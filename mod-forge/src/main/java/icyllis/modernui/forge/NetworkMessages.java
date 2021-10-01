@@ -110,11 +110,9 @@ public final class NetworkMessages {
             if (type == null) {
                 ModernUI.LOGGER.warn(UIManager.MARKER, "Trying to open invalid screen for menu id: {}", menuId);
             } else {
-                final AbstractContainerMenu menu = type.create(containerId, player.inventory, buffer);
+                final AbstractContainerMenu menu = type.create(containerId, player.getInventory(), buffer);
                 ResourceLocation key = Registry.MENU.getKey(type);
-                if (menu == null) {
-                    ModernUI.LOGGER.error(UIManager.MARKER, "No container menu created from menu type: {}", key);
-                } else if (key != null) {
+                if (key != null) {
                     success = UIManager.getInstance().openMenu(player, menu, key.getNamespace());
                 }
             }

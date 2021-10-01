@@ -26,6 +26,7 @@ import net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.ApiStatus;
@@ -35,28 +36,39 @@ import javax.annotation.Nonnull;
 @ApiStatus.Experimental
 public class ProjectBuilderRenderer extends BlockEntityWithoutLevelRenderer {
 
+    public ProjectBuilderRenderer() {
+        super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());
+    }
+
+    @Override
+    public void onResourceManagerReload(@Nonnull ResourceManager resourceManager) {
+        // NOOP
+    }
+
     @Override
     public void renderByItem(@Nonnull ItemStack stack, @Nonnull ItemTransforms.TransformType transformType,
-                               @Nonnull PoseStack matrixStack, @Nonnull MultiBufferSource buffer, int combinedLight, int combinedOverlay) {
+                             @Nonnull PoseStack ps, @Nonnull MultiBufferSource source, int combinedLight,
+                             int combinedOverlay) {
         ItemRenderer itemRenderer = Minecraft.getInstance().getItemRenderer();
-        ProjectBuilderModel model = (ProjectBuilderModel) itemRenderer.getModel(stack, null, null);
+        ProjectBuilderModel model = (ProjectBuilderModel) itemRenderer.getModel(stack, null, null, 0);
 
-        matrixStack.pushPose();
-        matrixStack.translate(0.5, 0.5, 0.5);
+        ps.pushPose();
+        ps.translate(0.5, 0.5, 0.5);
 
-        itemRenderer.render(stack, transformType, true, matrixStack, buffer, combinedLight, combinedOverlay, model.main);
+        itemRenderer.render(stack, transformType, true, ps, source, combinedLight, combinedOverlay, model.main);
 
         long time = Util.getMillis();
         float angel = time * -0.08f;
         angel %= 360;
-        matrixStack.translate(0, 0, -0.671875f);
-        matrixStack.mulPose(Vector3f.YN.rotationDegrees(angel));
+        ps.translate(0, 0, -0.671875f);
+        ps.mulPose(Vector3f.YN.rotationDegrees(angel));
 
         float f = ((float) Math.sin(time / 200D) + 1) * 0.5f;
         int glowX = (int) Mth.lerp(f, combinedLight >> 16, 240);
         int glowY = (int) Mth.lerp(f, combinedLight & 0xffff, 240);
-        itemRenderer.render(stack, transformType, true, matrixStack, buffer, glowX << 16 | glowY, combinedOverlay, model.cube);
+        itemRenderer.render(stack, transformType, true, ps, source, glowX << 16 | glowY, combinedOverlay,
+                model.cube);
 
-        matrixStack.popPose();
+        ps.popPose();
     }
 }

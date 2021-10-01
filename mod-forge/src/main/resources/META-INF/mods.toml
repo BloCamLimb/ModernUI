@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[36,)"
+loaderVersion="[37,)"
 issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
 logoFile= "modernui_logo.png"
 license="Multi-licensing, see https://github.com/BloCamLimb/ModernUI for details"
@@ -18,12 +18,12 @@ license="Multi-licensing, see https://github.com/BloCamLimb/ModernUI for details
 [[dependencies.modernui]]
     modId="forge"
     mandatory=true
-    versionRange="[36.1.0,)"
+    versionRange="[37.0.70,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.modernui]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.16.5, 1.17)"
+    versionRange="[1.17.1, 1.18)"
     ordering="NONE"
     side="BOTH"

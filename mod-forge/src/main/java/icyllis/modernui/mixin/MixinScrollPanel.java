@@ -32,6 +32,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import javax.annotation.Nonnull;
+
 @Mixin(ScrollPanel.class)
 public abstract class MixinScrollPanel implements ScrollController.IListener {
 
@@ -83,14 +85,14 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraftforge/client/gui/ScrollPanel;drawPanel(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;II)V"), remap = false)
-    private void preDrawPanel(PoseStack matrix, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        RenderSystem.pushMatrix();
-        RenderSystem.translated(0, ((int) (((int) scrollDistance - scrollDistance) * client.getWindow().getGuiScale())) / client.getWindow().getGuiScale(), 0);
+    private void preDrawPanel(@Nonnull PoseStack ps, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        ps.pushPose();
+        ps.translate(0, ((int) (((int) scrollDistance - scrollDistance) * client.getWindow().getGuiScale())) / client.getWindow().getGuiScale(), 0);
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraftforge/client/gui/ScrollPanel;drawPanel(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;II)V"), remap = false)
-    private void postDrawPanel(PoseStack matrixStack, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        RenderSystem.popMatrix();
+    private void postDrawPanel(@Nonnull PoseStack ps, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
+        ps.popPose();
     }
 
     @Override

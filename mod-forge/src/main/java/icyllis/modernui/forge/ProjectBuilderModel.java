@@ -44,13 +44,13 @@ public class ProjectBuilderModel extends BakedModelWrapper<BakedModel> {
 
     private static BakedModel bakeCustomModel(@Nonnull ModelLoader loader, String name) {
         ResourceLocation location = new ResourceLocation(ModernUI.ID, name);
-        return loader.getBakedModel(location, BlockModelRotation.X0_Y0, ModelLoader.defaultTextureGetter());
+        return loader.bake(location, BlockModelRotation.X0_Y0, ModelLoader.defaultTextureGetter());
     }
 
     @Nonnull
     @Override
-    public BakedModel handlePerspective(@Nonnull ItemTransforms.TransformType cameraTransformType, @Nonnull PoseStack mat) {
-        super.handlePerspective(cameraTransformType, mat);
+    public BakedModel handlePerspective(@Nonnull ItemTransforms.TransformType transformType, @Nonnull PoseStack ps) {
+        super.handlePerspective(transformType, ps);
         return this;
     }
 

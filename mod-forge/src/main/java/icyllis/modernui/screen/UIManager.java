@@ -195,7 +195,7 @@ public final class UIManager implements ViewRootImpl.Handler {
         }
         mCallback = callback;
         player.containerMenu = menu;
-        minecraft.setScreen(new MenuScreen<>(menu, player.inventory, this));
+        minecraft.setScreen(new MenuScreen<>(menu, player.getInventory(), this));
         return true;
     }
 
@@ -386,7 +386,7 @@ public final class UIManager implements ViewRootImpl.Handler {
     void onMouseButton(@Nonnull InputEvent.RawMouseEvent event) {
         // We should ensure (overlay == null && screen != null)
         // and the screen must be a mui screen
-        if (minecraft.overlay == null && mScreen != null) {
+        if (minecraft.getOverlay() == null && mScreen != null) {
             //ModernUI.LOGGER.info(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
             final long now = RenderCore.timeNanos();
             float x = (float) minecraft.mouseHandler.xpos();
@@ -547,7 +547,6 @@ public final class UIManager implements ViewRootImpl.Handler {
         RenderSystem.enableBlend();
         RenderSystem.activeTexture(GL_TEXTURE0);
         RenderSystem.disableDepthTest();
-        RenderSystem.disableAlphaTest();
 
         // blend alpha correctly, since the Minecraft.mainRenderTarget has no alpha (always 1)
         // and our framebuffer is always a transparent layer
@@ -608,7 +607,8 @@ public final class UIManager implements ViewRootImpl.Handler {
 
     @SubscribeEvent
     void onRenderGameOverlay(@Nonnull RenderGameOverlayEvent.Pre event) {
-        switch (event.getType()) {
+        //TODO mixin cross-hairs
+        /*switch (event.getType()) {
             case CROSSHAIRS:
                 event.setCanceled(mScreen != null);
                 break;
@@ -616,11 +616,11 @@ public final class UIManager implements ViewRootImpl.Handler {
                 // hotfix 1.16 vanilla, using shader makes TEXTURE_2D disabled
                 RenderSystem.enableTexture();
                 break;
-            /*case HEALTH:
+            *//*case HEALTH:
                 if (TestHUD.sBars)
                     TestHUD.sInstance.drawBars(mFCanvas);
-                break;*/
-        }
+                break;*//*
+        }*/
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)

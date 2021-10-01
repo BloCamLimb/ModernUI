@@ -33,7 +33,6 @@ import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -196,14 +195,13 @@ public enum BlurHandler {
     public void drawScreenBackground(@Nonnull Screen screen, @Nonnull PoseStack stack, int x1, int y1, int x2, int y2) {
         RenderSystem.disableTexture();
         RenderSystem.enableBlend();
-        RenderSystem.disableAlphaTest();
         RenderSystem.defaultBlendFunc();
-        RenderSystem.shadeModel(GL11.GL_SMOOTH);
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         BufferBuilder builder = Tesselator.getInstance().getBuilder();
         Matrix4f matrix = stack.last().pose();
         int z = screen.getBlitOffset();
-        builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR);
+        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
         int color = mBackgroundColor[1];
         builder.vertex(matrix, x2, y1, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
         color = mBackgroundColor[0];
@@ -215,9 +213,7 @@ public enum BlurHandler {
         builder.end();
         BufferUploader.end(builder);
 
-        RenderSystem.shadeModel(GL11.GL_FLAT);
         RenderSystem.disableBlend();
-        RenderSystem.enableAlphaTest();
         RenderSystem.enableTexture();
     }
 }

@@ -32,10 +32,7 @@ import net.minecraft.network.chat.BaseComponent;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
-import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraftforge.resource.ISelectiveResourceReloadListener;
-import net.minecraftforge.resource.VanillaResourceType;
 import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
@@ -139,13 +136,7 @@ public class TextLayoutEngine {
 
         // init class
         GlyphManager.getInstance();
-        ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager()).registerReloadListener(
-                (ISelectiveResourceReloadListener) (manager, predicate) -> {
-                    if (predicate.test(VanillaResourceType.LANGUAGES)) {
-                        reload();
-                    }
-                }
-        );
+        // init
         reload();
     }
 
