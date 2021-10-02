@@ -16,23 +16,31 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.screen.shader.uniform;
+package icyllis.modernui.test.trash;
 
-import com.mojang.math.Vector4f;
-import icyllis.modernui.screen.shader.ShaderUniform;
-import org.lwjgl.opengl.GL20;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
+/**
+ * Defines a plugin to Modern UI.
+ * <p>
+ * Any class found with this annotation will be loaded as a Modern UI plugin,
+ * all these classes must be subclasses of {@link Plugin} to work.
+ *
+ * @see Plugin
+ */
 @Deprecated
-public class UniformVec4 extends ShaderUniform<Vector4f> {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface DefinePlugin {
 
-    public UniformVec4(int location) {
-        super(location);
-    }
-
-    @Override
-    public void load(Vector4f data) {
-        if (location != -1) {
-            GL20.glUniform4f(location, data.x(), data.y(), data.z(), data.w());
-        }
-    }
+    /**
+     * The identifier of the plugin, only lowercase letters are allowed.
+     * This is also used as the namespace of your plugin context.
+     *
+     * @return the plugin id
+     */
+    String value();
 }

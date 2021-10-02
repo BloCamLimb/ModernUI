@@ -16,32 +16,23 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.forge;
+package icyllis.modernui.test.shader.uniform;
 
-/**
- * Represents a plugin to Modern UI. All instances will be created from Modern UI system.
- * <p>
- * Creating a plugin by {@link DefinePlugin}, for example:
- * <pre>
- * &#64;DefinePlugin("example")
- * public class MuiPlugin extends Plugin {
- *      private static Plugin sInstance;
- *
- *      public MuiPlugin() {
- *          sInstance = this;
- *      }
- *
- *      public static Plugin get() {
- *          return sInstance;
- *      }
- * }
- * </pre>
- *
- * @see DefinePlugin
- */
+import com.mojang.math.Vector4f;
+import icyllis.modernui.test.shader.ShaderUniform;
+import org.lwjgl.opengl.GL20;
+
 @Deprecated
-public class Plugin {
+public class UniformVec4 extends ShaderUniform<Vector4f> {
 
-    public Plugin() {
+    public UniformVec4(int location) {
+        super(location);
+    }
+
+    @Override
+    public void load(Vector4f data) {
+        if (location != -1) {
+            GL20.glUniform4f(location, data.x(), data.y(), data.z(), data.w());
+        }
     }
 }

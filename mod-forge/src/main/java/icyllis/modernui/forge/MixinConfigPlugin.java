@@ -18,6 +18,7 @@
 
 package icyllis.modernui.forge;
 
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -34,12 +35,13 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public String getRefMapperConfig() {
-        return null;
+        return FMLLoader.getNameFunction("srg").isPresent() ? null : "ModernUI-ModernUI-Forge-refmap.json";
     }
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return !ModernUIForge.isOptiFineLoaded() || !mixinClassName.equals("icyllis.modernui.mixin.AccessVideoSettings");
+        return !ModernUIForge.isOptiFineLoaded() ||
+                !mixinClassName.equals("icyllis.modernui.mixin.AccessVideoSettings");
     }
 
     @Override

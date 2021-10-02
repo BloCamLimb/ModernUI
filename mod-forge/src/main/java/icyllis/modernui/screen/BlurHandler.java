@@ -23,7 +23,6 @@ import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.ColorEvaluator;
-import icyllis.modernui.mixin.AccessGameRenderer;
 import icyllis.modernui.mixin.AccessPostChain;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -52,6 +51,9 @@ public enum BlurHandler {
     public static float sAnimationDuration;
     public static float sBlurRadius;
     public static int[] sBackgroundColor = new int[4];
+
+    //FIXME blur shader working
+    private static boolean debugKey = true;
 
     // minecraft namespace
     private final ResourceLocation mBlurPostEffect = new ResourceLocation("shaders/post/blur_fast.json");
@@ -86,7 +88,7 @@ public enum BlurHandler {
             return;
         }
         boolean excluded = false;
-        if (nextScreen != null && !(nextScreen instanceof MuiScreen)) {
+        if (nextScreen != null && sBlurEffect && !(nextScreen instanceof MuiScreen)) {
             Class<?> t = nextScreen.getClass();
             if (t != null) {
                 for (Class<?> c : mBlacklist) {
@@ -97,7 +99,7 @@ public enum BlurHandler {
                 }
             }
         }
-        boolean blurDisabled = excluded || !sBlurEffect;
+        boolean blurDisabled = excluded || !sBlurEffect || debugKey;
         if (blurDisabled && excluded && mBlurring) {
             minecraft.gameRenderer.shutdownEffect();
             mFadingIn = false;
@@ -107,11 +109,13 @@ public enum BlurHandler {
         boolean hasGui = nextScreen != null;
         GameRenderer gr = minecraft.gameRenderer;
         if (hasGui && !mBlurring && !mScreenOpened) {
-            if (!blurDisabled && gr.currentEffect() == null) {
-                ((AccessGameRenderer) gr).callLoadEffect(mBlurPostEffect);
+            if (!blurDisabled && gr.currentEffect() == null && sBlurRadius > 1) {
+                gr.loadEffect(mBlurPostEffect);
                 mBlurring = true;
                 if (sAnimationDuration <= 0) {
                     updateRadius(sBlurRadius);
+                } else {
+                    updateRadius(0);
                 }
             }
             if (sAnimationDuration > 0) {
@@ -130,17 +134,17 @@ public enum BlurHandler {
     }
 
     /**
-     * Internal method, to re-blur after resources (including shaders) reloaded in in-game menu
+     * Internal method, to re-blur after resources (including shaders) reloaded in the pause menu.
      */
     public void forceBlur() {
         // no need to check if is excluded, this method is only called by opened ModernUI Screen
         if (!sBlurEffect) {
             return;
         }
-        if (minecraft.level != null) {
+        if (minecraft.level != null && mBlurring) {
             GameRenderer gr = minecraft.gameRenderer;
             if (gr.currentEffect() == null) {
-                ((AccessGameRenderer) gr).callLoadEffect(mBlurPostEffect);
+                gr.loadEffect(mBlurPostEffect);
                 mFadingIn = true;
                 mBlurring = true;
             }

@@ -31,7 +31,6 @@ import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.textmc.TextLayoutEngine;
@@ -625,20 +624,22 @@ public final class UIManager implements ViewRootImpl.Handler {
 
     @SubscribeEvent(priority = EventPriority.LOW)
     void onRenderTooltip(@Nonnull RenderTooltipEvent.Pre event) {
-        if (TestHUD.sTooltip) {
+        if (TooltipRenderer.sTooltip) {
             /*if (!(minecraft.font instanceof ModernFontRenderer)) {
                 ModernUI.LOGGER.fatal(MARKER, "Failed to hook FontRenderer, tooltip disabled");
                 TestHUD.sTooltip = false;
                 return;
             }*/
             final Window window = minecraft.getWindow();
-            double cursorX =
-                    minecraft.mouseHandler.xpos() * (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
-            double cursorY =
-                    minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
-            TestHUD.sInstance.drawTooltip(mCanvas, event.getLines(), minecraft.font, event.getStack(),
+            // screen coordinates to pixels for rendering
+            double cursorX = minecraft.mouseHandler.xpos() *
+                    (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
+            double cursorY = minecraft.mouseHandler.ypos() *
+                    (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
+            TooltipRenderer.drawTooltip(mCanvas, event.getLines(), event.getFontRenderer(), event.getStack(),
                     event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY,
-                    event.getScreenWidth(), event.getScreenHeight(), window.getWidth(), window.getHeight());
+                    event.getMaxWidth(), event.getScreenWidth(), event.getScreenHeight(),
+                    window.getWidth(), window.getHeight());
             event.setCanceled(true);
         }
     }

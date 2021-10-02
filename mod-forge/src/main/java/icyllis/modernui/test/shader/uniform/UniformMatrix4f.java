@@ -16,17 +16,24 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.screen;
+package icyllis.modernui.test.shader.uniform;
+
+import icyllis.modernui.test.shader.ShaderUniform;
+import icyllis.modernui.math.Matrix4;
+
+import javax.annotation.Nonnull;
 
 @Deprecated
-public enum TextAlign {
-    LEFT(0.0f),
-    CENTER(0.5f),
-    RIGHT(1.0f);
+public class UniformMatrix4f extends ShaderUniform<Matrix4> {
 
-    public final float offsetFactor;
+    public UniformMatrix4f(int location) {
+        super(location);
+    }
 
-    TextAlign(float offsetFactor) {
-        this.offsetFactor = offsetFactor;
+    @Override
+    public void load(@Nonnull Matrix4 data) {
+        if (location != -1) {
+            //GL20.glUniform4fv(location, data.getData());
+        }
     }
 }

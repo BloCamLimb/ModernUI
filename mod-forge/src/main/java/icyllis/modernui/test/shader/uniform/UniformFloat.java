@@ -16,33 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.test;
+package icyllis.modernui.test.shader.uniform;
 
-import icyllis.modernui.math.Matrix4;
-//import org.openjdk.jmh.annotations.*;
+import icyllis.modernui.test.shader.ShaderUniform;
+import org.lwjgl.opengl.GL20;
 
-import java.util.concurrent.TimeUnit;
+@Deprecated
+public class UniformFloat extends ShaderUniform<Float> {
 
-/*@BenchmarkMode(Mode.AverageTime)
-@Warmup(iterations = 2, time = 1)
-@Threads(2)
-@Fork(1)
-@Measurement(iterations = 5, time = 1)
-@OutputTimeUnit(TimeUnit.NANOSECONDS)
-@State(Scope.Thread)*/
-public class TestCompare {
-
-    /*@Benchmark
-    public Matrix4 box() {
-        return null;
+    public UniformFloat(int location) {
+        super(location);
     }
 
-    @Benchmark
-    public Matrix4 prim() {
-        Matrix4 m = new Matrix4();
-        for (int i = 0; i < 5000; i++) {
-            m = m.copy();
+    @Override
+    public void load(Float data) {
+        if (location != -1) {
+            GL20.glUniform1f(location, data);
         }
-        return m;
-    }*/
+    }
 }

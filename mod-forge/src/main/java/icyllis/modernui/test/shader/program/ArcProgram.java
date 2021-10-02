@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.screen.shader.program;
+package icyllis.modernui.test.shader.program;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.GLProgram;

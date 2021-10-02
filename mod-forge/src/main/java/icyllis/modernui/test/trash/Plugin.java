@@ -16,16 +16,32 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.screen.shader;
+package icyllis.modernui.test.trash;
 
+/**
+ * Represents a plugin to Modern UI. All instances will be created from Modern UI system.
+ * <p>
+ * Creating a plugin by {@link DefinePlugin}, for example:
+ * <pre>
+ * &#64;DefinePlugin("example")
+ * public class MuiPlugin extends Plugin {
+ *      private static Plugin sInstance;
+ *
+ *      public MuiPlugin() {
+ *          sInstance = this;
+ *      }
+ *
+ *      public static Plugin get() {
+ *          return sInstance;
+ *      }
+ * }
+ * </pre>
+ *
+ * @see DefinePlugin
+ */
 @Deprecated
-public abstract class ShaderUniform<T> {
+public class Plugin {
 
-    protected final int location;
-
-    public ShaderUniform(int location) {
-        this.location = location;
+    public Plugin() {
     }
-
-    public abstract void load(T data);
 }
