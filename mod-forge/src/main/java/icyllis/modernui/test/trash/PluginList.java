@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.forge;
+package icyllis.modernui.test.trash;
 
 import icyllis.modernui.ModernUI;
 import net.minecraftforge.fml.ModList;

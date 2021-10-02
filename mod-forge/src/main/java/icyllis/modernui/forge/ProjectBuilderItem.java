@@ -27,7 +27,7 @@ import java.util.function.Consumer;
 
 public class ProjectBuilderItem extends Item {
 
-    public ProjectBuilderItem(@Nonnull Properties props) {
+    ProjectBuilderItem(@Nonnull Properties props) {
         super(props);
     }
 

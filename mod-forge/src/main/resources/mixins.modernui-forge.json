@@ -1,11 +1,10 @@
 {
-  "minVersion": "0.8.2",
+  "minVersion": "0.8.4",
   "required": true,
-  "compatibilityLevel": "JAVA_11",
+  "compatibilityLevel": "JAVA_16",
   "plugin": "icyllis.modernui.forge.MixinConfigPlugin",
   "package": "icyllis.modernui.mixin",
   "client": [
-    "AccessGameRenderer",
     "AccessOption",
     "AccessPostChain",
     "AccessVideoSettings",

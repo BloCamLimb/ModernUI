@@ -23,6 +23,7 @@ import net.minecraft.resources.ResourceLocation;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
+@Deprecated
 @Mixin(GameRenderer.class)
 public interface AccessGameRenderer {
 

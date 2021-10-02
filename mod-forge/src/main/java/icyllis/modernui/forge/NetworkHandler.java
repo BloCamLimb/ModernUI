@@ -142,8 +142,6 @@ public class NetworkHandler {
                 mClientListener.handle(event.getPayload().readShort(), event.getPayload(), player);
             }
         }
-        // forge disabled this on client, see ClientPacketListener.handleCustomPayload() finally block
-        event.getPayload().release();
         event.getSource().get().setPacketHandled(true);
     }
 

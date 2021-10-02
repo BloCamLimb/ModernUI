@@ -21,8 +21,8 @@ package icyllis.modernui.forge;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.screen.BlurHandler;
+import icyllis.modernui.screen.TooltipRenderer;
 import icyllis.modernui.screen.UIManager;
-import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.text.FontAtlas;
 import icyllis.modernui.text.GlyphManager;
 import icyllis.modernui.textmc.ModernFontRenderer;
@@ -50,7 +50,7 @@ import java.util.List;
 import java.util.function.Function;
 
 @ApiStatus.Internal
-public final class Config {
+final class Config {
 
     static final Client CLIENT;
     private static final ForgeConfigSpec CLIENT_SPEC;
@@ -280,6 +280,9 @@ public final class Config {
                     .defineList("fontFamily", () -> {
                         List<String> list = new ArrayList<>();
                         list.add("modernui:font/biliw.otf");
+                        list.add("Microsoft YaHei");
+                        list.add("SimHei");
+                        list.add("STHeiti");
                         list.add("Segoe UI");
                         list.add("SansSerif");
                         return list;
@@ -329,13 +332,13 @@ public final class Config {
 
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
-            TestHUD.sTooltip = tooltip.get();
+            TooltipRenderer.sTooltip = tooltip.get();
             String tooltipColor = this.tooltipColor.get();
             try {
                 int i = Integer.valueOf(tooltipColor.substring(2), 16);
-                TestHUD.sTooltipR = i >> 16 & 0xff;
-                TestHUD.sTooltipG = i >> 8 & 0xff;
-                TestHUD.sTooltipB = i & 0xff;
+                TooltipRenderer.sTooltipR = i >> 16 & 0xff;
+                TooltipRenderer.sTooltipG = i >> 8 & 0xff;
+                TooltipRenderer.sTooltipB = i & 0xff;
             } catch (Exception e) {
                 ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}",
                         tooltipColor, e);

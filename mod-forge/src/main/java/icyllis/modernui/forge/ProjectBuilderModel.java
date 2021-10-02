@@ -36,7 +36,7 @@ public class ProjectBuilderModel extends BakedModelWrapper<BakedModel> {
     public final BakedModel main;
     public final BakedModel cube;
 
-    public ProjectBuilderModel(BakedModel originalModel, ModelLoader loader) {
+    ProjectBuilderModel(BakedModel originalModel, ModelLoader loader) {
         super(originalModel);
         main = bakeCustomModel(loader, "item/project_builder_main");
         cube = bakeCustomModel(loader, "item/project_builder_cube");

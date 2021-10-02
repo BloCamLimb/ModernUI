@@ -28,7 +28,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Deprecated
-@SuppressWarnings("UnusedMixin")
 @Mixin(FoodData.class)
 public class MixinFoodData {
 

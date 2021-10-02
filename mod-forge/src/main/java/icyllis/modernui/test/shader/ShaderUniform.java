@@ -16,22 +16,16 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.screen.shader.uniform;
-
-import icyllis.modernui.screen.shader.ShaderUniform;
-import org.lwjgl.opengl.GL20;
+package icyllis.modernui.test.shader;
 
 @Deprecated
-public class UniformFloat extends ShaderUniform<Float> {
+public abstract class ShaderUniform<T> {
 
-    public UniformFloat(int location) {
-        super(location);
+    protected final int location;
+
+    public ShaderUniform(int location) {
+        this.location = location;
     }
 
-    @Override
-    public void load(Float data) {
-        if (location != -1) {
-            GL20.glUniform1f(location, data);
-        }
-    }
+    public abstract void load(T data);
 }

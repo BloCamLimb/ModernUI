@@ -16,31 +16,17 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.forge;
+package icyllis.modernui.test.trash;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * Defines a plugin to Modern UI.
- * <p>
- * Any class found with this annotation will be loaded as a Modern UI plugin,
- * all these classes must be subclasses of {@link Plugin} to work.
- *
- * @see Plugin
- */
 @Deprecated
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface DefinePlugin {
+public enum TextAlign {
+    LEFT(0.0f),
+    CENTER(0.5f),
+    RIGHT(1.0f);
 
-    /**
-     * The identifier of the plugin, only lowercase letters are allowed.
-     * This is also used as the namespace of your plugin context.
-     *
-     * @return the plugin id
-     */
-    String value();
+    public final float offsetFactor;
+
+    TextAlign(float offsetFactor) {
+        this.offsetFactor = offsetFactor;
+    }
 }

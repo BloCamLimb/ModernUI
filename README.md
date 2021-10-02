@@ -32,9 +32,9 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
 ### Adding Modern UI to your project
 #### Environment requirements
 - Windows, Linux or macOS
-- JDK 11.0.8 or above
-- OpenGL 4.5 or above
-- (Optional) Forge 1.16.5-36.1.0
+- JDK 16.0.1 or above
+- OpenGL 4.5 or above (macOS users would get stuck on this, but there may be Vulkan pipeline in the future)
+- (Optional) Forge 1.17.1-37.0.70
 #### Gradle configuration
 ```
 repositories {
