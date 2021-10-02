@@ -159,7 +159,7 @@ public final class GLWrapper extends GL45C {
         LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
         if (!caps.OpenGL45) {
-            LOGGER.info(RenderCore.MARKER, "OpenGL 4.5 not requested, testing ARBs");
+            LOGGER.debug(RenderCore.MARKER, "OpenGL 4.5 not requested, testing ARBs");
             if (glVersion == null)
                 glVersion = "UNKNOWN";
             else {

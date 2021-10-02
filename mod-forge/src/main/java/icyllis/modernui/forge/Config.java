@@ -47,6 +47,7 @@ import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 
 @ApiStatus.Internal
@@ -165,7 +166,8 @@ final class Config {
         private final ForgeConfigSpec.IntValue blurRadius;
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> backgroundColor;
         private final ForgeConfigSpec.BooleanValue tooltip;
-        private final ForgeConfigSpec.ConfigValue<String> tooltipColor;
+        private final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipFill;
+        private final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipStroke;
         private final ForgeConfigSpec.BooleanValue ding;
         //private final ForgeConfigSpec.BooleanValue hudBars;
 
@@ -192,15 +194,15 @@ final class Config {
                     "The duration of GUI background color and blur radius animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 200, 0, 800);
             backgroundColor = builder.comment(
-                    "The GUI background color in world in 0xAARRGGBB format.",
+                    "The GUI background color in world in 0xAARRGGBB format. Default value: 0x66000000",
                     "Can be one to four values representing top left, top right, bottom right, bottom left color.",
-                    "Multiple values produce a gradient effect, whereas one value has only one color.",
+                    "Multiple values produce a gradient effect, whereas one value produce a solid color.",
                     "When values is less than 4, the rest of the corner color will be replaced by the last value.")
                     .defineList("backgroundColor", () -> {
                         List<String> list = new ArrayList<>();
                         list.add("0x66000000");
                         return list;
-                    }, s -> true);
+                    }, $ -> true);
 
             blurEffect = builder.comment(
                     "Add blur effect to world renderer when opened, it is incompatible with OptiFine's FXAA shader or" +
@@ -215,7 +217,7 @@ final class Config {
                         List<String> list = new ArrayList<>();
                         list.add(ChatScreen.class.getName());
                         return list;
-                    }, s -> true);
+                    }, $ -> true);
 
             builder.pop();
 
@@ -223,12 +225,31 @@ final class Config {
                     .push("tooltip");
 
             tooltip = builder.comment(
-                    "Enable Modern UI's tooltip style.")
+                    "Whether to enable Modern UI's tooltip style, or back to vanilla style.")
                     .define("enable", true);
-
-            tooltipColor = builder.comment(
-                    "The tooltip frame color. Format: 0xRRGGBB. Default value: 0xAADCF0")
-                    .define("frameColor", "0xAADCF0");
+            tooltipFill = builder.comment(
+                    "The tooltip FILL color in 0xAARRGGBB format. Default value: 0xD4000000",
+                    "Can be one to four values representing top left, top right, bottom right, bottom left color.",
+                    "Multiple values produce a gradient effect, whereas one value produce a solid color.",
+                    "When values is less than 4, the rest of the corner color will be replaced by the last value.")
+                    .defineList("colorFill", () -> {
+                        List<String> list = new ArrayList<>();
+                        list.add("0xD4000000");
+                        return list;
+                    }, $ -> true);
+            tooltipStroke = builder.comment(
+                    "The tooltip STROKE color in 0xAARRGGBB format. Default value: 0xF0AADCF0, 0xF0DAD0F4, 0xF0FFC3F7",
+                    "Can be one to four values representing top left, top right, bottom right, bottom left color.",
+                    "Multiple values produce a gradient effect, whereas one value produce a solid color.",
+                    "When values is less than 4, the rest of the corner color will be replaced by the last value.")
+                    .defineList("colorStroke", () -> {
+                        List<String> list = new ArrayList<>();
+                        list.add("0xF0AADCF0");
+                        list.add("0xF0DAD0F4");
+                        list.add("0xF0FFC3F7");
+                        list.add("0xF0DAD0F4");
+                        return list;
+                    }, $ -> true);
 
             builder.pop();
 
@@ -318,13 +339,13 @@ final class Config {
 
             List<? extends String> colors = backgroundColor.get();
             int color = 0x66000000;
-            for (int i = 0; i < 4; i++) {
+            for (int i = 0; i < BlurHandler.sBackgroundColor.length; i++) {
                 if (colors != null && i < colors.size()) {
                     try {
-                        color = Integer.valueOf(colors.get(i).substring(2), 16);
+                        color = (int) Long.parseLong(colors.get(i).substring(2).toLowerCase(Locale.ROOT), 16);
                     } catch (Exception e) {
                         ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting background color: {}",
-                                tooltipColor, e);
+                                tooltipFill, e);
                     }
                 }
                 BlurHandler.sBackgroundColor[i] = color;
@@ -333,16 +354,34 @@ final class Config {
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
             TooltipRenderer.sTooltip = tooltip.get();
-            String tooltipColor = this.tooltipColor.get();
-            try {
-                int i = Integer.valueOf(tooltipColor.substring(2), 16);
-                TooltipRenderer.sTooltipR = i >> 16 & 0xff;
-                TooltipRenderer.sTooltipG = i >> 8 & 0xff;
-                TooltipRenderer.sTooltipB = i & 0xff;
-            } catch (Exception e) {
-                ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}",
-                        tooltipColor, e);
+
+            colors = tooltipFill.get();
+            color = 0xD4000000;
+            for (int i = 0; i < TooltipRenderer.sFillColor.length; i++) {
+                if (colors != null && i < colors.size()) {
+                    try {
+                        color = Integer.parseUnsignedInt(colors.get(i).substring(2).toLowerCase(Locale.ROOT), 16);
+                    } catch (Exception e) {
+                        ModernUI.LOGGER.error(ModernUI.MARKER,
+                                "Wrong color format for setting tooltip fill color: {}", tooltipFill, e);
+                    }
+                }
+                TooltipRenderer.sFillColor[i] = color;
             }
+            colors = tooltipStroke.get();
+            color = 0xF0AADCF0;
+            for (int i = 0; i < TooltipRenderer.sStrokeColor.length; i++) {
+                if (colors != null && i < colors.size()) {
+                    try {
+                        color = (int) Long.parseLong(colors.get(i).substring(2).toLowerCase(Locale.ROOT), 16);
+                    } catch (Exception e) {
+                        ModernUI.LOGGER.error(ModernUI.MARKER,
+                                "Wrong color format for setting tooltip stroke color: {}", tooltipFill, e);
+                    }
+                }
+                TooltipRenderer.sStrokeColor[i] = color;
+            }
+
             UIManager.sPlaySoundOnLoaded = ding.get();
             //TestHUD.sBars = hudBars.get();
 

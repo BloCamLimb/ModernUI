@@ -1,5 +1,15 @@
 Changelogs
 ===
+### 1.17.1-3.0.0.93 (2021-10-02)
+#### Forge Extension 1.17.1-37.0.70
+* Enhance tooltip rendering and add gradient effect
+* Fix hex colors cannot be parsed
+* Port to 1.17.1
+#### Modern Text 1.17 (Embedded)
+* Port to 1.17.1, use OpenGL core profile
+#### Core Framework 3.0 (Preview)
+* Require Java 16
+
 ### 1.16.5-2.6.4.92 (2021-09-29)
 #### Forge Extension 1.16.5-36.2.0
 * Optimize packet dispatcher

@@ -22,15 +22,29 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
+import icyllis.modernui.ModernUI;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
 
 public class TextRenderType extends RenderType {
+
+    public static final ResourceLocation
+            SHADER_RL = new ResourceLocation(ModernUI.ID, "rendertype_modern_text"),
+            SHADER_SEE_THROUGH_RL = new ResourceLocation(ModernUI.ID, "rendertype_modern_text_see_through");
+
+    private static final ShaderStateShard
+            RENDERTYPE_MODERN_TEXT = new ShaderStateShard(TextRenderType::getShader),
+            RENDERTYPE_MODERN_TEXT_SEE_THROUGH = new ShaderStateShard(TextRenderType::getShaderSeeThrough);
+
+    private static ShaderInstance sShader;
+    private static ShaderInstance sShaderSeeThrough;
 
     /**
      * Texture id to render type map
@@ -46,7 +60,7 @@ public class TextRenderType extends RenderType {
 
     static {
         GENERAL_STATES = ImmutableList.of(
-                RENDERTYPE_TEXT_INTENSITY_SHADER,
+                RENDERTYPE_MODERN_TEXT,
                 TRANSLUCENT_TRANSPARENCY,
                 LEQUAL_DEPTH_TEST,
                 CULL,
@@ -59,7 +73,7 @@ public class TextRenderType extends RenderType {
                 DEFAULT_LINE
         );
         SEE_THROUGH_STATES = ImmutableList.of(
-                RENDERTYPE_TEXT_SEE_THROUGH_SHADER,
+                RENDERTYPE_MODERN_TEXT_SEE_THROUGH,
                 TRANSLUCENT_TRANSPARENCY,
                 NO_DEPTH_TEST,
                 CULL,
@@ -137,5 +151,21 @@ public class TextRenderType extends RenderType {
     @Override
     public boolean equals(Object o) {
         return this == o;
+    }
+
+    public static ShaderInstance getShader() {
+        return sShader;
+    }
+
+    public static void setShader(@Nonnull ShaderInstance shader) {
+        sShader = shader;
+    }
+
+    public static ShaderInstance getShaderSeeThrough() {
+        return sShaderSeeThrough;
+    }
+
+    public static void setShaderSeeThrough(@Nonnull ShaderInstance shaderSeeThrough) {
+        sShaderSeeThrough = shaderSeeThrough;
     }
 }

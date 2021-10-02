@@ -18,21 +18,27 @@
 
 package icyllis.modernui.forge;
 
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettings;
 import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.screen.OpenMenuEvent;
 import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestMenu;
+import icyllis.modernui.test.TestUI;
 import icyllis.modernui.textmc.TextLayoutEngine;
+import icyllis.modernui.textmc.TextRenderType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Option;
 import net.minecraft.client.ProgressOption;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceProvider;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
@@ -40,6 +46,7 @@ import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
+import net.minecraftforge.client.event.RegisterShadersEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
@@ -190,6 +197,28 @@ final class Registration {
             }
         } else {
             ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to capture video settings");
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
+    static void onMenuOpen(@Nonnull OpenMenuEvent event) {
+        if (event.getMenu().getType() == MuiRegistries.TEST_MENU) {
+            event.setCallback(new TestUI());
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
+    static void onShaderReload(@Nonnull RegisterShadersEvent event) {
+        ResourceProvider provider = event.getResourceManager();
+        try {
+            event.registerShader(new ShaderInstance(provider, TextRenderType.SHADER_RL,
+                    DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP), TextRenderType::setShader);
+            event.registerShader(new ShaderInstance(provider, TextRenderType.SHADER_SEE_THROUGH_RL,
+                    DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP), TextRenderType::setShaderSeeThrough);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
