@@ -25,6 +25,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.Minecraft;
@@ -53,9 +54,9 @@ public class TooltipRenderer {
 
     // config value
     public static boolean sTooltip = true;
-    public static int sTooltipR = 170;
-    public static int sTooltipG = 220;
-    public static int sTooltipB = 240;
+
+    public static int[] sFillColor = new int[4];
+    public static int[] sStrokeColor = new int[4];
 
     // space between mouse and tooltip
     public static final int TOOLTIP_SPACE = 12;
@@ -70,21 +71,42 @@ public class TooltipRenderer {
     private static final FloatBuffer sMatBuf = BufferUtils.createFloatBuffer(16);
     private static final Matrix4 sMyMat = new Matrix4();
 
+    private static final int[] sColor = new int[4];
+
+    private static boolean sDraw;
+    private static float sAlpha;
+
+    public static void update(long deltaMillis) {
+        if (sDraw) {
+            if (sAlpha < 1) {
+                sAlpha = Math.min(sAlpha + deltaMillis * 0.01f, 1);
+            }
+            sDraw = false;
+        } else if (sAlpha > 0) {
+            sAlpha = Math.max(sAlpha - deltaMillis * 0.01f, 0);
+        }
+    }
+
     // from Forge hooks
     public static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull List<? extends FormattedText> texts,
                                    @Nonnull Font font, @Nonnull ItemStack stack, @Nonnull PoseStack poseStack,
                                    float mouseX, float mouseY, float preciseMouseX, float preciseMouseY,
                                    int maxTextWidth, float screenWidth, float screenHeight,
                                    int framebufferWidth, int framebufferHeight) {
-        float tooltipX = mouseX + TOOLTIP_SPACE;
-        float tooltipY = mouseY - TOOLTIP_SPACE;
+        sDraw = true;
+        final float partialX = (preciseMouseX - (int) preciseMouseX);
+        final float partialY = (preciseMouseY - (int) preciseMouseY);
+
+        // matrix transformation for x and y params, compatibility to MineColonies
+        float tooltipX = mouseX + TOOLTIP_SPACE + partialX;
+        float tooltipY = mouseY - TOOLTIP_SPACE + partialY;
         /*if (mouseX != (int) mouseX || mouseY != (int) mouseY) {
             // ignore partial pixels
             tooltipX += mouseX - (int) mouseX;
             tooltipY += mouseY - (int) mouseY;
         }*/
         int tooltipWidth = 0;
-        int tooltipHeight = V_BORDER * 2 + 2;
+        int tooltipHeight = V_BORDER * 2;
 
         for (FormattedText text : texts) {
             tooltipWidth = Math.max(tooltipWidth, font.width(text));
@@ -92,7 +114,7 @@ public class TooltipRenderer {
 
         boolean needWrap = false;
         if (tooltipX + tooltipWidth + H_BORDER + 1 > screenWidth) {
-            tooltipX = mouseX - TOOLTIP_SPACE - H_BORDER - 1 - tooltipWidth;
+            tooltipX = mouseX - TOOLTIP_SPACE - H_BORDER - 1 - tooltipWidth + partialX;
             if (tooltipX < H_BORDER + 1) {
                 if (mouseX > screenWidth / 2) {
                     tooltipWidth = (int) (mouseX - TOOLTIP_SPACE - H_BORDER * 2 - 2);
@@ -126,9 +148,9 @@ public class TooltipRenderer {
             texts = temp;
 
             if (mouseX > screenWidth / 2) {
-                tooltipX = mouseX - TOOLTIP_SPACE - H_BORDER - 1 - tooltipWidth;
+                tooltipX = mouseX - TOOLTIP_SPACE - H_BORDER - 1 - tooltipWidth + partialX;
             } else {
-                tooltipX = mouseX + TOOLTIP_SPACE;
+                tooltipX = mouseX + TOOLTIP_SPACE + partialX;
             }
         }
 
@@ -139,21 +161,11 @@ public class TooltipRenderer {
             }
         }
 
-        if (tooltipY < V_BORDER + 1) {
-            tooltipY = V_BORDER + 1;
-        } else if (tooltipY + tooltipHeight + V_BORDER + 1 > screenHeight) {
-            tooltipY = screenHeight - tooltipHeight - V_BORDER - 1;
-        }
+        tooltipY = MathUtil.clamp(tooltipY, V_BORDER + 1, screenHeight - tooltipHeight - V_BORDER - 1);
 
         // smoothing scaled pixels, keep the same partial value as mouse position since tooltipWidth and height are int
         final int tooltipLeft = (int) tooltipX;
         final int tooltipTop = (int) tooltipY;
-        final float partialX = (preciseMouseX - (int) preciseMouseX);
-        final float partialY = (preciseMouseY - (int) preciseMouseY);
-
-        // matrix transformation for x and y params, compatibility to MineColonies
-        tooltipX += partialX;
-        tooltipY += partialY;
 
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
@@ -188,13 +200,23 @@ public class TooltipRenderer {
 
         paint.setSmoothRadius(0.5f);
 
-        paint.setRGBA(0, 0, 0, 212);
+        for (int i = 0; i < 4; i++) {
+            int color = sFillColor[i];
+            int alpha = (int) ((color >>> 24) * sAlpha);
+            sColor[i] = (color & 0xFFFFFF) | (alpha << 24);
+        }
+        paint.setColors(sColor);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER,
                 tooltipY + tooltipHeight + V_BORDER, 3, paint);
 
-        paint.setRGBA(sTooltipR, sTooltipG, sTooltipB, 240);
+        for (int i = 0; i < 4; i++) {
+            int color = sStrokeColor[i];
+            int alpha = (int) ((color >>> 24) * sAlpha);
+            sColor[i] = (color & 0xFFFFFF) | (alpha << 24);
+        }
+        paint.setColors(sColor);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.5f);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
@@ -211,11 +233,12 @@ public class TooltipRenderer {
 
         final MultiBufferSource.BufferSource source =
                 MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
+        final int color = (Math.max((int) (sAlpha * 255), 1) << 24) | 0xFFFFFF;
         for (int i = 0; i < texts.size(); i++) {
             FormattedText text = texts.get(i);
             if (text != null)
-                ModernFontRenderer.drawText(text, tooltipX, tooltipY, ~0, true, mat, source,
-                        false, 0, 0x00F0_00F0);
+                ModernFontRenderer.drawText(text, tooltipX, tooltipY, color, true, mat, source,
+                        false, 0, 0x00F000F0);
             if (i + 1 == titleLinesCount) {
                 tooltipY += TITLE_GAP;
             }
@@ -238,6 +261,7 @@ public class TooltipRenderer {
     public static void drawTooltip(@Nonnull PoseStack poseStack, @Nonnull List<ClientTooltipComponent> list,
                                    int mouseX, int mouseY, @Nonnull Font font, float screenWidth, float screenHeight,
                                    @Nonnull ItemRenderer itemRenderer, @Nonnull Minecraft minecraft) {
+        sDraw = true;
         final GLCanvas canvas = GLCanvas.getInstance();
 
         final Window window = minecraft.getWindow();
@@ -249,15 +273,18 @@ public class TooltipRenderer {
                 (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
         final float scale = (float) window.getGuiScale();
 
-        float tooltipX = mouseX + TOOLTIP_SPACE;
-        float tooltipY = mouseY - TOOLTIP_SPACE;
+        final float partialX = (int) ((cursorX - (int) cursorX) * scale) / scale;
+        final float partialY = (int) ((cursorY - (int) cursorY) * scale) / scale;
+
+        float tooltipX = mouseX + TOOLTIP_SPACE + partialX;
+        float tooltipY = mouseY - TOOLTIP_SPACE + partialY;
 
         int tooltipWidth;
         int tooltipHeight;
         if (list.size() == 1) {
             ClientTooltipComponent component = list.get(0);
             tooltipWidth = component.getWidth(font);
-            tooltipHeight = component.getHeight() - 2;
+            tooltipHeight = component.getHeight() - TITLE_GAP;
         } else {
             tooltipWidth = 0;
             tooltipHeight = 0;
@@ -274,12 +301,6 @@ public class TooltipRenderer {
         if (tooltipY + tooltipHeight + 6 > screenHeight) {
             tooltipY = screenHeight - tooltipHeight - 6;
         }
-
-        final float partialX = (int) ((cursorX - (int) cursorX) * scale) / scale;
-        final float partialY = (int) ((cursorY - (int) cursorY) * scale) / scale;
-
-        tooltipX += partialX;
-        tooltipY += partialY;
 
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
@@ -314,13 +335,23 @@ public class TooltipRenderer {
 
         paint.setSmoothRadius(0.5f);
 
-        paint.setRGBA(0, 0, 0, 212);
+        for (int i = 0; i < 4; i++) {
+            int color = sFillColor[i];
+            int alpha = (int) ((color >>> 24) * sAlpha);
+            sColor[i] = (color & 0xFFFFFF) | (alpha << 24);
+        }
+        paint.setColors(sColor);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER,
                 tooltipY + tooltipHeight + V_BORDER, 3, paint);
 
-        paint.setRGBA(sTooltipR, sTooltipG, sTooltipB, 240);
+        for (int i = 0; i < 4; i++) {
+            int color = sStrokeColor[i];
+            int alpha = (int) ((color >>> 24) * sAlpha);
+            sColor[i] = (color & 0xFFFFFF) | (alpha << 24);
+        }
+        paint.setColors(sColor);
         paint.setStyle(Paint.Style.STROKE);
         paint.setStrokeWidth(1.5f);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,

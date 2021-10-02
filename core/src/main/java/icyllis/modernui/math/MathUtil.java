@@ -166,6 +166,10 @@ public final class MathUtil {
         return Math.max(Math.min(a, max), min);
     }
 
+    public static float clamp(float a, float min, float max) {
+        return Math.max(Math.min(a, max), min);
+    }
+
     public static float toRadians(float degrees) {
         return degrees * DEG_TO_RAD;
     }

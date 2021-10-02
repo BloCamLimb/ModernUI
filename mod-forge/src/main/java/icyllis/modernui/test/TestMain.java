@@ -23,6 +23,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.animation.ColorEvaluator;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
@@ -154,6 +155,8 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        ModernUI.LOGGER.info(Integer.toHexString(ColorEvaluator.evaluate(0.5f, 0xF0AADCF0, 0xF0FFC3F7)));
 
         String ss2 = "lLLzI8DOJAtV1jfQ9aIPtn3zk8rILNzb86jgLh4Zee2ahIZqWhMZNrJrgkS5zJZq5+uppJn+s9ohVo2Rt1triHeZv58mmkergv1oEbWHJRGza9wgSxMYlSd0Lk9jB677Bmjyy7S2NV2V1rnL1CDI4/zdlM4vC6n3I5XIpcAEGXEK/KlpSA8ZSPzdq47UUYYQOEkr9JL/GDgSt9zrYzx28P3G0lV7wOL/9y7/C87nv8vFhUQeaBIIfPFU4H2zttM0i0Pkhry6olgGzFmls366lrrMQdaPQccv5kKVdVVrwqZPQAkRFMYhcBq1PNVTG1xHvTTi66YBfG1Nilx/pm7VoQ==";
 

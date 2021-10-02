@@ -72,18 +72,6 @@ final class EventHandler {
     }*/
 
     @OnlyIn(Dist.CLIENT)
-    @Mod.EventBusSubscriber(modid = ModernUI.ID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
-    static class ModClient {
-
-        @SubscribeEvent
-        static void onOpenMenu(@Nonnull OpenMenuEvent event) {
-            if (event.getMenu().getType() == MuiRegistries.TEST_MENU) {
-                event.setCallback(new TestUI());
-            }
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
     static class ModClientDev {
 
         @SubscribeEvent

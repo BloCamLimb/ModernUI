@@ -190,6 +190,6 @@ public class FontAtlas {
             // we later generate mipmap
         }
         mTexture.setFilter(sLinearSampling ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST, GL_NEAREST);
-        mTexture.swizzleRGBA(GL_RED, GL_RED, GL_RED, GL_RED);
+        mTexture.swizzleRGBA(GL_ONE, GL_ONE, GL_ONE, GL_RED);
     }
 }

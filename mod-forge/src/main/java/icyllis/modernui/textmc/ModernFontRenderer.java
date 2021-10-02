@@ -81,11 +81,12 @@ public class ModernFontRenderer {
 
         // ensure alpha, color can be ARGB, or can be RGB
         // we check if alpha <= 1, then make alpha = 255 (fully opaque)
-        if ((color & 0xfe000000) == 0) {
+        /*if ((color & 0xfe000000) == 0) {
             color |= 0xff000000;
-        }
+        }*/
 
         int a = color >>> 24;
+        if (a == 0) a = 255;
         int r = color >> 16 & 0xff;
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
@@ -114,11 +115,12 @@ public class ModernFontRenderer {
 
         // ensure alpha, color can be ARGB, or can be RGB
         // we check if alpha <= 1, then make alpha = 255 (fully opaque)
-        if ((color & 0xfe000000) == 0) {
+        /*if ((color & 0xfe000000) == 0) {
             color |= 0xff000000;
-        }
+        }*/
 
         int a = color >>> 24;
+        if (a == 0) a = 255;
         int r = color >> 16 & 0xff;
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
@@ -147,11 +149,12 @@ public class ModernFontRenderer {
 
         // ensure alpha, color can be ARGB, or can be RGB
         // we check if alpha <= 1, then make alpha = 255 (fully opaque)
-        if ((color & 0xfe000000) == 0) {
+        /*if ((color & 0xfe000000) == 0) {
             color |= 0xff000000;
-        }
+        }*/
 
         int a = color >>> 24;
+        if (a == 0) a = 255;
         int r = color >> 16 & 0xff;
         int g = color >> 8 & 0xff;
         int b = color & 0xff;

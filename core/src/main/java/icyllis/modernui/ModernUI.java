@@ -56,8 +56,8 @@ public class ModernUI {
 
     public ModernUI() {
         sInstance = this;
-        if (Runtime.version().feature() < 11) {
-            throw new RuntimeException("JRE 11 or above is required");
+        if (Runtime.version().feature() < 16) {
+            throw new RuntimeException("JRE 16 or above is required");
         }
     }
 

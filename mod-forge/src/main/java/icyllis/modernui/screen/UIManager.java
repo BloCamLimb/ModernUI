@@ -207,6 +207,15 @@ public final class UIManager implements ViewRootImpl.Handler {
         return mElapsedTimeMillis;
     }
 
+    /**
+     * Get synced frame time, update every frame
+     *
+     * @return frame time in milliseconds
+     */
+    public long getFrameTimeMillis() {
+        return mFrameTimeMillis;
+    }
+
     @Nullable
     public ScreenCallback getCallback() {
         return mCallback;
@@ -686,11 +695,15 @@ public final class UIManager implements ViewRootImpl.Handler {
         if (event.phase == TickEvent.Phase.START) {
             final long lastFrameTime = mFrameTimeMillis;
             mFrameTimeMillis = RenderCore.timeMillis();
-            mElapsedTimeMillis += mFrameTimeMillis - lastFrameTime;
+            final long deltaMillis = mFrameTimeMillis - lastFrameTime;
+            mElapsedTimeMillis += deltaMillis;
             if (mScreen != null && minecraft.screen == mScreen) {
                 mUiThread.interrupt();
             }
             BlurHandler.INSTANCE.update(mElapsedTimeMillis);
+            if (TooltipRenderer.sTooltip) {
+                TooltipRenderer.update(deltaMillis);
+            }
         }
         /* else {
             // layout after updating animations and before drawing
