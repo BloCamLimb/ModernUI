@@ -273,8 +273,8 @@ public class TooltipRenderer {
                 (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
         final float scale = (float) window.getGuiScale();
 
-        final float partialX = (int) ((cursorX - (int) cursorX) * scale) / scale;
-        final float partialY = (int) ((cursorY - (int) cursorY) * scale) / scale;
+        final float partialX = Math.round((cursorX - (int) cursorX) * scale) / scale;
+        final float partialY = Math.round((cursorY - (int) cursorY) * scale) / scale;
 
         float tooltipX = mouseX + TOOLTIP_SPACE + partialX;
         float tooltipY = mouseY - TOOLTIP_SPACE + partialY;

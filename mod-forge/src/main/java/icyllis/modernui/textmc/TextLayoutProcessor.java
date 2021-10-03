@@ -195,8 +195,10 @@ public class TextLayoutProcessor {
     };
 
     private final FormattedText.StyledContentConsumer<?> mContentBuilder = new FormattedText.StyledContentConsumer<>() {
+
+        @Nonnull
         @Override
-        public Optional<Object> accept(Style style, @Nonnull String text) {
+        public Optional<Object> accept(@Nonnull Style style, @Nonnull String text) {
             mCarriers.add(new CharacterStyleCarrier(mNext, mNext - mShift, style, false));
             final int limit = text.length();
             for (int i = 0; i < limit; ++i) {

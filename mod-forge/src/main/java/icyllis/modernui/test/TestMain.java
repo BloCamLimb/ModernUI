@@ -44,27 +44,23 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
-import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
-import javax.crypto.Cipher;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.security.Key;
-import java.security.KeyFactory;
-import java.security.spec.PKCS8EncodedKeySpec;
+import java.util.Arrays;
 import java.util.List;
-import java.util.*;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -156,9 +152,7 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-        ModernUI.LOGGER.info(Integer.toHexString(ColorEvaluator.evaluate(0.5f, 0xF0AADCF0, 0xF0FFC3F7)));
-
-        String ss2 = "lLLzI8DOJAtV1jfQ9aIPtn3zk8rILNzb86jgLh4Zee2ahIZqWhMZNrJrgkS5zJZq5+uppJn+s9ohVo2Rt1triHeZv58mmkergv1oEbWHJRGza9wgSxMYlSd0Lk9jB677Bmjyy7S2NV2V1rnL1CDI4/zdlM4vC6n3I5XIpcAEGXEK/KlpSA8ZSPzdq47UUYYQOEkr9JL/GDgSt9zrYzx28P3G0lV7wOL/9y7/C87nv8vFhUQeaBIIfPFU4H2zttM0i0Pkhry6olgGzFmls366lrrMQdaPQccv5kKVdVVrwqZPQAkRFMYhcBq1PNVTG1xHvTTi66YBfG1Nilx/pm7VoQ==";
+        ModernUI.LOGGER.info(Integer.toHexString(ColorEvaluator.evaluate(0.5f, 0xF0AADCF0, 0xF0FFC3F7)).toUpperCase(Locale.ROOT));
 
         /*float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
