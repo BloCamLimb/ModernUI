@@ -6,7 +6,7 @@ plugins {
     id 'com.github.johnrengelman.shadow'
 }
 
-version = "${minecraft_version}-${mod_version}"
+version = "${minecraft_version}-${core_version}"
 
 configurations {
     shadow
@@ -137,10 +137,10 @@ if (project.hasProperty("jks")) {
 }
 
 processResources {
-    inputs.property 'version', mod_version
+    inputs.property 'version', core_version
 
     filesMatching("META-INF/mods.toml") {
-        expand 'version': mod_version
+        expand 'version': core_version
     }
 }
 

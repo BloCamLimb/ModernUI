@@ -121,7 +121,8 @@ public class MixinStringSplitter {
      */
     @Overwrite
     public FormattedText headByWidth(@Nonnull FormattedText text, int width, @Nonnull Style style) {
-        if (text instanceof TextComponent c) {
+        if (text instanceof TextComponent) {
+            TextComponent c = (TextComponent) text;
             if (c.getStyle().getFont().equals(Minecraft.ALT_FONT)) {
                 final float[] maxWidth = {width};
                 final int[] position = {0};

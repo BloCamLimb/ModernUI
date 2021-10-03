@@ -342,10 +342,10 @@ final class Config {
             for (int i = 0; i < BlurHandler.sBackgroundColor.length; i++) {
                 if (colors != null && i < colors.size()) {
                     try {
-                        color = (int) Long.parseLong(colors.get(i).substring(2).toLowerCase(Locale.ROOT), 16);
+                        color = Integer.parseUnsignedInt(colors.get(i).substring(2).toLowerCase(Locale.ROOT), 16);
                     } catch (Exception e) {
                         ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting background color: {}",
-                                tooltipFill, e);
+                                backgroundColor, e);
                     }
                 }
                 BlurHandler.sBackgroundColor[i] = color;
@@ -373,10 +373,10 @@ final class Config {
             for (int i = 0; i < TooltipRenderer.sStrokeColor.length; i++) {
                 if (colors != null && i < colors.size()) {
                     try {
-                        color = (int) Long.parseLong(colors.get(i).substring(2).toLowerCase(Locale.ROOT), 16);
+                        color = Integer.parseUnsignedInt(colors.get(i).substring(2).toLowerCase(Locale.ROOT), 16);
                     } catch (Exception e) {
                         ModernUI.LOGGER.error(ModernUI.MARKER,
-                                "Wrong color format for setting tooltip stroke color: {}", tooltipFill, e);
+                                "Wrong color format for setting tooltip stroke color: {}", tooltipStroke, e);
                     }
                 }
                 TooltipRenderer.sStrokeColor[i] = color;

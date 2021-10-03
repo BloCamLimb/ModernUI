@@ -41,6 +41,7 @@ public class TextureManager {
     public static final int MIPMAP_MASK = 0x2;
 
     private Map<String, Map<String, GLTexture>> mTextures = new HashMap<>();
+    private final Object mLock = new Object();
 
     private TextureManager() {
     }
@@ -54,9 +55,11 @@ public class TextureManager {
 
     // internal use
     public void reload() {
-        // implicitly release textures, see cleaner
-        mTextures.clear();
-        mTextures = new HashMap<>();
+        synchronized (mLock) {
+            // implicitly release textures, see cleaner
+            mTextures.clear();
+            mTextures = new HashMap<>();
+        }
     }
 
     /**
@@ -83,16 +86,20 @@ public class TextureManager {
      */
     @Nonnull
     public GLTexture getOrCreate(@Nonnull String namespace, @Nonnull String path, int flags) {
-        Map<String, GLTexture> cache = mTextures.computeIfAbsent(namespace, n -> new HashMap<>());
-        if ((flags & CACHE_MASK) != 0) {
-            GLTexture entry = cache.get(path);
-            if (entry != null) {
-                return entry;
+        final GLTexture texture;
+        synchronized (mLock) {
+            Map<String, GLTexture> cache = null;
+            if ((flags & CACHE_MASK) != 0) {
+                cache = mTextures.computeIfAbsent(namespace, n -> new HashMap<>());
+                GLTexture entry = cache.get(path);
+                if (entry != null) {
+                    return entry;
+                }
             }
-        }
-        GLTexture texture = new GLTexture(GLWrapper.GL_TEXTURE_2D);
-        if ((flags & CACHE_MASK) != 0) {
-            mTextures.get(namespace).put(path, texture);
+            texture = new GLTexture(GLWrapper.GL_TEXTURE_2D);
+            if (cache != null) {
+                cache.put(path, texture);
+            }
         }
         try (InputStream stream = ModernUI.get().getResourceAsStream(namespace, path)) {
             NativeImage image = NativeImage.decode(null, stream);
