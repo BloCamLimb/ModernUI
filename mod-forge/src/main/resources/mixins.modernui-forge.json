@@ -4,12 +4,16 @@
   "compatibilityLevel": "JAVA_16",
   "plugin": "icyllis.modernui.forge.MixinConfigPlugin",
   "package": "icyllis.modernui.mixin",
+  "mixins": [
+    "MixinServerPacketListener"
+  ],
   "client": [
     "AccessOption",
     "AccessPostChain",
     "AccessVideoSettings",
     "MixinBidiReorder",
     "MixinClientLanguage",
+    "MixinClientPacketListener",
     "MixinFontRenderer",
     "MixinIngameGui",
     "MixinLanguage",

@@ -186,6 +186,9 @@ public final class UIManager implements ViewRootImpl.Handler {
 
     // Internal method
     public boolean openMenu(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu, String namespace) {
+        if (!minecraft.isSameThread()) {
+            throw new IllegalStateException();
+        }
         OpenMenuEvent event = new OpenMenuEvent(menu);
         ModernUIForge.fire(namespace, event);
         ScreenCallback callback = event.getCallback();

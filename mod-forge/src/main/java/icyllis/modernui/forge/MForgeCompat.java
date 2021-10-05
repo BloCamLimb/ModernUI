@@ -74,7 +74,7 @@ public final class MForgeCompat {
      * @param player   the server player to open the screen for
      * @param provider a provider to create a menu on server side
      * @param pos      a block pos to send to client, this will be passed to
-     *                 the menu supplier (IContainerFactory) that registered on client
+     *                 the menu supplier that registered on client
      * @throws ClassCastException this method is not called on logic server
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
@@ -90,7 +90,7 @@ public final class MForgeCompat {
      * @param player   the server player to open the screen for
      * @param provider a provider to create a menu on server side
      * @param writer   a data writer to send additional data to client, this will be passed
-     *                 to the menu supplier (IContainerFactory) that registered on client
+     *                 to the menu supplier that registered on client
      * @throws ClassCastException this method is not called on logic server
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
      */
@@ -109,6 +109,7 @@ public final class MForgeCompat {
      *                 to the menu supplier (IContainerFactory) that registered on client
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
      */
+    @SuppressWarnings("deprecation")
     public static void openMenu(@Nonnull ServerPlayer player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
         // do the same thing as ServerPlayer.openMenu()

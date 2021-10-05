@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
  * This event occurred when the server requires the client to open a user
  * interface to display a container menu in a world, this event is cancelled
  * after setting the application screen. The menu is created on the client by
- * the registered {@link net.minecraftforge.fml.network.IContainerFactory factory},
+ * the registered {@link net.minecraftforge.fmllegacy.network.IContainerFactory factory},
  * which contains custom network data from server, you can set the application
  * screen through the data and the menu type.  For example:
  *
@@ -45,8 +45,8 @@ import javax.annotation.Nullable;
  * }
  * </pre>
  * <p>
- * This event will be only posted to your own mod event bus. If no application
- * screen set along with this event, the server container menu will be closed.
+ * This event will be only posted to your own mod event bus on client main thread.
+ * If no screen set along with this event, the server container menu will be closed.
  */
 @Cancelable
 @OnlyIn(Dist.CLIENT)
@@ -73,10 +73,10 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
     }
 
     /**
-     * Set the application UI for the menu. After calling this method,
+     * Set the application screen for the menu. After calling this method,
      * the event will be canceled.
      *
-     * @param callback the application screen screen
+     * @param callback the application screen callback
      */
     public void setCallback(@Nonnull ScreenCallback callback) {
         mCallback = callback;
