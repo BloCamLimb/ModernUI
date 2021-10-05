@@ -33,8 +33,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.ref.WeakReference;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 /**
  * Internal use.
@@ -82,7 +82,7 @@ public final class NetworkMessages {
         private C() {
         }
 
-        private static void msg(short index, @Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player) {
+        private static void msg(short index, @Nonnull FriendlyByteBuf payload, @Nonnull Supplier<LocalPlayer> player) {
             /*case 0:
                     syncFood(payload, player);
                     break;*/
@@ -99,12 +99,11 @@ public final class NetworkMessages {
         }*/
 
         @SuppressWarnings("deprecation")
-        private static void openMenu(@Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player) {
+        private static void openMenu(@Nonnull FriendlyByteBuf payload, @Nonnull Supplier<LocalPlayer> player) {
             final int containerId = payload.readVarInt();
             final int menuId = payload.readVarInt();
-            final WeakReference<LocalPlayer> playerRef = new WeakReference<>(player);
             Minecraft.getInstance().execute(() -> {
-                LocalPlayer p = playerRef.get();
+                LocalPlayer p = player.get();
                 if (p == null) {
                     return;
                 }

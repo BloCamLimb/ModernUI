@@ -19,6 +19,7 @@
 package icyllis.modernui.mixin;
 
 import icyllis.modernui.forge.NetworkHandler;
+import net.minecraft.network.Connection;
 import net.minecraft.network.protocol.game.ServerboundCustomPayloadPacket;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.network.ServerGamePacketListenerImpl;
@@ -29,15 +30,21 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nonnull;
+import java.util.function.Supplier;
 
 @Mixin(ServerGamePacketListenerImpl.class)
-public class MixinServerPacketListener {
+public abstract class MixinServerPacketListener {
 
     @Shadow
     public ServerPlayer player;
 
+    @Shadow
+    public abstract Connection getConnection();
+
+    private final Supplier<ServerPlayer> mPlayerSupplier = () -> getConnection().isConnected() ? player : null;
+
     @Inject(method = "handleCustomPayload", at = @At("HEAD"))
     private void tunnelCustomPayload(@Nonnull ServerboundCustomPayloadPacket packet, CallbackInfo ci) {
-        NetworkHandler.onCustomPayload(packet, player);
+        NetworkHandler.onCustomPayload(packet, mPlayerSupplier);
     }
 }
