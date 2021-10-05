@@ -18,38 +18,37 @@
 
 package icyllis.modernui.forge;
 
+import icyllis.modernui.ModernUI;
 import io.netty.buffer.Unpooled;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.game.ServerboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.RunningOnDifferentThreadException;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.fmllegacy.network.NetworkEvent;
 import net.minecraftforge.fmllegacy.network.NetworkRegistry;
-import net.minecraftforge.fmllegacy.network.event.EventNetworkChannel;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * For handling a network channel more faster, you can create an instance for your mod
+ * For handling a network channel more faster, you can create an instance for your mod.
  */
 public class NetworkHandler {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Network");
+    private static final Map<String, NetworkHandler> sNetworks = new HashMap<>();
 
     private final ResourceLocation mId;
 
@@ -63,108 +62,116 @@ public class NetworkHandler {
     private final ServerListener mServerListener;
 
     /**
-     * Create a network handler of a mod. Note that this is a dist-sensitive operation,
-     * you may consider the following example:
+     * Create a network handler of a mod. Note that this is a distribution-sensitive operation,
+     * you must be careful with the security of class loading.
      *
-     * <pre>
-     * new NetworkHandler(MODID, "main_network", () -> NetworkMessages::handle, NetworkMessages::handle, null, false);
-     * </pre>
-     *
-     * @param modid          the mod-id
-     * @param name           the network channel name, for example, "network".
-     * @param clientListener listener for server-to-client messages, the inner supplier must be in another class
-     * @param serverListener listener for client-to-server messages
-     * @param protocol       network protocol version, when null or empty it will request the same version of the mod
-     * @param optional       when true it will accept if the channel absent on one side, or request same protocol
-     * @see NetworkMessages
+     * @param modid    the mod-id
+     * @param scl      listener for S->C messages, the inner supplier must be in another non-anonymous class
+     * @param csl      listener for C->S messages, it is on logical server side
+     * @param protocol network protocol, when empty it will request the same version of mod(s)
+     * @param optional when true it will accept if the channel absent on one side, or request same protocol
+     * @throws IllegalArgumentException invalid mod-id
      */
-    public NetworkHandler(@Nonnull String modid, @Nonnull String name,
-                          @Nonnull Supplier<Supplier<ClientListener>> clientListener,
-                          @Nullable ServerListener serverListener, @Nullable String protocol, boolean optional) {
-        if (protocol == null || protocol.isEmpty()) {
-            protocol = DigestUtils.md5Hex(ModList.get().getModFileById(modid).getMods().stream()
+    public NetworkHandler(@Nonnull String modid, @Nullable Supplier<Supplier<ClientListener>> scl,
+                          @Nullable ServerListener csl, @Nullable String protocol, boolean optional) {
+        // modid only starts with [a-z]
+        if (!modid.startsWith("_") && ModList.get().getModFileById(modid) == null) {
+            throw new IllegalArgumentException("No mod found that given by modid " + modid);
+        }
+        if (protocol == null) {
+            protocol = "default";
+        } else if (protocol.isEmpty()) {
+            protocol = ModList.get().getModFileById(modid).getMods().stream()
                     .map(iModInfo -> iModInfo.getVersion().getQualifier())
-                    .collect(Collectors.joining(",")).getBytes(StandardCharsets.UTF_8));
+                    .collect(Collectors.joining(","));
         }
         mProtocol = protocol;
         mOptional = optional;
-        EventNetworkChannel channel = NetworkRegistry.ChannelBuilder
-                .named(mId = new ResourceLocation(modid, name))
-                .networkProtocolVersion(this::getProtocolVersion)
+        NetworkRegistry.ChannelBuilder
+                .named(mId = new ResourceLocation(ModernUI.ID, modid))
+                .networkProtocolVersion(this::getProtocol)
                 .clientAcceptedVersions(this::checkS2CProtocol)
                 .serverAcceptedVersions(this::checkC2SProtocol)
                 .eventNetworkChannel();
-        if (FMLEnvironment.dist.isClient()) {
-            mClientListener = clientListener.get().get();
-            channel.addListener(this::onS2CMessageReceived);
+        if (scl != null && FMLEnvironment.dist.isClient()) {
+            mClientListener = scl.get().get();
         } else {
             mClientListener = null;
         }
-        mServerListener = serverListener;
-        channel.addListener(this::onC2SMessageReceived);
+        mServerListener = csl;
+        // NetworkRegistry has duplication detection
+        sNetworks.put(modid, this);
     }
 
     /**
-     * Get the protocol version of this channel on current side
+     * Get the protocol string of this channel on current side.
      *
      * @return the protocol
      */
-    public String getProtocolVersion() {
+    public String getProtocol() {
         return mProtocol;
     }
 
     /**
-     * This method will run on client to verify the server protocol that sent by handshake network channel
+     * This method will run on client to verify the server protocol that sent by handshake network channel.
      *
-     * @param serverProtocol the protocol of this channel sent from server side
+     * @param protocol the protocol of this channel sent from server side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    private boolean checkS2CProtocol(@Nonnull String serverProtocol) {
-        return mOptional && serverProtocol.equals(NetworkRegistry.ABSENT) || serverProtocol.equals(mProtocol);
+    private boolean checkS2CProtocol(@Nonnull String protocol) {
+        return mOptional && protocol.equals(NetworkRegistry.ABSENT) || protocol.equals(mProtocol);
     }
 
     /**
-     * This method will run on server to verify the remote client protocol that sent by handshake network channel
+     * This method will run on server to verify the remote client protocol that sent by handshake network channel.
      *
-     * @param clientProtocol the protocol of this channel sent from client side
+     * @param protocol the protocol of this channel sent from client side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    private boolean checkC2SProtocol(@Nonnull String clientProtocol) {
-        return mOptional && clientProtocol.equals(NetworkRegistry.ABSENT) || clientProtocol.equals(mProtocol);
+    private boolean checkC2SProtocol(@Nonnull String protocol) {
+        return mOptional && protocol.equals(NetworkRegistry.ABSENT) || protocol.equals(mProtocol);
     }
 
     @OnlyIn(Dist.CLIENT)
-    private void onS2CMessageReceived(@Nonnull NetworkEvent.ServerCustomPayloadEvent event) {
-        // render thread
-        if (mClientListener != null) {
-            LocalPlayer player = Minecraft.getInstance().player;
+    public static void onCustomPayload(@Nonnull ClientboundCustomPayloadPacket packet, @Nullable LocalPlayer player) {
+        ResourceLocation id = packet.getIdentifier();
+        if (id.getNamespace().equals(ModernUI.ID)) {
+            FriendlyByteBuf payload = packet.getInternalData();
             if (player != null) {
-                mClientListener.handle(event.getPayload().readShort(), event.getPayload(), player);
+                NetworkHandler it = sNetworks.get(id.getPath());
+                if (it != null && it.mClientListener != null) {
+                    it.mClientListener.handle(payload.readShort(), payload, player);
+                }
             }
+            payload.release();
+            throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
-        event.getSource().get().setPacketHandled(true);
     }
 
-    private void onC2SMessageReceived(@Nonnull NetworkEvent.ClientCustomPayloadEvent event) {
-        // server thread
-        if (mServerListener != null) {
-            ServerPlayer player = event.getSource().get().getSender();
+    public static void onCustomPayload(@Nonnull ServerboundCustomPayloadPacket packet, @Nullable ServerPlayer player) {
+        ResourceLocation id = packet.getIdentifier();
+        if (id.getNamespace().equals(ModernUI.ID)) {
+            FriendlyByteBuf payload = packet.getInternalData();
             if (player != null) {
-                mServerListener.handle(event.getPayload().readShort(), event.getPayload(), player);
+                NetworkHandler it = sNetworks.get(id.getPath());
+                if (it != null && it.mServerListener != null) {
+                    it.mServerListener.handle(payload.readShort(), payload, player);
+                }
             }
+            payload.release();
+            throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
-        event.getSource().get().setPacketHandled(true);
     }
 
     /**
-     * Allocates a heap buffer to write packet data with index. Once you done that,
-     * pass the value returned here to {@link #getDispatcher(FriendlyByteBuf)}.
-     * The message index is used to identify what type of message is it, which is
-     * also determined by network protocol version.
+     * Allocates a heap buffer to write indexed packet data. Once you done that,
+     * pass the value returned here to {@link #dispatcher(FriendlyByteBuf)} or
+     * {@link #sendToServer(FriendlyByteBuf)}. The message index is used to identify
+     * what type of message is, which is also determined by your network protocol.
      *
      * @param index the message index used on the reception side, ranged from 0 to 32767
-     * @return a byte buf to write the packet data (message)
-     * @see #getDispatcher(FriendlyByteBuf)
+     * @return a byte buf to write the packet data (message body)
+     * @see #dispatcher(FriendlyByteBuf)
      * @see #sendToServer(FriendlyByteBuf)
      */
     @Nonnull
@@ -178,22 +185,22 @@ public class NetworkHandler {
      * Creates the packet with a broadcaster from a message. The packet must by dispatched
      * right after calling this, for example {@link PacketDispatcher#sendToPlayer(Player)}.
      *
-     * @param data the packet data
+     * @param data the packet data (message body)
      * @return a broadcaster to broadcast the packet
      * @see #buffer(int)
      * @see ClientListener
      */
     @Nonnull
-    public PacketDispatcher getDispatcher(@Nonnull FriendlyByteBuf data) {
+    public PacketDispatcher dispatcher(@Nonnull FriendlyByteBuf data) {
         return PacketDispatcher.obtain(mId, data);
     }
 
     /**
-     * Send a message to server
+     * Send a message to server.
      * <p>
      * This is the only method to be called on the client.
      *
-     * @param data the packet data
+     * @param data the packet data (message body)
      * @see #buffer(int)
      * @see ServerListener
      */
@@ -211,10 +218,17 @@ public class NetworkHandler {
     public interface ClientListener {
 
         /**
-         * Handle a server-to-client network message
+         * Handle a server-to-client network message.
+         * <p>
+         * This method is invoked on the Netty-IO thread, you need to consume or retain
+         * the payload and then process it further through thread scheduling. If processing
+         * may take a long time, you may need to hold a weak reference to the player.
+         * <p>
+         * Note that in addition to retain, you can throw a {@link RunningOnDifferentThreadException}
+         * to prevent the payload from being released after this method call.
          *
          * @param index   message index
-         * @param payload packet data
+         * @param payload message body
          * @param player  the client player
          */
         void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player);
@@ -224,10 +238,17 @@ public class NetworkHandler {
     public interface ServerListener {
 
         /**
-         * Handle a client-to-server network message
+         * Handle a client-to-server network message.
+         * <p>
+         * This method is invoked on the Netty-IO thread, you need to consume or retain
+         * the payload and then process it further through thread scheduling. If processing
+         * may take a long time, you may need to hold a weak reference to the player.
+         * <p>
+         * Note that in addition to retain, you can throw a {@link RunningOnDifferentThreadException}
+         * to prevent the payload from being released after this method call.
          *
          * @param index   message index
-         * @param payload packet data
+         * @param payload message body
          * @param player  the server player
          */
         void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull ServerPlayer player);

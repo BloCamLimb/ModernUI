@@ -18,38 +18,28 @@
 
 package icyllis.modernui.mixin;
 
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.food.FoodData;
+import icyllis.modernui.forge.NetworkHandler;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientPacketListener;
+import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Deprecated
-@Mixin(FoodData.class)
-public class MixinFoodData {
+import javax.annotation.Nonnull;
+
+@Mixin(ClientPacketListener.class)
+public class MixinClientPacketListener {
 
     @Shadow
-    private float saturationLevel;
-    @Shadow
-    private float exhaustionLevel;
+    @Final
+    private Minecraft minecraft;
 
-    private float prevSaturationLevel;
-    private float prevExhaustionLevel;
-
-    private boolean needSync;
-
-    @Inject(method = "tick", at = @At("TAIL"))
-    private void postTick(Player player, CallbackInfo ci) {
-        if (saturationLevel != prevSaturationLevel || exhaustionLevel != prevExhaustionLevel) {
-            prevSaturationLevel = saturationLevel;
-            prevExhaustionLevel = exhaustionLevel;
-            needSync = true;
-        }
-        if (needSync && (player.level.getGameTime() & 0x7) == 0) {
-            //NetworkMessages.syncFood(saturationLevel, exhaustionLevel).sendToPlayer(player);
-            needSync = false;
-        }
+    @Inject(method = "handleCustomPayload", at = @At("HEAD"))
+    private void tunnelCustomPayload(@Nonnull ClientboundCustomPayloadPacket packet, CallbackInfo ci) {
+        NetworkHandler.onCustomPayload(packet, minecraft.player);
     }
 }

@@ -58,7 +58,6 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fmllegacy.network.IContainerFactory;
 import net.minecraftforge.registries.IForgeRegistry;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -67,6 +66,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.Objects;
 
@@ -114,32 +115,66 @@ final class Registration {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        byte[] protocol = null;
+        byte[] bytes = null;
         try (InputStream stream = ModernUIForge.class.getClassLoader().getResourceAsStream(
                 NetworkMessages.class.getName().replace('.', '/') + ".class")) {
             Objects.requireNonNull(stream, "Mod file is broken");
-            protocol = IOUtils.toByteArray(stream);
+            bytes = IOUtils.toByteArray(stream);
         } catch (IOException e) {
             e.printStackTrace();
         }
         try (InputStream stream = ModernUIForge.class.getClassLoader().getResourceAsStream(
                 NetworkMessages.class.getName().replace('.', '/') + "$C.class")) {
             Objects.requireNonNull(stream, "Mod file is broken");
-            protocol = ArrayUtils.addAll(protocol, IOUtils.toByteArray(stream));
+            bytes = ArrayUtils.addAll(bytes, IOUtils.toByteArray(stream));
         } catch (IOException e) {
             e.printStackTrace();
         }
         if (ModList.get().getModContainerById(new String(new byte[]{0x1f ^ 0x74, (0x4 << 0x1) | 0x41,
                 ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent()) {
-            event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("Van Darkholme"));
+            event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("OK"));
         }
-        protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getLicense()
+        bytes = ArrayUtils.addAll(bytes, ModList.get().getModFileById(ModernUI.ID).getLicense()
                 .getBytes(StandardCharsets.UTF_8));
 
-        NetworkMessages.sNetwork = new NetworkHandler(ModernUI.ID, "main_network", () -> NetworkMessages::handle,
-                NetworkMessages::handle, protocol == null ? null : DigestUtils.md5Hex(protocol), true);
+        NetworkMessages.sNetwork = new NetworkHandler("_root", () -> NetworkMessages::msg,
+                null, bytes == null ? null : digest(bytes), true);
+        ModernUI.LOGGER.info("PROTOCOL: {}", NetworkMessages.sNetwork.getProtocol());
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
+    }
+
+    @Nonnull
+    private static String digest(@Nonnull byte[] in) {
+        try {
+            in = MessageDigest.getInstance("MD5").digest(in);
+        } catch (final NoSuchAlgorithmException e) {
+            throw new IllegalStateException(e);
+        }
+        final StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 15; i += 3) {
+            int c = (in[i] & 0xFF) | (in[i + 1] & 0xFF) << 8 | (in[i + 2] & 0xFF) << 16;
+            for (int k = 0; k < 4; k++) {
+                final int m = c & 0x3f;
+                if (m < 26)
+                    sb.append((char) ('A' + m));
+                else if (m < 52)
+                    sb.append((char) ('a' + m - 26));
+                else if (m < 62)
+                    sb.append((char) ('0' + m - 52));
+                else if (m == 62)
+                    sb.append('+');
+                else
+                    sb.append('/');
+                c >>= 6;
+            }
+        }
+        final String h = Integer.toHexString(in[15] & 0xFF);
+        if (h.length() == 1) {
+            sb.append('0');
+        }
+        sb.append(h);
+        return sb.toString();
     }
 
     @OnlyIn(Dist.CLIENT)

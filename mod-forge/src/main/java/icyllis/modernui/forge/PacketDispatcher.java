@@ -50,7 +50,7 @@ public class PacketDispatcher {
     }
 
     @Nonnull
-    public static PacketDispatcher obtain(@Nonnull ResourceLocation id, @Nonnull FriendlyByteBuf data) {
+    static PacketDispatcher obtain(@Nonnull ResourceLocation id, @Nonnull FriendlyByteBuf data) {
         PacketDispatcher b = sPool.acquire();
         if (b == null) {
             b = new PacketDispatcher();
@@ -178,7 +178,7 @@ public class PacketDispatcher {
     public void sendToTrackingChunk(@Nonnull LevelChunk chunk) {
         check();
         ((ServerLevel) chunk.getLevel()).getChunkSource().chunkMap.getPlayers(
-                chunk.getPos(), /* borderOnly */ false).forEach(mDispatcher);
+                chunk.getPos(), /* boundaryOnly */ false).forEach(mDispatcher);
         recycle();
     }
 }

@@ -19,14 +19,13 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.mixin.AccessFoodData;
 import icyllis.modernui.screen.UIManager;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.food.FoodData;
+import net.minecraft.server.RunningOnDifferentThreadException;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.api.distmarker.Dist;
@@ -34,46 +33,46 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.util.function.Consumer;
 
 /**
- * Internal use
+ * Internal use.
  */
 public final class NetworkMessages {
+
+    private static final int S2C_OPEN_MENU = 1;
 
     static NetworkHandler sNetwork;
 
     private NetworkMessages() {
     }
 
-    // handle C2S messages
-    static void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull ServerPlayer player) {
-    }
-
-    // returns a safe supplier of a S2C handler on client
+    // a safe supplier
     @Nonnull
-    static NetworkHandler.ClientListener handle() {
-        return C::handle; // this supplier won't be called on dedicated server, so it's in the C class
+    static NetworkHandler.ClientListener msg() {
+        // this supplier won't be called on dedicated server, so it's in the inner class
+        return C::msg;
     }
 
-    @Deprecated
+    /*@Deprecated
     @Nonnull
     public static PacketDispatcher syncFood(float foodSaturationLevel, float foodExhaustionLevel) {
         FriendlyByteBuf buf = NetworkHandler.buffer(0);
         buf.writeFloat(foodSaturationLevel);
         buf.writeFloat(foodExhaustionLevel);
-        return sNetwork.getDispatcher(buf);
-    }
+        return sNetwork.dispatcher(buf);
+    }*/
 
     @Nonnull
     static PacketDispatcher openMenu(int containerId, int menuId, @Nullable Consumer<FriendlyByteBuf> writer) {
-        FriendlyByteBuf buf = NetworkHandler.buffer(1);
+        FriendlyByteBuf buf = NetworkHandler.buffer(S2C_OPEN_MENU);
         buf.writeVarInt(containerId);
         buf.writeVarInt(menuId);
         if (writer != null) {
             writer.accept(buf);
         }
-        return sNetwork.getDispatcher(buf);
+        return sNetwork.dispatcher(buf);
     }
 
     // this class doesn't allow to load on dedicated server
@@ -83,42 +82,48 @@ public final class NetworkMessages {
         private C() {
         }
 
-        private static void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player) {
-            switch (index) {
-                /*case 0:
+        private static void msg(short index, @Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player) {
+            /*case 0:
                     syncFood(payload, player);
                     break;*/
-                case 1:
-                    openMenu(payload, player);
-                    break;
+            if (index == S2C_OPEN_MENU) {
+                openMenu(payload, player);
             }
         }
 
-        @Deprecated
+        /*@Deprecated
         private static void syncFood(@Nonnull FriendlyByteBuf buffer, @Nonnull LocalPlayer player) {
             FoodData foodData = player.getFoodData();
             foodData.setSaturation(buffer.readFloat());
             ((AccessFoodData) foodData).setExhaustionLevel(buffer.readFloat());
-        }
+        }*/
 
         @SuppressWarnings("deprecation")
-        private static void openMenu(@Nonnull FriendlyByteBuf buffer, @Nonnull LocalPlayer player) {
-            final int containerId = buffer.readVarInt();
-            final int menuId = buffer.readVarInt();
-            final MenuType<?> type = Registry.MENU.byId(menuId);
-            boolean success = false;
-            if (type == null) {
-                ModernUI.LOGGER.warn(UIManager.MARKER, "Trying to open invalid screen for menu id: {}", menuId);
-            } else {
-                final AbstractContainerMenu menu = type.create(containerId, player.getInventory(), buffer);
-                ResourceLocation key = Registry.MENU.getKey(type);
-                if (key != null) {
-                    success = UIManager.getInstance().openMenu(player, menu, key.getNamespace());
+        private static void openMenu(@Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player) {
+            final int containerId = payload.readVarInt();
+            final int menuId = payload.readVarInt();
+            final WeakReference<LocalPlayer> playerRef = new WeakReference<>(player);
+            Minecraft.getInstance().execute(() -> {
+                LocalPlayer p = playerRef.get();
+                if (p == null) {
+                    return;
                 }
-            }
-            if (!success) {
-                player.closeContainer(); // close server menu
-            }
+                final MenuType<?> type = Registry.MENU.byId(menuId);
+                boolean success = false;
+                if (type == null) {
+                    ModernUI.LOGGER.warn(UIManager.MARKER, "Trying to open invalid screen for menu id: {}", menuId);
+                } else {
+                    final AbstractContainerMenu menu = type.create(containerId, p.getInventory(), payload);
+                    ResourceLocation key = Registry.MENU.getKey(type);
+                    if (key != null) {
+                        success = UIManager.getInstance().openMenu(p, menu, key.getNamespace());
+                    }
+                }
+                if (!success) {
+                    p.closeContainer(); // close server menu
+                }
+            });
+            throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
     }
 }
