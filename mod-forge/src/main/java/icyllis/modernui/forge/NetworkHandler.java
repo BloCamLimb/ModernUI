@@ -133,30 +133,28 @@ public class NetworkHandler {
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static void onCustomPayload(@Nonnull ClientboundCustomPayloadPacket packet, @Nullable LocalPlayer player) {
+    public static void onCustomPayload(@Nonnull ClientboundCustomPayloadPacket packet,
+                                       @Nonnull Supplier<LocalPlayer> player) {
         ResourceLocation id = packet.getIdentifier();
         if (id.getNamespace().equals(ModernUI.ID)) {
             FriendlyByteBuf payload = packet.getInternalData();
-            if (player != null) {
-                NetworkHandler it = sNetworks.get(id.getPath());
-                if (it != null && it.mClientListener != null) {
-                    it.mClientListener.handle(payload.readShort(), payload, player);
-                }
+            NetworkHandler it = sNetworks.get(id.getPath());
+            if (it != null && it.mClientListener != null) {
+                it.mClientListener.handle(payload.readShort(), payload, player);
             }
             payload.release();
             throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
     }
 
-    public static void onCustomPayload(@Nonnull ServerboundCustomPayloadPacket packet, @Nullable ServerPlayer player) {
+    public static void onCustomPayload(@Nonnull ServerboundCustomPayloadPacket packet,
+                                       @Nonnull Supplier<ServerPlayer> player) {
         ResourceLocation id = packet.getIdentifier();
         if (id.getNamespace().equals(ModernUI.ID)) {
             FriendlyByteBuf payload = packet.getInternalData();
-            if (player != null) {
-                NetworkHandler it = sNetworks.get(id.getPath());
-                if (it != null && it.mServerListener != null) {
-                    it.mServerListener.handle(payload.readShort(), payload, player);
-                }
+            NetworkHandler it = sNetworks.get(id.getPath());
+            if (it != null && it.mServerListener != null) {
+                it.mServerListener.handle(payload.readShort(), payload, player);
             }
             payload.release();
             throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
@@ -221,17 +219,18 @@ public class NetworkHandler {
          * Handle a server-to-client network message.
          * <p>
          * This method is invoked on the Netty-IO thread, you need to consume or retain
-         * the payload and then process it further through thread scheduling. If processing
-         * may take a long time, you may need to hold a weak reference to the player.
+         * the payload and then process it further through thread scheduling. The player
+         * supplier may return null if the connection is interrupted. In this case, the
+         * message handling should be ignored currently.
          * <p>
-         * Note that in addition to retain, you can throw a {@link RunningOnDifferentThreadException}
+         * Note that in addition to retain, you can throw {@link RunningOnDifferentThreadException}
          * to prevent the payload from being released after this method call.
          *
          * @param index   message index
          * @param payload message body
-         * @param player  the client player
+         * @param player  the supplier to get the current client player, may return null
          */
-        void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull LocalPlayer player);
+        void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull Supplier<LocalPlayer> player);
     }
 
     @FunctionalInterface
@@ -241,16 +240,17 @@ public class NetworkHandler {
          * Handle a client-to-server network message.
          * <p>
          * This method is invoked on the Netty-IO thread, you need to consume or retain
-         * the payload and then process it further through thread scheduling. If processing
-         * may take a long time, you may need to hold a weak reference to the player.
+         * the payload and then process it further through thread scheduling. The player
+         * supplier may return null if the connection is interrupted. In this case, the
+         * message handling should be ignored currently.
          * <p>
-         * Note that in addition to retain, you can throw a {@link RunningOnDifferentThreadException}
+         * Note that in addition to retain, you can throw {@link RunningOnDifferentThreadException}
          * to prevent the payload from being released after this method call.
          *
          * @param index   message index
          * @param payload message body
-         * @param player  the server player
+         * @param player  the supplier to get the current server player, may return null
          */
-        void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull ServerPlayer player);
+        void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull Supplier<ServerPlayer> player);
     }
 }
