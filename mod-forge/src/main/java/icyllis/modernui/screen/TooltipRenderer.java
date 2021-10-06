@@ -53,7 +53,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 public class TooltipRenderer {
 
     // config value
-    public static boolean sTooltip = true;
+    public static volatile boolean sTooltip = true;
 
     public static int[] sFillColor = new int[4];
     public static int[] sStrokeColor = new int[4];

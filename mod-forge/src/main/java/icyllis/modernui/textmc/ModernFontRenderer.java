@@ -47,7 +47,7 @@ public class ModernFontRenderer {
     /**
      * Config values
      */
-    public static boolean sAllowShadow = true;
+    public static volatile boolean sAllowShadow = true;
     //private boolean mGlobalRenderer = false;
 
     //private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();

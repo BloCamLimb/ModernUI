@@ -47,9 +47,9 @@ public enum BlurHandler {
     /**
      * Config values
      */
-    public static boolean sBlurEffect;
-    public static float sAnimationDuration;
-    public static float sBlurRadius;
+    public static volatile boolean sBlurEffect;
+    public static volatile float sAnimationDuration;
+    public static volatile float sBlurRadius;
     public static int[] sBackgroundColor = new int[4];
 
     //FIXME blur shader working
@@ -162,7 +162,7 @@ public enum BlurHandler {
                     Class<?> clazz = Class.forName(s);
                     mBlacklist.add(clazz);
                 } catch (ClassNotFoundException e) {
-                    ModernUI.LOGGER.info(ModernUI.MARKER, "Failed to find blur blacklist class: {}", s, e);
+                    ModernUI.LOGGER.info(ModernUI.MARKER, "Failed to find blur blacklist class: {}", s);
                 }
             }
         }
