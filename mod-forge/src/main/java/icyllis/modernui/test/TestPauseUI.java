@@ -104,10 +104,9 @@ public class TestPauseUI extends ScreenCallback {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             Paint paint = Paint.take();
-            paint.setSmoothRadius(0);
             paint.setStyle(Paint.Style.FILL);
             paint.setRGBA(96, 96, 96, (int) (a * 255));
-            canvas.drawRect(0, 0, getRight(), getBottom(), paint);
+            canvas.drawRect(getLeft(), getTop(), getRight(), getBottom(), paint);
         }
     }
 }

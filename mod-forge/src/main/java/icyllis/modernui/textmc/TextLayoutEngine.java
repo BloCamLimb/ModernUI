@@ -65,7 +65,7 @@ public class TextLayoutEngine {
 
     private static final ChatFormatting[] FORMATTINGS = ChatFormatting.values();
 
-    public static boolean sFixedResolution = false;
+    public static volatile boolean sFixedResolution = false;
 
     /*
      * Draw and cache all glyphs of all fonts needed

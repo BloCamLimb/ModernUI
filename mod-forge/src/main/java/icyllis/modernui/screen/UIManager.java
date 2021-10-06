@@ -85,7 +85,7 @@ public final class UIManager implements ViewRootImpl.Handler {
     private static volatile UIManager sInstance;
 
     // config value
-    public static boolean sPlaySoundOnLoaded;
+    public static volatile boolean sPlaySoundOnLoaded;
 
     // minecraft client
     private final Minecraft minecraft = Minecraft.getInstance();
