@@ -59,7 +59,7 @@ public class FontAtlas {
     /**
      * Linear sampling with mipmaps;
      */
-    public static boolean sLinearSampling = true;
+    public static volatile boolean sLinearSampling = true;
 
     // cached factory
     private static final IntFunction<TexturedGlyph> sFactory = i -> new TexturedGlyph();
