@@ -43,6 +43,8 @@ public abstract class Layout {
 
     private static final ParagraphStyle[] NO_PARA_SPANS = {};
 
+    /// member variables \\\
+
     private CharSequence mText;
     private TextPaint mPaint;
     private int mWidth;
@@ -394,7 +396,7 @@ public abstract class Layout {
 
     /**
      * Returns the primary directionality of the paragraph containing the
-     * specified line, either 0 for left-to-right lines, or 1 for right-to-left
+     * specified line, either 1 for left-to-right lines, or -1 for right-to-left
      * lines (see {@link #DIR_LEFT_TO_RIGHT}, {@link #DIR_RIGHT_TO_LEFT}).
      */
     public abstract int getParagraphDirection(int line);

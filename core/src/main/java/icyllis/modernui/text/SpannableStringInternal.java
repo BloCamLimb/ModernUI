@@ -34,16 +34,22 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.util.GrowingArrayUtils;
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrays;
 import it.unimi.dsi.fastutil.objects.ObjectArrays;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
+import java.util.ArrayList;
 import java.util.List;
 
 // modified version of https://android.googlesource.com/
 abstract class SpannableStringInternal implements Spanned, GetChars {
+
+    private static final Pool<ArrayList<Object>> sListPool = Pools.concurrent(1);
 
     private static final int START = 0;
     private static final int END = 1;
@@ -83,7 +89,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
      * @param ignoreNoCopySpan whether to copy NoCopySpans in the {@code source}
      */
     private void copySpansFromSpanned(@Nonnull Spanned src, int start, int end, boolean ignoreNoCopySpan) {
-        Object[] spans = src.getSpans(start, end, Object.class, null);
+        Object[] spans = src.getSpans(start, end, Object.class);
 
         if (spans != null) {
             for (Object span : spans) {
@@ -230,7 +236,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         }
 
         if (mSpanCount + 1 >= mSpans.length) {
-            Object[] newSpans = new Object[mSpanCount + Math.max(1, mSpanCount >> 1)];
+            Object[] newSpans = new Object[GrowingArrayUtils.growSize(mSpanCount)];
             int[] newData = new int[newSpans.length * COLUMNS];
 
             System.arraycopy(mSpans, 0, newSpans, 0, mSpanCount);
@@ -281,13 +287,39 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         }
     }
 
+    @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
     @Nullable
     @Override
     public final <T> T[] getSpans(int start, int end, @Nullable Class<? extends T> type, @Nullable List<T> out) {
-        if (out == null) {
-            return getSpansArray(start, end, type);
+        if (mSpanCount == 0) {
+            if (out != null) {
+                out.clear();
+            }
+            return null;
         }
-        getSpansList(start, end, type, out);
+        if (out == null) {
+            ArrayList<Object> list = sListPool.acquire();
+            if (list == null) {
+                list = new ArrayList<>();
+            }
+            getSpansList(start, end, type, list);
+            final T[] ret;
+            if (list.isEmpty()) {
+                ret = null;
+            } else {
+                // Java ArrayList uses Object[] as the backend
+                if (type == null || type == Object.class) {
+                    ret = (T[]) list.toArray();
+                } else {
+                    ret = list.toArray((T[]) Array.newInstance(type, list.size()));
+                }
+                list.clear();
+            }
+            sListPool.release(list);
+            return ret;
+        }
+        out.clear();
+        getSpansList(start, end, type, (List<Object>) out);
         return null;
     }
 
@@ -386,8 +418,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         return (T[]) r;
     }
 
-    @SuppressWarnings("unchecked")
-    private <T> void getSpansList(int start, int end, @Nullable Class<? extends T> type, @Nonnull List<T> out) {
+    private void getSpansList(int start, int end, @Nullable Class<?> type, @Nonnull List<Object> out) {
         final int count = mSpanCount;
         final Object[] spans = mSpans;
         final int[] data = mSpanData;
@@ -395,7 +426,6 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
         final boolean any = type == null || type == Object.class;
 
         int found = 0;
-        out.clear();
 
         for (int i = 0; i < count; i++) {
             int spanStart = data[i * COLUMNS + START];
@@ -423,9 +453,9 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
                         break;
                     }
                 }
-                out.add(j, (T) spans[i]);
+                out.add(j, spans[i]);
             } else {
-                out.add((T) spans[i]);
+                out.add(spans[i]);
             }
             found++;
         }
@@ -485,7 +515,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
     }
 
     private void sendSpanAdded(Object span, int start, int end) {
-        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class, null);
+        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
         if (watchers != null) {
             for (SpanWatcher watcher : watchers) {
                 watcher.onSpanAdded((Spannable) this, span, start, end);
@@ -494,7 +524,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
     }
 
     private void sendSpanRemoved(Object span, int start, int end) {
-        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class, null);
+        final SpanWatcher[] watchers = getSpans(start, end, SpanWatcher.class);
         if (watchers != null) {
             for (SpanWatcher watcher : watchers) {
                 watcher.onSpanRemoved((Spannable) this, span, start, end);
@@ -504,7 +534,7 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
 
     private void sendSpanChanged(Object span, int s, int e, int st, int en) {
         final SpanWatcher[] watchers = getSpans(Math.min(s, st), Math.max(e, en),
-                SpanWatcher.class, null);
+                SpanWatcher.class);
         if (watchers != null) {
             for (SpanWatcher watcher : watchers) {
                 watcher.onSpanChanged((Spannable) this, span, s, e, st, en);
@@ -536,12 +566,11 @@ abstract class SpannableStringInternal implements Spanned, GetChars {
     // Same as SpannableStringBuilder
     @Override
     public boolean equals(Object o) {
-        if (o instanceof Spanned &&
+        if (o instanceof final Spanned other &&
                 toString().equals(o.toString())) {
-            final Spanned other = (Spanned) o;
             // Check span data
-            final Object[] otherSpans = other.getSpans(0, other.length(), Object.class, null);
-            final Object[] spans = getSpans(0, length(), Object.class, null);
+            final Object[] otherSpans = other.getSpans(0, other.length(), Object.class);
+            final Object[] spans = getSpans(0, length(), Object.class);
             if (otherSpans == null && spans == null) {
                 return true;
             } else if (otherSpans != null && spans != null &&

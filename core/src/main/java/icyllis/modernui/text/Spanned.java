@@ -202,6 +202,16 @@ public interface Spanned extends CharSequence {
     <T> T[] getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out);
 
     /**
+     * Convenience for getSpans(start, end, type, null).
+     *
+     * @see #getSpans(int, int, Class, List)
+     */
+    @Nullable
+    default <T> T[] getSpans(int start, int end, Class<? extends T> type) {
+        return getSpans(start, end, type, null);
+    }
+
+    /**
      * Return the beginning of the range of text to which the specified
      * markup object is attached, or {@code -1} if the object is not attached.
      *
