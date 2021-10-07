@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import org.apache.logging.log4j.Marker;
@@ -617,11 +618,11 @@ public class StaticLayout extends Layout {
         final int dir = measured.getParagraphDir();
 
         if (want >= mLines.length) {
-            mLines = Arrays.copyOf(mLines, want + (want >> 1));
+            mLines = Arrays.copyOf(mLines, GrowingArrayUtils.growSize(want));
         }
 
         if (j >= mLineDirections.length) {
-            mLineDirections = Arrays.copyOf(mLineDirections, j + (j >> 1));
+            mLineDirections = Arrays.copyOf(mLineDirections, GrowingArrayUtils.growSize(j));
         }
 
         boolean firstLine = (j == 0);

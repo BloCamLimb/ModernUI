@@ -55,7 +55,7 @@ public class GlyphManager {
      * Bitmap-like fonts, with anti aliasing and high precision OFF.
      * This may require additional reviews on pixel alignment.
      */
-    public static boolean sBitmapLike = false;
+    public static volatile boolean sBitmapLike = false;
 
     private static final Function<Font, FontAtlas> sFactory = f -> new FontAtlas();
 

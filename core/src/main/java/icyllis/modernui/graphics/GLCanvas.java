@@ -31,6 +31,7 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.*;
+import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -621,22 +622,20 @@ public final class GLCanvas extends Canvas {
 
     private ByteBuffer checkPosColorMemory() {
         if (mPosColorMemory.remaining() < 48) {
-            int cap = mPosColorMemory.capacity();
-            cap = cap + (cap >> 1);
-            mPosColorMemory = memRealloc(mPosColorMemory, cap);
+            int newCap = GrowingArrayUtils.growSize(mPosColorMemory.capacity());
+            mPosColorMemory = memRealloc(mPosColorMemory, newCap);
             mPosColorResized = true;
-            ModernUI.LOGGER.debug(MARKER, "Grow pos color buffer to {} bytes", cap);
+            ModernUI.LOGGER.debug(MARKER, "Grow pos color buffer to {} bytes", newCap);
         }
         return mPosColorMemory;
     }
 
     private ByteBuffer checkPosColorTexMemory() {
         if (mPosColorTexMemory.remaining() < 80) {
-            int cap = mPosColorTexMemory.capacity();
-            cap = cap + (cap >> 1);
-            mPosColorTexMemory = memRealloc(mPosColorTexMemory, cap);
+            int newCap = GrowingArrayUtils.growSize(mPosColorTexMemory.capacity());
+            mPosColorTexMemory = memRealloc(mPosColorTexMemory, newCap);
             mPosColorTexResized = true;
-            ModernUI.LOGGER.debug(MARKER, "Grow pos color tex buffer to {} bytes", cap);
+            ModernUI.LOGGER.debug(MARKER, "Grow pos color tex buffer to {} bytes", newCap);
         }
         return mPosColorTexMemory;
     }
@@ -653,21 +652,19 @@ public final class GLCanvas extends Canvas {
     @RenderThread
     private ByteBuffer checkPosTexMemory() {
         if (mPosTexMemory.remaining() < 64) {
-            int cap = mPosTexMemory.capacity();
-            cap = cap + (cap >> 1);
-            mPosTexMemory = memRealloc(mPosTexMemory, cap);
+            int newCap = GrowingArrayUtils.growSize(mPosTexMemory.capacity());
+            mPosTexMemory = memRealloc(mPosTexMemory, newCap);
             mPosTexResized = true;
-            ModernUI.LOGGER.debug(MARKER, "Grow pos tex buffer to {} bytes", cap);
+            ModernUI.LOGGER.debug(MARKER, "Grow pos tex buffer to {} bytes", newCap);
         }
         return mPosTexMemory;
     }
 
     private ByteBuffer checkUniformMemory() {
         if (mUniformMemory.remaining() < 64) {
-            int cap = mUniformMemory.capacity();
-            cap = cap + (cap >> 1);
-            mUniformMemory = memRealloc(mUniformMemory, cap);
-            ModernUI.LOGGER.debug(MARKER, "Grow general uniform buffer to {} bytes", cap);
+            int newCap = GrowingArrayUtils.growSize(mUniformMemory.capacity());
+            mUniformMemory = memRealloc(mUniformMemory, newCap);
+            ModernUI.LOGGER.debug(MARKER, "Grow general uniform buffer to {} bytes", newCap);
         }
         return mUniformMemory;
     }
