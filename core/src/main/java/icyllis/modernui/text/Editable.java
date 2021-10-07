@@ -56,28 +56,28 @@ public interface Editable extends Spannable, GetChars, Appendable {
      * @return a reference to this object.
      * @see Spanned#SPAN_PARAGRAPH
      */
-    Editable replace(int st, int en, CharSequence source, int start, int end);
+    Editable replace(int st, int en, @Nonnull CharSequence source, int start, int end);
 
     /**
      * Convenience for replace(st, en, text, 0, text.length())
      *
      * @see #replace(int, int, CharSequence, int, int)
      */
-    Editable replace(int st, int en, CharSequence text);
+    Editable replace(int st, int en, @Nonnull CharSequence text);
 
     /**
      * Convenience for replace(where, where, text, start, end)
      *
      * @see #replace(int, int, CharSequence, int, int)
      */
-    Editable insert(int where, CharSequence text, int start, int end);
+    Editable insert(int where, @Nonnull CharSequence text, int start, int end);
 
     /**
      * Convenience for replace(where, where, text, 0, text.length());
      *
      * @see #replace(int, int, CharSequence, int, int)
      */
-    Editable insert(int where, CharSequence text);
+    Editable insert(int where, @Nonnull CharSequence text);
 
     /**
      * Convenience for replace(st, en, "", 0, 0)
@@ -92,7 +92,7 @@ public interface Editable extends Spannable, GetChars, Appendable {
      * @see #replace(int, int, CharSequence, int, int)
      */
     @Override
-    Editable append(CharSequence text);
+    Editable append(@Nonnull CharSequence text);
 
     /**
      * Convenience for replace(length(), length(), text, start, end)
@@ -100,7 +100,7 @@ public interface Editable extends Spannable, GetChars, Appendable {
      * @see #replace(int, int, CharSequence, int, int)
      */
     @Override
-    Editable append(CharSequence text, int start, int end);
+    Editable append(@Nonnull CharSequence text, int start, int end);
 
     /**
      * Convenience for append(String.valueOf(text)).
@@ -130,12 +130,13 @@ public interface Editable extends Spannable, GetChars, Appendable {
      * whenever the text of this Editable is changed, each of which has
      * the opportunity to limit or transform the text that is being inserted.
      */
-    void setFilters(InputFilter[] filters);
+    void setFilters(@Nonnull InputFilter[] filters);
 
     /**
      * Returns the array of input filters that are currently applied
      * to changes to this Editable.
      */
+    @Nonnull
     InputFilter[] getFilters();
 
     /**
