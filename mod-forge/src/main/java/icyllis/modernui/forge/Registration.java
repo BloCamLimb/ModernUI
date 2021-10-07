@@ -156,24 +156,22 @@ final class Registration {
             int c = (in[i] & 0xFF) | (in[i + 1] & 0xFF) << 8 | (in[i + 2] & 0xFF) << 16;
             for (int k = 0; k < 4; k++) {
                 final int m = c & 0x3f;
+                final char t;
                 if (m < 26)
-                    sb.append((char) ('A' + m));
+                    t = (char) ('A' + m);
                 else if (m < 52)
-                    sb.append((char) ('a' + m - 26));
+                    t = (char) ('a' + m - 26);
                 else if (m < 62)
-                    sb.append((char) ('0' + m - 52));
+                    t = (char) ('0' + m - 52);
                 else if (m == 62)
-                    sb.append('+');
-                else
-                    sb.append('/');
+                    t = '+';
+                else // m == 63
+                    t = '/';
+                sb.append(t);
                 c >>= 6;
             }
         }
-        final String h = Integer.toHexString(in[15] & 0xFF);
-        if (h.length() == 1) {
-            sb.append('0');
-        }
-        sb.append(h);
+        sb.append(Integer.toHexString(in[15] & 0xFF));
         return sb.toString();
     }
 
