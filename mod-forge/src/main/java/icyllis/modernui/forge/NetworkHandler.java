@@ -182,6 +182,7 @@ public class NetworkHandler {
     /**
      * Creates the packet with a broadcaster from a message. The packet must by dispatched
      * right after calling this, for example {@link PacketDispatcher#sendToPlayer(Player)}.
+     * Packet data cannot exceed 1,043,200 bytes.
      *
      * @param data the packet data (message body)
      * @return a broadcaster to broadcast the packet
@@ -196,7 +197,7 @@ public class NetworkHandler {
     /**
      * Send a message to server.
      * <p>
-     * This is the only method to be called on the client.
+     * This is the only method to be called on the client. Packet data cannot exceed 32,600 bytes.
      *
      * @param data the packet data (message body)
      * @see #buffer(int)
@@ -216,15 +217,15 @@ public class NetworkHandler {
     public interface ClientListener {
 
         /**
-         * Handle a server-to-client network message.
+         * Handle a client-to-server network message.
          * <p>
          * This method is invoked on the Netty-IO thread, you need to consume or retain
-         * the payload and then process it further through thread scheduling. The player
-         * supplier may return null if the connection is interrupted. In this case, the
-         * message handling should be ignored currently.
-         * <p>
-         * Note that in addition to retain, you can throw {@link RunningOnDifferentThreadException}
+         * the payload and then process it further through thread scheduling. In addition
+         * to retain, you can throw {@link RunningOnDifferentThreadException}
          * to prevent the payload from being released after this method call.
+         * <p>
+         * Note that the player supplier may return null if the connection is interrupted.
+         * In this case, the message handling should be ignored.
          *
          * @param index   message index
          * @param payload message body
@@ -240,12 +241,12 @@ public class NetworkHandler {
          * Handle a client-to-server network message.
          * <p>
          * This method is invoked on the Netty-IO thread, you need to consume or retain
-         * the payload and then process it further through thread scheduling. The player
-         * supplier may return null if the connection is interrupted. In this case, the
-         * message handling should be ignored currently.
-         * <p>
-         * Note that in addition to retain, you can throw {@link RunningOnDifferentThreadException}
+         * the payload and then process it further through thread scheduling. In addition
+         * to retain, you can throw {@link RunningOnDifferentThreadException}
          * to prevent the payload from being released after this method call.
+         * <p>
+         * Note that the player supplier may return null if the connection is interrupted.
+         * In this case, the message handling should be ignored.
          *
          * @param index   message index
          * @param payload message body
