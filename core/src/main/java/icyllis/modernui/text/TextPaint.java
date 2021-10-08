@@ -25,18 +25,20 @@ import javax.annotation.Nonnull;
 
 /**
  * This class holds data used during text measuring and drawing at higher levels.
+ * For the base class {@link FontPaint}, changing any attributes will require a
+ * reflow and re-layout, not just re-drawing.
  */
 public class TextPaint extends FontPaint {
 
     /**
      * Paint flag that applies an underline decoration to drawn text.
      */
-    private static final int UNDERLINE_FLAG = 0x08;
+    public static final int UNDERLINE_FLAG = 0x08;
 
     /**
      * Paint flag that applies a strike-through decoration to drawn text.
      */
-    private static final int STRIKETHROUGH_FLAG = 0x10;
+    public static final int STRIKETHROUGH_FLAG = 0x10;
 
     private static final Pool<TextPaint> sPool = Pools.concurrent(4);
 
@@ -202,6 +204,12 @@ public class TextPaint extends FontPaint {
         return fm.mAscent / 12f;
     }
 
+    /**
+     * Create a copy of this paint as the base class paint for internal
+     * layout engine. Subclasses must ensure that be immutable.
+     *
+     * @return a internal paint
+     */
     @Nonnull
     @Override
     public final FontPaint toBase() {

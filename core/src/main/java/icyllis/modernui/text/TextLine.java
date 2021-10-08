@@ -41,7 +41,9 @@ import javax.annotation.Nullable;
  */
 public class TextLine {
 
-    private static final Pool<TextLine> sPool = Pools.concurrent(3);
+    private static final Pool<TextLine> sPool = Pools.concurrent(1);
+
+    private static final char TAB_CHAR = '\t';
 
     private TextPaint mPaint;
     private CharSequence mText;
@@ -209,7 +211,7 @@ public class TextLine {
 
             int segStart = runStart;
             for (int j = mHasTabs ? runStart : runLimit; j <= runLimit; j++) {
-                if (j == runLimit || charAt(j) == '\t') {
+                if (j == runLimit || charAt(j) == TAB_CHAR) {
                     h += drawRun(canvas, segStart, j, runIsRtl, x + h, top, y, bottom,
                             runIndex != (runCount - 1) || j != mLen);
 
@@ -220,6 +222,99 @@ public class TextLine {
                 }
             }
         }
+    }
+
+    /**
+     * Returns the signed graphical offset from the leading margin.
+     * <p>
+     * Following examples are all for measuring offset=3. LX(e.g. L0, L1, ...) denotes a
+     * character which has LTR BiDi property. On the other hand, RX(e.g. R0, R1, ...) denotes a
+     * character which has RTL BiDi property. Assuming all character has 1em width.
+     * <p>
+     * Example 1: All LTR chars within LTR context
+     * Input Text (logical)  :   L0 L1 L2 L3 L4 L5 L6 L7 L8
+     * Input Text (visual)   :   L0 L1 L2 L3 L4 L5 L6 L7 L8
+     * Output(trailing=true) :  |--------| (Returns 3em)
+     * Output(trailing=false):  |--------| (Returns 3em)
+     * <p>
+     * Example 2: All RTL chars within RTL context.
+     * Input Text (logical)  :   R0 R1 R2 R3 R4 R5 R6 R7 R8
+     * Input Text (visual)   :   R8 R7 R6 R5 R4 R3 R2 R1 R0
+     * Output(trailing=true) :                    |--------| (Returns -3em)
+     * Output(trailing=false):                    |--------| (Returns -3em)
+     * <p>
+     * Example 3: BiDi chars within LTR context.
+     * Input Text (logical)  :   L0 L1 L2 R3 R4 R5 L6 L7 L8
+     * Input Text (visual)   :   L0 L1 L2 R5 R4 R3 L6 L7 L8
+     * Output(trailing=true) :  |-----------------| (Returns 6em)
+     * Output(trailing=false):  |--------| (Returns 3em)
+     * <p>
+     * Example 4: BiDi chars within RTL context.
+     * Input Text (logical)  :   L0 L1 L2 R3 R4 R5 L6 L7 L8
+     * Input Text (visual)   :   L6 L7 L8 R5 R4 R3 L0 L1 L2
+     * Output(trailing=true) :           |-----------------| (Returns -6em)
+     * Output(trailing=false):                    |--------| (Returns -3em)
+     *
+     * @param offset   the line-relative character offset, between 0 and the line length, inclusive
+     * @param trailing no effect if the offset is not on the BiDi transition offset. If the offset
+     *                 is on the BiDi transition offset and true is passed, the offset is regarded
+     *                 as the edge of the trailing run's edge. If false, the offset is regarded as
+     *                 the edge of the preceding run's edge. See example above.
+     * @param fmi      receives metrics information about the requested character, can be null
+     * @return the signed graphical offset from the leading margin to the requested character edge.
+     * The positive value means the offset is right from the leading edge. The negative
+     * value means the offset is left from the leading edge.
+     */
+    public float measure(int offset, boolean trailing, @Nullable FontMetricsInt fmi) {
+        if (offset > mLen) {
+            throw new IndexOutOfBoundsException(
+                    "offset(" + offset + ") should be less than line limit(" + mLen + ")");
+        }
+        final int target = trailing ? offset - 1 : offset;
+        if (target < 0) {
+            return 0;
+        }
+
+        float h = 0;
+        for (int runIndex = 0; runIndex < mDirections.getRunCount(); runIndex++) {
+            final int runStart = mDirections.getRunStart(runIndex);
+            if (runStart > mLen) break;
+            final int runLimit = Math.min(runStart + mDirections.getRunLength(runIndex), mLen);
+            final boolean runIsRtl = mDirections.isRunRtl(runIndex);
+
+            int segStart = runStart;
+            for (int j = mHasTabs ? runStart : runLimit; j <= runLimit; j++) {
+                if (j == runLimit || charAt(j) == TAB_CHAR) {
+                    final boolean targetIsInThisSegment = target >= segStart && target < j;
+                    final boolean sameDirection = (mDir == Layout.DIR_RIGHT_TO_LEFT) == runIsRtl;
+
+                    if (targetIsInThisSegment && sameDirection) {
+                        return h + measureRun(segStart, offset, j, runIsRtl, fmi);
+                    }
+
+                    final float segmentWidth = measureRun(segStart, j, j, runIsRtl, fmi);
+                    h += sameDirection ? segmentWidth : -segmentWidth;
+
+                    if (targetIsInThisSegment) {
+                        return h + measureRun(segStart, offset, j, runIsRtl, null);
+                    }
+
+                    if (j != runLimit) {  // charAt(j) == TAB_CHAR
+                        if (offset == j) {
+                            return h;
+                        }
+                        h = mDir * nextTab(h * mDir);
+                        if (target == j) {
+                            return h;
+                        }
+                    }
+
+                    segStart = j + 1;
+                }
+            }
+        }
+
+        return h;
     }
 
     /**
@@ -318,7 +413,7 @@ public class TextLine {
                 expandMetricsFromPaint(fmi, wp);
             }
             return handleText(wp, start, limit, start, limit, runIsRtl, canvas, x, top,
-                    y, bottom, fmi, needWidth, measureLimit, 0);
+                    y, bottom, needWidth, measureLimit, 0);
         }
 
         // Shaping needs to take into account context up to metric boundaries,
@@ -367,34 +462,39 @@ public class TextLine {
                 expandMetricsFromPaint(fmi, wp);
             }
 
+            TextPaint activePaint = mActivePaint;
             for (int j = i, jnext; j < mlimit; j = jnext) {
                 jnext = mCharacterStyleSpanSet.getNextTransition(mStart + j, mStart + inext) -
                         mStart;
 
                 final int offset = Math.min(jnext, mlimit);
-                wp.set(mPaint);
+                activePaint.set(wp);
                 for (int k = 0; k < mCharacterStyleSpanSet.mSpans.size(); k++) {
                     // Intentionally using >= and <= as explained above
                     if ((mCharacterStyleSpanSet.mSpanStarts[k] >= mStart + offset) ||
                             (mCharacterStyleSpanSet.mSpanEnds[k] <= mStart + j)) continue;
 
                     final CharacterStyle span = mCharacterStyleSpanSet.mSpans.get(k);
-                    span.updateDrawState(wp);
+                    span.updateDrawState(activePaint);
                 }
 
-                int decoration = 0;
-                if (wp.isUnderline()) {
-                    decoration = 0x1;
-                    wp.setUnderline(false);
-                }
-                if (wp.isStrikethrough()) {
-                    decoration |= 0x2;
-                    wp.setStrikethrough(false);
-                }
+                final int flags = activePaint.mFlags & (TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
+                activePaint.mFlags &= ~(TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
 
-                x += handleText(wp, j, jnext, i, inext, runIsRtl, canvas, x,
-                        top, y, bottom, fmi, needWidth || jnext < measureLimit,
-                        offset, decoration);
+                if (jnext - j <= LayoutCache.MAX_PIECE_LENGTH) {
+                    x += handleText(activePaint, j, jnext, i, inext, runIsRtl, canvas, x,
+                            top, y, bottom, needWidth || jnext < measureLimit,
+                            offset, flags);
+                } else {
+                    int s = j, e = s;
+                    do {
+                        e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, jnext);
+                        x += handleText(activePaint, s, e, i, inext, runIsRtl, canvas, x,
+                                top, y, bottom, needWidth || jnext < measureLimit,
+                                offset, flags);
+                        s = e;
+                    } while (s < jnext);
+                }
             }
         }
 
@@ -405,34 +505,42 @@ public class TextLine {
      * Utility function for measuring and rendering text.  The text must
      * not include a tab.
      *
-     * @param wp         the working paint
-     * @param start      the start of the text
-     * @param end        the end of the text
-     * @param runIsRtl   true if the run is right-to-left
-     * @param c          the canvas, can be null if rendering is not needed
-     * @param x          the edge of the run closest to the leading margin
-     * @param top        the top of the line
-     * @param y          the baseline
-     * @param bottom     the bottom of the line
-     * @param fmi        receives metrics information, can be null
-     * @param needWidth  true if the width of the run is needed
-     * @param offset     the offset for the purpose of measuring
-     * @param decoration the decoration
+     * @param wp        the working paint
+     * @param start     the start of the text
+     * @param end       the end of the text
+     * @param runIsRtl  true if the run is right-to-left
+     * @param c         the canvas, can be null if rendering is not needed
+     * @param x         the edge of the run closest to the leading margin
+     * @param top       the top of the line
+     * @param y         the baseline
+     * @param bottom    the bottom of the line
+     * @param needWidth true if the width of the run is needed
+     * @param offset    the offset for the purpose of measuring
+     * @param flags     the decoration flags
      * @return the signed width of the run based on the run direction; only
      * valid if needWidth is true
      */
     private float handleText(@Nonnull TextPaint wp, int start, int end,
                              int contextStart, int contextEnd, boolean runIsRtl,
                              @Nullable Canvas c, float x, int top, int y, int bottom,
-                             @Nullable FontMetricsInt fmi, boolean needWidth, int offset, int decoration) {
+                             boolean needWidth, int offset, int flags) {
         // No need to do anything if the run width is "0"
         if (end == start) {
             return 0f;
         }
         float totalWidth = 0;
 
-        if (needWidth || (c != null && (wp.bgColor != 0 || decoration != 0 || runIsRtl))) {
-            totalWidth = getRunAdvance(wp, start, end, runIsRtl, offset);
+        LayoutPiece piece = null;
+        if (c != null || needWidth) {
+            if (mCharsValid) {
+                piece = LayoutCache.getOrCreate(mChars, start, offset,
+                        runIsRtl, wp, false, c != null);
+            } else {
+                final int delta = mStart;
+                piece = LayoutCache.getOrCreate(mText, start + delta, offset + delta,
+                        runIsRtl, wp, false, c != null);
+            }
+            totalWidth = piece.getAdvance();
         }
 
         if (c != null) {
@@ -453,47 +561,26 @@ public class TextLine {
                 c.drawRect(leftX, top, rightX, bottom, paint);
             }
 
-            int delta = mStart;
-            /*c.drawTextRun(mText, delta + start, delta + end,
-                    x, y, runIsRtl, wp);*/
+            c.drawTextRun(piece, leftX, y, wp);
+
+            if (flags != 0) {
+                if ((flags & TextPaint.UNDERLINE_FLAG) != 0) {
+                    float thickness = piece.getAscent() / 12f;
+                    float strokeTop = y + piece.getDescent() / 3f;
+                    Paint paint = Paint.take();
+                    paint.setColor(wp.getColor());
+                    c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
+                }
+                if ((flags & TextPaint.STRIKETHROUGH_FLAG) != 0) {
+                    float thickness = piece.getAscent() / 12f;
+                    float strokeTop = y + piece.getAscent() / -2f;
+                    Paint paint = Paint.take();
+                    paint.setColor(wp.getColor());
+                    c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
+                }
+            }
         }
         return runIsRtl ? -totalWidth : totalWidth;
-    }
-
-    private float getRunAdvance(TextPaint wp, int start, int end, boolean runIsRtl, int offset) {
-        assert start != end;
-        if (mCharsValid) {
-            if (offset - start <= LayoutCache.MAX_PIECE_LENGTH) {
-                return LayoutCache.getOrCreate(mChars, start, offset, runIsRtl, wp, false, false)
-                        .getAdvance();
-            }
-            int s = start, e = s, a = 0;
-            do {
-                e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, offset);
-                a += LayoutCache.getOrCreate(mChars, s, e, runIsRtl, wp, false, false)
-                        .getAdvance();
-                s = e;
-            } while (s < offset);
-            return a;
-        } else {
-            final int delta = mStart;
-            if (mComputed == null) {
-                if (offset - start <= LayoutCache.MAX_PIECE_LENGTH) {
-                    return LayoutCache.getOrCreate(mText, start + delta, offset + delta,
-                            runIsRtl, wp, false, false).getAdvance();
-                }
-                int s = start, e = s, a = 0;
-                do {
-                    e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, offset);
-                    a += LayoutCache.getOrCreate(mText, s + delta, e + delta,
-                            runIsRtl, wp, false, false).getAdvance();
-                    s = e;
-                } while (s < offset);
-                return a;
-            } else {
-                return mComputed.getWidth(start + delta, end + delta);
-            }
-        }
     }
 
     /**
