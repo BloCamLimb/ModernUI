@@ -104,23 +104,23 @@ public final class NetworkMessages {
             final int menuId = payload.readVarInt();
             Minecraft.getInstance().execute(() -> {
                 LocalPlayer p = player.get();
-                if (p == null) {
-                    return;
-                }
-                final MenuType<?> type = Registry.MENU.byId(menuId);
-                boolean success = false;
-                if (type == null) {
-                    ModernUI.LOGGER.warn(UIManager.MARKER, "Trying to open invalid screen for menu id: {}", menuId);
-                } else {
-                    final AbstractContainerMenu menu = type.create(containerId, p.getInventory(), payload);
-                    ResourceLocation key = Registry.MENU.getKey(type);
-                    if (key != null) {
-                        success = UIManager.getInstance().openMenu(p, menu, key.getNamespace());
+                if (p != null) {
+                    final MenuType<?> type = Registry.MENU.byId(menuId);
+                    boolean success = false;
+                    if (type == null) {
+                        ModernUI.LOGGER.warn(UIManager.MARKER, "Trying to open invalid screen for menu id: {}", menuId);
+                    } else {
+                        final AbstractContainerMenu menu = type.create(containerId, p.getInventory(), payload);
+                        ResourceLocation key = Registry.MENU.getKey(type);
+                        if (key != null) {
+                            success = UIManager.getInstance().openMenu(p, menu, key.getNamespace());
+                        }
+                    }
+                    if (!success) {
+                        p.closeContainer(); // close server menu
                     }
                 }
-                if (!success) {
-                    p.closeContainer(); // close server menu
-                }
+                payload.release();
             });
             throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
