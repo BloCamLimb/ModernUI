@@ -18,31 +18,63 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.forge.MForgeCompat;
 import icyllis.modernui.forge.MuiRegistries;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuConstructor;
+
+import javax.annotation.Nonnull;
+import java.util.function.Consumer;
 
 public class TestMenu extends AbstractContainerMenu {
 
-    // client
-    public TestMenu(int windowId, Inventory inventory, FriendlyByteBuf buf) {
-        super(MuiRegistries.TEST_MENU, windowId);
+    /**
+     * Constructor to create the container menu on client side.
+     *
+     * @param containerId the id representing the menu in communication model
+     * @param inventory   player inventory (on client side)
+     * @param data        additional data sent by server
+     * @see MForgeCompat#openMenu(ServerPlayer, MenuConstructor, Consumer)
+     */
+    public TestMenu(int containerId, @Nonnull Inventory inventory, @Nonnull FriendlyByteBuf data) {
+        super(MuiRegistries.TEST_MENU, containerId);
     }
 
-    // server
-    public TestMenu(int windowId, Inventory inventory, Player player) {
-        super(MuiRegistries.TEST_MENU, windowId);
+    /**
+     * Constructor to create the container menu on server side.
+     *
+     * @param containerId the id representing the menu in communication model
+     * @param inventory   player inventory (on server side)
+     * @param player      server player
+     * @see MForgeCompat#openMenu(ServerPlayer, MenuConstructor, Consumer)
+     */
+    public TestMenu(int containerId, @Nonnull Inventory inventory, @Nonnull Player player) {
+        super(MuiRegistries.TEST_MENU, containerId);
     }
 
+    /**
+     * Called when the container menu is closed, on both side.
+     *
+     * @param player the player using this menu
+     */
     @Override
-    public void removed(Player player) {
+    public void removed(@Nonnull Player player) {
         super.removed(player);
     }
 
+    /**
+     * Determines whether the container menu should be closed. This method is called every tick
+     * on server thread.
+     *
+     * @param player the player using this menu
+     * @return valid or not, {@code false} to close
+     */
     @Override
-    public boolean stillValid(Player player) {
+    public boolean stillValid(@Nonnull Player player) {
         return true;
     }
 }

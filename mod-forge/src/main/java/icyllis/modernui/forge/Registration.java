@@ -139,7 +139,6 @@ final class Registration {
 
         NetworkMessages.sNetwork = new NetworkHandler("_root", () -> NetworkMessages::msg,
                 null, bytes == null ? null : digest(bytes), true);
-        ModernUI.LOGGER.info("PROTOCOL: {}", NetworkMessages.sNetwork.getProtocol());
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
     }
