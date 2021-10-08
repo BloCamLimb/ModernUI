@@ -111,7 +111,7 @@ public class LineBreaker {
 
     private void process() {
         BreakIterator breaker = sBreaker;
-        CharacterIterator iterator = new CharArrayIterator(mTextBuf);
+        final CharacterIterator iterator = new CharArrayIterator(mTextBuf);
 
         Locale locale = null;
         int nextBoundary = 0;
@@ -119,10 +119,10 @@ public class LineBreaker {
 
             Locale newLocale = run.getLocale();
             if (locale != newLocale) {
+                locale = newLocale;
                 breaker = BreakIterator.getLineInstance(locale);
                 breaker.setText(iterator);
                 nextBoundary = breaker.following(run.mStart);
-                locale = newLocale;
             }
 
             for (int i = run.mStart; i < run.mEnd; i++) {
@@ -139,6 +139,11 @@ public class LineBreaker {
                 }
             }
         }
+
+        if (getPrevLineBreakOffset() != mTextBuf.length && mPrevBoundaryOffset != NOWHERE) {
+            // The remaining words in the last line.
+            breakLineAt(mPrevBoundaryOffset, mLineWidth, 0, 0);
+        }
     }
 
     private void processLineBreak(int offset) {
@@ -151,8 +156,7 @@ public class LineBreaker {
             }
         }
 
-
-        if (mPrevBoundaryOffset == NOWHERE) {
+        if (mPrevBoundaryOffset == NOWHERE || true) {
             mPrevBoundaryOffset = offset;
             mLineWidthAtPrevBoundary = mLineWidth;
             mCharsAdvanceAtPrevBoundary = mCharsAdvance;

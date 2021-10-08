@@ -64,12 +64,21 @@ public class CharArrayIterator implements CharacterIterator {
 
     @Override
     public char next() {
-        return pos < end ? text[pos++] : DONE;
+        pos += 1;
+        if (pos >= end) {
+            pos = end;
+            return DONE;
+        }
+        return current();
     }
 
     @Override
     public char previous() {
-        return pos > start ? text[--pos] : DONE;
+        if (pos == start) {
+            return DONE;
+        }
+        pos -= 1;
+        return current();
     }
 
     @Override

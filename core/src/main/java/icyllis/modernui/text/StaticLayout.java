@@ -468,7 +468,7 @@ public class StaticLayout extends Layout {
 
             constraints.setWidth(restWidth);
             constraints.setIndent(firstWidth);
-            constraints.setTabStops(variableTabStops, 20);
+            constraints.setTabStops(variableTabStops, TAB_INCREMENT);
 
             LineBreaker.Result res = LineBreaker.computeLineBreaks(
                     measuredPara.getMeasuredText(), constraints, indents, mLineCount);
@@ -489,6 +489,8 @@ public class StaticLayout extends Layout {
                 descents[i] = res.getLineDescent(i);
                 hasTabs[i] = res.hasLineTab(i);
             }
+
+            ModernUI.LOGGER.info("StaticLayout LineBreaks: {}", breaks);
 
             final int remainingLineCount = mMaximumVisibleLineCount - mLineCount;
             final boolean ellipsisMayBeApplied = ellipsize != null

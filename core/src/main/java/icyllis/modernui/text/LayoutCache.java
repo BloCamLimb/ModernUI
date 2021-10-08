@@ -39,6 +39,9 @@ import java.util.Locale;
 @ThreadSafe
 public class LayoutCache {
 
+    /**
+     * The internal policy on the maximum length of a text run, shared globally.
+     */
     public static final int MAX_PIECE_LENGTH = 128;
 
     private static final Pool<LookupKey> sLookupKeys = Pools.concurrent(2);
@@ -69,7 +72,7 @@ public class LayoutCache {
             buf = new char[MAX_PIECE_LENGTH];
         }
         TextUtils.getChars(text, start, end, buf, 0);
-        LayoutPiece piece = getOrCreate(buf, start, end, isRtl, paint, measure, layout);
+        LayoutPiece piece = getOrCreate(buf, 0, end - start, isRtl, paint, measure, layout);
         sCharBuffers.release(buf);
         return piece;
     }

@@ -534,13 +534,16 @@ public class MeasuredParagraph {
             //TODO get replacement width
             builder.addReplacementRun(tp, end - start, 0);
         } else {
-            assert mSpanned != null;
             final int offset = mTextStart;
             final FontPaint base = tp.toBase();
-            int spanEnd;
-            for (int spanStart = start; spanStart < end; spanStart = spanEnd) {
-                spanEnd = mSpanned.nextSpanTransition(spanStart, end, CharacterStyle.class);
-                applyStyleRun(base, spanStart - offset, spanEnd - offset, builder);
+            if (mSpanned != null) {
+                int spanEnd;
+                for (int spanStart = start; spanStart < end; spanStart = spanEnd) {
+                    spanEnd = mSpanned.nextSpanTransition(spanStart, end, CharacterStyle.class);
+                    applyStyleRun(base, spanStart - offset, spanEnd - offset, builder);
+                }
+            } else {
+                applyStyleRun(base, start - offset, end - offset, builder);
             }
         }
 

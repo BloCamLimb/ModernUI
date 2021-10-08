@@ -32,7 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * The layout of a styled text run, including glyphs' measurements and rendering info.
+ * The layout of a styled text run, including text shaping results, glyph measurements and
+ * their rendering information.
  *
  * @see LayoutCache
  * @see GlyphManager

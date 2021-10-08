@@ -234,13 +234,13 @@ public class Typeface {
 
     // an array of base fonts
     @Nonnull
-    private final Font[] mFonts;
+    private final List<Font> mFonts;
 
     private Typeface(@Nonnull Font[] fonts) {
         if (fonts.length == 0) {
             throw new IllegalArgumentException("Font set cannot be empty");
         }
-        mFonts = fonts;
+        mFonts = List.of(fonts);
     }
 
     // calculate font runs
@@ -361,14 +361,14 @@ public class Typeface {
         if (lastFamily == null) {
             // No character needed any font support, so it doesn't really matter which font they end up
             // getting displayed in. We put the whole string in one run, using the first font.
-            result.add(new FontRun(mFonts[0], offset, limit));
+            result.add(new FontRun(mFonts.get(0), offset, limit));
         }
         return result;
     }
 
-    // backing array, base fonts
+    // base fonts
     @Nonnull
-    public Font[] getFonts() {
+    public List<Font> getFonts() {
         return mFonts;
     }
 
@@ -384,31 +384,33 @@ public class Typeface {
                 return font;
             }
         }
-        return mFonts[0];
+        return mFonts.get(0);
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Typeface that = (Typeface) o;
-        return Arrays.equals(mFonts, that.mFonts);
+
+        Typeface typeface = (Typeface) o;
+
+        return mFonts.equals(typeface.mFonts);
     }
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(mFonts);
+        return mFonts.hashCode();
     }
 
     @Override
     public String toString() {
         StringBuilder b = new StringBuilder();
         b.append("Typeface{");
-        for (int i = 0, e = mFonts.length; i < e; i++) {
+        for (int i = 0, e = mFonts.size(); i < e; i++) {
             if (i > 0) {
                 b.append(", ");
             }
-            b.append(mFonts[i].getFamily(Locale.ROOT));
+            b.append(mFonts.get(i).getFamily(Locale.ROOT));
         }
         return b.append('}').toString();
     }

@@ -41,6 +41,8 @@ public abstract class Layout {
     public static final int DIR_LEFT_TO_RIGHT = 1;
     public static final int DIR_RIGHT_TO_LEFT = -1;
 
+    public static final float TAB_INCREMENT = 20;
+
     private static final ParagraphStyle[] NO_PARA_SPANS = {};
 
     /// member variables \\\
@@ -120,7 +122,7 @@ public abstract class Layout {
     }
 
     /**
-     * Draw the visible area of this Layout background layer on the specified canvas.
+     * Draw the visible background drawables of this Layout on the specified canvas.
      * <p>
      * Significantly, visible area given by <code>firstLine</code> and
      * <code>lastLine</code> is computed by {@link #getLineRangeForDraw(Canvas)}.
@@ -131,6 +133,7 @@ public abstract class Layout {
      * @param lastLine  last line index (inclusive)
      * @see #drawText(Canvas, int, int)
      */
+    //TODO background span
     public final void drawBackground(@Nonnull Canvas canvas, int firstLine, int lastLine) {
         if (!mSpannedText) return;
         assert firstLine >= 0 && lastLine >= firstLine;
@@ -151,6 +154,7 @@ public abstract class Layout {
      */
     public void drawText(@Nonnull Canvas canvas, int firstLine, int lastLine) {
         assert firstLine >= 0 && lastLine >= firstLine && lastLine < getLineCount();
+
         int previousLineBottom = getLineTop(firstLine);
         int previousLineEnd = getLineStart(firstLine);
         ParagraphStyle[] spans = NO_PARA_SPANS;
@@ -162,6 +166,8 @@ public abstract class Layout {
         Alignment paraAlign = mAlignment;
         TabStops tabStops = null;
         boolean tabStopsIsInitialized = false;
+
+        TextLine tl = TextLine.obtain();
 
         // Draw the lines, one at a time.
         // The baseline is the top of the following line minus the current line's descent.
@@ -179,6 +185,7 @@ public abstract class Layout {
             int left = 0;
             int right = mWidth;
 
+            //TODO para style
             if (mSpannedText) {
                 Spanned sp = (Spanned) buf;
                 spans = getParagraphSpans(sp, start, spanEnd, ParagraphStyle.class);
@@ -188,9 +195,9 @@ public abstract class Layout {
             // Can't tell if we have tabs for sure, currently
             if (hasTab && !tabStopsIsInitialized) {
                 if (tabStops == null) {
-                    tabStops = new TabStops(20, spans);
+                    tabStops = new TabStops(TAB_INCREMENT, spans);
                 } else {
-                    tabStops.reset(20, spans);
+                    tabStops.reset(TAB_INCREMENT, spans);
                 }
                 tabStopsIsInitialized = true;
             }
@@ -205,6 +212,11 @@ public abstract class Layout {
                         Alignment.ALIGN_OPPOSITE : Alignment.ALIGN_NORMAL;
             }
 
+            Directions directions = getLineDirections(lineNum);
+            final int ellipsisStart = getEllipsisStart(lineNum);
+            tl.set(paint, buf, start, end, dir, directions, hasTab, tabStops,
+                    ellipsisStart, ellipsisStart + getEllipsisCount(lineNum));
+
             int x;
             final int indentWidth;
             if (align == Alignment.ALIGN_NORMAL) {
@@ -216,7 +228,7 @@ public abstract class Layout {
                     x = right - indentWidth;
                 }
             } else {
-                int max = 0;/*(int) getLineExtent(lineNum, tabStops, false);*/
+                int max = (int) tl.measure(end - start, false, null);
                 if (align == Alignment.ALIGN_OPPOSITE) {
                     if (dir == DIR_LEFT_TO_RIGHT) {
                         indentWidth = -getIndentAdjust(lineNum, Alignment.ALIGN_RIGHT);
@@ -231,7 +243,16 @@ public abstract class Layout {
                     x = ((right + left - max) >> 1) + indentWidth;
                 }
             }
+
+            if (directions == Directions.ALL_LEFT_TO_RIGHT && !mSpannedText && !hasTab) {
+                // XXX: assumes there's nothing additional to be done
+                canvas.drawText(buf, start, end, x, lbaseline, paint);
+            } else {
+                tl.draw(canvas, x, ltop, lbaseline, lbottom);
+            }
         }
+
+        tl.recycle();
     }
 
     /**
@@ -270,7 +291,7 @@ public abstract class Layout {
             assert lineNum == lineCount;
             lastLine = lineCount - 1;
         }
-
+        assert lastLine >= firstLine;
         return (long) firstLine << 32 | lastLine;
     }
 
