@@ -19,12 +19,16 @@
 package icyllis.modernui.text;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.reflect.Array;
 
 public final class TextUtils {
 
     private static final Object sLock = new Object();
     private static char[] sTemp = null;
+
+    // Zero-width character used to fill ellipsized strings when codepoint length must be preserved.
+    static final char ELLIPSIS_FILLER = '\uFEFF'; // ZERO WIDTH NO-BREAK SPACE
 
     //TODO: Based on CLDR data, these need to be localized for Dzongkha (dz) and perhaps
     // Hong Kong Traditional Chinese (zh-Hant-HK), but that may need to depend on the actual word
@@ -183,6 +187,63 @@ public final class TextUtils {
         return -1;
     }
 
+    public static int lastIndexOf(CharSequence s, char ch) {
+        return lastIndexOf(s, ch, s.length() - 1);
+    }
+
+    public static int lastIndexOf(CharSequence s, char ch, int last) {
+        Class<? extends CharSequence> c = s.getClass();
+
+        if (c == String.class)
+            return ((String) s).lastIndexOf(ch, last);
+
+        return lastIndexOf(s, ch, 0, last);
+    }
+
+    public static int lastIndexOf(CharSequence s, char ch,
+                                  int start, int last) {
+        if (last < 0)
+            return -1;
+        if (last >= s.length())
+            last = s.length() - 1;
+
+        int end = last + 1;
+
+        Class<? extends CharSequence> c = s.getClass();
+
+        if (s instanceof GetChars || c == StringBuffer.class ||
+                c == StringBuilder.class || c == String.class) {
+            char[] temp = obtain(500);
+
+            while (start < end) {
+                int segstart = end - 500;
+                if (segstart < start)
+                    segstart = start;
+
+                getChars(s, segstart, end, temp, 0);
+
+                int count = end - segstart;
+                for (int i = count - 1; i >= 0; i--) {
+                    if (temp[i] == ch) {
+                        recycle(temp);
+                        return i + segstart;
+                    }
+                }
+
+                end = segstart;
+            }
+
+            recycle(temp);
+            return -1;
+        }
+
+        for (int i = end - 1; i >= start; i--)
+            if (s.charAt(i) == ch)
+                return i;
+
+        return -1;
+    }
+
     /**
      * Where to truncate.
      */
@@ -201,5 +262,42 @@ public final class TextUtils {
             return "0 bytes";
         int i = (Integer.SIZE - 1 - Integer.numberOfLeadingZeros(num)) / 10;
         return num / (1 << (i * 10)) + sBinaryCompacts[i];
+    }
+
+    /**
+     * Copies the spans from the region <code>start...end</code> in
+     * <code>source</code> to the region
+     * <code>destoff...destoff+end-start</code> in <code>dest</code>.
+     * Spans in <code>source</code> that begin before <code>start</code>
+     * or end after <code>end</code> but overlap this range are trimmed
+     * as if they began at <code>start</code> or ended at <code>end</code>.
+     *
+     * @throws IndexOutOfBoundsException if any of the copied spans
+     *                                   are out of range in <code>dest</code>.
+     */
+    public static void copySpansFrom(@Nonnull Spanned source, int start, int end,
+                                     @Nullable Class<?> kind,
+                                     @Nonnull Spannable dest, int destoff) {
+        if (kind == null) {
+            kind = Object.class;
+        }
+
+        Object[] spans = source.getSpans(start, end, kind);
+
+        if (spans != null) {
+            for (Object span : spans) {
+                int st = source.getSpanStart(span);
+                int en = source.getSpanEnd(span);
+                int fl = source.getSpanFlags(span);
+
+                if (st < start)
+                    st = start;
+                if (en > end)
+                    en = end;
+
+                dest.setSpan(span, st - start + destoff, en - start + destoff,
+                        fl);
+            }
+        }
     }
 }

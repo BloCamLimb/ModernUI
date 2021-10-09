@@ -140,7 +140,7 @@ public class TextPaint extends FontPaint {
      * @see #setUnderline(boolean)
      */
     public float getUnderlineOffset(@Nonnull FontMetricsInt fm) {
-        return fm.mDescent / 3f;
+        return fm.descent / 3f;
     }
 
     /**
@@ -152,7 +152,7 @@ public class TextPaint extends FontPaint {
      * @see #setUnderline(boolean)
      */
     public float getUnderlineThickness(@Nonnull FontMetricsInt fm) {
-        return fm.mAscent / 12f;
+        return fm.ascent / 12f;
     }
 
     /**
@@ -191,7 +191,7 @@ public class TextPaint extends FontPaint {
      * @see #getStrikethroughThickness(FontMetricsInt)
      */
     public float getStrikethroughOffset(@Nonnull FontMetricsInt fm) {
-        return -fm.mAscent / 2f;
+        return -fm.ascent / 2f;
     }
 
     /**
@@ -201,7 +201,7 @@ public class TextPaint extends FontPaint {
      * @see #getStrikethroughOffset(FontMetricsInt)
      */
     public float getStrikethroughThickness(@Nonnull FontMetricsInt fm) {
-        return fm.mAscent / 12f;
+        return fm.ascent / 12f;
     }
 
     /**

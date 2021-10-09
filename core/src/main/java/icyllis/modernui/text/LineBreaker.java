@@ -249,8 +249,8 @@ public class LineBreaker {
                 }
             fm.reset();
             mMeasuredText.getExtent(prevBreakOffset, breakPoint.mOffset, fm);
-            ascents[i] = fm.mAscent;
-            descents[i] = fm.mDescent;
+            ascents[i] = fm.ascent;
+            descents[i] = fm.descent;
             prevBreakOffset = breakPoint.mOffset;
         }
         return new Result(mBreakPoints.toArray(new BreakPoint[0]), ascents, descents);

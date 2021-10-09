@@ -163,11 +163,11 @@ public class LayoutPiece {
             }
         }
 
-        mAscent = extent.mAscent;
+        mAscent = extent.ascent;
         if (measure || mAdvances != null) {
             mAscent |= 0x80000000;
         }
-        mDescent = extent.mDescent;
+        mDescent = extent.descent;
         if (layout || mGlyphs != null || receivingLayout) {
             mDescent |= 0x80000000;
         }

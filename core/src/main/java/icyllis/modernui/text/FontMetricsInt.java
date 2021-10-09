@@ -30,19 +30,19 @@ public class FontMetricsInt {
      * The recommended distance above the baseline for singled spaced text.
      * This is always a positive integer.
      */
-    public int mAscent;
+    public int ascent;
 
     /**
      * The recommended distance below the baseline for singled spaced text.
      * This is always a positive integer.
      */
-    public int mDescent;
+    public int descent;
 
     public FontMetricsInt() {
     }
 
     public void reset() {
-        mAscent = mDescent = 0;
+        ascent = descent = 0;
     }
 
     public void extendBy(@Nonnull FontMetrics fm) {
@@ -50,12 +50,12 @@ public class FontMetricsInt {
     }
 
     public void extendBy(@Nonnull FontMetricsInt fm) {
-        extendBy(fm.mAscent, fm.mDescent);
+        extendBy(fm.ascent, fm.descent);
     }
 
     public void extendBy(int ascent, int descent) {
-        mAscent = Math.max(mAscent, ascent); // positive
-        mDescent = Math.max(mDescent, descent); // positive
+        this.ascent = Math.max(this.ascent, ascent); // positive
+        this.descent = Math.max(this.descent, descent); // positive
     }
 
     @Override
@@ -65,14 +65,14 @@ public class FontMetricsInt {
 
         FontMetricsInt that = (FontMetricsInt) o;
 
-        if (mAscent != that.mAscent) return false;
-        return mDescent == that.mDescent;
+        if (ascent != that.ascent) return false;
+        return descent == that.descent;
     }
 
     @Override
     public int hashCode() {
-        int result = mAscent;
-        result = 31 * result + mDescent;
+        int result = ascent;
+        result = 31 * result + descent;
         return result;
     }
 }
