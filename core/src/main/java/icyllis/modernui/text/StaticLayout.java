@@ -66,8 +66,8 @@ public class StaticLayout extends Layout {
         b.mWidth = width;
         b.mAlignment = Alignment.ALIGN_NORMAL;
         b.mTextDir = TextDirectionHeuristics.FIRSTSTRONG_LTR;
-        b.mFallbackLineSpacing = true; // default true
         b.mIncludePad = true;
+        b.mFallbackLineSpacing = true; // default true
         b.mEllipsizedWidth = width;
         b.mEllipsize = null;
         b.mMaxLines = Integer.MAX_VALUE;
@@ -83,7 +83,7 @@ public class StaticLayout extends Layout {
      * default values.
      */
     @SuppressWarnings("unused")
-    public final static class Builder {
+    public static final class Builder {
 
         // cached instance
         private final FontMetricsInt mFontMetricsInt = new FontMetricsInt();
@@ -300,7 +300,7 @@ public class StaticLayout extends Layout {
          */
         @Nonnull
         public StaticLayout build() {
-            StaticLayout result = new StaticLayout(this);
+            final StaticLayout result = new StaticLayout(this);
             recycle();
             return result;
         }
@@ -367,9 +367,17 @@ public class StaticLayout extends Layout {
     }
 
     private StaticLayout(@Nonnull Builder b) {
-        super(b.mText, b.mPaint, b.mWidth, b.mAlignment, b.mTextDir);
+        super(b.mEllipsize == null
+                ? b.mText
+                : (b.mText instanceof Spanned)
+                ? new SpannedEllipsizer(b.mText)
+                : new Ellipsizer(b.mText), b.mPaint, b.mWidth, b.mAlignment, b.mTextDir);
         if (b.mEllipsize != null) {
-            //FIXME add
+            Ellipsizer e = (Ellipsizer) getText();
+
+            e.mLayout = this;
+            e.mWidth = b.mEllipsizedWidth;
+            e.mMethod = b.mEllipsize;
             mEllipsizedWidth = b.mEllipsizedWidth;
 
             mColumns = COLUMNS_ELLIPSIZE;
@@ -532,15 +540,15 @@ public class StaticLayout extends Layout {
                 // retrieve end of span
                 spanEnd = spanEndCache[cacheIndex];
 
-                fm.mAscent = fmCache[cacheIndex * 2];
-                fm.mDescent = fmCache[cacheIndex * 2 + 1];
+                fm.ascent = fmCache[cacheIndex * 2];
+                fm.descent = fmCache[cacheIndex * 2 + 1];
                 cacheIndex++;
 
-                if (fm.mAscent < fmAscent) {
-                    fmAscent = fm.mAscent;
+                if (fm.ascent < fmAscent) {
+                    fmAscent = fm.ascent;
                 }
-                if (fm.mDescent > fmDescent) {
-                    fmDescent = fm.mDescent;
+                if (fm.descent > fmDescent) {
+                    fmDescent = fm.descent;
                 }
 
                 // skip breaks ending before current span range
@@ -571,8 +579,8 @@ public class StaticLayout extends Layout {
 
                     if (endPos < spanEnd) {
                         // preserve metrics for current span
-                        fmAscent = fm.mAscent;
-                        fmDescent = fm.mDescent;
+                        fmAscent = fm.ascent;
+                        fmDescent = fm.descent;
                     } else {
                         fmAscent = fmDescent = 0;
                     }
@@ -598,7 +606,7 @@ public class StaticLayout extends Layout {
                     MeasuredParagraph.buildForBidi(source, bufEnd, bufEnd, textDir, null);
             GlyphManager.getInstance().getFontMetrics(paint, fm);
             out(source, bufEnd, bufEnd,
-                    fm.mAscent, fm.mDescent, fm.mAscent, fm.mDescent,
+                    fm.ascent, fm.descent, fm.ascent, fm.descent,
                     v, /*null, */null, fm, false,
                     measuredPara, bufEnd,
                     includePad, trackPad,

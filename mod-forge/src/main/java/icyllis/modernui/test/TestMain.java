@@ -297,17 +297,15 @@ public class TestMain {
         //GlyphManager glyphManager = GlyphManager.getInstance();
 
         String text;
-        text = "\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627" +
+        text = "\t\t\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627" +
                 "\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020" +
                 "\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a" +
                 "\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644" +
                 "\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624" +
                 "\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634" +
                 "\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063" +
-                "\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029";
-        /*text = "My name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
-                "I'm hired for people to fulfill their fantasies, their deep dark fantasies.";
-        text = "\u0938\u092d\u0940\u0020\u092e\u0928\u0941\u0937\u094d\u092f\u094b\u0902\u0020\u0915" +
+                "\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029\n";
+        /*text = "\u0938\u092d\u0940\u0020\u092e\u0928\u0941\u0937\u094d\u092f\u094b\u0902\u0020\u0915" +
                 "\u094b\u0020\u0917\u094c\u0930\u0935\u0020\u0914\u0930\u0020\u0905\u0927\u093f\u0915" +
                 "\u093e\u0930\u094b\u0902\u0020\u0915\u0947\u0020\u092e\u093e\u092e\u0932\u0947\u0020" +
                 "\u092e\u0947\u0902\u0020\u091c\u0928\u094d\u092e\u091c\u093e\u0924\u0020\u0938\u094d" +
@@ -320,11 +318,15 @@ public class TestMain {
                 "\u094d\u092a\u0930\u0020\u0909\u0928\u094d\u0939\u0947\u0902\u0020\u092d\u093e\u0908" +
                 "\u091a\u093e\u0930\u0947\u0020\u0915\u0947\u0020\u092d\u093e\u0935\u0020\u0938\u0947" +
                 "\u0020\u092c\u0930\u094d\u0924\u093e\u0935\u0020\u0915\u0930\u0928\u093e\u0020\u091a" +
-                "\u093e\u0939\u093f\u092f\u0947\u0964";
-        text = "\u4f60\u770b\u8fd9\u4e2a\u5f6c\u5f6c\u0020\u624d\u559d\u51e0\u7f50\u0020\u5c31\u9189" +
-                "\u4e86\u002e\u002e\u002e\u771f\u7684\u592a\u900a\u529b\uff1b\u54e6\uff0c\u542c\u4f60" +
-                "\u90a3\u4e48\u8bf4\u0020\u4f60\u5f88\u52c7\u54e6\uff1b\u5f00\u73a9\u7b11\uff0c\u6211" +
-                "\u8d85\u52c7\u7684\u597d\u4e0d\u597d\u0020\u6211\u8d85\u4f1a\u559d\u7684\u5566";*/
+                "\u093e\u0939\u093f\u092f\u0947\u0964";*/
+        text += "\t\tMy name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
+                "I'm hired for people to fulfill their fantasies, their deep dark fantasies.\n" +
+                "\t\t\u4f60\u770b\u8fd9\u4e2a\u5f6c\u5f6c\u0020\u624d\u559d\u51e0\u7f50\u0020\u5c31\u9189" +
+                "\u4e86\u002e\u002e\u002e\ua994\ua9ba\ua9b4\ua98f\ua9ba\ua9b4\u0020\u771f\u7684\u592a\u900a\u529b" +
+                "\uff1b\u54e6\uff0c\u542c\u4f60" +
+                "\u90a3\u4e48\u8bf4\u0020\u4f60\u5f88\u52c7" +
+                "\u54e6\uff1b\u5f00\u73a9\u7b11\uff0c\u6211" +
+                "\u8d85\u52c7\u7684\u597d\u4e0d\u597d\u0020\u6211\u8d85\u4f1a\u559d\u7684\u5566";
                 /*"I was gonna be a movie star, you know with modelling and uh, acting. " +
                 "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I
                 get into escort work.";*/
@@ -355,12 +357,12 @@ public class TestMain {
         //breakLines(text, true);
 
         Spannable spannable = SpannableString.valueOf(text);
-        spannable.setSpan(new ForegroundColorSpan(0xfff699b4), 54, text.length(), 0);
-        spannable.setSpan(new AbsoluteSizeSpan(18), 29, text.length() - 20, 0);
+        spannable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(), 0);
+        spannable.setSpan(new AbsoluteSizeSpan(18), text.length() - 59, text.length() - 20, 0);
         spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 20, text.length(), 0);
         spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), 0);
         //TextLine textLine = new TextLine(spannable);
-        StaticLayout staticLayout = StaticLayout.builder(spannable, 0, spannable.length(), new TextPaint(), 500)
+        StaticLayout staticLayout = StaticLayout.builder(spannable, 0, spannable.length(), new TextPaint(), 600)
                 .build();
 
         GLFW.glfwSwapInterval(1);
@@ -422,9 +424,11 @@ public class TestMain {
             tcc = "আমি আজ সকালের নাস্তা খাব না";
             canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
             //textLine.draw(canvas, 32, 400);
-            canvas.translate(20, 600);
+            canvas.translate(40, 600);
+            paint.setRGBA(0, 0, 0, 128);
+            canvas.drawRoundRect(-6, -10, 606, 280, 5, paint);
             staticLayout.draw(canvas);
-            canvas.translate(-20, -600);
+            canvas.translate(-40, -600);
 
             float playTime = sTrack.getTime();
 

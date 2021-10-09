@@ -23,6 +23,7 @@ import icyllis.modernui.text.style.ParagraphStyle;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * A base class that manages text layout in visual elements on the screen,
@@ -228,7 +229,7 @@ public abstract class Layout {
                     x = right - indentWidth;
                 }
             } else {
-                int max = (int) tl.measure(end - start, false, null);
+                int max = (int) tl.metrics(null);
                 if (align == Alignment.ALIGN_OPPOSITE) {
                     if (dir == DIR_LEFT_TO_RIGHT) {
                         indentWidth = -getIndentAdjust(lineNum, Alignment.ALIGN_RIGHT);
@@ -305,9 +306,29 @@ public abstract class Layout {
         int high = getLineCount(), low = -1, guess;
 
         while (high - low > 1) {
-            guess = (high + low) / 2;
+            guess = (high + low) >> 1;
 
             if (getLineTop(guess) > vertical)
+                high = guess;
+            else
+                low = guess;
+        }
+
+        return Math.max(low, 0);
+    }
+
+    /**
+     * Get the line number on which the specified text offset appears.
+     * If you ask for a position before 0, you get 0; if you ask for a position
+     * beyond the end of the text, you get the last line.
+     */
+    public int getLineForOffset(int offset) {
+        int high = getLineCount(), low = -1, guess;
+
+        while (high - low > 1) {
+            guess = (high + low) / 2;
+
+            if (getLineStart(guess) > offset)
                 high = guess;
             else
                 low = guess;
@@ -508,6 +529,91 @@ public abstract class Layout {
     }
 
     /**
+     * Return the vertical position of the bottom of the specified line.
+     */
+    public final int getLineBottom(int line) {
+        return getLineTop(line + 1);
+    }
+
+    /**
+     * Return the vertical position of the baseline of the specified line.
+     */
+    public final int getLineBaseline(int line) {
+        // getLineTop(line+1) == getLineBottom(line)
+        return getLineTop(line + 1) - getLineDescent(line);
+    }
+
+    /**
+     * Get the ascent of the text on the specified line.
+     * The return value is negative to match the Paint.ascent() convention.
+     */
+    public final int getLineAscent(int line) {
+        // getLineTop(line+1) - getLineDescent(line) == getLineBaseLine(line)
+        return getLineTop(line) - (getLineTop(line + 1) - getLineDescent(line));
+    }
+
+    public int getOffsetToLeftOf(int offset) {
+        return getOffsetToLeftRightOf(offset, true);
+    }
+
+    public int getOffsetToRightOf(int offset) {
+        return getOffsetToLeftRightOf(offset, false);
+    }
+
+    private int getOffsetToLeftRightOf(int caret, boolean toLeft) {
+        int line = getLineForOffset(caret);
+        int lineStart = getLineStart(line);
+        int lineEnd = getLineEnd(line);
+        int lineDir = getParagraphDirection(line);
+
+        boolean lineChanged = false;
+        boolean advance = toLeft == (lineDir == DIR_RIGHT_TO_LEFT);
+        // if walking off line, look at the line we're headed to
+        if (advance) {
+            if (caret == lineEnd) {
+                if (line < getLineCount() - 1) {
+                    lineChanged = true;
+                    ++line;
+                } else {
+                    return caret; // at very end, don't move
+                }
+            }
+        } else {
+            if (caret == lineStart) {
+                if (line > 0) {
+                    lineChanged = true;
+                    --line;
+                } else {
+                    return caret; // at very start, don't move
+                }
+            }
+        }
+
+        if (lineChanged) {
+            lineStart = getLineStart(line);
+            lineEnd = getLineEnd(line);
+            int newDir = getParagraphDirection(line);
+            if (newDir != lineDir) {
+                // unusual case.  we want to walk onto the line, but it runs
+                // in a different direction than this one, so we fake movement
+                // in the opposite direction.
+                toLeft = !toLeft;
+                lineDir = newDir;
+            }
+        }
+
+        Directions directions = getLineDirections(line);
+
+        TextLine tl = TextLine.obtain();
+        // XXX: we don't care about tabs
+        tl.set(mPaint, mText, lineStart, lineEnd, lineDir, directions, false, null,
+                getEllipsisStart(line), getEllipsisStart(line) + getEllipsisCount(line));
+        caret = lineStart + tl.getOffsetToLeftRightOf(caret - lineStart, toLeft);
+        tl.recycle();
+        return caret;
+    }
+
+    /**
      * Returns the same as <code>text.getSpans()</code>, except where
      * <code>start</code> and <code>end</code> are the same and are not
      * at the very beginning of the text, in which case an empty array
@@ -544,6 +650,35 @@ public abstract class Layout {
         }
     }
 
+    private void ellipsize(int start, int end, int line,
+                           char[] dest, int destoff, TextUtils.TruncateAt method) {
+        final int ellipsisCount = getEllipsisCount(line);
+        if (ellipsisCount == 0) {
+            return;
+        }
+        final int ellipsisStart = getEllipsisStart(line);
+        final int lineStart = getLineStart(line);
+
+        final String ellipsisString = TextUtils.getEllipsisString(method);
+        final int ellipsisStringLen = ellipsisString.length();
+        // Use the ellipsis string only if there are that at least as many characters to replace.
+        final boolean useEllipsisString = ellipsisCount >= ellipsisStringLen;
+        final int min = Math.max(0, start - ellipsisStart - lineStart);
+        final int max = Math.min(ellipsisCount, end - ellipsisStart - lineStart);
+
+        for (int i = min; i < max; i++) {
+            final char c;
+            if (useEllipsisString && i < ellipsisStringLen) {
+                c = ellipsisString.charAt(i);
+            } else {
+                c = TextUtils.ELLIPSIS_FILLER;
+            }
+
+            final int a = i + ellipsisStart + lineStart;
+            dest[destoff + a - start] = c;
+        }
+    }
+
     public enum Alignment {
         ALIGN_NORMAL,
         ALIGN_OPPOSITE,
@@ -552,5 +687,104 @@ public abstract class Layout {
         ALIGN_LEFT,
         // internal use
         ALIGN_RIGHT
+    }
+
+    static class Ellipsizer implements CharSequence, GetChars {
+
+        CharSequence mText;
+        Layout mLayout;
+        int mWidth;
+        TextUtils.TruncateAt mMethod;
+
+        public Ellipsizer(CharSequence s) {
+            mText = s;
+        }
+
+        @Override
+        public char charAt(int off) {
+            char[] buf = TextUtils.obtain(1);
+            getChars(off, off + 1, buf, 0);
+            char ret = buf[0];
+
+            TextUtils.recycle(buf);
+            return ret;
+        }
+
+        @Override
+        public void getChars(int start, int end, char[] dest, int destoff) {
+            int line1 = mLayout.getLineForOffset(start);
+            int line2 = mLayout.getLineForOffset(end);
+
+            TextUtils.getChars(mText, start, end, dest, destoff);
+
+            for (int i = line1; i <= line2; i++) {
+                mLayout.ellipsize(start, end, i, dest, destoff, mMethod);
+            }
+        }
+
+        @Override
+        public int length() {
+            return mText.length();
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            char[] s = new char[end - start];
+            getChars(start, end, s, 0);
+            return new String(s);
+        }
+
+        @Override
+        public String toString() {
+            char[] s = new char[length()];
+            getChars(0, length(), s, 0);
+            return new String(s);
+        }
+    }
+
+    static class SpannedEllipsizer extends Ellipsizer implements Spanned {
+
+        private final Spanned mSpanned;
+
+        public SpannedEllipsizer(CharSequence display) {
+            super(display);
+            mSpanned = (Spanned) display;
+        }
+
+        @Nullable
+        @Override
+        public <T> T[] getSpans(int start, int end, Class<? extends T> type, @Nullable List<T> out) {
+            return mSpanned.getSpans(start, end, type, out);
+        }
+
+        @Override
+        public int getSpanStart(@Nonnull Object tag) {
+            return mSpanned.getSpanStart(tag);
+        }
+
+        @Override
+        public int getSpanEnd(@Nonnull Object tag) {
+            return mSpanned.getSpanEnd(tag);
+        }
+
+        @Override
+        public int getSpanFlags(@Nonnull Object tag) {
+            return mSpanned.getSpanFlags(tag);
+        }
+
+        @Override
+        public int nextSpanTransition(int start, int limit, Class<?> type) {
+            return mSpanned.nextSpanTransition(start, limit, type);
+        }
+
+        @Override
+        public CharSequence subSequence(int start, int end) {
+            char[] s = new char[end - start];
+            getChars(start, end, s, 0);
+
+            SpannableString ss = new SpannableString(new String(s));
+            TextUtils.copySpansFrom(mSpanned, start, end, Object.class, ss, 0);
+            return ss;
+        }
     }
 }

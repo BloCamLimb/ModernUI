@@ -547,8 +547,8 @@ public class MeasuredParagraph {
             }
         }
 
-        mFontMetrics.add(mCachedFm.mAscent);
-        mFontMetrics.add(mCachedFm.mDescent);
+        mFontMetrics.add(mCachedFm.ascent);
+        mFontMetrics.add(mCachedFm.descent);
         tp.recycle();
     }
 
