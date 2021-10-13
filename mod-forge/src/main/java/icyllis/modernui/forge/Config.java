@@ -47,7 +47,6 @@ import javax.annotation.Nonnull;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.function.Function;
 
 @ApiStatus.Internal
@@ -341,10 +340,9 @@ final class Config {
             int color = 0x66000000;
             for (int i = 0; i < BlurHandler.sBackgroundColor.length; i++) {
                 if (colors != null && i < colors.size()) {
-                    String s = "";
+                    String s = colors.get(i);
                     try {
-                        s = colors.get(i).substring(2);
-                        color = Integer.parseUnsignedInt(s.toLowerCase(Locale.ROOT), 16);
+                        color = Integer.parseUnsignedInt(s.substring(2), 16);
                     } catch (Exception e) {
                         ModernUI.LOGGER.error(ModernUI.MARKER,
                                 "Wrong color format for setting background color: {}", s);
@@ -361,10 +359,9 @@ final class Config {
             color = 0xD4000000;
             for (int i = 0; i < TooltipRenderer.sFillColor.length; i++) {
                 if (colors != null && i < colors.size()) {
-                    String s = "";
+                    String s = colors.get(i);
                     try {
-                        s = colors.get(i).substring(2);
-                        color = Integer.parseUnsignedInt(s.toLowerCase(Locale.ROOT), 16);
+                        color = Integer.parseUnsignedInt(s.substring(2), 16);
                     } catch (Exception e) {
                         ModernUI.LOGGER.error(ModernUI.MARKER,
                                 "Wrong color format for setting tooltip fill color: {}", s);
@@ -376,10 +373,9 @@ final class Config {
             color = 0xF0AADCF0;
             for (int i = 0; i < TooltipRenderer.sStrokeColor.length; i++) {
                 if (colors != null && i < colors.size()) {
-                    String s = "";
+                    String s = colors.get(i);
                     try {
-                        s = colors.get(i).substring(2);
-                        color = Integer.parseUnsignedInt(s.toLowerCase(Locale.ROOT), 16);
+                        color = Integer.parseUnsignedInt(s.substring(2), 16);
                     } catch (Exception e) {
                         ModernUI.LOGGER.error(ModernUI.MARKER,
                                 "Wrong color format for setting tooltip stroke color: {}", s);

@@ -251,7 +251,159 @@ public final class TextUtils {
         START,
         MIDDLE,
         END,
-        MARQUEE
+        MARQUEE // not supported
+    }
+
+    @FunctionalInterface
+    public interface EllipsizeCallback {
+
+        /**
+         * This method is called to report that the specified region of
+         * text was ellipsized away by a call to {@link #ellipsize}.
+         */
+        void ellipsized(int start, int end);
+    }
+
+    /**
+     * Returns the original text if it fits in the specified width
+     * given the properties of the specified Paint,
+     * or, if it does not fit, a truncated
+     * copy with ellipsis character added at the specified edge or center.
+     */
+    @Nonnull
+    public static CharSequence ellipsize(@Nonnull CharSequence text, @Nonnull FontPaint p,
+                                         float avail, @Nonnull TruncateAt where) {
+        return ellipsize(text, p, avail, where, false, null);
+    }
+
+    /**
+     * Returns the original text if it fits in the specified width
+     * given the properties of the specified Paint,
+     * or, if it does not fit, a copy with ellipsis character added
+     * at the specified edge or center.
+     * If <code>preserveLength</code> is specified, the returned copy
+     * will be padded with zero-width spaces to preserve the original
+     * length and offsets instead of truncating.
+     * If <code>callback</code> is non-null, it will be called to
+     * report the start and end of the ellipsized range.  TextDirection
+     * is determined by the first strong directional character.
+     */
+    @Nonnull
+    public static CharSequence ellipsize(@Nonnull CharSequence text, @Nonnull FontPaint paint,
+                                         float avail, @Nonnull TruncateAt where,
+                                         boolean preserveLength, @Nullable EllipsizeCallback callback) {
+        return ellipsize(text, paint, avail, where, preserveLength, callback,
+                TextDirectionHeuristics.FIRSTSTRONG_LTR, getEllipsisString(where));
+    }
+
+    /**
+     * Returns the original text if it fits in the specified width
+     * given the properties of the specified Paint,
+     * or, if it does not fit, a copy with ellipsis character added
+     * at the specified edge or center.
+     * If <code>preserveLength</code> is specified, the returned copy
+     * will be padded with zero-width spaces to preserve the original
+     * length and offsets instead of truncating.
+     * If <code>callback</code> is non-null, it will be called to
+     * report the start and end of the ellipsized range.
+     *
+     * @hide
+     */
+    @Nonnull
+    private static CharSequence ellipsize(@Nonnull CharSequence text, @Nonnull FontPaint paint,
+                                          float avail, @Nonnull TruncateAt where, boolean preserveLength,
+                                          @Nullable EllipsizeCallback callback,
+                                          @Nonnull TextDirectionHeuristic textDir, @Nonnull String ellipsis) {
+
+        final int len = text.length();
+
+        final float ellipsisWidth;
+
+        MeasuredParagraph mt = null;
+        try {
+            mt = MeasuredParagraph.buildForStaticLayout(paint, ellipsis, 0, ellipsis.length(), textDir, false, null);
+            ellipsisWidth = mt.getAdvance(0, ellipsis.length());
+        } finally {
+            if (mt != null) {
+                mt.recycle();
+                mt = null;
+            }
+        }
+
+        try {
+            mt = MeasuredParagraph.buildForStaticLayout(paint, text, 0, text.length(), textDir, false, null);
+            float width = mt.getAdvance(0, text.length());
+
+            if (width <= avail) {
+                if (callback != null) {
+                    callback.ellipsized(0, 0);
+                }
+
+                return text;
+            }
+
+            avail -= ellipsisWidth;
+
+            int left = 0;
+            int right = len;
+            if (avail >= 0) {
+                if (where == TruncateAt.START) {
+                    right = len - mt.breakText(len, false, avail);
+                } else if (where == TruncateAt.END) {
+                    left = mt.breakText(len, true, avail);
+                } else { // MIDDLE
+                    right = len - mt.breakText(len, false, avail / 2);
+                    avail -= mt.getAdvance(right, len);
+                    left = mt.breakText(right, true, avail);
+                }
+            }
+
+            if (callback != null) {
+                callback.ellipsized(left, right);
+            }
+
+            final char[] buf = mt.getChars();
+            Spanned sp = text instanceof Spanned ? (Spanned) text : null;
+
+            final int removed = right - left;
+            final int remaining = len - removed;
+            if (preserveLength) {
+                if (remaining > 0 && removed >= ellipsis.length()) {
+                    ellipsis.getChars(0, ellipsis.length(), buf, left);
+                    left += ellipsis.length();
+                } // else skip the ellipsis
+                for (int i = left; i < right; i++) {
+                    buf[i] = ELLIPSIS_FILLER;
+                }
+                String s = new String(buf, 0, len);
+                if (sp == null) {
+                    return s;
+                }
+                SpannableString ss = new SpannableString(s);
+                copySpansFrom(sp, 0, len, Object.class, ss, 0);
+                return ss;
+            }
+
+            if (remaining == 0) {
+                return "";
+            }
+
+            if (sp == null) {
+                return String.valueOf(buf, 0, left) +
+                        ellipsis +
+                        String.valueOf(buf, right, len - right);
+            }
+
+            SpannableStringBuilder ssb = new SpannableStringBuilder();
+            ssb.append(text, 0, left);
+            ssb.append(ellipsis);
+            ssb.append(text, right, len);
+            return ssb;
+        } finally {
+            if (mt != null) {
+                mt.recycle();
+            }
+        }
     }
 
     private static final String[] sBinaryCompacts = new String[]{" bytes", " KB", " MB", " GB"};
@@ -299,5 +451,21 @@ public final class TextUtils {
                         fl);
             }
         }
+    }
+
+    // Returns true if the character's presence could affect RTL layout.
+    //
+    // In order to be fast, the code is intentionally rough and quite conservative in its
+    // considering inclusion of any non-BMP or surrogate characters or anything in the bidi
+    // blocks or any bidi formatting characters with a potential to affect RTL layout.
+    static boolean couldAffectRtl(char c) {
+        return (0x0590 <= c && c <= 0x08FF) ||  // RTL scripts
+                c == 0x200E ||  // Bidi format character
+                c == 0x200F ||  // Bidi format character
+                (0x202A <= c && c <= 0x202E) ||  // Bidi format characters
+                (0x2066 <= c && c <= 0x2069) ||  // Bidi format characters
+                (0xD800 <= c && c <= 0xDFFF) ||  // Surrogate pairs
+                (0xFB1D <= c && c <= 0xFDFF) ||  // Hebrew and Arabic presentation forms
+                (0xFE70 <= c && c <= 0xFEFE);  // Arabic presentation forms
     }
 }

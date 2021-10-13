@@ -179,7 +179,12 @@ final class Registration {
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
-        Minecraft.getInstance().execute(() -> TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT));
+
+        // preload text engine
+        Minecraft.getInstance().execute(() -> {
+            ModernUI.get().getPreferredTypeface();
+            TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
+        });
 
         // Always replace static variable as an insurance policy
         /*AccessOption.setGuiScale(new CycleOption("options.guiScale",

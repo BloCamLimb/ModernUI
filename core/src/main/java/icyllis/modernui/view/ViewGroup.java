@@ -800,7 +800,7 @@ public abstract class ViewGroup extends View implements ViewParent {
 
     private void addViewInner(@Nonnull final View child, int index, @Nonnull LayoutParams params) {
         if (child.getParent() != null) {
-            ModernUI.LOGGER.fatal(MARKER,
+            ModernUI.LOGGER.fatal(VIEW_MARKER,
                     "Failed to add child view {} to {}. The child has already a parent.", child, this);
             return;
         }

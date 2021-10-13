@@ -34,7 +34,7 @@ public class SpannableString extends SpannableStringInternal implements Spannabl
         super(source, 0, source.length(), ignoreNoCopySpan);
     }
 
-    SpannableString(@Nonnull CharSequence source) {
+    public SpannableString(@Nonnull CharSequence source) {
         this(source, false);
     }
 

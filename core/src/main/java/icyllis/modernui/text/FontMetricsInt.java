@@ -75,4 +75,11 @@ public class FontMetricsInt {
         result = 31 * result + descent;
         return result;
     }
+
+    @Override
+    public String toString() {
+        return "FontMetricsInt: " +
+                "ascent=" + ascent +
+                ", descent=" + descent;
+    }
 }

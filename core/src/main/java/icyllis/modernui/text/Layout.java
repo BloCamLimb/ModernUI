@@ -20,6 +20,7 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.text.style.ParagraphStyle;
+import icyllis.modernui.text.style.TabStopSpan;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -53,7 +54,7 @@ public abstract class Layout {
     private int mWidth;
     private Alignment mAlignment;
     private boolean mSpannedText;
-    private TextDirectionHeuristic mTextDir;
+    private final TextDirectionHeuristic mTextDir;
 
     /**
      * Subclasses of Layout use this constructor to set the display text,
@@ -102,6 +103,23 @@ public abstract class Layout {
         mTextDir = textDir;
     }
 
+
+    /**
+     * Replace constructor properties of this Layout with new ones.  Be careful.
+     */
+    void replaceWith(CharSequence text, TextPaint paint,
+                     int width, Alignment align) {
+        if (width < 0) {
+            throw new IllegalArgumentException("Layout: " + width + " < 0");
+        }
+
+        mText = text;
+        mPaint = paint;
+        mWidth = width;
+        mAlignment = align;
+        mSpannedText = text instanceof Spanned;
+    }
+
     /**
      * Draw this Layout on the specified Canvas.
      * <p>
@@ -113,7 +131,7 @@ public abstract class Layout {
      * @see #drawBackground(Canvas, int, int)
      * @see #drawText(Canvas, int, int)
      */
-    public final void draw(@Nonnull Canvas canvas) {
+    public void draw(@Nonnull Canvas canvas) {
         final long range = getLineRangeForDraw(canvas);
         if (range < 0) return;
         int firstLine = (int) (range >>> 32);
@@ -153,7 +171,7 @@ public abstract class Layout {
      * @param lastLine  last line index (inclusive)
      * @see #drawBackground(Canvas, int, int)
      */
-    public void drawText(@Nonnull Canvas canvas, int firstLine, int lastLine) {
+    public final void drawText(@Nonnull Canvas canvas, int firstLine, int lastLine) {
         assert firstLine >= 0 && lastLine >= firstLine && lastLine < getLineCount();
 
         int previousLineBottom = getLineTop(firstLine);
@@ -168,7 +186,7 @@ public abstract class Layout {
         TabStops tabStops = null;
         boolean tabStopsIsInitialized = false;
 
-        TextLine tl = TextLine.obtain();
+        final TextLine tl = TextLine.obtain();
 
         // Draw the lines, one at a time.
         // The baseline is the top of the following line minus the current line's descent.
@@ -253,6 +271,7 @@ public abstract class Layout {
             }
         }
 
+        paint.recycle();
         tl.recycle();
     }
 
@@ -491,6 +510,66 @@ public abstract class Layout {
     public abstract int getEllipsisCount(int line);
 
     /**
+     * Gets the unsigned horizontal extent of the specified line, including
+     * leading margin indent, but excluding trailing whitespace.
+     */
+    public float getLineMax(int line) {
+        float margin = getParagraphLeadingMargin(line);
+        float signedExtent = getLineExtent(line, false);
+        return margin + (signedExtent >= 0 ? signedExtent : -signedExtent);
+    }
+
+    /**
+     * Gets the unsigned horizontal extent of the specified line, including
+     * leading margin indent and trailing whitespace.
+     */
+    public float getLineWidth(int line) {
+        float margin = getParagraphLeadingMargin(line);
+        float signedExtent = getLineExtent(line, true);
+        return margin + (signedExtent >= 0 ? signedExtent : -signedExtent);
+    }
+
+    /**
+     * Returns the signed horizontal extent of the specified line, excluding
+     * leading margin.  If full is false, excludes trailing whitespace.
+     *
+     * @param line the index of the line
+     * @param full whether to include trailing whitespace
+     * @return the extent of the line
+     */
+    private float getLineExtent(int line, boolean full) {
+        final int start = getLineStart(line);
+        final int end = full ? getLineEnd(line) : getLineVisibleEnd(line);
+
+        final boolean hasTabs = getLineContainsTab(line);
+        TabStops tabStops = null;
+        if (hasTabs && mText instanceof Spanned) {
+            // Just checking this line should be good enough, tabs should be
+            // consistent across all lines in a paragraph.
+            TabStopSpan[] tabs = getParagraphSpans((Spanned) mText, start, end, TabStopSpan.class);
+            if (tabs != null && tabs.length > 0) {
+                tabStops = new TabStops(TAB_INCREMENT, tabs); // XXX should reuse
+            }
+        }
+        final Directions directions = getLineDirections(line);
+        // Returned directions can actually be null
+        if (directions == null) {
+            return 0f;
+        }
+        final int dir = getParagraphDirection(line);
+
+        final TextLine tl = TextLine.obtain();
+        final TextPaint paint = TextPaint.obtain();
+        paint.set(mPaint);
+        tl.set(paint, mText, start, end, dir, directions, hasTabs, tabStops,
+                getEllipsisStart(line), getEllipsisStart(line) + getEllipsisCount(line));
+        final float width = tl.metrics(null);
+        tl.recycle();
+        paint.recycle();
+        return width;
+    }
+
+    /**
      * Return the text offset after the last character on the specified line.
      */
     public final int getLineEnd(int line) {
@@ -611,6 +690,18 @@ public abstract class Layout {
         caret = lineStart + tl.getOffsetToLeftRightOf(caret - lineStart, toLeft);
         tl.recycle();
         return caret;
+    }
+
+    /**
+     * Returns the effective leading margin (unsigned) for this line,
+     * taking into account LeadingMarginSpan and LeadingMarginSpan2.
+     *
+     * @param line the line index
+     * @return the leading margin of this line
+     */
+    private int getParagraphLeadingMargin(int line) {
+        //TODO
+        return 0;
     }
 
     /**

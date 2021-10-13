@@ -577,6 +577,40 @@ public class MeasuredParagraph {
     }
 
     /**
+     * Returns the maximum index that the accumulated width not exceeds the width.
+     * <p>
+     * If forward=false is passed, returns the minimum index from the end instead.
+     * <p>
+     * This only works if the MeasuredParagraph is computed with buildForMeasurement.
+     * Undefined behavior in other case.
+     */
+    int breakText(int limit, boolean forwards, float width) {
+        MeasuredText mt = mMeasuredText;
+        assert mt != null;
+        if (forwards) {
+            int i = 0;
+            while (i < limit) {
+                width -= mt.getAdvance(i);
+                if (width < 0.0f) break;
+                i++;
+            }
+            while (i > 0 && mCopiedBuffer[i - 1] == ' ') i--;
+            return i;
+        } else {
+            int i = limit - 1;
+            while (i >= 0) {
+                width -= mt.getAdvance(i);
+                if (width < 0.0f) break;
+                i--;
+            }
+            while (i < limit - 1 && (mCopiedBuffer[i + 1] == ' ' || mt.getAdvance(i + 1) == 0.0f)) {
+                i++;
+            }
+            return limit - i - 1;
+        }
+    }
+
+    /**
      * Recycle the MeasuredParagraph.
      */
     public void recycle() {

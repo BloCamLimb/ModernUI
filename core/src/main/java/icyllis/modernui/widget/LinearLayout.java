@@ -60,7 +60,7 @@ public class LinearLayout extends ViewGroup {
     /**
      * @see #setGravity(int)
      */
-    private int gravity = Gravity.TOP_LEFT;
+    private int gravity = Gravity.TOP | Gravity.START;
 
     /**
      * @see #setWeightSum(float)
@@ -870,7 +870,7 @@ public class LinearLayout extends ViewGroup {
             case Gravity.BOTTOM:
                 childTop = parentTop + parentHeight - totalLength;
                 break;
-            case Gravity.VERTICAL_CENTER:
+            case Gravity.CENTER_VERTICAL:
                 childTop = parentTop + (parentHeight - totalLength) / 2;
                 break;
             default:
@@ -896,7 +896,7 @@ public class LinearLayout extends ViewGroup {
                 int horizontalGravity = gravity & Gravity.HORIZONTAL_GRAVITY_MASK;
 
                 switch (horizontalGravity) {
-                    case Gravity.HORIZONTAL_CENTER:
+                    case Gravity.CENTER_HORIZONTAL:
                         childLeft = parentLeft + (parentWidth - width) / 2 +
                                 lp.leftMargin - lp.rightMargin;
                         break;
@@ -949,7 +949,7 @@ public class LinearLayout extends ViewGroup {
             case Gravity.RIGHT:
                 childLeft = parentLeft + parentWidth - totalLength;
                 break;
-            case Gravity.HORIZONTAL_CENTER:
+            case Gravity.CENTER_HORIZONTAL:
                 childLeft = parentLeft + (parentWidth - totalLength) / 2;
                 break;
             default:
@@ -975,7 +975,7 @@ public class LinearLayout extends ViewGroup {
                 int verticalGravity = gravity & Gravity.VERTICAL_GRAVITY_MASK;
 
                 switch (verticalGravity) {
-                    case Gravity.VERTICAL_CENTER:
+                    case Gravity.CENTER_VERTICAL:
                         childTop = parentTop + (parentHeight - height) / 2 +
                                 lp.topMargin - lp.bottomMargin;
                         break;
