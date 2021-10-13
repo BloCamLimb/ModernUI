@@ -140,7 +140,7 @@ public class FrameLayout extends ViewGroup {
                 int verticalGravity = gravity & Gravity.VERTICAL_GRAVITY_MASK;
 
                 switch (horizontalGravity) {
-                    case Gravity.HORIZONTAL_CENTER:
+                    case Gravity.CENTER_HORIZONTAL:
                         childLeft = parentLeft + (parentWidth - width) / 2 +
                                 lp.leftMargin - lp.rightMargin;
                         break;
@@ -152,7 +152,7 @@ public class FrameLayout extends ViewGroup {
                 }
 
                 switch (verticalGravity) {
-                    case Gravity.VERTICAL_CENTER:
+                    case Gravity.CENTER_VERTICAL:
                         childTop = parentTop + (parentHeight - height) / 2 +
                                 lp.topMargin - lp.bottomMargin;
                         break;
@@ -196,7 +196,7 @@ public class FrameLayout extends ViewGroup {
          * The gravity to apply with the View to which these layout parameters
          * are associated. Default value is TOP_LEFT
          */
-        public int gravity = Gravity.TOP_LEFT;
+        public int gravity = Gravity.TOP | Gravity.START;
 
         /**
          * Creates a new set of layout parameters with the specified width

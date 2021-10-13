@@ -178,7 +178,8 @@ public class TextLayoutEngine {
                 mResolutionLevel = Math.min(Math.round(guiScale * 4 / 3f), 12f);
             }
         }
-        ModernUI.LOGGER.info(ModernUI.MARKER, "Reloaded text layout engine, resolution level: {}", mResolutionLevel);
+        ModernUI.LOGGER.info(
+                ModernUI.MARKER, "Reloaded text layout engine, new resolution level: {}", mResolutionLevel);
     }
 
     /**
@@ -189,6 +190,14 @@ public class TextLayoutEngine {
      */
     @Nonnull
     public TextRenderNode lookupVanillaNode(@Nonnull String text) {
+        if (text.isEmpty()) {
+            return TextRenderNode.EMPTY;
+        }
+        if (!RenderSystem.isOnRenderThread()) {
+            return Minecraft.getInstance()
+                    .submit(() -> lookupVanillaNode(text))
+                    .join();
+        }
         return lookupVanillaNode(text, Style.EMPTY);
     }
 
@@ -227,6 +236,14 @@ public class TextLayoutEngine {
      * @see FormattedTextWrapper
      */
     public TextRenderNode lookupMultilayerNode(@Nonnull FormattedText text) {
+        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
+            return TextRenderNode.EMPTY;
+        }
+        if (!RenderSystem.isOnRenderThread()) {
+            return Minecraft.getInstance()
+                    .submit(() -> lookupMultilayerNode(text))
+                    .join();
+        }
         return lookupMultilayerNode(text, Style.EMPTY);
     }
 

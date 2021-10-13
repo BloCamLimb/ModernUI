@@ -77,9 +77,9 @@ public class StaticLayout extends Layout {
     /**
      * Builder for static layouts. The builder is the preferred pattern for constructing
      * StaticLayout objects and should be preferred over the constructors, particularly to access
-     * newer features. To build a static layout, first call {@link #builder} with the required
-     * arguments (text, paint, and width), then call setters for optional parameters, and finally
-     * {@link #build} to build the StaticLayout object. Parameters not explicitly set will get
+     * newer features. To build a static layout, first call {@link #builder(CharSequence, int, int, TextPaint, int)}
+     * with the required arguments (text, paint, and width), then call setters for optional parameters, and finally
+     * {@link #build()} to build the StaticLayout object. Parameters not explicitly set will get
      * default values.
      */
     @SuppressWarnings("unused")

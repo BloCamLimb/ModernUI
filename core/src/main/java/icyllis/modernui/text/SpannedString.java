@@ -50,7 +50,7 @@ public final class SpannedString extends SpannableStringInternal implements Span
         super(source, 0, source.length(), ignoreNoCopySpan);
     }
 
-    private SpannedString(@Nonnull CharSequence source) {
+    public SpannedString(@Nonnull CharSequence source) {
         this(source, false);
     }
 

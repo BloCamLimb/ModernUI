@@ -22,6 +22,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 
+//TODO
 public class PrecomputedText {
 
     private final SpannableString mText;

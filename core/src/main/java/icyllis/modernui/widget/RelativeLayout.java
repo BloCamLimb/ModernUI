@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
@@ -42,31 +43,31 @@ public class RelativeLayout extends ViewGroup {
     /**
      * Rule that aligns a child's right edge with another child's left edge.
      */
-    public static final int LEFT_OF      = 0;
+    public static final int LEFT_OF = 0;
     /**
      * Rule that aligns a child's left edge with another child's right edge.
      */
-    public static final int RIGHT_OF     = 1;
+    public static final int RIGHT_OF = 1;
     /**
      * Rule that aligns a child's bottom edge with another child's top edge.
      */
-    public static final int ABOVE        = 2;
+    public static final int ABOVE = 2;
     /**
      * Rule that aligns a child's top edge with another child's bottom edge.
      */
-    public static final int BELOW        = 3;
+    public static final int BELOW = 3;
     /**
      * Rule that aligns a child's left edge with another child's left edge.
      */
-    public static final int ALIGN_LEFT   = 4;
+    public static final int ALIGN_LEFT = 4;
     /**
      * Rule that aligns a child's top edge with another child's top edge.
      */
-    public static final int ALIGN_TOP    = 5;
+    public static final int ALIGN_TOP = 5;
     /**
      * Rule that aligns a child's right edge with another child's right edge.
      */
-    public static final int ALIGN_RIGHT  = 6;
+    public static final int ALIGN_RIGHT = 6;
     /**
      * Rule that aligns a child's bottom edge with another child's bottom edge.
      */
@@ -92,7 +93,7 @@ public class RelativeLayout extends ViewGroup {
     /**
      * See {@link #setGravity(int)}
      */
-    private int gravity = Gravity.TOP_LEFT;
+    private int gravity = Gravity.TOP | Gravity.START;
 
     /**
      * See {@link #setIgnoreGravity(int)}
@@ -107,8 +108,8 @@ public class RelativeLayout extends ViewGroup {
     private View[] sortedVerticalChildren;
 
     // inner
-    private final int[] inBounds  = new int[4];
-    private final int[] outBounds = new int[4];
+    private final Rect inBounds = new Rect();
+    private final Rect outBounds = new Rect();
 
     // inner
     private final DependencyGraph mGraph = new DependencyGraph();
@@ -263,7 +264,7 @@ public class RelativeLayout extends ViewGroup {
                         LayoutParams params = (LayoutParams) child.getLayoutParams();
                         int childHorizontalGravity = params.gravity & Gravity.HORIZONTAL_GRAVITY_MASK;
 
-                        if (childHorizontalGravity == Gravity.HORIZONTAL_CENTER) {
+                        if (childHorizontalGravity == Gravity.CENTER_HORIZONTAL) {
                             centerHorizontal(child, params, width);
                         } else if (childHorizontalGravity == Gravity.RIGHT) {
                             int childWidth = child.getMeasuredWidth();
@@ -290,7 +291,7 @@ public class RelativeLayout extends ViewGroup {
                     if (child.getVisibility() != GONE) {
                         LayoutParams params = (LayoutParams) child.getLayoutParams();
                         int childVerticalGravity = params.gravity & Gravity.VERTICAL_GRAVITY_MASK;
-                        if (childVerticalGravity == Gravity.VERTICAL_CENTER) {
+                        if (childVerticalGravity == Gravity.CENTER_VERTICAL) {
                             centerVertical(child, params, height);
                         } else if (childVerticalGravity == Gravity.BOTTOM) {
                             int childHeight = child.getMeasuredHeight();
@@ -303,15 +304,12 @@ public class RelativeLayout extends ViewGroup {
         }
 
         if (horizontalGravity || verticalGravity) {
-            int[] inBounds = this.inBounds;
-            inBounds[0] = 0;
-            inBounds[1] = 0;
-            inBounds[2] = width;
-            inBounds[3] = height;
+            Rect inBounds = this.inBounds;
+            inBounds.set(0, 0, width, height);
             Gravity.apply(gravity, right - left, bottom - top, inBounds, 0, 0, outBounds);
 
-            int horizontalOffset = outBounds[0] - left;
-            int verticalOffset = outBounds[1] - top;
+            int horizontalOffset = outBounds.left - left;
+            int verticalOffset = outBounds.top - top;
 
             if (horizontalOffset != 0 || verticalOffset != 0) {
                 for (int i = 0; i < count; i++) {
@@ -495,7 +493,7 @@ public class RelativeLayout extends ViewGroup {
             params.mRight = params.mLeft + child.getMeasuredWidth();
         } else if (params.mLeft == VALUE_NOT_SET) {
             // Both left and right vary
-            if ((gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.HORIZONTAL_CENTER) {
+            if ((gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.CENTER_HORIZONTAL) {
                 if (!wrapContent) {
                     centerHorizontal(child, params, myWidth);
                 } else {
@@ -529,7 +527,7 @@ public class RelativeLayout extends ViewGroup {
             params.mBottom = params.mTop + child.getMeasuredHeight();
         } else if (params.mTop == VALUE_NOT_SET) {
             // Both top and bottom vary
-            if ((gravity & Gravity.VERTICAL_GRAVITY_MASK) == Gravity.VERTICAL_CENTER) {
+            if ((gravity & Gravity.VERTICAL_GRAVITY_MASK) == Gravity.CENTER_VERTICAL) {
                 if (!wrapContent) {
                     centerVertical(child, params, myHeight);
                 } else {

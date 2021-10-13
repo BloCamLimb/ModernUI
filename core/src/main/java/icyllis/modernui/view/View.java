@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.*;
+import icyllis.modernui.util.LayoutDirection;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
@@ -66,7 +67,7 @@ public class View implements Drawable.Callback {
     /**
      * Log marker.
      */
-    public static final Marker MARKER = MarkerManager.getMarker("View");
+    public static final Marker VIEW_MARKER = MarkerManager.getMarker("View");
 
     /**
      * Used to mark a View that has no ID.
@@ -107,6 +108,37 @@ public class View implements Drawable.Callback {
     private static final int PFLAG_HOVERED = 0x10000000;
 
     private static final int PFLAG2_BACKGROUND_SIZE_CHANGED = 0x00000001;
+
+
+    /**
+     * A flag to indicate that the layout direction of this view has not been defined yet.
+     * @hide
+     */
+    public static final int LAYOUT_DIRECTION_UNDEFINED = LayoutDirection.UNDEFINED;
+
+    /**
+     * Horizontal layout direction of this view is from Left to Right.
+     * Use with {@link #setLayoutDirection}.
+     */
+    public static final int LAYOUT_DIRECTION_LTR = LayoutDirection.LTR;
+
+    /**
+     * Horizontal layout direction of this view is from Right to Left.
+     * Use with {@link #setLayoutDirection}.
+     */
+    public static final int LAYOUT_DIRECTION_RTL = LayoutDirection.RTL;
+
+    /**
+     * Horizontal layout direction of this view is inherited from its parent.
+     * Use with {@link #setLayoutDirection}.
+     */
+    public static final int LAYOUT_DIRECTION_INHERIT = LayoutDirection.INHERIT;
+
+    /**
+     * Horizontal layout direction of this view is from deduced from the default language
+     * script for the locale. Use with {@link #setLayoutDirection}.
+     */
+    public static final int LAYOUT_DIRECTION_LOCALE = LayoutDirection.LOCALE;
 
     // private flags
     int mPrivateFlags;
@@ -320,6 +352,9 @@ public class View implements Drawable.Callback {
 
     @Nullable
     ListenerInfo mListenerInfo;
+
+    public View() {
+    }
 
     /**
      * This method is called by ViewGroup.drawChild() to have each child view draw itself.
@@ -1953,7 +1988,7 @@ public class View implements Drawable.Callback {
      */
     public final boolean startDragAndDrop(@Nullable Object localState, @Nullable DragShadow shadow, int flags) {
         if (mAttachInfo == null) {
-            ModernUI.LOGGER.error(MARKER, "startDragAndDrop called out of a window");
+            ModernUI.LOGGER.error(VIEW_MARKER, "startDragAndDrop called out of a window");
             return false;
         }
         return mAttachInfo.mViewRootImpl.startDragAndDrop(this, localState, shadow, flags);
@@ -2757,7 +2792,7 @@ public class View implements Drawable.Callback {
             if (view != null) {
                 view.onDraw(canvas);
             } else {
-                ModernUI.LOGGER.error(MARKER, "No view found on draw shadow");
+                ModernUI.LOGGER.error(VIEW_MARKER, "No view found on draw shadow");
             }
         }
     }
