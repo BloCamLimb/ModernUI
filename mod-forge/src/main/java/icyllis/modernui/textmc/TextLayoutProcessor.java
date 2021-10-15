@@ -488,7 +488,7 @@ public class TextLayoutProcessor {
             }
         }
 
-        List<FontRun> items = ModernUI.get().getPreferredTypeface().itemize(text, start, limit);
+        List<FontRun> items = ModernUI.get().getSelectedTypeface().itemize(text, start, limit);
         for (FontRun run : items) {
             performTextLayout(text, run.getStart(), run.getEnd(), isRtl, fastDigit, carrier, run.getFont());
         }

@@ -149,7 +149,7 @@ public final class ModernUIForge extends ModernUI {
 
     @Nonnull
     @Override
-    public Typeface getPreferredTypeface() {
+    public Typeface getSelectedTypeface() {
         if (mTypeface == null) {
             synchronized (this) {
                 if (mTypeface == null) {

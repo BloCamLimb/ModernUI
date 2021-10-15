@@ -35,7 +35,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
-import java.util.Objects;
 
 /**
  * The core class of the client side of Modern UI
@@ -52,10 +51,14 @@ public class ModernUI {
 
     private static final Cleaner sCleaner = Cleaner.create();
 
-    private final Path mAssetsDir = Path.of(Objects.requireNonNullElse(System.getenv("APP_ASSETS"), ""));
+    private final Path mAssetsDir = Path.of(String.valueOf((System.getenv("APP_ASSETS"))));
 
     public ModernUI() {
-        sInstance = this;
+        synchronized (ModernUI.class) {
+            if (sInstance == null) {
+                sInstance = this;
+            }
+        }
         if (Runtime.version().feature() < 16) {
             throw new RuntimeException("JRE 16 or above is required");
         }
@@ -90,8 +93,17 @@ public class ModernUI {
     }
 
     @Nonnull
-    public Typeface getPreferredTypeface() {
+    public Typeface getSelectedTypeface() {
         return Typeface.INTERNAL;
+    }
+
+    /**
+     * Whether to enable RTL support, it should always be true.
+     *
+     * @return whether RTL is supported
+     */
+    public boolean hasRtlSupport() {
+        return true;
     }
 
     @Nonnull

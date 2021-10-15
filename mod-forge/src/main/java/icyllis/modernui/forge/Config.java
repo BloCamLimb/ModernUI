@@ -402,7 +402,7 @@ final class Config {
             GlyphManagerForge.sMipmapLevel = mipmapLevel.get();*/
             //GlyphManager.sResolutionLevel = resolutionLevel.get();
             //TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
-            ModernUI.get().getPreferredTypeface();
+            ModernUI.get().getSelectedTypeface();
         }
     }
 

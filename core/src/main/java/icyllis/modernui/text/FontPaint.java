@@ -59,7 +59,7 @@ public class FontPaint {
     int mFontSize;
 
     public FontPaint() {
-        mTypeface = ModernUI.get().getPreferredTypeface();
+        mTypeface = ModernUI.get().getSelectedTypeface();
         mLocale = ModernUI.get().getSelectedLocale();
         mFlags = REGULAR;
         mFontSize = 24;

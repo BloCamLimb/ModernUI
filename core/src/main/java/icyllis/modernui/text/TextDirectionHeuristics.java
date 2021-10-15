@@ -34,8 +34,8 @@
 
 package icyllis.modernui.text;
 
-import com.ibm.icu.util.ULocale;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.view.View;
 
 import java.nio.CharBuffer;
 import java.util.Locale;
@@ -310,7 +310,7 @@ public final class TextDirectionHeuristics {
         @Override
         protected boolean isDefaultRtl() {
             Locale locale = ModernUI.get().getSelectedLocale();
-            return !locale.equals(Locale.ROOT) && ULocale.forLocale(locale).isRightToLeft();
+            return TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL;
         }
     }
 }
