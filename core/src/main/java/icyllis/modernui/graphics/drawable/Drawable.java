@@ -37,6 +37,8 @@ public abstract class Drawable {
     @Nullable
     private WeakReference<Callback> mCallback;
 
+    private int mLayoutDirection;
+
     /**
      * Draw in its bounds (set via setBounds) respecting optional effects such
      * as alpha (set via setAlpha) and color filter (set via setColorFilter).
@@ -124,6 +126,19 @@ public abstract class Drawable {
     }
 
     /**
+     * Return in padding the insets suggested by this Drawable for placing
+     * content inside the drawable's bounds. Positive values move toward the
+     * center of the Drawable (set Rect.inset).
+     *
+     * @return true if this drawable actually has a padding, else false. When false is returned,
+     * the padding is always set to 0.
+     */
+    public boolean getPadding(@Nonnull Rect padding) {
+        padding.set(0, 0, 0, 0);
+        return false;
+    }
+
+    /**
      * Implement this interface if you want to create an animated drawable that
      * extends {@link Drawable Drawable}. Upon retrieving a drawable, use
      * {@link Drawable#setCallback(Callback)} to supply your implementation of
@@ -179,6 +194,52 @@ public abstract class Drawable {
         if (callback != null) {
             callback.invalidateDrawable(this);
         }
+    }
+
+
+    /**
+     * Returns the resolved layout direction for this Drawable.
+     *
+     * @return One of {@link icyllis.modernui.view.View#LAYOUT_DIRECTION_LTR},
+     *         {@link icyllis.modernui.view.View#LAYOUT_DIRECTION_RTL}
+     * @see #setLayoutDirection(int)
+     */
+    public int getLayoutDirection() {
+        return mLayoutDirection;
+    }
+
+    /**
+     * Set the layout direction for this drawable. Should be a resolved
+     * layout direction, as the Drawable has no capacity to do the resolution on
+     * its own.
+     *
+     * @param layoutDirection the resolved layout direction for the drawable,
+     *                        either {@link icyllis.modernui.view.View#LAYOUT_DIRECTION_LTR}
+     *                        or {@link icyllis.modernui.view.View#LAYOUT_DIRECTION_RTL}
+     * @return {@code true} if the layout direction change has caused the
+     *         appearance of the drawable to change such that it needs to be
+     *         re-drawn, {@code false} otherwise
+     * @see #getLayoutDirection()
+     */
+    public final boolean setLayoutDirection(int layoutDirection) {
+        if (mLayoutDirection != layoutDirection) {
+            mLayoutDirection = layoutDirection;
+            return onLayoutDirectionChanged(layoutDirection);
+        }
+        return false;
+    }
+
+    /**
+     * Called when the drawable's resolved layout direction changes.
+     *
+     * @param layoutDirection the new resolved layout direction
+     * @return {@code true} if the layout direction change has caused the
+     *         appearance of the drawable to change such that it needs to be
+     *         re-drawn, {@code false} otherwise
+     * @see #setLayoutDirection(int)
+     */
+    public boolean onLayoutDirectionChanged(int layoutDirection) {
+        return false;
     }
 
     /**

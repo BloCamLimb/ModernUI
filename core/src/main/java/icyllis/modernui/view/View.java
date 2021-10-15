@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.*;
+import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.LayoutDirection;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -74,6 +75,13 @@ public class View implements Drawable.Callback {
      */
     public static final int NO_ID = -1;
 
+    /**
+     * Temporary Rect currently for use in setBackground().  This will probably
+     * be extended in the future to hold our own class with more than just
+     * a Rect. :)
+     */
+    static final ThreadLocal<Rect> sThreadLocal = ThreadLocal.withInitial(Rect::new);
+
     /*
      * Private masks
      *
@@ -112,6 +120,7 @@ public class View implements Drawable.Callback {
 
     /**
      * A flag to indicate that the layout direction of this view has not been defined yet.
+     *
      * @hide
      */
     public static final int LAYOUT_DIRECTION_UNDEFINED = LayoutDirection.UNDEFINED;
@@ -139,6 +148,341 @@ public class View implements Drawable.Callback {
      * script for the locale. Use with {@link #setLayoutDirection}.
      */
     public static final int LAYOUT_DIRECTION_LOCALE = LayoutDirection.LOCALE;
+
+    /**
+     * Bit shift to get the horizontal layout direction. (bits after DRAG_HOVERED)
+     *
+     * @hide
+     */
+    static final int PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT = 2;
+
+    /**
+     * Mask for use with private flags indicating bits used for horizontal layout direction.
+     *
+     * @hide
+     */
+    static final int PFLAG2_LAYOUT_DIRECTION_MASK = 0x00000003 << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
+
+    /**
+     * Indicates whether the view horizontal layout direction has been resolved and drawn to the
+     * right-to-left direction.
+     *
+     * @hide
+     */
+    static final int PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL = 4 << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
+
+    /**
+     * Indicates whether the view horizontal layout direction has been resolved.
+     *
+     * @hide
+     */
+    static final int PFLAG2_LAYOUT_DIRECTION_RESOLVED = 8 << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
+
+    /**
+     * Mask for use with private flags indicating bits used for resolved horizontal layout direction.
+     *
+     * @hide
+     */
+    static final int PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK = 0x0000000C
+            << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
+
+    /*
+     * Array of horizontal layout direction flags for mapping attribute "layoutDirection" to correct
+     * flag value.
+     * @hide
+     */
+    private static final int[] LAYOUT_DIRECTION_FLAGS = {
+            LAYOUT_DIRECTION_LTR,
+            LAYOUT_DIRECTION_RTL,
+            LAYOUT_DIRECTION_INHERIT,
+            LAYOUT_DIRECTION_LOCALE
+    };
+
+    /**
+     * Default horizontal layout direction.
+     */
+    private static final int LAYOUT_DIRECTION_DEFAULT = LAYOUT_DIRECTION_INHERIT;
+
+    /**
+     * Default horizontal layout direction.
+     *
+     * @hide
+     */
+    static final int LAYOUT_DIRECTION_RESOLVED_DEFAULT = LAYOUT_DIRECTION_LTR;
+
+    /**
+     * Text direction is inherited through {@link ViewGroup}
+     */
+    public static final int TEXT_DIRECTION_INHERIT = 0;
+
+    /**
+     * Text direction is using "first strong algorithm". The first strong directional character
+     * determines the paragraph direction. If there is no strong directional character, the
+     * paragraph direction is the view's resolved layout direction.
+     */
+    public static final int TEXT_DIRECTION_FIRST_STRONG = 1;
+
+    /**
+     * Text direction is using "any-RTL" algorithm. The paragraph direction is RTL if it contains
+     * any strong RTL character, otherwise it is LTR if it contains any strong LTR characters.
+     * If there are neither, the paragraph direction is the view's resolved layout direction.
+     */
+    public static final int TEXT_DIRECTION_ANY_RTL = 2;
+
+    /**
+     * Text direction is forced to LTR.
+     */
+    public static final int TEXT_DIRECTION_LTR = 3;
+
+    /**
+     * Text direction is forced to RTL.
+     */
+    public static final int TEXT_DIRECTION_RTL = 4;
+
+    /**
+     * Text direction is coming from the system Locale.
+     */
+    public static final int TEXT_DIRECTION_LOCALE = 5;
+
+    /**
+     * Text direction is using "first strong algorithm". The first strong directional character
+     * determines the paragraph direction. If there is no strong directional character, the
+     * paragraph direction is LTR.
+     */
+    public static final int TEXT_DIRECTION_FIRST_STRONG_LTR = 6;
+
+    /**
+     * Text direction is using "first strong algorithm". The first strong directional character
+     * determines the paragraph direction. If there is no strong directional character, the
+     * paragraph direction is RTL.
+     */
+    public static final int TEXT_DIRECTION_FIRST_STRONG_RTL = 7;
+
+    /**
+     * Default text direction is inherited
+     */
+    private static final int TEXT_DIRECTION_DEFAULT = TEXT_DIRECTION_INHERIT;
+
+    /**
+     * Default resolved text direction
+     *
+     * @hide
+     */
+    static final int TEXT_DIRECTION_RESOLVED_DEFAULT = TEXT_DIRECTION_FIRST_STRONG;
+
+    /**
+     * Bit shift to get the horizontal layout direction. (bits after LAYOUT_DIRECTION_RESOLVED)
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_DIRECTION_MASK_SHIFT = 6;
+
+    /**
+     * Mask for use with private flags indicating bits used for text direction.
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_DIRECTION_MASK = 0x00000007
+            << PFLAG2_TEXT_DIRECTION_MASK_SHIFT;
+
+    /**
+     * Array of text direction flags for mapping attribute "textDirection" to correct
+     * flag value.
+     *
+     * @hide
+     */
+    private static final int[] PFLAG2_TEXT_DIRECTION_FLAGS = {
+            TEXT_DIRECTION_INHERIT << PFLAG2_TEXT_DIRECTION_MASK_SHIFT,
+            TEXT_DIRECTION_FIRST_STRONG << PFLAG2_TEXT_DIRECTION_MASK_SHIFT,
+            TEXT_DIRECTION_ANY_RTL << PFLAG2_TEXT_DIRECTION_MASK_SHIFT,
+            TEXT_DIRECTION_LTR << PFLAG2_TEXT_DIRECTION_MASK_SHIFT,
+            TEXT_DIRECTION_RTL << PFLAG2_TEXT_DIRECTION_MASK_SHIFT,
+            TEXT_DIRECTION_LOCALE << PFLAG2_TEXT_DIRECTION_MASK_SHIFT,
+            TEXT_DIRECTION_FIRST_STRONG_LTR << PFLAG2_TEXT_DIRECTION_MASK_SHIFT,
+            TEXT_DIRECTION_FIRST_STRONG_RTL << PFLAG2_TEXT_DIRECTION_MASK_SHIFT
+    };
+
+    /**
+     * Indicates whether the view text direction has been resolved.
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_DIRECTION_RESOLVED = 0x00000008
+            << PFLAG2_TEXT_DIRECTION_MASK_SHIFT;
+
+    /**
+     * Bit shift to get the horizontal layout direction. (bits after DRAG_HOVERED)
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT = 10;
+
+    /**
+     * Mask for use with private flags indicating bits used for resolved text direction.
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_DIRECTION_RESOLVED_MASK = 0x00000007
+            << PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT;
+
+    /**
+     * Indicates whether the view text direction has been resolved to the "first strong" heuristic.
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT =
+            TEXT_DIRECTION_RESOLVED_DEFAULT << PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT;
+
+    /**
+     * Default text alignment. The text alignment of this View is inherited from its parent.
+     * Use with {@link #setTextAlignment(int)}
+     */
+    public static final int TEXT_ALIGNMENT_INHERIT = 0;
+
+    /**
+     * Default for the root view. The gravity determines the text alignment, ALIGN_NORMAL,
+     * ALIGN_CENTER, or ALIGN_OPPOSITE, which are relative to each paragraph's text direction.
+     * <p>
+     * Use with {@link #setTextAlignment(int)}
+     */
+    public static final int TEXT_ALIGNMENT_GRAVITY = 1;
+
+    /**
+     * Align to the start of the paragraph, e.g. ALIGN_NORMAL.
+     * <p>
+     * Use with {@link #setTextAlignment(int)}
+     */
+    public static final int TEXT_ALIGNMENT_TEXT_START = 2;
+
+    /**
+     * Align to the end of the paragraph, e.g. ALIGN_OPPOSITE.
+     * <p>
+     * Use with {@link #setTextAlignment(int)}
+     */
+    public static final int TEXT_ALIGNMENT_TEXT_END = 3;
+
+    /**
+     * Center the paragraph, e.g. ALIGN_CENTER.
+     * <p>
+     * Use with {@link #setTextAlignment(int)}
+     */
+    public static final int TEXT_ALIGNMENT_CENTER = 4;
+
+    /**
+     * Align to the start of the view, which is ALIGN_LEFT if the view's resolved
+     * layoutDirection is LTR, and ALIGN_RIGHT otherwise.
+     * <p>
+     * Use with {@link #setTextAlignment(int)}
+     */
+    public static final int TEXT_ALIGNMENT_VIEW_START = 5;
+
+    /**
+     * Align to the end of the view, which is ALIGN_RIGHT if the view's resolved
+     * layoutDirection is LTR, and ALIGN_LEFT otherwise.
+     * <p>
+     * Use with {@link #setTextAlignment(int)}
+     */
+    public static final int TEXT_ALIGNMENT_VIEW_END = 6;
+
+    /**
+     * Default text alignment is inherited
+     */
+    private static final int TEXT_ALIGNMENT_DEFAULT = TEXT_ALIGNMENT_GRAVITY;
+
+    /**
+     * Default resolved text alignment
+     *
+     * @hide
+     */
+    static final int TEXT_ALIGNMENT_RESOLVED_DEFAULT = TEXT_ALIGNMENT_GRAVITY;
+
+    /**
+     * Bit shift to get the horizontal layout direction. (bits after DRAG_HOVERED)
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT = 13;
+
+    /**
+     * Mask for use with private flags indicating bits used for text alignment.
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_ALIGNMENT_MASK = 0x00000007 << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT;
+
+    /**
+     * Array of text direction flags for mapping attribute "textAlignment" to correct
+     * flag value.
+     *
+     * @hide
+     */
+    private static final int[] PFLAG2_TEXT_ALIGNMENT_FLAGS = {
+            TEXT_ALIGNMENT_INHERIT << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT,
+            TEXT_ALIGNMENT_GRAVITY << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT,
+            TEXT_ALIGNMENT_TEXT_START << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT,
+            TEXT_ALIGNMENT_TEXT_END << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT,
+            TEXT_ALIGNMENT_CENTER << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT,
+            TEXT_ALIGNMENT_VIEW_START << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT,
+            TEXT_ALIGNMENT_VIEW_END << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT
+    };
+
+    /**
+     * Indicates whether the view text alignment has been resolved.
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_ALIGNMENT_RESOLVED = 0x00000008 << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT;
+
+    /**
+     * Bit shift to get the resolved text alignment.
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT = 17;
+
+    /**
+     * Mask for use with private flags indicating bits used for text alignment.
+     *
+     * @hide
+     */
+    static final int PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK = 0x00000007
+            << PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT;
+
+    /**
+     * Indicates whether if the view text alignment has been resolved to gravity
+     */
+    private static final int PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT =
+            TEXT_ALIGNMENT_RESOLVED_DEFAULT << PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT;
+
+    /**
+     * Flag indicating that start/end padding has been resolved into left/right padding
+     * for use in measurement, layout, drawing, etc. This is set by {@link #resolvePadding()}
+     * and checked by {@link #measure(int, int)} to determine if padding needs to be resolved
+     * during measurement. In some special cases this is required such as when an adapter-based
+     * view measures prospective children without attaching them to a window.
+     */
+    static final int PFLAG2_PADDING_RESOLVED = 0x20000000;
+
+    /**
+     * Flag indicating that the start/end drawables has been resolved into left/right ones.
+     */
+    static final int PFLAG2_DRAWABLE_RESOLVED = 0x40000000;
+
+    /**
+     * Indicates that the view is tracking some sort of transient state
+     * that the app should not need to be aware of, but that the framework
+     * should take special care to preserve.
+     */
+    static final int PFLAG2_HAS_TRANSIENT_STATE = 0x80000000;
+
+    /**
+     * Group of bits indicating that RTL properties resolution is done.
+     */
+    static final int ALL_RTL_PROPERTIES_RESOLVED = PFLAG2_LAYOUT_DIRECTION_RESOLVED |
+            PFLAG2_TEXT_DIRECTION_RESOLVED |
+            PFLAG2_TEXT_ALIGNMENT_RESOLVED |
+            PFLAG2_PADDING_RESOLVED |
+            PFLAG2_DRAWABLE_RESOLVED;
 
     // private flags
     int mPrivateFlags;
@@ -289,14 +633,44 @@ public class View implements Drawable.Callback {
     /**
      * The offset, in pixels, by which the content of this view is scrolled
      * horizontally.
+     * Please use {@link View#getScrollX()} and {@link View#setScrollX(int)} instead of
+     * accessing these directly.
+     * {@hide}
      */
     protected int mScrollX;
-
     /**
      * The offset, in pixels, by which the content of this view is scrolled
      * vertically.
+     * Please use {@link View#getScrollY()} and {@link View#setScrollY(int)} instead of
+     * accessing these directly.
+     * {@hide}
      */
     protected int mScrollY;
+
+    /**
+     * The final computed left padding in pixels that is used for drawing. This is the distance in
+     * pixels between the left edge of this view and the left edge of its content.
+     * {@hide}
+     */
+    protected int mPaddingLeft = 0;
+    /**
+     * The final computed right padding in pixels that is used for drawing. This is the distance in
+     * pixels between the right edge of this view and the right edge of its content.
+     * {@hide}
+     */
+    protected int mPaddingRight = 0;
+    /**
+     * The final computed top padding in pixels that is used for drawing. This is the distance in
+     * pixels between the top edge of this view and the top edge of its content.
+     * {@hide}
+     */
+    protected int mPaddingTop;
+    /**
+     * The final computed bottom padding in pixels that is used for drawing. This is the distance in
+     * pixels between the bottom edge of this view and the bottom edge of its content.
+     * {@hide}
+     */
+    protected int mPaddingBottom;
 
     /**
      * The transform matrix for the View. This transform is calculated internally
@@ -327,10 +701,74 @@ public class View implements Drawable.Callback {
     private int mMinHeight;
 
     /**
+     * The right padding after RTL resolution, but before taking account of scroll bars.
+     *
+     * @hide
+     */
+    protected int mUserPaddingRight;
+
+    /**
+     * The resolved bottom padding before taking account of scroll bars.
+     *
+     * @hide
+     */
+    protected int mUserPaddingBottom;
+
+    /**
+     * The left padding after RTL resolution, but before taking account of scroll bars.
+     *
+     * @hide
+     */
+    protected int mUserPaddingLeft;
+
+    /**
+     * Cache the paddingStart set by the user to append to the scrollbar's size.
+     */
+    int mUserPaddingStart;
+
+    /**
+     * Cache the paddingEnd set by the user to append to the scrollbar's size.
+     */
+    int mUserPaddingEnd;
+
+    /**
+     * The left padding as set by a setter method, a background's padding, or via XML property
+     * resolution. This value is the padding before LTR resolution or taking account of scrollbars.
+     *
+     * @hide
+     */
+    int mUserPaddingLeftInitial;
+
+    /**
+     * The right padding as set by a setter method, a background's padding, or via XML property
+     * resolution. This value is the padding before LTR resolution or taking account of scrollbars.
+     *
+     * @hide
+     */
+    int mUserPaddingRightInitial;
+
+    /**
+     * Default undefined padding
+     */
+    private static final int UNDEFINED_PADDING = Integer.MIN_VALUE;
+
+    /**
+     * Cache if a left padding has been defined explicitly via padding, horizontal padding,
+     * or leftPadding in XML, or by setPadding(...) or setRelativePadding(...)
+     */
+    private boolean mLeftPaddingDefined = false;
+
+    /**
+     * Cache if a right padding has been defined explicitly via padding, horizontal padding,
+     * or rightPadding in XML, or by setPadding(...) or setRelativePadding(...)
+     */
+    private boolean mRightPaddingDefined = false;
+
+    /**
      * Cached previous measure spec to avoid unnecessary measurements
      */
-    private int mPrevWidthMeasureSpec = Integer.MIN_VALUE;
-    private int mPrevHeightMeasureSpec = Integer.MIN_VALUE;
+    private int mOldWidthMeasureSpec = Integer.MIN_VALUE;
+    private int mOldHeightMeasureSpec = Integer.MIN_VALUE;
 
     /**
      * The measurement result in onMeasure(), used to layout
@@ -638,7 +1076,6 @@ public class View implements Drawable.Callback {
 
     /**
      * Called from client thread every tick on pre-tick, to update or cache something
-     *
      */
     @Deprecated
     protected void tick() {
@@ -744,8 +1181,8 @@ public class View implements Drawable.Callback {
 
         if (!needsLayout) {
             boolean specChanged =
-                    widthMeasureSpec != mPrevWidthMeasureSpec
-                            || heightMeasureSpec != mPrevHeightMeasureSpec;
+                    widthMeasureSpec != mOldWidthMeasureSpec
+                            || heightMeasureSpec != mOldHeightMeasureSpec;
             boolean isSpecExactly =
                     MeasureSpec.getMode(widthMeasureSpec).isExactly()
                             && MeasureSpec.getMode(heightMeasureSpec).isExactly();
@@ -773,8 +1210,8 @@ public class View implements Drawable.Callback {
             mPrivateFlags |= PFLAG_LAYOUT_REQUIRED;
         }
 
-        mPrevWidthMeasureSpec = widthMeasureSpec;
-        mPrevHeightMeasureSpec = heightMeasureSpec;
+        mOldWidthMeasureSpec = widthMeasureSpec;
+        mOldHeightMeasureSpec = heightMeasureSpec;
     }
 
     /**
@@ -869,6 +1306,17 @@ public class View implements Drawable.Callback {
     public void setLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
         mLayoutParams = params;
         requestLayout();
+    }
+
+    /**
+     * Resolve the layout parameters depending on the resolved layout direction
+     *
+     * @hide
+     */
+    public void resolveLayoutParams() {
+        if (mLayoutParams != null) {
+            mLayoutParams.resolveLayoutDirection(getLayoutDirection());
+        }
     }
 
     /**
@@ -1712,6 +2160,709 @@ public class View implements Drawable.Callback {
         mAttachInfo = info;
     }
 
+    /// SECTION START - Direction, RTL \\\
+
+    /**
+     * Returns the layout direction for this view.
+     *
+     * @return One of {@link #LAYOUT_DIRECTION_LTR},
+     * {@link #LAYOUT_DIRECTION_RTL},
+     * {@link #LAYOUT_DIRECTION_INHERIT} or
+     * {@link #LAYOUT_DIRECTION_LOCALE}.
+     * @hide
+     */
+    public final int getRawLayoutDirection() {
+        return (mPrivateFlags2 & PFLAG2_LAYOUT_DIRECTION_MASK) >> PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
+    }
+
+    /**
+     * Set the layout direction for this view. This will propagate a reset of layout direction
+     * resolution to the view's children and resolve layout direction for this view.
+     * <p>
+     * Should be one of:
+     * <p>
+     * {@link #LAYOUT_DIRECTION_LTR},
+     * {@link #LAYOUT_DIRECTION_RTL},
+     * {@link #LAYOUT_DIRECTION_INHERIT},
+     * {@link #LAYOUT_DIRECTION_LOCALE}.
+     * <p>
+     * Resolution will be done if the value is set to LAYOUT_DIRECTION_INHERIT. The resolution
+     * proceeds up the parent chain of the view to get the value. If there is no parent, then it
+     * will return the default {@link #LAYOUT_DIRECTION_LTR}.
+     *
+     * @param layoutDirection the layout direction to set
+     */
+    public void setLayoutDirection(int layoutDirection) {
+        if (getRawLayoutDirection() != layoutDirection) {
+            // Reset the current layout direction and the resolved one
+            mPrivateFlags2 &= ~PFLAG2_LAYOUT_DIRECTION_MASK;
+            resetRtlProperties();
+            // Set the new layout direction (filtered)
+            mPrivateFlags2 |=
+                    ((layoutDirection << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT) & PFLAG2_LAYOUT_DIRECTION_MASK);
+            // We need to resolve all RTL properties as they all depend on layout direction
+            resolveRtlProperties();
+            requestLayout();
+            invalidate();
+        }
+    }
+
+    /**
+     * Returns the resolved layout direction for this view.
+     *
+     * @return {@link #LAYOUT_DIRECTION_RTL} if the layout direction is RTL or returns
+     * {@link #LAYOUT_DIRECTION_LTR} if the layout direction is not RTL.
+     */
+    public final int getLayoutDirection() {
+        return ((mPrivateFlags2 & PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL) ==
+                PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL) ? LAYOUT_DIRECTION_RTL : LAYOUT_DIRECTION_LTR;
+    }
+
+    /**
+     * Indicates whether or not this view's layout is right-to-left. This is resolved from
+     * layout attribute and/or the inherited value from the parent
+     *
+     * @return true if the layout is right-to-left.
+     * @hide
+     */
+    public final boolean isLayoutRtl() {
+        return (getLayoutDirection() == LAYOUT_DIRECTION_RTL);
+    }
+
+    /**
+     * Resolve all RTL related properties.
+     *
+     * @hide
+     */
+    private void resolveRtlProperties() {
+        // Overall check
+        if ((mPrivateFlags2 & ALL_RTL_PROPERTIES_RESOLVED) == ALL_RTL_PROPERTIES_RESOLVED) {
+            return;
+        }
+
+        // Order is important here: LayoutDirection MUST be resolved first
+        if (!isLayoutDirectionResolved()) {
+            resolveLayoutDirection();
+            resolveLayoutParams();
+        }
+        // ... then we can resolve the others properties depending on the resolved LayoutDirection.
+        if (!isTextDirectionResolved()) {
+            resolveTextDirection();
+        }
+        if (!isTextAlignmentResolved()) {
+            resolveTextAlignment();
+        }
+        // Should resolve Drawables before Padding because we need the layout direction of the
+        // Drawable to correctly resolve Padding.
+        if (!areDrawablesResolved()) {
+            resolveDrawables();
+        }
+        if (!isPaddingResolved()) {
+            resolvePadding();
+        }
+        onRtlPropertiesChanged(getLayoutDirection());
+    }
+
+    /**
+     * Reset resolution of all RTL related properties.
+     *
+     * @hide
+     */
+    private void resetRtlProperties() {
+        resetResolvedLayoutDirection();
+        resetResolvedTextDirection();
+        resetResolvedTextAlignment();
+        resetResolvedPadding();
+        resetResolvedDrawables();
+    }
+
+    /**
+     * Called when any RTL property (layout direction or text direction or text alignment) has
+     * been changed.
+     * <p>
+     * Subclasses need to override this method to take care of cached information that depends on the
+     * resolved layout direction, or to inform child views that inherit their layout direction.
+     * <p>
+     * The default implementation does nothing.
+     *
+     * @param layoutDirection the direction of the layout
+     * @see #LAYOUT_DIRECTION_LTR
+     * @see #LAYOUT_DIRECTION_RTL
+     */
+    protected void onRtlPropertiesChanged(int layoutDirection) {
+    }
+
+    /**
+     * Resolve and cache the layout direction. LTR is set initially. This is implicitly supposing
+     * that the parent directionality can and will be resolved before its children.
+     *
+     * @return true if resolution has been done, false otherwise.
+     * @hide
+     */
+    public boolean resolveLayoutDirection() {
+        // Clear any previous layout direction resolution
+        mPrivateFlags2 &= ~PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK;
+
+        if (ModernUI.get().hasRtlSupport()) {
+            // Set resolved depending on layout direction
+            switch (getRawLayoutDirection()) {
+                case LAYOUT_DIRECTION_INHERIT:
+                    // We cannot resolve yet. LTR is by default and let the resolution happen again
+                    // later to get the correct resolved value
+                    if (!canResolveLayoutDirection()) return false;
+
+                    // Parent has not yet resolved, LTR is still the default
+                    try {
+                        if (!mParent.isLayoutDirectionResolved()) return false;
+
+                        if (mParent.getLayoutDirection() == LAYOUT_DIRECTION_RTL) {
+                            mPrivateFlags2 |= PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL;
+                        }
+                    } catch (AbstractMethodError e) {
+                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                                " does not fully implement ViewParent", e);
+                    }
+                    break;
+                case LAYOUT_DIRECTION_RTL:
+                    mPrivateFlags2 |= PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL;
+                    break;
+                case LAYOUT_DIRECTION_LOCALE:
+                    if (TextUtils.getLayoutDirectionFromLocale(ModernUI.get().getSelectedLocale()) ==
+                            LAYOUT_DIRECTION_RTL) {
+                        mPrivateFlags2 |= PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL;
+                    }
+                    break;
+                default:
+                    // Nothing to do, LTR by default
+            }
+        }
+
+        // Set to resolved
+        mPrivateFlags2 |= PFLAG2_LAYOUT_DIRECTION_RESOLVED;
+        return true;
+    }
+
+    /**
+     * Check if layout direction resolution can be done.
+     *
+     * @return true if layout direction resolution can be done otherwise return false.
+     */
+    public final boolean canResolveLayoutDirection() {
+        if (isLayoutDirectionInherited()) {
+            if (mParent != null) {
+                try {
+                    return mParent.canResolveLayoutDirection();
+                } catch (AbstractMethodError e) {
+                    ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                            " does not fully implement ViewParent", e);
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Reset the resolved layout direction. Layout direction will be resolved during a call to
+     * {@link #onMeasure(int, int)}.
+     *
+     * @hide
+     */
+    void resetResolvedLayoutDirection() {
+        // Reset the current resolved bits
+        mPrivateFlags2 &= ~PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK;
+    }
+
+    /**
+     * @return true if the layout direction is inherited.
+     * @hide
+     */
+    public final boolean isLayoutDirectionInherited() {
+        return (getRawLayoutDirection() == LAYOUT_DIRECTION_INHERIT);
+    }
+
+    /**
+     * @return true if layout direction has been resolved.
+     */
+    public final boolean isLayoutDirectionResolved() {
+        return (mPrivateFlags2 & PFLAG2_LAYOUT_DIRECTION_RESOLVED) == PFLAG2_LAYOUT_DIRECTION_RESOLVED;
+    }
+
+    /**
+     * Return the value specifying the text direction or policy that was set with
+     * {@link #setTextDirection(int)}.
+     *
+     * @return the defined text direction. It can be one of:
+     * <p>
+     * {@link #TEXT_DIRECTION_INHERIT},
+     * {@link #TEXT_DIRECTION_FIRST_STRONG},
+     * {@link #TEXT_DIRECTION_ANY_RTL},
+     * {@link #TEXT_DIRECTION_LTR},
+     * {@link #TEXT_DIRECTION_RTL},
+     * {@link #TEXT_DIRECTION_LOCALE},
+     * {@link #TEXT_DIRECTION_FIRST_STRONG_LTR},
+     * {@link #TEXT_DIRECTION_FIRST_STRONG_RTL}
+     * @hide
+     */
+    public final int getRawTextDirection() {
+        return (mPrivateFlags2 & PFLAG2_TEXT_DIRECTION_MASK) >> PFLAG2_TEXT_DIRECTION_MASK_SHIFT;
+    }
+
+    /**
+     * Set the text direction.
+     * <p>
+     * Should be one of:
+     * <p>
+     * {@link #TEXT_DIRECTION_INHERIT},
+     * {@link #TEXT_DIRECTION_FIRST_STRONG},
+     * {@link #TEXT_DIRECTION_ANY_RTL},
+     * {@link #TEXT_DIRECTION_LTR},
+     * {@link #TEXT_DIRECTION_RTL},
+     * {@link #TEXT_DIRECTION_LOCALE}
+     * {@link #TEXT_DIRECTION_FIRST_STRONG_LTR},
+     * {@link #TEXT_DIRECTION_FIRST_STRONG_RTL},
+     * <p>
+     * Resolution will be done if the value is set to TEXT_DIRECTION_INHERIT. The resolution
+     * proceeds up the parent chain of the view to get the value. If there is no parent, then it
+     * will
+     * return the default {@link #TEXT_DIRECTION_FIRST_STRONG}.
+     *
+     * @param textDirection the direction to set.
+     */
+    public void setTextDirection(int textDirection) {
+        if (getRawTextDirection() != textDirection) {
+            // Reset the current text direction and the resolved one
+            mPrivateFlags2 &= ~PFLAG2_TEXT_DIRECTION_MASK;
+            resetResolvedTextDirection();
+            // Set the new text direction
+            mPrivateFlags2 |= ((textDirection << PFLAG2_TEXT_DIRECTION_MASK_SHIFT) & PFLAG2_TEXT_DIRECTION_MASK);
+            // Do resolution
+            resolveTextDirection();
+            // Notify change
+            onRtlPropertiesChanged(getLayoutDirection());
+            // Refresh
+            requestLayout();
+            invalidate();
+        }
+    }
+
+    /**
+     * Return the resolved text direction.
+     *
+     * @return the resolved text direction. Returns one of:
+     * <p>
+     * {@link #TEXT_DIRECTION_FIRST_STRONG},
+     * {@link #TEXT_DIRECTION_ANY_RTL},
+     * {@link #TEXT_DIRECTION_LTR},
+     * {@link #TEXT_DIRECTION_RTL},
+     * {@link #TEXT_DIRECTION_LOCALE},
+     * {@link #TEXT_DIRECTION_FIRST_STRONG_LTR},
+     * {@link #TEXT_DIRECTION_FIRST_STRONG_RTL}
+     */
+    public final int getTextDirection() {
+        return (mPrivateFlags2 & PFLAG2_TEXT_DIRECTION_RESOLVED_MASK) >> PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT;
+    }
+
+    /**
+     * Resolve the text direction.
+     *
+     * @return true if resolution has been done, false otherwise.
+     * @hide
+     */
+    public boolean resolveTextDirection() {
+        // Reset any previous text direction resolution
+        mPrivateFlags2 &= ~(PFLAG2_TEXT_DIRECTION_RESOLVED | PFLAG2_TEXT_DIRECTION_RESOLVED_MASK);
+
+        if (ModernUI.get().hasRtlSupport()) {
+            // Set resolved text direction flag depending on text direction flag
+            final int textDirection = getRawTextDirection();
+            switch (textDirection) {
+                case TEXT_DIRECTION_INHERIT -> {
+                    if (!canResolveTextDirection()) {
+                        // We cannot do the resolution if there is no parent, so use the default one
+                        mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
+                        // Resolution will need to happen again later
+                        return false;
+                    }
+
+                    // Parent has not yet resolved, so we still return the default
+                    try {
+                        if (!mParent.isTextDirectionResolved()) {
+                            mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
+                            // Resolution will need to happen again later
+                            return false;
+                        }
+                    } catch (AbstractMethodError e) {
+                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                                " does not fully implement ViewParent", e);
+                        mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED |
+                                PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
+                        return true;
+                    }
+
+                    // Set current resolved direction to the same value as the parent's one
+                    int parentResolvedDirection;
+                    try {
+                        parentResolvedDirection = mParent.getTextDirection();
+                    } catch (AbstractMethodError e) {
+                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                                " does not fully implement ViewParent", e);
+                        parentResolvedDirection = TEXT_DIRECTION_LTR;
+                    }
+                    switch (parentResolvedDirection) {
+                        case TEXT_DIRECTION_FIRST_STRONG, TEXT_DIRECTION_ANY_RTL, TEXT_DIRECTION_LTR,
+                                TEXT_DIRECTION_RTL, TEXT_DIRECTION_LOCALE, TEXT_DIRECTION_FIRST_STRONG_LTR,
+                                TEXT_DIRECTION_FIRST_STRONG_RTL -> mPrivateFlags2 |=
+                                (parentResolvedDirection << PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT);
+                        default ->
+                                // Default resolved direction is "first strong" heuristic
+                                mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
+                    }
+                }
+                case TEXT_DIRECTION_FIRST_STRONG, TEXT_DIRECTION_ANY_RTL, TEXT_DIRECTION_LTR, TEXT_DIRECTION_RTL,
+                        TEXT_DIRECTION_LOCALE, TEXT_DIRECTION_FIRST_STRONG_LTR, TEXT_DIRECTION_FIRST_STRONG_RTL ->
+                        // Resolved direction is the same as text direction
+                        mPrivateFlags2 |= (textDirection << PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT);
+                default ->
+                        // Default resolved direction is "first strong" heuristic
+                        mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
+            }
+        } else {
+            // Default resolved direction is "first strong" heuristic
+            mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
+        }
+
+        // Set to resolved
+        mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED;
+        return true;
+    }
+
+    /**
+     * Check if text direction resolution can be done.
+     *
+     * @return true if text direction resolution can be done otherwise return false.
+     */
+    public final boolean canResolveTextDirection() {
+        if (isTextDirectionInherited()) {
+            if (mParent != null) {
+                try {
+                    return mParent.canResolveTextDirection();
+                } catch (AbstractMethodError e) {
+                    ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                            " does not fully implement ViewParent", e);
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Reset resolved text direction. Text direction will be resolved during a call to
+     * {@link #onMeasure(int, int)}.
+     *
+     * @hide
+     */
+    void resetResolvedTextDirection() {
+        // Reset any previous text direction resolution
+        mPrivateFlags2 &= ~(PFLAG2_TEXT_DIRECTION_RESOLVED | PFLAG2_TEXT_DIRECTION_RESOLVED_MASK);
+        // Set to default value
+        mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
+    }
+
+    /**
+     * @return true if text direction is inherited.
+     * @hide
+     */
+    public final boolean isTextDirectionInherited() {
+        return (getRawTextDirection() == TEXT_DIRECTION_INHERIT);
+    }
+
+    /**
+     * @return true if text direction is resolved.
+     */
+    public final boolean isTextDirectionResolved() {
+        return (mPrivateFlags2 & PFLAG2_TEXT_DIRECTION_RESOLVED) == PFLAG2_TEXT_DIRECTION_RESOLVED;
+    }
+
+    /**
+     * Return the value specifying the text alignment or policy that was set with
+     * {@link #setTextAlignment(int)}.
+     *
+     * @return the defined text alignment. It can be one of:
+     * <p>
+     * {@link #TEXT_ALIGNMENT_INHERIT},
+     * {@link #TEXT_ALIGNMENT_GRAVITY},
+     * {@link #TEXT_ALIGNMENT_CENTER},
+     * {@link #TEXT_ALIGNMENT_TEXT_START},
+     * {@link #TEXT_ALIGNMENT_TEXT_END},
+     * {@link #TEXT_ALIGNMENT_VIEW_START},
+     * {@link #TEXT_ALIGNMENT_VIEW_END}
+     * @hide
+     */
+    public final int getRawTextAlignment() {
+        return (mPrivateFlags2 & PFLAG2_TEXT_ALIGNMENT_MASK) >> PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT;
+    }
+
+    /**
+     * Set the text alignment.
+     * <p>
+     * Should be one of
+     * <p>
+     * {@link #TEXT_ALIGNMENT_INHERIT},
+     * {@link #TEXT_ALIGNMENT_GRAVITY},
+     * {@link #TEXT_ALIGNMENT_CENTER},
+     * {@link #TEXT_ALIGNMENT_TEXT_START},
+     * {@link #TEXT_ALIGNMENT_TEXT_END},
+     * {@link #TEXT_ALIGNMENT_VIEW_START},
+     * {@link #TEXT_ALIGNMENT_VIEW_END}
+     * <p>
+     * Resolution will be done if the value is set to TEXT_ALIGNMENT_INHERIT. The resolution
+     * proceeds up the parent chain of the view to get the value. If there is no parent, then it
+     * will return the default {@link #TEXT_ALIGNMENT_GRAVITY}.
+     *
+     * @param textAlignment The text alignment to set.
+     */
+    public void setTextAlignment(int textAlignment) {
+        if (textAlignment != getRawTextAlignment()) {
+            // Reset the current and resolved text alignment
+            mPrivateFlags2 &= ~PFLAG2_TEXT_ALIGNMENT_MASK;
+            resetResolvedTextAlignment();
+            // Set the new text alignment
+            mPrivateFlags2 |=
+                    ((textAlignment << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT) & PFLAG2_TEXT_ALIGNMENT_MASK);
+            // Do resolution
+            resolveTextAlignment();
+            // Notify change
+            onRtlPropertiesChanged(getLayoutDirection());
+            // Refresh
+            requestLayout();
+            invalidate();
+        }
+    }
+
+    /**
+     * Return the resolved text alignment.
+     *
+     * @return the resolved text alignment. Returns one of:
+     * <p>
+     * {@link #TEXT_ALIGNMENT_GRAVITY},
+     * {@link #TEXT_ALIGNMENT_CENTER},
+     * {@link #TEXT_ALIGNMENT_TEXT_START},
+     * {@link #TEXT_ALIGNMENT_TEXT_END},
+     * {@link #TEXT_ALIGNMENT_VIEW_START},
+     * {@link #TEXT_ALIGNMENT_VIEW_END}
+     */
+    public final int getTextAlignment() {
+        return (mPrivateFlags2 & PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK) >>
+                PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT;
+    }
+
+    /**
+     * Resolve the text alignment.
+     *
+     * @return true if resolution has been done, false otherwise.
+     * @hide
+     */
+    public boolean resolveTextAlignment() {
+        // Reset any previous text alignment resolution
+        mPrivateFlags2 &= ~(PFLAG2_TEXT_ALIGNMENT_RESOLVED | PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK);
+
+        if (ModernUI.get().hasRtlSupport()) {
+            // Set resolved text alignment flag depending on text alignment flag
+            final int textAlignment = getRawTextAlignment();
+            switch (textAlignment) {
+                case TEXT_ALIGNMENT_INHERIT -> {
+                    // Check if we can resolve the text alignment
+                    if (!canResolveTextAlignment()) {
+                        // We cannot do the resolution if there is no parent so use the default
+                        mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
+                        // Resolution will need to happen again later
+                        return false;
+                    }
+
+                    // Parent has not yet resolved, so we still return the default
+                    try {
+                        if (!mParent.isTextAlignmentResolved()) {
+                            mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
+                            // Resolution will need to happen again later
+                            return false;
+                        }
+                    } catch (AbstractMethodError e) {
+                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                                " does not fully implement ViewParent", e);
+                        mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED |
+                                PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
+                        return true;
+                    }
+                    int parentResolvedTextAlignment;
+                    try {
+                        parentResolvedTextAlignment = mParent.getTextAlignment();
+                    } catch (AbstractMethodError e) {
+                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                                " does not fully implement ViewParent", e);
+                        parentResolvedTextAlignment = TEXT_ALIGNMENT_GRAVITY;
+                    }
+                    switch (parentResolvedTextAlignment) {
+                        case TEXT_ALIGNMENT_GRAVITY, TEXT_ALIGNMENT_TEXT_START, TEXT_ALIGNMENT_TEXT_END,
+                                TEXT_ALIGNMENT_CENTER, TEXT_ALIGNMENT_VIEW_START, TEXT_ALIGNMENT_VIEW_END ->
+                                // Resolved text alignment is the same as the parent resolved
+                                // text alignment
+                                mPrivateFlags2 |=
+                                        (parentResolvedTextAlignment << PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT);
+                        default ->
+                                // Use default resolved text alignment
+                                mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
+                    }
+                }
+                case TEXT_ALIGNMENT_GRAVITY, TEXT_ALIGNMENT_TEXT_START, TEXT_ALIGNMENT_TEXT_END,
+                        TEXT_ALIGNMENT_CENTER, TEXT_ALIGNMENT_VIEW_START, TEXT_ALIGNMENT_VIEW_END ->
+                        // Resolved text alignment is the same as text alignment
+                        mPrivateFlags2 |= (textAlignment << PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT);
+                default ->
+                        // Use default resolved text alignment
+                        mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
+            }
+        } else {
+            // Use default resolved text alignment
+            mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
+        }
+
+        // Set the resolved
+        mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED;
+        return true;
+    }
+
+    /**
+     * Check if text alignment resolution can be done.
+     *
+     * @return true if text alignment resolution can be done otherwise return false.
+     */
+    public final boolean canResolveTextAlignment() {
+        if (isTextAlignmentInherited()) {
+            if (mParent != null) {
+                try {
+                    return mParent.canResolveTextAlignment();
+                } catch (AbstractMethodError e) {
+                    ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                            " does not fully implement ViewParent", e);
+                }
+            }
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Reset resolved text alignment. Text alignment will be resolved during a call to
+     * {@link #onMeasure(int, int)}.
+     *
+     * @hide
+     */
+    void resetResolvedTextAlignment() {
+        // Reset any previous text alignment resolution
+        mPrivateFlags2 &= ~(PFLAG2_TEXT_ALIGNMENT_RESOLVED | PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK);
+        // Set to default
+        mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
+    }
+
+    /**
+     * @return true if text alignment is inherited.
+     * @hide
+     */
+    public final boolean isTextAlignmentInherited() {
+        return (getRawTextAlignment() == TEXT_ALIGNMENT_INHERIT);
+    }
+
+    /**
+     * @return true if text alignment is resolved.
+     */
+    public final boolean isTextAlignmentResolved() {
+        return (mPrivateFlags2 & PFLAG2_TEXT_ALIGNMENT_RESOLVED) == PFLAG2_TEXT_ALIGNMENT_RESOLVED;
+    }
+
+    /**
+     * Return if padding has been resolved
+     *
+     * @hide
+     */
+    boolean isPaddingResolved() {
+        return (mPrivateFlags2 & PFLAG2_PADDING_RESOLVED) == PFLAG2_PADDING_RESOLVED;
+    }
+
+    /**
+     * Resolves padding depending on layout direction, if applicable, and
+     * recomputes internal padding values to adjust for scroll bars.
+     *
+     * @hide
+     */
+    public void resolvePadding() {
+        final int resolvedLayoutDirection = getLayoutDirection();
+
+        // Post Jelly Bean MR1 case: we need to take the resolved layout direction into account.
+        // If start / end padding are defined, they will be resolved (hence overriding) to
+        // left / right or right / left depending on the resolved layout direction.
+        // If start / end padding are not defined, use the left / right ones.
+        if (mBackground != null && (!mLeftPaddingDefined || !mRightPaddingDefined)) {
+            Rect padding = sThreadLocal.get();
+            if (padding == null) {
+                padding = new Rect();
+                sThreadLocal.set(padding);
+            }
+            mBackground.getPadding(padding);
+            if (!mLeftPaddingDefined) {
+                mUserPaddingLeftInitial = padding.left;
+            }
+            if (!mRightPaddingDefined) {
+                mUserPaddingRightInitial = padding.right;
+            }
+        }
+        if (resolvedLayoutDirection == LAYOUT_DIRECTION_RTL) {
+            if (mUserPaddingStart != UNDEFINED_PADDING) {
+                mUserPaddingRight = mUserPaddingStart;
+            } else {
+                mUserPaddingRight = mUserPaddingRightInitial;
+            }
+            if (mUserPaddingEnd != UNDEFINED_PADDING) {
+                mUserPaddingLeft = mUserPaddingEnd;
+            } else {
+                mUserPaddingLeft = mUserPaddingLeftInitial;
+            }
+        } else {
+            if (mUserPaddingStart != UNDEFINED_PADDING) {
+                mUserPaddingLeft = mUserPaddingStart;
+            } else {
+                mUserPaddingLeft = mUserPaddingLeftInitial;
+            }
+            if (mUserPaddingEnd != UNDEFINED_PADDING) {
+                mUserPaddingRight = mUserPaddingEnd;
+            } else {
+                mUserPaddingRight = mUserPaddingRightInitial;
+            }
+        }
+
+        mUserPaddingBottom = (mUserPaddingBottom >= 0) ? mUserPaddingBottom : mPaddingBottom;
+
+        internalSetPadding(mUserPaddingLeft, mPaddingTop, mUserPaddingRight, mUserPaddingBottom);
+        onRtlPropertiesChanged(resolvedLayoutDirection);
+
+        mPrivateFlags2 |= PFLAG2_PADDING_RESOLVED;
+    }
+
+    /**
+     * Reset the resolved layout direction.
+     * <p>
+     * Used when we only want to reset *this* view's padding and not trigger overrides
+     * in ViewGroup that reset children too.
+     *
+     * @hide
+     */
+    void resetResolvedPadding() {
+        mPrivateFlags2 &= ~PFLAG2_PADDING_RESOLVED;
+    }
+
+    /// SECTION END - Direction, RTL \\\
+
     /**
      * Request layout if layout information changed.
      * This will schedule a layout pass of the view tree.
@@ -1750,6 +2901,278 @@ public class View implements Drawable.Callback {
         if (parent != null) {
             parent.childDrawableStateChanged(this);
         }
+    }
+
+
+    /**
+     * Resolve the Drawables depending on the layout direction. This is implicitly supposing
+     * that the View directionality can and will be resolved before its Drawables.
+     * <p>
+     * Will call {@link View#onResolveDrawables} when resolution is done.
+     *
+     * @hide
+     */
+    protected void resolveDrawables() {
+        // Drawables resolution may need to happen before resolving the layout direction (which is
+        // done only during the measure() call).
+        // If the layout direction is not resolved yet, we cannot resolve the Drawables except in
+        // one case: when the raw layout direction has not been defined as LAYOUT_DIRECTION_INHERIT.
+        // So, if the raw layout direction is LAYOUT_DIRECTION_LTR or LAYOUT_DIRECTION_RTL or
+        // LAYOUT_DIRECTION_LOCALE, we can "cheat" and we don't need to wait for the layout
+        // direction to be resolved as its resolved value will be the same as its raw value.
+        if (!isLayoutDirectionResolved() &&
+                getRawLayoutDirection() == View.LAYOUT_DIRECTION_INHERIT) {
+            return;
+        }
+
+        final int layoutDirection = isLayoutDirectionResolved() ?
+                getLayoutDirection() : getRawLayoutDirection();
+
+        if (mBackground != null) {
+            mBackground.setLayoutDirection(layoutDirection);
+        }
+        /*if (mForegroundInfo != null && mForegroundInfo.mDrawable != null) {
+            mForegroundInfo.mDrawable.setLayoutDirection(layoutDirection);
+        }
+        if (mDefaultFocusHighlight != null) {
+            mDefaultFocusHighlight.setLayoutDirection(layoutDirection);
+        }*/
+        mPrivateFlags2 |= PFLAG2_DRAWABLE_RESOLVED;
+        onResolveDrawables(layoutDirection);
+    }
+
+    boolean areDrawablesResolved() {
+        return (mPrivateFlags2 & PFLAG2_DRAWABLE_RESOLVED) == PFLAG2_DRAWABLE_RESOLVED;
+    }
+
+    /**
+     * Called when layout direction has been resolved.
+     * <p>
+     * The default implementation does nothing.
+     *
+     * @param layoutDirection The resolved layout direction.
+     * @hide
+     * @see #LAYOUT_DIRECTION_LTR
+     * @see #LAYOUT_DIRECTION_RTL
+     */
+    public void onResolveDrawables(int layoutDirection) {
+    }
+
+    /**
+     * @hide
+     */
+    protected void resetResolvedDrawables() {
+        resetResolvedDrawablesInternal();
+    }
+
+    void resetResolvedDrawablesInternal() {
+        mPrivateFlags2 &= ~PFLAG2_DRAWABLE_RESOLVED;
+    }
+
+    /**
+     * Sets the padding. The view may add on the space required to display
+     * the scrollbars, depending on the style and visibility of the scrollbars.
+     * So the values returned from {@link #getPaddingLeft}, {@link #getPaddingTop},
+     * {@link #getPaddingRight} and {@link #getPaddingBottom} may be different
+     * from the values set in this call.
+     *
+     * @param left   the left padding in pixels
+     * @param top    the top padding in pixels
+     * @param right  the right padding in pixels
+     * @param bottom the bottom padding in pixels
+     */
+    public void setPadding(int left, int top, int right, int bottom) {
+        resetResolvedPadding();
+
+        mUserPaddingStart = UNDEFINED_PADDING;
+        mUserPaddingEnd = UNDEFINED_PADDING;
+
+        mUserPaddingLeftInitial = left;
+        mUserPaddingRightInitial = right;
+
+        mLeftPaddingDefined = true;
+        mRightPaddingDefined = true;
+
+        internalSetPadding(left, top, right, bottom);
+    }
+
+    /**
+     * @hide
+     */
+    protected void internalSetPadding(int left, int top, int right, int bottom) {
+        mUserPaddingLeft = left;
+        mUserPaddingRight = right;
+        mUserPaddingBottom = bottom;
+
+        final int viewFlags = mViewFlags;
+        boolean changed = false;
+
+        // Common case is there are no scroll bars.
+        /*if ((viewFlags & (SCROLLBARS_VERTICAL|SCROLLBARS_HORIZONTAL)) != 0) {
+            if ((viewFlags & SCROLLBARS_VERTICAL) != 0) {
+                final int offset = (viewFlags & SCROLLBARS_INSET_MASK) == 0
+                        ? 0 : getVerticalScrollbarWidth();
+                switch (mVerticalScrollbarPosition) {
+                    case SCROLLBAR_POSITION_DEFAULT:
+                        if (isLayoutRtl()) {
+                            left += offset;
+                        } else {
+                            right += offset;
+                        }
+                        break;
+                    case SCROLLBAR_POSITION_RIGHT:
+                        right += offset;
+                        break;
+                    case SCROLLBAR_POSITION_LEFT:
+                        left += offset;
+                        break;
+                }
+            }
+            if ((viewFlags & SCROLLBARS_HORIZONTAL) != 0) {
+                bottom += (viewFlags & SCROLLBARS_INSET_MASK) == 0
+                        ? 0 : getHorizontalScrollbarHeight();
+            }
+        }*/
+
+        if (mPaddingLeft != left) {
+            changed = true;
+            mPaddingLeft = left;
+        }
+        if (mPaddingTop != top) {
+            changed = true;
+            mPaddingTop = top;
+        }
+        if (mPaddingRight != right) {
+            changed = true;
+            mPaddingRight = right;
+        }
+        if (mPaddingBottom != bottom) {
+            changed = true;
+            mPaddingBottom = bottom;
+        }
+
+        if (changed) {
+            requestLayout();
+        }
+    }
+
+    /**
+     * Sets the relative padding. The view may add on the space required to display
+     * the scrollbars, depending on the style and visibility of the scrollbars.
+     * So the values returned from {@link #getPaddingStart}, {@link #getPaddingTop},
+     * {@link #getPaddingEnd} and {@link #getPaddingBottom} may be different
+     * from the values set in this call.
+     *
+     * @param start  the start padding in pixels
+     * @param top    the top padding in pixels
+     * @param end    the end padding in pixels
+     * @param bottom the bottom padding in pixels
+     */
+    public void setPaddingRelative(int start, int top, int end, int bottom) {
+        resetResolvedPadding();
+
+        mUserPaddingStart = start;
+        mUserPaddingEnd = end;
+        mLeftPaddingDefined = true;
+        mRightPaddingDefined = true;
+
+        if (isLayoutRtl()) {
+            mUserPaddingLeftInitial = end;
+            mUserPaddingRightInitial = start;
+            internalSetPadding(end, top, start, bottom);
+        } else {
+            mUserPaddingLeftInitial = start;
+            mUserPaddingRightInitial = end;
+            internalSetPadding(start, top, end, bottom);
+        }
+    }
+
+    /**
+     * Returns the top padding of this view.
+     *
+     * @return the top padding in pixels
+     */
+    public int getPaddingTop() {
+        return mPaddingTop;
+    }
+
+    /**
+     * Returns the bottom padding of this view. If there are inset and enabled
+     * scrollbars, this value may include the space required to display the
+     * scrollbars as well.
+     *
+     * @return the bottom padding in pixels
+     */
+    public int getPaddingBottom() {
+        return mPaddingBottom;
+    }
+
+    /**
+     * Returns the left padding of this view. If there are inset and enabled
+     * scrollbars, this value may include the space required to display the
+     * scrollbars as well.
+     *
+     * @return the left padding in pixels
+     */
+    public int getPaddingLeft() {
+        if (!isPaddingResolved()) {
+            resolvePadding();
+        }
+        return mPaddingLeft;
+    }
+
+    /**
+     * Returns the start padding of this view depending on its resolved layout direction.
+     * If there are inset and enabled scrollbars, this value may include the space
+     * required to display the scrollbars as well.
+     *
+     * @return the start padding in pixels
+     */
+    public int getPaddingStart() {
+        if (!isPaddingResolved()) {
+            resolvePadding();
+        }
+        return (getLayoutDirection() == LAYOUT_DIRECTION_RTL) ?
+                mPaddingRight : mPaddingLeft;
+    }
+
+    /**
+     * Returns the right padding of this view. If there are inset and enabled
+     * scrollbars, this value may include the space required to display the
+     * scrollbars as well.
+     *
+     * @return the right padding in pixels
+     */
+    public int getPaddingRight() {
+        if (!isPaddingResolved()) {
+            resolvePadding();
+        }
+        return mPaddingRight;
+    }
+
+    /**
+     * Returns the end padding of this view depending on its resolved layout direction.
+     * If there are inset and enabled scrollbars, this value may include the space
+     * required to display the scrollbars as well.
+     *
+     * @return the end padding in pixels
+     */
+    public int getPaddingEnd() {
+        if (!isPaddingResolved()) {
+            resolvePadding();
+        }
+        return (getLayoutDirection() == LAYOUT_DIRECTION_RTL) ?
+                mPaddingLeft : mPaddingRight;
+    }
+
+    /**
+     * Return if the padding has been set through relative values
+     * {@link #setPaddingRelative(int, int, int, int)} or through
+     *
+     * @return true if the padding is relative or false if it is not.
+     */
+    public boolean isPaddingRelative() {
+        return (mUserPaddingStart != UNDEFINED_PADDING || mUserPaddingEnd != UNDEFINED_PADDING);
     }
 
     /**

@@ -1409,6 +1409,19 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
 
         /**
+         * Resolve layout parameters depending on the layout direction. Subclasses that care about
+         * layoutDirection changes should override this method. The default implementation does
+         * nothing.
+         *
+         * @param layoutDirection the direction of the layout
+         *                        <p>
+         *                        {@link View#LAYOUT_DIRECTION_LTR}
+         *                        {@link View#LAYOUT_DIRECTION_RTL}
+         */
+        public void resolveLayoutDirection(int layoutDirection) {
+        }
+
+        /**
          * Create a new object copied from this params
          *
          * @return copied layout params
@@ -1417,7 +1430,6 @@ public abstract class ViewGroup extends View implements ViewParent {
         public LayoutParams copy() {
             return new LayoutParams(this);
         }
-
     }
 
     public static class MarginLayoutParams extends LayoutParams {

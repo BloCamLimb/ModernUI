@@ -18,9 +18,13 @@
 
 package icyllis.modernui.text;
 
+import com.ibm.icu.util.ULocale;
+import icyllis.modernui.view.View;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.reflect.Array;
+import java.util.Locale;
 
 public final class TextUtils {
 
@@ -467,5 +471,22 @@ public final class TextUtils {
                 (0xD800 <= c && c <= 0xDFFF) ||  // Surrogate pairs
                 (0xFB1D <= c && c <= 0xFDFF) ||  // Hebrew and Arabic presentation forms
                 (0xFE70 <= c && c <= 0xFEFE);  // Arabic presentation forms
+    }
+
+    /**
+     * Return the layout direction for a given Locale
+     *
+     * @param locale the Locale for which we want the layout direction. Can be null.
+     * @return the layout direction. This may be one of:
+     * {@link View#LAYOUT_DIRECTION_LTR} or
+     * {@link View#LAYOUT_DIRECTION_RTL}.
+     *
+     * Be careful: this code will need to be updated when vertical scripts will be supported
+     */
+    public static int getLayoutDirectionFromLocale(@Nullable Locale locale) {
+        return (locale != null && !locale.equals(Locale.ROOT)
+                && ULocale.forLocale(locale).isRightToLeft())
+                ? View.LAYOUT_DIRECTION_RTL
+                : View.LAYOUT_DIRECTION_LTR;
     }
 }

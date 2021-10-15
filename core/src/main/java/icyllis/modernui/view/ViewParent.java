@@ -40,6 +40,89 @@ public interface ViewParent {
     void requestLayout();
 
     /**
+     * Tells if this view parent can resolve the layout direction.
+     * See {@link View#setLayoutDirection(int)}
+     *
+     * @return True if this view parent can resolve the layout direction.
+     */
+    boolean canResolveLayoutDirection();
+
+    /**
+     * Tells if this view parent layout direction is resolved.
+     * See {@link View#setLayoutDirection(int)}
+     *
+     * @return True if this view parent layout direction is resolved.
+     */
+    boolean isLayoutDirectionResolved();
+
+    /**
+     * Return this view parent layout direction. See {@link View#getLayoutDirection()}
+     *
+     * @return {@link View#LAYOUT_DIRECTION_RTL} if the layout direction is RTL or returns
+     * {@link View#LAYOUT_DIRECTION_LTR} if the layout direction is not RTL.
+     */
+    int getLayoutDirection();
+
+    /**
+     * Tells if this view parent can resolve the text direction.
+     * See {@link View#setTextDirection(int)}
+     *
+     * @return True if this view parent can resolve the text direction.
+     */
+    boolean canResolveTextDirection();
+
+    /**
+     * Tells if this view parent text direction is resolved.
+     * See {@link View#setTextDirection(int)}
+     *
+     * @return True if this view parent text direction is resolved.
+     */
+    boolean isTextDirectionResolved();
+
+    /**
+     * Return this view parent text direction. See {@link View#getTextDirection()}
+     *
+     * @return the resolved text direction. Returns one of:
+     *
+     * {@link View#TEXT_DIRECTION_FIRST_STRONG}
+     * {@link View#TEXT_DIRECTION_ANY_RTL},
+     * {@link View#TEXT_DIRECTION_LTR},
+     * {@link View#TEXT_DIRECTION_RTL},
+     * {@link View#TEXT_DIRECTION_LOCALE}
+     */
+    int getTextDirection();
+
+    /**
+     * Tells if this view parent can resolve the text alignment.
+     * See {@link View#setTextAlignment(int)}
+     *
+     * @return True if this view parent can resolve the text alignment.
+     */
+    boolean canResolveTextAlignment();
+
+    /**
+     * Tells if this view parent text alignment is resolved.
+     * See {@link View#setTextAlignment(int)}
+     *
+     * @return True if this view parent text alignment is resolved.
+     */
+    boolean isTextAlignmentResolved();
+
+    /**
+     * Return this view parent text alignment. See {@link View#getTextAlignment()}
+     *
+     * @return the resolved text alignment. Returns one of:
+     *
+     * {@link View#TEXT_ALIGNMENT_GRAVITY},
+     * {@link View#TEXT_ALIGNMENT_CENTER},
+     * {@link View#TEXT_ALIGNMENT_TEXT_START},
+     * {@link View#TEXT_ALIGNMENT_TEXT_END},
+     * {@link View#TEXT_ALIGNMENT_VIEW_START},
+     * {@link View#TEXT_ALIGNMENT_VIEW_END}
+     */
+    int getTextAlignment();
+
+    /**
      * This method is called on the parent when a child's drawable state
      * has changed.
      *
