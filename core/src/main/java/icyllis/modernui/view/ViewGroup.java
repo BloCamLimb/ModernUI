@@ -758,7 +758,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     public void addView(@Nonnull View child, int index) {
         LayoutParams params = child.getLayoutParams();
         if (params == null) {
-            params = createDefaultLayoutParams();
+            params = generateDefaultLayoutParams();
         }
         addView(child, index, params);
     }
@@ -771,7 +771,7 @@ public abstract class ViewGroup extends View implements ViewParent {
      * @param height view layout height
      */
     public void addView(@Nonnull View child, int width, int height) {
-        LayoutParams params = createDefaultLayoutParams();
+        LayoutParams params = generateDefaultLayoutParams();
         params.width = width;
         params.height = height;
         addView(child, -1, params);
@@ -808,7 +808,7 @@ public abstract class ViewGroup extends View implements ViewParent {
         requestLayout();
 
         if (!checkLayoutParams(params)) {
-            params = convertLayoutParams(params);
+            params = generateLayoutParams(params);
         }
 
         child.setLayoutParams(params);
@@ -1307,43 +1307,45 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     /**
-     * Create a safe layout params base on the given params to fit to this view group
-     * <p>
-     * See also {@link #createDefaultLayoutParams()}
-     * See also {@link #checkLayoutParams(LayoutParams)}
+     * Returns a safe set of layout parameters based on the supplied layout params.
+     * When a ViewGroup is passed a View whose layout params do not pass the test of
+     * {@link #checkLayoutParams(LayoutParams)}, this method
+     * is invoked. This method should return a new set of layout params suitable for
+     * this ViewGroup, possibly by copying the appropriate attributes from the
+     * specified set of layout params.
      *
-     * @param params the layout params to convert
-     * @return safe layout params
+     * @param p The layout parameters to convert into a suitable set of layout parameters
+     *          for this ViewGroup.
+     * @return an instance of {@link LayoutParams} or one of its descendants
      */
     @Nonnull
-    protected LayoutParams convertLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
-        return params;
+    protected LayoutParams generateLayoutParams(@Nonnull LayoutParams p) {
+        return p;
     }
 
     /**
-     * Create default layout params if child params is null
-     * <p>
-     * See also {@link #convertLayoutParams(LayoutParams)}
-     * See also {@link #checkLayoutParams(LayoutParams)}
+     * Returns a set of default layout parameters. These parameters are requested
+     * when the View passed to {@link #addView(View)} has no layout parameters
+     * already set. If null is returned, an exception is thrown from addView.
      *
-     * @return default layout params
+     * @return a set of default layout parameters or null
      */
     @Nonnull
-    protected LayoutParams createDefaultLayoutParams() {
+    protected LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
     }
 
     /**
-     * Check whether given params fit to this view group
+     * Check whether given params fit to this view group.
      * <p>
-     * See also {@link #convertLayoutParams(LayoutParams)}
-     * See also {@link #createDefaultLayoutParams()}
+     * See also {@link #generateLayoutParams(LayoutParams)}
+     * See also {@link #generateDefaultLayoutParams()}
      *
-     * @param params layout params to check
+     * @param p layout params to check
      * @return if params matched to this view group
      */
-    protected boolean checkLayoutParams(@Nullable LayoutParams params) {
-        return params != null;
+    protected boolean checkLayoutParams(@Nullable LayoutParams p) {
+        return p != null;
     }
 
     /**
@@ -1354,33 +1356,33 @@ public abstract class ViewGroup extends View implements ViewParent {
      * for both width and height.
      * <p>
      * There are subclasses of LayoutParams for different subclasses of
-     * ViewGroup
+     * ViewGroup.
      */
     public static class LayoutParams {
 
         /**
-         * Special value for width or height, which means
-         * views want to be as big as parent view,
-         * but not greater than parent
+         * Special value for the height or width requested by a View.
+         * MATCH_PARENT means that the view wants to be as big as its parent,
+         * minus the parent's padding, if any. Introduced in API Level 8.
          */
         public static final int MATCH_PARENT = -1;
 
         /**
-         * Special value for width or height, which means
-         * views want to be just large enough to fit
-         * its own content
+         * Special value for the height or width requested by a View.
+         * WRAP_CONTENT means that the view wants to be just large enough to fit
+         * its own internal content, taking its own padding into account.
          */
         public static final int WRAP_CONTENT = -2;
 
         /**
-         * The width that views want to be.
-         * Can be one of MATCH_PARENT or WARP_CONTENT, or exact value
+         * Information about how wide the view wants to be. Can be one of the
+         * constants MATCH_PARENT or WRAP_CONTENT, or an exact size.
          */
         public int width;
 
         /**
-         * The height that views want to be.
-         * Can be one of MATCH_PARENT or WARP_CONTENT, or exact value
+         * Information about how tall the view wants to be. Can be one of the
+         * constants MATCH_PARENT or WRAP_CONTENT, or an exact size.
          */
         public int height;
 
@@ -1388,14 +1390,14 @@ public abstract class ViewGroup extends View implements ViewParent {
          * Creates a new set of layout parameters with the specified width
          * and height.
          *
-         * @param width  either {@link #WRAP_CONTENT},
-         *               {@link #MATCH_PARENT}, or a fixed value
-         * @param height either {@link #WRAP_CONTENT},
-         *               {@link #MATCH_PARENT}, or a fixed value
+         * @param width  the width, either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a size in pixels
+         * @param height the height, either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a size in pixels
          */
         public LayoutParams(int width, int height) {
-            this.width = width >= 0 ? ViewConfig.get().getViewSize(width) : width;
-            this.height = height >= 0 ? ViewConfig.get().getViewSize(height) : height;
+            this.width = width;
+            this.height = height;
         }
 
         /**
@@ -1409,14 +1411,21 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
 
         /**
+         * Used internally by MarginLayoutParams.
+         *
+         * @hide
+         */
+        LayoutParams() {
+        }
+
+        /**
          * Resolve layout parameters depending on the layout direction. Subclasses that care about
          * layoutDirection changes should override this method. The default implementation does
          * nothing.
          *
          * @param layoutDirection the direction of the layout
-         *                        <p>
-         *                        {@link View#LAYOUT_DIRECTION_LTR}
-         *                        {@link View#LAYOUT_DIRECTION_RTL}
+         * @see View#LAYOUT_DIRECTION_LTR
+         * @see View#LAYOUT_DIRECTION_RTL
          */
         public void resolveLayoutDirection(int layoutDirection) {
         }
@@ -1432,43 +1441,144 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
     }
 
+    /**
+     * Per-child layout information for layouts that support margins.
+     */
     public static class MarginLayoutParams extends LayoutParams {
 
         /**
-         * The left margin
+         * The left margin in pixels of the child. Margin values should be positive.
+         * Call {@link ViewGroup#setLayoutParams(LayoutParams)} after reassigning a new value
+         * to this field.
          */
         public int leftMargin;
 
         /**
-         * The top margin
+         * The top margin in pixels of the child. Margin values should be positive.
+         * Call {@link ViewGroup#setLayoutParams(LayoutParams)} after reassigning a new value
+         * to this field.
          */
         public int topMargin;
 
         /**
-         * The right margin
+         * The right margin in pixels of the child. Margin values should be positive.
+         * Call {@link ViewGroup#setLayoutParams(LayoutParams)} after reassigning a new value
+         * to this field.
          */
         public int rightMargin;
 
         /**
-         * The bottom margin
+         * The bottom margin in pixels of the child. Margin values should be positive.
+         * Call {@link ViewGroup#setLayoutParams(LayoutParams)} after reassigning a new value
+         * to this field.
          */
         public int bottomMargin;
+
+        /**
+         * The start margin in pixels of the child. Margin values should be positive.
+         * Call {@link ViewGroup#setLayoutParams(LayoutParams)} after reassigning a new value
+         * to this field.
+         */
+        private int startMargin = DEFAULT_MARGIN_RELATIVE;
+
+        /**
+         * The end margin in pixels of the child. Margin values should be positive.
+         * Call {@link ViewGroup#setLayoutParams(LayoutParams)} after reassigning a new value
+         * to this field.
+         */
+        private int endMargin = DEFAULT_MARGIN_RELATIVE;
+
+        /**
+         * The default start and end margin.
+         *
+         * @hide
+         */
+        public static final int DEFAULT_MARGIN_RELATIVE = Integer.MIN_VALUE;
+
+        /**
+         * Bit  0: layout direction
+         * Bit  1: layout direction
+         * Bit  2: left margin undefined
+         * Bit  3: right margin undefined
+         * Bit  4: is RTL compatibility mode
+         * Bit  5: need resolution
+         * <p>
+         * Bit 6 to 7 not used
+         *
+         * @hide
+         */
+        byte mMarginFlags;
+
+        private static final int LAYOUT_DIRECTION_MASK = 0x00000003;
+        private static final int LEFT_MARGIN_UNDEFINED_MASK = 0x00000004;
+        private static final int RIGHT_MARGIN_UNDEFINED_MASK = 0x00000008;
+        private static final int RTL_COMPATIBILITY_MODE_MASK = 0x00000010;
+        private static final int NEED_RESOLUTION_MASK = 0x00000020;
+
+        private static final int DEFAULT_MARGIN_RESOLVED = 0;
+        private static final int UNDEFINED_MARGIN = DEFAULT_MARGIN_RELATIVE;
 
         /**
          * Creates a new set of layout parameters with the specified width
          * and height.
          *
-         * @param width  either {@link #WRAP_CONTENT},
-         *               {@link #MATCH_PARENT}, or a fixed value
-         * @param height either {@link #WRAP_CONTENT},
-         *               {@link #MATCH_PARENT}, or a fixed value
+         * @param width  the width, either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a size in pixels
+         * @param height the height, either {@link #WRAP_CONTENT},
+         *               {@link #MATCH_PARENT}, or a size in pixels
          */
         public MarginLayoutParams(int width, int height) {
             super(width, height);
+
+            mMarginFlags |= LEFT_MARGIN_UNDEFINED_MASK;
+            mMarginFlags |= RIGHT_MARGIN_UNDEFINED_MASK;
         }
 
         /**
-         * Sets the margins, and its values should be positive.
+         * Copy constructor. Clones the width, height and margin values of the source.
+         *
+         * @param source The layout params to copy from.
+         */
+        public MarginLayoutParams(@Nonnull MarginLayoutParams source) {
+            this.width = source.width;
+            this.height = source.height;
+
+            this.leftMargin = source.leftMargin;
+            this.topMargin = source.topMargin;
+            this.rightMargin = source.rightMargin;
+            this.bottomMargin = source.bottomMargin;
+            this.startMargin = source.startMargin;
+            this.endMargin = source.endMargin;
+
+            this.mMarginFlags = source.mMarginFlags;
+        }
+
+        public MarginLayoutParams(LayoutParams source) {
+            super(source);
+
+            mMarginFlags |= LEFT_MARGIN_UNDEFINED_MASK;
+            mMarginFlags |= RIGHT_MARGIN_UNDEFINED_MASK;
+        }
+
+        /**
+         * @hide Used internally.
+         */
+        public final void copyMarginsFrom(@Nonnull MarginLayoutParams source) {
+            this.leftMargin = source.leftMargin;
+            this.topMargin = source.topMargin;
+            this.rightMargin = source.rightMargin;
+            this.bottomMargin = source.bottomMargin;
+            this.startMargin = source.startMargin;
+            this.endMargin = source.endMargin;
+
+            this.mMarginFlags = source.mMarginFlags;
+        }
+
+        /**
+         * Sets the margins, in pixels. A call to {@link View#requestLayout()} needs
+         * to be done so that the new margins are taken into account. Left and right margins may be
+         * overridden by {@link View#requestLayout()} depending on layout direction.
+         * Margin values should be positive.
          *
          * @param left   the left margin size
          * @param top    the top margin size
@@ -1480,24 +1590,184 @@ public abstract class ViewGroup extends View implements ViewParent {
             topMargin = top;
             rightMargin = right;
             bottomMargin = bottom;
+            mMarginFlags &= ~LEFT_MARGIN_UNDEFINED_MASK;
+            mMarginFlags &= ~RIGHT_MARGIN_UNDEFINED_MASK;
+            if (isMarginRelative()) {
+                mMarginFlags |= NEED_RESOLUTION_MASK;
+            } else {
+                mMarginFlags &= ~NEED_RESOLUTION_MASK;
+            }
         }
 
         /**
-         * Copy constructor. Clones the width, height and margin values of the source.
+         * Sets the relative margins, in pixels. A call to {@link View#requestLayout()}
+         * needs to be done so that the new relative margins are taken into account. Left and right
+         * margins may be overridden by {@link View#requestLayout()} depending on
+         * layout direction. Margin values should be positive.
          *
-         * @param source the layout params to copy from.
+         * @param start  the start margin size
+         * @param top    the top margin size
+         * @param end    the right margin size
+         * @param bottom the bottom margin size
+         * @hide
          */
-        public MarginLayoutParams(@Nonnull MarginLayoutParams source) {
-            super(source.width, source.height);
-
-            leftMargin = source.leftMargin;
-            topMargin = source.topMargin;
-            rightMargin = source.rightMargin;
-            bottomMargin = source.bottomMargin;
+        public void setMarginsRelative(int start, int top, int end, int bottom) {
+            startMargin = start;
+            topMargin = top;
+            endMargin = end;
+            bottomMargin = bottom;
+            mMarginFlags |= NEED_RESOLUTION_MASK;
         }
 
-        public MarginLayoutParams(@Nonnull LayoutParams source) {
-            super(source);
+        /**
+         * Sets the relative start margin. Margin values should be positive.
+         *
+         * @param start the start margin size
+         */
+        public void setMarginStart(int start) {
+            startMargin = start;
+            mMarginFlags |= NEED_RESOLUTION_MASK;
+        }
+
+        /**
+         * Returns the start margin in pixels.
+         *
+         * @return the start margin in pixels.
+         */
+        public int getMarginStart() {
+            if (startMargin != DEFAULT_MARGIN_RELATIVE)
+                return startMargin;
+            if ((mMarginFlags & NEED_RESOLUTION_MASK) == NEED_RESOLUTION_MASK) {
+                doResolveMargins();
+            }
+            if (isLayoutRtl()) {
+                return rightMargin;
+            } else {
+                return leftMargin;
+            }
+        }
+
+        /**
+         * Sets the relative end margin. Margin values should be positive.
+         *
+         * @param end the end margin size
+         */
+        public void setMarginEnd(int end) {
+            endMargin = end;
+            mMarginFlags |= NEED_RESOLUTION_MASK;
+        }
+
+        /**
+         * Returns the end margin in pixels.
+         *
+         * @return the end margin in pixels.
+         */
+        public int getMarginEnd() {
+            if (endMargin != DEFAULT_MARGIN_RELATIVE)
+                return endMargin;
+            if ((mMarginFlags & NEED_RESOLUTION_MASK) == NEED_RESOLUTION_MASK) {
+                doResolveMargins();
+            }
+            if (isLayoutRtl()) {
+                return leftMargin;
+            } else {
+                return rightMargin;
+            }
+        }
+
+        /**
+         * Check if margins are relative.
+         *
+         * @return true if either marginStart or marginEnd has been set.
+         */
+        public boolean isMarginRelative() {
+            return (startMargin != DEFAULT_MARGIN_RELATIVE || endMargin != DEFAULT_MARGIN_RELATIVE);
+        }
+
+        /**
+         * Set the layout direction
+         *
+         * @param layoutDirection the layout direction.
+         *                        Should be either {@link View#LAYOUT_DIRECTION_LTR}
+         *                        or {@link View#LAYOUT_DIRECTION_RTL}.
+         */
+        public void setLayoutDirection(int layoutDirection) {
+            if (layoutDirection != View.LAYOUT_DIRECTION_LTR &&
+                    layoutDirection != View.LAYOUT_DIRECTION_RTL) return;
+            if (layoutDirection != (mMarginFlags & LAYOUT_DIRECTION_MASK)) {
+                mMarginFlags &= ~LAYOUT_DIRECTION_MASK;
+                mMarginFlags |= (layoutDirection & LAYOUT_DIRECTION_MASK);
+                if (isMarginRelative()) {
+                    mMarginFlags |= NEED_RESOLUTION_MASK;
+                } else {
+                    mMarginFlags &= ~NEED_RESOLUTION_MASK;
+                }
+            }
+        }
+
+        /**
+         * Returns the layout direction. Can be either {@link View#LAYOUT_DIRECTION_LTR} or
+         * {@link View#LAYOUT_DIRECTION_RTL}.
+         *
+         * @return the layout direction.
+         */
+        public int getLayoutDirection() {
+            return (mMarginFlags & LAYOUT_DIRECTION_MASK);
+        }
+
+        /**
+         * This will be called by {@link View#requestLayout()}. Left and Right margins
+         * may be overridden depending on layout direction.
+         */
+        @Override
+        public void resolveLayoutDirection(int layoutDirection) {
+            setLayoutDirection(layoutDirection);
+
+            // No relative margin or pre JB-MR1 case or no need to resolve, just dont do anything
+            // Will use the left and right margins if no relative margin is defined.
+            if (!isMarginRelative() ||
+                    (mMarginFlags & NEED_RESOLUTION_MASK) != NEED_RESOLUTION_MASK) return;
+
+            // Proceed with resolution
+            doResolveMargins();
+        }
+
+        private void doResolveMargins() {
+            if ((mMarginFlags & RTL_COMPATIBILITY_MODE_MASK) == RTL_COMPATIBILITY_MODE_MASK) {
+                // if left or right margins are not defined and if we have some start or end margin
+                // defined then use those start and end margins.
+                if ((mMarginFlags & LEFT_MARGIN_UNDEFINED_MASK) == LEFT_MARGIN_UNDEFINED_MASK
+                        && startMargin > DEFAULT_MARGIN_RELATIVE) {
+                    leftMargin = startMargin;
+                }
+                if ((mMarginFlags & RIGHT_MARGIN_UNDEFINED_MASK) == RIGHT_MARGIN_UNDEFINED_MASK
+                        && endMargin > DEFAULT_MARGIN_RELATIVE) {
+                    rightMargin = endMargin;
+                }
+            } else {
+                // We have some relative margins (either the start one or the end one or both). So use
+                // them and override what has been defined for left and right margins. If either start
+                // or end margin is not defined, just set it to default "0".
+                if (isLayoutRtl()) {
+                    leftMargin = (endMargin > DEFAULT_MARGIN_RELATIVE) ?
+                            endMargin : DEFAULT_MARGIN_RESOLVED;
+                    rightMargin = (startMargin > DEFAULT_MARGIN_RELATIVE) ?
+                            startMargin : DEFAULT_MARGIN_RESOLVED;
+                } else {
+                    leftMargin = (startMargin > DEFAULT_MARGIN_RELATIVE) ?
+                            startMargin : DEFAULT_MARGIN_RESOLVED;
+                    rightMargin = (endMargin > DEFAULT_MARGIN_RELATIVE) ?
+                            endMargin : DEFAULT_MARGIN_RESOLVED;
+                }
+            }
+            mMarginFlags &= ~NEED_RESOLUTION_MASK;
+        }
+
+        /**
+         * @hide
+         */
+        public boolean isLayoutRtl() {
+            return ((mMarginFlags & LAYOUT_DIRECTION_MASK) == View.LAYOUT_DIRECTION_RTL);
         }
 
         @Nonnull

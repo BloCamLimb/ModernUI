@@ -29,24 +29,25 @@ import javax.annotation.Nullable;
  * children. Absolute layouts are less flexible and harder to maintain than
  * other types of layouts without absolute positioning.
  *
- * @since 2.0.1
+ * @since 2.0
  */
 @SuppressWarnings("unused")
 public class AbsoluteLayout extends ViewGroup {
 
     public AbsoluteLayout() {
-
     }
 
     @Override
     protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
         int count = getChildCount();
 
-        int maxWidth = 0;
         int maxHeight = 0;
+        int maxWidth = 0;
 
+        // Find out how big everyone wants to be
         measureChildren(widthMeasureSpec, heightMeasureSpec);
 
+        // Find rightmost and bottom-most child
         for (int i = 0; i < count; i++) {
             View child = getChildAt(i);
             if (child.getVisibility() != GONE) {
@@ -60,11 +61,16 @@ public class AbsoluteLayout extends ViewGroup {
             }
         }
 
-        maxWidth = Math.max(maxWidth, getMinimumWidth());
-        maxHeight = Math.max(maxHeight, getMinimumHeight());
+        // Account for padding too
+        maxWidth += mPaddingLeft + mPaddingRight;
+        maxHeight += mPaddingTop + mPaddingBottom;
 
-        setMeasuredDimension(resolveSize(maxWidth, widthMeasureSpec),
-                resolveSize(maxHeight, heightMeasureSpec));
+        // Check against minimum height and width
+        maxHeight = Math.max(maxHeight, getSuggestedMinimumHeight());
+        maxWidth = Math.max(maxWidth, getSuggestedMinimumWidth());
+
+        setMeasuredDimension(resolveSizeAndState(maxWidth, widthMeasureSpec, 0),
+                resolveSizeAndState(maxHeight, heightMeasureSpec, 0));
     }
 
     @Override
@@ -76,25 +82,33 @@ public class AbsoluteLayout extends ViewGroup {
             if (child.getVisibility() != GONE) {
                 LayoutParams lp = (LayoutParams) child.getLayoutParams();
 
-                child.layout(lp.x, lp.y,
-                        lp.x + child.getMeasuredWidth(),
-                        lp.y + child.getMeasuredHeight());
+                int childLeft = mPaddingLeft + lp.x;
+                int childTop = mPaddingTop + lp.y;
+                child.layout(childLeft, childTop,
+                        childLeft + child.getMeasuredWidth(),
+                        childTop + child.getMeasuredHeight());
             }
         }
     }
 
     @Nonnull
     @Override
-    protected ViewGroup.LayoutParams convertLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
+    protected ViewGroup.LayoutParams generateLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
         if (params instanceof LayoutParams) {
-            return params;
+            return new LayoutParams((LayoutParams) params);
         }
         return new LayoutParams(params);
     }
 
+    /**
+     * Returns a set of layout parameters with a width of
+     * {@link ViewGroup.LayoutParams#WRAP_CONTENT},
+     * a height of {@link ViewGroup.LayoutParams#WRAP_CONTENT}
+     * and with the coordinates (0, 0).
+     */
     @Nonnull
     @Override
-    protected ViewGroup.LayoutParams createDefaultLayoutParams() {
+    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT, 0, 0);
     }
 
@@ -103,12 +117,16 @@ public class AbsoluteLayout extends ViewGroup {
         return params instanceof LayoutParams;
     }
 
+    /**
+     * Per-child layout information associated with AbsoluteLayout.
+     */
     public static class LayoutParams extends ViewGroup.LayoutParams {
 
         /**
          * The horizontal, or X, location of the child within the view group.
          */
         public int x;
+
         /**
          * The vertical, or Y, location of the child within the view group.
          */
@@ -140,7 +158,7 @@ public class AbsoluteLayout extends ViewGroup {
          *
          * @param source The layout params to copy from.
          */
-        public LayoutParams(LayoutParams source) {
+        public LayoutParams(@Nonnull LayoutParams source) {
             super(source);
             this.x = source.x;
             this.y = source.y;
