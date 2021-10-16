@@ -799,7 +799,7 @@ public class RelativeLayout extends ViewGroup {
 
     @Nonnull
     @Override
-    protected ViewGroup.LayoutParams convertLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
+    protected ViewGroup.LayoutParams generateLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
         if (params instanceof LayoutParams) {
             return params;
         } else if (params instanceof MarginLayoutParams) {
@@ -810,7 +810,7 @@ public class RelativeLayout extends ViewGroup {
 
     @Nonnull
     @Override
-    protected ViewGroup.LayoutParams createDefaultLayoutParams() {
+    protected ViewGroup.LayoutParams generateDefaultLayoutParams() {
         return new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT);
     }
 

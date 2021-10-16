@@ -23,10 +23,12 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.MovementMethod;
 import icyllis.modernui.text.method.TransformationMethod;
 import icyllis.modernui.view.Gravity;
+import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 
@@ -195,6 +197,121 @@ public class TextView extends View {
         mText = text;
         mSpannable = (text instanceof Spannable) ? (Spannable) text : null;
         mPrecomputed = (text instanceof PrecomputedText) ? (PrecomputedText) text : null;
+    }
+
+    /**
+     * It would be better to rely on the input type for everything. A password inputType should have
+     * a password transformation. We should hence use isPasswordInputType instead of this method.
+     * <p>
+     * We should:
+     * - Call setInputType in setKeyListener instead of changing the input type directly (which
+     * would install the correct transformation).
+     * - Refuse the installation of a non-password transformation in setTransformation if the input
+     * type is password.
+     * <p>
+     * However, this is like this for legacy reasons and we cannot break existing apps. This method
+     * is useful since it matches what the user can see (obfuscated text or not).
+     *
+     * @return true if the current transformation method is of the password type.
+     */
+    boolean hasPasswordTransformationMethod() {
+        //TODO
+        return false;
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        int widthSize = MeasureSpec.getSize(widthMeasureSpec);
+        int heightSize = MeasureSpec.getSize(heightMeasureSpec);
+
+        int width;
+        int height;
+
+        BoringLayout.Metrics boring = UNKNOWN_BORING;
+        BoringLayout.Metrics hintBoring = UNKNOWN_BORING;
+
+        if (mTextDir == null) {
+            mTextDir = getTextDirectionHeuristic();
+        }
+    }
+
+    private static int desired(@Nonnull Layout layout) {
+        int n = layout.getLineCount();
+        CharSequence text = layout.getText();
+        float max = 0;
+
+        // if any line was wrapped, we can't use it.
+        // but it's ok for the last line not to have a newline
+
+        for (int i = 0; i < n - 1; i++) {
+            if (text.charAt(layout.getLineEnd(i) - 1) != '\n') {
+                return -1;
+            }
+        }
+
+        for (int i = 0; i < n; i++) {
+            max = Math.max(max, layout.getLineMax(i));
+        }
+
+        return (int) Math.ceil(max);
+    }
+
+    @Override
+    protected void onRtlPropertiesChanged(int layoutDirection) {
+        super.onRtlPropertiesChanged(layoutDirection);
+    }
+
+    /**
+     * Returns resolved {@link TextDirectionHeuristic} that will be used for text layout.
+     * The {@link TextDirectionHeuristic} that is used by TextView is only available after
+     * {@link #getTextDirection()} and {@link #getLayoutDirection()} is resolved. Therefore the
+     * return value may not be the same as the one TextView uses if the View's layout direction is
+     * not resolved or detached from parent root view.
+     */
+    @Nonnull
+    public TextDirectionHeuristic getTextDirectionHeuristic() {
+        if (hasPasswordTransformationMethod()) {
+            // passwords fields should be LTR
+            return TextDirectionHeuristics.LTR;
+        }
+
+        /*if (mEditor != null
+                && (mEditor.mInputType & EditorInfo.TYPE_MASK_CLASS)
+                == EditorInfo.TYPE_CLASS_PHONE) {
+            // Phone numbers must be in the direction of the locale's digits. Most locales have LTR
+            // digits, but some locales, such as those written in the Adlam or N'Ko scripts, have
+            // RTL digits.
+            final DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(getTextLocale());
+            final String zero = symbols.getDigitStrings()[0];
+            // In case the zero digit is multi-codepoint, just use the first codepoint to determine
+            // direction.
+            final int firstCodepoint = zero.codePointAt(0);
+            final byte digitDirection = Character.getDirectionality(firstCodepoint);
+            if (digitDirection == Character.DIRECTIONALITY_RIGHT_TO_LEFT
+                    || digitDirection == Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC) {
+                return TextDirectionHeuristics.RTL;
+            } else {
+                return TextDirectionHeuristics.LTR;
+            }
+        }*/
+
+        // Always need to resolve layout direction first
+        final boolean defaultIsRtl = isLayoutRtl();
+
+        // Now, we can select the heuristic
+        return switch (getTextDirection()) {
+            case TEXT_DIRECTION_ANY_RTL -> TextDirectionHeuristics.ANYRTL_LTR;
+            case TEXT_DIRECTION_LTR -> TextDirectionHeuristics.LTR;
+            case TEXT_DIRECTION_RTL -> TextDirectionHeuristics.RTL;
+            case TEXT_DIRECTION_LOCALE -> TextDirectionHeuristics.LOCALE;
+            case TEXT_DIRECTION_FIRST_STRONG_LTR -> TextDirectionHeuristics.FIRSTSTRONG_LTR;
+            case TEXT_DIRECTION_FIRST_STRONG_RTL -> TextDirectionHeuristics.FIRSTSTRONG_RTL;
+            default -> (defaultIsRtl ? TextDirectionHeuristics.FIRSTSTRONG_RTL :
+                    TextDirectionHeuristics.FIRSTSTRONG_LTR);
+        };
     }
 
     /**

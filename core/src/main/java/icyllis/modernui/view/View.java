@@ -35,6 +35,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 
+import static java.lang.Math.max;
+
 /**
  * View is the basic component of UI. View has its own rectangular area on screen,
  * which is also responsible for drawing and event handling.
@@ -117,6 +119,32 @@ public class View implements Drawable.Callback {
 
     private static final int PFLAG2_BACKGROUND_SIZE_CHANGED = 0x00000001;
 
+    /**
+     * Bits of {@link #getMeasuredWidthAndState()} and
+     * {@link #getMeasuredWidthAndState()} that provide the actual measured size.
+     */
+    public static final int MEASURED_SIZE_MASK = 0x00ffffff;
+
+    /**
+     * Bits of {@link #getMeasuredWidthAndState()} and
+     * {@link #getMeasuredWidthAndState()} that provide the additional state bits.
+     */
+    public static final int MEASURED_STATE_MASK = 0xff000000;
+
+    /**
+     * Bit shift of {@link #MEASURED_STATE_MASK} to get to the height bits
+     * for functions that combine both width and height into a single int,
+     * such as {@link #getMeasuredState()} and the childState argument of
+     * {@link #resolveSizeAndState(int, int, int)}.
+     */
+    public static final int MEASURED_HEIGHT_STATE_SHIFT = 16;
+
+    /**
+     * Bit of {@link #getMeasuredWidthAndState()} and
+     * {@link #getMeasuredWidthAndState()} that indicates the measured size
+     * is smaller that the space the view would like to have.
+     */
+    public static final int MEASURED_STATE_TOO_SMALL = 0x01000000;
 
     /**
      * A flag to indicate that the layout direction of this view has not been defined yet.
@@ -1254,25 +1282,64 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Get measured width information
-     * This should be used during measurement and layout calculations only.
-     * Use {@link #getWidth()} to get the width of this view after layout.
+     * Like {@link #getMeasuredWidthAndState()}, but only returns the
+     * raw width component (that is the result is masked by
+     * {@link #MEASURED_SIZE_MASK}).
      *
-     * @return measured width of this view
+     * @return The raw measured width of this view.
      */
     public final int getMeasuredWidth() {
+        return mMeasuredWidth & MEASURED_SIZE_MASK;
+    }
+
+    /**
+     * Return the full width measurement information for this view as computed
+     * by the most recent call to {@link #measure(int, int)}.  This result is a bit mask
+     * as defined by {@link #MEASURED_SIZE_MASK} and {@link #MEASURED_STATE_TOO_SMALL}.
+     * This should be used during measurement and layout calculations only. Use
+     * {@link #getWidth()} to see how wide a view is after layout.
+     *
+     * @return The measured width of this view as a bit mask.
+     */
+    public final int getMeasuredWidthAndState() {
         return mMeasuredWidth;
     }
 
     /**
-     * Get measured height information
-     * This should be used during measurement and layout calculations only.
-     * Use {@link #getHeight()} to get the height of this view after layout.
+     * Like {@link #getMeasuredHeightAndState()}, but only returns the
+     * raw height component (that is the result is masked by
+     * {@link #MEASURED_SIZE_MASK}).
      *
-     * @return measured height of this view
+     * @return The raw measured height of this view.
      */
     public final int getMeasuredHeight() {
+        return mMeasuredHeight & MEASURED_SIZE_MASK;
+    }
+
+    /**
+     * Return the full height measurement information for this view as computed
+     * by the most recent call to {@link #measure(int, int)}.  This result is a bit mask
+     * as defined by {@link #MEASURED_SIZE_MASK} and {@link #MEASURED_STATE_TOO_SMALL}.
+     * This should be used during measurement and layout calculations only. Use
+     * {@link #getHeight()} to see how high a view is after layout.
+     *
+     * @return The measured height of this view as a bit mask.
+     */
+    public final int getMeasuredHeightAndState() {
         return mMeasuredHeight;
+    }
+
+    /**
+     * Return only the state bits of {@link #getMeasuredWidthAndState()}
+     * and {@link #getMeasuredHeightAndState()}, combined into one integer.
+     * The width component is in the regular bits {@link #MEASURED_STATE_MASK}
+     * and the height component is at the shifted bits
+     * {@link #MEASURED_HEIGHT_STATE_SHIFT}>>{@link #MEASURED_STATE_MASK}.
+     */
+    public final int getMeasuredState() {
+        return (mMeasuredWidth & MEASURED_STATE_MASK)
+                | ((mMeasuredHeight >> MEASURED_HEIGHT_STATE_SHIFT)
+                & (MEASURED_STATE_MASK >> MEASURED_HEIGHT_STATE_SHIFT));
     }
 
     /**
@@ -1320,6 +1387,114 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Merge two states as returned by {@link #getMeasuredState()}.
+     *
+     * @param curState The current state as returned from a view or the result
+     *                 of combining multiple views.
+     * @param newState The new view state to combine.
+     * @return Returns a new integer reflecting the combination of the two
+     * states.
+     */
+    public static int combineMeasuredStates(int curState, int newState) {
+        return curState | newState;
+    }
+
+    /**
+     * Version of {@link #resolveSizeAndState(int, int, int)}
+     * returning only the {@link #MEASURED_SIZE_MASK} bits of the result.
+     */
+    public static int resolveSize(int size, int measureSpec) {
+        return resolveSizeAndState(size, measureSpec, 0) & MEASURED_SIZE_MASK;
+    }
+
+    /**
+     * Utility to reconcile a desired size and state, with constraints imposed
+     * by a MeasureSpec. Will take the desired size, unless a different size
+     * is imposed by the constraints. The returned value is a compound integer,
+     * with the resolved size in the {@link #MEASURED_SIZE_MASK} bits and
+     * optionally the bit {@link #MEASURED_STATE_TOO_SMALL} set if the
+     * resulting size is smaller than the size the view wants to be.
+     *
+     * @param size               How big the view wants to be.
+     * @param measureSpec        Constraints imposed by the parent.
+     * @param childMeasuredState Size information bit mask for the view's
+     *                           children.
+     * @return Size information bit mask as defined by
+     * {@link #MEASURED_SIZE_MASK} and
+     * {@link #MEASURED_STATE_TOO_SMALL}.
+     */
+    public static int resolveSizeAndState(int size, int measureSpec, int childMeasuredState) {
+        final int specMode = MeasureSpec.getMode(measureSpec);
+        final int specSize = MeasureSpec.getSize(measureSpec);
+        final int result;
+        switch (specMode) {
+            case MeasureSpec.AT_MOST:
+                if (specSize < size) {
+                    result = specSize | MEASURED_STATE_TOO_SMALL;
+                } else {
+                    result = size;
+                }
+                break;
+            case MeasureSpec.EXACTLY:
+                result = specSize;
+                break;
+            case MeasureSpec.UNSPECIFIED:
+            default:
+                result = size;
+        }
+        return result | (childMeasuredState & MEASURED_STATE_MASK);
+    }
+
+    /**
+     * Utility to return a default size. Uses the supplied size if the
+     * MeasureSpec imposed no constraints. Will get larger if allowed
+     * by the MeasureSpec.
+     *
+     * @param size        Default size for this view
+     * @param measureSpec Constraints imposed by the parent
+     * @return The size this view should be.
+     */
+    public static int getDefaultSize(int size, int measureSpec) {
+        int specMode = MeasureSpec.getMode(measureSpec);
+        int specSize = MeasureSpec.getSize(measureSpec);
+
+        return switch (specMode) {
+            case MeasureSpec.AT_MOST, MeasureSpec.EXACTLY -> specSize;
+            default -> size;
+        };
+    }
+
+    /**
+     * Returns the suggested minimum height that the view should use. This
+     * returns the maximum of the view's minimum height
+     * and the background's minimum height
+     * ({@link Drawable#getMinimumHeight()}).
+     * <p>
+     * When being used in {@link #onMeasure(int, int)}, the caller should still
+     * ensure the returned height is within the requirements of the parent.
+     *
+     * @return The suggested minimum height of the view.
+     */
+    protected int getSuggestedMinimumHeight() {
+        return (mBackground == null) ? mMinHeight : max(mMinHeight, mBackground.getMinimumHeight());
+    }
+
+    /**
+     * Returns the suggested minimum width that the view should use. This
+     * returns the maximum of the view's minimum width
+     * and the background's minimum width
+     * ({@link Drawable#getMinimumWidth()}).
+     * <p>
+     * When being used in {@link #onMeasure(int, int)}, the caller should still
+     * ensure the returned width is within the requirements of the parent.
+     *
+     * @return The suggested minimum width of the view.
+     */
+    protected int getSuggestedMinimumWidth() {
+        return (mBackground == null) ? mMinWidth : max(mMinWidth, mBackground.getMinimumWidth());
+    }
+
+    /**
      * Returns the minimum width of the view.
      *
      * @return the minimum width the view will try to be, in pixels
@@ -1363,31 +1538,6 @@ public class View implements Drawable.Callback {
     public void setMinimumHeight(int minHeight) {
         mMinHeight = minHeight;
         requestLayout();
-    }
-
-    /**
-     * Utility to return a default size. Uses the supplied size if the
-     * MeasureSpec imposed no constraints. Will get larger if allowed
-     * by the MeasureSpec.
-     *
-     * @param size        default size for this view
-     * @param measureSpec measure spec imposed by the parent
-     * @return the measured size of this view
-     */
-    public static int getDefaultSize(int size, int measureSpec) {
-        return switch (MeasureSpec.getMode(measureSpec)) {
-            case MeasureSpec.EXACTLY, MeasureSpec.AT_MOST -> MeasureSpec.getSize(measureSpec);
-            default -> size;
-        };
-    }
-
-    public static int resolveSize(int size, int measureSpec) {
-        int specSize = MeasureSpec.getSize(measureSpec);
-        return switch (MeasureSpec.getMode(measureSpec)) {
-            case MeasureSpec.AT_MOST -> Math.min(specSize, size);
-            case MeasureSpec.EXACTLY -> specSize;
-            default -> size;
-        };
     }
 
     /**
@@ -2794,49 +2944,51 @@ public class View implements Drawable.Callback {
     public void resolvePadding() {
         final int resolvedLayoutDirection = getLayoutDirection();
 
-        // Post Jelly Bean MR1 case: we need to take the resolved layout direction into account.
-        // If start / end padding are defined, they will be resolved (hence overriding) to
-        // left / right or right / left depending on the resolved layout direction.
-        // If start / end padding are not defined, use the left / right ones.
-        if (mBackground != null && (!mLeftPaddingDefined || !mRightPaddingDefined)) {
-            Rect padding = sThreadLocal.get();
-            if (padding == null) {
-                padding = new Rect();
-                sThreadLocal.set(padding);
+        if (ModernUI.get().hasRtlSupport()) {
+            // Post Jelly Bean MR1 case: we need to take the resolved layout direction into account.
+            // If start / end padding are defined, they will be resolved (hence overriding) to
+            // left / right or right / left depending on the resolved layout direction.
+            // If start / end padding are not defined, use the left / right ones.
+            if (mBackground != null && (!mLeftPaddingDefined || !mRightPaddingDefined)) {
+                Rect padding = sThreadLocal.get();
+                if (padding == null) {
+                    padding = new Rect();
+                    sThreadLocal.set(padding);
+                }
+                mBackground.getPadding(padding);
+                if (!mLeftPaddingDefined) {
+                    mUserPaddingLeftInitial = padding.left;
+                }
+                if (!mRightPaddingDefined) {
+                    mUserPaddingRightInitial = padding.right;
+                }
             }
-            mBackground.getPadding(padding);
-            if (!mLeftPaddingDefined) {
-                mUserPaddingLeftInitial = padding.left;
-            }
-            if (!mRightPaddingDefined) {
-                mUserPaddingRightInitial = padding.right;
-            }
-        }
-        if (resolvedLayoutDirection == LAYOUT_DIRECTION_RTL) {
-            if (mUserPaddingStart != UNDEFINED_PADDING) {
-                mUserPaddingRight = mUserPaddingStart;
+            if (resolvedLayoutDirection == LAYOUT_DIRECTION_RTL) {
+                if (mUserPaddingStart != UNDEFINED_PADDING) {
+                    mUserPaddingRight = mUserPaddingStart;
+                } else {
+                    mUserPaddingRight = mUserPaddingRightInitial;
+                }
+                if (mUserPaddingEnd != UNDEFINED_PADDING) {
+                    mUserPaddingLeft = mUserPaddingEnd;
+                } else {
+                    mUserPaddingLeft = mUserPaddingLeftInitial;
+                }
             } else {
-                mUserPaddingRight = mUserPaddingRightInitial;
+                if (mUserPaddingStart != UNDEFINED_PADDING) {
+                    mUserPaddingLeft = mUserPaddingStart;
+                } else {
+                    mUserPaddingLeft = mUserPaddingLeftInitial;
+                }
+                if (mUserPaddingEnd != UNDEFINED_PADDING) {
+                    mUserPaddingRight = mUserPaddingEnd;
+                } else {
+                    mUserPaddingRight = mUserPaddingRightInitial;
+                }
             }
-            if (mUserPaddingEnd != UNDEFINED_PADDING) {
-                mUserPaddingLeft = mUserPaddingEnd;
-            } else {
-                mUserPaddingLeft = mUserPaddingLeftInitial;
-            }
-        } else {
-            if (mUserPaddingStart != UNDEFINED_PADDING) {
-                mUserPaddingLeft = mUserPaddingStart;
-            } else {
-                mUserPaddingLeft = mUserPaddingLeftInitial;
-            }
-            if (mUserPaddingEnd != UNDEFINED_PADDING) {
-                mUserPaddingRight = mUserPaddingEnd;
-            } else {
-                mUserPaddingRight = mUserPaddingRightInitial;
-            }
-        }
 
-        mUserPaddingBottom = (mUserPaddingBottom >= 0) ? mUserPaddingBottom : mPaddingBottom;
+            mUserPaddingBottom = (mUserPaddingBottom >= 0) ? mUserPaddingBottom : mPaddingBottom;
+        }
 
         internalSetPadding(mUserPaddingLeft, mPaddingTop, mUserPaddingRight, mUserPaddingBottom);
         onRtlPropertiesChanged(resolvedLayoutDirection);
@@ -3260,6 +3412,39 @@ public class View implements Drawable.Callback {
         if (background != null) {
             background.setCallback(this);
         }
+    }
+
+    /**
+     * Gets the background drawable
+     *
+     * @return The drawable used as the background for this view, if any.
+     * @see #setBackground(Drawable)
+     */
+    public Drawable getBackground() {
+        return mBackground;
+    }
+
+    /**
+     * Returns the drawable used as the foreground of this View. The
+     * foreground drawable, if non-null, is always drawn on top of the view's content.
+     *
+     * @return a Drawable or null if no foreground was set
+     * @see #onDrawForeground(Canvas)
+     */
+    public Drawable getForeground() {
+        return null;
+    }
+
+    /**
+     * Magic bit used to support features of framework-internal window decor implementation details.
+     * This used to live exclusively in FrameLayout.
+     *
+     * @return true if the foreground should draw inside the padding region or false
+     * if it should draw inset by the view's padding
+     * @hide internal use only; only used by FrameLayout and internal screen layouts.
+     */
+    public boolean isForegroundInsidePadding() {
+        return true;
     }
 
     /**
