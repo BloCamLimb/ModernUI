@@ -152,25 +152,25 @@ public class RelativeLayout extends ViewGroup {
         int width = 0;
         int height = 0;
 
-        MeasureSpec.Mode widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        MeasureSpec.Mode heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        int heightMode = MeasureSpec.getMode(heightMeasureSpec);
         int widthSize = MeasureSpec.getSize(widthMeasureSpec);
         int heightSize = MeasureSpec.getSize(heightMeasureSpec);
 
         // Record our dimensions if they are known;
-        if (widthMode.notUnspecified()) {
+        if (widthMode != MeasureSpec.UNSPECIFIED) {
             myWidth = widthSize;
         }
 
-        if (heightMode.notUnspecified()) {
+        if (heightMode != MeasureSpec.UNSPECIFIED) {
             myHeight = heightSize;
         }
 
-        if (widthMode.isExactly()) {
+        if (widthMode == MeasureSpec.EXACTLY) {
             width = myWidth;
         }
 
-        if (heightMode.isExactly()) {
+        if (heightMode == MeasureSpec.EXACTLY) {
             height = myHeight;
         }
 
@@ -192,8 +192,8 @@ public class RelativeLayout extends ViewGroup {
             ignore = findViewById(ignoreGravity);
         }
 
-        boolean isWrapContentWidth = widthMode.notExactly();
-        boolean isWrapContentHeight = heightMode.notExactly();
+        boolean isWrapContentWidth = widthMode != MeasureSpec.EXACTLY;
+        boolean isWrapContentHeight = heightMode != MeasureSpec.EXACTLY;
 
         View[] views = sortedHorizontalChildren;
         int count = views.length;
@@ -362,22 +362,22 @@ public class RelativeLayout extends ViewGroup {
         if (myHeight < 0) {
             if (params.height >= 0) {
                 childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
-                        params.height, MeasureSpec.Mode.EXACTLY);
+                        params.height, MeasureSpec.EXACTLY);
             } else {
                 // Negative values in a mySize/myWidth/myWidth value in
                 // RelativeLayout measurement is code for, "we got an
                 // unspecified mode in the RelativeLayout's measure spec."
                 // Carry it forward.
-                childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.Mode.UNSPECIFIED);
+                childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED);
             }
         } else {
             int maxHeight = Math.max(0, myHeight);
 
-            MeasureSpec.Mode heightMode;
+            int heightMode;
             if (params.height == LayoutParams.MATCH_PARENT) {
-                heightMode = MeasureSpec.Mode.EXACTLY;
+                heightMode = MeasureSpec.EXACTLY;
             } else {
-                heightMode = MeasureSpec.Mode.AT_MOST;
+                heightMode = MeasureSpec.AT_MOST;
             }
 
             childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(maxHeight, heightMode);
@@ -402,7 +402,7 @@ public class RelativeLayout extends ViewGroup {
      */
     private int getChildMeasureSpec(int childStart, int childEnd,
                                     int childSize, int startMargin, int endMargin, int mySize) {
-        MeasureSpec.Mode childSpecMode = MeasureSpec.Mode.UNSPECIFIED;
+        int childSpecMode = MeasureSpec.UNSPECIFIED;
         int childSpecSize = 0;
 
         // Negative values in a mySize value in RelativeLayout
@@ -413,15 +413,15 @@ public class RelativeLayout extends ViewGroup {
             if (childStart != VALUE_NOT_SET && childEnd != VALUE_NOT_SET) {
                 // Constraints fixed both edges, so child has an exact size.
                 childSpecSize = Math.max(0, childEnd - childStart);
-                childSpecMode = MeasureSpec.Mode.EXACTLY;
+                childSpecMode = MeasureSpec.EXACTLY;
             } else if (childSize >= 0) {
                 // The child specified an exact size.
                 childSpecSize = childSize;
-                childSpecMode = MeasureSpec.Mode.EXACTLY;
+                childSpecMode = MeasureSpec.EXACTLY;
             } else {
                 // Allow the child to be whatever size it wants.
                 childSpecSize = 0;
-                childSpecMode = MeasureSpec.Mode.UNSPECIFIED;
+                childSpecMode = MeasureSpec.UNSPECIFIED;
             }
 
             return MeasureSpec.makeMeasureSpec(childSpecSize, childSpecMode);
@@ -445,12 +445,12 @@ public class RelativeLayout extends ViewGroup {
 
         if (childStart != VALUE_NOT_SET && childEnd != VALUE_NOT_SET) {
             // Constraints fixed both edges, so child must be an exact size.
-            childSpecMode = MeasureSpec.Mode.EXACTLY;
+            childSpecMode = MeasureSpec.EXACTLY;
             childSpecSize = Math.max(0, maxAvailable);
         } else {
             if (childSize >= 0) {
                 // Child wanted an exact size. Give as much as possible.
-                childSpecMode = MeasureSpec.Mode.EXACTLY;
+                childSpecMode = MeasureSpec.EXACTLY;
 
                 if (maxAvailable >= 0) {
                     // We have a maximum size in this dimension.
@@ -462,14 +462,14 @@ public class RelativeLayout extends ViewGroup {
             } else if (childSize == LayoutParams.MATCH_PARENT) {
                 // Child wanted to be as big as possible. Give all available
                 // space.
-                childSpecMode = MeasureSpec.Mode.EXACTLY;
+                childSpecMode = MeasureSpec.EXACTLY;
                 childSpecSize = Math.max(0, maxAvailable);
             } else if (childSize == LayoutParams.WRAP_CONTENT) {
                 // Child wants to wrap content. Use AT_MOST to communicate
                 // available space if we know our max size.
                 if (maxAvailable >= 0) {
                     // We have a maximum size in this dimension.
-                    childSpecMode = MeasureSpec.Mode.AT_MOST;
+                    childSpecMode = MeasureSpec.AT_MOST;
                     childSpecSize = maxAvailable;
                 }  // We can grow in this dimension. Child can be as big as it
                 // wants.

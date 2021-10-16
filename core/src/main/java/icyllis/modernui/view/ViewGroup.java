@@ -1227,61 +1227,61 @@ public abstract class ViewGroup extends View implements ViewParent {
         int size = Math.max(0, specSize - padding);
 
         int resultSize = 0;
-        MeasureSpec.Mode resultMode = MeasureSpec.Mode.UNSPECIFIED;
+        int resultMode = MeasureSpec.UNSPECIFIED;
 
         switch (MeasureSpec.getMode(spec)) {
             // Parent has imposed an exact size on us
-            case EXACTLY:
+            case MeasureSpec.EXACTLY:
                 if (childDimension >= 0) {
                     resultSize = childDimension;
-                    resultMode = MeasureSpec.Mode.EXACTLY;
+                    resultMode = MeasureSpec.EXACTLY;
                 } else if (childDimension == LayoutParams.MATCH_PARENT) {
                     // Child wants to be our size. So be it.
                     resultSize = size;
-                    resultMode = MeasureSpec.Mode.EXACTLY;
+                    resultMode = MeasureSpec.EXACTLY;
                 } else if (childDimension == LayoutParams.WRAP_CONTENT) {
                     // Child wants to determine its own size. It can't be
                     // bigger than us.
                     resultSize = size;
-                    resultMode = MeasureSpec.Mode.AT_MOST;
+                    resultMode = MeasureSpec.AT_MOST;
                 }
                 break;
 
             // Parent has imposed a maximum size on us
-            case AT_MOST:
+            case MeasureSpec.AT_MOST:
                 if (childDimension >= 0) {
                     // Child wants a specific size... so be it
                     resultSize = childDimension;
-                    resultMode = MeasureSpec.Mode.EXACTLY;
+                    resultMode = MeasureSpec.EXACTLY;
                 } else if (childDimension == LayoutParams.MATCH_PARENT) {
                     // Child wants to be our size, but our size is not fixed.
                     // Constrain child to not be bigger than us.
                     resultSize = size;
-                    resultMode = MeasureSpec.Mode.AT_MOST;
+                    resultMode = MeasureSpec.AT_MOST;
                 } else if (childDimension == LayoutParams.WRAP_CONTENT) {
                     // Child wants to determine its own size. It can't be
                     // bigger than us.
                     resultSize = size;
-                    resultMode = MeasureSpec.Mode.AT_MOST;
+                    resultMode = MeasureSpec.AT_MOST;
                 }
                 break;
 
             // Parent asked to see how big we want to be
-            case UNSPECIFIED:
+            case MeasureSpec.UNSPECIFIED:
                 if (childDimension >= 0) {
                     // Child wants a specific size... let him have it
                     resultSize = childDimension;
-                    resultMode = MeasureSpec.Mode.EXACTLY;
+                    resultMode = MeasureSpec.EXACTLY;
                 } else if (childDimension == LayoutParams.MATCH_PARENT) {
                     // Child wants to be our size... find out how big it should
                     // be
                     resultSize = size;
-                    resultMode = MeasureSpec.Mode.UNSPECIFIED;
+                    resultMode = MeasureSpec.UNSPECIFIED;
                 } else if (childDimension == LayoutParams.WRAP_CONTENT) {
                     // Child wants to determine its own size.... find out how
                     // big it should be
                     resultSize = size;
-                    resultMode = MeasureSpec.Mode.UNSPECIFIED;
+                    resultMode = MeasureSpec.UNSPECIFIED;
                 }
                 break;
         }

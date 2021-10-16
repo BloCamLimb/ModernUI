@@ -30,14 +30,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
 
 /**
- * The core class of the client side of Modern UI
+ * The core class of the client side of Modern UI.
  */
 public class ModernUI {
 
@@ -51,16 +51,19 @@ public class ModernUI {
 
     private static final Cleaner sCleaner = Cleaner.create();
 
-    private final Path mAssetsDir = Path.of(String.valueOf((System.getenv("APP_ASSETS"))));
+    static {
+        if (Runtime.version().feature() < 16) {
+            throw new RuntimeException("JRE 16 or above is required");
+        }
+    }
+
+    private final Path mAssetsDir = Path.of(String.valueOf(System.getenv("APP_ASSETS")));
 
     public ModernUI() {
         synchronized (ModernUI.class) {
             if (sInstance == null) {
                 sInstance = this;
             }
-        }
-        if (Runtime.version().feature() < 16) {
-            throw new RuntimeException("JRE 16 or above is required");
         }
     }
 
@@ -113,6 +116,6 @@ public class ModernUI {
 
     @Nonnull
     public ReadableByteChannel getResourceAsChannel(@Nonnull String namespace, @Nonnull String path) throws IOException {
-        return Files.newByteChannel(mAssetsDir.resolve(namespace).resolve(path), StandardOpenOption.READ);
+        return FileChannel.open(mAssetsDir.resolve(namespace).resolve(path), StandardOpenOption.READ);
     }
 }

@@ -18,14 +18,34 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.math.MathUtil;
-
 import javax.annotation.Nonnull;
 
 /**
- * Measure specification encapsulates the layout requirements passed from parent to child.
+ * A MeasureSpec encapsulates the layout requirements passed from parent to child.
  * Each MeasureSpec represents a requirement for either the width or the height.
- * A MeasureSpec is comprised of a size and a mode.
+ * A MeasureSpec is comprised of a size and a mode. There are three possible
+ * modes:
+ * <dl>
+ * <dt>UNSPECIFIED</dt>
+ * <dd>
+ * The parent has not imposed any constraint on the child. It can be whatever size
+ * it wants.
+ * </dd>
+ *
+ * <dt>EXACTLY</dt>
+ * <dd>
+ * The parent has determined an exact size for the child. The child is going to be
+ * given those bounds regardless of how big it wants to be.
+ * </dd>
+ *
+ * <dt>AT_MOST</dt>
+ * <dd>
+ * The child can be as large as it wants up to the specified size.
+ * </dd>
+ * </dl>
+ * <p>
+ * MeasureSpecs are implemented as ints to reduce object allocation. This class
+ * is provided to pack and unpack the &lt;size, mode&gt; tuple into the int.
  */
 @SuppressWarnings("unused")
 public class MeasureSpec {
@@ -34,21 +54,46 @@ public class MeasureSpec {
     private static final int MODE_MASK  = 0x3 << MODE_SHIFT;
 
     /**
-     * Creates a measure specification based on the given size and mode.
+     * Measure specification mode: The parent has not imposed any constraint
+     * on the child. It can be whatever size it wants.
+     */
+    public static final int UNSPECIFIED = 0;
+
+    /**
+     * Measure specification mode: The parent has determined an exact size
+     * for the child. The child is going to be given those bounds regardless
+     * of how big it wants to be.
+     */
+    public static final int EXACTLY = 1 << MODE_SHIFT;
+
+    /**
+     * Measure specification mode: The child can be as large as it wants up
+     * to the specified size.
+     */
+    public static final int AT_MOST = 2 << MODE_SHIFT;
+
+    /**
+     * Creates a measure specification based on the supplied size and mode.
+     * <p>
+     * The mode must always be one of the following:
+     * <ul>
+     *  <li>{@link #UNSPECIFIED}</li>
+     *  <li>{@link #EXACTLY}</li>
+     *  <li>{@link #AT_MOST}</li>
+     * </ul>
      *
      * @param size the size of the measure specification
      * @param mode the mode of the measure specification
      * @return the measure specification based on size and mode
      */
-    public static int makeMeasureSpec(int size, @Nonnull Mode mode) {
-        size = MathUtil.clamp(size, 0, (1 << MODE_SHIFT) - 1);
-        return (size & ~MODE_MASK) | (mode.ordinal() << MODE_SHIFT);
+    public static int makeMeasureSpec(int size, int mode) {
+        return (size & ~MODE_MASK) | (mode & MODE_MASK);
     }
 
     /**
      * Extracts the size from the supplied measure specification.
      *
-     * @param measureSpec the measure specification to extract from
+     * @param measureSpec the measure specification to extract the size from
      * @return the size in pixels defined in the supplied measure specification
      */
     public static int getSize(int measureSpec) {
@@ -59,59 +104,34 @@ public class MeasureSpec {
      * Extracts the mode from the supplied measure specification.
      *
      * @param measureSpec the measure specification to extract from
-     * @return the measure mode, see {@link Mode}
+     * @return the mode of the measure specification
      */
-    @Nonnull
-    public static Mode getMode(int measureSpec) {
-        return Mode.values()[measureSpec >>> MODE_SHIFT];
+    public static int getMode(int measureSpec) {
+        return (measureSpec & MODE_MASK);
     }
 
     /**
-     * Measure specification modes.
+     * Returns a String representation of the specified measure
+     * specification.
+     *
+     * @param measureSpec the measure specification to convert to a String
+     * @return a String with the following format: "MeasureSpec: MODE SIZE"
      */
-    //TODO remove enum class
-    @Deprecated
-    public enum Mode {
-        /**
-         * The parent has not imposed any constraint on the child.
-         * It can be whatever size it wants.
-         */
-        UNSPECIFIED,
+    @Nonnull
+    public static String toString(int measureSpec) {
+        int mode = getMode(measureSpec);
+        int size = getSize(measureSpec);
 
-        /**
-         * The parent has determined an exact size for the child.
-         * The child is going to be given those bounds regardless
-         * of how big it wants to be.
-         */
-        EXACTLY,
+        StringBuilder sb = new StringBuilder("MeasureSpec: ");
 
-        /**
-         * The child can be as large as it wants up to the specified size.
-         */
-        AT_MOST;
-
-        public boolean isUnspecified() {
-            return this == UNSPECIFIED;
+        switch (mode) {
+            case UNSPECIFIED -> sb.append("UNSPECIFIED ");
+            case EXACTLY -> sb.append("EXACTLY ");
+            case AT_MOST -> sb.append("AT_MOST ");
+            default -> sb.append(mode).append(" ");
         }
 
-        public boolean notUnspecified() {
-            return this != UNSPECIFIED;
-        }
-
-        public boolean isExactly() {
-            return this == EXACTLY;
-        }
-
-        public boolean notExactly() {
-            return this != EXACTLY;
-        }
-
-        public boolean isAtMost() {
-            return this == AT_MOST;
-        }
-
-        public boolean notAtMost() {
-            return this != AT_MOST;
-        }
+        sb.append(size);
+        return sb.toString();
     }
 }

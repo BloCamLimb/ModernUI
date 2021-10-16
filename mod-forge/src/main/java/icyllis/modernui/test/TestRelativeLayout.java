@@ -20,8 +20,8 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.Gravity;
-import icyllis.modernui.widget.RelativeLayout;
 import icyllis.modernui.view.View;
+import icyllis.modernui.widget.RelativeLayout;
 
 import javax.annotation.Nonnull;
 
@@ -38,7 +38,7 @@ public class TestRelativeLayout extends RelativeLayout {
 
         lp = new LayoutParams(60, 20);
         lp.setRule(ABOVE, 1);
-        lp.gravity = Gravity.HORIZONTAL_CENTER;
+        lp.gravity = Gravity.CENTER_HORIZONTAL;
         view = new CView();
         view.setId(2);
         view.setLayoutParams(lp);
@@ -47,7 +47,7 @@ public class TestRelativeLayout extends RelativeLayout {
 
         lp = new LayoutParams(LayoutParams.MATCH_PARENT, 40);
         lp.setRule(LEFT_OF, 1);
-        lp.gravity = Gravity.VERTICAL_CENTER;
+        lp.gravity = Gravity.CENTER_VERTICAL;
         view = new CView();
         view.setId(3);
         view.setLayoutParams(lp);

@@ -45,6 +45,7 @@ import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
+import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
@@ -117,7 +118,7 @@ public class TestMain {
     static {
         AudioManager.getInstance().initialize();
         try {
-            sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:", "6.ogg"))));
+            sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:", "10.ogg"))));
             sGraph = new SpectrumGraph(sTrack);
         } catch (Exception e) {
             e.printStackTrace();
@@ -327,6 +328,7 @@ public class TestMain {
                 "\u90a3\u4e48\u8bf4\u0020\u4f60\u5f88\u52c7" +
                 "\u54e6\uff1b\u5f00\u73a9\u7b11\uff0c\u6211" +
                 "\u8d85\u52c7\u7684\u597d\u4e0d\u597d\u0020\u6211\u8d85\u4f1a\u559d\u7684\u5566";
+        text += "\n\u09b9\u09cd\u09af\u09be\u09b2\u09cb\u0020\u0645\u0631\u062d\u0628\u0627\u0020\ud808\udd99\ud808\udd99";
                 /*"I was gonna be a movie star, you know with modelling and uh, acting. " +
                 "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I
                 get into escort work.";*/
@@ -358,8 +360,8 @@ public class TestMain {
 
         Spannable spannable = SpannableString.valueOf(text);
         spannable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(), 0);
-        spannable.setSpan(new AbsoluteSizeSpan(18), text.length() - 59, text.length() - 20, 0);
-        spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 20, text.length(), 0);
+        spannable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30, 0);
+        spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40, 0);
         spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), 0);
         //TextLine textLine = new TextLine(spannable);
         StaticLayout staticLayout = StaticLayout.builder(spannable, 0, spannable.length(), new TextPaint(), 600)
@@ -378,6 +380,10 @@ public class TestMain {
         GLWrapper.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         GLWrapper.glEnable(GL_STENCIL_TEST);
         GLWrapper.glEnable(GL_MULTISAMPLE);
+
+        TextPaint tps = new TextPaint();
+        tps.setColor(0xff40ddee);
+        tps.setTypeface(Typeface.SANS_SERIF);
 
         while (!window.shouldClose()) {
             long time = RenderCore.timeMillis();
@@ -416,17 +422,15 @@ public class TestMain {
 
             canvas.drawBezier(300, 100, 390, 220 + 100 * sin, 480, 170, paint);
 
-            TextPaint tp = new TextPaint();
-            tp.setColor(0xff40ddee);
             //canvas.rotate(30);
             /*String tcc = "今日も一日頑張るぞい";
             canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
             tcc = "আমি আজ সকালের নাস্তা খাব না";
             canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
             //textLine.draw(canvas, 32, 400);
-            canvas.translate(40, 600);
+            canvas.translate(40, 560);
             paint.setRGBA(0, 0, 0, 128);
-            canvas.drawRoundRect(-6, -10, 606, 280, 5, paint);
+            canvas.drawRoundRect(-6, -10, 606, 310, 5, paint);
             staticLayout.draw(canvas);
             canvas.translate(-40, -600);
 
@@ -436,11 +440,11 @@ public class TestMain {
             sGraph.draw(canvas, 800, 450);
 
             String tcc = String.format("%d / %d", (int) playTime, (int) sTrack.getLength());
-            canvas.drawText(tcc, 0, tcc.length(), 760, 456, tp);
+            canvas.drawText(tcc, 0, tcc.length(), 800, 456, Gravity.CENTER_HORIZONTAL, tps);
 
             tcc = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 + " / " +
                     Runtime.getRuntime().maxMemory() / 1048576;
-            canvas.drawText(tcc, 0, tcc.length(), 1000, 60, tp);
+            canvas.drawText(tcc, 0, tcc.length(), 1000, 60, tps);
             //canvas.rotate(-30);
 
             //paint.setStyle(Paint.Style.FILL);

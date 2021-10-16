@@ -156,8 +156,8 @@ public final class ViewRootImpl implements ViewParent {
         if (mLayoutRequested || width != host.getMeasuredWidth() || height != host.getMeasuredHeight()) {
             long startTime = RenderCore.timeNanos();
 
-            int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.Mode.EXACTLY);
-            int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.Mode.EXACTLY);
+            int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
+            int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
 
             host.measure(widthSpec, heightSpec);
 
@@ -324,6 +324,21 @@ public final class ViewRootImpl implements ViewParent {
     @Override
     public int getTextDirection() {
         return View.TEXT_DIRECTION_RESOLVED_DEFAULT;
+    }
+
+    @Override
+    public boolean canResolveTextAlignment() {
+        return true;
+    }
+
+    @Override
+    public boolean isTextAlignmentResolved() {
+        return true;
+    }
+
+    @Override
+    public int getTextAlignment() {
+        return View.TEXT_ALIGNMENT_RESOLVED_DEFAULT;
     }
 
     @Override
