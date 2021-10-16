@@ -563,6 +563,21 @@ public class View implements Drawable.Callback {
     static final int ENABLED_MASK = 0x00000008;
 
     /**
+     * This view won't draw. {@link #onDraw(Canvas)} won't be
+     * called and further optimizations will be performed. It is okay to have
+     * this flag set and a background. Use with DRAW_MASK when calling setFlags.
+     * {@hide}
+     */
+    static final int WILL_NOT_DRAW = 0x00000080;
+
+    /**
+     * Mask for use with setFlags indicating bits used for indicating whether
+     * this view is will draw
+     * {@hide}
+     */
+    static final int DRAW_MASK = 0x00000080;
+
+    /**
      * This view doesn't show scrollbars.
      */
     static final int SCROLLBARS_NONE = 0x00000000;
@@ -1745,9 +1760,34 @@ public class View implements Drawable.Callback {
         return (mPrivateFlags & PFLAG_PRESSED) == PFLAG_PRESSED;
     }
 
+    /**
+     * Set flags controlling behavior of this view.
+     *
+     * @param flags Constant indicating the value which should be set
+     * @param mask  Constant indicating the bit range that should be changed
+     */
     void setFlags(int flags, int mask) {
         int old = mViewFlags;
         mViewFlags = (mViewFlags & ~mask) | (flags & mask);
+
+        int changed = mViewFlags ^ old;
+        if (changed == 0) {
+            return;
+        }
+
+        if ((changed & DRAW_MASK) != 0) {
+            if ((mViewFlags & WILL_NOT_DRAW) != 0) {
+                if (mBackground != null) {
+                    mPrivateFlags &= ~PFLAG_SKIP_DRAW;
+                } else {
+                    mPrivateFlags |= PFLAG_SKIP_DRAW;
+                }
+            } else {
+                mPrivateFlags &= ~PFLAG_SKIP_DRAW;
+            }
+            requestLayout();
+            invalidate();
+        }
     }
 
     /**
@@ -2303,6 +2343,29 @@ public class View implements Drawable.Callback {
 
     void dispatchAttachedToWindow(AttachInfo info) {
         mAttachInfo = info;
+    }
+
+    /**
+     * If this view doesn't do any drawing on its own, set this flag to
+     * allow further optimizations. By default, this flag is not set on
+     * View, but could be set on some View subclasses such as ViewGroup.
+     * <p>
+     * Typically, if you override {@link #onDraw(Canvas)}
+     * you should clear this flag.
+     *
+     * @param willNotDraw whether or not this View draw on its own
+     */
+    public void setWillNotDraw(boolean willNotDraw) {
+        setFlags(willNotDraw ? WILL_NOT_DRAW : 0, DRAW_MASK);
+    }
+
+    /**
+     * Returns whether or not this View draws on its own.
+     *
+     * @return true if this view has nothing to draw, false otherwise
+     */
+    public boolean willNotDraw() {
+        return (mViewFlags & DRAW_MASK) == WILL_NOT_DRAW;
     }
 
     /// SECTION START - Direction, RTL \\\
@@ -3009,6 +3072,18 @@ public class View implements Drawable.Callback {
     }
 
     /// SECTION END - Direction, RTL \\\
+
+    /**
+     * <p>Return the offset of the widget's text baseline from the widget's top
+     * boundary. If this widget does not support baseline alignment, this
+     * method returns -1. </p>
+     *
+     * @return the offset of the baseline within the widget's bounds or -1
+     * if baseline alignment is not supported
+     */
+    public int getBaseline() {
+        return -1;
+    }
 
     /**
      * Request layout if layout information changed.

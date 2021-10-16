@@ -27,17 +27,10 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.screen.Animation;
 import icyllis.modernui.screen.Applier;
-import icyllis.modernui.text.FontPaint;
-import icyllis.modernui.text.Spannable;
-import icyllis.modernui.text.SpannableString;
-import icyllis.modernui.text.TextLine;
-import icyllis.modernui.text.style.AbsoluteSizeSpan;
-import icyllis.modernui.text.style.ForegroundColorSpan;
-import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewConfig;
 import icyllis.modernui.widget.LinearLayout;
-import icyllis.modernui.widget.Orientation;
 import icyllis.modernui.widget.SwitchButton;
 import net.minecraft.ChatFormatting;
 
@@ -77,9 +70,9 @@ public class TestLinearLayout extends LinearLayout {
     private int ticks;
 
     public TestLinearLayout() {
-        setOrientation(Orientation.VERTICAL);
+        setOrientation(VERTICAL);
         setGravity(Gravity.CENTER);
-        setDivider(new Drawable() {
+        setDividerDrawable(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.take();
@@ -93,27 +86,32 @@ public class TestLinearLayout extends LinearLayout {
             }
         });
         setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
-        setDividerPadding(8);
+
+        ViewConfig c = ViewConfig.get();
+        setDividerPadding(c.getViewSize(8));
 
         for (int i = 0; i < 8; i++) {
             View v;
             LinearLayout.LayoutParams p;
             if (i == 4) {
                 v = new SwitchButton();
-                p = new LinearLayout.LayoutParams(100, 36);
+                p = new LinearLayout.LayoutParams(c.getViewSize(100), c.getViewSize(36));
             } else {
                 v = new CView();
-                p = new LinearLayout.LayoutParams(200, 36);
+                p = new LinearLayout.LayoutParams(c.getViewSize(200), c.getViewSize(36));
             }
             v.setEnabled(true);
             v.setClickable(true);
             addView(v, p);
         }
-        addView(new DView(Interpolator.DECELERATE, 0), new LinearLayout.LayoutParams(120, 40));
+        addView(new DView(Interpolator.DECELERATE, 0), new LinearLayout.LayoutParams(c.getViewSize(120),
+                c.getViewSize(40)));
 
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
-        cAnim = new Animation(200).applyTo(new Applier(20, 0, () -> c, v -> c = v).setInterpolator(Interpolator.DECELERATE));
-
+        cAnim = new Animation(200)
+                .applyTo(new Applier(20, 0, () -> this.c, v -> this.c = v)
+                        .setInterpolator(Interpolator.DECELERATE)
+                );
         circleAnimation1 = new Animation(600)
                 .applyTo(
                         new Applier((float) Math.PI, (float) -Math.PI, () -> circleAcc1, v -> circleAcc1 = v)
@@ -136,17 +134,19 @@ public class TestLinearLayout extends LinearLayout {
                 );
         iconRadiusAni = new Animation(300)
                 .applyTo(new Applier(40, 80, () -> iconRadius, v -> iconRadius = v)
-                        .setInterpolator(Interpolator.DECELERATE));
-
+                        .setInterpolator(Interpolator.DECELERATE)
+                );
         arcStartAni = new Animation(800)
                 .applyTo(new Applier(-90, 270, () -> arcStart, v -> {
-                    arcStart = v;
-                    invalidate();
-                })
-                        .setInterpolator(Interpolator.DECELERATE));
+                            arcStart = v;
+                            invalidate();
+                        })
+                                .setInterpolator(Interpolator.DECELERATE)
+                );
         arcEndAni = new Animation(800)
                 .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v)
-                        .setInterpolator(Interpolator.ACCELERATE));
+                        .setInterpolator(Interpolator.ACCELERATE)
+                );
 
         ObjectAnimator anim = ObjectAnimator.ofFloat(this, sRoundRectLengthProp, 0, 80);
         anim.setDuration(400);

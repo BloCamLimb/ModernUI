@@ -26,6 +26,7 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.screen.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewConfig;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.ScrollView;
 
@@ -36,11 +37,12 @@ public class TestUI extends ScreenCallback {
     @Override
     public void onCreate() {
         ScrollView contentView = new ScrollView();
-        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(500, 280);
+        ViewConfig c = ViewConfig.get();
+        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(c.getViewSize(500), c.getViewSize(280));
         contentViewParams.gravity = Gravity.CENTER;
 
         View ll = new TestLinearLayout();
-        FrameLayout.LayoutParams cl = new FrameLayout.LayoutParams(280, 480);
+        FrameLayout.LayoutParams cl = new FrameLayout.LayoutParams(c.getViewSize(280), c.getViewSize(480));
         ll.setLayoutParams(cl);
         contentView.addView(ll);
 

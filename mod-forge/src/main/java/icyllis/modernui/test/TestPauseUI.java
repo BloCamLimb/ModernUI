@@ -18,17 +18,16 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.screen.Animation;
-import icyllis.modernui.screen.Applier;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.screen.Animation;
+import icyllis.modernui.screen.Applier;
 import icyllis.modernui.screen.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
-import icyllis.modernui.widget.Orientation;
 import icyllis.modernui.widget.ScrollView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.LanguageInfo;
@@ -50,9 +49,9 @@ public class TestPauseUI extends ScreenCallback {
         params.setMargins(0, 20, 0, 20);
         ScrollView scrollView = new ScrollView();
         LinearLayout linearLayout = new LinearLayout();
-        linearLayout.setOrientation(Orientation.VERTICAL);
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
         linearLayout.setGravity(Gravity.CENTER);
-        linearLayout.setDivider(new Drawable() {
+        linearLayout.setDividerDrawable(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
                 /*canvas.setRGBA(192, 192, 192, 128);
@@ -67,7 +66,8 @@ public class TestPauseUI extends ScreenCallback {
         linearLayout.setShowDividers(LinearLayout.SHOW_DIVIDER_MIDDLE | LinearLayout.SHOW_DIVIDER_END);
         linearLayout.setDividerPadding(8);
         LanguageInfo lang = Minecraft.getInstance().getLanguageManager().getSelected();
-        String[] list = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(lang.getJavaLocale());
+        String[] list =
+                GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(lang.getJavaLocale());
         for (String typeface : list) {
             linearLayout.addView(new Ent(typeface), new LinearLayout.LayoutParams(MATCH_PARENT, 10));
         }

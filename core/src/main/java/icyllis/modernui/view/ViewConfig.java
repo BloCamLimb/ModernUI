@@ -51,14 +51,14 @@ public class ViewConfig {
     /**
      * Get the size in pixels that matches the layout standards.
      *
-     * @param p scaling-independent pixel
+     * @param sip scaling-independent pixel
      * @return size in pixels
      */
-    public int getViewSize(float p) {
-        return Math.round(p * mViewScale);
+    public int getViewSize(float sip) {
+        return Math.round(sip * mViewScale);
     }
 
-    public int getTextSize(float p) {
-        return Math.round(p * mViewScale);
+    public int getTextSize(float sip) {
+        return Math.round(sip * mViewScale);
     }
 }
