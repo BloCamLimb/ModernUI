@@ -22,6 +22,7 @@ import icyllis.modernui.math.*;
 import icyllis.modernui.text.LayoutPiece;
 import icyllis.modernui.text.MeasuredText;
 import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -46,14 +47,6 @@ import javax.annotation.Nullable;
 public abstract class Canvas {
 
     public static final Marker MARKER = MarkerManager.getMarker("Canvas");
-
-    /**
-     * Bit flags representing the sides.
-     */
-    public static final int TOP = 0x1;
-    public static final int BOTTOM = 0x2;
-    public static final int LEFT = 0x4;
-    public static final int RIGHT = 0x8;
 
     protected Canvas() {
     }
@@ -548,7 +541,7 @@ public abstract class Canvas {
      * @param paint  the paint used to draw the round rectangle
      */
     public final void drawRoundRect(@Nonnull RectF rect, float radius, @Nonnull Paint paint) {
-        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, 0, paint);
+        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, Gravity.NO_GRAVITY, paint);
     }
 
     /**
@@ -564,7 +557,7 @@ public abstract class Canvas {
      */
     public final void drawRoundRect(float left, float top, float right, float bottom,
                                     float radius, @Nonnull Paint paint) {
-        drawRoundRect(left, top, right, bottom, radius, 0, paint);
+        drawRoundRect(left, top, right, bottom, radius, Gravity.NO_GRAVITY, paint);
     }
 
     /**
@@ -573,9 +566,10 @@ public abstract class Canvas {
      *
      * @param rect   The rectangular bounds of the round rect to be drawn
      * @param radius the radius used to round the corners
-     * @param sides  the side to round, accepted values are 0 (all sides),
-     *               or one of {@link #TOP}, {@link #BOTTOM}, {@link #LEFT},
-     *               {@link #RIGHT}, or any combination of two adjacent sides
+     * @param sides  the side to round, accepted values are 0 (all sides), or one of
+     *               {@link Gravity#TOP}, {@link Gravity#BOTTOM},
+     *               {@link Gravity#LEFT}, {@link Gravity#RIGHT}, or any
+     *               combination of two adjacent sides
      * @param paint  the paint used to draw the round rectangle
      */
     public final void drawRoundRect(@Nonnull RectF rect, float radius, int sides, @Nonnull Paint paint) {
@@ -591,9 +585,10 @@ public abstract class Canvas {
      * @param right  the right of the rectangular bounds
      * @param bottom the bottom of the rectangular bounds
      * @param radius the radius used to round the corners
-     * @param sides  the side to round, accepted values are 0 (all sides),
-     *               or one of {@link #TOP}, {@link #BOTTOM}, {@link #LEFT},
-     *               {@link #RIGHT}, or any combination of two adjacent sides
+     * @param sides  the side to round, accepted values are 0 (all sides), or one of
+     *               {@link Gravity#TOP}, {@link Gravity#BOTTOM},
+     *               {@link Gravity#LEFT}, {@link Gravity#RIGHT}, or any
+     *               combination of two adjacent sides
      * @param paint  the paint used to draw the round rectangle
      */
     public abstract void drawRoundRect(float left, float top, float right, float bottom,
@@ -628,8 +623,30 @@ public abstract class Canvas {
      * @param y     the vertical baseline of the line of text
      * @param paint the paint used to measure and draw the text
      */
+    public final void drawText(@Nonnull CharSequence text, int start, int end,
+                               float x, float y, @Nonnull TextPaint paint) {
+        drawText(text, start, end, x, y, Gravity.LEFT, paint);
+    }
+
+    /**
+     * Draw a text, which does not contain any characters that affect high-level layout.
+     * This includes but not limited to LINE_FEED, CHARACTER_TABULATION, any BiDi character,
+     * and any control characters. All characters will be laid-out left-to-right.
+     * <p>
+     * <strong>Do not call this method directly in any application with internationalization support,
+     * especially with BiDi text.</strong>
+     *
+     * @param text  the text to draw
+     * @param start context start of the text for shaping and rendering
+     * @param end   context end of the text for shaping and rendering
+     * @param x     the horizontal position at which to draw the text
+     * @param y     the vertical baseline of the line of text
+     * @param align text alignment, one of {@link Gravity#LEFT}, {@link Gravity#CENTER_HORIZONTAL}
+     *              or {@link Gravity#RIGHT}
+     * @param paint the paint used to measure and draw the text
+     */
     public abstract void drawText(@Nonnull CharSequence text, int start, int end,
-                                  float x, float y, @Nonnull TextPaint paint);
+                                  float x, float y, int align, @Nonnull TextPaint paint);
 
     /**
      * Draw a run of text. The given range cannot excess a style run or break grapheme cluster,

@@ -37,7 +37,7 @@ public class LinearLayout extends ViewGroup {
     /**
      * Don't show any dividers.
      */
-    public static final int SHOW_DIVIDER_NONE      = 0;
+    public static final int SHOW_DIVIDER_NONE = 0;
     /**
      * Show a divider at the beginning of the group.
      */
@@ -45,11 +45,11 @@ public class LinearLayout extends ViewGroup {
     /**
      * Show dividers between each item in the group.
      */
-    public static final int SHOW_DIVIDER_MIDDLE    = 1 << 1;
+    public static final int SHOW_DIVIDER_MIDDLE = 1 << 1;
     /**
      * Show a divider at the end of the group.
      */
-    public static final int SHOW_DIVIDER_END       = 1 << 2;
+    public static final int SHOW_DIVIDER_END = 1 << 2;
 
 
     /**
@@ -76,9 +76,9 @@ public class LinearLayout extends ViewGroup {
 
     // inner
     private static final int INDEX_CENTER_VERTICAL = 0;
-    private static final int INDEX_TOP             = 1;
-    private static final int INDEX_BOTTOM          = 2;
-    private static final int INDEX_FILL            = 3;
+    private static final int INDEX_TOP = 1;
+    private static final int INDEX_BOTTOM = 2;
+    private static final int INDEX_FILL = 3;
 
     /**
      * {@link #setDivider(Drawable)}
@@ -335,8 +335,8 @@ public class LinearLayout extends ViewGroup {
 
         final int count = getChildCount();
 
-        final MeasureSpec.Mode widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        final MeasureSpec.Mode heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        final int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
 
         boolean matchWidth = false;
         boolean skippedMeasure = false;
@@ -369,7 +369,7 @@ public class LinearLayout extends ViewGroup {
             totalWeight += lp.weight;
 
             boolean useExcessSpace = lp.height == 0 && lp.weight > 0;
-            if (heightMode.isExactly() && useExcessSpace) {
+            if (heightMode == MeasureSpec.EXACTLY && useExcessSpace) {
                 // Optimization: don't bother measuring children who are only
                 // laid out using excess space. These views will get measured
                 // later if we have space to distribute.
@@ -407,7 +407,7 @@ public class LinearLayout extends ViewGroup {
             }
 
             boolean matchWidthLocally = false;
-            if (widthMode.notExactly() && lp.width == LayoutParams.MATCH_PARENT) {
+            if (widthMode != MeasureSpec.EXACTLY && lp.width == LayoutParams.MATCH_PARENT) {
                 // The width of the linear layout will scale, and at least one
                 // child said it wanted to match our width. Set a flag
                 // indicating that we need to remeasure at least that view when
@@ -479,7 +479,7 @@ public class LinearLayout extends ViewGroup {
                     }
 
                     int childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
-                            Math.max(0, childHeight), MeasureSpec.Mode.EXACTLY);
+                            Math.max(0, childHeight), MeasureSpec.EXACTLY);
                     int childWidthMeasureSpec = getChildMeasureSpec(widthMeasureSpec,
                             lp.leftMargin + lp.rightMargin, lp.width);
                     child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
@@ -489,7 +489,7 @@ public class LinearLayout extends ViewGroup {
                 int measuredWidth = child.getMeasuredWidth() + margin;
                 maxWidth = Math.max(maxWidth, measuredWidth);
 
-                boolean matchWidthLocally = widthMode.notExactly() &&
+                boolean matchWidthLocally = widthMode != MeasureSpec.EXACTLY &&
                         lp.width == LayoutParams.MATCH_PARENT;
 
                 alternativeMaxWidth = Math.max(alternativeMaxWidth,
@@ -504,7 +504,7 @@ public class LinearLayout extends ViewGroup {
             alternativeMaxWidth = Math.max(alternativeMaxWidth, weightedMaxWidth);
         }
 
-        if (!allFillParent && widthMode.notExactly()) {
+        if (!allFillParent && widthMode != MeasureSpec.EXACTLY) {
             maxWidth = alternativeMaxWidth;
         }
 
@@ -515,7 +515,7 @@ public class LinearLayout extends ViewGroup {
         if (matchWidth) {
             // Pretend that the linear layout has an exact size.
             int uniformMeasureSpec = MeasureSpec.makeMeasureSpec(getMeasuredWidth(),
-                    MeasureSpec.Mode.EXACTLY);
+                    MeasureSpec.EXACTLY);
             for (int i = 0; i < count; i++) {
                 View child = getChildAt(i);
                 if (child.getVisibility() != GONE) {
@@ -550,8 +550,8 @@ public class LinearLayout extends ViewGroup {
 
         final int count = getChildCount();
 
-        final MeasureSpec.Mode widthMode = MeasureSpec.getMode(widthMeasureSpec);
-        final MeasureSpec.Mode heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        final int widthMode = MeasureSpec.getMode(widthMeasureSpec);
+        final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
 
         boolean matchHeight = false;
         boolean skippedMeasure = false;
@@ -595,7 +595,7 @@ public class LinearLayout extends ViewGroup {
             totalWeight += lp.weight;
 
             boolean useExcessSpace = lp.width == 0 && lp.weight > 0;
-            if (widthMode.isExactly() && useExcessSpace) {
+            if (widthMode == MeasureSpec.EXACTLY && useExcessSpace) {
                 // Optimization: don't bother measuring children who are only
                 // laid out using excess space. These views will get measured
                 // later if we have space to distribute.
@@ -628,7 +628,7 @@ public class LinearLayout extends ViewGroup {
                     consumedExcessSpace += childWidth;
                 }
 
-                if (widthMode.isExactly()) {
+                if (widthMode == MeasureSpec.EXACTLY) {
                     totalLength += childWidth + lp.leftMargin + lp.rightMargin;
                 } else {
                     totalLength = Math.max(totalLength, totalLength + childWidth + lp.leftMargin
@@ -637,7 +637,7 @@ public class LinearLayout extends ViewGroup {
             }
 
             boolean matchHeightLocally = false;
-            if (heightMode.notExactly() && lp.height == LayoutParams.MATCH_PARENT) {
+            if (heightMode != MeasureSpec.EXACTLY && lp.height == LayoutParams.MATCH_PARENT) {
                 // The height of the linear layout will scale, and at least one
                 // child said it wanted to match our height. Set a flag indicating that
                 // we need to remeasure at least that view when we know our height.
@@ -729,20 +729,20 @@ public class LinearLayout extends ViewGroup {
                     }
 
                     int childWidthMeasureSpec = MeasureSpec.makeMeasureSpec(
-                            Math.max(0, childWidth), MeasureSpec.Mode.EXACTLY);
+                            Math.max(0, childWidth), MeasureSpec.EXACTLY);
                     int childHeightMeasureSpec = getChildMeasureSpec(heightMeasureSpec,
                             lp.topMargin + lp.bottomMargin, lp.height);
                     child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
                 }
 
-                if (widthMode.isExactly()) {
+                if (widthMode == MeasureSpec.EXACTLY) {
                     totalLength += child.getMeasuredWidth() + lp.leftMargin + lp.rightMargin;
                 } else {
                     totalLength = Math.max(totalLength, totalLength + child.getMeasuredWidth() +
                             lp.leftMargin + lp.rightMargin);
                 }
 
-                boolean matchHeightLocally = heightMode.notExactly() &&
+                boolean matchHeightLocally = heightMode != MeasureSpec.EXACTLY &&
                         lp.height == LayoutParams.MATCH_PARENT;
 
                 int margin = lp.topMargin + lp.bottomMargin;
@@ -772,7 +772,7 @@ public class LinearLayout extends ViewGroup {
             alternativeMaxHeight = Math.max(alternativeMaxHeight, weightedMaxHeight);
         }
 
-        if (!allFillParent && heightMode.notExactly()) {
+        if (!allFillParent && heightMode != MeasureSpec.EXACTLY) {
             maxHeight = alternativeMaxHeight;
         }
 
@@ -786,7 +786,7 @@ public class LinearLayout extends ViewGroup {
             // ourselves. The measured height should be the max height of the children, changed
             // to accommodate the heightMeasureSpec from the parent
             int uniformMeasureSpec = MeasureSpec.makeMeasureSpec(getMeasuredHeight(),
-                    MeasureSpec.Mode.EXACTLY);
+                    MeasureSpec.EXACTLY);
             for (int i = 0; i < count; ++i) {
                 View child = getChildAt(i);
                 if (child.getVisibility() != GONE) {

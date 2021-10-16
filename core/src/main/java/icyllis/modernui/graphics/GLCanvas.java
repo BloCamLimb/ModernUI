@@ -30,10 +30,14 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.text.*;
+import icyllis.modernui.text.LayoutCache;
+import icyllis.modernui.text.LayoutPiece;
+import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.TexturedGlyph;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
+import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
@@ -1338,22 +1342,22 @@ public final class GLCanvas extends Canvas {
         drawSmooth(Math.min(radius, paint.getSmoothRadius()));
         putRectColor(left, top, right, bottom, paint);
         ByteBuffer buffer = checkUniformMemory();
-        if ((sides & RIGHT) == RIGHT) {
+        if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
             buffer.putFloat(left);
         } else {
             buffer.putFloat(left + radius);
         }
-        if ((sides & BOTTOM) == BOTTOM) {
+        if ((sides & Gravity.BOTTOM) == Gravity.BOTTOM) {
             buffer.putFloat(top);
         } else {
             buffer.putFloat(top + radius);
         }
-        if ((sides & LEFT) == LEFT) {
+        if ((sides & Gravity.LEFT) == Gravity.LEFT) {
             buffer.putFloat(right);
         } else {
             buffer.putFloat(right - radius);
         }
-        if ((sides & TOP) == TOP) {
+        if ((sides & Gravity.TOP) == Gravity.TOP) {
             buffer.putFloat(bottom);
         } else {
             buffer.putFloat(bottom - radius);
@@ -1375,22 +1379,22 @@ public final class GLCanvas extends Canvas {
         drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
         putRectColor(left - strokeRadius, top - strokeRadius, right + strokeRadius, bottom + strokeRadius, paint);
         ByteBuffer buffer = checkUniformMemory();
-        if ((sides & RIGHT) == RIGHT) {
+        if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
             buffer.putFloat(left);
         } else {
             buffer.putFloat(left + radius);
         }
-        if ((sides & BOTTOM) == BOTTOM) {
+        if ((sides & Gravity.BOTTOM) == Gravity.BOTTOM) {
             buffer.putFloat(top);
         } else {
             buffer.putFloat(top + radius);
         }
-        if ((sides & LEFT) == LEFT) {
+        if ((sides & Gravity.LEFT) == Gravity.LEFT) {
             buffer.putFloat(right);
         } else {
             buffer.putFloat(right - radius);
         }
-        if ((sides & TOP) == TOP) {
+        if ((sides & Gravity.TOP) == Gravity.TOP) {
             buffer.putFloat(bottom);
         } else {
             buffer.putFloat(bottom - radius);
@@ -1427,7 +1431,7 @@ public final class GLCanvas extends Canvas {
 
     @Override
     public void drawText(@Nonnull CharSequence text, int start, int end, float x, float y,
-                         @Nonnull TextPaint paint) {
+                         int align, @Nonnull TextPaint paint) {
         if ((start | end | end - start | text.length() - end) < 0) {
             throw new IndexOutOfBoundsException();
         }
@@ -1437,8 +1441,14 @@ public final class GLCanvas extends Canvas {
         final int color = paint.getColor();
         if (end - start <= LayoutCache.MAX_PIECE_LENGTH) {
             LayoutPiece piece = LayoutCache.getOrCreate(text, start, end, false, paint, false, true);
+            switch (align & Gravity.HORIZONTAL_GRAVITY_MASK) {
+                case Gravity.CENTER_HORIZONTAL -> x -= piece.getAdvance() / 2f;
+                case Gravity.RIGHT -> x -= piece.getAdvance();
+            }
             drawTextRun(piece, x, y, color);
         } else {
+            final float originalX = x;
+            final int pst = mDrawTexts.size();
             int s = start, e = s;
             do {
                 e = Math.min(e + LayoutCache.MAX_PIECE_LENGTH, end);
@@ -1447,6 +1457,20 @@ public final class GLCanvas extends Canvas {
                 x += piece.getAdvance();
                 s = e;
             } while (s < end);
+            switch (align & Gravity.HORIZONTAL_GRAVITY_MASK) {
+                case Gravity.CENTER_HORIZONTAL -> {
+                    float offset = (originalX - x) / 2f;
+                    for (int i = pst; i < mDrawTexts.size(); i++) {
+                        mDrawTexts.get(i).offsetX(offset);
+                    }
+                }
+                case Gravity.RIGHT -> {
+                    float offset = originalX - x;
+                    for (int i = pst; i < mDrawTexts.size(); i++) {
+                        mDrawTexts.get(i).offsetX(offset);
+                    }
+                }
+            }
         }
     }
 
@@ -1461,11 +1485,11 @@ public final class GLCanvas extends Canvas {
                 x + piece.getAdvance(), y + piece.getDescent())) {
             return;
         }
-        DrawText drawText = sDrawTextPool.acquire();
-        if (drawText == null) {
-            drawText = new DrawText();
+        DrawText t = sDrawTextPool.acquire();
+        if (t == null) {
+            t = new DrawText();
         }
-        mDrawTexts.add(drawText.set(piece, x, y));
+        mDrawTexts.add(t.set(piece, x, y));
         drawMatrix();
         checkUniformMemory()
                 .putFloat(((color >> 16) & 0xff) / 255f)
@@ -1490,6 +1514,10 @@ public final class GLCanvas extends Canvas {
             this.x = x;
             this.y = y;
             return this;
+        }
+
+        private void offsetX(float dx) {
+            x += dx;
         }
 
         @Nonnull

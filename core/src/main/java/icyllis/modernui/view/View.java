@@ -1184,8 +1184,8 @@ public class View implements Drawable.Callback {
                     widthMeasureSpec != mOldWidthMeasureSpec
                             || heightMeasureSpec != mOldHeightMeasureSpec;
             boolean isSpecExactly =
-                    MeasureSpec.getMode(widthMeasureSpec).isExactly()
-                            && MeasureSpec.getMode(heightMeasureSpec).isExactly();
+                    MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY
+                            && MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY;
             boolean matchesSpecSize =
                     getMeasuredWidth() == MeasureSpec.getSize(widthMeasureSpec)
                             && getMeasuredHeight() == MeasureSpec.getSize(heightMeasureSpec);
@@ -1375,24 +1375,19 @@ public class View implements Drawable.Callback {
      * @return the measured size of this view
      */
     public static int getDefaultSize(int size, int measureSpec) {
-        switch (MeasureSpec.getMode(measureSpec)) {
-            case EXACTLY:
-            case AT_MOST:
-                return MeasureSpec.getSize(measureSpec);
-        }
-        return size;
+        return switch (MeasureSpec.getMode(measureSpec)) {
+            case MeasureSpec.EXACTLY, MeasureSpec.AT_MOST -> MeasureSpec.getSize(measureSpec);
+            default -> size;
+        };
     }
 
     public static int resolveSize(int size, int measureSpec) {
         int specSize = MeasureSpec.getSize(measureSpec);
-        switch (MeasureSpec.getMode(measureSpec)) {
-            case AT_MOST:
-                return Math.min(specSize, size);
-            case EXACTLY:
-                return specSize;
-            default:
-                return size;
-        }
+        return switch (MeasureSpec.getMode(measureSpec)) {
+            case MeasureSpec.AT_MOST -> Math.min(specSize, size);
+            case MeasureSpec.EXACTLY -> specSize;
+            default -> size;
+        };
     }
 
     /**

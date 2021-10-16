@@ -99,7 +99,7 @@ public class TextView extends View {
 
     // Do not update following mText/mSpannable/mPrecomputed except for setTextInternal()
     @Nullable
-    private CharSequence mText;
+    private CharSequence mText = "";
     @Nullable
     private Spannable mSpannable;
     @Nullable
@@ -121,6 +121,7 @@ public class TextView extends View {
     @Nullable
     private Layout mHintLayout;
 
+    //TODO give it a default movement method
     @Nullable
     private MovementMethod mMovement;
     @Nullable
@@ -187,11 +188,6 @@ public class TextView extends View {
     private Editor mEditor;
 
     public TextView() {
-        setTextInternal("");
-
-        //TODO def movement method
-        mMovement = null;
-        mTransformation = null;
     }
 
     // Update member variables

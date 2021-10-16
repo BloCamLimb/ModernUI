@@ -498,8 +498,6 @@ public class StaticLayout extends Layout {
                 hasTabs[i] = res.hasLineTab(i);
             }
 
-            ModernUI.LOGGER.info("StaticLayout LineBreaks: {}", breaks);
-
             final int remainingLineCount = mMaximumVisibleLineCount - mLineCount;
             final boolean ellipsisMayBeApplied = ellipsize != null
                     && (ellipsize == TextUtils.TruncateAt.END
