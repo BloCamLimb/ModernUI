@@ -27,7 +27,9 @@ import icyllis.modernui.screen.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfig;
+import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
+import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.ScrollView;
 
 import javax.annotation.Nonnull;
@@ -38,16 +40,14 @@ public class TestUI extends ScreenCallback {
     public void onCreate() {
         ScrollView contentView = new ScrollView();
         ViewConfig c = ViewConfig.get();
-        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(c.getViewSize(500), c.getViewSize(280));
+        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(c.getViewSize(500), c.getViewSize(380));
         contentViewParams.gravity = Gravity.CENTER;
 
-        View ll = new TestLinearLayout();
-        FrameLayout.LayoutParams cl = new FrameLayout.LayoutParams(c.getViewSize(280), c.getViewSize(480));
-        ll.setLayoutParams(cl);
-        contentView.addView(ll);
+        LinearLayout ll = new TestLinearLayout();
+        contentView.addView(ll, new FrameLayout.LayoutParams(c.getViewSize(400), c.getViewSize(800)));
 
         contentView.setBackground(new Drawable() {
-            long lastTime = AnimationHandler.currentTimeMillis();
+            //long lastTime = AnimationHandler.currentTimeMillis();
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
@@ -56,7 +56,7 @@ public class TestUI extends ScreenCallback {
                 paint.setRGBA(8, 8, 8, 80);
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
 
-                SpectrumGraph graph = TestMain.sGraph;
+                /*SpectrumGraph graph = TestMain.sGraph;
                 long time = AnimationHandler.currentTimeMillis();
                 long delta = time - lastTime;
                 lastTime = time;
@@ -65,7 +65,7 @@ public class TestUI extends ScreenCallback {
                     graph.update(delta);
                     graph.draw(canvas, getBounds().centerX(), getBounds().centerY());
                     invalidateSelf();
-                }
+                }*/
             }
         });
 

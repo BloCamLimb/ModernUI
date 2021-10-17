@@ -27,11 +27,20 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.screen.Animation;
 import icyllis.modernui.screen.Applier;
+import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.text.Spannable;
+import icyllis.modernui.text.SpannableString;
+import icyllis.modernui.text.style.AbsoluteSizeSpan;
+import icyllis.modernui.text.style.ForegroundColorSpan;
+import icyllis.modernui.text.style.StyleSpan;
+import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfig;
+import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.SwitchButton;
+import icyllis.modernui.widget.TextView;
 import net.minecraft.ChatFormatting;
 
 import javax.annotation.Nonnull;
@@ -90,12 +99,44 @@ public class TestLinearLayout extends LinearLayout {
         ViewConfig c = ViewConfig.get();
         setDividerPadding(c.getViewSize(8));
 
+        String text;
+        text = "\t\t\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627" +
+                "\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020" +
+                "\u060c\u0020\u0641\u0647\u0648\u0020\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a" +
+                "\u0629\u0020\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u002e\u0020\u062a\u0633\u062c\u0651\u0644" +
+                "\u0020\u0627\u0644\u0622\u0646\u0020\u0644\u062d\u0636\u0648\u0631\u0020\u0627\u0644\u0645\u0624" +
+                "\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634" +
+                "\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063" +
+                "\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029\n";
+        text += "\t\tMy name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
+                "I'm hired for people to fulfill their fantasies, their deep dark fantasies.\n" +
+                "\t\t\u4f60\u770b\u8fd9\u4e2a\u5f6c\u5f6c\u0020\u624d\u559d\u51e0\u7f50\u0020\u5c31\u9189" +
+                "\u4e86\u002e\u002e\u002e\ua994\ua9ba\ua9b4\ua98f\ua9ba\ua9b4\u0020\u771f\u7684\u592a\u900a\u529b" +
+                "\uff1b\u54e6\uff0c\u542c\u4f60" +
+                "\u90a3\u4e48\u8bf4\u0020\u4f60\u5f88\u52c7" +
+                "\u54e6\uff1b\u5f00\u73a9\u7b11\uff0c\u6211" +
+                "\u8d85\u52c7\u7684\u597d\u4e0d\u597d\u0020\u6211\u8d85\u4f1a\u559d\u7684\u5566";
+        text += "\n\u09b9\u09cd\u09af\u09be\u09b2\u09cb\u0020\u0645\u0631\u062d\u0628\u0627\u0020\ud808\udd99\ud808" +
+                "\udd99";
+
+        Spannable spannable = SpannableString.valueOf(text);
+        spannable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(), 0);
+        spannable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30, 0);
+        spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40, 0);
+        spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), 0);
+        TextView tv = new TextView();
+        tv.setText(spannable);
+
         for (int i = 0; i < 8; i++) {
             View v;
             LinearLayout.LayoutParams p;
             if (i == 4) {
                 v = new SwitchButton();
                 p = new LinearLayout.LayoutParams(c.getViewSize(100), c.getViewSize(36));
+            } else if (i == 2) {
+                v = tv;
+                p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
             } else {
                 v = new CView();
                 p = new LinearLayout.LayoutParams(c.getViewSize(200), c.getViewSize(36));

@@ -251,17 +251,25 @@ public class GlyphManager {
      * lower 32 bits are descent.
      */
     @SuppressWarnings("MagicConstant")
-    public void getFontMetrics(@Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
-        fm.reset();
+    public int getFontMetrics(@Nonnull FontPaint paint, @Nullable FontMetricsInt fm) {
+        int ascent = 0, descent = 0, height = 0;
         for (Font f : paint.mTypeface.getFonts()) {
-            fm.extendBy(mGraphics.getFontMetrics(f.deriveFont(paint.getFontStyle(), paint.mFontSize)));
+            FontMetrics metrics = mGraphics.getFontMetrics(f.deriveFont(paint.getFontStyle(), paint.mFontSize));
+            ascent = Math.max(ascent, metrics.getAscent()); // positive
+            descent = Math.max(descent, metrics.getDescent()); // positive
+            height = Math.max(height, metrics.getHeight());
         }
+        if (fm != null) {
+            fm.ascent = ascent;
+            fm.descent = descent;
+        }
+        return height;
     }
 
     /**
      * Extend metrics.
      *
-     * @see LayoutPiece#LayoutPiece(char[], int, int, boolean, FontPaint)
+     * @see LayoutPiece#LayoutPiece(char[], int, int, boolean, FontPaint, boolean, boolean, LayoutPiece)
      */
     @SuppressWarnings("MagicConstant")
     public Font getFontMetrics(@Nonnull Font font, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {

@@ -22,6 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.math.MathUtil;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.util.Locale;
 
@@ -172,6 +173,23 @@ public class FontPaint {
         if (!mTypeface.equals(paint.mTypeface))
             return true;
         return !mLocale.equals(paint.mLocale);
+    }
+
+    /**
+     * Return the font's interline spacing, given the Paint's settings for
+     * typeface, textSize, etc. If metrics is not null, return the fontmetric
+     * values in it. Note: all values have been converted to integers from
+     * floats, in such a way has to make the answers useful for both spacing
+     * and clipping. If you want more control over the rounding, call
+     * getFontMetrics().
+     *
+     * <p>Note that these are the values for the main typeface, and actual text rendered may need a
+     * larger set of values because fallback fonts may get used in rendering the text.
+     *
+     * @return the font's interline spacing.
+     */
+    public int getFontMetricsInt(@Nullable FontMetricsInt fm) {
+        return GlyphManager.getInstance().getFontMetrics(this, fm);
     }
 
     /**

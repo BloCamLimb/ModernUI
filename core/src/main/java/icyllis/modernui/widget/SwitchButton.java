@@ -159,7 +159,7 @@ public class SwitchButton extends CompoundButton {
 
     private int getThumbOffset() {
         final float thumbPosition;
-        if (false/*isLayoutRtl()*/) {
+        if (isLayoutRtl()) {
             thumbPosition = 1f - mThumbPosition;
         } else {
             thumbPosition = mThumbPosition;

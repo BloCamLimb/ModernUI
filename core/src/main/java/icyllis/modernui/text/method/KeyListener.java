@@ -16,32 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.widget;
+package icyllis.modernui.text.method;
 
-import icyllis.modernui.text.method.KeyListener;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
-
-/**
- * Helper class used by TextView to handle editable text views.
- */
-public class Editor {
-
-    private static final Marker MARKER = MarkerManager.getMarker("Editor");
-
-    private final TextView mTextView;
-
-    KeyListener mKeyListener;
-
-    boolean mCursorVisible = true;
-    boolean mSelectAllOnFocus;
-    boolean mTextIsSelectable;
-
-    public Editor(TextView textView) {
-        mTextView = textView;
-    }
-
-    void prepareCursorControllers() {
-
-    }
+public interface KeyListener {
 }

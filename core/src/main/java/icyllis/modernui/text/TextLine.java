@@ -1050,11 +1050,11 @@ public class TextLine {
         return TabStops.nextDefaultStop(h, 20);
     }
 
-    private static void expandMetricsFromPaint(@Nonnull FontMetricsInt fmi, TextPaint wp) {
+    private static void expandMetricsFromPaint(@Nonnull FontMetricsInt fmi, @Nonnull TextPaint wp) {
         final int previousAscent = fmi.ascent;
         final int previousDescent = fmi.descent;
 
-        GlyphManager.getInstance().getFontMetrics(wp, fmi);
+        wp.getFontMetricsInt(fmi);
 
         fmi.extendBy(previousAscent, previousDescent);
     }
