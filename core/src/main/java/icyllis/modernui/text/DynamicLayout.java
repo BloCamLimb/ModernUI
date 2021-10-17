@@ -155,17 +155,17 @@ public class DynamicLayout extends Layout {
          * displaying the text (which is needed to avoid text from consecutive lines running into
          * each other). If set, fallback fonts that end up getting used can increase the ascent
          * and descent of the lines that they are used on.
+         * <p>
+         * The default is {@code true}. It is required to be true if text could be in
+         * languages like Burmese or Tibetan where text is typically much taller or deeper than
+         * Latin text.
          *
-         * <p>For backward compatibility reasons, the default is {@code false}, but setting this to
-         * true is strongly recommended. It is required to be true if text could be in languages
-         * like Burmese or Tibetan where text is typically much taller or deeper than Latin text.
-         *
-         * @param useLineSpacingFromFallbacks whether to expand linespacing based on fallback fonts
+         * @param fallbackLineSpacing whether to expand line spacing based on fallback fonts
          * @return this builder, useful for chaining
          */
         @Nonnull
-        public Builder setUseLineSpacingFromFallbacks(boolean useLineSpacingFromFallbacks) {
-            mFallbackLineSpacing = useLineSpacingFromFallbacks;
+        public Builder setFallbackLineSpacing(boolean fallbackLineSpacing) {
+            mFallbackLineSpacing = fallbackLineSpacing;
             return this;
         }
 
@@ -346,7 +346,7 @@ public class DynamicLayout extends Layout {
         final Directions[] dirs = new Directions[]{Directions.ALL_LEFT_TO_RIGHT};
 
         final FontMetricsInt fm = b.mFontMetricsInt;
-        GlyphManager.getInstance().getFontMetrics(b.mPaint, fm);
+        b.mPaint.getFontMetricsInt(fm);
         final int asc = fm.ascent;
         final int desc = fm.descent;
 
@@ -355,7 +355,7 @@ public class DynamicLayout extends Layout {
         start[DESCENT] = desc;
         mInts.insertAt(0, start);
 
-        start[TOP] = desc - asc;
+        start[TOP] = desc + asc;
         mInts.insertAt(1, start);
 
         mObjects.insertAt(0, dirs);

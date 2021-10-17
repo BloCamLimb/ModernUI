@@ -24,6 +24,7 @@ import icyllis.modernui.math.Rect;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.Arrays;
 
 /**
  * A Drawable represents something that can be drawn within its bounds.
@@ -32,7 +33,7 @@ public abstract class Drawable {
 
     private static final Rect ZERO_BOUNDS_RECT = new Rect();
 
-    @Nonnull
+    private int[] mStateSet = new int[0];
     private Rect mBounds = ZERO_BOUNDS_RECT;
     @Nullable
     private WeakReference<Callback> mCallback;
@@ -196,12 +197,61 @@ public abstract class Drawable {
         }
     }
 
+    /**
+     * Specify a set of states for the drawable. These are use-case specific,
+     * so see the relevant documentation.
+     *
+     * <p>If the new state you are supplying causes the appearance of the
+     * Drawable to change, then it is responsible for calling
+     * {@link #invalidateSelf} in order to have itself redrawn, <em>and</em>
+     * true will be returned from this function.
+     *
+     * <p>Note: The Drawable holds a reference on to <var>stateSet</var>
+     * until a new state array is given to it, so you must not modify this
+     * array during that time.</p>
+     *
+     * @param stateSet The new set of states to be displayed.
+     * @return Returns true if this change in state has caused the appearance
+     * of the Drawable to change (hence requiring an invalidate), otherwise
+     * returns false.
+     */
+    public boolean setState(@Nonnull final int[] stateSet) {
+        if (!Arrays.equals(mStateSet, stateSet)) {
+            mStateSet = stateSet;
+            return onStateChange(stateSet);
+        }
+        return false;
+    }
+
+    /**
+     * Describes the current state, as a union of primitive states.
+     * Some drawables may modify their imagery based on the selected state.
+     *
+     * @return An array of resource Ids describing the current state.
+     */
+    @Nonnull
+    public int[] getState() {
+        return mStateSet;
+    }
+
+    /**
+     * Override this in your subclass to change appearance if you recognize the
+     * specified state.
+     *
+     * @return Returns true if the state change has caused the appearance of
+     * the Drawable to change (that is, it needs to be drawn), else false
+     * if it looks the same and there is no need to redraw it since its
+     * last state.
+     */
+    protected boolean onStateChange(int[] state) {
+        return false;
+    }
 
     /**
      * Returns the resolved layout direction for this Drawable.
      *
      * @return One of {@link icyllis.modernui.view.View#LAYOUT_DIRECTION_LTR},
-     *         {@link icyllis.modernui.view.View#LAYOUT_DIRECTION_RTL}
+     * {@link icyllis.modernui.view.View#LAYOUT_DIRECTION_RTL}
      * @see #setLayoutDirection(int)
      */
     public int getLayoutDirection() {
@@ -217,8 +267,8 @@ public abstract class Drawable {
      *                        either {@link icyllis.modernui.view.View#LAYOUT_DIRECTION_LTR}
      *                        or {@link icyllis.modernui.view.View#LAYOUT_DIRECTION_RTL}
      * @return {@code true} if the layout direction change has caused the
-     *         appearance of the drawable to change such that it needs to be
-     *         re-drawn, {@code false} otherwise
+     * appearance of the drawable to change such that it needs to be
+     * re-drawn, {@code false} otherwise
      * @see #getLayoutDirection()
      */
     public final boolean setLayoutDirection(int layoutDirection) {
@@ -234,8 +284,8 @@ public abstract class Drawable {
      *
      * @param layoutDirection the new resolved layout direction
      * @return {@code true} if the layout direction change has caused the
-     *         appearance of the drawable to change such that it needs to be
-     *         re-drawn, {@code false} otherwise
+     * appearance of the drawable to change such that it needs to be
+     * re-drawn, {@code false} otherwise
      * @see #setLayoutDirection(int)
      */
     public boolean onLayoutDirectionChanged(int layoutDirection) {

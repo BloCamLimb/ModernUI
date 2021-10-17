@@ -297,8 +297,10 @@ public abstract class Layout {
         int firstLine = -1, lastLine = -1;
         do {
             lineBottom = getLineTop(lineNum + 1);
-            if (firstLine == -1 && !canvas.quickReject(0, lineTop, mWidth, lineBottom)) {
-                firstLine = lineNum;
+            if (firstLine == -1) {
+                if (!canvas.quickReject(0, lineTop, mWidth, lineBottom)) {
+                    firstLine = lineNum;
+                }
             } else if (canvas.quickReject(0, lineTop, mWidth, lineBottom)) {
                 lastLine = lineNum - 1;
                 break;
@@ -306,7 +308,9 @@ public abstract class Layout {
             lineTop = lineBottom;
         } while (++lineNum < lineCount);
 
-        assert firstLine != -1;
+        if (firstLine == -1) {
+            return ~0L;
+        }
         if (lastLine == -1) {
             assert lineNum == lineCount;
             lastLine = lineCount - 1;
@@ -705,6 +709,124 @@ public abstract class Layout {
     }
 
     /**
+     * Return how wide a layout must be in order to display the specified text with one line per
+     * paragraph.
+     *
+     * <p>As of O, Uses
+     * {@link TextDirectionHeuristics#FIRSTSTRONG_LTR} as the default text direction heuristics. In
+     * the earlier versions uses {@link TextDirectionHeuristics#LTR} as the default.</p>
+     */
+    public static float getDesiredWidth(CharSequence source,
+                                        TextPaint paint) {
+        return getDesiredWidth(source, 0, source.length(), paint);
+    }
+
+    /**
+     * Return how wide a layout must be in order to display the specified text slice with one
+     * line per paragraph.
+     *
+     * <p>As of O, Uses
+     * {@link TextDirectionHeuristics#FIRSTSTRONG_LTR} as the default text direction heuristics. In
+     * the earlier versions uses {@link TextDirectionHeuristics#LTR} as the default.</p>
+     */
+    public static float getDesiredWidth(CharSequence source, int start, int end, TextPaint paint) {
+        return getDesiredWidth(source, start, end, paint, TextDirectionHeuristics.FIRSTSTRONG_LTR);
+    }
+
+    /**
+     * Return how wide a layout must be in order to display the
+     * specified text slice with one line per paragraph.
+     *
+     * @hide
+     */
+    public static float getDesiredWidth(CharSequence source, int start, int end, TextPaint paint,
+                                        TextDirectionHeuristic textDir) {
+        return getDesiredWidthWithLimit(source, start, end, paint, textDir, Float.MAX_VALUE);
+    }
+
+    /**
+     * Return how wide a layout must be in order to display the
+     * specified text slice with one line per paragraph.
+     * <p>
+     * If the measured width exceeds given limit, returns limit value instead.
+     *
+     * @hide
+     */
+    public static float getDesiredWidthWithLimit(CharSequence source, int start, int end,
+                                                 TextPaint paint, TextDirectionHeuristic textDir, float upperLimit) {
+        float need = 0;
+
+        int next;
+        for (int i = start; i <= end; i = next) {
+            next = TextUtils.indexOf(source, '\n', i, end);
+
+            if (next < 0)
+                next = end;
+
+            // note, omits trailing paragraph char
+            float w = measurePara(paint, source, i, next, textDir);
+            if (w > upperLimit) {
+                return upperLimit;
+            }
+
+            if (w > need)
+                need = w;
+
+            next++;
+        }
+
+        return need;
+    }
+
+    private static float measurePara(TextPaint paint, CharSequence text, int start, int end,
+                                     TextDirectionHeuristic textDir) {
+        MeasuredParagraph mt = null;
+        TextLine tl = TextLine.obtain();
+        try {
+            mt = MeasuredParagraph.buildForBidi(text, start, end, textDir, mt);
+            final char[] chars = mt.getChars();
+            final int len = chars.length;
+            final Directions directions = mt.getDirections(0, len);
+            final int dir = mt.getParagraphDir();
+            boolean hasTabs = false;
+            TabStops tabStops = null;
+            // leading margins should be taken into account when measuring a paragraph
+            int margin = 0;
+            /*if (text instanceof Spanned) {
+                Spanned spanned = (Spanned) text;
+                LeadingMarginSpan[] spans = getParagraphSpans(spanned, start, end,
+                        LeadingMarginSpan.class);
+                for (LeadingMarginSpan lms : spans) {
+                    margin += lms.getLeadingMargin(true);
+                }
+            }*/
+            for (char c : chars) {
+                if (c == '\t') {
+                    hasTabs = true;
+                    if (text instanceof Spanned spanned) {
+                        int spanEnd = spanned.nextSpanTransition(start, end,
+                                TabStopSpan.class);
+                        TabStopSpan[] spans = getParagraphSpans(spanned, start, spanEnd,
+                                TabStopSpan.class);
+                        if (spans != null && spans.length > 0) {
+                            tabStops = new TabStops(TAB_INCREMENT, spans);
+                        }
+                    }
+                    break;
+                }
+            }
+            tl.set(paint, text, start, end, dir, directions, hasTabs, tabStops,
+                    0 /* ellipsisStart */, 0 /* ellipsisEnd */);
+            return margin + Math.abs(tl.metrics(null));
+        } finally {
+            tl.recycle();
+            if (mt != null) {
+                mt.recycle();
+            }
+        }
+    }
+
+    /**
      * Returns the same as <code>text.getSpans()</code>, except where
      * <code>start</code> and <code>end</code> are the same and are not
      * at the very beginning of the text, in which case an empty array
@@ -735,7 +857,7 @@ public abstract class Layout {
         }
 
         if (text instanceof SpannableStringBuilder) {
-            return null/*((SpannableStringBuilder) text).getSpans(start, end, type, false)*/;
+            return ((SpannableStringBuilder) text).getSpans(start, end, type, false, null);
         } else {
             return text.getSpans(start, end, type, null);
         }

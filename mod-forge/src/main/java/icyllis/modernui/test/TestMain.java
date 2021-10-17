@@ -267,7 +267,7 @@ public class TestMain {
             }
             AudioManager.getInstance().close();
             Stream.of(glfwSetMonitorCallback(null),
-                    glfwSetErrorCallback(null))
+                            glfwSetErrorCallback(null))
                     .filter(Objects::nonNull)
                     .forEach(Callback::free);
             glfwTerminate();
@@ -328,7 +328,8 @@ public class TestMain {
                 "\u90a3\u4e48\u8bf4\u0020\u4f60\u5f88\u52c7" +
                 "\u54e6\uff1b\u5f00\u73a9\u7b11\uff0c\u6211" +
                 "\u8d85\u52c7\u7684\u597d\u4e0d\u597d\u0020\u6211\u8d85\u4f1a\u559d\u7684\u5566";
-        text += "\n\u09b9\u09cd\u09af\u09be\u09b2\u09cb\u0020\u0645\u0631\u062d\u0628\u0627\u0020\ud808\udd99\ud808\udd99";
+        text += "\n\u09b9\u09cd\u09af\u09be\u09b2\u09cb\u0020\u0645\u0631\u062d\u0628\u0627\u0020\ud808\udd99\ud808" +
+                "\udd99";
                 /*"I was gonna be a movie star, you know with modelling and uh, acting. " +
                 "After a hundred or two audition and small parts, you know I decided, you know, I had enough, then I
                 get into escort work.";*/

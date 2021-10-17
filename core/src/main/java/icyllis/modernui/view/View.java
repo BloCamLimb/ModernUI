@@ -1240,6 +1240,8 @@ public class View implements Drawable.Callback {
             // remove the flag first anyway
             mPrivateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
 
+            resolveRtlProperties();
+
             // measure ourselves, this should set the measured dimension flag back
             onMeasure(widthMeasureSpec, heightMeasureSpec);
 
@@ -1968,6 +1970,54 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Set the scrolled position of your view. This will cause a call to
+     * {@link #onScrollChanged(int, int, int, int)} and the view will be
+     * invalidated.
+     *
+     * @param x the x position to scroll to
+     * @param y the y position to scroll to
+     */
+    public void scrollTo(int x, int y) {
+        if (mScrollX != x || mScrollY != y) {
+            int oldX = mScrollX;
+            int oldY = mScrollY;
+            mScrollX = x;
+            mScrollY = y;
+            onScrollChanged(mScrollX, mScrollY, oldX, oldY);
+            if (!awakenScrollBars()) {
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * Move the scrolled position of your view. This will cause a call to
+     * {@link #onScrollChanged(int, int, int, int)} and the view will be
+     * invalidated.
+     *
+     * @param x the amount of pixels to scroll by horizontally
+     * @param y the amount of pixels to scroll by vertically
+     */
+    public void scrollBy(int x, int y) {
+        scrollTo(mScrollX + x, mScrollY + y);
+    }
+
+    /**
+     * This is called in response to an internal scroll in this view (i.e., the
+     * view scrolled its own contents). This is typically as a result of
+     * {@link #scrollBy(int, int)} or {@link #scrollTo(int, int)} having been
+     * called.
+     *
+     * @param l    Current horizontal scroll origin.
+     * @param t    Current vertical scroll origin.
+     * @param oldl Previous horizontal scroll origin.
+     * @param oldt Previous vertical scroll origin.
+     */
+    protected void onScrollChanged(int l, int t, int oldl, int oldt) {
+
+    }
+
+    /**
      * <p>Trigger the scrollbars to draw. When invoked this method starts an
      * animation to fade the scrollbars out after a default delay. If a subclass
      * provides animated scrolling, the start delay should equal the duration
@@ -2427,7 +2477,7 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Indicates whether or not this view's layout is right-to-left. This is resolved from
+     * Indicates whether this view's layout is right-to-left. This is resolved from
      * layout attribute and/or the inherited value from the parent
      *
      * @return true if the layout is right-to-left.

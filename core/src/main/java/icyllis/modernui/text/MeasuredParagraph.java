@@ -528,7 +528,7 @@ public class MeasuredParagraph {
             }
         }
 
-        GlyphManager.getInstance().getFontMetrics(tp, mCachedFm);
+        tp.getFontMetricsInt(mCachedFm);
 
         if (replacement != null) {
             //TODO get replacement width

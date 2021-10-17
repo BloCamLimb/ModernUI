@@ -542,7 +542,7 @@ public class StaticLayout extends Layout {
                 fm.descent = fmCache[cacheIndex * 2 + 1];
                 cacheIndex++;
 
-                if (fm.ascent < fmAscent) {
+                if (fm.ascent > fmAscent) {
                     fmAscent = fm.ascent;
                 }
                 if (fm.descent > fmDescent) {
@@ -602,7 +602,7 @@ public class StaticLayout extends Layout {
                 && mLineCount < mMaximumVisibleLineCount) {
             final MeasuredParagraph measuredPara =
                     MeasuredParagraph.buildForBidi(source, bufEnd, bufEnd, textDir, null);
-            GlyphManager.getInstance().getFontMetrics(paint, fm);
+            paint.getFontMetricsInt(fm);
             out(source, bufEnd, bufEnd,
                     fm.ascent, fm.descent, fm.ascent, fm.descent,
                     v, /*null, */null, fm, false,
