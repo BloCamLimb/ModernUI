@@ -29,7 +29,7 @@ import java.util.function.LongConsumer;
 public class AnimationHandler {
 
     // support thread-local?
-    private static AnimationHandler sInstance;
+    private static volatile AnimationHandler sInstance;
 
     private final CopyOnWriteArrayList<FrameCallback> mCallbacks = new CopyOnWriteArrayList<>();
     private final Object2LongMap<FrameCallback> mDelayedStartTime = new Object2LongOpenHashMap<>();
@@ -57,7 +57,8 @@ public class AnimationHandler {
     /**
      * Returns the current animation time in milliseconds used to update animations.
      * This value is updated when a new frame started, it's different from
-     * {@link RenderCore#timeMillis()} which gives you a real current time.
+     * {@link RenderCore#timeMillis()} or {@link System#currentTimeMillis()}
+     * which gives you a real current time.
      *
      * @return the current animation time in milliseconds
      */

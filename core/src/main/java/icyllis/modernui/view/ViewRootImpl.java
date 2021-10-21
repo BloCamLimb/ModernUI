@@ -35,6 +35,7 @@ import java.util.LinkedList;
  * so methods are public for external calls. You may need to modify this class
  * to run your own stand-alone application.
  */
+//TODO remove class
 public final class ViewRootImpl implements ViewParent {
 
     private static final Marker MARKER = MarkerManager.getMarker("ViewRootImpl");
@@ -42,7 +43,6 @@ public final class ViewRootImpl implements ViewParent {
     private final AttachInfo mAttachInfo;
     private final Thread mThread;
     private final GLCanvas mCanvas;
-    private final Handler mHandler;
 
     private final LinkedList<InputEvent> mInputEvents = new LinkedList<>();
 
@@ -63,11 +63,10 @@ public final class ViewRootImpl implements ViewParent {
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
-    public ViewRootImpl(GLCanvas canvas, Handler handler) {
-        mAttachInfo = new AttachInfo(this);
+    public ViewRootImpl(GLCanvas canvas, AttachInfo.Handler handler) {
+        mAttachInfo = new AttachInfo(this, handler);
         mThread = Thread.currentThread();
         mCanvas = canvas;
-        mHandler = handler;
     }
 
     public void setView(@Nonnull View view) {
@@ -269,14 +268,6 @@ public final class ViewRootImpl implements ViewParent {
         }
     }
 
-    void postTask(@Nonnull Runnable action, long delay) {
-        mHandler.postTask(action, delay);
-    }
-
-    void removeTask(@Nonnull Runnable action) {
-        mHandler.removeTask(action);
-    }
-
     @Nullable
     @Override
     public ViewParent getParent() {
@@ -344,13 +335,6 @@ public final class ViewRootImpl implements ViewParent {
     @Override
     public void childDrawableStateChanged(View child) {
 
-    }
-
-    public interface Handler {
-
-        void postTask(@Nonnull Runnable action, long delay);
-
-        void removeTask(@Nonnull Runnable action);
     }
 
     /*@Deprecated

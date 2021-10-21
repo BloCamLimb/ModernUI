@@ -30,22 +30,21 @@ import java.util.Iterator;
  * <p>
  * Note that empty spans are ignored by this class.
  */
-public class SpanSet<E> {
+public class SpanSet<E> extends ArrayList<E> {
 
     private final Class<? extends E> mType;
 
-    public final ArrayList<E> mSpans = new ArrayList<>();
     public int[] mSpanStarts;
     public int[] mSpanEnds;
     public int[] mSpanFlags;
 
-    public SpanSet(Class<? extends E> type) {
+    public SpanSet(@Nonnull Class<? extends E> type) {
         mType = type;
     }
 
     public boolean init(@Nonnull Spanned spanned, int start, int limit) {
-        spanned.getSpans(start, limit, mType, mSpans);
-        final int length = mSpans.size();
+        spanned.getSpans(start, limit, mType, this);
+        final int length = size();
 
         if (length > 0) {
             if (mSpanStarts == null || mSpanStarts.length < length) {
@@ -56,7 +55,7 @@ public class SpanSet<E> {
             }
 
             int size = 0;
-            for (Iterator<E> it = mSpans.iterator(); it.hasNext(); ) {
+            for (Iterator<E> it = iterator(); it.hasNext(); ) {
                 E span = it.next();
                 final int spanStart = spanned.getSpanStart(span);
                 final int spanEnd = spanned.getSpanEnd(span);
@@ -84,7 +83,7 @@ public class SpanSet<E> {
      * @param end must be strictly greater than start
      */
     public boolean hasSpansIntersecting(int start, int end) {
-        for (int i = 0; i < mSpans.size(); i++) {
+        for (int i = 0; i < size(); i++) {
             // equal test is valid since both intervals are not empty by construction
             if (mSpanStarts[i] >= end || mSpanEnds[i] <= start) continue;
             return true;
@@ -96,7 +95,7 @@ public class SpanSet<E> {
      * Similar to {@link Spanned#nextSpanTransition(int, int, Class)}
      */
     public int getNextTransition(int start, int limit) {
-        for (int i = 0; i < mSpans.size(); i++) {
+        for (int i = 0; i < size(); i++) {
             final int spanStart = mSpanStarts[i];
             final int spanEnd = mSpanEnds[i];
             if (spanStart > start && spanStart < limit)
@@ -111,6 +110,6 @@ public class SpanSet<E> {
      * Removes all internal references to the spans to avoid memory leaks.
      */
     public void recycle() {
-        mSpans.clear();
+        clear();
     }
 }

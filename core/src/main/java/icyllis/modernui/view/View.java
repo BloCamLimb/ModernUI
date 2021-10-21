@@ -834,6 +834,12 @@ public class View implements Drawable.Callback {
     @Nullable
     ListenerInfo mListenerInfo;
 
+    /**
+     * Queue of pending runnables. Used to postpone calls to post() until this
+     * view is attached and has a handler.
+     */
+    private HandlerActionQueue mRunQueue;
+
     public View() {
     }
 
@@ -2393,6 +2399,11 @@ public class View implements Drawable.Callback {
 
     void dispatchAttachedToWindow(AttachInfo info) {
         mAttachInfo = info;
+        // transfer all pending tasks
+        if (mRunQueue != null) {
+            mRunQueue.executeActions(info.mHandler);
+            mRunQueue = null;
+        }
     }
 
     /**
@@ -3684,6 +3695,128 @@ public class View implements Drawable.Callback {
         }
         return false;
     }*/
+
+    /**
+     * Returns the queue of runnable for this view.
+     *
+     * @return the queue of runnable for this view
+     */
+    @Nonnull
+    private HandlerActionQueue getRunQueue() {
+        if (mRunQueue == null) {
+            mRunQueue = new HandlerActionQueue();
+        }
+        return mRunQueue;
+    }
+
+    /**
+     * <p>Causes the Runnable to be added to the task queue.
+     * The runnable will be run on the UI thread.</p>
+     *
+     * @param action the runnable that will be executed.
+     * @return true if the runnable was successfully placed in to the queue
+     * @see #postDelayed
+     * @see #removeCallbacks
+     */
+    public final boolean post(@Nonnull Runnable action) {
+        final AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            return attachInfo.mHandler.post(action);
+        }
+
+        // Postpone the runnable until we know on which thread it needs to run.
+        // Assume that the runnable will be successfully placed after attach.
+        getRunQueue().post(action);
+        return true;
+    }
+
+    /**
+     * <p>Causes the Runnable to be added to the task queue, to be run
+     * after the specified amount of time elapses.
+     * The runnable will be run on the UI thread.</p>
+     * <p>
+     * Note that a result of true does not mean the Runnable will be processed --
+     * if the application is shutdown before the delivery time of the message
+     * occurs then the message will be dropped.
+     *
+     * @param action      the runnable that will be executed.
+     * @param delayMillis the delay (in milliseconds) until the runnable will be executed.
+     * @return true if the runnable was successfully placed in to the queue
+     * @see #post
+     * @see #removeCallbacks
+     */
+    public final boolean postDelayed(@Nonnull Runnable action, long delayMillis) {
+        final AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            return attachInfo.mHandler.postDelayed(action, delayMillis);
+        }
+
+        // Postpone the runnable until we know on which thread it needs to run.
+        // Assume that the runnable will be successfully placed after attach.
+        getRunQueue().postDelayed(action, delayMillis);
+        return true;
+    }
+
+    /**
+     * <p>Causes the runnable to execute on the next animation time step.
+     * The runnable will be run on the UI thread.</p>
+     *
+     * @param action the runnable that will be executed
+     * @see #postOnAnimationDelayed
+     * @see #removeCallbacks
+     */
+    public final void postOnAnimation(@Nonnull Runnable action) {
+        final AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            attachInfo.mHandler.postOnAnimation(action);
+        } else {
+            // Postpone the runnable until we know
+            // on which thread it needs to run.
+            getRunQueue().post(action);
+        }
+    }
+
+    /**
+     * <p>Causes the Runnable to execute on the next animation time step,
+     * after the specified amount of time elapses.
+     * The runnable will be run on the UI thread.</p>
+     *
+     * @param action      the runnable that will be executed
+     * @param delayMillis the delay (in milliseconds) until the runnable will be executed
+     * @see #postOnAnimation
+     * @see #removeCallbacks
+     */
+    public final void postOnAnimationDelayed(@Nonnull Runnable action, long delayMillis) {
+        final AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            attachInfo.mHandler.postOnAnimationDelayed(action, delayMillis);
+        } else {
+            // Postpone the runnable until we know
+            // on which thread it needs to run.
+            getRunQueue().postDelayed(action, delayMillis);
+        }
+    }
+
+    /**
+     * <p>Removes the specified Runnable from the message queue.</p>
+     *
+     * @param action the runnable to remove from the task handling queue
+     * @see #post
+     * @see #postDelayed
+     * @see #postOnAnimation
+     * @see #postOnAnimationDelayed
+     */
+    public final void removeCallbacks(@Nullable Runnable action) {
+        if (action != null) {
+            final AttachInfo attachInfo = mAttachInfo;
+            if (attachInfo != null) {
+                attachInfo.mHandler.removeCallbacks(action);
+            }
+            if (mRunQueue != null) {
+                mRunQueue.removeCallbacks(action);
+            }
+        }
+    }
 
     /**
      * Called by a parent to request that a child update its values for mScrollX

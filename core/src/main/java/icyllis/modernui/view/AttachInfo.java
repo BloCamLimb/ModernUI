@@ -19,17 +19,25 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.math.PointF;
+import icyllis.modernui.util.TimedAction;
+
+import javax.annotation.Nonnull;
 
 /**
  * A set of information given to a view when it is attached to its parent
  * window.
  */
-final class AttachInfo {
+public final class AttachInfo {
 
     /**
      * The view root impl.
      */
     final ViewRootImpl mViewRootImpl;
+
+    /**
+     * This handler can be used to pump events in the UI events queue.
+     */
+    final Handler mHandler;
 
     /**
      * The top view of the hierarchy.
@@ -38,7 +46,27 @@ final class AttachInfo {
 
     PointF mTmpPointF = new PointF();
 
-    AttachInfo(ViewRootImpl viewRootImpl) {
+    public AttachInfo(ViewRootImpl viewRootImpl, Handler handler) {
         mViewRootImpl = viewRootImpl;
+        mHandler = handler;
+    }
+
+    public interface Handler {
+
+        default boolean post(@Nonnull Runnable r) {
+            return postDelayed(r, 0);
+        }
+
+        boolean postDelayed(@Nonnull Runnable r, long delayMillis);
+
+        default void postOnAnimation(@Nonnull Runnable r) {
+            postOnAnimationDelayed(r, 0);
+        }
+
+        void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis);
+
+        void transfer(@Nonnull TimedAction action, long delayMillis);
+
+        void removeCallbacks(@Nonnull Runnable r);
     }
 }
