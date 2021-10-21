@@ -31,7 +31,6 @@ import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.jetbrains.annotations.Contract;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -896,7 +895,6 @@ public class TextView extends View {
      * @return the current key listener for this TextView.
      */
     @Nullable
-    @Contract(pure = true)
     public final KeyListener getKeyListener() {
         return mEditor == null ? null : mEditor.mKeyListener;
     }

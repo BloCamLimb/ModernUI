@@ -55,7 +55,7 @@ public final class GrowingArrayUtils {
     public static <T> T[] append(@Nonnull T[] array, int currentSize, T element) {
         assert currentSize <= array.length;
 
-        if (currentSize + 1 > array.length) {
+        if (currentSize >= array.length) {
             Class<? extends Object[]> newType = array.getClass();
             int newLength = GrowingArrayUtils.growSize(currentSize);
             @SuppressWarnings("unchecked")
@@ -76,7 +76,7 @@ public final class GrowingArrayUtils {
     public static int[] append(@Nonnull int[] array, int currentSize, int element) {
         assert currentSize <= array.length;
 
-        if (currentSize + 1 > array.length) {
+        if (currentSize >= array.length) {
             int[] newArray = new int[growSize(currentSize)];
             System.arraycopy(array, 0, newArray, 0, currentSize);
             array = newArray;
@@ -100,7 +100,7 @@ public final class GrowingArrayUtils {
     public static <T> T[] insert(@Nonnull T[] array, int currentSize, int index, T element) {
         assert currentSize <= array.length;
 
-        if (currentSize + 1 <= array.length) {
+        if (currentSize < array.length) {
             System.arraycopy(array, index, array, index + 1, currentSize - index);
             array[index] = element;
             return array;
@@ -125,7 +125,7 @@ public final class GrowingArrayUtils {
     public static int[] insert(@Nonnull int[] array, int currentSize, int index, int element) {
         assert currentSize <= array.length;
 
-        if (currentSize + 1 <= array.length) {
+        if (currentSize < array.length) {
             System.arraycopy(array, index, array, index + 1, currentSize - index);
             array[index] = element;
             return array;

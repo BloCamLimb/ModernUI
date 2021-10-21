@@ -613,7 +613,7 @@ public class TextLine {
                 if (mSpanned != null) {
                     mReplacementSpanSpanSet.init(mSpanned, offset, offset);
 
-                    for (int i = 0; i < mReplacementSpanSpanSet.mSpans.size(); i++) {
+                    for (int i = 0; i < mReplacementSpanSpanSet.size(); i++) {
                         int start = mReplacementSpanSpanSet.mSpanStarts[i];
                         int end = mReplacementSpanSpanSet.mSpanEnds[i];
 
@@ -642,7 +642,7 @@ public class TextLine {
                 if (mSpanned != null) {
                     mReplacementSpanSpanSet.init(mSpanned, offset, offset);
 
-                    for (int i = 0; i < mReplacementSpanSpanSet.mSpans.size(); i++) {
+                    for (int i = 0; i < mReplacementSpanSpanSet.size(); i++) {
                         int start = mReplacementSpanSpanSet.mSpanStarts[i];
                         int end = mReplacementSpanSpanSet.mSpanEnds[i];
 
@@ -674,8 +674,8 @@ public class TextLine {
                 }
 
                 ReplacementSpan replacement = null;
-                for (int j = 0; j < mMetricAffectingSpanSpanSet.mSpans.size(); j++) {
-                    MetricAffectingSpan span = mMetricAffectingSpanSpanSet.mSpans.get(j);
+                for (int j = 0; j < mMetricAffectingSpanSpanSet.size(); j++) {
+                    MetricAffectingSpan span = mMetricAffectingSpanSpanSet.get(j);
 
                     if ((mMetricAffectingSpanSpanSet.mSpanStarts[j] >= mStart + spanLimit) ||
                             (mMetricAffectingSpanSpanSet.mSpanEnds[j] <= mStart + spanStart)) continue;
@@ -822,13 +822,13 @@ public class TextLine {
 
             ReplacementSpan replacement = null;
 
-            for (int j = 0; j < mMetricAffectingSpanSpanSet.mSpans.size(); j++) {
+            for (int j = 0; j < mMetricAffectingSpanSpanSet.size(); j++) {
                 // Both intervals [spanStarts..spanEnds] and [mStart + i..mStart + mlimit] are NOT
                 // empty by construction. This special case in getSpans() explains the >= & <= tests
                 if ((mMetricAffectingSpanSpanSet.mSpanStarts[j] >= mStart + mlimit)
                         || (mMetricAffectingSpanSpanSet.mSpanEnds[j] <= mStart + i)) continue;
 
-                final MetricAffectingSpan span = mMetricAffectingSpanSpanSet.mSpans.get(j);
+                final MetricAffectingSpan span = mMetricAffectingSpanSpanSet.get(j);
                 if (span instanceof ReplacementSpan) {
                     boolean insideEllipsis =
                             mStart + mEllipsisStart <= mMetricAffectingSpanSpanSet.mSpanStarts[j]
@@ -859,12 +859,12 @@ public class TextLine {
 
                 final int offset = Math.min(jnext, mlimit);
                 activePaint.set(wp);
-                for (int k = 0; k < mCharacterStyleSpanSet.mSpans.size(); k++) {
+                for (int k = 0; k < mCharacterStyleSpanSet.size(); k++) {
                     // Intentionally using >= and <= as explained above
                     if ((mCharacterStyleSpanSet.mSpanStarts[k] >= mStart + offset) ||
                             (mCharacterStyleSpanSet.mSpanEnds[k] <= mStart + j)) continue;
 
-                    final CharacterStyle span = mCharacterStyleSpanSet.mSpans.get(k);
+                    final CharacterStyle span = mCharacterStyleSpanSet.get(k);
                     span.updateDrawState(activePaint);
                 }
 

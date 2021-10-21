@@ -34,11 +34,8 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.textmc.TextLayoutEngine;
-import icyllis.modernui.util.TimedTask;
-import icyllis.modernui.view.MotionEvent;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
-import icyllis.modernui.view.ViewRootImpl;
+import icyllis.modernui.util.TimedAction;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.DecorView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -76,7 +73,7 @@ import static org.lwjgl.glfw.GLFW.*;
  */
 @NotThreadSafe
 @OnlyIn(Dist.CLIENT)
-public final class UIManager implements ViewRootImpl.Handler {
+public final class UIManager implements AttachInfo.Handler {
 
     // logger marker
     public static final Marker MARKER = MarkerManager.getMarker("UIManager");
@@ -110,10 +107,11 @@ public final class UIManager implements ViewRootImpl.Handler {
     private ScreenCallback mCallback;
 
     // a list of UI tasks
-    private final List<TimedTask> mTasks = new CopyOnWriteArrayList<>();
+    private final List<TimedAction> mTasks = new CopyOnWriteArrayList<>();
+    private final List<TimedAction> mAnimationTasks = new CopyOnWriteArrayList<>();
 
     // animation update callback
-    private final LongConsumer mAnimationCallback;
+    private final LongConsumer mAnimationHandler;
 
     // elapsed ticks from a gui open, update every tick, 20 = 1 second
     private int mTicks = 0;
@@ -122,6 +120,8 @@ public final class UIManager implements ViewRootImpl.Handler {
     private long mElapsedTimeMillis;
 
     private long mFrameTimeMillis;
+
+    private long mUptimeMillis;
 
     // lazy loading
     private GLCanvas mCanvas;
@@ -135,10 +135,10 @@ public final class UIManager implements ViewRootImpl.Handler {
     private boolean mFirstScreenOpened = false;
     private boolean mProjectionChanged = false;
 
-    private final Predicate<? super TimedTask> mUiHandler = task -> task.doExecuteTask(mFrameTimeMillis);
+    private final Predicate<? super TimedAction> mUiHandler = task -> task.execute(mUptimeMillis);
 
     private UIManager() {
-        mAnimationCallback = AnimationHandler.init();
+        mAnimationHandler = AnimationHandler.init();
         mFramebuffer = new GLFramebuffer(mWindow.getWidth(), mWindow.getHeight());
         mUiThread = new Thread(this::run, "UI thread");
         MinecraftForge.EVENT_BUS.register(this);
@@ -228,7 +228,7 @@ public final class UIManager implements ViewRootImpl.Handler {
     void start(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
             mCallback.host = this;
-            postTask(() -> mCallback.onCreate(), 0);
+            postDelayed(() -> mCallback.onCreate(), 0);
         }
         mScreen = screen;
 
@@ -277,18 +277,31 @@ public final class UIManager implements ViewRootImpl.Handler {
     /**
      * Post a task that will run on UI thread in specified milliseconds.
      *
-     * @param action runnable task
-     * @param delay  delayed time to run the task in milliseconds
+     * @param r           runnable task
+     * @param delayMillis delayed time to run the task in milliseconds
+     * @return if successful
      */
-    //TODO pooled
     @Override
-    public void postTask(@Nonnull Runnable action, long delay) {
-        mTasks.add(new TimedTask(action, mFrameTimeMillis + delay));
+    public boolean postDelayed(@Nonnull Runnable r, long delayMillis) {
+        return mTasks.add(TimedAction.obtain(r, Math.max(0, delayMillis) + System.currentTimeMillis()));
     }
 
     @Override
-    public void removeTask(@Nonnull Runnable action) {
-        mTasks.removeIf(t -> t.mRunnable == action);
+    public void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis) {
+        mAnimationTasks.add(TimedAction.obtain(r, Math.max(0, delayMillis) + System.currentTimeMillis()));
+    }
+
+    @Override
+    public void transfer(@Nonnull TimedAction action, long delayMillis) {
+        action.time = Math.max(0, delayMillis) + System.currentTimeMillis();
+        mTasks.add(action);
+    }
+
+    @Override
+    public void removeCallbacks(@Nonnull Runnable r) {
+        Predicate<? super TimedAction> pred = t -> t.remove(r);
+        mTasks.removeIf(pred);
+        mAnimationTasks.removeIf(pred);
     }
 
     @UiThread
@@ -306,20 +319,21 @@ public final class UIManager implements ViewRootImpl.Handler {
             // holds the lock
             synchronized (mRenderLock) {
                 try {
-                    // 1. do tasks
+                    // 1. handle tasks
+                    mUptimeMillis = System.currentTimeMillis();
                     if (!mTasks.isEmpty()) {
                         // batched processing
                         mTasks.removeIf(mUiHandler);
-                    }
-                    if (mScreen == null) {
-                        return;
                     }
 
                     // 2. do input events
                     mRoot.doProcessInputEvents();
 
                     // 3. do animations
-                    mAnimationCallback.accept(mFrameTimeMillis);
+                    mAnimationHandler.accept(mFrameTimeMillis);
+                    if (!mAnimationTasks.isEmpty()) {
+                        mAnimationTasks.removeIf(mUiHandler);
+                    }
 
                     // 4. do traversal
                     mRoot.doTraversal();
@@ -660,7 +674,7 @@ public final class UIManager implements ViewRootImpl.Handler {
      * Called when game window size changed, used to re-layout the window.
      */
     void resize() {
-        postTask(() -> mRoot.setFrame(mWindow.getWidth(), mWindow.getHeight()), 0);
+        postDelayed(() -> mRoot.setFrame(mWindow.getWidth(), mWindow.getHeight()), 0);
         mProjectionChanged = true;
     }
 
@@ -676,7 +690,7 @@ public final class UIManager implements ViewRootImpl.Handler {
         }
         UITools.useDefaultCursor();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-        postTask(() -> mDecor.removeAllViews(), 0);
+        postDelayed(() -> mDecor.removeAllViews(), 0);
     }
 
     @Deprecated
@@ -684,7 +698,7 @@ public final class UIManager implements ViewRootImpl.Handler {
     void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             ++mTicks;
-            postTask(mRoot::tick, 0);
+            postDelayed(mRoot::tick, 0);
         }
         /* else {
             if (mPendingRepostCursorEvent) {
