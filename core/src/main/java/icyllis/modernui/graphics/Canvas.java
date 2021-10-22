@@ -304,35 +304,35 @@ public abstract class Canvas {
                                  float sweepAngle, @Nonnull Paint paint);
 
     /**
-     * Draw a quadratic bezier curve using the specified paint. The three points represent
+     * Draw a quadratic Bézier curve using the specified paint. The three points represent
      * the starting point, the first control point and the end control point respectively.
      * <p>
-     * The Style is ignored in the paint, bezier curves are always "framed".
+     * The Style is ignored in the paint, Bézier curves are always "framed".
      * Stroke width in the paint represents the width of the curve.
      *
-     * @param p0    the starting point of the bezier curve
-     * @param p1    the first control point of the bezier curve
-     * @param p2    the end control point of the bezier curve
-     * @param paint the paint used to draw the bezier curve
+     * @param p0    the starting point of the Bézier curve
+     * @param p1    the first control point of the Bézier curve
+     * @param p2    the end control point of the Bézier curve
+     * @param paint the paint used to draw the Bézier curve
      */
-    public void drawBezier(@Nonnull PointF p0, @Nonnull PointF p1, @Nonnull PointF p2, @Nonnull Paint paint) {
+    public final void drawBezier(@Nonnull PointF p0, @Nonnull PointF p1, @Nonnull PointF p2, @Nonnull Paint paint) {
         drawBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, paint);
     }
 
     /**
-     * Draw a quadratic bezier curve using the specified paint. The three points represent
+     * Draw a quadratic Bézier curve using the specified paint. The three points represent
      * the starting point, the first control point and the end control point respectively.
      * <p>
-     * The Style is ignored in the paint, bezier curves are always "framed".
+     * The Style is ignored in the paint, Bézier curves are always "framed".
      * Stroke width in the paint represents the width of the curve.
      *
-     * @param x0    the x-coordinate of the starting point of the bezier curve
-     * @param y0    the y-coordinate of the starting point of the bezier curve
-     * @param x1    the x-coordinate of the first control point of the bezier curve
-     * @param y1    the y-coordinate of the first control point of the bezier curve
-     * @param x2    the x-coordinate of the end control point of the bezier curve
-     * @param y2    the y-coordinate of the end control point of the bezier curve
-     * @param paint the paint used to draw the bezier curve
+     * @param x0    the x-coordinate of the starting point of the Bézier curve
+     * @param y0    the y-coordinate of the starting point of the Bézier curve
+     * @param x1    the x-coordinate of the first control point of the Bézier curve
+     * @param y1    the y-coordinate of the first control point of the Bézier curve
+     * @param x2    the x-coordinate of the end control point of the Bézier curve
+     * @param y2    the y-coordinate of the end control point of the Bézier curve
+     * @param paint the paint used to draw the Bézier curve
      */
     public abstract void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
                                     @Nonnull Paint paint);

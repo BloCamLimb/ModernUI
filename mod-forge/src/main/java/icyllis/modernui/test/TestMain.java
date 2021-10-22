@@ -421,7 +421,7 @@ public class TestMain {
             canvas.drawRoundLine(20, 20, 140, 60, paint);
             canvas.drawRoundLine(120, 30, 60, 80, paint);
 
-            canvas.drawBezier(300, 100, 390, 220 + 100 * sin, 480, 170, paint);
+            canvas.drawBezier(300, 100, 410, 210 + 100 * sin, 480, 170, paint);
 
             //canvas.rotate(30);
             /*String tcc = "今日も一日頑張るぞい";
