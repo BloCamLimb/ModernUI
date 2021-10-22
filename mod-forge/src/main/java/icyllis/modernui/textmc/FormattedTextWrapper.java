@@ -52,7 +52,7 @@ public class FormattedTextWrapper implements FormattedCharSequence {
      * @see FormattedCharSequence#composite(List)
      */
     @Override
-    public boolean accept(FormattedCharSink sink) {
+    public boolean accept(@Nonnull FormattedCharSink sink) {
         // do not reorder, transfer the code points
         return mText.visit((style, text) ->
                 StringDecomposer.iterateFormatted(text, style, sink) ? Optional.empty()

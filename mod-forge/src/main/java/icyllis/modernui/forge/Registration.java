@@ -24,8 +24,8 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettings;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.screen.OpenMenuEvent;
-import icyllis.modernui.screen.UIManager;
+import icyllis.modernui.mcgui.OpenMenuEvent;
+import icyllis.modernui.mcgui.UIManager;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.test.TestUI;
 import icyllis.modernui.textmc.TextLayoutEngine;
@@ -224,7 +224,7 @@ final class Registration {
                             (options, progressOption) -> options.guiScale == 0 ?
                                     ((AccessOption) progressOption)
                                             .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
-                                                    .append(new TextComponent(" (" + (MForgeCompat.calcGuiScales() >> 4 & 0xf) + ")"))) :
+                                                    .append(new TextComponent(" (" + (MuiForgeBridge.calcGuiScales() >> 4 & 0xf) + ")"))) :
                                     ((AccessOption) progressOption)
                                             .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
                     );

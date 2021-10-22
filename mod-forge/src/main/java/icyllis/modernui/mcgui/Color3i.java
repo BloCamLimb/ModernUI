@@ -16,16 +16,15 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.test.trash;
+package icyllis.modernui.mcgui;
 
 /**
- * No use, actually deprecated
+ * No use, actually deprecated.
  */
-@Deprecated
 public class Color3i {
 
     /**
-     * Classic 16 formatting colors {@link net.minecraft.util.text.TextFormatting}
+     * Classic 16 formatting colors {@link net.minecraft.ChatFormatting}
      */
     public static final Color3i BLACK        = new Color3i(0, 0, 0);
     public static final Color3i DARK_BLUE    = new Color3i(0, 0, 170);
@@ -133,17 +132,14 @@ public class Color3i {
         return WHITE;
     }
 
-    @Deprecated
     public static float getRedFrom(int color) {
         return (color >> 16 & 0xff) / 255.0f;
     }
 
-    @Deprecated
     public static float getGreenFrom(int color) {
         return (color >> 8 & 0xff) / 255.0f;
     }
 
-    @Deprecated
     public static float getBlueFrom(int color) {
         return (color & 0xff) / 255.0f;
     }

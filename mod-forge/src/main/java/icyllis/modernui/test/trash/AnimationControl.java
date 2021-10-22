@@ -20,7 +20,7 @@ package icyllis.modernui.test.trash;
 
 import icyllis.modernui.animation.AnimatorSet;
 import icyllis.modernui.animation.ObjectAnimator;
-import icyllis.modernui.screen.Animation;
+import icyllis.modernui.mcgui.Animation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

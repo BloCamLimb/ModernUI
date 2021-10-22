@@ -162,7 +162,7 @@ public class NetworkHandler {
     }
 
     /**
-     * Allocates a heap buffer to write indexed packet data. Once you done that,
+     * Allocates a heap buffer to write indexed packet data. Once you're done that,
      * pass the value returned here to {@link #dispatcher(FriendlyByteBuf)} or
      * {@link #sendToServer(FriendlyByteBuf)}. The message index is used to identify
      * what type of message is, which is also determined by your network protocol.

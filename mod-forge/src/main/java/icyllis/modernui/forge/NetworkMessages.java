@@ -19,7 +19,7 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.screen.UIManager;
+import icyllis.modernui.mcgui.UIManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Registry;

@@ -19,8 +19,8 @@
 package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.screen.BlurHandler;
-import icyllis.modernui.screen.TooltipRenderer;
+import icyllis.modernui.mcgui.BlurHandler;
+import icyllis.modernui.mcgui.TooltipRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
