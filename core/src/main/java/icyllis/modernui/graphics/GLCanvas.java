@@ -304,7 +304,7 @@ public final class GLCanvas extends Canvas {
         int circleStroke = manager.getShard(ModernUI.ID, "circle_stroke.frag");
         int arcFill = manager.getShard(ModernUI.ID, "arc_fill.frag");
         int arcStroke = manager.getShard(ModernUI.ID, "arc_stroke.frag");
-        int bezierCurve = manager.getShard(ModernUI.ID, "bezier_curve.frag");
+        int quadBezier = manager.getShard(ModernUI.ID, "quadratic_bezier.frag");
         int alphaTex = manager.getShard(ModernUI.ID, "alpha_tex.frag");
         int colorTexMs = manager.getShard(ModernUI.ID, "color_tex_4x.frag");
 
@@ -317,7 +317,7 @@ public final class GLCanvas extends Canvas {
         manager.create(CIRCLE_STROKE, posColor, circleStroke);
         manager.create(ARC_FILL, posColor, arcFill);
         manager.create(ARC_STROKE, posColor, arcStroke);
-        manager.create(BEZIER_CURVE, posColor, bezierCurve);
+        manager.create(BEZIER_CURVE, posColor, quadBezier);
         manager.create(ALPHA_TEX, posTex, alphaTex);
         manager.create(COLOR_TEX_MS, posColorTex, colorTexMs);
 
