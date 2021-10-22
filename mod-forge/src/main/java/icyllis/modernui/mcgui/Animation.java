@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.screen;
+package icyllis.modernui.mcgui;
 
 import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.platform.RenderCore;

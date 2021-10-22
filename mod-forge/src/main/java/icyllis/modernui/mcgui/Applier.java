@@ -16,10 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.screen;
+package icyllis.modernui.mcgui;
 
 import icyllis.modernui.animation.Interpolator;
-import net.minecraft.util.Mth;
+import icyllis.modernui.math.MathUtil;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -73,7 +73,7 @@ public class Applier {
 
     void update(float progress) {
         progress = interpolator.getInterpolation(progress);
-        float value = Mth.lerp(progress, logicStart, logicEnd);
+        float value = MathUtil.lerp(progress, logicStart, logicEnd);
         setter.accept(value);
     }
 
@@ -87,7 +87,8 @@ public class Applier {
 
         private boolean useHeight;
 
-        public Resizable(Function<Integer, Float> initResizer, Function<Integer, Float> targetResizer, Consumer<Float> resultSetter, Consumer<Function<Integer, Float>> resizerSetter, boolean useHeight) {
+        public Resizable(Function<Integer, Float> initResizer, Function<Integer, Float> targetResizer,
+        Consumer<Float> resultSetter, Consumer<Function<Integer, Float>> resizerSetter, boolean useHeight) {
             super(0, 0, resultSetter);
             this.initResizer = initResizer;
             this.targetResizer = targetResizer;

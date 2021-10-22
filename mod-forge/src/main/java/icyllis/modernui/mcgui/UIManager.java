@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.screen;
+package icyllis.modernui.mcgui;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
@@ -56,12 +56,12 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 
@@ -71,6 +71,7 @@ import static org.lwjgl.glfw.GLFW.*;
 /**
  * Manage UI thread and connect Minecraft to Modern UI view system at bottom level.
  */
+@ApiStatus.Internal
 @NotThreadSafe
 @OnlyIn(Dist.CLIENT)
 public final class UIManager implements AttachInfo.Handler {
@@ -107,8 +108,8 @@ public final class UIManager implements AttachInfo.Handler {
     private ScreenCallback mCallback;
 
     // a list of UI tasks
-    private final List<TimedAction> mTasks = new CopyOnWriteArrayList<>();
-    private final List<TimedAction> mAnimationTasks = new CopyOnWriteArrayList<>();
+    private final ConcurrentLinkedQueue<TimedAction> mTasks = new ConcurrentLinkedQueue<>();
+    private final ConcurrentLinkedQueue<TimedAction> mAnimationTasks = new ConcurrentLinkedQueue<>();
 
     // animation update callback
     private final LongConsumer mAnimationHandler;
@@ -176,11 +177,11 @@ public final class UIManager implements AttachInfo.Handler {
     /**
      * Open an application UI and create views.
      *
-     * @param screen the application user interface
+     * @param callback the application user interface
      * @see #start(MuiScreen)
      */
-    public void openGui(@Nonnull ScreenCallback screen) {
-        mCallback = screen;
+    public void openGui(@Nonnull ScreenCallback callback) {
+        mCallback = callback;
         minecraft.setScreen(new SimpleScreen(this));
     }
 
@@ -228,7 +229,7 @@ public final class UIManager implements AttachInfo.Handler {
     void start(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
             mCallback.host = this;
-            postDelayed(() -> mCallback.onCreate(), 0);
+            post(mCallback::onCreate);
         }
         mScreen = screen;
 
@@ -698,7 +699,7 @@ public final class UIManager implements AttachInfo.Handler {
     void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             ++mTicks;
-            postDelayed(mRoot::tick, 0);
+            post(mRoot::tick);
         }
         /* else {
             if (mPendingRepostCursorEvent) {

@@ -20,10 +20,8 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.screen.BlurHandler;
-import icyllis.modernui.screen.OpenMenuEvent;
+import icyllis.modernui.mcgui.BlurHandler;
 import icyllis.modernui.test.TestMenu;
-import icyllis.modernui.test.TestUI;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import net.minecraft.client.ProgressOption;
 import net.minecraft.client.gui.screens.Screen;
@@ -61,7 +59,7 @@ final class EventHandler {
     static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
         if (ModernUIForge.isDeveloperMode()) {
             if (event.getSide().isServer() && event.getItemStack().getItem() == Items.DIAMOND) {
-                MForgeCompat.openMenu(event.getPlayer(), TestMenu::new);
+                MuiForgeBridge.openMenu(event.getPlayer(), TestMenu::new);
             }
         }
     }
@@ -142,7 +140,7 @@ final class EventHandler {
         @SubscribeEvent
         static void onGuiInit(@Nonnull GuiScreenEvent.InitGuiEvent event) {
             if (event.getGui() instanceof VideoSettingsScreen && NEW_GUI_SCALE != null) {
-                NEW_GUI_SCALE.setMaxValue(MForgeCompat.calcGuiScales() & 0xf);
+                NEW_GUI_SCALE.setMaxValue(MuiForgeBridge.calcGuiScales() & 0xf);
             }
         }
 
