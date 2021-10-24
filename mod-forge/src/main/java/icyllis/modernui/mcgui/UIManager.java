@@ -26,6 +26,7 @@ import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
+import icyllis.modernui.forge.MuiForgeBridge;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.texture.GLTexture;
@@ -50,6 +51,7 @@ import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
+import net.minecraftforge.client.gui.ForgeIngameGui;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -61,7 +63,9 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.LockSupport;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 
@@ -145,32 +149,29 @@ public final class UIManager implements AttachInfo.Handler {
         MinecraftForge.EVENT_BUS.register(this);
     }
 
-    // internal use
-    @Nonnull
-    public static UIManager getInstance() {
-        if (sInstance == null) {
-            synchronized (UIManager.class) {
-                if (sInstance == null) {
-                    sInstance = new UIManager();
-                }
-            }
-        }
-        return sInstance;
-    }
-
     @RenderThread
     public static void initialize() {
         RenderCore.checkRenderThread();
-        UIManager m = getInstance();
-        if (m.mCanvas == null) {
-            m.mCanvas = GLCanvas.initialize();
-            glEnable(GL_MULTISAMPLE);
-            m.mFramebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
-            // no depth buffer
-            m.mFramebuffer.attachRenderbuffer(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
-            m.mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
-            m.mUiThread.start();
-            ModernUI.LOGGER.info(MARKER, "UI system initialized");
+        if (sInstance == null) {
+            final UIManager m = new UIManager();
+            sInstance = m;
+            if (m.mCanvas == null) {
+                m.mCanvas = GLCanvas.initialize();
+                glEnable(GL_MULTISAMPLE);
+                m.mFramebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+                // no depth buffer
+                m.mFramebuffer.attachRenderbuffer(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+                m.mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+                m.mUiThread.start();
+                ModernUI.LOGGER.info(MARKER, "UI system initialized");
+            }
+            try {
+                Field f = MuiForgeBridge.class.getDeclaredField("sUIManager");
+                f.setAccessible(true);
+                f.set(null, m);
+            } catch (NoSuchFieldException | IllegalAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -203,12 +204,12 @@ public final class UIManager implements AttachInfo.Handler {
     }
 
     /**
-     * Get elapsed time in UI, update every frame
+     * Get elapsed time in UI, update every frame. Internal use only.
      *
      * @return drawing time in milliseconds
      */
-    public long getElapsedTime() {
-        return mElapsedTimeMillis;
+    public static long getElapsedTime() {
+        return sInstance.mElapsedTimeMillis;
     }
 
     /**
@@ -257,7 +258,7 @@ public final class UIManager implements AttachInfo.Handler {
         }
 
         if (mCloseScreen) {
-            finish();
+            stop();
             return;
         }
 
@@ -312,10 +313,7 @@ public final class UIManager implements AttachInfo.Handler {
         mRoot.setView(mDecor);
         ModernUI.LOGGER.info(MARKER, "View system initialized");
         for (; ; ) {
-            try {
-                mUiThread.join();
-            } catch (InterruptedException ignored) {
-            }
+            LockSupport.park();
 
             // holds the lock
             synchronized (mRenderLock) {
@@ -441,17 +439,17 @@ public final class UIManager implements AttachInfo.Handler {
         }
     }
 
-    // Internal method
-    public void onScroll(double scrollX, double scrollY) {
-        if (mScreen != null) {
+    // Hook method
+    public static void onScroll(double scrollX, double scrollY) {
+        if (sInstance.mScreen != null) {
             final long now = RenderCore.timeNanos();
-            float x = (float) minecraft.mouseHandler.xpos();
-            float y = (float) minecraft.mouseHandler.ypos();
+            float x = (float) sInstance.minecraft.mouseHandler.xpos();
+            float y = (float) sInstance.minecraft.mouseHandler.ypos();
             MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_SCROLL,
                     x, y, 0);
             event.setAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
             event.setAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
-            mRoot.enqueueInputEvent(event);
+            sInstance.mRoot.enqueueInputEvent(event);
         }
     }
 
@@ -632,8 +630,7 @@ public final class UIManager implements AttachInfo.Handler {
     }
 
     @SubscribeEvent
-    void onRenderGameOverlay(@Nonnull RenderGameOverlayEvent.Pre event) {
-        //TODO mixin cross-hairs
+    void onRenderGameOverlayLayer(@Nonnull RenderGameOverlayEvent.PreLayer event) {
         /*switch (event.getType()) {
             case CROSSHAIRS:
                 event.setCanceled(mScreen != null);
@@ -647,6 +644,11 @@ public final class UIManager implements AttachInfo.Handler {
                     TestHUD.sInstance.drawBars(mFCanvas);
                 break;*//*
         }*/
+        if (event.getOverlay() == ForgeIngameGui.CROSSHAIR_ELEMENT) {
+            if (mScreen != null) {
+                event.setCanceled(true);
+            }
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
@@ -675,15 +677,16 @@ public final class UIManager implements AttachInfo.Handler {
      * Called when game window size changed, used to re-layout the window.
      */
     void resize() {
-        postDelayed(() -> mRoot.setFrame(mWindow.getWidth(), mWindow.getHeight()), 0);
+        post(() -> mRoot.setFrame(mWindow.getWidth(), mWindow.getHeight()));
         mProjectionChanged = true;
     }
 
-    void finish() {
+    void stop() {
         if (!mCloseScreen || mScreen == null) {
             return;
         }
         mTasks.clear();
+        mAnimationTasks.clear();
         mScreen = null;
         if (mCallback != null) {
             mCallback.host = null;
@@ -691,7 +694,7 @@ public final class UIManager implements AttachInfo.Handler {
         }
         UITools.useDefaultCursor();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-        postDelayed(() -> mDecor.removeAllViews(), 0);
+        post(() -> mDecor.removeAllViews());
     }
 
     @Deprecated
@@ -716,7 +719,7 @@ public final class UIManager implements AttachInfo.Handler {
             final long deltaMillis = mFrameTimeMillis - lastFrameTime;
             mElapsedTimeMillis += deltaMillis;
             if (mScreen != null && minecraft.screen == mScreen) {
-                mUiThread.interrupt();
+                LockSupport.unpark(mUiThread);
             }
             BlurHandler.INSTANCE.update(mElapsedTimeMillis);
             if (TooltipRenderer.sTooltip) {
