@@ -173,32 +173,29 @@ public final class ModernUIForge extends ModernUI {
             }
             if (cfg.endsWith(".ttf") || cfg.endsWith(".otf")
                     || cfg.endsWith(".TTF") || cfg.endsWith(".OTF")) {
-                if (cfg.contains(":/") || cfg.contains(":\\")) {
-                    try {
-                        Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
-                                cfg.replaceAll("\\\\", "/")));
-                        selected.add(f);
-                        ModernUI.LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
-                                f.getFamily(Locale.ROOT), cfg);
-                    } catch (Exception e) {
-                        ModernUI.LOGGER.warn(MARKER, "Font {} failed to load", cfg);
-                    }
-                } else if (cfg.contains(":")) {
-                    try (Resource resource = Minecraft.getInstance().getResourceManager()
-                            .getResource(new ResourceLocation(cfg))) {
-                        Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
-                        selected.add(f);
-                        ModernUI.LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
-                                f.getFamily(Locale.ROOT), cfg);
-                    } catch (Exception e) {
-                        ModernUI.LOGGER.warn(MARKER, "Font {} failed to load", cfg);
-                    }
-                } else {
-                    ModernUI.LOGGER.warn(MARKER, "Font {} is invalid", cfg);
+                try {
+                    Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
+                            cfg.replaceAll("\\\\", "/")));
+                    selected.add(f);
+                    ModernUI.LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
+                            f.getFamily(Locale.ROOT), cfg);
+                    continue;
+                } catch (Exception ignored) {
                 }
+                try (Resource resource = Minecraft.getInstance().getResourceManager()
+                        .getResource(new ResourceLocation(cfg))) {
+                    Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
+                    selected.add(f);
+                    ModernUI.LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
+                            f.getFamily(Locale.ROOT), cfg);
+                    continue;
+                } catch (Exception ignored) {
+                }
+                ModernUI.LOGGER.warn(MARKER, "Font {} failed to load or invalid", cfg);
             } else {
                 Optional<Font> font =
-                        Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equalsIgnoreCase(cfg)).findFirst();
+                        Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equalsIgnoreCase(cfg))
+                                .findFirst();
                 if (font.isPresent()) {
                     selected.add(font.get());
                     ModernUI.LOGGER.debug(MARKER, "Font {} was loaded", cfg);

@@ -20,6 +20,7 @@ package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.mcgui.UIManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -41,6 +42,8 @@ import java.util.function.Consumer;
  * Compatibility layer for Minecraft Forge mods, exposed for external calls.
  */
 public final class MuiForgeBridge {
+
+    static UIManager sUIManager;
 
     private MuiForgeBridge() {
     }

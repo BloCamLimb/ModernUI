@@ -50,6 +50,6 @@ public class MixinMouseHandler {
     @Inject(method = "onScroll", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/screens/Screen;mouseScrolled(DDD)Z"))
     private void onScrollCallback(long handle, double xoffset, double yoffset, CallbackInfo ci) {
-        UIManager.getInstance().onScroll(xoffset, yoffset);
+        UIManager.onScroll(xoffset, yoffset);
     }
 }

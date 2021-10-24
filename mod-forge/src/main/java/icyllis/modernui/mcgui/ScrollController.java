@@ -124,7 +124,7 @@ public class ScrollController {
      * @param duration scroll duration in milliseconds
      */
     public void scrollTo(float target, int duration) {
-        startTime = UIManager.getInstance().getElapsedTime();
+        startTime = UIManager.getElapsedTime();
         startValue = currValue;
         targetValue = Mth.clamp(target, 0, maxValue);
         this.duration = duration;
@@ -137,7 +137,7 @@ public class ScrollController {
      */
     public boolean scrollTo(float target) {
         float lastTime = startTime;
-        startTime = UIManager.getInstance().getElapsedTime();
+        startTime = UIManager.getElapsedTime();
         startValue = currValue;
         targetValue = Mth.clamp(target, 0, maxValue);
         if (startValue == targetValue) {

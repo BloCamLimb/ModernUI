@@ -227,6 +227,7 @@ public class TestLinearLayout extends LinearLayout {
         canvas.restore();*/
 
         Paint paint = Paint.take();
+        paint.setAlpha(192);
         paint.setStyle(Paint.Style.FILL);
         canvas.drawRoundRect(6, 90, 46, 104, 7, paint);
 
@@ -248,9 +249,10 @@ public class TestLinearLayout extends LinearLayout {
         canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
 
         paint.setStyle(Paint.Style.FILL);
-        paint.setAlpha((int) (roundRectAlpha * 255));
+        paint.setAlpha((int) (roundRectAlpha * 192));
         canvas.drawRoundRect(20, 480, 20 + mRoundRectLen * 1.6f, 480 + mRoundRectLen, 10, paint);
         paint.setAlpha(255);
+
         // 1
 
         /*canvas.save();
