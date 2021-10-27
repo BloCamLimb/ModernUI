@@ -997,32 +997,24 @@ public class TextLine {
 
         float ret = 0;
 
-        //FIXME replacement
-        /*int textStart = mStart + start;
+        int textStart = mStart + start;
         int textLimit = mStart + limit;
 
         if (needWidth || (canvas != null && runIsRtl)) {
-            int previousTop = 0;
             int previousAscent = 0;
             int previousDescent = 0;
-            int previousBottom = 0;
-            int previousLeading = 0;
 
             boolean needUpdateMetrics = (fmi != null);
 
             if (needUpdateMetrics) {
-                previousTop     = fmi.top;
-                previousAscent  = fmi.ascent;
+                previousAscent = fmi.ascent;
                 previousDescent = fmi.descent;
-                previousBottom  = fmi.bottom;
-                previousLeading = fmi.leading;
             }
 
             ret = replacement.getSize(wp, mText, textStart, textLimit, fmi);
 
             if (needUpdateMetrics) {
-                updateMetrics(fmi, previousTop, previousAscent, previousDescent, previousBottom,
-                        previousLeading);
+                fmi.extendBy(previousAscent, previousDescent);
             }
         }
 
@@ -1032,7 +1024,7 @@ public class TextLine {
             }
             replacement.draw(canvas, mText, textStart, textLimit,
                     x, top, y, bottom, wp);
-        }*/
+        }
 
         return runIsRtl ? -ret : ret;
     }

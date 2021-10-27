@@ -23,7 +23,6 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.*;
-import icyllis.modernui.text.method.KeyListener;
 import icyllis.modernui.text.method.MovementMethod;
 import icyllis.modernui.text.method.TransformationMethod;
 import icyllis.modernui.view.Gravity;
@@ -318,8 +317,6 @@ public class TextView extends View {
 
     private Typeface mOriginalTypeface;
 
-    // True if setKeyListener() has been explicitly called
-    private boolean mListenerChanged = false;
     // True if fallback fonts that end up getting used should be allowed to affect line spacing.
     boolean mUseFallbackLineSpacing = true;
 
@@ -891,17 +888,6 @@ public class TextView extends View {
     }
 
     /**
-     * Gets the current {@link KeyListener} for the TextView.
-     * This will frequently be null for non-EditText TextViews.
-     *
-     * @return the current key listener for this TextView.
-     */
-    @Nullable
-    public final KeyListener getKeyListener() {
-        return mEditor == null ? null : mEditor.mKeyListener;
-    }
-
-    /**
      * Make a new Layout based on the already-measured size of the view,
      * on the assumption that it was measured correctly at some point.
      */
@@ -970,7 +956,7 @@ public class TextView extends View {
                 || alignment == Layout.Alignment.ALIGN_OPPOSITE);
         int oldDir = 0;
         if (testDirChange) oldDir = mLayout.getParagraphDirection(0);
-        boolean shouldEllipsize = mEllipsize != null && getKeyListener() == null;
+        boolean shouldEllipsize = mEllipsize != null;
         TextUtils.TruncateAt effectiveEllipsize = mEllipsize;
 
         if (mTextDir == null) {
@@ -1074,7 +1060,7 @@ public class TextView extends View {
                     .setTextDirection(mTextDir)
                     .setIncludePad(mIncludePad)
                     .setFallbackLineSpacing(mUseFallbackLineSpacing)
-                    .setEllipsize(getKeyListener() == null ? effectiveEllipsize : null)
+                    .setEllipsize(effectiveEllipsize)
                     .setEllipsizedWidth(ellipsisWidth);
             result = builder.build();
         } else {

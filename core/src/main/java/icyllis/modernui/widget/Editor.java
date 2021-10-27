@@ -18,7 +18,6 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.text.method.KeyListener;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -30,8 +29,6 @@ public class Editor {
     private static final Marker MARKER = MarkerManager.getMarker("Editor");
 
     private final TextView mTextView;
-
-    KeyListener mKeyListener;
 
     boolean mCursorVisible = true;
     boolean mSelectAllOnFocus;
