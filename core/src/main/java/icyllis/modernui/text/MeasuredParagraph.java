@@ -50,7 +50,7 @@ public class MeasuredParagraph {
     private static final Pool<MeasuredParagraph> sPool = Pools.concurrent(1);
 
     /**
-     * The casted original text.
+     * The cast original text.
      * <p>
      * This may be null if the passed text is not a Spanned.
      */
@@ -531,8 +531,9 @@ public class MeasuredParagraph {
         tp.getFontMetricsInt(mCachedFm);
 
         if (replacement != null) {
-            //TODO get replacement width
-            builder.addReplacementRun(tp, end - start, 0);
+            final float width = replacement.getSize(
+                    tp, mSpanned, start + mTextStart, end + mTextStart, mCachedFm);
+            builder.addReplacementRun(tp, end - start, width);
         } else {
             final int offset = mTextStart;
             final FontPaint base = tp.toBase();
