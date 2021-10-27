@@ -36,7 +36,7 @@ import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.graphics.texture.TextureManager;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.RectF;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.platform.NativeImage;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.platform.Window;
@@ -375,7 +375,7 @@ public class TestMain {
 
         long lastTime = RenderCore.timeMillis();
 
-        RectF screenRect = new RectF(0, 0, window.getWidth(), window.getHeight());
+        Rect screenRect = new Rect(0, 0, window.getWidth(), window.getHeight());
 
         sTrack.play();
 

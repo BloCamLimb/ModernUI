@@ -40,6 +40,7 @@ import icyllis.modernui.view.*;
 import icyllis.modernui.widget.DecorView;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -667,14 +668,22 @@ public final class UIManager implements AttachInfo.Handler {
             }*/
             final Window window = minecraft.getWindow();
             // screen coordinates to pixels for rendering
-            double cursorX = minecraft.mouseHandler.xpos() *
+            final MouseHandler mouseHandler = minecraft.mouseHandler;
+            // screen coordinates to pixels for rendering
+            double cursorX = mouseHandler.xpos() *
                     (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
-            double cursorY = minecraft.mouseHandler.ypos() *
+            double cursorY = mouseHandler.ypos() *
                     (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
-            TooltipRenderer.drawTooltip(mCanvas, event.getLines(), event.getFontRenderer(), event.getStack(),
-                    event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY,
-                    event.getMaxWidth(), event.getScreenWidth(), event.getScreenHeight(),
-                    window.getWidth(), window.getHeight());
+            if (event.getLines().isEmpty()) {
+                TooltipRenderer.drawTooltip(mCanvas, window, event.getMatrixStack(), event.getComponents(),
+                        event.getX(), event.getY(), event.getFontRenderer(), event.getScreenWidth(),
+                        event.getScreenHeight(), cursorX, cursorY, minecraft.getItemRenderer(), minecraft);
+            } else {
+                TooltipRenderer.drawTooltip(mCanvas, event.getLines(), event.getFontRenderer(), event.getStack(),
+                        event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY,
+                        event.getMaxWidth(), event.getScreenWidth(), event.getScreenHeight(), window.getWidth(),
+                        window.getHeight());
+            }
             event.setCanceled(true);
         }
     }
