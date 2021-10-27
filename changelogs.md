@@ -1,5 +1,27 @@
 Changelogs
 ===
+### 1.17.1-3.0.1.94 (2021-10-27)
+#### Forge Extension 1.17.1-37.0.96
+* Update new tooltip events
+* Fix registry references
+* Add network handler on netty thread
+* Update network protocol
+* Rename packages
+#### Modern Text 1.17 (Embedded)
+* Fix external fonts cannot be loaded on Linux
+#### Core Framework 3.0 (Preview)
+* Add view paddings and RTL properties
+* Update layout containers
+* Update UI thread scheduling
+* Enhance quadratic bezier shader
+* Add DynamicLayout
+* Add text methods
+* Fix various bugs on text engine
+Add SpannableStringBuilder
+* Fix bugs on LineBreaker
+* Avoid allocating large arrays for getSpans
+* Add GrowingArrayUtils
+
 ### 1.17.1-3.0.0.93 (2021-10-02)
 #### Forge Extension 1.17.1-37.0.70
 * Enhance tooltip rendering and add gradient effect

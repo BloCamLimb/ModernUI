@@ -29,7 +29,6 @@ import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -49,6 +48,9 @@ import java.util.List;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
+/**
+ * An extension that replaces vanilla tooltip style.
+ */
 @ApiStatus.Internal
 public class TooltipRenderer {
 
@@ -74,7 +76,7 @@ public class TooltipRenderer {
     private static final int[] sColor = new int[4];
 
     private static boolean sDraw;
-    private static float sAlpha;
+    public static float sAlpha;
 
     public static void update(long deltaMillis) {
         if (sDraw) {
@@ -87,7 +89,7 @@ public class TooltipRenderer {
         }
     }
 
-    // from Forge hooks
+    @Deprecated(forRemoval = true)
     public static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull List<? extends FormattedText> texts,
                                    @Nonnull Font font, @Nonnull ItemStack stack, @Nonnull PoseStack poseStack,
                                    float mouseX, float mouseY, float preciseMouseX, float preciseMouseY,
@@ -257,24 +259,15 @@ public class TooltipRenderer {
         sTempTexts.clear();
     }
 
-    // from vanilla
-    public static void drawTooltip(@Nonnull PoseStack poseStack, @Nonnull List<ClientTooltipComponent> list,
-                                   int mouseX, int mouseY, @Nonnull Font font, float screenWidth, float screenHeight,
+    public static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull Window window, @Nonnull PoseStack poseStack,
+                                   @Nonnull List<ClientTooltipComponent> list, int mouseX, int mouseY,
+                                   @Nonnull Font font, float screenWidth, float screenHeight,
+                                   double cursorX, double cursorY,
                                    @Nonnull ItemRenderer itemRenderer, @Nonnull Minecraft minecraft) {
         sDraw = true;
-        final GLCanvas canvas = GLCanvas.getInstance();
 
-        final Window window = minecraft.getWindow();
-        final MouseHandler mouseHandler = minecraft.mouseHandler;
-        // screen coordinates to pixels for rendering
-        double cursorX = mouseHandler.xpos() *
-                (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
-        double cursorY = mouseHandler.ypos() *
-                (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
-        final float scale = (float) window.getGuiScale();
-
-        final float partialX = Math.round((cursorX - (int) cursorX) * scale) / scale;
-        final float partialY = Math.round((cursorY - (int) cursorY) * scale) / scale;
+        final float partialX = (float) (cursorX - (int) cursorX);
+        final float partialY = (float) (cursorY - (int) cursorY);
 
         float tooltipX = mouseX + TOOLTIP_SPACE + partialX;
         float tooltipY = mouseY - TOOLTIP_SPACE + partialY;
@@ -391,7 +384,7 @@ public class TooltipRenderer {
 
         for (int i = 0; i < list.size(); i++) {
             ClientTooltipComponent component = list.get(i);
-            component.renderImage(font, drawX, drawY, poseStack, itemRenderer, 400, minecraft.textureManager);
+            component.renderImage(font, drawX, drawY, poseStack, itemRenderer, 400, minecraft.getTextureManager());
             if (i == 0) {
                 drawY += TITLE_GAP;
             }

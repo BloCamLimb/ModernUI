@@ -20,29 +20,19 @@ package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.mcgui.BlurHandler;
-import icyllis.modernui.mcgui.TooltipRenderer;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.List;
 
 @Mixin(Screen.class)
 public class MixinScreen {
 
     //private static final ResourceLocation BACKGROUND = new ResourceLocation("textures/block/spruce_planks.png");
 
-    @Shadow
+    /*@Shadow
     public int width;
 
     @Shadow
@@ -53,7 +43,7 @@ public class MixinScreen {
 
     @Shadow
     @Nullable
-    protected Minecraft minecraft;
+    protected Minecraft minecraft;*/
 
     @Redirect(
             method = "renderBackground(Lcom/mojang/blaze3d/vertex/PoseStack;I)V",
@@ -64,11 +54,11 @@ public class MixinScreen {
             )
     )
     private void renderBackgroundInWorld(@Nonnull Screen screen, @Nonnull PoseStack stack, int x1, int y1,
-                                         int x2, int y2, int colorA, int colorB) {
+                                         int x2, int y2, int colorFrom, int colorTo) {
         BlurHandler.INSTANCE.drawScreenBackground(screen, stack, x1, y1, x2, y2);
     }
 
-    @Redirect(
+    /*@Redirect(
             method = "renderTooltipInternal",
             at = @At(
                     value = "INVOKE",
@@ -84,13 +74,12 @@ public class MixinScreen {
     }
 
     @Inject(method = "renderTooltipInternal", at = @At("TAIL"), remap = false)
-    private void drawTooltip(PoseStack stack, List<ClientTooltipComponent> list, int x, int y, Font font,
-                             CallbackInfo ci) {
+    private void drawTooltip(PoseStack stack, List<ClientTooltipComponent> list, int x, int y, CallbackInfo ci) {
         if (TooltipRenderer.sTooltip && !list.isEmpty()) {
             assert minecraft != null;
             TooltipRenderer.drawTooltip(stack, list, x, y, font, width, height, itemRenderer, minecraft);
         }
-    }
+    }*/
 
     /*@Redirect(
             method = "renderDirtBackground",
