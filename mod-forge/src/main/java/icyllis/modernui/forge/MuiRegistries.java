@@ -18,25 +18,33 @@
 
 package icyllis.modernui.forge;
 
+import icyllis.modernui.ModernUI;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
+import net.minecraftforge.registries.ObjectHolder;
 
+@SuppressWarnings("unused")
+@ObjectHolder(ModernUI.ID)
 public final class MuiRegistries {
 
     /**
      * Sounds
      */
+    @ObjectHolder("button1")
     public static SoundEvent BUTTON_CLICK_1;
+    @ObjectHolder("button2")
     public static SoundEvent BUTTON_CLICK_2;
 
     /**
      * Container Menus (Debug Only)
      */
+    @ObjectHolder("test")
     public static MenuType<?> TEST_MENU;
 
     /**
      * Items (Development Only)
      */
+    @ObjectHolder("project_builder")
     public static Item PROJECT_BUILDER_ITEM;
 }

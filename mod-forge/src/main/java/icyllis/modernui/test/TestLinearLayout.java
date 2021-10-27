@@ -27,9 +27,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.mcgui.Animation;
 import icyllis.modernui.mcgui.Applier;
-import icyllis.modernui.text.FontPaint;
-import icyllis.modernui.text.Spannable;
-import icyllis.modernui.text.SpannableString;
+import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
@@ -119,13 +117,14 @@ public class TestLinearLayout extends LinearLayout {
         text += "\n\u09b9\u09cd\u09af\u09be\u09b2\u09cb\u0020\u0645\u0631\u062d\u0628\u0627\u0020\ud808\udd99\ud808" +
                 "\udd99";
 
-        Spannable spannable = SpannableString.valueOf(text);
-        spannable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(), 0);
-        spannable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30, 0);
-        spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40, 0);
-        spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), 0);
+        Editable editable = SpannableStringBuilder.valueOf(text);
+        editable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(), 0);
+        editable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30, 0);
+        editable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40, 0);
+        editable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), 0);
         TextView tv = new TextView();
-        tv.setText(spannable);
+        tv.setText(editable);
+        tv.setId(6679);
 
         for (int i = 0; i < 8; i++) {
             View v;

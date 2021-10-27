@@ -38,6 +38,7 @@ import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.TimedAction;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.DecorView;
+import icyllis.modernui.widget.TextView;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
@@ -338,7 +339,6 @@ public final class UIManager implements AttachInfo.Handler {
                     mRoot.doTraversal();
                 } catch (Throwable t) {
                     ModernUI.LOGGER.error(MARKER, "An error occurred on UI thread", t);
-                    throw t;
                 }
 
                 // test stuff
@@ -562,7 +562,13 @@ public final class UIManager implements AttachInfo.Handler {
         /*if (mKeyboard != null) {
             return mKeyboard.onCharTyped(codePoint, modifiers);
         }*/
-        return false;//root.charTyped(codePoint, modifiers);
+        post(() -> {
+            TextView tv = mDecor.findViewById(6679);
+            if (tv != null) {
+                tv.getEditableText().append(ch);
+            }
+        });
+        return true;//root.charTyped(codePoint, modifiers);
     }
 
     @RenderThread
