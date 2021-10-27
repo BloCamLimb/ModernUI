@@ -31,6 +31,7 @@ import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,7 +47,8 @@ public class TextView extends View {
     static final boolean DEBUG_EXTRACT = false;
     static final boolean DEBUG_CURSOR = false;
 
-    private static final BoringLayout.Metrics UNKNOWN_BORING = new BoringLayout.Metrics();
+    @VisibleForTesting
+    public static final BoringLayout.Metrics UNKNOWN_BORING = new BoringLayout.Metrics();
 
     // Width modes.
     private static final int LINES = 1;
@@ -944,10 +946,11 @@ public class TextView extends View {
      * not the full view width with padding.
      * {@hide}
      */
-    private void makeNewLayout(int wantWidth, int hintWidth,
-                               BoringLayout.Metrics boring,
-                               BoringLayout.Metrics hintBoring,
-                               int ellipsisWidth, boolean bringIntoView) {
+    @VisibleForTesting
+    public final void makeNewLayout(int wantWidth, int hintWidth,
+                                    BoringLayout.Metrics boring,
+                                    BoringLayout.Metrics hintBoring,
+                                    int ellipsisWidth, boolean bringIntoView) {
         // Update "old" cached values
         mOldMaximum = mMaximum;
         mOldMaxMode = mMaxMode;
@@ -1050,7 +1053,8 @@ public class TextView extends View {
      *
      * @hide
      */
-    public boolean useDynamicLayout() {
+    @VisibleForTesting
+    public final boolean useDynamicLayout() {
         return isTextSelectable() || (mSpannable != null && mPrecomputed == null);
     }
 

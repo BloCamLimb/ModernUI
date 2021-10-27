@@ -452,7 +452,7 @@ public class StaticLayout extends Layout {
                     paint, textDir, /* computeLayout */ false);
         }
 
-        for (int paraIndex = 0, paraStart = 0, paraEnd = 0;
+        for (int paraIndex = 0, paraStart = bufStart, paraEnd = paraStart;
              paraIndex < paragraphs.length;
              paraIndex++, paraStart = paraEnd) {
             paraEnd += paragraphs[paraIndex].getTextLength();

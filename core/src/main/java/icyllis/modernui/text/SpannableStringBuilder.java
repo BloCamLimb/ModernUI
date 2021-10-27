@@ -614,9 +614,9 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
     }
 
     /**
-     * Replaces the specified range (<code>st&hellip;en</code>) of text in this
-     * Editable with a copy of the slice <code>start&hellip;end</code> from
-     * <code>source</code>.  The destination slice may be empty, in which case
+     * Replaces the specified range (<code>start&hellip;end</code>) of text in this
+     * Editable with a copy of the slice <code>tbstart&hellip;tbend</code> from
+     * <code>tb</code>.  The destination slice may be empty, in which case
      * the operation is an insertion, or the source slice may be empty,
      * in which case the operation is a deletion.
      * <p>
@@ -661,7 +661,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
             return this;
         }
 
-        TextWatcher[] textWatchers = getSpans(start, start + origLen, TextWatcher.class);
+        TextWatcher[] textWatchers = getSpans(start, end, TextWatcher.class);
         if (textWatchers != null) {
             sendBeforeTextChanged(textWatchers, start, origLen, newLen);
         }
@@ -669,17 +669,12 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
         // Try to keep the cursor / selection at the same relative position during
         // a text replacement. If replaced or replacement text length is zero, this
         // is already taken care of.
-        boolean adjustSelection = origLen != 0 && newLen != 0;
-        int selectionStart = 0;
-        int selectionEnd = 0;
-        if (adjustSelection) {
-            selectionStart = Selection.getSelectionStart(this);
-            selectionEnd = Selection.getSelectionEnd(this);
-        }
+        if (origLen != 0 && newLen != 0) {
+            int selectionStart = Selection.getSelectionStart(this);
+            int selectionEnd = Selection.getSelectionEnd(this);
 
-        change(start, end, tb, tbstart, tbend);
+            change(start, end, tb, tbstart, tbend);
 
-        if (adjustSelection) {
             boolean changed = false;
             if (selectionStart > start && selectionStart < end) {
                 final long diff = selectionStart - start;
@@ -702,6 +697,8 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
             if (changed) {
                 restoreInvariants();
             }
+        } else {
+            change(start, end, tb, tbstart, tbend);
         }
 
         if (textWatchers != null) {
@@ -1018,8 +1015,9 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
             }
             final IntArrayList prioSortBuffer = sortByInsertionOrder ? obtain() : null;
             final IntArrayList orderSortBuffer = sortByInsertionOrder ? obtain() : null;
-            getSpansRec(queryStart, queryEnd, kind, treeRoot(), list, prioSortBuffer,
+            int c = getSpansRec(queryStart, queryEnd, kind, treeRoot(), list, prioSortBuffer,
                     orderSortBuffer, 0, sortByInsertionOrder);
+            assert c == list.size();
             if (sortByInsertionOrder) {
                 if (!list.isEmpty()) {
                     sort(list, prioSortBuffer, orderSortBuffer);
@@ -1140,8 +1138,9 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
                     (Object.class == kind || kind.isInstance(mSpans[i]))) {
                 int spanPriority = mSpanFlags[i] & SPAN_PRIORITY;
                 if (sort) {
-                    priority.set(count, spanPriority);
-                    insertionOrder.set(count, mSpanOrder[i]);
+                    priority.add(spanPriority);
+                    insertionOrder.add(mSpanOrder[i]);
+                    ret.add(mSpans[i]);
                 } else if (spanPriority != 0) {
                     //insertion sort for elements with priority
                     int j = 0;
@@ -1183,6 +1182,7 @@ public class SpannableStringBuilder implements Editable, Spannable, GetChars, Ap
      * @param buffer buffer to be recycled
      */
     private static void recycle(@Nonnull IntArrayList buffer) {
+        buffer.clear();
         sIntBufferPool.release(buffer);
     }
 

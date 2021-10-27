@@ -359,14 +359,17 @@ public class TestMain {
 
         //breakLines(text, true);
 
-        Spannable spannable = SpannableString.valueOf(text);
-        spannable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(), 0);
-        spannable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30, 0);
-        spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40, 0);
-        spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), 0);
+        Editable editable = Editable.DEFAULT_FACTORY.newEditable(text);
+        editable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(), 0);
+        editable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30, 0);
+        editable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40, 0);
+        editable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), 0);
         //TextLine textLine = new TextLine(spannable);
-        StaticLayout staticLayout = StaticLayout.builder(spannable, 0, spannable.length(), new TextPaint(), 600)
+        DynamicLayout dynamicLayout = DynamicLayout.builder(editable, new TextPaint(), 600)
                 .build();
+
+        //editable.insert(0, "ABCD");
+        editable.append("ABCDEF");
 
         GLFW.glfwSwapInterval(1);
 
@@ -429,10 +432,10 @@ public class TestMain {
             tcc = "আমি আজ সকালের নাস্তা খাব না";
             canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
             //textLine.draw(canvas, 32, 400);
-            canvas.translate(40, 560);
+            canvas.translate(40, 360);
             paint.setRGBA(0, 0, 0, 128);
             canvas.drawRoundRect(-6, -10, 606, 310, 5, paint);
-            staticLayout.draw(canvas);
+            dynamicLayout.draw(canvas);
             canvas.translate(-40, -600);
 
             float playTime = sTrack.getTime();
