@@ -555,7 +555,7 @@ public final class MotionEvent extends InputEvent {
      * This method should only be called by system.
      */
     @Override
-    public final void recycle() {
+    public void recycle() {
         sPool.release(this);
     }
 
@@ -567,7 +567,7 @@ public final class MotionEvent extends InputEvent {
      * @return The action, such as {@link #ACTION_DOWN} or
      * the combination of {@link #ACTION_POINTER_DOWN} with a shifted pointer index.
      */
-    public final int getAction() {
+    public int getAction() {
         return mAction;
     }
 
@@ -578,7 +578,7 @@ public final class MotionEvent extends InputEvent {
      * @return The action, such as {@link #ACTION_DOWN} or {@link #ACTION_POINTER_DOWN}.
      */
     @Deprecated
-    protected final int getActionMasked() {
+    private int getActionMasked() {
         return mAction & ACTION_MASK;
     }
 
@@ -593,7 +593,7 @@ public final class MotionEvent extends InputEvent {
      * @return The index associated with the action.
      */
     @Deprecated
-    protected final int getActionIndex() {
+    private int getActionIndex() {
         return (mAction & ACTION_POINTER_INDEX_MASK) >> ACTION_POINTER_INDEX_SHIFT;
     }
 
@@ -608,24 +608,18 @@ public final class MotionEvent extends InputEvent {
      *
      * @return true if this motion event is a touch event.
      */
-    public final boolean isTouchEvent() {
-        switch (mAction & ACTION_MASK) {
-            case ACTION_DOWN:
-            case ACTION_UP:
-            case ACTION_MOVE:
-            case ACTION_CANCEL:
-            case ACTION_OUTSIDE:
-            case ACTION_POINTER_DOWN:
-            case ACTION_POINTER_UP:
-                return true;
-        }
-        return false;
+    public boolean isTouchEvent() {
+        return switch (mAction & ACTION_MASK) {
+            case ACTION_DOWN, ACTION_UP, ACTION_MOVE, ACTION_CANCEL, ACTION_OUTSIDE, ACTION_POINTER_DOWN,
+                    ACTION_POINTER_UP -> true;
+            default -> false;
+        };
     }
 
     /**
      * Sets this event's action.
      */
-    public final void setAction(int action) {
+    public void setAction(int action) {
         mAction = action;
     }
 
@@ -641,7 +635,7 @@ public final class MotionEvent extends InputEvent {
      * @see #BUTTON_FORWARD
      * @see #isButtonPressed(int)
      */
-    public final int getButtonState() {
+    public int getButtonState() {
         return mButtonState;
     }
 
@@ -657,7 +651,7 @@ public final class MotionEvent extends InputEvent {
      * @see #BUTTON_FORWARD
      * @see #getButtonState()
      */
-    public final boolean isButtonPressed(int button) {
+    public boolean isButtonPressed(int button) {
         if (button == 0) {
             return false;
         }
@@ -669,7 +663,7 @@ public final class MotionEvent extends InputEvent {
      * >= 1.
      */
     @Deprecated
-    protected final int getPointerCount() {
+    private int getPointerCount() {
         return 1;
     }
 
@@ -683,7 +677,7 @@ public final class MotionEvent extends InputEvent {
      *                     (the first pointer that is down) to {@link #getPointerCount()}-1.
      */
     @Deprecated
-    protected final int getPointerId(int pointerIndex) {
+    private int getPointerId(int pointerIndex) {
         if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
             throw new IllegalArgumentException("pointerIndex out of range");
         }
@@ -704,14 +698,14 @@ public final class MotionEvent extends InputEvent {
      * @see #TOOL_TYPE_MOUSE
      */
     @Deprecated
-    protected final int getToolType(int pointerIndex) {
+    private int getToolType(int pointerIndex) {
         if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
             throw new IllegalArgumentException("pointerIndex out of range");
         }
         return TOOL_TYPE_UNKNOWN;
     }
 
-    public final boolean isHoverExitPending() {
+    public boolean isHoverExitPending() {
         return (mFlags & FLAG_HOVER_EXIT_PENDING) != 0;
     }
 
@@ -731,7 +725,7 @@ public final class MotionEvent extends InputEvent {
      * Returns the time (in ms) when the user originally pressed down to start
      * a stream of position events.
      */
-    public final long getDownTime() {
+    public long getDownTime() {
         return mDownTime / 1000000;
     }
 
@@ -770,13 +764,11 @@ public final class MotionEvent extends InputEvent {
             throw new IllegalArgumentException("pointerIndex out of range");
         }
         float value = getRawPointerCoords(pointerIndex).getAxisValue(axis);
-        switch (axis) {
-            case AXIS_X:
-                return value + mXOffset;
-            case AXIS_Y:
-                return value + mYOffset;
-        }
-        return value;
+        return switch (axis) {
+            case AXIS_X -> value + mXOffset;
+            case AXIS_Y -> value + mYOffset;
+            default -> value;
+        };
     }
 
     /**
@@ -787,10 +779,8 @@ public final class MotionEvent extends InputEvent {
      */
     public void setAxisValue(int axis, float value) {
         switch (axis) {
-            case AXIS_X:
-            case AXIS_Y:
-                throw new IllegalArgumentException("Axis X and Y are not expected to change.");
-            default: {
+            case AXIS_X, AXIS_Y -> throw new IllegalArgumentException("Axis X and Y are not expected to change.");
+            default -> {
                 if (axis < 0 || axis > 63) {
                     throw new IllegalArgumentException("Axis out of range.");
                 }
@@ -832,7 +822,7 @@ public final class MotionEvent extends InputEvent {
      * @param axis The axis identifier for the axis value to retrieve.
      * @return The value associated with the axis, or 0 if none.
      */
-    public final float getAxisValue(int axis) {
+    public float getAxisValue(int axis) {
         switch (axis) {
             case AXIS_X:
                 return getX();
@@ -859,7 +849,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @see #AXIS_X
      */
-    public final float getX() {
+    public float getX() {
         return mRawXCursorPosition + mXOffset;
     }
 
@@ -869,7 +859,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @see #AXIS_Y
      */
-    public final float getY() {
+    public float getY() {
         return mRawYCursorPosition + mYOffset;
     }
 
@@ -885,7 +875,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_X
      */
     @Deprecated
-    protected final float getX(int pointerIndex) {
+    private float getX(int pointerIndex) {
         return getAxisValue(AXIS_X, pointerIndex);
     }
 
@@ -901,7 +891,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_Y
      */
     @Deprecated
-    protected final float getY(int pointerIndex) {
+    private float getY(int pointerIndex) {
         return getAxisValue(AXIS_Y, pointerIndex);
     }
 
@@ -914,7 +904,7 @@ public final class MotionEvent extends InputEvent {
      * @see #getX(int)
      * @see #AXIS_X
      */
-    public final float getRawX() {
+    public float getRawX() {
         return mRawXCursorPosition;
     }
 
@@ -927,7 +917,7 @@ public final class MotionEvent extends InputEvent {
      * @see #getY(int)
      * @see #AXIS_Y
      */
-    public final float getRawY() {
+    public float getRawY() {
         return mRawYCursorPosition;
     }
 
@@ -943,7 +933,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_X
      */
     @Deprecated
-    protected float getRawX(int pointerIndex) {
+    private float getRawX(int pointerIndex) {
         return getRawAxisValue(AXIS_X, pointerIndex);
     }
 
@@ -959,7 +949,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_Y
      */
     @Deprecated
-    protected float getRawY(int pointerIndex) {
+    private float getRawY(int pointerIndex) {
         return getRawAxisValue(AXIS_Y, pointerIndex);
     }
 
@@ -980,7 +970,7 @@ public final class MotionEvent extends InputEvent {
      * reported. This value is only valid if the device is a mouse.
      */
     @Deprecated
-    protected float getXCursorPosition() {
+    private float getXCursorPosition() {
         return mRawXCursorPosition + mXOffset;
     }
 
@@ -989,7 +979,7 @@ public final class MotionEvent extends InputEvent {
      * reported. This value is only valid if the device is a mouse.
      */
     @Deprecated
-    protected float getYCursorPosition() {
+    private float getYCursorPosition() {
         return mRawYCursorPosition + mYOffset;
     }
 
@@ -999,7 +989,7 @@ public final class MotionEvent extends InputEvent {
      * @param deltaX Amount to add to the current X coordinate of the event.
      * @param deltaY Amount to add to the current Y coordinate of the event.
      */
-    public final void offsetLocation(float deltaX, float deltaY) {
+    public void offsetLocation(float deltaX, float deltaY) {
         mXOffset += deltaX;
         mYOffset += deltaY;
     }
@@ -1011,7 +1001,7 @@ public final class MotionEvent extends InputEvent {
      * @param x New absolute X location.
      * @param y New absolute Y location.
      */
-    public final void setLocation(float x, float y) {
+    public void setLocation(float x, float y) {
         float oldX = getX();
         float oldY = getY();
         offsetLocation(x - oldX, y - oldY);
@@ -1030,7 +1020,7 @@ public final class MotionEvent extends InputEvent {
      *                  May be 0 to ensure that no modifier keys are pressed.
      * @return true if only the specified modifier keys are pressed.
      */
-    public final boolean hasModifiers(int modifiers) {
+    public boolean hasModifiers(int modifiers) {
         if (modifiers == 0) {
             return mModifiers == 0;
         }
@@ -1042,7 +1032,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @return true if the SHIFT key is pressed, false otherwise
      */
-    public final boolean isShiftPressed() {
+    public boolean isShiftPressed() {
         return (mModifiers & GLFW.GLFW_MOD_SHIFT) != 0;
     }
 
@@ -1052,7 +1042,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @return true if the CTRL key is pressed, false otherwise
      */
-    public final boolean isCtrlPressed() {
+    public boolean isCtrlPressed() {
         if (Platform.get() == Platform.MACOSX) {
             return (mModifiers & GLFW.GLFW_MOD_SUPER) != 0;
         }
@@ -1064,7 +1054,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @return true if the ALT key is pressed, false otherwise
      */
-    public final boolean isAltPressed() {
+    public boolean isAltPressed() {
         return (mModifiers & GLFW.GLFW_MOD_ALT) != 0;
     }
 
@@ -1073,7 +1063,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @return true if the SUPER key is pressed, false otherwise
      */
-    public final boolean isSuperPressed() {
+    public boolean isSuperPressed() {
         return (mModifiers & GLFW.GLFW_MOD_SUPER) != 0;
     }
 
@@ -1082,7 +1072,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @return true if the CAPS LOCK key is on, false otherwise
      */
-    public final boolean isCapsLockOn() {
+    public boolean isCapsLockOn() {
         return (mModifiers & GLFW.GLFW_MOD_CAPS_LOCK) != 0;
     }
 
@@ -1091,7 +1081,7 @@ public final class MotionEvent extends InputEvent {
      *
      * @return true if the NUM LOCK key is on, false otherwise
      */
-    public final boolean isNumLockOn() {
+    public boolean isNumLockOn() {
         return (mModifiers & GLFW.GLFW_MOD_NUM_LOCK) != 0;
     }
 
@@ -1151,14 +1141,11 @@ public final class MotionEvent extends InputEvent {
                 return "ACTION_BUTTON_RELEASE";
         }
         int index = (action & ACTION_POINTER_INDEX_MASK) >> ACTION_POINTER_INDEX_SHIFT;
-        switch (action & ACTION_MASK) {
-            case ACTION_POINTER_DOWN:
-                return "ACTION_POINTER_DOWN(" + index + ")";
-            case ACTION_POINTER_UP:
-                return "ACTION_POINTER_UP(" + index + ")";
-            default:
-                return Integer.toString(action);
-        }
+        return switch (action & ACTION_MASK) {
+            case ACTION_POINTER_DOWN -> "ACTION_POINTER_DOWN(" + index + ")";
+            case ACTION_POINTER_UP -> "ACTION_POINTER_UP(" + index + ")";
+            default -> Integer.toString(action);
+        };
     }
 
     /**
