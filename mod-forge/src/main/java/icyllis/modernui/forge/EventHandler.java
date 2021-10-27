@@ -19,8 +19,8 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.mcgui.BlurHandler;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import net.minecraft.client.ProgressOption;
@@ -46,7 +46,6 @@ import net.minecraftforge.fml.common.Mod;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -81,8 +80,7 @@ final class EventHandler {
         @SubscribeEvent
         static void onBakeModel(@Nonnull ModelBakeEvent event) {
             Map<ResourceLocation, BakedModel> registry = event.getModelRegistry();
-            replaceModel(registry, new ModelResourceLocation(
-                            Objects.requireNonNull(MuiRegistries.PROJECT_BUILDER_ITEM.getRegistryName()), "inventory"),
+            replaceModel(registry, new ModelResourceLocation(ModernUI.ID, "project_builder", "inventory"),
                     baseModel -> new ProjectBuilderModel(baseModel, event.getModelLoader()));
         }
 

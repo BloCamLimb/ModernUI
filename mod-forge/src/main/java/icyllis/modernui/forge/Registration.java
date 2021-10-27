@@ -21,11 +21,11 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.mcgui.OpenMenuEvent;
+import icyllis.modernui.mcgui.UIManager;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettings;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.mcgui.OpenMenuEvent;
-import icyllis.modernui.mcgui.UIManager;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.test.TestUI;
 import icyllis.modernui.textmc.TextLayoutEngine;
@@ -85,21 +85,21 @@ final class Registration {
     static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
         final IForgeRegistry<SoundEvent> registry = event.getRegistry();
 
-        MuiRegistries.BUTTON_CLICK_1 = registerSound(registry, "button1");
-        MuiRegistries.BUTTON_CLICK_2 = registerSound(registry, "button2");
+        registerSound(registry, "button1");
+        registerSound(registry, "button2");
     }
 
     @SubscribeEvent
     static void registerMenus(@Nonnull RegistryEvent.Register<MenuType<?>> event) {
         final IForgeRegistry<MenuType<?>> registry = event.getRegistry();
-        MuiRegistries.TEST_MENU = registerMenu(registry, TestMenu::new, "test");
+        registerMenu(registry, TestMenu::new, "test");
     }
 
     @SubscribeEvent
     static void registerItems(@Nonnull RegistryEvent.Register<Item> event) {
         if (ModernUIForge.sDevelopment) {
             Item.Properties properties = new Item.Properties().stacksTo(1);
-            event.getRegistry().register(MuiRegistries.PROJECT_BUILDER_ITEM = new ProjectBuilderItem(properties)
+            event.getRegistry().register(new ProjectBuilderItem(properties)
                     .setRegistryName("project_builder"));
         }
     }
@@ -141,6 +141,11 @@ final class Registration {
                 null, bytes == null ? null : digest(bytes), true);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
+
+        // give it a probe
+        if (MuiForgeBridge.isServerStarted()) {
+            ModernUI.LOGGER.fatal("Walking");
+        }
     }
 
     @Nonnull
