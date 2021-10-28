@@ -39,8 +39,13 @@ class FloatKeyframeSet extends KeyframeSet<Float> implements Keyframes.FloatKeyf
     }
 
     @Override
-    public Float getValue(float fraction) {
-        return getFloatValue(fraction);
+    public FloatKeyframeSet copy() {
+        final int numKeyframes = mKeyframes.length;
+        FloatKeyframe[] newKeyframes = new FloatKeyframe[numKeyframes];
+        for (int i = 0; i < numKeyframes; ++i) {
+            newKeyframes[i] = (FloatKeyframe) mKeyframes[i].copy();
+        }
+        return new FloatKeyframeSet(newKeyframes);
     }
 
     @Override

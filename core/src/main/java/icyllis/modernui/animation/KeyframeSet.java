@@ -107,6 +107,16 @@ public class KeyframeSet<T> implements Keyframes<T> {
         mEvaluator = evaluator;
     }
 
+    @Override
+    public KeyframeSet<T> copy() {
+        int numKeyframes = mKeyframes.length;
+        final Keyframe[] newKeyframes = new Keyframe[numKeyframes];
+        for (int i = 0; i < numKeyframes; ++i) {
+            newKeyframes[i] = mKeyframes[i].copy();
+        }
+        return new KeyframeSet<>(newKeyframes);
+    }
+
     @SuppressWarnings("unchecked")
     @Override
     public T getValue(float fraction) {

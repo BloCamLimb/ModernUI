@@ -44,7 +44,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * For handling a network channel more faster, you can create an instance for your mod.
+ * For handling a network channel faster, you can create an instance for your mod.
  */
 public class NetworkHandler {
 
@@ -68,7 +68,7 @@ public class NetworkHandler {
      * @param modid    the mod-id
      * @param scl      listener for S->C messages, the inner supplier must be in another non-anonymous class
      * @param csl      listener for C->S messages, it is on logical server side
-     * @param protocol network protocol, when empty it will request the same version of mod(s)
+     * @param protocol network protocol, leaving empty will request the same version of mod(s)
      * @param optional when true it will accept if the channel absent on one side, or request same protocol
      * @throws IllegalArgumentException invalid mod-id
      */

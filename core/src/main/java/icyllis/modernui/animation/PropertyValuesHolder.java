@@ -26,14 +26,14 @@ import java.lang.reflect.Field;
 /**
  * This class holds information about a property and the values that that property
  * should take on during an animation. PropertyValuesHolder objects can be used to create
- * animations with ValueAnimator or ObjectAnimator that operate on several different properties
+ * animations with ValueAnimator or ObjectAnimator that operate on several properties
  * in parallel.
  *
  * @param <T> target type, which this animation applies to
  * @param <V> animated value type, used for animation calculation
  * @param <P> the property value type for output
  */
-public class PropertyValuesHolder<T, V, P> {
+public class PropertyValuesHolder<T, V, P> implements Cloneable {
 
     private static final Unsafe UNSAFE;
 
@@ -166,7 +166,7 @@ public class PropertyValuesHolder<T, V, P> {
      * cannot automatically interpolate between objects of unknown type. This variant also
      * takes a <code>TypeConverter</code> to convert from animated values to the type
      * of the property. If only one value is supplied, the <code>TypeConverter</code>
-     * must be a {@link BidiTypeConverter} to retrieve the current
+     * must be a {@link BidirectionalTypeConverter} to retrieve the current
      * value.
      *
      * <p><strong>Note:</strong> The Object values are stored as references to the original
@@ -259,7 +259,7 @@ public class PropertyValuesHolder<T, V, P> {
     /**
      * Sets the converter to convert from the values type to the setter's parameter type.
      * If only one value is supplied or target is changeable, <var>converter</var> must
-     * be a {@link BidiTypeConverter}.
+     * be a {@link BidirectionalTypeConverter}.
      *
      * @param converter The converter to use to convert values.
      */
@@ -297,12 +297,12 @@ public class PropertyValuesHolder<T, V, P> {
     @SuppressWarnings("unchecked")
     private V convertBack(P value) {
         if (mConverter != null) {
-            if (!(mConverter instanceof BidiTypeConverter)) {
+            if (!(mConverter instanceof BidirectionalTypeConverter)) {
                 throw new IllegalArgumentException("Converter "
                         + mConverter.getClass().getName()
                         + " must be a BidirectionalTypeConverter");
             }
-            return ((BidiTypeConverter<V, P>) mConverter).convertBack(value);
+            return ((BidirectionalTypeConverter<V, P>) mConverter).convertBack(value);
         }
         return (V) value;
     }
@@ -336,6 +336,21 @@ public class PropertyValuesHolder<T, V, P> {
         if (keyframes.length > 0) {
             V value = convertBack(mProperty.get(target));
             keyframes[keyframes.length - 1].setValue(value);
+        }
+    }
+
+    @Override
+    public PropertyValuesHolder<T, V, P> clone() {
+        try {
+            @SuppressWarnings("unchecked")
+            PropertyValuesHolder<T, V, P> pvh = (PropertyValuesHolder<T, V, P>) super.clone();
+            pvh.mProperty = mProperty;
+            pvh.mKeyframes = mKeyframes.copy();
+            pvh.mEvaluator = mEvaluator;
+            return pvh;
+        } catch (CloneNotSupportedException e) {
+            // won't reach here
+            return null;
         }
     }
 
