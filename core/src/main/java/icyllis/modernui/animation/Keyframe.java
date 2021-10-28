@@ -231,6 +231,8 @@ public abstract class Keyframe {
         mInterpolator = interpolator;
     }
 
+    public abstract Keyframe copy();
+
     static class ObjectKeyframe extends Keyframe {
 
         /**
@@ -253,6 +255,14 @@ public abstract class Keyframe {
         public void setValue(Object value) {
             mValue = value;
             mHasValue = (value != null);
+        }
+
+        @Override
+        public ObjectKeyframe copy() {
+            ObjectKeyframe kfClone = new ObjectKeyframe(getFraction(), hasValue() ? mValue : null);
+            kfClone.mValueWasSetOnStart = mValueWasSetOnStart;
+            kfClone.setInterpolator(getInterpolator());
+            return kfClone;
         }
     }
 
@@ -289,6 +299,16 @@ public abstract class Keyframe {
                 mHasValue = true;
             }
         }
+
+        @Override
+        public IntKeyframe copy() {
+            IntKeyframe kfClone = mHasValue ?
+                    new IntKeyframe(getFraction(), mValue) :
+                    new IntKeyframe(getFraction());
+            kfClone.setInterpolator(getInterpolator());
+            kfClone.mValueWasSetOnStart = mValueWasSetOnStart;
+            return kfClone;
+        }
     }
 
     /**
@@ -323,6 +343,16 @@ public abstract class Keyframe {
                 mValue = (Float) value;
                 mHasValue = true;
             }
+        }
+
+        @Override
+        public FloatKeyframe copy() {
+            FloatKeyframe kfClone = mHasValue ?
+                    new FloatKeyframe(getFraction(), mValue) :
+                    new FloatKeyframe(getFraction());
+            kfClone.setInterpolator(getInterpolator());
+            kfClone.mValueWasSetOnStart = mValueWasSetOnStart;
+            return kfClone;
         }
     }
 }

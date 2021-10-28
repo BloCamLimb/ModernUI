@@ -23,8 +23,10 @@ import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.lang.reflect.Array;
 import java.util.Objects;
 import java.util.Set;
+import java.util.concurrent.CopyOnWriteArraySet;
 
 /**
  * ObjectAnimator provides support for animating properties on target objects.
@@ -209,7 +211,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * The set of listeners to be sent events through the life of an animation.
      */
     @Nullable
-    Set<UpdateListener> mUpdateListeners = null;
+    Set<AnimatorUpdateListener> mUpdateListeners = null;
 
     /**
      * The time interpolator to be used. The elapsed fraction of the animation will be passed
@@ -330,7 +332,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * (these values will be distributed evenly across the duration of the animation).
      * This variant supplies a <code>TypeConverter</code> to convert from the animated values to the
      * type of the property. If only one value is supplied, the <code>TypeConverter</code> must be a
-     * {@link BidiTypeConverter} to retrieve the current value.
+     * {@link BidirectionalTypeConverter} to retrieve the current value.
      *
      * <p><strong>Note:</strong> The values are stored as references to the original
      * objects, which means that changes to those objects after this method is called will
@@ -401,7 +403,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * Starts this animation. If the animation has a nonzero startDelay, the animation will start
      * running after that delay elapses. A non-delayed animation will have its initial
      * value(s) set immediately, followed by calls to
-     * {@link Listener#onAnimationStart(Animator, boolean)} for any listeners of this animator.
+     * {@link AnimatorListener#onAnimationStart(Animator, boolean)} for any listeners of this animator.
      */
     @Override
     public void start() {
@@ -494,7 +496,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
         mStartTime = -1;
         if (notify && mListeners != null) {
             // iterate the snapshot
-            for (Listener l : mListeners) {
+            for (AnimatorListener l : mListeners) {
                 l.onAnimationEnd(this, mReversing);
             }
         }
@@ -505,7 +507,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     private void notifyStartListeners() {
         if (mListeners != null && !mStartListenersCalled) {
             // iterate the snapshot
-            for (Listener l : mListeners) {
+            for (AnimatorListener l : mListeners) {
                 l.onAnimationStart(this, mReversing);
             }
         }
@@ -561,7 +563,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      *
      * @param listener the listener to be added to the current set of listeners for this animation.
      */
-    public void addUpdateListener(@Nonnull UpdateListener listener) {
+    public void addUpdateListener(@Nonnull AnimatorUpdateListener listener) {
         if (mUpdateListeners == null) {
             mUpdateListeners = new ObjectArraySet<>();
         }
@@ -584,7 +586,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * @param listener the listener to be removed from the current set of update listeners
      *                 for this animation.
      */
-    public void removeUpdateListener(@Nonnull UpdateListener listener) {
+    public void removeUpdateListener(@Nonnull AnimatorUpdateListener listener) {
         if (mUpdateListeners == null) {
             return;
         }
@@ -644,6 +646,44 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     @Override
     public boolean isStarted() {
         return mStarted;
+    }
+
+    @Nonnull
+    @Override
+    public ObjectAnimator clone() {
+        final ObjectAnimator anim = (ObjectAnimator) super.clone();
+        if (mUpdateListeners != null) {
+            anim.mUpdateListeners = new CopyOnWriteArraySet<>(mUpdateListeners);
+        }
+        anim.mSeekFraction = -1;
+        anim.mReversing = false;
+        anim.mInitialized = false;
+        anim.mStarted = false;
+        anim.mRunning = false;
+        anim.mPaused = false;
+        anim.mResumed = false;
+        anim.mStartListenersCalled = false;
+        anim.mStartTime = -1;
+        anim.mAnimationEndRequested = false;
+        anim.mPauseTime = -1;
+        anim.mLastFrameTime = -1;
+        anim.mOverallFraction = 0;
+        anim.mCurrentFraction = 0;
+        anim.mSelfPulse = true;
+        anim.mSuppressSelfPulseRequested = false;
+
+        PropertyValuesHolder<Object, ?, ?>[] oldValues = mValues;
+        if (oldValues != null) {
+            int numValues = oldValues.length;
+            @SuppressWarnings("unchecked")
+            PropertyValuesHolder<Object, ?, ?>[] valuesHolder = (PropertyValuesHolder<Object, ?, ?>[])
+                    Array.newInstance(oldValues.getClass().getComponentType(), numValues);
+            anim.mValues = valuesHolder;
+            for (int i = 0; i < numValues; ++i) {
+                anim.mValues[i] = oldValues[i].clone();
+            }
+        }
+        return anim;
     }
 
     /**
@@ -723,7 +763,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * set to this fraction; it will simply set the fraction to this value and perform any
      * appropriate actions based on that fraction. If the animation is already running, then
      * setCurrentFraction() will set the current fraction to this value and continue
-     * playing from that point. {@link Listener} events are not called
+     * playing from that point. {@link AnimatorListener} events are not called
      * due to changing the fraction; those events are only processed while the animation
      * is running.
      *
@@ -781,7 +821,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * @param values The set of values, per property, being animated between.
      */
     @SuppressWarnings("unchecked")
-    public final void setValues(@Nonnull PropertyValuesHolder<?, ?, ?>... values) {
+    public void setValues(@Nonnull PropertyValuesHolder<?, ?, ?>... values) {
         mValues = (PropertyValuesHolder<Object, ?, ?>[]) values;
         // New property/values/target should cause re-initialization prior to starting
         mInitialized = false;
@@ -923,7 +963,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
     }
 
     @Override
-    public final void doAnimationFrame(long frameTime) {
+    public void doAnimationFrame(long frameTime) {
         if (mStartTime < 0) {
             // First frame. If there is start delay, start delay count down will happen *after* this
             // frame.
@@ -1008,7 +1048,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
             } else if (newIteration && !lastIterationFinished) {
                 // Time to repeat
                 if (mListeners != null) {
-                    for (Listener l : mListeners) {
+                    for (AnimatorListener l : mListeners) {
                         l.onAnimationRepeat(this);
                     }
                 }
@@ -1039,7 +1079,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
                 notifyStartListeners();
             }
             // iterate the snapshot
-            for (Listener l : mListeners) {
+            for (AnimatorListener l : mListeners) {
                 l.onAnimationCancel(this);
             }
         }
@@ -1169,7 +1209,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
             value.calculateValue(fraction);
         }
         if (mUpdateListeners != null) {
-            for (UpdateListener l : mUpdateListeners) {
+            for (AnimatorUpdateListener l : mUpdateListeners) {
                 l.onAnimationUpdate(this);
             }
         }
@@ -1185,8 +1225,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
         if (anim == this && mAutoCancel) {
             return true;
         }
-        if (anim instanceof ObjectAnimator) {
-            final ObjectAnimator it = (ObjectAnimator) anim;
+        if (anim instanceof final ObjectAnimator it) {
             if (it.mAutoCancel) {
                 PropertyValuesHolder<?, ?, ?>[] itsValues = it.getValues();
                 if (it.getTarget() == getTarget() && mValues.length == itsValues.length) {
@@ -1225,7 +1264,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * <code>ValueAnimator</code>.
      */
     @FunctionalInterface
-    public interface UpdateListener {
+    public interface AnimatorUpdateListener {
 
         /**
          * <p>Notifies the occurrence of another frame of the animation.</p>

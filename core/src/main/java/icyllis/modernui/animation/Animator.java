@@ -30,7 +30,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * This is the base for classes which provide basic support for animations which can be
  * started, ended, and have listeners added to them.
  */
-public abstract class Animator {
+public abstract class Animator implements Cloneable {
 
     public static final Marker MARKER = MarkerManager.getMarker("Animator");
 
@@ -48,13 +48,13 @@ public abstract class Animator {
      * The set of listeners to be sent events through the life of an animation.
      */
     @Nullable
-    Set<Listener> mListeners;
+    Set<AnimatorListener> mListeners;
 
     /**
      * Starts this animation. If the animation has a nonzero startDelay, the animation will start
      * running after that delay elapses. A non-delayed animation will have its initial
      * value(s) set immediately, followed by calls to
-     * {@link Listener#onAnimationStart(Animator, boolean)} for any listeners of this animator.
+     * {@link AnimatorListener#onAnimationStart(Animator, boolean)} for any listeners of this animator.
      *
      * <p>The animation started by calling this method will be run on the thread that called
      * this method.</p>
@@ -63,8 +63,8 @@ public abstract class Animator {
 
     /**
      * Cancels the animation. Unlike {@link #end()}, <code>cancel()</code> causes the animation to
-     * stop in its tracks, sending an {@link Listener#onAnimationCancel(Animator)} to
-     * its listeners, followed by an {@link Listener#onAnimationEnd(Animator, boolean)} message.
+     * stop in its tracks, sending an {@link AnimatorListener#onAnimationCancel(Animator)} to
+     * its listeners, followed by an {@link AnimatorListener#onAnimationEnd(Animator, boolean)} message.
      *
      * <p>This method must be called on the thread that is running the animation.</p>
      */
@@ -72,7 +72,7 @@ public abstract class Animator {
 
     /**
      * Ends the animation. This causes the animation to assign the end value of the property being
-     * animated, then calling the {@link Listener#onAnimationEnd(Animator, boolean)} method on its
+     * animated, then calling the {@link AnimatorListener#onAnimationEnd(Animator, boolean)} method on its
      * listeners.
      *
      * <p>This method must be called on the thread that is running the animation.</p>
@@ -87,13 +87,13 @@ public abstract class Animator {
      *
      * @see #resume()
      * @see #isPaused()
-     * @see Listener#onAnimationPause(Animator)
+     * @see AnimatorListener#onAnimationPause(Animator)
      */
     public void pause() {
         if (isStarted() && !mPaused) {
             mPaused = true;
             if (mListeners != null) {
-                for (Listener l : mListeners) {
+                for (AnimatorListener l : mListeners) {
                     l.onAnimationPause(this);
                 }
             }
@@ -108,13 +108,13 @@ public abstract class Animator {
      *
      * @see #pause()
      * @see #isPaused()
-     * @see Listener#onAnimationResume(Animator)
+     * @see AnimatorListener#onAnimationResume(Animator)
      */
     public void resume() {
         if (mPaused) {
             mPaused = false;
             if (mListeners != null) {
-                for (Listener l : mListeners) {
+                for (AnimatorListener l : mListeners) {
                     l.onAnimationResume(this);
                 }
             }
@@ -216,7 +216,7 @@ public abstract class Animator {
      *
      * @param listener the listener to be added to the current set of listeners for this animation.
      */
-    public final void addListener(@Nonnull Listener listener) {
+    public final void addListener(@Nonnull AnimatorListener listener) {
         if (mListeners == null) {
             mListeners = new CopyOnWriteArraySet<>();
         }
@@ -229,7 +229,7 @@ public abstract class Animator {
      * @param listener the listener to be removed from the current set of listeners for this
      *                 animation.
      */
-    public final void removeListener(@Nonnull Listener listener) {
+    public final void removeListener(@Nonnull AnimatorListener listener) {
         if (mListeners == null) {
             return;
         }
@@ -240,7 +240,7 @@ public abstract class Animator {
     }
 
     /**
-     * Removes all {@link #addListener(Listener)} listeners} from this object.
+     * Removes all {@link #addListener(AnimatorListener)} listeners} from this object.
      */
     public final void removeAllListeners() {
         if (mListeners != null) {
@@ -250,14 +250,27 @@ public abstract class Animator {
     }
 
     /**
-     * Gets the set of {@link Listener} objects that are currently listening for events
+     * Gets the set of {@link AnimatorListener} objects that are currently listening for events
      * on this <code>Animator</code> object.
      *
      * @return The set of listeners.
      */
     @Nullable
-    public final Set<Listener> getListeners() {
+    public final Set<AnimatorListener> getListeners() {
         return mListeners;
+    }
+
+    @Override
+    public Animator clone() {
+        try {
+            final Animator anim = (Animator) super.clone();
+            if (mListeners != null) {
+                anim.mListeners = new CopyOnWriteArraySet<>(mListeners);
+            }
+            return anim;
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError();
+        }
     }
 
     /**
@@ -326,7 +339,7 @@ public abstract class Animator {
      * Notifications indicate animation related events, such as the end or the
      * repetition of the animation.</p>
      */
-    public interface Listener {
+    public interface AnimatorListener {
 
         /**
          * <p>Notifies the start of the animation as well as the animation's overall play direction.

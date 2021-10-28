@@ -18,6 +18,10 @@
 
 package icyllis.modernui.animation;
 
+/**
+ * This interface abstracts a collection of Keyframe objects and is called by
+ * ValueAnimator to calculate values between those keyframes for a given animation.
+ */
 public interface Keyframes<T> {
 
     /**
@@ -49,6 +53,8 @@ public interface Keyframes<T> {
      * not made up of Keyframes.
      */
     Keyframe[] getKeyframes();
+
+    Keyframes<T> copy();
 
     interface IntKeyframes extends Keyframes<Integer> {
 

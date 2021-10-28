@@ -39,8 +39,13 @@ class IntKeyframeSet extends KeyframeSet<Integer> implements Keyframes.IntKeyfra
     }
 
     @Override
-    public Integer getValue(float fraction) {
-        return getIntValue(fraction);
+    public IntKeyframeSet copy() {
+        int numKeyframes = mKeyframes.length;
+        IntKeyframe[] newKeyframes = new IntKeyframe[numKeyframes];
+        for (int i = 0; i < numKeyframes; ++i) {
+            newKeyframes[i] = (IntKeyframe) mKeyframes[i].copy();
+        }
+        return new IntKeyframeSet(newKeyframes);
     }
 
     @Override
