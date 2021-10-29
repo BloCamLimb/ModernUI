@@ -73,14 +73,16 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
     }
 
     /**
-     * Set the application screen for the menu. After calling this method,
-     * the event will be canceled.
+     * Set the application screen for the menu. The event will be canceled
+     * if callback is available.
      *
      * @param callback the application screen callback
      */
-    public void setCallback(@Nonnull ScreenCallback callback) {
+    public void setCallback(@Nullable ScreenCallback callback) {
         mCallback = callback;
-        setCanceled(true);
+        if (callback != null && !isCanceled()) {
+            setCanceled(true);
+        }
     }
 
     @Nullable

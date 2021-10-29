@@ -72,7 +72,7 @@ public final class NetworkMessages {
         if (writer != null) {
             writer.accept(buf);
         }
-        return sNetwork.dispatcher(buf);
+        return sNetwork.dispatch(buf);
     }
 
     // this class doesn't allow to load on dedicated server
