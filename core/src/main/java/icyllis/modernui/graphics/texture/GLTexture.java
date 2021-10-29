@@ -232,7 +232,7 @@ public class GLTexture extends GLObject {
             throw new IllegalArgumentException();
         }
         final int texture = get();
-        glTextureStorage2DMultisample(get(), samples, internalFormat, width, height, true);
+        glTextureStorage2DMultisample(texture, samples, internalFormat, width, height, true);
 
         long dim = 0;
         dim |= (glGetTextureLevelParameteri(texture, 0, GL_TEXTURE_WIDTH) & SIZE_MASK);
@@ -381,7 +381,7 @@ public class GLTexture extends GLObject {
      * @param copy   true to copy the level 0 image data from the old one to the new one
      */
     public void resize(int width, int height, boolean copy) {
-        if (ref == null) {
+        if (!isCreated()) {
             return;
         }
         int oldWidth = getWidth();

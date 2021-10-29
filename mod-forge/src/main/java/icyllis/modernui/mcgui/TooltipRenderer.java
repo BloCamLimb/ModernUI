@@ -228,7 +228,7 @@ public class TooltipRenderer {
                 tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);*/
 
         canvas.restore();
-        canvas.draw();
+        canvas.draw(null);
 
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);
@@ -352,7 +352,7 @@ public class TooltipRenderer {
                 tooltipY + tooltipHeight + V_BORDER, 3, paint);
 
         canvas.restore();
-        canvas.draw();
+        canvas.draw(null);
 
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);

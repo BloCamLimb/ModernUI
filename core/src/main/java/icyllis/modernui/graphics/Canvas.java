@@ -64,6 +64,41 @@ public abstract class Canvas {
     public abstract int save();
 
     /**
+     * This behaves the same as {@link #save()}, but in addition it allocates and
+     * redirects drawing to an offscreen rendering target.
+     * <p class="note"><strong>Note:</strong> this method is very expensive,
+     * incurring more than double rendering cost for contained content. Avoid
+     * using this method when possible.
+     * <p>
+     * All drawing calls are directed to a newly allocated offscreen rendering target.
+     * Only when the balancing call to restore() is made, is that offscreen
+     * buffer drawn back to the current target of the Canvas (which can potentially be a previous
+     * layer if these calls are nested).
+     *
+     * @param bounds May be null. The maximum size the offscreen render target
+     *               needs to be (in local coordinates)
+     * @param alpha  The alpha to apply to the offscreen when it is
+     *               drawn during restore()
+     * @return value to pass to restoreToCount() to balance this call
+     */
+    public final int saveLayer(@Nullable RectF bounds, int alpha) {
+        if (bounds == null) {
+            // ok, it's big enough
+            return saveLayer(0, 0, 0x8000, 0x8000, alpha);
+        } else {
+            return saveLayer(bounds.left, bounds.top, bounds.right, bounds.bottom, alpha);
+        }
+    }
+
+    /**
+     * Convenience for {@link #saveLayer(RectF, int)} that takes the four float coordinates of the
+     * bounds' rectangle.
+     *
+     * @see #saveLayer(RectF, int)
+     */
+    public abstract int saveLayer(float left, float top, float right, float bottom, int alpha);
+
+    /**
      * This call balances a previous call to save(), and is used to remove all
      * modifications to the matrix/clip state since the last save call. It is
      * an error to call restore() more or less times than save() was called in

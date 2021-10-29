@@ -389,78 +389,94 @@ public class TestMain {
         tps.setColor(0xff40ddee);
         tps.setTypeface(Typeface.SANS_SERIF);
 
+        GLFramebuffer framebuffer = new GLFramebuffer(4);
+        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
+        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
+        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
+        framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+        framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+
         while (!window.shouldClose()) {
             long time = RenderCore.timeMillis();
             long delta = time - lastTime;
             lastTime = time;
             GLWrapper.resetFrame(window);
-            canvas.reset(window.getWidth(), window.getHeight());
 
-            // UI thread
-            Paint paint = Paint.take();
+            if (window.getWidth() > 0) {
+                canvas.reset(window.getWidth(), window.getHeight());
 
-            paint.setRGB(160, 160, 160);
-            canvas.drawImage(image, null, screenRect, paint);
+                // UI thread
+                Paint paint = Paint.take();
+
+                paint.setRGB(160, 160, 160);
+                canvas.drawImage(image, null, screenRect, paint);
 
 
-            drawOsuScore(canvas);
+                canvas.saveLayer(null, 128);
+                drawOsuScore(canvas);
+                canvas.restore();
 
 
-            paint.setStyle(Paint.Style.STROKE);
-            float sin = MathUtil.sin(time / 300f);
-            paint.setRGBA(255, 255, 255, 255);
-            canvas.drawRoundRect(120, 120, 200, 250 - 50 * sin, 25 + 15 * sin, paint);
+                paint.setStyle(Paint.Style.STROKE);
+                float sin = MathUtil.sin(time / 300f);
+                paint.setRGBA(255, 255, 255, 255);
+                canvas.drawRoundRect(120, 120, 200, 250 - 50 * sin, 25 + 15 * sin, paint);
 
-            canvas.save();
-            canvas.rotate(180 * sin, 230, 100);
-            canvas.drawRect(190, 60, 270, 140, paint);
-            canvas.restore();
+                canvas.save();
+                canvas.rotate(180 * sin, 230, 100);
+                canvas.drawRect(190, 60, 270, 140, paint);
+                canvas.restore();
 
-            paint.setStrokeWidth(10);
-            canvas.drawArc(200, 200, 30, 90 + 60 * sin, -90 + 120 * sin, paint);
+                paint.setStrokeWidth(10);
+                canvas.drawArc(200, 200, 30, 90 + 60 * sin, -90 + 120 * sin, paint);
 
-            paint.setStrokeWidth(8);
-            paint.setRGBA(120, 220, 240, 192);
-            canvas.drawRoundLine(20, 20, 140, 60, paint);
-            canvas.drawRoundLine(120, 30, 60, 80, paint);
+                paint.setStrokeWidth(8);
+                paint.setRGBA(120, 220, 240, 192);
+                canvas.drawRoundLine(20, 20, 140, 60, paint);
+                canvas.drawRoundLine(120, 30, 60, 80, paint);
 
-            canvas.drawBezier(300, 100, 410, 210 + 100 * sin, 480, 170, paint);
+                canvas.drawBezier(300, 100, 410, 210 + 100 * sin, 480, 170, paint);
 
-            //canvas.rotate(30);
+                //canvas.rotate(30);
             /*String tcc = "今日も一日頑張るぞい";
             canvas.drawTextRun(tcc, 0, tcc.length(), 730, 170, false, paint1);
             tcc = "আমি আজ সকালের নাস্তা খাব না";
             canvas.drawTextRun(tcc, 0, tcc.length(), 660, 240, false, paint1);*/
-            //textLine.draw(canvas, 32, 400);
-            canvas.translate(40, 360);
-            paint.setRGBA(0, 0, 0, 128);
-            canvas.drawRoundRect(-6, -10, 606, 310, 5, paint);
-            dynamicLayout.draw(canvas);
-            canvas.translate(-40, -600);
+                //textLine.draw(canvas, 32, 400);
+                canvas.translate(40, 360);
+                paint.setRGBA(0, 0, 0, 128);
+                canvas.drawRoundRect(-6, -10, 606, 310, 5, paint);
+                dynamicLayout.draw(canvas);
+                canvas.translate(-40, -600);
 
-            float playTime = sTrack.getTime();
+                float playTime = sTrack.getTime();
 
-            sGraph.update(delta);
-            sGraph.draw(canvas, 800, 450);
+                sGraph.update(delta);
+                sGraph.draw(canvas, 800, 450);
 
-            String tcc = String.format("%d / %d", (int) playTime, (int) sTrack.getLength());
-            canvas.drawText(tcc, 0, tcc.length(), 800, 456, Gravity.CENTER_HORIZONTAL, tps);
+                String tcc = String.format("%d / %d", (int) playTime, (int) sTrack.getLength());
+                canvas.drawText(tcc, 0, tcc.length(), 800, 456, Gravity.CENTER_HORIZONTAL, tps);
 
-            tcc = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 + " / " +
-                    Runtime.getRuntime().maxMemory() / 1048576;
-            canvas.drawText(tcc, 0, tcc.length(), 1000, 60, tps);
-            //canvas.rotate(-30);
+                tcc = (Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory()) / 1048576 + " / " +
+                        Runtime.getRuntime().maxMemory() / 1048576;
+                canvas.drawText(tcc, 0, tcc.length(), 1000, 60, tps);
+                //canvas.rotate(-30);
 
-            //paint.setStyle(Paint.Style.FILL);
-            //canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);
-            paint.setStyle(Paint.Style.STROKE);
-            paint.setStrokeWidth(8);
-            paint.setRGBA(255, 255, 255, 192);
-            canvas.drawArc(800, 450, 100, -90,
-                    360 * (playTime / sTrack.getLength()), paint);
+                //paint.setStyle(Paint.Style.FILL);
+                //canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(8);
+                paint.setRGBA(255, 255, 255, 192);
+                canvas.drawArc(800, 450, 100, -90,
+                        360 * (playTime / sTrack.getLength()), paint);
 
-            // render thread, wait UI thread
-            canvas.draw();
+                // render thread, wait UI thread
+                canvas.draw(framebuffer);
+            }
+
+            glBlitNamedFramebuffer(framebuffer.get(), 0, 0, 0, window.getWidth(), window.getHeight(),
+                    0, 0, window.getWidth(), window.getHeight(), GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
             window.swapBuffers();
         }

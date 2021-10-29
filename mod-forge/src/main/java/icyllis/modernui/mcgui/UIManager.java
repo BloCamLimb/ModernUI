@@ -161,6 +161,9 @@ public final class UIManager implements AttachInfo.Handler {
                 m.mCanvas = GLCanvas.initialize();
                 glEnable(GL_MULTISAMPLE);
                 m.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+                m.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
+                m.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
+                m.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
                 // no depth buffer
                 m.mFramebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
                 m.mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
@@ -604,13 +607,8 @@ public final class UIManager implements AttachInfo.Handler {
             if (mRoot.hasDrawn()) {
                 glEnable(GL_STENCIL_TEST);
 
-                framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).make(width, height, true);
-                framebuffer.getAttachment(GL_STENCIL_ATTACHMENT).make(width, height, true);
-                framebuffer.clearColorBuffer();
-                framebuffer.clearDepthStencilBuffer();
-                framebuffer.bindDraw();
                 try {
-                    canvas.draw();
+                    canvas.draw(framebuffer);
                 } catch (Throwable t) {
                     ModernUI.LOGGER.fatal(MARKER,
                             "Failed to invoke rendering callbacks, please report the issue to related mods");
@@ -629,8 +627,8 @@ public final class UIManager implements AttachInfo.Handler {
 
         // do alpha fade in
         int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
-        canvas.drawTextureMSAA(texture, 0, 0, width, height, alpha << 24 | 0xffffff, true);
-        canvas.draw();
+        canvas.drawTextureMS(texture, 0, 0, width, height, alpha << 24 | 0xffffff, true);
+        canvas.draw(null);
 
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);
