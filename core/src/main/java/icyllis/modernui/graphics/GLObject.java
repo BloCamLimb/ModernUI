@@ -50,6 +50,10 @@ public abstract class GLObject implements AutoCloseable {
      */
     public abstract int get();
 
+    public final boolean isCreated() {
+        return ref != null;
+    }
+
     /**
      * Deletes the associated OpenGL object explicitly.
      */

@@ -48,6 +48,13 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  */
 public final class GLFramebuffer extends GLObject {
 
+    private static final GLFramebuffer sSwapFramebuffer = new GLFramebuffer(0);
+
+    static {
+        sSwapFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+        sSwapFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+    }
+
     // this can be Java GC-ed
     private final FloatBuffer mClearColor = BufferUtils.createFloatBuffer(4);
 
@@ -63,6 +70,26 @@ public final class GLFramebuffer extends GLObject {
      */
     public GLFramebuffer(int samples) {
         mSamples = Math.max(0, samples);
+    }
+
+    /**
+     * Blit the given framebuffer color buffer of read buffer to a swap framebuffer
+     * texture. This is used with a MSAA target for blending with other targets.
+     *
+     * @param framebuffer source framebuffer
+     * @return sampled texture
+     */
+    @Nonnull
+    public static GLTexture swap(@Nonnull GLFramebuffer framebuffer) {
+        framebuffer.bindRead();
+        int colorBuffer = glGetInteger(GL_READ_BUFFER);
+        Attachment src = framebuffer.getAttachment(colorBuffer);
+        int w = src.getWidth();
+        int h = src.getHeight();
+        sSwapFramebuffer.getAttachment(GL_COLOR_ATTACHMENT0).make(w, h, false);
+        glBlitNamedFramebuffer(framebuffer.get(), sSwapFramebuffer.get(), 0, 0, w, h,
+                0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
+        return sSwapFramebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
     }
 
     @Override
@@ -254,7 +281,7 @@ public final class GLFramebuffer extends GLObject {
             mInternalFormat = internalFormat;
         }
 
-        public abstract void make(int width, int height, boolean exactly);
+        public abstract boolean make(int width, int height, boolean exactly);
 
         public int getWidth() {
             return mWidth;
@@ -285,7 +312,7 @@ public final class GLFramebuffer extends GLObject {
         }
 
         @Override
-        public void make(int width, int height, boolean exactly) {
+        public boolean make(int width, int height, boolean exactly) {
             if (width <= 0 || height <= 0) {
                 throw new IllegalArgumentException("Negative size");
             }
@@ -296,7 +323,7 @@ public final class GLFramebuffer extends GLObject {
                 mTexture.close();
                 GLFramebuffer framebuffer = mFramebuffer.get();
                 if (framebuffer == null) {
-                    return;
+                    return false;
                 }
                 if (framebuffer.mSamples > 0) {
                     mTexture.allocate2DMS(mInternalFormat, width, height, framebuffer.mSamples);
@@ -304,7 +331,9 @@ public final class GLFramebuffer extends GLObject {
                     mTexture.allocate2D(mInternalFormat, width, height, 0);
                 }
                 glNamedFramebufferTexture(framebuffer.get(), mAttachmentPoint, mTexture.get(), 0);
+                return true;
             }
+            return false;
         }
 
         @Override
@@ -324,7 +353,7 @@ public final class GLFramebuffer extends GLObject {
         }
 
         @Override
-        public void make(int width, int height, boolean exactly) {
+        public boolean make(int width, int height, boolean exactly) {
             if (width <= 0 || height <= 0) {
                 throw new IllegalArgumentException("Negative size");
             }
@@ -335,12 +364,14 @@ public final class GLFramebuffer extends GLObject {
                 mRenderbuffer.close();
                 GLFramebuffer framebuffer = mFramebuffer.get();
                 if (framebuffer == null) {
-                    return;
+                    return false;
                 }
                 mRenderbuffer.allocate(mInternalFormat, width, height, framebuffer.mSamples);
                 glNamedFramebufferRenderbuffer(framebuffer.get(), mAttachmentPoint, GL_RENDERBUFFER,
                         mRenderbuffer.get());
+                return true;
             }
+            return false;
         }
 
         @Override
