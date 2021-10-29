@@ -55,10 +55,10 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * Represents a bitmap, with its image data in native. It is used for operations
+ * Represents a native image, with its image data in native. It is used for operations
  * on the client side, such as reading from/writing to a stream/channel. Compared
  * with {@link Image Images}, this data is completely stored in RAM with an
- * uncompressed format. Losing the reference of a bitmap object will automatically
+ * uncompressed format. Losing the reference of a native image object will automatically
  * free the native memory.
  */
 @SuppressWarnings("unused")
@@ -75,33 +75,33 @@ public final class NativeImage implements AutoCloseable {
     private Ref mRef;
 
     /**
-     * Creates a bitmap, the type of all components is unsigned byte.
+     * Creates a native image, the type of all components is unsigned byte.
      *
      * @param format number of channels
      * @param width  width in pixels, ranged from 1 to 16384
      * @param height height in pixels, ranged from 1 to 16384
-     * @param init   {@code true} to initialize pixels data to 0, or just allocate memory
+     * @param clear  {@code true} to initialize pixels data to 0, or just allocate memory
      * @throws IllegalArgumentException width or height out of range
      */
-    public NativeImage(@Nonnull Format format, int width, int height, boolean init) {
+    public NativeImage(@Nonnull Format format, int width, int height, boolean clear) {
         if (width <= 0 || height <= 0) {
-            throw new IllegalArgumentException("Bitmap size must be positive");
+            throw new IllegalArgumentException("Image size must be positive");
         }
         if (width > 16384) {
-            throw new IllegalArgumentException("Bitmap width is too large");
+            throw new IllegalArgumentException("Image width is too large");
         }
         if (height > 16384) {
-            throw new IllegalArgumentException("Bitmap height is too large");
+            throw new IllegalArgumentException("Image height is too large");
         }
         mFormat = format;
         mWidth = width;
         mHeight = height;
-        mRef = new Ref(this, format.channels * width * height, init);
+        mRef = new Ref(this, format.channels * width * height, clear);
     }
 
     private NativeImage(@Nonnull Format format, int width, int height, @Nonnull ByteBuffer data) throws IOException {
         if (data.capacity() != format.channels * width * height) {
-            throw new IOException("Not tightly packed"); // ensure alignment to 1
+            throw new IOException("Not tightly packed (should this happen?)");
         }
         mFormat = format;
         mWidth = width;
@@ -125,7 +125,7 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Display a file save dialog to select the path to save this bitmap.
+     * Display a file save dialog to select the path to save this native image.
      *
      * @param format the format used as a file filter
      * @return the path or {@code null} if selects nothing
@@ -140,10 +140,10 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Opens a file select dialog, then decodes the selected file and creates a bitmap.
+     * Opens a file select dialog, then decodes the selected file and creates a native image.
      *
      * @param format the format to convert to, or {@code null} to use format in file
-     * @return a bitmap or {@code null} if selects nothing
+     * @return a native image or {@code null} if selects nothing
      */
     @Nullable
     public static NativeImage openDialog(@Nullable Format format) throws IOException {
@@ -151,7 +151,7 @@ public final class NativeImage implements AutoCloseable {
         if (path != null) {
             try (SeekableByteChannel channel = Files.newByteChannel(Path.of(path),
                     StandardOpenOption.READ)) {
-                // not to close bitmap but the stream
+                // not to close native image but the stream
                 return decode(format, channel);
             }
         }
@@ -159,13 +159,13 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Creates a bitmap whose image downloaded from the given texture. The image of
+     * Creates a native image whose image downloaded from the given texture. The image of
      * the level-of-detail 0 will be taken.
      *
-     * @param format  the bitmap format to convert the image to
+     * @param format  the native image format to convert the image to
      * @param texture the texture to download from
      * @param flipY   flip the image vertically, such as the texture is from a framebuffer
-     * @return the created bitmap
+     * @return the created native image
      */
     @Nonnull
     @RenderThread
@@ -197,24 +197,34 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Creates a bitmap whose image downloaded from the given framebuffer content
-     * bound as a read framebuffer. The color buffer 0 will be taken.
+     * Creates a native image whose image downloaded from the given off-screen rendering target
+     * bound as a read framebuffer.
      *
-     * @param format      the bitmap format to convert the image to
+     * @param format      the native image format to convert the image to
      * @param framebuffer the framebuffer to download from
+     * @param colorBuffer the color attachment to read
      * @param flipY       flip the image vertically, such as the texture is from a framebuffer
-     * @return the created bitmap
+     * @return the created native image
      */
     @Nonnull
     @RenderThread
-    public static NativeImage download(@Nonnull Format format, @Nonnull GLFramebuffer framebuffer, boolean flipY) {
+    public static NativeImage download(@Nonnull Format format, @Nonnull GLFramebuffer framebuffer,
+                                       int colorBuffer, boolean flipY) {
         RenderCore.checkRenderThread();
-        final int width = framebuffer.getWidth();
-        final int height = framebuffer.getHeight();
+        if (framebuffer.isMsaaEnabled()) {
+            throw new IllegalArgumentException("Cannot get pixels from a multisampling target");
+        }
+        final GLFramebuffer.Attachment attachment = framebuffer.getAttachment(colorBuffer);
+        final int width = attachment.getWidth();
+        final int height = attachment.getHeight();
         final NativeImage nativeImage = new NativeImage(format, width, height, false);
         final long p = nativeImage.getPixels();
         framebuffer.bindRead();
-        glReadBuffer(0);
+        framebuffer.setReadBuffer(colorBuffer);
+        glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+        glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+        glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+        glPixelStorei(GL_PACK_ALIGNMENT, 1);
         glReadPixels(0, 0, width, height, format.glFormat, GL_UNSIGNED_BYTE, p);
         if (flipY) {
             final int stride = width * format.channels;
@@ -336,7 +346,7 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Save this bitmap image to specified path as specified format. This will
+     * Save this native image image to specified path as specified format. This will
      * open a save dialog to select the path.
      *
      * @param format  the format of the saved image
@@ -350,7 +360,7 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Save this bitmap image to specified path with specified format.
+     * Save this native image image to specified path with specified format.
      *
      * @param path    the image path
      * @param format  the format of the saved image
@@ -388,7 +398,7 @@ public final class NativeImage implements AutoCloseable {
 
     private void checkReleased() {
         if (mRef == null) {
-            throw new IllegalStateException("Cannot operate released bitmap");
+            throw new IllegalStateException("Cannot operate released native image");
         }
     }
 
@@ -431,7 +441,7 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Lists supported formats a bitmap can be saved as.
+     * Lists supported formats a native image can be saved as.
      */
     public enum SaveFormat {
         /**

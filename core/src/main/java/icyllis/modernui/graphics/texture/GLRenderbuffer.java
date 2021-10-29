@@ -51,6 +51,14 @@ public final class GLRenderbuffer extends GLObject {
         }
     }
 
+    public int getWidth() {
+        return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_WIDTH);
+    }
+
+    public int getHeight() {
+        return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_HEIGHT);
+    }
+
     public int getInternalFormat() {
         return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
     }
