@@ -374,26 +374,32 @@ public class GLTexture extends GLObject {
     }
 
     /**
-     * Regenerate the texture to the new size.
+     * Regenerate the 2D texture to the new size.
      *
      * @param width  new width of the texture
      * @param height new height of the texture
      * @param copy   true to copy the level 0 image data from the old one to the new one
      */
     public void resize(int width, int height, boolean copy) {
-        int oldTex = get();
+        if (ref == null) {
+            return;
+        }
         int oldWidth = getWidth();
         int oldHeight = getHeight();
+        if ((oldWidth | oldHeight) == 0) {
+            return;
+        }
         if (width == oldWidth && height == oldHeight) {
             return;
         }
-        int internalFormat = glGetTextureLevelParameteri(oldTex, 0, GL_TEXTURE_INTERNAL_FORMAT);
-        int maxLevel = glGetTextureParameteri(oldTex, GL_TEXTURE_MAX_LEVEL);
+        int texture = get();
+        int internalFormat = getInternalFormat();
+        int maxLevel = glGetTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL);
 
         Cleaner.Cleanable cleanup = recreate();
         allocate2DM(internalFormat, width, height, maxLevel);
         if (copy) {
-            glCopyImageSubData(oldTex, GL_TEXTURE_2D, 0, 0, 0, 0,
+            glCopyImageSubData(texture, GL_TEXTURE_2D, 0, 0, 0, 0,
                     get(), GL_TEXTURE_2D, 0, 0, 0, 0,
                     Math.min(width, oldWidth), Math.min(height, oldHeight), 1);
             if (maxLevel > 0) {
@@ -405,10 +411,14 @@ public class GLTexture extends GLObject {
         }
     }
 
+    public int getInternalFormat() {
+        return glGetTextureLevelParameteri(get(), 0, GL_TEXTURE_INTERNAL_FORMAT);
+    }
+
     /**
      * Re-create the OpenGL texture and returns the cleanup action for the previous one.
      * You should call the cleanup action if you will not touch the previous texture any more.
-     * Otherwise it will be cleaned when this Texture object become phantom-reachable.
+     * Otherwise, it will be cleaned when this Texture object become phantom-reachable.
      *
      * @return cleanup action, null if this texture was recycled or never initialized
      */
