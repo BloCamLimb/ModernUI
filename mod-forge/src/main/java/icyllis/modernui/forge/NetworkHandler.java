@@ -87,6 +87,7 @@ public class NetworkHandler {
         }
         mProtocol = protocol;
         mOptional = optional;
+
         NetworkRegistry.ChannelBuilder
                 .named(mId = new ResourceLocation(ModernUI.ID, modid))
                 .networkProtocolVersion(this::getProtocol)
@@ -99,8 +100,11 @@ public class NetworkHandler {
             mClientListener = null;
         }
         mServerListener = csl;
-        // NetworkRegistry has duplication detection
-        sNetworks.put(modid, this);
+
+        synchronized (NetworkHandler.class) {
+            // NetworkRegistry has duplication detection
+            sNetworks.put(modid, this);
+        }
     }
 
     /**
@@ -163,13 +167,13 @@ public class NetworkHandler {
 
     /**
      * Allocates a heap buffer to write indexed packet data. Once you're done that,
-     * pass the value returned here to {@link #dispatcher(FriendlyByteBuf)} or
+     * pass the value returned here to {@link #dispatch(FriendlyByteBuf)} or
      * {@link #sendToServer(FriendlyByteBuf)}. The message index is used to identify
      * what type of message is, which is also determined by your network protocol.
      *
      * @param index the message index used on the reception side, ranged from 0 to 32767
      * @return a byte buf to write the packet data (message body)
-     * @see #dispatcher(FriendlyByteBuf)
+     * @see #dispatch(FriendlyByteBuf)
      * @see #sendToServer(FriendlyByteBuf)
      */
     @Nonnull
@@ -180,7 +184,7 @@ public class NetworkHandler {
     }
 
     /**
-     * Creates the packet with a broadcaster from a message. The packet must by dispatched
+     * Creates the packet with a broadcaster from a message. The packet must be dispatched
      * right after calling this, for example {@link PacketDispatcher#sendToPlayer(Player)}.
      * Packet data cannot exceed 1,043,200 bytes.
      *
@@ -190,7 +194,7 @@ public class NetworkHandler {
      * @see ClientListener
      */
     @Nonnull
-    public PacketDispatcher dispatcher(@Nonnull FriendlyByteBuf data) {
+    public PacketDispatcher dispatch(@Nonnull FriendlyByteBuf data) {
         return PacketDispatcher.obtain(mId, data);
     }
 

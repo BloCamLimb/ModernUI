@@ -40,7 +40,6 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
@@ -52,11 +51,9 @@ import net.minecraftforge.common.extensions.IForgeContainerType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fmllegacy.network.IContainerFactory;
 import net.minecraftforge.registries.IForgeRegistry;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
@@ -84,15 +81,16 @@ final class Registration {
     @SubscribeEvent
     static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
         final IForgeRegistry<SoundEvent> registry = event.getRegistry();
-
-        registerSound(registry, "button1");
-        registerSound(registry, "button2");
+        registry.register(new SoundEvent(new ResourceLocation(ModernUI.ID, "button1"))
+                .setRegistryName("button1"));
+        registry.register(new SoundEvent(new ResourceLocation(ModernUI.ID, "button2"))
+                .setRegistryName("button2"));
     }
 
     @SubscribeEvent
     static void registerMenus(@Nonnull RegistryEvent.Register<MenuType<?>> event) {
-        final IForgeRegistry<MenuType<?>> registry = event.getRegistry();
-        registerMenu(registry, TestMenu::new, "test");
+        event.getRegistry().register(IForgeContainerType.create(TestMenu::new)
+                .setRegistryName("test"));
     }
 
     @SubscribeEvent
@@ -260,25 +258,7 @@ final class Registration {
             event.registerShader(new ShaderInstance(provider, TextRenderType.SHADER_SEE_THROUGH_RL,
                     DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP), TextRenderType::setShaderSeeThrough);
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Bad shaders", e);
         }
-    }
-
-    @Nonnull
-    @OnlyIn(Dist.CLIENT)
-    public static SoundEvent registerSound(@Nonnull IForgeRegistry<SoundEvent> registry, String name) {
-        ResourceLocation soundID = new ResourceLocation(ModLoadingContext.get().getActiveNamespace(), name);
-        SoundEvent event = new SoundEvent(soundID).setRegistryName(soundID);
-        registry.register(event);
-        return event;
-    }
-
-    @Nonnull
-    public static <T extends AbstractContainerMenu> MenuType<T> registerMenu(
-            @Nonnull IForgeRegistry<MenuType<?>> registry, IContainerFactory<T> factory, String name) {
-        MenuType<T> type = IForgeContainerType.create(factory);
-        type.setRegistryName(name);
-        registry.register(type);
-        return type;
     }
 }
