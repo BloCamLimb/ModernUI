@@ -146,7 +146,7 @@ public final class UIManager implements AttachInfo.Handler {
 
     private UIManager() {
         mAnimationHandler = AnimationHandler.init();
-        mFramebuffer = new GLFramebuffer(mWindow.getWidth(), mWindow.getHeight());
+        mFramebuffer = new GLFramebuffer(4);
         mUiThread = new Thread(this::run, "UI thread");
         MinecraftForge.EVENT_BUS.register(this);
     }
@@ -160,9 +160,9 @@ public final class UIManager implements AttachInfo.Handler {
             if (m.mCanvas == null) {
                 m.mCanvas = GLCanvas.initialize();
                 glEnable(GL_MULTISAMPLE);
-                m.mFramebuffer.attachTexture(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+                m.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
                 // no depth buffer
-                m.mFramebuffer.attachRenderbuffer(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+                m.mFramebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
                 m.mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
                 m.mUiThread.start();
                 ModernUI.LOGGER.info(MARKER, "UI system initialized");
@@ -604,7 +604,10 @@ public final class UIManager implements AttachInfo.Handler {
             if (mRoot.hasDrawn()) {
                 glEnable(GL_STENCIL_TEST);
 
-                framebuffer.reset(width, height);
+                framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).make(width, height, true);
+                framebuffer.getAttachment(GL_DEPTH_STENCIL_ATTACHMENT).make(width, height, true);
+                framebuffer.clearColorBuffer();
+                framebuffer.clearDepthStencilBuffer();
                 framebuffer.bindDraw();
                 try {
                     canvas.draw();
@@ -632,7 +635,7 @@ public final class UIManager implements AttachInfo.Handler {
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);
 
-        // force to change Blaze3D state
+        // force changing Blaze3D state
         RenderSystem.bindTexture(DEFAULT_TEXTURE);
     }
 

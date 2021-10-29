@@ -51,6 +51,10 @@ public final class GLRenderbuffer extends GLObject {
         }
     }
 
+    public int getInternalFormat() {
+        return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
+    }
+
     private static final class RenderbufferRef extends Ref {
 
         private RenderbufferRef(@Nonnull GLRenderbuffer owner) {

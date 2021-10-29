@@ -25,6 +25,8 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.lwjgl.BufferUtils;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.lang.ref.WeakReference;
 import java.nio.FloatBuffer;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -44,28 +46,29 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  *
  * @see <a href="https://www.khronos.org/opengl/wiki/Framebuffer_Object">Framebuffer Object</a>
  */
-//TODO WIP
 public final class GLFramebuffer extends GLObject {
 
-    private int mWidth;
-    private int mHeight;
-
-    private Int2ObjectMap<GLObject> mAttachments;
-
-    //private int mMsaaLevel = 0;
-
+    // this can be Java GC-ed
     private final FloatBuffer mClearColor = BufferUtils.createFloatBuffer(4);
 
-    public GLFramebuffer(int width, int height) {
-        mWidth = Math.max(1, width);
-        mHeight = Math.max(1, height);
+    private final int mSamples;
+
+    @Nullable
+    private Int2ObjectMap<Attachment> mAttachments;
+
+    /**
+     * Creates a framebuffer.
+     *
+     * @param samples multisample anti-aliasing
+     */
+    public GLFramebuffer(int samples) {
+        mSamples = Math.max(0, samples);
     }
 
     @Override
     public int get() {
         if (ref == null) {
             ref = new FramebufferRef(this);
-            mAttachments = new Int2ObjectArrayMap<>();
         }
         return ref.object;
     }
@@ -85,74 +88,47 @@ public final class GLFramebuffer extends GLObject {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, get());
     }
 
-    public void attachTexture(int attachmentPoint, int internalFormat) {
-        GLTexture texture = new GLTexture(GL_TEXTURE_2D_MULTISAMPLE);
-        texture.allocate2DMS(internalFormat, mWidth, mHeight, 4);
-        glNamedFramebufferTexture(get(), attachmentPoint, texture.get(), 0);
-        mAttachments.put(attachmentPoint, texture);
+    @Nonnull
+    private Int2ObjectMap<Attachment> getAttachments() {
+        if (mAttachments == null) {
+            mAttachments = new Int2ObjectArrayMap<>();
+        }
+        return mAttachments;
     }
 
-    public void attachRenderbuffer(int attachmentPoint, int internalFormat) {
-        GLRenderbuffer renderbuffer = new GLRenderbuffer();
-        renderbuffer.allocate(internalFormat, mWidth, mHeight, 4);
-        glNamedFramebufferRenderbuffer(get(), attachmentPoint, GL_RENDERBUFFER, renderbuffer.get());
-        mAttachments.put(attachmentPoint, renderbuffer);
+    public void addTextureAttachment(int attachmentPoint, int internalFormat) {
+        getAttachments().put(attachmentPoint, new TextureAttachment(this, attachmentPoint, internalFormat));
+    }
+
+    public void addRenderbufferAttachment(int attachmentPoint, int internalFormat) {
+        getAttachments().put(attachmentPoint, new RenderbufferAttachment(this, attachmentPoint, internalFormat));
     }
 
     public void removeAttachment(int attachmentPoint) {
-        if (mAttachments.remove(attachmentPoint) != null) {
+        if (mAttachments == null) {
+            return;
+        }
+        Attachment attachment = mAttachments.remove(attachmentPoint);
+        if (attachment != null) {
+            attachment.close();
             glNamedFramebufferTexture(get(), attachmentPoint, DEFAULT_TEXTURE, 0);
+        }
+        if (mAttachments.isEmpty()) {
+            mAttachments = null;
         }
     }
 
     public void clearAttachments() {
-        int framebuffer = get();
-        for (int point : mAttachments.keySet()) {
-            glNamedFramebufferTexture(framebuffer, point, DEFAULT_TEXTURE, 0);
-        }
-        mAttachments.clear();
-    }
-
-    public void reset(int width, int height) {
-        resize(width, height);
-        clearColorBuffer();
-        clearDepthStencilBuffer();
-    }
-
-    public int getWidth() {
-        return mWidth;
-    }
-
-    public int getHeight() {
-        return mHeight;
-    }
-
-    /**
-     * Reallocate all attachments to the new size, if changed.
-     */
-    public void resize(int width, int height) {
-        if (mWidth == width && mHeight == height) {
+        if (mAttachments == null) {
             return;
         }
-        mWidth = width;
-        mHeight = height;
+        int framebuffer = get();
         for (var entry : mAttachments.int2ObjectEntrySet()) {
-            GLObject obj = entry.getValue();
-            if (obj instanceof GLTexture) {
-                GLTexture texture = (GLTexture) obj;
-                int internalFormat = glGetTextureLevelParameteri(texture.get(), 0, GL_TEXTURE_INTERNAL_FORMAT);
-                texture.close();
-                texture.allocate2DMS(internalFormat, width, height, 4);
-                glNamedFramebufferTexture(get(), entry.getIntKey(), texture.get(), 0);
-            } else if (obj instanceof GLRenderbuffer) {
-                GLRenderbuffer renderbuffer = (GLRenderbuffer) obj;
-                int internalFormat = glGetNamedRenderbufferParameteri(renderbuffer.get(),
-                        GL_RENDERBUFFER_INTERNAL_FORMAT);
-                renderbuffer.close();
-                renderbuffer.allocate(internalFormat, width, height, 4);
-                glNamedFramebufferRenderbuffer(get(), entry.getIntKey(), GL_RENDERBUFFER, renderbuffer.get());
-            }
+            entry.getValue().close();
+            glNamedFramebufferTexture(framebuffer, entry.getIntKey(), DEFAULT_TEXTURE, 0);
         }
+        mAttachments.clear();
+        mAttachments = null;
     }
 
     /**
@@ -194,6 +170,17 @@ public final class GLFramebuffer extends GLObject {
         glNamedFramebufferDrawBuffer(get(), buffer);
     }
 
+    @Nonnull
+    public Attachment getAttachment(int attachmentPoint) {
+        if (mAttachments != null) {
+            Attachment a = mAttachments.get(attachmentPoint);
+            if (a != null) {
+                return a;
+            }
+        }
+        throw new IllegalStateException("No attachment");
+    }
+
     /**
      * Returns the attached texture with the given attachment point.
      *
@@ -203,27 +190,32 @@ public final class GLFramebuffer extends GLObject {
      */
     @Nonnull
     public GLTexture getAttachedTexture(int attachmentPoint) {
-        AutoCloseable a = mAttachments.get(attachmentPoint);
-        if (a instanceof GLTexture) {
-            return ((GLTexture) a);
+        if (mAttachments != null) {
+            Attachment a = mAttachments.get(attachmentPoint);
+            if (a instanceof TextureAttachment) {
+                return ((TextureAttachment) a).mTexture;
+            }
         }
-        throw new IllegalArgumentException();
+        throw new IllegalStateException("No attachment");
     }
 
     @Nonnull
     public GLRenderbuffer getAttachedRenderbuffer(int attachmentPoint) {
-        AutoCloseable a = mAttachments.get(attachmentPoint);
-        if (a instanceof GLRenderbuffer) {
-            return (GLRenderbuffer) a;
+        if (mAttachments != null) {
+            AutoCloseable a = mAttachments.get(attachmentPoint);
+            if (a instanceof RenderbufferAttachment) {
+                return ((RenderbufferAttachment) a).mRenderbuffer;
+            }
         }
-        throw new IllegalArgumentException();
+        throw new IllegalStateException("No attachment");
     }
 
     @Override
     public void close() {
         super.close();
         if (mAttachments != null) {
-            mAttachments.values().forEach(GLObject::close);
+            mAttachments.values().forEach(Attachment::close);
+            mAttachments.clear();
             mAttachments = null;
         }
     }
@@ -237,6 +229,105 @@ public final class GLFramebuffer extends GLObject {
         @Override
         public void run() {
             deleteFramebufferAsync(object, this);
+        }
+    }
+
+    public static abstract class Attachment implements AutoCloseable {
+
+        final WeakReference<GLFramebuffer> mFramebuffer;
+        final int mAttachmentPoint;
+        final int mInternalFormat;
+
+        int mWidth;
+        int mHeight;
+
+        private Attachment(GLFramebuffer framebuffer, int attachmentPoint, int internalFormat) {
+            mFramebuffer = new WeakReference<>(framebuffer);
+            mAttachmentPoint = attachmentPoint;
+            mInternalFormat = internalFormat;
+        }
+
+        public abstract void make(int width, int height, boolean exactly);
+
+        @Override
+        public void close() {
+            mWidth = 0;
+            mHeight = 0;
+        }
+    }
+
+    private static class TextureAttachment extends Attachment {
+
+        private final GLTexture mTexture;
+
+        protected TextureAttachment(GLFramebuffer framebuffer, int attachmentPoint, int internalFormat) {
+            super(framebuffer, attachmentPoint, internalFormat);
+            if (framebuffer.mSamples > 0) {
+                mTexture = new GLTexture(GL_TEXTURE_2D_MULTISAMPLE);
+            } else {
+                mTexture = new GLTexture(GL_TEXTURE_2D);
+            }
+        }
+
+        @Override
+        public void make(int width, int height, boolean exactly) {
+            if (width <= 0 || height <= 0) {
+                throw new IllegalArgumentException("Negative size");
+            }
+            if (exactly ? mWidth != width || mHeight != height :
+                    mWidth < width || mHeight < height) {
+                mTexture.close();
+                GLFramebuffer framebuffer = mFramebuffer.get();
+                if (framebuffer == null) {
+                    return;
+                }
+                if (framebuffer.mSamples > 0) {
+                    mTexture.allocate2DMS(mInternalFormat, width, height, framebuffer.mSamples);
+                } else {
+                    mTexture.allocate2D(mInternalFormat, width, height, 0);
+                }
+                glNamedFramebufferTexture(framebuffer.get(), mAttachmentPoint, mTexture.get(), 0);
+            }
+        }
+
+        @Override
+        public void close() {
+            super.close();
+            mTexture.close();
+        }
+    }
+
+    private static class RenderbufferAttachment extends Attachment {
+
+        private final GLRenderbuffer mRenderbuffer;
+
+        protected RenderbufferAttachment(GLFramebuffer framebuffer, int attachmentPoint, int internalFormat) {
+            super(framebuffer, attachmentPoint, internalFormat);
+            mRenderbuffer = new GLRenderbuffer();
+        }
+
+        @Override
+        public void make(int width, int height, boolean exactly) {
+            if (width <= 0 || height <= 0) {
+                throw new IllegalArgumentException("Negative size");
+            }
+            if (exactly ? mWidth != width || mHeight != height :
+                    mWidth < width || mHeight < height) {
+                mRenderbuffer.close();
+                GLFramebuffer framebuffer = mFramebuffer.get();
+                if (framebuffer == null) {
+                    return;
+                }
+                mRenderbuffer.allocate(mInternalFormat, width, height, framebuffer.mSamples);
+                glNamedFramebufferRenderbuffer(framebuffer.get(), mAttachmentPoint, GL_RENDERBUFFER,
+                        mRenderbuffer.get());
+            }
+        }
+
+        @Override
+        public void close() {
+            super.close();
+            mRenderbuffer.close();
         }
     }
 }
