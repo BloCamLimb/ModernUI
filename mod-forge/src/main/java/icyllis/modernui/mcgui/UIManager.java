@@ -605,7 +605,7 @@ public final class UIManager implements AttachInfo.Handler {
                 glEnable(GL_STENCIL_TEST);
 
                 framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).make(width, height, true);
-                framebuffer.getAttachment(GL_DEPTH_STENCIL_ATTACHMENT).make(width, height, true);
+                framebuffer.getAttachment(GL_STENCIL_ATTACHMENT).make(width, height, true);
                 framebuffer.clearColorBuffer();
                 framebuffer.clearDepthStencilBuffer();
                 framebuffer.bindDraw();

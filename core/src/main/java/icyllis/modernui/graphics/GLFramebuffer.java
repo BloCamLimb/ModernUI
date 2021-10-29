@@ -88,6 +88,10 @@ public final class GLFramebuffer extends GLObject {
         glBindFramebuffer(GL_READ_FRAMEBUFFER, get());
     }
 
+    public boolean isMsaaEnabled() {
+        return mSamples > 0;
+    }
+
     @Nonnull
     private Int2ObjectMap<Attachment> getAttachments() {
         if (mAttachments == null) {
@@ -148,8 +152,7 @@ public final class GLFramebuffer extends GLObject {
     }
 
     /**
-     * Clear the current depth buffer set by {@link #setDrawBuffer(int)} to
-     * 1.0f, and stencil buffer to 0.
+     * Clear the current depth buffer to 1.0f, and stencil buffer to 0.
      */
     public void clearDepthStencilBuffer() {
         // for depth or stencil, the drawbuffer must be 0
@@ -170,6 +173,10 @@ public final class GLFramebuffer extends GLObject {
         glNamedFramebufferDrawBuffer(get(), buffer);
     }
 
+    public void setReadBuffer(int buffer) {
+        glNamedFramebufferReadBuffer(get(), buffer);
+    }
+
     @Nonnull
     public Attachment getAttachment(int attachmentPoint) {
         if (mAttachments != null) {
@@ -178,7 +185,7 @@ public final class GLFramebuffer extends GLObject {
                 return a;
             }
         }
-        throw new IllegalStateException("No attachment");
+        throw new IllegalStateException("No attachment " + attachmentPoint);
     }
 
     /**
@@ -196,7 +203,7 @@ public final class GLFramebuffer extends GLObject {
                 return ((TextureAttachment) a).mTexture;
             }
         }
-        throw new IllegalStateException("No attachment");
+        throw new IllegalStateException("No attachment " + attachmentPoint);
     }
 
     @Nonnull
@@ -207,7 +214,7 @@ public final class GLFramebuffer extends GLObject {
                 return ((RenderbufferAttachment) a).mRenderbuffer;
             }
         }
-        throw new IllegalStateException("No attachment");
+        throw new IllegalStateException("No attachment " + attachmentPoint);
     }
 
     @Override
@@ -249,6 +256,14 @@ public final class GLFramebuffer extends GLObject {
 
         public abstract void make(int width, int height, boolean exactly);
 
+        public int getWidth() {
+            return mWidth;
+        }
+
+        public int getHeight() {
+            return mHeight;
+        }
+
         @Override
         public void close() {
             mWidth = 0;
@@ -276,6 +291,8 @@ public final class GLFramebuffer extends GLObject {
             }
             if (exactly ? mWidth != width || mHeight != height :
                     mWidth < width || mHeight < height) {
+                mWidth = width;
+                mHeight = height;
                 mTexture.close();
                 GLFramebuffer framebuffer = mFramebuffer.get();
                 if (framebuffer == null) {
@@ -313,6 +330,8 @@ public final class GLFramebuffer extends GLObject {
             }
             if (exactly ? mWidth != width || mHeight != height :
                     mWidth < width || mHeight < height) {
+                mWidth = width;
+                mHeight = height;
                 mRenderbuffer.close();
                 GLFramebuffer framebuffer = mFramebuffer.get();
                 if (framebuffer == null) {
