@@ -883,10 +883,9 @@ public class View implements Drawable.Callback {
         canvas.translate(-sx, -sy);
 
         if (hasSpace) {
-            //TODO stacked offscreen rendering
-            /*if (alpha < 1) {
-
-            }*/
+            if (alpha < 1) {
+                canvas.saveLayer(null, (int) (alpha * 255));
+            }
 
             if ((mPrivateFlags & PFLAG_SKIP_DRAW) == PFLAG_SKIP_DRAW) {
                 dispatchDraw(canvas);
@@ -2362,6 +2361,31 @@ public class View implements Drawable.Callback {
     public void setTranslationX(float translationX) {
         ensureTransformation();
         mTransformation.setTranslationX(translationX);
+    }
+
+    /**
+     * This property is intended only for use by the Fade transition, which animates it
+     * to produce a visual translucency that does not side effect (or get affected by)
+     * the real alpha property. This value is composited with the other alpha value
+     * (and the AlphaAnimation value, when that is present) to produce a final visual
+     * translucency result, which is what is passed into the DisplayList.
+     */
+    public final void setTransitionAlpha(float alpha) {
+        if (mTransitionAlpha != alpha) {
+            mTransitionAlpha = alpha;
+            invalidate();
+        }
+    }
+
+    /**
+     * This property is intended only for use by the Fade transition, which animates
+     * it to produce a visual translucency that does not side effect (or get affected
+     * by) the real alpha property. This value is composited with the other alpha
+     * value (and the AlphaAnimation value, when that is present) to produce a final
+     * visual translucency result, which is what is passed into the DisplayList.
+     */
+    public final float getTransitionAlpha() {
+        return mTransitionAlpha;
     }
 
     /**
