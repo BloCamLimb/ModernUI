@@ -621,9 +621,11 @@ public final class GLCanvas extends Canvas {
                 default -> throw new IllegalStateException("Unexpected draw op " + op);
             }
         }
+        assert mLayerStack.isEmpty();
 
         mDrawOps.clear();
         mClipRefs.clear();
+        mLayerAlphas.clear();
         mTextures.clear();
         mDrawTexts.clear();
         mUniformMemory.clear();
@@ -788,7 +790,10 @@ public final class GLCanvas extends Canvas {
         mSaveStates.push(s);
 
         s.mMatrix.translate(Math.max(left, 0), Math.max(top, 0), 0);
-        if (s.mColorBuf < 3) {
+        if (alpha <= 0) {
+            // will be quick rejected
+            s.mBounds.setEmpty();
+        } else if (alpha < 255 && s.mColorBuf < 3) {
             s.mColorBuf++;
             mLayerAlphas.add(alpha);
             mDrawOps.add(DRAW_LAYER_PUSH);

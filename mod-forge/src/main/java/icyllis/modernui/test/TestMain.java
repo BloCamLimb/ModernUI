@@ -384,6 +384,7 @@ public class TestMain {
         GLWrapper.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         GLWrapper.glEnable(GL_STENCIL_TEST);
         GLWrapper.glEnable(GL_MULTISAMPLE);
+        GLWrapper.glDisable(GL_DEPTH_TEST);
 
         TextPaint tps = new TextPaint();
         tps.setColor(0xff40ddee);
@@ -412,11 +413,14 @@ public class TestMain {
                 paint.setRGB(160, 160, 160);
                 canvas.drawImage(image, null, screenRect, paint);
 
-
-                canvas.saveLayer(null, 128);
-                drawOsuScore(canvas);
-                canvas.restore();
-
+                int stackAlpha = (int) (255 * ((time - 2500) / 300F));
+                if (stackAlpha < 255) {
+                    canvas.saveLayer(null, stackAlpha);
+                    drawOsuScore(canvas);
+                    canvas.restore();
+                } else {
+                    drawOsuScore(canvas);
+                }
 
                 paint.setStyle(Paint.Style.STROKE);
                 float sin = MathUtil.sin(time / 300f);
