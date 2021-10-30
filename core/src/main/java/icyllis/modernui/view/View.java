@@ -34,6 +34,7 @@ import org.lwjgl.glfw.GLFW;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 
 import static java.lang.Math.max;
 
@@ -1135,20 +1136,33 @@ public class View implements Drawable.Callback {
      * <p>
      * Derived classes should NOT override this method for any reason.
      * Derived classes with children should override {@link #onLayout(boolean, int, int, int, int)}.
-     * In that method, they should call layout() on each of their children
+     * In that method, they should call layout() on each of their children.
      *
-     * @param left   left position, relative to parent
-     * @param top    top position, relative to parent
-     * @param right  right position, relative to parent
-     * @param bottom bottom position, relative to parent
+     * @param l left position, relative to parent
+     * @param t top position, relative to parent
+     * @param r right position, relative to parent
+     * @param b bottom position, relative to parent
      */
-    public void layout(int left, int top, int right, int bottom) {
-        boolean changed = setFrame(left, top, right, bottom);
+    @SuppressWarnings("unchecked")
+    public void layout(int l, int t, int r, int b) {
+        int oldL = mLeft;
+        int oldT = mTop;
+        int oldB = mBottom;
+        int oldR = mRight;
+
+        boolean changed = setFrame(l, t, r, b);
 
         if (changed || (mPrivateFlags & PFLAG_LAYOUT_REQUIRED) != 0) {
-            onLayout(changed, left, top, right, bottom);
+            onLayout(changed, l, t, r, b);
 
             mPrivateFlags &= ~PFLAG_LAYOUT_REQUIRED;
+
+            ListenerInfo li = mListenerInfo;
+            if (li != null && li.mOnLayoutChangeListeners != null) {
+                for (var listener : (ArrayList<OnLayoutChangeListener>) li.mOnLayoutChangeListeners.clone()) {
+                    listener.onLayoutChange(this, l, t, r, b, oldL, oldT, oldR, oldB);
+                }
+            }
         }
 
         mPrivateFlags &= ~PFLAG_FORCE_LAYOUT;
@@ -1798,10 +1812,19 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Invalidate the whole view hierarchy. All views will be redrawn
-     * in the future.
+     * Invalidate the whole view. If the view is visible, {@link #onDraw(Canvas)}
+     * will be called at some point in the future.
+     * <p>
+     * This must be called from a UI thread. To call from a non-UI thread, call
+     * {@link #postInvalidate()}.
      */
     public final void invalidate() {
+        if ((mViewFlags & VISIBILITY_MASK) != VISIBLE &&
+                (!(mParent instanceof ViewGroup) ||
+                        !((ViewGroup) mParent).isViewTransitioning(this))) {
+            return;
+        }
+
         if (mAttachInfo != null) {
             mAttachInfo.mViewRootImpl.invalidate();
         }
@@ -2267,43 +2290,150 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Get view logic left position on screen.
-     * The sum of scroll amounts of all parent views are not counted.
+     * Left position of this view relative to its parent.
      *
-     * @return left
+     * @return The left edge of this view, in pixels.
      */
     public final int getLeft() {
         return mLeft;
     }
 
     /**
-     * Get view logic top position on screen.
-     * The sum of scroll amounts of all parent views are not counted.
+     * Sets the left position of this view relative to its parent. This method is meant to be called
+     * by the layout system and should not generally be called otherwise, because the property
+     * may be changed at any time by the layout.
      *
-     * @return top
+     * @param left The left of this view, in pixels.
+     */
+    public final void setLeft(int left) {
+        if (left != mLeft) {
+            invalidate();
+
+            int oldWidth = mRight - mLeft;
+            int height = mBottom - mTop;
+
+            mLeft = left;
+
+            sizeChange(mRight - mLeft, height, oldWidth, height);
+
+            mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+        }
+    }
+
+    /**
+     * Top position of this view relative to its parent.
+     *
+     * @return The top of this view, in pixels.
      */
     public final int getTop() {
         return mTop;
     }
 
     /**
-     * Get view logic right position on screen.
-     * The sum of scroll amounts of all parent views are not counted.
+     * Sets the top position of this view relative to its parent. This method is meant to be called
+     * by the layout system and should not generally be called otherwise, because the property
+     * may be changed at any time by the layout.
      *
-     * @return right
+     * @param top The top of this view, in pixels.
+     */
+    public final void setTop(int top) {
+        if (top != mTop) {
+            invalidate();
+
+            int width = mRight - mLeft;
+            int oldHeight = mBottom - mTop;
+
+            mTop = top;
+
+            sizeChange(width, mBottom - mTop, width, oldHeight);
+
+            mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+        }
+    }
+
+    /**
+     * Right position of this view relative to its parent.
+     *
+     * @return The right edge of this view, in pixels.
      */
     public final int getRight() {
         return mRight;
     }
 
     /**
-     * Get view logic bottom position on screen.
-     * The sum of scroll amounts of all parent views are not counted.
+     * Sets the right position of this view relative to its parent. This method is meant to be called
+     * by the layout system and should not generally be called otherwise, because the property
+     * may be changed at any time by the layout.
      *
-     * @return bottom
+     * @param right The right of this view, in pixels.
+     */
+    public final void setRight(int right) {
+        if (right != mRight) {
+            invalidate();
+
+            int oldWidth = mRight - mLeft;
+            int height = mBottom - mTop;
+
+            mRight = right;
+
+            sizeChange(mRight - mLeft, height, oldWidth, height);
+
+            mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+        }
+    }
+
+    /**
+     * Bottom position of this view relative to its parent.
+     *
+     * @return The bottom of this view, in pixels.
      */
     public final int getBottom() {
         return mBottom;
+    }
+
+    /**
+     * Sets the bottom position of this view relative to its parent. This method is meant to be
+     * called by the layout system and should not generally be called otherwise, because the
+     * property may be changed at any time by the layout.
+     *
+     * @param bottom The bottom of this view, in pixels.
+     */
+    public final void setBottom(int bottom) {
+        if (bottom != mBottom) {
+            invalidate();
+
+            int width = mRight - mLeft;
+            int oldHeight = mBottom - mTop;
+
+            mBottom = bottom;
+
+            sizeChange(width, mBottom - mTop, width, oldHeight);
+
+            mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+        }
+    }
+
+    private void sizeChange(int newWidth, int newHeight, int oldWidth, int oldHeight) {
+        onSizeChanged(newWidth, newHeight, oldWidth, oldHeight);
+        // If this isn't laid out yet, focus assignment will be handled during the "deferment/
+        // backtracking" of requestFocus during layout, so don't touch focus here.
+        //TODO
+        /*if (isLayoutValid()
+                // Don't touch focus if animating
+                && !(mParent instanceof ViewGroup && ((ViewGroup) mParent).isLayoutSuppressed())) {
+            if (newWidth <= 0 || newHeight <= 0) {
+                if (hasFocus()) {
+                    clearFocus();
+                    if (mParent instanceof ViewGroup) {
+                        ((ViewGroup) mParent).clearFocusedInCluster();
+                    }
+                }
+            } else if (oldWidth <= 0 || oldHeight <= 0) {
+                if (mParent != null && canTakeFocus()) {
+                    mParent.focusableViewAvailable(this);
+                }
+            }
+        }*/
     }
 
     /**
@@ -4181,7 +4311,6 @@ public class View implements Drawable.Callback {
      * @see #setHovered
      */
     public void onHoverChanged(boolean hovered) {
-
     }
 
     @Nonnull
@@ -4190,6 +4319,35 @@ public class View implements Drawable.Callback {
             mListenerInfo = new ListenerInfo();
         }
         return mListenerInfo;
+    }
+
+    /**
+     * Add a listener that will be called when the bounds of the view change due to
+     * layout processing.
+     *
+     * @param listener The listener that will be called when layout bounds change.
+     */
+    public void addOnLayoutChangeListener(@Nonnull OnLayoutChangeListener listener) {
+        ListenerInfo li = getListenerInfo();
+        if (li.mOnLayoutChangeListeners == null) {
+            li.mOnLayoutChangeListeners = new ArrayList<>();
+        }
+        if (!li.mOnLayoutChangeListeners.contains(listener)) {
+            li.mOnLayoutChangeListeners.add(listener);
+        }
+    }
+
+    /**
+     * Remove a listener for layout changes.
+     *
+     * @param listener The listener for layout bounds change.
+     */
+    public void removeOnLayoutChangeListener(@Nonnull OnLayoutChangeListener listener) {
+        ListenerInfo li = mListenerInfo;
+        if (li == null || li.mOnLayoutChangeListeners == null) {
+            return;
+        }
+        li.mOnLayoutChangeListeners.remove(listener);
     }
 
     /**
@@ -4684,6 +4842,19 @@ public class View implements Drawable.Callback {
 
     static class ListenerInfo {
 
+        ListenerInfo() {
+        }
+
+        /**
+         * Listeners for layout change events.
+         */
+        private ArrayList<OnLayoutChangeListener> mOnLayoutChangeListeners;
+
+        protected OnScrollChangeListener mOnScrollChangeListener;
+
+        /**
+         * Listener used to dispatch click events.
+         */
         private OnClickListener mOnClickListener;
 
         private OnHoverListener mOnHoverListener;
@@ -4708,6 +4879,7 @@ public class View implements Drawable.Callback {
      * dispatched to this view. The callback will be invoked before the hover
      * event is given to the view.
      */
+    @FunctionalInterface
     public interface OnHoverListener {
 
         /**
@@ -4720,5 +4892,53 @@ public class View implements Drawable.Callback {
          * @return True if the listener has consumed the event, false otherwise.
          */
         boolean onHover(View v, MotionEvent event);
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when the scroll
+     * X or Y positions of a view change.
+     * <p>
+     * <b>Note:</b> Some views handle scrolling independently of View and may
+     * have their own separate listeners for scroll-type events.
+     *
+     * @see #setOnScrollChangeListener(View.OnScrollChangeListener)
+     */
+    @FunctionalInterface
+    public interface OnScrollChangeListener {
+
+        /**
+         * Called when the scroll position of a view changes.
+         *
+         * @param v          The view whose scroll position has changed.
+         * @param scrollX    Current horizontal scroll origin.
+         * @param scrollY    Current vertical scroll origin.
+         * @param oldScrollX Previous horizontal scroll origin.
+         * @param oldScrollY Previous vertical scroll origin.
+         */
+        void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY);
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when the layout bounds of a view
+     * changes due to layout processing.
+     */
+    @FunctionalInterface
+    public interface OnLayoutChangeListener {
+
+        /**
+         * Called when the layout bounds of a view changes due to layout processing.
+         *
+         * @param v         The view whose bounds have changed.
+         * @param left      The new value of the view's left property.
+         * @param top       The new value of the view's top property.
+         * @param right     The new value of the view's right property.
+         * @param bottom    The new value of the view's bottom property.
+         * @param oldLeft   The previous value of the view's left property.
+         * @param oldTop    The previous value of the view's top property.
+         * @param oldRight  The previous value of the view's right property.
+         * @param oldBottom The previous value of the view's bottom property.
+         */
+        void onLayoutChange(View v, int left, int top, int right, int bottom,
+                            int oldLeft, int oldTop, int oldRight, int oldBottom);
     }
 }

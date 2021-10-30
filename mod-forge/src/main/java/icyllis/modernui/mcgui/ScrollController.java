@@ -18,7 +18,7 @@
 
 package icyllis.modernui.mcgui;
 
-import icyllis.modernui.animation.Interpolator;
+import icyllis.modernui.animation.TimeInterpolator;
 import net.minecraft.util.Mth;
 
 import javax.annotation.Nonnull;
@@ -55,7 +55,7 @@ public class ScrollController {
     public void update(long time) {
         if (currValue != targetValue) {
             float p = Math.min((float) (time - startTime) / duration, 1);
-            p = Interpolator.DECELERATE.getInterpolation(p);
+            p = TimeInterpolator.DECELERATE.getInterpolation(p);
             currValue = Mth.lerp(p, startValue, targetValue);
             listener.onScrollAmountUpdated(this, currValue);
             //UIManager.getInstance().repostCursorEvent();

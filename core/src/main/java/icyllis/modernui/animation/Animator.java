@@ -176,18 +176,18 @@ public abstract class Animator implements Cloneable {
      * The time interpolator used in calculating the elapsed fraction of the
      * animation. The interpolator determines whether the animation runs with
      * linear or non-linear motion, such as acceleration and deceleration. The
-     * default value is {@link Interpolator#ACCELERATE_DECELERATE}.
+     * default value is {@link TimeInterpolator#ACCELERATE_DECELERATE}.
      *
      * @param value the interpolator to be used by this animation
      */
-    public abstract void setInterpolator(Interpolator value);
+    public abstract void setInterpolator(TimeInterpolator value);
 
     /**
      * Returns the timing interpolator that this animation uses.
      *
      * @return The timing interpolator for this animation.
      */
-    public abstract Interpolator getInterpolator();
+    public abstract TimeInterpolator getInterpolator();
 
     /**
      * Returns whether this Animator is currently running (having been started and gone past any

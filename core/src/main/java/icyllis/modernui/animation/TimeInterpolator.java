@@ -27,13 +27,13 @@ import javax.annotation.Nonnull;
  * to have non-linear motion, such as acceleration and deceleration.
  */
 @FunctionalInterface
-public interface Interpolator {
+public interface TimeInterpolator {
 
     /**
      * The linear interpolator.
      */
     @Nonnull
-    Interpolator LINEAR = in -> in;
+    TimeInterpolator LINEAR = in -> in;
 
     /**
      * The constant accelerate interpolator whose factor is 1.0.
@@ -41,7 +41,7 @@ public interface Interpolator {
      * @see #accelerate(float)
      */
     @Nonnull
-    Interpolator ACCELERATE = in -> in * in;
+    TimeInterpolator ACCELERATE = in -> in * in;
 
     /**
      * The constant decelerate interpolator whose factor is 1.0.
@@ -49,14 +49,14 @@ public interface Interpolator {
      * @see #decelerate(float)
      */
     @Nonnull
-    Interpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
+    TimeInterpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
 
     /**
      * The interpolator where the rate of change starts and ends slowly but
      * accelerates through the middle.
      */
     @Nonnull
-    Interpolator ACCELERATE_DECELERATE = in -> MathUtil.cos((in + 1.0f) * MathUtil.PI) * 0.5f + 0.5f;
+    TimeInterpolator ACCELERATE_DECELERATE = in -> MathUtil.cos((in + 1.0f) * MathUtil.PI) * 0.5f + 0.5f;
 
     /**
      * The constant cycle interpolator that indicates 1/4 cycle sine wave.
@@ -64,7 +64,7 @@ public interface Interpolator {
      * @see #cycle(float)
      */
     @Nonnull
-    Interpolator SINE = in -> MathUtil.sin(MathUtil.PI_DIV_2 * in);
+    TimeInterpolator SINE = in -> MathUtil.sin(MathUtil.PI_DIV_2 * in);
 
     /**
      * The constant anticipate interpolator whose tension is 2.0.
@@ -72,7 +72,7 @@ public interface Interpolator {
      * @see #anticipate(float)
      */
     @Nonnull
-    Interpolator ANTICIPATE = in -> in * in * (3.0f * in - 2.0f);
+    TimeInterpolator ANTICIPATE = in -> in * in * (3.0f * in - 2.0f);
 
     /**
      * The constant overshoot interpolator whose tension is 2.0.
@@ -80,7 +80,7 @@ public interface Interpolator {
      * @see #overshoot(float)
      */
     @Nonnull
-    Interpolator OVERSHOOT = in -> (in - 1.0f) * (in - 1.0f) * (3.0f * (in - 1.0f) + 2.0f) + 1.0f;
+    TimeInterpolator OVERSHOOT = in -> (in - 1.0f) * (in - 1.0f) * (3.0f * (in - 1.0f) + 2.0f) + 1.0f;
 
     /**
      * The constant anticipate/overshoot interpolator whose tension is 2.0.
@@ -88,7 +88,7 @@ public interface Interpolator {
      * @see #anticipateOvershoot(float)
      */
     @Nonnull
-    Interpolator ANTICIPATE_OVERSHOOT = in -> {
+    TimeInterpolator ANTICIPATE_OVERSHOOT = in -> {
         in *= 2.0f;
         if (in < 0.5f) {
             return 0.5f * in * in * (4.0f * in - 3.0f);
@@ -102,10 +102,10 @@ public interface Interpolator {
      * The bounce interpolator where the change bounces at the end.
      */
     @Nonnull
-    Interpolator BOUNCE = new BounceInterpolator();
+    TimeInterpolator BOUNCE = new BounceInterpolator();
 
     @Nonnull
-    Interpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
+    TimeInterpolator VISCOUS_FLUID = new ViscousFluidInterpolator();
 
     /**
      * Get interpolation value. This interpolated value is then multiplied by the change in
@@ -119,28 +119,28 @@ public interface Interpolator {
     float getInterpolation(float progress);
 
     /**
-     * Create an accelerate interpolator where the rate of change starts out slowly and
+     * Create an interpolator where the rate of change starts out slowly
      * and then accelerates. If {@code factor} is 1.0f, a constant object will be returned.
      *
-     * @param factor the accelerate factor
+     * @param factor acceleration factor
      * @return an accelerate interpolator
      */
     @Nonnull
-    static Interpolator accelerate(float factor) {
+    static TimeInterpolator accelerate(float factor) {
         if (factor == 1.0f)
             return ACCELERATE;
         return t -> (float) Math.pow(t, factor * 2.0);
     }
 
     /**
-     * Create a decelerate interpolator where the rate of change starts out quickly and
+     * Create an interpolator where the rate of change starts out quickly
      * and then decelerates. If {@code factor} is 1.0f, a constant object will be returned.
      *
-     * @param factor the decelerate factor
+     * @param factor deceleration factor
      * @return a decelerate interpolator
      */
     @Nonnull
-    static Interpolator decelerate(float factor) {
+    static TimeInterpolator decelerate(float factor) {
         if (factor == 1.0f)
             return DECELERATE;
         return t -> (float) (1.0f - Math.pow(1.0f - t, factor * 2.0));
@@ -152,35 +152,35 @@ public interface Interpolator {
      * be returned.
      */
     @Nonnull
-    static Interpolator cycle(float cycle) {
+    static TimeInterpolator cycle(float cycle) {
         if (cycle == 0.25f)
             return SINE;
         return t -> MathUtil.sin(MathUtil.TWO_PI * cycle * t);
     }
 
     /**
-     * Create an anticipate interpolator where the change starts backward then flings forward.
+     * Create an interpolator where the change starts backward then flings forward.
      * If {@code tension} is 2.0f, a constant object will be returned.
      *
-     * @param tension the anticipate tension
+     * @param tension anticipation tension
      * @return an anticipate interpolator
      */
     @Nonnull
-    static Interpolator anticipate(float tension) {
+    static TimeInterpolator anticipate(float tension) {
         if (tension == 2.0f)
             return ANTICIPATE;
         return t -> t * t * ((tension + 1.0f) * t - tension);
     }
 
     /**
-     * Create an overshoot interpolator where the change flings forward and overshoots the last value
+     * Create an interpolator where the change flings forward and overshoots the last value
      * then comes back. If {@code tension} is 2.0f, a constant object will be returned.
      *
-     * @param tension the overshoot tension
+     * @param tension overshoot tension
      * @return an overshoot interpolator
      */
     @Nonnull
-    static Interpolator overshoot(float tension) {
+    static TimeInterpolator overshoot(float tension) {
         if (tension == 2.0f)
             return OVERSHOOT;
         return t -> {
@@ -200,7 +200,7 @@ public interface Interpolator {
      * @return an anticipate/overshoot interpolator
      */
     @Nonnull
-    static Interpolator anticipateOvershoot(float tension) {
+    static TimeInterpolator anticipateOvershoot(float tension) {
         return anticipateOvershoot(tension, 1.5f);
     }
 
@@ -218,7 +218,7 @@ public interface Interpolator {
      * @return an anticipate/overshoot interpolator
      */
     @Nonnull
-    static Interpolator anticipateOvershoot(float tension, float extraTension) {
+    static TimeInterpolator anticipateOvershoot(float tension, float extraTension) {
         final float v = tension * extraTension;
         if (v == 3.0f)
             return ANTICIPATE_OVERSHOOT;

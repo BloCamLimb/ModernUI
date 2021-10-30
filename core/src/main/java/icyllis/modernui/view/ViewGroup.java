@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.util.Pool;
@@ -82,6 +83,14 @@ public abstract class ViewGroup extends View implements ViewParent {
     // It might not have actually handled the hover event.
     private boolean mHoveredSelf;
 
+    // Used to animate add/remove changes in layout
+    private LayoutTransition mTransition;
+
+    // The set of views that are currently being transitioned. This list is used to track views
+    // being removed that should not actually be removed from the parent yet because they are
+    // being animated.
+    private ArrayList<View> mTransitioningViews;
+
     public ViewGroup() {
         mGroupFlags |= FLAG_CLIP_CHILDREN;
     }
@@ -96,8 +105,8 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     @Override
-    public final void layout(int left, int top, int right, int bottom) {
-        super.layout(left, top, right, bottom);
+    public final void layout(int l, int t, int r, int b) {
+        super.layout(l, t, r, b);
     }
 
     @Override
@@ -1287,6 +1296,15 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
 
         return MeasureSpec.makeMeasureSpec(resultSize, resultMode);
+    }
+
+    /**
+     * Utility function called by View during invalidation to determine whether a view that
+     * is invisible or gone should still be invalidated because it is being transitioned (and
+     * therefore still needs to be drawn).
+     */
+    boolean isViewTransitioning(View view) {
+        return (mTransitioningViews != null && mTransitioningViews.contains(view));
     }
 
     @Override

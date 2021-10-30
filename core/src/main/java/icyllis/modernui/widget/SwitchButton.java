@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.ColorEvaluator;
-import icyllis.modernui.animation.Interpolator;
+import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
@@ -65,9 +65,9 @@ public class SwitchButton extends CompoundButton {
         float fraction = animator.getAnimatedFraction();
         if (!isChecked()) {
             fraction = 1f - fraction;
-            mThumbPosition = Interpolator.ACCELERATE.getInterpolation(fraction);
+            mThumbPosition = TimeInterpolator.ACCELERATE.getInterpolation(fraction);
         } else {
-            mThumbPosition = Interpolator.DECELERATE.getInterpolation(fraction);
+            mThumbPosition = TimeInterpolator.DECELERATE.getInterpolation(fraction);
         }
         mInsideRadius = (mButtonBottom - mButtonTop) * 0.5f * fraction;
         mInsideColor = ColorEvaluator.evaluate(fraction, mUncheckedColor, mCheckedColor);
