@@ -18,7 +18,7 @@
 
 package icyllis.modernui.mcgui;
 
-import icyllis.modernui.animation.Interpolator;
+import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.math.MathUtil;
 
 import javax.annotation.Nonnull;
@@ -40,7 +40,7 @@ public class Applier {
     private final Consumer<Float> setter;
 
     @Nonnull
-    private Interpolator interpolator = Interpolator.LINEAR;
+    private TimeInterpolator interpolator = TimeInterpolator.LINEAR;
 
     public Applier(float startValue, float endValue, Supplier<Float> getter, Consumer<Float> setter) {
         this.startValue = startValue;
@@ -49,7 +49,7 @@ public class Applier {
         this.setter = setter;
     }
 
-    public Applier setInterpolator(@Nonnull Interpolator interpolator) {
+    public Applier setInterpolator(@Nonnull TimeInterpolator interpolator) {
         this.interpolator = interpolator;
         return this;
     }

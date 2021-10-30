@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.animation.AnimationHandler;
-import icyllis.modernui.animation.Interpolator;
+import icyllis.modernui.animation.TimeInterpolator;
 
 import java.util.Objects;
 
@@ -35,7 +35,7 @@ public class Scroller {
     private final SplineScroller mScrollerX = new SplineScroller();
     private final SplineScroller mScrollerY = new SplineScroller();
 
-    private final Interpolator mInterpolator;
+    private final TimeInterpolator mInterpolator;
 
     private final boolean mFlywheel;
 
@@ -49,12 +49,12 @@ public class Scroller {
         this(null);
     }
 
-    public Scroller(Interpolator interpolator) {
+    public Scroller(TimeInterpolator interpolator) {
         this(interpolator, true);
     }
 
-    public Scroller(Interpolator interpolator, boolean flywheel) {
-        mInterpolator = Objects.requireNonNullElse(interpolator, Interpolator.DECELERATE);
+    public Scroller(TimeInterpolator interpolator, boolean flywheel) {
+        mInterpolator = Objects.requireNonNullElse(interpolator, TimeInterpolator.DECELERATE);
         mFlywheel = flywheel;
     }
 

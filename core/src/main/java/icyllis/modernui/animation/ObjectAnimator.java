@@ -47,7 +47,7 @@ import java.util.concurrent.CopyOnWriteArraySet;
  * from the target object when the animator starts, just like animators with only one
  * value specified. In addition, an optional interpolator can be specified. The interpolator will
  * be applied on the interval between the keyframe that the interpolator is set on and the previous
- * keyframe. When no interpolator is supplied, the default {@link Interpolator#ACCELERATE_DECELERATE}
+ * keyframe. When no interpolator is supplied, the default {@link TimeInterpolator#ACCELERATE_DECELERATE}
  * will be used.
  */
 @SuppressWarnings("unused")
@@ -219,7 +219,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * calculate the animated values.
      */
     @Nonnull
-    private Interpolator mInterpolator = Interpolator.ACCELERATE_DECELERATE;
+    private TimeInterpolator mInterpolator = TimeInterpolator.ACCELERATE_DECELERATE;
 
     /**
      * The property/value sets being animated.
@@ -600,14 +600,14 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      * The time interpolator used in calculating the elapsed fraction of the
      * animation. The interpolator determines whether the animation runs with
      * linear or non-linear motion, such as acceleration and deceleration. The
-     * default value is {@link Interpolator#ACCELERATE_DECELERATE}.
+     * default value is {@link TimeInterpolator#ACCELERATE_DECELERATE}.
      *
      * @param value the interpolator to be used by this animation. A value of <code>null</code>
      *              will result in linear interpolation.
      */
     @Override
-    public void setInterpolator(@Nullable Interpolator value) {
-        mInterpolator = Objects.requireNonNullElse(value, Interpolator.LINEAR);
+    public void setInterpolator(@Nullable TimeInterpolator value) {
+        mInterpolator = Objects.requireNonNullElse(value, TimeInterpolator.LINEAR);
     }
 
     /**
@@ -617,7 +617,7 @@ public final class ObjectAnimator extends Animator implements AnimationHandler.F
      */
     @Nonnull
     @Override
-    public Interpolator getInterpolator() {
+    public TimeInterpolator getInterpolator() {
         return mInterpolator;
     }
 

@@ -37,7 +37,7 @@ public class KeyframeSet<T> implements Keyframes<T> {
 
     public KeyframeSet(@Nonnull Keyframe[] keyframes) {
         if (keyframes.length < 2)
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException("Keyframes < 2");
         mKeyframes = keyframes;
     }
 
@@ -121,7 +121,7 @@ public class KeyframeSet<T> implements Keyframes<T> {
     @Override
     public T getValue(float fraction) {
         final Keyframe[] keyframes = mKeyframes;
-        final Interpolator interpolator;
+        final TimeInterpolator interpolator;
         final int length = keyframes.length;
         if (length == 2) {
             final Keyframe nextKeyframe = keyframes[1];
