@@ -37,11 +37,11 @@ public class TestUI extends ScreenCallback {
     public void onCreate() {
         ScrollView contentView = new ScrollView();
         ViewConfig c = ViewConfig.get();
-        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(c.getViewSize(500), c.getViewSize(380));
+        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(c.getViewSize(500), c.getViewSize(480));
         contentViewParams.gravity = Gravity.CENTER;
 
         LinearLayout ll = new TestLinearLayout();
-        contentView.addView(ll, new FrameLayout.LayoutParams(c.getViewSize(400), c.getViewSize(800)));
+        contentView.addView(ll, new FrameLayout.LayoutParams(c.getViewSize(400), c.getViewSize(700)));
 
         contentView.setBackground(new Drawable() {
             //long lastTime = AnimationHandler.currentTimeMillis();

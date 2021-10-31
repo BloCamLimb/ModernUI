@@ -638,7 +638,7 @@ public class View implements Drawable.Callback {
      * Parent view of this view
      * {@link #assignParent(ViewParent)}
      */
-    private ViewParent mParent;
+    ViewParent mParent;
 
     /**
      * Internal use
@@ -830,7 +830,7 @@ public class View implements Drawable.Callback {
      * The layout parameters associated with this view and used by the parent
      * {@link ViewGroup} to determine how this view should be laid out.
      */
-    private ViewGroup.LayoutParams mLayoutParams;
+    ViewGroup.LayoutParams mLayoutParams;
 
     @Nullable
     ListenerInfo mListenerInfo;
@@ -2560,6 +2560,10 @@ public class View implements Drawable.Callback {
         }
     }
 
+    void dispatchDetachedFromWindow() {
+
+    }
+
     /**
      * If this view doesn't do any drawing on its own, set this flag to
      * allow further optimizations. By default, this flag is not set on
@@ -2568,14 +2572,14 @@ public class View implements Drawable.Callback {
      * Typically, if you override {@link #onDraw(Canvas)}
      * you should clear this flag.
      *
-     * @param willNotDraw whether or not this View draw on its own
+     * @param willNotDraw whether this View draw on its own
      */
     public void setWillNotDraw(boolean willNotDraw) {
         setFlags(willNotDraw ? WILL_NOT_DRAW : 0, DRAW_MASK);
     }
 
     /**
-     * Returns whether or not this View draws on its own.
+     * Returns whether this View draws on its own.
      *
      * @return true if this view has nothing to draw, false otherwise
      */
@@ -2657,10 +2661,10 @@ public class View implements Drawable.Callback {
      *
      * @hide
      */
-    private void resolveRtlProperties() {
+    public boolean resolveRtlProperties() {
         // Overall check
         if ((mPrivateFlags2 & ALL_RTL_PROPERTIES_RESOLVED) == ALL_RTL_PROPERTIES_RESOLVED) {
-            return;
+            return false;
         }
 
         // Order is important here: LayoutDirection MUST be resolved first
@@ -2684,6 +2688,7 @@ public class View implements Drawable.Callback {
             resolvePadding();
         }
         onRtlPropertiesChanged(getLayoutDirection());
+        return true;
     }
 
     /**
@@ -4104,6 +4109,16 @@ public class View implements Drawable.Callback {
      */
     protected boolean dispatchGenericPointerEvent(MotionEvent event) {
         return false;
+    }
+
+    /**
+     * Returns the current visibility of the window this view is attached to
+     * (either {@link #GONE}, {@link #INVISIBLE}, or {@link #VISIBLE}).
+     *
+     * @return Returns the current visibility of the view's window.
+     */
+    public final int getWindowVisibility() {
+        return mAttachInfo != null ? mAttachInfo.mWindowVisibility : GONE;
     }
 
     /**

@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.platform.RenderCore;
@@ -27,6 +28,7 @@ import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.LinkedList;
 
 /**
@@ -60,6 +62,8 @@ public final class ViewRootImpl implements ViewParent {
     private int mWidth;
     private int mHeight;
 
+    private ArrayList<LayoutTransition> mPendingTransitions;
+
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
@@ -79,6 +83,7 @@ public final class ViewRootImpl implements ViewParent {
                 view.setLayoutParams(params);
             }*/
             mAttachInfo.mRootView = view;
+            mAttachInfo.mWindowVisibility = View.VISIBLE;
             view.assignParent(this);
             view.dispatchAttachedToWindow(mAttachInfo);
         }
@@ -172,6 +177,12 @@ public final class ViewRootImpl implements ViewParent {
         if (mInvalidated) {
             mIsDrawing = true;
             mCanvas.reset(width, height);
+            if (mPendingTransitions != null && mPendingTransitions.size() > 0) {
+                for (LayoutTransition pendingTransition : mPendingTransitions) {
+                    pendingTransition.startChangingAnimations();
+                }
+                mPendingTransitions.clear();
+            }
             host.draw(mCanvas);
             mIsDrawing = false;
             if (mKeepInvalidated) {
@@ -335,6 +346,28 @@ public final class ViewRootImpl implements ViewParent {
     @Override
     public void childDrawableStateChanged(View child) {
 
+    }
+
+    /**
+     * Add LayoutTransition to the list of transitions to be started in the next traversal.
+     * This list will be cleared after the transitions on the list are start()'ed. These
+     * transitionsa re added by LayoutTransition itself when it sets up animations. The setup
+     * happens during the layout phase of traversal, which we want to complete before any of the
+     * animations are started (because those animations may side-effect properties that layout
+     * depends upon, like the bounding rectangles of the affected views). So we add the transition
+     * to the list and it is started just prior to starting the drawing phase of traversal.
+     *
+     * @param transition The LayoutTransition to be started on the next traversal.
+     *
+     * @hide
+     */
+    public void requestTransitionStart(LayoutTransition transition) {
+        if (mPendingTransitions == null || !mPendingTransitions.contains(transition)) {
+            if (mPendingTransitions == null) {
+                mPendingTransitions = new ArrayList<>();
+            }
+            mPendingTransitions.add(transition);
+        }
     }
 
     /*@Deprecated

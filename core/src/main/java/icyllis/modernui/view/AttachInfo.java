@@ -40,6 +40,11 @@ public final class AttachInfo {
     final Handler mHandler;
 
     /**
+     * The current visibility of the window.
+     */
+    public int mWindowVisibility;
+
+    /**
      * The top view of the hierarchy.
      */
     View mRootView;

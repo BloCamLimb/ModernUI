@@ -18,16 +18,17 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings("unused")
 public abstract class ViewGroup extends View implements ViewParent {
@@ -57,6 +58,13 @@ public abstract class ViewGroup extends View implements ViewParent {
      */
     private static final int FLAG_DISALLOW_INTERCEPT = 0x80000;
 
+    /**
+     * When set, this ViewGroup will not dispatch onAttachedToWindow calls
+     * to children when adding new views. This is used to prevent multiple
+     * onAttached calls when a ViewGroup adds children in its own onAttached method.
+     */
+    private static final int FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW = 0x400000;
+
     private int mGroupFlags;
 
     // child views
@@ -65,6 +73,15 @@ public abstract class ViewGroup extends View implements ViewParent {
     // number of valid children in the children array, the rest
     // should be null or not considered as children
     private int mChildrenCount = 0;
+
+    // Whether layout calls are currently being suppressed, controlled by calls to
+    // suppressLayout()
+    boolean mSuppressLayout = false;
+
+    // Whether any layout calls have actually been suppressed while mSuppressLayout
+    // has been true. This tracks whether we need to issue a requestLayout() when
+    // layout is later re-enabled.
+    private boolean mLayoutCalledWhileSuppressed = false;
 
     // Lazily-created holder for point computations.
     private float[] mTempPosition;
@@ -86,10 +103,22 @@ public abstract class ViewGroup extends View implements ViewParent {
     // Used to animate add/remove changes in layout
     private LayoutTransition mTransition;
 
+    // Views which have been hidden or removed which need to be animated on
+    // their way out.
+    private ArrayList<View> mDisappearingChildren;
+
     // The set of views that are currently being transitioned. This list is used to track views
     // being removed that should not actually be removed from the parent yet because they are
     // being animated.
     private ArrayList<View> mTransitioningViews;
+
+    // List of children changing visibility. This is used to potentially keep rendering
+    // views during a transition when they otherwise would have become gone/invisible
+    private ArrayList<View> mVisibilityChangingChildren;
+
+    // Used to manage the list of transient views, added by addTransientView()
+    private IntArrayList mTransientIndices = null;
+    private List<View> mTransientViews = null;
 
     public ViewGroup() {
         mGroupFlags |= FLAG_CLIP_CHILDREN;
@@ -297,6 +326,40 @@ public abstract class ViewGroup extends View implements ViewParent {
         return handled;
     }
 
+    private void exitHoverTargets() {
+        if (mHoveredSelf || mFirstHoverTarget != null) {
+            final long now = RenderCore.timeNanos();
+            MotionEvent event = MotionEvent.obtain(now, now,
+                    MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
+            dispatchHoverEvent(event);
+            event.recycle();
+        }
+    }
+
+    private void cancelHoverTarget(View view) {
+        HoverTarget predecessor = null;
+        HoverTarget target = mFirstHoverTarget;
+        while (target != null) {
+            final HoverTarget next = target.next;
+            if (target.child == view) {
+                if (predecessor == null) {
+                    mFirstHoverTarget = next;
+                } else {
+                    predecessor.next = next;
+                }
+                target.recycle();
+
+                final long now = RenderCore.timeNanos();
+                MotionEvent event = MotionEvent.obtain(now, now,
+                        MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
+                view.dispatchHoverEvent(event);
+                event.recycle();
+                return;
+            }
+            predecessor = target;
+            target = next;
+        }
+    }
 
     /**
      * Dispatches a generic pointer event to a child, taking into account
@@ -531,6 +594,21 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
     }
 
+    private void cancelTouchTarget(View view) {
+        TouchTarget target = mTouchTarget;
+        if (target != null) {
+            if (target.child == view) {
+                target.recycle();
+
+                final long now = RenderCore.timeNanos();
+                MotionEvent event = MotionEvent.obtain(now, now,
+                        MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
+                view.dispatchTouchEvent(event);
+                event.recycle();
+            }
+        }
+    }
+
     @Override
     public boolean dispatchTouchEvent(@Nonnull MotionEvent ev) {
         boolean handled = false;
@@ -750,19 +828,174 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     /**
-     * Add a child view to the end of array with default layout params
+     * This method adds a view to this container at the specified index purely for the
+     * purposes of allowing that view to draw even though it is not a normal child of
+     * the container. That is, the view does not participate in layout, focus, accessibility,
+     * input, or other normal view operations; it is purely an item to be drawn during the normal
+     * rendering operation of this container. The index that it is added at is the order
+     * in which it will be drawn, with respect to the other views in the container.
+     * For example, a transient view added at index 0 will be drawn before all other views
+     * in the container because it will be drawn first (including before any real view
+     * at index 0). There can be more than one transient view at any particular index;
+     * these views will be drawn in the order in which they were added to the list of
+     * transient views. The index of transient views can also be greater than the number
+     * of normal views in the container; that just means that they will be drawn after all
+     * other views are drawn.
      *
-     * @param child child view to add
+     * <p>Note that since transient views do not participate in layout, they must be sized
+     * manually or, more typically, they should just use the size that they had before they
+     * were removed from their container.</p>
+     *
+     * <p>Transient views are useful for handling animations of views that have been removed
+     * from the container, but which should be animated out after the removal. Adding these
+     * views as transient views allows them to participate in drawing without side-effecting
+     * the layout of the container.</p>
+     *
+     * <p>Transient views must always be explicitly {@link #removeTransientView(View) removed}
+     * from the container when they are no longer needed. For example, a transient view
+     * which is added in order to fade it out in its old location should be removed
+     * once the animation is complete.</p>
+     *
+     * @param view  The view to be added. The view must not have a parent.
+     * @param index The index at which this view should be drawn, must be >= 0.
+     *              This value is relative to the {@link #getChildAt(int) index} values in the normal
+     *              child list of this container, where any transient view at a particular index will
+     *              be drawn before any normal child at that same index.
+     * @hide
+     */
+    public void addTransientView(View view, int index) {
+        if (index < 0 || view == null) {
+            return;
+        }
+        if (view.mParent != null) {
+            throw new IllegalStateException("The specified view already has a parent "
+                    + view.mParent);
+        }
+
+        if (mTransientIndices == null) {
+            mTransientIndices = new IntArrayList();
+            mTransientViews = new ArrayList<>();
+        }
+        final int oldSize = mTransientIndices.size();
+        if (oldSize > 0) {
+            int insertionIndex;
+            for (insertionIndex = 0; insertionIndex < oldSize; ++insertionIndex) {
+                if (index < mTransientIndices.get(insertionIndex)) {
+                    break;
+                }
+            }
+            mTransientIndices.add(insertionIndex, index);
+            mTransientViews.add(insertionIndex, view);
+        } else {
+            mTransientIndices.add(index);
+            mTransientViews.add(view);
+        }
+        view.mParent = this;
+        if (mAttachInfo != null) {
+            view.dispatchAttachedToWindow(mAttachInfo);
+        }
+        invalidate();
+    }
+
+    /**
+     * Removes a view from the list of transient views in this container. If there is no
+     * such transient view, this method does nothing.
+     *
+     * @param view The transient view to be removed
+     * @hide
+     */
+    public void removeTransientView(View view) {
+        if (mTransientViews == null) {
+            return;
+        }
+        final int size = mTransientViews.size();
+        for (int i = 0; i < size; ++i) {
+            if (view == mTransientViews.get(i)) {
+                mTransientViews.remove(i);
+                mTransientIndices.removeInt(i);
+                view.mParent = null;
+                if (view.mAttachInfo != null) {
+                    view.dispatchDetachedFromWindow();
+                }
+                invalidate();
+                return;
+            }
+        }
+    }
+
+    /**
+     * Returns the number of transient views in this container. Specific transient
+     * views and the index at which they were added can be retrieved via
+     * {@link #getTransientView(int)} and {@link #getTransientViewIndex(int)}.
+     *
+     * @return The number of transient views in this container
+     * @hide
+     * @see #addTransientView(View, int)
+     */
+    public int getTransientViewCount() {
+        return mTransientIndices == null ? 0 : mTransientIndices.size();
+    }
+
+    /**
+     * Given a valid position within the list of transient views, returns the index of
+     * the transient view at that position.
+     *
+     * @param position The position of the index being queried. Must be at least 0
+     *                 and less than the value returned by {@link #getTransientViewCount()}.
+     * @return The index of the transient view stored in the given position if the
+     * position is valid, otherwise -1
+     * @hide
+     */
+    public int getTransientViewIndex(int position) {
+        if (position < 0 || mTransientIndices == null || position >= mTransientIndices.size()) {
+            return -1;
+        }
+        return mTransientIndices.get(position);
+    }
+
+    /**
+     * Given a valid position within the list of transient views, returns the
+     * transient view at that position.
+     *
+     * @param position The position of the view being queried. Must be at least 0
+     *                 and less than the value returned by {@link #getTransientViewCount()}.
+     * @return The transient view stored in the given position if the
+     * position is valid, otherwise null
+     * @hide
+     */
+    public View getTransientView(int position) {
+        if (mTransientViews == null || position >= mTransientViews.size()) {
+            return null;
+        }
+        return mTransientViews.get(position);
+    }
+
+    /**
+     * <p>Adds a child view. If no layout parameters are already set on the child, the
+     * default parameters for this ViewGroup are set on the child.</p>
+     *
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     *
+     * @param child the child view to add
+     * @see #generateDefaultLayoutParams()
      */
     public void addView(@Nonnull View child) {
         addView(child, -1);
     }
 
     /**
-     * Add a child view to specified index of array with default layout params
+     * Adds a child view. If no layout parameters are already set on the child, the
+     * default parameters for this ViewGroup are set on the child.
      *
-     * @param child child view to add
-     * @param index target index
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     *
+     * @param child the child view to add
+     * @param index the position at which to add the child
+     * @see #generateDefaultLayoutParams()
      */
     public void addView(@Nonnull View child, int index) {
         LayoutParams params = child.getLayoutParams();
@@ -773,54 +1006,117 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     /**
-     * Add a child view to end of array with specified width and height
+     * Adds a child view with this ViewGroup's default layout parameters and the
+     * specified width and height.
      *
-     * @param child  child view to add
-     * @param width  view layout width
-     * @param height view layout height
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     *
+     * @param child the child view to add
      */
     public void addView(@Nonnull View child, int width, int height) {
-        LayoutParams params = generateDefaultLayoutParams();
+        final LayoutParams params = generateDefaultLayoutParams();
         params.width = width;
         params.height = height;
         addView(child, -1, params);
     }
 
     /**
-     * Add a child view to the end of array with specified layout params
+     * Adds a child view with the specified layout parameters.
      *
-     * @param child  child view to add
-     * @param params layout params of the view
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     *
+     * @param child  the child view to add
+     * @param params the layout parameters to set on the child
      */
     public void addView(@Nonnull View child, @Nonnull LayoutParams params) {
         addView(child, -1, params);
     }
 
     /**
-     * Add a child view to specified index of array with specified layout params
+     * Adds a child view with the specified layout parameters.
      *
-     * @param child  child view to add
-     * @param index  target index
-     * @param params layout params of the view
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     *
+     * @param child  the child view to add
+     * @param index  the position at which to add the child or -1 to add last
+     * @param params the layout parameters to set on the child
      */
     public void addView(@Nonnull View child, int index, @Nonnull LayoutParams params) {
-        addViewInner(child, index, params);
+        // addViewInner() will call child.requestLayout() when setting the new LayoutParams
+        // therefore, we call requestLayout() on ourselves before, so that the child's request
+        // will be blocked at our level
+        requestLayout();
+        invalidate();
+        addViewInner(child, index, params, false);
     }
 
-    private void addViewInner(@Nonnull final View child, int index, @Nonnull LayoutParams params) {
-        if (child.getParent() != null) {
-            ModernUI.LOGGER.fatal(VIEW_MARKER,
-                    "Failed to add child view {} to {}. The child has already a parent.", child, this);
-            return;
+    /**
+     * Adds a view during layout. This is useful if in your onLayout() method,
+     * you need to add more views (as does the list view for example).
+     * <p>
+     * If index is negative, it means put it at the end of the list.
+     *
+     * @param child  the view to add to the group
+     * @param index  the index at which the child must be added or -1 to add last
+     * @param params the layout parameters to associate with the child
+     * @return true if the child was added, false otherwise
+     */
+    protected boolean addViewInLayout(@Nonnull View child, int index, @Nonnull LayoutParams params) {
+        return addViewInLayout(child, index, params, false);
+    }
+
+    /**
+     * Adds a view during layout. This is useful if in your onLayout() method,
+     * you need to add more views (as does the list view for example).
+     * <p>
+     * If index is negative, it means put it at the end of the list.
+     *
+     * @param child                the view to add to the group
+     * @param index                the index at which the child must be added or -1 to add last
+     * @param params               the layout parameters to associate with the child
+     * @param preventRequestLayout if true, calling this method will not trigger a
+     *                             layout request on child
+     * @return true if the child was added, false otherwise
+     */
+    protected boolean addViewInLayout(@Nonnull View child, int index, @Nonnull LayoutParams params,
+                                      boolean preventRequestLayout) {
+        child.mParent = null;
+        addViewInner(child, index, params, preventRequestLayout);
+        return true;
+    }
+
+    private void addViewInner(@Nonnull final View child, int index, @Nonnull LayoutParams params,
+                              boolean preventRequestLayout) {
+        if (mTransition != null) {
+            // Don't prevent other add transitions from completing, but cancel remove
+            // transitions to let them complete the process before we add to the container
+            mTransition.cancel(LayoutTransition.DISAPPEARING);
         }
 
-        requestLayout();
+        if (child.getParent() != null) {
+            throw new IllegalStateException("The specified child already has a parent. " +
+                    "You must call removeView() on the child's parent first.");
+        }
+
+        if (mTransition != null) {
+            mTransition.addChild(this, child);
+        }
 
         if (!checkLayoutParams(params)) {
             params = generateLayoutParams(params);
         }
 
-        child.setLayoutParams(params);
+        if (preventRequestLayout) {
+            child.mLayoutParams = params;
+        } else {
+            child.setLayoutParams(params);
+        }
 
         if (index < 0) {
             index = mChildrenCount;
@@ -828,14 +1124,54 @@ public abstract class ViewGroup extends View implements ViewParent {
 
         addInArray(child, index);
 
-        child.assignParent(this);
+        // tell our children
+        if (preventRequestLayout) {
+            child.assignParent(this);
+        } else {
+            child.mParent = this;
+        }
 
         AttachInfo attachInfo = mAttachInfo;
-        if (attachInfo != null) {
+        if (attachInfo != null && (mGroupFlags & FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW) == 0) {
             child.dispatchAttachedToWindow(attachInfo);
+        }
+
+        if (mTransientIndices != null) {
+            final int transientCount = mTransientIndices.size();
+            for (int i = 0; i < transientCount; ++i) {
+                final int oldIndex = mTransientIndices.get(i);
+                if (index <= oldIndex) {
+                    mTransientIndices.set(i, oldIndex + 1);
+                }
+            }
         }
     }
 
+    /**
+     * Returns the position in the group of the specified child view.
+     *
+     * @param child the view for which to get the position
+     * @return a positive integer representing the position of the view in the
+     * group, or -1 if the view does not exist in the group
+     */
+    public int indexOfChild(View child) {
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            if (children[i] == child) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    /**
+     * Returns the view at the specified position in the group.
+     *
+     * @param index the position at which to get the view from
+     * @return the view at the specified position or null if the position
+     * does not exist within the group
+     */
     public View getChildAt(int index) {
         if (index < 0 || index >= mChildrenCount) {
             return null;
@@ -843,35 +1179,332 @@ public abstract class ViewGroup extends View implements ViewParent {
         return mChildren[index];
     }
 
+    /**
+     * Returns the number of children in the group.
+     *
+     * @return a positive integer representing the number of children in
+     * the group
+     */
     public int getChildCount() {
         return mChildrenCount;
     }
 
-    private void addInArray(@Nonnull View child, int index) {
-        View[] views = mChildren;
+    private void addInArray(View child, int index) {
+        View[] children = mChildren;
         final int count = mChildrenCount;
-        final int size = views.length;
+        final int size = children.length;
         if (index == count) {
             if (size == count) {
                 mChildren = new View[size + ARRAY_CAPACITY_INCREMENT];
-                System.arraycopy(views, 0, mChildren, 0, size);
-                views = mChildren;
+                System.arraycopy(children, 0, mChildren, 0, size);
+                children = mChildren;
             }
-            views[mChildrenCount++] = child;
+            children[mChildrenCount++] = child;
         } else if (index < count) {
             if (size == count) {
                 mChildren = new View[size + ARRAY_CAPACITY_INCREMENT];
-                System.arraycopy(views, 0, mChildren, 0, index);
-                System.arraycopy(views, index, mChildren, index + 1, count - index);
-                views = mChildren;
+                System.arraycopy(children, 0, mChildren, 0, index);
+                System.arraycopy(children, index, mChildren, index + 1, count - index);
+                children = mChildren;
             } else {
-                System.arraycopy(views, index, views, index + 1, count - index);
+                System.arraycopy(children, index, children, index + 1, count - index);
             }
-            views[index] = child;
+            children[index] = child;
             mChildrenCount++;
         } else {
             throw new IndexOutOfBoundsException("index=" + index + " count=" + count);
         }
+    }
+
+    // This method also sets the child's mParent to null
+    private void removeFromArray(int index) {
+        final View[] children = mChildren;
+        if (!(mTransitioningViews != null && mTransitioningViews.contains(children[index]))) {
+            children[index].mParent = null;
+        }
+        final int count = mChildrenCount;
+        if (index == count - 1) {
+            children[--mChildrenCount] = null;
+        } else if (index < count) {
+            System.arraycopy(children, index + 1, children, index, count - index - 1);
+            children[--mChildrenCount] = null;
+        } else {
+            throw new IndexOutOfBoundsException();
+        }
+    }
+
+    // This method also sets the children's mParent to null
+    private void removeFromArray(int start, int count) {
+        final View[] children = mChildren;
+        final int childrenCount = mChildrenCount;
+
+        start = Math.max(0, start);
+        final int end = Math.min(childrenCount, start + count);
+
+        if (start == end) {
+            return;
+        }
+
+        if (end == childrenCount) {
+            for (int i = start; i < end; i++) {
+                children[i].mParent = null;
+                children[i] = null;
+            }
+        } else {
+            for (int i = start; i < end; i++) {
+                children[i].mParent = null;
+            }
+
+            // Since we're looping above, we might as well do the copy, but is arraycopy()
+            // faster than the extra 2 bounds checks we would do in the loop?
+            System.arraycopy(children, end, children, start, childrenCount - end);
+
+            for (int i = childrenCount - (end - start); i < childrenCount; i++) {
+                children[i] = null;
+            }
+        }
+
+        mChildrenCount -= (end - start);
+    }
+
+    /**
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     */
+    public void removeView(View view) {
+        if (removeViewInternal(view)) {
+            requestLayout();
+            invalidate();
+        }
+    }
+
+    /**
+     * Removes a view during layout. This is useful if in your onLayout() method,
+     * you need to remove more views.
+     *
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     *
+     * @param view the view to remove from the group
+     */
+    public void removeViewInLayout(View view) {
+        removeViewInternal(view);
+    }
+
+    /**
+     * Removes a range of views during layout. This is useful if in your onLayout() method,
+     * you need to remove more views.
+     *
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     *
+     * @param start the index of the first view to remove from the group
+     * @param count the number of views to remove from the group
+     */
+    public void removeViewsInLayout(int start, int count) {
+        removeViewsInternal(start, count);
+    }
+
+    /**
+     * Removes the view at the specified position in the group.
+     *
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     *
+     * @param index the position in the group of the view to remove
+     */
+    public void removeViewAt(int index) {
+        removeViewInternal(index, getChildAt(index));
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Removes the specified range of views from the group.
+     *
+     * <p><strong>Note:</strong> do not invoke this method from
+     * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
+     * {@link #dispatchDraw(Canvas)} or any related method.</p>
+     *
+     * @param start the first position in the group of the range of views to remove
+     * @param count the number of views to remove
+     */
+    public void removeViews(int start, int count) {
+        removeViewsInternal(start, count);
+        requestLayout();
+        invalidate();
+    }
+
+    private boolean removeViewInternal(View view) {
+        final int index = indexOfChild(view);
+        if (index >= 0) {
+            removeViewInternal(index, view);
+            return true;
+        }
+        return false;
+    }
+
+    private void removeViewInternal(int index, View view) {
+        if (mTransition != null) {
+            mTransition.removeChild(this, view);
+        }
+
+        boolean clearChildFocus = false;
+        /*if (view == mFocused) {
+            view.unFocus(null);
+            clearChildFocus = true;
+        }
+        if (view == mFocusedInCluster) {
+            clearFocusedInCluster(view);
+        }*/
+
+        cancelTouchTarget(view);
+        cancelHoverTarget(view);
+
+        if (mTransitioningViews != null && mTransitioningViews.contains(view)) {
+            addDisappearingView(view);
+        } else if (view.mAttachInfo != null) {
+            view.dispatchDetachedFromWindow();
+        }
+
+        /*if (view.hasTransientState()) {
+            childHasTransientStateChanged(view, false);
+        }
+
+        needGlobalAttributesUpdate(false);*/
+
+        removeFromArray(index);
+
+        /*if (view.hasUnhandledKeyListener()) {
+            decrementChildUnhandledKeyListeners();
+        }
+
+        if (view == mDefaultFocus) {
+            clearDefaultFocus(view);
+        }
+        if (clearChildFocus) {
+            clearChildFocus(view);
+            if (!rootViewRequestFocus()) {
+                notifyGlobalFocusCleared(this);
+            }
+        }*/
+
+        //dispatchViewRemoved(view);
+
+        int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
+        for (int i = 0; i < transientCount; ++i) {
+            final int oldIndex = mTransientIndices.get(i);
+            if (index < oldIndex) {
+                mTransientIndices.set(i, oldIndex - 1);
+            }
+        }
+    }
+
+    /**
+     * Sets the LayoutTransition object for this ViewGroup. If the LayoutTransition object is
+     * not null, changes in layout which occur because of children being added to or removed from
+     * the ViewGroup will be animated according to the animations defined in that LayoutTransition
+     * object. By default, the transition object is null (so layout changes are not animated).
+     *
+     * <p>Replacing a non-null transition will cause that previous transition to be
+     * canceled, if it is currently running, to restore this container to
+     * its correct post-transition state.</p>
+     *
+     * @param transition The LayoutTransition object that will animated changes in layout. A value
+     *                   of <code>null</code> means no transition will run on layout changes.
+     */
+    public void setLayoutTransition(LayoutTransition transition) {
+        if (mTransition != null) {
+            LayoutTransition previousTransition = mTransition;
+            previousTransition.cancel();
+            previousTransition.removeTransitionListener(mLayoutTransitionListener);
+        }
+        mTransition = transition;
+        if (mTransition != null) {
+            mTransition.addTransitionListener(mLayoutTransitionListener);
+        }
+    }
+
+    /**
+     * Gets the LayoutTransition object for this ViewGroup. If the LayoutTransition object is
+     * not null, changes in layout which occur because of children being added to or removed from
+     * the ViewGroup will be animated according to the animations defined in that LayoutTransition
+     * object. By default, the transition object is null (so layout changes are not animated).
+     *
+     * @return LayoutTranstion The LayoutTransition object that will animated changes in layout.
+     * A value of <code>null</code> means no transition will run on layout changes.
+     */
+    public LayoutTransition getLayoutTransition() {
+        return mTransition;
+    }
+
+    private void removeViewsInternal(int start, int count) {
+        final int end = start + count;
+
+        if (start < 0 || count < 0 || end > mChildrenCount) {
+            throw new IndexOutOfBoundsException();
+        }
+
+        //final View focused = mFocused;
+        final boolean detach = mAttachInfo != null;
+        boolean clearChildFocus = false;
+        View clearDefaultFocus = null;
+
+        final View[] children = mChildren;
+
+        for (int i = start; i < end; i++) {
+            final View view = children[i];
+
+            if (mTransition != null) {
+                mTransition.removeChild(this, view);
+            }
+
+            /*if (view == focused) {
+                view.unFocus(null);
+                clearChildFocus = true;
+            }
+            if (view == mDefaultFocus) {
+                clearDefaultFocus = view;
+            }
+            if (view == mFocusedInCluster) {
+                clearFocusedInCluster(view);
+            }
+
+            view.clearAccessibilityFocus();*/
+
+            cancelTouchTarget(view);
+            cancelHoverTarget(view);
+
+            if (mTransitioningViews != null && mTransitioningViews.contains(view)) {
+                addDisappearingView(view);
+            } else if (detach) {
+                view.dispatchDetachedFromWindow();
+            }
+
+            /*if (view.hasTransientState()) {
+                childHasTransientStateChanged(view, false);
+            }
+
+            needGlobalAttributesUpdate(false);
+
+            dispatchViewRemoved(view);*/
+        }
+
+        removeFromArray(start, count);
+
+        /*if (clearDefaultFocus != null) {
+            clearDefaultFocus(clearDefaultFocus);
+        }
+        if (clearChildFocus) {
+            clearChildFocus(focused);
+            if (!rootViewRequestFocus()) {
+                notifyGlobalFocusCleared(focused);
+            }
+        }*/
     }
 
     /**
@@ -885,6 +1518,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     public void removeAllViews() {
         removeAllViewsInLayout();
         requestLayout();
+        invalidate();
     }
 
     /**
@@ -909,43 +1543,42 @@ public abstract class ViewGroup extends View implements ViewParent {
         final View[] children = mChildren;
         mChildrenCount = 0;
 
-        /*final View focused = mFocused;
+        //final View focused = mFocused;
         final boolean detach = mAttachInfo != null;
-        boolean clearChildFocus = false;
+        /*boolean clearChildFocus = false;
 
         needGlobalAttributesUpdate(false);*/
 
         for (int i = count - 1; i >= 0; i--) {
             final View view = children[i];
 
-            /*if (mTransition != null) {
+            if (mTransition != null) {
                 mTransition.removeChild(this, view);
             }
 
-            if (view == focused) {
+            /*if (view == focused) {
                 view.unFocus(null);
                 clearChildFocus = true;
             }
 
-            view.clearAccessibilityFocus();
+            view.clearAccessibilityFocus();*/
 
             cancelTouchTarget(view);
             cancelHoverTarget(view);
 
-            if (view.getAnimation() != null ||
-                    (mTransitioningViews != null && mTransitioningViews.contains(view))) {
+            if ((mTransitioningViews != null && mTransitioningViews.contains(view))) {
                 addDisappearingView(view);
             } else if (detach) {
                 view.dispatchDetachedFromWindow();
             }
 
-            if (view.hasTransientState()) {
+            /*if (view.hasTransientState()) {
                 childHasTransientStateChanged(view, false);
             }
 
-            dispatchViewRemoved(view);
+            dispatchViewRemoved(view);*/
 
-            view.mParent = null;*/
+            view.mParent = null;
             children[i] = null;
         }
 
@@ -962,7 +1595,6 @@ public abstract class ViewGroup extends View implements ViewParent {
             }
         }*/
     }
-
 
     @SuppressWarnings("unchecked")
     @Nullable
@@ -1095,6 +1727,218 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     /**
+     * This method is called by LayoutTransition when there are 'changing' animations that need
+     * to start after the layout/setup phase. The request is forwarded to the ViewAncestor, who
+     * starts all pending transitions prior to the drawing phase in the current traversal.
+     *
+     * @param transition The LayoutTransition to be started on the next traversal.
+     *
+     * @hide
+     */
+    public void requestTransitionStart(LayoutTransition transition) {
+        ViewRootImpl viewAncestor = mAttachInfo != null ? mAttachInfo.mViewRootImpl : null;
+        if (viewAncestor != null) {
+            viewAncestor.requestTransitionStart(transition);
+        }
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    public boolean resolveRtlProperties() {
+        final boolean result = super.resolveRtlProperties();
+        // We dont need to resolve the children RTL properties if nothing has changed for the parent
+        if (result) {
+            int count = getChildCount();
+            for (int i = 0; i < count; i++) {
+                final View child = getChildAt(i);
+                if (child.isLayoutDirectionInherited()) {
+                    child.resolveRtlProperties();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    public boolean resolveLayoutDirection() {
+        final boolean result = super.resolveLayoutDirection();
+        if (result) {
+            int count = getChildCount();
+            for (int i = 0; i < count; i++) {
+                final View child = getChildAt(i);
+                if (child.isLayoutDirectionInherited()) {
+                    child.resolveLayoutDirection();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    public boolean resolveTextDirection() {
+        final boolean result = super.resolveTextDirection();
+        if (result) {
+            int count = getChildCount();
+            for (int i = 0; i < count; i++) {
+                final View child = getChildAt(i);
+                if (child.isTextDirectionInherited()) {
+                    child.resolveTextDirection();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    public boolean resolveTextAlignment() {
+        final boolean result = super.resolveTextAlignment();
+        if (result) {
+            int count = getChildCount();
+            for (int i = 0; i < count; i++) {
+                final View child = getChildAt(i);
+                if (child.isTextAlignmentInherited()) {
+                    child.resolveTextAlignment();
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    public void resolvePadding() {
+        super.resolvePadding();
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            final View child = getChildAt(i);
+            if (child.isLayoutDirectionInherited() && !child.isPaddingResolved()) {
+                child.resolvePadding();
+            }
+        }
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    protected void resolveDrawables() {
+        super.resolveDrawables();
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            final View child = getChildAt(i);
+            if (child.isLayoutDirectionInherited() && !child.areDrawablesResolved()) {
+                child.resolveDrawables();
+            }
+        }
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    public void resolveLayoutParams() {
+        super.resolveLayoutParams();
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            final View child = getChildAt(i);
+            child.resolveLayoutParams();
+        }
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    void resetResolvedLayoutDirection() {
+        super.resetResolvedLayoutDirection();
+
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            final View child = getChildAt(i);
+            if (child.isLayoutDirectionInherited()) {
+                child.resetResolvedLayoutDirection();
+            }
+        }
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    void resetResolvedTextDirection() {
+        super.resetResolvedTextDirection();
+
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            final View child = getChildAt(i);
+            if (child.isTextDirectionInherited()) {
+                child.resetResolvedTextDirection();
+            }
+        }
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    void resetResolvedTextAlignment() {
+        super.resetResolvedTextAlignment();
+
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            final View child = getChildAt(i);
+            if (child.isTextAlignmentInherited()) {
+                child.resetResolvedTextAlignment();
+            }
+        }
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    void resetResolvedPadding() {
+        super.resetResolvedPadding();
+
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            final View child = getChildAt(i);
+            if (child.isLayoutDirectionInherited()) {
+                child.resetResolvedPadding();
+            }
+        }
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    protected void resetResolvedDrawables() {
+        super.resetResolvedDrawables();
+
+        int count = getChildCount();
+        for (int i = 0; i < count; i++) {
+            final View child = getChildAt(i);
+            if (child.isLayoutDirectionInherited()) {
+                child.resetResolvedDrawables();
+            }
+        }
+    }
+
+    /**
      * Returns whether this group's children are clipped to their bounds before drawing.
      * The default value is true.
      *
@@ -1142,7 +1986,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     }*/
 
     /**
-     * Ask all of the children of this view to measure themselves, taking into
+     * Ask all the children of this view to measure themselves, taking into
      * account both the MeasureSpec requirements for this view and its padding.
      * We skip children that are in the GONE state The heavy lifting is done in
      * getChildMeasureSpec.
@@ -1299,6 +2143,38 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     /**
+     * Removes any pending animations for views that have been removed. Call
+     * this if you don't want animations for exiting views to stack up.
+     */
+    public void clearDisappearingChildren() {
+        final ArrayList<View> disappearingChildren = mDisappearingChildren;
+        if (disappearingChildren != null) {
+            for (View view : disappearingChildren) {
+                if (view.mAttachInfo != null) {
+                    view.dispatchDetachedFromWindow();
+                }
+            }
+            disappearingChildren.clear();
+            invalidate();
+        }
+    }
+
+    /**
+     * Add a view which is removed from mChildren but still needs animation
+     *
+     * @param v View to add
+     */
+    private void addDisappearingView(View v) {
+        ArrayList<View> disappearingChildren = mDisappearingChildren;
+
+        if (disappearingChildren == null) {
+            disappearingChildren = mDisappearingChildren = new ArrayList<>();
+        }
+
+        disappearingChildren.add(v);
+    }
+
+    /**
      * Utility function called by View during invalidation to determine whether a view that
      * is invisible or gone should still be invalidated because it is being transitioned (and
      * therefore still needs to be drawn).
@@ -1307,12 +2183,156 @@ public abstract class ViewGroup extends View implements ViewParent {
         return (mTransitioningViews != null && mTransitioningViews.contains(view));
     }
 
+    /**
+     * This method tells the ViewGroup that the given View object, which should have this
+     * ViewGroup as its parent,
+     * should be kept around  (re-displayed when the ViewGroup draws its children) even if it
+     * is removed from its parent. This allows animations, such as those used by
+     * {@link icyllis.modernui.fragment.Fragment} and {@link LayoutTransition} to animate
+     * the removal of views. A call to this method should always be accompanied by a later call
+     * to {@link #endViewTransition(View)}, such as after an animation on the View has finished,
+     * so that the View finally gets removed.
+     *
+     * @param view The View object to be kept visible even if it gets removed from its parent.
+     */
+    public void startViewTransition(@Nonnull View view) {
+        if (view.mParent == this) {
+            if (mTransitioningViews == null) {
+                mTransitioningViews = new ArrayList<>();
+            }
+            mTransitioningViews.add(view);
+        }
+    }
+
+    /**
+     * This method should always be called following an earlier call to
+     * {@link #startViewTransition(View)}. The given View is finally removed from its parent
+     * and will no longer be displayed. Note that this method does not perform the functionality
+     * of removing a view from its parent; it just discontinues the display of a View that
+     * has previously been removed.
+     *
+     * @param view The View object that has been removed but is being kept around in the visible
+     *             hierarchy by an earlier call to {@link #startViewTransition(View)}.
+     */
+    public void endViewTransition(View view) {
+        if (mTransitioningViews != null) {
+            mTransitioningViews.remove(view);
+            final ArrayList<View> disappearingChildren = mDisappearingChildren;
+            if (disappearingChildren != null && disappearingChildren.contains(view)) {
+                disappearingChildren.remove(view);
+                if (mVisibilityChangingChildren != null &&
+                        mVisibilityChangingChildren.contains(view)) {
+                    mVisibilityChangingChildren.remove(view);
+                } else {
+                    if (view.mAttachInfo != null) {
+                        view.dispatchDetachedFromWindow();
+                    }
+                    if (view.mParent != null) {
+                        view.mParent = null;
+                    }
+                }
+                invalidate();
+            }
+        }
+    }
+
+    private final LayoutTransition.TransitionListener mLayoutTransitionListener =
+            new LayoutTransition.TransitionListener() {
+                @Override
+                public void startTransition(LayoutTransition transition, ViewGroup container,
+                                            View view, int transitionType) {
+                    // We only care about disappearing items, since we need special logic to keep
+                    // those items visible after they've been 'removed'
+                    if (transitionType == LayoutTransition.DISAPPEARING) {
+                        startViewTransition(view);
+                    }
+                }
+
+                @Override
+                public void endTransition(LayoutTransition transition, ViewGroup container,
+                                          View view, int transitionType) {
+                    if (mLayoutCalledWhileSuppressed && !transition.isChangingLayout()) {
+                        requestLayout();
+                        mLayoutCalledWhileSuppressed = false;
+                    }
+                    if (transitionType == LayoutTransition.DISAPPEARING && mTransitioningViews != null) {
+                        endViewTransition(view);
+                    }
+                }
+            };
+
+    /**
+     * Tells this ViewGroup to suppress all layout() calls until layout
+     * suppression is disabled with a later call to suppressLayout(false).
+     * When layout suppression is disabled, a requestLayout() call is sent
+     * if layout() was attempted while layout was being suppressed.
+     */
+    public void suppressLayout(boolean suppress) {
+        mSuppressLayout = suppress;
+        if (!suppress) {
+            if (mLayoutCalledWhileSuppressed) {
+                requestLayout();
+                mLayoutCalledWhileSuppressed = false;
+            }
+        }
+    }
+
+    /**
+     * Returns whether layout calls on this container are currently being
+     * suppressed, due to an earlier call to {@link #suppressLayout(boolean)}.
+     *
+     * @return true if layout calls are currently suppressed, false otherwise.
+     */
+    public boolean isLayoutSuppressed() {
+        return mSuppressLayout;
+    }
+
     @Override
     final void dispatchAttachedToWindow(AttachInfo info) {
+        mGroupFlags |= FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
         super.dispatchAttachedToWindow(info);
-        for (int i = 0; i < mChildrenCount; i++) {
-            mChildren[i].dispatchAttachedToWindow(info);
+        mGroupFlags &= ~FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
+
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            final View child = children[i];
+            child.dispatchAttachedToWindow(info);
         }
+        final int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
+        for (int i = 0; i < transientCount; ++i) {
+            View view = mTransientViews.get(i);
+            view.dispatchAttachedToWindow(info);
+        }
+    }
+
+    @Override
+    final void dispatchDetachedFromWindow() {
+        // If we still have a touch target, we are still in the process of
+        // dispatching motion events to a child; we need to get rid of that
+        // child to avoid dispatching events to it after the window is torn
+        // down. To make sure we keep the child in a consistent state, we
+        // first send it an ACTION_CANCEL motion event.
+        cancelAndClearTouchTargets(null);
+
+        // Similarly, set ACTION_EXIT to all hover targets and clear them.
+        exitHoverTargets();
+
+        // In case view is detached while transition is running
+        mLayoutCalledWhileSuppressed = false;
+
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchDetachedFromWindow();
+        }
+        clearDisappearingChildren();
+        final int transientCount = mTransientViews == null ? 0 : mTransientIndices.size();
+        for (int i = 0; i < transientCount; ++i) {
+            View view = mTransientViews.get(i);
+            view.dispatchDetachedFromWindow();
+        }
+        super.dispatchDetachedFromWindow();
     }
 
     @Override
@@ -1346,7 +2366,7 @@ public abstract class ViewGroup extends View implements ViewParent {
      * when the View passed to {@link #addView(View)} has no layout parameters
      * already set. If null is returned, an exception is thrown from addView.
      *
-     * @return a set of default layout parameters or null
+     * @return a set of default layout parameters
      */
     @Nonnull
     protected LayoutParams generateDefaultLayoutParams() {
