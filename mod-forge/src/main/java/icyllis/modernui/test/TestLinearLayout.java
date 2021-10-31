@@ -18,16 +18,15 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.animation.Animator;
-import icyllis.modernui.animation.FloatProperty;
-import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.animation.ObjectAnimator;
+import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.mcgui.Animation;
 import icyllis.modernui.mcgui.Applier;
-import icyllis.modernui.text.*;
+import icyllis.modernui.text.Editable;
+import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.text.SpannableStringBuilder;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
@@ -125,6 +124,10 @@ public class TestLinearLayout extends LinearLayout {
         TextView tv = new TextView();
         tv.setText(editable);
         tv.setId(6679);
+        tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        postDelayed(() -> addView(tv, 2), 5000);
 
         for (int i = 0; i < 8; i++) {
             View v;
@@ -133,9 +136,7 @@ public class TestLinearLayout extends LinearLayout {
                 v = new SwitchButton();
                 p = new LinearLayout.LayoutParams(c.getViewSize(100), c.getViewSize(36));
             } else if (i == 2) {
-                v = tv;
-                p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT);
+                continue;
             } else {
                 v = new CView();
                 p = new LinearLayout.LayoutParams(c.getViewSize(200), c.getViewSize(36));
@@ -196,6 +197,8 @@ public class TestLinearLayout extends LinearLayout {
 
         roundRectAlphaAni = new Animation(250)
                 .applyTo(new Applier(0, 1, () -> roundRectAlpha, v -> roundRectAlpha = v));
+
+        setLayoutTransition(new LayoutTransition());
     }
 
     private static final FloatProperty<TestLinearLayout> sRoundRectLengthProp = new FloatProperty<>() {

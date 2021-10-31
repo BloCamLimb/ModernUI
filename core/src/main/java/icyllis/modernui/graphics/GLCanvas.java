@@ -858,20 +858,23 @@ public final class GLCanvas extends Canvas {
         }
         Deque<SaveState> stack = mSaveStates;
 
-        SaveState s = stack.pop();
-        final int topRef = s.mRefVal;
-        sSaveStatePool.release(s);
+        SaveState lastPop = stack.pop();
+        final int topRef = lastPop.mRefVal;
+        final int topBuf = lastPop.mColorBuf;
+        sSaveStatePool.release(lastPop);
 
         while (stack.size() > saveCount) {
-            s = stack.pop();
-            if (s.mColorBuf != getSaveState().mColorBuf) {
-                restoreLayer();
-            }
-            sSaveStatePool.release(s);
+            lastPop = stack.pop();
+            sSaveStatePool.release(lastPop);
         }
 
         if (topRef != getSaveState().mRefVal) {
-            restoreClipBatch(s.mBounds);
+            restoreClipBatch(lastPop.mBounds);
+        }
+
+        int bufDiff = topBuf - getSaveState().mColorBuf;
+        while (bufDiff-- > 0) {
+            restoreLayer();
         }
     }
 

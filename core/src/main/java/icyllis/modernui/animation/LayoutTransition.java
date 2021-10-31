@@ -20,14 +20,67 @@ package icyllis.modernui.animation;
 
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewParent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
+/**
+ * This class enables automatic animations on layout changes in ViewGroup objects. To enable
+ * transitions for a layout container, create a LayoutTransition object and set it on any
+ * ViewGroup by calling {@link ViewGroup#setLayoutTransition(LayoutTransition)}. This will cause
+ * default animations to run whenever items are added to or removed from that container. To specify
+ * custom animations, use the {@link LayoutTransition#setAnimator(int, Animator)
+ * setAnimator()} method.
+ *
+ * <p>One of the core concepts of these transition animations is that there are two types of
+ * changes that cause the transition and four different animations that run because of
+ * those changes. The changes that trigger the transition are items being added to a container
+ * (referred to as an "appearing" transition) or removed from a container (also known as
+ * "disappearing"). Setting the visibility of views (between GONE and VISIBLE) will trigger
+ * the same add/remove logic. The animations that run due to those events are one that animates
+ * items being added, one that animates items being removed, and two that animate the other
+ * items in the container that change due to the add/remove occurrence. Users of
+ * the transition may want different animations for the changing items depending on whether
+ * they are changing due to an appearing or disappearing event, so there is one animation for
+ * each of these variations of the changing event. Most of the API of this class is concerned
+ * with setting up the basic properties of the animations used in these four situations,
+ * or with setting up custom animations for any or all of the four.</p>
+ *
+ * <p>By default, the DISAPPEARING animation begins immediately, as does the CHANGE_APPEARING
+ * animation. The other animations begin after a delay that is set to the default duration
+ * of the animations. This behavior facilitates a sequence of animations in transitions as
+ * follows: when an item is being added to a layout, the other children of that container will
+ * move first (thus creating space for the new item), then the appearing animation will run to
+ * animate the item being added. Conversely, when an item is removed from a container, the
+ * animation to remove it will run first, then the animations of the other children in the
+ * layout will run (closing the gap created in the layout when the item was removed). If this
+ * default choreography behavior is not desired, the {@link #setDuration(int, long)} and
+ * {@link #setStartDelay(int, long)} of any or all of the animations can be changed as
+ * appropriate. Keep in mind, however, that if you start an APPEARING animation before a
+ * DISAPPEARING animation is completed, the DISAPPEARING animation stops, and any effects from
+ * the DISAPPEARING animation are reverted. If you instead start a DISAPPEARING animation
+ * before an APPEARING animation is completed, a similar set of effects occurs for the
+ * APPEARING animation.</p>
+ *
+ * <p>The animations specified for the transition, both the defaults and any custom animations
+ * set on the transition object, are templates only. That is, these animations exist to hold the
+ * basic animation properties, such as the duration, start delay, and properties being animated.
+ * But the actual target object, as well as the start and end values for those properties, are
+ * set automatically in the process of setting up the transition each time it runs. Each of the
+ * animations is cloned from the original copy and the clone is then populated with the dynamic
+ * values of the target being animated (such as one of the items in a layout container that is
+ * moving as a result of the layout event) as well as the values that are changing (such as the
+ * position and size of that object). The actual values that are pushed to each animation
+ * depends on what properties are specified for the animation. For example, the default
+ * CHANGE_APPEARING animation animates the <code>left</code>, <code>top</code>, <code>right</code>,
+ * <code>bottom</code>, <code>scrollX</code>, and <code>scrollY</code> properties.
+ * Values for these properties are updated with the pre- and post-layout
+ * values when the transition begins. Custom animations will be similarly populated with
+ * the target and values being animated, assuming they use ObjectAnimator objects with
+ * property names that are known on the target object.</p>
+ */
 public class LayoutTransition {
 
     /**
@@ -76,8 +129,8 @@ public class LayoutTransition {
      * These are the default animations, defined in the constructor, that will be used
      * unless the user specifies custom animations.
      */
-    private static volatile ObjectAnimator defaultChange;
-    private static ObjectAnimator defaultChangeIn;
+    private static ObjectAnimator defaultChange;
+    private static volatile ObjectAnimator defaultChangeIn;
     private static ObjectAnimator defaultChangeOut;
     private static ObjectAnimator defaultFadeIn;
     private static ObjectAnimator defaultFadeOut;
@@ -199,9 +252,9 @@ public class LayoutTransition {
      * type of layout event.
      */
     public LayoutTransition() {
-        if (defaultChange == null) {
+        if (defaultChangeIn == null) {
             synchronized (LayoutTransition.class) {
-                if (defaultChange == null) {
+                if (defaultChangeIn == null) {
                     initDefaultAnimators();
                 }
             }
@@ -594,6 +647,124 @@ public class LayoutTransition {
     }
 
     /**
+     * This function sets up animations on all of the views that change during layout.
+     * For every child in the parent, we create a change animation of the appropriate
+     * type (appearing, disappearing, or changing) and ask it to populate its start values from its
+     * target view. We add layout listeners to all child views and listen for changes. For
+     * those views that change, we populate the end values for those animations and start them.
+     * Animations are not run on unchanging views.
+     *
+     * @param parent       The container which is undergoing a change.
+     * @param newView      The view being added to or removed from the parent. May be null if the
+     *                     changeReason is CHANGING.
+     * @param changeReason A value of APPEARING, DISAPPEARING, or CHANGING, indicating whether the
+     *                     transition is occurring because an item is being added to or removed from the parent, or
+     *                     if it is running in response to a layout operation (that is, if the value is CHANGING).
+     */
+    private void runChangeTransition(final ViewGroup parent, View newView, final int changeReason) {
+        Animator baseAnimator = null;
+        Animator parentAnimator = null;
+        final long duration;
+        switch (changeReason) {
+            case APPEARING -> {
+                baseAnimator = mChangingAppearingAnim;
+                duration = mChangingAppearingDuration;
+                parentAnimator = defaultChangeIn;
+            }
+            case DISAPPEARING -> {
+                baseAnimator = mChangingDisappearingAnim;
+                duration = mChangingDisappearingDuration;
+                parentAnimator = defaultChangeOut;
+            }
+            case CHANGING -> {
+                baseAnimator = mChangingAnim;
+                duration = mChangingDuration;
+                parentAnimator = defaultChange;
+            }
+            default -> duration = 0;
+        }
+        // If the animation is null, there's nothing to do
+        if (baseAnimator == null) {
+            return;
+        }
+
+        // reset the inter-animation delay, in case we use it later
+        staggerDelay = 0;
+
+        //FIXME
+        /*final ViewTreeObserver observer = parent.getViewTreeObserver();
+        if (!observer.isAlive()) {
+            // If the observer's not in a good state, skip the transition
+            return;
+        }*/
+        int numChildren = parent.getChildCount();
+
+        for (int i = 0; i < numChildren; ++i) {
+            final View child = parent.getChildAt(i);
+
+            // only animate the views not being added or removed
+            if (child != newView) {
+                setupChangeAnimation(parent, changeReason, baseAnimator, duration, child);
+            }
+        }
+        if (mAnimateParentHierarchy) {
+            ViewGroup tempParent = parent;
+            while (tempParent != null) {
+                ViewParent parentParent = tempParent.getParent();
+                if (parentParent instanceof ViewGroup) {
+                    setupChangeAnimation((ViewGroup) parentParent, changeReason, parentAnimator,
+                            duration, tempParent);
+                    tempParent = (ViewGroup) parentParent;
+                } else {
+                    tempParent = null;
+                }
+
+            }
+        }
+
+        // This is the cleanup step. When we get this rendering event, we know that all of
+        // the appropriate animations have been set up and run. Now we can clear out the
+        // layout listeners.
+        //FIXME
+        /*CleanupCallback callback = new CleanupCallback(layoutChangeListenerMap, parent);
+        observer.addOnPreDrawListener(callback);
+        parent.addOnAttachStateChangeListener(callback);*/
+        parent.post(() -> {
+            int count = layoutChangeListenerMap.size();
+            if (count > 0) {
+                Collection<View> views = layoutChangeListenerMap.keySet();
+                for (View view : views) {
+                    View.OnLayoutChangeListener listener = layoutChangeListenerMap.get(view);
+                    view.removeOnLayoutChangeListener(listener);
+                }
+                layoutChangeListenerMap.clear();
+            }
+        });
+    }
+
+    /**
+     * This flag controls whether CHANGE_APPEARING or CHANGE_DISAPPEARING animations will
+     * cause the default changing animation to be run on the parent hierarchy as well. This allows
+     * containers of transitioning views to also transition, which may be necessary in situations
+     * where the containers bounds change between the before/after states and may clip their
+     * children during the transition animations. For example, layouts with wrap_content will
+     * adjust their bounds according to the dimensions of their children.
+     *
+     * <p>The default changing transitions animate the bounds and scroll positions of the
+     * target views. These are the animations that will run on the parent hierarchy, not
+     * the custom animations that happen to be set on the transition. This allows custom
+     * behavior for the children of the transitioning container, but uses standard behavior
+     * of resizing/rescrolling on any changing parents.
+     *
+     * @param animateParentHierarchy A boolean value indicating whether the parents of
+     *                               transitioning views should also be animated during the transition. Default value is
+     *                               true.
+     */
+    public void setAnimateParentHierarchy(boolean animateParentHierarchy) {
+        mAnimateParentHierarchy = animateParentHierarchy;
+    }
+
+    /**
      * Utility function called by runChangingTransition for both the children and the parent
      * hierarchy.
      */
@@ -654,15 +825,15 @@ public class LayoutTransition {
         // Add a listener to track layout changes on this view. If we don't get a callback,
         // then there's nothing to animate.
         final View.OnLayoutChangeListener listener = new View.OnLayoutChangeListener() {
+            @Override
             public void onLayoutChange(View v, int left, int top, int right, int bottom,
                                        int oldLeft, int oldTop, int oldRight, int oldBottom) {
 
                 // Tell the animation to extract end values from the changed object
                 anim.setupEndValues();
-                if (anim instanceof ObjectAnimator valueAnim) {
+                if (anim instanceof final ObjectAnimator anim) {
                     boolean valuesDiffer = false;
-                    PropertyValuesHolder<Object, ?, ?>[] oldValues = valueAnim.getValues();
-                    for (PropertyValuesHolder<Object, ?, ?> pvh : oldValues) {
+                    for (var pvh : anim.getValues()) {
                         if (pvh.mKeyframes instanceof KeyframeSet) {
                             Keyframe[] keyframes = ((KeyframeSet<?>) pvh.mKeyframes).mKeyframes;
                             if (!keyframes[0].getValue().equals(
@@ -717,8 +888,7 @@ public class LayoutTransition {
                 // Cache the animation in case we need to cancel it later
                 currentChangingAnimations.put(child, anim);
 
-                //FIXME?
-                //parent.requestTransitionStart(LayoutTransition.this);
+                parent.requestTransitionStart(LayoutTransition.this);
 
                 // this only removes listeners whose views changed - must clear the
                 // other listeners later
@@ -773,6 +943,48 @@ public class LayoutTransition {
     }
 
     /**
+     * Starts the animations set up for a CHANGING transition. We separate the setup of these
+     * animations from actually starting them, to avoid side-effects that starting the animations
+     * may have on the properties of the affected objects. After setup, we tell the affected parent
+     * that this transition should be started. The parent informs its ViewAncestor, which then
+     * starts the transition after the current layout/measurement phase, just prior to drawing
+     * the view hierarchy.
+     *
+     * @hide
+     */
+    @SuppressWarnings("unchecked")
+    public void startChangingAnimations() {
+        LinkedHashMap<View, Animator> currentAnimCopy =
+                (LinkedHashMap<View, Animator>) currentChangingAnimations.clone();
+        for (Animator anim : currentAnimCopy.values()) {
+            if (anim instanceof ObjectAnimator) {
+                ((ObjectAnimator) anim).setCurrentPlayTime(0);
+            }
+            anim.start();
+        }
+    }
+
+    /**
+     * Ends the animations that are set up for a CHANGING transition. This is a variant of
+     * startChangingAnimations() which is called when the window the transition is playing in
+     * is not visible. We need to make sure the animations put their targets in their end states
+     * and that the transition finishes to remove any mid-process state (such as isRunning()).
+     *
+     * @hide
+     */
+    @SuppressWarnings("unchecked")
+    public void endChangingAnimations() {
+        LinkedHashMap<View, Animator> currentAnimCopy =
+                (LinkedHashMap<View, Animator>) currentChangingAnimations.clone();
+        for (Animator anim : currentAnimCopy.values()) {
+            anim.start();
+            anim.end();
+        }
+        // listeners should clean up the currentChangingAnimations list, but just in case...
+        currentChangingAnimations.clear();
+    }
+
+    /**
      * Returns true if animations are running which animate layout-related properties. This
      * essentially means that either CHANGE_APPEARING or CHANGE_DISAPPEARING animations
      * are running, since these animations operate on layout-related properties.
@@ -794,8 +1006,356 @@ public class LayoutTransition {
                 currentDisappearingAnimations.size() > 0);
     }
 
+    /**
+     * Cancels the currently running transition. Note that we cancel() the changing animations
+     * but end() the visibility animations. This is because this method is currently called
+     * in the context of starting a new transition, so we want to move things from their mid-
+     * transition positions, but we want them to have their end-transition visibility.
+     *
+     * @hide
+     */
+    @SuppressWarnings("unchecked")
+    public void cancel() {
+        if (currentChangingAnimations.size() > 0) {
+            LinkedHashMap<View, Animator> currentAnimCopy =
+                    (LinkedHashMap<View, Animator>) currentChangingAnimations.clone();
+            for (Animator anim : currentAnimCopy.values()) {
+                anim.cancel();
+            }
+            currentChangingAnimations.clear();
+        }
+        if (currentAppearingAnimations.size() > 0) {
+            LinkedHashMap<View, Animator> currentAnimCopy =
+                    (LinkedHashMap<View, Animator>) currentAppearingAnimations.clone();
+            for (Animator anim : currentAnimCopy.values()) {
+                anim.end();
+            }
+            currentAppearingAnimations.clear();
+        }
+        if (currentDisappearingAnimations.size() > 0) {
+            LinkedHashMap<View, Animator> currentAnimCopy =
+                    (LinkedHashMap<View, Animator>) currentDisappearingAnimations.clone();
+            for (Animator anim : currentAnimCopy.values()) {
+                anim.end();
+            }
+            currentDisappearingAnimations.clear();
+        }
+    }
+
+    /**
+     * Cancels the specified type of transition. Note that we cancel() the changing animations
+     * but end() the visibility animations. This is because this method is currently called
+     * in the context of starting a new transition, so we want to move things from their mid-
+     * transition positions, but we want them to have their end-transition visibility.
+     *
+     * @hide
+     */
+    @SuppressWarnings("unchecked")
+    public void cancel(int transitionType) {
+        switch (transitionType) {
+            case CHANGE_APPEARING:
+            case CHANGE_DISAPPEARING:
+            case CHANGING:
+                if (currentChangingAnimations.size() > 0) {
+                    LinkedHashMap<View, Animator> currentAnimCopy =
+                            (LinkedHashMap<View, Animator>) currentChangingAnimations.clone();
+                    for (Animator anim : currentAnimCopy.values()) {
+                        anim.cancel();
+                    }
+                    currentChangingAnimations.clear();
+                }
+                break;
+            case APPEARING:
+                if (currentAppearingAnimations.size() > 0) {
+                    LinkedHashMap<View, Animator> currentAnimCopy =
+                            (LinkedHashMap<View, Animator>) currentAppearingAnimations.clone();
+                    for (Animator anim : currentAnimCopy.values()) {
+                        anim.end();
+                    }
+                    currentAppearingAnimations.clear();
+                }
+                break;
+            case DISAPPEARING:
+                if (currentDisappearingAnimations.size() > 0) {
+                    LinkedHashMap<View, Animator> currentAnimCopy =
+                            (LinkedHashMap<View, Animator>) currentDisappearingAnimations.clone();
+                    for (Animator anim : currentAnimCopy.values()) {
+                        anim.end();
+                    }
+                    currentDisappearingAnimations.clear();
+                }
+                break;
+        }
+    }
+
+    /**
+     * This method runs the animation that makes an added item appear.
+     *
+     * @param parent The ViewGroup to which the View is being added.
+     * @param child  The View being added to the ViewGroup.
+     */
+    @SuppressWarnings("unchecked")
+    private void runAppearingTransition(final ViewGroup parent, final View child) {
+        Animator currentAnimation = currentDisappearingAnimations.get(child);
+        if (currentAnimation != null) {
+            currentAnimation.cancel();
+        }
+        if (mAppearingAnim == null) {
+            if (hasListeners()) {
+                ArrayList<TransitionListener> listeners =
+                        (ArrayList<TransitionListener>) mListeners.clone();
+                for (TransitionListener listener : listeners) {
+                    listener.endTransition(this, parent, child, APPEARING);
+                }
+            }
+            return;
+        }
+        Animator anim = mAppearingAnim.clone();
+        anim.setTarget(child);
+        anim.setStartDelay(mAppearingDelay);
+        anim.setDuration(mAppearingDuration);
+        if (mAppearingInterpolator != sAppearingInterpolator) {
+            anim.setInterpolator(mAppearingInterpolator);
+        }
+        if (anim instanceof ObjectAnimator) {
+            ((ObjectAnimator) anim).setCurrentPlayTime(0);
+        }
+        anim.addListener(new Animator.AnimatorListener() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public void onAnimationEnd(@Nonnull Animator anim, boolean reverse) {
+                currentAppearingAnimations.remove(child);
+                if (hasListeners()) {
+                    ArrayList<TransitionListener> listeners =
+                            (ArrayList<TransitionListener>) mListeners.clone();
+                    for (TransitionListener listener : listeners) {
+                        listener.endTransition(LayoutTransition.this, parent, child, APPEARING);
+                    }
+                }
+            }
+        });
+        currentAppearingAnimations.put(child, anim);
+        anim.start();
+    }
+
+    /**
+     * This method runs the animation that makes a removed item disappear.
+     *
+     * @param parent The ViewGroup from which the View is being removed.
+     * @param child  The View being removed from the ViewGroup.
+     */
+    @SuppressWarnings("unchecked")
+    private void runDisappearingTransition(final ViewGroup parent, final View child) {
+        Animator currentAnimation = currentAppearingAnimations.get(child);
+        if (currentAnimation != null) {
+            currentAnimation.cancel();
+        }
+        if (mDisappearingAnim == null) {
+            if (hasListeners()) {
+                ArrayList<TransitionListener> listeners =
+                        (ArrayList<TransitionListener>) mListeners.clone();
+                for (TransitionListener listener : listeners) {
+                    listener.endTransition(this, parent, child, DISAPPEARING);
+                }
+            }
+            return;
+        }
+        Animator anim = mDisappearingAnim.clone();
+        anim.setStartDelay(mDisappearingDelay);
+        anim.setDuration(mDisappearingDuration);
+        if (mDisappearingInterpolator != sDisappearingInterpolator) {
+            anim.setInterpolator(mDisappearingInterpolator);
+        }
+        anim.setTarget(child);
+        final float preAnimAlpha = child.getTransitionAlpha();
+        anim.addListener(new Animator.AnimatorListener() {
+            @SuppressWarnings("unchecked")
+            @Override
+            public void onAnimationEnd(@Nonnull Animator anim, boolean reverse) {
+                currentDisappearingAnimations.remove(child);
+                child.setTransitionAlpha(preAnimAlpha);
+                if (hasListeners()) {
+                    ArrayList<TransitionListener> listeners =
+                            (ArrayList<TransitionListener>) mListeners.clone();
+                    for (TransitionListener listener : listeners) {
+                        listener.endTransition(LayoutTransition.this, parent, child, DISAPPEARING);
+                    }
+                }
+            }
+        });
+        if (anim instanceof ObjectAnimator) {
+            ((ObjectAnimator) anim).setCurrentPlayTime(0);
+        }
+        currentDisappearingAnimations.put(child, anim);
+        anim.start();
+    }
+
+    /**
+     * This method is called by ViewGroup when a child view is about to be added to the
+     * container. This callback starts the process of a transition; we grab the starting
+     * values, listen for changes to all of the children of the container, and start appropriate
+     * animations.
+     *
+     * @param parent        The ViewGroup to which the View is being added.
+     * @param child         The View being added to the ViewGroup.
+     * @param changesLayout Whether the removal will cause changes in the layout of other views
+     *                      in the container. INVISIBLE views becoming VISIBLE will not cause changes and thus will not
+     *                      affect CHANGE_APPEARING or CHANGE_DISAPPEARING animations.
+     */
+    @SuppressWarnings("unchecked")
+    private void addChild(@Nonnull ViewGroup parent, View child, boolean changesLayout) {
+        if (parent.getWindowVisibility() != View.VISIBLE) {
+            return;
+        }
+        if ((mTransitionTypes & FLAG_APPEARING) == FLAG_APPEARING) {
+            // Want disappearing animations to finish up before proceeding
+            cancel(DISAPPEARING);
+        }
+        if (changesLayout && (mTransitionTypes & FLAG_CHANGE_APPEARING) == FLAG_CHANGE_APPEARING) {
+            // Also, cancel changing animations so that we start fresh ones from current locations
+            cancel(CHANGE_APPEARING);
+            cancel(CHANGING);
+        }
+        if (hasListeners() && (mTransitionTypes & FLAG_APPEARING) == FLAG_APPEARING) {
+            ArrayList<TransitionListener> listeners =
+                    (ArrayList<TransitionListener>) mListeners.clone();
+            for (TransitionListener listener : listeners) {
+                listener.startTransition(this, parent, child, APPEARING);
+            }
+        }
+        if (changesLayout && (mTransitionTypes & FLAG_CHANGE_APPEARING) == FLAG_CHANGE_APPEARING) {
+            runChangeTransition(parent, child, APPEARING);
+        }
+        if ((mTransitionTypes & FLAG_APPEARING) == FLAG_APPEARING) {
+            runAppearingTransition(parent, child);
+        }
+    }
+
     private boolean hasListeners() {
         return mListeners != null && mListeners.size() > 0;
+    }
+
+    /**
+     * This method is called by ViewGroup when there is a call to layout() on the container
+     * with this LayoutTransition. If the CHANGING transition is enabled and if there is no other
+     * transition currently running on the container, then this call runs a CHANGING transition.
+     * The transition does not start immediately; it just sets up the mechanism to run if any
+     * of the children of the container change their layout parameters (similar to
+     * the CHANGE_APPEARING and CHANGE_DISAPPEARING transitions).
+     *
+     * @param parent The ViewGroup whose layout() method has been called.
+     * @hide
+     */
+    public void layoutChange(@Nonnull ViewGroup parent) {
+        if (parent.getWindowVisibility() != View.VISIBLE) {
+            return;
+        }
+        if ((mTransitionTypes & FLAG_CHANGING) == FLAG_CHANGING && !isRunning()) {
+            // This method is called for all calls to layout() in the container, including
+            // those caused by add/remove/hide/show events, which will already have set up
+            // transition animations. Avoid setting up CHANGING animations in this case; only
+            // do so when there is not a transition already running on the container.
+            runChangeTransition(parent, null, CHANGING);
+        }
+    }
+
+    /**
+     * This method is called by ViewGroup when a child view is about to be added to the
+     * container. This callback starts the process of a transition; we grab the starting
+     * values, listen for changes to all the children of the container, and start appropriate
+     * animations.
+     *
+     * @param parent The ViewGroup to which the View is being added.
+     * @param child  The View being added to the ViewGroup.
+     */
+    public void addChild(ViewGroup parent, View child) {
+        addChild(parent, child, true);
+    }
+
+    /**
+     * This method is called by ViewGroup when a child view is about to be made visible in the
+     * container. This callback starts the process of a transition; we grab the starting
+     * values, listen for changes to all the children of the container, and start appropriate
+     * animations.
+     *
+     * @param parent        The ViewGroup in which the View is being made visible.
+     * @param child         The View being made visible.
+     * @param oldVisibility The previous visibility value of the child View, either
+     *                      {@link View#GONE} or {@link View#INVISIBLE}.
+     */
+    public void showChild(ViewGroup parent, View child, int oldVisibility) {
+        addChild(parent, child, oldVisibility == View.GONE);
+    }
+
+    /**
+     * This method is called by ViewGroup when a child view is about to be removed from the
+     * container. This callback starts the process of a transition; we grab the starting
+     * values, listen for changes to all the children of the container, and start appropriate
+     * animations.
+     *
+     * @param parent        The ViewGroup from which the View is being removed.
+     * @param child         The View being removed from the ViewGroup.
+     * @param changesLayout Whether the removal will cause changes in the layout of other views
+     *                      in the container. Views becoming INVISIBLE will not cause changes and thus will not
+     *                      affect CHANGE_APPEARING or CHANGE_DISAPPEARING animations.
+     */
+    @SuppressWarnings("unchecked")
+    private void removeChild(@Nonnull ViewGroup parent, View child, boolean changesLayout) {
+        if (parent.getWindowVisibility() != View.VISIBLE) {
+            return;
+        }
+        if ((mTransitionTypes & FLAG_DISAPPEARING) == FLAG_DISAPPEARING) {
+            // Want appearing animations to finish up before proceeding
+            cancel(APPEARING);
+        }
+        if (changesLayout &&
+                (mTransitionTypes & FLAG_CHANGE_DISAPPEARING) == FLAG_CHANGE_DISAPPEARING) {
+            // Also, cancel changing animations so that we start fresh ones from current locations
+            cancel(CHANGE_DISAPPEARING);
+            cancel(CHANGING);
+        }
+        if (hasListeners() && (mTransitionTypes & FLAG_DISAPPEARING) == FLAG_DISAPPEARING) {
+            ArrayList<TransitionListener> listeners =
+                    (ArrayList<TransitionListener>) mListeners.clone();
+            for (TransitionListener listener : listeners) {
+                listener.startTransition(this, parent, child, DISAPPEARING);
+            }
+        }
+        if (changesLayout &&
+                (mTransitionTypes & FLAG_CHANGE_DISAPPEARING) == FLAG_CHANGE_DISAPPEARING) {
+            runChangeTransition(parent, child, DISAPPEARING);
+        }
+        if ((mTransitionTypes & FLAG_DISAPPEARING) == FLAG_DISAPPEARING) {
+            runDisappearingTransition(parent, child);
+        }
+    }
+
+    /**
+     * This method is called by ViewGroup when a child view is about to be removed from the
+     * container. This callback starts the process of a transition; we grab the starting
+     * values, listen for changes to all the children of the container, and start appropriate
+     * animations.
+     *
+     * @param parent The ViewGroup from which the View is being removed.
+     * @param child  The View being removed from the ViewGroup.
+     */
+    public void removeChild(ViewGroup parent, View child) {
+        removeChild(parent, child, true);
+    }
+
+    /**
+     * This method is called by ViewGroup when a child view is about to be hidden in
+     * container. This callback starts the process of a transition; we grab the starting
+     * values, listen for changes to all the children of the container, and start appropriate
+     * animations.
+     *
+     * @param parent        The parent ViewGroup of the View being hidden.
+     * @param child         The View being hidden.
+     * @param newVisibility The new visibility value of the child View, either
+     *                      {@link View#GONE} or {@link View#INVISIBLE}.
+     */
+    public void hideChild(ViewGroup parent, View child, int newVisibility) {
+        removeChild(parent, child, newVisibility == View.GONE);
     }
 
     /**
