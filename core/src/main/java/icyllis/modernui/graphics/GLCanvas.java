@@ -427,12 +427,15 @@ public final class GLCanvas extends Canvas {
 
         // generic array index
         int posColorIndex = 0;
+        // preserve two triangles
         int posColorTexIndex = 4;
         // textures
         int textureIndex = 0;
         int clipIndex = 0;
         int textIndex = 0;
+        // layer alphas
         int alphaIndex = 0;
+        // draw buffers
         int colorBuffer = GL_COLOR_ATTACHMENT0;
 
         for (int op : mDrawOps) {
@@ -597,8 +600,7 @@ public final class GLCanvas extends Canvas {
                         throw new IllegalStateException("No off-screen rendering target");
                     }
                     mLayerStack.push(mLayerAlphas.getInt(alphaIndex));
-                    colorBuffer++;
-                    framebuffer.setDrawBuffer(colorBuffer);
+                    framebuffer.setDrawBuffer(++colorBuffer);
                     framebuffer.clearColorBuffer();
                     alphaIndex++;
                 }
@@ -611,11 +613,11 @@ public final class GLCanvas extends Canvas {
                             0, 1, 1, 0);
                     mPosColorTexVBO.upload(0, mLayerImageMemory.flip());
                     mLayerImageMemory.clear();
+
                     bindVertexArray(POS_COLOR_TEX);
                     useProgram(COLOR_TEX_MS);
                     bindTexture(framebuffer.getAttachedTexture(colorBuffer).get());
-                    colorBuffer--;
-                    framebuffer.setDrawBuffer(colorBuffer);
+                    framebuffer.setDrawBuffer(--colorBuffer);
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
                 }
                 default -> throw new IllegalStateException("Unexpected draw op " + op);
@@ -789,7 +791,6 @@ public final class GLCanvas extends Canvas {
         }
         mSaveStates.push(s);
 
-        s.mMatrix.translate(Math.max(left, 0), Math.max(top, 0), 0);
         if (alpha <= 0) {
             // will be quick rejected
             s.mBounds.setEmpty();
@@ -1351,22 +1352,18 @@ public final class GLCanvas extends Canvas {
         mDrawOps.add(DRAW_IMAGE);
     }
 
-    public void drawTexture(@Nonnull GLTexture texture, float l, float t, float r, float b, int color,
-                            boolean flipY) {
-        drawMatrix();
-        putRectColorUV(l, t, r, b, color,
-                0, flipY ? 1 : 0, 1, flipY ? 0 : 1);
-        mTextures.add(texture);
-        mDrawOps.add(DRAW_IMAGE);
-    }
-
-    public void drawTextureMS(@Nonnull GLTexture texture, float l, float t, float r, float b, int color,
-                              boolean flipY) {
-        drawMatrix();
-        putRectColorUV(l, t, r, b, color,
-                0, flipY ? 1 : 0, 1, flipY ? 0 : 1);
-        mTextures.add(texture);
-        mDrawOps.add(DRAW_IMAGE_MS);
+    public void drawTexture(@Nonnull GLTexture texture, float l, float t, float r, float b,
+                            int color, boolean flipY) {
+        int target = texture.getTarget();
+        if (target == GL_TEXTURE_2D || target == GL_TEXTURE_2D_MULTISAMPLE) {
+            drawMatrix();
+            putRectColorUV(l, t, r, b, color,
+                    0, flipY ? 1 : 0, 1, flipY ? 0 : 1);
+            mTextures.add(texture);
+            mDrawOps.add(target == GL_TEXTURE_2D ? DRAW_IMAGE : DRAW_IMAGE_MS);
+        } else {
+            ModernUI.LOGGER.warn(MARKER, "Cannot draw texture target {}", target);
+        }
     }
 
     @Override

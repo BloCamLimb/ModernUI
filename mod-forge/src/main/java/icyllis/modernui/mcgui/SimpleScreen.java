@@ -36,11 +36,11 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 final class SimpleScreen extends Screen implements MuiScreen {
 
-    private final UIManager host;
+    private final UIManager root;
 
-    SimpleScreen(UIManager window) {
+    SimpleScreen(UIManager root) {
         super(TextComponent.EMPTY);
-        host = window;
+        this.root = root;
     }
 
     /*@Override
@@ -52,7 +52,7 @@ final class SimpleScreen extends Screen implements MuiScreen {
 
     @Override
     protected void init() {
-        host.start(this);
+        root.start(this);
         //TODO configurable
         BlurHandler.INSTANCE.forceBlur();
     }
@@ -61,18 +61,18 @@ final class SimpleScreen extends Screen implements MuiScreen {
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         this.width = width;
         this.height = height;
-        host.resize();
+        root.resize();
     }
 
     @Override
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
-        host.render();
+        root.render();
     }
 
     @Override
     public void removed() {
         super.removed();
-        host.stop();
+        root.stop();
     }
 
     //TODO configurable
@@ -85,18 +85,18 @@ final class SimpleScreen extends Screen implements MuiScreen {
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        host.onCursorPos();
+        root.onCursorPos();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        host.onMouseButton();
+        root.onMouseButton();
         return true;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        host.onMouseButton();
+        root.onMouseButton();
         return true;
     }
 
@@ -137,6 +137,6 @@ final class SimpleScreen extends Screen implements MuiScreen {
 
     @Override
     public boolean charTyped(char ch, int modifiers) {
-        return host.charTyped(ch);
+        return root.charTyped(ch);
     }
 }

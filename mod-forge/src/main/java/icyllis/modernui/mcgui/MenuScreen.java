@@ -46,11 +46,11 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> implements MuiScreen {
 
-    private final UIManager host;
+    private final UIManager root;
 
-    MenuScreen(@Nonnull T menu, Inventory inventory, UIManager window) {
+    MenuScreen(@Nonnull T menu, Inventory inventory, UIManager root) {
         super(menu, inventory, TextComponent.EMPTY);
-        host = window;
+        this.root = root;
     }
 
     /*@Override
@@ -65,7 +65,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     protected void init() {
         super.init();
-        host.start(this);
+        root.start(this);
     }
 
     @Override
@@ -73,7 +73,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
         this.width = width;
         this.height = height;
         init();
-        host.resize();
+        root.resize();
         //MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
 
         /*ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
@@ -90,7 +90,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
         //TODO configurable bg
         renderBackground(poseStack);
-        host.render();
+        root.render();
     }
 
     @Override
@@ -100,25 +100,25 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     public void removed() {
         super.removed();
-        host.stop();
+        root.stop();
     }
 
     // IMPL - GuiEventListener
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        host.onCursorPos();
+        root.onCursorPos();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        host.onMouseButton();
+        root.onMouseButton();
         return true;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        host.onMouseButton();
+        root.onMouseButton();
         return true;
     }
 
@@ -175,6 +175,6 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Override
     public boolean charTyped(char ch, int modifiers) {
-        return host.charTyped(ch);
+        return root.charTyped(ch);
     }
 }

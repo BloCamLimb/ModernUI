@@ -355,7 +355,7 @@ public class TestLinearLayout extends LinearLayout {
     }
 
     @Override
-    protected void tick() {
+    public void tick() {
         ticks++;
         if ((ticks & 15) == 0) {
             if (!b) {
@@ -423,7 +423,7 @@ public class TestLinearLayout extends LinearLayout {
         }
 
         @Override
-        protected void tick() {
+        public void tick() {
             super.tick();
             /*if (ticks % 40 == 0) {
                 animation.invert();

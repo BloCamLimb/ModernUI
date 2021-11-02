@@ -19,7 +19,7 @@
 package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.mcgui.UIManager;
+import icyllis.modernui.forge.MuiForgeBridge;
 import icyllis.modernui.mcgui.ScrollController;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.gui.ScrollPanel;
@@ -80,16 +80,21 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
 
     @Inject(method = "render", at = @At("HEAD"))
     private void preRender(PoseStack matrix, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        mScrollController.update(UIManager.getElapsedTime());
+        mScrollController.update(MuiForgeBridge.getElapsedTime());
     }
 
-    @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraftforge/client/gui/ScrollPanel;drawPanel(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;II)V"), remap = false)
+    @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraftforge" +
+            "/client/gui/ScrollPanel;drawPanel(Lcom/mojang/blaze3d/vertex/PoseStack;" +
+            "IILcom/mojang/blaze3d/vertex/Tesselator;II)V"), remap = false)
     private void preDrawPanel(@Nonnull PoseStack ps, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
         ps.pushPose();
-        ps.translate(0, ((int) (((int) scrollDistance - scrollDistance) * client.getWindow().getGuiScale())) / client.getWindow().getGuiScale(), 0);
+        ps.translate(0,
+                ((int) (((int) scrollDistance - scrollDistance) * client.getWindow().getGuiScale())) / client.getWindow().getGuiScale(), 0);
     }
 
-    @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraftforge/client/gui/ScrollPanel;drawPanel(Lcom/mojang/blaze3d/vertex/PoseStack;IILcom/mojang/blaze3d/vertex/Tesselator;II)V"), remap = false)
+    @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.AFTER, target = "Lnet/minecraftforge" +
+            "/client/gui/ScrollPanel;drawPanel(Lcom/mojang/blaze3d/vertex/PoseStack;" +
+            "IILcom/mojang/blaze3d/vertex/Tesselator;II)V"), remap = false)
     private void postDrawPanel(@Nonnull PoseStack ps, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
         ps.popPose();
     }

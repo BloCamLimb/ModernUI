@@ -1736,7 +1736,7 @@ public abstract class ViewGroup extends View implements ViewParent {
      * @hide
      */
     public void requestTransitionStart(LayoutTransition transition) {
-        ViewRootImpl viewAncestor = mAttachInfo != null ? mAttachInfo.mViewRootImpl : null;
+        ViewRootBase viewAncestor = mAttachInfo != null ? mAttachInfo.mViewRootBase : null;
         if (viewAncestor != null) {
             viewAncestor.requestTransitionStart(transition);
         }
@@ -2336,7 +2336,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     }
 
     @Override
-    protected void tick() {
+    public void tick() {
         final View[] views = mChildren;
         final int count = mChildrenCount;
         for (int i = 0; i < count; i++) {
