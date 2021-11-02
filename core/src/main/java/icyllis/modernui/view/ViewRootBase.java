@@ -33,18 +33,16 @@ import java.util.LinkedList;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View and
- * Window. There must also be a class handle events from Window to ViewRootImpl,
- * so methods are public for external calls. You may need to modify this class
- * to run your own stand-alone application.
+ * Window. There must also be methods handle the connection between Window and
+ * ViewRootBase.
  */
-//TODO remove class
-public final class ViewRootImpl implements ViewParent {
+public abstract class ViewRootBase implements ViewParent {
 
-    private static final Marker MARKER = MarkerManager.getMarker("ViewRootImpl");
+    private static final Marker MARKER = MarkerManager.getMarker("ViewRootBase");
 
     private final AttachInfo mAttachInfo;
-    private final Thread mThread;
-    private final GLCanvas mCanvas;
+    protected Thread mThread;
+    protected GLCanvas mCanvas;
 
     private final LinkedList<InputEvent> mInputEvents = new LinkedList<>();
 
@@ -58,7 +56,7 @@ public final class ViewRootImpl implements ViewParent {
 
     private boolean hasDragOperation;
 
-    private View mView;
+    protected View mView;
     private int mWidth;
     private int mHeight;
 
@@ -67,13 +65,20 @@ public final class ViewRootImpl implements ViewParent {
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
-    public ViewRootImpl(GLCanvas canvas, AttachInfo.Handler handler) {
-        mAttachInfo = new AttachInfo(this, handler);
-        mThread = Thread.currentThread();
-        mCanvas = canvas;
+    protected ViewRootBase() {
+        mAttachInfo = new AttachInfo(this);
     }
 
-    public void setView(@Nonnull View view) {
+    protected final void initBase() {
+        synchronized (this) {
+            if (mThread != null) {
+                throw new IllegalStateException("Initialize twice");
+            }
+            mThread = Thread.currentThread();
+        }
+    }
+
+    protected void setView(@Nonnull View view) {
         if (mView == null) {
             mView = view;
             /*ViewGroup.LayoutParams params = view.getLayoutParams();
@@ -89,7 +94,7 @@ public final class ViewRootImpl implements ViewParent {
         }
     }
 
-    public void setFrame(int width, int height) {
+    protected void setFrame(int width, int height) {
         if (width != mWidth || height != mHeight) {
             mWidth = width;
             mHeight = height;
@@ -134,7 +139,7 @@ public final class ViewRootImpl implements ViewParent {
     }
 
     @UiThread
-    public void doTraversal() {
+    protected void doTraversal() {
         if (mTraversalScheduled) {
             mTraversalScheduled = false;
             performTraversal();
@@ -167,38 +172,44 @@ public final class ViewRootImpl implements ViewParent {
 
             host.layout(0, 0, host.getMeasuredWidth(), host.getMeasuredHeight());
 
-            ModernUI.LOGGER.info(MARKER, "Layout done in {} \u03bcs, window size: {}x{}",
-                    (RenderCore.timeNanos() - startTime) / 1000.0f, width, height);
+            ModernUI.LOGGER.info(MARKER, "Layout done in {} ms, window size: {}x{}",
+                    (RenderCore.timeNanos() - startTime) / 1000000.0, width, height);
             mLayoutRequested = false;
         }
 
         mWillDrawSoon = false;
 
-        if (mInvalidated) {
-            mIsDrawing = true;
-            mCanvas.reset(width, height);
+        boolean cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw();
+
+        if (!cancelDraw) {
             if (mPendingTransitions != null && mPendingTransitions.size() > 0) {
                 for (LayoutTransition pendingTransition : mPendingTransitions) {
                     pendingTransition.startChangingAnimations();
                 }
                 mPendingTransitions.clear();
             }
-            host.draw(mCanvas);
-            mIsDrawing = false;
-            if (mKeepInvalidated) {
-                mKeepInvalidated = false;
-            } else {
-                mInvalidated = false;
+            if (mInvalidated) {
+                mIsDrawing = true;
+                mCanvas.reset(width, height);
+                host.draw(mCanvas);
+                mIsDrawing = false;
+                if (mKeepInvalidated) {
+                    mKeepInvalidated = false;
+                } else {
+                    mInvalidated = false;
+                }
+                mHasDrawn = true;
             }
-            mHasDrawn = true;
+        } else {
+            scheduleTraversal();
         }
     }
 
-    public void enqueueInputEvent(@Nonnull InputEvent event) {
+    protected void enqueueInputEvent(@Nonnull InputEvent event) {
         mInputEvents.add(event);
     }
 
-    public void doProcessInputEvents() {
+    protected void doProcessInputEvents() {
         checkThread();
         if (mView != null) {
             InputEvent event;
@@ -262,12 +273,6 @@ public final class ViewRootImpl implements ViewParent {
         }
     }
 
-    public void tick() {
-        if (mView != null) {
-            mView.tick();
-        }
-    }
-
     void invalidate() {
         checkThread();
         mInvalidated = true;
@@ -278,6 +283,24 @@ public final class ViewRootImpl implements ViewParent {
             scheduleTraversal();
         }
     }
+
+    /// START - Handler
+
+    protected boolean post(@Nonnull Runnable r) {
+        return postDelayed(r, 0);
+    }
+
+    protected abstract boolean postDelayed(@Nonnull Runnable r, long delayMillis);
+
+    protected void postOnAnimation(@Nonnull Runnable r) {
+        postOnAnimationDelayed(r, 0);
+    }
+
+    protected abstract void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis);
+
+    protected abstract void removeCallbacks(@Nonnull Runnable r);
+
+    /// END - Handler
 
     @Nullable
     @Override
@@ -358,7 +381,6 @@ public final class ViewRootImpl implements ViewParent {
      * to the list and it is started just prior to starting the drawing phase of traversal.
      *
      * @param transition The LayoutTransition to be started on the next traversal.
-     *
      * @hide
      */
     public void requestTransitionStart(LayoutTransition transition) {

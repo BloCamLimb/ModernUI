@@ -745,6 +745,11 @@ public class View implements Drawable.Callback {
     private int mMinHeight;
 
     /**
+     * Special tree observer used when mAttachInfo is null.
+     */
+    private ViewTreeObserver mFloatingTreeObserver;
+
+    /**
      * The right padding after RTL resolution, but before taking account of scroll bars.
      *
      * @hide
@@ -885,7 +890,7 @@ public class View implements Drawable.Callback {
 
         if (hasSpace) {
             if (alpha < 1) {
-                canvas.saveLayer(null, (int) (alpha * 255));
+                canvas.saveLayer(sx, sy, sx + mRight - mLeft, sy + mBottom - mTop, (int) (alpha * 255));
             }
 
             if ((mPrivateFlags & PFLAG_SKIP_DRAW) == PFLAG_SKIP_DRAW) {
@@ -1127,8 +1132,7 @@ public class View implements Drawable.Callback {
      * Called from client thread every tick on pre-tick, to update or cache something
      */
     @Deprecated
-    protected void tick() {
-
+    public void tick() {
     }
 
     /**
@@ -1826,7 +1830,7 @@ public class View implements Drawable.Callback {
         }
 
         if (mAttachInfo != null) {
-            mAttachInfo.mViewRootImpl.invalidate();
+            mAttachInfo.mViewRootBase.invalidate();
         }
     }
 
@@ -2553,9 +2557,13 @@ public class View implements Drawable.Callback {
 
     void dispatchAttachedToWindow(AttachInfo info) {
         mAttachInfo = info;
+        if (mFloatingTreeObserver != null) {
+            info.mTreeObserver.merge(mFloatingTreeObserver);
+            mFloatingTreeObserver = null;
+        }
         // transfer all pending tasks
         if (mRunQueue != null) {
-            mRunQueue.executeActions(info.mHandler);
+            mRunQueue.executeActions(info.mViewRootBase);
             mRunQueue = null;
         }
     }
@@ -3743,6 +3751,28 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Returns the ViewTreeObserver for this view's hierarchy. The view tree
+     * observer can be used to get notifications when global events, like
+     * layout, happen.
+     * <p>
+     * The returned ViewTreeObserver observer is not guaranteed to remain
+     * valid for the lifetime of this View. If the caller of this method keeps
+     * a long-lived reference to ViewTreeObserver, it should always check for
+     * the return value of {@link ViewTreeObserver#isAlive()}.
+     *
+     * @return The ViewTreeObserver for this view's hierarchy.
+     */
+    public final ViewTreeObserver getViewTreeObserver() {
+        if (mAttachInfo != null) {
+            return mAttachInfo.mTreeObserver;
+        }
+        if (mFloatingTreeObserver == null) {
+            mFloatingTreeObserver = new ViewTreeObserver();
+        }
+        return mFloatingTreeObserver;
+    }
+
+    /**
      * Finds the topmost view in the current view hierarchy.
      *
      * @return the topmost view containing this view
@@ -3775,7 +3805,7 @@ public class View implements Drawable.Callback {
             return;
         }
 
-        PointF p = mAttachInfo.mTmpPointF;
+        PointF p = mAttachInfo.mTmpTransformLocation;
         p.set(0, 0);
 
         if (!hasIdentityMatrix()) {
@@ -3785,16 +3815,15 @@ public class View implements Drawable.Callback {
         p.offset(mLeft, mTop);
 
         ViewParent parent = mParent;
-        while (parent instanceof View) {
-            View view = (View) parent;
-            p.offset(-view.mScrollX, -view.mScrollY);
+        while (parent instanceof View v) {
+            p.offset(-v.mScrollX, -v.mScrollY);
 
-            if (!view.hasIdentityMatrix()) {
-                view.getMatrix().transform(p);
+            if (!v.hasIdentityMatrix()) {
+                v.getMatrix().transform(p);
             }
 
-            p.offset(view.mLeft, view.mTop);
-            parent = view.mParent;
+            p.offset(v.mLeft, v.mTop);
+            parent = v.mParent;
         }
 
         p.round(out);
@@ -3880,7 +3909,7 @@ public class View implements Drawable.Callback {
     public final boolean post(@Nonnull Runnable action) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            return attachInfo.mHandler.post(action);
+            return attachInfo.mViewRootBase.post(action);
         }
 
         // Postpone the runnable until we know on which thread it needs to run.
@@ -3907,7 +3936,7 @@ public class View implements Drawable.Callback {
     public final boolean postDelayed(@Nonnull Runnable action, long delayMillis) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            return attachInfo.mHandler.postDelayed(action, delayMillis);
+            return attachInfo.mViewRootBase.postDelayed(action, delayMillis);
         }
 
         // Postpone the runnable until we know on which thread it needs to run.
@@ -3927,7 +3956,7 @@ public class View implements Drawable.Callback {
     public final void postOnAnimation(@Nonnull Runnable action) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            attachInfo.mHandler.postOnAnimation(action);
+            attachInfo.mViewRootBase.postOnAnimation(action);
         } else {
             // Postpone the runnable until we know
             // on which thread it needs to run.
@@ -3948,7 +3977,7 @@ public class View implements Drawable.Callback {
     public final void postOnAnimationDelayed(@Nonnull Runnable action, long delayMillis) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            attachInfo.mHandler.postOnAnimationDelayed(action, delayMillis);
+            attachInfo.mViewRootBase.postOnAnimationDelayed(action, delayMillis);
         } else {
             // Postpone the runnable until we know
             // on which thread it needs to run.
@@ -3969,7 +3998,7 @@ public class View implements Drawable.Callback {
         if (action != null) {
             final AttachInfo attachInfo = mAttachInfo;
             if (attachInfo != null) {
-                attachInfo.mHandler.removeCallbacks(action);
+                attachInfo.mViewRootBase.removeCallbacks(action);
             }
             if (mRunQueue != null) {
                 mRunQueue.removeCallbacks(action);
@@ -4011,7 +4040,7 @@ public class View implements Drawable.Callback {
             ModernUI.LOGGER.error(VIEW_MARKER, "startDragAndDrop called out of a window");
             return false;
         }
-        return mAttachInfo.mViewRootImpl.startDragAndDrop(this, localState, shadow, flags);
+        return mAttachInfo.mViewRootBase.startDragAndDrop(this, localState, shadow, flags);
     }
 
     /**

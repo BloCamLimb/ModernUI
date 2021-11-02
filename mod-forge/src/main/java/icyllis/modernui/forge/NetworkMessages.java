@@ -100,11 +100,11 @@ public final class NetworkMessages {
 
         @SuppressWarnings("deprecation")
         private static void openMenu(@Nonnull FriendlyByteBuf payload, @Nonnull Supplier<LocalPlayer> player) {
-            final int containerId = payload.readVarInt();
-            final int menuId = payload.readVarInt();
             Minecraft.getInstance().execute(() -> {
                 LocalPlayer p = player.get();
                 if (p != null) {
+                    final int containerId = payload.readVarInt();
+                    final int menuId = payload.readVarInt();
                     final MenuType<?> type = Registry.MENU.byId(menuId);
                     boolean success = false;
                     if (type == null) {

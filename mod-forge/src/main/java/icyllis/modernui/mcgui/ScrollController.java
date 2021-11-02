@@ -24,7 +24,7 @@ import net.minecraft.util.Mth;
 import javax.annotation.Nonnull;
 
 /**
- * Scroll smoothly in one orientation
+ * Scroll smoothly in one orientation. Mostly deprecated.
  *
  * @since 1.6
  */
@@ -124,7 +124,7 @@ public class ScrollController {
      * @param duration scroll duration in milliseconds
      */
     public void scrollTo(float target, int duration) {
-        startTime = UIManager.getElapsedTime();
+        startTime = UIManager.sInstance.getElapsedTime();
         startValue = currValue;
         targetValue = Mth.clamp(target, 0, maxValue);
         this.duration = duration;
@@ -137,7 +137,7 @@ public class ScrollController {
      */
     public boolean scrollTo(float target) {
         float lastTime = startTime;
-        startTime = UIManager.getElapsedTime();
+        startTime = UIManager.sInstance.getElapsedTime();
         startValue = currValue;
         targetValue = Mth.clamp(target, 0, maxValue);
         if (startValue == targetValue) {

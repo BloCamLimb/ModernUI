@@ -20,7 +20,6 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.TimedAction;
-import icyllis.modernui.view.AttachInfo.Handler;
 
 /**
  * Class used to enqueue pending work from Views when no Window is attached.
@@ -78,12 +77,13 @@ public class HandlerActionQueue {
         }
     }
 
-    public void executeActions(Handler handler) {
+    public void executeActions(ViewRootBase handler) {
         synchronized (this) {
             final TimedAction[] actions = mActions;
             for (int i = 0, count = mCount; i < count; i++) {
                 final TimedAction action = actions[i];
-                handler.transfer(action, action.time);
+                handler.postDelayed(action.action, action.time);
+                action.recycle();
             }
 
             mActions = null;

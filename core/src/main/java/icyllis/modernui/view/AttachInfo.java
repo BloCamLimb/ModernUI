@@ -19,59 +19,42 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.math.PointF;
-import icyllis.modernui.util.TimedAction;
-
-import javax.annotation.Nonnull;
 
 /**
  * A set of information given to a view when it is attached to its parent
  * window.
  */
-public final class AttachInfo {
-
-    /**
-     * The view root impl.
-     */
-    final ViewRootImpl mViewRootImpl;
-
-    /**
-     * This handler can be used to pump events in the UI events queue.
-     */
-    final Handler mHandler;
-
-    /**
-     * The current visibility of the window.
-     */
-    public int mWindowVisibility;
+final class AttachInfo {
 
     /**
      * The top view of the hierarchy.
      */
     View mRootView;
 
-    PointF mTmpPointF = new PointF();
+    /**
+     * The current visibility of the window.
+     */
+    int mWindowVisibility;
 
-    public AttachInfo(ViewRootImpl viewRootImpl, Handler handler) {
-        mViewRootImpl = viewRootImpl;
-        mHandler = handler;
-    }
+    /**
+     * The view tree observer used to dispatch global events like
+     * layout, pre-draw, touch mode change, etc.
+     */
+    final ViewTreeObserver mTreeObserver;
 
-    public interface Handler {
+    /**
+     * The view root base.
+     */
+    final ViewRootBase mViewRootBase;
 
-        default boolean post(@Nonnull Runnable r) {
-            return postDelayed(r, 0);
-        }
+    /**
+     * Global to the view hierarchy used as a temporary for dealing with
+     * x/y location when view is transformed.
+     */
+    final PointF mTmpTransformLocation = new PointF();
 
-        boolean postDelayed(@Nonnull Runnable r, long delayMillis);
-
-        default void postOnAnimation(@Nonnull Runnable r) {
-            postOnAnimationDelayed(r, 0);
-        }
-
-        void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis);
-
-        void transfer(@Nonnull TimedAction action, long delayMillis);
-
-        void removeCallbacks(@Nonnull Runnable r);
+    AttachInfo(ViewRootBase viewRootBase) {
+        mViewRootBase = viewRootBase;
+        mTreeObserver = new ViewTreeObserver();
     }
 }

@@ -19,7 +19,9 @@
 package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.platform.Window;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.mcgui.ScreenCallback;
 import icyllis.modernui.mcgui.UIManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -39,7 +41,7 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 /**
- * Compatibility layer for Minecraft Forge mods, exposed for external calls.
+ * The bridge for connecting to the compatibility layer for Minecraft Forge mods.
  */
 public final class MuiForgeBridge {
 
@@ -58,53 +60,41 @@ public final class MuiForgeBridge {
     }
 
     /**
-     * Open a container menu on server, generate an id represents the next screen.
-     * Then send a packet to player to request to open an application screen on client.
+     * Open a container menu on server, generate an id represents the next screen (due to network latency).
+     * Then send a packet to the player to request the application user interface on client.
+     * <p>
+     * This is served as a client/server interaction model, there must be a running server.
      *
      * @param player   the server player to open the screen for
      * @param provider a provider to create a menu on server side
-     * @throws ClassCastException this method is not called on logic server
      * @see #openMenu(Player, MenuConstructor, Consumer)
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider) {
-        openMenu((ServerPlayer) player, provider, (Consumer<FriendlyByteBuf>) null);
+        openMenu(player, provider, (Consumer<FriendlyByteBuf>) null);
     }
 
     /**
-     * Open a container menu on server, generate an id represents the next screen.
-     * Then send a packet to player to request to open an application screen on client.
+     * Open a container menu on server, generate an id represents the next screen (due to network latency).
+     * Then send a packet to the player to request the application user interface on client.
+     * <p>
+     * This is served as a client/server interaction model, there must be a running server.
      *
      * @param player   the server player to open the screen for
      * @param provider a provider to create a menu on server side
      * @param pos      a block pos to send to client, this will be passed to
      *                 the menu supplier that registered on client
-     * @throws ClassCastException this method is not called on logic server
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nonnull BlockPos pos) {
-        openMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
+        openMenu(player, provider, buf -> buf.writeBlockPos(pos));
     }
 
     /**
-     * Open a container menu on server, generate an id represents the next screen.
-     * Then send a packet to player to request to open an application screen on client.
-     *
-     * @param player   the server player to open the screen for
-     * @param provider a provider to create a menu on server side
-     * @param writer   a data writer to send additional data to client, this will be passed
-     *                 to the menu supplier that registered on client
-     * @throws ClassCastException this method is not called on logic server
-     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
-     */
-    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
-                                @Nullable Consumer<FriendlyByteBuf> writer) {
-        openMenu((ServerPlayer) player, provider, writer);
-    }
-
-    /**
-     * Open a container menu on server, generate an id represents the next screen.
-     * Then send a packet to player to request to open an application screen on client.
+     * Open a container menu on server, generate an id represents the next screen (due to network latency).
+     * Then send a packet to the player to request the application user interface on client.
+     * <p>
+     * This is served as a client/server interaction model, there must be a running server.
      *
      * @param player   the server player to open the screen for
      * @param provider a provider to create a menu on server side
@@ -112,23 +102,48 @@ public final class MuiForgeBridge {
      *                 to the menu supplier (IContainerFactory) that registered on client
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
      */
-    @SuppressWarnings("deprecation")
-    public static void openMenu(@Nonnull ServerPlayer player, @Nonnull MenuConstructor provider,
+    public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
-        // do the same thing as ServerPlayer.openMenu()
-        if (player.containerMenu != player.inventoryMenu) {
-            player.closeContainer();
+        if (!(player instanceof ServerPlayer p)) {
+            ModernUI.LOGGER.warn(ModernUI.MARKER, "openMenu() is not called from logical server",
+                    new Exception().fillInStackTrace());
+            return;
         }
-        player.nextContainerCounter();
-        AbstractContainerMenu menu = provider.createMenu(player.containerCounter, player.getInventory(), player);
+        // do the same thing as ServerPlayer.openMenu()
+        if (p.containerMenu != p.inventoryMenu) {
+            p.closeContainer();
+        }
+        p.nextContainerCounter();
+        AbstractContainerMenu menu = provider.createMenu(p.containerCounter, p.getInventory(), p);
         if (menu == null) {
             return;
         }
-        NetworkMessages.openMenu(menu.containerId, Registry.MENU.getId(menu.getType()), writer)
-                .sendToPlayer(player);
-        player.initMenu(menu);
-        player.containerMenu = menu;
-        MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(player, menu));
+        @SuppressWarnings("deprecation")
+        int menuId = Registry.MENU.getId(menu.getType());
+        NetworkMessages.openMenu(menu.containerId, menuId, writer).sendToPlayer(p);
+        p.initMenu(menu);
+        p.containerMenu = menu;
+        MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(p, menu));
+    }
+
+    /**
+     * Get the elapsed time since the current screen is set, update every frame.
+     *
+     * @return elapsed time in milliseconds
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static long getElapsedTime() {
+        return sUIManager.getElapsedTime();
+    }
+
+    /**
+     * Set the application user interface with the given callback and create views.
+     *
+     * @param callback the host callbacks
+     */
+    @OnlyIn(Dist.CLIENT)
+    public void openGui(@Nonnull ScreenCallback callback) {
+        sUIManager.openGui(callback);
     }
 
     @OnlyIn(Dist.CLIENT)
