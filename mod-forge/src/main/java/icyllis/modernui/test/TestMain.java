@@ -281,10 +281,8 @@ public class TestMain {
         RenderCore.initialize();
         GLCanvas canvas = GLCanvas.initialize();
         ShaderManager.getInstance().reload();
-        // OpenGL coordinates origin is "bottom" left, we flip it
-        Matrix4 projection = Matrix4.makeOrthographic(window.getWidth(), -window.getHeight(), 0, 2000);
+        Matrix4 projection = new Matrix4();
         //projection = Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.01f, 1000);
-        canvas.setProjection(projection);
 
         final Image image;
         try {
@@ -475,6 +473,8 @@ public class TestMain {
                 canvas.drawArc(800, 450, 100, -90,
                         360 * (playTime / sTrack.getLength()), paint);
 
+                // OpenGL coordinates origin is bottom left, we flip it to top left
+                canvas.setProjection(projection.setOrthographic(window.getWidth(), -window.getHeight(), 0, 2000));
                 // render thread, wait UI thread
                 canvas.draw(framebuffer);
             }

@@ -788,17 +788,17 @@ public class Quaternion {
      * Transform this quaternion to a normalized 3x3 row-major matrix representing
      * the rotation. If recycle matrix is null, a new matrix will be returned.
      *
-     * @param recycle a matrix for storing result if you want to recycle it
+     * @param out a matrix for storing the result
      * @return the resulting matrix
      */
     @Nonnull
-    public Matrix3 toMatrix3(@Nullable Matrix3 recycle) {
-        if (recycle == null)
+    public Matrix3 toMatrix3(@Nullable Matrix3 out) {
+        if (out == null)
             return toMatrix3();
         final float sq = lengthSquared();
         if (sq < 1.0e-6f) {
-            recycle.setIdentity();
-            return recycle;
+            out.setIdentity();
+            return out;
         }
         final float inv;
         if (MathUtil.approxEqual(sq, 1.0f)) {
@@ -820,35 +820,35 @@ public class Quaternion {
         final float zz = z * zs;
         final float zw = zs * w;
 
-        recycle.m11 = 1.0f - (yy + zz);
-        recycle.m21 = xy - zw;
-        recycle.m31 = xz + yw;
+        out.m11 = 1.0f - (yy + zz);
+        out.m21 = xy - zw;
+        out.m31 = xz + yw;
 
-        recycle.m12 = xy + zw;
-        recycle.m22 = 1.0f - (xx + zz);
-        recycle.m32 = yz - xw;
+        out.m12 = xy + zw;
+        out.m22 = 1.0f - (xx + zz);
+        out.m32 = yz - xw;
 
-        recycle.m13 = xz - yw;
-        recycle.m23 = yz + xw;
-        recycle.m33 = 1.0f - (xx + yy);
-        return recycle;
+        out.m13 = xz - yw;
+        out.m23 = yz + xw;
+        out.m33 = 1.0f - (xx + yy);
+        return out;
     }
 
     /**
      * Transform this quaternion to a normalized 4x4 row-major matrix representing
      * the rotation. If recycle matrix is null, a new matrix will be returned.
      *
-     * @param recycle a matrix for storing result if you want to recycle it
+     * @param out a matrix for storing the result
      * @return the resulting matrix
      */
     @Nonnull
-    public Matrix4 toMatrix4(@Nullable Matrix4 recycle) {
-        if (recycle == null)
+    public Matrix4 toMatrix4(@Nullable Matrix4 out) {
+        if (out == null)
             return toMatrix4();
         final float sq = lengthSquared();
         if (sq < 1.0e-6f) {
-            recycle.setIdentity();
-            return recycle;
+            out.setIdentity();
+            return out;
         }
         final float inv;
         if (MathUtil.approxEqual(sq, 1.0f)) {
@@ -870,26 +870,26 @@ public class Quaternion {
         final float zz = z * zs;
         final float zw = zs * w;
 
-        recycle.m11 = 1.0f - (yy + zz);
-        recycle.m21 = xy - zw;
-        recycle.m31 = xz + yw;
-        recycle.m41 = 0.0f;
+        out.m11 = 1.0f - (yy + zz);
+        out.m21 = xy - zw;
+        out.m31 = xz + yw;
+        out.m41 = 0.0f;
 
-        recycle.m12 = xy + zw;
-        recycle.m22 = 1.0f - (xx + zz);
-        recycle.m32 = yz - xw;
-        recycle.m42 = 0.0f;
+        out.m12 = xy + zw;
+        out.m22 = 1.0f - (xx + zz);
+        out.m32 = yz - xw;
+        out.m42 = 0.0f;
 
-        recycle.m13 = xz - yw;
-        recycle.m23 = yz + xw;
-        recycle.m33 = 1.0f - (xx + yy);
-        recycle.m43 = 0.0f;
+        out.m13 = xz - yw;
+        out.m23 = yz + xw;
+        out.m33 = 1.0f - (xx + yy);
+        out.m43 = 0.0f;
 
-        recycle.m14 = 0.0f;
-        recycle.m24 = 0.0f;
-        recycle.m34 = 0.0f;
-        recycle.m44 = 1.0f;
-        return recycle;
+        out.m14 = 0.0f;
+        out.m24 = 0.0f;
+        out.m34 = 0.0f;
+        out.m44 = 1.0f;
+        return out;
     }
 
     /**
@@ -921,10 +921,10 @@ public class Quaternion {
 
     @Override
     public int hashCode() {
-        int result = (x != +0.0f ? Float.floatToIntBits(x) : 0);
-        result = 31 * result + (y != +0.0f ? Float.floatToIntBits(y) : 0);
-        result = 31 * result + (z != +0.0f ? Float.floatToIntBits(z) : 0);
-        result = 31 * result + (w != +0.0f ? Float.floatToIntBits(w) : 0);
+        int result = (x != 0.0f ? Float.floatToIntBits(x) : 0);
+        result = 31 * result + (y != 0.0f ? Float.floatToIntBits(y) : 0);
+        result = 31 * result + (z != 0.0f ? Float.floatToIntBits(z) : 0);
+        result = 31 * result + (w != 0.0f ? Float.floatToIntBits(w) : 0);
         return result;
     }
 
