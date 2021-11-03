@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.animation.LayoutTransition;
+import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.util.Pool;
@@ -30,6 +31,20 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * <p>
+ * A <code>ViewGroup</code> is a special view that can contain other views
+ * (called children.) The view group is the base class for layouts and views
+ * containers. This class also defines the
+ * {@link LayoutParams} class which serves as the base
+ * class for layouts parameters.
+ * </p>
+ *
+ * <p>
+ * Also see {@link LayoutParams} for layout attributes.
+ * </p>
+ */
+@UiThread
 @SuppressWarnings("unused")
 public abstract class ViewGroup extends View implements ViewParent {
 
@@ -53,6 +68,31 @@ public abstract class ViewGroup extends View implements ViewParent {
      */
     private static final int FLAG_ADD_STATES_FROM_CHILDREN = 0x2000;
 
+    private static final int FLAG_MASK_FOCUSABILITY = 0x60000;
+
+    /**
+     * This view will get focus before any of its descendants.
+     */
+    public static final int FOCUS_BEFORE_DESCENDANTS = 0x20000;
+
+    /**
+     * This view will get focus only if none of its descendants want it.
+     */
+    public static final int FOCUS_AFTER_DESCENDANTS = 0x40000;
+
+    /**
+     * This view will block any of its descendants from getting focus, even
+     * if they are focusable.
+     */
+    public static final int FOCUS_BLOCK_DESCENDANTS = 0x60000;
+
+    /**
+     * Used to map between enum in attrubutes and flag values.
+     */
+    private static final int[] DESCENDANT_FOCUSABILITY_FLAGS =
+            {FOCUS_BEFORE_DESCENDANTS, FOCUS_AFTER_DESCENDANTS,
+                    FOCUS_BLOCK_DESCENDANTS};
+
     /**
      * When set, this ViewGroup should not intercept touch events.
      */
@@ -73,6 +113,12 @@ public abstract class ViewGroup extends View implements ViewParent {
     // number of valid children in the children array, the rest
     // should be null or not considered as children
     private int mChildrenCount = 0;
+
+    // The view contained within this ViewGroup that has or contains focus.
+    private View mFocused;
+
+    // The last child of this ViewGroup which held focus within the current cluster
+    View mFocusedInCluster;
 
     // Whether layout calls are currently being suppressed, controlled by calls to
     // suppressLayout()
@@ -1596,6 +1642,203 @@ public abstract class ViewGroup extends View implements ViewParent {
         }*/
     }
 
+
+    /**
+     * Gets the descendant focusability of this view group.  The descendant
+     * focusability defines the relationship between this view group and its
+     * descendants when looking for a view to take focus in
+     * {@link #requestFocus(int)}.
+     *
+     * @return one of {@link #FOCUS_BEFORE_DESCENDANTS}, {@link #FOCUS_AFTER_DESCENDANTS},
+     * {@link #FOCUS_BLOCK_DESCENDANTS}.
+     */
+    public int getDescendantFocusability() {
+        return mGroupFlags & FLAG_MASK_FOCUSABILITY;
+    }
+
+    /**
+     * Set the descendant focusability of this view group. This defines the relationship
+     * between this view group and its descendants when looking for a view to
+     * take focus in {@link #requestFocus(int)}.
+     *
+     * @param focusability one of {@link #FOCUS_BEFORE_DESCENDANTS}, {@link #FOCUS_AFTER_DESCENDANTS},
+     *                     {@link #FOCUS_BLOCK_DESCENDANTS}.
+     */
+    public void setDescendantFocusability(int focusability) {
+        switch (focusability) {
+            case FOCUS_BEFORE_DESCENDANTS:
+            case FOCUS_AFTER_DESCENDANTS:
+            case FOCUS_BLOCK_DESCENDANTS:
+                break;
+            default:
+                throw new IllegalArgumentException("must be one of FOCUS_BEFORE_DESCENDANTS, "
+                        + "FOCUS_AFTER_DESCENDANTS, FOCUS_BLOCK_DESCENDANTS");
+        }
+        mGroupFlags &= ~FLAG_MASK_FOCUSABILITY;
+        mGroupFlags |= (focusability & FLAG_MASK_FOCUSABILITY);
+    }
+
+    @Override
+    void handleFocusGainInternal(int direction) {
+        if (mFocused != null) {
+            mFocused.unFocus(this);
+            mFocused = null;
+            mFocusedInCluster = null;
+        }
+        super.handleFocusGainInternal(direction);
+    }
+
+    @Override
+    public void requestChildFocus(View child, View focused) {
+        if (getDescendantFocusability() == FOCUS_BLOCK_DESCENDANTS) {
+            return;
+        }
+
+        // Unfocus us, if necessary
+        super.unFocus(focused);
+
+        // We had a previous notion of who had focus. Clear it.
+        if (mFocused != child) {
+            if (mFocused != null) {
+                mFocused.unFocus(focused);
+            }
+
+            mFocused = child;
+        }
+        if (mParent != null) {
+            mParent.requestChildFocus(this, focused);
+        }
+    }
+
+    @Override
+    public void clearChildFocus(View child) {
+        mFocused = null;
+        if (mParent != null) {
+            mParent.clearChildFocus(this);
+        }
+    }
+
+    @Override
+    public void clearFocus() {
+        if (mFocused == null) {
+            super.clearFocus();
+        } else {
+            View focused = mFocused;
+            mFocused = null;
+            focused.clearFocus();
+        }
+    }
+
+    @Override
+    void unFocus(View focused) {
+        if (mFocused == null) {
+            super.unFocus(focused);
+        } else {
+            mFocused.unFocus(focused);
+            mFocused = null;
+        }
+    }
+
+    @Override
+    public boolean hasFocusable() {
+        // This should probably be super.hasFocusable, but that would change
+        // behavior. Historically, we have not checked the ancestor views for
+        // shouldBlockFocusForTouchscreen() in ViewGroup.hasFocusable.
+
+        // Invisible and gone views are never focusable.
+        if ((mViewFlags & VISIBILITY_MASK) != VISIBLE) {
+            return false;
+        }
+
+        // Only use effective focusable value when allowed.
+        if (isFocusable()) {
+            return true;
+        }
+
+        // Determine whether we have a focused descendant.
+        final int descendantFocusability = getDescendantFocusability();
+        if (descendantFocusability != FOCUS_BLOCK_DESCENDANTS) {
+            return hasFocusableChild();
+        }
+
+        return false;
+    }
+
+    boolean hasFocusableChild() {
+        // Determine whether we have a focusable descendant.
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+
+        for (int i = 0; i < count; i++) {
+            final View child = children[i];
+
+            // In case the subclass has overridden has[Explicit]Focusable, dispatch
+            // to the expected one for each child even though we share logic here.
+            if (child.hasFocusable()) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true if this view has or contains focus
+     *
+     * @return true if this view has or contains focus
+     */
+    @Override
+    public boolean hasFocus() {
+        return (mPrivateFlags & PFLAG_FOCUSED) != 0 || mFocused != null;
+    }
+
+    @Override
+    public View findFocus() {
+        if (isFocused()) {
+            return this;
+        }
+
+        if (mFocused != null) {
+            return mFocused.findFocus();
+        }
+        return null;
+    }
+
+    /**
+     * Find the nearest view in the specified direction that wants to take
+     * focus.
+     *
+     * @param focused   The view that currently has focus
+     * @param direction One of FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, and
+     *                  FOCUS_RIGHT, or 0 for not applicable.
+     */
+    @Override
+    public View focusSearch(View focused, int direction) {
+        if (mParent != null) {
+            return mParent.focusSearch(focused, direction);
+        }
+        return null;
+    }
+
+    @Override
+    public void focusableViewAvailable(View v) {
+        if (mParent != null
+                // shortcut: don't report a new focusable view if we block our descendants from
+                // getting focus or if we're not visible
+                && (getDescendantFocusability() != FOCUS_BLOCK_DESCENDANTS)
+                && ((mViewFlags & VISIBILITY_MASK) == VISIBLE)
+                // shortcut: don't report a new focusable view if we already are focused
+                // (and we don't prefer our descendants)
+                //
+                // note: knowing that mFocused is non-null is not a good enough reason
+                // to break the traversal since in that case we'd actually have to find
+                // the focused view and make sure it wasn't FOCUS_AFTER_DESCENDANTS and
+                // an ancestor of v; this will get checked for at ViewAncestor
+                && !(isFocused() && getDescendantFocusability() != FOCUS_AFTER_DESCENDANTS)) {
+            mParent.focusableViewAvailable(v);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     @Nullable
     @Override
@@ -1617,6 +1860,18 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
 
         return null;
+    }
+
+    @Override
+    public void bringChildToFront(View child) {
+        final int index = indexOfChild(child);
+        if (index >= 0) {
+            removeFromArray(index);
+            addInArray(child, mChildrenCount);
+            child.mParent = this;
+            requestLayout();
+            invalidate();
+        }
     }
 
     private void setBooleanFlag(int flag, boolean value) {
@@ -1732,7 +1987,6 @@ public abstract class ViewGroup extends View implements ViewParent {
      * starts all pending transitions prior to the drawing phase in the current traversal.
      *
      * @param transition The LayoutTransition to be started on the next traversal.
-     *
      * @hide
      */
     public void requestTransitionStart(LayoutTransition transition) {

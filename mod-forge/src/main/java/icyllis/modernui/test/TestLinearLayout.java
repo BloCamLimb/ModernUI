@@ -27,6 +27,7 @@ import icyllis.modernui.mcgui.Applier;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.SpannableStringBuilder;
+import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
@@ -108,26 +109,29 @@ public class TestLinearLayout extends LinearLayout {
         text += "\t\tMy name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
                 "I'm hired for people to fulfill their fantasies, their deep dark fantasies.\n" +
                 "\t\t\u4f60\u770b\u8fd9\u4e2a\u5f6c\u5f6c\u0020\u624d\u559d\u51e0\u7f50\u0020\u5c31\u9189" +
-                "\u4e86\u002e\u002e\u002e\ua994\ua9ba\ua9b4\ua98f\ua9ba\ua9b4\u0020\u771f\u7684\u592a\u900a\u529b" +
+                "\u4e86\u002e\u002e\u002e\u771f\u7684\u592a\u900a\u529b" +
                 "\uff1b\u54e6\uff0c\u542c\u4f60" +
                 "\u90a3\u4e48\u8bf4\u0020\u4f60\u5f88\u52c7" +
                 "\u54e6\uff1b\u5f00\u73a9\u7b11\uff0c\u6211" +
-                "\u8d85\u52c7\u7684\u597d\u4e0d\u597d\u0020\u6211\u8d85\u4f1a\u559d\u7684\u5566";
-        text += "\n\u09b9\u09cd\u09af\u09be\u09b2\u09cb\u0020\u0645\u0631\u062d\u0628\u0627\u0020\ud808\udd99\ud808" +
+                "\u8d85\u52c7\u7684\u597d\u4e0d\u597d\u0020\u6211\u8d85\u4f1a\u559d\u7684\u5566\n";
+        text += "\t\t\u09b9\u09cd\u09af\u09be\u09b2\u09cb\u0020\u0645\u0631\u062d\u0628\u0627\u0020\ud808\udd99\ud808" +
                 "\udd99";
 
         Editable editable = SpannableStringBuilder.valueOf(text);
-        editable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(), 0);
-        editable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30, 0);
-        editable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40, 0);
-        editable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), 0);
+        editable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        editable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        editable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        editable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
         TextView tv = new TextView();
         tv.setText(editable);
         tv.setId(6679);
         tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        postDelayed(() -> addView(tv, 2), 5000);
+        postDelayed(() -> addView(tv, 2), 2700);
 
         for (int i = 0; i < 8; i++) {
             View v;
