@@ -208,7 +208,9 @@ public abstract class Canvas {
      * @param matrix the matrix to multiply
      */
     public final void multiply(@Nonnull Matrix4 matrix) {
-        getMatrix().multiply(matrix);
+        if (!matrix.isIdentity()) {
+            getMatrix().multiply(matrix);
+        }
     }
 
     /**
