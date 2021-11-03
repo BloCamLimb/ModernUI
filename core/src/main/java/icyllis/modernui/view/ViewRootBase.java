@@ -146,7 +146,7 @@ public abstract class ViewRootBase implements ViewParent {
         }
     }
 
-    public void scheduleTraversal() {
+    public void scheduleTraversals() {
         if (!mTraversalScheduled) {
             mTraversalScheduled = true;
         }
@@ -201,7 +201,7 @@ public abstract class ViewRootBase implements ViewParent {
                 mHasDrawn = true;
             }
         } else {
-            scheduleTraversal();
+            scheduleTraversals();
         }
     }
 
@@ -280,7 +280,7 @@ public abstract class ViewRootBase implements ViewParent {
             if (mIsDrawing) {
                 mKeepInvalidated = true;
             }
-            scheduleTraversal();
+            scheduleTraversals();
         }
     }
 
@@ -290,17 +290,33 @@ public abstract class ViewRootBase implements ViewParent {
         return postDelayed(r, 0);
     }
 
-    protected abstract boolean postDelayed(@Nonnull Runnable r, long delayMillis);
+    protected boolean postDelayed(@Nonnull Runnable r, long delayMillis) {
+        return false;
+    }
 
     protected void postOnAnimation(@Nonnull Runnable r) {
         postOnAnimationDelayed(r, 0);
     }
 
-    protected abstract void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis);
+    protected void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis) {
+    }
 
-    protected abstract void removeCallbacks(@Nonnull Runnable r);
+    protected void removeCallbacks(@Nonnull Runnable r) {
+    }
 
     /// END - Handler
+
+    /**
+     * Return true if child is an ancestor of parent, (or equal to the parent).
+     */
+    public static boolean isViewDescendantOf(View child, View parent) {
+        if (child == parent) {
+            return true;
+        }
+
+        final ViewParent theParent = child.getParent();
+        return (theParent instanceof ViewGroup) && isViewDescendantOf((View) theParent, parent);
+    }
 
     @Nullable
     @Override
@@ -318,7 +334,68 @@ public abstract class ViewRootBase implements ViewParent {
     public void requestLayout() {
         checkThread();
         mLayoutRequested = true;
-        scheduleTraversal();
+        scheduleTraversals();
+    }
+
+    @Override
+    public boolean isLayoutRequested() {
+        return mLayoutRequested;
+    }
+
+    @Override
+    public void requestChildFocus(View child, View focused) {
+        checkThread();
+        scheduleTraversals();
+    }
+
+    @Override
+    public void clearChildFocus(View child) {
+        checkThread();
+        scheduleTraversals();
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public View focusSearch(View focused, int direction) {
+        checkThread();
+        if (!(mView instanceof ViewGroup)) {
+            return null;
+        }
+        //return FocusFinder.getInstance().findNextFocus((ViewGroup) mView, focused, direction);
+        return null;
+    }
+
+    /*@Override
+    public View keyboardNavigationClusterSearch(View currentCluster,
+                                                @FocusDirection int direction) {
+        checkThread();
+        return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
+                mView, currentCluster, direction);
+    }*/
+
+    @Override
+    public void bringChildToFront(View child) {
+    }
+
+    @Override
+    public void focusableViewAvailable(View v) {
+        checkThread();
+        if (mView != null) {
+            if (!mView.hasFocus()) {
+                // the one case where will transfer focus away from the current one
+                // is if the current view is a view group that prefers to give focus
+                // to its children first AND the view is a descendant of it.
+                View focused = mView.findFocus();
+                if (focused instanceof ViewGroup group) {
+                    if (group.getDescendantFocusability() == ViewGroup.FOCUS_AFTER_DESCENDANTS
+                            && isViewDescendantOf(v, focused)) {
+                        v.requestFocus();
+                    }
+                }
+            }
+        }
     }
 
     @Override
@@ -368,7 +445,6 @@ public abstract class ViewRootBase implements ViewParent {
 
     @Override
     public void childDrawableStateChanged(View child) {
-
     }
 
     /**

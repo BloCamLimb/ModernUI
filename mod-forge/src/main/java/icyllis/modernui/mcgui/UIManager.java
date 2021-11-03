@@ -143,6 +143,8 @@ public final class UIManager extends ViewRootBase {
     private boolean mFirstScreenOpened = false;
     private boolean mProjectionChanged = false;
 
+    private final Matrix4 mProjectionMatrix = new Matrix4();
+
     private final Predicate<? super TimedAction> mUiHandler = task -> task.execute(mUptimeMillis);
 
     private UIManager() {
@@ -346,45 +348,45 @@ public final class UIManager extends ViewRootBase {
                     Minecraft.getInstance().delayCrash(CrashReport.forThrowable(t, "Exception on UI thread"));
                     throw t;
                 }
-
-                // test stuff
-                /*Paint paint = Paint.take();
-                paint.setStrokeWidth(6);
-                int c = (int) mElapsedTimeMillis / 300;
-                c = Math.min(c, 8);
-                float[] pts = new float[c * 2 + 2];
-                pts[0] = 90;
-                pts[1] = 30;
-                for (int i = 0; i < c; i++) {
-                    pts[2 + i * 2] = Math.min((i + 2) * 60, mElapsedTimeMillis / 5) + 30;
-                    if ((i & 1) == 0) {
-                        if (mElapsedTimeMillis >= (i + 2) * 300) {
-                            pts[3 + i * 2] = 90;
-                        } else {
-                            pts[3 + i * 2] = 30 + (mElapsedTimeMillis % 300) / 5f;
-                        }
-                    } else {
-                        if (mElapsedTimeMillis >= (i + 2) * 300) {
-                            pts[3 + i * 2] = 30;
-                        } else {
-                            pts[3 + i * 2] = 90 - (mElapsedTimeMillis % 300) / 5f;
-                        }
-                    }
-                }
-                mCanvas.drawStripLines(pts, paint);
-
-                paint.setRGBA(255, 180, 100, 255);
-                mCanvas.drawCircle(90, 30, 6, paint);
-                mCanvas.drawCircle(150, 90, 6, paint);
-                mCanvas.drawCircle(210, 30, 6, paint);
-                mCanvas.drawCircle(270, 90, 6, paint);
-                mCanvas.drawCircle(330, 30, 6, paint);
-                mCanvas.drawCircle(390, 90, 6, paint);
-                mCanvas.drawCircle(450, 30, 6, paint);
-                mCanvas.drawCircle(510, 90, 6, paint);
-                mCanvas.drawCircle(570, 30, 6, paint);*/
             }
         }
+
+        // test stuff
+        /*Paint paint = Paint.take();
+        paint.setStrokeWidth(6);
+        int c = (int) mElapsedTimeMillis / 300;
+        c = Math.min(c, 8);
+        float[] pts = new float[c * 2 + 2];
+        pts[0] = 90;
+        pts[1] = 30;
+        for (int i = 0; i < c; i++) {
+            pts[2 + i * 2] = Math.min((i + 2) * 60, mElapsedTimeMillis / 5) + 30;
+            if ((i & 1) == 0) {
+                if (mElapsedTimeMillis >= (i + 2) * 300) {
+                    pts[3 + i * 2] = 90;
+                } else {
+                    pts[3 + i * 2] = 30 + (mElapsedTimeMillis % 300) / 5f;
+                }
+            } else {
+                if (mElapsedTimeMillis >= (i + 2) * 300) {
+                    pts[3 + i * 2] = 30;
+                } else {
+                    pts[3 + i * 2] = 90 - (mElapsedTimeMillis % 300) / 5f;
+                }
+            }
+        }
+        mCanvas.drawStripLines(pts, paint);
+
+        paint.setRGBA(255, 180, 100, 255);
+        mCanvas.drawCircle(90, 30, 6, paint);
+        mCanvas.drawCircle(150, 90, 6, paint);
+        mCanvas.drawCircle(210, 30, 6, paint);
+        mCanvas.drawCircle(270, 90, 6, paint);
+        mCanvas.drawCircle(330, 30, 6, paint);
+        mCanvas.drawCircle(390, 90, 6, paint);
+        mCanvas.drawCircle(450, 30, 6, paint);
+        mCanvas.drawCircle(510, 90, 6, paint);
+        mCanvas.drawCircle(570, 30, 6, paint);*/
     }
 
     /**
@@ -598,8 +600,7 @@ public final class UIManager extends ViewRootBase {
             // Test
             mProjectionChanged = false;
         }
-        Matrix4 projection = Matrix4.makeOrthographic(width, -height, 0, 2000);
-        canvas.setProjection(projection);
+        canvas.setProjection(mProjectionMatrix.setOrthographic(width, -height, 0, 2000));
 
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
