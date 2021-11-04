@@ -24,7 +24,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewConfig;
+import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.view.ViewGroup;
 
 import javax.annotation.Nonnull;
@@ -163,7 +163,7 @@ public class ScrollView extends FrameLayout {
             final int bottom = getChildAt(0).getHeight();
             final int maxY = Math.max(0, bottom - height);
             final int scrollY = mScrollY;
-            int dy = Math.round(delta * -60.0f * ViewConfig.get().getViewScale());
+            int dy = Math.round(delta * -60.0f * ViewConfiguration.get().getViewScale());
             dy = Math.max(0, Math.min(mScroller.getFinalY() + dy, maxY)) - scrollY;
             mScroller.startScroll(mScrollX, scrollY, 0, dy);
             invalidate();

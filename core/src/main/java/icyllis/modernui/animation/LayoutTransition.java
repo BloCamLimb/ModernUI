@@ -727,8 +727,7 @@ public class LayoutTransition {
         // layout listeners.
         CleanupCallback callback = new CleanupCallback(layoutChangeListenerMap, parent);
         observer.addOnPreDrawListener(callback);
-        //FIXME
-        //parent.addOnAttachStateChangeListener(callback);
+        parent.addOnAttachStateChangeListener(callback);
     }
 
     /**
@@ -1417,11 +1416,12 @@ public class LayoutTransition {
     }
 
     /**
-     * Utility class to clean up listeners after animations are setup. Cleanup happens
+     * Utility class to clean up listeners after animations are set up. Cleanup happens
      * when either the OnPreDrawListener method is called or when the parent is detached,
      * whichever comes first.
      */
-    private static final class CleanupCallback implements ViewTreeObserver.OnPreDrawListener {
+    private static final class CleanupCallback implements ViewTreeObserver.OnPreDrawListener,
+            View.OnAttachStateChangeListener {
 
         final Map<View, View.OnLayoutChangeListener> layoutChangeListenerMap;
         final ViewGroup parent;
@@ -1433,7 +1433,7 @@ public class LayoutTransition {
 
         private void cleanup() {
             parent.getViewTreeObserver().removeOnPreDrawListener(this);
-            //parent.removeOnAttachStateChangeListener(this);
+            parent.removeOnAttachStateChangeListener(this);
             int count = layoutChangeListenerMap.size();
             if (count > 0) {
                 Collection<View> views = layoutChangeListenerMap.keySet();
@@ -1445,14 +1445,14 @@ public class LayoutTransition {
             }
         }
 
-        /*@Override
+        @Override
         public void onViewAttachedToWindow(View v) {
         }
 
         @Override
         public void onViewDetachedFromWindow(View v) {
             cleanup();
-        }*/
+        }
 
         @Override
         public boolean onPreDraw() {

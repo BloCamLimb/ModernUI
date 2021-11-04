@@ -34,7 +34,7 @@ import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewConfig;
+import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.SwitchButton;
@@ -94,7 +94,7 @@ public class TestLinearLayout extends LinearLayout {
         });
         setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
 
-        ViewConfig c = ViewConfig.get();
+        ViewConfiguration c = ViewConfiguration.get();
         setDividerPadding(c.getViewSize(8));
 
         String text;
@@ -130,8 +130,10 @@ public class TestLinearLayout extends LinearLayout {
         tv.setId(6679);
         tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
+        tv.setClickable(true);
+        tv.setFocusableInTouchMode(true);
 
-        postDelayed(() -> addView(tv, 2), 2700);
+        postDelayed(() -> addView(tv, 2), 1600);
 
         for (int i = 0; i < 8; i++) {
             View v;
@@ -145,7 +147,6 @@ public class TestLinearLayout extends LinearLayout {
                 v = new CView();
                 p = new LinearLayout.LayoutParams(c.getViewSize(200), c.getViewSize(36));
             }
-            v.setEnabled(true);
             v.setClickable(true);
             addView(v, p);
         }

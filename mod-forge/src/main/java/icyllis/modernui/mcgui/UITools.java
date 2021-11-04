@@ -30,8 +30,7 @@ import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 
-//TODO
-@SuppressWarnings("unused")
+@Deprecated
 @OnlyIn(Dist.CLIENT)
 public class UITools {
 
@@ -41,14 +40,9 @@ public class UITools {
 
     //private static final TrueTypeRenderer FONT_RENDERER;
 
-    private static final long IBEAM_CURSOR;
-    private static final long HAND_CURSOR;
 
     static {
         //FONT_RENDERER = TrueTypeRenderer.getInstance();
-
-        IBEAM_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR);
-        HAND_CURSOR = GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR);
     }
 
     public static final char CHECK_MARK = '\u2714';
@@ -102,14 +96,14 @@ public class UITools {
      * The text input I-beam cursor.
      */
     public static void useIBeamCursor() {
-        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().getWindow(), IBEAM_CURSOR);
+        //GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().getWindow(), IBEAM_CURSOR);
     }
 
     /**
      * The hand cursor on a link or a web-page button.
      */
     public static void useHandCursor() {
-        GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().getWindow(), HAND_CURSOR);
+        //GLFW.glfwSetCursor(Minecraft.getInstance().getWindow().getWindow(), HAND_CURSOR);
     }
 
     /**

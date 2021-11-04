@@ -284,6 +284,9 @@ public abstract class ViewRootBase implements ViewParent {
         }
     }
 
+    protected void updatePointerIcon(@Nullable PointerIcon pointerIcon) {
+    }
+
     /// START - Handler
 
     protected boolean post(@Nonnull Runnable r) {

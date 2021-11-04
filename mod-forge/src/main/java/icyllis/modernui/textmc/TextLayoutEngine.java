@@ -25,7 +25,7 @@ import icyllis.modernui.mixin.MixinClientLanguage;
 import icyllis.modernui.mcgui.Color3i;
 import icyllis.modernui.text.GlyphManager;
 import icyllis.modernui.text.TexturedGlyph;
-import icyllis.modernui.view.ViewConfig;
+import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.BaseComponent;
@@ -170,7 +170,7 @@ public class TextLayoutEngine {
             // make font size to 16
             mResolutionLevel = 2;
         } else {
-            int guiScale = Math.round(ViewConfig.get().getViewScale() * 2);
+            int guiScale = Math.round(ViewConfiguration.get().getViewScale() * 2);
             // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
             if (GlyphManager.sBitmapLike) {
                 mResolutionLevel = Math.min(guiScale, 9f);

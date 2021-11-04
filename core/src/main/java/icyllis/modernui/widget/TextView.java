@@ -27,6 +27,7 @@ import icyllis.modernui.text.method.MovementMethod;
 import icyllis.modernui.text.method.TransformationMethod;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
+import icyllis.modernui.view.PointerIcon;
 import icyllis.modernui.view.View;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -1117,6 +1118,15 @@ public class TextView extends View {
             result = builder.build();
         }
         return result;
+    }
+
+    @Override
+    public void onHoverChanged(boolean hovered) {
+        if (hovered && (isTextSelectable() || (mText instanceof Editable && isEnabled()))) {
+            setPointerIcon(PointerIcon.getSystemIcon(PointerIcon.TYPE_TEXT));
+        } else {
+            setPointerIcon(null);
+        }
     }
 
     /**
