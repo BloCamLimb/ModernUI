@@ -24,7 +24,7 @@ import icyllis.modernui.forge.MuiForgeBridge;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.textmc.TextLayoutEngine;
-import icyllis.modernui.view.ViewConfig;
+import icyllis.modernui.view.ViewConfiguration;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
@@ -56,7 +56,7 @@ public class MixinWindow {
             ModernUI.LOGGER.warn(ModernUI.MARKER, "Gui scale should be an integer: {}", scaleFactor);
         }
         // See standards
-        ViewConfig.get().setViewScale(newScale * 0.5f);
+        ViewConfiguration.get().setViewScale(newScale * 0.5f);
         if (RenderCore.isInitialized() && oldScale != newScale) {
             TextLayoutEngine.getInstance().reload();
         }

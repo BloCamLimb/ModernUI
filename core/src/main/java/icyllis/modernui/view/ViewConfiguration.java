@@ -19,25 +19,41 @@
 package icyllis.modernui.view;
 
 /**
- * View config, including methods to standards used in UI.
+ * Contains methods to standard constants used in the UI for timeouts, sizes, and distances.
  */
-public class ViewConfig {
+public class ViewConfiguration {
 
-    private static final ViewConfig sInstance = new ViewConfig();
+    private static final ViewConfiguration sInstance = new ViewConfiguration();
 
     /**
-     * View scale, determined by user preference or depends on your device
+     * Defines the duration in milliseconds of the pressed state in child
+     * components.
      */
-    private float mViewScale = 1;
+    private static final int PRESSED_STATE_DURATION = 64;
 
-    private ViewConfig() {
+    /**
+     * View scale factor, depends on user preference or display device.
+     */
+    private float mViewScale = 1.0f;
+
+    public ViewConfiguration() {
     }
 
     /**
-     * @return global view config
+     * Returns the global configuration.
+     *
+     * @return the global view configuration
      */
-    public static ViewConfig get() {
+    public static ViewConfiguration get() {
         return sInstance;
+    }
+
+    /**
+     * @return the duration in milliseconds of the pressed state in child
+     * components.
+     */
+    public static int getPressedStateDuration() {
+        return PRESSED_STATE_DURATION;
     }
 
     public void setViewScale(float scale) {
@@ -49,7 +65,7 @@ public class ViewConfig {
     }
 
     /**
-     * Get the size in pixels that matches the layout standards.
+     * Get the size in pixels that matches the view layout standards.
      *
      * @param sip scaling-independent pixel
      * @return size in pixels
@@ -58,6 +74,12 @@ public class ViewConfig {
         return Math.round(sip * mViewScale);
     }
 
+    /**
+     * Get the size in pixels that matches the text layout standards.
+     *
+     * @param sip scaling-independent pixel
+     * @return size in pixels
+     */
     public int getTextSize(float sip) {
         return Math.round(sip * mViewScale);
     }

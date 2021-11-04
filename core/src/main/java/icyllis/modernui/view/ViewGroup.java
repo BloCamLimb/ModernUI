@@ -926,7 +926,7 @@ public abstract class ViewGroup extends View implements ViewParent {
         if (oldSize > 0) {
             int insertionIndex;
             for (insertionIndex = 0; insertionIndex < oldSize; ++insertionIndex) {
-                if (index < mTransientIndices.get(insertionIndex)) {
+                if (index < mTransientIndices.getInt(insertionIndex)) {
                     break;
                 }
             }
@@ -996,7 +996,7 @@ public abstract class ViewGroup extends View implements ViewParent {
         if (position < 0 || mTransientIndices == null || position >= mTransientIndices.size()) {
             return -1;
         }
-        return mTransientIndices.get(position);
+        return mTransientIndices.getInt(position);
     }
 
     /**
@@ -1185,7 +1185,7 @@ public abstract class ViewGroup extends View implements ViewParent {
         if (mTransientIndices != null) {
             final int transientCount = mTransientIndices.size();
             for (int i = 0; i < transientCount; ++i) {
-                final int oldIndex = mTransientIndices.get(i);
+                final int oldIndex = mTransientIndices.getInt(i);
                 if (index <= oldIndex) {
                     mTransientIndices.set(i, oldIndex + 1);
                 }
@@ -1400,11 +1400,11 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
 
         boolean clearChildFocus = false;
-        /*if (view == mFocused) {
+        if (view == mFocused) {
             view.unFocus(null);
             clearChildFocus = true;
         }
-        if (view == mFocusedInCluster) {
+        /*if (view == mFocusedInCluster) {
             clearFocusedInCluster(view);
         }*/
 
@@ -1443,7 +1443,7 @@ public abstract class ViewGroup extends View implements ViewParent {
 
         int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
         for (int i = 0; i < transientCount; ++i) {
-            final int oldIndex = mTransientIndices.get(i);
+            final int oldIndex = mTransientIndices.getInt(i);
             if (index < oldIndex) {
                 mTransientIndices.set(i, oldIndex - 1);
             }
@@ -1676,6 +1676,44 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
         mGroupFlags &= ~FLAG_MASK_FOCUSABILITY;
         mGroupFlags |= (focusability & FLAG_MASK_FOCUSABILITY);
+    }
+
+    @Override
+    public void addFocusables(@Nonnull ArrayList<View> views, int direction) {
+        final int focusableCount = views.size();
+
+        final int descendantFocusability = getDescendantFocusability();
+
+        if (descendantFocusability == FOCUS_BLOCK_DESCENDANTS) {
+            super.addFocusables(views, direction);
+            return;
+        }
+
+        if (descendantFocusability == FOCUS_BEFORE_DESCENDANTS) {
+            super.addFocusables(views, direction);
+        }
+
+        int count = 0;
+        final View[] children = new View[mChildrenCount];
+        for (int i = 0; i < mChildrenCount; ++i) {
+            View child = mChildren[i];
+            if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                children[count++] = child;
+            }
+        }
+        //FIXME
+        //FocusFinder.sort(children, 0, count, this, isLayoutRtl());
+        for (int i = 0; i < count; ++i) {
+            children[i].addFocusables(views, direction);
+        }
+
+        // When set to FOCUS_AFTER_DESCENDANTS, we only add ourselves if
+        // there aren't any focusable descendants.  this is
+        // to avoid the focus search finding layouts when a more precise search
+        // among the focusable children would be more interesting.
+        if (descendantFocusability == FOCUS_AFTER_DESCENDANTS && focusableCount == views.size()) {
+            super.addFocusables(views, direction);
+        }
     }
 
     @Override

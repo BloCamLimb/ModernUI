@@ -34,12 +34,10 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
+import icyllis.modernui.text.Editable;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.TimedAction;
-import icyllis.modernui.view.MotionEvent;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
-import icyllis.modernui.view.ViewRootBase;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.DecorView;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.CrashReport;
@@ -142,6 +140,9 @@ public final class UIManager extends ViewRootBase {
 
     private boolean mFirstScreenOpened = false;
     private boolean mProjectionChanged = false;
+
+    private PointerIcon mOldCursor = PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT);
+    private PointerIcon mNewCursor = mOldCursor;
 
     private final Matrix4 mProjectionMatrix = new Matrix4();
 
@@ -283,6 +284,11 @@ public final class UIManager extends ViewRootBase {
         }
     }
 
+    @Override
+    protected void updatePointerIcon(@Nullable PointerIcon pointerIcon) {
+        mNewCursor = pointerIcon == null ? PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT) : pointerIcon;
+    }
+
     /**
      * Post a task that will run on UI thread in specified milliseconds.
      *
@@ -317,6 +323,9 @@ public final class UIManager extends ViewRootBase {
     private void run() {
         initBase();
         mDecor = new DecorView();
+        mDecor.setClickable(true);
+        mDecor.setFocusableInTouchMode(true);
+        mDecor.setWillNotDraw(true);
         setView(mDecor);
         ModernUI.LOGGER.info(MARKER, "View system initialized");
         for (; ; ) {
@@ -547,8 +556,8 @@ public final class UIManager extends ViewRootBase {
         }
 
         builder.append("Callback or Screen: ");
-        builder.append(mCallback != null ? mCallback.getClass().getName() : minecraft.screen == null ? null :
-                minecraft.screen.getClass().getName());
+        builder.append(mCallback != null ? mCallback.getClass() : minecraft.screen == null ? null :
+                minecraft.screen.getClass());
         builder.append('\n');
 
         builder.append("Layout Cache Entries: ");
@@ -571,9 +580,12 @@ public final class UIManager extends ViewRootBase {
             return mKeyboard.onCharTyped(codePoint, modifiers);
         }*/
         post(() -> {
-            TextView tv = mDecor.findViewById(6679);
-            if (tv != null) {
-                tv.getEditableText().append(ch);
+            View v = mDecor.findFocus();
+            if (v instanceof TextView tv) {
+                Editable editable = tv.getEditableText();
+                if (editable != null) {
+                    editable.append(ch);
+                }
             }
         });
         return true;//root.charTyped(codePoint, modifiers);
@@ -601,6 +613,12 @@ public final class UIManager extends ViewRootBase {
             mProjectionChanged = false;
         }
         canvas.setProjection(mProjectionMatrix.setOrthographic(width, -height, 0, 2000));
+
+        // This is on Main thread
+        if (mNewCursor != mOldCursor) {
+            glfwSetCursor(mWindow.getWindow(), mNewCursor.getHandle());
+            mOldCursor = mNewCursor;
+        }
 
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
@@ -711,7 +729,7 @@ public final class UIManager extends ViewRootBase {
             mCallback.host = null;
             mCallback = null;
         }
-        UITools.useDefaultCursor();
+        updatePointerIcon(null);
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
         post(() -> mDecor.removeAllViews());
     }

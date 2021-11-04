@@ -35,6 +35,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import static java.lang.Math.max;
 
@@ -841,6 +842,11 @@ public class View implements Drawable.Callback {
     static final int CLICKABLE = 0x00004000;
 
     /**
+     * Indicates this view can take / keep focus when int touch mode.
+     */
+    static final int FOCUSABLE_IN_TOUCH_MODE = 0x00040000;
+
+    /**
      * Indicates this view can be long clicked. When long clickable, a View
      * reacts to long clicks by notifying the OnLongClickListener or showing a
      * context menu.
@@ -1112,6 +1118,9 @@ public class View implements Drawable.Callback {
      */
     ViewGroup.LayoutParams mLayoutParams;
 
+    private PerformClick mPerformClick;
+    private UnsetPressedState mUnsetPressedState;
+
     @Nullable
     ListenerInfo mListenerInfo;
 
@@ -1121,7 +1130,21 @@ public class View implements Drawable.Callback {
      */
     private HandlerActionQueue mRunQueue;
 
+    /**
+     * Simple constructor to use when creating a view from code.
+     */
     public View() {
+        mViewFlags = FOCUSABLE_AUTO;
+        // Set some flags defaults
+        mPrivateFlags2 =
+                (LAYOUT_DIRECTION_DEFAULT << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT) |
+                        (TEXT_DIRECTION_DEFAULT << PFLAG2_TEXT_DIRECTION_MASK_SHIFT) |
+                        (PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT) |
+                        (TEXT_ALIGNMENT_DEFAULT << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT) |
+                        (PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT);
+
+        mUserPaddingStart = UNDEFINED_PADDING;
+        mUserPaddingEnd = UNDEFINED_PADDING;
     }
 
     /**
@@ -1164,7 +1187,7 @@ public class View implements Drawable.Callback {
         canvas.translate(-sx, -sy);
 
         if (hasSpace) {
-            if (alpha < 1) {
+            if (alpha < 0.9961f) {
                 canvas.saveLayer(sx, sy, sx + mRight - mLeft, sy + mBottom - mTop, (int) (alpha * 255));
             }
 
@@ -2003,9 +2026,48 @@ public class View implements Drawable.Callback {
      *
      * @param focusable One of {@link #NOT_FOCUSABLE}, {@link #FOCUSABLE},
      *                  or {@link #FOCUSABLE_AUTO}.
+     * @see #setFocusableInTouchMode(boolean)
      */
     public void setFocusable(int focusable) {
+        if ((focusable & (FOCUSABLE_AUTO | FOCUSABLE)) == 0) {
+            setFlags(0, FOCUSABLE_IN_TOUCH_MODE);
+        }
         setFlags(focusable, FOCUSABLE_MASK);
+    }
+
+    /**
+     * When a view is focusable, it may not want to take focus when in touch mode.
+     * For example, a button would like focus when the user is navigating via a D-pad
+     * so that the user can click on it, but once the user starts touching the screen,
+     * the button shouldn't take focus
+     *
+     * @return Whether the view is focusable in touch mode.
+     */
+    public final boolean isFocusableInTouchMode() {
+        return (mViewFlags & FOCUSABLE_IN_TOUCH_MODE) == FOCUSABLE_IN_TOUCH_MODE;
+    }
+
+    /**
+     * Set whether this view can receive focus while in touch mode.
+     * <p>
+     * Setting this to true will also ensure that this view is focusable.
+     *
+     * @param focusableInTouchMode If true, this view can receive the focus while
+     *                             in touch mode.
+     * @see #setFocusable(boolean)
+     */
+    public void setFocusableInTouchMode(boolean focusableInTouchMode) {
+        // Focusable in touch mode should always be set before the focusable flag
+        // otherwise, setting the focusable flag will trigger a focusableViewAvailable()
+        // which, in touch mode, will not successfully request focus on this view
+        // because the focusable in touch mode flag is not set
+        setFlags(focusableInTouchMode ? FOCUSABLE_IN_TOUCH_MODE : 0, FOCUSABLE_IN_TOUCH_MODE);
+
+        // Clear FOCUSABLE_AUTO if set.
+        if (focusableInTouchMode) {
+            // Clears FOCUSABLE_AUTO if set.
+            setFlags(FOCUSABLE, FOCUSABLE_MASK);
+        }
     }
 
     /**
@@ -2229,6 +2291,38 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Find and return all focusable views that are descendants of this view,
+     * possibly including this view if it is focusable itself.
+     *
+     * @param direction The direction of the focus
+     * @return A list of focusable views
+     */
+    public ArrayList<View> getFocusables(int direction) {
+        ArrayList<View> result = new ArrayList<>(24);
+        addFocusables(result, direction);
+        return result;
+    }
+
+    /**
+     * Adds any focusable views that are descendants of this view (possibly
+     * including this view if it is focusable itself) to views. This method
+     * adds all focusable views regardless if we are in touch mode or
+     * only views focusable in touch mode if we are in touch mode or
+     * only views that can take accessibility focus if accessibility is enabled
+     * depending on the focusable mode parameter.
+     *
+     * @param views     Focusable views found so far or null if all we are interested is
+     *                  the number of focusables.
+     * @param direction The direction of the focus.
+     */
+    public void addFocusables(@Nonnull ArrayList<View> views, int direction) {
+        if (!canTakeFocus()) {
+            return;
+        }
+        views.add(this);
+    }
+
+    /**
      * Call this to try to give focus to a specific view or to one of its
      * descendants.
      * <p>
@@ -2271,6 +2365,11 @@ public class View implements Drawable.Callback {
     private boolean requestFocusNoSearch(int direction) {
         // need to be focusable
         if (!canTakeFocus()) {
+            return false;
+        }
+
+        // need to be focusable in touch mode if in touch mode
+        if (!isFocusableInTouchMode()) {
             return false;
         }
 
@@ -2339,7 +2438,7 @@ public class View implements Drawable.Callback {
      * </p>
      */
     public void clearFocus() {
-        clearFocusInternal(null, true);
+        clearFocusInternal(true);
     }
 
     /**
@@ -2349,7 +2448,7 @@ public class View implements Drawable.Callback {
      * @param broadcast whether to broadcast the change up through the parent
      *                  hierarchy
      */
-    void clearFocusInternal(View focused, boolean broadcast) {
+    void clearFocusInternal(boolean broadcast) {
         if ((mPrivateFlags & PFLAG_FOCUSED) != 0) {
             mPrivateFlags &= ~PFLAG_FOCUSED;
             clearParentsWantFocus();
@@ -2373,10 +2472,15 @@ public class View implements Drawable.Callback {
         }*/
     }
 
+    boolean rootViewRequestFocus() {
+        final View root = getRootView();
+        return root != null && root.requestFocus();
+    }
+
     void clearParentsWantFocus() {
-        if (mParent instanceof View) {
-            ((View) mParent).mPrivateFlags &= ~PFLAG_WANTS_FOCUS;
-            ((View) mParent).clearParentsWantFocus();
+        if (mParent instanceof View v) {
+            v.mPrivateFlags &= ~PFLAG_WANTS_FOCUS;
+            v.clearParentsWantFocus();
         }
     }
 
@@ -2386,10 +2490,10 @@ public class View implements Drawable.Callback {
      * <p>
      * <b>NOTE:</b> The parent view's focused child must be updated manually
      * after calling this method. Otherwise, the view hierarchy may be left in
-     * an inconstent state.
+     * an inconstant state.
      */
     void unFocus(View focused) {
-        clearFocusInternal(focused, false);
+        clearFocusInternal(false);
     }
 
     /**
@@ -3200,10 +3304,35 @@ public class View implements Drawable.Callback {
             mRunQueue = null;
         }
         mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
+
+        ListenerInfo li = mListenerInfo;
+        final CopyOnWriteArrayList<OnAttachStateChangeListener> listeners =
+                li != null ? li.mOnAttachStateChangeListeners : null;
+        if (listeners != null && listeners.size() > 0) {
+            // NOTE: because of the use of CopyOnWriteArrayList, we *must* use an iterator to
+            // perform the dispatching. The iterator is a safe-guard against listeners that
+            // could mutate the list by calling the various add/remove methods. This prevents
+            // the array from being modified while we iterate it.
+            for (OnAttachStateChangeListener listener : listeners) {
+                listener.onViewAttachedToWindow(this);
+            }
+        }
     }
 
     void dispatchDetachedFromWindow() {
         mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
+        ListenerInfo li = mListenerInfo;
+        final CopyOnWriteArrayList<OnAttachStateChangeListener> listeners =
+                li != null ? li.mOnAttachStateChangeListeners : null;
+        if (listeners != null && listeners.size() > 0) {
+            // NOTE: because of the use of CopyOnWriteArrayList, we *must* use an iterator to
+            // perform the dispatching. The iterator is a safe-guard against listeners that
+            // could mutate the list by calling the various add/remove methods. This prevents
+            // the array from being modified while we iterate it.
+            for (OnAttachStateChangeListener listener : listeners) {
+                listener.onViewDetachedFromWindow(this);
+            }
+        }
     }
 
     /**
@@ -4751,7 +4880,7 @@ public class View implements Drawable.Callback {
      * @param event the event to be dispatched
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
-    public boolean dispatchGenericMotionEvent(MotionEvent event) {
+    public boolean dispatchGenericMotionEvent(@Nonnull MotionEvent event) {
         final int action = event.getAction();
         if (action == MotionEvent.ACTION_HOVER_ENTER
                 || action == MotionEvent.ACTION_HOVER_MOVE
@@ -4759,8 +4888,7 @@ public class View implements Drawable.Callback {
             if (dispatchHoverEvent(event)) {
                 return true;
             }
-        }
-        if (dispatchGenericPointerEvent(event)) {
+        } else if (dispatchGenericPointerEvent(event)) {
             return true;
         }
         return dispatchGenericMotionEventInternal(event);
@@ -4788,6 +4916,13 @@ public class View implements Drawable.Callback {
      * @return True if the event was handled by the view, false otherwise.
      */
     protected boolean dispatchHoverEvent(MotionEvent event) {
+        ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnHoverListener != null
+                && (mViewFlags & ENABLED_MASK) == ENABLED
+                && li.mOnHoverListener.onHover(this, event)) {
+            return true;
+        }
+
         return onHoverEvent(event);
     }
 
@@ -4924,18 +5059,14 @@ public class View implements Drawable.Callback {
      * @see #setHovered
      * @see #onHoverChanged
      */
-    public boolean onHoverEvent(MotionEvent event) {
+    public boolean onHoverEvent(@Nonnull MotionEvent event) {
         final int action = event.getAction();
-        // If we consider ourself hoverable, or if we we're already hovered,
+        // If we consider ourselves hoverable, or if we're already hovered,
         // handle changing state in response to ENTER and EXIT events.
         if (isHoverable() || isHovered()) {
             switch (action) {
-                case MotionEvent.ACTION_HOVER_ENTER:
-                    setHovered(true);
-                    break;
-                case MotionEvent.ACTION_HOVER_EXIT:
-                    setHovered(false);
-                    break;
+                case MotionEvent.ACTION_HOVER_ENTER -> setHovered(true);
+                case MotionEvent.ACTION_HOVER_EXIT -> setHovered(false);
             }
 
             // Dispatch the event to onGenericMotionEvent before returning true.
@@ -5060,6 +5191,39 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Add a listener for attach state changes.
+     * <p>
+     * This listener will be called whenever this view is attached or detached
+     * from a window. Remove the listener using
+     * {@link #removeOnAttachStateChangeListener(OnAttachStateChangeListener)}.
+     *
+     * @param listener Listener to attach
+     * @see #removeOnAttachStateChangeListener(OnAttachStateChangeListener)
+     */
+    public void addOnAttachStateChangeListener(OnAttachStateChangeListener listener) {
+        ListenerInfo li = getListenerInfo();
+        if (li.mOnAttachStateChangeListeners == null) {
+            li.mOnAttachStateChangeListeners = new CopyOnWriteArrayList<>();
+        }
+        li.mOnAttachStateChangeListeners.add(listener);
+    }
+
+    /**
+     * Remove a listener for attach state changes. The listener will receive no further
+     * notification of window attach/detach events.
+     *
+     * @param listener Listener to remove
+     * @see #addOnAttachStateChangeListener(OnAttachStateChangeListener)
+     */
+    public void removeOnAttachStateChangeListener(OnAttachStateChangeListener listener) {
+        ListenerInfo li = mListenerInfo;
+        if (li == null || li.mOnAttachStateChangeListeners == null) {
+            return;
+        }
+        li.mOnAttachStateChangeListeners.remove(listener);
+    }
+
+    /**
      * Register a callback to be invoked when this view is clicked. If this view is not
      * clickable, it becomes clickable.
      *
@@ -5160,7 +5324,20 @@ public class View implements Drawable.Callback {
      * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
     public boolean dispatchTouchEvent(@Nonnull MotionEvent event) {
-        return onTouchEvent(event);
+        boolean result = false;
+
+        ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnTouchListener != null
+                && (mViewFlags & ENABLED_MASK) == ENABLED
+                && li.mOnTouchListener.onTouch(this, event)) {
+            result = true;
+        }
+
+        if (!result && onTouchEvent(event)) {
+            result = true;
+        }
+
+        return result;
     }
 
     /**
@@ -5174,9 +5351,11 @@ public class View implements Drawable.Callback {
      * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
     public boolean onTouchEvent(@Nonnull MotionEvent event) {
-        final int action = event.getAction();
         final int viewFlags = mViewFlags;
-        final boolean clickable = (viewFlags & CLICKABLE) == CLICKABLE
+        final int action = event.getAction();
+
+        final boolean clickable = ((viewFlags & CLICKABLE) == CLICKABLE
+                || (viewFlags & LONG_CLICKABLE) == LONG_CLICKABLE)
                 || (viewFlags & CONTEXT_CLICKABLE) == CONTEXT_CLICKABLE;
 
         if ((viewFlags & ENABLED_MASK) == DISABLED) {
@@ -5188,27 +5367,59 @@ public class View implements Drawable.Callback {
             return clickable;
         }
 
-        if (clickable) {
-            switch (action) {
-                case MotionEvent.ACTION_UP:
-                    if ((mPrivateFlags & PFLAG_PRESSED) != 0) {
-                        performClick();
-                        setPressed(false);
-                    }
-                    break;
-                case MotionEvent.ACTION_DOWN:
-                    setPressed(true);
-                    break;
-
-                case MotionEvent.ACTION_CANCEL:
-                    setPressed(false);
-                    break;
-            }
-
-            return true;
+        if (!clickable) {
+            return false;
         }
 
-        return false;
+        switch (action) {
+            case MotionEvent.ACTION_UP -> {
+                boolean prepressed = (mPrivateFlags & PFLAG_PREPRESSED) != 0;
+                if ((mPrivateFlags & PFLAG_PRESSED) != 0 || prepressed) {
+                    // take focus if we don't have it already, and we should in
+                    // touch mode.
+                    boolean focusTaken = false;
+                    if (isFocusable() && isFocusableInTouchMode() && !isFocused()) {
+                        focusTaken = requestFocus();
+                    }
+
+                    if (prepressed) {
+                        // The button is being released before we actually
+                        // showed it as pressed.  Make it show the pressed
+                        // state now (before scheduling the click) to ensure
+                        // the user sees it.
+                        setPressed(true);
+                    }
+
+                    if (!focusTaken) {
+                        // Use a Runnable and post this rather than calling
+                        // performClick directly. This lets other visual state
+                        // of the view update before click actions start.
+                        if (mPerformClick == null) {
+                            mPerformClick = new PerformClick();
+                        }
+                        if (!post(mPerformClick)) {
+                            performClick();
+                        }
+                    }
+
+                    if (mUnsetPressedState == null) {
+                        mUnsetPressedState = new UnsetPressedState();
+                    }
+
+                    if (prepressed) {
+                        postDelayed(mUnsetPressedState,
+                                ViewConfiguration.getPressedStateDuration());
+                    } else if (!post(mUnsetPressedState)) {
+                        // If the post failed, un-press right now
+                        mUnsetPressedState.run();
+                    }
+                }
+            }
+            case MotionEvent.ACTION_DOWN -> setPressed(true);
+            case MotionEvent.ACTION_CANCEL -> setPressed(false);
+        }
+
+        return true;
     }
 
     boolean isOnScrollbarThumb(float x, float y) {
@@ -5306,6 +5517,16 @@ public class View implements Drawable.Callback {
     boolean pointInView(float localX, float localY, float slop) {
         return localX >= -slop && localY >= -slop && localX < ((mRight - mLeft) + slop) &&
                 localY < ((mBottom - mTop) + slop);
+    }
+
+    /**
+     * Set the pointer icon for the current view.
+     * Passing {@code null} will restore the pointer icon to its default value.
+     *
+     * @param pointerIcon A PointerIcon instance which will be shown when the mouse hovers.
+     */
+    public void setPointerIcon(@Nullable PointerIcon pointerIcon) {
+        mAttachInfo.mViewRootBase.updatePointerIcon(pointerIcon);
     }
 
     /**
@@ -5549,38 +5770,82 @@ public class View implements Drawable.Callback {
         }
     }
 
+    private final class PerformClick implements Runnable {
+
+        @Override
+        public void run() {
+            performClick();
+        }
+    }
+
+    private final class UnsetPressedState implements Runnable {
+
+        @Override
+        public void run() {
+            setPressed(false);
+        }
+    }
+
     static class ListenerInfo {
 
         ListenerInfo() {
         }
 
-        /**
-         * Listeners for layout change events.
-         */
-        private ArrayList<OnLayoutChangeListener> mOnLayoutChangeListeners;
+        private OnTouchListener mOnTouchListener;
 
-        protected OnScrollChangeListener mOnScrollChangeListener;
+        private OnHoverListener mOnHoverListener;
 
         /**
          * Listener used to dispatch click events.
          */
         private OnClickListener mOnClickListener;
 
-        private OnHoverListener mOnHoverListener;
+        /**
+         * Listener used to dispatch long click events.
+         */
+        private OnLongClickListener mOnLongClickListener;
+
+        /**
+         * Listener used to dispatch context click events.
+         */
+        private OnContextClickListener mOnContextClickListener;
+
+        protected OnScrollChangeListener mOnScrollChangeListener;
+
+        /**
+         * Listener used to dispatch focus change events.
+         */
+        private OnFocusChangeListener mOnFocusChangeListener;
+
+        /**
+         * Listeners for layout change events.
+         */
+        private ArrayList<OnLayoutChangeListener> mOnLayoutChangeListeners;
+
+        /**
+         * Listeners for attach events.
+         */
+        private CopyOnWriteArrayList<OnAttachStateChangeListener> mOnAttachStateChangeListeners;
     }
 
     /**
-     * Interface definition for a callback to be invoked when a view is clicked.
+     * Interface definition for a callback to be invoked when a touch event is
+     * dispatched to this view. The callback will be invoked before the touch
+     * event is given to the view.
      */
     @FunctionalInterface
-    public interface OnClickListener {
+    public interface OnTouchListener {
 
         /**
-         * Called when a view has been clicked.
+         * Called when a touch event is dispatched to a view. This allows listeners to
+         * get a chance to respond before the target view.
          *
-         * @param v The view that was clicked.
+         * @param v     The view the touch event has been dispatched to.
+         * @param event The MotionEvent object containing full information about
+         *              the event.
+         * @return True if the listener has consumed the event, false otherwise.
          */
-        void onClick(View v);
+        boolean onTouch(View v, MotionEvent event);
     }
 
     /**
@@ -5604,13 +5869,57 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Interface definition for a callback to be invoked when a view is clicked.
+     */
+    @FunctionalInterface
+    public interface OnClickListener {
+
+        /**
+         * Called when a view has been clicked.
+         *
+         * @param v The view that was clicked.
+         */
+        void onClick(View v);
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when a view has been clicked and held.
+     */
+    @FunctionalInterface
+    public interface OnLongClickListener {
+
+        /**
+         * Called when a view has been clicked and held.
+         *
+         * @param v The view that was clicked and held.
+         * @return true if the callback consumed the long click, false otherwise.
+         */
+        boolean onLongClick(View v);
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when a view is context clicked.
+     */
+    @FunctionalInterface
+    public interface OnContextClickListener {
+
+        /**
+         * Called when a view is context clicked.
+         *
+         * @param v The view that has been context clicked.
+         * @return true if the callback consumed the context click, false otherwise.
+         */
+        boolean onContextClick(View v);
+    }
+
+    /**
      * Interface definition for a callback to be invoked when the scroll
      * X or Y positions of a view change.
      * <p>
      * <b>Note:</b> Some views handle scrolling independently of View and may
      * have their own separate listeners for scroll-type events.
      *
-     * @see #setOnScrollChangeListener(View.OnScrollChangeListener)
+     * @see #setOnScrollChangeListener(OnScrollChangeListener)
      */
     @FunctionalInterface
     public interface OnScrollChangeListener {
@@ -5625,6 +5934,22 @@ public class View implements Drawable.Callback {
          * @param oldScrollY Previous vertical scroll origin.
          */
         void onScrollChange(View v, int scrollX, int scrollY, int oldScrollX, int oldScrollY);
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when the focus state of
+     * a view changed.
+     */
+    @FunctionalInterface
+    public interface OnFocusChangeListener {
+
+        /**
+         * Called when the focus state of a view has changed.
+         *
+         * @param v        The view whose state has changed.
+         * @param hasFocus The new focus state of v.
+         */
+        void onFocusChange(View v, boolean hasFocus);
     }
 
     /**
@@ -5649,5 +5974,26 @@ public class View implements Drawable.Callback {
          */
         void onLayoutChange(View v, int left, int top, int right, int bottom,
                             int oldLeft, int oldTop, int oldRight, int oldBottom);
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when this view is attached
+     * or detached from its window.
+     */
+    public interface OnAttachStateChangeListener {
+
+        /**
+         * Called when the view is attached to a window.
+         *
+         * @param v The view that was attached
+         */
+        void onViewAttachedToWindow(View v);
+
+        /**
+         * Called when the view is detached from a window.
+         *
+         * @param v The view that was detached
+         */
+        void onViewDetachedFromWindow(View v);
     }
 }
