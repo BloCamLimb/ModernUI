@@ -1505,6 +1505,8 @@ public class View implements Drawable.Callback {
             mRight = right;
             mBottom = bottom;
 
+            mPrivateFlags |= PFLAG_HAS_BOUNDS;
+
             if (sizeChanged) {
                 onSizeChanged(newWidth, newHeight, oldWidth, oldHeight);
             }
@@ -5246,6 +5248,35 @@ public class View implements Drawable.Callback {
         return (li != null && li.mOnClickListener != null);
     }
 
+    /**
+     * Register a callback to be invoked when a hardware key is pressed in this view.
+     * Key presses in software input methods will generally not trigger the methods of
+     * this listener.
+     *
+     * @param l the key listener to attach to this view
+     */
+    public void setOnKeyListener(OnKeyListener l) {
+        getListenerInfo().mOnKeyListener = l;
+    }
+
+    /**
+     * Register a callback to be invoked when a touch event is sent to this view.
+     *
+     * @param l the touch listener to attach to this view
+     */
+    public void setOnTouchListener(OnTouchListener l) {
+        getListenerInfo().mOnTouchListener = l;
+    }
+
+    /**
+     * Register a callback to be invoked when a hover event is sent to this view.
+     *
+     * @param l the hover listener to attach to this view
+     */
+    public void setOnHoverListener(OnHoverListener l) {
+        getListenerInfo().mOnHoverListener = l;
+    }
+
     /*
      * Internal method. Check if mouse hover this view.
      *
@@ -5444,6 +5475,107 @@ public class View implements Drawable.Callback {
         return false;
     }
 
+    /**
+     * Dispatch a key event to the next view on the focus path. This path runs
+     * from the top of the view tree down to the currently focused view. If this
+     * view has focus, it will dispatch to itself. Otherwise it will dispatch
+     * the next node down the focus path. This method also fires any key
+     * listeners.
+     *
+     * @param event The key event to be dispatched.
+     * @return True if the event was handled, false otherwise.
+     */
+    public boolean dispatchKeyEvent(@Nonnull KeyEvent event) {
+        // Give any attached key listener a first crack at the event.
+        ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnKeyListener != null && (mViewFlags & ENABLED_MASK) == ENABLED
+                && li.mOnKeyListener.onKey(this, event.getKeyCode(), event)) {
+            return true;
+        }
+
+        return switch (event.getAction()) {
+            case KeyEvent.ACTION_DOWN -> onKeyDown(event.getKeyCode(), event);
+            case KeyEvent.ACTION_UP -> onKeyUp(event.getKeyCode(), event);
+            default -> false;
+        };
+    }
+
+    /**
+     * Default implementation: perform press of the view
+     * when {@link KeyEvent#KEY_ENTER}, {@link KeyEvent#KEY_KP_ENTER}
+     * or {@link KeyEvent#KEY_SPACE} is released, if the view is enabled and clickable.
+     *
+     * @param keyCode a key code that represents the button pressed, from
+     *                {@link KeyEvent}
+     * @param event   the KeyEvent object that defines the button action
+     */
+    public boolean onKeyDown(int keyCode, @Nonnull KeyEvent event) {
+        if (keyCode == KeyEvent.KEY_ENTER || keyCode == KeyEvent.KEY_KP_ENTER
+                || keyCode == KeyEvent.KEY_SPACE) {
+            if ((mViewFlags & ENABLED_MASK) == DISABLED) {
+                return true;
+            }
+            if (event.getRepeatCount() == 0) {
+                if ((mViewFlags & CLICKABLE) == CLICKABLE) {
+                    setPressed(true);
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Default implementation: perform clicking of the view
+     * when {@link KeyEvent#KEY_ENTER}, {@link KeyEvent#KEY_KP_ENTER}
+     * or {@link KeyEvent#KEY_SPACE} is released.
+     *
+     * @param keyCode A key code that represents the button pressed, from
+     *                {@link KeyEvent}.
+     * @param event   The KeyEvent object that defines the button action.
+     */
+    public boolean onKeyUp(int keyCode, @Nonnull KeyEvent event) {
+        if (keyCode == KeyEvent.KEY_ENTER || keyCode == KeyEvent.KEY_KP_ENTER
+                || keyCode == KeyEvent.KEY_SPACE) {
+            if ((mViewFlags & ENABLED_MASK) == DISABLED) {
+                return true;
+            }
+            if ((mViewFlags & CLICKABLE) == CLICKABLE && isPressed()) {
+                setPressed(false);
+                return performClick();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Determines whether the given point, in local coordinates is inside the view.
+     */
+    final boolean pointInView(float localX, float localY) {
+        return pointInView(localX, localY, 0);
+    }
+
+    /**
+     * Utility method to determine whether the given point, in local coordinates,
+     * is inside the view, where the area of the view is expanded by the slop factor.
+     * This method is called while processing touch-move events to determine if the event
+     * is still within the view.
+     */
+    boolean pointInView(float localX, float localY, float slop) {
+        return localX >= -slop && localY >= -slop && localX < ((mRight - mLeft) + slop) &&
+                localY < ((mBottom - mTop) + slop);
+    }
+
+    /**
+     * Set the pointer icon for the current view.
+     * Passing {@code null} will restore the pointer icon to its default value.
+     *
+     * @param pointerIcon A PointerIcon instance which will be shown when the mouse hovers.
+     */
+    public void setPointerIcon(@Nullable PointerIcon pointerIcon) {
+        mAttachInfo.mViewRootBase.updatePointerIcon(pointerIcon);
+    }
+
     /*
      * Returns true if the view is currently mouse hovered
      *
@@ -5500,34 +5632,6 @@ public class View implements Drawable.Callback {
         }
         return onMouseClicked(mouseX, mouseY, mouseButton);
     }*/
-
-    /**
-     * Determines whether the given point, in local coordinates is inside the view.
-     */
-    final boolean pointInView(float localX, float localY) {
-        return pointInView(localX, localY, 0);
-    }
-
-    /**
-     * Utility method to determine whether the given point, in local coordinates,
-     * is inside the view, where the area of the view is expanded by the slop factor.
-     * This method is called while processing touch-move events to determine if the event
-     * is still within the view.
-     */
-    boolean pointInView(float localX, float localY, float slop) {
-        return localX >= -slop && localY >= -slop && localX < ((mRight - mLeft) + slop) &&
-                localY < ((mBottom - mTop) + slop);
-    }
-
-    /**
-     * Set the pointer icon for the current view.
-     * Passing {@code null} will restore the pointer icon to its default value.
-     *
-     * @param pointerIcon A PointerIcon instance which will be shown when the mouse hovers.
-     */
-    public void setPointerIcon(@Nullable PointerIcon pointerIcon) {
-        mAttachInfo.mViewRootBase.updatePointerIcon(pointerIcon);
-    }
 
     /**
      * Called when mouse hovered on this view and a mouse button pressed.
@@ -5795,6 +5899,8 @@ public class View implements Drawable.Callback {
 
         private OnHoverListener mOnHoverListener;
 
+        private OnKeyListener mOnKeyListener;
+
         /**
          * Listener used to dispatch click events.
          */
@@ -5866,6 +5972,34 @@ public class View implements Drawable.Callback {
          * @return True if the listener has consumed the event, false otherwise.
          */
         boolean onHover(View v, MotionEvent event);
+    }
+
+
+    /**
+     * Interface definition for a callback to be invoked when a hardware key event is
+     * dispatched to this view. The callback will be invoked before the key event is
+     * given to the view. This is only useful for hardware keyboards; a software input
+     * method has no obligation to trigger this listener.
+     */
+    @FunctionalInterface
+    public interface OnKeyListener {
+
+        /**
+         * Called when a hardware key is dispatched to a view. This allows listeners to
+         * get a chance to respond before the target view.
+         * <p>Key presses in software keyboards will generally NOT trigger this method,
+         * although some may elect to do so in some situations. Do not assume a
+         * software input method has to be key-based; even if it is, it may use key presses
+         * in a different way than you expect, so there is no way to reliably catch soft
+         * input key presses.
+         *
+         * @param v       The view the key has been dispatched to.
+         * @param keyCode The code for the physical key that was pressed
+         * @param event   The KeyEvent object containing full information about
+         *                the event.
+         * @return True if the listener has consumed the event, false otherwise.
+         */
+        boolean onKey(View v, int keyCode, KeyEvent event);
     }
 
     /**

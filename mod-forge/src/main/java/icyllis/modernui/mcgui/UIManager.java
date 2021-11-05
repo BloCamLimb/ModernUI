@@ -410,7 +410,7 @@ public final class UIManager extends ViewRootBase {
         final long now = RenderCore.timeNanos();
         float x = (float) minecraft.mouseHandler.xpos();
         float y = (float) minecraft.mouseHandler.ypos();
-        MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_HOVER_MOVE,
+        MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_HOVER_MOVE,
                 x, y, 0);
         enqueueInputEvent(event);
         //mPendingRepostCursorEvent = false;
@@ -443,7 +443,10 @@ public final class UIManager extends ViewRootBase {
                     MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP;
             if ((action == MotionEvent.ACTION_DOWN && (buttonState ^ actionButton) == 0)
                     || (action == MotionEvent.ACTION_UP && buttonState == 0)) {
-                mPendingMouseEvent = MotionEvent.obtain(now, now, action, actionButton,
+                if (mPendingMouseEvent != null) {
+                    mPendingMouseEvent.recycle();
+                }
+                mPendingMouseEvent = MotionEvent.obtain(now, action, actionButton,
                         x, y, event.getMods(), buttonState, 0);
             }
         }
@@ -462,7 +465,7 @@ public final class UIManager extends ViewRootBase {
             final long now = RenderCore.timeNanos();
             float x = (float) sInstance.minecraft.mouseHandler.xpos();
             float y = (float) sInstance.minecraft.mouseHandler.ypos();
-            MotionEvent event = MotionEvent.obtain(now, now, MotionEvent.ACTION_SCROLL,
+            MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_SCROLL,
                     x, y, 0);
             event.setAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
             event.setAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
@@ -470,20 +473,31 @@ public final class UIManager extends ViewRootBase {
         }
     }
 
+    public static void onUnicodeChar(int codePoint) {
+        if (sInstance.mScreen != null) {
+
+        }
+    }
+
     @SubscribeEvent
     void onPostKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
-        if (mScreen != null && event.getAction() == GLFW_PRESS) {
-            //TODO dispatch to views
-            InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
-            if (mScreen instanceof MenuScreen<?> && minecraft.options.keyInventory.isActiveAndMatches(key)) {
-                if (minecraft.player != null) {
-                    minecraft.player.closeContainer();
+        if (mScreen != null) {
+            int action = event.getAction() == GLFW_RELEASE ? KeyEvent.ACTION_UP : KeyEvent.ACTION_DOWN;
+            KeyEvent keyEvent = KeyEvent.obtain(RenderCore.timeNanos(), action, event.getKey(), 0,
+                    event.getModifiers(), event.getScanCode(), 0);
+            enqueueInputEvent(keyEvent);
+            if (event.getAction() == GLFW_PRESS) {
+                InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
+                if (mScreen instanceof MenuScreen<?> && minecraft.options.keyInventory.isActiveAndMatches(key)) {
+                    if (minecraft.player != null) {
+                        minecraft.player.closeContainer();
+                    }
+                    return;
+                } else if (event.getKey() == GLFW_KEY_ESCAPE) {
+                    //TODO check should close on esc
+                    minecraft.setScreen(null);
+                    return;
                 }
-                return;
-            } else if (event.getKey() == GLFW_KEY_ESCAPE) {
-                //TODO check should close on esc
-                minecraft.setScreen(null);
-                return;
             }
         }
         if (!ModernUIForge.isDeveloperMode() || event.getAction() != GLFW_PRESS || !Screen.hasControlDown()) {
@@ -571,8 +585,8 @@ public final class UIManager extends ViewRootBase {
         }
     }
 
+    //TODO
     boolean charTyped(char ch) {
-        //TODO
         /*if (popup != null) {
             return popup.charTyped(codePoint, modifiers);
         }*/

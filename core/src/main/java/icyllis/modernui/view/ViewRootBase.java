@@ -29,7 +29,7 @@ import org.apache.logging.log4j.MarkerManager;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.LinkedList;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
  * The top of a view hierarchy, implementing the needed protocol between View and
@@ -44,7 +44,7 @@ public abstract class ViewRootBase implements ViewParent {
     protected Thread mThread;
     protected GLCanvas mCanvas;
 
-    private final LinkedList<InputEvent> mInputEvents = new LinkedList<>();
+    private final ConcurrentLinkedQueue<InputEvent> mInputEvents = new ConcurrentLinkedQueue<>();
 
     private boolean mTraversalScheduled;
     private boolean mWillDrawSoon;
@@ -206,35 +206,28 @@ public abstract class ViewRootBase implements ViewParent {
     }
 
     protected void enqueueInputEvent(@Nonnull InputEvent event) {
-        mInputEvents.add(event);
+        mInputEvents.offer(event);
     }
 
     protected void doProcessInputEvents() {
         checkThread();
         if (mView != null) {
-            InputEvent event;
-            while ((event = mInputEvents.poll()) != null) {
+            InputEvent e;
+            while ((e = mInputEvents.poll()) != null) {
                 try {
-                    if (event instanceof KeyEvent) {
-                        processKeyEvent((KeyEvent) event);
+                    if (e instanceof KeyEvent) {
+                        mView.dispatchKeyEvent((KeyEvent) e);
                     } else {
-                        processPointerEvent((MotionEvent) event);
+                        mView.dispatchPointerEvent((MotionEvent) e);
                     }
                 } finally {
-                    event.recycle();
+                    e.recycle();
                 }
             }
         } else {
+            // drop all
             mInputEvents.clear();
         }
-    }
-
-    private boolean processKeyEvent(KeyEvent event) {
-        return false;
-    }
-
-    private boolean processPointerEvent(MotionEvent event) {
-        return mView.dispatchPointerEvent(event);
     }
 
     /*boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
