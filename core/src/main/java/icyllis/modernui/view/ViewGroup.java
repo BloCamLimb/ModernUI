@@ -375,7 +375,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     private void exitHoverTargets() {
         if (mHoveredSelf || mFirstHoverTarget != null) {
             final long now = RenderCore.timeNanos();
-            MotionEvent event = MotionEvent.obtain(now, now,
+            MotionEvent event = MotionEvent.obtain(now,
                     MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
             dispatchHoverEvent(event);
             event.recycle();
@@ -396,7 +396,7 @@ public abstract class ViewGroup extends View implements ViewParent {
                 target.recycle();
 
                 final long now = RenderCore.timeNanos();
-                MotionEvent event = MotionEvent.obtain(now, now,
+                MotionEvent event = MotionEvent.obtain(now,
                         MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
                 view.dispatchHoverEvent(event);
                 event.recycle();
@@ -625,7 +625,7 @@ public abstract class ViewGroup extends View implements ViewParent {
             boolean syntheticEvent = false;
             if (event == null) {
                 final long time = RenderCore.timeNanos();
-                event = MotionEvent.obtain(time, time,
+                event = MotionEvent.obtain(time,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 syntheticEvent = true;
             }
@@ -647,7 +647,7 @@ public abstract class ViewGroup extends View implements ViewParent {
                 target.recycle();
 
                 final long now = RenderCore.timeNanos();
-                MotionEvent event = MotionEvent.obtain(now, now,
+                MotionEvent event = MotionEvent.obtain(now,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 view.dispatchTouchEvent(event);
                 event.recycle();
@@ -834,7 +834,7 @@ public abstract class ViewGroup extends View implements ViewParent {
                 event.offsetLocation(-offsetX, -offsetY);
             }
         } else {
-            final MotionEvent transformedEvent = MotionEvent.obtain(event);
+            final MotionEvent transformedEvent = event.copy();
 
             final float offsetX = mScrollX - child.mLeft;
             final float offsetY = mScrollY - child.mTop;
@@ -871,6 +871,18 @@ public abstract class ViewGroup extends View implements ViewParent {
     void transformPointToViewLocal(float[] point, View child) {
         point[0] += mScrollX - child.mLeft;
         point[1] += mScrollY - child.mTop;
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(@Nonnull KeyEvent event) {
+        if ((mPrivateFlags & (PFLAG_FOCUSED | PFLAG_HAS_BOUNDS))
+                == (PFLAG_FOCUSED | PFLAG_HAS_BOUNDS)) {
+            return super.dispatchKeyEvent(event);
+        } else if (mFocused != null && (mFocused.mPrivateFlags & PFLAG_HAS_BOUNDS)
+                == PFLAG_HAS_BOUNDS) {
+            return mFocused.dispatchKeyEvent(event);
+        }
+        return false;
     }
 
     /**

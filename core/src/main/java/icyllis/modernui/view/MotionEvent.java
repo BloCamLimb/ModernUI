@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import org.lwjgl.glfw.GLFW;
@@ -26,7 +27,7 @@ import org.lwjgl.system.Platform;
 import javax.annotation.Nonnull;
 
 /**
- * Object that indicates movement events (mouse, touchpad etc).
+ * Object that indicates movement events (mouse, touchpad etc.).
  * Modified for desktop application, such as multiple pointers are disabled.
  */
 @SuppressWarnings("unused")
@@ -80,7 +81,7 @@ public final class MotionEvent extends InputEvent {
     public static final int ACTION_CANCEL = 3;
 
     /**
-     * Constant for {@link #getActionMasked}: A movement has happened outside of the
+     * Constant for {@link #getActionMasked}: A movement has happened outside the
      * normal bounds of the UI element.  This does not provide a full gesture,
      * but only the initial location of the movement/touch.
      * <p>
@@ -218,14 +219,12 @@ public final class MotionEvent extends InputEvent {
      */
     private static final int ACTION_POINTER_INDEX_SHIFT = 8;
 
-
     /**
      * This private flag is only set on {@link #ACTION_HOVER_MOVE} events and indicates that
      * this event will be immediately followed by a {@link #ACTION_HOVER_EXIT}. It is used to
      * prevent generating redundant {@link #ACTION_HOVER_ENTER} events.
      */
     public static final int FLAG_HOVER_EXIT_PENDING = 0x4;
-
 
     /**
      * Button constant: Primary button (left mouse button).
@@ -265,7 +264,6 @@ public final class MotionEvent extends InputEvent {
      */
     public static final int BUTTON_FORWARD = 1 << 4;
 
-
     /**
      * Tool type constant: Unknown tool type.
      * This constant is used when the tool type is not known or is not relevant,
@@ -302,7 +300,6 @@ public final class MotionEvent extends InputEvent {
      * @see #getToolType
      */
     private static final int TOOL_TYPE_ERASER = 4;
-
 
     /**
      * Axis constant: X axis of a motion event.
@@ -384,7 +381,6 @@ public final class MotionEvent extends InputEvent {
 
     private static final Pool<MotionEvent> sPool = Pools.concurrent(10);
 
-
     private int mAction;
     private int mActionButton;
     private int mFlags;
@@ -396,7 +392,6 @@ public final class MotionEvent extends InputEvent {
     private float mRawXCursorPosition;
     private float mRawYCursorPosition;
 
-    private long mDownTime;
     private long mEventTime;
 
     private long mPackedAxisBits;
@@ -415,19 +410,17 @@ public final class MotionEvent extends InputEvent {
     }
 
     @Nonnull
-    public static MotionEvent obtain(long downTime, long eventTime, int action,
+    public static MotionEvent obtain(long eventTime, int action,
                                      float x, float y, int modifiers) {
-        return obtain(downTime, eventTime, action, 0, x, y, modifiers, 0, 0);
+        return obtain(eventTime, action, 0, x, y, modifiers, 0, 0);
     }
 
     /**
      * Create a new MotionEvent, filling in a subset of the basic motion
      * values.
      *
-     * @param downTime     The time (in ns) when the user originally pressed down to start
-     *                     a stream of position events.  This must be obtained from {@link GLFW#glfwGetTime()}.
-     * @param eventTime    The the time (in ns) when this specific event was generated.  This
-     *                     must be obtained from {@link GLFW#glfwGetTime()}.
+     * @param eventTime    The time (in ns) when this specific event was generated.  This
+     *                     must be obtained from {@link RenderCore#timeNanos()}.
      * @param action       The kind of action being performed, such as {@link #ACTION_DOWN}.
      * @param actionButton The button of press or release action, such as {@link #BUTTON_PRIMARY}
      * @param x            The X coordinate of this event.
@@ -437,7 +430,7 @@ public final class MotionEvent extends InputEvent {
      * @param flags        The motion event flags.
      */
     @Nonnull
-    public static MotionEvent obtain(long downTime, long eventTime, int action,
+    public static MotionEvent obtain(long eventTime, int action,
                                      int actionButton, float x, float y,
                                      int modifiers, int buttonState, int flags) {
         if ((action & ACTION_MASK) != action) {
@@ -447,20 +440,8 @@ public final class MotionEvent extends InputEvent {
             throw new IllegalArgumentException("actionButton should be defined for action press or release");
         }
         MotionEvent event = obtain();
-        event.initialize(action, actionButton, flags, modifiers, buttonState,
-                0, 0, x, y,
-                downTime, eventTime);
+        event.initialize(action, actionButton, flags, modifiers, buttonState, x, y, eventTime);
         return event;
-    }
-
-    /**
-     * Create a new MotionEvent, copying from an existing one.
-     */
-    @Nonnull
-    public static MotionEvent obtain(@Nonnull MotionEvent other) {
-        MotionEvent ev = obtain();
-        ev.copyFrom(other);
-        return ev;
     }
 
     private void copyFrom(@Nonnull MotionEvent other) {
@@ -473,7 +454,6 @@ public final class MotionEvent extends InputEvent {
         mYOffset = other.mYOffset;
         mRawXCursorPosition = other.mRawXCursorPosition;
         mRawYCursorPosition = other.mRawYCursorPosition;
-        mDownTime = other.mDownTime;
         mEventTime = other.mEventTime;
 
         final long bits = other.mPackedAxisBits;
@@ -490,20 +470,17 @@ public final class MotionEvent extends InputEvent {
         }
     }
 
-    @SuppressWarnings("SameParameterValue")
     private void initialize(int action, int actionButton, int flags, int modifiers, int buttonState,
-                            float xOffset, float yOffset, float rawXCursorPosition, float rawYCursorPosition,
-                            long downTime, long eventTime) {
+                            float rawXCursorPosition, float rawYCursorPosition, long eventTime) {
         mAction = action;
         mActionButton = actionButton;
         mFlags = flags;
         mModifiers = modifiers;
         mButtonState = buttonState;
-        mXOffset = xOffset;
-        mYOffset = yOffset;
+        mXOffset = 0;
+        mYOffset = 0;
         mRawXCursorPosition = rawXCursorPosition;
         mRawYCursorPosition = rawYCursorPosition;
-        mDownTime = downTime;
         mEventTime = eventTime;
         mPackedAxisBits = 0;
     }
@@ -710,23 +687,31 @@ public final class MotionEvent extends InputEvent {
     }
 
     public void setHoverExitPending(boolean hoverExitPending) {
-        mFlags = hoverExitPending
-                ? mFlags | FLAG_HOVER_EXIT_PENDING
-                : mFlags & ~FLAG_HOVER_EXIT_PENDING;
+        if (hoverExitPending) {
+            mFlags |= FLAG_HOVER_EXIT_PENDING;
+        } else {
+            mFlags &= ~FLAG_HOVER_EXIT_PENDING;
+        }
     }
 
+    /**
+     * Create a new MotionEvent, copying from this one.
+     */
     @Nonnull
     @Override
     public MotionEvent copy() {
-        return obtain(this);
+        MotionEvent ev = obtain();
+        ev.copyFrom(this);
+        return ev;
     }
 
     /**
      * Returns the time (in ms) when the user originally pressed down to start
      * a stream of position events.
      */
-    public long getDownTime() {
-        return mDownTime / 1000000;
+    @Deprecated
+    private long getDownTime() {
+        return mEventTime / 1000000;
     }
 
     @Override
@@ -743,7 +728,6 @@ public final class MotionEvent extends InputEvent {
     public void cancel() {
         setAction(ACTION_CANCEL);
     }
-
 
     @Deprecated
     private PointerCoords getRawPointerCoords(int pointerIndex) {
@@ -1008,6 +992,18 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
+     * Returns the state of the modifier keys that were in effect when
+     * the event was generated.  This is the same values as those
+     * returned by {@link KeyEvent#getModifiers()}.
+     *
+     * @return an integer in which each bit set to 1 represents a pressed modifier key
+     * @see KeyEvent#getModifiers()
+     */
+    public int getModifiers() {
+        return mModifiers;
+    }
+
+    /**
      * Returns true if only the specified modifiers keys are pressed.
      * Returns false if a different combination of modifier keys are pressed.
      * <p>
@@ -1059,7 +1055,7 @@ public final class MotionEvent extends InputEvent {
     }
 
     /**
-     * Returns the pressed state of the SUPER key (a.k.a META or WIN key).
+     * Returns the pressed state of the SUPER key (a.k.a. META or WIN key).
      *
      * @return true if the SUPER key is pressed, false otherwise
      */
@@ -1155,6 +1151,7 @@ public final class MotionEvent extends InputEvent {
      * creating new {@link MotionEvent} objects and to query pointer coordinates
      * in bulk.
      */
+    @Deprecated
     private static final class PointerCoords {
 
         private static final int INITIAL_PACKED_AXIS_VALUES = 8;
@@ -1284,6 +1281,7 @@ public final class MotionEvent extends InputEvent {
      * Objects of this type can be used to specify the pointer id and tool type
      * when creating new {@link MotionEvent} objects and to query pointer properties in bulk.
      */
+    @Deprecated
     private static final class PointerProperties {
 
         /**
