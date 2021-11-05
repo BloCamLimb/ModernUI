@@ -816,6 +816,16 @@ public class TextView extends View {
         return mTextPaint.getFontMetricsInt(null);
     }
 
+    /**
+     * Gets the {@link Layout} that is currently being used to display the text.
+     * This value can be null if the text or width has recently changed.
+     *
+     * @return The Layout that is currently being used to display the text.
+     */
+    public final Layout getLayout() {
+        return mLayout;
+    }
+
     @Override
     protected void onRtlPropertiesChanged(int layoutDirection) {
         super.onRtlPropertiesChanged(layoutDirection);
