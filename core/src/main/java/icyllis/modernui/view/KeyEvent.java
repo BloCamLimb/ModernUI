@@ -32,9 +32,8 @@ import javax.annotation.Nonnull;
 @SuppressWarnings("unused")
 public class KeyEvent extends InputEvent {
 
-    /**
-     * Key codes.
-     */
+    public static final int KEY_UNKNOWN = GLFW.GLFW_KEY_UNKNOWN;
+
     public static final int KEY_SPACE = GLFW.GLFW_KEY_SPACE;
     public static final int KEY_APOSTROPHE = GLFW.GLFW_KEY_APOSTROPHE;
     public static final int KEY_COMMA = GLFW.GLFW_KEY_COMMA;
@@ -156,6 +155,18 @@ public class KeyEvent extends InputEvent {
     public static final int KEY_RIGHT_ALT = GLFW.GLFW_KEY_RIGHT_ALT;
     public static final int KEY_RIGHT_SUPER = GLFW.GLFW_KEY_RIGHT_SUPER;
     public static final int KEY_MENU = GLFW.GLFW_KEY_MENU;
+
+    public static final int MOD_SHIFT = GLFW.GLFW_MOD_SUPER;
+    public static final int MOD_CTRL;
+    public static final int MOD_ALT = GLFW.GLFW_MOD_ALT;
+
+    static {
+        if (Platform.get() == Platform.MACOSX) {
+            MOD_CTRL = GLFW.GLFW_MOD_SUPER;
+        } else {
+            MOD_CTRL = GLFW.GLFW_MOD_CONTROL;
+        }
+    }
 
     /**
      * {@link #getAction} value: the key has been pressed down.
@@ -299,7 +310,7 @@ public class KeyEvent extends InputEvent {
      * @return true if the SHIFT key is pressed, false otherwise
      */
     public final boolean isShiftPressed() {
-        return (mModifiers & GLFW.GLFW_MOD_SHIFT) != 0;
+        return (mModifiers & MOD_SHIFT) != 0;
     }
 
     /**
@@ -309,10 +320,7 @@ public class KeyEvent extends InputEvent {
      * @return true if the CTRL key is pressed, false otherwise
      */
     public final boolean isCtrlPressed() {
-        if (Platform.get() == Platform.MACOSX) {
-            return (mModifiers & GLFW.GLFW_MOD_SUPER) != 0;
-        }
-        return (mModifiers & GLFW.GLFW_MOD_CONTROL) != 0;
+        return (mModifiers & MOD_CTRL) != 0;
     }
 
     /**
@@ -321,7 +329,7 @@ public class KeyEvent extends InputEvent {
      * @return true if the ALT key is pressed, false otherwise
      */
     public final boolean isAltPressed() {
-        return (mModifiers & GLFW.GLFW_MOD_ALT) != 0;
+        return (mModifiers & MOD_ALT) != 0;
     }
 
     /**

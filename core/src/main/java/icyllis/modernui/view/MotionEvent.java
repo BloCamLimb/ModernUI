@@ -22,7 +22,6 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
 
@@ -1029,7 +1028,7 @@ public final class MotionEvent extends InputEvent {
      * @return true if the SHIFT key is pressed, false otherwise
      */
     public boolean isShiftPressed() {
-        return (mModifiers & GLFW.GLFW_MOD_SHIFT) != 0;
+        return (mModifiers & KeyEvent.MOD_SHIFT) != 0;
     }
 
     /**
@@ -1039,10 +1038,7 @@ public final class MotionEvent extends InputEvent {
      * @return true if the CTRL key is pressed, false otherwise
      */
     public boolean isCtrlPressed() {
-        if (Platform.get() == Platform.MACOSX) {
-            return (mModifiers & GLFW.GLFW_MOD_SUPER) != 0;
-        }
-        return (mModifiers & GLFW.GLFW_MOD_CONTROL) != 0;
+        return (mModifiers & KeyEvent.MOD_CTRL) != 0;
     }
 
     /**
@@ -1051,7 +1047,7 @@ public final class MotionEvent extends InputEvent {
      * @return true if the ALT key is pressed, false otherwise
      */
     public boolean isAltPressed() {
-        return (mModifiers & GLFW.GLFW_MOD_ALT) != 0;
+        return (mModifiers & KeyEvent.MOD_ALT) != 0;
     }
 
     /**
