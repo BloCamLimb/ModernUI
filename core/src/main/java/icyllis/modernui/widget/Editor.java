@@ -18,6 +18,8 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.text.InputFilter;
+import icyllis.modernui.text.Spannable;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -29,6 +31,8 @@ public class Editor {
     private static final Marker MARKER = MarkerManager.getMarker("Editor");
 
     private final TextView mTextView;
+    public boolean mSelectionMoved;
+    public InputFilter mUndoInputFilter;
 
     boolean mCursorVisible = true;
     boolean mSelectAllOnFocus;
@@ -39,6 +43,39 @@ public class Editor {
     }
 
     void prepareCursorControllers() {
+
+    }
+
+    public void sendOnTextChanged(int start, int before, int after) {
+
+    }
+
+    public void maybeFireScheduledRestartInputForSetText() {
+
+    }
+
+    public void addSpanWatchers(Spannable sp) {
+
+    }
+
+    public void scheduleRestartInputForSetText() {
+
+    }
+
+    public void forgetUndoRedo() {
+
+    }
+
+    public void reportExtractedText() {
+
+    }
+
+    public void invalidateTextDisplayList() {
+
+
+    }
+
+    public void makeBlink() {
 
     }
 }

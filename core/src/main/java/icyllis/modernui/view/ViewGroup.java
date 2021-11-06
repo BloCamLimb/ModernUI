@@ -108,11 +108,11 @@ public abstract class ViewGroup extends View implements ViewParent {
     private int mGroupFlags;
 
     // child views
-    private View[] mChildren = new View[ARRAY_CAPACITY_INCREMENT];
+    private View[] mChildren;
 
     // number of valid children in the children array, the rest
     // should be null or not considered as children
-    private int mChildrenCount = 0;
+    private int mChildrenCount;
 
     // The view contained within this ViewGroup that has or contains focus.
     private View mFocused;
@@ -168,6 +168,9 @@ public abstract class ViewGroup extends View implements ViewParent {
 
     public ViewGroup() {
         mGroupFlags |= FLAG_CLIP_CHILDREN;
+        setDescendantFocusability(FOCUS_BEFORE_DESCENDANTS);
+        mChildren = new View[ARRAY_CAPACITY_INCREMENT];
+        mChildrenCount = 0;
     }
 
     @Override

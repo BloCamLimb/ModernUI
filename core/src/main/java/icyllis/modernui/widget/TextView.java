@@ -18,19 +18,15 @@
 
 package icyllis.modernui.widget;
 
-import com.ibm.icu.text.BreakIterator;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.*;
-import icyllis.modernui.text.method.MovementMethod;
-import icyllis.modernui.text.method.TransformationMethod;
-import icyllis.modernui.text.method.WordIterator;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.MeasureSpec;
-import icyllis.modernui.view.PointerIcon;
-import icyllis.modernui.view.View;
+import icyllis.modernui.text.method.*;
+import icyllis.modernui.text.style.CharacterStyle;
+import icyllis.modernui.view.*;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -38,12 +34,14 @@ import org.jetbrains.annotations.VisibleForTesting;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Locale;
+import java.util.function.BiConsumer;
 
 /**
  * A user interface element that displays text to the user and provides user-editable text.
  */
 //TODO
-public class TextView extends View {
+public class TextView extends View implements ViewTreeObserver.OnPreDrawListener {
 
     static final Marker MARKER = MarkerManager.getMarker("TextView");
     static final boolean DEBUG_EXTRACT = false;
@@ -52,7 +50,7 @@ public class TextView extends View {
     @VisibleForTesting
     public static final BoringLayout.Metrics UNKNOWN_BORING = new BoringLayout.Metrics();
 
-    // Width modes.
+    // Minimum or maximum modes.
     private static final int LINES = 1;
     private static final int PIXELS = 2;
 
@@ -68,9 +66,6 @@ public class TextView extends View {
 
     private static final int CHANGE_WATCHER_PRIORITY = 100;
 
-    /**
-     * Return code of {@link #doKeyDown}.
-     */
     private static final int KEY_EVENT_NOT_HANDLED = 0;
     private static final int KEY_EVENT_HANDLED = -1;
     private static final int KEY_DOWN_HANDLED_BY_KEY_LISTENER = 1;
@@ -81,9 +76,6 @@ public class TextView extends View {
     // System-wide time for last cut, copy or text changed action.
     static long sLastCutCopyOrTextChangedTime;
 
-    /**
-     * {@link #setTextColor(int)} or {@link #getCurrentTextColor()} should be used instead.
-     */
     private int mCurTextColor;
 
     private int mCurHintTextColor;
@@ -107,202 +99,26 @@ public class TextView extends View {
 
     private boolean mCursorVisible = true;
 
-    static class Drawables {
-        static final int LEFT = 0;
-        static final int TOP = 1;
-        static final int RIGHT = 2;
-        static final int BOTTOM = 3;
-
-        static final int DRAWABLE_NONE = -1;
-        static final int DRAWABLE_RIGHT = 0;
-        static final int DRAWABLE_LEFT = 1;
-
-        final Rect mCompoundRect = new Rect();
-
-        final Drawable[] mShowing = new Drawable[4];
-
-        boolean mHasTint;
-        boolean mHasTintMode;
-
-        Drawable mDrawableStart, mDrawableEnd, mDrawableError, mDrawableTemp;
-        Drawable mDrawableLeftInitial, mDrawableRightInitial;
-
-        boolean mIsRtlCompatibilityMode;
-        boolean mOverride;
-
-        int mDrawableSizeTop, mDrawableSizeBottom, mDrawableSizeLeft, mDrawableSizeRight,
-                mDrawableSizeStart, mDrawableSizeEnd, mDrawableSizeError, mDrawableSizeTemp;
-
-        int mDrawableWidthTop, mDrawableWidthBottom, mDrawableHeightLeft, mDrawableHeightRight,
-                mDrawableHeightStart, mDrawableHeightEnd, mDrawableHeightError, mDrawableHeightTemp;
-
-        int mDrawablePadding;
-
-        int mDrawableSaved = DRAWABLE_NONE;
-
-        public Drawables() {
-            mIsRtlCompatibilityMode = !ModernUI.get().hasRtlSupport();
-            mOverride = false;
-        }
-
-        /**
-         * @return {@code true} if this object contains metadata that needs to
-         * be retained, {@code false} otherwise
-         */
-        public boolean hasMetadata() {
-            return mDrawablePadding != 0 || mHasTintMode || mHasTint;
-        }
-
-        /**
-         * Updates the list of displayed drawables to account for the current
-         * layout direction.
-         *
-         * @param layoutDirection the current layout direction
-         * @return {@code true} if the displayed drawables changed
-         */
-        public boolean resolveWithLayoutDirection(int layoutDirection) {
-            final Drawable previousLeft = mShowing[Drawables.LEFT];
-            final Drawable previousRight = mShowing[Drawables.RIGHT];
-
-            // First reset "left" and "right" drawables to their initial values
-            mShowing[Drawables.LEFT] = mDrawableLeftInitial;
-            mShowing[Drawables.RIGHT] = mDrawableRightInitial;
-
-            if (mIsRtlCompatibilityMode) {
-                // Use "start" drawable as "left" drawable if the "left" drawable was not defined
-                if (mDrawableStart != null && mShowing[Drawables.LEFT] == null) {
-                    mShowing[Drawables.LEFT] = mDrawableStart;
-                    mDrawableSizeLeft = mDrawableSizeStart;
-                    mDrawableHeightLeft = mDrawableHeightStart;
-                }
-                // Use "end" drawable as "right" drawable if the "right" drawable was not defined
-                if (mDrawableEnd != null && mShowing[Drawables.RIGHT] == null) {
-                    mShowing[Drawables.RIGHT] = mDrawableEnd;
-                    mDrawableSizeRight = mDrawableSizeEnd;
-                    mDrawableHeightRight = mDrawableHeightEnd;
-                }
-            } else {
-                // JB-MR1+ normal case: "start" / "end" drawables are overriding "left" / "right"
-                // drawable if and only if they have been defined
-                switch (layoutDirection) {
-                    case LAYOUT_DIRECTION_RTL:
-                        if (mOverride) {
-                            mShowing[Drawables.RIGHT] = mDrawableStart;
-                            mDrawableSizeRight = mDrawableSizeStart;
-                            mDrawableHeightRight = mDrawableHeightStart;
-
-                            mShowing[Drawables.LEFT] = mDrawableEnd;
-                            mDrawableSizeLeft = mDrawableSizeEnd;
-                            mDrawableHeightLeft = mDrawableHeightEnd;
-                        }
-                        break;
-
-                    case LAYOUT_DIRECTION_LTR:
-                    default:
-                        if (mOverride) {
-                            mShowing[Drawables.LEFT] = mDrawableStart;
-                            mDrawableSizeLeft = mDrawableSizeStart;
-                            mDrawableHeightLeft = mDrawableHeightStart;
-
-                            mShowing[Drawables.RIGHT] = mDrawableEnd;
-                            mDrawableSizeRight = mDrawableSizeEnd;
-                            mDrawableHeightRight = mDrawableHeightEnd;
-                        }
-                        break;
-                }
-            }
-
-            applyErrorDrawableIfNeeded(layoutDirection);
-
-            return mShowing[Drawables.LEFT] != previousLeft
-                    || mShowing[Drawables.RIGHT] != previousRight;
-        }
-
-        public void setErrorDrawable(Drawable dr, TextView tv) {
-            if (mDrawableError != dr && mDrawableError != null) {
-                mDrawableError.setCallback(null);
-            }
-            mDrawableError = dr;
-
-            if (mDrawableError != null) {
-                final Rect compoundRect = mCompoundRect;
-                final int[] state = tv.getDrawableState();
-
-                mDrawableError.setState(state);
-                mDrawableError.copyBounds(compoundRect);
-                mDrawableError.setCallback(tv);
-                mDrawableSizeError = compoundRect.width();
-                mDrawableHeightError = compoundRect.height();
-            } else {
-                mDrawableSizeError = mDrawableHeightError = 0;
-            }
-        }
-
-        private void applyErrorDrawableIfNeeded(int layoutDirection) {
-            // first restore the initial state if needed
-            switch (mDrawableSaved) {
-                case DRAWABLE_LEFT:
-                    mShowing[Drawables.LEFT] = mDrawableTemp;
-                    mDrawableSizeLeft = mDrawableSizeTemp;
-                    mDrawableHeightLeft = mDrawableHeightTemp;
-                    break;
-                case DRAWABLE_RIGHT:
-                    mShowing[Drawables.RIGHT] = mDrawableTemp;
-                    mDrawableSizeRight = mDrawableSizeTemp;
-                    mDrawableHeightRight = mDrawableHeightTemp;
-                    break;
-                case DRAWABLE_NONE:
-                default:
-            }
-            // then, if needed, assign the Error drawable to the correct location
-            if (mDrawableError != null) {
-                if (layoutDirection == LAYOUT_DIRECTION_RTL) {
-                    mDrawableSaved = DRAWABLE_LEFT;
-                    mDrawableTemp = mShowing[Drawables.LEFT];
-                    mDrawableSizeTemp = mDrawableSizeLeft;
-                    mDrawableHeightTemp = mDrawableHeightLeft;
-                    mShowing[Drawables.LEFT] = mDrawableError;
-                    mDrawableSizeLeft = mDrawableSizeError;
-                    mDrawableHeightLeft = mDrawableHeightError;
-                } else {
-                    mDrawableSaved = DRAWABLE_RIGHT;
-                    mDrawableTemp = mShowing[Drawables.RIGHT];
-                    mDrawableSizeTemp = mDrawableSizeRight;
-                    mDrawableHeightTemp = mDrawableHeightRight;
-                    mShowing[Drawables.RIGHT] = mDrawableError;
-                    mDrawableSizeRight = mDrawableSizeError;
-                    mDrawableHeightRight = mDrawableHeightError;
-                }
-            }
-        }
-    }
-
     Drawables mDrawables;
 
     // Do not update following mText/mSpannable/mPrecomputed except for setTextInternal()
+    @Nonnull
     private CharSequence mText = "";
     @Nullable
     private Spannable mSpannable;
     @Nullable
     private PrecomputedText mPrecomputed;
 
-    private CharSequence mTransformed;
+    @Nonnull
+    private CharSequence mTransformed = "";
+    @Nonnull
     private BufferType mBufferType = BufferType.NORMAL;
-
-    /**
-     * Type of the text buffer that defines the characteristics of the text such as static,
-     * styleable, or editable.
-     */
-    public enum BufferType {
-        NORMAL, SPANNABLE, EDITABLE
-    }
 
     @Nullable
     private CharSequence mHint;
     @Nullable
     private Layout mHintLayout;
 
-    //TODO give it a default movement method
     @Nullable
     private MovementMethod mMovement;
     @Nullable
@@ -315,10 +131,6 @@ public class TextView extends View {
     // display attributes
     private final TextPaint mTextPaint = new TextPaint();
     private Layout mLayout;
-    private boolean mLocalesChanged = false;
-    private int mTextSizeUnit = -1;
-
-    private Typeface mOriginalTypeface;
 
     // True if fallback fonts that end up getting used should be allowed to affect line spacing.
     boolean mUseFallbackLineSpacing = true;
@@ -338,9 +150,7 @@ public class TextView extends View {
     private int mOldMaxMode = mMaxMode;
 
     private int mMaxWidth = Integer.MAX_VALUE;
-    private int mMaxWidthMode = PIXELS;
     private int mMinWidth = 0;
-    private int mMinWidthMode = PIXELS;
 
     private boolean mSingleLine;
     private int mDesiredHeightAtMeasure = -1;
@@ -360,6 +170,7 @@ public class TextView extends View {
 
     private TextDirectionHeuristic mTextDir;
 
+    @Nonnull
     private InputFilter[] mFilters = NO_FILTERS;
 
     private boolean mHighlightPathBogus = true;
@@ -373,38 +184,93 @@ public class TextView extends View {
     public TextView() {
     }
 
-    // Update member variables
-    private void setTextInternal(@Nonnull CharSequence text) {
-        mText = text;
-        mSpannable = (text instanceof Spannable) ? (Spannable) text : null;
-        mPrecomputed = (text instanceof PrecomputedText) ? (PrecomputedText) text : null;
+    /**
+     * Gets the {@link MovementMethod} being used for this TextView,
+     * which provides positioning, scrolling, and text selection functionality.
+     * This will frequently be null for non-editable TextViews.
+     *
+     * @return the movement method being used for this TextView.
+     * @see MovementMethod
+     */
+    @Nullable
+    public final MovementMethod getMovementMethod() {
+        return mMovement;
     }
 
-    public void setText(@Nonnull CharSequence text) {
-        setTextInternal(text);
-        if (mTransformation == null) {
-            mTransformed = text;
+    /**
+     * Sets the {@link MovementMethod} for handling arrow key movement for this TextView.
+     * This can be null to disallow using the arrow keys to move the cursor or scroll
+     * the view.
+     * <p>
+     * Be warned that if you want a TextView with a movement method not to be focusable,
+     * or if you want a TextView without a movement method to be focusable, you must call
+     * {@link #setFocusable} again after calling this to get the focusability back the
+     * way you want it.
+     *
+     * @param movement the movement method to set
+     */
+    public final void setMovementMethod(@Nullable MovementMethod movement) {
+        if (mMovement != movement) {
+            mMovement = movement;
+
+            if (movement != null && mSpannable == null) {
+                setText(mText);
+            }
+
+            if (mMovement != null || (mEditor != null && mBufferType == BufferType.EDITABLE)) {
+                setFocusable(FOCUSABLE);
+                setClickable(true);
+                setLongClickable(true);
+            } else {
+                setFocusable(FOCUSABLE_AUTO);
+                setClickable(false);
+                setLongClickable(false);
+            }
+
+            // SelectionModifierCursorController depends on textCanBeSelected, which depends on
+            // mMovement
+            if (mEditor != null) {
+                mEditor.prepareCursorControllers();
+            }
         }
     }
 
     /**
-     * It would be better to rely on the input type for everything. A password inputType should have
-     * a password transformation. We should hence use isPasswordInputType instead of this method.
-     * <p>
-     * We should:
-     * - Call setInputType in setKeyListener instead of changing the input type directly (which
-     * would install the correct transformation).
-     * - Refuse the installation of a non-password transformation in setTransformation if the input
-     * type is password.
-     * <p>
-     * However, this is like this for legacy reasons and we cannot break existing apps. This method
-     * is useful since it matches what the user can see (obfuscated text or not).
+     * Gets the current {@link TransformationMethod} for the TextView.
+     * This is frequently null, except for single-line and password fields.
      *
-     * @return true if the current transformation method is of the password type.
+     * @return the current transformation method for this TextView.
      */
-    boolean hasPasswordTransformationMethod() {
-        //TODO
-        return false;
+    @Nullable
+    public final TransformationMethod getTransformationMethod() {
+        return mTransformation;
+    }
+
+    /**
+     * Sets the transformation that is applied to the text that this
+     * TextView is displaying.
+     *
+     * @param method the transformation method to set
+     */
+    public final void setTransformationMethod(@Nullable TransformationMethod method) {
+        if (method == mTransformation) {
+            // Avoid the setText() below if the transformation is
+            // the same.
+            return;
+        }
+        if (mTransformation != null) {
+            if (mSpannable != null) {
+                mSpannable.removeSpan(mTransformation);
+            }
+        }
+
+        mTransformation = method;
+
+        setText(mText);
+
+        // PasswordTransformationMethod always have LTR text direction heuristics returned by
+        // getTextDirectionHeuristic, needs to be reset
+        mTextDir = getTextDirectionHeuristic();
     }
 
     /**
@@ -483,6 +349,1664 @@ public class TextView extends View {
         } else {
             return getCompoundPaddingRight();
         }
+    }
+
+    /**
+     * Returns the extended top padding of the view, including both the
+     * top Drawable if any and any extra space to keep more than maxLines
+     * of text from showing.  It is only valid to call this after measuring.
+     */
+    public int getExtendedPaddingTop() {
+        if (mMaxMode != LINES) {
+            return getCompoundPaddingTop();
+        }
+
+        if (mLayout == null) {
+            assumeLayout();
+        }
+
+        if (mLayout.getLineCount() <= mMaximum) {
+            return getCompoundPaddingTop();
+        }
+
+        int top = getCompoundPaddingTop();
+        int bottom = getCompoundPaddingBottom();
+        int viewht = getHeight() - top - bottom;
+        int layoutht = mLayout.getLineTop(mMaximum);
+
+        if (layoutht >= viewht) {
+            return top;
+        }
+
+        final int gravity = mGravity & Gravity.VERTICAL_GRAVITY_MASK;
+        if (gravity == Gravity.TOP) {
+            return top;
+        } else if (gravity == Gravity.BOTTOM) {
+            return top + viewht - layoutht;
+        } else { // (gravity == Gravity.CENTER_VERTICAL)
+            return top + (viewht - layoutht) / 2;
+        }
+    }
+
+    /**
+     * Returns the extended bottom padding of the view, including both the
+     * bottom Drawable if any and any extra space to keep more than maxLines
+     * of text from showing.  It is only valid to call this after measuring.
+     */
+    public int getExtendedPaddingBottom() {
+        if (mMaxMode != LINES) {
+            return getCompoundPaddingBottom();
+        }
+
+        if (mLayout == null) {
+            assumeLayout();
+        }
+
+        if (mLayout.getLineCount() <= mMaximum) {
+            return getCompoundPaddingBottom();
+        }
+
+        int top = getCompoundPaddingTop();
+        int bottom = getCompoundPaddingBottom();
+        int viewht = getHeight() - top - bottom;
+        int layoutht = mLayout.getLineTop(mMaximum);
+
+        if (layoutht >= viewht) {
+            return bottom;
+        }
+
+        final int gravity = mGravity & Gravity.VERTICAL_GRAVITY_MASK;
+        if (gravity == Gravity.TOP) {
+            return bottom + viewht - layoutht;
+        } else if (gravity == Gravity.BOTTOM) {
+            return bottom;
+        } else { // (gravity == Gravity.CENTER_VERTICAL)
+            return bottom + (viewht - layoutht) / 2;
+        }
+    }
+
+    /**
+     * Returns the total left padding of the view, including the left
+     * Drawable if any.
+     */
+    public int getTotalPaddingLeft() {
+        return getCompoundPaddingLeft();
+    }
+
+    /**
+     * Returns the total right padding of the view, including the right
+     * Drawable if any.
+     */
+    public int getTotalPaddingRight() {
+        return getCompoundPaddingRight();
+    }
+
+    /**
+     * Returns the total start padding of the view, including the start
+     * Drawable if any.
+     */
+    public int getTotalPaddingStart() {
+        return getCompoundPaddingStart();
+    }
+
+    /**
+     * Returns the total end padding of the view, including the end
+     * Drawable if any.
+     */
+    public int getTotalPaddingEnd() {
+        return getCompoundPaddingEnd();
+    }
+
+    /**
+     * Returns the total top padding of the view, including the top
+     * Drawable if any, the extra space to keep more than maxLines
+     * from showing, and the vertical offset for gravity, if any.
+     */
+    public int getTotalPaddingTop() {
+        return getExtendedPaddingTop() + getVerticalOffset(true);
+    }
+
+    /**
+     * Returns the total bottom padding of the view, including the bottom
+     * Drawable if any, the extra space to keep more than maxLines
+     * from showing, and the vertical offset for gravity, if any.
+     */
+    public int getTotalPaddingBottom() {
+        return getExtendedPaddingBottom() + getBottomVerticalOffset(true);
+    }
+
+    /**
+     * Sets the Drawables (if any) to appear to the left of, above, to the
+     * right of, and below the text. Use {@code null} if you do not want a
+     * Drawable there. The Drawables must already have had
+     * {@link Drawable#setBounds} called.
+     * <p>
+     * Calling this method will overwrite any Drawables previously set using
+     * {@link #setCompoundDrawablesRelative} or related methods.
+     */
+    public void setCompoundDrawables(@Nullable Drawable left, @Nullable Drawable top,
+                                     @Nullable Drawable right, @Nullable Drawable bottom) {
+        Drawables dr = mDrawables;
+
+        // We're switching to absolute, discard relative.
+        if (dr != null) {
+            if (dr.mDrawableStart != null) dr.mDrawableStart.setCallback(null);
+            dr.mDrawableStart = null;
+            if (dr.mDrawableEnd != null) dr.mDrawableEnd.setCallback(null);
+            dr.mDrawableEnd = null;
+            dr.mDrawableSizeStart = dr.mDrawableHeightStart = 0;
+            dr.mDrawableSizeEnd = dr.mDrawableHeightEnd = 0;
+        }
+
+        final boolean drawables = left != null || top != null || right != null || bottom != null;
+        if (!drawables) {
+            // Clearing drawables...  can we free the data structure?
+            if (dr != null) {
+                if (!dr.hasMetadata()) {
+                    mDrawables = null;
+                } else {
+                    // We need to retain the last set padding, so just clear
+                    // out all of the fields in the existing structure.
+                    for (int i = dr.mShowing.length - 1; i >= 0; i--) {
+                        if (dr.mShowing[i] != null) {
+                            dr.mShowing[i].setCallback(null);
+                        }
+                        dr.mShowing[i] = null;
+                    }
+                    dr.mDrawableSizeLeft = dr.mDrawableHeightLeft = 0;
+                    dr.mDrawableSizeRight = dr.mDrawableHeightRight = 0;
+                    dr.mDrawableSizeTop = dr.mDrawableWidthTop = 0;
+                    dr.mDrawableSizeBottom = dr.mDrawableWidthBottom = 0;
+                }
+            }
+        } else {
+            if (dr == null) {
+                mDrawables = dr = new Drawables();
+            }
+
+            mDrawables.mOverride = false;
+
+            if (dr.mShowing[Drawables.LEFT] != left && dr.mShowing[Drawables.LEFT] != null) {
+                dr.mShowing[Drawables.LEFT].setCallback(null);
+            }
+            dr.mShowing[Drawables.LEFT] = left;
+
+            if (dr.mShowing[Drawables.TOP] != top && dr.mShowing[Drawables.TOP] != null) {
+                dr.mShowing[Drawables.TOP].setCallback(null);
+            }
+            dr.mShowing[Drawables.TOP] = top;
+
+            if (dr.mShowing[Drawables.RIGHT] != right && dr.mShowing[Drawables.RIGHT] != null) {
+                dr.mShowing[Drawables.RIGHT].setCallback(null);
+            }
+            dr.mShowing[Drawables.RIGHT] = right;
+
+            if (dr.mShowing[Drawables.BOTTOM] != bottom && dr.mShowing[Drawables.BOTTOM] != null) {
+                dr.mShowing[Drawables.BOTTOM].setCallback(null);
+            }
+            dr.mShowing[Drawables.BOTTOM] = bottom;
+
+            final Rect compoundRect = dr.mCompoundRect;
+            int[] state;
+
+            state = getDrawableState();
+
+            if (left != null) {
+                left.setState(state);
+                left.copyBounds(compoundRect);
+                left.setCallback(this);
+                dr.mDrawableSizeLeft = compoundRect.width();
+                dr.mDrawableHeightLeft = compoundRect.height();
+            } else {
+                dr.mDrawableSizeLeft = dr.mDrawableHeightLeft = 0;
+            }
+
+            if (right != null) {
+                right.setState(state);
+                right.copyBounds(compoundRect);
+                right.setCallback(this);
+                dr.mDrawableSizeRight = compoundRect.width();
+                dr.mDrawableHeightRight = compoundRect.height();
+            } else {
+                dr.mDrawableSizeRight = dr.mDrawableHeightRight = 0;
+            }
+
+            if (top != null) {
+                top.setState(state);
+                top.copyBounds(compoundRect);
+                top.setCallback(this);
+                dr.mDrawableSizeTop = compoundRect.height();
+                dr.mDrawableWidthTop = compoundRect.width();
+            } else {
+                dr.mDrawableSizeTop = dr.mDrawableWidthTop = 0;
+            }
+
+            if (bottom != null) {
+                bottom.setState(state);
+                bottom.copyBounds(compoundRect);
+                bottom.setCallback(this);
+                dr.mDrawableSizeBottom = compoundRect.height();
+                dr.mDrawableWidthBottom = compoundRect.width();
+            } else {
+                dr.mDrawableSizeBottom = dr.mDrawableWidthBottom = 0;
+            }
+        }
+
+        // Save initial left/right drawables
+        if (dr != null) {
+            dr.mDrawableLeftInitial = left;
+            dr.mDrawableRightInitial = right;
+        }
+
+        resetResolvedDrawables();
+        resolveDrawables();
+        invalidate();
+        requestLayout();
+    }
+
+    /**
+     * Sets the Drawables (if any) to appear to the left of, above, to the
+     * right of, and below the text. Use {@code null} if you do not want a
+     * Drawable there. The Drawables' bounds will be set to their intrinsic
+     * bounds.
+     * <p>
+     * Calling this method will overwrite any Drawables previously set using
+     * {@link #setCompoundDrawablesRelative} or related methods.
+     */
+    public void setCompoundDrawablesWithIntrinsicBounds(@Nullable Drawable left, @Nullable Drawable top,
+                                                        @Nullable Drawable right, @Nullable Drawable bottom) {
+        if (left != null) {
+            left.setBounds(0, 0, left.getIntrinsicWidth(), left.getIntrinsicHeight());
+        }
+        if (right != null) {
+            right.setBounds(0, 0, right.getIntrinsicWidth(), right.getIntrinsicHeight());
+        }
+        if (top != null) {
+            top.setBounds(0, 0, top.getIntrinsicWidth(), top.getIntrinsicHeight());
+        }
+        if (bottom != null) {
+            bottom.setBounds(0, 0, bottom.getIntrinsicWidth(), bottom.getIntrinsicHeight());
+        }
+        setCompoundDrawables(left, top, right, bottom);
+    }
+
+    /**
+     * Sets the Drawables (if any) to appear to the start of, above, to the end
+     * of, and below the text. Use {@code null} if you do not want a Drawable
+     * there. The Drawables must already have had {@link Drawable#setBounds}
+     * called.
+     * <p>
+     * Calling this method will overwrite any Drawables previously set using
+     * {@link #setCompoundDrawables} or related methods.
+     */
+    public void setCompoundDrawablesRelative(@Nullable Drawable start, @Nullable Drawable top,
+                                             @Nullable Drawable end, @Nullable Drawable bottom) {
+        Drawables dr = mDrawables;
+
+        // We're switching to relative, discard absolute.
+        if (dr != null) {
+            if (dr.mShowing[Drawables.LEFT] != null) {
+                dr.mShowing[Drawables.LEFT].setCallback(null);
+            }
+            dr.mShowing[Drawables.LEFT] = dr.mDrawableLeftInitial = null;
+            if (dr.mShowing[Drawables.RIGHT] != null) {
+                dr.mShowing[Drawables.RIGHT].setCallback(null);
+            }
+            dr.mShowing[Drawables.RIGHT] = dr.mDrawableRightInitial = null;
+            dr.mDrawableSizeLeft = dr.mDrawableHeightLeft = 0;
+            dr.mDrawableSizeRight = dr.mDrawableHeightRight = 0;
+        }
+
+        final boolean drawables = start != null || top != null
+                || end != null || bottom != null;
+
+        if (!drawables) {
+            // Clearing drawables...  can we free the data structure?
+            if (dr != null) {
+                if (!dr.hasMetadata()) {
+                    mDrawables = null;
+                } else {
+                    // We need to retain the last set padding, so just clear
+                    // out all of the fields in the existing structure.
+                    if (dr.mDrawableStart != null) dr.mDrawableStart.setCallback(null);
+                    dr.mDrawableStart = null;
+                    if (dr.mShowing[Drawables.TOP] != null) {
+                        dr.mShowing[Drawables.TOP].setCallback(null);
+                    }
+                    dr.mShowing[Drawables.TOP] = null;
+                    if (dr.mDrawableEnd != null) {
+                        dr.mDrawableEnd.setCallback(null);
+                    }
+                    dr.mDrawableEnd = null;
+                    if (dr.mShowing[Drawables.BOTTOM] != null) {
+                        dr.mShowing[Drawables.BOTTOM].setCallback(null);
+                    }
+                    dr.mShowing[Drawables.BOTTOM] = null;
+                    dr.mDrawableSizeStart = dr.mDrawableHeightStart = 0;
+                    dr.mDrawableSizeEnd = dr.mDrawableHeightEnd = 0;
+                    dr.mDrawableSizeTop = dr.mDrawableWidthTop = 0;
+                    dr.mDrawableSizeBottom = dr.mDrawableWidthBottom = 0;
+                }
+            }
+        } else {
+            if (dr == null) {
+                mDrawables = dr = new Drawables();
+            }
+
+            mDrawables.mOverride = true;
+
+            if (dr.mDrawableStart != start && dr.mDrawableStart != null) {
+                dr.mDrawableStart.setCallback(null);
+            }
+            dr.mDrawableStart = start;
+
+            if (dr.mShowing[Drawables.TOP] != top && dr.mShowing[Drawables.TOP] != null) {
+                dr.mShowing[Drawables.TOP].setCallback(null);
+            }
+            dr.mShowing[Drawables.TOP] = top;
+
+            if (dr.mDrawableEnd != end && dr.mDrawableEnd != null) {
+                dr.mDrawableEnd.setCallback(null);
+            }
+            dr.mDrawableEnd = end;
+
+            if (dr.mShowing[Drawables.BOTTOM] != bottom && dr.mShowing[Drawables.BOTTOM] != null) {
+                dr.mShowing[Drawables.BOTTOM].setCallback(null);
+            }
+            dr.mShowing[Drawables.BOTTOM] = bottom;
+
+            final Rect compoundRect = dr.mCompoundRect;
+            int[] state;
+
+            state = getDrawableState();
+
+            if (start != null) {
+                start.setState(state);
+                start.copyBounds(compoundRect);
+                start.setCallback(this);
+                dr.mDrawableSizeStart = compoundRect.width();
+                dr.mDrawableHeightStart = compoundRect.height();
+            } else {
+                dr.mDrawableSizeStart = dr.mDrawableHeightStart = 0;
+            }
+
+            if (end != null) {
+                end.setState(state);
+                end.copyBounds(compoundRect);
+                end.setCallback(this);
+                dr.mDrawableSizeEnd = compoundRect.width();
+                dr.mDrawableHeightEnd = compoundRect.height();
+            } else {
+                dr.mDrawableSizeEnd = dr.mDrawableHeightEnd = 0;
+            }
+
+            if (top != null) {
+                top.setState(state);
+                top.copyBounds(compoundRect);
+                top.setCallback(this);
+                dr.mDrawableSizeTop = compoundRect.height();
+                dr.mDrawableWidthTop = compoundRect.width();
+            } else {
+                dr.mDrawableSizeTop = dr.mDrawableWidthTop = 0;
+            }
+
+            if (bottom != null) {
+                bottom.setState(state);
+                bottom.copyBounds(compoundRect);
+                bottom.setCallback(this);
+                dr.mDrawableSizeBottom = compoundRect.height();
+                dr.mDrawableWidthBottom = compoundRect.width();
+            } else {
+                dr.mDrawableSizeBottom = dr.mDrawableWidthBottom = 0;
+            }
+        }
+
+        resetResolvedDrawables();
+        resolveDrawables();
+        invalidate();
+        requestLayout();
+    }
+
+    /**
+     * Sets the Drawables (if any) to appear to the start of, above, to the end
+     * of, and below the text. Use {@code null} if you do not want a Drawable
+     * there. The Drawables' bounds will be set to their intrinsic bounds.
+     * <p>
+     * Calling this method will overwrite any Drawables previously set using
+     * {@link #setCompoundDrawables} or related methods.
+     */
+    public void setCompoundDrawablesRelativeWithIntrinsicBounds(@Nullable Drawable start, @Nullable Drawable top,
+                                                                @Nullable Drawable end, @Nullable Drawable bottom) {
+        if (start != null) {
+            start.setBounds(0, 0, start.getIntrinsicWidth(), start.getIntrinsicHeight());
+        }
+        if (end != null) {
+            end.setBounds(0, 0, end.getIntrinsicWidth(), end.getIntrinsicHeight());
+        }
+        if (top != null) {
+            top.setBounds(0, 0, top.getIntrinsicWidth(), top.getIntrinsicHeight());
+        }
+        if (bottom != null) {
+            bottom.setBounds(0, 0, bottom.getIntrinsicWidth(), bottom.getIntrinsicHeight());
+        }
+        setCompoundDrawablesRelative(start, top, end, bottom);
+    }
+
+    /**
+     * Returns drawables for the left, top, right, and bottom borders.
+     */
+    @Nonnull
+    public Drawable[] getCompoundDrawables() {
+        final Drawables dr = mDrawables;
+        if (dr != null) {
+            return dr.mShowing.clone();
+        } else {
+            return new Drawable[]{null, null, null, null};
+        }
+    }
+
+    /**
+     * Returns drawables for the start, top, end, and bottom borders.
+     */
+    @Nonnull
+    public Drawable[] getCompoundDrawablesRelative() {
+        final Drawables dr = mDrawables;
+        if (dr != null) {
+            return new Drawable[]{
+                    dr.mDrawableStart, dr.mShowing[Drawables.TOP],
+                    dr.mDrawableEnd, dr.mShowing[Drawables.BOTTOM]
+            };
+        } else {
+            return new Drawable[]{null, null, null, null};
+        }
+    }
+
+    /**
+     * Sets the size of the padding between the compound drawables and
+     * the text.
+     */
+    public void setCompoundDrawablePadding(int pad) {
+        Drawables dr = mDrawables;
+        if (pad == 0) {
+            if (dr != null) {
+                dr.mDrawablePadding = pad;
+            }
+        } else {
+            if (dr == null) {
+                mDrawables = dr = new Drawables();
+            }
+            dr.mDrawablePadding = pad;
+        }
+
+        invalidate();
+        requestLayout();
+    }
+
+    /**
+     * Returns the padding between the compound drawables and the text.
+     */
+    public int getCompoundDrawablePadding() {
+        final Drawables dr = mDrawables;
+        return dr != null ? dr.mDrawablePadding : 0;
+    }
+
+    /**
+     * @inheritDoc
+     * @see #setFirstBaselineToTopHeight(int)
+     * @see #setLastBaselineToBottomHeight(int)
+     */
+    @Override
+    public void setPadding(int left, int top, int right, int bottom) {
+        if (left != mPaddingLeft
+                || right != mPaddingRight
+                || top != mPaddingTop
+                || bottom != mPaddingBottom) {
+            nullLayouts();
+        }
+
+        // the super call will requestLayout()
+        super.setPadding(left, top, right, bottom);
+        invalidate();
+    }
+
+    /**
+     * @inheritDoc
+     * @see #setFirstBaselineToTopHeight(int)
+     * @see #setLastBaselineToBottomHeight(int)
+     */
+    @Override
+    public void setPaddingRelative(int start, int top, int end, int bottom) {
+        if (start != getPaddingStart()
+                || end != getPaddingEnd()
+                || top != mPaddingTop
+                || bottom != mPaddingBottom) {
+            nullLayouts();
+        }
+
+        // the super call will requestLayout()
+        super.setPaddingRelative(start, top, end, bottom);
+        invalidate();
+    }
+
+    /**
+     * Updates the top padding of the TextView so that {@code firstBaselineToTopHeight} is
+     * the distance between the top of the TextView and first line's baseline.
+     *
+     * <strong>Note</strong> that if {@code FontMetrics.top} or {@code FontMetrics.ascent} was
+     * already greater than {@code firstBaselineToTopHeight}, the top padding is not updated.
+     * Moreover, since this function sets the top padding, if the height of the TextView is less than
+     * the sum of top padding, line height and bottom padding, top of the line will be pushed
+     * down and bottom will be clipped.
+     *
+     * @param firstBaselineToTopHeight distance between first baseline to top of the container
+     *                                 in pixels
+     * @see #getFirstBaselineToTopHeight()
+     * @see #setLastBaselineToBottomHeight(int)
+     * @see #setPadding(int, int, int, int)
+     * @see #setPaddingRelative(int, int, int, int)
+     */
+    public void setFirstBaselineToTopHeight(int firstBaselineToTopHeight) {
+        if (firstBaselineToTopHeight < 0) {
+            firstBaselineToTopHeight = 0;
+        }
+
+        final FontMetricsInt fontMetrics = getPaint().getFontMetricsInt();
+        final int fontMetricsTop = fontMetrics.ascent;
+
+        if (firstBaselineToTopHeight > fontMetricsTop) {
+            final int paddingTop = firstBaselineToTopHeight - fontMetricsTop;
+            setPadding(getPaddingLeft(), paddingTop, getPaddingRight(), getPaddingBottom());
+        }
+    }
+
+    /**
+     * Updates the bottom padding of the TextView so that {@code lastBaselineToBottomHeight} is
+     * the distance between the bottom of the TextView and the last line's baseline.
+     *
+     * <strong>Note</strong> that if {@code FontMetrics.bottom} or {@code FontMetrics.descent} was
+     * already greater than {@code lastBaselineToBottomHeight}, the bottom padding is not updated.
+     * Moreover, since this function sets the bottom padding, if the height of the TextView is less
+     * than the sum of top padding, line height and bottom padding, bottom of the text will be
+     * clipped.
+     *
+     * @param lastBaselineToBottomHeight distance between last baseline to bottom of the container
+     *                                   in pixels
+     * @see #getLastBaselineToBottomHeight()
+     * @see #setFirstBaselineToTopHeight(int)
+     * @see #setPadding(int, int, int, int)
+     * @see #setPaddingRelative(int, int, int, int)
+     */
+    public void setLastBaselineToBottomHeight(int lastBaselineToBottomHeight) {
+        if (lastBaselineToBottomHeight < 0) {
+            lastBaselineToBottomHeight = 0;
+        }
+
+        final FontMetricsInt fontMetrics = getPaint().getFontMetricsInt();
+        final int fontMetricsBottom = fontMetrics.descent;
+
+        if (lastBaselineToBottomHeight > fontMetricsBottom) {
+            final int paddingBottom = lastBaselineToBottomHeight - fontMetricsBottom;
+            setPadding(getPaddingLeft(), getPaddingTop(), getPaddingRight(), paddingBottom);
+        }
+    }
+
+    /**
+     * Returns the distance between the first text baseline and the top of this TextView.
+     *
+     * @see #setFirstBaselineToTopHeight(int)
+     */
+    public int getFirstBaselineToTopHeight() {
+        return getPaddingTop() + getPaint().getFontMetricsInt().ascent;
+    }
+
+    /**
+     * Returns the distance between the last text baseline and the bottom of this TextView.
+     *
+     * @see #setLastBaselineToBottomHeight(int)
+     */
+    public int getLastBaselineToBottomHeight() {
+        return getPaddingBottom() + getPaint().getFontMetricsInt().descent;
+    }
+
+    /**
+     * Get the default primary {@link Locale} of the text in this TextView.
+     *
+     * @return the default primary {@link Locale} of the text in this TextView.
+     */
+    @Nonnull
+    public Locale getTextLocale() {
+        return mTextPaint.getTextLocale();
+    }
+
+    /**
+     * Set the default {@link Locale} of the text in this TextView to the given Locale.
+     *
+     * @param locale the {@link Locale} for drawing text, must not be null.
+     */
+    public void setTextLocale(@Nonnull Locale locale) {
+        mTextPaint.setTextLocale(locale);
+        if (mLayout != null) {
+            nullLayouts();
+            requestLayout();
+            invalidate();
+        }
+    }
+
+    /**
+     * @return the size (in pixels) of the default text size in this TextView.
+     */
+    public float getTextSize() {
+        return mTextPaint.getFontSize();
+    }
+
+    /**
+     * Set the default text size to the given value, interpreted as "scaled
+     * pixel" units.  This size is adjusted based on the current density and
+     * user font size preference.
+     *
+     * @param size The scaled pixel size.
+     */
+    public void setTextSize(float size) {
+        if (size != mTextPaint.getFontSize()) {
+            mTextPaint.setFontSize(ViewConfiguration.get().getTextSize(size));
+
+            if (mLayout != null) {
+                nullLayouts();
+                requestLayout();
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * Sets the typeface and style in which the text should be displayed.
+     *
+     * @see #getTypeface()
+     */
+    public void setTypeface(@Nonnull Typeface tf) {
+        if (mTextPaint.getTypeface() != tf) {
+            mTextPaint.setTypeface(tf);
+
+            if (mLayout != null) {
+                nullLayouts();
+                requestLayout();
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * Gets the current {@link Typeface} that is used to style the text.
+     *
+     * @return The current Typeface.
+     * @see #setTypeface(Typeface)
+     */
+    @Nonnull
+    public Typeface getTypeface() {
+        return mTextPaint.getTypeface();
+    }
+
+    /**
+     * Gets the vertical distance between lines of text, in pixels.
+     * Note that markup within the text can cause individual lines
+     * to be taller or shorter than this height, and the layout may
+     * contain additional first-or last-line padding.
+     *
+     * @return The height of one standard line in pixels.
+     */
+    public int getLineHeight() {
+        return mTextPaint.getFontMetricsInt(null);
+    }
+
+    /**
+     * Set whether to respect the ascent and descent of the fallback fonts that are used in
+     * displaying the text (which is needed to avoid text from consecutive lines running into
+     * each other). If set, fallback fonts that end up getting used can increase the ascent
+     * and descent of the lines that they are used on.
+     * <p/>
+     * It is required to be true if text could be in languages like Burmese or Tibetan where text
+     * is typically much taller or deeper than Latin text.
+     *
+     * @param enabled whether to expand linespacing based on fallback fonts, {@code true} by default
+     * @see StaticLayout.Builder#setFallbackLineSpacing(boolean)
+     */
+    public void setFallbackLineSpacing(boolean enabled) {
+        if (mUseFallbackLineSpacing != enabled) {
+            mUseFallbackLineSpacing = enabled;
+            if (mLayout != null) {
+                nullLayouts();
+                requestLayout();
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * @return whether fallback line spacing is enabled, {@code true} by default
+     * @see #setFallbackLineSpacing(boolean)
+     */
+    public boolean isFallbackLineSpacing() {
+        return mUseFallbackLineSpacing;
+    }
+
+    //TODO color setting
+
+    /**
+     * Gets the {@link TextPaint} used for the text.
+     * Use this only to consult the Paint's properties and not to change them.
+     *
+     * @return The base paint used for the text.
+     */
+    @Nonnull
+    public TextPaint getPaint() {
+        return mTextPaint;
+    }
+
+    /**
+     * Gets the {@link Layout} that is currently being used to display the text.
+     * This value can be null if the text or width has recently changed.
+     *
+     * @return The Layout that is currently being used to display the text.
+     */
+    public final Layout getLayout() {
+        return mLayout;
+    }
+
+    /**
+     * Sets the autolink mask of the text.
+     */
+    public final void setAutoLinkMask(int mask) {
+        mAutoLinkMask = mask;
+    }
+
+    /**
+     * Gets the autolink mask of the text.
+     */
+    public final int getAutoLinkMask() {
+        return mAutoLinkMask;
+    }
+
+    /**
+     * Sets whether the movement method will automatically be set to
+     * {@link LinkMovementMethod} if {@link #setAutoLinkMask} has been
+     * set to nonzero and links are detected in {@link #setText}.
+     * The default is true.
+     */
+    public final void setLinksClickable(boolean whether) {
+        mLinksClickable = whether;
+    }
+
+    /**
+     * Returns whether the movement method will automatically be set to
+     * {@link LinkMovementMethod} if {@link #setAutoLinkMask} has been
+     * set to nonzero and links are detected in {@link #setText}.
+     * The default is true.
+     */
+    public final boolean getLinksClickable() {
+        return mLinksClickable;
+    }
+
+    /**
+     * Sets the horizontal alignment of the text and the
+     * vertical gravity that will be used when there is extra space
+     * in the TextView beyond what is required for the text itself.
+     *
+     * @see Gravity
+     */
+    public void setGravity(int gravity) {
+        if ((gravity & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK) == 0) {
+            gravity |= Gravity.START;
+        }
+        if ((gravity & Gravity.VERTICAL_GRAVITY_MASK) == 0) {
+            gravity |= Gravity.TOP;
+        }
+
+        boolean newLayout = (gravity & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK)
+                != (mGravity & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK);
+
+        if (gravity != mGravity) {
+            invalidate();
+        }
+
+        mGravity = gravity;
+
+        if (mLayout != null && newLayout) {
+            // XXX this is heavy-handed because no actual content changes.
+            int want = mLayout.getWidth();
+            int hintWant = mHintLayout == null ? 0 : mHintLayout.getWidth();
+
+            makeNewLayout(want, hintWant, UNKNOWN_BORING, UNKNOWN_BORING,
+                    getWidth() - getCompoundPaddingLeft() - getCompoundPaddingRight(), true);
+        }
+    }
+
+    /**
+     * Returns the horizontal and vertical alignment of this TextView.
+     *
+     * @see Gravity
+     */
+    public int getGravity() {
+        return mGravity;
+    }
+
+    /**
+     * Sets whether the text should be allowed to be wider than the
+     * View is.  If false, it will be wrapped to the width of the View.
+     */
+    public void setHorizontallyScrolling(boolean whether) {
+        if (mHorizontallyScrolling != whether) {
+            mHorizontallyScrolling = whether;
+
+            if (mLayout != null) {
+                nullLayouts();
+                requestLayout();
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * Returns whether the text is allowed to be wider than the View.
+     * If false, the text will be wrapped to the width of the View.
+     *
+     * @see #setHorizontallyScrolling(boolean)
+     */
+    public final boolean isHorizontallyScrollable() {
+        return mHorizontallyScrolling;
+    }
+
+    /**
+     * Sets the height of the TextView to be at least {@code minLines} tall.
+     * <p>
+     * This value is used for height calculation if LayoutParams does not force TextView to have an
+     * exact height. Setting this value overrides other previous minimum height configurations such
+     * as {@link #setMinHeight(int)} or {@link #setHeight(int)}. {@link #setSingleLine()} will set
+     * this value to 1.
+     *
+     * @param minLines the minimum height of TextView in terms of number of lines
+     * @see #getMinLines()
+     * @see #setLines(int)
+     */
+    public void setMinLines(int minLines) {
+        mMinimum = minLines;
+        mMinMode = LINES;
+
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Returns the minimum height of TextView in terms of number of lines or -1 if the minimum
+     * height was set using {@link #setMinHeight(int)} or {@link #setHeight(int)}.
+     *
+     * @return the minimum height of TextView in terms of number of lines or -1 if the minimum
+     * height is not defined in lines
+     * @see #setMinLines(int)
+     * @see #setLines(int)
+     */
+    public int getMinLines() {
+        return mMinMode == LINES ? mMinimum : -1;
+    }
+
+    /**
+     * Sets the height of the TextView to be at least {@code minPixels} tall.
+     * <p>
+     * This value is used for height calculation if LayoutParams does not force TextView to have an
+     * exact height. Setting this value overrides previous minimum height configurations such as
+     * {@link #setMinLines(int)} or {@link #setLines(int)}.
+     * <p>
+     * The value given here is different than {@link #setMinimumHeight(int)}. Between
+     * {@code minHeight} and the value set in {@link #setMinimumHeight(int)}, the greater one is
+     * used to decide the final height.
+     *
+     * @param minPixels the minimum height of TextView in terms of pixels
+     * @see #getMinHeight()
+     * @see #setHeight(int)
+     */
+    public void setMinHeight(int minPixels) {
+        mMinimum = minPixels;
+        mMinMode = PIXELS;
+
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Returns the minimum height of TextView in terms of pixels or -1 if the minimum height was
+     * set using {@link #setMinLines(int)} or {@link #setLines(int)}.
+     *
+     * @return the minimum height of TextView in terms of pixels or -1 if the minimum height is not
+     * defined in pixels
+     * @see #setMinHeight(int)
+     * @see #setHeight(int)
+     */
+    public int getMinHeight() {
+        return mMinMode == PIXELS ? mMinimum : -1;
+    }
+
+    /**
+     * Sets the height of the TextView to be at most {@code maxLines} tall.
+     * <p>
+     * This value is used for height calculation if LayoutParams does not force TextView to have an
+     * exact height. Setting this value overrides previous maximum height configurations such as
+     * {@link #setMaxHeight(int)} or {@link #setLines(int)}.
+     *
+     * @param maxLines the maximum height of TextView in terms of number of lines
+     * @see #getMaxLines()
+     * @see #setLines(int)
+     */
+    public void setMaxLines(int maxLines) {
+        mMaximum = maxLines;
+        mMaxMode = LINES;
+
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Returns the maximum height of TextView in terms of number of lines or -1 if the
+     * maximum height was set using {@link #setMaxHeight(int)} or {@link #setHeight(int)}.
+     *
+     * @return the maximum height of TextView in terms of number of lines. -1 if the maximum height
+     * is not defined in lines.
+     * @see #setMaxLines(int)
+     * @see #setLines(int)
+     */
+    public int getMaxLines() {
+        return mMaxMode == LINES ? mMaximum : -1;
+    }
+
+    /**
+     * Sets the height of the TextView to be at most {@code maxPixels} tall.
+     * <p>
+     * This value is used for height calculation if LayoutParams does not force TextView to have an
+     * exact height. Setting this value overrides previous maximum height configurations such as
+     * {@link #setMaxLines(int)} or {@link #setLines(int)}.
+     *
+     * @param maxPixels the maximum height of TextView in terms of pixels
+     * @see #getMaxHeight()
+     * @see #setHeight(int)
+     */
+    public void setMaxHeight(int maxPixels) {
+        mMaximum = maxPixels;
+        mMaxMode = PIXELS;
+
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Returns the maximum height of TextView in terms of pixels or -1 if the maximum height was
+     * set using {@link #setMaxLines(int)} or {@link #setLines(int)}.
+     *
+     * @return the maximum height of TextView in terms of pixels or -1 if the maximum height
+     * is not defined in pixels
+     * @see #setMaxHeight(int)
+     * @see #setHeight(int)
+     */
+    public int getMaxHeight() {
+        return mMaxMode == PIXELS ? mMaximum : -1;
+    }
+
+    /**
+     * Sets the height of the TextView to be exactly {@code lines} tall.
+     * <p>
+     * This value is used for height calculation if LayoutParams does not force TextView to have an
+     * exact height. Setting this value overrides previous minimum/maximum height configurations
+     * such as {@link #setMinLines(int)} or {@link #setMaxLines(int)}. {@link #setSingleLine()} will
+     * set this value to 1.
+     *
+     * @param lines the exact height of the TextView in terms of lines
+     * @see #setHeight(int)
+     */
+    public void setLines(int lines) {
+        mMaximum = mMinimum = lines;
+        mMaxMode = mMinMode = LINES;
+
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Sets the height of the TextView to be exactly <code>pixels</code> tall.
+     * <p>
+     * This value is used for height calculation if LayoutParams does not force TextView to have an
+     * exact height. Setting this value overrides previous minimum/maximum height configurations
+     * such as {@link #setMinHeight(int)} or {@link #setMaxHeight(int)}.
+     *
+     * @param pixels the exact height of the TextView in terms of pixels
+     * @see #setLines(int)
+     */
+    public void setHeight(int pixels) {
+        mMaximum = mMinimum = pixels;
+        mMaxMode = mMinMode = PIXELS;
+
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Sets the width of the TextView to be at least {@code minPixels} wide.
+     * <p>
+     * This value is used for width calculation if LayoutParams does not force TextView to have an
+     * exact width.
+     * <p>
+     * The value given here is different from {@link #setMinimumWidth(int)}. Between
+     * {@code minWidth} and the value set in {@link #setMinimumWidth(int)}, the greater one is used
+     * to decide the final width.
+     *
+     * @param minPixels the minimum width of TextView in terms of pixels
+     * @see #getMinWidth()
+     * @see #setWidth(int)
+     */
+    public void setMinWidth(int minPixels) {
+        mMinWidth = minPixels;
+
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Returns the minimum width of TextView in terms of pixels.
+     *
+     * @return the minimum width of TextView in terms of pixels.
+     * @see #setMinWidth(int)
+     * @see #setWidth(int)
+     */
+    public int getMinWidth() {
+        return mMinWidth;
+    }
+
+    /**
+     * Sets the width of the TextView to be at most {@code maxPixels} wide.
+     * <p>
+     * This value is used for width calculation if LayoutParams does not force TextView to have an
+     * exact width.
+     *
+     * @param maxPixels the maximum width of TextView in terms of pixels
+     * @see #getMaxWidth()
+     * @see #setWidth(int)
+     */
+    public void setMaxWidth(int maxPixels) {
+        mMaxWidth = maxPixels;
+
+        requestLayout();
+        invalidate();
+    }
+
+    /**
+     * Returns the maximum width of TextView in terms of pixels.
+     *
+     * @return the maximum width of TextView in terms of pixels.
+     * @see #setMaxWidth(int)
+     * @see #setWidth(int)
+     */
+    public int getMaxWidth() {
+        return mMaxWidth;
+    }
+
+    /**
+     * Sets the width of the TextView to be exactly {@code pixels} wide.
+     * <p>
+     * This value is used for width calculation if LayoutParams does not force TextView to have an
+     * exact width. Setting this value overrides previous minimum/maximum width configurations
+     * such as {@link #setMinWidth(int)} or {@link #setMaxWidth(int)}.
+     *
+     * @param pixels the exact width of the TextView in terms of pixels
+     */
+    public void setWidth(int pixels) {
+        mMaxWidth = mMinWidth = pixels;
+
+        requestLayout();
+        invalidate();
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+
+    /**
+     * Returns the length, in characters, of the text managed by this TextView
+     *
+     * @return The length of the text managed by the TextView in characters.
+     */
+    public int length() {
+        return mText.length();
+    }
+
+    /**
+     * Return the text that TextView is displaying. If {@link #setText(CharSequence)} was called
+     * with an argument of {@link BufferType#SPANNABLE BufferType.SPANNABLE}
+     * or {@link BufferType#EDITABLE BufferType.EDITABLE}, you can cast
+     * the return value from this method to Spannable or Editable, respectively.
+     *
+     * <p>The content of the return value should not be modified. If you want a modifiable one, you
+     * should make your own copy first.</p>
+     *
+     * @return The text displayed by the text view.
+     */
+    @Nonnull
+    public CharSequence getText() {
+        return mText;
+    }
+
+    /**
+     * Return the text that TextView is displaying as an Editable object. If the text is not
+     * editable, null is returned.
+     *
+     * @see #getText
+     */
+    @Nullable
+    public Editable getEditableText() {
+        return (mText instanceof Editable) ? (Editable) mText : null;
+    }
+
+    /**
+     * Sets the Factory used to create new {@link Editable Editables}.
+     *
+     * @param factory {@link Editable.Factory} to be used
+     * @see Editable.Factory
+     * @see BufferType#EDITABLE
+     */
+    public final void setEditableFactory(@Nonnull Editable.Factory factory) {
+        mEditableFactory = factory;
+        setText(mText);
+    }
+
+    /**
+     * Sets the Factory used to create new {@link Spannable Spannables}.
+     *
+     * @param factory {@link Spannable.Factory} to be used
+     * @see Spannable.Factory
+     * @see BufferType#SPANNABLE
+     */
+    public final void setSpannableFactory(@Nonnull Spannable.Factory factory) {
+        mSpannableFactory = factory;
+        setText(mText);
+    }
+
+    /**
+     * Sets the text to be displayed. To style your strings, attach
+     * {@link CharacterStyle} to a {@link SpannableString}.
+     * <p>
+     * When required, TextView will use {@link Spannable.Factory} to create final or
+     * intermediate {@link Spannable Spannables}. Likewise, it will use
+     * {@link Editable.Factory} to create final or intermediate
+     * {@link Editable Editables}.
+     * <p>
+     * If the passed text is a {@link PrecomputedText} but the parameters used to create the
+     * PrecomputedText mismatches with this TextView, IllegalArgumentException is thrown.
+     *
+     * @param text text to be displayed
+     * @throws IllegalArgumentException if the passed text is a {@link PrecomputedText} but the
+     *                                  parameters used to create the PrecomputedText mismatches
+     *                                  with this TextView.
+     */
+    public final void setText(@Nonnull CharSequence text) {
+        setText(text, mBufferType);
+    }
+
+    /**
+     * Sets the text to be displayed but retains the cursor position. Same as
+     * {@link #setText(CharSequence)} except that the cursor position (if any) is retained in the
+     * new text.
+     * <p/>
+     * When required, TextView will use {@link Spannable.Factory} to create final or
+     * intermediate {@link Spannable Spannables}. Likewise, it will use
+     * {@link Editable.Factory} to create final or intermediate
+     * {@link Editable Editables}.
+     *
+     * @param text text to be displayed
+     * @see #setText(CharSequence)
+     */
+    public final void setTextKeepState(@Nonnull CharSequence text) {
+        setTextKeepState(text, mBufferType);
+    }
+
+    /**
+     * Sets the text to be displayed and the {@link BufferType} but retains
+     * the cursor position. Same as
+     * {@link #setText(CharSequence, BufferType)} except that the cursor
+     * position (if any) is retained in the new text.
+     * <p/>
+     * When required, TextView will use {@link Spannable.Factory} to create final or
+     * intermediate {@link Spannable Spannables}. Likewise, it will use
+     * {@link Editable.Factory} to create final or intermediate
+     * {@link Editable Editables}.
+     *
+     * @param text text to be displayed
+     * @param type a {@link BufferType} which defines whether the text is
+     *             stored as a static text, styleable/spannable text, or editable text
+     * @see #setText(CharSequence, BufferType)
+     */
+    public final void setTextKeepState(@Nonnull CharSequence text, @Nonnull BufferType type) {
+        int start = getSelectionStart();
+        int end = getSelectionEnd();
+        int len = text.length();
+
+        setText(text, type);
+
+        if (start >= 0 || end >= 0) {
+            if (mSpannable != null) {
+                Selection.setSelection(mSpannable,
+                        Math.max(0, Math.min(start, len)),
+                        Math.max(0, Math.min(end, len)));
+            }
+        }
+    }
+
+    /**
+     * Sets the text to be displayed and the {@link BufferType}.
+     * <p/>
+     * When required, TextView will use {@link Spannable.Factory} to create final or
+     * intermediate {@link Spannable Spannables}. Likewise, it will use
+     * {@link Editable.Factory} to create final or intermediate
+     * {@link Editable Editables}.
+     * <p>
+     * Subclasses overriding this method should ensure that the following post condition holds,
+     * in order to guarantee the safety of the view's measurement and layout operations:
+     * regardless of the input, after calling #setText both {@code mText} and {@code mTransformed}
+     * will be different from {@code null}.
+     *
+     * @param text text to be displayed
+     * @param type a {@link BufferType} which defines whether the text is
+     *             stored as a static text, styleable/spannable text, or editable text
+     * @see #setText(CharSequence)
+     * @see BufferType
+     * @see #setSpannableFactory(Spannable.Factory)
+     * @see #setEditableFactory(Editable.Factory)
+     */
+    public void setText(@Nonnull CharSequence text, @Nonnull BufferType type) {
+        for (InputFilter filter : mFilters) {
+            CharSequence out = filter.filter(text, 0, text.length(), EMPTY_SPANNED, 0, 0);
+            if (out != null) {
+                text = out;
+            }
+        }
+
+        int oldLength = mText.length();
+        sendBeforeTextChanged(mText, 0, oldLength, text.length());
+
+        boolean needEditableForNotification = mListeners != null && !mListeners.isEmpty();
+
+        if (type == BufferType.EDITABLE || needEditableForNotification) {
+            createEditorIfNeeded();
+            mEditor.forgetUndoRedo();
+            mEditor.scheduleRestartInputForSetText();
+            Editable t = mEditableFactory.newEditable(text);
+            text = t;
+            setFilters(t, mFilters);
+        } else if (type == BufferType.SPANNABLE || mMovement != null) {
+            text = mSpannableFactory.newSpannable(text);
+        } else {
+            text = TextUtils.stringOrSpannedString(text);
+        }
+
+        if (mAutoLinkMask != 0) {
+            //TODO links
+        }
+
+        mBufferType = type;
+        setTextInternal(text);
+
+        if (mTransformation == null) {
+            mTransformed = text;
+        } else {
+            mTransformed = mTransformation.getTransformation(text, this);
+        }
+
+        final int textLength = text.length();
+
+        if (text instanceof Spannable sp) {
+
+            // Remove any ChangeWatchers that might have come from other TextViews.
+            final ChangeWatcher[] watchers = sp.getSpans(0, sp.length(), ChangeWatcher.class);
+            if (watchers != null) {
+                for (ChangeWatcher watcher : watchers) {
+                    sp.removeSpan(watcher);
+                }
+            }
+
+            if (mChangeWatcher == null) mChangeWatcher = new ChangeWatcher();
+
+            sp.setSpan(mChangeWatcher, 0, textLength, Spanned.SPAN_INCLUSIVE_INCLUSIVE
+                    | (CHANGE_WATCHER_PRIORITY << Spanned.SPAN_PRIORITY_SHIFT));
+
+            if (mEditor != null) mEditor.addSpanWatchers(sp);
+
+            if (mTransformation != null) {
+                sp.setSpan(mTransformation, 0, textLength, Spanned.SPAN_INCLUSIVE_INCLUSIVE);
+            }
+
+            if (mMovement != null) {
+                mMovement.initialize(this, (Spannable) text);
+
+                /*
+                 * Initializing the movement method will have set the
+                 * selection, so reset mSelectionMoved to keep that from
+                 * interfering with the normal on-focus selection-setting.
+                 */
+                if (mEditor != null) mEditor.mSelectionMoved = false;
+            }
+        }
+
+        if (mLayout != null) {
+            checkForRelayout();
+        }
+
+        sendOnTextChanged(text, 0, oldLength, textLength);
+        onTextChanged(text, 0, oldLength, textLength);
+
+        if (needEditableForNotification) {
+            sendAfterTextChanged((Editable) text);
+        }
+
+        if (mEditor != null) {
+            // SelectionModifierCursorController depends on textCanBeSelected, which depends on text
+            mEditor.prepareCursorControllers();
+
+            mEditor.maybeFireScheduledRestartInputForSetText();
+        }
+    }
+
+    // Update mText and mPrecomputed
+    private void setTextInternal(@Nonnull CharSequence text) {
+        mText = text;
+        mSpannable = (text instanceof Spannable) ? (Spannable) text : null;
+        mPrecomputed = (text instanceof PrecomputedText) ? (PrecomputedText) text : null;
+    }
+
+    /**
+     * Returns the hint that is displayed when the text of the TextView
+     * is empty.
+     */
+    @Nullable
+    public CharSequence getHint() {
+        return mHint;
+    }
+
+    /**
+     * Sets the text to be displayed when the text of the TextView is empty.
+     * Null means to use the normal empty text. The hint does not currently
+     * participate in determining the size of the view.
+     */
+    public final void setHint(@Nullable CharSequence hint) {
+        setHintInternal(hint);
+
+        if (mEditor != null && isFocused()) {
+            mEditor.reportExtractedText();
+        }
+    }
+
+    private void setHintInternal(@Nullable CharSequence hint) {
+        mHint = TextUtils.stringOrSpannedString(hint);
+
+        if (mLayout != null) {
+            checkForRelayout();
+        }
+
+        if (mText.length() == 0) {
+            invalidate();
+        }
+
+        // Invalidate display list if hint is currently used
+        if (mEditor != null && mText.length() == 0 && mHint != null) {
+            mEditor.invalidateTextDisplayList();
+        }
+    }
+
+    /**
+     * It would be better to rely on the input type for everything. A password inputType should have
+     * a password transformation. We should hence use isPasswordInputType instead of this method.
+     * <p>
+     * We should:
+     * - Call setInputType in setKeyListener instead of changing the input type directly (which
+     * would install the correct transformation).
+     * - Refuse the installation of a non-password transformation in setTransformation if the input
+     * type is password.
+     * <p>
+     * However, this is like this for legacy reasons, and we cannot break existing apps. This method
+     * is useful since it matches what the user can see (obfuscated text or not).
+     *
+     * @return true if the current transformation method is of the password type.
+     */
+    boolean hasPasswordTransformationMethod() {
+        //TODO
+        return false;
+    }
+
+    /**
+     * Sets the list of input filters that will be used if the buffer is
+     * Editable. Has no effect otherwise.
+     */
+    public void setFilters(@Nonnull InputFilter[] filters) {
+        mFilters = filters;
+
+        if (mText instanceof Editable) {
+            setFilters((Editable) mText, filters);
+        }
+    }
+
+    /**
+     * Sets the list of input filters on the specified Editable,
+     * and includes mInput in the list if it is an InputFilter.
+     */
+    private void setFilters(@Nonnull Editable e, @Nonnull InputFilter[] filters) {
+        if (mEditor != null) {
+            final boolean undoFilter = mEditor.mUndoInputFilter != null;
+            if (undoFilter) {
+                InputFilter[] nf = new InputFilter[filters.length + 1];
+
+                System.arraycopy(filters, 0, nf, 0, filters.length);
+                nf[filters.length] = mEditor.mUndoInputFilter;
+
+                e.setFilters(nf);
+                return;
+            }
+        }
+        e.setFilters(filters);
+    }
+
+    /**
+     * Returns the current list of input filters.
+     */
+    @Nonnull
+    public InputFilter[] getFilters() {
+        return mFilters;
+    }
+
+    /////////////////////////////////////////////////////////////////////////
+
+    private int getBoxHeight(Layout l) {
+        int padding = (l == mHintLayout)
+                ? getCompoundPaddingTop() + getCompoundPaddingBottom()
+                : getExtendedPaddingTop() + getExtendedPaddingBottom();
+        return getMeasuredHeight() - padding;
+    }
+
+    private int getVerticalOffset(boolean forceNormal) {
+        int voffset = 0;
+        final int gravity = mGravity & Gravity.VERTICAL_GRAVITY_MASK;
+
+        Layout l = mLayout;
+        if (!forceNormal && mText.length() == 0 && mHintLayout != null) {
+            l = mHintLayout;
+        }
+
+        if (gravity != Gravity.TOP) {
+            int boxht = getBoxHeight(l);
+            int textht = l.getHeight();
+
+            if (textht < boxht) {
+                if (gravity == Gravity.BOTTOM) {
+                    voffset = boxht - textht;
+                } else { // (gravity == Gravity.CENTER_VERTICAL)
+                    voffset = (boxht - textht) >> 1;
+                }
+            }
+        }
+        return voffset;
+    }
+
+    private int getBottomVerticalOffset(boolean forceNormal) {
+        int voffset = 0;
+        final int gravity = mGravity & Gravity.VERTICAL_GRAVITY_MASK;
+
+        Layout l = mLayout;
+        if (!forceNormal && mText.length() == 0 && mHintLayout != null) {
+            l = mHintLayout;
+        }
+
+        if (gravity != Gravity.BOTTOM) {
+            int boxht = getBoxHeight(l);
+            int textht = l.getHeight();
+
+            if (textht < boxht) {
+                if (gravity == Gravity.TOP) {
+                    voffset = boxht - textht;
+                } else { // (gravity == Gravity.CENTER_VERTICAL)
+                    voffset = (boxht - textht) >> 1;
+                }
+            }
+        }
+        return voffset;
+    }
+
+    private void registerForPreDraw() {
+        if (!mPreDrawRegistered) {
+            getViewTreeObserver().addOnPreDrawListener(this);
+            mPreDrawRegistered = true;
+        }
+    }
+
+    private void unregisterForPreDraw() {
+        getViewTreeObserver().removeOnPreDrawListener(this);
+        mPreDrawRegistered = false;
+        mPreDrawListenerDetached = false;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean onPreDraw() {
+        if (mLayout == null) {
+            assumeLayout();
+        }
+
+        unregisterForPreDraw();
+
+        return true;
+    }
+
+    @Override
+    protected boolean verifyDrawable(@Nonnull Drawable who) {
+        final boolean verified = super.verifyDrawable(who);
+        if (!verified && mDrawables != null) {
+            for (Drawable dr : mDrawables.mShowing) {
+                if (who == dr) {
+                    return true;
+                }
+            }
+        }
+        return verified;
+    }
+
+    /**
+     * Returns the state of the {@code textIsSelectable} flag (See
+     * {@link #setTextIsSelectable setTextIsSelectable()}).
+     *
+     * @return True if the text displayed in this TextView can be selected by the user.
+     */
+    public boolean isTextSelectable() {
+        return mEditor != null && mEditor.mTextIsSelectable;
+    }
+
+    /**
+     * Sets whether the content of this view is selectable by the user. The default is
+     * {@code false}, meaning that the content is not selectable.
+     * <p>
+     * When you use a TextView to display a useful piece of information to the user (such as a
+     * contact's address), make it selectable, so that the user can select and copy its
+     * content.
+     * <p>
+     * When you call this method to set the value of {@code textIsSelectable}, it sets
+     * the flags {@code focusable}, {@code focusableInTouchMode}, {@code clickable},
+     * and {@code longClickable} to the same value. To restore any of these
+     * flags to a state you had set previously, call one or more of the following methods:
+     * {@link #setFocusable(boolean) setFocusable()},
+     * {@link #setFocusableInTouchMode(boolean) setFocusableInTouchMode()},
+     * {@link #setClickable(boolean) setClickable()} or
+     * {@link #setLongClickable(boolean) setLongClickable()}.
+     *
+     * @param selectable Whether the content of this TextView should be selectable.
+     */
+    public void setTextIsSelectable(boolean selectable) {
+        if (!selectable && mEditor == null) return; // false is default value with no edit data
+
+        createEditorIfNeeded();
+        if (mEditor.mTextIsSelectable == selectable) return;
+
+        mEditor.mTextIsSelectable = selectable;
+        setFocusableInTouchMode(selectable);
+        setFocusable(FOCUSABLE_AUTO);
+        setClickable(selectable);
+        setLongClickable(selectable);
+
+        setMovementMethod(selectable ? ArrowKeyMovementMethod.getInstance() : null);
+        setText(mText, selectable ? BufferType.SPANNABLE : BufferType.NORMAL);
+
+        // Called by setText above, but safer in case of future code changes
+        mEditor.prepareCursorControllers();
+    }
+
+    @Override
+    protected void drawableStateChanged() {
+        super.drawableStateChanged();
+        //TODO states
+    }
+
+    @Override
+    protected int[] onCreateDrawableState(int extraSpace) {
+        return super.onCreateDrawableState(extraSpace);
+    }
+
+    private BiConsumer<Canvas, Paint> getUpdatedHighlightPath() {
+        return null;
+    }
+
+    @Override
+    protected void onDraw(@Nonnull Canvas canvas) {
+        if (mLayout == null) {
+            assumeLayout();
+        }
+
+        Layout layout = mLayout;
+
+        if (mHint != null && mText.length() == 0) {
+            layout = mHintLayout;
+        }
+
+        assert layout != null;
+
+        final int compoundPaddingLeft = getCompoundPaddingLeft();
+        final int compoundPaddingTop = getCompoundPaddingTop();
+        final int compoundPaddingRight = getCompoundPaddingRight();
+        final int compoundPaddingBottom = getCompoundPaddingBottom();
+        final int scrollX = mScrollX;
+        final int scrollY = mScrollY;
+
+        final int vspace = getHeight() - compoundPaddingBottom - compoundPaddingTop;
+        final int maxScrollY = mLayout.getHeight() - vspace;
+
+        float clipLeft = compoundPaddingLeft + scrollX;
+        float clipTop = (scrollY == 0) ? 0 : compoundPaddingTop + scrollY;
+        float clipRight = getWidth() - getCompoundPaddingRight() + scrollX;
+        float clipBottom = getHeight() + scrollY
+                - ((scrollY == maxScrollY) ? 0 : compoundPaddingBottom);
+
+        canvas.save();
+        canvas.clipRect(clipLeft, clipTop, clipRight, clipBottom);
+        layout.draw(canvas);
+        canvas.restore();
     }
 
     @Override
@@ -652,42 +2176,6 @@ public class TextView extends View {
         setMeasuredDimension(width, height);
     }
 
-    @Override
-    protected void onDraw(@Nonnull Canvas canvas) {
-        if (mLayout == null) {
-            assumeLayout();
-        }
-
-        Layout layout = mLayout;
-
-        if (mHint != null && mText.length() == 0) {
-            layout = mHintLayout;
-        }
-
-        assert layout != null;
-
-        final int compoundPaddingLeft = getCompoundPaddingLeft();
-        final int compoundPaddingTop = getCompoundPaddingTop();
-        final int compoundPaddingRight = getCompoundPaddingRight();
-        final int compoundPaddingBottom = getCompoundPaddingBottom();
-        final int scrollX = mScrollX;
-        final int scrollY = mScrollY;
-
-        final int vspace = getHeight() - compoundPaddingBottom - compoundPaddingTop;
-        final int maxScrollY = mLayout.getHeight() - vspace;
-
-        float clipLeft = compoundPaddingLeft + scrollX;
-        float clipTop = (scrollY == 0) ? 0 : compoundPaddingTop + scrollY;
-        float clipRight = getWidth() - getCompoundPaddingRight() + scrollX;
-        float clipBottom = getHeight() + scrollY
-                - ((scrollY == maxScrollY) ? 0 : compoundPaddingBottom);
-
-        canvas.save();
-        canvas.clipRect(clipLeft, clipTop, clipRight, clipBottom);
-        layout.draw(canvas);
-        canvas.restore();
-    }
-
     private static int desired(@Nonnull Layout layout) {
         int n = layout.getLineCount();
         CharSequence text = layout.getText();
@@ -765,67 +2253,60 @@ public class TextView extends View {
         return desired;
     }
 
-    /**
-     * Return the text that TextView is displaying. If {@link #setText(CharSequence)} was called
-     * with an argument of {@link TextView.BufferType#SPANNABLE BufferType.SPANNABLE}
-     * or {@link TextView.BufferType#EDITABLE BufferType.EDITABLE}, you can cast
-     * the return value from this method to Spannable or Editable, respectively.
-     *
-     * <p>The content of the return value should not be modified. If you want a modifiable one, you
-     * should make your own copy first.</p>
-     *
-     * @return The text displayed by the text view.
-     */
-    public CharSequence getText() {
-        return mText;
-    }
 
     /**
-     * Returns the length, in characters, of the text managed by this TextView
-     *
-     * @return The length of the text managed by the TextView in characters.
+     * Check whether entirely new text requires a new view layout
+     * or merely a new text layout.
      */
-    public int length() {
-        return mText.length();
-    }
+    private void checkForRelayout() {
+        // If we have a fixed width, we can just swap in a new text layout
+        // if the text height stays the same or if the view height is fixed.
+        ViewGroup.LayoutParams params = getLayoutParams();
+        if ((params.width != ViewGroup.LayoutParams.WRAP_CONTENT
+                || (mMaxWidth == mMinWidth))
+                && (mHint == null || mHintLayout != null)
+                && (getWidth() - getCompoundPaddingLeft() - getCompoundPaddingRight() > 0)) {
+            // Static width, so try making a new text layout.
 
-    /**
-     * Return the text that TextView is displaying as an Editable object. If the text is not
-     * editable, null is returned.
-     *
-     * @see #getText
-     */
-    public Editable getEditableText() {
-        return (mText instanceof Editable) ? (Editable) mText : null;
-    }
+            int oldht = mLayout.getHeight();
+            int want = mLayout.getWidth();
+            int hintWant = mHintLayout == null ? 0 : mHintLayout.getWidth();
 
-    /**
-     * @hide
-     */
-    public CharSequence getTransformed() {
-        return mTransformed;
-    }
+            /*
+             * No need to bring the text into view, since the size is not
+             * changing (unless we do the requestLayout(), in which case it
+             * will happen at measure).
+             */
+            makeNewLayout(want, hintWant, UNKNOWN_BORING, UNKNOWN_BORING,
+                    getWidth() - getCompoundPaddingLeft() - getCompoundPaddingRight(),
+                    false);
 
-    /**
-     * Gets the vertical distance between lines of text, in pixels.
-     * Note that markup within the text can cause individual lines
-     * to be taller or shorter than this height, and the layout may
-     * contain additional first-or last-line padding.
-     *
-     * @return The height of one standard line in pixels.
-     */
-    public int getLineHeight() {
-        return mTextPaint.getFontMetricsInt(null);
-    }
+            if (mEllipsize != TextUtils.TruncateAt.MARQUEE) {
+                // In a fixed-height view, so use our new text layout.
+                if (params.height != ViewGroup.LayoutParams.WRAP_CONTENT
+                        && params.height != ViewGroup.LayoutParams.MATCH_PARENT) {
+                    invalidate();
+                    return;
+                }
 
-    /**
-     * Gets the {@link Layout} that is currently being used to display the text.
-     * This value can be null if the text or width has recently changed.
-     *
-     * @return The Layout that is currently being used to display the text.
-     */
-    public final Layout getLayout() {
-        return mLayout;
+                // Dynamic height, but height has stayed the same,
+                // so use our new text layout.
+                if (mLayout.getHeight() == oldht
+                        && (mHintLayout == null || mHintLayout.getHeight() == oldht)) {
+                    invalidate();
+                    return;
+                }
+            }
+
+            // We lose: the height has changed and we have a dynamic height.
+            // Request a new view layout using our new text layout.
+        } else {
+            // Dynamic width, so we have no choice but to request a new
+            // view layout with a new text layout.
+            nullLayouts();
+        }
+        requestLayout();
+        invalidate();
     }
 
     @Override
@@ -880,24 +2361,22 @@ public class TextView extends View {
         };
     }
 
-    private void registerForPreDraw() {
-        if (!mPreDrawRegistered) {
-            //getViewTreeObserver().addOnPreDrawListener(this);
-            mPreDrawRegistered = true;
-        }
-    }
-
     /**
-     * Returns the state of the {@code textIsSelectable} flag (See
-     * {@link #setTextIsSelectable setTextIsSelectable()}). Although you have to set this flag
-     * to allow users to select and copy text in a non-editable TextView, the content of an
-     * {@link EditText} can always be selected, independently of the value of this flag.
-     * <p>
-     *
-     * @return True if the text displayed in this TextView can be selected by the user.
+     * @hide
      */
-    public boolean isTextSelectable() {
-        return mEditor != null && mEditor.mTextIsSelectable;
+    @VisibleForTesting
+    public void nullLayouts() {
+        if (mLayout instanceof BoringLayout && mSavedLayout == null) {
+            mSavedLayout = (BoringLayout) mLayout;
+        }
+        if (mHintLayout instanceof BoringLayout && mSavedHintLayout == null) {
+            mSavedHintLayout = (BoringLayout) mHintLayout;
+        }
+
+        mBoring = mHintBoring = null;
+
+        // Since it depends on the value of mLayout
+        if (mEditor != null) mEditor.prepareCursorControllers();
     }
 
     /**
@@ -1065,7 +2544,6 @@ public class TextView extends View {
                                       TextUtils.TruncateAt effectiveEllipsize, boolean useSaved) {
         Layout result = null;
         if (useDynamicLayout()) {
-            assert mText != null;
             final DynamicLayout.Builder builder = DynamicLayout.builder(mText, mTextPaint,
                             wantWidth)
                     .setDisplayText(mTransformed)
@@ -1141,6 +2619,19 @@ public class TextView extends View {
         }
     }
 
+    @Override
+    public void setEnabled(boolean enabled) {
+        super.setEnabled(enabled);
+        // Will change text color
+        if (mEditor != null) {
+            mEditor.invalidateTextDisplayList();
+            mEditor.prepareCursorControllers();
+
+            // start or stop the cursor blinking as appropriate
+            mEditor.makeBlink();
+        }
+    }
+
     /**
      * Convenience for {@link Selection#getSelectionStart}.
      */
@@ -1166,16 +2657,6 @@ public class TextView extends View {
     }
 
     /**
-     * Gets the {@link TextPaint} used for the text.
-     * Use this only to consult the Paint's properties and not to change them.
-     *
-     * @return The base paint used for the text.
-     */
-    public TextPaint getPaint() {
-        return mTextPaint;
-    }
-
-    /**
      * This method is used by the ArrowKeyMovementMethod to jump from one word to the other.
      * Made available to achieve a consistent behavior.
      *
@@ -1183,6 +2664,62 @@ public class TextView extends View {
      */
     public WordIterator getWordIterator() {
         return null;
+    }
+
+    private void sendBeforeTextChanged(CharSequence text, int start, int before, int after) {
+        if (mListeners != null) {
+            final ArrayList<TextWatcher> list = mListeners;
+            for (TextWatcher textWatcher : list) {
+                textWatcher.beforeTextChanged(text, start, before, after);
+            }
+        }
+    }
+
+    /**
+     * Not private so it can be called from an inner class without going
+     * through a thunk.
+     */
+    void sendOnTextChanged(CharSequence text, int start, int before, int after) {
+        if (mListeners != null) {
+            final ArrayList<TextWatcher> list = mListeners;
+            for (TextWatcher textWatcher : list) {
+                textWatcher.onTextChanged(text, start, before, after);
+            }
+        }
+
+        if (mEditor != null) mEditor.sendOnTextChanged(start, before, after);
+    }
+
+    /**
+     * This method is called when the text is changed, in case any subclasses
+     * would like to know.
+     * <p>
+     * Within <code>text</code>, the <code>lengthAfter</code> characters
+     * beginning at <code>start</code> have just replaced old text that had
+     * length <code>lengthBefore</code>. It is an error to attempt to make
+     * changes to <code>text</code> from this callback.
+     *
+     * @param text         The text the TextView is displaying
+     * @param start        The offset of the start of the range of the text that was
+     *                     modified
+     * @param lengthBefore The length of the former text that has been replaced
+     * @param lengthAfter  The length of the replacement modified text
+     */
+    protected void onTextChanged(CharSequence text, int start, int lengthBefore, int lengthAfter) {
+        // intentionally empty, template pattern method can be overridden by subclasses
+    }
+
+    /**
+     * Not private so it can be called from an inner class without going
+     * through a thunk.
+     */
+    void sendAfterTextChanged(Editable text) {
+        if (mListeners != null) {
+            final ArrayList<TextWatcher> list = mListeners;
+            for (TextWatcher textWatcher : list) {
+                textWatcher.afterTextChanged(text);
+            }
+        }
     }
 
     /**
@@ -1200,6 +2737,186 @@ public class TextView extends View {
     private void createEditorIfNeeded() {
         if (mEditor == null) {
             mEditor = new Editor(this);
+        }
+    }
+
+    /**
+     * Type of the text buffer that defines the characteristics of the text such as static,
+     * styleable, or editable.
+     */
+    public enum BufferType {
+        NORMAL,
+        SPANNABLE,
+        EDITABLE
+    }
+
+    static class Drawables {
+        static final int LEFT = 0;
+        static final int TOP = 1;
+        static final int RIGHT = 2;
+        static final int BOTTOM = 3;
+
+        static final int DRAWABLE_NONE = -1;
+        static final int DRAWABLE_RIGHT = 0;
+        static final int DRAWABLE_LEFT = 1;
+
+        final Rect mCompoundRect = new Rect();
+
+        final Drawable[] mShowing = new Drawable[4];
+
+        boolean mHasTint;
+        boolean mHasTintMode;
+
+        Drawable mDrawableStart, mDrawableEnd, mDrawableError, mDrawableTemp;
+        Drawable mDrawableLeftInitial, mDrawableRightInitial;
+
+        boolean mIsRtlCompatibilityMode;
+        boolean mOverride;
+
+        int mDrawableSizeTop, mDrawableSizeBottom, mDrawableSizeLeft, mDrawableSizeRight,
+                mDrawableSizeStart, mDrawableSizeEnd, mDrawableSizeError, mDrawableSizeTemp;
+
+        int mDrawableWidthTop, mDrawableWidthBottom, mDrawableHeightLeft, mDrawableHeightRight,
+                mDrawableHeightStart, mDrawableHeightEnd, mDrawableHeightError, mDrawableHeightTemp;
+
+        int mDrawablePadding;
+
+        int mDrawableSaved = DRAWABLE_NONE;
+
+        public Drawables() {
+            mIsRtlCompatibilityMode = !ModernUI.get().hasRtlSupport();
+            mOverride = false;
+        }
+
+        /**
+         * @return {@code true} if this object contains metadata that needs to
+         * be retained, {@code false} otherwise
+         */
+        public boolean hasMetadata() {
+            return mDrawablePadding != 0 || mHasTintMode || mHasTint;
+        }
+
+        /**
+         * Updates the list of displayed drawables to account for the current
+         * layout direction.
+         *
+         * @param layoutDirection the current layout direction
+         * @return {@code true} if the displayed drawables changed
+         */
+        public boolean resolveWithLayoutDirection(int layoutDirection) {
+            final Drawable previousLeft = mShowing[Drawables.LEFT];
+            final Drawable previousRight = mShowing[Drawables.RIGHT];
+
+            // First reset "left" and "right" drawables to their initial values
+            mShowing[Drawables.LEFT] = mDrawableLeftInitial;
+            mShowing[Drawables.RIGHT] = mDrawableRightInitial;
+
+            if (mIsRtlCompatibilityMode) {
+                // Use "start" drawable as "left" drawable if the "left" drawable was not defined
+                if (mDrawableStart != null && mShowing[Drawables.LEFT] == null) {
+                    mShowing[Drawables.LEFT] = mDrawableStart;
+                    mDrawableSizeLeft = mDrawableSizeStart;
+                    mDrawableHeightLeft = mDrawableHeightStart;
+                }
+                // Use "end" drawable as "right" drawable if the "right" drawable was not defined
+                if (mDrawableEnd != null && mShowing[Drawables.RIGHT] == null) {
+                    mShowing[Drawables.RIGHT] = mDrawableEnd;
+                    mDrawableSizeRight = mDrawableSizeEnd;
+                    mDrawableHeightRight = mDrawableHeightEnd;
+                }
+            } else {
+                // JB-MR1+ normal case: "start" / "end" drawables are overriding "left" / "right"
+                // drawable if and only if they have been defined
+                switch (layoutDirection) {
+                    case LAYOUT_DIRECTION_RTL:
+                        if (mOverride) {
+                            mShowing[Drawables.RIGHT] = mDrawableStart;
+                            mDrawableSizeRight = mDrawableSizeStart;
+                            mDrawableHeightRight = mDrawableHeightStart;
+
+                            mShowing[Drawables.LEFT] = mDrawableEnd;
+                            mDrawableSizeLeft = mDrawableSizeEnd;
+                            mDrawableHeightLeft = mDrawableHeightEnd;
+                        }
+                        break;
+
+                    case LAYOUT_DIRECTION_LTR:
+                    default:
+                        if (mOverride) {
+                            mShowing[Drawables.LEFT] = mDrawableStart;
+                            mDrawableSizeLeft = mDrawableSizeStart;
+                            mDrawableHeightLeft = mDrawableHeightStart;
+
+                            mShowing[Drawables.RIGHT] = mDrawableEnd;
+                            mDrawableSizeRight = mDrawableSizeEnd;
+                            mDrawableHeightRight = mDrawableHeightEnd;
+                        }
+                        break;
+                }
+            }
+
+            applyErrorDrawableIfNeeded(layoutDirection);
+
+            return mShowing[Drawables.LEFT] != previousLeft
+                    || mShowing[Drawables.RIGHT] != previousRight;
+        }
+
+        public void setErrorDrawable(Drawable dr, TextView tv) {
+            if (mDrawableError != dr && mDrawableError != null) {
+                mDrawableError.setCallback(null);
+            }
+            mDrawableError = dr;
+
+            if (mDrawableError != null) {
+                final Rect compoundRect = mCompoundRect;
+                final int[] state = tv.getDrawableState();
+
+                mDrawableError.setState(state);
+                mDrawableError.copyBounds(compoundRect);
+                mDrawableError.setCallback(tv);
+                mDrawableSizeError = compoundRect.width();
+                mDrawableHeightError = compoundRect.height();
+            } else {
+                mDrawableSizeError = mDrawableHeightError = 0;
+            }
+        }
+
+        private void applyErrorDrawableIfNeeded(int layoutDirection) {
+            // first restore the initial state if needed
+            switch (mDrawableSaved) {
+                case DRAWABLE_LEFT:
+                    mShowing[Drawables.LEFT] = mDrawableTemp;
+                    mDrawableSizeLeft = mDrawableSizeTemp;
+                    mDrawableHeightLeft = mDrawableHeightTemp;
+                    break;
+                case DRAWABLE_RIGHT:
+                    mShowing[Drawables.RIGHT] = mDrawableTemp;
+                    mDrawableSizeRight = mDrawableSizeTemp;
+                    mDrawableHeightRight = mDrawableHeightTemp;
+                    break;
+                case DRAWABLE_NONE:
+                default:
+            }
+            // then, if needed, assign the Error drawable to the correct location
+            if (mDrawableError != null) {
+                if (layoutDirection == LAYOUT_DIRECTION_RTL) {
+                    mDrawableSaved = DRAWABLE_LEFT;
+                    mDrawableTemp = mShowing[Drawables.LEFT];
+                    mDrawableSizeTemp = mDrawableSizeLeft;
+                    mDrawableHeightTemp = mDrawableHeightLeft;
+                    mShowing[Drawables.LEFT] = mDrawableError;
+                    mDrawableSizeLeft = mDrawableSizeError;
+                    mDrawableHeightLeft = mDrawableHeightError;
+                } else {
+                    mDrawableSaved = DRAWABLE_RIGHT;
+                    mDrawableTemp = mShowing[Drawables.RIGHT];
+                    mDrawableSizeTemp = mDrawableSizeRight;
+                    mDrawableHeightTemp = mDrawableHeightRight;
+                    mShowing[Drawables.RIGHT] = mDrawableError;
+                    mDrawableSizeRight = mDrawableSizeError;
+                    mDrawableHeightRight = mDrawableHeightError;
+                }
+            }
         }
     }
 

@@ -175,6 +175,13 @@ public class FontPaint {
         return !mLocale.equals(paint.mLocale);
     }
 
+    @Nonnull
+    public FontMetricsInt getFontMetricsInt() {
+        FontMetricsInt fm = new FontMetricsInt();
+        getFontMetricsInt(fm);
+        return fm;
+    }
+
     /**
      * Return the font's interline spacing, given the Paint's settings for
      * typeface, textSize, etc. If metrics is not null, return the fontmetric
