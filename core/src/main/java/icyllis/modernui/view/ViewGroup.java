@@ -174,8 +174,18 @@ public abstract class ViewGroup extends View implements ViewParent {
     protected void dispatchDraw(@Nonnull Canvas canvas) {
         final View[] views = mChildren;
         final int count = mChildrenCount;
+        final boolean clip = (mGroupFlags & FLAG_CLIP_CHILDREN) != 0;
         for (int i = 0; i < count; i++) {
-            views[i].draw(canvas, this, (mGroupFlags & FLAG_CLIP_CHILDREN) != 0);
+            views[i].draw(canvas, this, clip);
+        }
+        // Draw any disappearing views that have animations
+        if (mDisappearingChildren != null) {
+            final ArrayList<View> disappearingChildren = mDisappearingChildren;
+            // Go backwards -- we may delete as animations finish
+            for (int i = disappearingChildren.size() - 1; i >= 0; i--) {
+                final View child = disappearingChildren.get(i);
+                child.draw(canvas, this, clip);
+            }
         }
     }
 

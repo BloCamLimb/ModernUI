@@ -40,28 +40,66 @@ import com.ibm.icu.lang.UProperty;
 /**
  * A utility class for Emoji.
  */
-// https://android.googlesource.com/platform/frameworks/minikin/+/refs/heads/master/libs/minikin/Emoji.cpp
 public final class Emoji {
 
-    public static boolean isEmoji(int codePoint) {
-        return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI);
+    public static int COMBINING_ENCLOSING_KEYCAP = 0x20E3;
+
+    public static int ZERO_WIDTH_JOINER = 0x200D;
+
+    public static int VARIATION_SELECTOR_16 = 0xFE0F;
+
+    public static int CANCEL_TAG = 0xE007F;
+
+    /**
+     * Returns true if the given code point is regional indicator symbol.
+     */
+    public static boolean isRegionalIndicatorSymbol(int codePoint) {
+        return 0x1F1E6 <= codePoint && codePoint <= 0x1F1FF;
     }
 
+    /**
+     * Returns true if the given code point is emoji modifier.
+     */
     public static boolean isEmojiModifier(int codePoint) {
         return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI_MODIFIER);
     }
 
-    public static boolean isEmojiBase(int codePoint) {
+    /**
+     * Returns true if the given code point is emoji modifier base.
+     *
+     * @param c codepoint to check
+     * @return true if is emoji modifier base
+     */
+    public static boolean isEmojiModifierBase(int c) {
         // These two characters were removed from Emoji_Modifier_Base in Emoji 4.0, but we need to
         // keep them as emoji modifier bases since there are fonts and user-generated text out there
         // that treats these as potential emoji bases.
-        if (codePoint == 0x1F91D || codePoint == 0x1F93C) {
+        if (c == 0x1F91D || c == 0x1F93C) {
             return true;
         }
-        return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI_MODIFIER_BASE);
+        // If Android's copy of ICU is behind, check for new codepoints here.
+        // Consult log for implementation pattern.
+        return UCharacter.hasBinaryProperty(c, UProperty.EMOJI_MODIFIER_BASE);
     }
 
-    public static boolean isRegionalIndicatorSymbol(int codePoint) {
-        return 0x1F1E6 <= codePoint && codePoint <= 0x1F1FF;
+    /**
+     * Returns true if the character has Emoji property.
+     */
+    public static boolean isEmoji(int codePoint) {
+        return UCharacter.hasBinaryProperty(codePoint, UProperty.EMOJI);
+    }
+
+    // Returns true if the character can be a base character of COMBINING ENCLOSING KEYCAP.
+    public static boolean isKeycapBase(int codePoint) {
+        return ('0' <= codePoint && codePoint <= '9') || codePoint == '#' || codePoint == '*';
+    }
+
+    /**
+     * Returns true if the character can be a part of tag_spec in emoji tag sequence.
+     * <p>
+     * Note that 0xE007F (CANCEL TAG) is not included.
+     */
+    public static boolean isTagSpecChar(int codePoint) {
+        return 0xE0020 <= codePoint && codePoint <= 0xE007E;
     }
 }
