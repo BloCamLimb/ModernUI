@@ -29,7 +29,7 @@ import java.util.List;
 
 /**
  * A base class that manages text layout in visual elements on the screen,
- * which is designed for text pages at a high-level.
+ * which is designed for text pages at high-level.
  * <p>
  * For text that will be edited, use a {@link DynamicLayout},
  * which will be updated as the text changes.

@@ -75,6 +75,17 @@ public final class TextUtils {
         }
     }
 
+    public static CharSequence stringOrSpannedString(CharSequence source) {
+        if (source == null)
+            return null;
+        if (source instanceof SpannedString)
+            return source;
+        if (source instanceof Spanned)
+            return new SpannedString(source);
+
+        return source.toString();
+    }
+
     public static void getChars(@Nonnull CharSequence s, int srcBegin, int srcEnd,
                                 @Nonnull char[] dst, int dstBegin) {
         final Class<? extends CharSequence> c = s.getClass();
