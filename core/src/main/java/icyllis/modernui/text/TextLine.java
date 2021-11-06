@@ -693,7 +693,7 @@ public class TextLine {
                     return after ? spanLimit : spanStart;
                 }
             } else {
-                spanLimit = limit;
+                spanLimit = runLimit;
             }
         }
 
@@ -703,7 +703,7 @@ public class TextLine {
                     spanLimit - spanStart, offset, cursorOpt);
         } else {
             return GraphemeBreak.getTextRunCursor(mText, wp.mLocale,
-                    mStart + spanStart, mStart + spanLimit, offset, cursorOpt) - mStart;
+                    mStart + spanStart, mStart + spanLimit, mStart + offset, cursorOpt) - mStart;
         }
     }
 
