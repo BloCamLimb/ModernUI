@@ -76,6 +76,8 @@ public class TestLinearLayout extends LinearLayout {
 
     private int ticks;
 
+    private TextView mTextView;
+
     public TestLinearLayout() {
         setOrientation(VERTICAL);
         setGravity(Gravity.CENTER);
@@ -133,13 +135,21 @@ public class TestLinearLayout extends LinearLayout {
         tv.setClickable(true);
         tv.setFocusableInTouchMode(true);
 
-        postDelayed(() -> addView(tv, 2), 1600);
+        mTextView = tv;
 
         for (int i = 0; i < 8; i++) {
             View v;
             LinearLayout.LayoutParams p;
             if (i == 4) {
-                v = new SwitchButton();
+                SwitchButton switchButton = new SwitchButton();
+                v = switchButton;
+                switchButton.setOnCheckedChangeListener((button, checked) -> {
+                    if (checked) {
+                        button.post(() -> addView(mTextView, 2));
+                    } else {
+                        button.post(() -> removeView(mTextView));
+                    }
+                });
                 p = new LinearLayout.LayoutParams(c.getViewSize(100), c.getViewSize(36));
             } else if (i == 2) {
                 continue;

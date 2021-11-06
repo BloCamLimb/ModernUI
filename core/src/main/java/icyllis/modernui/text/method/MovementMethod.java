@@ -23,6 +23,8 @@ import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.widget.TextView;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 /**
  * Provides cursor positioning, scrolling and text selection functionality in a {@link TextView}.
  * <p>
@@ -34,6 +36,7 @@ import icyllis.modernui.widget.TextView;
  * directly by applications.
  * </p>
  */
+@ParametersAreNonnullByDefault
 public interface MovementMethod {
 
     void initialize(TextView widget, Spannable text);

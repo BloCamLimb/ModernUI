@@ -22,6 +22,7 @@ import icyllis.modernui.text.Layout;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.view.KeyEvent;
+import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
 import icyllis.modernui.widget.TextView;
 
@@ -45,7 +46,7 @@ public class ArrowKeyMovementMethod extends BaseMovementMethod {
     }
 
     private static boolean isSelecting(Spannable buffer) {
-        return TextKeyListener.getMetaState(buffer, KeyEvent.MOD_SHIFT) == TextKeyListener.PRESSED_RETURN_VALUE;
+        return TextKeyListener.getMetaState(buffer, KeyEvent.MOD_SHIFT) != 0;
     }
 
     private static int getCurrentLineTop(Spannable buffer, Layout layout) {
@@ -185,6 +186,22 @@ public class ArrowKeyMovementMethod extends BaseMovementMethod {
     }
 
     @Override
+    protected boolean leftWord(TextView widget, Spannable buffer) {
+        final int selectionEnd = widget.getSelectionEnd();
+        final WordIterator wordIterator = widget.getWordIterator();
+        wordIterator.setCharSequence(buffer, selectionEnd, selectionEnd);
+        return Selection.moveToPreceding(buffer, wordIterator, isSelecting(buffer));
+    }
+
+    @Override
+    protected boolean rightWord(TextView widget, Spannable buffer) {
+        final int selectionEnd = widget.getSelectionEnd();
+        final WordIterator wordIterator = widget.getWordIterator();
+        wordIterator.setCharSequence(buffer, selectionEnd, selectionEnd);
+        return Selection.moveToFollowing(buffer, wordIterator, isSelecting(buffer));
+    }
+
+    @Override
     protected boolean home(TextView widget, Spannable buffer) {
         return lineStart(widget, buffer);
     }
@@ -192,6 +209,12 @@ public class ArrowKeyMovementMethod extends BaseMovementMethod {
     @Override
     protected boolean end(TextView widget, Spannable buffer) {
         return lineEnd(widget, buffer);
+    }
+
+    @Override
+    public boolean onTouchEvent(TextView widget, Spannable text, MotionEvent event) {
+        //TODO drag selection
+        return super.onTouchEvent(widget, text, event);
     }
 
     @Override

@@ -23,9 +23,12 @@ import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.widget.TextView;
 
+import javax.annotation.ParametersAreNonnullByDefault;
+
 /**
  * Base classes for movement methods.
  */
+@ParametersAreNonnullByDefault
 public abstract class BaseMovementMethod implements MovementMethod {
 
     protected BaseMovementMethod() {
@@ -43,12 +46,7 @@ public abstract class BaseMovementMethod implements MovementMethod {
     @Override
     public boolean onKeyDown(TextView widget, Spannable text, int keyCode, KeyEvent event) {
         final int movementMods = event.getModifiers() & ~KeyEvent.MOD_SHIFT;
-        boolean handled = handleMovementKey(widget, text, keyCode, movementMods, event);
-        if (handled) {
-            TextKeyListener.adjustMetaAfterKeypress(text);
-            TextKeyListener.resetLockedMeta(text);
-        }
-        return handled;
+        return handleMovementKey(widget, text, keyCode, movementMods);
     }
 
     @Override
@@ -60,17 +58,12 @@ public abstract class BaseMovementMethod implements MovementMethod {
     public boolean onKeyOther(TextView widget, Spannable text, KeyEvent event) {
         final int movementMods = event.getModifiers() & ~KeyEvent.MOD_SHIFT;
         final int keyCode = event.getKeyCode();
-        final int repeat = event.getRepeatCount();
         boolean handled = false;
-        for (int i = 0; i < repeat; i++) {
-            if (!handleMovementKey(widget, text, keyCode, movementMods, event)) {
+        for (int i = event.getRepeatCount(); i > 0; i--) {
+            if (!handleMovementKey(widget, text, keyCode, movementMods)) {
                 break;
             }
             handled = true;
-        }
-        if (handled) {
-            TextKeyListener.adjustMetaAfterKeypress(text);
-            TextKeyListener.resetLockedMeta(text);
         }
         return handled;
     }
@@ -98,13 +91,12 @@ public abstract class BaseMovementMethod implements MovementMethod {
      *
      * @param widget       The text view.
      * @param buffer       The text buffer.
-     * @param event        The key event.
      * @param keyCode      The key code.
      * @param movementMods The keyboard meta states used for movement.
      * @return True if the event was handled.
      */
     protected boolean handleMovementKey(TextView widget, Spannable buffer,
-                                        int keyCode, int movementMods, KeyEvent event) {
+                                        int keyCode, int movementMods) {
         switch (keyCode) {
             case KeyEvent.KEY_LEFT:
                 if (movementMods == 0) {

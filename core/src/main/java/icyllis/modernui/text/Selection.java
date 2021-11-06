@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.BreakIterator;
+import icyllis.modernui.text.method.WordIterator;
 
 import javax.annotation.ParametersAreNonnullByDefault;
 
@@ -27,7 +28,6 @@ import javax.annotation.ParametersAreNonnullByDefault;
  * A cursor is a selection where the start and end are at the same offset.
  */
 @ParametersAreNonnullByDefault
-@SuppressWarnings("unused")
 public final class Selection {
 
     public static final Object SELECTION_START = new NoCopySpan.Concrete();
@@ -444,7 +444,7 @@ public final class Selection {
      * {@hide}
      */
     public static boolean moveToPreceding(
-            Spannable text, BreakIterator iter, boolean extendSelection) {
+            Spannable text, WordIterator iter, boolean extendSelection) {
         final int offset = iter.preceding(getSelectionEnd(text));
         if (offset != BreakIterator.DONE) {
             if (extendSelection) {
@@ -460,7 +460,7 @@ public final class Selection {
      * {@hide}
      */
     public static boolean moveToFollowing(
-            Spannable text, BreakIterator iter, boolean extendSelection) {
+            Spannable text, WordIterator iter, boolean extendSelection) {
         final int offset = iter.following(getSelectionEnd(text));
         if (offset != BreakIterator.DONE) {
             if (extendSelection) {

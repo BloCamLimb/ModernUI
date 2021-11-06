@@ -18,5 +18,30 @@
 
 package icyllis.modernui.text.method;
 
+import icyllis.modernui.view.View;
+
+/**
+ * TextView uses TransformationMethods to do things like replacing the
+ * characters of passwords with dots, or keeping the newline characters
+ * from causing line breaks in single-line text fields.
+ */
 public interface TransformationMethod {
+
+    /**
+     * Returns a CharSequence that is a transformation of the source text --
+     * for example, replacing each character with a dot in a password field.
+     * Beware that the returned text must be exactly the same length as
+     * the source text, and that if the source text is Editable, the returned
+     * text must mirror it dynamically instead of doing a one-time copy.
+     * The method should not return {@code null} unless {@code source}
+     * is {@code null}.
+     */
+    CharSequence getTransformation(CharSequence source, View view);
+
+    /**
+     * This method is called when the TextView that uses this
+     * TransformationMethod gains or loses focus.
+     */
+    void onFocusChanged(View view, CharSequence sourceText,
+                        boolean focused, int direction);
 }

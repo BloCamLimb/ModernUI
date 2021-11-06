@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import com.ibm.icu.text.BreakIterator;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -25,6 +26,7 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.MovementMethod;
 import icyllis.modernui.text.method.TransformationMethod;
+import icyllis.modernui.text.method.WordIterator;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.PointerIcon;
@@ -1137,6 +1139,50 @@ public class TextView extends View {
         } else {
             setPointerIcon(null);
         }
+    }
+
+    /**
+     * Convenience for {@link Selection#getSelectionStart}.
+     */
+    public int getSelectionStart() {
+        return Selection.getSelectionStart(getText());
+    }
+
+    /**
+     * Convenience for {@link Selection#getSelectionEnd}.
+     */
+    public int getSelectionEnd() {
+        return Selection.getSelectionEnd(getText());
+    }
+
+    /**
+     * Return true iff there is a selection of nonzero length inside this text view.
+     */
+    public boolean hasSelection() {
+        final int selectionStart = getSelectionStart();
+        final int selectionEnd = getSelectionEnd();
+
+        return selectionStart >= 0 && selectionEnd > 0 && selectionStart != selectionEnd;
+    }
+
+    /**
+     * Gets the {@link TextPaint} used for the text.
+     * Use this only to consult the Paint's properties and not to change them.
+     *
+     * @return The base paint used for the text.
+     */
+    public TextPaint getPaint() {
+        return mTextPaint;
+    }
+
+    /**
+     * This method is used by the ArrowKeyMovementMethod to jump from one word to the other.
+     * Made available to achieve a consistent behavior.
+     *
+     * @hide
+     */
+    public WordIterator getWordIterator() {
+        return null;
     }
 
     /**

@@ -21,6 +21,7 @@ package icyllis.modernui.text;
 import com.ibm.icu.impl.UCharacterProperty;
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
+import com.ibm.icu.lang.UProperty;
 import icyllis.modernui.ModernUI;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -228,8 +229,9 @@ public class Typeface {
         return (UCharacterProperty.getMask(UCharacter.getType(c)) & GC_M_MASK) != 0;
     }
 
+    // Returns true if the given code point is a variation selector.
     public static boolean isVariationSelector(int c) {
-        return (c >= 0xE0100 && c <= 0xE01FF) || (c >= 0xFE00 && c <= 0xFE0F);
+        return UCharacter.hasBinaryProperty(c, UProperty.VARIATION_SELECTOR);
     }
 
     // an array of base fonts
@@ -328,7 +330,7 @@ public class Typeface {
                     // character to the new run. U+20E3 COMBINING ENCLOSING KEYCAP, used in emoji, is
                     // handled properly by this since it's a combining mark too.
                     if (pos != 0 &&
-                            (isCombining(ch) || (Emoji.isEmojiModifier(ch) && Emoji.isEmojiBase(prevCh)))) {
+                            (isCombining(ch) || (Emoji.isEmojiModifier(ch) && Emoji.isEmojiModifierBase(prevCh)))) {
                         int prevLength = Character.charCount(prevCh);
                         if (lastRun != null) {
                             lastRun.mEnd -= prevLength;
