@@ -1494,7 +1494,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @see #getText
      */
-    @Nullable
     public Editable getEditableText() {
         return (mText instanceof Editable) ? (Editable) mText : null;
     }
@@ -1629,11 +1628,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         if (type == BufferType.EDITABLE || needEditableForNotification) {
             createEditorIfNeeded();
-            mEditor.forgetUndoRedo();
-            mEditor.scheduleRestartInputForSetText();
             Editable t = mEditableFactory.newEditable(text);
             text = t;
-            setFilters(t, mFilters);
+            t.setFilters(mFilters);
         } else if (type == BufferType.SPANNABLE || mMovement != null) {
             text = mSpannableFactory.newSpannable(text);
         } else {
@@ -1702,8 +1699,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         if (mEditor != null) {
             // SelectionModifierCursorController depends on textCanBeSelected, which depends on text
             mEditor.prepareCursorControllers();
-
-            mEditor.maybeFireScheduledRestartInputForSetText();
         }
     }
 
@@ -1781,28 +1776,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         mFilters = filters;
 
         if (mText instanceof Editable) {
-            setFilters((Editable) mText, filters);
+            ((Editable) mText).setFilters(filters);
         }
-    }
-
-    /**
-     * Sets the list of input filters on the specified Editable,
-     * and includes mInput in the list if it is an InputFilter.
-     */
-    private void setFilters(@Nonnull Editable e, @Nonnull InputFilter[] filters) {
-        if (mEditor != null) {
-            final boolean undoFilter = mEditor.mUndoInputFilter != null;
-            if (undoFilter) {
-                InputFilter[] nf = new InputFilter[filters.length + 1];
-
-                System.arraycopy(filters, 0, nf, 0, filters.length);
-                nf[filters.length] = mEditor.mUndoInputFilter;
-
-                e.setFilters(nf);
-                return;
-            }
-        }
-        e.setFilters(filters);
     }
 
     /**
@@ -2006,6 +1981,23 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         canvas.save();
         canvas.clipRect(clipLeft, clipTop, clipRight, clipBottom);
         layout.draw(canvas);
+
+        if (mMovement != null && mEditor != null && (isFocused() || isPressed()) && mEditor.shouldRenderCursor()) {
+            int selStart = getSelectionStart();
+            if (selStart >= 0 && selStart == getSelectionEnd()) {
+                int line = layout.getLineForOffset(selStart);
+                int top = layout.getLineTop(line);
+                int bottom = layout.getLineBottom(line);
+                int diff = (bottom - top) >> 3;
+                bottom -= diff;
+                top += diff;
+                float h = layout.getPrimaryHorizontal(selStart);
+                Paint paint = Paint.take();
+                paint.setStrokeWidth(4);
+                canvas.drawRoundLine(h, top, h, bottom, paint);
+            }
+        }
+
         canvas.restore();
     }
 
@@ -2663,6 +2655,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @hide
      */
     public WordIterator getWordIterator() {
+        if (mEditor != null)
+            return mEditor.getWordIterator();
         return null;
     }
 
@@ -2720,6 +2714,165 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 textWatcher.afterTextChanged(text);
             }
         }
+    }
+
+    @Override
+    protected void onFocusChanged(boolean focused, int direction) {
+        if (mEditor != null) mEditor.onFocusChanged(focused, direction);
+
+        super.onFocusChanged(focused, direction);
+    }
+
+    /**
+     * @return True iff this TextView contains a text that can be edited, or if this is
+     * a selectable TextView.
+     */
+    boolean isTextEditable() {
+        return mText instanceof Editable && mEditor != null && isEnabled();
+    }
+
+    /**
+     * Move the cursor, if needed, so that it is at an offset that is visible
+     * to the user.  This will not move the cursor if it represents more than
+     * one character (a selection range).  This will only work if the
+     * TextView contains spannable text; otherwise it will do nothing.
+     *
+     * @return True if the cursor was actually moved, false otherwise.
+     */
+    public boolean moveCursorToVisibleOffset() {
+        if (mSpannable == null) {
+            return false;
+        }
+        int start = getSelectionStart();
+        int end = getSelectionEnd();
+        if (start != end) {
+            return false;
+        }
+
+        // First: make sure the line is visible on screen:
+
+        int line = mLayout.getLineForOffset(start);
+
+        final int top = mLayout.getLineTop(line);
+        final int bottom = mLayout.getLineTop(line + 1);
+        final int vspace = getHeight() - getExtendedPaddingTop() - getExtendedPaddingBottom();
+        int vslack = (bottom - top) / 2;
+        if (vslack > vspace / 4) {
+            vslack = vspace / 4;
+        }
+        final int vs = mScrollY;
+
+        if (top < (vs + vslack)) {
+            line = mLayout.getLineForVertical(vs + vslack + (bottom - top));
+        } else if (bottom > (vspace + vs - vslack)) {
+            line = mLayout.getLineForVertical(vspace + vs - vslack - (bottom - top));
+        }
+
+        // Next: make sure the character is visible on screen:
+
+        final int hspace = getWidth() - getCompoundPaddingLeft() - getCompoundPaddingRight();
+        final int hs = mScrollX;
+        final int leftChar = mLayout.getOffsetForHorizontal(line, hs);
+        final int rightChar = mLayout.getOffsetForHorizontal(line, hspace + hs);
+
+        // line might contain bidirectional text
+        final int lowChar = Math.min(leftChar, rightChar);
+        final int highChar = Math.max(leftChar, rightChar);
+
+        int newStart = start;
+        if (newStart < lowChar) {
+            newStart = lowChar;
+        } else if (newStart > highChar) {
+            newStart = highChar;
+        }
+
+        if (newStart != start) {
+            Selection.setSelection(mSpannable, newStart);
+            return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Returns true, only while processing a touch gesture, if the initial
+     * touch down event caused focus to move to the text view and as a result
+     * its selection changed.  Only valid while processing the touch gesture
+     * of interest, in an editable text view.
+     */
+    public boolean didTouchFocusSelect() {
+        return mEditor != null && mEditor.mTouchFocusSelected;
+    }
+
+    @Override
+    public boolean onTouchEvent(@Nonnull MotionEvent event) {
+        final boolean superResult = super.onTouchEvent(event);
+
+        final boolean touchIsFinished = (event.getAction() == MotionEvent.ACTION_UP)
+                && (mEditor == null || !mEditor.mIgnoreActionUpEvent) && isFocused();
+
+        if ((mMovement != null || mEditor != null) && isEnabled()
+                && mSpannable != null && mLayout != null) {
+            boolean handled = false;
+
+            if (mMovement != null) {
+                handled |= mMovement.onTouchEvent(this, mSpannable, event);
+            }
+
+            final boolean textIsSelectable = isTextSelectable();
+
+            if (touchIsFinished && (isTextEditable() || textIsSelectable)) {
+                // The above condition ensures that the mEditor is not null
+                mEditor.onTouchUpEvent(event);
+
+                handled = true;
+            }
+
+            if (handled) {
+                return true;
+            }
+        }
+
+        return superResult;
+    }
+
+    /**
+     * Get the character offset closest to the specified absolute position. A typical use case is to
+     * pass the result of {@link MotionEvent#getX()} and {@link MotionEvent#getY()} to this method.
+     *
+     * @param x The horizontal absolute position of a point on screen
+     * @param y The vertical absolute position of a point on screen
+     * @return the character offset for the character whose position is closest to the specified
+     * position. Returns -1 if there is no layout.
+     */
+    public int getOffsetForPosition(float x, float y) {
+        if (getLayout() == null)
+            return -1;
+        final int line = getLineAtCoordinate(y);
+        return getOffsetAtCoordinate(line, x);
+    }
+
+    int getLineAtCoordinate(float y) {
+        y -= getTotalPaddingTop();
+        // Clamp the position to inside of the view.
+        y = Math.max(0.0f, y);
+        y = Math.min(getHeight() - getTotalPaddingBottom() - 1, y);
+        y += getScrollY();
+        return getLayout().getLineForVertical((int) y);
+    }
+
+    float convertToLocalHorizontalCoordinate(float x) {
+        x -= getTotalPaddingLeft();
+        // Clamp the position to inside of the view.
+        x = Math.max(0.0f, x);
+        x = Math.min(getWidth() - getTotalPaddingRight() - 1, x);
+        x += getScrollX();
+        return x;
+    }
+
+    int getOffsetAtCoordinate(int line, float x) {
+        x = convertToLocalHorizontalCoordinate(x);
+        return getLayout().getOffsetForHorizontal(line, x);
     }
 
     /**
