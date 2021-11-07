@@ -26,8 +26,8 @@ import icyllis.modernui.mcgui.Animation;
 import icyllis.modernui.mcgui.Applier;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.FontPaint;
-import icyllis.modernui.text.SpannableStringBuilder;
 import icyllis.modernui.text.Spanned;
+import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
@@ -119,7 +119,12 @@ public class TestLinearLayout extends LinearLayout {
         text += "\t\t\u09b9\u09cd\u09af\u09be\u09b2\u09cb\u0020\u0645\u0631\u062d\u0628\u0627\u0020\ud808\udd99\ud808" +
                 "\udd99";
 
-        Editable editable = SpannableStringBuilder.valueOf(text);
+        TextView tv = new TextView();
+        tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        tv.setText(text, TextView.BufferType.EDITABLE);
+        Editable editable = tv.getEditableText();
         editable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(),
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         editable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30,
@@ -127,13 +132,9 @@ public class TestLinearLayout extends LinearLayout {
         editable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         editable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-        TextView tv = new TextView();
-        tv.setText(editable);
-        tv.setId(6679);
-        tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
-        tv.setClickable(true);
+
         tv.setFocusableInTouchMode(true);
+        tv.setMovementMethod(ArrowKeyMovementMethod.getInstance());
 
         mTextView = tv;
 

@@ -169,9 +169,6 @@ public class MeasuredParagraph {
      */
     @Nonnull
     public Directions getDirections(int start, int end) {
-        if (start < 0 || start > end || end > mCopiedBuffer.length) {
-            throw new IllegalArgumentException();
-        }
         if (start == end || mLevels == null) {
             return Directions.ALL_LEFT_TO_RIGHT;
         }

@@ -596,9 +596,11 @@ public final class UIManager extends ViewRootBase {
         post(() -> {
             View v = mDecor.findFocus();
             if (v instanceof TextView tv) {
-                Editable editable = tv.getEditableText();
-                if (editable != null) {
-                    editable.append(ch);
+                Editable content = tv.getEditableText();
+                if (content != null) {
+                    int selStart = tv.getSelectionStart();
+                    int selEnd = tv.getSelectionEnd();
+                    content.replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd), String.valueOf(ch));
                 }
             }
         });
