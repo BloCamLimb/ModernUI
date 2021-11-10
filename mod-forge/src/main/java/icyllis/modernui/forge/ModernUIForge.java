@@ -21,6 +21,8 @@ package icyllis.modernui.forge;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.TextureManager;
+import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.text.LayoutCache;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import net.minecraft.client.Minecraft;
@@ -159,6 +161,8 @@ public final class ModernUIForge extends ModernUI {
                         loadFonts(configs, set);
                     }
                     mTypeface = Typeface.createTypeface(set.toArray(new Font[0]));
+                    Minecraft.getInstance().tell(() -> LayoutCache.getOrCreate(ID, 0, 1, false,
+                            new FontPaint(), false, false));
                     ModernUI.LOGGER.info(MARKER, "Active: {}", mTypeface);
                 }
             }

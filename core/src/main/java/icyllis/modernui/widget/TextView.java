@@ -23,12 +23,11 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.platform.Clipboard;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.view.*;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
@@ -43,9 +42,10 @@ import java.util.function.BiConsumer;
 //TODO
 public class TextView extends View implements ViewTreeObserver.OnPreDrawListener {
 
-    static final Marker MARKER = MarkerManager.getMarker("TextView");
-    static final boolean DEBUG_EXTRACT = false;
-    static final boolean DEBUG_CURSOR = false;
+    public static final int ID_CUT = 1;
+    public static final int ID_COPY = 2;
+    public static final int ID_PASTE = 3;
+    public static final int ID_SELECT_ALL = 4;
 
     @VisibleForTesting
     public static final BoringLayout.Metrics UNKNOWN_BORING = new BoringLayout.Metrics();
@@ -65,11 +65,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     private static final Spanned EMPTY_SPANNED = new SpannedString("");
 
     private static final int CHANGE_WATCHER_PRIORITY = 100;
-
-    private static final int KEY_EVENT_NOT_HANDLED = 0;
-    private static final int KEY_EVENT_HANDLED = -1;
-    private static final int KEY_DOWN_HANDLED_BY_KEY_LISTENER = 1;
-    private static final int KEY_DOWN_HANDLED_BY_MOVEMENT_METHOD = 2;
 
     private static final int FLOATING_TOOLBAR_SELECT_ALL_REFRESH_DELAY = 500;
 
@@ -225,12 +220,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 setFocusable(FOCUSABLE_AUTO);
                 setClickable(false);
                 setLongClickable(false);
-            }
-
-            // SelectionModifierCursorController depends on textCanBeSelected, which depends on
-            // mMovement
-            if (mEditor != null) {
-                mEditor.prepareCursorControllers();
             }
         }
     }
@@ -1695,11 +1684,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         if (needEditableForNotification) {
             sendAfterTextChanged((Editable) text);
         }
-
-        if (mEditor != null) {
-            // SelectionModifierCursorController depends on textCanBeSelected, which depends on text
-            mEditor.prepareCursorControllers();
-        }
     }
 
     // Update mText and mPrecomputed
@@ -1928,9 +1912,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         setMovementMethod(selectable ? ArrowKeyMovementMethod.getInstance() : null);
         setText(mText, selectable ? BufferType.SPANNABLE : BufferType.NORMAL);
-
-        // Called by setText above, but safer in case of future code changes
-        mEditor.prepareCursorControllers();
     }
 
     @Override
@@ -1980,22 +1961,38 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         canvas.save();
         canvas.clipRect(clipLeft, clipTop, clipRight, clipBottom);
-        layout.draw(canvas);
 
-        if (mMovement != null && mEditor != null && (isFocused() || isPressed()) && mEditor.shouldRenderCursor()) {
-            int selStart = getSelectionStart();
-            if (selStart >= 0 && selStart == getSelectionEnd()) {
-                int line = layout.getLineForOffset(selStart);
-                int top = layout.getLineTop(line);
-                int bottom = layout.getLineBottom(line);
-                int diff = (bottom - top) >> 3;
-                bottom -= diff;
-                top += diff;
-                float h = layout.getPrimaryHorizontal(selStart);
-                Paint paint = Paint.take();
-                paint.setStrokeWidth(4);
-                canvas.drawRoundLine(h, top, h, bottom, paint);
+        final long range = layout.getLineRangeForDraw(canvas);
+        if (range >= 0) {
+            int firstLine = (int) (range >>> 32);
+            int lastLine = (int) (range & 0xFFFFFFFFL);
+            layout.drawBackground(canvas, firstLine, lastLine);
+
+            if (mMovement != null && mEditor != null && (isFocused() || isPressed())) {
+                int selStart = getSelectionStart();
+                if (selStart >= 0) {
+                    int line = layout.getLineForOffset(selStart);
+                    int top = layout.getLineTop(line);
+                    int bottom = layout.getLineBottom(line);
+                    int selEnd = getSelectionEnd();
+                    float h = layout.getPrimaryHorizontal(selStart);
+                    Paint paint = Paint.take();
+                    paint.setStrokeWidth(4);
+                    if (mEditor.shouldRenderCursor() && selStart == selEnd) {
+                        int diff = (bottom - top) >> 3;
+                        bottom -= diff;
+                        top += diff;
+                        paint.setColor(mTextPaint.getColor());
+                        canvas.drawRoundLine(h, top, h, bottom, paint);
+                    } else {
+                        float h2 = layout.getPrimaryHorizontal(selEnd);
+                        paint.setColor(0x6633B5E5);
+                        canvas.drawRect(Math.min(h, h2), top, Math.max(h, h2), bottom, paint);
+                    }
+                }
             }
+
+            layout.drawText(canvas, firstLine, lastLine);
         }
 
         canvas.restore();
@@ -2366,9 +2363,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
 
         mBoring = mHintBoring = null;
-
-        // Since it depends on the value of mLayout
-        if (mEditor != null) mEditor.prepareCursorControllers();
     }
 
     /**
@@ -2512,10 +2506,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         if (bringIntoView || (testDirChange && oldDir != mLayout.getParagraphDirection(0))) {
             registerForPreDraw();
         }
-
-        // CursorControllers need a non-null mLayout
-        if (mEditor != null)
-            mEditor.prepareCursorControllers();
     }
 
     /**
@@ -2617,7 +2607,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         // Will change text color
         if (mEditor != null) {
             mEditor.invalidateTextDisplayList();
-            mEditor.prepareCursorControllers();
 
             // start or stop the cursor blinking as appropriate
             mEditor.makeBlink();
@@ -2724,7 +2713,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     /**
-     * @return True iff this TextView contains a text that can be edited, or if this is
+     * @return True if this TextView contains a text that can be edited, or if this is
      * a selectable TextView.
      */
     boolean isTextEditable() {
@@ -2806,9 +2795,24 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     @Override
     public boolean onTouchEvent(@Nonnull MotionEvent event) {
+        final int action = event.getAction();
+        if (mEditor != null) {
+            mEditor.onTouchEvent(event);
+        }
+
         final boolean superResult = super.onTouchEvent(event);
 
-        final boolean touchIsFinished = (event.getAction() == MotionEvent.ACTION_UP)
+        /*
+         * Don't handle the release after a long press, because it will move the selection away from
+         * whatever the menu action was trying to affect. If the long press should have triggered an
+         * insertion action mode, we can now actually show it.
+         */
+        if (mEditor != null && mEditor.mDiscardNextActionUp && action == MotionEvent.ACTION_UP) {
+            mEditor.mDiscardNextActionUp = false;
+            return superResult;
+        }
+
+        final boolean touchIsFinished = (action == MotionEvent.ACTION_UP)
                 && (mEditor == null || !mEditor.mIgnoreActionUpEvent) && isFocused();
 
         if ((mMovement != null || mEditor != null) && isEnabled()
@@ -2820,6 +2824,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             }
 
             final boolean textIsSelectable = isTextSelectable();
+            if (touchIsFinished && mLinksClickable && mAutoLinkMask != 0 && textIsSelectable) {
+                //TODO links clicking
+            }
 
             if (touchIsFinished && (isTextEditable() || textIsSelectable)) {
                 // The above condition ensures that the mEditor is not null
@@ -2834,6 +2841,211 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
 
         return superResult;
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, @Nonnull KeyEvent event) {
+        if (!isEnabled()) {
+            return super.onKeyDown(keyCode, event);
+        }
+
+        // If this is the initial keydown, we don't want to prevent a movement away from this view.
+        // While this shouldn't be necessary because any time we're preventing default movement we
+        // should be restricting the focus to remain within this view, thus we'll also receive
+        // the key up event, occasionally key up events will get dropped and we don't want to
+        // prevent the user from traversing out of this on the next key down.
+        if (event.getRepeatCount() == 0 && !KeyEvent.isModifierKey(keyCode)) {
+            mPreventDefaultMovement = false;
+        }
+
+        switch (keyCode) {
+            case KeyEvent.KEY_ENTER:
+            case KeyEvent.KEY_KP_ENTER:
+                if (event.hasNoModifiers()) {
+                    if (mSingleLine && mBufferType == BufferType.EDITABLE) {
+                        if (hasOnClickListeners()) {
+                            return super.onKeyDown(keyCode, event);
+                        }
+                        return true;
+                    }
+                }
+                break;
+            case KeyEvent.KEY_TAB:
+                if (event.hasNoModifiers() || event.isShiftPressed()) {
+                    // Tab is used to move focus.
+                    return super.onKeyDown(keyCode, event);
+                }
+                break;
+        }
+
+        if (mEditor != null && mBufferType == BufferType.EDITABLE) {
+            if (TextKeyListener.getInstance().onKeyDown(this, (Editable) mText, keyCode, event)) {
+                return true;
+            }
+        }
+
+        if (mMovement != null && mLayout != null) {
+            if (mSpannable != null && mMovement.onKeyDown(this, mSpannable, keyCode, event)) {
+                if (event.getRepeatCount() == 0 && !KeyEvent.isModifierKey(keyCode)) {
+                    mPreventDefaultMovement = true;
+                }
+                return true;
+            }
+            // Consume arrows from keyboard devices to prevent focus leaving the editor.
+            // DPAD/JOY devices (Gamepads, TV remotes) often lack a TAB key so allow those
+            // to move focus with arrows.
+            switch (keyCode) {
+                case KeyEvent.KEY_UP:
+                case KeyEvent.KEY_DOWN:
+                case KeyEvent.KEY_LEFT:
+                case KeyEvent.KEY_RIGHT:
+                    return true;
+            }
+        }
+
+        return mPreventDefaultMovement && !KeyEvent.isModifierKey(keyCode) || super.onKeyDown(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyUp(int keyCode, @Nonnull KeyEvent event) {
+        if (!isEnabled()) {
+            return super.onKeyUp(keyCode, event);
+        }
+
+        if (!KeyEvent.isModifierKey(keyCode)) {
+            mPreventDefaultMovement = false;
+        }
+
+        switch (keyCode) {
+            case KeyEvent.KEY_ENTER:
+            case KeyEvent.KEY_KP_ENTER:
+                if (event.hasNoModifiers()) {
+                    if (mSingleLine && mBufferType == BufferType.EDITABLE) {
+                        /*
+                         * If there is a click listener, just call through to
+                         * super, which will invoke it.
+                         *
+                         * If there isn't a click listener, try to advance focus,
+                         * but still call through to super, which will reset the
+                         * pressed state and long-press state.  (It will also
+                         * call performClick(), but that won't do anything in
+                         * this case.)
+                         */
+                        if (!hasOnClickListeners()) {
+                            View v = focusSearch(FOCUS_DOWN);
+
+                            if (v != null) {
+                                if (!v.requestFocus(FOCUS_DOWN)) {
+                                    throw new IllegalStateException("focus search returned a view "
+                                            + "that wasn't able to take focus!");
+                                }
+
+                                /*
+                                 * Return true because we handled the key; super
+                                 * will return false because there was no click
+                                 * listener.
+                                 */
+                                super.onKeyUp(keyCode, event);
+                                return true;
+                            }
+                        }
+                    }
+                    return super.onKeyUp(keyCode, event);
+                }
+                break;
+        }
+
+        if (mEditor != null && mBufferType == BufferType.EDITABLE) {
+            if (TextKeyListener.getInstance().onKeyUp(this, (Editable) mText, keyCode, event)) {
+                return true;
+            }
+        }
+
+        if (mMovement != null && mLayout != null) {
+            if (mSpannable != null && mMovement.onKeyUp(this, mSpannable, keyCode, event)) {
+                return true;
+            }
+        }
+
+        return super.onKeyUp(keyCode, event);
+    }
+
+    @Override
+    public boolean onKeyShortcut(int keyCode, @Nonnull KeyEvent event) {
+        if (event.isCtrlPressed()) {
+            // Handle Ctrl-only shortcuts.
+            switch (keyCode) {
+                case KeyEvent.KEY_X:
+                    if (canCut()) {
+                        return onTextContextMenuItem(ID_CUT);
+                    }
+                    break;
+                case KeyEvent.KEY_C:
+                    if (canCopy()) {
+                        return onTextContextMenuItem(ID_COPY);
+                    }
+                    break;
+                case KeyEvent.KEY_V:
+                    if (canPaste()) {
+                        return onTextContextMenuItem(ID_PASTE);
+                    }
+                    break;
+                case KeyEvent.KEY_A:
+                    if (canSelectAllText()) {
+                        return onTextContextMenuItem(ID_SELECT_ALL);
+                    }
+                    break;
+            }
+        }
+        return super.onKeyShortcut(keyCode, event);
+    }
+
+    /**
+     * Called when a context menu option for the text view is selected.  Currently,
+     * this will be one of {@link #ID_CUT}, {@link #ID_COPY}, {@link #ID_PASTE} or
+     * {@link #ID_SELECT_ALL}.
+     *
+     * @return true if the context menu item action was performed.
+     */
+    public boolean onTextContextMenuItem(int id) {
+        int min = 0;
+        int max = mText.length();
+
+        if (isFocused()) {
+            final int selStart = getSelectionStart();
+            final int selEnd = getSelectionEnd();
+
+            min = Math.max(0, Math.min(selStart, selEnd));
+            max = Math.max(0, Math.max(selStart, selEnd));
+        }
+
+        switch (id) {
+            case ID_CUT -> {
+                CharSequence cut = mTransformed.subSequence(min, max);
+                Clipboard.setText(cut);
+                getEditableText().delete(min, max);
+                return true;
+            }
+            case ID_COPY -> {
+                CharSequence copy = mTransformed.subSequence(min, max);
+                Clipboard.setText(copy);
+                return true;
+            }
+            case ID_PASTE -> {
+                String replacement = Clipboard.getText();
+                if (replacement != null) {
+                    Editable editable = getEditableText();
+                    Selection.setSelection(editable, max);
+                    editable.replace(min, max, replacement);
+                }
+                return true;
+            }
+            case ID_SELECT_ALL -> {
+                selectAllText();
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -2874,6 +3086,60 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         x = convertToLocalHorizontalCoordinate(x);
         return getLayout().getOffsetForHorizontal(line, x);
     }
+
+    boolean canCut() {
+        if (hasPasswordTransformationMethod()) {
+            return false;
+        }
+
+        return mText.length() > 0 && hasSelection() && mText instanceof Editable
+                && mEditor != null && mBufferType == BufferType.EDITABLE;
+    }
+
+    boolean canCopy() {
+        if (hasPasswordTransformationMethod()) {
+            return false;
+        }
+
+        return mText.length() > 0 && hasSelection() && mEditor != null;
+    }
+
+    boolean canPaste() {
+        return mText instanceof Editable
+                && mEditor != null && mBufferType == BufferType.EDITABLE
+                && getSelectionStart() >= 0
+                && getSelectionEnd() >= 0;
+    }
+
+    boolean canSelectAllText() {
+        return mText.length() != 0 && mEditor != null
+                && mLayout != null && textCanBeSelected()
+                && !hasPasswordTransformationMethod()
+                && !(getSelectionStart() == 0 && getSelectionEnd() == mText.length());
+    }
+
+    boolean selectAllText() {
+        if (mSpannable == null) {
+            return false;
+        }
+        final int length = mText.length();
+        Selection.setSelection(mSpannable, 0, length);
+        return length > 0;
+    }
+
+    /**
+     * Test based on the <i>intrinsic</i> characteristics of the TextView.
+     * The text must be spannable and the movement method must allow for arbitrary selection.
+     */
+    boolean textCanBeSelected() {
+        // prepareCursorController() relies on this method.
+        // If you change this condition, make sure prepareCursorController is called anywhere
+        // the value of this condition might be changed.
+        if (mMovement == null || !mMovement.canSelectArbitrarily()) return false;
+        return isTextEditable()
+                || (isTextSelectable() && mText instanceof Spannable && isEnabled());
+    }
+
 
     /**
      * An Editor should be created as soon as any of the editable-specific fields (grouped

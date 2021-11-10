@@ -5501,6 +5501,16 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Dispatches a key shortcut event.
+     *
+     * @param event The key event to be dispatched.
+     * @return True if the event was handled by the view, false otherwise.
+     */
+    public boolean dispatchKeyShortcutEvent(@Nonnull KeyEvent event) {
+        return onKeyShortcut(event.getKeyCode(), event);
+    }
+
+    /**
      * Default implementation: perform press of the view
      * when {@link KeyEvent#KEY_ENTER}, {@link KeyEvent#KEY_KP_ENTER}
      * or {@link KeyEvent#KEY_SPACE} is released, if the view is enabled and clickable.
@@ -5545,6 +5555,21 @@ public class View implements Drawable.Callback {
                 return performClick();
             }
         }
+        return false;
+    }
+
+    /**
+     * Called on the focused view when a key shortcut event is not handled.
+     * Override this method to implement local key shortcuts for the View.
+     * Key shortcuts can also be implemented by setting the
+     * {@link MenuItem#setShortcut(char, char) shortcut} property of menu items.
+     *
+     * @param keyCode The value in event.getKeyCode().
+     * @param event Description of the key event.
+     * @return If you handled the event, return true. If you want to allow the
+     *         event to be handled by the next receiver, return false.
+     */
+    public boolean onKeyShortcut(int keyCode, @Nonnull KeyEvent event) {
         return false;
     }
 
