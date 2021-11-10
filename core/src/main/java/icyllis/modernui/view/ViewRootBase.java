@@ -49,12 +49,13 @@ public abstract class ViewRootBase implements ViewParent {
     private boolean mTraversalScheduled;
     private boolean mWillDrawSoon;
     private boolean mIsDrawing;
-    private boolean mHasDrawn;
     private boolean mLayoutRequested;
     private boolean mInvalidated;
     private boolean mKeepInvalidated;
 
     private boolean hasDragOperation;
+
+    protected boolean mRedrawn;
 
     protected View mView;
     private int mWidth;
@@ -198,7 +199,7 @@ public abstract class ViewRootBase implements ViewParent {
                 } else {
                     mInvalidated = false;
                 }
-                mHasDrawn = true;
+                mRedrawn = true;
             }
         } else {
             scheduleTraversals();
@@ -215,8 +216,45 @@ public abstract class ViewRootBase implements ViewParent {
             InputEvent e;
             while ((e = mInputEvents.poll()) != null) {
                 try {
-                    if (e instanceof KeyEvent) {
-                        mView.dispatchKeyEvent((KeyEvent) e);
+                    if (e instanceof KeyEvent event) {
+                        if (mView.dispatchKeyEvent(event)) {
+                            continue;
+                        }
+                        int groupNavigationDirection = 0;
+
+                        if (event.getAction() == KeyEvent.ACTION_DOWN
+                                && event.getKeyCode() == KeyEvent.KEY_TAB) {
+                            if (event.isShiftPressed()) {
+                                groupNavigationDirection = View.FOCUS_BACKWARD;
+                            } else {
+                                groupNavigationDirection = View.FOCUS_FORWARD;
+                            }
+                        }
+
+                        // If a modifier is held, try to interpret the key as a shortcut.
+                        if (event.getAction() == KeyEvent.ACTION_DOWN
+                                && !event.hasNoModifiers()
+                                && event.getRepeatCount() == 0
+                                && !KeyEvent.isModifierKey(event.getKeyCode())
+                                && groupNavigationDirection == 0) {
+                            if (mView.dispatchKeyShortcutEvent(event)) {
+                                continue;
+                            }
+                        }
+
+                        // Handle automatic focus changes.
+                        /*if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                            if (groupNavigationDirection != 0) {
+                                if (performKeyboardGroupNavigation(groupNavigationDirection)) {
+                                    continue;
+                                }
+                            } else {
+                                if (performFocusNavigation(event)) {
+                                    continue;
+                                }
+                            }
+                        }*/
+                        //TODO focus
                     } else {
                         mView.dispatchPointerEvent((MotionEvent) e);
                     }
@@ -253,12 +291,6 @@ public abstract class ViewRootBase implements ViewParent {
             mView.ensureMouseHoverExit();
         }
     }*/
-
-    public boolean hasDrawn() {
-        boolean b = mHasDrawn;
-        mHasDrawn = false;
-        return b;
-    }
 
     void performDragEvent(DragEvent event) {
         if (hasDragOperation) {

@@ -29,7 +29,12 @@ import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -62,6 +67,17 @@ final class EventHandler {
             }
         }
     }
+
+    /*@SubscribeEvent
+    static void onRightClickBlock(@Nonnull PlayerInteractEvent.RightClickBlock event) {
+        if (event.getSide().isServer() && event.getHand() == InteractionHand.MAIN_HAND &&
+                event.getPlayer().isShiftKeyDown() &&
+                event.getWorld().getBlockState(event.getPos()).getBlock() == Blocks.GRASS_BLOCK) {
+            event.getPlayer().addItem(new ItemStack(Blocks.STONE));
+            event.setCancellationResult(InteractionResult.SUCCESS);
+            event.setCanceled(true);
+        }
+    }*/
 
     /*@SubscribeEvent
     static void onContainerClosed(PlayerContainerEvent.Close event) {

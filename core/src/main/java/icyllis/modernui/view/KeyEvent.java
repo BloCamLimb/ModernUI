@@ -156,7 +156,7 @@ public class KeyEvent extends InputEvent {
     public static final int KEY_RIGHT_SUPER = GLFW.GLFW_KEY_RIGHT_SUPER;
     public static final int KEY_MENU = GLFW.GLFW_KEY_MENU;
 
-    public static final int MOD_SHIFT = GLFW.GLFW_MOD_SUPER;
+    public static final int MOD_SHIFT = GLFW.GLFW_MOD_SHIFT;
     public static final int MOD_CTRL;
     public static final int MOD_ALT = GLFW.GLFW_MOD_ALT;
 
@@ -276,12 +276,12 @@ public class KeyEvent extends InputEvent {
     }
 
     /**
-     * Returns true if any modifier key is pressed.
+     * Returns true if no modifier keys are pressed.
      *
-     * @return true if any modifier key is pressed.
+     * @return True if no modifier keys are pressed.
      */
-    public final boolean hasModifiers() {
-        return mModifiers != 0;
+    public final boolean hasNoModifiers() {
+        return mModifiers == 0;
     }
 
     /**
@@ -391,5 +391,24 @@ public class KeyEvent extends InputEvent {
     @Override
     public void cancel() {
         // Intentionally empty
+    }
+
+    /**
+     * Returns true if this key code is a modifier key.
+     * <p>
+     * For the purposes of this function, {@link #KEY_CAPS_LOCK},
+     * {@link #KEY_SCROLL_LOCK}, and {@link #KEY_NUM_LOCK} are
+     * not considered modifier keys.  Consequently, this function return false
+     * for those keys.
+     * </p>
+     *
+     * @return True if the key code is one of modifier keys.
+     */
+    public static boolean isModifierKey(int keyCode) {
+        return switch (keyCode) {
+            case KEY_LEFT_SHIFT, KEY_RIGHT_SHIFT, KEY_LEFT_ALT, KEY_RIGHT_ALT, KEY_LEFT_CONTROL, KEY_RIGHT_CONTROL,
+                    KEY_LEFT_SUPER, KEY_RIGHT_SUPER -> true;
+            default -> false;
+        };
     }
 }

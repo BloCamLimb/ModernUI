@@ -898,6 +898,18 @@ public abstract class ViewGroup extends View implements ViewParent {
         return false;
     }
 
+    @Override
+    public boolean dispatchKeyShortcutEvent(@Nonnull KeyEvent event) {
+        if ((mPrivateFlags & (PFLAG_FOCUSED | PFLAG_HAS_BOUNDS))
+                == (PFLAG_FOCUSED | PFLAG_HAS_BOUNDS)) {
+            return super.dispatchKeyShortcutEvent(event);
+        } else if (mFocused != null && (mFocused.mPrivateFlags & PFLAG_HAS_BOUNDS)
+                == PFLAG_HAS_BOUNDS) {
+            return mFocused.dispatchKeyShortcutEvent(event);
+        }
+        return false;
+    }
+
     /**
      * This method adds a view to this container at the specified index purely for the
      * purposes of allowing that view to draw even though it is not a normal child of

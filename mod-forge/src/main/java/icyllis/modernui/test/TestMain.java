@@ -67,6 +67,7 @@ import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.glfw.GLFW.*;
+import static org.lwjgl.system.MemoryUtil.*;
 
 @SuppressWarnings("unused")
 public class TestMain {

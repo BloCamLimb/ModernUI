@@ -23,6 +23,7 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
@@ -289,6 +290,14 @@ public final class UIManager extends ViewRootBase {
         mNewCursor = pointerIcon == null ? PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT) : pointerIcon;
     }
 
+    @MainThread
+    private void applyPointerIcon() {
+        if (mNewCursor != mOldCursor) {
+            glfwSetCursor(mWindow.getWindow(), mNewCursor.getHandle());
+            mOldCursor = mNewCursor;
+        }
+    }
+
     /**
      * Post a task that will run on UI thread in specified milliseconds.
      *
@@ -327,6 +336,43 @@ public final class UIManager extends ViewRootBase {
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
         setView(mDecor);
+        // kick-start
+        try {
+            Class.forName("icyllis.modernui.text.BoringLayout");
+            Class.forName("icyllis.modernui.text.CharArrayIterator");
+            Class.forName("icyllis.modernui.text.CharSequenceIterator");
+            Class.forName("icyllis.modernui.text.Directions");
+            Class.forName("icyllis.modernui.text.DynamicLayout");
+            Class.forName("icyllis.modernui.text.GlyphManager");
+            Class.forName("icyllis.modernui.text.GraphemeBreak");
+            Class.forName("icyllis.modernui.text.Layout");
+            Class.forName("icyllis.modernui.text.LayoutCache");
+            Class.forName("icyllis.modernui.text.LayoutPiece");
+            Class.forName("icyllis.modernui.text.LineBreaker");
+            Class.forName("icyllis.modernui.text.MeasuredParagraph");
+            Class.forName("icyllis.modernui.text.MeasuredText");
+            Class.forName("icyllis.modernui.text.PrecomputedText");
+            Class.forName("icyllis.modernui.text.Selection");
+            Class.forName("icyllis.modernui.text.SpannableString");
+            Class.forName("icyllis.modernui.text.SpannableStringBuilder");
+            Class.forName("icyllis.modernui.text.SpannableStringInternal");
+            Class.forName("icyllis.modernui.text.StaticLayout");
+            Class.forName("icyllis.modernui.text.TabStops");
+            Class.forName("icyllis.modernui.text.TextDirectionHeuristics");
+            Class.forName("icyllis.modernui.text.TextLine");
+            Class.forName("icyllis.modernui.text.TextPaint");
+            Class.forName("icyllis.modernui.text.TextUtils");
+            Class.forName("icyllis.modernui.text.Typeface");
+
+            Class.forName("icyllis.modernui.widget.Editor");
+            Class.forName("icyllis.modernui.widget.LinearLayout");
+            Class.forName("icyllis.modernui.widget.ScrollView");
+            Class.forName("icyllis.modernui.widget.TextView");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
+        }
+        scheduleTraversals();
+        doTraversal();
         ModernUI.LOGGER.info(MARKER, "View system initialized");
         for (; ; ) {
             LockSupport.park();
@@ -631,19 +677,16 @@ public final class UIManager extends ViewRootBase {
         canvas.setProjection(mProjectionMatrix.setOrthographic(width, -height, 0, 2000));
 
         // This is on Main thread
-        if (mNewCursor != mOldCursor) {
-            glfwSetCursor(mWindow.getWindow(), mNewCursor.getHandle());
-            mOldCursor = mNewCursor;
-        }
+        applyPointerIcon();
 
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
         // wait UI thread, if slow
         synchronized (mRenderLock) {
-            if (hasDrawn()) {
+            if (mRedrawn) {
+                mRedrawn = false;
                 glEnable(GL_STENCIL_TEST);
-
                 try {
                     canvas.draw(framebuffer);
                 } catch (Throwable t) {
@@ -652,7 +695,6 @@ public final class UIManager extends ViewRootBase {
                     printDebugInfo();
                     throw t;
                 }
-
                 glDisable(GL_STENCIL_TEST);
             }
         }
@@ -746,8 +788,9 @@ public final class UIManager extends ViewRootBase {
             mCallback = null;
         }
         updatePointerIcon(null);
+        applyPointerIcon();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-        post(() -> mDecor.removeAllViews());
+        post(mDecor::removeAllViews);
     }
 
     @Deprecated

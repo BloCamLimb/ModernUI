@@ -26,6 +26,8 @@ import icyllis.modernui.view.MotionEvent;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
+import javax.annotation.Nonnull;
+
 /**
  * Helper class used by TextView to handle editable text views.
  */
@@ -131,20 +133,43 @@ public class Editor {
         }
     }
 
-    void onTouchUpEvent(MotionEvent event) {
-        boolean selectAllGotFocus = mSelectAllOnFocus && mTextView.didTouchFocusSelect();
+    /**
+     * Handles touch events on an editable text view, implementing cursor movement, selection, etc.
+     */
+    void onTouchEvent(@Nonnull MotionEvent event) {
+        final int action = event.getAction();
+        final boolean filterOutEvent;
+        if ((action == MotionEvent.ACTION_DOWN || action == MotionEvent.ACTION_UP)
+                && ((mLastButtonState ^ event.getButtonState()) & MotionEvent.BUTTON_PRIMARY) == 0) {
+            filterOutEvent = true;
+        } else {
+            filterOutEvent = action == MotionEvent.ACTION_MOVE
+                    && !event.isButtonPressed(MotionEvent.BUTTON_PRIMARY);
+        }
+        mLastButtonState = event.getButtonState();
+        if (filterOutEvent) {
+            if (event.getAction() == MotionEvent.ACTION_UP) {
+                mDiscardNextActionUp = true;
+            }
+            return;
+        }
 
+        if (event.getAction() == MotionEvent.ACTION_DOWN) {
+            // Reset this state; it will be re-set if super.onTouchEvent
+            // causes focus to move to the view.
+            mTouchFocusSelected = false;
+            mIgnoreActionUpEvent = false;
+        }
+    }
+
+    void onTouchUpEvent(@Nonnull MotionEvent event) {
+        boolean selectAllGotFocus = mSelectAllOnFocus && mTextView.didTouchFocusSelect();
         CharSequence text = mTextView.getText();
         if (!selectAllGotFocus && text.length() > 0) {
             // Move cursor
             final int offset = mTextView.getOffsetForPosition(event.getX(), event.getY());
             Selection.setSelection((Spannable) text, offset);
         }
-    }
-
-    @Deprecated
-    void prepareCursorControllers() {
-
     }
 
     public void sendOnTextChanged(int start, int before, int after) {

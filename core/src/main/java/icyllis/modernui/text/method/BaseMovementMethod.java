@@ -55,20 +55,6 @@ public abstract class BaseMovementMethod implements MovementMethod {
     }
 
     @Override
-    public boolean onKeyOther(TextView widget, Spannable text, KeyEvent event) {
-        final int movementMods = event.getModifiers() & ~KeyEvent.MOD_SHIFT;
-        final int keyCode = event.getKeyCode();
-        boolean handled = false;
-        for (int i = event.getRepeatCount(); i > 0; i--) {
-            if (!handleMovementKey(widget, text, keyCode, movementMods)) {
-                break;
-            }
-            handled = true;
-        }
-        return handled;
-    }
-
-    @Override
     public void onTakeFocus(TextView widget, Spannable text, int direction) {
     }
 

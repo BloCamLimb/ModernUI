@@ -45,13 +45,6 @@ public interface MovementMethod {
 
     boolean onKeyUp(TextView widget, Spannable text, int keyCode, KeyEvent event);
 
-    /**
-     * If the key listener wants to other kinds of key events, return true,
-     * otherwise return false and the caller (i.e. the widget host)
-     * will handle the key.
-     */
-    boolean onKeyOther(TextView widget, Spannable text, KeyEvent event);
-
     void onTakeFocus(TextView widget, Spannable text, int direction);
 
     boolean onTouchEvent(TextView widget, Spannable text, MotionEvent event);
