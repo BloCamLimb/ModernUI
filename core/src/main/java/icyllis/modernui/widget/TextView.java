@@ -24,6 +24,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.platform.Clipboard;
+import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
 import icyllis.modernui.text.style.CharacterStyle;
@@ -3832,13 +3833,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         switch (id) {
             case ID_CUT -> {
                 CharSequence cut = mTransformed.subSequence(min, max);
-                Clipboard.setText(cut);
+                RenderCore.recordMainCall(() -> Clipboard.setText(cut));
                 getEditableText().delete(min, max);
                 return true;
             }
             case ID_COPY -> {
                 CharSequence copy = mTransformed.subSequence(min, max);
-                Clipboard.setText(copy);
+                RenderCore.recordMainCall(() -> Clipboard.setText(copy));
                 return true;
             }
             case ID_PASTE -> {
@@ -3920,7 +3921,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     @Override
     public void onHoverChanged(boolean hovered) {
-        if (hovered && (isTextSelectable() || (mText instanceof Editable && isEnabled()))) {
+        if (hovered && (isTextSelectable() || isTextEditable())) {
             setPointerIcon(PointerIcon.getSystemIcon(PointerIcon.TYPE_TEXT));
         } else {
             setPointerIcon(null);

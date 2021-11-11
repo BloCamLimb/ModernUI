@@ -500,7 +500,7 @@ public final class UIManager extends ViewRootBase {
             KeyEvent keyEvent = KeyEvent.obtain(RenderCore.timeNanos(), action, event.getKey(), 0,
                     event.getModifiers(), event.getScanCode(), 0);
             enqueueInputEvent(keyEvent);
-            if (mDecor.hasFocus()) {
+            if (!mDecor.isFocused() && mDecor.hasFocus()) {
                 return;
             }
             if (event.getAction() == GLFW_PRESS) {

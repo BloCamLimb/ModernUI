@@ -158,9 +158,9 @@ public class TestLinearLayout extends LinearLayout {
                         ViewGroup.LayoutParams.WRAP_CONTENT);
                 textField.setText("", TextView.BufferType.EDITABLE);
                 textField.setHint("Your Name");
-                textField.setSingleLine();
                 textField.setFocusableInTouchMode(true);
                 textField.setMovementMethod(ArrowKeyMovementMethod.getInstance());
+                textField.setPadding(c.getViewSize(12), 0, c.getViewSize(12), 0);
             } else {
                 v = new CView();
                 p = new LinearLayout.LayoutParams(c.getViewSize(200), c.getViewSize(36));
