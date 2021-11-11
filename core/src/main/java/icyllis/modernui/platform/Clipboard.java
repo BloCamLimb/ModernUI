@@ -18,6 +18,7 @@
 
 package icyllis.modernui.platform;
 
+import icyllis.modernui.annotation.MainThread;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -29,10 +30,11 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * A helper class to get/set clipboard text, methods are only expected
  * to be called on the main thread.
  */
+@MainThread
 public final class Clipboard {
 
     /**
-     * Get text from clipboard, or {@code null} if it cannot be converted to string.
+     * Get text from clipboard, or {@code null} if it is empty or cannot be converted to string.
      *
      * @return the clipboard text
      */

@@ -1463,19 +1463,15 @@ public abstract class ViewGroup extends View implements ViewParent {
 
         removeFromArray(index);
 
-        /*if (view.hasUnhandledKeyListener()) {
-            decrementChildUnhandledKeyListeners();
-        }
-
-        if (view == mDefaultFocus) {
+        /*if (view == mDefaultFocus) {
             clearDefaultFocus(view);
-        }
+        }*/
         if (clearChildFocus) {
             clearChildFocus(view);
             if (!rootViewRequestFocus()) {
                 notifyGlobalFocusCleared(this);
             }
-        }*/
+        }
 
         //dispatchViewRemoved(view);
 
@@ -1533,7 +1529,7 @@ public abstract class ViewGroup extends View implements ViewParent {
             throw new IndexOutOfBoundsException();
         }
 
-        //final View focused = mFocused;
+        final View focused = mFocused;
         final boolean detach = mAttachInfo != null;
         boolean clearChildFocus = false;
         View clearDefaultFocus = null;
@@ -1547,18 +1543,16 @@ public abstract class ViewGroup extends View implements ViewParent {
                 mTransition.removeChild(this, view);
             }
 
-            /*if (view == focused) {
+            if (view == focused) {
                 view.unFocus(null);
                 clearChildFocus = true;
             }
-            if (view == mDefaultFocus) {
+            /*if (view == mDefaultFocus) {
                 clearDefaultFocus = view;
             }
             if (view == mFocusedInCluster) {
                 clearFocusedInCluster(view);
-            }
-
-            view.clearAccessibilityFocus();*/
+            }*/
 
             cancelTouchTarget(view);
             cancelHoverTarget(view);
@@ -1582,13 +1576,13 @@ public abstract class ViewGroup extends View implements ViewParent {
 
         /*if (clearDefaultFocus != null) {
             clearDefaultFocus(clearDefaultFocus);
-        }
+        }*/
         if (clearChildFocus) {
             clearChildFocus(focused);
             if (!rootViewRequestFocus()) {
                 notifyGlobalFocusCleared(focused);
             }
-        }*/
+        }
     }
 
     /**
@@ -1627,11 +1621,11 @@ public abstract class ViewGroup extends View implements ViewParent {
         final View[] children = mChildren;
         mChildrenCount = 0;
 
-        //final View focused = mFocused;
+        final View focused = mFocused;
         final boolean detach = mAttachInfo != null;
-        /*boolean clearChildFocus = false;
+        boolean clearChildFocus = false;
 
-        needGlobalAttributesUpdate(false);*/
+        //needGlobalAttributesUpdate(false);
 
         for (int i = count - 1; i >= 0; i--) {
             final View view = children[i];
@@ -1640,12 +1634,10 @@ public abstract class ViewGroup extends View implements ViewParent {
                 mTransition.removeChild(this, view);
             }
 
-            /*if (view == focused) {
+            if (view == focused) {
                 view.unFocus(null);
                 clearChildFocus = true;
             }
-
-            view.clearAccessibilityFocus();*/
 
             cancelTouchTarget(view);
             cancelHoverTarget(view);
@@ -1671,15 +1663,14 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
         if (mFocusedInCluster != null) {
             clearFocusedInCluster(mFocusedInCluster);
-        }
+        }*/
         if (clearChildFocus) {
             clearChildFocus(focused);
             if (!rootViewRequestFocus()) {
                 notifyGlobalFocusCleared(focused);
             }
-        }*/
+        }
     }
-
 
     /**
      * Gets the descendant focusability of this view group.  The descendant
