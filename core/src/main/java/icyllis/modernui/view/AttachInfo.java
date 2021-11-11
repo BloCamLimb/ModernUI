@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.math.PointF;
+import icyllis.modernui.math.RectF;
 
 /**
  * A set of information given to a view when it is attached to its parent
@@ -52,6 +53,11 @@ final class AttachInfo {
      * x/y location when view is transformed.
      */
     final PointF mTmpTransformLocation = new PointF();
+
+    /**
+     * Temporary for use in computing hit areas with transformed views
+     */
+    final RectF mTmpTransformRect = new RectF();
 
     AttachInfo(ViewRootBase viewRootBase) {
         mViewRootBase = viewRootBase;

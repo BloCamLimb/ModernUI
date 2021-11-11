@@ -86,6 +86,15 @@ public final class TextUtils {
         return source.toString();
     }
 
+    /**
+     * Returns true if the string is null or 0-length.
+     * @param str the string to be examined
+     * @return true if str is null or zero length
+     */
+    public static boolean isEmpty(@Nullable CharSequence str) {
+        return str == null || str.length() == 0;
+    }
+
     public static void getChars(@Nonnull CharSequence s, int srcBegin, int srcEnd,
                                 @Nonnull char[] dst, int dstBegin) {
         final Class<? extends CharSequence> c = s.getClass();
@@ -266,6 +275,7 @@ public final class TextUtils {
         START,
         MIDDLE,
         END,
+        @Deprecated
         MARQUEE // not supported
     }
 

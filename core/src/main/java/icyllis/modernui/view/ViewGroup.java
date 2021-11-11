@@ -21,6 +21,7 @@ package icyllis.modernui.view;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
@@ -1893,6 +1894,11 @@ public abstract class ViewGroup extends View implements ViewParent {
             return mParent.focusSearch(focused, direction);
         }
         return null;
+    }
+
+    @Override
+    public boolean requestChildRectangleOnScreen(View child, Rect rectangle, boolean immediate) {
+        return false;
     }
 
     @Override

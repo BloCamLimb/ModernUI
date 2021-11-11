@@ -93,6 +93,14 @@ public final class TextKeyListener {
     }
 
     /**
+     * Resets all meta state to inactive.
+     */
+    public static void resetMetaState(Spannable text) {
+        text.removeSpan(CAP);
+        text.removeSpan(ALT);
+    }
+
+    /**
      * Gets the state of a particular meta key.
      *
      * @param meta META_SHIFT_ON, META_ALT_ON, META_SYM_ON
@@ -119,6 +127,14 @@ public final class TextKeyListener {
         } else {
             return 0;
         }
+    }
+
+    /**
+     * Returns true if this object is one that this class would use to
+     * keep track of any meta state in the specified text.
+     */
+    public static boolean isMetaTracker(Object what) {
+        return what == CAP || what == ALT;
     }
 
     /**

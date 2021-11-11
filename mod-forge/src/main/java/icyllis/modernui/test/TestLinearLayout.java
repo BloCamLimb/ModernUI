@@ -24,8 +24,8 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.mcgui.Animation;
 import icyllis.modernui.mcgui.Applier;
-import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
@@ -76,7 +76,7 @@ public class TestLinearLayout extends LinearLayout {
 
     private int ticks;
 
-    private TextView mTextView;
+    private final TextView mTextView;
 
     public TestLinearLayout() {
         setOrientation(VERTICAL);
@@ -123,18 +123,15 @@ public class TestLinearLayout extends LinearLayout {
         tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        tv.setText(text, TextView.BufferType.EDITABLE);
-        Editable editable = tv.getEditableText();
-        editable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(),
+        tv.setText(text, TextView.BufferType.SPANNABLE);
+        Spannable spannable = (Spannable) tv.getText();
+        spannable.setSpan(new ForegroundColorSpan(0xfff699b4), text.length() - 54, text.length(),
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        editable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30,
+        spannable.setSpan(new AbsoluteSizeSpan(18), text.length() - 69, text.length() - 30,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        editable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40,
+        spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        editable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-
-        tv.setFocusableInTouchMode(true);
-        tv.setMovementMethod(ArrowKeyMovementMethod.getInstance());
+        spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
 
         mTextView = tv;
 
@@ -154,6 +151,16 @@ public class TestLinearLayout extends LinearLayout {
                 p = new LinearLayout.LayoutParams(c.getViewSize(100), c.getViewSize(36));
             } else if (i == 2) {
                 continue;
+            } else if (i == 3) {
+                TextView textField = new TextView();
+                v = textField;
+                p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
+                textField.setText("", TextView.BufferType.EDITABLE);
+                textField.setHint("Your Name");
+                textField.setSingleLine();
+                textField.setFocusableInTouchMode(true);
+                textField.setMovementMethod(ArrowKeyMovementMethod.getInstance());
             } else {
                 v = new CView();
                 p = new LinearLayout.LayoutParams(c.getViewSize(200), c.getViewSize(36));

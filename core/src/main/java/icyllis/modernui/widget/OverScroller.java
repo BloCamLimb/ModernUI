@@ -27,8 +27,7 @@ import java.util.Objects;
  * This class controls horizontal and vertical scrolling with the ability to
  * overshoot the bounds of a scrolling operation.
  */
-@SuppressWarnings("unused")
-public class Scroller {
+public class OverScroller {
 
     private static final int DEFAULT_DURATION = 200;
 
@@ -45,15 +44,15 @@ public class Scroller {
     /**
      * Creates a Scroller with flywheel.
      */
-    public Scroller() {
+    public OverScroller() {
         this(null);
     }
 
-    public Scroller(TimeInterpolator interpolator) {
+    public OverScroller(TimeInterpolator interpolator) {
         this(interpolator, true);
     }
 
-    public Scroller(TimeInterpolator interpolator, boolean flywheel) {
+    public OverScroller(TimeInterpolator interpolator, boolean flywheel) {
         mInterpolator = Objects.requireNonNullElse(interpolator, TimeInterpolator.DECELERATE);
         mFlywheel = flywheel;
     }
@@ -88,6 +87,15 @@ public class Scroller {
      */
     public final void forceFinished(boolean finished) {
         mScrollerX.mFinished = mScrollerY.mFinished = finished;
+    }
+
+    /**
+     * Returns how long the scroll event will take, in milliseconds.
+     *
+     * @return The duration of the scroll in milliseconds.
+     */
+    public final int getDuration() {
+        return mScrollerX.mDuration;
     }
 
     /**

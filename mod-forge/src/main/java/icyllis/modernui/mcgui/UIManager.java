@@ -36,6 +36,7 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.text.Editable;
+import icyllis.modernui.text.Selection;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.TimedAction;
 import icyllis.modernui.view.*;
@@ -332,45 +333,12 @@ public final class UIManager extends ViewRootBase {
     private void run() {
         initBase();
         mDecor = new DecorView();
+        // make the root view clickable through, so that views can lose focus
         mDecor.setClickable(true);
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
         setView(mDecor);
-        // kick-start
-        try {
-            Class.forName("icyllis.modernui.text.BoringLayout");
-            Class.forName("icyllis.modernui.text.CharArrayIterator");
-            Class.forName("icyllis.modernui.text.CharSequenceIterator");
-            Class.forName("icyllis.modernui.text.Directions");
-            Class.forName("icyllis.modernui.text.DynamicLayout");
-            Class.forName("icyllis.modernui.text.GlyphManager");
-            Class.forName("icyllis.modernui.text.GraphemeBreak");
-            Class.forName("icyllis.modernui.text.Layout");
-            Class.forName("icyllis.modernui.text.LayoutCache");
-            Class.forName("icyllis.modernui.text.LayoutPiece");
-            Class.forName("icyllis.modernui.text.LineBreaker");
-            Class.forName("icyllis.modernui.text.MeasuredParagraph");
-            Class.forName("icyllis.modernui.text.MeasuredText");
-            Class.forName("icyllis.modernui.text.PrecomputedText");
-            Class.forName("icyllis.modernui.text.Selection");
-            Class.forName("icyllis.modernui.text.SpannableString");
-            Class.forName("icyllis.modernui.text.SpannableStringBuilder");
-            Class.forName("icyllis.modernui.text.SpannableStringInternal");
-            Class.forName("icyllis.modernui.text.StaticLayout");
-            Class.forName("icyllis.modernui.text.TabStops");
-            Class.forName("icyllis.modernui.text.TextDirectionHeuristics");
-            Class.forName("icyllis.modernui.text.TextLine");
-            Class.forName("icyllis.modernui.text.TextPaint");
-            Class.forName("icyllis.modernui.text.TextUtils");
-            Class.forName("icyllis.modernui.text.Typeface");
-
-            Class.forName("icyllis.modernui.widget.Editor");
-            Class.forName("icyllis.modernui.widget.LinearLayout");
-            Class.forName("icyllis.modernui.widget.ScrollView");
-            Class.forName("icyllis.modernui.widget.TextView");
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
+        // preheat
         scheduleTraversals();
         doTraversal();
         ModernUI.LOGGER.info(MARKER, "View system initialized");
@@ -532,6 +500,9 @@ public final class UIManager extends ViewRootBase {
             KeyEvent keyEvent = KeyEvent.obtain(RenderCore.timeNanos(), action, event.getKey(), 0,
                     event.getModifiers(), event.getScanCode(), 0);
             enqueueInputEvent(keyEvent);
+            if (mDecor.hasFocus()) {
+                return;
+            }
             if (event.getAction() == GLFW_PRESS) {
                 InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
                 if (mScreen instanceof MenuScreen<?> && minecraft.options.keyInventory.isActiveAndMatches(key)) {
@@ -646,7 +617,10 @@ public final class UIManager extends ViewRootBase {
                 if (content != null) {
                     int selStart = tv.getSelectionStart();
                     int selEnd = tv.getSelectionEnd();
-                    content.replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd), String.valueOf(ch));
+                    if (selStart >= 0 && selEnd >= 0) {
+                        Selection.setSelection(content, Math.max(selStart, selEnd));
+                        content.replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd), String.valueOf(ch));
+                    }
                 }
             }
         });
