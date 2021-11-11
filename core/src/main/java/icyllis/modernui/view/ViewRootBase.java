@@ -22,6 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.GLCanvas;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.platform.RenderCore;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -70,12 +71,46 @@ public abstract class ViewRootBase implements ViewParent {
         mAttachInfo = new AttachInfo(this);
     }
 
-    protected final void initBase() {
+    protected void initBase() {
         synchronized (this) {
             if (mThread != null) {
                 throw new IllegalStateException("Initialize twice");
             }
             mThread = Thread.currentThread();
+            try {
+                Class.forName("icyllis.modernui.text.BoringLayout");
+                Class.forName("icyllis.modernui.text.CharArrayIterator");
+                Class.forName("icyllis.modernui.text.CharSequenceIterator");
+                Class.forName("icyllis.modernui.text.Directions");
+                Class.forName("icyllis.modernui.text.DynamicLayout");
+                Class.forName("icyllis.modernui.text.GlyphManager");
+                Class.forName("icyllis.modernui.text.GraphemeBreak");
+                Class.forName("icyllis.modernui.text.Layout");
+                Class.forName("icyllis.modernui.text.LayoutCache");
+                Class.forName("icyllis.modernui.text.LayoutPiece");
+                Class.forName("icyllis.modernui.text.LineBreaker");
+                Class.forName("icyllis.modernui.text.MeasuredParagraph");
+                Class.forName("icyllis.modernui.text.MeasuredText");
+                Class.forName("icyllis.modernui.text.PrecomputedText");
+                Class.forName("icyllis.modernui.text.Selection");
+                Class.forName("icyllis.modernui.text.SpannableString");
+                Class.forName("icyllis.modernui.text.SpannableStringBuilder");
+                Class.forName("icyllis.modernui.text.SpannableStringInternal");
+                Class.forName("icyllis.modernui.text.StaticLayout");
+                Class.forName("icyllis.modernui.text.TabStops");
+                Class.forName("icyllis.modernui.text.TextDirectionHeuristics");
+                Class.forName("icyllis.modernui.text.TextLine");
+                Class.forName("icyllis.modernui.text.TextPaint");
+                Class.forName("icyllis.modernui.text.TextUtils");
+                Class.forName("icyllis.modernui.text.Typeface");
+
+                Class.forName("icyllis.modernui.widget.Editor");
+                Class.forName("icyllis.modernui.widget.LinearLayout");
+                Class.forName("icyllis.modernui.widget.ScrollView");
+                Class.forName("icyllis.modernui.widget.TextView");
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException(e);
+            }
         }
     }
 
@@ -137,6 +172,11 @@ public abstract class ViewRootBase implements ViewParent {
         if (mThread != Thread.currentThread()) {
             throw new IllegalStateException("Not called from UI thread");
         }
+    }
+
+    @Override
+    public boolean requestChildRectangleOnScreen(View child, Rect rectangle, boolean immediate) {
+        return false;
     }
 
     @UiThread

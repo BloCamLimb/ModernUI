@@ -38,7 +38,7 @@ import javax.annotation.Nonnull;
  */
 public class ScrollView extends FrameLayout {
 
-    private final Scroller mScroller = new Scroller();
+    private final OverScroller mOverScroller = new OverScroller();
 
     public ScrollView() {
         setVerticalScrollBarEnabled(true);
@@ -119,9 +119,9 @@ public class ScrollView extends FrameLayout {
 
     @Override
     public void computeScroll() {
-        if (mScroller.computeScrollOffset()) {
-            mScrollX = mScroller.getCurrX();
-            mScrollY = mScroller.getCurrY();
+        if (mOverScroller.computeScrollOffset()) {
+            mScrollX = mOverScroller.getCurrX();
+            mScrollY = mOverScroller.getCurrY();
             awakenScrollBars();
         }
     }
@@ -164,12 +164,119 @@ public class ScrollView extends FrameLayout {
             final int maxY = Math.max(0, bottom - height);
             final int scrollY = mScrollY;
             int dy = Math.round(delta * -60.0f * ViewConfiguration.get().getViewScale());
-            dy = Math.max(0, Math.min(mScroller.getFinalY() + dy, maxY)) - scrollY;
-            mScroller.startScroll(mScrollX, scrollY, 0, dy);
+            dy = Math.max(0, Math.min(mOverScroller.getFinalY() + dy, maxY)) - scrollY;
+            mOverScroller.startScroll(mScrollX, scrollY, 0, dy);
             invalidate();
             return dy > 0;
         }
         return super.onGenericMotionEvent(event);
+    }
+
+
+    /**
+     * Compute the amount to scroll in the Y direction in order to get
+     * a rectangle completely on the screen (or, if taller than the screen,
+     * at least the first screen size chunk of it).
+     *
+     * @param rect The rect.
+     * @return The scroll delta.
+     */
+    protected int computeScrollDeltaToGetChildRectOnScreen(Rect rect) {
+        if (getChildCount() == 0) return 0;
+
+        int height = getHeight();
+        int screenTop = getScrollY();
+        int screenBottom = screenTop + height;
+
+        int scrollYDelta = 0;
+
+        if (rect.bottom > screenBottom && rect.top > screenTop) {
+            // need to move down to get it in view: move down just enough so
+            // that the entire rectangle is in view (or at least the first
+            // screen size chunk).
+
+            if (rect.height() > height) {
+                // just enough to get screen size chunk on
+                scrollYDelta += (rect.top - screenTop);
+            } else {
+                // get entire rect at bottom of screen
+                scrollYDelta += (rect.bottom - screenBottom);
+            }
+
+            // make sure we aren't scrolling beyond the end of our content
+            int bottom = getChildAt(0).getBottom();
+            int distanceToBottom = bottom - screenBottom;
+            scrollYDelta = Math.min(scrollYDelta, distanceToBottom);
+
+        } else if (rect.top < screenTop && rect.bottom < screenBottom) {
+            // need to move up to get it in view: move up just enough so that
+            // entire rectangle is in view (or at least the first screen
+            // size chunk of it).
+
+            if (rect.height() > height) {
+                // screen size chunk
+                scrollYDelta -= (screenBottom - rect.bottom);
+            } else {
+                // entire rect at top
+                scrollYDelta -= (screenTop - rect.top);
+            }
+
+            // make sure we aren't scrolling any further than the top our content
+            scrollYDelta = Math.max(scrollYDelta, -getScrollY());
+        }
+        return scrollYDelta;
+    }
+
+    @Override
+    public boolean requestChildRectangleOnScreen(View child, Rect rectangle,
+                                                 boolean immediate) {
+        // offset into coordinate space of this scroll view
+        rectangle.offset(child.getLeft() - child.getScrollX(),
+                child.getTop() - child.getScrollY());
+
+        return scrollToChildRect(rectangle, immediate);
+    }
+
+    /**
+     * If rect is off screen, scroll just enough to get it (or at least the
+     * first screen size chunk of it) on screen.
+     *
+     * @param rect      The rectangle.
+     * @param immediate True to scroll immediately without animation
+     * @return true if scrolling was performed
+     */
+    private boolean scrollToChildRect(Rect rect, boolean immediate) {
+        final int delta = computeScrollDeltaToGetChildRectOnScreen(rect);
+        final boolean scroll = delta != 0;
+        if (scroll) {
+            if (immediate) {
+                scrollBy(0, delta);
+            } else {
+                smoothScrollBy(0, delta);
+            }
+        }
+        return scroll;
+    }
+
+    /**
+     * Like {@link View#scrollBy}, but scroll smoothly instead of immediately.
+     *
+     * @param dx the number of pixels to scroll by on the X axis
+     * @param dy the number of pixels to scroll by on the Y axis
+     */
+    public final void smoothScrollBy(int dx, int dy) {
+        if (getChildCount() == 0) {
+            // Nothing to do.
+            return;
+        }
+        final int height = getHeight() - mPaddingBottom - mPaddingTop;
+        final int bottom = getChildAt(0).getHeight();
+        final int maxY = Math.max(0, bottom - height);
+        final int scrollY = mScrollY;
+        dy = Math.max(0, Math.min(scrollY + dy, maxY)) - scrollY;
+
+        mOverScroller.startScroll(mScrollX, scrollY, 0, dy);
+        invalidate();
     }
 
     /*@Override

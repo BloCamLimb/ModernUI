@@ -49,11 +49,12 @@ public final class RenderCore {
 
     public static final Marker MARKER = MarkerManager.getMarker("Graphics");
 
-    private static boolean sInitialized = false;
-    static boolean sIgnoreFormatError = false;
+    static volatile boolean sIgnoreFormatError;
 
-    private static Thread sRenderThread;
+    private static volatile Thread sMainThread;
+    private static volatile Thread sRenderThread;
 
+    private static final Queue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
     private static final Queue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
 
     /**
@@ -64,6 +65,7 @@ public final class RenderCore {
         if (GLFW.glfwSetErrorCallback(RenderCore::onError) != null || !GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
+        sMainThread = Thread.currentThread();
     }
 
     private static void onError(int errorCode, long descPtr) {
@@ -73,37 +75,53 @@ public final class RenderCore {
         LOGGER.error(MARKER, "GLFW Error: 0x{} {}", Integer.toHexString(errorCode), desc);
     }
 
+    public static void checkMainThread() {
+        if (Thread.currentThread() != sMainThread)
+            throw new IllegalStateException("Not called from main thread");
+    }
+
     public static void checkRenderThread() {
         if (Thread.currentThread() != sRenderThread)
             throw new IllegalStateException("Not called from render thread");
+    }
+
+    public static boolean isOnMainThread() {
+        return Thread.currentThread() == sMainThread;
     }
 
     public static boolean isOnRenderThread() {
         return Thread.currentThread() == sRenderThread;
     }
 
-    public static void interrupt() {
-        sRenderThread.interrupt();
+    public static void recordMainCall(@Nonnull Runnable r) {
+        sMainCalls.offer(r);
     }
 
     public static void recordRenderCall(@Nonnull Runnable r) {
         sRenderCalls.offer(r);
     }
 
+    public static void flushMainCalls() {
+        Runnable r;
+        while ((r = sMainCalls.poll()) != null) r.run();
+    }
+
     public static void flushRenderCalls() {
         Runnable r;
-        while ((r = sRenderCalls.poll()) != null)
-            r.run();
+        while ((r = sRenderCalls.poll()) != null) r.run();
     }
 
     /**
      * Call after creating a Window on render thread.
      */
     public static void initialize() {
-        if (sInitialized) {
-            return;
+        synchronized (RenderCore.class) {
+            if (sRenderThread == null) {
+                sRenderThread = Thread.currentThread();
+            } else {
+                throw new IllegalStateException("Initialize twice");
+            }
         }
-        sRenderThread = Thread.currentThread();
 
         // get or create
         GLCapabilities caps;
@@ -123,12 +141,10 @@ public final class RenderCore {
         }
 
         GLWrapper.initialize(caps);
-
-        sInitialized = true;
     }
 
     public static boolean isInitialized() {
-        return sInitialized;
+        return sRenderThread != null;
     }
 
     public static long timeNanos() {

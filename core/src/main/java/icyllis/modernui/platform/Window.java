@@ -199,7 +199,6 @@ public final class Window implements AutoCloseable {
     private void callbackRefresh(long window) {
         if (!mRefresh) {
             mRefresh = true;
-            RenderCore.interrupt();
         }
     }
 

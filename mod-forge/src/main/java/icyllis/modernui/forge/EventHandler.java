@@ -29,12 +29,7 @@ import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.phys.HitResult;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.GuiOpenEvent;
@@ -161,6 +156,7 @@ final class EventHandler {
         @SubscribeEvent
         static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.END) {
+                RenderCore.flushMainCalls();
                 RenderCore.flushRenderCalls();
             }
         }

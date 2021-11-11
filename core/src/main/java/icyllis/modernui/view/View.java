@@ -1472,19 +1472,25 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Layout child views, call from {@link #layout(int, int, int, int)}
+     * Called from {@link #layout(int, int, int, int)} when this view should
+     * assign a size and position to each of its children.
+     * <p>
+     * Derived classes with children should override this method and call layout
+     * on each of their children.
      *
-     * @param changed whether the size or position of this view was changed
-     * @param left    left position, relative to parent
-     * @param top     top position, relative to parent
-     * @param right   right position, relative to parent
-     * @param bottom  bottom position, relative to parent
+     * @param changed This is a new size or position for this view
+     * @param left    Left position, relative to parent
+     * @param top     Top position, relative to parent
+     * @param right   Right position, relative to parent
+     * @param bottom  Bottom position, relative to parent
      */
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
     }
 
     /**
-     * Assign the rectangle area of this view, called from layout()
+     * Assign a size and position to this view.
+     * <p>
+     * Called from {@link #layout(int, int, int, int)}.
      *
      * @param left   left position, relative to parent
      * @param top    top position, relative to parent
@@ -2429,6 +2435,73 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Request that a rectangle of this view be visible on the screen,
+     * scrolling if necessary just enough.
+     *
+     * <p>A View should call this if it maintains some notion of which part
+     * of its content is interesting.  For example, a text editing view
+     * should call this when its cursor moves.
+     * <p>The Rectangle passed into this method should be in the View's content coordinate space.
+     * It should not be affected by which part of the View is currently visible or its scroll
+     * position.
+     *
+     * @param rectangle The rectangle in the View's content coordinate space
+     * @return Whether any parent scrolled.
+     */
+    public boolean requestRectangleOnScreen(Rect rectangle) {
+        return requestRectangleOnScreen(rectangle, false);
+    }
+
+    /**
+     * Request that a rectangle of this view be visible on the screen,
+     * scrolling if necessary just enough.
+     *
+     * <p>A View should call this if it maintains some notion of which part
+     * of its content is interesting.  For example, a text editing view
+     * should call this when its cursor moves.
+     * <p>The Rectangle passed into this method should be in the View's content coordinate space.
+     * It should not be affected by which part of the View is currently visible or its scroll
+     * position.
+     * <p>When <code>immediate</code> is set to true, scrolling will not be
+     * animated.
+     *
+     * @param rectangle The rectangle in the View's content coordinate space
+     * @param immediate True to forbid animated scrolling, false otherwise
+     * @return Whether any parent scrolled.
+     */
+    public boolean requestRectangleOnScreen(Rect rectangle, boolean immediate) {
+        if (mParent == null) {
+            return false;
+        }
+
+        View child = this;
+
+        RectF position = (mAttachInfo != null) ? mAttachInfo.mTmpTransformRect : new RectF();
+        position.set(rectangle);
+
+        ViewParent parent = mParent;
+        boolean scrolled = false;
+        while (parent != null) {
+            rectangle.set((int) position.left, (int) position.top,
+                    (int) position.right, (int) position.bottom);
+
+            scrolled |= parent.requestChildRectangleOnScreen(child, rectangle, immediate);
+
+            if (!(parent instanceof View)) {
+                break;
+            }
+
+            // move it from child's content coordinate space to parent's content coordinate space
+            position.offset(child.mLeft - child.getScrollX(), child.mTop -child.getScrollY());
+
+            child = (View) parent;
+            parent = child.getParent();
+        }
+
+        return scrolled;
+    }
+
+    /**
      * Called when this view wants to give up focus. If focus is cleared
      * {@link #onFocusChanged(boolean, int)} is called.
      * <p>
@@ -3033,6 +3106,22 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Return the visible drawing bounds of your view. Fills in the output
+     * rectangle with the values from getScrollX(), getScrollY(),
+     * getWidth(), and getHeight(). These bounds do not account for any
+     * transformation properties currently set on the view, such as
+     * {@link #setScaleX(float)} or {@link #setRotation(float)}.
+     *
+     * @param outRect The (scrolled) drawing bounds of the view.
+     */
+    public void getDrawingRect(@Nonnull Rect outRect) {
+        outRect.left = mScrollX;
+        outRect.top = mScrollY;
+        outRect.right = mScrollX + (mRight - mLeft);
+        outRect.bottom = mScrollY + (mBottom - mTop);
+    }
+
+    /**
      * Left position of this view relative to its parent.
      *
      * @return The left edge of this view, in pixels.
@@ -3305,6 +3394,7 @@ public class View implements Drawable.Callback {
             mRunQueue.executeActions(info.mViewRootBase);
             mRunQueue = null;
         }
+        onAttachedToWindow();
         mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
 
         ListenerInfo li = mListenerInfo;
@@ -3322,7 +3412,9 @@ public class View implements Drawable.Callback {
     }
 
     void dispatchDetachedFromWindow() {
+        onDetachedFromWindow();
         mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
+
         ListenerInfo li = mListenerInfo;
         final CopyOnWriteArrayList<OnAttachStateChangeListener> listeners =
                 li != null ? li.mOnAttachStateChangeListeners : null;
@@ -3335,6 +3427,29 @@ public class View implements Drawable.Callback {
                 listener.onViewDetachedFromWindow(this);
             }
         }
+
+        mAttachInfo = null;
+    }
+
+    /**
+     * This is called when the view is attached to a window.  At this point it
+     * has a Surface and will start drawing.  Note that this function is
+     * guaranteed to be called before {@link #onDraw(Canvas)},
+     * however it may be called any time before the first onDraw -- including
+     * before or after {@link #onMeasure(int, int)}.
+     *
+     * @see #onDetachedFromWindow()
+     */
+    protected void onAttachedToWindow() {
+    }
+
+    /**
+     * This is called when the view is detached from a window.  At this point it
+     * no longer has a surface for drawing.
+     *
+     * @see #onAttachedToWindow()
+     */
+    protected void onDetachedFromWindow() {
     }
 
     /**
@@ -5565,9 +5680,9 @@ public class View implements Drawable.Callback {
      * {@link MenuItem#setShortcut(char, char) shortcut} property of menu items.
      *
      * @param keyCode The value in event.getKeyCode().
-     * @param event Description of the key event.
+     * @param event   Description of the key event.
      * @return If you handled the event, return true. If you want to allow the
-     *         event to be handled by the next receiver, return false.
+     * event to be handled by the next receiver, return false.
      */
     public boolean onKeyShortcut(int keyCode, @Nonnull KeyEvent event) {
         return false;
@@ -5589,6 +5704,21 @@ public class View implements Drawable.Callback {
     boolean pointInView(float localX, float localY, float slop) {
         return localX >= -slop && localY >= -slop && localX < ((mRight - mLeft) + slop) &&
                 localY < ((mBottom - mTop) + slop);
+    }
+
+    /**
+     * When a view has focus and the user navigates away from it, the next view is searched for
+     * starting from the rectangle filled in by this method.
+     * <p>
+     * By default, the rectangle is the {@link #getDrawingRect(Rect)})
+     * of the view.  However, if your view maintains some idea of internal selection,
+     * such as a cursor, or a selected row or column, you should override this method and
+     * fill in a more specific rectangle.
+     *
+     * @param r The rectangle to fill in, in this view's coordinates.
+     */
+    public void getFocusedRect(@Nonnull Rect r) {
+        getDrawingRect(r);
     }
 
     /**

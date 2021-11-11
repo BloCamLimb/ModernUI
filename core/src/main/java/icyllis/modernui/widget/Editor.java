@@ -52,14 +52,14 @@ public class Editor {
     boolean mSelectAllOnFocus;
     boolean mTextIsSelectable;
 
-    boolean mInBatchEditControllers;
+    /*boolean mInBatchEditControllers;
     private boolean mPreserveSelection;
     private boolean mRestartActionModeOnNextRefresh;
     private boolean mRequestingLinkActionMode;
 
     boolean mIsBeingLongClicked;
 
-    private float mContextMenuAnchorX, mContextMenuAnchorY;
+    private float mContextMenuAnchorX, mContextMenuAnchorY;*/
 
     // The button state as of the last time #onTouchEvent is called.
     private int mLastButtonState;
@@ -129,6 +129,30 @@ public class Editor {
                 movement.onTakeFocus(mTextView, (Spannable) mTextView.getText(), direction);
             }
 
+            // The DecorView does not have focus when the 'Done' ExtractEditText button is
+            // pressed. Since it is the ViewAncestor's mView, it requests focus before
+            // ExtractEditText clears focus, which gives focus to the ExtractEditText.
+            // This special case ensure that we keep current selection in that case.
+            // It would be better to know why the DecorView does not have focus at that time.
+            if (mSelectionMoved && selStart >= 0 && selEnd >= 0) {
+                /*
+                 * Someone intentionally set the selection, so let them
+                 * do whatever it is that they wanted to do instead of
+                 * the default on-focus behavior.  We reset the selection
+                 * here instead of just skipping the onTakeFocus() call
+                 * because some movement methods do something other than
+                 * just setting the selection in theirs and we still
+                 * need to go through that path.
+                 */
+                Selection.setSelection((Spannable) mTextView.getText(), selStart, selEnd);
+            }
+
+            if (mSelectAllOnFocus) {
+                mTextView.selectAllText();
+            }
+
+            mTouchFocusSelected = true;
+
             makeBlink();
         }
     }
@@ -165,27 +189,17 @@ public class Editor {
     void onTouchUpEvent(@Nonnull MotionEvent event) {
         boolean selectAllGotFocus = mSelectAllOnFocus && mTextView.didTouchFocusSelect();
         CharSequence text = mTextView.getText();
-        if (!selectAllGotFocus && text.length() > 0) {
+        if (!selectAllGotFocus) {
             // Move cursor
             final int offset = mTextView.getOffsetForPosition(event.getX(), event.getY());
             Selection.setSelection((Spannable) text, offset);
         }
     }
 
-    public void sendOnTextChanged(int start, int before, int after) {
-
+    void sendOnTextChanged(int start, int before, int after) {
     }
 
-    public void addSpanWatchers(Spannable sp) {
-
-    }
-
-    public void reportExtractedText() {
-
-    }
-
-    public void invalidateTextDisplayList() {
-
+    void addSpanWatchers(Spannable sp) {
     }
 
     /**
@@ -230,7 +244,7 @@ public class Editor {
 
             if (shouldBlink()) {
                 if (mTextView.getLayout() != null) {
-                    mTextView.invalidate();
+                    mTextView.invalidateCursorPath();
                 }
 
                 mTextView.postDelayed(this, BLINK);

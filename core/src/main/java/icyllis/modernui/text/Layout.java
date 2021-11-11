@@ -19,9 +19,13 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.math.Rect;
+import icyllis.modernui.text.method.TextKeyListener;
 import icyllis.modernui.text.style.ParagraphStyle;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.text.style.TabStopSpan;
+import icyllis.modernui.view.KeyEvent;
+import it.unimi.dsi.fastutil.floats.FloatArrayList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -439,6 +443,25 @@ public abstract class Layout {
      * Return the number of lines of text in this layout.
      */
     public abstract int getLineCount();
+
+    /**
+     * Return the baseline for the specified line (0&hellip;getLineCount() - 1)
+     * If bounds is not null, return the top, left, right, bottom extents
+     * of the specified line in it.
+     *
+     * @param line   which line to examine (0..getLineCount() - 1)
+     * @param bounds Optional. If not null, it returns the extent of the line
+     * @return the Y-coordinate of the baseline
+     */
+    public int getLineBounds(int line, @Nullable Rect bounds) {
+        if (bounds != null) {
+            bounds.left = 0;     // ???
+            bounds.top = getLineTop(line);
+            bounds.right = mWidth;   // ???
+            bounds.bottom = getLineTop(line + 1);
+        }
+        return getLineBaseline(line);
+    }
 
     /**
      * Return the vertical position of the top of the specified line
@@ -1323,6 +1346,318 @@ public abstract class Layout {
     private int getParagraphLeadingMargin(int line) {
         //TODO
         return 0;
+    }
+
+    /**
+     * Determine whether we should clamp cursor position. Currently it's
+     * only robust for left-aligned displays.
+     */
+    private boolean shouldClampCursor(int line) {
+        // Only clamp cursor position in left-aligned displays.
+        return switch (getParagraphAlignment(line)) {
+            case ALIGN_LEFT -> true;
+            case ALIGN_NORMAL -> getParagraphDirection(line) > 0;
+            default -> false;
+        };
+
+    }
+
+    /**
+     * Get the leftmost position that should be exposed for horizontal
+     * scrolling on the specified line.
+     */
+    public float getLineLeft(int line) {
+        final int dir = getParagraphDirection(line);
+        Alignment align = getParagraphAlignment(line);
+        // Before Q, StaticLayout.Builder.setAlignment didn't check whether the input alignment
+        // is null. And when it is null, the old behavior is the same as ALIGN_CENTER.
+        // To keep consistency, we convert a null alignment to ALIGN_CENTER.
+        if (align == null) {
+            align = Alignment.ALIGN_CENTER;
+        }
+
+        // First convert combinations of alignment and direction settings to
+        // three basic cases: ALIGN_LEFT, ALIGN_RIGHT and ALIGN_CENTER.
+        // For unexpected cases, it will fallback to ALIGN_LEFT.
+        final Alignment resultAlign;
+        switch (align) {
+            case ALIGN_NORMAL:
+                resultAlign =
+                        dir == DIR_RIGHT_TO_LEFT ? Alignment.ALIGN_RIGHT : Alignment.ALIGN_LEFT;
+                break;
+            case ALIGN_OPPOSITE:
+                resultAlign =
+                        dir == DIR_RIGHT_TO_LEFT ? Alignment.ALIGN_LEFT : Alignment.ALIGN_RIGHT;
+                break;
+            case ALIGN_CENTER:
+                resultAlign = Alignment.ALIGN_CENTER;
+                break;
+            case ALIGN_RIGHT:
+                resultAlign = Alignment.ALIGN_RIGHT;
+                break;
+            default: /* align == Alignment.ALIGN_LEFT */
+                resultAlign = Alignment.ALIGN_LEFT;
+        }
+
+        // Here we must use getLineMax() to do the computation, because it maybe overridden by
+        // derived class. And also note that line max equals the width of the text in that line
+        // plus the leading margin.
+        switch (resultAlign) {
+            case ALIGN_CENTER:
+                final int left = getParagraphLeft(line);
+                final float max = getLineMax(line);
+                // This computation only works when mWidth equals leadingMargin plus
+                // the width of text in this line. If this condition doesn't meet anymore,
+                // please change here too.
+                return (float) Math.floor(left + (mWidth - max) / 2);
+            case ALIGN_RIGHT:
+                return mWidth - getLineMax(line);
+            default: /* resultAlign == Alignment.ALIGN_LEFT */
+                return 0;
+        }
+    }
+
+    /**
+     * Get the rightmost position that should be exposed for horizontal
+     * scrolling on the specified line.
+     */
+    public float getLineRight(int line) {
+        final int dir = getParagraphDirection(line);
+        Alignment align = getParagraphAlignment(line);
+        // Before Q, StaticLayout.Builder.setAlignment didn't check whether the input alignment
+        // is null. And when it is null, the old behavior is the same as ALIGN_CENTER.
+        // To keep consistency, we convert a null alignment to ALIGN_CENTER.
+        if (align == null) {
+            align = Alignment.ALIGN_CENTER;
+        }
+
+        final Alignment resultAlign;
+        switch (align) {
+            case ALIGN_NORMAL:
+                resultAlign =
+                        dir == DIR_RIGHT_TO_LEFT ? Alignment.ALIGN_RIGHT : Alignment.ALIGN_LEFT;
+                break;
+            case ALIGN_OPPOSITE:
+                resultAlign =
+                        dir == DIR_RIGHT_TO_LEFT ? Alignment.ALIGN_LEFT : Alignment.ALIGN_RIGHT;
+                break;
+            case ALIGN_CENTER:
+                resultAlign = Alignment.ALIGN_CENTER;
+                break;
+            case ALIGN_RIGHT:
+                resultAlign = Alignment.ALIGN_RIGHT;
+                break;
+            default: /* align == Alignment.ALIGN_LEFT */
+                resultAlign = Alignment.ALIGN_LEFT;
+        }
+
+        switch (resultAlign) {
+            case ALIGN_CENTER:
+                final int right = getParagraphRight(line);
+                final float max = getLineMax(line);
+                // This computation only works when mWidth equals leadingMargin plus width of the
+                // text in this line. If this condition doesn't meet anymore, please change here.
+                return (float) Math.ceil(right - (mWidth - max) / 2);
+            case ALIGN_RIGHT:
+                return mWidth;
+            default: /* resultAlign == Alignment.ALIGN_LEFT */
+                return getLineMax(line);
+        }
+    }
+
+    /**
+     * Fills in the specified Path with a representation of a cursor
+     * at the specified offset.  This will often be a vertical line
+     * but can be multiple discontinuous lines in text with multiple
+     * directionalities.
+     *
+     * @param point  the cursor offset in chars
+     * @param dest   the destination lines
+     * @param buffer the editing buffer
+     */
+    public void getCursorPath(int point, @Nonnull FloatArrayList dest, @Nonnull CharSequence buffer) {
+        dest.clear();
+        if (point < 0) {
+            return;
+        }
+
+        int line = getLineForOffset(point);
+        int top = getLineTop(line);
+        int bottom = getLineBottom(line);
+
+        boolean clamped = shouldClampCursor(line);
+        float h1 = getPrimaryHorizontal(point, clamped) - 0.5f;
+
+        int caps = TextKeyListener.getMetaState(buffer, KeyEvent.MOD_SHIFT);
+        int fn = TextKeyListener.getMetaState(buffer, KeyEvent.MOD_ALT);
+        int dist = (bottom - top) >> 3;
+        top += dist;
+        bottom -= dist;
+
+        if (caps != 0 || fn != 0) {
+            dist = (bottom - top) >> 2;
+
+            if (fn != 0)
+                top += dist;
+            if (caps != 0)
+                bottom -= dist;
+        } else {
+            dist = 0;
+        }
+
+        if (h1 < 0.5f)
+            h1 = 0.5f;
+
+        dest.add(h1);
+        dest.add(top);
+        dest.add(h1);
+        dest.add(bottom);
+
+        if (caps == 1) {
+            dest.add(h1);
+            dest.add(bottom);
+            dest.add(h1 - dist * 0.7f);
+            dest.add(bottom + dist);
+
+            dest.add(h1 - dist * 0.7f);
+            dest.add(bottom + dist - 0.5f);
+            dest.add(h1 + dist * 0.7f);
+            dest.add(bottom + dist - 0.5f);
+
+            dest.add(h1 + dist * 0.7f);
+            dest.add(bottom + dist);
+            dest.add(h1);
+            dest.add(bottom);
+        }
+
+        if (fn == 1) {
+            dest.add(h1);
+            dest.add(top);
+            dest.add(h1 - dist * 0.7f);
+            dest.add(top - dist);
+
+            dest.add(h1 - dist * 0.7f);
+            dest.add(top - dist + 0.5f);
+            dest.add(h1 + dist * 0.7f);
+            dest.add(top - dist + 0.5f);
+
+            dest.add(h1 + dist * 0.7f);
+            dest.add(top - dist);
+            dest.add(h1);
+            dest.add(top);
+        }
+    }
+
+    private void addSelection(int line, int start, int end,
+                              int top, int bottom, FloatArrayList out) {
+        int linestart = getLineStart(line);
+        int lineend = getLineEnd(line);
+        Directions dirs = getLineDirections(line);
+
+        if (lineend > linestart && mText.charAt(lineend - 1) == '\n') {
+            lineend--;
+        }
+
+        for (int i = 0; i < dirs.mDirections.length; i += 2) {
+            int here = linestart + dirs.mDirections[i];
+            int there = here + (dirs.mDirections[i + 1] & Directions.RUN_LENGTH_MASK);
+
+            if (there > lineend) {
+                there = lineend;
+            }
+
+            if (start <= there && end >= here) {
+                int st = Math.max(start, here);
+                int en = Math.min(end, there);
+
+                if (st != en) {
+                    float h1 = getHorizontal(st, false, line, false /* not clamped */);
+                    float h2 = getHorizontal(en, true, line, false /* not clamped */);
+
+                    float left = Math.min(h1, h2);
+                    float right = Math.max(h1, h2);
+
+                    out.add(left);
+                    out.add(top);
+                    out.add(right);
+                    out.add(bottom);
+                }
+            }
+        }
+    }
+
+    /**
+     * Calculates the rectangles which should be highlighted to indicate a selection between start
+     * and end and feeds them into the given array.
+     *
+     * @param start the starting index of the selection
+     * @param end   the ending index of the selection
+     * @param dest  the destination rectangles
+     */
+    public void getSelectionPath(int start, int end, @Nonnull FloatArrayList dest) {
+        dest.clear();
+        if (start == end) {
+            return;
+        }
+
+        if (end < start) {
+            int temp = end;
+            end = start;
+            start = temp;
+        }
+
+        final int startline = getLineForOffset(start);
+        final int endline = getLineForOffset(end);
+
+        int top = getLineTop(startline);
+        int bottom = getLineBottom(endline);
+
+        if (startline == endline) {
+            addSelection(startline, start, end, top, bottom, dest);
+        } else {
+            final float width = mWidth;
+
+            addSelection(startline, start, getLineEnd(startline),
+                    top, getLineBottom(startline), dest);
+
+            if (getParagraphDirection(startline) == DIR_RIGHT_TO_LEFT) {
+                dest.add(0);
+                dest.add(top);
+                dest.add(getLineLeft(startline));
+                dest.add(getLineBottom(startline));
+            } else {
+                dest.add(getLineRight(startline));
+                dest.add(top);
+                dest.add(width);
+                dest.add(getLineBottom(startline));
+            }
+
+            for (int i = startline + 1; i < endline; i++) {
+                top = getLineTop(i);
+                bottom = getLineBottom(i);
+                dest.add(0);
+                dest.add(top);
+                dest.add(width);
+                dest.add(bottom);
+            }
+
+            top = getLineTop(endline);
+            bottom = getLineBottom(endline);
+
+            addSelection(endline, getLineStart(endline), end, top, bottom, dest);
+
+            if (getParagraphDirection(endline) == DIR_RIGHT_TO_LEFT) {
+                dest.add(getLineRight(endline));
+                dest.add(top);
+                dest.add(width);
+                dest.add(bottom);
+            } else {
+                dest.add(0);
+                dest.add(top);
+                dest.add(getLineLeft(endline));
+                dest.add(bottom);
+            }
+        }
     }
 
     /**
