@@ -18,27 +18,39 @@
 
 package icyllis.modernui.text.method;
 
-import icyllis.modernui.view.View;
-
-import javax.annotation.Nonnull;
-
-//TODO
-public class SingleLineTransformationMethod implements TransformationMethod {
+/**
+ * This transformation method causes any newline characters (\n) to be
+ * displayed as spaces instead of causing line breaks, and causes
+ * carriage return characters (\r) to have no appearance.
+ */
+public class SingleLineTransformationMethod extends ReplacementTransformationMethod {
 
     private static final SingleLineTransformationMethod sInstance = new SingleLineTransformationMethod();
+
+    private static final char[] ORIGINAL = new char[]{'\n', '\r'};
+    private static final char[] REPLACEMENT = new char[]{' ', '\uFEFF'};
+
+    private SingleLineTransformationMethod() {
+    }
 
     public static SingleLineTransformationMethod getInstance() {
         return sInstance;
     }
 
-    @Nonnull
+    /**
+     * The characters to be replaced are \n and \r.
+     */
     @Override
-    public CharSequence getTransformation(@Nonnull CharSequence source, View view) {
-        return source;
+    protected char[] getOriginal() {
+        return ORIGINAL;
     }
 
+    /**
+     * The character \n is replaced with is space;
+     * the character \r is replaced with is FEFF (zero width space).
+     */
     @Override
-    public void onFocusChanged(View view, CharSequence sourceText, boolean focused, int direction) {
-
+    protected char[] getReplacement() {
+        return REPLACEMENT;
     }
 }

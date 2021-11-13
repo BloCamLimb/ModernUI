@@ -121,9 +121,6 @@ public final class UIManager extends ViewRootBase {
     // animation update callback
     private final LongConsumer mAnimationHandler;
 
-    // elapsed ticks from a gui open, update every tick, 20 = 1 second
-    private int mTicks = 0;
-
     // elapsed time from a gui open in milliseconds, update every frame
     private long mElapsedTimeMillis;
 
@@ -139,6 +136,7 @@ public final class UIManager extends ViewRootBase {
     private final Object mRenderLock = new Object();
 
     private MotionEvent mPendingMouseEvent;
+    private int mButtonState;
 
     private boolean mFirstScreenOpened = false;
     private boolean mProjectionChanged = false;
@@ -273,7 +271,7 @@ public final class UIManager extends ViewRootBase {
         }
 
         if (mScreen != next && next instanceof MuiScreen) {
-            mTicks = 0;
+            //mTicks = 0;
             mElapsedTimeMillis = 0;
         }
         if (mScreen != next && mScreen != null) {
@@ -281,7 +279,7 @@ public final class UIManager extends ViewRootBase {
         }
         // for non-mui screens
         if (mScreen == null) {
-            mTicks = 0;
+            //mTicks = 0;
             mElapsedTimeMillis = 0;
         }
     }
@@ -428,6 +426,10 @@ public final class UIManager extends ViewRootBase {
                 x, y, 0);
         enqueueInputEvent(event);
         //mPendingRepostCursorEvent = false;
+        if (mButtonState > 0) {
+            event = MotionEvent.obtain(now, MotionEvent.ACTION_MOVE, 0, x, y, 0, mButtonState, 0);
+            enqueueInputEvent(event);
+        }
     }
 
     /**
@@ -452,6 +454,7 @@ public final class UIManager extends ViewRootBase {
                     buttonState |= 1 << i;
                 }
             }
+            mButtonState = buttonState;
             int actionButton = 1 << event.getButton();
             int action = event.getAction() == GLFW_PRESS ?
                     MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP;
@@ -771,7 +774,7 @@ public final class UIManager extends ViewRootBase {
     @SubscribeEvent
     void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            ++mTicks;
+            //++mTicks;
             post(this::tick);
         }
         /* else {
@@ -827,6 +830,9 @@ public final class UIManager extends ViewRootBase {
 
     //boolean mLayoutRequested = false;
     //private long mLastLayoutTime = 0;
+
+    // elapsed ticks from a gui open, update every tick, 20 = 1 second
+    //private int mTicks = 0;
 
     // registered menu screens
     //private final Map<ContainerType<?>, Function<? extends Container, ApplicationUI>> mScreenRegistry = new

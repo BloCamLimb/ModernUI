@@ -113,6 +113,20 @@ public interface ViewParent {
     void childDrawableStateChanged(View child);
 
     /**
+     * Called when a child does not want this parent and its ancestors to
+     * intercept touch events with
+     * {@link ViewGroup#onInterceptTouchEvent(MotionEvent)}.
+     *
+     * <p>This parent should pass this call onto its parents. This parent must obey
+     * this request for the duration of the touch (that is, only clear the flag
+     * after this parent has received an up or a cancel.</p>
+     *
+     * @param disallowIntercept True if the child does not want the parent to
+     *            intercept touch events.
+     */
+    void requestDisallowInterceptTouchEvent(boolean disallowIntercept);
+
+    /**
      * Called when a child of this group wants a particular rectangle to be
      * positioned onto the screen.  {@link ViewGroup}s overriding this can trust
      * that:

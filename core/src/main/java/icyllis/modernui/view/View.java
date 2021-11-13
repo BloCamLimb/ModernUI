@@ -2492,7 +2492,7 @@ public class View implements Drawable.Callback {
             }
 
             // move it from child's content coordinate space to parent's content coordinate space
-            position.offset(child.mLeft - child.getScrollX(), child.mTop -child.getScrollY());
+            position.offset(child.mLeft - child.getScrollX(), child.mTop - child.getScrollY());
 
             child = (View) parent;
             parent = child.getParent();
@@ -4918,6 +4918,41 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * <p>Cause an invalidate to happen on a subsequent cycle through the event loop.
+     * Use this to invalidate the View from a non-UI thread.</p>
+     *
+     * <p>This method can be invoked from outside of the UI thread
+     * only when this View is attached to a window.</p>
+     *
+     * @see #invalidate()
+     * @see #postInvalidateDelayed(long)
+     */
+    public final void postInvalidate() {
+        postInvalidateDelayed(0);
+    }
+
+    /**
+     * <p>Cause an invalidate to happen on a subsequent cycle through the event
+     * loop. Waits for the specified amount of time.</p>
+     *
+     * <p>This method can be invoked from outside of the UI thread
+     * only when this View is attached to a window.</p>
+     *
+     * @param delayMillis the duration in milliseconds to delay the
+     *                    invalidation by
+     * @see #invalidate()
+     * @see #postInvalidate()
+     */
+    public final void postInvalidateDelayed(long delayMillis) {
+        // We try only with the AttachInfo because there's no point in invalidating
+        // if we are not attached to our window
+        final AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            attachInfo.mViewRootBase.postDelayed(this::invalidate, delayMillis);
+        }
+    }
+
+    /**
      * Called by a parent to request that a child update its values for mScrollX
      * and mScrollY if necessary. This will typically be done if the child is
      * animating a scroll using a Scroller.
@@ -5566,6 +5601,15 @@ public class View implements Drawable.Callback {
         }
 
         return true;
+    }
+
+    /**
+     * Cancels a pending long press.  Your subclass can use this if you
+     * want the context menu to come up if the user presses and holds
+     * at the same place, but you don't want it to come up if they press
+     * and then move around enough to cause scrolling.
+     */
+    public void cancelLongPress() {
     }
 
     boolean isOnScrollbarThumb(float x, float y) {
