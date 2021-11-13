@@ -759,6 +759,25 @@ public abstract class ViewGroup extends View implements ViewParent {
         return handled;
     }
 
+    @Override
+    public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+        if (disallowIntercept == ((mGroupFlags & FLAG_DISALLOW_INTERCEPT) != 0)) {
+            // We're already in this state, assume our ancestors are too
+            return;
+        }
+
+        if (disallowIntercept) {
+            mGroupFlags |= FLAG_DISALLOW_INTERCEPT;
+        } else {
+            mGroupFlags &= ~FLAG_DISALLOW_INTERCEPT;
+        }
+
+        // Pass it up to our parent
+        if (mParent != null) {
+            mParent.requestDisallowInterceptTouchEvent(disallowIntercept);
+        }
+    }
+
     /**
      * Implement this method to intercept all touch screen motion events.  This
      * allows you to watch events as they are dispatched to your children, and
@@ -797,12 +816,9 @@ public abstract class ViewGroup extends View implements ViewParent {
      * messages will be delivered here.
      */
     public boolean onInterceptTouchEvent(MotionEvent ev) {
-        if (ev.getAction() == MotionEvent.ACTION_DOWN
+        return ev.getAction() == MotionEvent.ACTION_DOWN
                 && ev.isButtonPressed(MotionEvent.BUTTON_PRIMARY)
-                && isOnScrollbarThumb(ev.getX(), ev.getY())) {
-            return true;
-        }
-        return false;
+                && isOnScrollbarThumb(ev.getX(), ev.getY());
     }
 
     private float[] getTempLocationF() {

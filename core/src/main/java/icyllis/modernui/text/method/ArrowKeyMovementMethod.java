@@ -30,6 +30,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
 
 /**
  * A movement method that provides cursor movement and selection.
+ * <p>
+ * Modified from Android.
  */
 @ParametersAreNonnullByDefault
 public class ArrowKeyMovementMethod extends BaseMovementMethod {
@@ -212,9 +214,83 @@ public class ArrowKeyMovementMethod extends BaseMovementMethod {
     }
 
     @Override
-    public boolean onTouchEvent(TextView widget, Spannable text, MotionEvent event) {
-        //TODO drag selection
-        return super.onTouchEvent(widget, text, event);
+    public boolean onTouchEvent(TextView widget, Spannable buffer, MotionEvent event) {
+        int initialScrollX = -1;
+        int initialScrollY = -1;
+        final int action = event.getAction();
+
+        if (action == MotionEvent.ACTION_UP) {
+            initialScrollX = Touch.getInitialScrollX(buffer);
+            initialScrollY = Touch.getInitialScrollY(buffer);
+        }
+
+        boolean handled = Touch.onTouchEvent(widget, buffer, event);
+
+        if (widget.didTouchFocusSelect()) {
+            return handled;
+        }
+        if (action == MotionEvent.ACTION_DOWN) {
+            // For touch events, the code should run only when selection is active.
+            if (event.isButtonPressed(MotionEvent.BUTTON_PRIMARY) || isSelecting(buffer)) {
+                if (!widget.isFocused()) {
+                    if (!widget.requestFocus()) {
+                        return handled;
+                    }
+                }
+                int offset = widget.getOffsetForPosition(event.getX(), event.getY());
+                buffer.setSpan(LAST_TAP_DOWN, offset, offset, Spannable.SPAN_POINT_POINT);
+                // Disallow intercepting of the touch events, so that
+                // users can scroll and select at the same time.
+                // without this, users would get booted out of select
+                // mode once the view detected it needed to scroll.
+                assert widget.getParent() != null;
+                widget.getParent().requestDisallowInterceptTouchEvent(true);
+            }
+        } else if (widget.isFocused()) {
+            if (action == MotionEvent.ACTION_MOVE) {
+                if (handled && event.isButtonPressed(MotionEvent.BUTTON_PRIMARY) || isSelecting(buffer)) {
+                    final int startOffset = buffer.getSpanStart(LAST_TAP_DOWN);
+                    // Before selecting, make sure we've moved out of the "slop".
+                    // handled will be true, if we're in select mode AND we're
+                    // OUT of the slop
+
+                    // Turn long press off while we're selecting. User needs to
+                    // re-tap on the selection to enable long press
+                    widget.cancelLongPress();
+
+                    // Update selection as we're moving the selection area.
+
+                    // Get the current touch position
+                    final int offset = widget.getOffsetForPosition(event.getX(), event.getY());
+                    // Added: keep current offset as the selection end, see bringPointIntoView()
+                    // in TextView.onPreDraw(), preventing scrolling back after Touch.scrollTo().
+                    // For ACTION_UP, this should not need to be considered
+                    Selection.setSelection(buffer, startOffset, offset);
+                    return true;
+                }
+            } else if (action == MotionEvent.ACTION_UP) {
+                // If we have scrolled, then the up shouldn't move the cursor,
+                // but we do need to make sure the cursor is still visible at
+                // the current scroll offset to avoid the scroll jumping later
+                // to show it.
+                if ((initialScrollY >= 0 && initialScrollY != widget.getScrollY()) ||
+                        (initialScrollX >= 0 && initialScrollX != widget.getScrollX())) {
+                    widget.moveCursorToVisibleOffset();
+                    return true;
+                }
+
+                if (event.isButtonPressed(MotionEvent.BUTTON_PRIMARY) || isSelecting(buffer)) {
+                    final int startOffset = buffer.getSpanStart(LAST_TAP_DOWN);
+                    final int endOffset = widget.getOffsetForPosition(event.getX(), event.getY());
+                    Selection.setSelection(buffer, Math.min(startOffset, endOffset),
+                            Math.max(startOffset, endOffset));
+                    buffer.removeSpan(LAST_TAP_DOWN);
+                }
+
+                return true;
+            }
+        }
+        return handled;
     }
 
     @Override

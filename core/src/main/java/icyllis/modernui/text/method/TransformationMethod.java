@@ -37,12 +37,12 @@ public interface TransformationMethod {
      * text must mirror it dynamically instead of doing a one-time copy.
      */
     @Nonnull
-    CharSequence getTransformation(@Nonnull CharSequence source, View view);
+    CharSequence getTransformation(@Nonnull CharSequence source, @Nonnull View view);
 
     /**
      * This method is called when the TextView that uses this
      * TransformationMethod gains or loses focus.
      */
-    void onFocusChanged(View view, CharSequence sourceText,
+    void onFocusChanged(@Nonnull View view, @Nonnull CharSequence sourceText,
                         boolean focused, int direction);
 }

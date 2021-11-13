@@ -18,6 +18,8 @@
 
 package icyllis.modernui.view;
 
+import org.jetbrains.annotations.ApiStatus;
+
 /**
  * Contains methods to standard constants used in the UI for timeouts, sizes, and distances.
  */
@@ -32,9 +34,24 @@ public class ViewConfiguration {
     private static final int PRESSED_STATE_DURATION = 64;
 
     /**
+     * Distance a touch can wander before we think the user is scrolling in dips.
+     * Note that this value defined here is only used as a fallback by legacy/misbehaving
+     * applications that do not provide a Context for determining density/configuration-dependent
+     * values.
+     * <p>
+     * To alter this value, see the configuration resource config_viewConfigurationTouchSlop
+     * in frameworks/base/core/res/res/values/config.xml or the appropriate device resource overlay.
+     * It may be appropriate to tweak this on a device-specific basis in an overlay based on
+     * the characteristics of the touch panel and firmware.
+     */
+    private static final int TOUCH_SLOP = 8;
+
+    /**
      * View scale factor, depends on user preference or display device.
      */
     private float mViewScale = 1.0f;
+
+    private int mTouchSlop = TOUCH_SLOP;
 
     public ViewConfiguration() {
     }
@@ -56,6 +73,7 @@ public class ViewConfiguration {
         return PRESSED_STATE_DURATION;
     }
 
+    @ApiStatus.Internal
     public void setViewScale(float scale) {
         mViewScale = scale;
     }
@@ -82,5 +100,17 @@ public class ViewConfiguration {
      */
     public int getTextSize(float sip) {
         return Math.round(sip * mViewScale);
+    }
+
+    @ApiStatus.Internal
+    public void setTouchSlop(int touchSlop) {
+        mTouchSlop = touchSlop;
+    }
+
+    /**
+     * @return Distance in pixels a touch can wander before we think the user is scrolling
+     */
+    public int getScaledTouchSlop() {
+        return mTouchSlop;
     }
 }

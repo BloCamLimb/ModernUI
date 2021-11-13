@@ -515,6 +515,11 @@ public abstract class ViewRootBase implements ViewParent {
     public void childDrawableStateChanged(View child) {
     }
 
+    @Override
+    public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
+        // no op
+    }
+
     /**
      * Add LayoutTransition to the list of transitions to be started in the next traversal.
      * This list will be cleared after the transitions on the list are start()'ed. These

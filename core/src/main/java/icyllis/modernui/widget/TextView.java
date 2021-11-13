@@ -41,6 +41,38 @@ import java.util.Locale;
 
 /**
  * A user interface element that displays text to the user and provides user-editable text.
+ * <p>
+ * To display a styled text, use a {@link Spannable} with markup objects, like {@link CharacterStyle}.
+ * TextView will hold a copy of your text after calling {@link #setText(CharSequence, BufferType)}.
+ * After you provide a String, you want it to have styles:
+ * <pre>
+ *  TextView textView = new TextView();
+ *  textView.setText(string, TextView.BufferType.SPANNABLE);
+ *  // add styles
+ *  Spannable spannable = (Spannable) textView.getText();
+ *  spannable.setSpan(new ForegroundColorSpan(0xfff699b4), 0, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+ * </pre>
+ *
+ * <p>
+ * To create an EditText (an editable TextView):
+ * <pre>
+ *  TextView editText = new TextView();
+ *  editText.setText("", TextView.BufferType.EDITABLE);
+ *  editText.setFocusableInTouchMode(true);
+ *  editText.setMovementMethod(ArrowKeyMovementMethod.getInstance());
+ * </pre>
+ * <p>
+ * To make it a single line EditText (a text field):
+ * <pre>
+ *  editText.setSingleLine();
+ * </pre>
+ * To make it a password EditText:
+ * <pre>
+ *  editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
+ * </pre>
+ * If you want a non-editable text to be selected, see {@link #setTextIsSelectable(boolean)}.
+ * <p>
+ * Explore the methods in this class to find more usage
  */
 public class TextView extends View implements ViewTreeObserver.OnPreDrawListener {
 
@@ -1724,7 +1756,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      *
      * @return true if the current transformation method is of the password type.
      */
-    boolean hasPasswordTransformationMethod() {
+    private boolean hasPasswordTransformationMethod() {
         return mTransformation instanceof PasswordTransformationMethod;
     }
 
@@ -3599,6 +3631,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public boolean didTouchFocusSelect() {
         return mEditor != null && mEditor.mTouchFocusSelected;
+    }
+
+    @Override
+    public void cancelLongPress() {
+        super.cancelLongPress();
+        if (mEditor != null) mEditor.mIgnoreActionUpEvent = true;
     }
 
     @Override

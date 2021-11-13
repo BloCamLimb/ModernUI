@@ -27,7 +27,9 @@ import icyllis.modernui.mcgui.Applier;
 import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.Spanned;
+import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
+import icyllis.modernui.text.method.PasswordTransformationMethod;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
@@ -158,8 +160,10 @@ public class TestLinearLayout extends LinearLayout {
                         ViewGroup.LayoutParams.WRAP_CONTENT);
                 textField.setText("", TextView.BufferType.EDITABLE);
                 textField.setHint("Your Name");
+                textField.setSingleLine();
                 textField.setFocusableInTouchMode(true);
                 textField.setMovementMethod(ArrowKeyMovementMethod.getInstance());
+                //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 textField.setPadding(c.getViewSize(12), 0, c.getViewSize(12), 0);
             } else {
                 v = new CView();
@@ -431,6 +435,8 @@ public class TestLinearLayout extends LinearLayout {
         private float offsetY;
 
         private final int offset;
+        private final TextPaint mTextPaint = new TextPaint();
+        private int mTicks;
 
         public DView(TimeInterpolator interpolator, int offset) {
             this.offset = offset;
@@ -441,18 +447,18 @@ public class TestLinearLayout extends LinearLayout {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            /*canvas.setTextAlign(TextAlign.LEFT);
-            canvas.drawText("" + ChatFormatting.RED + ChatFormatting.BLUE + "G", offset, offsetY + 4);*/
+            canvas.drawText("G", 0, 1, offset, offsetY + 24, mTextPaint);
         }
 
         @Override
         public void tick() {
             super.tick();
-            /*if (ticks % 40 == 0) {
+            mTicks++;
+            if (mTicks % 40 == 0) {
                 animation.invert();
-            } else if (ticks % 20 == 0) {
+            } else if (mTicks % 20 == 0) {
                 animation.start();
-            }*/
+            }
         }
     }
 }
