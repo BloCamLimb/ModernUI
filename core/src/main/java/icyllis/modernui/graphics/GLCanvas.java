@@ -1352,13 +1352,14 @@ public final class GLCanvas extends Canvas {
         mDrawOps.add(DRAW_IMAGE);
     }
 
-    public void drawTexture(@Nonnull GLTexture texture, float l, float t, float r, float b,
-                            int color, boolean flipY) {
+    // this is only used for offscreen
+    public void drawLayer(@Nonnull GLTexture texture, float w, float h, int color, boolean flipY) {
         int target = texture.getTarget();
         if (target == GL_TEXTURE_2D || target == GL_TEXTURE_2D_MULTISAMPLE) {
             drawMatrix();
-            putRectColorUV(l, t, r, b, color,
-                    0, flipY ? 1 : 0, 1, flipY ? 0 : 1);
+            putRectColorUV(0, 0, w, h, color,
+                    0, flipY ? h / texture.getHeight() : 0,
+                    w / texture.getWidth(), flipY ? 0 : h / texture.getHeight());
             mTextures.add(texture);
             mDrawOps.add(target == GL_TEXTURE_2D ? DRAW_IMAGE : DRAW_IMAGE_MS);
         } else {
@@ -1384,6 +1385,27 @@ public final class GLCanvas extends Canvas {
         }
         drawMatrix();
         putRectColorUV(dstLeft, dstTop, dstRight, dstBottom, paint,
+                srcLeft / w, srcTop / h, srcRight / w, srcBottom / h);
+        mTextures.add(texture);
+        mDrawOps.add(DRAW_IMAGE);
+    }
+
+    public void drawTexture(@Nonnull GLTexture texture, float srcLeft, float srcTop, float srcRight, float srcBottom,
+                            float dstLeft, float dstTop, float dstRight, float dstBottom) {
+        if (quickReject(dstLeft, dstTop, dstRight, dstBottom)) {
+            return;
+        }
+        srcLeft = Math.max(0, srcLeft);
+        srcTop = Math.max(0, srcTop);
+        int w = texture.getWidth();
+        int h = texture.getHeight();
+        srcRight = Math.min(srcRight, w);
+        srcBottom = Math.min(srcBottom, h);
+        if (srcRight <= srcLeft || srcBottom <= srcTop) {
+            return;
+        }
+        drawMatrix();
+        putRectColorUV(dstLeft, dstTop, dstRight, dstBottom, null,
                 srcLeft / w, srcTop / h, srcRight / w, srcBottom / h);
         mTextures.add(texture);
         mDrawOps.add(DRAW_IMAGE);

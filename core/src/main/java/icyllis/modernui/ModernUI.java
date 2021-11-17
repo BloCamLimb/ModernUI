@@ -35,6 +35,9 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * The core class of the client side of Modern UI.
@@ -58,6 +61,8 @@ public class ModernUI {
     }
 
     private final Path mAssetsDir = Path.of(String.valueOf(System.getenv("APP_ASSETS")));
+
+    private volatile ExecutorService mBackgroundExecutor;
 
     public ModernUI() {
         synchronized (ModernUI.class) {
@@ -117,5 +122,22 @@ public class ModernUI {
     @Nonnull
     public ReadableByteChannel getResourceAsChannel(@Nonnull String namespace, @Nonnull String path) throws IOException {
         return FileChannel.open(mAssetsDir.resolve(namespace).resolve(path), StandardOpenOption.READ);
+    }
+
+    /**
+     * Get the executor for background tasks. This should be a ForkJoinPool in asyncMode.
+     *
+     * @return background executor
+     */
+    @Nonnull
+    public Executor getBackgroundExecutor() {
+        if (mBackgroundExecutor == null) {
+            synchronized (this) {
+                if (mBackgroundExecutor == null) {
+                    mBackgroundExecutor = Executors.newWorkStealingPool();
+                }
+            }
+        }
+        return mBackgroundExecutor;
     }
 }

@@ -18,95 +18,176 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.ModernUI;
+import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.mcgui.Animation;
-import icyllis.modernui.mcgui.Applier;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.mcgui.ScreenCallback;
+import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewConfiguration;
+import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
-import icyllis.modernui.widget.ScrollView;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.language.LanguageInfo;
+import icyllis.modernui.widget.TextView;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
-
-import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
 public class TestPauseUI extends ScreenCallback {
 
+    public static final int NETWORK_COLOR = 0xFF295E8A;
+
+    private Image mButtonIcon;
+
     @Override
     public void onCreate() {
-        FrameLayout frameLayout = new FrameLayout();
-        View child = new NavigationBar();
-        FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(32, MATCH_PARENT);
-        frameLayout.addView(child, params);
-        params = new FrameLayout.LayoutParams(160, MATCH_PARENT, Gravity.CENTER);
-        params.setMargins(0, 20, 0, 20);
-        ScrollView scrollView = new ScrollView();
-        LinearLayout linearLayout = new LinearLayout();
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        linearLayout.setGravity(Gravity.CENTER);
-        linearLayout.setDividerDrawable(new Drawable() {
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                /*canvas.setRGBA(192, 192, 192, 128);
-                canvas.drawLine(0, 0, getWidth(), 0);*/
-            }
+        final ViewConfiguration c = ViewConfiguration.get();
 
-            @Override
-            public int getIntrinsicHeight() {
-                return 1;
-            }
-        });
-        linearLayout.setShowDividers(LinearLayout.SHOW_DIVIDER_MIDDLE | LinearLayout.SHOW_DIVIDER_END);
-        linearLayout.setDividerPadding(8);
-        LanguageInfo lang = Minecraft.getInstance().getLanguageManager().getSelected();
-        String[] list =
-                GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(lang.getJavaLocale());
-        for (String typeface : list) {
-            linearLayout.addView(new Ent(typeface), new LinearLayout.LayoutParams(MATCH_PARENT, 10));
+        var content = new LinearLayout();
+        content.setOrientation(LinearLayout.VERTICAL);
+
+        var navigation = new LinearLayout();
+        navigation.setOrientation(LinearLayout.HORIZONTAL);
+        navigation.setHorizontalGravity(Gravity.CENTER_HORIZONTAL);
+        navigation.setLayoutTransition(new LayoutTransition());
+
+        if (mButtonIcon == null) {
+            mButtonIcon = Image.create(ModernUI.ID, "gui/gui_icon.png");
         }
-        scrollView.addView(linearLayout, new FrameLayout.LayoutParams(MATCH_PARENT, 3000));
-        frameLayout.addView(scrollView, params);
-        setContentView(frameLayout, new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+
+        for (int i = 0; i < 8; i++) {
+            var button = new NavigationButton(mButtonIcon, i * 32);
+            var params = new LinearLayout.LayoutParams(c.getViewSize(32), c.getViewSize(32));
+            button.setClickable(true);
+            params.setMargins(i == 7 ? 26 : 2, 2, 2, 6);
+            if (i == 0 || i == 7) {
+                navigation.addView(button, params);
+            } else {
+                int index = i;
+                content.postDelayed(() -> navigation.addView(button, index, params), i * 50);
+            }
+        }
+
+        content.addView(navigation,
+                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT));
+
+        var tab = new LinearLayout();
+        tab.setOrientation(LinearLayout.VERTICAL);
+        tab.setLayoutTransition(new LayoutTransition());
+        tab.setBackground(new TabBackground());
+
+        for (int i = 0; i < 3; i++) {
+            var field = new TextView();
+            field.setText("", TextView.BufferType.EDITABLE);
+            field.setHint(switch (i) {
+                case 0:
+                    yield "Flux Point";
+                case 1:
+                    yield "Priority";
+                default:
+                    yield "Transfer Limit";
+            });
+            field.setFocusableInTouchMode(true);
+            field.setMovementMethod(ArrowKeyMovementMethod.getInstance());
+            field.setSingleLine();
+            field.setBackground(new TextFieldBackground());
+            field.setGravity(Gravity.CENTER_VERTICAL);
+            field.setTextSize(16);
+
+            var params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            params.setMargins(c.getViewSize(20), c.getViewSize(i == 0 ? 50 : 2), c.getViewSize(20), c.getViewSize(2));
+
+            content.postDelayed(() -> tab.addView(field, params), (i + 1) * 60);
+        }
+
+        int tabSize = c.getViewSize(340);
+        content.addView(tab, new LinearLayout.LayoutParams(tabSize, tabSize));
+
+        setContentView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
     }
 
-    private static class Ent extends View {
+    private static class TabBackground extends Drawable {
 
-        private final String k;
+        private final float mRadius;
 
-        public Ent(String k) {
-            this.k = k;
+        public TabBackground() {
+            mRadius = ViewConfiguration.get().getViewSize(16);
         }
 
         @Override
-        protected void onDraw(@Nonnull Canvas canvas) {
-            super.onDraw(canvas);
-            /*canvas.resetColor();
-            canvas.setTextAlign(TextAlign.CENTER);
-            canvas.drawText(k, getWidth() >> 1, 0);*/
+        public void draw(@Nonnull Canvas canvas) {
+            Rect b = getBounds();
+            float stroke = mRadius * 0.25f;
+            float start = stroke * 0.5f;
+
+            Paint paint = Paint.take();
+            paint.setRGBA(0, 0, 0, 180);
+            canvas.drawRoundRect(b.left + start, b.top + start, b.right - start, b.bottom - start, mRadius, paint);
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(stroke);
+            paint.setColor(NETWORK_COLOR);
+            canvas.drawRoundRect(b.left + start, b.top + start, b.right - start, b.bottom - start, mRadius, paint);
         }
     }
 
-    private static class NavigationBar extends View {
+    private static class TextFieldBackground extends Drawable {
 
-        private float a = 0;
+        private final float mRadius;
 
-        public NavigationBar() {
-            new Animation(200).applyTo(new Applier(0, 0.51f, () -> a, v -> a = v)).start();
+        public TextFieldBackground() {
+            mRadius = ViewConfiguration.get().getViewSize(3);
+        }
+
+        @Override
+        public void draw(@Nonnull Canvas canvas) {
+            Rect b = getBounds();
+            float start = mRadius * 0.5f;
+
+            Paint paint = Paint.take();
+            paint.setStyle(Paint.Style.STROKE);
+            paint.setStrokeWidth(mRadius);
+            paint.setColor(NETWORK_COLOR);
+            canvas.drawRoundRect(b.left + start, b.top + start, b.right - start, b.bottom - start, mRadius, paint);
+        }
+
+        @Override
+        public boolean getPadding(@Nonnull Rect padding) {
+            int h = Math.round(mRadius * 2);
+            int v = Math.round(mRadius * 0.5f);
+            padding.set(h, v, h, v);
+            return true;
+        }
+    }
+
+    private static class NavigationButton extends View {
+
+        private final Image mImage;
+        private final int mSrcLeft;
+
+        public NavigationButton(Image image, int srcLeft) {
+            mImage = image;
+            mSrcLeft = srcLeft;
         }
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             Paint paint = Paint.take();
-            paint.setStyle(Paint.Style.FILL);
-            paint.setRGBA(96, 96, 96, (int) (a * 255));
-            canvas.drawRect(getLeft(), getTop(), getRight(), getBottom(), paint);
+            if (!isHovered())
+                paint.setRGBA(192, 192, 192, 255);
+            canvas.drawImage(mImage, mSrcLeft, 352, mSrcLeft + 32, 384, 0, 0, getWidth(), getHeight(), paint);
+        }
+
+        @Override
+        public void onHoverChanged(boolean hovered) {
+            super.onHoverChanged(hovered);
+            invalidate();
         }
     }
 }

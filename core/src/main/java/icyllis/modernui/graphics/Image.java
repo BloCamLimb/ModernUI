@@ -48,7 +48,8 @@ public class Image {
      */
     @Nonnull
     public static Image create(@Nonnull String namespace, @Nonnull String subPath) {
-        return new Image(TextureManager.getInstance().getOrCreate(namespace, subPath));
+        return new Image(TextureManager.getInstance().getOrCreate(namespace, "textures/" + subPath,
+                TextureManager.CACHE_MASK | TextureManager.MIPMAP_MASK));
     }
 
     /**

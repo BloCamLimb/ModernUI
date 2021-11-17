@@ -20,20 +20,54 @@ package icyllis.modernui.mcgui;
 
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
+import javax.annotation.Nonnull;
 
 /**
- * Callback to handle user interface lifecycle events.
+ * Callback for handling user interface lifecycle events.
+ * <p>
+ * Most methods are callbacks that will be invoked on UI thread. To initiate this on
+ * the client side, call {@link #start()} from client main thread.
+ * This is served as a local interaction model, the server will not intersect with this before.
+ *
+ * @see OpenMenuEvent#setCallback(ScreenCallback)
  */
+@OnlyIn(Dist.CLIENT)
 public abstract class ScreenCallback {
 
-    UIManager host;
+    UIManager mHost;
 
     protected ScreenCallback() {
     }
 
+    /**
+     * Start the lifecycle of application user interface with this callback and create views.
+     * This method must be called from client main thread.
+     * <p>
+     * This is served as a local interaction model, the server will not intersect with this before.
+     * <p>
+     * Note that this callback object can be restarted even it was dead. But in this case,
+     * you need to pay special attention to the lifecycle, since it is not associated with this object.
+     */
+    public final void start() {
+        mHost.openGui(this);
+    }
+
     public abstract void onCreate();
 
-    public void setContentView(View view, ViewGroup.LayoutParams params) {
-        host.setContentView(view, params);
+    /**
+     * Set the content view for the screen, this is the top-level view that users can add.
+     * After this method is called, all child views of the root view are removed.
+     * <p>
+     * Note that the layout params match the root view (a container view), it must be a subclass
+     * of FrameLayout, you can use {@link icyllis.modernui.widget.FrameLayout.LayoutParams} safely.
+     *
+     * @param view   content view
+     * @param params layout params of content view
+     */
+    public void setContentView(@Nonnull View view, @Nonnull ViewGroup.LayoutParams params) {
+        mHost.setContentView(view, params);
     }
 }

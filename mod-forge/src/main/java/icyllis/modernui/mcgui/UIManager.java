@@ -32,6 +32,7 @@ import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.platform.NativeImage;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
@@ -43,6 +44,7 @@ import icyllis.modernui.view.*;
 import icyllis.modernui.widget.DecorView;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.CrashReport;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.screens.Screen;
@@ -69,6 +71,7 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
@@ -144,7 +147,7 @@ public final class UIManager extends ViewRootBase {
     private PointerIcon mOldCursor = PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT);
     private PointerIcon mNewCursor = mOldCursor;
 
-    private final Matrix4 mProjectionMatrix = new Matrix4();
+    final Matrix4 mProjectionMatrix = new Matrix4();
 
     private final Predicate<? super TimedAction> mUiHandler = task -> task.execute(mUptimeMillis);
 
@@ -189,7 +192,7 @@ public final class UIManager extends ViewRootBase {
      * @param callback the application user interface
      * @see #start(MuiScreen)
      */
-    public void openGui(@Nonnull ScreenCallback callback) {
+    void openGui(@Nonnull ScreenCallback callback) {
         mCallback = callback;
         minecraft.setScreen(new SimpleScreen(this));
     }
@@ -225,7 +228,7 @@ public final class UIManager extends ViewRootBase {
      *
      * @return frame time in milliseconds
      */
-    public long getFrameTimeMillis() {
+    public long getFrameTime() {
         return mFrameTimeMillis;
     }
 
@@ -237,7 +240,7 @@ public final class UIManager extends ViewRootBase {
     // Called when open a screen from Modern UI, or back to the screen
     void start(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
-            mCallback.host = this;
+            mCallback.mHost = this;
             post(mCallback::onCreate);
         }
         mScreen = screen;
@@ -248,7 +251,7 @@ public final class UIManager extends ViewRootBase {
         resize();
     }
 
-    void setContentView(View view, ViewGroup.LayoutParams params) {
+    void setContentView(@Nonnull View view, @Nonnull ViewGroup.LayoutParams params) {
         mDecor.removeAllViews();
         mDecor.addView(view, params);
     }
@@ -525,15 +528,16 @@ public final class UIManager extends ViewRootBase {
         }
         switch (event.getKey()) {
             case GLFW_KEY_C:
-                // take a screenshot, MSAA framebuffer doesn't support that
-                /*Bitmap bitmap = Bitmap.download(Bitmap.Format.RGBA, mFramebuffer, true);
+                // take a screenshot from MSAA framebuffer
+                GLTexture sampled = GLFramebuffer.swap(mFramebuffer, GL_COLOR_ATTACHMENT0);
+                NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);
                 Util.ioPool().execute(() -> {
-                    try (bitmap) {
-                        bitmap.saveDialog(Bitmap.SaveFormat.PNG, 0);
+                    try (image) {
+                        image.saveDialog(NativeImage.SaveFormat.PNG, 0);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
-                });*/
+                });
                 break;
 
             case GLFW_KEY_H:
@@ -605,7 +609,7 @@ public final class UIManager extends ViewRootBase {
         }
     }
 
-    //TODO
+    //TODO directly use code points
     boolean charTyped(char ch) {
         /*if (popup != null) {
             return popup.charTyped(codePoint, modifiers);
@@ -675,7 +679,7 @@ public final class UIManager extends ViewRootBase {
                 glDisable(GL_STENCIL_TEST);
             }
         }
-        GLTexture texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+        GLTexture texture = GLFramebuffer.swap(framebuffer, GL_COLOR_ATTACHMENT0);
 
         // draw MSAA off-screen result to Minecraft main framebuffer (not the default framebuffer)
         RenderSystem.defaultBlendFunc();
@@ -683,7 +687,7 @@ public final class UIManager extends ViewRootBase {
 
         // do alpha fade in
         int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
-        canvas.drawTexture(texture, 0, 0, width, height, alpha << 24 | 0xffffff, true);
+        canvas.drawLayer(texture, width, height, alpha << 24 | 0xffffff, true);
         canvas.draw(null);
 
         glBindVertexArray(oldVertexArray);
@@ -761,7 +765,7 @@ public final class UIManager extends ViewRootBase {
         mAnimationTasks.clear();
         mScreen = null;
         if (mCallback != null) {
-            mCallback.host = null;
+            mCallback.mHost = null;
             mCallback = null;
         }
         updatePointerIcon(null);

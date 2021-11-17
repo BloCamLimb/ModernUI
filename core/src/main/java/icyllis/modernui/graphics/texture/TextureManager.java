@@ -63,18 +63,6 @@ public class TextureManager {
     }
 
     /**
-     * Get or create an OpenGL 2D texture from the given resource.
-     *
-     * @param namespace the application namespace
-     * @param subPath   the sub path to the resource, parent is 'textures'
-     * @return texture
-     */
-    @Nonnull
-    public GLTexture getOrCreate(@Nonnull String namespace, @Nonnull String subPath) {
-        return getOrCreate(namespace, "textures/" + subPath, CACHE_MASK | MIPMAP_MASK);
-    }
-
-    /**
      * Get or create an OpenGL 2D texture from the given resource. {@link #CACHE_MASK} will use
      * cache or create into the cache. {@link #MIPMAP_MASK} will generate mipmaps for
      * the resource texture.
@@ -87,19 +75,19 @@ public class TextureManager {
     @Nonnull
     public GLTexture getOrCreate(@Nonnull String namespace, @Nonnull String path, int flags) {
         final GLTexture texture;
-        synchronized (mLock) {
-            Map<String, GLTexture> cache = null;
-            if ((flags & CACHE_MASK) != 0) {
-                cache = mTextures.computeIfAbsent(namespace, n -> new HashMap<>());
+        if ((flags & CACHE_MASK) != 0) {
+            synchronized (mLock) {
+                Map<String, GLTexture> cache = mTextures.computeIfAbsent(namespace, n -> new HashMap<>());
                 GLTexture entry = cache.get(path);
                 if (entry != null) {
                     return entry;
+                } else {
+                    texture = new GLTexture(GLWrapper.GL_TEXTURE_2D);
+                    cache.put(path, texture);
                 }
             }
+        } else {
             texture = new GLTexture(GLWrapper.GL_TEXTURE_2D);
-            if (cache != null) {
-                cache.put(path, texture);
-            }
         }
         try (InputStream stream = ModernUI.get().getResourceAsStream(namespace, path)) {
             NativeImage image = NativeImage.decode(null, stream);

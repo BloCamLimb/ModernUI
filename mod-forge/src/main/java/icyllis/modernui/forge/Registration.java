@@ -26,13 +26,15 @@ import icyllis.modernui.mcgui.UIManager;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettings;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.test.TestMenu;
+import icyllis.modernui.test.TestContainerMenu;
+import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.test.TestUI;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.textmc.TextRenderType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Option;
 import net.minecraft.client.ProgressOption;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.network.chat.TextComponent;
@@ -89,7 +91,7 @@ final class Registration {
 
     @SubscribeEvent
     static void registerMenus(@Nonnull RegistryEvent.Register<MenuType<?>> event) {
-        event.getRegistry().register(IForgeContainerType.create(TestMenu::new)
+        event.getRegistry().register(IForgeContainerType.create(TestContainerMenu::new)
                 .setRegistryName("test"));
     }
 
@@ -244,7 +246,11 @@ final class Registration {
     @SubscribeEvent
     static void onMenuOpen(@Nonnull OpenMenuEvent event) {
         if (event.getMenu().getType() == MuiRegistries.TEST_MENU) {
-            event.setCallback(new TestUI());
+            if (Screen.hasControlDown()) {
+                event.setCallback(new TestPauseUI());
+            } else {
+                event.setCallback(new TestUI());
+            }
         }
     }
 

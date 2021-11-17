@@ -20,17 +20,16 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.forge.MuiForgeBridge;
 import icyllis.modernui.forge.MuiRegistries;
+import icyllis.modernui.mcgui.ContainerMenu;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
-public class TestMenu extends AbstractContainerMenu {
+public class TestContainerMenu extends ContainerMenu {
 
     /**
      * Constructor to create the container menu on client side.
@@ -38,9 +37,9 @@ public class TestMenu extends AbstractContainerMenu {
      * @param containerId the id representing the menu in communication model
      * @param inventory   player inventory (on client side)
      * @param data        additional data sent by server
-     * @see MuiForgeBridge#openMenu(ServerPlayer, MenuConstructor, Consumer)
+     * @see MuiForgeBridge#openMenu(Player, MenuConstructor, Consumer)
      */
-    public TestMenu(int containerId, @Nonnull Inventory inventory, @Nonnull FriendlyByteBuf data) {
+    public TestContainerMenu(int containerId, @Nonnull Inventory inventory, @Nonnull FriendlyByteBuf data) {
         super(MuiRegistries.TEST_MENU, containerId);
     }
 
@@ -50,9 +49,9 @@ public class TestMenu extends AbstractContainerMenu {
      * @param containerId the id representing the menu in communication model
      * @param inventory   player inventory (on server side)
      * @param player      server player
-     * @see MuiForgeBridge#openMenu(ServerPlayer, MenuConstructor, Consumer)
+     * @see MuiForgeBridge#openMenu(Player, MenuConstructor, Consumer)
      */
-    public TestMenu(int containerId, @Nonnull Inventory inventory, @Nonnull Player player) {
+    public TestContainerMenu(int containerId, @Nonnull Inventory inventory, @Nonnull Player player) {
         super(MuiRegistries.TEST_MENU, containerId);
     }
 
@@ -64,17 +63,5 @@ public class TestMenu extends AbstractContainerMenu {
     @Override
     public void removed(@Nonnull Player player) {
         super.removed(player);
-    }
-
-    /**
-     * Determines whether the container menu should be closed. This method is called every tick
-     * on server thread.
-     *
-     * @param player the player using this menu
-     * @return valid or not, {@code false} to close
-     */
-    @Override
-    public boolean stillValid(@Nonnull Player player) {
-        return true;
     }
 }
