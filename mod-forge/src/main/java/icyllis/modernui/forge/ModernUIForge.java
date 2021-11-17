@@ -25,6 +25,7 @@ import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.LayoutCache;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.TextLayoutEngine;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
@@ -57,6 +58,7 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
+import java.util.concurrent.Executor;
 
 @Mod(ModernUI.ID)
 public final class ModernUIForge extends ModernUI {
@@ -220,6 +222,12 @@ public final class ModernUIForge extends ModernUI {
     @Override
     public ReadableByteChannel getResourceAsChannel(@Nonnull String namespace, @Nonnull String path) throws IOException {
         return Channels.newChannel(getResourceAsStream(namespace, path));
+    }
+
+    @Nonnull
+    @Override
+    public Executor getBackgroundExecutor() {
+        return Util.backgroundExecutor();
     }
 
     public static boolean isDeveloperMode() {

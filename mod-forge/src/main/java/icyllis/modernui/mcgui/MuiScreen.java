@@ -21,5 +21,5 @@ package icyllis.modernui.mcgui;
 /**
  * A convenient way to check instanceof MenuScreen or SimpleScreen
  */
-public interface MuiScreen {
+interface MuiScreen {
 }

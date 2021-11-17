@@ -77,12 +77,11 @@ public final class GLFramebuffer extends GLObject {
      * texture. This is used with a MSAA target for blending with other targets.
      *
      * @param framebuffer source framebuffer
+     * @param colorBuffer color buffer
      * @return sampled texture
      */
     @Nonnull
-    public static GLTexture swap(@Nonnull GLFramebuffer framebuffer) {
-        framebuffer.bindRead();
-        int colorBuffer = glGetInteger(GL_READ_BUFFER);
+    public static GLTexture swap(@Nonnull GLFramebuffer framebuffer, int colorBuffer) {
         Attachment src = framebuffer.getAttachment(colorBuffer);
         int w = src.getWidth();
         int h = src.getHeight();

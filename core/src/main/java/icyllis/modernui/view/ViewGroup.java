@@ -195,7 +195,15 @@ public abstract class ViewGroup extends View implements ViewParent {
 
     @Override
     public final void layout(int l, int t, int r, int b) {
-        super.layout(l, t, r, b);
+        if (!mSuppressLayout && (mTransition == null || !mTransition.isChangingLayout())) {
+            if (mTransition != null) {
+                mTransition.layoutChange(this);
+            }
+            super.layout(l, t, r, b);
+        } else {
+            // record the fact that we noop'd it; request layout when transition finishes
+            mLayoutCalledWhileSuppressed = true;
+        }
     }
 
     @Override
@@ -2578,30 +2586,32 @@ public abstract class ViewGroup extends View implements ViewParent {
         }
     }
 
-    private final LayoutTransition.TransitionListener mLayoutTransitionListener =
-            new LayoutTransition.TransitionListener() {
-                @Override
-                public void startTransition(LayoutTransition transition, ViewGroup container,
-                                            View view, int transitionType) {
-                    // We only care about disappearing items, since we need special logic to keep
-                    // those items visible after they've been 'removed'
-                    if (transitionType == LayoutTransition.DISAPPEARING) {
-                        startViewTransition(view);
-                    }
-                }
+    private final LayoutTransitionListener mLayoutTransitionListener = new LayoutTransitionListener();
 
-                @Override
-                public void endTransition(LayoutTransition transition, ViewGroup container,
-                                          View view, int transitionType) {
-                    if (mLayoutCalledWhileSuppressed && !transition.isChangingLayout()) {
-                        requestLayout();
-                        mLayoutCalledWhileSuppressed = false;
-                    }
-                    if (transitionType == LayoutTransition.DISAPPEARING && mTransitioningViews != null) {
-                        endViewTransition(view);
-                    }
-                }
-            };
+    private class LayoutTransitionListener implements LayoutTransition.TransitionListener {
+
+        @Override
+        public void startTransition(LayoutTransition transition, ViewGroup container,
+                                    View view, int transitionType) {
+            // We only care about disappearing items, since we need special logic to keep
+            // those items visible after they've been 'removed'
+            if (transitionType == LayoutTransition.DISAPPEARING) {
+                startViewTransition(view);
+            }
+        }
+
+        @Override
+        public void endTransition(LayoutTransition transition, ViewGroup container,
+                                  View view, int transitionType) {
+            if (mLayoutCalledWhileSuppressed && !transition.isChangingLayout()) {
+                requestLayout();
+                mLayoutCalledWhileSuppressed = false;
+            }
+            if (transitionType == LayoutTransition.DISAPPEARING && mTransitioningViews != null) {
+                endViewTransition(view);
+            }
+        }
+    }
 
     /**
      * Tells this ViewGroup to suppress all layout() calls until layout

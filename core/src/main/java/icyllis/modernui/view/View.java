@@ -2619,7 +2619,17 @@ public class View implements Drawable.Callback {
      */
     @CallSuper
     protected void onFocusChanged(boolean gainFocus, int direction) {
+        if (!gainFocus) {
+            if (isPressed()) {
+                setPressed(false);
+            }
+        }
 
+        invalidate();
+        ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnFocusChangeListener != null) {
+            li.mOnFocusChangeListener.onFocusChange(this, gainFocus);
+        }
     }
 
     /**
@@ -4622,10 +4632,87 @@ public class View implements Drawable.Callback {
         if (background == mBackground) {
             return;
         }
-        mBackground = background;
-        if (background != null) {
-            background.setCallback(this);
+
+        boolean requestLayout = false;
+
+        /*
+         * Regardless of whether we're setting a new background or not, we want
+         * to clear the previous drawable. setVisible first while we still have the callback set.
+         */
+        if (mBackground != null) {
+            mBackground.setCallback(null);
         }
+
+        if (background != null) {
+            Rect padding = sThreadLocal.get();
+            if (padding == null) {
+                padding = new Rect();
+                sThreadLocal.set(padding);
+            }
+            resetResolvedDrawablesInternal();
+            background.setLayoutDirection(getLayoutDirection());
+            if (background.getPadding(padding)) {
+                resetResolvedPadding();
+                if (background.getLayoutDirection() == LAYOUT_DIRECTION_RTL) {
+                    mUserPaddingLeftInitial = padding.right;
+                    mUserPaddingRightInitial = padding.left;
+                    internalSetPadding(padding.right, padding.top, padding.left, padding.bottom);
+                } else {
+                    mUserPaddingLeftInitial = padding.left;
+                    mUserPaddingRightInitial = padding.right;
+                    internalSetPadding(padding.left, padding.top, padding.right, padding.bottom);
+                }
+                mLeftPaddingDefined = false;
+                mRightPaddingDefined = false;
+            }
+
+            // Compare the minimum sizes of the old Drawable and the new.  If there isn't an old or
+            // if it has a different minimum size, we should layout again
+            if (mBackground == null
+                    || mBackground.getMinimumHeight() != background.getMinimumHeight()
+                    || mBackground.getMinimumWidth() != background.getMinimumWidth()) {
+                requestLayout = true;
+            }
+
+            // Set mBackground before we set this as the callback and start making other
+            // background drawable state change calls. In particular, the setVisible call below
+            // can result in drawables attempting to start animations or otherwise invalidate,
+            // which requires the view set as the callback (us) to recognize the drawable as
+            // belonging to it as per verifyDrawable.
+            mBackground = background;
+
+            // Set callback last, since the view may still be initializing.
+            background.setCallback(this);
+
+            if ((mPrivateFlags & PFLAG_SKIP_DRAW) != 0) {
+                mPrivateFlags &= ~PFLAG_SKIP_DRAW;
+                requestLayout = true;
+            }
+        } else {
+            /* Remove the background */
+            mBackground = null;
+            if ((mViewFlags & WILL_NOT_DRAW) != 0) {
+                mPrivateFlags |= PFLAG_SKIP_DRAW;
+            }
+
+            /*
+             * When the background is set, we try to apply its padding to this
+             * View. When the background is removed, we don't touch this View's
+             * padding. This is noted in the Javadocs. Hence, we don't need to
+             * requestLayout(), the invalidate() below is sufficient.
+             */
+
+            // The old background's minimum size could have affected this
+            // View's layout, so let's requestLayout
+            requestLayout = true;
+        }
+
+        if (requestLayout) {
+            requestLayout();
+        }
+
+        mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+        invalidate();
     }
 
     /**

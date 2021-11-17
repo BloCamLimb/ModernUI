@@ -18,9 +18,10 @@
 
 package icyllis.modernui.mcgui;
 
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.entity.player.Inventory;
+import icyllis.modernui.forge.MuiForgeBridge;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.Cancelable;
@@ -30,13 +31,13 @@ import net.minecraftforge.fmllegacy.network.IContainerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 /**
  * This event occurred when the server requires the client to open a user
  * interface to display a container menu in a world, this event is cancelled
  * after setting the application screen. The menu is created on the client by
- * the registered {@link IContainerFactory#create(int, Inventory, FriendlyByteBuf)
- * factory},
+ * the registered {@link IContainerFactory},
  * which contains custom network data from server, you can set the application
  * screen through the data and the menu type.  For example:
  *
@@ -51,6 +52,8 @@ import javax.annotation.Nullable;
  * <p>
  * This event will be only posted to your own mod event bus on client main thread.
  * If no screen set along with this event, the server container menu will be closed.
+ *
+ * @see MuiForgeBridge#openMenu(Player, MenuConstructor, Consumer)
  */
 @Cancelable
 @OnlyIn(Dist.CLIENT)
@@ -62,7 +65,7 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
     @Nullable
     private ScreenCallback mCallback;
 
-    public OpenMenuEvent(@Nonnull AbstractContainerMenu menu) {
+    OpenMenuEvent(@Nonnull AbstractContainerMenu menu) {
         mMenu = menu;
     }
 

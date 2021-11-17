@@ -21,7 +21,6 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.mcgui.ScreenCallback;
 import icyllis.modernui.mcgui.UIManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -41,7 +40,7 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 /**
- * The bridge for connecting to the compatibility layer for Minecraft Forge mods.
+ * The bridge for connecting Minecraft Forge mods to Modern UI.
  */
 public final class MuiForgeBridge {
 
@@ -62,12 +61,15 @@ public final class MuiForgeBridge {
     /**
      * Open a container menu on server, generate an id represents the next screen (due to network latency).
      * Then send a packet to the player to request the application user interface on client.
+     * This method must be called from server main thread.
      * <p>
      * This is served as a client/server interaction model, there must be a running server.
      *
      * @param player   the server player to open the screen for
      * @param provider a provider to create a menu on server side
      * @see #openMenu(Player, MenuConstructor, Consumer)
+     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
+     * @see icyllis.modernui.mcgui.OpenMenuEvent
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider) {
         openMenu(player, provider, (Consumer<FriendlyByteBuf>) null);
@@ -76,6 +78,7 @@ public final class MuiForgeBridge {
     /**
      * Open a container menu on server, generate an id represents the next screen (due to network latency).
      * Then send a packet to the player to request the application user interface on client.
+     * This method must be called from server main thread.
      * <p>
      * This is served as a client/server interaction model, there must be a running server.
      *
@@ -85,6 +88,7 @@ public final class MuiForgeBridge {
      *                 the menu supplier that registered on client
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
+     * @see icyllis.modernui.mcgui.OpenMenuEvent
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nonnull BlockPos pos) {
         openMenu(player, provider, buf -> buf.writeBlockPos(pos));
@@ -93,6 +97,7 @@ public final class MuiForgeBridge {
     /**
      * Open a container menu on server, generate an id represents the next screen (due to network latency).
      * Then send a packet to the player to request the application user interface on client.
+     * This method must be called from server main thread.
      * <p>
      * This is served as a client/server interaction model, there must be a running server.
      *
@@ -101,6 +106,7 @@ public final class MuiForgeBridge {
      * @param writer   a data writer to send additional data to client, this will be passed
      *                 to the menu supplier (IContainerFactory) that registered on client
      * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
+     * @see icyllis.modernui.mcgui.OpenMenuEvent
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
@@ -137,13 +143,13 @@ public final class MuiForgeBridge {
     }
 
     /**
-     * Set the application user interface with the given callback and create views.
+     * Get synced frame time, update every frame.
      *
-     * @param callback the host callbacks
+     * @return frame time in milliseconds
      */
     @OnlyIn(Dist.CLIENT)
-    public void openGui(@Nonnull ScreenCallback callback) {
-        sUIManager.openGui(callback);
+    public static long getFrameTime() {
+        return sUIManager.getFrameTime();
     }
 
     @OnlyIn(Dist.CLIENT)
