@@ -19,13 +19,14 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.LayoutTransition;
+import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.mcgui.ScreenCallback;
+import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
@@ -63,7 +64,7 @@ public class TestPauseUI extends ScreenCallback {
             var button = new NavigationButton(mButtonIcon, i * 32);
             var params = new LinearLayout.LayoutParams(c.getViewSize(32), c.getViewSize(32));
             button.setClickable(true);
-            params.setMargins(i == 7 ? 26 : 2, 2, 2, 6);
+            params.setMarginsRelative(i == 7 ? 26 : 2, 2, 2, 6);
             if (i == 0 || i == 7) {
                 navigation.addView(button, params);
             } else {
@@ -82,9 +83,16 @@ public class TestPauseUI extends ScreenCallback {
         tab.setBackground(new TabBackground());
 
         for (int i = 0; i < 3; i++) {
-            var field = new TextView();
-            field.setText("", TextView.BufferType.EDITABLE);
-            field.setHint(switch (i) {
+            var v = new TextView();
+            v.setText(switch (i) {
+                case 0:
+                    yield "Flux Point";
+                case 1:
+                    yield "0";
+                default:
+                    yield "800000";
+            }, TextView.BufferType.EDITABLE);
+            v.setHint(switch (i) {
                 case 0:
                     yield "Flux Point";
                 case 1:
@@ -92,18 +100,29 @@ public class TestPauseUI extends ScreenCallback {
                 default:
                     yield "Transfer Limit";
             });
-            field.setFocusableInTouchMode(true);
-            field.setMovementMethod(ArrowKeyMovementMethod.getInstance());
-            field.setSingleLine();
-            field.setBackground(new TextFieldBackground());
-            field.setGravity(Gravity.CENTER_VERTICAL);
-            field.setTextSize(16);
+            v.setFocusableInTouchMode(true);
+            v.setMovementMethod(ArrowKeyMovementMethod.getInstance());
+            v.setSingleLine();
+            v.setBackground(new TextFieldBackground());
+            v.setGravity(Gravity.CENTER_VERTICAL);
+            v.setTextSize(16);
+            v.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                    new TextFieldStart(mButtonIcon, (((i + 1) % 3) + 1) * 64), null, null, null);
 
             var params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.setMargins(c.getViewSize(20), c.getViewSize(i == 0 ? 50 : 2), c.getViewSize(20), c.getViewSize(2));
+            params.setMargins(c.getViewSize(20), c.getViewSize(i == 0 ? 50 : 2), c.getViewSize(20),
+                    c.getViewSize(2));
 
-            content.postDelayed(() -> tab.addView(field, params), (i + 1) * 60);
+            content.postDelayed(() -> tab.addView(v, params), (i + 1) * 100);
+        }
+
+        {
+            var v = new ConnectorView(mButtonIcon);
+            var params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.MATCH_PARENT);
+            params.setMargins(c.getViewSize(8), c.getViewSize(2), c.getViewSize(8), c.getViewSize(8));
+            content.postDelayed(() -> tab.addView(v, params), 400);
         }
 
         int tabSize = c.getViewSize(340);
@@ -116,9 +135,12 @@ public class TestPauseUI extends ScreenCallback {
     private static class TabBackground extends Drawable {
 
         private final float mRadius;
+        private final TextPaint mTextPaint;
 
         public TabBackground() {
             mRadius = ViewConfiguration.get().getViewSize(16);
+            mTextPaint = new TextPaint();
+            mTextPaint.setFontSize(ViewConfiguration.get().getTextSize(16));
         }
 
         @Override
@@ -134,6 +156,47 @@ public class TestPauseUI extends ScreenCallback {
             paint.setStrokeWidth(stroke);
             paint.setColor(NETWORK_COLOR);
             canvas.drawRoundRect(b.left + start, b.top + start, b.right - start, b.bottom - start, mRadius, paint);
+
+            canvas.drawText("BloCamLimb's Network", 0, 20, b.exactCenterX(), b.top + mRadius * 1.8f,
+                    Gravity.CENTER_HORIZONTAL,
+                    mTextPaint);
+        }
+    }
+
+    private static class TextFieldStart extends Drawable {
+
+        private final Image mImage;
+        private final int mSrcLeft;
+        private final int mSize;
+
+        public TextFieldStart(Image image, int srcLeft) {
+            mImage = image;
+            mSrcLeft = srcLeft;
+            mSize = ViewConfiguration.get().getViewSize(24);
+        }
+
+        @Override
+        public void draw(@Nonnull Canvas canvas) {
+            Rect b = getBounds();
+            canvas.drawImage(mImage, mSrcLeft, 192, mSrcLeft + 64, 256, b.left, b.top, b.right, b.bottom, null);
+        }
+
+        @Override
+        public int getIntrinsicWidth() {
+            return mSize;
+        }
+
+        @Override
+        public int getIntrinsicHeight() {
+            return mSize;
+        }
+
+        @Override
+        public boolean getPadding(@Nonnull Rect padding) {
+            int h = Math.round(mSize / 4f);
+            int v = Math.round(mSize / 6f);
+            padding.set(h, v, h, v);
+            return true;
         }
     }
 
@@ -159,7 +222,7 @@ public class TestPauseUI extends ScreenCallback {
 
         @Override
         public boolean getPadding(@Nonnull Rect padding) {
-            int h = Math.round(mRadius * 2);
+            int h = Math.round(mRadius);
             int v = Math.round(mRadius * 0.5f);
             padding.set(h, v, h, v);
             return true;
@@ -188,6 +251,140 @@ public class TestPauseUI extends ScreenCallback {
         public void onHoverChanged(boolean hovered) {
             super.onHoverChanged(hovered);
             invalidate();
+        }
+    }
+
+    private static class ConnectorView extends View {
+
+        private final Image mImage;
+        private final int mSize;
+        private float mRodLength;
+        private final Paint mBoxPaint = new Paint();
+
+        private final ObjectAnimator mRodAnimator;
+        private final ObjectAnimator mBoxAnimator;
+
+        public ConnectorView(Image image) {
+            mImage = image;
+            mSize = ViewConfiguration.get().getViewSize(32);
+            mRodAnimator = ObjectAnimator.ofFloat(this, new FloatProperty<>() {
+                @Override
+                public void setValue(@Nonnull ConnectorView target, float value) {
+                    target.mRodLength = value;
+                    invalidate();
+                }
+
+                @Override
+                public Float get(@Nonnull ConnectorView target) {
+                    return target.mRodLength;
+                }
+            }, 0, ViewConfiguration.get().getViewSize(32));
+            mRodAnimator.setInterpolator(TimeInterpolator.DECELERATE);
+            mRodAnimator.setDuration(400);
+            mRodAnimator.addListener(new Animator.AnimatorListener() {
+                @Override
+                public void onAnimationEnd(@Nonnull Animator animation, boolean isReverse) {
+                    mBoxAnimator.start();
+                }
+            });
+            mBoxAnimator = ObjectAnimator.ofInt(mBoxPaint, new IntProperty<>() {
+                @Override
+                public void setValue(@Nonnull Paint target, int value) {
+                    target.setAlpha(value);
+                    invalidate();
+                }
+
+                @Override
+                public Integer get(@Nonnull Paint target) {
+                    return target.getColor() >>> 24;
+                }
+            }, 0, 128);
+            mRodAnimator.setInterpolator(TimeInterpolator.LINEAR);
+            mBoxAnimator.setDuration(400);
+            mBoxPaint.setRGBA(64, 64, 64, 0);
+        }
+
+        @Override
+        protected void onAttachedToWindow() {
+            super.onAttachedToWindow();
+            mRodAnimator.start();
+        }
+
+        @Override
+        protected void onDraw(@Nonnull Canvas canvas) {
+            Paint paint = Paint.take();
+            paint.setColor(NETWORK_COLOR);
+            paint.setAlpha(192);
+            paint.setStrokeWidth(mSize / 8f);
+
+            float centerX = getWidth() / 2f;
+            float centerY = getHeight() / 2f;
+
+            int boxAlpha = mBoxPaint.getColor() >>> 24;
+
+            float px1l = centerX - (15 / 64f) * mSize;
+            float py1 = centerY + (8 / 64f) * mSize;
+            canvas.save();
+            canvas.rotate(22.5f, px1l, py1);
+            canvas.drawRoundLine(px1l, py1, px1l - mRodLength * 2, py1, paint);
+            canvas.restore();
+
+            if (boxAlpha > 0) {
+                canvas.drawRect(px1l - mSize * 2.9f, py1 - mSize * 1.1f,
+                        px1l - mSize * 1.9f, py1 - mSize * 0.1f, mBoxPaint);
+            }
+
+            float px1r = centerX + (15 / 64f) * mSize;
+            canvas.save();
+            canvas.rotate(-22.5f, px1r, py1);
+            canvas.drawRoundLine(px1r, py1, px1r + mRodLength * 2, py1, paint);
+            canvas.restore();
+
+            if (boxAlpha > 0) {
+                canvas.drawRect(px1r + mSize * 1.9f, py1 - mSize * 1.1f,
+                        px1r + mSize * 2.9f, py1 - mSize * 0.1f, mBoxPaint);
+            }
+
+            float py2 = centerY + (19 / 64f) * mSize;
+            canvas.drawRoundLine(centerX, py2, centerX, py2 + mRodLength, paint);
+
+            if (boxAlpha > 0) {
+                canvas.drawRect(centerX - mSize * .5f, py2 + mSize * 1.1f,
+                        centerX + mSize * .5f, py2 + mSize * 2.1f, mBoxPaint);
+            }
+
+            float offset = mSize / 2f;
+            canvas.drawImage(mImage, 0, 192, 64, 256,
+                    centerX - offset, centerY - offset,
+                    centerX + offset, centerY + offset, null);
+
+            canvas.save();
+            canvas.rotate(-22.5f, px1l, py1);
+            canvas.drawRoundLine(px1l, py1, px1l - mRodLength * 2, py1, paint);
+            canvas.restore();
+
+            if (boxAlpha > 0) {
+                canvas.drawRect(px1l - mSize * 2.9f, py1 + mSize * 0.1f,
+                        px1l - mSize * 1.9f, py1 + mSize * 1.1f, mBoxPaint);
+            }
+
+            canvas.save();
+            canvas.rotate(22.5f, px1r, py1);
+            canvas.drawRoundLine(px1r, py1, px1r + mRodLength * 2, py1, paint);
+            canvas.restore();
+
+            if (boxAlpha > 0) {
+                canvas.drawRect(px1r + mSize * 1.9f, py1 + mSize * 0.1f,
+                        px1r + mSize * 2.9f, py1 + mSize * 1.1f, mBoxPaint);
+            }
+
+            py2 = centerY - (19 / 64f) * mSize;
+            canvas.drawRoundLine(centerX, py2, centerX, py2 - mRodLength, paint);
+
+            if (boxAlpha > 0) {
+                canvas.drawRect(centerX - mSize * .5f, py2 - mSize * 2.1f,
+                        centerX + mSize * .5f, py2 - mSize * 1.1f, mBoxPaint);
+            }
         }
     }
 }

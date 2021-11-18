@@ -34,7 +34,6 @@ import icyllis.modernui.textmc.TextRenderType;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Option;
 import net.minecraft.client.ProgressOption;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.network.chat.TextComponent;
@@ -245,12 +244,11 @@ final class Registration {
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void onMenuOpen(@Nonnull OpenMenuEvent event) {
-        if (event.getMenu().getType() == MuiRegistries.TEST_MENU) {
-            if (Screen.hasControlDown()) {
-                event.setCallback(new TestPauseUI());
-            } else {
+        if (event.getMenu() instanceof TestContainerMenu c) {
+            if (c.isDiamond())
                 event.setCallback(new TestUI());
-            }
+            else
+                event.setCallback(new TestPauseUI());
         }
     }
 

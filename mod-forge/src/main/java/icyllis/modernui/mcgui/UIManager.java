@@ -34,7 +34,6 @@ import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.NativeImage;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
@@ -540,16 +539,24 @@ public final class UIManager extends ViewRootBase {
                 });
                 break;
 
-            case GLFW_KEY_H:
+            /*case GLFW_KEY_H:
                 TestMain.sTrack.play();
                 break;
 
             case GLFW_KEY_J:
                 TestMain.sTrack.pause();
+                break;*/
+
+            case GLFW_KEY_N:
+                post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_RTL));
+                break;
+
+            case GLFW_KEY_M:
+                post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
                 break;
 
             case GLFW_KEY_G:
-                if (minecraft.screen == null && minecraft.hasSingleplayerServer() &&
+                if (minecraft.screen == null && minecraft.isLocalServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished()) {
                     openGui(new TestPauseUI());
                 }

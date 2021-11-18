@@ -57,8 +57,10 @@ final class EventHandler {
     @SubscribeEvent
     static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
         if (ModernUIForge.isDeveloperMode()) {
-            if (event.getSide().isServer() && event.getItemStack().getItem() == Items.DIAMOND) {
-                MuiForgeBridge.openMenu(event.getPlayer(), TestContainerMenu::new);
+            final boolean diamond;
+            if (event.getSide().isServer() && ((diamond = event.getItemStack().is(Items.DIAMOND))
+                    || event.getItemStack().is(Items.EMERALD))) {
+                MuiForgeBridge.openMenu(event.getPlayer(), TestContainerMenu::new, buf -> buf.writeBoolean(diamond));
             }
         }
     }

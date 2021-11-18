@@ -18,12 +18,10 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.platform.RenderCore;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -204,17 +202,18 @@ public abstract class ViewRootBase implements ViewParent {
         int width = mWidth;
         int height = mHeight;
         if (mLayoutRequested || width != host.getMeasuredWidth() || height != host.getMeasuredHeight()) {
-            long startTime = RenderCore.timeNanos();
+            //long startTime = RenderCore.timeNanos();
 
             int widthSpec = MeasureSpec.makeMeasureSpec(width, MeasureSpec.EXACTLY);
             int heightSpec = MeasureSpec.makeMeasureSpec(height, MeasureSpec.EXACTLY);
 
             host.measure(widthSpec, heightSpec);
 
+            assert width == host.getMeasuredWidth() && height == host.getMeasuredHeight();
             host.layout(0, 0, host.getMeasuredWidth(), host.getMeasuredHeight());
 
-            ModernUI.LOGGER.info(MARKER, "Layout done in {} ms, window size: {}x{}",
-                    (RenderCore.timeNanos() - startTime) / 1000000.0, width, height);
+            /*ModernUI.LOGGER.info(MARKER, "Layout done in {} ms, window size: {}x{}",
+                    (RenderCore.timeNanos() - startTime) / 1000000.0, width, height);*/
             mLayoutRequested = false;
         }
 

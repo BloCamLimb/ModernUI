@@ -375,7 +375,7 @@ public class TestMain {
 
         Rect screenRect = new Rect(0, 0, window.getWidth(), window.getHeight());
 
-        sTrack.play();
+        //sTrack.play();
 
         GLWrapper.glEnable(GL_CULL_FACE);
         GLWrapper.glEnable(GL_BLEND);
@@ -448,7 +448,9 @@ public class TestMain {
                 //textLine.draw(canvas, 32, 400);
                 canvas.translate(40, 360);
                 paint.setRGBA(0, 0, 0, 128);
-                canvas.drawRoundRect(-6, -10, 606, 310, 5, paint);
+                paint.setStyle(Paint.Style.STROKE);
+                paint.setStrokeWidth(8);
+                canvas.drawRoundRect(-6, -10, 606, 310, 12, Gravity.LEFT, paint);
                 dynamicLayout.draw(canvas);
                 canvas.translate(-40, -600);
 
