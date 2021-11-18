@@ -2687,6 +2687,44 @@ public abstract class ViewGroup extends View implements ViewParent {
         super.dispatchDetachedFromWindow();
     }
 
+    /**
+     * Called when a view's visibility has changed. Notify the parent to take any appropriate
+     * action.
+     *
+     * @param child         The view whose visibility has changed
+     * @param oldVisibility The previous visibility value (GONE, INVISIBLE, or VISIBLE).
+     * @param newVisibility The new visibility value (GONE, INVISIBLE, or VISIBLE).
+     * @hide
+     */
+    protected void onChildVisibilityChanged(View child, int oldVisibility, int newVisibility) {
+        if (mTransition != null) {
+            if (newVisibility == VISIBLE) {
+                mTransition.showChild(this, child, oldVisibility);
+            } else {
+                mTransition.hideChild(this, child, newVisibility);
+                if (mTransitioningViews != null && mTransitioningViews.contains(child)) {
+                    // Only track this on disappearing views - appearing views are already visible
+                    // and don't need special handling during drawChild()
+                    if (mVisibilityChangingChildren == null) {
+                        mVisibilityChangingChildren = new ArrayList<View>();
+                    }
+                    mVisibilityChangingChildren.add(child);
+                    addDisappearingView(child);
+                }
+            }
+        }
+    }
+
+    @Override
+    protected void dispatchVisibilityChanged(@Nonnull View changedView, int visibility) {
+        super.dispatchVisibilityChanged(changedView, visibility);
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchVisibilityChanged(changedView, visibility);
+        }
+    }
+
     @Override
     public void tick() {
         final View[] views = mChildren;

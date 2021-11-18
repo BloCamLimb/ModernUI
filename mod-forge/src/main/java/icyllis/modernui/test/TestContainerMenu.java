@@ -31,6 +31,8 @@ import java.util.function.Consumer;
 
 public class TestContainerMenu extends ContainerMenu {
 
+    private boolean mDiamond;
+
     /**
      * Constructor to create the container menu on client side.
      *
@@ -41,6 +43,7 @@ public class TestContainerMenu extends ContainerMenu {
      */
     public TestContainerMenu(int containerId, @Nonnull Inventory inventory, @Nonnull FriendlyByteBuf data) {
         super(MuiRegistries.TEST_MENU, containerId);
+        mDiamond = data.readBoolean();
     }
 
     /**
@@ -63,5 +66,9 @@ public class TestContainerMenu extends ContainerMenu {
     @Override
     public void removed(@Nonnull Player player) {
         super.removed(player);
+    }
+
+    public boolean isDiamond() {
+        return mDiamond;
     }
 }

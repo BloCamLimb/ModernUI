@@ -2234,6 +2234,24 @@ public class View implements Drawable.Callback {
             changed = (changed & ~FOCUSABLE) | focusableChangedByAuto;
         }
 
+        /* Check if the FOCUSABLE bit has changed */
+        if (((changed & FOCUSABLE) != 0) && ((privateFlags & PFLAG_HAS_BOUNDS) != 0)) {
+            if (((old & FOCUSABLE) == FOCUSABLE)
+                    && ((privateFlags & PFLAG_FOCUSED) != 0)) {
+                /* Give up focus if we are no longer focusable */
+                clearFocus();
+            } else if (((old & FOCUSABLE) == NOT_FOCUSABLE)
+                    && ((privateFlags & PFLAG_FOCUSED) == 0)) {
+                /*
+                 * Tell the view system that we are now available to take focus
+                 * if no one else already has it.
+                 */
+                if (mParent != null) {
+                    shouldNotifyFocusableAvailable = canTakeFocus();
+                }
+            }
+        }
+
         final int newVisibility = flags & VISIBILITY_MASK;
         if (newVisibility == VISIBLE) {
             if ((changed & VISIBILITY_MASK) != 0) {
@@ -2249,6 +2267,68 @@ public class View implements Drawable.Callback {
                 // focus. Even if this specific view isn't focusable, it may contain something that
                 // is, so let the root view try to give this focus if nothing else does.
                 shouldNotifyFocusableAvailable = hasSize();
+            }
+        }
+
+        if ((changed & ENABLED_MASK) != 0) {
+            if ((mViewFlags & ENABLED_MASK) == ENABLED) {
+                // a view becoming enabled should notify the parent as long as the view is also
+                // visible and the parent wasn't already notified by becoming visible during this
+                // setFlags invocation.
+                shouldNotifyFocusableAvailable = canTakeFocus();
+            } else {
+                if (isFocused())
+                    clearFocus();
+            }
+        }
+
+        /* Check if the GONE bit has changed */
+        if ((changed & GONE) != 0) {
+            requestLayout();
+
+            if (((mViewFlags & VISIBILITY_MASK) == GONE)) {
+                if (hasFocus()) {
+                    clearFocus();
+                }
+                if (mParent instanceof View) {
+                    // GONE views noop invalidation, so invalidate the parent
+                    ((View) mParent).invalidate();
+                }
+                // Mark the view drawn to ensure that it gets invalidated properly the next
+                // time it is visible and gets invalidated
+                mPrivateFlags |= PFLAG_DRAWN;
+            }
+        }
+
+        /* Check if the VISIBLE bit has changed */
+        if ((changed & INVISIBLE) != 0) {
+            /*
+             * If this view is becoming invisible, set the DRAWN flag so that
+             * the next invalidate() will not be skipped.
+             */
+            mPrivateFlags |= PFLAG_DRAWN;
+
+            if (((mViewFlags & VISIBILITY_MASK) == INVISIBLE)) {
+                // root view becoming invisible shouldn't clear focus and accessibility focus
+                if (getRootView() != this) {
+                    if (hasFocus()) {
+                        clearFocus();
+                    }
+                }
+            }
+        }
+
+        if ((changed & VISIBILITY_MASK) != 0) {
+            if (mParent instanceof ViewGroup parent) {
+                parent.onChildVisibilityChanged(this, (changed & VISIBILITY_MASK),
+                        newVisibility);
+                parent.invalidate();
+            } else if (mParent instanceof View) {
+                ((View) mParent).invalidate();
+            }
+
+            if (mAttachInfo != null) {
+                dispatchVisibilityChanged(this, newVisibility);
             }
         }
 
@@ -5088,6 +5168,42 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Dispatch a view visibility change down the view hierarchy.
+     * ViewGroups should override to route to their children.
+     *
+     * @param changedView The view whose visibility changed. Could be 'this' or
+     *                    an ancestor view.
+     * @param visibility  The new visibility of changedView: {@link #VISIBLE},
+     *                    {@link #INVISIBLE} or {@link #GONE}.
+     */
+    protected void dispatchVisibilityChanged(@Nonnull View changedView,
+                                             int visibility) {
+        onVisibilityChanged(changedView, visibility);
+    }
+
+    /**
+     * Called when the visibility of the view or an ancestor of the view has
+     * changed.
+     *
+     * @param changedView The view whose visibility changed. May be
+     *                    {@code this} or an ancestor view.
+     * @param visibility  The new visibility, one of {@link #VISIBLE},
+     *                    {@link #INVISIBLE} or {@link #GONE}.
+     */
+    protected void onVisibilityChanged(@Nonnull View changedView, int visibility) {
+    }
+
+    /**
+     * Returns the current visibility of the window this view is attached to
+     * (either {@link #GONE}, {@link #INVISIBLE}, or {@link #VISIBLE}).
+     *
+     * @return Returns the current visibility of the view's window.
+     */
+    public final int getWindowVisibility() {
+        return mAttachInfo != null ? mAttachInfo.mWindowVisibility : GONE;
+    }
+
+    /**
      * Dispatch a pointer event.
      * <p>
      * Dispatches touch related pointer events to {@link #onTouchEvent(MotionEvent)} and all
@@ -5177,16 +5293,6 @@ public class View implements Drawable.Callback {
      */
     protected boolean dispatchGenericPointerEvent(MotionEvent event) {
         return false;
-    }
-
-    /**
-     * Returns the current visibility of the window this view is attached to
-     * (either {@link #GONE}, {@link #INVISIBLE}, or {@link #VISIBLE}).
-     *
-     * @return Returns the current visibility of the view's window.
-     */
-    public final int getWindowVisibility() {
-        return mAttachInfo != null ? mAttachInfo.mWindowVisibility : GONE;
     }
 
     /**

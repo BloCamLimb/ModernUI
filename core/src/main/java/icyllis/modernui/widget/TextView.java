@@ -125,6 +125,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     Drawables mDrawables;
 
+    private int mLastLayoutDirection = LAYOUT_DIRECTION_UNDEFINED;
+
     // Do not update following mText/mSpannable/mPrecomputed except for setTextInternal()
     @Nonnull
     private CharSequence mText = "";
@@ -2046,11 +2048,71 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     @Override
     protected void onDraw(@Nonnull Canvas canvas) {
-        if (mLayout == null) {
-            assumeLayout();
+        final int compoundPaddingLeft = getCompoundPaddingLeft();
+        final int compoundPaddingTop = getCompoundPaddingTop();
+        final int compoundPaddingRight = getCompoundPaddingRight();
+        final int compoundPaddingBottom = getCompoundPaddingBottom();
+        final int scrollX = mScrollX;
+        final int scrollY = mScrollY;
+
+        final Drawables dr = mDrawables;
+        if (dr != null) {
+            /*
+             * Compound, not extended, because the icon is not clipped
+             * if the text height is smaller.
+             */
+
+            int vspace = getHeight() - compoundPaddingBottom - compoundPaddingTop;
+            int hspace = getWidth() - compoundPaddingRight - compoundPaddingLeft;
+
+            // IMPORTANT: The coordinates computed are also used in invalidateDrawable()
+            // Make sure to update invalidateDrawable() when changing this code.
+            if (dr.mShowing[Drawables.LEFT] != null) {
+                canvas.save();
+                canvas.translate(scrollX + mPaddingLeft,
+                        scrollY + compoundPaddingTop + (vspace - dr.mDrawableHeightLeft) / 2f);
+                dr.mShowing[Drawables.LEFT].draw(canvas);
+                canvas.restore();
+            }
+
+            // IMPORTANT: The coordinates computed are also used in invalidateDrawable()
+            // Make sure to update invalidateDrawable() when changing this code.
+            if (dr.mShowing[Drawables.RIGHT] != null) {
+                canvas.save();
+                canvas.translate(scrollX + getWidth() - mPaddingRight
+                                - dr.mDrawableSizeRight,
+                        scrollY + compoundPaddingTop + (vspace - dr.mDrawableHeightRight) / 2f);
+                dr.mShowing[Drawables.RIGHT].draw(canvas);
+                canvas.restore();
+            }
+
+            // IMPORTANT: The coordinates computed are also used in invalidateDrawable()
+            // Make sure to update invalidateDrawable() when changing this code.
+            if (dr.mShowing[Drawables.TOP] != null) {
+                canvas.save();
+                canvas.translate(scrollX + compoundPaddingLeft
+                        + (hspace - dr.mDrawableWidthTop) / 2f, scrollY + mPaddingTop);
+                dr.mShowing[Drawables.TOP].draw(canvas);
+                canvas.restore();
+            }
+
+            // IMPORTANT: The coordinates computed are also used in invalidateDrawable()
+            // Make sure to update invalidateDrawable() when changing this code.
+            if (dr.mShowing[Drawables.BOTTOM] != null) {
+                canvas.save();
+                canvas.translate(scrollX + compoundPaddingLeft
+                                + (hspace - dr.mDrawableWidthBottom) / 2f,
+                        scrollY + getHeight() - mPaddingBottom - dr.mDrawableSizeBottom);
+                dr.mShowing[Drawables.BOTTOM].draw(canvas);
+                canvas.restore();
+            }
         }
 
         int color = 0xFFFFFFFF;
+
+        if (mLayout == null) {
+            assumeLayout();
+        }
 
         Layout layout = mLayout;
 
@@ -2061,13 +2123,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
 
         mTextPaint.setColor(color);
-
-        final int compoundPaddingLeft = getCompoundPaddingLeft();
-        final int compoundPaddingTop = getCompoundPaddingTop();
-        final int compoundPaddingRight = getCompoundPaddingRight();
-        final int compoundPaddingBottom = getCompoundPaddingBottom();
-        final int scrollX = mScrollX;
-        final int scrollY = mScrollY;
 
         int extendedPaddingTop = getExtendedPaddingTop();
         int extendedPaddingBottom = getExtendedPaddingBottom();
@@ -3955,6 +4010,46 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             default -> isLayoutRtl() ? TextDirectionHeuristics.FIRSTSTRONG_RTL :
                     TextDirectionHeuristics.FIRSTSTRONG_LTR;
         };
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    public void onResolveDrawables(int layoutDirection) {
+        // No need to resolve twice
+        if (mLastLayoutDirection == layoutDirection) {
+            return;
+        }
+        mLastLayoutDirection = layoutDirection;
+
+        // Resolve drawables
+        if (mDrawables != null) {
+            if (mDrawables.resolveWithLayoutDirection(layoutDirection)) {
+                prepareDrawableForDisplay(mDrawables.mShowing[Drawables.LEFT]);
+                prepareDrawableForDisplay(mDrawables.mShowing[Drawables.RIGHT]);
+                //applyCompoundDrawableTint();
+            }
+        }
+    }
+
+    /**
+     * Prepares a drawable for display by propagating layout direction and
+     * drawable state.
+     *
+     * @param dr the drawable to prepare
+     */
+    private void prepareDrawableForDisplay(@Nullable Drawable dr) {
+        if (dr == null) {
+            return;
+        }
+
+        dr.setLayoutDirection(getLayoutDirection());
+
+        /*if (dr.isStateful()) {
+            dr.setState(getDrawableState());
+            dr.jumpToCurrentState();
+        }*/
     }
 
     @Override
