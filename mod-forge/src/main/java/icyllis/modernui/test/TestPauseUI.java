@@ -108,6 +108,7 @@ public class TestPauseUI extends ScreenCallback {
             v.setTextSize(16);
             v.setCompoundDrawablesRelativeWithIntrinsicBounds(
                     new TextFieldStart(mButtonIcon, (((i + 1) % 3) + 1) * 64), null, null, null);
+            v.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
 
             var params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);

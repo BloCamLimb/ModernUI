@@ -2343,11 +2343,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
 
         Layout.Alignment alignment = getLayoutAlignment();
-        final boolean testDirChange = mSingleLine && mLayout != null
-                && (alignment == Layout.Alignment.ALIGN_NORMAL
-                || alignment == Layout.Alignment.ALIGN_OPPOSITE);
+        // Bug fixed by Modern UI
+        final boolean testDirChange = !bringIntoView && mSingleLine && mLayout != null;
+        bringIntoView |= testDirChange && mLayout.getAlignment() != alignment;
         int oldDir = 0;
-        if (testDirChange) oldDir = mLayout.getParagraphDirection(0);
+        if (testDirChange && !bringIntoView)
+            oldDir = mLayout.getParagraphDirection(0);
         boolean shouldEllipsize = mEllipsize != null && mBufferType != BufferType.EDITABLE;
         TextUtils.TruncateAt effectiveEllipsize = mEllipsize;
 
