@@ -162,8 +162,7 @@ public class TestPauseUI extends ScreenCallback {
             canvas.drawRoundRect(b.left + start, b.top + start, b.right - start, b.bottom - start, mRadius, paint);
 
             canvas.drawText("BloCamLimb's Network", 0, 20, b.exactCenterX(), b.top + mRadius * 1.8f,
-                    Gravity.CENTER_HORIZONTAL,
-                    mTextPaint);
+                    Gravity.CENTER_HORIZONTAL, mTextPaint);
         }
     }
 

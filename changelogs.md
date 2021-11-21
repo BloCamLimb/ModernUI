@@ -1,5 +1,34 @@
 Changelogs
 ===
+### 1.17.1-3.1.0.95 (2021-11-21)
+#### Forge Extension 1.17.1-37.0.97
+* Integrate multi-threading pipeline with Blaze3D
+* Public stable APIs
+* Check code style
+#### Modern Text 1.17 (Embedded)
+#### Core Framework 3.1
+* Fix single line text alignment and scrolling
+* Add compound drawables to text view
+* Fix background paddings and transitions
+* Add cursor selection, movement/scrolling
+* Update clipboard manager
+* Add blinking cursor and selection rendering
+* Add transformation method
+* Add arrow key movement method
+* Add cursor movement and text/word deletion
+* Add text selection and movement
+* Add key event dispatching
+* Add pointer icon resolution
+* Add focus system for view tree
+* Fix transform with non-homogeneous vectors
+* Update view root and view tree protocol
+* Add layout transition for a view group
+* Add alpha transition of a view layer
+* Add child off-screen rendering targets
+* Improve MSAA framebuffer and attachments
+* Make animators cloneable
+* Add replacement style
+
 ### 1.17.1-3.0.1.94 (2021-10-27)
 #### Forge Extension 1.17.1-37.0.96
 * Update new tooltip events
@@ -17,7 +46,7 @@ Changelogs
 * Add DynamicLayout
 * Add text methods
 * Fix various bugs on text engine
-Add SpannableStringBuilder
+* Add SpannableStringBuilder
 * Fix bugs on LineBreaker
 * Avoid allocating large arrays for getSpans
 * Add GrowingArrayUtils

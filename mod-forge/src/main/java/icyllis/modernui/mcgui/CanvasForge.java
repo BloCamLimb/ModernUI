@@ -37,6 +37,7 @@ import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -65,11 +66,11 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  *
  * @author BloCamLimb
  */
-public class CanvasForge {
+public final class CanvasForge {
 
     private static final CanvasForge sInstance = new CanvasForge();
 
-    private static final Pool<DrawItem> sDrawItemPool = Pools.simple(50);
+    private static final Pool<DrawItem> sDrawItemPool = Pools.simple(60);
 
     private final BufferBuilder mBufferBuilder = new BufferBuilder(256);
     private final BufferSource mBufferSource = new BufferSource();
@@ -130,12 +131,10 @@ public class CanvasForge {
         canvas.save();
 
         Matrix4 mat = canvas.getMatrix();
-        mat.translate(x, y, 100);
+        mat.translate(x, y, 0);
         mat.scale(size, -size, 1);
 
         mat.get(mMatBuf.rewind());
-        Matrix4f mv = new Matrix4f();
-        mv.load(mMatBuf.flip());
 
         canvas.restore();
 
@@ -145,7 +144,7 @@ public class CanvasForge {
         if (t == null) {
             t = new DrawItem();
         }
-        mDrawItems.add(t.set(stack, mv, color));
+        mDrawItems.add(t.set(stack, mMatBuf.flip(), color));
 
         canvas.drawCustom(mDrawItem);
     }
@@ -153,16 +152,16 @@ public class CanvasForge {
     private static class DrawItem {
 
         private ItemStack mStack;
-        private Matrix4f mModelView;
+        private final Matrix4f mModelView = new Matrix4f();
         private float mR, mG, mB, mA;
 
         private DrawItem() {
         }
 
         @Nonnull
-        private DrawItem set(@Nonnull ItemStack stack, @Nonnull Matrix4f mv, int color) {
+        private DrawItem set(@Nonnull ItemStack stack, @Nonnull FloatBuffer mv, int color) {
             mStack = stack;
-            mModelView = mv;
+            mModelView.load(mv);
             mR = ((color >> 16) & 0xFF) / 255f;
             mG = ((color >> 8) & 0xFF) / 255f;
             mB = (color & 0xFF) / 255f;
@@ -172,7 +171,6 @@ public class CanvasForge {
 
         private void recycle() {
             mStack = null;
-            mModelView = null;
             sDrawItemPool.release(this);
         }
     }
@@ -190,15 +188,16 @@ public class CanvasForge {
         }
         PoseStack localTransform = new PoseStack();
         renderer.render(t.mStack, ItemTransforms.TransformType.GUI, false, localTransform, bufferSource,
-                0x00f000f0, OverlayTexture.NO_OVERLAY, model);
+                LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, model);
         bufferSource.endBatch();
         if (light2D) {
             Lighting.setupFor3DItems();
         }
 
+        mDrawItems.remove().recycle();
+
         RenderSystem.enableCull();
         RenderSystem.enableBlend();
-        RenderSystem.disableDepthTest();
         RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     }
 
@@ -233,7 +232,7 @@ public class CanvasForge {
         final ShaderInstance shader = RenderSystem.getShader();
         assert shader != null;
 
-        final DrawItem t = mDrawItems.remove();
+        final DrawItem t = mDrawItems.element();
         if (shader.MODEL_VIEW_MATRIX != null) {
             shader.MODEL_VIEW_MATRIX.set(t.mModelView);
         }
@@ -277,12 +276,11 @@ public class CanvasForge {
         }
 
         RenderSystem.setupShaderLights(shader);
-        canvas.useProgram(shader.getId());
         ((FastShader) shader).fastApply(canvas, mSamplerUnits);
 
-        glDrawElements(mode.asGLMode, indexCount, indexBufferType, MemoryUtil.NULL);
+        RenderSystem.disableDepthTest();
 
-        t.recycle();
+        glDrawElements(mode.asGLMode, indexCount, indexBufferType, MemoryUtil.NULL);
     }
 
     private class BufferSource implements MultiBufferSource {

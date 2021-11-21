@@ -221,12 +221,13 @@ public class NetworkHandler {
     public interface ClientListener {
 
         /**
-         * Handle a client-to-server network message.
+         * Handle a server-to-client network message.
          * <p>
          * This method is invoked on the Netty-IO thread, you need to consume or retain
          * the payload and then process it further through thread scheduling. In addition
          * to retain, you can throw {@link RunningOnDifferentThreadException}
          * to prevent the payload from being released after this method call.
+         * In the latter two cases, you must manually release the payload.
          * <p>
          * Note that the player supplier may return null if the connection is interrupted.
          * In this case, the message handling should be ignored.
@@ -248,6 +249,7 @@ public class NetworkHandler {
          * the payload and then process it further through thread scheduling. In addition
          * to retain, you can throw {@link RunningOnDifferentThreadException}
          * to prevent the payload from being released after this method call.
+         * In the latter two cases, you must manually release the payload.
          * <p>
          * Note that the player supplier may return null if the connection is interrupted.
          * In this case, the message handling should be ignored.
