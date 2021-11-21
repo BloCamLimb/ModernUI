@@ -40,6 +40,10 @@ public class MixinShaderInstance implements CanvasForge.FastShader {
 
     @Shadow
     @Final
+    private int programId;
+
+    @Shadow
+    @Final
     private List<Integer> samplerLocations;
 
     @Shadow
@@ -53,6 +57,7 @@ public class MixinShaderInstance implements CanvasForge.FastShader {
     @Override
     public void fastApply(@Nonnull GLCanvas canvas, @Nonnull Object2IntMap<String> units) {
         dirty = false;
+        canvas.useProgram(programId);
 
         for (int i = 0; i < samplerLocations.size(); ++i) {
             int unit = units.getInt(samplerNames.get(i));
