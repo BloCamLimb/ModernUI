@@ -23,6 +23,7 @@
     "MixinScreen",
     "MixinScrollPanel",
     "MixinSelectionList",
+    "MixinShaderInstance",
     "MixinStringSplitter",
     "MixinWindow"
   ]
