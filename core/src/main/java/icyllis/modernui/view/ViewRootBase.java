@@ -20,7 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.graphics.GLCanvas;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Rect;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -41,7 +41,6 @@ public abstract class ViewRootBase implements ViewParent {
 
     private final AttachInfo mAttachInfo;
     protected Thread mThread;
-    protected GLCanvas mCanvas;
 
     private final ConcurrentLinkedQueue<InputEvent> mInputEvents = new ConcurrentLinkedQueue<>();
 
@@ -166,7 +165,7 @@ public abstract class ViewRootBase implements ViewParent {
         return true;
     }
 
-    private void checkThread() {
+    protected void checkThread() {
         if (mThread != Thread.currentThread()) {
             throw new IllegalStateException("Not called from UI thread");
         }
@@ -230,8 +229,8 @@ public abstract class ViewRootBase implements ViewParent {
             }
             if (mInvalidated) {
                 mIsDrawing = true;
-                mCanvas.reset(width, height);
-                host.draw(mCanvas);
+                Canvas canvas = beginRecording(width, height);
+                host.draw(canvas);
                 mIsDrawing = false;
                 if (mKeepInvalidated) {
                     mKeepInvalidated = false;
@@ -244,6 +243,9 @@ public abstract class ViewRootBase implements ViewParent {
             scheduleTraversals();
         }
     }
+
+    @Nonnull
+    protected abstract Canvas beginRecording(int width, int height);
 
     protected void enqueueInputEvent(@Nonnull InputEvent event) {
         mInputEvents.offer(event);

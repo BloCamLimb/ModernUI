@@ -25,6 +25,7 @@ import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.mcgui.CanvasForge;
 import icyllis.modernui.mcgui.ScreenCallback;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
@@ -35,6 +36,8 @@ import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.TextView;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 
 import javax.annotation.Nonnull;
 
@@ -265,6 +268,8 @@ public class TestPauseUI extends ScreenCallback {
         private final ObjectAnimator mRodAnimator;
         private final ObjectAnimator mBoxAnimator;
 
+        private final ItemStack mItem = Items.DIAMOND_BLOCK.getDefaultInstance();
+
         public ConnectorView(Image image) {
             mImage = image;
             mSize = ViewConfiguration.get().getViewSize(32);
@@ -385,6 +390,9 @@ public class TestPauseUI extends ScreenCallback {
             if (boxAlpha > 0) {
                 canvas.drawRect(centerX - mSize * .5f, py2 - mSize * 2.1f,
                         centerX + mSize * .5f, py2 - mSize * 1.1f, mBoxPaint);
+                paint.reset();
+                paint.setAlpha(Math.min(255, boxAlpha << 1));
+                CanvasForge.get(canvas).drawItemStack(mItem, centerX, py2 - mSize * 1.6f, mSize, paint);
             }
         }
     }

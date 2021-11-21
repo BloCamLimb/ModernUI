@@ -41,16 +41,15 @@ import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntStack;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.List;
+import java.util.*;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -79,8 +78,7 @@ public final class GLCanvas extends Canvas {
     private static final Pool<SaveState> sSaveStatePool = Pools.simple(20);
     private static final Pool<DrawText> sDrawTextPool = Pools.simple(60);
 
-    // a client side identity matrix
-    private static final Matrix4 IDENTITY_MAT = Matrix4.identity();
+    private static final Matrix4 RESTORE_MAT;
 
     /**
      * Uniform block binding points (sequential)
@@ -143,6 +141,7 @@ public final class GLCanvas extends Canvas {
     public static final int DRAW_SMOOTH = 16;
     public static final int DRAW_LAYER_PUSH = 17;
     public static final int DRAW_LAYER_POP = 18;
+    public static final int DRAW_CUSTOM = 19;
 
     /**
      * Uniform block sizes (maximum), use std140 layout
@@ -164,6 +163,8 @@ public final class GLCanvas extends Canvas {
         POS_COLOR = new VertexFormat(POS, COLOR);
         POS_COLOR_TEX = new VertexFormat(POS, COLOR, UV);
         POS_TEX = new VertexFormat(POS, UV);
+        RESTORE_MAT = new Matrix4();
+        RESTORE_MAT.setTranslation(0, 0, -1000);
     }
 
     // private stacks
@@ -207,8 +208,8 @@ public final class GLCanvas extends Canvas {
 
     // used in rendering, local states
     private int mCurrTexture;
-    private GLProgram mCurrProgram;
-    private VertexFormat mCurrVertexFormat;
+    private int mCurrProgram;
+    private int mCurrVertexFormat;
 
     private final Matrix4 mLastMatrix = new Matrix4();
     private float mLastSmoothRadius;
@@ -223,13 +224,14 @@ public final class GLCanvas extends Canvas {
     private final IntStack mLayerStack = new IntArrayList(3);
 
     // using textures of draw states, in the order of calling
-    private final List<GLTexture> mTextures = new ArrayList<>();
+    private final Queue<GLTexture> mTextures = new ArrayDeque<>();
     private final List<DrawText> mDrawTexts = new ArrayList<>();
+    private final Queue<Runnable> mCustoms = new ArrayDeque<>();
 
     private final Rect mTmpRect = new Rect();
     private final RectF mTmpRectF = new RectF();
 
-    private final ByteBuffer mProjectionUpload = memAlloc(64);
+    private final FloatBuffer mProjectionUpload = memAllocFloat(16);
 
     @RenderThread
     private GLCanvas() {
@@ -297,6 +299,7 @@ public final class GLCanvas extends Canvas {
      *
      * @return the global instance
      */
+    @VisibleForTesting
     public static GLCanvas getInstance() {
         return INSTANCE;
     }
@@ -344,8 +347,14 @@ public final class GLCanvas extends Canvas {
     @RenderThread
     public void setProjection(@Nonnull Matrix4 projection) {
         RenderCore.checkRenderThread();
-        projection.get(mProjectionUpload);
-        mMatrixUBO.upload(0, mProjectionUpload.flip());
+        projection.get(mProjectionUpload.rewind());
+        mMatrixUBO.upload(0, 64, memAddress(mProjectionUpload.flip()));
+    }
+
+    @Nonnull
+    @RenderThread
+    public FloatBuffer getProjection() {
+        return mProjectionUpload.rewind();
     }
 
     /**
@@ -357,7 +366,7 @@ public final class GLCanvas extends Canvas {
     public void reset(int width, int height) {
         SaveState s = getSaveState();
         s.mBounds.set(0, 0, width, height);
-        s.mMatrix.setIdentity();
+        s.mMatrix.set(RESTORE_MAT);
         s.mRefVal = 0;
         s.mColorBuf = 0;
         mLastMatrix.setZero();
@@ -366,21 +375,26 @@ public final class GLCanvas extends Canvas {
         mHeight = height;
     }
 
-    private void bindVertexArray(@Nonnull VertexFormat format) {
-        if (mCurrVertexFormat != format) {
-            glBindVertexArray(format.getVertexArray());
-            mCurrVertexFormat = format;
+    @RenderThread
+    public boolean bindVertexArray(int array) {
+        if (mCurrVertexFormat != array) {
+            glBindVertexArray(array);
+            mCurrVertexFormat = array;
+            return true;
         }
+        return false;
     }
 
-    private void useProgram(@Nonnull GLProgram program) {
+    @RenderThread
+    public void useProgram(int program) {
         if (mCurrProgram != program) {
-            glUseProgram(program.get());
+            glUseProgram(program);
             mCurrProgram = program;
         }
     }
 
-    private void bindTexture(int texture) {
+    @RenderThread
+    public void bindTexture(int texture) {
         if (mCurrTexture != texture) {
             glBindTextureUnit(0, texture);
             mCurrTexture = texture;
@@ -419,8 +433,8 @@ public final class GLCanvas extends Canvas {
         glStencilFuncSeparate(GL_FRONT, GL_EQUAL, 0, 0xff);
         glStencilMaskSeparate(GL_FRONT, 0xff);
 
-        mCurrVertexFormat = null;
-        mCurrProgram = null;
+        mCurrVertexFormat = 0;
+        mCurrProgram = 0;
         mCurrTexture = 0;
 
         long uniformDataPtr = memAddress(mUniformMemory.flip());
@@ -429,8 +443,6 @@ public final class GLCanvas extends Canvas {
         int posColorIndex = 0;
         // preserve two triangles
         int posColorTexIndex = 4;
-        // textures
-        int textureIndex = 0;
         int clipIndex = 0;
         int textIndex = 0;
         // layer alphas
@@ -441,88 +453,85 @@ public final class GLCanvas extends Canvas {
         for (int op : mDrawOps) {
             switch (op) {
                 case DRAW_RECT -> {
-                    bindVertexArray(POS_COLOR);
-                    useProgram(COLOR_FILL);
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(COLOR_FILL.get());
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_FILL -> {
-                    bindVertexArray(POS_COLOR);
-                    useProgram(ROUND_RECT_FILL);
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(ROUND_RECT_FILL.get());
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_STROKE -> {
-                    bindVertexArray(POS_COLOR);
-                    useProgram(ROUND_RECT_STROKE);
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(ROUND_RECT_STROKE.get());
                     mRoundRectUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_IMAGE -> {
-                    bindVertexArray(POS_COLOR_TEX);
-                    useProgram(ROUND_RECT_TEX);
-                    bindTexture(mTextures.get(textureIndex).get());
+                    bindVertexArray(POS_COLOR_TEX.getVertexArray());
+                    useProgram(ROUND_RECT_TEX.get());
+                    bindTexture(mTextures.remove().get());
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
-                    textureIndex++;
                 }
                 case DRAW_IMAGE -> {
-                    bindVertexArray(POS_COLOR_TEX);
-                    useProgram(COLOR_TEX);
-                    bindTexture(mTextures.get(textureIndex).get());
+                    bindVertexArray(POS_COLOR_TEX.getVertexArray());
+                    useProgram(COLOR_TEX.get());
+                    bindTexture(mTextures.remove().get());
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
-                    textureIndex++;
                 }
                 case DRAW_IMAGE_MS -> {
-                    bindVertexArray(POS_COLOR_TEX);
-                    useProgram(COLOR_TEX_MS);
-                    bindTexture(mTextures.get(textureIndex).get());
+                    bindVertexArray(POS_COLOR_TEX.getVertexArray());
+                    useProgram(COLOR_TEX_MS.get());
+                    bindTexture(mTextures.remove().get());
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
-                    textureIndex++;
                 }
                 case DRAW_CIRCLE_FILL -> {
-                    bindVertexArray(POS_COLOR);
-                    useProgram(CIRCLE_FILL);
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(CIRCLE_FILL.get());
                     mCircleUBO.upload(0, 12, uniformDataPtr);
                     uniformDataPtr += 12;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_CIRCLE_STROKE -> {
-                    bindVertexArray(POS_COLOR);
-                    useProgram(CIRCLE_STROKE);
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(CIRCLE_STROKE.get());
                     mCircleUBO.upload(0, 16, uniformDataPtr);
                     uniformDataPtr += 16;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_FILL -> {
-                    bindVertexArray(POS_COLOR);
-                    useProgram(ARC_FILL);
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(ARC_FILL.get());
                     mArcUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_STROKE -> {
-                    bindVertexArray(POS_COLOR);
-                    useProgram(ARC_STROKE);
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(ARC_STROKE.get());
                     mArcUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_BEZIER -> {
-                    bindVertexArray(POS_COLOR);
-                    useProgram(BEZIER_CURVE);
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(BEZIER_CURVE.get());
                     mBezierUBO.upload(0, 28, uniformDataPtr);
                     uniformDataPtr += 28;
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
@@ -535,8 +544,8 @@ public final class GLCanvas extends Canvas {
                         glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_INCR);
                         glColorMaski(0, false, false, false, false);
 
-                        bindVertexArray(POS_COLOR);
-                        useProgram(COLOR_FILL);
+                        bindVertexArray(POS_COLOR.getVertexArray());
+                        useProgram(COLOR_FILL.get());
                         glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                         posColorIndex += 4;
 
@@ -555,8 +564,8 @@ public final class GLCanvas extends Canvas {
                         glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_REPLACE);
                         glColorMaski(0, false, false, false, false);
 
-                        bindVertexArray(POS_COLOR);
-                        useProgram(COLOR_FILL);
+                        bindVertexArray(POS_COLOR.getVertexArray());
+                        useProgram(COLOR_FILL.get());
                         glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
                         posColorIndex += 4;
 
@@ -568,8 +577,8 @@ public final class GLCanvas extends Canvas {
                     clipIndex++;
                 }
                 case DRAW_TEXT -> {
-                    bindVertexArray(POS_TEX);
-                    useProgram(ALPHA_TEX);
+                    bindVertexArray(POS_TEX.getVertexArray());
+                    useProgram(ALPHA_TEX.get());
                     mMatrixUBO.upload(128, 16, uniformDataPtr);
                     uniformDataPtr += 16;
 
@@ -596,39 +605,37 @@ public final class GLCanvas extends Canvas {
                     uniformDataPtr += 4;
                 }
                 case DRAW_LAYER_PUSH -> {
-                    if (framebuffer == null) {
-                        throw new IllegalStateException("No off-screen rendering target");
-                    }
+                    assert framebuffer != null;
                     mLayerStack.push(mLayerAlphas.getInt(alphaIndex));
                     framebuffer.setDrawBuffer(++colorBuffer);
                     framebuffer.clearColorBuffer();
                     alphaIndex++;
                 }
                 case DRAW_LAYER_POP -> {
-                    if (framebuffer == null) {
-                        throw new IllegalStateException("No off-screen rendering target");
-                    }
+                    assert framebuffer != null;
                     int alpha = mLayerStack.popInt();
                     putRectColorUV(mLayerImageMemory, 0, 0, mWidth, mHeight, (alpha << 24) | 0xFFFFFF,
                             0, 1, 1, 0);
                     mPosColorTexVBO.upload(0, mLayerImageMemory.flip());
                     mLayerImageMemory.clear();
 
-                    bindVertexArray(POS_COLOR_TEX);
-                    useProgram(COLOR_TEX_MS);
+                    bindVertexArray(POS_COLOR_TEX.getVertexArray());
+                    useProgram(COLOR_TEX_MS.get());
                     bindTexture(framebuffer.getAttachedTexture(colorBuffer).get());
                     framebuffer.setDrawBuffer(--colorBuffer);
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
                 }
+                case DRAW_CUSTOM -> mCustoms.remove().run();
                 default -> throw new IllegalStateException("Unexpected draw op " + op);
             }
         }
         assert mLayerStack.isEmpty();
+        assert mTextures.isEmpty();
+        assert mCustoms.isEmpty();
 
         mDrawOps.clear();
         mClipRefs.clear();
         mLayerAlphas.clear();
-        mTextures.clear();
         mDrawTexts.clear();
         mUniformMemory.clear();
     }
@@ -907,7 +914,7 @@ public final class GLCanvas extends Canvas {
             // taking the opposite number means that the clip rect is not to drawn
             mClipRefs.add(-getSaveState().mRefVal);
         } else {
-            drawMatrix(IDENTITY_MAT);
+            drawMatrix(RESTORE_MAT);
             // must have a color
             putRectColor(b.left, b.top, b.right, b.bottom, ~0);
             mClipRefs.add(getSaveState().mRefVal);
@@ -916,7 +923,7 @@ public final class GLCanvas extends Canvas {
     }
 
     private void restoreLayer() {
-        drawMatrix(IDENTITY_MAT);
+        drawMatrix(RESTORE_MAT);
         mDrawOps.add(DRAW_LAYER_POP);
         drawMatrix();
     }
@@ -1662,5 +1669,15 @@ public final class GLCanvas extends Canvas {
             sDrawTextPool.release(this);
             return glyphs;
         }
+    }
+
+    /**
+     * Draw something custom. Do not break any state of current OpenGL context or GLCanvas in the future.
+     *
+     * @param custom the custom draw
+     */
+    public void drawCustom(@Nonnull Runnable custom) {
+        mCustoms.add(custom);
+        mDrawOps.add(DRAW_CUSTOM);
     }
 }

@@ -28,6 +28,7 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.forge.MuiForgeBridge;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.texture.GLTexture;
@@ -134,6 +135,7 @@ public final class UIManager extends ViewRootBase {
 
     // lazy loading
     private final GLFramebuffer mFramebuffer;
+    GLCanvas mCanvas;
 
     private final Object mRenderLock = new Object();
 
@@ -146,7 +148,7 @@ public final class UIManager extends ViewRootBase {
     private PointerIcon mOldCursor = PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT);
     private PointerIcon mNewCursor = mOldCursor;
 
-    final Matrix4 mProjectionMatrix = new Matrix4();
+    private final Matrix4 mProjectionMatrix = new Matrix4();
 
     private final Predicate<? super TimedAction> mUiHandler = task -> task.execute(mUptimeMillis);
 
@@ -234,6 +236,18 @@ public final class UIManager extends ViewRootBase {
     @Nullable
     public ScreenCallback getCallback() {
         return mCallback;
+    }
+
+    @Override
+    public void checkThread() {
+        super.checkThread();
+    }
+
+    @Nonnull
+    @Override
+    protected Canvas beginRecording(int width, int height) {
+        mCanvas.reset(width, height);
+        return mCanvas;
     }
 
     // Called when open a screen from Modern UI, or back to the screen
