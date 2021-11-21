@@ -32,33 +32,22 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
 #### Environment requirements
 - Windows, Linux or macOS
 - JDK 16.0.1 or above
-- OpenGL 4.5 or above (macOS users would get stuck on this, but there may be Vulkan pipeline in the future)
-- (Optional) Forge 1.17.1-37.0.70
+- OpenGL 4.5 or above (see Mesa Zink for macOS users)
+- (Optional) Forge 1.17.1-37.0.97
 #### Gradle configuration
 ```
 repositories {
     maven {
         name 'IzzelAliz Maven'
-        url 'https://maven.izzel.io/releases'
+        url 'https://maven.izzel.io/releases/'
     }
 }
 dependencies {
-    implementation "icyllis.modernui:ModernUI-Core:${modernui_core_version}"
+    implementation "icyllis.modernui:ModernUI-Core:${modernui_version}"
 }
 ```
-##### Forge Loom 0.10
-```
-dependencies {
-    modCompile "icyllis.modernui:ModernUI-Forge:${modernui_version}"
-}
-```
-##### ForgeGradle 4 (To be updated)
-Mixin 0.8.2 can't automatically remap the refmap
-in forge dev environment, you may manually add mixin system properties and
-re-run `genIntellijRuns`, see https://github.com/SpongePowered/Mixin/issues/462  
-ForgeGradle 3 will ignore sources jar and dependencies, you may manually
-add one that with `@pom` for dependencies, see https://github.com/MinecraftForge/ForgeGradle/issues/736  
-These should be fixed in ForgeGradle 4 and Mixin 0.8.3.
+##### ForgeGradle 5
+You need to regenerate run configurations.
 ```
 minecraft {
     runs {
@@ -66,11 +55,24 @@ minecraft {
             property 'mixin.env.remapRefMap', 'true'
             property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
         }
+        server {
+            property 'mixin.env.remapRefMap', 'true'
+            property 'mixin.env.refMapRemappingFile', "${projectDir}/build/createSrgToMcp/output.srg"
+        }
+    }
+}
+configurations {
+    library
+    implementation.extendsFrom library
+}
+minecraft.runs.all {
+    lazyToken('minecraft_classpath') {
+        configurations.library.copyRecursive().resolve().collect { it.absolutePath }.join(File.pathSeparator)
     }
 }
 dependencies {
-    compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}")
-    compile fg.deobf("icyllis.modernui:ModernUI-Forge:${modernui_version}@pom")
+    library "icyllis.modernui:ModernUI-Core:${modernui_version}"
+    implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_version}")
 }
 ```
 ### Debugging Modern UI
