@@ -43,7 +43,9 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraft.client.renderer.texture.AbstractTexture;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
@@ -83,6 +85,9 @@ public final class CanvasForge {
     private final Object2IntMap<String> mSamplerUnits = new Object2IntArrayMap<>();
 
     private final Runnable mDrawItem = this::drawItem;
+
+    private final ItemRenderer mRenderer = Minecraft.getInstance().getItemRenderer();
+    private final TextureManager mTextureManager = Minecraft.getInstance().getTextureManager();
 
     private volatile GLCanvas mCanvas;
 
@@ -177,9 +182,9 @@ public final class CanvasForge {
 
     private void drawItem() {
         DrawItem t = mDrawItems.element();
-        ItemRenderer renderer = Minecraft.getInstance().getItemRenderer();
-        BakedModel model = renderer.getModel(t.mStack, null, Minecraft.getInstance().player, 0);
-        RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
+        BakedModel model = mRenderer.getModel(t.mStack, null, Minecraft.getInstance().player, 0);
+        AbstractTexture texture = mTextureManager.getTexture(InventoryMenu.BLOCK_ATLAS);
+        RenderSystem.setShaderTexture(0, texture.getId());
 
         BufferSource bufferSource = mBufferSource;
         boolean light2D = !model.usesBlockLight();
@@ -187,7 +192,7 @@ public final class CanvasForge {
             Lighting.setupForFlatItems();
         }
         PoseStack localTransform = new PoseStack();
-        renderer.render(t.mStack, ItemTransforms.TransformType.GUI, false, localTransform, bufferSource,
+        mRenderer.render(t.mStack, ItemTransforms.TransformType.GUI, false, localTransform, bufferSource,
                 LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY, model);
         bufferSource.endBatch();
         if (light2D) {
