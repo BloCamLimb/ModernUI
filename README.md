@@ -75,8 +75,6 @@ dependencies {
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_version}")
 }
 ```
-### Debugging Modern UI
-Note that for debugging in Minecraft environment, you need to pack shaders in the core (sub)project to a resource pack in the run directory.
 ### Screenshots
 ![new3.gif](https://i.loli.net/2021/09/27/yNsL98XtpKP7UVA.gif)
 ![new2](https://i.loli.net/2021/09/24/TJjyzd6oOf5pPcq.png)

@@ -300,10 +300,11 @@ final class Config {
                     .defineList("fontFamily", () -> {
                         List<String> list = new ArrayList<>();
                         list.add("modernui:font/biliw.otf");
-                        list.add("Microsoft YaHei");
-                        list.add("SimHei");
+                        list.add("Calibri");
+                        list.add("Microsoft YaHei UI");
                         list.add("STHeiti");
                         list.add("Segoe UI");
+                        list.add("SimHei");
                         list.add("SansSerif");
                         return list;
                     }, s -> true);
