@@ -5507,6 +5507,30 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Register a callback to be invoked when the scroll X or Y positions of
+     * this view change.
+     * <p>
+     * <b>Note:</b> Some views handle scrolling independently of View and may
+     * have their own separate listeners for scroll-type events.
+     *
+     * @param l The listener to notify when the scroll X or Y position changes.
+     * @see #getScrollX()
+     * @see #getScrollY()
+     */
+    public void setOnScrollChangeListener(@Nullable OnScrollChangeListener l) {
+        getListenerInfo().mOnScrollChangeListener = l;
+    }
+
+    /**
+     * Register a callback to be invoked when focus of this view changed.
+     *
+     * @param l The callback that will run.
+     */
+    public void setOnFocusChangeListener(@Nullable OnFocusChangeListener l) {
+        getListenerInfo().mOnFocusChangeListener = l;
+    }
+
+    /**
      * Add a listener that will be called when the bounds of the view change due to
      * layout processing.
      *
@@ -5545,7 +5569,7 @@ public class View implements Drawable.Callback {
      * @param listener Listener to attach
      * @see #removeOnAttachStateChangeListener(OnAttachStateChangeListener)
      */
-    public void addOnAttachStateChangeListener(OnAttachStateChangeListener listener) {
+    public void addOnAttachStateChangeListener(@Nonnull OnAttachStateChangeListener listener) {
         ListenerInfo li = getListenerInfo();
         if (li.mOnAttachStateChangeListeners == null) {
             li.mOnAttachStateChangeListeners = new CopyOnWriteArrayList<>();
@@ -5560,12 +5584,23 @@ public class View implements Drawable.Callback {
      * @param listener Listener to remove
      * @see #addOnAttachStateChangeListener(OnAttachStateChangeListener)
      */
-    public void removeOnAttachStateChangeListener(OnAttachStateChangeListener listener) {
+    public void removeOnAttachStateChangeListener(@Nonnull OnAttachStateChangeListener listener) {
         ListenerInfo li = mListenerInfo;
         if (li == null || li.mOnAttachStateChangeListeners == null) {
             return;
         }
         li.mOnAttachStateChangeListeners.remove(listener);
+    }
+
+    /**
+     * Returns the focus-change callback registered for this view.
+     *
+     * @return The callback, or null if one is not registered.
+     */
+    @Nullable
+    public OnFocusChangeListener getOnFocusChangeListener() {
+        ListenerInfo li = mListenerInfo;
+        return li != null ? li.mOnFocusChangeListener : null;
     }
 
     /**
