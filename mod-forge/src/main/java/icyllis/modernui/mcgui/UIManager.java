@@ -524,9 +524,11 @@ public final class UIManager extends ViewRootBase {
             }
             if (event.getAction() == GLFW_PRESS) {
                 InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
-                if (mScreen instanceof MenuScreen<?> && minecraft.options.keyInventory.isActiveAndMatches(key)) {
-                    if (minecraft.player != null) {
-                        minecraft.player.closeContainer();
+                if (mScreen instanceof MenuScreen<?>) {
+                    if (minecraft.options.keyInventory.isActiveAndMatches(key) || event.getKey() == GLFW_KEY_ESCAPE) {
+                        if (minecraft.player != null) {
+                            minecraft.player.closeContainer();
+                        }
                     }
                     return;
                 } else if (event.getKey() == GLFW_KEY_ESCAPE) {
