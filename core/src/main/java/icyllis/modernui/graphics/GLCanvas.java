@@ -34,7 +34,6 @@ import icyllis.modernui.text.LayoutCache;
 import icyllis.modernui.text.LayoutPiece;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.TexturedGlyph;
-import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
@@ -678,7 +677,7 @@ public final class GLCanvas extends Canvas {
 
     private ByteBuffer checkPosColorMemory() {
         if (mPosColorMemory.remaining() < 48) {
-            int newCap = GrowingArrayUtils.growSize(mPosColorMemory.capacity());
+            int newCap = grow(mPosColorMemory.capacity());
             mPosColorMemory = memRealloc(mPosColorMemory, newCap);
             mPosColorResized = true;
             ModernUI.LOGGER.debug(MARKER, "Grow pos color buffer to {} bytes", newCap);
@@ -688,7 +687,7 @@ public final class GLCanvas extends Canvas {
 
     private ByteBuffer checkPosColorTexMemory() {
         if (mPosColorTexMemory.remaining() < POS_COLOR_TEX_VERTEX_SIZE * 4) {
-            int newCap = GrowingArrayUtils.growSize(mPosColorTexMemory.capacity());
+            int newCap = grow(mPosColorTexMemory.capacity());
             mPosColorTexMemory = memRealloc(mPosColorTexMemory, newCap);
             mPosColorTexResized = true;
             ModernUI.LOGGER.debug(MARKER, "Grow pos color tex buffer to {} bytes", newCap);
@@ -708,7 +707,7 @@ public final class GLCanvas extends Canvas {
     @RenderThread
     private ByteBuffer checkPosTexMemory() {
         if (mPosTexMemory.remaining() < 64) {
-            int newCap = GrowingArrayUtils.growSize(mPosTexMemory.capacity());
+            int newCap = grow(mPosTexMemory.capacity());
             mPosTexMemory = memRealloc(mPosTexMemory, newCap);
             mPosTexResized = true;
             ModernUI.LOGGER.debug(MARKER, "Grow pos tex buffer to {} bytes", newCap);
@@ -718,11 +717,15 @@ public final class GLCanvas extends Canvas {
 
     private ByteBuffer checkUniformMemory() {
         if (mUniformMemory.remaining() < 64) {
-            int newCap = GrowingArrayUtils.growSize(mUniformMemory.capacity());
+            int newCap = grow(mUniformMemory.capacity());
             mUniformMemory = memRealloc(mUniformMemory, newCap);
             ModernUI.LOGGER.debug(MARKER, "Grow general uniform buffer to {} bytes", newCap);
         }
         return mUniformMemory;
+    }
+
+    private static int grow(int cap) {
+        return cap + (cap >> 1);
     }
 
     /**

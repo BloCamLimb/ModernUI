@@ -5633,7 +5633,7 @@ public class View implements Drawable.Callback {
      *
      * @param l the key listener to attach to this view
      */
-    public void setOnKeyListener(OnKeyListener l) {
+    public void setOnKeyListener(@Nullable OnKeyListener l) {
         getListenerInfo().mOnKeyListener = l;
     }
 
@@ -5642,7 +5642,7 @@ public class View implements Drawable.Callback {
      *
      * @param l the touch listener to attach to this view
      */
-    public void setOnTouchListener(OnTouchListener l) {
+    public void setOnTouchListener(@Nullable OnTouchListener l) {
         getListenerInfo().mOnTouchListener = l;
     }
 
@@ -5651,7 +5651,7 @@ public class View implements Drawable.Callback {
      *
      * @param l the hover listener to attach to this view
      */
-    public void setOnHoverListener(OnHoverListener l) {
+    public void setOnHoverListener(@Nullable OnHoverListener l) {
         getListenerInfo().mOnHoverListener = l;
     }
 
