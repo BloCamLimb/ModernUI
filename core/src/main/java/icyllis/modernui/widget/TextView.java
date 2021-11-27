@@ -102,9 +102,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     private static final int CHANGE_WATCHER_PRIORITY = 100;
 
-    private int mCurTextColor;
+    private int mCurTextColor = 0xFFFFFFFF;
 
-    private int mCurHintTextColor;
+    private int mCurHintTextColor = 0xFFFFFFFF;
 
     private Editable.Factory mEditableFactory = Editable.DEFAULT_FACTORY;
     private Spannable.Factory mSpannableFactory = Spannable.DEFAULT_FACTORY;
@@ -195,6 +195,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     @Nonnull
     private InputFilter[] mFilters = NO_FILTERS;
 
+    int mHighlightColor = 0x6633B5E5;
     private FloatArrayList mHighlightPath;
     private boolean mHighlightPathBogus = true;
 
@@ -1084,7 +1085,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * It is required to be true if text could be in languages like Burmese or Tibetan where text
      * is typically much taller or deeper than Latin text.
      *
-     * @param enabled whether to expand linespacing based on fallback fonts, {@code true} by default
+     * @param enabled whether to expand line spacing based on fallback fonts, {@code true} by default
      * @see StaticLayout.Builder#setFallbackLineSpacing(boolean)
      */
     public void setFallbackLineSpacing(boolean enabled) {
@@ -1106,7 +1107,45 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         return mUseFallbackLineSpacing;
     }
 
-    //TODO color setting
+    /**
+     * Sets the text color for all the states (normal, selected,
+     * focused) to be this color.
+     *
+     * @param color a color value in the form 0xAARRGGBB
+     */
+    public void setTextColor(int color) {
+        if (mCurTextColor != color) {
+            mCurTextColor = color;
+            invalidate();
+        }
+    }
+
+    /**
+     * Return the current color selected for normal text.
+     *
+     * @return Returns the current text color.
+     */
+    public final int getCurrentTextColor() {
+        return mCurTextColor;
+    }
+
+    /**
+     * Sets the color used to display the selection highlight.
+     */
+    public void setHighlightColor(int color) {
+        if (mHighlightColor != color) {
+            mHighlightColor = color;
+            invalidate();
+        }
+    }
+
+    /**
+     * @return the color used to display the selection highlight
+     * @see #setHighlightColor(int)
+     */
+    public int getHighlightColor() {
+        return mHighlightColor;
+    }
 
     /**
      * Gets the {@link TextPaint} used for the text.
@@ -1161,6 +1200,28 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public final boolean getLinksClickable() {
         return mLinksClickable;
+    }
+
+    /**
+     * Sets the color of the hint text for all the states (disabled, focussed, selected...) of this
+     * TextView.
+     *
+     * @see #setTextColor(int)
+     */
+    public final void setHintTextColor(int color) {
+        if (mCurHintTextColor != color) {
+            mCurHintTextColor = color;
+            invalidate();
+        }
+    }
+
+    /**
+     * <p>Return the current color selected to paint the hint text.</p>
+     *
+     * @return Returns the current hint text color.
+     */
+    public final int getCurrentHintTextColor() {
+        return mCurHintTextColor;
     }
 
     /**
@@ -2032,7 +2093,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                     mHighlightPathBogus = false;
                 }
 
-                paint.setColor(0x6633B5E5);
+                paint.setColor(mHighlightColor);
                 paint.setStyle(Paint.Style.FILL);
 
                 if (cursorOffsetVertical != 0) canvas.translate(0, cursorOffsetVertical);
@@ -2108,7 +2169,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             }
         }
 
-        int color = 0xFFFFFFFF;
+        int color = mCurTextColor;
 
         if (mLayout == null) {
             assumeLayout();
@@ -2117,7 +2178,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         Layout layout = mLayout;
 
         if (mHint != null && mText.length() == 0) {
-            color = 0xFF808080;
+            color = mCurHintTextColor;
 
             layout = mHintLayout;
         }

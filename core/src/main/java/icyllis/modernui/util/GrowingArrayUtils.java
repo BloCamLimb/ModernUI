@@ -38,7 +38,7 @@ public final class GrowingArrayUtils {
      * Given the current size of an array, returns an ideal size to which the array should grow.
      */
     public static int growSize(int currentSize) {
-        return currentSize <= 1 ? 2 : currentSize + (currentSize >> 1);
+        return currentSize <= 4 ? 8 : currentSize * 2;
     }
 
     /**

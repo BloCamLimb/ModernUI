@@ -49,8 +49,6 @@ public final class RenderCore {
 
     public static final Marker MARKER = MarkerManager.getMarker("Graphics");
 
-    static volatile boolean sIgnoreFormatError;
-
     private static volatile Thread sMainThread;
     private static volatile Thread sRenderThread;
 
@@ -69,8 +67,6 @@ public final class RenderCore {
     }
 
     private static void onError(int errorCode, long descPtr) {
-        if (errorCode == GLFW.GLFW_FORMAT_UNAVAILABLE && sIgnoreFormatError)
-            return;
         String desc = descPtr == NULL ? "" : MemoryUtil.memUTF8(descPtr);
         LOGGER.error(MARKER, "GLFW Error: 0x{} {}", Integer.toHexString(errorCode), desc);
     }

@@ -20,6 +20,7 @@ package icyllis.modernui.platform;
 
 import icyllis.modernui.annotation.MainThread;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWErrorCallback;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,15 +41,15 @@ public final class Clipboard {
      */
     @Nullable
     public static String getText() {
-        RenderCore.sIgnoreFormatError = true;
+        GLFWErrorCallback callback = GLFW.glfwSetErrorCallback(null);
         final String text = GLFW.glfwGetClipboardString(NULL);
-        RenderCore.sIgnoreFormatError = false;
-        if (text == null)
+        GLFW.glfwSetErrorCallback(callback);
+        if (text == null) {
             return null;
-        // filter broken surrogate pairs
+        }
+        // fix surrogate pairs
         final StringBuilder builder = new StringBuilder();
-        final int l = text.length();
-        for (int i = 0; i < l; i++) {
+        for (int i = 0, l = text.length(); i < l; i++) {
             final char _c1 = text.charAt(i);
             final char _c2;
             if (Character.isHighSurrogate(_c1) && i + 1 < l) {
