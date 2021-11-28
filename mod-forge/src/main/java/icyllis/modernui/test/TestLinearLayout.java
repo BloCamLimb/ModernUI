@@ -29,7 +29,6 @@ import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
-import icyllis.modernui.text.method.PasswordTransformationMethod;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
@@ -99,7 +98,7 @@ public class TestLinearLayout extends LinearLayout {
         setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
 
         ViewConfiguration c = ViewConfiguration.get();
-        setDividerPadding(c.getViewSize(8));
+        setDividerPadding(c.view(8));
 
         String text;
         text = "\t\t\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627" +
@@ -150,7 +149,7 @@ public class TestLinearLayout extends LinearLayout {
                         button.post(() -> removeView(mTextView));
                     }
                 });
-                p = new LinearLayout.LayoutParams(c.getViewSize(100), c.getViewSize(36));
+                p = new LinearLayout.LayoutParams(c.view(100), c.view(36));
             } else if (i == 2) {
                 continue;
             } else if (i == 3) {
@@ -164,16 +163,16 @@ public class TestLinearLayout extends LinearLayout {
                 textField.setFocusableInTouchMode(true);
                 textField.setMovementMethod(ArrowKeyMovementMethod.getInstance());
                 //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
-                textField.setPadding(c.getViewSize(12), 0, c.getViewSize(12), 0);
+                textField.setPadding(c.view(12), 0, c.view(12), 0);
             } else {
                 v = new CView();
-                p = new LinearLayout.LayoutParams(c.getViewSize(200), c.getViewSize(36));
+                p = new LinearLayout.LayoutParams(c.view(200), c.view(36));
             }
             v.setClickable(true);
             addView(v, p);
         }
-        addView(new DView(TimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(c.getViewSize(120),
-                c.getViewSize(40)));
+        addView(new DView(TimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(c.view(120),
+                c.view(40)));
 
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
         cAnim = new Animation(200)

@@ -65,7 +65,7 @@ public class TestPauseUI extends ScreenCallback {
 
         for (int i = 0; i < 8; i++) {
             var button = new NavigationButton(mButtonIcon, i * 32);
-            var params = new LinearLayout.LayoutParams(c.getViewSize(32), c.getViewSize(32));
+            var params = new LinearLayout.LayoutParams(c.view(32), c.view(32));
             button.setClickable(true);
             params.setMarginsRelative(i == 7 ? 26 : 2, 2, 2, 6);
             if (i == 0 || i == 7) {
@@ -115,8 +115,8 @@ public class TestPauseUI extends ScreenCallback {
 
             var params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.setMargins(c.getViewSize(20), c.getViewSize(i == 0 ? 50 : 2), c.getViewSize(20),
-                    c.getViewSize(2));
+            params.setMargins(c.view(20), c.view(i == 0 ? 50 : 2), c.view(20),
+                    c.view(2));
 
             content.postDelayed(() -> tab.addView(v, params), (i + 1) * 100);
         }
@@ -125,11 +125,11 @@ public class TestPauseUI extends ScreenCallback {
             var v = new ConnectorView(mButtonIcon);
             var params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT);
-            params.setMargins(c.getViewSize(8), c.getViewSize(2), c.getViewSize(8), c.getViewSize(8));
+            params.setMargins(c.view(8), c.view(2), c.view(8), c.view(8));
             content.postDelayed(() -> tab.addView(v, params), 400);
         }
 
-        int tabSize = c.getViewSize(340);
+        int tabSize = c.view(340);
         content.addView(tab, new LinearLayout.LayoutParams(tabSize, tabSize));
 
         setContentView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -142,9 +142,9 @@ public class TestPauseUI extends ScreenCallback {
         private final TextPaint mTextPaint;
 
         public TabBackground() {
-            mRadius = ViewConfiguration.get().getViewSize(16);
+            mRadius = ViewConfiguration.get().view(16);
             mTextPaint = new TextPaint();
-            mTextPaint.setFontSize(ViewConfiguration.get().getTextSize(16));
+            mTextPaint.setFontSize(ViewConfiguration.get().text(16));
         }
 
         @Override
@@ -175,7 +175,7 @@ public class TestPauseUI extends ScreenCallback {
         public TextFieldStart(Image image, int srcLeft) {
             mImage = image;
             mSrcLeft = srcLeft;
-            mSize = ViewConfiguration.get().getViewSize(24);
+            mSize = ViewConfiguration.get().view(24);
         }
 
         @Override
@@ -208,7 +208,7 @@ public class TestPauseUI extends ScreenCallback {
         private final float mRadius;
 
         public TextFieldBackground() {
-            mRadius = ViewConfiguration.get().getViewSize(3);
+            mRadius = ViewConfiguration.get().view(3);
         }
 
         @Override
@@ -271,7 +271,7 @@ public class TestPauseUI extends ScreenCallback {
 
         public ConnectorView(Image image) {
             mImage = image;
-            mSize = ViewConfiguration.get().getViewSize(32);
+            mSize = ViewConfiguration.get().view(32);
             mRodAnimator = ObjectAnimator.ofFloat(this, new FloatProperty<>() {
                 @Override
                 public void setValue(@Nonnull ConnectorView target, float value) {
@@ -283,7 +283,7 @@ public class TestPauseUI extends ScreenCallback {
                 public Float get(@Nonnull ConnectorView target) {
                     return target.mRodLength;
                 }
-            }, 0, ViewConfiguration.get().getViewSize(32));
+            }, 0, ViewConfiguration.get().view(32));
             mRodAnimator.setInterpolator(TimeInterpolator.DECELERATE);
             mRodAnimator.setDuration(400);
             mRodAnimator.addListener(new Animator.AnimatorListener() {
