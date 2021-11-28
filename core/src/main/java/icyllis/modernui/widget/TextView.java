@@ -1026,7 +1026,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public void setTextSize(float size) {
         if (size != mTextPaint.getFontSize()) {
-            mTextPaint.setFontSize(ViewConfiguration.get().getTextSize(size));
+            mTextPaint.setFontSize(ViewConfiguration.get().text(size));
 
             if (mLayout != null) {
                 nullLayouts();

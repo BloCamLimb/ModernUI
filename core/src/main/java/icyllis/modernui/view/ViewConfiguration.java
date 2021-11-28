@@ -85,20 +85,20 @@ public class ViewConfiguration {
     /**
      * Get the size in pixels that matches the view layout standards.
      *
-     * @param sip scaling-independent pixel
+     * @param sip scaling-independent pixel, relative to other views
      * @return size in pixels
      */
-    public int getViewSize(float sip) {
+    public int view(float sip) {
         return Math.round(sip * mViewScale);
     }
 
     /**
      * Get the size in pixels that matches the text layout standards.
      *
-     * @param sip scaling-independent pixel
+     * @param sip scaling-independent pixel, relative to other texts
      * @return size in pixels
      */
-    public int getTextSize(float sip) {
+    public int text(float sip) {
         return Math.round(sip * mViewScale);
     }
 
