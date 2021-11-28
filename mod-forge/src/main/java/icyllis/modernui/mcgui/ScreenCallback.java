@@ -29,15 +29,14 @@ import javax.annotation.Nonnull;
  * Callback for handling user interface lifecycle events.
  * <p>
  * Most methods are callbacks that will be invoked on UI thread. To initiate this on
- * the client side, call {@link #start()} from client main thread.
- * This is served as a local interaction model, the server will not intersect with this before.
+ * the client side, call {@link #startLifecycle()} from client main thread.
+ * In this case, this is served as a local interaction model, the server will not
+ * intersect with this before. Otherwise, initiate this with a network model.
  *
  * @see OpenMenuEvent#setCallback(ScreenCallback)
  */
 @OnlyIn(Dist.CLIENT)
 public abstract class ScreenCallback {
-
-    UIManager mHost;
 
     protected ScreenCallback() {
     }
@@ -51,8 +50,8 @@ public abstract class ScreenCallback {
      * Note that this callback object can be restarted even it was dead. But in this case,
      * you need to pay special attention to the lifecycle, since it is not associated with this object.
      */
-    public final void start() {
-        mHost.openGui(this);
+    public final void startLifecycle() {
+        UIManager.sInstance.openGui(this);
     }
 
     public abstract void onCreate();
@@ -68,6 +67,9 @@ public abstract class ScreenCallback {
      * @param params layout params of content view
      */
     public void setContentView(@Nonnull View view, @Nonnull ViewGroup.LayoutParams params) {
-        mHost.setContentView(view, params);
+        UIManager.sInstance.setContentView(view, params);
+    }
+
+    public void onDestroy() {
     }
 }

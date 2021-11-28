@@ -253,20 +253,20 @@ public final class UIManager extends ViewRootBase {
     // Called when open a screen from Modern UI, or back to the screen
     void start(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
-            mCallback.mHost = this;
             post(mCallback::onCreate);
+            mScreen = screen;
+
+            // init view of this UI
         }
-        mScreen = screen;
-
-        // init view of this UI
-
 
         resize();
     }
 
     void setContentView(@Nonnull View view, @Nonnull ViewGroup.LayoutParams params) {
-        mDecor.removeAllViews();
-        mDecor.addView(view, params);
+        if (mScreen != null) {
+            mDecor.removeAllViews();
+            mDecor.addView(view, params);
+        }
     }
 
     @SubscribeEvent
@@ -788,7 +788,7 @@ public final class UIManager extends ViewRootBase {
         mAnimationTasks.clear();
         mScreen = null;
         if (mCallback != null) {
-            mCallback.mHost = null;
+            mCallback.onDestroy();
             mCallback = null;
         }
         updatePointerIcon(null);
