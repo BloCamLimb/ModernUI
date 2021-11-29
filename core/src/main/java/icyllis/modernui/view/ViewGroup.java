@@ -1239,10 +1239,21 @@ public abstract class ViewGroup extends View implements ViewParent {
             child.mParent = this;
         }
 
+        final boolean childHasFocus = child.hasFocus();
+        if (childHasFocus) {
+            requestChildFocus(child, child.findFocus());
+        }
+
         AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null && (mGroupFlags & FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW) == 0) {
             child.dispatchAttachedToWindow(attachInfo);
         }
+
+        if (child.isLayoutDirectionInherited()) {
+            child.resetRtlProperties();
+        }
+
+        onViewAdded(child);
 
         if (mTransientIndices != null) {
             final int transientCount = mTransientIndices.size();
@@ -1253,6 +1264,31 @@ public abstract class ViewGroup extends View implements ViewParent {
                 }
             }
         }
+    }
+
+    /**
+     * Called when a new child is added to this ViewGroup. Overrides should always
+     * call super.onViewAdded.
+     *
+     * @param child the added child view
+     */
+    public void onViewAdded(View child) {
+    }
+
+    void dispatchViewRemoved(View child) {
+        onViewRemoved(child);
+        /*if (mOnHierarchyChangeListener != null) {
+            mOnHierarchyChangeListener.onChildViewRemoved(this, child);
+        }*/
+    }
+
+    /**
+     * Called when a child view is removed from this ViewGroup. Overrides should always
+     * call super.onViewRemoved.
+     *
+     * @param child the removed child view
+     */
+    public void onViewRemoved(View child) {
     }
 
     /**
@@ -1497,7 +1533,7 @@ public abstract class ViewGroup extends View implements ViewParent {
             }
         }
 
-        //dispatchViewRemoved(view);
+        dispatchViewRemoved(view);
 
         int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
         for (int i = 0; i < transientCount; ++i) {
@@ -1591,9 +1627,9 @@ public abstract class ViewGroup extends View implements ViewParent {
                 childHasTransientStateChanged(view, false);
             }
 
-            needGlobalAttributesUpdate(false);
+            needGlobalAttributesUpdate(false);*/
 
-            dispatchViewRemoved(view);*/
+            dispatchViewRemoved(view);
         }
 
         removeFromArray(start, count);
@@ -1674,9 +1710,9 @@ public abstract class ViewGroup extends View implements ViewParent {
 
             /*if (view.hasTransientState()) {
                 childHasTransientStateChanged(view, false);
-            }
+            }*/
 
-            dispatchViewRemoved(view);*/
+            dispatchViewRemoved(view);
 
             view.mParent = null;
             children[i] = null;
@@ -1932,6 +1968,39 @@ public abstract class ViewGroup extends View implements ViewParent {
                 // an ancestor of v; this will get checked for at ViewAncestor
                 && !(isFocused() && getDescendantFocusability() != FOCUS_AFTER_DESCENDANTS)) {
             mParent.focusableViewAvailable(v);
+        }
+    }
+
+    @Override
+    public void dispatchSetSelected(boolean selected) {
+        final View[] children = mChildren;
+        final int count = mChildrenCount;
+        for (int i = 0; i < count; i++) {
+            children[i].setSelected(selected);
+        }
+    }
+
+    @Override
+    public void dispatchSetActivated(boolean activated) {
+        final View[] children = mChildren;
+        final int count = mChildrenCount;
+        for (int i = 0; i < count; i++) {
+            children[i].setActivated(activated);
+        }
+    }
+
+    @Override
+    protected void dispatchSetPressed(boolean pressed) {
+        final View[] children = mChildren;
+        final int count = mChildrenCount;
+        for (int i = 0; i < count; i++) {
+            final View child = children[i];
+            // Children that are clickable on their own should not
+            // show a pressed state when their parent view does.
+            // Clearing a pressed state always propagates.
+            if (!pressed || (!child.isClickable() && !child.isLongClickable())) {
+                child.setPressed(pressed);
+            }
         }
     }
 
