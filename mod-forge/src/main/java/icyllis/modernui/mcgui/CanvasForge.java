@@ -284,6 +284,8 @@ public final class CanvasForge {
         ((FastShader) shader).fastApply(canvas, mSamplerUnits);
 
         RenderSystem.disableDepthTest();
+        RenderSystem.enableBlend();
+        RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         glDrawElements(mode.asGLMode, indexCount, indexBufferType, MemoryUtil.NULL);
     }
