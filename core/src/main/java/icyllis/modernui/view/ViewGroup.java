@@ -180,7 +180,10 @@ public abstract class ViewGroup extends View implements ViewParent {
         final int count = mChildrenCount;
         final boolean clip = (mGroupFlags & FLAG_CLIP_CHILDREN) != 0;
         for (int i = 0; i < count; i++) {
-            views[i].draw(canvas, this, clip);
+            View child = views[i];
+            if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                child.draw(canvas, this, clip);
+            }
         }
         // Draw any disappearing views that have animations
         if (mDisappearingChildren != null) {
