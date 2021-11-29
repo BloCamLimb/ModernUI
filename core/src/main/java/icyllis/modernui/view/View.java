@@ -2190,6 +2190,86 @@ public class View implements Drawable.Callback {
         return (mPrivateFlags & PFLAG_PRESSED) == PFLAG_PRESSED;
     }
 
+    /**
+     * Changes the selection state of this view. A view can be selected or not.
+     * Note that selection is not the same as focus. Views are typically
+     * selected in the context of an AdapterView like ListView or GridView;
+     * the selected view is the view that is highlighted.
+     *
+     * @param selected true if the view must be selected, false otherwise
+     */
+    public void setSelected(boolean selected) {
+        //noinspection DoubleNegation
+        if (((mPrivateFlags & PFLAG_SELECTED) != 0) != selected) {
+            mPrivateFlags = (mPrivateFlags & ~PFLAG_SELECTED) | (selected ? PFLAG_SELECTED : 0);
+            if (!selected && (mViewFlags & ENABLED_MASK) == ENABLED_MASK && isPressed()) {
+                setPressed(false);
+            }
+            invalidate();
+            refreshDrawableState();
+            dispatchSetSelected(selected);
+        }
+    }
+
+    /**
+     * Dispatch setSelected to all of this View's children.
+     *
+     * @param selected The new selected state
+     * @see #setSelected(boolean)
+     */
+    protected void dispatchSetSelected(boolean selected) {
+    }
+
+    /**
+     * Indicates the selection state of this view.
+     *
+     * @return true if the view is selected, false otherwise
+     */
+    public boolean isSelected() {
+        return (mPrivateFlags & PFLAG_SELECTED) != 0;
+    }
+
+    /**
+     * Changes the activated state of this view. A view can be activated or not.
+     * Note that activation is not the same as selection.  Selection is
+     * a transient property, representing the view (hierarchy) the user is
+     * currently interacting with.  Activation is a longer-term state that the
+     * user can move views in and out of.  For example, in a list view with
+     * single or multiple selection enabled, the views in the current selection
+     * set are activated.  (Um, yeah, we are deeply sorry about the terminology
+     * here.)  The activated state is propagated down to children of the view it
+     * is set on.
+     *
+     * @param activated true if the view must be activated, false otherwise
+     */
+    public void setActivated(boolean activated) {
+        //noinspection DoubleNegation
+        if (((mPrivateFlags & PFLAG_ACTIVATED) != 0) != activated) {
+            mPrivateFlags = (mPrivateFlags & ~PFLAG_ACTIVATED) | (activated ? PFLAG_ACTIVATED : 0);
+            invalidate();
+            refreshDrawableState();
+            dispatchSetActivated(activated);
+        }
+    }
+
+    /**
+     * Dispatch setActivated to all of this View's children.
+     *
+     * @param activated The new activated state
+     * @see #setActivated(boolean)
+     */
+    protected void dispatchSetActivated(boolean activated) {
+    }
+
+    /**
+     * Indicates the activation state of this view.
+     *
+     * @return true if the view is activated, false otherwise
+     */
+    public boolean isActivated() {
+        return (mPrivateFlags & PFLAG_ACTIVATED) != 0;
+    }
+
     private boolean hasSize() {
         return (mBottom > mTop) && (mRight > mLeft);
     }
@@ -3696,7 +3776,7 @@ public class View implements Drawable.Callback {
      *
      * @hide
      */
-    private void resetRtlProperties() {
+    void resetRtlProperties() {
         resetResolvedLayoutDirection();
         resetResolvedTextDirection();
         resetResolvedTextAlignment();
