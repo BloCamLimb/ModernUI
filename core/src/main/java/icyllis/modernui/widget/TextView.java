@@ -4260,7 +4260,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         Drawable mDrawableStart, mDrawableEnd, mDrawableTemp;
         Drawable mDrawableLeftInitial, mDrawableRightInitial;
 
-        boolean mIsRtlCompatibilityMode;
         boolean mOverride;
 
         int mDrawableSizeTop, mDrawableSizeBottom, mDrawableSizeLeft, mDrawableSizeRight,
@@ -4274,7 +4273,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         int mDrawableSaved = DRAWABLE_NONE;
 
         public Drawables() {
-            mIsRtlCompatibilityMode = !ModernUI.get().hasRtlSupport();
             mOverride = false;
         }
 
@@ -4301,7 +4299,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             mShowing[Drawables.LEFT] = mDrawableLeftInitial;
             mShowing[Drawables.RIGHT] = mDrawableRightInitial;
 
-            if (mIsRtlCompatibilityMode) {
+            if (!ModernUI.get().hasRtlSupport()) {
                 // Use "start" drawable as "left" drawable if the "left" drawable was not defined
                 if (mDrawableStart != null && mShowing[Drawables.LEFT] == null) {
                     mShowing[Drawables.LEFT] = mDrawableStart;
