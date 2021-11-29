@@ -29,7 +29,7 @@ public class TestRelativeLayout extends RelativeLayout {
 
     public TestRelativeLayout() {
         LayoutParams lp = new LayoutParams(40, 20);
-        lp.gravity = Gravity.CENTER;
+        lp.addRule(CENTER_IN_PARENT);
         CView view = new CView();
         view.setId(1);
         view.setLayoutParams(lp);
@@ -37,8 +37,8 @@ public class TestRelativeLayout extends RelativeLayout {
         addView(view);
 
         lp = new LayoutParams(60, 20);
-        lp.setRule(ABOVE, 1);
-        lp.gravity = Gravity.CENTER_HORIZONTAL;
+        lp.addRule(ABOVE, 1);
+        lp.addRule(CENTER_HORIZONTAL);
         view = new CView();
         view.setId(2);
         view.setLayoutParams(lp);
@@ -46,8 +46,8 @@ public class TestRelativeLayout extends RelativeLayout {
         addView(view);
 
         lp = new LayoutParams(LayoutParams.MATCH_PARENT, 40);
-        lp.setRule(LEFT_OF, 1);
-        lp.gravity = Gravity.CENTER_VERTICAL;
+        lp.addRule(LEFT_OF, 1);
+        lp.addRule(CENTER_VERTICAL);
         view = new CView();
         view.setId(3);
         view.setLayoutParams(lp);

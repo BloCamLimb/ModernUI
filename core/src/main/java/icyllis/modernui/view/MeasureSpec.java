@@ -23,7 +23,7 @@ import javax.annotation.Nonnull;
 /**
  * A MeasureSpec encapsulates the layout requirements passed from parent to child.
  * Each MeasureSpec represents a requirement for either the width or the height.
- * A MeasureSpec is comprised of a size and a mode. There are three possible
+ * A MeasureSpec comprises a size and a mode. There are three possible
  * modes:
  * <dl>
  * <dt>UNSPECIFIED</dt>
