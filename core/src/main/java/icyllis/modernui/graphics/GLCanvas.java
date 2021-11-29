@@ -613,7 +613,8 @@ public final class GLCanvas extends Canvas {
                 case DRAW_LAYER_POP -> {
                     assert framebuffer != null;
                     int alpha = mLayerStack.popInt();
-                    putRectColorUV(mLayerImageMemory, 0, 0, mWidth, mHeight, (alpha << 24) | 0xFFFFFF,
+                    putRectColorUV(mLayerImageMemory, 0, 0, mWidth, mHeight,
+                            alpha << 24 | alpha << 16 | alpha << 8 | alpha,
                             0, 1, 1, 0);
                     mPosColorTexVBO.upload(0, mLayerImageMemory.flip());
                     mLayerImageMemory.clear();
@@ -622,7 +623,9 @@ public final class GLCanvas extends Canvas {
                     useProgram(COLOR_TEX_MS.get());
                     bindTexture(framebuffer.getAttachedTexture(colorBuffer).get());
                     framebuffer.setDrawBuffer(--colorBuffer);
+                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+                    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                 }
                 case DRAW_CUSTOM -> mCustoms.remove().run();
                 default -> throw new IllegalStateException("Unexpected draw op " + op);

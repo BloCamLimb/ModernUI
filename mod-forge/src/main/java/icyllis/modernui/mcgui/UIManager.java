@@ -704,18 +704,19 @@ public final class UIManager extends ViewRootBase {
         }
         GLTexture texture = GLFramebuffer.swap(framebuffer, GL_COLOR_ATTACHMENT0);
 
-        // draw MSAA off-screen result to Minecraft main framebuffer (not the default framebuffer)
-        RenderSystem.defaultBlendFunc();
+        // draw MSAA off-screen target to Minecraft main target (not the default framebuffer)
+        RenderSystem.blendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
         glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
 
         // do alpha fade in
         int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
-        canvas.drawLayer(texture, width, height, alpha << 24 | 0xffffff, true);
+        canvas.drawLayer(texture, width, height, alpha << 24 | alpha << 16 | alpha << 8 | alpha, true);
         canvas.draw(null);
 
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);
 
+        RenderSystem.defaultBlendFunc();
         // force changing Blaze3D state
         RenderSystem.bindTexture(DEFAULT_TEXTURE);
     }

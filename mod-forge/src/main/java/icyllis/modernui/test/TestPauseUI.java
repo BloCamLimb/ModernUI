@@ -48,7 +48,7 @@ public class TestPauseUI extends ScreenCallback {
     private Image mButtonIcon;
 
     @Override
-    public void onCreate() {
+    protected void onCreate() {
         final ViewConfiguration c = ViewConfiguration.get();
 
         var content = new LinearLayout();

@@ -54,7 +54,7 @@ public abstract class ScreenCallback {
         UIManager.sInstance.openGui(this);
     }
 
-    public abstract void onCreate();
+    protected abstract void onCreate();
 
     /**
      * Set the content view for the screen, this is the top-level view that users can add.
@@ -70,6 +70,6 @@ public abstract class ScreenCallback {
         UIManager.sInstance.setContentView(view, params);
     }
 
-    public void onDestroy() {
+    protected void onDestroy() {
     }
 }

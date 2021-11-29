@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
 public class TestUI extends ScreenCallback {
 
     @Override
-    public void onCreate() {
+    protected void onCreate() {
         ScrollView contentView = new ScrollView();
         ViewConfiguration c = ViewConfiguration.get();
         FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(c.view(500), c.view(480));
