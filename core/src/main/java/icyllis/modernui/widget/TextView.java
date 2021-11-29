@@ -2338,6 +2338,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             mSavedHintLayout = (BoringLayout) mHintLayout;
         }
 
+        mLayout = mHintLayout = null;
+
         mBoring = mHintBoring = null;
     }
 
