@@ -26,7 +26,7 @@ import java.util.Objects;
  */
 public class TimedAction {
 
-    private static final Pool<TimedAction> sPool = Pools.concurrent(20);
+    private static final Pool<TimedAction> sPool = Pools.concurrent(100);
 
     public Runnable action;
     public long time;
