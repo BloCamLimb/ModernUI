@@ -528,9 +528,9 @@ public final class UIManager extends ViewRootBase {
                     if (minecraft.options.keyInventory.isActiveAndMatches(key) || event.getKey() == GLFW_KEY_ESCAPE) {
                         if (minecraft.player != null) {
                             minecraft.player.closeContainer();
+                            return;
                         }
                     }
-                    return;
                 } else if (event.getKey() == GLFW_KEY_ESCAPE) {
                     //TODO check should close on esc
                     minecraft.setScreen(null);
@@ -799,24 +799,26 @@ public final class UIManager extends ViewRootBase {
     }
 
     @Deprecated
+    private final Runnable mTick = () -> {
+        if (mView != null) {
+            mView.tick();
+        }
+    };
+
+    @Deprecated
     @SubscribeEvent
     void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             //++mTicks;
-            post(this::tick);
+            if (mScreen != null && minecraft.screen == mScreen) {
+                post(mTick);
+            }
         }
         /* else {
             if (mPendingRepostCursorEvent) {
                 onCursorPos();
             }
         }*/
-    }
-
-    @Deprecated
-    private void tick() {
-        if (mView != null) {
-            mView.tick();
-        }
     }
 
     @SubscribeEvent
