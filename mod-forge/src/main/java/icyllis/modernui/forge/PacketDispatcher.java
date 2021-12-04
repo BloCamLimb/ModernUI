@@ -41,7 +41,7 @@ import java.util.function.Consumer;
  */
 public class PacketDispatcher {
 
-    private static final Pool<PacketDispatcher> sPool = Pools.concurrent(3);
+    private static final Pool<PacketDispatcher> sPool = Pools.concurrent(5);
 
     private ClientboundCustomPayloadPacket mPacket;
     private final Consumer<ServerPlayer> mDispatcher = p -> p.connection.send(mPacket);
@@ -78,7 +78,9 @@ public class PacketDispatcher {
      * @param player the player
      */
     public void sendToPlayer(@Nonnull Player player) {
-        sendToPlayer((ServerPlayer) player);
+        check();
+        ((ServerPlayer) player).connection.send(mPacket);
+        recycle();
     }
 
     /**
@@ -136,7 +138,7 @@ public class PacketDispatcher {
      * @param radius    radius to target point
      * @param dimension dimension that target players in
      */
-    public void sendToNear(@Nullable ServerPlayer excluded, double x, double y, double z, double radius,
+    public void sendToNear(@Nullable Player excluded, double x, double y, double z, double radius,
                            @Nonnull ResourceKey<Level> dimension) {
         check();
         ServerLifecycleHooks.getCurrentServer().getPlayerList().broadcast(
