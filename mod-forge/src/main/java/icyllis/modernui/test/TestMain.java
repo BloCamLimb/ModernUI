@@ -50,12 +50,15 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Callback;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -256,6 +259,20 @@ public class TestMain {
                     e.printStackTrace();
                 }
             }, "Open-File").start();*/
+            new Thread(() -> {
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                try (MemoryStack stack = MemoryStack.stackPush()) {
+                    ByteBuffer buffer = stack.malloc(3);
+                    String c = TinyFileDialogs.tinyfd_colorChooser("Choose a color", null, buffer, buffer);
+                    if (c != null) {
+                        ModernUI.LOGGER.info("Choose color {}", c);
+                    }
+                }
+            }, "Choose-Color").start();
 
             while (sWindow == null || !sWindow.shouldClose()) {
                 glfwWaitEventsTimeout(1 / 288D);

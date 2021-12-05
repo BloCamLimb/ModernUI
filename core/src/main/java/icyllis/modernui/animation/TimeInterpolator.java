@@ -88,15 +88,7 @@ public interface TimeInterpolator {
      * @see #anticipateOvershoot(float)
      */
     @Nonnull
-    TimeInterpolator ANTICIPATE_OVERSHOOT = in -> {
-        in *= 2.0f;
-        if (in < 0.5f) {
-            return 0.5f * in * in * (4.0f * in - 3.0f);
-        } else {
-            in -= 2.0f;
-            return 0.5f * (in * in * (4.0f * in + 3.0f) + 2.0f);
-        }
-    };
+    TimeInterpolator ANTICIPATE_OVERSHOOT = new AnticipateOvershootInterpolator();
 
     /**
      * The bounce interpolator where the change bounces at the end.
@@ -201,7 +193,7 @@ public interface TimeInterpolator {
      */
     @Nonnull
     static TimeInterpolator anticipateOvershoot(float tension) {
-        return anticipateOvershoot(tension, 1.5f);
+        return new AnticipateOvershootInterpolator(tension);
     }
 
     /**
@@ -219,17 +211,6 @@ public interface TimeInterpolator {
      */
     @Nonnull
     static TimeInterpolator anticipateOvershoot(float tension, float extraTension) {
-        final float v = tension * extraTension;
-        if (v == 3.0f)
-            return ANTICIPATE_OVERSHOOT;
-        return t -> {
-            t *= 2.0f;
-            if (t < 0.5f) {
-                return 0.5f * t * t * ((v + 1) * t - v);
-            } else {
-                t -= 2.0f;
-                return 0.5f * (t * t * ((v + 1) * t + v) + 2.0f);
-            }
-        };
+        return new AnticipateOvershootInterpolator(tension, extraTension);
     }
 }
