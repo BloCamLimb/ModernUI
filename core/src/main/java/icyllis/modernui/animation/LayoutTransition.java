@@ -18,6 +18,8 @@
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
@@ -271,46 +273,46 @@ public class LayoutTransition {
         // "left" is just a placeholder; we'll put real properties/values in when needed
         PropertyValuesHolder<View, ?, ?> pvhLeft = PropertyValuesHolder.ofInt(new IntProperty<>() {
             @Override
-            public void setValue(@Nonnull View target, int value) {
-                target.setLeft(value);
+            public void setValue(@Nonnull View object, int value) {
+                object.setLeft(value);
             }
 
             @Override
-            public Integer get(@Nonnull View target) {
-                return target.getLeft();
+            public Integer get(@Nonnull View object) {
+                return object.getLeft();
             }
         }, 0, 1);
         PropertyValuesHolder<View, ?, ?> pvhTop = PropertyValuesHolder.ofInt(new IntProperty<>() {
             @Override
-            public void setValue(@Nonnull View target, int value) {
-                target.setTop(value);
+            public void setValue(@Nonnull View object, int value) {
+                object.setTop(value);
             }
 
             @Override
-            public Integer get(@Nonnull View target) {
-                return target.getTop();
+            public Integer get(@Nonnull View object) {
+                return object.getTop();
             }
         }, 0, 1);
         PropertyValuesHolder<View, ?, ?> pvhRight = PropertyValuesHolder.ofInt(new IntProperty<>() {
             @Override
-            public void setValue(@Nonnull View target, int value) {
-                target.setRight(value);
+            public void setValue(@Nonnull View object, int value) {
+                object.setRight(value);
             }
 
             @Override
-            public Integer get(@Nonnull View target) {
-                return target.getRight();
+            public Integer get(@Nonnull View object) {
+                return object.getRight();
             }
         }, 0, 1);
         PropertyValuesHolder<View, ?, ?> pvhBottom = PropertyValuesHolder.ofInt(new IntProperty<>() {
             @Override
-            public void setValue(@Nonnull View target, int value) {
-                target.setBottom(value);
+            public void setValue(@Nonnull View object, int value) {
+                object.setBottom(value);
             }
 
             @Override
-            public Integer get(@Nonnull View target) {
-                return target.getBottom();
+            public Integer get(@Nonnull View object) {
+                return object.getBottom();
             }
         }, 0, 1);
         /*PropertyValuesHolder pvhScrollX = PropertyValuesHolder.ofInt("scrollX", 0, 1);
@@ -329,13 +331,13 @@ public class LayoutTransition {
 
         FloatProperty<View> alpha = new FloatProperty<>() {
             @Override
-            public void setValue(@Nonnull View target, float value) {
-                target.setTransitionAlpha(value);
+            public void setValue(@Nonnull View object, float value) {
+                object.setTransitionAlpha(value);
             }
 
             @Override
-            public Float get(@Nonnull View target) {
-                return target.getTransitionAlpha();
+            public Float get(@Nonnull View object) {
+                return object.getTransitionAlpha();
             }
         };
 

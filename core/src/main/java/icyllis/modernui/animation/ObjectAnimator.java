@@ -18,6 +18,9 @@
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.IntProperty;
+import icyllis.modernui.util.Property;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 
 import javax.annotation.Nonnull;

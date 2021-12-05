@@ -16,26 +16,30 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.animation;
+package icyllis.modernui.util;
 
 import javax.annotation.Nonnull;
 
 /**
  * An implementation of {@link Property} to be used specifically with fields of type
- * <code>int</code>. This type-specific subclass enables performance benefit by allowing
- * calls to a {@link #setValue(Object, int) setValue()} function that takes the primitive
- * <code>int</code> type and avoids autoboxing and other overhead associated with the
- * <code>Integer</code> class.
+ * <code>float</code>. This type-specific subclass enables performance benefit by allowing
+ * calls to a {@link #setValue(Object, float) setValue()} function that takes the primitive
+ * <code>float</code> type and avoids autoboxing and other overhead associated with the
+ * <code>Float</code> class.
  *
  * @param <T> The class on which the Property is declared.
  */
-public abstract class IntProperty<T> implements Property<T, Integer> {
+public abstract class FloatProperty<T> implements Property<T, Float> {
 
-    public abstract void setValue(@Nonnull T target, int value);
+    /**
+     * A type-specific variant of {@link #set(Object, Float)} that is faster when dealing
+     * with fields of type <code>float</code>.
+     */
+    public abstract void setValue(@Nonnull T object, float value);
 
     @Deprecated
     @Override
-    public final void set(@Nonnull T target, @Nonnull Integer value) {
-        setValue(target, value);
+    public final void set(@Nonnull T object, @Nonnull Float value) {
+        setValue(object, value);
     }
 }

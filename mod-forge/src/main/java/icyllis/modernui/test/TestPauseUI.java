@@ -29,6 +29,8 @@ import icyllis.modernui.mcgui.CanvasForge;
 import icyllis.modernui.mcgui.ScreenCallback;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
+import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
@@ -274,14 +276,14 @@ public class TestPauseUI extends ScreenCallback {
             mSize = ViewConfiguration.get().view(32);
             mRodAnimator = ObjectAnimator.ofFloat(this, new FloatProperty<>() {
                 @Override
-                public void setValue(@Nonnull ConnectorView target, float value) {
-                    target.mRodLength = value;
+                public void setValue(@Nonnull ConnectorView object, float value) {
+                    object.mRodLength = value;
                     invalidate();
                 }
 
                 @Override
-                public Float get(@Nonnull ConnectorView target) {
-                    return target.mRodLength;
+                public Float get(@Nonnull ConnectorView object) {
+                    return object.mRodLength;
                 }
             }, 0, ViewConfiguration.get().view(32));
             mRodAnimator.setInterpolator(TimeInterpolator.DECELERATE);
@@ -294,14 +296,14 @@ public class TestPauseUI extends ScreenCallback {
             });
             mBoxAnimator = ObjectAnimator.ofInt(mBoxPaint, new IntProperty<>() {
                 @Override
-                public void setValue(@Nonnull Paint target, int value) {
-                    target.setAlpha(value);
+                public void setValue(@Nonnull Paint object, int value) {
+                    object.setAlpha(value);
                     invalidate();
                 }
 
                 @Override
-                public Integer get(@Nonnull Paint target) {
-                    return target.getColor() >>> 24;
+                public Integer get(@Nonnull Paint object) {
+                    return object.getColor() >>> 24;
                 }
             }, 0, 128);
             mRodAnimator.setInterpolator(TimeInterpolator.LINEAR);
