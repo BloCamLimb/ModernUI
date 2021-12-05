@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.animation;
+package icyllis.modernui.util;
 
 import javax.annotation.Nonnull;
 
@@ -32,12 +32,14 @@ import javax.annotation.Nonnull;
 public interface Property<T, V> {
 
     /**
-     * Sets the value on <code>target</code> which this property represents.
+     * Sets the value on <code>object</code> which this property represents. If the method is unable
+     * to set the value on the target object it will throw an {@link UnsupportedOperationException}
+     * exception.
      */
-    void set(@Nonnull T target, V value);
+    void set(@Nonnull T object, V value);
 
     /**
-     * Returns the current value that this property represents on the given <code>obj</code>.
+     * Returns the current value that this property represents on the given <code>object</code>.
      */
-    V get(@Nonnull T target);
+    V get(@Nonnull T object);
 }

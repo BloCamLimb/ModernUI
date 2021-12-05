@@ -18,6 +18,9 @@
 
 package icyllis.modernui.animation;
 
+import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.IntProperty;
+import icyllis.modernui.util.Property;
 import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
@@ -43,7 +46,7 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
             field.setAccessible(true);
             UNSAFE = (Unsafe) field.get(null);
         } catch (Exception e) {
-            throw new IllegalStateException("No UNSAFE", e);
+            throw new IllegalStateException("No UNSAFE, this should not happen in a desktop environment", e);
         }
     }
 
@@ -86,7 +89,8 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
 
     /**
      * Constructs and returns a PropertyValuesHolder with a given property name and
-     * set of int values.
+     * set of int values. In this case, a direct write/read operation on the field
+     * will be performed (i.e. no setter/getter methods).
      *
      * @param clazz        The target class that the property belongs to.
      * @param propertyName The name of the property being animated.
@@ -101,7 +105,8 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
             long offset = UNSAFE.objectFieldOffset(clazz.getDeclaredField(propertyName));
             return ofInt(new UnsafeIntProperty<>(offset), values);
         } catch (NoSuchFieldException e) {
-            throw new IllegalArgumentException("Cannot find the property " + propertyName + " in " + clazz.getName());
+            throw new IllegalArgumentException(
+                    "Cannot find the property " + propertyName + " in " + clazz.getName(), e);
         }
     }
 
@@ -491,13 +496,13 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
         }
 
         @Override
-        public void setValue(@Nonnull T target, int value) {
-            UNSAFE.putInt(target, mOffset, value);
+        public void setValue(@Nonnull T object, int value) {
+            UNSAFE.putInt(object, mOffset, value);
         }
 
         @Override
-        public Integer get(@Nonnull T target) {
-            return UNSAFE.getInt(target, mOffset);
+        public Integer get(@Nonnull T object) {
+            return UNSAFE.getInt(object, mOffset);
         }
     }
 

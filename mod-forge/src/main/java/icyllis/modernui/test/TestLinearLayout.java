@@ -33,6 +33,7 @@ import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
+import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
@@ -229,13 +230,13 @@ public class TestLinearLayout extends LinearLayout {
 
     private static final FloatProperty<TestLinearLayout> sRoundRectLengthProp = new FloatProperty<>() {
         @Override
-        public void setValue(@Nonnull TestLinearLayout target, float value) {
-            target.mRoundRectLen = value;
+        public void setValue(@Nonnull TestLinearLayout object, float value) {
+            object.mRoundRectLen = value;
         }
 
         @Override
-        public Float get(@Nonnull TestLinearLayout target) {
-            return target.mRoundRectLen;
+        public Float get(@Nonnull TestLinearLayout object) {
+            return object.mRoundRectLen;
         }
     };
 
