@@ -70,6 +70,12 @@ public abstract class CompoundButton extends View implements Checkable {
         setChecked(!mChecked);
     }
 
+    @Override
+    public boolean performClick() {
+        toggle();
+        return super.performClick();
+    }
+
     /**
      * Register a callback to be invoked when the checked state of this button
      * changes.

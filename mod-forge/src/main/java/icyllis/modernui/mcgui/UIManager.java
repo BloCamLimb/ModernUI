@@ -710,7 +710,9 @@ public final class UIManager extends ViewRootBase {
 
         // do alpha fade in
         int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
-        canvas.drawLayer(texture, width, height, alpha << 24 | alpha << 16 | alpha << 8 | alpha, true);
+        alpha = alpha << 8 | alpha;
+        // premultiplied alpha
+        canvas.drawLayer(texture, width, height, alpha << 16 | alpha, true);
         canvas.draw(null);
 
         glBindVertexArray(oldVertexArray);

@@ -88,7 +88,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     public static final int FOCUS_BLOCK_DESCENDANTS = 0x60000;
 
     /**
-     * Used to map between enum in attrubutes and flag values.
+     * Used to map between enum in attributes and flag values.
      */
     private static final int[] DESCENDANT_FOCUSABILITY_FLAGS =
             {FOCUS_BEFORE_DESCENDANTS, FOCUS_AFTER_DESCENDANTS,
@@ -2170,7 +2170,7 @@ public abstract class ViewGroup extends View implements ViewParent {
     @Override
     public boolean resolveRtlProperties() {
         final boolean result = super.resolveRtlProperties();
-        // We dont need to resolve the children RTL properties if nothing has changed for the parent
+        // We don't need to resolve the children RTL properties if nothing has changed for the parent
         if (result) {
             int count = getChildCount();
             for (int i = 0; i < count; i++) {

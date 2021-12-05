@@ -54,10 +54,7 @@ public class TimedAction {
      */
     @Nonnull
     public static TimedAction obtain(@Nonnull Runnable r, long time) {
-        TimedAction a = sPool.acquire();
-        if (a == null) {
-            a = new TimedAction();
-        }
+        TimedAction a = obtain();
         a.action = r;
         a.time = time;
         return a;
