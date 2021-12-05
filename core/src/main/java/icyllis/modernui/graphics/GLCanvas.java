@@ -45,6 +45,7 @@ import org.jetbrains.annotations.VisibleForTesting;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
+import java.lang.annotation.Native;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
@@ -54,7 +55,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * Modern OpenGL implementation to Canvas, handling multi-threaded rendering.
+ * Modern OpenGL implementation to Canvas, handling multithreaded rendering.
  * <p>
  * GLCanvas is highly integrated, you can't draw other things except those
  * defined in Canvas easily. This helps to build OpenGL buffers from UI thread,
@@ -65,6 +66,8 @@ import static org.lwjgl.system.MemoryUtil.*;
  * and {@link #draw} means calling OpenGL draw functions on the render thread.
  * <p>
  * The color buffer drawn to must be at index 0, and stencil buffer must be 8-bit.
+ * <p>
+ * Shader sources are defined in assets.
  *
  * @author BloCamLimb
  */
@@ -152,6 +155,7 @@ public final class GLCanvas extends Canvas {
     public static final int CIRCLE_UNIFORM_SIZE = 16;
     public static final int ROUND_RECT_UNIFORM_SIZE = 24;
 
+    @Native
     public static final int POS_COLOR_TEX_VERTEX_SIZE = 20;
 
     static {
@@ -174,16 +178,16 @@ public final class GLCanvas extends Canvas {
 
     // vertex buffer objects
     private final GLBuffer mPosColorVBO = new GLBuffer();
-    private ByteBuffer mPosColorMemory = memAlloc(1024);
+    private ByteBuffer mPosColorMemory = memAlloc(4096);
     private boolean mPosColorResized = true;
 
     private final GLBuffer mPosColorTexVBO = new GLBuffer();
-    private ByteBuffer mPosColorTexMemory = memAlloc(1024);
+    private ByteBuffer mPosColorTexMemory = memAlloc(4096);
     private boolean mPosColorTexResized = true;
 
     // dynamic update on render thread
     private final GLBuffer mPosTexVBO = new GLBuffer();
-    private ByteBuffer mPosTexMemory = memAlloc(1024);
+    private ByteBuffer mPosTexMemory = memAlloc(4096);
     private boolean mPosTexResized = true;
 
     /*private int mModelViewVBO = INVALID_ID;
@@ -191,7 +195,7 @@ public final class GLCanvas extends Canvas {
     private boolean mRecreateModelView = true;*/
 
     // the client buffer used for updating the uniform blocks
-    private ByteBuffer mUniformMemory = memAlloc(1024);
+    private ByteBuffer mUniformMemory = memAlloc(4096);
 
     // immutable uniform buffer objects
     private final GLBuffer mMatrixUBO = new GLBuffer();

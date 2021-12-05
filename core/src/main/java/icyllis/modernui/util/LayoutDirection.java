@@ -18,21 +18,22 @@
 
 package icyllis.modernui.util;
 
+import org.jetbrains.annotations.ApiStatus;
+
 /**
  * A class for defining layout directions. A layout direction can be left-to-right (LTR)
  * or right-to-left (RTL). It can also be inherited (from a parent) or deduced from the default
  * language script of a locale.
  */
-public class LayoutDirection {
+public final class LayoutDirection {
 
     private LayoutDirection() {
     }
 
     /**
      * An undefined layout direction.
-     *
-     * @hide
      */
+    @ApiStatus.Internal
     public static final int UNDEFINED = -1;
 
     /**

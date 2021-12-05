@@ -143,12 +143,6 @@ public class SwitchButton extends CompoundButton {
     }
 
     @Override
-    public boolean performClick() {
-        toggle();
-        return true;
-    }
-
-    @Override
     public void setChecked(boolean checked) {
         boolean oldChecked = isChecked();
         super.setChecked(checked);
