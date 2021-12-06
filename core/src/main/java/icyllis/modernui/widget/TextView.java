@@ -1026,7 +1026,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public void setTextSize(float size) {
         if (size != mTextPaint.getFontSize()) {
-            mTextPaint.setFontSize(ViewConfiguration.get().text(size));
+            mTextPaint.setFontSize(ViewConfiguration.sp(size));
 
             if (mLayout != null) {
                 nullLayouts();
@@ -4301,7 +4301,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             mShowing[Drawables.LEFT] = mDrawableLeftInitial;
             mShowing[Drawables.RIGHT] = mDrawableRightInitial;
 
-            if (!ModernUI.get().hasRtlSupport()) {
+            if (!ModernUI.getInstance().hasRtlSupport()) {
                 // Use "start" drawable as "left" drawable if the "left" drawable was not defined
                 if (mDrawableStart != null && mShowing[Drawables.LEFT] == null) {
                     mShowing[Drawables.LEFT] = mDrawableStart;

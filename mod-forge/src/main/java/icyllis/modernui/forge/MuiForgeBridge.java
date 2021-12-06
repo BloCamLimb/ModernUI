@@ -152,29 +152,6 @@ public final class MuiForgeBridge {
         return sUIManager.getFrameTime();
     }
 
-    /**
-     * Post a task that will run on UI thread later.
-     *
-     * @param action runnable task
-     * @return if successful
-     */
-    @OnlyIn(Dist.CLIENT)
-    public static boolean postOnUiThread(@Nonnull Runnable action) {
-        return sUIManager.postDelayed(action, 0);
-    }
-
-    /**
-     * Post a task that will run on UI thread in specified milliseconds.
-     *
-     * @param action      runnable task
-     * @param delayMillis delayed time to run the task in milliseconds
-     * @return if successful
-     */
-    @OnlyIn(Dist.CLIENT)
-    public static boolean postOnUiThread(@Nonnull Runnable action, long delayMillis) {
-        return sUIManager.postDelayed(action, delayMillis);
-    }
-
     @OnlyIn(Dist.CLIENT)
     public static int calcGuiScales() {
         return calcGuiScales(Minecraft.getInstance().getWindow());

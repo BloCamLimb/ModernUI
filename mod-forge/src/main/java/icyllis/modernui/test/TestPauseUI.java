@@ -18,8 +18,13 @@
 
 package icyllis.modernui.test;
 
+import com.ibm.icu.text.DateFormat;
+import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.*;
+import icyllis.modernui.animation.Animator;
+import icyllis.modernui.animation.LayoutTransition;
+import icyllis.modernui.animation.ObjectAnimator;
+import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
@@ -27,8 +32,11 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.mcgui.CanvasForge;
 import icyllis.modernui.mcgui.ScreenCallback;
+import icyllis.modernui.text.SpannableString;
+import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
+import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.view.Gravity;
@@ -38,10 +46,15 @@ import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.TextView;
+import icyllis.modernui.widget.Toast;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import javax.annotation.Nonnull;
+import java.util.Date;
+import java.util.Locale;
+
+import static icyllis.modernui.view.ViewConfiguration.dp;
 
 public class TestPauseUI extends ScreenCallback {
 
@@ -51,8 +64,6 @@ public class TestPauseUI extends ScreenCallback {
 
     @Override
     protected void onCreate() {
-        final ViewConfiguration c = ViewConfiguration.get();
-
         var content = new LinearLayout();
         content.setOrientation(LinearLayout.VERTICAL);
 
@@ -67,7 +78,7 @@ public class TestPauseUI extends ScreenCallback {
 
         for (int i = 0; i < 8; i++) {
             var button = new NavigationButton(mButtonIcon, i * 32);
-            var params = new LinearLayout.LayoutParams(c.view(32), c.view(32));
+            var params = new LinearLayout.LayoutParams(dp(32), dp(32));
             button.setClickable(true);
             params.setMarginsRelative(i == 7 ? 26 : 2, 2, 2, 6);
             if (i == 0 || i == 7) {
@@ -75,6 +86,21 @@ public class TestPauseUI extends ScreenCallback {
             } else {
                 int index = i;
                 content.postDelayed(() -> navigation.addView(button, index, params), i * 50);
+            }
+            if (i == 2) {
+                button.setOnClickListener(__ -> {
+                    DateFormat dateFormat = SimpleDateFormat.getDateInstance(SimpleDateFormat.FULL, Locale.CHINA);
+                    Toast.makeText("Hello, Toast! " + dateFormat.format(new Date()), Toast.LENGTH_LONG).show();
+                });
+            }
+            if (i == 3) {
+                button.setOnClickListener(__ -> {
+                    String s = "Your request was rejected by the server.";
+                    SpannableString text = new SpannableString(s);
+                    text.setSpan(new ForegroundColorSpan(0xFFCF1515), 0, s.length(),
+                            Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                    Toast.makeText(text, Toast.LENGTH_SHORT).show();
+                });
             }
         }
 
@@ -117,8 +143,8 @@ public class TestPauseUI extends ScreenCallback {
 
             var params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT);
-            params.setMargins(c.view(20), c.view(i == 0 ? 50 : 2), c.view(20),
-                    c.view(2));
+            params.setMargins(dp(20), dp(i == 0 ? 50 : 2), dp(20),
+                    dp(2));
 
             content.postDelayed(() -> tab.addView(v, params), (i + 1) * 100);
         }
@@ -127,11 +153,11 @@ public class TestPauseUI extends ScreenCallback {
             var v = new ConnectorView(mButtonIcon);
             var params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT);
-            params.setMargins(c.view(8), c.view(2), c.view(8), c.view(8));
+            params.setMargins(dp(8), dp(2), dp(8), dp(8));
             content.postDelayed(() -> tab.addView(v, params), 400);
         }
 
-        int tabSize = c.view(340);
+        int tabSize = dp(340);
         content.addView(tab, new LinearLayout.LayoutParams(tabSize, tabSize));
 
         setContentView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
@@ -144,9 +170,9 @@ public class TestPauseUI extends ScreenCallback {
         private final TextPaint mTextPaint;
 
         public TabBackground() {
-            mRadius = ViewConfiguration.get().view(16);
+            mRadius = dp(16);
             mTextPaint = new TextPaint();
-            mTextPaint.setFontSize(ViewConfiguration.get().text(16));
+            mTextPaint.setFontSize(ViewConfiguration.sp(16));
         }
 
         @Override
@@ -177,7 +203,7 @@ public class TestPauseUI extends ScreenCallback {
         public TextFieldStart(Image image, int srcLeft) {
             mImage = image;
             mSrcLeft = srcLeft;
-            mSize = ViewConfiguration.get().view(24);
+            mSize = dp(24);
         }
 
         @Override
@@ -210,7 +236,7 @@ public class TestPauseUI extends ScreenCallback {
         private final float mRadius;
 
         public TextFieldBackground() {
-            mRadius = ViewConfiguration.get().view(3);
+            mRadius = dp(3);
         }
 
         @Override
@@ -273,7 +299,7 @@ public class TestPauseUI extends ScreenCallback {
 
         public ConnectorView(Image image) {
             mImage = image;
-            mSize = ViewConfiguration.get().view(32);
+            mSize = dp(32);
             mRodAnimator = ObjectAnimator.ofFloat(this, new FloatProperty<>() {
                 @Override
                 public void setValue(@Nonnull ConnectorView object, float value) {
@@ -285,7 +311,7 @@ public class TestPauseUI extends ScreenCallback {
                 public Float get(@Nonnull ConnectorView object) {
                     return object.mRodLength;
                 }
-            }, 0, ViewConfiguration.get().view(32));
+            }, 0, dp(32));
             mRodAnimator.setInterpolator(TimeInterpolator.DECELERATE);
             mRodAnimator.setDuration(400);
             mRodAnimator.addListener(new Animator.AnimatorListener() {

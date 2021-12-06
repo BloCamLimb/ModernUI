@@ -25,6 +25,7 @@ import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.LayoutCache;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.TextLayoutEngine;
+import icyllis.modernui.view.ViewManager;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -228,6 +229,22 @@ public final class ModernUIForge extends ModernUI {
     @Override
     public Executor getBackgroundExecutor() {
         return Util.backgroundExecutor();
+    }
+
+    @Nonnull
+    @Override
+    public ViewManager getViewManager() {
+        return MuiForgeBridge.sUIManager.getDecorView();
+    }
+
+    @Override
+    public boolean postOnUiThread(@Nonnull Runnable action) {
+        return MuiForgeBridge.sUIManager.postDelayed(action, 0);
+    }
+
+    @Override
+    public boolean postOnUiThread(@Nonnull Runnable action, long delayMillis) {
+        return MuiForgeBridge.sUIManager.postDelayed(action, delayMillis);
     }
 
     public static boolean isDeveloperMode() {

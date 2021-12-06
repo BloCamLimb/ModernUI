@@ -24,24 +24,24 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.mcgui.ScreenCallback;
 import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.ScrollView;
 
 import javax.annotation.Nonnull;
 
+import static icyllis.modernui.view.ViewConfiguration.dp;
+
 public class TestUI extends ScreenCallback {
 
     @Override
     protected void onCreate() {
         ScrollView contentView = new ScrollView();
-        ViewConfiguration c = ViewConfiguration.get();
-        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(c.view(500), c.view(480));
+        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(dp(500), dp(480));
         contentViewParams.gravity = Gravity.CENTER;
 
         LinearLayout ll = new TestLinearLayout();
-        contentView.addView(ll, new FrameLayout.LayoutParams(c.view(400), c.view(700)));
+        contentView.addView(ll, new FrameLayout.LayoutParams(dp(400), dp(700)));
 
         contentView.setBackground(new Drawable() {
             //long lastTime = AnimationHandler.currentTimeMillis();

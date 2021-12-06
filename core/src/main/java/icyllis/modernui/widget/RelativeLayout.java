@@ -1192,7 +1192,7 @@ public class RelativeLayout extends ViewGroup {
             System.arraycopy(mInitialRules, LEFT_OF, mRules, LEFT_OF, VERB_COUNT);
 
             // Apply rules depending on direction and if we are in RTL compatibility mode
-            if (!ModernUI.get().hasRtlSupport()) {
+            if (!ModernUI.getInstance().hasRtlSupport()) {
                 if (mRules[ALIGN_START] != 0) {
                     if (mRules[ALIGN_LEFT] == 0) {
                         // "left" rule is not defined but "start" rule is: use the "start" rule as
