@@ -66,6 +66,26 @@ public class ViewConfiguration {
     }
 
     /**
+     * Get the size in pixels that matches the view layout standards.
+     *
+     * @param sip scaling-independent pixel, relative to other views
+     * @return converted size in pixels
+     */
+    public static int dp(float sip) {
+        return Math.round(sip * get().mViewScale);
+    }
+
+    /**
+     * Get the size in pixels that matches the text layout standards.
+     *
+     * @param sip scaling-independent pixel, relative to other texts
+     * @return converted size in pixels
+     */
+    public static int sp(float sip) {
+        return Math.round(sip * get().mViewScale);
+    }
+
+    /**
      * @return the duration in milliseconds of the pressed state in child
      * components.
      */
@@ -78,28 +98,11 @@ public class ViewConfiguration {
         mViewScale = scale;
     }
 
+    /**
+     * @return the current view scale is used to convert scale-independent pixels to pixels
+     */
     public float getViewScale() {
         return mViewScale;
-    }
-
-    /**
-     * Get the size in pixels that matches the view layout standards.
-     *
-     * @param sip scaling-independent pixel, relative to other views
-     * @return size in pixels
-     */
-    public int view(float sip) {
-        return Math.round(sip * mViewScale);
-    }
-
-    /**
-     * Get the size in pixels that matches the text layout standards.
-     *
-     * @param sip scaling-independent pixel, relative to other texts
-     * @return size in pixels
-     */
-    public int text(float sip) {
-        return Math.round(sip * mViewScale);
     }
 
     @ApiStatus.Internal

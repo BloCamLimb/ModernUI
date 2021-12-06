@@ -1471,6 +1471,7 @@ public final class GLCanvas extends Canvas {
     @Override
     public void drawRoundRect(float left, float top, float right, float bottom, float radius,
                               int sides, @Nonnull Paint paint) {
+        radius = Math.min(radius, Math.min(right - left, bottom - top) * 0.5f);
         if (radius < 0) {
             radius = 0;
         }

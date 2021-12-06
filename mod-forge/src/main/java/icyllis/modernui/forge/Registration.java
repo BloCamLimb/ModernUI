@@ -186,7 +186,7 @@ final class Registration {
 
         // preload text engine
         Minecraft.getInstance().execute(() -> {
-            ModernUI.get().getSelectedTypeface();
+            ModernUI.getInstance().getSelectedTypeface();
             TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
         });
 

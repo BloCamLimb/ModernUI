@@ -19,6 +19,7 @@
 package icyllis.modernui;
 
 import icyllis.modernui.text.Typeface;
+import icyllis.modernui.view.ViewManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -40,7 +41,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 /**
- * The core class of the client side of Modern UI.
+ * The core class of Modern UI.
  */
 public class ModernUI {
 
@@ -60,9 +61,10 @@ public class ModernUI {
         }
     }
 
-    private final Path mAssetsDir = Path.of(String.valueOf(System.getenv("APP_ASSETS")));
+    protected final Path mAssetsDir = Path.of(String.valueOf(System.getenv("APP_ASSETS")));
 
-    private volatile ExecutorService mBackgroundExecutor;
+    protected volatile ExecutorService mBackgroundExecutor;
+    protected volatile ViewManager mViewManager;
 
     public ModernUI() {
         synchronized (ModernUI.class) {
@@ -73,11 +75,22 @@ public class ModernUI {
     }
 
     /**
+     * Initializes the Modern UI with the default application setups.
+     *
+     * @return the Modern UI
+     */
+    public static ModernUI initialize() {
+        ModernUI it = new ModernUI();
+        it.mBackgroundExecutor = Executors.newWorkStealingPool();
+        return sInstance;
+    }
+
+    /**
      * Gets Modern UI instance.
      *
      * @return the Modern UI
      */
-    public static ModernUI get() {
+    public static ModernUI getInstance() {
         return sInstance;
     }
 
@@ -95,11 +108,21 @@ public class ModernUI {
         return sCleaner.register(target, action);
     }
 
+    /**
+     * Get the preferred locale set by user.
+     *
+     * @return selected locale
+     */
     @Nonnull
     public Locale getSelectedLocale() {
         return Locale.getDefault();
     }
 
+    /**
+     * Get the preferred typeface set by user.
+     *
+     * @return selected typeface
+     */
     @Nonnull
     public Typeface getSelectedTypeface() {
         return Typeface.INTERNAL;
@@ -131,13 +154,37 @@ public class ModernUI {
      */
     @Nonnull
     public Executor getBackgroundExecutor() {
-        if (mBackgroundExecutor == null) {
-            synchronized (this) {
-                if (mBackgroundExecutor == null) {
-                    mBackgroundExecutor = Executors.newWorkStealingPool();
-                }
-            }
-        }
         return mBackgroundExecutor;
+    }
+
+    /**
+     * Get the view manager of the application window.
+     *
+     * @return window view manager
+     */
+    @Nonnull
+    public ViewManager getViewManager() {
+        return mViewManager;
+    }
+
+    /**
+     * Post a task that will run on UI thread later.
+     *
+     * @param action runnable task
+     * @return if successful
+     */
+    public boolean postOnUiThread(@Nonnull Runnable action) {
+        return false;
+    }
+
+    /**
+     * Post a task that will run on UI thread in specified milliseconds.
+     *
+     * @param action      runnable task
+     * @param delayMillis delayed time to run the task in milliseconds
+     * @return if successful
+     */
+    public boolean postOnUiThread(@Nonnull Runnable action, long delayMillis) {
+        return false;
     }
 }

@@ -47,7 +47,7 @@ import java.util.List;
  */
 @UiThread
 @SuppressWarnings("unused")
-public abstract class ViewGroup extends View implements ViewParent {
+public abstract class ViewGroup extends View implements ViewParent, ViewManager {
 
     private static final int ARRAY_CAPACITY_INCREMENT = 12;
 
@@ -1143,6 +1143,7 @@ public abstract class ViewGroup extends View implements ViewParent {
      * @param child  the child view to add
      * @param params the layout parameters to set on the child
      */
+    @Override
     public void addView(@Nonnull View child, @Nonnull LayoutParams params) {
         addView(child, -1, params);
     }
@@ -1165,6 +1166,17 @@ public abstract class ViewGroup extends View implements ViewParent {
         requestLayout();
         invalidate();
         addViewInner(child, index, params, false);
+    }
+
+    @Override
+    public void updateViewLayout(@Nonnull View view, @Nonnull ViewGroup.LayoutParams params) {
+        if (!checkLayoutParams(params)) {
+            throw new IllegalArgumentException("Invalid LayoutParams supplied to " + this);
+        }
+        if (view.mParent != this) {
+            throw new IllegalArgumentException("Given view not a child of " + this);
+        }
+        view.setLayoutParams(params);
     }
 
     /**
@@ -1419,7 +1431,8 @@ public abstract class ViewGroup extends View implements ViewParent {
      * {@link #draw(Canvas)}, {@link #onDraw(Canvas)},
      * {@link #dispatchDraw(Canvas)} or any related method.</p>
      */
-    public void removeView(View view) {
+    @Override
+    public void removeView(@Nonnull View view) {
         if (removeViewInternal(view)) {
             requestLayout();
             invalidate();
@@ -1436,7 +1449,7 @@ public abstract class ViewGroup extends View implements ViewParent {
      *
      * @param view the view to remove from the group
      */
-    public void removeViewInLayout(View view) {
+    public void removeViewInLayout(@Nonnull View view) {
         removeViewInternal(view);
     }
 

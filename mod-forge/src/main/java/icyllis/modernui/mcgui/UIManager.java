@@ -23,6 +23,7 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
@@ -42,6 +43,7 @@ import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.TimedAction;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.DecorView;
+import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.CrashReport;
 import net.minecraft.Util;
@@ -152,6 +154,8 @@ public final class UIManager extends ViewRootBase {
 
     private final Predicate<? super TimedAction> mUiHandler = task -> task.execute(mUptimeMillis);
 
+    private final Runnable mPerformCreate = this::performCreate;
+
     private UIManager() {
         mAnimationHandler = AnimationHandler.init();
         mFramebuffer = new GLFramebuffer(4);
@@ -238,6 +242,10 @@ public final class UIManager extends ViewRootBase {
         return mCallback;
     }
 
+    public FrameLayout getDecorView() {
+        return mDecor;
+    }
+
     @Override
     public void checkThread() {
         super.checkThread();
@@ -253,13 +261,21 @@ public final class UIManager extends ViewRootBase {
     // Called when open a screen from Modern UI, or back to the screen
     void start(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
-            post(mCallback::onCreate);
+            post(mPerformCreate);
             mScreen = screen;
 
             // init view of this UI
         }
 
         resize();
+    }
+
+    void performCreate() {
+        LayoutTransition transition = mDecor.getLayoutTransition();
+        transition.disableTransitionType(LayoutTransition.APPEARING);
+        mCallback.onCreate();
+        transition.enableTransitionType(LayoutTransition.APPEARING);
+        transition.enableTransitionType(LayoutTransition.DISAPPEARING);
     }
 
     void setContentView(@Nonnull View view, @Nonnull ViewGroup.LayoutParams params) {
@@ -351,8 +367,14 @@ public final class UIManager extends ViewRootBase {
         mDecor.setClickable(true);
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
+        {
+            LayoutTransition transition = new LayoutTransition();
+            transition.disableTransitionType(LayoutTransition.CHANGE_APPEARING);
+            transition.disableTransitionType(LayoutTransition.CHANGE_DISAPPEARING);
+            mDecor.setLayoutTransition(transition);
+        }
         setView(mDecor);
-        // preheat
+        // kick-start
         scheduleTraversals();
         doTraversal();
         ModernUI.LOGGER.info(MARKER, "View system initialized");
@@ -783,21 +805,25 @@ public final class UIManager extends ViewRootBase {
         mProjectionChanged = true;
     }
 
+    private final Runnable mPerformPostDestroy = () -> {
+        mDecor.getLayoutTransition().disableTransitionType(LayoutTransition.DISAPPEARING);
+        mDecor.removeAllViews();
+    };
+
     void stop() {
         if (!mCloseScreen || mScreen == null) {
             return;
         }
-        mTasks.clear();
-        mAnimationTasks.clear();
         mScreen = null;
         if (mCallback != null) {
-            mCallback.onDestroy();
+            post(mCallback::onDestroy);
             mCallback = null;
         }
         updatePointerIcon(null);
         applyPointerIcon();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-        post(mDecor::removeAllViews);
+
+        post(mPerformPostDestroy);
     }
 
     @Deprecated
@@ -830,9 +856,9 @@ public final class UIManager extends ViewRootBase {
             mFrameTimeMillis = RenderCore.timeMillis();
             final long deltaMillis = mFrameTimeMillis - lastFrameTime;
             mElapsedTimeMillis += deltaMillis;
-            if (mScreen != null && minecraft.screen == mScreen) {
-                LockSupport.unpark(mThread);
-            }
+            // coordinates UI thread
+            LockSupport.unpark(mThread);
+            // update extension animations
             BlurHandler.INSTANCE.update(mElapsedTimeMillis);
             if (TooltipRenderer.sTooltip) {
                 TooltipRenderer.update(deltaMillis);

@@ -167,7 +167,7 @@ public class ShaderManager {
                 return 0;
             }
         }
-        try (ReadableByteChannel channel = ModernUI.get().getResourceAsChannel(namespace, path)) {
+        try (ReadableByteChannel channel = ModernUI.getInstance().getResourceAsChannel(namespace, path)) {
             String source = RenderCore.readStringUTF8(channel);
             if (source == null) {
                 ModernUI.LOGGER.error(MARKER, "Failed to read shader source {}:{}", namespace, path);

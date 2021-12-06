@@ -19,6 +19,8 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
+import com.ibm.icu.text.DateFormat;
+import com.ibm.icu.text.SimpleDateFormat;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
@@ -62,10 +64,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -143,7 +143,7 @@ public class TestMain {
 
         /*System.setProperty("org.lwjgl.librarypath", nativesDir);*/
 
-        new ModernUI();
+        ModernUI.initialize();
 
         IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
         GRAPHICS = IMAGE.createGraphics();
@@ -236,11 +236,11 @@ public class TestMain {
             Thread.currentThread().setName("Main-Thread");
             RenderCore.initBackend();
             sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1600, 900);
-            try (var c1 = ModernUI.get().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
+            try (var c1 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
                  var bitmap1 = NativeImage.decode(null, c1);
-                 var c2 = ModernUI.get().getResourceAsChannel(ModernUI.ID, "AppLogo32x.png");
+                 var c2 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo32x.png");
                  var bitmap2 = NativeImage.decode(null, c2);
-                 var c3 = ModernUI.get().getResourceAsChannel(ModernUI.ID, "AppLogo48x.png");
+                 var c3 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo48x.png");
                  var bitmap3 = NativeImage.decode(null, c3)) {
                 sWindow.setIcon(bitmap1, bitmap2, bitmap3);
             } catch (IOException e) {

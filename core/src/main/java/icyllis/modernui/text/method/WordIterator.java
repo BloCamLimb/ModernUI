@@ -47,7 +47,7 @@ public class WordIterator {
      * Constructs a WordIterator using the default locale.
      */
     public WordIterator() {
-        this(ModernUI.get().getSelectedLocale());
+        this(ModernUI.getInstance().getSelectedLocale());
     }
 
     /**

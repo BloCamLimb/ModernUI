@@ -18,7 +18,10 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.animation.*;
+import icyllis.modernui.animation.Animator;
+import icyllis.modernui.animation.LayoutTransition;
+import icyllis.modernui.animation.ObjectAnimator;
+import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -36,7 +39,6 @@ import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.SwitchButton;
@@ -44,6 +46,8 @@ import icyllis.modernui.widget.TextView;
 import net.minecraft.ChatFormatting;
 
 import javax.annotation.Nonnull;
+
+import static icyllis.modernui.view.ViewConfiguration.dp;
 
 public class TestLinearLayout extends LinearLayout {
 
@@ -98,8 +102,7 @@ public class TestLinearLayout extends LinearLayout {
         });
         setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
 
-        ViewConfiguration c = ViewConfiguration.get();
-        setDividerPadding(c.view(8));
+        setDividerPadding(dp(8));
 
         String text;
         text = "\t\t\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627" +
@@ -150,7 +153,7 @@ public class TestLinearLayout extends LinearLayout {
                         button.post(() -> removeView(mTextView));
                     }
                 });
-                p = new LinearLayout.LayoutParams(c.view(100), c.view(36));
+                p = new LinearLayout.LayoutParams(dp(100), dp(36));
             } else if (i == 2) {
                 continue;
             } else if (i == 3) {
@@ -164,16 +167,16 @@ public class TestLinearLayout extends LinearLayout {
                 textField.setFocusableInTouchMode(true);
                 textField.setMovementMethod(ArrowKeyMovementMethod.getInstance());
                 //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
-                textField.setPadding(c.view(12), 0, c.view(12), 0);
+                textField.setPadding(dp(12), 0, dp(12), 0);
             } else {
                 v = new CView();
-                p = new LinearLayout.LayoutParams(c.view(200), c.view(36));
+                p = new LinearLayout.LayoutParams(dp(200), dp(36));
             }
             v.setClickable(true);
             addView(v, p);
         }
-        addView(new DView(TimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(c.view(120),
-                c.view(40)));
+        addView(new DView(TimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(dp(120),
+                dp(40)));
 
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
         cAnim = new Animation(200)
