@@ -84,7 +84,7 @@ public class TestHUD {
         Player player = (Player) minecraft.getCameraEntity();
         Objects.requireNonNull(player);
 
-        float partialTicks = net.minecraftforge.client.model.animation.Animation.getPartialTickTime();
+        float partialTicks = Minecraft.getInstance().getFrameTime();
 
         float f = player.walkDist - player.walkDistO;
         float f1 = -(player.walkDist + f * partialTicks);

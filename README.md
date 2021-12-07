@@ -6,7 +6,7 @@
 ### Description
 Modern UI is a UI framework for desktop application development.
 Many of the structures are similar to Android, but the implementation can be quite different.
-The render engine uses OpenGL 4.5 core profile and can be multi-threaded, so the performance is much better than 2D graphics libraries drawn by CPU.
+The render engine uses OpenGL 4.5 core profile and can be multithreaded, so the performance is much better than other 2D graphics libraries.
 The text engine is unicode-based and uses HarfBuzz and ICU4j, so it has a broad compatibility for various languages.
 
 This project is still in early stages.  
@@ -30,10 +30,10 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - Apache Log4j, IBM ICU4j, LWJGL
 ### Adding Modern UI to your project
 #### Environment requirements
-- Windows, Linux or macOS
-- JDK 16.0.1 or above
+- Windows, Linux or macOS (macOS may not be supported)
+- JDK 17.0.1 or above
 - OpenGL 4.5 or above (see Mesa Zink for macOS users)
-- (Optional) Forge 1.17.1-37.0.97
+- (Optional) Forge 1.18-38.0.15
 #### Gradle configuration
 ```
 repositories {
@@ -47,7 +47,7 @@ dependencies {
 }
 ```
 ##### ForgeGradle 5
-You need to regenerate run configurations.
+You need to regenerate run configurations after adding these lines.
 ```
 minecraft {
     runs {

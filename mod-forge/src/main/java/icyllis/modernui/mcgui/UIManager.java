@@ -57,10 +57,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
+import net.minecraftforge.client.event.ScreenOpenEvent;
 import net.minecraftforge.client.gui.ForgeIngameGui;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -286,8 +286,8 @@ public final class UIManager extends ViewRootBase {
     }
 
     @SubscribeEvent
-    void onGuiOpen(@Nonnull GuiOpenEvent event) {
-        final Screen next = event.getGui();
+    void onGuiOpen(@Nonnull ScreenOpenEvent event) {
+        final Screen next = event.getScreen();
         mCloseScreen = next == null;
 
         if (!mFirstScreenOpened) {
@@ -404,7 +404,7 @@ public final class UIManager extends ViewRootBase {
                     doTraversal();
                 } catch (Throwable t) {
                     ModernUI.LOGGER.error(MARKER, "An error occurred on UI thread", t);
-                    Minecraft.getInstance().delayCrash(CrashReport.forThrowable(t, "Exception on UI thread"));
+                    Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(t, "Exception on UI thread"));
                     throw t;
                 }
             }
@@ -502,7 +502,7 @@ public final class UIManager extends ViewRootBase {
                     mPendingMouseEvent.recycle();
                 }
                 mPendingMouseEvent = MotionEvent.obtain(now, action, actionButton,
-                        x, y, event.getMods(), buttonState, 0);
+                        x, y, event.getModifiers(), buttonState, 0);
             }
         }
     }
@@ -783,16 +783,16 @@ public final class UIManager extends ViewRootBase {
                     (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
             double cursorY = mouseHandler.ypos() *
                     (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
-            if (event.getLines().isEmpty()) {
-                TooltipRenderer.drawTooltip(mCanvas, window, event.getMatrixStack(), event.getComponents(),
-                        event.getX(), event.getY(), event.getFontRenderer(), event.getScreenWidth(),
-                        event.getScreenHeight(), cursorX, cursorY, minecraft.getItemRenderer(), minecraft);
-            } else {
+            //if (event.getLines().isEmpty()) {
+            TooltipRenderer.drawTooltip(mCanvas, window, event.getPoseStack(), event.getComponents(),
+                    event.getX(), event.getY(), event.getFont(), event.getScreenWidth(),
+                    event.getScreenHeight(), cursorX, cursorY, minecraft.getItemRenderer());
+            /*} else {
                 TooltipRenderer.drawTooltip(mCanvas, event.getLines(), event.getFontRenderer(), event.getStack(),
                         event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY,
                         event.getMaxWidth(), event.getScreenWidth(), event.getScreenHeight(), window.getWidth(),
                         window.getHeight());
-            }
+            }*/
             event.setCanceled(true);
         }
     }
@@ -811,12 +811,13 @@ public final class UIManager extends ViewRootBase {
     };
 
     void stop() {
-        if (!mCloseScreen || mScreen == null) {
+        if ((!mCloseScreen && minecraft.player != null) || mScreen == null) {
             return;
         }
         mScreen = null;
         if (mCallback != null) {
-            post(mCallback::onDestroy);
+            final ScreenCallback callback = mCallback;
+            post(callback::onDestroy);
             mCallback = null;
         }
         updatePointerIcon(null);

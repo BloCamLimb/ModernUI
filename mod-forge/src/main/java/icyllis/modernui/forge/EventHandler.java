@@ -32,11 +32,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
-import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.client.event.ScreenOpenEvent;
+import net.minecraftforge.client.model.ForgeModelBakery;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -86,8 +86,8 @@ final class EventHandler {
 
         @SubscribeEvent
         static void onRegistryModel(@Nonnull ModelRegistryEvent event) {
-            ModelLoader.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_main"));
-            ModelLoader.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_cube"));
+            ForgeModelBakery.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_main"));
+            ForgeModelBakery.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_cube"));
         }
 
         @SubscribeEvent
@@ -129,28 +129,28 @@ final class EventHandler {
         }*/
 
         @SubscribeEvent(priority = EventPriority.HIGH)
-        static void onGuiOpenH(@Nonnull GuiOpenEvent event) {
+        static void onGuiOpenH(@Nonnull ScreenOpenEvent event) {
             // TipTheScales is not good, and it also not compatible with OptiFine
             if (ModernUIForge.sInterceptTipTheScales) {
-                if (event.getGui() instanceof VideoSettingsScreen) {
-                    sCapturedVideoSettingsScreen = event.getGui();
+                if (event.getScreen() instanceof VideoSettingsScreen) {
+                    sCapturedVideoSettingsScreen = event.getScreen();
                 }
             }
         }
 
         @SubscribeEvent(priority = EventPriority.LOW)
-        static void onGuiOpenL(@Nonnull GuiOpenEvent event) {
-            BlurHandler.INSTANCE.count(event.getGui());
+        static void onGuiOpenL(@Nonnull ScreenOpenEvent event) {
+            BlurHandler.INSTANCE.count(event.getScreen());
             // This event should not be cancelled
             if (sCapturedVideoSettingsScreen != null) {
-                event.setGui(sCapturedVideoSettingsScreen);
+                event.setScreen(sCapturedVideoSettingsScreen);
                 sCapturedVideoSettingsScreen = null;
             }
         }
 
         @SubscribeEvent
-        static void onGuiInit(@Nonnull GuiScreenEvent.InitGuiEvent event) {
-            if (event.getGui() instanceof VideoSettingsScreen && NEW_GUI_SCALE != null) {
+        static void onGuiInit(@Nonnull ScreenEvent.InitScreenEvent event) {
+            if (event.getScreen() instanceof VideoSettingsScreen && NEW_GUI_SCALE != null) {
                 NEW_GUI_SCALE.setMaxValue(MuiForgeBridge.calcGuiScales() & 0xf);
             }
         }

@@ -25,20 +25,12 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.textmc.ModernFontRenderer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.common.MinecraftForge;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.BufferUtils;
 
@@ -65,11 +57,11 @@ public class TooltipRenderer {
     public static final int TOOLTIP_SPACE = 12;
     public static final int H_BORDER = 4;
     public static final int V_BORDER = 4;
-    public static final int LINE_HEIGHT = 10;
+    //public static final int LINE_HEIGHT = 10;
     // extra space after first line
     public static final int TITLE_GAP = 2;
 
-    private static final List<FormattedText> sTempTexts = new ArrayList<>();
+    //private static final List<FormattedText> sTempTexts = new ArrayList<>();
 
     private static final FloatBuffer sMatBuf = BufferUtils.createFloatBuffer(16);
     private static final Matrix4 sMyMat = new Matrix4();
@@ -90,8 +82,7 @@ public class TooltipRenderer {
         }
     }
 
-    @Deprecated(forRemoval = true)
-    public static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull List<? extends FormattedText> texts,
+    /*public static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull List<? extends FormattedText> texts,
                                    @Nonnull Font font, @Nonnull ItemStack stack, @Nonnull PoseStack poseStack,
                                    float mouseX, float mouseY, float preciseMouseX, float preciseMouseY,
                                    int maxTextWidth, float screenWidth, float screenHeight,
@@ -103,11 +94,11 @@ public class TooltipRenderer {
         // matrix transformation for x and y params, compatibility to MineColonies
         float tooltipX = mouseX + TOOLTIP_SPACE + partialX;
         float tooltipY = mouseY - TOOLTIP_SPACE + partialY;
-        /*if (mouseX != (int) mouseX || mouseY != (int) mouseY) {
+        *//*if (mouseX != (int) mouseX || mouseY != (int) mouseY) {
             // ignore partial pixels
             tooltipX += mouseX - (int) mouseX;
             tooltipY += mouseY - (int) mouseY;
-        }*/
+        }*//*
         int tooltipWidth = 0;
         int tooltipHeight = V_BORDER * 2;
 
@@ -225,8 +216,8 @@ public class TooltipRenderer {
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER,
                 tooltipY + tooltipHeight + V_BORDER, 3, paint);
-        /*canvas.drawRoundedFrameT1(tooltipX - H_BORDER, tooltipY - V_BORDER,
-                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);*/
+        *//*canvas.drawRoundedFrameT1(tooltipX - H_BORDER, tooltipY - V_BORDER,
+                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);*//*
 
         canvas.restore();
         canvas.draw(null);
@@ -252,19 +243,19 @@ public class TooltipRenderer {
         // because of the order of draw calls, we actually don't need z-shifting
         poseStack.translate(partialX, partialY, -400);
         // compatibility with Forge mods, like Quark
-        MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, poseStack, tooltipLeft, tooltipTop,
-                font, tooltipWidth, tooltipHeight));
+        *//*MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, poseStack, tooltipLeft,
+        tooltipTop,
+                font, tooltipWidth, tooltipHeight));*//*
         poseStack.popPose();
 
         RenderSystem.enableDepthTest();
         sTempTexts.clear();
-    }
+    }*/
 
     public static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull Window window, @Nonnull PoseStack poseStack,
                                    @Nonnull List<ClientTooltipComponent> list, int mouseX, int mouseY,
                                    @Nonnull Font font, float screenWidth, float screenHeight,
-                                   double cursorX, double cursorY,
-                                   @Nonnull ItemRenderer itemRenderer, @Nonnull Minecraft minecraft) {
+                                   double cursorX, double cursorY, @Nonnull ItemRenderer itemRenderer) {
         sDraw = true;
 
         final float partialX = (float) (cursorX - (int) cursorX);
@@ -385,7 +376,7 @@ public class TooltipRenderer {
 
         for (int i = 0; i < list.size(); i++) {
             ClientTooltipComponent component = list.get(i);
-            component.renderImage(font, drawX, drawY, poseStack, itemRenderer, 400, minecraft.getTextureManager());
+            component.renderImage(font, drawX, drawY, poseStack, itemRenderer, 400);
             if (i == 0) {
                 drawY += TITLE_GAP;
             }

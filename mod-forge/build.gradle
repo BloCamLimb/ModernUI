@@ -21,6 +21,11 @@ loom {
             mod 'modernui'
         }
     }
+    launches {
+        data {
+            arg "--existing", file("src/main/resources").absolutePath
+        }
+    }
     addTaskBeforeRun(":${project.name}:classes")
 }
 
@@ -45,9 +50,10 @@ repositories {
 
 dependencies {
     minecraft "com.mojang:minecraft:${minecraft_version}"
+    //mappings minecraft.officialMojangMappings()
     mappings loom.layered() {
         officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${minecraft_version}:2021.09.05@zip" as String)
+        parchment("org.parchmentmc.data:parchment-1.17.1:2021.12.05@zip" as String)
     }
     forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
@@ -209,7 +215,7 @@ publishing {
     }
 }
 
-if (project.hasProperty('curseforge_api')) {
+/*if (project.hasProperty('curseforge_api')) {
     curseforge {
         apiKey = project.getProperty('curseforge_api')
         project {
@@ -231,4 +237,4 @@ if (project.hasProperty('curseforge_api')) {
             forgeGradleIntegration = false
         }
     }
-}
+}*/

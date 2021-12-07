@@ -27,7 +27,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.Cancelable;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.fml.event.IModBusEvent;
-import net.minecraftforge.fmllegacy.network.IContainerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,7 +36,7 @@ import java.util.function.Consumer;
  * This event occurred when the server requires the client to open a user
  * interface to display a container menu in a world, this event is cancelled
  * after setting the application screen. The menu is created on the client by
- * the registered {@link IContainerFactory},
+ * the registered {@link net.minecraftforge.network.IContainerFactory},
  * which contains custom network data from server, you can set the application
  * screen through the data and the menu type.  For example:
  *

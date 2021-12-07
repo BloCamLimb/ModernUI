@@ -20,7 +20,7 @@ allprojects {
     group = 'icyllis.modernui'
     archivesBaseName = 'ModernUI'
 
-    java.toolchain.languageVersion = JavaLanguageVersion.of(16)
+    java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
     repositories {
         mavenCentral()
@@ -37,6 +37,6 @@ allprojects {
 
     tasks.withType(JavaCompile).configureEach {
         it.options.encoding = "UTF-8"
-        it.options.release.set(16)
+        it.options.release.set(17)
     }
 }

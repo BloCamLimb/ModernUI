@@ -23,9 +23,10 @@ import icyllis.modernui.ModernUI;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.BlockModelRotation;
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.BakedModelWrapper;
-import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.client.model.ForgeModelBakery;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -36,15 +37,15 @@ public class ProjectBuilderModel extends BakedModelWrapper<BakedModel> {
     public final BakedModel main;
     public final BakedModel cube;
 
-    ProjectBuilderModel(BakedModel originalModel, ModelLoader loader) {
+    ProjectBuilderModel(BakedModel originalModel, ModelBakery bakery) {
         super(originalModel);
-        main = bakeCustomModel(loader, "item/project_builder_main");
-        cube = bakeCustomModel(loader, "item/project_builder_cube");
+        main = bakeCustomModel(bakery, "item/project_builder_main");
+        cube = bakeCustomModel(bakery, "item/project_builder_cube");
     }
 
-    private static BakedModel bakeCustomModel(@Nonnull ModelLoader loader, String name) {
+    private static BakedModel bakeCustomModel(@Nonnull ModelBakery bakery, String name) {
         ResourceLocation location = new ResourceLocation(ModernUI.ID, name);
-        return loader.bake(location, BlockModelRotation.X0_Y0, ModelLoader.defaultTextureGetter());
+        return bakery.bake(location, BlockModelRotation.X0_Y0, ForgeModelBakery.defaultTextureGetter());
     }
 
     @Nonnull

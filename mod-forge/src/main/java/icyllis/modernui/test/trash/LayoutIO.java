@@ -18,21 +18,12 @@
 
 package icyllis.modernui.test.trash;
 
-import icyllis.modernui.view.View;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.resource.IResourceType;
-
-import java.lang.reflect.Constructor;
-import java.util.HashMap;
-import java.util.Map;
-
 @Deprecated
 public final class LayoutIO {
 
-    public static final Type UI_RESOURCE_TYPE = new Type();
+    // public static final Type UI_RESOURCE_TYPE = new Type();
 
-    private final Map<String, Constructor<? extends View>> constructorMap = new HashMap<>();
+    //private final Map<String, Constructor<? extends View>> constructorMap = new HashMap<>();
 
     public static void init() {
         /*((IReloadableResourceManager) Minecraft.getInstance().getResourceManager()).addReloadListener(
@@ -75,7 +66,7 @@ public final class LayoutIO {
         return list;
     }*/
 
-    private static class Type implements IResourceType {
+    /*private static class Type implements IResourceType {
 
-    }
+    }*/
 }
