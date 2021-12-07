@@ -1,5 +1,28 @@
 Changelogs
 ===
+### Modern UI 3.2.0.97 (2021-12-07)
+#### Forge Extension 1.18-38.0.15
+* Port to 1.18, remove deprecated methods
+* Add destroy state to callback lifecycle
+* Fix container not closed when backing
+#### Modern Text 1.18 (Embedded)
+#### Core Framework 3.2
+* Require Java 17, update libraries
+* Add toast, toast manager and presenter
+* Fix anticipate overshoot interpolator
+* Expose thread scheduling methods
+* Fix invisible state not working
+* Fix null layouts not working
+* Notify hierarchy changes to ViewGroup
+* Add selected and activated states to View
+* Update RelativeLayout
+* Fix alpha blending between render targets
+* Rename view scale usages
+* Add number input filters
+* Fix primitive array increment
+* Add text color attributes
+* Add listener setters
+
 ### 1.17.1-3.1.0.95 (2021-11-21)
 #### Forge Extension 1.17.1-37.0.97
 * Integrate multi-threading pipeline with Blaze3D

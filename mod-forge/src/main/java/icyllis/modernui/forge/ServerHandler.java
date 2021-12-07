@@ -23,11 +23,11 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStoppingEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fmllegacy.server.ServerLifecycleHooks;
-import net.minecraftforge.fmlserverevents.FMLServerStartedEvent;
-import net.minecraftforge.fmlserverevents.FMLServerStoppingEvent;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
 import java.text.SimpleDateFormat;
@@ -49,13 +49,13 @@ final class ServerHandler {
             1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000, 9000, 10000, 60000, 300000, 600000, 1800000};
 
     @SubscribeEvent
-    void onStart(@Nonnull FMLServerStartedEvent event) {
+    void onStart(@Nonnull ServerStartedEvent event) {
         started = true;
         determineShutdownTime();
     }
 
     @SubscribeEvent
-    void onStop(@Nonnull FMLServerStoppingEvent event) {
+    void onStop(@Nonnull ServerStoppingEvent event) {
         started = false;
     }
 

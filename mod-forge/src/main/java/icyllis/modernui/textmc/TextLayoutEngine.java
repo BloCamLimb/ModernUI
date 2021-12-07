@@ -750,7 +750,7 @@ public class TextLayoutEngine {
         Entry entry;
 
         /* Don't perform a cache lookup from other threads because the stringCache is not synchronized */
-        RenderSystem.assertThread(RenderSystem::isOnRenderThread);
+        RenderSystem.assertOnRenderThread();
         //if () {
         /* Re-use existing lookupKey to avoid allocation overhead on the critical rendering path */
         //lookupKey.str = str;

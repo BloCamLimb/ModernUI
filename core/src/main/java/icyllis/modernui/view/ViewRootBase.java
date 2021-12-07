@@ -220,7 +220,7 @@ public abstract class ViewRootBase implements ViewParent {
 
         boolean cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw();
 
-        if (!cancelDraw) {
+        if (!cancelDraw && !mRedrawn) {
             if (mPendingTransitions != null && mPendingTransitions.size() > 0) {
                 for (LayoutTransition pendingTransition : mPendingTransitions) {
                     pendingTransition.startChangingAnimations();

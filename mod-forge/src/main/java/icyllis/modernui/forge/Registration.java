@@ -48,7 +48,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.client.event.RegisterShadersEvent;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.common.extensions.IForgeContainerType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
@@ -90,7 +90,7 @@ final class Registration {
 
     @SubscribeEvent
     static void registerMenus(@Nonnull RegistryEvent.Register<MenuType<?>> event) {
-        event.getRegistry().register(IForgeContainerType.create(TestContainerMenu::new)
+        event.getRegistry().register(IForgeMenuType.create(TestContainerMenu::new)
                 .setRegistryName("test"));
     }
 
