@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text.method;
 
+import icyllis.modernui.text.Layout;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MotionEvent;
@@ -65,7 +66,30 @@ public abstract class BaseMovementMethod implements MovementMethod {
 
     @Override
     public boolean onGenericMotionEvent(TextView widget, Spannable text, MotionEvent event) {
-        //TODO scrolling
+        if (event.getAction() == MotionEvent.ACTION_SCROLL) {
+            final float vscroll;
+            final float hscroll;
+            if (event.isShiftPressed()) {
+                vscroll = 0;
+                hscroll = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
+            } else {
+                vscroll = -event.getAxisValue(MotionEvent.AXIS_VSCROLL);
+                hscroll = event.getAxisValue(MotionEvent.AXIS_HSCROLL);
+            }
+
+            boolean handled = false;
+            if (hscroll < 0) {
+                handled = scrollLeft(widget, (int) Math.ceil(-hscroll));
+            } else if (hscroll > 0) {
+                handled = scrollRight(widget, (int) Math.ceil(hscroll));
+            }
+            if (vscroll < 0) {
+                handled |= scrollUp(widget, (int) Math.ceil(-vscroll));
+            } else if (vscroll > 0) {
+                handled |= scrollDown(widget, (int) Math.ceil(vscroll));
+            }
+            return handled;
+        }
         return false;
     }
 
@@ -314,6 +338,268 @@ public abstract class BaseMovementMethod implements MovementMethod {
      * @return True if the event was handled.
      */
     protected boolean end(TextView widget, Spannable buffer) {
+        return false;
+    }
+
+    private int getTopLine(TextView widget) {
+        return widget.getLayout().getLineForVertical(widget.getScrollY());
+    }
+
+    private int getBottomLine(TextView widget) {
+        return widget.getLayout().getLineForVertical(widget.getScrollY() + getInnerHeight(widget));
+    }
+
+    private int getInnerWidth(TextView widget) {
+        return widget.getWidth() - widget.getTotalPaddingLeft() - widget.getTotalPaddingRight();
+    }
+
+    private int getInnerHeight(TextView widget) {
+        return widget.getHeight() - widget.getTotalPaddingTop() - widget.getTotalPaddingBottom();
+    }
+
+    private int getCharacterWidth(TextView widget) {
+        return (int) Math.ceil(widget.getPaint().getFontMetricsInt(null));
+    }
+
+    private int getScrollBoundsLeft(TextView widget) {
+        final Layout layout = widget.getLayout();
+        final int topLine = getTopLine(widget);
+        final int bottomLine = getBottomLine(widget);
+        if (topLine > bottomLine) {
+            return 0;
+        }
+        int left = Integer.MAX_VALUE;
+        for (int line = topLine; line <= bottomLine; line++) {
+            final int lineLeft = (int) Math.floor(layout.getLineLeft(line));
+            if (lineLeft < left) {
+                left = lineLeft;
+            }
+        }
+        return left;
+    }
+
+    private int getScrollBoundsRight(TextView widget) {
+        final Layout layout = widget.getLayout();
+        final int topLine = getTopLine(widget);
+        final int bottomLine = getBottomLine(widget);
+        if (topLine > bottomLine) {
+            return 0;
+        }
+        int right = Integer.MIN_VALUE;
+        for (int line = topLine; line <= bottomLine; line++) {
+            final int lineRight = (int) Math.ceil(layout.getLineRight(line));
+            if (lineRight > right) {
+                right = lineRight;
+            }
+        }
+        return right;
+    }
+
+    /**
+     * Performs a scroll left action.
+     * Scrolls left by the specified number of characters.
+     *
+     * @param widget The text view.
+     * @param amount The number of characters to scroll by.  Must be at least 1.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollLeft(TextView widget, int amount) {
+        final int minScrollX = getScrollBoundsLeft(widget);
+        int scrollX = widget.getScrollX();
+        if (scrollX > minScrollX) {
+            scrollX = Math.max(scrollX - getCharacterWidth(widget) * amount, minScrollX);
+            widget.scrollTo(scrollX, widget.getScrollY());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Performs a scroll right action.
+     * Scrolls right by the specified number of characters.
+     *
+     * @param widget The text view.
+     * @param amount The number of characters to scroll by.  Must be at least 1.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollRight(TextView widget, int amount) {
+        final int maxScrollX = getScrollBoundsRight(widget) - getInnerWidth(widget);
+        int scrollX = widget.getScrollX();
+        if (scrollX < maxScrollX) {
+            scrollX = Math.min(scrollX + getCharacterWidth(widget) * amount, maxScrollX);
+            widget.scrollTo(scrollX, widget.getScrollY());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Performs a scroll up action.
+     * Scrolls up by the specified number of lines.
+     *
+     * @param widget The text view.
+     * @param amount The number of lines to scroll by.  Must be at least 1.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollUp(TextView widget, int amount) {
+        final Layout layout = widget.getLayout();
+        final int top = widget.getScrollY();
+        int topLine = layout.getLineForVertical(top);
+        if (layout.getLineTop(topLine) == top) {
+            // If the top line is partially visible, bring it all the way
+            // into view; otherwise, bring the previous line into view.
+            topLine -= 1;
+        }
+        if (topLine >= 0) {
+            topLine = Math.max(topLine - amount + 1, 0);
+            Touch.scrollTo(widget, layout, widget.getScrollX(), layout.getLineTop(topLine));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Performs a scroll down action.
+     * Scrolls down by the specified number of lines.
+     *
+     * @param widget The text view.
+     * @param amount The number of lines to scroll by.  Must be at least 1.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollDown(TextView widget, int amount) {
+        final Layout layout = widget.getLayout();
+        final int innerHeight = getInnerHeight(widget);
+        final int bottom = widget.getScrollY() + innerHeight;
+        int bottomLine = layout.getLineForVertical(bottom);
+        if (layout.getLineTop(bottomLine + 1) < bottom + 1) {
+            // Less than a pixel of this line is out of view,
+            // so we must have tried to make it entirely in view
+            // and now want the next line to be in view instead.
+            bottomLine += 1;
+        }
+        final int limit = layout.getLineCount() - 1;
+        if (bottomLine <= limit) {
+            bottomLine = Math.min(bottomLine + amount - 1, limit);
+            Touch.scrollTo(widget, layout, widget.getScrollX(),
+                    layout.getLineTop(bottomLine + 1) - innerHeight);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Performs a scroll page up action.
+     * Scrolls up by one page.
+     *
+     * @param widget The text view.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollPageUp(TextView widget) {
+        final Layout layout = widget.getLayout();
+        final int top = widget.getScrollY() - getInnerHeight(widget);
+        int topLine = layout.getLineForVertical(top);
+        if (topLine >= 0) {
+            Touch.scrollTo(widget, layout, widget.getScrollX(), layout.getLineTop(topLine));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Performs a scroll page up action.
+     * Scrolls down by one page.
+     *
+     * @param widget The text view.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollPageDown(TextView widget) {
+        final Layout layout = widget.getLayout();
+        final int innerHeight = getInnerHeight(widget);
+        final int bottom = widget.getScrollY() + innerHeight + innerHeight;
+        int bottomLine = layout.getLineForVertical(bottom);
+        if (bottomLine <= layout.getLineCount() - 1) {
+            Touch.scrollTo(widget, layout, widget.getScrollX(),
+                    layout.getLineTop(bottomLine + 1) - innerHeight);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Performs a scroll to top action.
+     * Scrolls to the top of the document.
+     *
+     * @param widget The text view.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollTop(TextView widget) {
+        final Layout layout = widget.getLayout();
+        if (getTopLine(widget) >= 0) {
+            Touch.scrollTo(widget, layout, widget.getScrollX(), layout.getLineTop(0));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Performs a scroll to bottom action.
+     * Scrolls to the bottom of the document.
+     *
+     * @param widget The text view.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollBottom(TextView widget) {
+        final Layout layout = widget.getLayout();
+        final int lineCount = layout.getLineCount();
+        if (getBottomLine(widget) <= lineCount - 1) {
+            Touch.scrollTo(widget, layout, widget.getScrollX(),
+                    layout.getLineTop(lineCount) - getInnerHeight(widget));
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Performs a scroll to line start action.
+     * Scrolls to the start of the line.
+     *
+     * @param widget The text view.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollLineStart(TextView widget) {
+        final int minScrollX = getScrollBoundsLeft(widget);
+        int scrollX = widget.getScrollX();
+        if (scrollX > minScrollX) {
+            widget.scrollTo(minScrollX, widget.getScrollY());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Performs a scroll to line end action.
+     * Scrolls to the end of the line.
+     *
+     * @param widget The text view.
+     * @return True if the event was handled.
+     * @hide
+     */
+    protected boolean scrollLineEnd(TextView widget) {
+        final int maxScrollX = getScrollBoundsRight(widget) - getInnerWidth(widget);
+        int scrollX = widget.getScrollX();
+        if (scrollX < maxScrollX) {
+            widget.scrollTo(maxScrollX, widget.getScrollY());
+            return true;
+        }
         return false;
     }
 }

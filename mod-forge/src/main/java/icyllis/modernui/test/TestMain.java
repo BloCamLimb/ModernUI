@@ -19,8 +19,6 @@
 package icyllis.modernui.test;
 
 import com.ibm.icu.text.BreakIterator;
-import com.ibm.icu.text.DateFormat;
-import com.ibm.icu.text.SimpleDateFormat;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
@@ -64,8 +62,10 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -121,7 +121,7 @@ public class TestMain {
     static {
         AudioManager.getInstance().initialize();
         try {
-            sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:", "10.ogg"))));
+            sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:/10.ogg"))));
             sGraph = new SpectrumGraph(sTrack);
         } catch (Exception e) {
             e.printStackTrace();
@@ -392,7 +392,7 @@ public class TestMain {
 
         Rect screenRect = new Rect(0, 0, window.getWidth(), window.getHeight());
 
-        //sTrack.play();
+        sTrack.play();
 
         GLWrapper.glEnable(GL_CULL_FACE);
         GLWrapper.glEnable(GL_BLEND);

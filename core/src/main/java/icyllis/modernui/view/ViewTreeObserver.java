@@ -32,9 +32,24 @@ import java.util.ArrayList;
  */
 public final class ViewTreeObserver {
 
+    private CopyOnWriteArray<OnGlobalLayoutListener> mOnGlobalLayoutListeners;
     private CopyOnWriteArray<OnPreDrawListener> mOnPreDrawListeners;
 
     private boolean mAlive = true;
+
+    /**
+     * Interface definition for a callback to be invoked when the global layout state
+     * or the visibility of views within the view tree changes.
+     */
+    @FunctionalInterface
+    public interface OnGlobalLayoutListener {
+
+        /**
+         * Callback method to be invoked when the global layout state or the visibility of views
+         * within the view tree changes
+         */
+        void onGlobalLayout();
+    }
 
     /**
      * Interface definition for a callback to be invoked when the view tree is about to be drawn.
@@ -66,6 +81,14 @@ public final class ViewTreeObserver {
      * @param observer The ViewTreeObserver whose listeners must be added to this observer
      */
     void merge(@Nonnull ViewTreeObserver observer) {
+        if (observer.mOnGlobalLayoutListeners != null) {
+            if (mOnGlobalLayoutListeners != null) {
+                mOnGlobalLayoutListeners.addAll(observer.mOnGlobalLayoutListeners);
+            } else {
+                mOnGlobalLayoutListeners = observer.mOnGlobalLayoutListeners;
+            }
+        }
+
         if (observer.mOnPreDrawListeners != null) {
             if (mOnPreDrawListeners != null) {
                 mOnPreDrawListeners.addAll(observer.mOnPreDrawListeners);
@@ -75,6 +98,36 @@ public final class ViewTreeObserver {
         }
 
         observer.kill();
+    }
+
+    /**
+     * Register a callback to be invoked when the global layout state or the visibility of views
+     * within the view tree changes
+     *
+     * @param listener The callback to add
+     * @throws IllegalStateException If {@link #isAlive()} returns false
+     */
+    public void addOnGlobalLayoutListener(@Nonnull OnGlobalLayoutListener listener) {
+        checkIsAlive();
+        if (mOnGlobalLayoutListeners == null) {
+            mOnGlobalLayoutListeners = new CopyOnWriteArray<>();
+        }
+        mOnGlobalLayoutListeners.add(listener);
+    }
+
+    /**
+     * Remove a previously installed global layout callback
+     *
+     * @param victim The callback to remove
+     * @throws IllegalStateException If {@link #isAlive()} returns false
+     * @see #addOnGlobalLayoutListener(OnGlobalLayoutListener)
+     */
+    public void removeOnGlobalLayoutListener(@Nonnull OnGlobalLayoutListener victim) {
+        checkIsAlive();
+        if (mOnGlobalLayoutListeners == null) {
+            return;
+        }
+        mOnGlobalLayoutListeners.remove(victim);
     }
 
     /**
@@ -132,6 +185,30 @@ public final class ViewTreeObserver {
      */
     private void kill() {
         mAlive = false;
+    }
+
+    /**
+     * Notifies registered listeners that a global layout happened. This can be called
+     * manually if you are forcing a layout on a View or a hierarchy of Views that are
+     * not attached to a Window or in the GONE state.
+     */
+    public void dispatchOnGlobalLayout() {
+        // NOTE: because of the use of CopyOnWriteArrayList, we *must* use an iterator to
+        // perform the dispatching. The iterator is a safeguard against listeners that
+        // could mutate the list by calling the various add/remove methods. This prevents
+        // the array from being modified while we iterate it.
+        final CopyOnWriteArray<OnGlobalLayoutListener> listeners = mOnGlobalLayoutListeners;
+        if (listeners != null && listeners.size() > 0) {
+            CopyOnWriteArray.Access<OnGlobalLayoutListener> access = listeners.start();
+            try {
+                int count = access.size();
+                for (int i = 0; i < count; i++) {
+                    access.get(i).onGlobalLayout();
+                }
+            } finally {
+                listeners.end();
+            }
+        }
     }
 
     /**

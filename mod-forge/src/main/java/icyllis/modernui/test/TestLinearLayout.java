@@ -32,6 +32,7 @@ import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
+import icyllis.modernui.text.method.ScrollingMovementMethod;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
@@ -125,8 +126,7 @@ public class TestLinearLayout extends LinearLayout {
                 "\udd99";
 
         TextView tv = new TextView();
-        tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT));
+        tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(100)));
 
         tv.setText(text, TextView.BufferType.SPANNABLE);
         Spannable spannable = (Spannable) tv.getText();
@@ -137,6 +137,7 @@ public class TestLinearLayout extends LinearLayout {
         spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+        tv.setMovementMethod(ScrollingMovementMethod.getInstance());
 
         mTextView = tv;
 

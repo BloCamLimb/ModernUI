@@ -167,6 +167,9 @@ public class ModernUI {
         return mViewManager;
     }
 
+    public void checkUiThread() {
+    }
+
     /**
      * Post a task that will run on UI thread later.
      *

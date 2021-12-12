@@ -193,13 +193,15 @@ public interface TimeInterpolator {
      */
     @Nonnull
     static TimeInterpolator anticipateOvershoot(float tension) {
+        if (tension == 2.0f) {
+            return ANTICIPATE_OVERSHOOT;
+        }
         return new AnticipateOvershootInterpolator(tension);
     }
 
     /**
      * Create an anticipate/overshoot interpolator where the change starts backward then flings forward
-     * and overshoots the target value and finally goes back to the final value. If {@code tension} is
-     * 2.0f, a constant object will be returned.
+     * and overshoots the target value and finally goes back to the final value.
      *
      * @param tension      Amount of anticipation/overshoot. When tension equals 0.0f,
      *                     there is no anticipation/overshoot and the interpolator becomes

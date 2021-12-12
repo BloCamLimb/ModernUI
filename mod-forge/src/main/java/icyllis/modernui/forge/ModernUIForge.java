@@ -45,6 +45,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.javafmlmod.FMLModContainer;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
+import net.minecraftforge.fml.util.thread.EffectiveSide;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -234,6 +235,11 @@ public final class ModernUIForge extends ModernUI {
     @Override
     public ViewManager getViewManager() {
         return MuiForgeBridge.sUIManager.getDecorView();
+    }
+
+    @Override
+    public void checkUiThread() {
+        MuiForgeBridge.sUIManager.checkThread();
     }
 
     @Override

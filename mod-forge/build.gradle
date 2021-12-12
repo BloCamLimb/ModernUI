@@ -65,8 +65,8 @@ dependencies {
         transitive = false
     }
 
-    /*compile "org.openjdk.jmh:jmh-core:1.29"
-    annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.29"*/
+    implementation "org.openjdk.jmh:jmh-core:1.29"
+    annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.29"
 
     implementation(forgeDependencies("com.github.ben-manes.caffeine:caffeine:${caffeine_version}"))
     implementation(forgeDependencies("com.vladsch.flexmark:flexmark:${flexmark_version}"))
