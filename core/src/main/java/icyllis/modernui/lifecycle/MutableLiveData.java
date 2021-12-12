@@ -16,36 +16,41 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.fragment;
-
-import icyllis.modernui.lifecycle.LifecycleOwner;
-import icyllis.modernui.lifecycle.Lifecycle;
-import icyllis.modernui.lifecycle.LifecycleRegistry;
+package icyllis.modernui.lifecycle;
 
 import javax.annotation.Nonnull;
+import java.util.concurrent.Executor;
 
-class FragmentViewLifecycleOwner implements LifecycleOwner {
+/**
+ * {@link LiveData} which publicly exposes {@link #setValue(T)} and {@link #postValue(T)} method.
+ *
+ * @param <T> The type of data hold by this instance
+ */
+public class MutableLiveData<T> extends LiveData<T> {
 
-    private LifecycleRegistry mLifecycle;
-
-    void initialize() {
-        if (mLifecycle == null) {
-            mLifecycle = new LifecycleRegistry(this);
-        }
+    /**
+     * Creates a MutableLiveData initialized with the given {@code value}.
+     *
+     * @param value initial value
+     */
+    public MutableLiveData(T value) {
+        super(value);
     }
 
-    boolean isInitialized() {
-        return mLifecycle != null;
+    /**
+     * Creates a MutableLiveData with no value assigned to it.
+     */
+    public MutableLiveData() {
+        super();
     }
 
-    @Nonnull
     @Override
-    public Lifecycle getLifecycle() {
-        initialize();
-        return mLifecycle;
+    public void postValue(T value) {
+        super.postValue(value);
     }
 
-    void handleLifecycleEvent(Lifecycle.Event event) {
-        mLifecycle.handleLifecycleEvent(event);
+    @Override
+    public void setValue(T value) {
+        super.setValue(value);
     }
 }

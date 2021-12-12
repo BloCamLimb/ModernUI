@@ -4000,12 +4000,18 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 return true;
             }
             case ID_PASTE -> {
-                String replacement = Clipboard.getText();
-                if (replacement != null) {
-                    Editable editable = getEditableText();
-                    Selection.setSelection(editable, max);
-                    editable.replace(min, max, replacement);
-                }
+                int aMax = max;
+                int aMin = min;
+                RenderCore.recordMainCall(() -> {
+                    String replacement = Clipboard.getText();
+                    if (replacement != null) {
+                        post(() -> {
+                            Editable editable = getEditableText();
+                            Selection.setSelection(editable, aMax);
+                            editable.replace(aMin, aMax, replacement);
+                        });
+                    }
+                });
                 return true;
             }
             case ID_SELECT_ALL -> {

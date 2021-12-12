@@ -33,10 +33,16 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Window.class)
-public class MixinWindow {
+public abstract class MixinWindow {
 
     @Shadow
     private double guiScale;
+
+    @Shadow
+    public abstract int getWidth();
+
+    @Shadow
+    public abstract int getHeight();
 
     /**
      * @author BloCamLimb
@@ -53,12 +59,14 @@ public class MixinWindow {
         int oldScale = (int) guiScale;
         int newScale = (int) scaleFactor;
         if (newScale != scaleFactor) {
-            ModernUI.LOGGER.warn(ModernUI.MARKER, "Gui scale should be an integer: {}", scaleFactor);
+            ModernUI.LOGGER.warn(ModernUI.MARKER,
+                    "Gui scale {} should be an integer, some mods break this", scaleFactor);
         }
         // See standards
         ViewConfiguration.get().setViewScale(newScale * 0.5f);
-        if (RenderCore.isInitialized() && oldScale != newScale) {
+        if (RenderCore.isInitialized() && newScale != oldScale) {
             TextLayoutEngine.getInstance().reload();
         }
+        MuiForgeBridge.dispatchOnDisplayResize(getWidth(), getHeight(), newScale, oldScale);
     }
 }

@@ -53,6 +53,7 @@ public abstract class ViewRootBase implements ViewParent {
 
     private boolean hasDragOperation;
 
+    protected final Object mRenderLock = new Object();
     protected boolean mRedrawn;
 
     protected View mView;
@@ -214,33 +215,37 @@ public abstract class ViewRootBase implements ViewParent {
             /*ModernUI.LOGGER.info(MARKER, "Layout done in {} ms, window size: {}x{}",
                     (RenderCore.timeNanos() - startTime) / 1000000.0, width, height);*/
             mLayoutRequested = false;
+
+            mAttachInfo.mTreeObserver.dispatchOnGlobalLayout();
         }
 
         mWillDrawSoon = false;
 
         boolean cancelDraw = mAttachInfo.mTreeObserver.dispatchOnPreDraw();
 
-        if (!cancelDraw && !mRedrawn) {
-            if (mPendingTransitions != null && mPendingTransitions.size() > 0) {
-                for (LayoutTransition pendingTransition : mPendingTransitions) {
-                    pendingTransition.startChangingAnimations();
+        synchronized (mRenderLock) {
+            if (!cancelDraw && !mRedrawn) {
+                if (mPendingTransitions != null && mPendingTransitions.size() > 0) {
+                    for (LayoutTransition pendingTransition : mPendingTransitions) {
+                        pendingTransition.startChangingAnimations();
+                    }
+                    mPendingTransitions.clear();
                 }
-                mPendingTransitions.clear();
-            }
-            if (mInvalidated) {
-                mIsDrawing = true;
-                Canvas canvas = beginRecording(width, height);
-                host.draw(canvas);
-                mIsDrawing = false;
-                if (mKeepInvalidated) {
-                    mKeepInvalidated = false;
-                } else {
-                    mInvalidated = false;
+                if (mInvalidated) {
+                    mIsDrawing = true;
+                    Canvas canvas = beginRecording(width, height);
+                    host.draw(canvas);
+                    mIsDrawing = false;
+                    if (mKeepInvalidated) {
+                        mKeepInvalidated = false;
+                    } else {
+                        mInvalidated = false;
+                    }
+                    mRedrawn = true;
                 }
-                mRedrawn = true;
+            } else {
+                scheduleTraversals();
             }
-        } else {
-            scheduleTraversals();
         }
     }
 

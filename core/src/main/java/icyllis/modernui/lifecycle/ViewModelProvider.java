@@ -19,27 +19,88 @@
 package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.UiThread;
 
 import javax.annotation.Nonnull;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 
 /**
- * An utility class that provides {@code ViewModels} for a scope.
+ * A utility class that provides {@code ViewModels} for a scope.
+ * <p>
+ * Default {@code ViewModelProvider} for a {@code Fragment} can be obtained
+ * by passing it to {@link ViewModelProvider#ViewModelProvider(ViewModelStoreOwner)}.
  */
 public class ViewModelProvider {
 
-    private final IFactory factory;
-    private final ViewModelStore viewModelStore;
+    private static final String DEFAULT_KEY = "ViewModelProvider.DefaultKey";
+
+    /**
+     * Implementations of {@code Factory} interface are responsible to instantiate ViewModels.
+     */
+    @FunctionalInterface
+    public interface Factory {
+
+        /**
+         * Creates a new instance of the given {@code Class}.
+         * <p>
+         *
+         * @param modelClass a {@code Class} whose instance is requested
+         * @param <T>        The type parameter for the ViewModel.
+         * @return a newly created ViewModel
+         */
+        @Nonnull
+        <T extends ViewModel> T create(@Nonnull Class<T> modelClass);
+    }
+
+    static class OnRequeryFactory {
+
+        void onRequery(@Nonnull ViewModel viewModel) {
+        }
+    }
+
+    /**
+     * Implementations of {@code Factory} interface are responsible to instantiate ViewModels.
+     * <p>
+     * This is more advanced version of {@link Factory} that receives a key specified for requested
+     * {@link ViewModel}.
+     */
+    static abstract class KeyedFactory extends OnRequeryFactory implements Factory {
+
+        /**
+         * Creates a new instance of the given {@code Class}.
+         *
+         * @param key        a key associated with the requested ViewModel
+         * @param modelClass a {@code Class} whose instance is requested
+         * @param <T>        The type parameter for the ViewModel.
+         * @return a newly created ViewModel
+         */
+        @Nonnull
+        public abstract <T extends ViewModel> T create(@Nonnull String key,
+                                                       @Nonnull Class<T> modelClass);
+
+        @Nonnull
+        @Override
+        public final <T extends ViewModel> T create(@Nonnull Class<T> modelClass) {
+            throw new UnsupportedOperationException("create(String, Class<?>) must be called on "
+                    + "implementations of KeyedFactory");
+        }
+    }
+
+    private final Factory mFactory;
+    private final ViewModelStore mViewModelStore;
 
     /**
      * Creates {@code ViewModelProvider}. This will create {@code ViewModels}
      * and retain them in a store of the given {@code ViewModelStoreOwner}.
-     * A {@link NewInstanceFactory} will be used as the factory.
-     *
-     * @param owner a {@code ViewModelStoreOwner} whose {@link ViewModelStore} will be used to
-     *              retain {@code ViewModels}
+     * <p>
+     * This method will use the
+     * {@link ViewModelStoreOwner#getDefaultViewModelProviderFactory() default factory}
+     * if it returns not null. Otherwise, a {@link NewInstanceFactory} will be used.
      */
     public ViewModelProvider(@Nonnull ViewModelStoreOwner owner) {
-        this(owner.getViewModelStore(), NewInstanceFactory.getInstance());
+        this(owner.getViewModelStore(), Objects.requireNonNullElseGet(
+                owner.getDefaultViewModelProviderFactory(), NewInstanceFactory::getInstance));
     }
 
     /**
@@ -51,7 +112,7 @@ public class ViewModelProvider {
      * @param factory a {@code Factory} which will be used to instantiate
      *                new {@code ViewModels}
      */
-    public ViewModelProvider(@Nonnull ViewModelStoreOwner owner, @Nonnull IFactory factory) {
+    public ViewModelProvider(@Nonnull ViewModelStoreOwner owner, @Nonnull Factory factory) {
         this(owner.getViewModelStore(), factory);
     }
 
@@ -63,9 +124,9 @@ public class ViewModelProvider {
      * @param factory factory a {@code Factory} which will be used to instantiate
      *                new {@code ViewModels}
      */
-    public ViewModelProvider(@Nonnull ViewModelStore store, @Nonnull IFactory factory) {
-        this.factory = factory;
-        this.viewModelStore = store;
+    public ViewModelProvider(@Nonnull ViewModelStore store, @Nonnull Factory factory) {
+        mFactory = factory;
+        mViewModelStore = store;
     }
 
     /**
@@ -82,12 +143,13 @@ public class ViewModelProvider {
      * @return A ViewModel that is an instance of the given type {@code T}.
      */
     @Nonnull
+    @UiThread
     public <T extends ViewModel> T get(@Nonnull Class<T> modelClass) {
         String canonicalName = modelClass.getCanonicalName();
         if (canonicalName == null) {
             throw new IllegalArgumentException("Local and anonymous classes can not be ViewModels");
         }
-        return get(canonicalName, modelClass);
+        return get(DEFAULT_KEY + ":" + canonicalName, modelClass);
     }
 
     /**
@@ -106,45 +168,34 @@ public class ViewModelProvider {
      */
     @SuppressWarnings("unchecked")
     @Nonnull
+    @UiThread
     public <T extends ViewModel> T get(@Nonnull String key, @Nonnull Class<T> modelClass) {
-        ViewModel viewModel = viewModelStore.get(key);
+        ViewModel viewModel = mViewModelStore.get(key);
 
         if (modelClass.isInstance(viewModel)) {
+            if (mFactory instanceof OnRequeryFactory) {
+                ((OnRequeryFactory) mFactory).onRequery(viewModel);
+            }
             return (T) viewModel;
         } else {
             if (viewModel != null) {
-                ModernUI.LOGGER.warn(ViewModel.MARKER,
-                        "ViewModel {} got by key {} does not match model class {}, a new instance is overriding the previous one",
-                        viewModel, key, modelClass);
+                ModernUI.LOGGER.warn(ViewModel.MARKER, "Mismatched model class {} with an existing instance {}",
+                        modelClass, viewModel);
             }
         }
-        viewModel = factory.create(key, modelClass);
-        viewModelStore.put(key, viewModel);
+        if (mFactory instanceof KeyedFactory) {
+            viewModel = ((KeyedFactory) mFactory).create(key, modelClass);
+        } else {
+            viewModel = mFactory.create(modelClass);
+        }
+        mViewModelStore.put(key, viewModel);
         return (T) viewModel;
-    }
-
-    /**
-     * Implementations of {@code IFactory} interface are responsible to instantiate ViewModels.
-     */
-    @FunctionalInterface
-    public interface IFactory {
-
-        /**
-         * Creates a new instance of the given {@code Class}.
-         *
-         * @param key        a key associated with the requested ViewModel
-         * @param modelClass a {@code Class} whose instance is requested
-         * @param <T>        The type parameter for the ViewModel.
-         * @return a newly created ViewModel
-         */
-        @Nonnull
-        <T extends ViewModel> T create(@Nonnull String key, @Nonnull Class<T> modelClass);
     }
 
     /**
      * Simple factory, which calls empty constructor on the give class.
      */
-    public static class NewInstanceFactory implements IFactory {
+    public static class NewInstanceFactory implements Factory {
 
         private static NewInstanceFactory sInstance;
 
@@ -163,11 +214,11 @@ public class ViewModelProvider {
 
         @Nonnull
         @Override
-        public <T extends ViewModel> T create(@Nonnull String key, @Nonnull Class<T> modelClass) {
+        public <T extends ViewModel> T create(@Nonnull Class<T> modelClass) {
             try {
-                return modelClass.newInstance();
-            } catch (IllegalAccessException | InstantiationException e) {
-                throw new RuntimeException(e);
+                return modelClass.getDeclaredConstructor().newInstance();
+            } catch (InvocationTargetException | InstantiationException | IllegalAccessException | NoSuchMethodException e) {
+                throw new RuntimeException("Cannot create an instance of " + modelClass, e);
             }
         }
     }

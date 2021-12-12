@@ -18,21 +18,19 @@
 
 package icyllis.modernui.lifecycle;
 
-import icyllis.modernui.annotation.UiThread;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
-
-public abstract class ViewModel {
-
-    public static final Marker MARKER = MarkerManager.getMarker("ViewModel");
+/**
+ * A simple callback that can receive from {@link LiveData}.
+ *
+ * @param <T> The type of the parameter
+ * @see LiveData LiveData - for a usage description.
+ */
+@FunctionalInterface
+public interface Observer<T> {
 
     /**
-     * This method will be called when this ViewModel is no longer used and will be destroyed.
-     * <p>
-     * It is useful when ViewModel observes some data, and you need to clear this subscription to
-     * prevent a leak of this ViewModel.
+     * Called when the data is changed.
+     *
+     * @param t The new data
      */
-    @UiThread
-    protected void onCleared() {
-    }
+    void onChanged(T t);
 }

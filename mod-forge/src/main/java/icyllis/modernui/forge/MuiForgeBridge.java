@@ -37,12 +37,16 @@ import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Consumer;
 
 /**
  * The bridge for connecting Minecraft Forge mods to Modern UI.
  */
 public final class MuiForgeBridge {
+
+    private static final List<OnDisplayResizeListener> sOnDisplayResizeListeners = new ArrayList<>();
 
     static UIManager sUIManager;
 
@@ -68,7 +72,7 @@ public final class MuiForgeBridge {
      * @param player   the server player to open the screen for
      * @param provider a provider to create a menu on server side
      * @see #openMenu(Player, MenuConstructor, Consumer)
-     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
+     * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      * @see icyllis.modernui.mcgui.OpenMenuEvent
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider) {
@@ -87,7 +91,7 @@ public final class MuiForgeBridge {
      * @param pos      a block pos to send to client, this will be passed to
      *                 the menu supplier that registered on client
      * @see #openMenu(Player, MenuConstructor, Consumer)
-     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
+     * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      * @see icyllis.modernui.mcgui.OpenMenuEvent
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nonnull BlockPos pos) {
@@ -105,7 +109,7 @@ public final class MuiForgeBridge {
      * @param provider a provider to create a menu on server side
      * @param writer   a data writer to send additional data to client, this will be passed
      *                 to the menu supplier (IContainerFactory) that registered on client
-     * @see net.minecraftforge.common.extensions.IForgeContainerType#create(net.minecraftforge.fmllegacy.network.IContainerFactory)
+     * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      * @see icyllis.modernui.mcgui.OpenMenuEvent
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
@@ -203,6 +207,50 @@ public final class MuiForgeBridge {
         }
 
         return min << 8 | best << 4 | max;
+    }
+
+    /**
+     * @param listener l
+     * @see OnDisplayResizeListener
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static void addOnDisplayResizeListener(@Nonnull OnDisplayResizeListener listener) {
+        synchronized (sOnDisplayResizeListeners) {
+            if (!sOnDisplayResizeListeners.contains(listener)) {
+                sOnDisplayResizeListeners.add(listener);
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void removeOnDisplayResizeListener(@Nonnull OnDisplayResizeListener listener) {
+        synchronized (sOnDisplayResizeListeners) {
+            sOnDisplayResizeListeners.remove(listener);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public static void dispatchOnDisplayResize(int width, int height, int guiScale, int oldGuiScale) {
+        synchronized (sOnDisplayResizeListeners) {
+            // no copy on write, be careful
+            for (var l : sOnDisplayResizeListeners) {
+                l.onDisplayResize(width, height, guiScale, oldGuiScale);
+            }
+        }
+    }
+
+    @FunctionalInterface
+    public interface OnDisplayResizeListener {
+
+        /**
+         * Invoked at the beginning of {@link Minecraft#resizeDisplay()}.
+         *
+         * @param width       framebuffer width of the window in pixels
+         * @param height      framebuffer height of the window in pixels
+         * @param guiScale    the new gui scale will be applied to (not apply yet)
+         * @param oldGuiScale the old gui scale, may be equal to the new gui scale
+         */
+        void onDisplayResize(int width, int height, int guiScale, int oldGuiScale);
     }
 
     /* Screen */

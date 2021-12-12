@@ -16,23 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.lifecycle;
+package icyllis.modernui.chatmc;
 
-import icyllis.modernui.annotation.UiThread;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
-
-public abstract class ViewModel {
-
-    public static final Marker MARKER = MarkerManager.getMarker("ViewModel");
-
-    /**
-     * This method will be called when this ViewModel is no longer used and will be destroyed.
-     * <p>
-     * It is useful when ViewModel observes some data, and you need to clear this subscription to
-     * prevent a leak of this ViewModel.
-     */
-    @UiThread
-    protected void onCleared() {
-    }
+public class ModernChatComponent {
 }

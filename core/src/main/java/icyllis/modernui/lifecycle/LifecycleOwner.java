@@ -21,14 +21,17 @@ package icyllis.modernui.lifecycle;
 import javax.annotation.Nonnull;
 
 /**
- * Defines an object that holds a lifecycle
+ * A class that has an Android lifecycle. These events can be used by custom components to
+ * handle lifecycle changes without implementing any code inside the Activity or the Fragment.
+ *
+ * @see Lifecycle
  */
 public interface LifecycleOwner {
 
     /**
-     * Returns the {@link Lifecycle} of the provider.
+     * Returns the Lifecycle of the provider.
      *
-     * @return a {@code lifecycle}
+     * @return The lifecycle of the provider.
      */
     @Nonnull
     Lifecycle getLifecycle();

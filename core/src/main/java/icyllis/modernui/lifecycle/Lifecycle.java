@@ -18,174 +18,103 @@
 
 package icyllis.modernui.lifecycle;
 
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import icyllis.modernui.annotation.UiThread;
 
 import javax.annotation.Nonnull;
-import java.lang.ref.WeakReference;
-import java.util.List;
 
 /**
- * The Lifecycle of {@link icyllis.modernui.fragment.Fragment}
+ * Defines an object that has a Lifecycle. {@link icyllis.modernui.fragment.Fragment}
+ * class implement {@link LifecycleOwner} interface which has the
+ * {@link LifecycleOwner#getLifecycle()} method to access the Lifecycle. You can also
+ * implement {@link LifecycleOwner} in your own classes.
+ * <p>
+ * {@link Event#ON_CREATE}, {@link Event#ON_START}, {@link Event#ON_RESUME} events in this class
+ * are dispatched <b>after</b> the {@link LifecycleOwner}'s related method returns.
+ * {@link Event#ON_PAUSE}, {@link Event#ON_STOP}, {@link Event#ON_DESTROY} events in this class
+ * are dispatched <b>before</b> the {@link LifecycleOwner}'s related method is called.
+ * This gives you certain guarantees on which state the owner is in.
+ * <p>
+ * Observe lifecycle events with {@link LifecycleObserver}.
+ * <pre>
+ * class TestObserver implements LifecycleObserver {
+ *     &#64;Override
+ *     public void onCreate(&#64;Nonnull LifecycleOwner owner) {
+ *         // your code
+ *     }
+ * }
+ * </pre>
  */
-public class Lifecycle {
+public abstract class Lifecycle {
 
     /**
-     * The provider that owns this Lifecycle.
-     * Only WeakReference on LifecycleOwner is kept, so if somebody leaks Lifecycle, they won't leak
-     * the whole Fragment / Activity. However, to leak Lifecycle object isn't great idea neither,
-     * because it keeps strong references on all other listeners, so you'll leak all of them as
-     * well.
-     */
-    private final WeakReference<LifecycleOwner> mLifecycleOwner;
-
-    private final List<IObserver> mObservers = new ObjectArrayList<>();
-
-    /**
-     * Current state
-     */
-    private State mState = State.INITIALIZED;
-
-    /**
-     * Creates a new Lifecycle for the given provider.
+     * Adds a LifecycleObserver that will be notified when the LifecycleOwner changes
+     * state.
      * <p>
-     * You should usually create this inside your LifecycleOwner class's constructor and hold
-     * onto the same instance.
+     * The given observer will be brought to the current state of the LifecycleOwner.
+     * For example, if the LifecycleOwner is in {@link State#STARTED} state, the given observer
+     * will receive {@link Event#ON_CREATE}, {@link Event#ON_START} events.
      *
-     * @param provider The owner LifecycleOwner
+     * @param observer The observer to notify.
      */
-    public Lifecycle(@Nonnull LifecycleOwner provider) {
-        mLifecycleOwner = new WeakReference<>(provider);
-    }
+    @UiThread
+    public abstract void addObserver(@Nonnull LifecycleObserver observer);
 
     /**
-     * Add a listener what will be called when LifecycleOwner changes state.
-     *
-     * @param listener the listener to call
-     */
-    public void addObserver(@Nonnull IObserver listener) {
-        mObservers.add(listener);
-    }
-
-    /**
-     * Remove a listener from the listener list.
-     *
-     * @param listener the listener to remove
-     */
-    public void removeObserver(@Nonnull IObserver listener) {
-        mObservers.remove(listener);
-    }
-
-    /**
-     * Moves the Lifecycle to the given state and dispatches necessary events to the listeners
-     *
-     * @param state new state
-     */
-    public void setCurrentState(@Nonnull State state) {
-        moveToState(state);
-    }
-
-    /**
-     * Sets the current state and notifies the listeners
+     * Removes the given observer from the observers list.
      * <p>
-     * Note that if the {@code currentState} is the same state as the last call to this method,
-     * calling this method has no effect.
+     * If this method is called while a state change is being dispatched,
+     * <ul>
+     * <li>If the given observer has not yet received that event, it will not receive it.
+     * <li>If the given observer has more than 1 method that observes the currently dispatched
+     * event and at least one of them received the event, all of them will receive the event and
+     * the removal will happen afterwards.
+     * </ul>
      *
-     * @param event The event type that was received
+     * @param observer The observer to be removed.
      */
-    public void handleLifecycleEvent(@Nonnull Event event) {
-        State next = getStateAfter(event);
-        moveToState(next);
-    }
-
-    private void moveToState(@Nonnull State state) {
-        if (mState == state) {
-            return;
-        }
-        LifecycleOwner lifecycleOwner = mLifecycleOwner.get();
-        if (lifecycleOwner == null) {
-            throw new IllegalStateException("LifecycleOwner of this Lifecycle is already garbage collected. " +
-                    "It is too late to change lifecycle state.");
-        }
-        int i;
-        while ((i = state.compareTo(mState)) != 0) {
-            Event event = i < 0 ? downEvent(mState) : upEvent(mState);
-            for (IObserver l : mObservers) {
-                l.onLifecycleEvent(lifecycleOwner, event);
-            }
-        }
-    }
-
-    @Nonnull
-    private static State getStateAfter(@Nonnull Event event) {
-        switch (event) {
-            case ON_CREATE:
-            case ON_STOP:
-                return State.CREATED;
-            case ON_START:
-            case ON_PAUSE:
-                return State.STARTED;
-            case ON_RESUME:
-                return State.RESUMED;
-            case ON_DESTROY:
-                return State.DESTROYED;
-        }
-        throw new IllegalArgumentException("Unexpected event value " + event);
-    }
-
-    @Nonnull
-    private Event downEvent(@Nonnull State state) {
-        switch (state) {
-            case INITIALIZED:
-            case DESTROYED:
-                throw new IllegalArgumentException();
-            case CREATED:
-                mState = State.DESTROYED;
-                return Event.ON_DESTROY;
-            case STARTED:
-                mState = State.CREATED;
-                return Event.ON_STOP;
-            case RESUMED:
-                mState = State.STARTED;
-                return Event.ON_PAUSE;
-        }
-        throw new IllegalArgumentException("Unexpected state value " + state);
-    }
-
-    @Nonnull
-    private Event upEvent(@Nonnull State state) {
-        switch (state) {
-            case INITIALIZED:
-            case DESTROYED:
-                mState = State.CREATED;
-                return Event.ON_CREATE;
-            case CREATED:
-                mState = State.STARTED;
-                return Event.ON_START;
-            case STARTED:
-                mState = State.RESUMED;
-                return Event.ON_RESUME;
-            case RESUMED:
-                throw new IllegalArgumentException();
-        }
-        throw new IllegalArgumentException("Unexpected state value " + state);
-    }
+    @UiThread
+    public abstract void removeObserver(@Nonnull LifecycleObserver observer);
 
     /**
      * Returns the current state of the Lifecycle.
      *
      * @return The current state of the Lifecycle.
      */
+    @UiThread
     @Nonnull
-    public State getCurrentState() {
-        return mState;
+    public abstract State getCurrentState();
+
+    public enum Event {
+        /**
+         * Constant for onCreate event of the {@link LifecycleOwner}.
+         */
+        ON_CREATE,
+        /**
+         * Constant for onStart event of the {@link LifecycleOwner}.
+         */
+        ON_START,
+        /**
+         * Constant for onResume event of the {@link LifecycleOwner}.
+         */
+        ON_RESUME,
+        /**
+         * Constant for onPause event of the {@link LifecycleOwner}.
+         */
+        ON_PAUSE,
+        /**
+         * Constant for onStop event of the {@link LifecycleOwner}.
+         */
+        ON_STOP,
+        /**
+         * Constant for onDestroy event of the {@link LifecycleOwner}.
+         */
+        ON_DESTROY
     }
 
-    @FunctionalInterface
-    public interface IObserver {
-
-        void onLifecycleEvent(@Nonnull LifecycleOwner source, Event event);
-    }
-
+    /**
+     * Lifecycle states. You can consider the states as the nodes in a graph and
+     * {@link Event}s as the edges between these nodes.
+     */
     public enum State {
         /**
          * Destroyed state for a LifecycleOwner. After this event, this Lifecycle will not dispatch
@@ -217,19 +146,10 @@ public class Lifecycle {
          * Compares if this State is greater or equal to the given {@code state}.
          *
          * @param state State to compare with
-         * @return true if this state is greater or equal to the given {@code state}
+         * @return true if this State is greater or equal to the given {@code state}
          */
         public boolean isAtLeast(@Nonnull State state) {
             return compareTo(state) >= 0;
         }
-    }
-
-    public enum Event {
-        ON_CREATE,
-        ON_START,
-        ON_RESUME,
-        ON_PAUSE,
-        ON_STOP,
-        ON_DESTROY
     }
 }

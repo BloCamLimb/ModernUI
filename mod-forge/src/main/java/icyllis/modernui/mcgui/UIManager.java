@@ -139,8 +139,6 @@ public final class UIManager extends ViewRootBase {
     private final GLFramebuffer mFramebuffer;
     GLCanvas mCanvas;
 
-    private final Object mRenderLock = new Object();
-
     private MotionEvent mPendingMouseEvent;
     private int mButtonState;
 
@@ -381,32 +379,29 @@ public final class UIManager extends ViewRootBase {
         for (; ; ) {
             LockSupport.park();
 
-            // holds the lock
-            synchronized (mRenderLock) {
-                try {
-                    // 1. handle tasks
-                    mUptimeMillis = System.currentTimeMillis();
-                    if (!mTasks.isEmpty()) {
-                        // batched processing
-                        mTasks.removeIf(mUiHandler);
-                    }
-
-                    // 2. do input events
-                    doProcessInputEvents();
-
-                    // 3. do animations
-                    mAnimationHandler.accept(mFrameTimeMillis);
-                    if (!mAnimationTasks.isEmpty()) {
-                        mAnimationTasks.removeIf(mUiHandler);
-                    }
-
-                    // 4. do traversal
-                    doTraversal();
-                } catch (Throwable t) {
-                    ModernUI.LOGGER.error(MARKER, "An error occurred on UI thread", t);
-                    Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(t, "Exception on UI thread"));
-                    throw t;
+            try {
+                // 1. handle tasks
+                mUptimeMillis = System.currentTimeMillis();
+                if (!mTasks.isEmpty()) {
+                    // batched processing
+                    mTasks.removeIf(mUiHandler);
                 }
+
+                // 2. do input events
+                doProcessInputEvents();
+
+                // 3. do animations
+                mAnimationHandler.accept(mFrameTimeMillis);
+                if (!mAnimationTasks.isEmpty()) {
+                    mAnimationTasks.removeIf(mUiHandler);
+                }
+
+                // 4. do traversal
+                doTraversal();
+            } catch (Throwable t) {
+                ModernUI.LOGGER.error(MARKER, "An error occurred on UI thread", t);
+                Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(t, "Exception on UI thread"));
+                throw t;
             }
         }
 
@@ -663,16 +658,13 @@ public final class UIManager extends ViewRootBase {
             return mKeyboard.onCharTyped(codePoint, modifiers);
         }*/
         post(() -> {
-            View v = mDecor.findFocus();
-            if (v instanceof TextView tv) {
-                Editable content = tv.getEditableText();
-                if (content != null) {
-                    int selStart = tv.getSelectionStart();
-                    int selEnd = tv.getSelectionEnd();
-                    if (selStart >= 0 && selEnd >= 0) {
-                        Selection.setSelection(content, Math.max(selStart, selEnd));
-                        content.replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd), String.valueOf(ch));
-                    }
+            final Editable content;
+            if (mDecor.findFocus() instanceof TextView tv && (content = tv.getEditableText()) != null) {
+                int selStart = tv.getSelectionStart();
+                int selEnd = tv.getSelectionEnd();
+                if (selStart >= 0 && selEnd >= 0) {
+                    Selection.setSelection(content, Math.max(selStart, selEnd));
+                    content.replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd), String.valueOf(ch));
                 }
             }
         });
@@ -700,6 +692,7 @@ public final class UIManager extends ViewRootBase {
             // Test
             mProjectionChanged = false;
         }
+        // Flip Y, setting the origin to the top left
         canvas.setProjection(mProjectionMatrix.setOrthographic(width, -height, 0, 2000));
 
         // This is on Main thread
@@ -797,11 +790,13 @@ public final class UIManager extends ViewRootBase {
         }
     }
 
+    private final Runnable mSetFrame = () -> setFrame(mWindow.getWidth(), mWindow.getHeight());
+
     /**
      * Called when game window size changed, used to re-layout the window.
      */
     void resize() {
-        post(() -> setFrame(mWindow.getWidth(), mWindow.getHeight()));
+        post(mSetFrame);
         mProjectionChanged = true;
     }
 
