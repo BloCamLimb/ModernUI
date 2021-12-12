@@ -20,7 +20,6 @@ package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.util.SafeLinkedList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -51,6 +50,8 @@ import java.util.function.Supplier;
  * This class is designed to hold individual data fields of {@link ViewModel},
  * but can also be used for sharing data between different modules in your application
  * in a decoupled fashion.
+ * <p>
+ * An instance of this class takes a total of 240 bytes at least.
  *
  * @param <T> The type of data held by this instance
  * @see ViewModel

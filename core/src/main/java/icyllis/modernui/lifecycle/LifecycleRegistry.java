@@ -19,7 +19,6 @@
 package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.util.SafeLinkedHashMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
