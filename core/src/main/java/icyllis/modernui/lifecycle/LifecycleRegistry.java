@@ -23,7 +23,7 @@ import icyllis.modernui.annotation.UiThread;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
+import java.util.ArrayDeque;
 import java.util.Iterator;
 import java.util.function.Supplier;
 
@@ -74,7 +74,7 @@ public class LifecycleRegistry extends Lifecycle {
     // newObserver should be brought only to CREATED state during the execution of
     // this onStart method. our invariant with mObserverMap doesn't help, because parent observer
     // is no longer in the map.
-    private final ArrayList<State> mParentStates = new ArrayList<>();
+    private final ArrayDeque<State> mParentStates = new ArrayDeque<>();
 
     /**
      * Creates a new LifecycleRegistry for the given provider.
@@ -140,8 +140,7 @@ public class LifecycleRegistry extends Lifecycle {
         ObserverWithState previous = mObserverMap.ceil(observer);
 
         State siblingState = previous != null ? previous.mState : null;
-        State parentState = !mParentStates.isEmpty() ? mParentStates.get(mParentStates.size() - 1)
-                : null;
+        State parentState = mParentStates.peekFirst();
         return min(min(mState, siblingState), parentState);
     }
 
@@ -168,7 +167,7 @@ public class LifecycleRegistry extends Lifecycle {
             pushParentState(statefulObserver.mState);
             statefulObserver.dispatchEvent(lifecycleOwner, upEvent(statefulObserver.mState));
             popParentState();
-            // mState / subling may have been changed recalculate
+            // mState / sibling may have been changed recalculate
             targetState = calculateTargetState(observer);
         }
 
@@ -180,11 +179,11 @@ public class LifecycleRegistry extends Lifecycle {
     }
 
     private void popParentState() {
-        mParentStates.remove(mParentStates.size() - 1);
+        mParentStates.removeFirst();
     }
 
     private void pushParentState(State state) {
-        mParentStates.add(state);
+        mParentStates.addFirst(state);
     }
 
     @Override
