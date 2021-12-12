@@ -18,9 +18,6 @@
 
 package icyllis.modernui.lifecycle;
 
-import javax.annotation.Nonnull;
-import java.util.concurrent.Executor;
-
 /**
  * {@link LiveData} which publicly exposes {@link #setValue(T)} and {@link #postValue(T)} method.
  *
@@ -41,7 +38,6 @@ public class MutableLiveData<T> extends LiveData<T> {
      * Creates a MutableLiveData with no value assigned to it.
      */
     public MutableLiveData() {
-        super();
     }
 
     @Override

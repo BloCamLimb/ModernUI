@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.util;
+package icyllis.modernui.lifecycle;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

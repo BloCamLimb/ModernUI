@@ -56,8 +56,8 @@ public class ModernUI {
     private static final Cleaner sCleaner = Cleaner.create();
 
     static {
-        if (Runtime.version().feature() < 16) {
-            throw new RuntimeException("JRE 16 or above is required");
+        if (Runtime.version().feature() < 17) {
+            throw new RuntimeException("JRE 17 or above is required");
         }
     }
 
