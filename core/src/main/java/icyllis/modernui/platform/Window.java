@@ -88,9 +88,9 @@ public final class Window implements AutoCloseable {
                 ModernUI.LOGGER.info("Paste: {}", Clipboard.getText());
             }
         });
-        glfwSetCharCallback(handle, (window, ch) -> {
+        /*glfwSetCharCallback(handle, (window, ch) -> {
             ModernUI.LOGGER.info(MarkerManager.getMarker("Input"), "InputChar: {}", ch);
-        });
+        });*/
 
         // initialize values
         Monitor monitor = Monitor.getPrimary();

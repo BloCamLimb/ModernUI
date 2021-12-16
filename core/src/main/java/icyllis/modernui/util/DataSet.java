@@ -16,28 +16,36 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.view;
+package icyllis.modernui.util;
+
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * A DataSet (sometimes known as DataStore) encapsulates a mapping from String keys
+ * to values of various primitive types. The base class can safely be persisted to
+ * and restored from local disk or network. A DataSet can be used as a node of other
+ * DataSets to construct a tree structure. The I/O uses {@link java.io.DataInput} and
+ * {@link java.io.DataOutput} where Strings are coded in Java modified UTF-8 format.
+ */
 //TODO work in process
-public class AttributeMap {
+public class DataSet {
 
     // int, float takes up 16 bytes
-    private final Map<String, Object> map = new HashMap<>();
+    private final Map<String, Object> mMap = new Object2ObjectOpenHashMap<>();
 
-    public AttributeMap() {
+    public DataSet() {
     }
 
     public void putInt(@Nonnull String key, int value) {
-        map.put(key, value);
+        mMap.put(key, value);
     }
 
     public int getInt(@Nonnull String key, int defValue) {
-        Object o = map.get(key);
+        Object o = mMap.get(key);
         if (o instanceof Number) {
             return ((Number) o).intValue();
         }
@@ -45,28 +53,28 @@ public class AttributeMap {
     }
 
     public void putFloat(@Nonnull String key, float value) {
-        map.put(key, value);
+        mMap.put(key, value);
     }
 
     public float getFloat(@Nonnull String key, float defValue) {
-        Object o = map.get(key);
+        Object o = mMap.get(key);
         if (o instanceof Number) {
             return ((Number) o).floatValue();
         }
         return defValue;
     }
 
-    public void put(@Nonnull String key, @Nonnull AttributeMap map) {
+    public void put(@Nonnull String key, @Nonnull DataSet map) {
         if (map != this) {
-            this.map.put(key, map);
+            this.mMap.put(key, map);
         }
     }
 
     @Nullable
-    public AttributeMap get(@Nonnull String key) {
-        Object o = map.get(key);
-        if (o instanceof AttributeMap) {
-            return (AttributeMap) o;
+    public DataSet get(@Nonnull String key) {
+        Object o = mMap.get(key);
+        if (o instanceof DataSet) {
+            return (DataSet) o;
         }
         return null;
     }
