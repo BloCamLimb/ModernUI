@@ -46,6 +46,7 @@ import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.view.Gravity;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
@@ -62,10 +63,8 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
+import java.util.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -122,7 +121,7 @@ public class TestMain {
         AudioManager.getInstance().initialize();
         try {
             sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:/10.ogg"))));
-            sGraph = new SpectrumGraph(sTrack);
+            sGraph = new SpectrumGraph(sTrack, true, 300);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -145,6 +144,15 @@ public class TestMain {
 
         ModernUI.initialize();
 
+        HashMap<Object, Object> map1 = new HashMap<>();
+        for (int i = 0; i < 10000; i++) {
+            map1.put(Integer.toString(i), "");
+        }
+        Object2ObjectOpenHashMap<Object, Object> map2 = new Object2ObjectOpenHashMap<>();
+        for (int i = 0; i < 10000; i++) {
+            map2.put(Integer.toString(i), "");
+        }
+
         IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
         GRAPHICS = IMAGE.createGraphics();
 
@@ -156,6 +164,17 @@ public class TestMain {
         GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        //(sec23°)²+(sec22°)²-2sec23°sec22°cos45°=a²
+        //θ=arccos((a²+(sec22°)²-(sec23°)²)/(2asec22°))
+        double sec22 = 1 / Math.cos(Math.toRadians(22));
+        double sec23 = 1 / Math.cos(Math.toRadians(23));
+        double sec22_2 = sec22 * sec22;
+        double sec23_2 = sec23 * sec23;
+        double a_2 = sec23_2 + sec22_2 - 2 * sec22 * sec23 * Math.cos(Math.toRadians(45));
+        double a = Math.sqrt(a_2);
+        double theta = Math.acos((a_2 + sec22_2 - sec23_2) / (2 * a * sec22));
+        ModernUI.LOGGER.info(Math.toDegrees(theta));
 
         ModernUI.LOGGER.info(Integer.toHexString(ColorEvaluator.evaluate(0.5f, 0xF0AADCF0, 0xF0FFC3F7)).toUpperCase(Locale.ROOT));
 

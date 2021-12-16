@@ -27,11 +27,16 @@ import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.io.DataOutput;
 import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Consumer;
+import java.util.function.Function;
 
 @Fork(1)
 @Threads(2)
@@ -40,19 +45,17 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 public class TestBenchmark {
 
     public static void main(String[] args) throws RunnerException {
-        /*new Runner(new OptionsBuilder()
+        new Runner(new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
                 .shouldFailOnError(true).shouldDoGC(true)
-                .jvmArgs("-server").build()).run();*/
-        Int2ObjectMap<String> map = new Int2ObjectOpenHashMap<>();
-        map.put(1, "a");
-        map.put(2, "b");
-        int n = 0;
-        while (map.containsKey(++n));
-        ModernUI.LOGGER.info(n);
-    }
+                .jvmArgs("-server").build()).run();
 
-    public static void testReentrantLock() {
+    }
+    
+    static Object v = new double[]{};
+    static long i;
+
+    /*public static void testReentrantLock() {
         ReentrantReadWriteLock lock = new ReentrantReadWriteLock();
 
         Lock readLock = lock.readLock();
@@ -114,5 +117,5 @@ public class TestBenchmark {
         for (int i = 0; i < 1000000; i++) {
             m.get(13);
         }
-    }
+    }*/
 }
