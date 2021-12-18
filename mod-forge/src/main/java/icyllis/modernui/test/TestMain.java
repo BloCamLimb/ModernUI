@@ -45,8 +45,9 @@ import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
+import icyllis.modernui.util.DataSet;
+import icyllis.modernui.util.DataSetIO;
 import icyllis.modernui.view.Gravity;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
@@ -58,13 +59,19 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -144,13 +151,11 @@ public class TestMain {
 
         ModernUI.initialize();
 
-        HashMap<Object, Object> map1 = new HashMap<>();
-        for (int i = 0; i < 10000; i++) {
-            map1.put(Integer.toString(i), "");
-        }
-        Object2ObjectOpenHashMap<Object, Object> map2 = new Object2ObjectOpenHashMap<>();
-        for (int i = 0; i < 10000; i++) {
-            map2.put(Integer.toString(i), "");
+        try {
+            DataSet dataSet = DataSetIO.inflate(new FileInputStream("F:/ftestdata.db"));
+            ModernUI.LOGGER.info(dataSet);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
         IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
@@ -411,7 +416,7 @@ public class TestMain {
 
         Rect screenRect = new Rect(0, 0, window.getWidth(), window.getHeight());
 
-        sTrack.play();
+        //sTrack.play();
 
         GLWrapper.glEnable(GL_CULL_FACE);
         GLWrapper.glEnable(GL_BLEND);
