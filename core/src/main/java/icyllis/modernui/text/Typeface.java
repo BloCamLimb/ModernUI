@@ -406,14 +406,14 @@ public class Typeface {
 
     @Override
     public String toString() {
-        StringBuilder b = new StringBuilder();
-        b.append("Typeface{");
+        StringBuilder s = new StringBuilder();
+        s.append('{');
         for (int i = 0, e = mFonts.size(); i < e; i++) {
             if (i > 0) {
-                b.append(", ");
+                s.append(',').append(' ');
             }
-            b.append(mFonts.get(i).getFamily(Locale.ROOT));
+            s.append(mFonts.get(i).getFamily(Locale.ROOT));
         }
-        return b.append('}').toString();
+        return s.append('}').toString();
     }
 }

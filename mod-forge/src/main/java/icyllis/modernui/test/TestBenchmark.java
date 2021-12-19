@@ -18,22 +18,31 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.ModernUI;
+import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.util.DataSet;
+import icyllis.modernui.util.DataSetIO;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtIo;
+import org.github.jamm.MemoryMeter;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import java.util.IdentityHashMap;
-import java.util.List;
-import java.util.Map;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.*;
 
 @Fork(1)
-@Threads(2)
-@Warmup(iterations = 1, time = 3)
-@Measurement(iterations = 3, time = 3)
+@Threads(1)
+@Warmup(iterations = 5, time = 1)
+@Measurement(iterations = 10, time = 2)
 public class TestBenchmark {
 
     public static void main(String[] args) throws RunnerException {
@@ -41,7 +50,74 @@ public class TestBenchmark {
                 .include(TestBenchmark.class.getSimpleName())
                 .shouldFailOnError(true).shouldDoGC(true)
                 .jvmArgs("-server").build()).run();
+        MemoryMeter meter = MemoryMeter.builder().build();
+        ModernUI.LOGGER.info("CompoundTag: {}", TextUtils.binaryCompact((int) meter.measureDeep(sCompoundTag)));
+        ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact((int) meter.measureDeep(sDataSet)));
+    }
 
+    public static DataSet sDataSet = new DataSet();
+    public static CompoundTag sCompoundTag = new CompoundTag();
+
+    static {
+        sDataSet.putInt("uniqueID", 1007);
+        List<DataSet> list = new ArrayList<>();
+        for (int i = 0; i < 1007; i++) {
+            DataSet set = new DataSet();
+            set.putInt("id", i + 1);
+            set.putInt("color", 0xFF7766);
+            set.putUUID("ownerUUID", UUID.randomUUID());
+            set.putString("p", "abcedf");
+            list.add(set);
+        }
+        sDataSet.put("networks", list);
+
+        sCompoundTag.putInt("uniqueID", 1007);
+        ListTag listTag = new ListTag();
+        for (int i = 0; i < 1007; i++) {
+            CompoundTag tag = new CompoundTag();
+            tag.putInt("id", i + 1);
+            tag.putInt("color", 0xFF7766);
+            tag.putUUID("ownerUUID", UUID.randomUUID());
+            tag.putString("p", "abcedf");
+            listTag.add(tag);
+        }
+        sCompoundTag.put("networks", listTag);
+    }
+
+    @Benchmark
+    public static void dataSetDeflation() {
+        try {
+            DataSetIO.deflate(sDataSet, new FileOutputStream("F:/testdata_set1.dat"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Benchmark
+    public static void compoundTagDeflation() {
+        try {
+            NbtIo.writeCompressed(sCompoundTag, new FileOutputStream("F:/testdata_tag1.dat"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Benchmark
+    public static void dataSetInflation() {
+        try {
+            DataSetIO.inflate(new FileInputStream("F:/testdata_set1.dat"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Benchmark
+    public static void compoundTagInflation() {
+        try {
+            NbtIo.readCompressed(new FileInputStream("F:/testdata_tag1.dat"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public static Object v;
@@ -79,14 +155,12 @@ public class TestBenchmark {
         classMapper.put(List.class, () -> i9++);
     }
 
-    @Benchmark
     public static void testClassMapper() {
         Object v = TestBenchmark.v;
         classMapper.get(v.getClass()).run();
         TestBenchmark.v = Math.random() > 0.5 ? new double[]{} : sArrayList;
     }
 
-    @Benchmark
     public static void testInstanceOf() {
         Object v = TestBenchmark.v;
         if (v instanceof Byte) {
