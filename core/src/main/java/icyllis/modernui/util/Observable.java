@@ -39,12 +39,11 @@ public abstract class Observable<T> {
     protected final ArrayList<T> mObservers = new ArrayList<T>();
 
     /**
-     * Adds an observer to the list. The observer cannot be null and it must not already
+     * Adds an observer to the list. The observer cannot be null, and it must not already
      * be registered.
      *
      * @param observer the observer to register
-     * @throws IllegalArgumentException the observer is null
-     * @throws IllegalStateException    the observer is already registered
+     * @throws IllegalStateException the observer is already registered
      */
     public void registerObserver(T observer) {
         synchronized (mObservers) {
@@ -56,20 +55,17 @@ public abstract class Observable<T> {
     }
 
     /**
-     * Removes a previously registered observer. The observer must not be null and it
+     * Removes a previously registered observer. The observer must not be null, and it
      * must already have been registered.
      *
      * @param observer the observer to unregister
-     * @throws IllegalArgumentException the observer is null
-     * @throws IllegalStateException    the observer is not yet registered
+     * @throws IllegalStateException the observer is not yet registered
      */
     public void unregisterObserver(T observer) {
         synchronized (mObservers) {
-            int index = mObservers.indexOf(observer);
-            if (index == -1) {
+            if (!mObservers.remove(observer)) {
                 throw new IllegalStateException("Observer " + observer + " was not registered.");
             }
-            mObservers.remove(index);
         }
     }
 

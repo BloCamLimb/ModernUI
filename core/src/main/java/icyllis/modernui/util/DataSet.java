@@ -37,6 +37,7 @@ import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -54,6 +55,7 @@ import java.util.UUID;
  *
  * @see DataSetIO
  */
+@ApiStatus.Experimental
 @ParametersAreNonnullByDefault
 public class DataSet {
 

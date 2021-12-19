@@ -48,36 +48,29 @@ import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.DataSetIO;
 import icyllis.modernui.view.Gravity;
+import mezz.jei.api.JeiPlugin;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Callback;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
-import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.glfw.GLFW.*;
 
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "unchecked"})
 public class TestMain {
 
     public static final Marker MARKER = MarkerManager.getMarker("Test");
@@ -151,12 +144,25 @@ public class TestMain {
 
         ModernUI.initialize();
 
+        ModernUI.LOGGER.info("Module: {}", TestMain.class.getModule());
+        ModernUI.LOGGER.info("Main class loader: {}", TestMain.class.getClassLoader());
+        ModernUI.LOGGER.info("System class loader: {}", ClassLoader.getSystemClassLoader());
+        ModernUI.LOGGER.info("Bootstrap class loader: {}", Object.class.getClassLoader());
+
         try {
-            DataSet dataSet = DataSetIO.inflate(new FileInputStream("F:/ftestdata.db"));
+            DataSet dataSet = DataSetIO.inflate(new FileInputStream("F:/ftestdata.dat"));
             ModernUI.LOGGER.info(dataSet);
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        ArrayList<Object> acc_r = new ArrayList<>();
+        acc_r.add("c");
+        List<String> acc_f = (List<String>) (Object) acc_r;
+
+        ArrayList<String> acc_c = new ArrayList<>();
+        acc_c.add("d");
+        List<Object> acc_g = (List<Object>) (Object) acc_c;
 
         IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
         GRAPHICS = IMAGE.createGraphics();
@@ -283,7 +289,7 @@ public class TestMain {
                     e.printStackTrace();
                 }
             }, "Open-File").start();*/
-            new Thread(() -> {
+            /*new Thread(() -> {
                 try {
                     Thread.sleep(1000);
                 } catch (InterruptedException e) {
@@ -296,7 +302,7 @@ public class TestMain {
                         ModernUI.LOGGER.info("Choose color {}", c);
                     }
                 }
-            }, "Choose-Color").start();
+            }, "Choose-Color").start();*/
 
             while (sWindow == null || !sWindow.shouldClose()) {
                 glfwWaitEventsTimeout(1 / 288D);

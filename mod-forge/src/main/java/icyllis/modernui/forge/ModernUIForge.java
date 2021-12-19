@@ -36,16 +36,12 @@ import net.minecraftforge.data.loading.DatagenModLoader;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.fml.ModLoadingStage;
-import net.minecraftforge.fml.ModLoadingWarning;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.IModBusEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.javafmlmod.FMLModContainer;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.fml.util.thread.EffectiveSide;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
@@ -54,7 +50,6 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
@@ -62,26 +57,31 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.Executor;
 
+/**
+ * Mod context class.
+ */
 @Mod(ModernUI.ID)
 public final class ModernUIForge extends ModernUI {
 
     private static boolean sOptiFineLoaded;
 
-    static boolean sInterceptTipTheScales;
+    static volatile boolean sInterceptTipTheScales;
 
-    static boolean sDevelopment;
-    static boolean sDeveloperMode;
+    static volatile boolean sDevelopment;
+    static volatile boolean sDeveloperMode;
 
     static {
         try {
             Class<?> clazz = Class.forName("optifine.Installer");
-            String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
             sOptiFineLoaded = true;
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "OptiFine installed: {}", version);
-        } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-
-        } catch (IllegalAccessException | InvocationTargetException e) {
-            e.printStackTrace();
+            try {
+                String version = (String) clazz.getMethod("getOptiFineVersion").invoke(null);
+                LOGGER.info(MARKER, "OptiFine installed: {}", version);
+            } catch (Exception e) {
+                LOGGER.info(MARKER, "OptiFine installed...");
+            }
+        } catch (ClassNotFoundException e) {
+            LOGGER.info("OptiFine not installed...");
         }
     }
 
@@ -93,7 +93,24 @@ public final class ModernUIForge extends ModernUI {
     public ModernUIForge() {
         final boolean isDataGen = DatagenModLoader.isRunningDataGen();
 
-        init();
+        // get '/run' parent
+        Path path = FMLPaths.GAMEDIR.get().getParent();
+        // the root directory of your project
+        File dir = path.toFile();
+        String[] r = dir.list((file, name) -> name.equals("build.gradle"));
+        if (r != null && r.length > 0 && dir.getName().equals(NAME_CPT)) {
+            sDevelopment = true;
+            LOGGER.debug(MARKER, "Auto detected in development environment");
+        } else if (ModernUI.class.getSigners() == null) {
+            LOGGER.warn(MARKER, "Signature is missing");
+        }
+
+        // TipTheScales doesn't work with OptiFine
+        if (ModList.get().isLoaded("tipthescales") && !sOptiFineLoaded) {
+            sInterceptTipTheScales = true;
+            LOGGER.info(MARKER, "Intercepting TipTheScales");
+        }
+
         Config.init();
         LocalStorage.init();
 
@@ -115,36 +132,19 @@ public final class ModernUIForge extends ModernUI {
 
         ModList.get().forEachModContainer((modid, container) -> {
             if (container instanceof FMLModContainer) {
-                sModEventBuses.put(container.getNamespace(), ((FMLModContainer) container).getEventBus());
+                final String namespace = container.getNamespace();
+                if (!namespace.equals("forge")) {
+                    sModEventBuses.put(namespace, ((FMLModContainer) container).getEventBus());
+                }
             }
         });
 
-        ModernUI.LOGGER.debug(ModernUI.MARKER, "Modern UI initialized");
+        LOGGER.info(MARKER, "Modern UI initialized, FML mods: {}", sModEventBuses.size());
     }
 
-    private static void init() {
-        // get '/run' parent
-        Path path = FMLPaths.GAMEDIR.get().getParent();
-        // the root directory of your project
-        File dir = path.toFile();
-        String[] r = dir.list((file, name) -> name.equals("build.gradle"));
-        if (r != null && r.length > 0 && dir.getName().equals(ModernUI.NAME_CPT)) {
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Working in development environment");
-            sDevelopment = true;
-        } else if (ModernUI.class.getSigners() == null) {
-            ModernUI.LOGGER.debug(MARKER, "Signature is missing");
-        }
-
-        // TipTheScales doesn't work with OptiFine
-        if (ModList.get().isLoaded("tipthescales") && !sOptiFineLoaded) {
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Intercepting TipTheScales");
-            sInterceptTipTheScales = true;
-        }
-    }
-
-    public static void warnSetup(String key, Object... args) {
+    /*public static void warnSetup(String key, Object... args) {
         ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP, key, args));
-    }
+    }*/
 
     @Nonnull
     @Override
@@ -155,19 +155,20 @@ public final class ModernUIForge extends ModernUI {
     @Nonnull
     @Override
     public Typeface getSelectedTypeface() {
-        if (mTypeface == null) {
-            synchronized (this) {
-                if (mTypeface == null) {
-                    Set<Font> set = new LinkedHashSet<>();
-                    List<? extends String> configs = Config.CLIENT.fontFamily.get();
-                    if (configs != null) {
-                        loadFonts(configs, set);
-                    }
-                    mTypeface = Typeface.createTypeface(set.toArray(new Font[0]));
-                    Minecraft.getInstance().tell(() -> LayoutCache.getOrCreate(ID, 0, 1, false,
-                            new FontPaint(), false, false));
-                    ModernUI.LOGGER.info(MARKER, "Active: {}", mTypeface);
+        if (mTypeface != null) {
+            return mTypeface;
+        }
+        synchronized (this) {
+            if (mTypeface == null) {
+                Set<Font> set = new LinkedHashSet<>();
+                List<? extends String> configs = Config.CLIENT.fontFamily.get();
+                if (configs != null) {
+                    loadFonts(configs, set);
                 }
+                mTypeface = Typeface.createTypeface(set.toArray(new Font[0]));
+                Minecraft.getInstance().tell(() -> LayoutCache.getOrCreate(ID, 0, 1, false,
+                        new FontPaint(), false, false));
+                LOGGER.info(MARKER, "Loaded typeface: {}", mTypeface);
             }
         }
         return mTypeface;
@@ -178,13 +179,13 @@ public final class ModernUIForge extends ModernUI {
             if (StringUtils.isEmpty(cfg)) {
                 continue;
             }
-            if (cfg.endsWith(".ttf") || cfg.endsWith(".otf")
-                    || cfg.endsWith(".TTF") || cfg.endsWith(".OTF")) {
+            if (cfg.endsWith(".ttf") || cfg.endsWith(".otf") ||
+                    cfg.endsWith(".TTF") || cfg.endsWith(".OTF")) {
                 try {
                     Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
                             cfg.replaceAll("\\\\", "/")));
                     selected.add(f);
-                    ModernUI.LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
+                    LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
                             f.getFamily(Locale.ROOT), cfg);
                     continue;
                 } catch (Exception ignored) {
@@ -193,21 +194,19 @@ public final class ModernUIForge extends ModernUI {
                         .getResource(new ResourceLocation(cfg))) {
                     Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
                     selected.add(f);
-                    ModernUI.LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
+                    LOGGER.debug(MARKER, "Font {} was loaded with config value {}",
                             f.getFamily(Locale.ROOT), cfg);
                     continue;
                 } catch (Exception ignored) {
                 }
-                ModernUI.LOGGER.warn(MARKER, "Font {} failed to load or invalid", cfg);
+                LOGGER.warn(MARKER, "Font {} failed to load or invalid", cfg);
             } else {
-                Optional<Font> font =
-                        Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equalsIgnoreCase(cfg))
-                                .findFirst();
+                Optional<Font> font = Typeface.sAllFontFamilies.stream()
+                        .filter(f -> f.getFamily(Locale.ROOT).equalsIgnoreCase(cfg))
+                        .findFirst();
                 if (font.isPresent()) {
                     selected.add(font.get());
-                    ModernUI.LOGGER.debug(MARKER, "Font {} was loaded", cfg);
-                } else {
-                    ModernUI.LOGGER.warn(MARKER, "Font {} cannot found or invalid", cfg);
+                    LOGGER.debug(MARKER, "Font {} was loaded", cfg);
                 }
             }
         }

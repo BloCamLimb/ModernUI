@@ -157,7 +157,32 @@ public final class DataSetIO {
             output.writeByte(VAL_NULL);
         } else {
             final Object e = list.get(0);
-            if (e instanceof byte[]) {
+            if (e instanceof String) {
+                output.writeByte(VAL_STRING);
+                output.writeInt(size);
+                for (String s : (List<String>) list) {
+                    output.writeUTF(s);
+                }
+            } else if (e instanceof UUID) {
+                output.writeByte(VAL_UUID);
+                output.writeInt(size);
+                for (UUID u : (List<UUID>) list) {
+                    output.writeLong(u.getMostSignificantBits());
+                    output.writeLong(u.getLeastSignificantBits());
+                }
+            } else if (e instanceof List<?>) {
+                output.writeByte(VAL_LIST);
+                output.writeInt(size);
+                for (List<?> li : (List<List<?>>) list) {
+                    writeList(li, output);
+                }
+            } else if (e instanceof DataSet) {
+                output.writeByte(VAL_DATA_SET);
+                output.writeInt(size);
+                for (DataSet set : (List<DataSet>) list) {
+                    writeDataSet(set, output);
+                }
+            } else if (e instanceof byte[]) {
                 output.writeByte(VAL_BYTE_ARRAY);
                 output.writeInt(size);
                 for (byte[] a : (List<byte[]>) list) {
@@ -209,31 +234,6 @@ public final class DataSetIO {
                         output.writeDouble(d);
                     }
                 }
-            } else if (e instanceof String) {
-                output.writeByte(VAL_STRING);
-                output.writeInt(size);
-                for (String s : (List<String>) list) {
-                    output.writeUTF(s);
-                }
-            } else if (e instanceof UUID) {
-                output.writeByte(VAL_UUID);
-                output.writeInt(size);
-                for (UUID u : (List<UUID>) list) {
-                    output.writeLong(u.getMostSignificantBits());
-                    output.writeLong(u.getLeastSignificantBits());
-                }
-            } else if (e instanceof List<?>) {
-                output.writeByte(VAL_LIST);
-                output.writeInt(size);
-                for (List<?> li : (List<List<?>>) list) {
-                    writeList(li, output);
-                }
-            } else if (e instanceof DataSet) {
-                output.writeByte(VAL_DATA_SET);
-                output.writeInt(size);
-                for (DataSet set : (List<DataSet>) list) {
-                    writeDataSet(set, output);
-                }
             } else {
                 throw new IllegalStateException("Unknown element class " + e.getClass());
             }
@@ -274,6 +274,23 @@ public final class DataSetIO {
                 output.writeByte(VAL_DOUBLE);
                 output.writeUTF(entry.getKey());
                 output.writeDouble((double) v);
+            } else if (v instanceof String) {
+                output.writeByte(VAL_STRING);
+                output.writeUTF(entry.getKey());
+                output.writeUTF((String) v);
+            } else if (v instanceof UUID u) {
+                output.writeByte(VAL_UUID);
+                output.writeUTF(entry.getKey());
+                output.writeLong(u.getMostSignificantBits());
+                output.writeLong(u.getLeastSignificantBits());
+            } else if (v instanceof List<?>) {
+                output.writeByte(VAL_LIST);
+                output.writeUTF(entry.getKey());
+                writeList((List<?>) v, output);
+            } else if (v instanceof DataSet) {
+                output.writeByte(VAL_DATA_SET);
+                output.writeUTF(entry.getKey());
+                writeDataSet((DataSet) v, output);
             } else if (v instanceof byte[] a) {
                 output.writeByte(VAL_BYTE_ARRAY);
                 output.writeUTF(entry.getKey());
@@ -314,23 +331,6 @@ public final class DataSetIO {
                 for (double d : a) {
                     output.writeDouble(d);
                 }
-            } else if (v instanceof String) {
-                output.writeByte(VAL_STRING);
-                output.writeUTF(entry.getKey());
-                output.writeUTF((String) v);
-            } else if (v instanceof UUID u) {
-                output.writeByte(VAL_UUID);
-                output.writeUTF(entry.getKey());
-                output.writeLong(u.getMostSignificantBits());
-                output.writeLong(u.getLeastSignificantBits());
-            } else if (v instanceof List<?>) {
-                output.writeByte(VAL_LIST);
-                output.writeUTF(entry.getKey());
-                writeList((List<?>) v, output);
-            } else if (v instanceof DataSet) {
-                output.writeByte(VAL_DATA_SET);
-                output.writeUTF(entry.getKey());
-                writeDataSet((DataSet) v, output);
             } else {
                 throw new IllegalStateException("Unknown value type " + v.getClass());
             }
