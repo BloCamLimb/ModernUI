@@ -28,6 +28,8 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - [flexmark-java](https://github.com/vsch/flexmark-java) by Atlassian Pty Ltd, Vladimir Schneider
   - [fastutil](https://github.com/vigna/fastutil) by Vigna
   - Apache Log4j, IBM ICU4j, LWJGL
+* An explanation in Chinese
+  - 许可协议即合同，具有法律约束力。无论出于何种目的，只要你使用 Modern UI，即代表你已经阅读并接受了全部条款。
 ### Adding Modern UI to your project
 #### Environment requirements
 - Windows, Linux or macOS (macOS may not be supported)
