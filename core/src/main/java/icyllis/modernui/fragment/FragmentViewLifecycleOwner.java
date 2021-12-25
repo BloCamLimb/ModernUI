@@ -18,34 +18,57 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.lifecycle.LifecycleOwner;
-import icyllis.modernui.lifecycle.Lifecycle;
-import icyllis.modernui.lifecycle.LifecycleRegistry;
+import icyllis.modernui.lifecycle.*;
 
 import javax.annotation.Nonnull;
 
-class FragmentViewLifecycleOwner implements LifecycleOwner {
+class FragmentViewLifecycleOwner implements LifecycleOwner, ViewModelStoreOwner {
 
-    private LifecycleRegistry mLifecycle;
+    private final Fragment mFragment;
+    private final ViewModelStore mViewModelStore;
 
+    private LifecycleRegistry mLifecycleRegistry;
+
+    FragmentViewLifecycleOwner(@Nonnull Fragment fragment, @Nonnull ViewModelStore viewModelStore) {
+        mFragment = fragment;
+        mViewModelStore = viewModelStore;
+    }
+
+    /**
+     * Initializes the underlying Lifecycle if it hasn't already been created.
+     */
     void initialize() {
-        if (mLifecycle == null) {
-            mLifecycle = new LifecycleRegistry(this);
+        if (mLifecycleRegistry == null) {
+            mLifecycleRegistry = new LifecycleRegistry(this);
         }
     }
 
+    /**
+     * @return True if the Lifecycle has been initialized.
+     */
     boolean isInitialized() {
-        return mLifecycle != null;
+        return mLifecycleRegistry != null;
     }
 
     @Nonnull
     @Override
     public Lifecycle getLifecycle() {
         initialize();
-        return mLifecycle;
+        return mLifecycleRegistry;
     }
 
-    void handleLifecycleEvent(Lifecycle.Event event) {
-        mLifecycle.handleLifecycleEvent(event);
+    @Nonnull
+    @Override
+    public ViewModelStore getViewModelStore() {
+        initialize();
+        return mViewModelStore;
+    }
+
+    void setCurrentState(@Nonnull Lifecycle.State state) {
+        mLifecycleRegistry.setCurrentState(state);
+    }
+
+    void handleLifecycleEvent(@Nonnull Lifecycle.Event event) {
+        mLifecycleRegistry.handleLifecycleEvent(event);
     }
 }

@@ -19,30 +19,13 @@
 package icyllis.modernui.fragment;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
-final class BackStackRecord extends FragmentTransaction implements FragmentManager.BackStackEntry {
+class FragmentLifecycleCallbacksDispatcher {
 
-    final FragmentManager mManager;
+    @Nonnull
+    private final FragmentManager mFragmentManager;
 
-    public BackStackRecord(FragmentManager manager) {
-        mManager = manager;
-    }
-
-    @Override
-    void doAddOp(int containerViewId, @Nonnull Fragment fragment, @Nullable String tag, int cmd) {
-        super.doAddOp(containerViewId, fragment, tag, cmd);
-        fragment.mFragmentManager = mManager;
-    }
-
-    @Override
-    public int getId() {
-        return 0;
-    }
-
-    @Nullable
-    @Override
-    public String getName() {
-        return null;
+    FragmentLifecycleCallbacksDispatcher(@Nonnull FragmentManager fragmentManager) {
+        mFragmentManager = fragmentManager;
     }
 }

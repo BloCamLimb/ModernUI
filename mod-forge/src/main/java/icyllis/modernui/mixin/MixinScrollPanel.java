@@ -19,7 +19,7 @@
 package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.forge.MuiForgeBridge;
+import icyllis.modernui.forge.MuiForgeApi;
 import icyllis.modernui.mcgui.ScrollController;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.gui.ScrollPanel;
@@ -80,7 +80,7 @@ public abstract class MixinScrollPanel implements ScrollController.IListener {
 
     @Inject(method = "render", at = @At("HEAD"))
     private void preRender(PoseStack matrix, int mouseX, int mouseY, float partialTicks, CallbackInfo ci) {
-        mScrollController.update(MuiForgeBridge.getElapsedTime());
+        mScrollController.update(MuiForgeApi.getElapsedTime());
     }
 
     @Inject(method = "render", at = @At(value = "INVOKE", shift = At.Shift.BEFORE, target = "Lnet/minecraftforge" +

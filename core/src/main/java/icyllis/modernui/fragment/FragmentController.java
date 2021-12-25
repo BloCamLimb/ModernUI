@@ -19,6 +19,7 @@
 package icyllis.modernui.fragment;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Provides integration points with a {@link FragmentManager} for a fragment host.
@@ -26,12 +27,20 @@ import javax.annotation.Nonnull;
  * It is the responsibility of the host to take care of the Fragment's lifecycle.
  * The methods provided by {@link FragmentController} are for that purpose.
  */
-public class FragmentController {
+public final class FragmentController {
 
     @Nonnull
     private final FragmentHostCallback<?> mHost;
 
-    public FragmentController(@Nonnull FragmentHostCallback<?> callbacks) {
+    /**
+     * Returns a {@link FragmentController}.
+     */
+    @Nonnull
+    public static FragmentController createController(@Nonnull FragmentHostCallback<?> callbacks) {
+        return new FragmentController(callbacks);
+    }
+
+    private FragmentController(@Nonnull FragmentHostCallback<?> callbacks) {
         mHost = callbacks;
     }
 
@@ -41,5 +50,13 @@ public class FragmentController {
     @Nonnull
     public FragmentManager getFragmentManager() {
         return mHost.mFragmentManager;
+    }
+
+    /**
+     * Returns a fragment with the given identifier.
+     */
+    @Nullable
+    public Fragment findFragmentByWho(@Nonnull String who) {
+        return mHost.mFragmentManager.findFragmentByWho(who);
     }
 }

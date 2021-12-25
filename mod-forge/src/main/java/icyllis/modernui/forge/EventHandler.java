@@ -60,7 +60,7 @@ final class EventHandler {
             final boolean diamond;
             if (event.getSide().isServer() && ((diamond = event.getItemStack().is(Items.DIAMOND))
                     || event.getItemStack().is(Items.EMERALD))) {
-                MuiForgeBridge.openMenu(event.getPlayer(), TestContainerMenu::new, buf -> buf.writeBoolean(diamond));
+                MuiForgeApi.openMenu(event.getPlayer(), TestContainerMenu::new, buf -> buf.writeBoolean(diamond));
             }
         }
     }
@@ -151,7 +151,7 @@ final class EventHandler {
         @SubscribeEvent
         static void onGuiInit(@Nonnull ScreenEvent.InitScreenEvent event) {
             if (event.getScreen() instanceof VideoSettingsScreen && NEW_GUI_SCALE != null) {
-                NEW_GUI_SCALE.setMaxValue(MuiForgeBridge.calcGuiScales() & 0xf);
+                NEW_GUI_SCALE.setMaxValue(MuiForgeApi.calcGuiScales() & 0xf);
             }
         }
 

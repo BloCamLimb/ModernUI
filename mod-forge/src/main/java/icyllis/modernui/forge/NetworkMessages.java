@@ -113,7 +113,7 @@ public final class NetworkMessages {
                         final AbstractContainerMenu menu = type.create(containerId, p.getInventory(), payload);
                         ResourceLocation key = Registry.MENU.getKey(type);
                         if (key != null) {
-                            success = MuiForgeBridge.sUIManager.openMenu(p, menu, key.getNamespace());
+                            success = MuiForgeApi.sUIManager.openMenu(p, menu, key.getNamespace());
                         }
                     }
                     if (!success) {

@@ -142,7 +142,7 @@ final class Registration {
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 
         // give it a probe
-        if (MuiForgeBridge.isServerStarted()) {
+        if (MuiForgeApi.isServerStarted()) {
             ModernUI.LOGGER.fatal("Walking");
         }
     }
@@ -228,7 +228,7 @@ final class Registration {
                             (options, progressOption) -> options.guiScale == 0 ?
                                     ((AccessOption) progressOption)
                                             .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
-                                                    .append(new TextComponent(" (" + (MuiForgeBridge.calcGuiScales() >> 4 & 0xf) + ")"))) :
+                                                    .append(new TextComponent(" (" + (MuiForgeApi.calcGuiScales() >> 4 & 0xf) + ")"))) :
                                     ((AccessOption) progressOption)
                                             .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
                     );

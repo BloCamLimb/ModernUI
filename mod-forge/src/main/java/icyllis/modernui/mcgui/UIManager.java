@@ -28,7 +28,7 @@ import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
-import icyllis.modernui.forge.MuiForgeBridge;
+import icyllis.modernui.forge.MuiForgeApi;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLFramebuffer;
@@ -180,7 +180,7 @@ public final class UIManager extends ViewRootBase {
                 ModernUI.LOGGER.info(MARKER, "UI system initialized");
             }
             try {
-                Field f = MuiForgeBridge.class.getDeclaredField("sUIManager");
+                Field f = MuiForgeApi.class.getDeclaredField("sUIManager");
                 f.setAccessible(true);
                 f.set(null, m);
             } catch (NoSuchFieldException | IllegalAccessException e) {

@@ -37,24 +37,30 @@ import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
+import javax.annotation.concurrent.GuardedBy;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
- * The bridge for connecting Minecraft Forge mods to Modern UI.
+ * Public APIs for Minecraft Forge mods to Modern UI.
+ *
+ * @since 3.3
  */
-public final class MuiForgeBridge {
+public final class MuiForgeApi {
 
-    private static final List<OnDisplayResizeListener> sOnDisplayResizeListeners = new ArrayList<>();
+    @GuardedBy("sOnDisplayResizeListeners")
+    private static final CopyOnWriteArrayList<OnDisplayResizeListener> sOnDisplayResizeListeners =
+            new CopyOnWriteArrayList<>();
 
+    // injected by the client framework
     static UIManager sUIManager;
 
-    private MuiForgeBridge() {
+    private MuiForgeApi() {
     }
 
     /**
-     * Get the lifecycle of current server.
+     * Get the lifecycle of current server. At most one server instance exists
+     * at the same time, which may be integrated or dedicated.
      *
      * @return {@code true} if server started
      */
@@ -65,7 +71,7 @@ public final class MuiForgeBridge {
     /**
      * Open a container menu on server, generate an id represents the next screen (due to network latency).
      * Then send a packet to the player to request the application user interface on client.
-     * This method must be called from server main thread.
+     * This method must be called from server thread.
      * <p>
      * This is served as a client/server interaction model, there must be a running server.
      *
@@ -82,7 +88,7 @@ public final class MuiForgeBridge {
     /**
      * Open a container menu on server, generate an id represents the next screen (due to network latency).
      * Then send a packet to the player to request the application user interface on client.
-     * This method must be called from server main thread.
+     * This method must be called from server thread.
      * <p>
      * This is served as a client/server interaction model, there must be a running server.
      *
@@ -101,7 +107,7 @@ public final class MuiForgeBridge {
     /**
      * Open a container menu on server, generate an id represents the next screen (due to network latency).
      * Then send a packet to the player to request the application user interface on client.
-     * This method must be called from server main thread.
+     * This method must be called from server thread.
      * <p>
      * This is served as a client/server interaction model, there must be a running server.
      *
@@ -137,7 +143,8 @@ public final class MuiForgeBridge {
     }
 
     /**
-     * Get the elapsed time since the current screen is set, update every frame.
+     * Get the elapsed time since the current screen is set, updated every frame.
+     * Ignoring game paused.
      *
      * @return elapsed time in milliseconds
      */
@@ -147,7 +154,7 @@ public final class MuiForgeBridge {
     }
 
     /**
-     * Get synced frame time, update every frame.
+     * Get synced UI frame time, updated every frame. Ignoring game paused.
      *
      * @return frame time in milliseconds
      */
@@ -210,6 +217,8 @@ public final class MuiForgeBridge {
     }
 
     /**
+     * Registers a callback to be invoked at the beginning of {@link Minecraft#resizeDisplay()}.
+     *
      * @param listener l
      * @see OnDisplayResizeListener
      */
@@ -222,6 +231,11 @@ public final class MuiForgeBridge {
         }
     }
 
+    /**
+     * Remove a registered OnDisplayResizeListener.
+     *
+     * @param listener the listener to unregister
+     */
     @OnlyIn(Dist.CLIENT)
     public static void removeOnDisplayResizeListener(@Nonnull OnDisplayResizeListener listener) {
         synchronized (sOnDisplayResizeListeners) {
@@ -232,7 +246,6 @@ public final class MuiForgeBridge {
     @OnlyIn(Dist.CLIENT)
     public static void dispatchOnDisplayResize(int width, int height, int guiScale, int oldGuiScale) {
         synchronized (sOnDisplayResizeListeners) {
-            // no copy on write, be careful
             for (var l : sOnDisplayResizeListeners) {
                 l.onDisplayResize(width, height, guiScale, oldGuiScale);
             }
@@ -244,6 +257,7 @@ public final class MuiForgeBridge {
 
         /**
          * Invoked at the beginning of {@link Minecraft#resizeDisplay()}.
+         * Gui scale algorithm is replaced by Modern UI, see {@link #calcGuiScales(Window)}.
          *
          * @param width       framebuffer width of the window in pixels
          * @param height      framebuffer height of the window in pixels
