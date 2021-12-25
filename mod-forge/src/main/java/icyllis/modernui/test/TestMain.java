@@ -48,11 +48,12 @@ import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.DataSetIO;
 import icyllis.modernui.view.Gravity;
-import mezz.jei.api.JeiPlugin;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Callback;
+import org.lwjgl.system.MemoryStack;
+import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -60,6 +61,8 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.nio.FloatBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -124,6 +127,18 @@ public class TestMain {
             sGraph = new SpectrumGraph(sTrack, true, 300);
         } catch (Exception e) {
             e.printStackTrace();
+        }
+    }
+
+    private static final Unsafe UNSAFE;
+
+    static {
+        try {
+            Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            UNSAFE = (Unsafe) field.get(null);
+        } catch (Exception e) {
+            throw new IllegalStateException("You're safe", e);
         }
     }
 

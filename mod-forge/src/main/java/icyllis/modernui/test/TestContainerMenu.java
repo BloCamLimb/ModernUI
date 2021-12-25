@@ -18,7 +18,7 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.forge.MuiForgeBridge;
+import icyllis.modernui.forge.MuiForgeApi;
 import icyllis.modernui.forge.MuiRegistries;
 import icyllis.modernui.mcgui.ContainerMenu;
 import net.minecraft.network.FriendlyByteBuf;
@@ -39,7 +39,7 @@ public class TestContainerMenu extends ContainerMenu {
      * @param containerId the id representing the menu in communication model
      * @param inventory   player inventory (on client side)
      * @param data        additional data sent by server
-     * @see MuiForgeBridge#openMenu(Player, MenuConstructor, Consumer)
+     * @see MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)
      */
     public TestContainerMenu(int containerId, @Nonnull Inventory inventory, @Nonnull FriendlyByteBuf data) {
         super(MuiRegistries.TEST_MENU, containerId);
@@ -52,7 +52,7 @@ public class TestContainerMenu extends ContainerMenu {
      * @param containerId the id representing the menu in communication model
      * @param inventory   player inventory (on server side)
      * @param player      server player
-     * @see MuiForgeBridge#openMenu(Player, MenuConstructor, Consumer)
+     * @see MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)
      */
     public TestContainerMenu(int containerId, @Nonnull Inventory inventory, @Nonnull Player player) {
         super(MuiRegistries.TEST_MENU, containerId);

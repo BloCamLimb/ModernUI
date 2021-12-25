@@ -18,7 +18,7 @@
 
 package icyllis.modernui.mcgui;
 
-import icyllis.modernui.forge.MuiForgeBridge;
+import icyllis.modernui.forge.MuiForgeApi;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
@@ -52,7 +52,7 @@ import java.util.function.Consumer;
  * This event will be only posted to your own mod event bus on client main thread.
  * If no screen set along with this event, the server container menu will be closed.
  *
- * @see MuiForgeBridge#openMenu(Player, MenuConstructor, Consumer)
+ * @see MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)
  */
 @Cancelable
 @OnlyIn(Dist.CLIENT)

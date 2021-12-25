@@ -22,12 +22,11 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
+import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -1372,7 +1371,7 @@ public class RelativeLayout extends ViewGroup {
          * List of nodes in the graph. Each node is identified by its
          * view id (see View#getId()).
          */
-        private final Int2ObjectMap<Node> mKeyNodes = new Int2ObjectArrayMap<>();
+        private final SparseArray<Node> mKeyNodes = new SparseArray<>();
 
         /**
          * Temporary data structure used to build the list of roots
@@ -1432,7 +1431,7 @@ public class RelativeLayout extends ViewGroup {
 
                 final ArrayList<Node> dependents = node.dependents;
                 for (final Node dependent : dependents) {
-                    final Int2ObjectMap<Node> dependencies = dependent.dependencies;
+                    final SparseArray<Node> dependencies = dependent.dependencies;
 
                     dependencies.remove(key);
                     if (dependencies.isEmpty()) {
@@ -1471,7 +1470,7 @@ public class RelativeLayout extends ViewGroup {
                 final LayoutParams layoutParams = (LayoutParams) node.view.getLayoutParams();
                 final int[] rules = layoutParams.mRules;
 
-                // Look only the the rules passed in parameter, this way we build only the
+                // Look only the rules passed in parameter, this way we build only the
                 // dependencies for a specific set of rules
                 for (int i : rulesFilter) {
                     final int rule = rules[i];
@@ -1526,7 +1525,7 @@ public class RelativeLayout extends ViewGroup {
             /**
              * The list of dependencies for this node.
              */
-            final Int2ObjectMap<Node> dependencies = new Int2ObjectArrayMap<>();
+            final SparseArray<Node> dependencies = new SparseArray<>();
 
             // The pool is static, so all nodes instances are shared across
             // activities, that's why we give it a rather high limit

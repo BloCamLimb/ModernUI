@@ -233,22 +233,22 @@ public final class ModernUIForge extends ModernUI {
     @Nonnull
     @Override
     public ViewManager getViewManager() {
-        return MuiForgeBridge.sUIManager.getDecorView();
+        return MuiForgeApi.sUIManager.getDecorView();
     }
 
     @Override
     public void checkUiThread() {
-        MuiForgeBridge.sUIManager.checkThread();
+        MuiForgeApi.sUIManager.checkThread();
     }
 
     @Override
     public boolean postOnUiThread(@Nonnull Runnable action) {
-        return MuiForgeBridge.sUIManager.postDelayed(action, 0);
+        return MuiForgeApi.sUIManager.postDelayed(action, 0);
     }
 
     @Override
     public boolean postOnUiThread(@Nonnull Runnable action, long delayMillis) {
-        return MuiForgeBridge.sUIManager.postDelayed(action, delayMillis);
+        return MuiForgeApi.sUIManager.postDelayed(action, delayMillis);
     }
 
     public static boolean isDeveloperMode() {

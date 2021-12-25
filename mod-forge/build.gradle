@@ -53,7 +53,7 @@ dependencies {
     //mappings minecraft.officialMojangMappings()
     mappings loom.layered() {
         officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-1.17.1:2021.12.05@zip" as String)
+        parchment("org.parchmentmc.data:parchment-${minecraft_version}:2021.12.19@zip" as String)
     }
     forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 

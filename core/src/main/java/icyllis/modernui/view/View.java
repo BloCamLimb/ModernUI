@@ -27,6 +27,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.*;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.LayoutDirection;
+import icyllis.modernui.util.SparseArray;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
@@ -1095,6 +1096,11 @@ public class View implements Drawable.Callback {
     private boolean mRightPaddingDefined = false;
 
     /**
+     * Map used to store views' tags.
+     */
+    private SparseArray<Object> mKeyedTags;
+
+    /**
      * Cached previous measure spec to avoid unnecessary measurements
      */
     private int mOldWidthMeasureSpec = Integer.MIN_VALUE;
@@ -1936,6 +1942,40 @@ public class View implements Drawable.Callback {
      */
     public void setId(int id) {
         mId = id;
+    }
+
+    /**
+     * Returns the tag associated with this view and the specified key.
+     *
+     * @param key The key identifying the tag
+     * @return the Object stored in this view as a tag, or {@code null} if not set
+     * @see #setTag(int, Object)
+     */
+    @Nullable
+    public Object getTag(int key) {
+        if (mKeyedTags != null) return mKeyedTags.get(key);
+        return null;
+    }
+
+    /**
+     * Sets a tag associated with this view and a key. A tag can be used
+     * to mark a view in its hierarchy and does not have to be unique within
+     * the hierarchy. Tags can also be used to store data within a view
+     * without resorting to another data structure.
+     *
+     * @param key The key identifying the tag
+     * @param tag An Object to tag the view with
+     * @throws IllegalArgumentException If they specified key is not valid
+     * @see #getTag(int)
+     */
+    public void setTag(int key, Object tag) {
+        if ((key & 0xFF000000) == 0) {
+            throw new IllegalArgumentException("The key must be a valid resource id.");
+        }
+        if (mKeyedTags == null) {
+            mKeyedTags = new SparseArray<>(2);
+        }
+        mKeyedTags.put(key, tag);
     }
 
     /**
@@ -3627,6 +3667,31 @@ public class View implements Drawable.Callback {
      */
     public boolean isAttachedToWindow() {
         return mAttachInfo != null;
+    }
+
+    /**
+     * Cancel any deferred high-level input events that were previously posted to the event queue.
+     *
+     * <p>Many views post high-level events such as click handlers to the event queue
+     * to run deferred in order to preserve a desired user experience - clearing visible
+     * pressed states before executing, etc. This method will abort any events of this nature
+     * that are currently in flight.</p>
+     *
+     * <p>Custom views that generate their own high-level deferred input events should override
+     * {@link #onCancelPendingInputEvents()} and remove those pending events from the queue.</p>
+     *
+     * <p>This will also cancel pending input events for any child views.</p>
+     *
+     * <p>Note that this may not be sufficient as a debouncing strategy for clicks in all cases.
+     * This will not impact newer events posted after this call that may occur as a result of
+     * lower-level input events still waiting in the queue. If you are trying to prevent
+     * double-submitted  events for the duration of some sort of asynchronous transaction
+     * you should also take other steps to protect against unexpected double inputs e.g. calling
+     * {@link #setEnabled(boolean) setEnabled(false)} and re-enabling the view when
+     * the transaction completes, tracking already submitted transaction IDs, etc.</p>
+     */
+    public final void cancelPendingInputEvents() {
+        //TODO implement
     }
 
     /**
