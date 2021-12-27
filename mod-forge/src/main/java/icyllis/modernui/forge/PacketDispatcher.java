@@ -20,6 +20,7 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceKey;
@@ -37,7 +38,9 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 /**
- * The packet dispatcher to broadcast a packet to various clients.
+ * The packet dispatcher to broadcast a network packet to various clients.
+ *
+ * @see NetworkHandler#dispatch(FriendlyByteBuf)
  */
 public class PacketDispatcher {
 
@@ -73,7 +76,7 @@ public class PacketDispatcher {
     }
 
     /**
-     * Send a message to a player
+     * Send a message to a player.
      *
      * @param player the player
      */
@@ -84,7 +87,7 @@ public class PacketDispatcher {
     }
 
     /**
-     * Send a message to a player
+     * Send a message to a player.
      *
      * @param player the player
      */
@@ -95,7 +98,7 @@ public class PacketDispatcher {
     }
 
     /**
-     * Send a message to all specific players
+     * Send a message to all specific players.
      *
      * @param players players on server
      */
@@ -117,7 +120,7 @@ public class PacketDispatcher {
     }
 
     /**
-     * Send a message to all players in the specified dimension
+     * Send a message to all players in the specified dimension.
      *
      * @param dimension dimension that players in
      */
@@ -129,7 +132,7 @@ public class PacketDispatcher {
     }
 
     /**
-     * Send a message to all players nearby a point with specified radius in specified dimension
+     * Send a message to all players nearby a point with specified radius in specified dimension.
      *
      * @param excluded  the player excluded from broadcasting
      * @param x         target point x
@@ -173,7 +176,20 @@ public class PacketDispatcher {
     }
 
     /**
-     * Send a message to all players who loaded the specified chunk
+     * Send a message to all players who are tracking the specified chunk.
+     *
+     * @param level the server level
+     * @param pos   the block pos used to find the chunk
+     */
+    public void sendToTrackingChunk(@Nonnull Level level, @Nonnull BlockPos pos) {
+        check();
+        ((ServerLevel) level).getChunkSource().chunkMap.getPlayers(
+                level.getChunk(pos).getPos(), /* boundaryOnly */ false).forEach(mDispatcher);
+        recycle();
+    }
+
+    /**
+     * Send a message to all players who are tracking the specified chunk.
      *
      * @param chunk the chunk that players in
      */

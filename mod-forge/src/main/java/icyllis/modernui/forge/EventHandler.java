@@ -26,17 +26,11 @@ import icyllis.modernui.textmc.TextLayoutEngine;
 import net.minecraft.client.ProgressOption;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.ModelBakeEvent;
-import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.event.ScreenOpenEvent;
-import net.minecraftforge.client.model.ForgeModelBakery;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -45,13 +39,11 @@ import net.minecraftforge.fml.common.Mod;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.function.Function;
 
 /**
  * Handles game server or client events from Forge event bus
  */
-@Mod.EventBusSubscriber
+@Mod.EventBusSubscriber(modid = ModernUI.ID)
 final class EventHandler {
 
     @SubscribeEvent
@@ -81,29 +73,6 @@ final class EventHandler {
 
     }*/
 
-    @OnlyIn(Dist.CLIENT)
-    static class ModClientDev {
-
-        @SubscribeEvent
-        static void onRegistryModel(@Nonnull ModelRegistryEvent event) {
-            ForgeModelBakery.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_main"));
-            ForgeModelBakery.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_cube"));
-        }
-
-        @SubscribeEvent
-        static void onBakeModel(@Nonnull ModelBakeEvent event) {
-            Map<ResourceLocation, BakedModel> registry = event.getModelRegistry();
-            replaceModel(registry, new ModelResourceLocation(ModernUI.ID, "project_builder", "inventory"),
-                    baseModel -> new ProjectBuilderModel(baseModel, event.getModelLoader()));
-        }
-
-        private static void replaceModel(@Nonnull Map<ResourceLocation, BakedModel> modelRegistry,
-                                         @Nonnull ModelResourceLocation location,
-                                         @Nonnull Function<BakedModel, BakedModel> replacer) {
-            modelRegistry.put(location, replacer.apply(modelRegistry.get(location)));
-        }
-    }
-
     /**
      * Handles game client events from Forge event bus
      */
@@ -111,7 +80,7 @@ final class EventHandler {
     @Mod.EventBusSubscriber(modid = ModernUI.ID, value = Dist.CLIENT)
     static class Client {
 
-        static ProgressOption NEW_GUI_SCALE;
+        static ProgressOption sNewGuiScale;
 
         @Nullable
         private static Screen sCapturedVideoSettingsScreen;
@@ -150,8 +119,8 @@ final class EventHandler {
 
         @SubscribeEvent
         static void onGuiInit(@Nonnull ScreenEvent.InitScreenEvent event) {
-            if (event.getScreen() instanceof VideoSettingsScreen && NEW_GUI_SCALE != null) {
-                NEW_GUI_SCALE.setMaxValue(MuiForgeApi.calcGuiScales() & 0xf);
+            if (event.getScreen() instanceof VideoSettingsScreen && sNewGuiScale != null) {
+                sNewGuiScale.setMaxValue(MuiForgeApi.calcGuiScales() & 0xf);
             }
         }
 

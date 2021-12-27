@@ -160,12 +160,15 @@ public final class RenderCore {
      * @throws IOException some errors occurred while reading
      */
     @Nonnull
-    public static ByteBuffer readResource(ReadableByteChannel channel) throws IOException {
+    public static ByteBuffer readInMemory(ReadableByteChannel channel) throws IOException {
         ByteBuffer ptr = null;
         try {
-            if (channel instanceof SeekableByteChannel) {
-                final SeekableByteChannel ch = (SeekableByteChannel) channel;
-                ptr = MemoryUtil.memAlloc((int) (ch.size() - ch.position() + 1)); // +1 EOF
+            if (channel instanceof final SeekableByteChannel ch) {
+                long rem = ch.size() - ch.position();
+                if (rem > 0x7FFFFFFE) {
+                    throw new IOException("File is too big, found " + rem + " bytes");
+                }
+                ptr = MemoryUtil.memAlloc((int) (rem + 1)); // +1 EOF
                 //noinspection StatementWithEmptyBody
                 while (ch.read(ptr) != -1) ;
             } else {
@@ -177,6 +180,7 @@ public final class RenderCore {
                 }
             }
         } catch (Throwable t) {
+            // IMPORTANT: in case of memory leakage
             MemoryUtil.memFree(ptr);
             throw t;
         }
@@ -192,23 +196,27 @@ public final class RenderCore {
      * @throws IOException some errors occurred while reading
      */
     @Nonnull
-    public static ByteBuffer readResource(InputStream stream) throws IOException {
-        return readResource(Channels.newChannel(stream));
+    public static ByteBuffer readInMemory(InputStream stream) throws IOException {
+        return readInMemory(Channels.newChannel(stream));
     }
 
-    // this method doesn't close channel
+    /**
+     * This method doesn't close channel.
+     *
+     * @param channel read from
+     * @return string or null if an IOException occurred
+     */
     @Nullable
     public static String readStringUTF8(ReadableByteChannel channel) {
-        ByteBuffer ptr = null;
+        ByteBuffer p = null;
         try {
-            ptr = readResource(channel);
-            final int len = ptr.position();
-            ptr.rewind();
-            return MemoryUtil.memUTF8(ptr, len);
+            p = readInMemory(channel);
+            final int l = p.position();
+            return MemoryUtil.memUTF8(p.rewind(), l);
         } catch (IOException e) {
             return null;
         } finally {
-            MemoryUtil.memFree(ptr);
+            MemoryUtil.memFree(p);
         }
     }
 

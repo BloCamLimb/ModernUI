@@ -26,20 +26,24 @@ import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
 import net.minecraft.network.protocol.game.ServerboundCustomPayloadPacket;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.RunningOnDifferentThreadException;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
@@ -48,9 +52,9 @@ import java.util.stream.Collectors;
  */
 public class NetworkHandler {
 
-    private static final Map<String, NetworkHandler> sNetworks = new HashMap<>();
+    private static final HashMap<String, NetworkHandler> sNetworks = new HashMap<>();
 
-    private final ResourceLocation mId;
+    private final ResourceLocation mName;
 
     private final String mProtocol;
     private final boolean mOptional;
@@ -66,21 +70,19 @@ public class NetworkHandler {
      * you must be careful with the security of class loading.
      *
      * @param modid    the mod-id
-     * @param scl      listener for S->C messages, the inner supplier must be in another non-anonymous class
-     * @param csl      listener for C->S messages, it is on logical server side
+     * @param cli      listener for S->C messages, the inner supplier must be in another non-anonymous class
+     * @param sli      listener for C->S messages, it is on logical server side
      * @param protocol network protocol, leaving empty will request the same version of mod(s)
      * @param optional when true it will accept if the channel absent on one side, or request same protocol
      * @throws IllegalArgumentException invalid mod-id
      */
-    public NetworkHandler(@Nonnull String modid, @Nullable Supplier<Supplier<ClientListener>> scl,
-                          @Nullable ServerListener csl, @Nullable String protocol, boolean optional) {
+    public NetworkHandler(@Nonnull String modid, @Nullable Supplier<Supplier<ClientListener>> cli,
+                          @Nullable ServerListener sli, @Nonnull String protocol, boolean optional) {
         // modid only starts with [a-z]
         if (!modid.startsWith("_") && ModList.get().getModFileById(modid) == null) {
             throw new IllegalArgumentException("No mod found that given by modid " + modid);
         }
-        if (protocol == null) {
-            protocol = "default";
-        } else if (protocol.isEmpty()) {
+        if (protocol.isEmpty()) {
             protocol = ModList.get().getModFileById(modid).getMods().stream()
                     .map(iModInfo -> iModInfo.getVersion().getQualifier())
                     .collect(Collectors.joining(","));
@@ -88,20 +90,21 @@ public class NetworkHandler {
         mProtocol = protocol;
         mOptional = optional;
 
+        // Just register it to FML, we handle messages from a mixin hook
         NetworkRegistry.ChannelBuilder
-                .named(mId = new ResourceLocation(ModernUI.ID, modid))
+                .named(mName = new ResourceLocation(ModernUI.ID, modid))
                 .networkProtocolVersion(this::getProtocol)
-                .clientAcceptedVersions(this::checkS2CProtocol)
-                .serverAcceptedVersions(this::checkC2SProtocol)
+                .clientAcceptedVersions(this::testServerProtocolOnClient)
+                .serverAcceptedVersions(this::testClientProtocolOnServer)
                 .eventNetworkChannel();
-        if (scl != null && FMLEnvironment.dist.isClient()) {
-            mClientListener = scl.get().get();
+        if (cli != null && FMLEnvironment.dist.isClient()) {
+            mClientListener = cli.get().get();
         } else {
             mClientListener = null;
         }
-        mServerListener = csl;
+        mServerListener = sli;
 
-        synchronized (NetworkHandler.class) {
+        synchronized (sNetworks) {
             // NetworkRegistry has duplication detection
             sNetworks.put(modid, this);
         }
@@ -122,8 +125,8 @@ public class NetworkHandler {
      * @param protocol the protocol of this channel sent from server side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    private boolean checkS2CProtocol(@Nonnull String protocol) {
-        return mOptional && protocol.equals(NetworkRegistry.ABSENT) || protocol.equals(mProtocol);
+    private boolean testServerProtocolOnClient(@Nonnull String protocol) {
+        return mOptional && protocol.equals(NetworkRegistry.ABSENT) || mProtocol.equals(protocol);
     }
 
     /**
@@ -132,8 +135,8 @@ public class NetworkHandler {
      * @param protocol the protocol of this channel sent from client side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    private boolean checkC2SProtocol(@Nonnull String protocol) {
-        return mOptional && protocol.equals(NetworkRegistry.ABSENT) || protocol.equals(mProtocol);
+    private boolean testClientProtocolOnServer(@Nonnull String protocol) {
+        return mOptional && protocol.equals(NetworkRegistry.ABSENT) || mProtocol.equals(protocol);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -173,29 +176,14 @@ public class NetworkHandler {
      *
      * @param index the message index used on the reception side, ranged from 0 to 32767
      * @return a byte buf to write the packet data (message body)
-     * @see #dispatch(FriendlyByteBuf)
      * @see #sendToServer(FriendlyByteBuf)
+     * @see #dispatch(FriendlyByteBuf)
      */
     @Nonnull
     public static FriendlyByteBuf buffer(int index) {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         buffer.writeShort(index);
         return buffer;
-    }
-
-    /**
-     * Creates the packet with a broadcaster from a message. The packet must be dispatched
-     * right after calling this, for example {@link PacketDispatcher#sendToPlayer(Player)}.
-     * Packet data cannot exceed 1,043,200 bytes.
-     *
-     * @param data the packet data (message body)
-     * @return a broadcaster to broadcast the packet
-     * @see #buffer(int)
-     * @see ClientListener
-     */
-    @Nonnull
-    public PacketDispatcher dispatch(@Nonnull FriendlyByteBuf data) {
-        return PacketDispatcher.obtain(mId, data);
     }
 
     /**
@@ -211,10 +199,164 @@ public class NetworkHandler {
     public void sendToServer(@Nonnull FriendlyByteBuf data) {
         ClientPacketListener connection = Minecraft.getInstance().getConnection();
         if (connection != null) {
-            connection.send(new ServerboundCustomPayloadPacket(mId, data));
+            connection.send(new ServerboundCustomPayloadPacket(mName, data));
         } else {
             data.release();
         }
+    }
+
+    /**
+     * Send a message to a player.
+     * <p>
+     * Packet data cannot exceed 1,043,200 bytes. After calling this method, you should not touch
+     * the data buffer anymore. It is recommended to use {@link #dispatch(FriendlyByteBuf)} that is
+     * chaining and safe.
+     *
+     * @param data   the packet data (message body)
+     * @param player the player
+     * @see #dispatch(FriendlyByteBuf)
+     */
+    public void sendToPlayer(@Nonnull FriendlyByteBuf data, @Nonnull Player player) {
+        ((ServerPlayer) player).connection.send(new ClientboundCustomPayloadPacket(mName, data));
+    }
+
+    /**
+     * Send a message to a player.
+     * <p>
+     * Packet data cannot exceed 1,043,200 bytes. After calling this method, you should not touch
+     * the data buffer anymore. It is recommended to use {@link #dispatch(FriendlyByteBuf)} that is
+     * chaining and safe.
+     *
+     * @param data   the packet data (message body)
+     * @param player the player
+     * @see #dispatch(FriendlyByteBuf)
+     */
+    public void sendToPlayer(@Nonnull FriendlyByteBuf data, @Nonnull ServerPlayer player) {
+        player.connection.send(new ClientboundCustomPayloadPacket(mName, data));
+    }
+
+    /**
+     * Send a message to all specific players.
+     * <p>
+     * Packet data cannot exceed 1,043,200 bytes. After calling this method, you should not touch
+     * the data buffer anymore. It is recommended to use {@link #dispatch(FriendlyByteBuf)} that is
+     * chaining and safe.
+     *
+     * @param data    the packet data (message body)
+     * @param players players on server
+     * @see #dispatch(FriendlyByteBuf)
+     */
+    public void sendToPlayers(@Nonnull FriendlyByteBuf data, @Nonnull Iterable<? extends Player> players) {
+        for (Player player : players)
+            ((ServerPlayer) player).connection.send(new ClientboundCustomPayloadPacket(mName, data));
+    }
+
+    /**
+     * Send a message to all players on the server.
+     * <p>
+     * Packet data cannot exceed 1,043,200 bytes. After calling this method, you should not touch
+     * the data buffer anymore. It is recommended to use {@link #dispatch(FriendlyByteBuf)} that is
+     * chaining and safe.
+     *
+     * @param data the packet data (message body)
+     * @see #dispatch(FriendlyByteBuf)
+     */
+    public void sendToAll(@Nonnull FriendlyByteBuf data) {
+        ServerLifecycleHooks.getCurrentServer().getPlayerList()
+                .broadcastAll(new ClientboundCustomPayloadPacket(mName, data));
+    }
+
+    /**
+     * Send a message to all players in the specified dimension.
+     * <p>
+     * Packet data cannot exceed 1,043,200 bytes. After calling this method, you should not touch
+     * the data buffer anymore. It is recommended to use {@link #dispatch(FriendlyByteBuf)} that is
+     * chaining and safe.
+     *
+     * @param data      the packet data (message body)
+     * @param dimension dimension that players in
+     * @see #dispatch(FriendlyByteBuf)
+     */
+    public void sendToDimension(@Nonnull FriendlyByteBuf data, @Nonnull ResourceKey<Level> dimension) {
+        ServerLifecycleHooks.getCurrentServer().getPlayerList()
+                .broadcastAll(new ClientboundCustomPayloadPacket(mName, data), dimension);
+    }
+
+    /**
+     * Send a message to all players nearby a point with specified radius in specified dimension.
+     * <p>
+     * Packet data cannot exceed 1,043,200 bytes. After calling this method, you should not touch
+     * the data buffer anymore. It is recommended to use {@link #dispatch(FriendlyByteBuf)} that is
+     * chaining and safe.
+     *
+     * @param data      the packet data (message body)
+     * @param excluded  the player excluded from broadcasting
+     * @param x         target point x
+     * @param y         target point y
+     * @param z         target point z
+     * @param radius    radius to target point
+     * @param dimension dimension that target players in
+     * @see #dispatch(FriendlyByteBuf)
+     */
+    public void sendToNear(@Nonnull FriendlyByteBuf data, @Nullable Player excluded,
+                           double x, double y, double z, double radius,
+                           @Nonnull ResourceKey<Level> dimension) {
+        ServerLifecycleHooks.getCurrentServer().getPlayerList().broadcast(
+                excluded, x, y, z, radius, dimension, new ClientboundCustomPayloadPacket(mName, data));
+    }
+
+    /**
+     * Send a message to all players tracking the specified entity. If a chunk that player loaded
+     * on the client contains the chunk where the entity is located, and then the player is
+     * tracking the entity changes.
+     * <p>
+     * Packet data cannot exceed 1,043,200 bytes. After calling this method, you should not touch
+     * the data buffer anymore. It is recommended to use {@link #dispatch(FriendlyByteBuf)} that is
+     * chaining and safe.
+     *
+     * @param data   the packet data (message body)
+     * @param entity the entity is tracking
+     * @see #dispatch(FriendlyByteBuf)
+     */
+    public void sendToTrackingEntity(@Nonnull FriendlyByteBuf data, @Nonnull Entity entity) {
+        ((ServerLevel) entity.level).getChunkSource().broadcast(entity,
+                new ClientboundCustomPayloadPacket(mName, data));
+    }
+
+    /**
+     * Send a message to all players tracking the specified entity, and also send the message to
+     * the entity if it is a player. If a chunk that player loaded on the client contains the
+     * chunk where the entity is located, and then the player is tracking the entity changes.
+     * <p>
+     * Packet data cannot exceed 1,043,200 bytes. After calling this method, you should not touch
+     * the data buffer anymore. It is recommended to use {@link #dispatch(FriendlyByteBuf)} that is
+     * chaining and safe.
+     *
+     * @param data   the packet data (message body)
+     * @param entity the entity is tracking
+     * @see #dispatch(FriendlyByteBuf)
+     */
+    public void sendToTrackingAndSelf(@Nonnull FriendlyByteBuf data, @Nonnull Entity entity) {
+        ((ServerLevel) entity.level).getChunkSource().broadcastAndSend(entity,
+                new ClientboundCustomPayloadPacket(mName, data));
+    }
+
+    /**
+     * Returns a broadcaster with the data buffer as the message. The packet must be dispatched
+     * right after calling this, for example {@link PacketDispatcher#sendToPlayer(Player)}.
+     * <p>
+     * Packet data cannot exceed 1,043,200 bytes. After calling this method, you should not touch
+     * the data buffer anymore. After dispatching, you should not touch the PacketDispatcher object
+     * anymore.
+     *
+     * @param data the packet data (message body)
+     * @return a broadcaster to broadcast the packet
+     * @see #buffer(int)
+     * @see ClientListener
+     */
+    @Nonnull
+    public PacketDispatcher dispatch(@Nonnull FriendlyByteBuf data) {
+        return PacketDispatcher.obtain(mName, data);
     }
 
     @FunctionalInterface
