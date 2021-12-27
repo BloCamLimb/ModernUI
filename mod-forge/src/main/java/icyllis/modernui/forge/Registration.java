@@ -36,6 +36,8 @@ import net.minecraft.client.Option;
 import net.minecraft.client.ProgressOption;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
@@ -45,8 +47,11 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
 import net.minecraftforge.client.event.RegisterShadersEvent;
+import net.minecraftforge.client.model.ForgeModelBakery;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.event.RegistryEvent;
@@ -67,7 +72,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * This class handles mod loading events
@@ -81,6 +88,7 @@ final class Registration {
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
+        // sounds can be on both side, but these are GUI sounds, so client only
         final IForgeRegistry<SoundEvent> registry = event.getRegistry();
         registry.register(new SoundEvent(new ResourceLocation(ModernUI.ID, "button1"))
                 .setRegistryName("button1"));
@@ -106,8 +114,7 @@ final class Registration {
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void loadingClient(ParticleFactoryRegisterEvent event) {
-        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on render thread
-        // we use this because we want a ResourceReloadListener after language data reloaded
+        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread
         RenderCore.initialize();
         UIManager.initialize();
     }
@@ -116,14 +123,14 @@ final class Registration {
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
         byte[] bytes = null;
         try (InputStream stream = ModernUIForge.class.getClassLoader().getResourceAsStream(
-                NetworkMessages.class.getName().replace('.', '/') + ".class")) {
+                "icyllis/modernui/forge/NetworkMessages.class")) {
             Objects.requireNonNull(stream, "Mod file is broken");
             bytes = IOUtils.toByteArray(stream);
         } catch (IOException e) {
             e.printStackTrace();
         }
         try (InputStream stream = ModernUIForge.class.getClassLoader().getResourceAsStream(
-                NetworkMessages.class.getName().replace('.', '/') + "$C.class")) {
+                "icyllis/modernui/forge/NetworkMessages$C.class")) {
             Objects.requireNonNull(stream, "Mod file is broken");
             bytes = ArrayUtils.addAll(bytes, IOUtils.toByteArray(stream));
         } catch (IOException e) {
@@ -137,7 +144,7 @@ final class Registration {
                 .getBytes(StandardCharsets.UTF_8));
 
         NetworkMessages.sNetwork = new NetworkHandler("_root", () -> NetworkMessages::msg,
-                null, bytes == null ? null : digest(bytes), true);
+                null, bytes == null ? "BROKEN" : digest(bytes), true);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 
@@ -184,7 +191,8 @@ final class Registration {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
-        // preload text engine
+        // preload text engine, note that this event is fired after client config first load
+        // so that the typeface is loaded
         Minecraft.getInstance().execute(() -> {
             ModernUI.getInstance().getSelectedTypeface();
             TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
@@ -203,6 +211,7 @@ final class Registration {
         );*/
 
         Option[] settings = null;
+        boolean captured = false;
         if (ModernUIForge.isOptiFineLoaded()) {
             try {
                 Field field = VideoSettingsScreen.class.getDeclaredField("videoOptions");
@@ -216,27 +225,30 @@ final class Registration {
         }
         if (settings != null) {
             for (int i = 0; i < settings.length; i++) {
-                if (settings[i] == Option.GUI_SCALE) {
-                    ProgressOption option = new ProgressOption("options.guiScale", 0, 2, 1,
-                            options -> (double) options.guiScale,
-                            (options, aDouble) -> {
-                                if (options.guiScale != aDouble.intValue()) {
-                                    options.guiScale = aDouble.intValue();
-                                    Minecraft.getInstance().resizeDisplay();
-                                }
-                            },
-                            (options, progressOption) -> options.guiScale == 0 ?
-                                    ((AccessOption) progressOption)
-                                            .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
-                                                    .append(new TextComponent(" (" + (MuiForgeApi.calcGuiScales() >> 4 & 0xf) + ")"))) :
-                                    ((AccessOption) progressOption)
-                                            .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
-                    );
-                    settings[i] = EventHandler.Client.NEW_GUI_SCALE = option;
-                    break;
+                if (settings[i] != Option.GUI_SCALE) {
+                    continue;
                 }
+                ProgressOption option = new ProgressOption("options.guiScale", 0, 2, 1,
+                        options -> (double) options.guiScale,
+                        (options, aDouble) -> {
+                            if (options.guiScale != aDouble.intValue()) {
+                                options.guiScale = aDouble.intValue();
+                                Minecraft.getInstance().resizeDisplay();
+                            }
+                        },
+                        (options, progressOption) -> options.guiScale == 0 ?
+                                ((AccessOption) progressOption)
+                                        .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
+                                                .append(new TextComponent(" (" + (MuiForgeApi.calcGuiScales() >> 4 & 0xf) + ")"))) :
+                                ((AccessOption) progressOption)
+                                        .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
+                );
+                settings[i] = EventHandler.Client.sNewGuiScale = option;
+                captured = true;
+                break;
             }
-        } else {
+        }
+        if (!captured) {
             ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to capture video settings");
         }
     }
@@ -245,10 +257,11 @@ final class Registration {
     @SubscribeEvent
     static void onMenuOpen(@Nonnull OpenMenuEvent event) {
         if (event.getMenu() instanceof TestContainerMenu c) {
-            if (c.isDiamond())
+            if (c.isDiamond()) {
                 event.setCallback(new TestUI());
-            else
+            } else {
                 event.setCallback(new TestPauseUI());
+            }
         }
     }
 
@@ -263,6 +276,29 @@ final class Registration {
                     DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP), TextRenderType::setShaderSeeThrough);
         } catch (IOException e) {
             throw new RuntimeException("Bad shaders", e);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    static class ModClientDev {
+
+        @SubscribeEvent
+        static void onRegistryModel(@Nonnull ModelRegistryEvent event) {
+            ForgeModelBakery.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_main"));
+            ForgeModelBakery.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_cube"));
+        }
+
+        @SubscribeEvent
+        static void onBakeModel(@Nonnull ModelBakeEvent event) {
+            Map<ResourceLocation, BakedModel> registry = event.getModelRegistry();
+            replaceModel(registry, new ModelResourceLocation(ModernUI.ID, "project_builder", "inventory"),
+                    baseModel -> new ProjectBuilderModel(baseModel, event.getModelLoader()));
+        }
+
+        private static void replaceModel(@Nonnull Map<ResourceLocation, BakedModel> modelRegistry,
+                                         @Nonnull ModelResourceLocation location,
+                                         @Nonnull Function<BakedModel, BakedModel> replacer) {
+            modelRegistry.put(location, replacer.apply(modelRegistry.get(location)));
         }
     }
 }

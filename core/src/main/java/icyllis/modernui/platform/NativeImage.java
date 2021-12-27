@@ -41,10 +41,8 @@ import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
-import java.nio.channels.ByteChannel;
+import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
@@ -110,17 +108,31 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Display a file open dialog to select an supported image file.
+     * Display a file open dialog to select a supported image file.
      *
      * @return the path or {@code null} if selects nothing
      */
     @Nullable
-    public static String getOpenDialog() {
+    public static String openDialogGet() {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer filters = SaveFormat.getAllFilters(stack);
-            // for multiple selects, s.split("\\|")
             return TinyFileDialogs.tinyfd_openFileDialog(null, null,
                     filters, SaveFormat.getAllDescription(), false);
+        }
+    }
+
+    /**
+     * Display a file open dialog to select multiple supported image files.
+     *
+     * @return the paths or {@code null} if selects nothing
+     */
+    @Nullable
+    public static String[] openDialogGets() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            PointerBuffer filters = SaveFormat.getAllFilters(stack);
+            String s = TinyFileDialogs.tinyfd_openFileDialog(null, null,
+                    filters, SaveFormat.getAllDescription(), true);
+            return s == null ? null : s.split("\\|");
         }
     }
 
@@ -131,7 +143,7 @@ public final class NativeImage implements AutoCloseable {
      * @return the path or {@code null} if selects nothing
      */
     @Nullable
-    public static String getSaveDialog(@Nonnull SaveFormat format) {
+    public static String saveDialogGet(@Nonnull SaveFormat format) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer filters = format.getFilters(stack);
             return TinyFileDialogs.tinyfd_saveFileDialog(null,
@@ -147,10 +159,9 @@ public final class NativeImage implements AutoCloseable {
      */
     @Nullable
     public static NativeImage openDialog(@Nullable Format format) throws IOException {
-        String path = getOpenDialog();
+        String path = openDialogGet();
         if (path != null) {
-            try (SeekableByteChannel channel = Files.newByteChannel(Path.of(path),
-                    StandardOpenOption.READ)) {
+            try (FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ)) {
                 // not to close native image but the stream
                 return decode(format, channel);
             }
@@ -249,13 +260,12 @@ public final class NativeImage implements AutoCloseable {
      */
     @Nonnull
     public static NativeImage decode(@Nullable Format format, @Nonnull ReadableByteChannel channel) throws IOException {
-        ByteBuffer ptr = null;
+        ByteBuffer p = null;
         try {
-            ptr = RenderCore.readResource(channel);
-            ptr.rewind();
-            return decode(format, ptr);
+            p = RenderCore.readInMemory(channel);
+            return decode(format, p.rewind());
         } finally {
-            MemoryUtil.memFree(ptr);
+            MemoryUtil.memFree(p);
         }
     }
 
@@ -267,13 +277,12 @@ public final class NativeImage implements AutoCloseable {
      */
     @Nonnull
     public static NativeImage decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
-        ByteBuffer ptr = null;
+        ByteBuffer p = null;
         try {
-            ptr = RenderCore.readResource(stream);
-            ptr.rewind();
-            return decode(format, ptr);
+            p = RenderCore.readInMemory(stream);
+            return decode(format, p.rewind());
         } finally {
-            MemoryUtil.memFree(ptr);
+            MemoryUtil.memFree(p);
         }
     }
 
@@ -289,8 +298,9 @@ public final class NativeImage implements AutoCloseable {
             if (data == null) {
                 throw new IOException("Failed to read image: " + STBImage.stbi_failure_reason());
             }
-            return new NativeImage(format == null ? Format.of(channels.get(0)) : format, width.get(0), height.get(0),
-                    data);
+            assert format == null || Format.of(channels.get(0)) == format;
+            return new NativeImage(format == null ? Format.of(channels.get(0)) : format,
+                    width.get(0), height.get(0), data);
         }
     }
 
@@ -346,52 +356,51 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Save this native image image to specified path as specified format. This will
+     * Save this native image to specified path as specified format. This will
      * open a save dialog to select the path.
      *
      * @param format  the format of the saved image
      * @param quality the compress quality, 1-100, only work for JPEG format.
      */
     public void saveDialog(@Nonnull SaveFormat format, int quality) throws IOException {
-        String path = getSaveDialog(format);
+        String path = saveDialogGet(format);
         if (path != null) {
             saveToPath(Path.of(path), format, quality);
         }
     }
 
     /**
-     * Save this native image image to specified path with specified format.
+     * Save this native image to specified path with specified format.
      *
      * @param path    the image path
      * @param format  the format of the saved image
      * @param quality the compress quality, 1-100, only work for JPEG format.
+     * @throws IOException saving is not successful
      */
     public void saveToPath(@Nonnull Path path, @Nonnull SaveFormat format, int quality) throws IOException {
         checkReleased();
-        final ByteChannel channel = Files.newByteChannel(path,
+        final IOException[] exception = new IOException[1];
+        final FileChannel channel = FileChannel.open(path,
                 StandardOpenOption.WRITE,
                 StandardOpenOption.CREATE,
                 StandardOpenOption.TRUNCATE_EXISTING);
-        try (channel) {
-            final IOException[] exception = new IOException[1];
-            final STBIWriteCallback func = STBIWriteCallback.create((context, data, size) -> {
-                try {
-                    channel.write(STBIWriteCallback.getData(data, size));
-                } catch (IOException e) {
-                    exception[0] = e;
+        final STBIWriteCallback func = STBIWriteCallback.create((ctx, data, size) -> {
+            try {
+                channel.write(STBIWriteCallback.getData(data, size));
+            } catch (IOException e) {
+                exception[0] = e;
+            }
+        });
+        try (channel; func) {
+            final boolean success = format.write(func, mWidth, mHeight, mFormat, mRef.mPixels, quality);
+            if (success) {
+                if (exception[0] != null) {
+                    throw new IOException("An error occurred while saving image to the path \"" +
+                            path.toAbsolutePath() + "\"", exception[0]);
                 }
-            });
-            try (func) {
-                final boolean success = format.write(func, mWidth, mHeight, mFormat, mRef.mPixels, quality);
-                if (success) {
-                    if (exception[0] != null) {
-                        throw new IOException("An error occurred while saving image to the path \"" +
-                                path.toAbsolutePath() + "\"", exception[0]);
-                    }
-                } else {
-                    throw new IOException("Failed to save image to the path \"" +
-                            path.toAbsolutePath() + "\": " + STBImage.stbi_failure_reason());
-                }
+            } else {
+                throw new IOException("Failed to save image to the path \"" +
+                        path.toAbsolutePath() + "\": " + STBImage.stbi_failure_reason());
             }
         }
     }
@@ -450,8 +459,8 @@ public final class NativeImage implements AutoCloseable {
          */
         PNG("*.png") {
             @Override
-            protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
-                                    long data, int quality) {
+            public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
+                                 long data, int quality) {
                 // leave stride as 0, it will use (width * channels)
                 return STBImageWrite.nstbi_write_png_to_func(func.address(),
                         NULL, width, height, format.channels, data, 0) != 0;
@@ -464,8 +473,8 @@ public final class NativeImage implements AutoCloseable {
          */
         TGA("*.tga", "*.vda", "*.icb", "*.vst") {
             @Override
-            protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
-                                    long data, int quality) {
+            public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
+                                 long data, int quality) {
                 return STBImageWrite.nstbi_write_tga_to_func(func.address(),
                         NULL, width, height, format.channels, data) != 0;
             }
@@ -477,8 +486,8 @@ public final class NativeImage implements AutoCloseable {
          */
         BMP("*.bmp", "*.dib") {
             @Override
-            protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
-                                    long data, int quality) {
+            public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
+                                 long data, int quality) {
                 return STBImageWrite.nstbi_write_bmp_to_func(func.address(),
                         NULL, width, height, format.channels, data) != 0;
             }
@@ -489,10 +498,10 @@ public final class NativeImage implements AutoCloseable {
          * compress for the smallest size. {@code 100} means compress for max
          * visual quality. The file extension can be {@code .jpg}.
          */
-        JPEG("*.jpg", "*.jpeg", "*.jpe") {
+        JPEG("*.jpg", "*.jpeg", "*.jpe", "*.jfif", "*.jif") {
             @Override
-            protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
-                                    long data, int quality) {
+            public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
+                                 long data, int quality) {
                 if (quality < 1)
                     quality = 1;
                 else if (quality > 120)
@@ -502,6 +511,8 @@ public final class NativeImage implements AutoCloseable {
             }
         };
 
+        private static final SaveFormat[] VALUES = values();
+
         @Nonnull
         private final String[] filters;
 
@@ -509,19 +520,17 @@ public final class NativeImage implements AutoCloseable {
             this.filters = filters;
         }
 
-        protected boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
-                                long data, int quality) throws IOException {
-            throw new IOException("Unsupported save format");
-        }
+        public abstract boolean write(@Nonnull STBIWriteCallbackI func, int width, int height,
+                                      @Nonnull Format format, long data, int quality) throws IOException;
 
         @Nonnull
         private static PointerBuffer getAllFilters(@Nonnull MemoryStack stack) {
             int length = 0;
-            for (SaveFormat format : values()) {
+            for (SaveFormat format : VALUES) {
                 length += format.filters.length;
             }
             PointerBuffer buffer = stack.mallocPointer(length);
-            for (SaveFormat format : values()) {
+            for (SaveFormat format : VALUES) {
                 for (String filter : format.filters) {
                     stack.nUTF8Safe(filter, true);
                     buffer.put(stack.getPointerAddress());
@@ -532,7 +541,7 @@ public final class NativeImage implements AutoCloseable {
 
         @Nonnull
         private static String getAllDescription() {
-            return "Images (" + Arrays.stream(values()).flatMap(f -> Arrays.stream(f.filters))
+            return "Images (" + Arrays.stream(VALUES).flatMap(f -> Arrays.stream(f.filters))
                     .sorted().collect(Collectors.joining(";")) + ")";
         }
 

@@ -126,7 +126,7 @@ public final class ModernUIForge extends ModernUI {
                         );
             }
             if (sDevelopment) {
-                FMLJavaModLoadingContext.get().getModEventBus().register(EventHandler.ModClientDev.class);
+                FMLJavaModLoadingContext.get().getModEventBus().register(Registration.ModClientDev.class);
             }
         }
 
