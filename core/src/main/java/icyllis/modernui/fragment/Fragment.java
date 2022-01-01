@@ -18,6 +18,7 @@
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.animation.Animator;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.lifecycle.*;
@@ -27,6 +28,9 @@ import icyllis.modernui.view.ViewGroup;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.UUID;
 
 /**
@@ -40,6 +44,8 @@ import java.util.UUID;
  * developer guide.
  */
 public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
+
+    static final Object USE_DEFAULT_TRANSITION = new Object();
 
     static final int INITIALIZING = -1;          // Not yet attached.
     static final int ATTACHED = 0;               // Attached to the host.
@@ -62,6 +68,9 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
 
     // Construction arguments;
     DataSet mArguments;
+
+    // Boolean indicating whether this Fragment is the primary navigation fragment
+    private Boolean mIsPrimaryNavigationFragment = null;
 
     // True if the fragment is in the list of added fragments.
     boolean mAdded;
@@ -142,6 +151,31 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
 
     // The View generated for this fragment.
     View mView;
+
+    // Whether this fragment should defer starting until after other fragments
+    // have been started and their loaders are finished.
+    boolean mDeferStart;
+
+    // Hint provided by the app that this fragment is currently visible to the user.
+    boolean mUserVisibleHint = true;
+
+    // The animation and transition information for the fragment. This will be null
+    // unless the elements are explicitly accessed and should remain null for Fragments
+    // without Views.
+    AnimationInfo mAnimationInfo;
+
+    // True if the View was added, and its animation has yet to be run. This could
+    // also indicate that the fragment view hasn't been made visible, even if there is no
+    // animation for this fragment.
+    boolean mIsNewlyAdded;
+
+    // True if mHidden has been changed and the animation should be scheduled.
+    boolean mHiddenChanged;
+
+    // The alpha of the view when the view was added and then postponed. If the value is less
+    // than zero, this means that the view's add was canceled and should not participate in
+    // removal animations.
+    float mPostponedAlpha;
 
     // Keep track of whether this Fragment has run performCreate(). Retained instance
     // fragments can have mRetaining set to true without going through creation, so we must
@@ -680,10 +714,33 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     @CallSuper
     public void onCreate(@Nullable DataSet savedInstanceState) {
         mCalled = true;
-        //restoreChildFragmentState(savedInstanceState);
+        restoreChildFragmentState(savedInstanceState);
         if (!mChildFragmentManager.isStateAtLeast(Fragment.CREATED)) {
             mChildFragmentManager.dispatchCreate();
         }
+    }
+
+    /**
+     * Restore the state of the child FragmentManager. Called by either
+     * {@link #onCreate(DataSet)} for non-retained instance fragments or by
+     * {@link FragmentManager#moveToState(Fragment, int, int, int, boolean)}
+     * for retained instance fragments.
+     *
+     * <p><strong>Post-condition:</strong> if there were child fragments to restore,
+     * the child FragmentManager will be instantiated and brought to the {@link #CREATED} state.
+     * </p>
+     *
+     * @param savedInstanceState the savedInstanceState potentially containing fragment info
+     */
+    void restoreChildFragmentState(@Nullable DataSet savedInstanceState) {
+        /*if (savedInstanceState != null) {
+            Parcelable p = savedInstanceState.getParcelable(
+                    FragmentActivity.FRAGMENTS_TAG);
+            if (p != null) {
+                mChildFragmentManager.restoreSaveState(p);
+                mChildFragmentManager.dispatchCreate();
+            }
+        }*/
     }
 
     /**
@@ -899,6 +956,93 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         mCalled = true;
     }
 
+
+    /**
+     * Print the Fragments's state into the given stream.
+     *
+     * @param prefix Text to print at the front of each line.
+     * @param fd     The raw file descriptor that the dump is being sent to.
+     * @param writer The PrintWriter to which you should dump your state.  This will be
+     *               closed for you after you return.
+     * @param args   additional arguments to the dump request.
+     */
+    public void dump(@Nonnull String prefix, @Nullable FileDescriptor fd,
+                     @Nonnull PrintWriter writer, @Nullable String... args) {
+        writer.print(prefix);
+        writer.print("mFragmentId=#");
+        writer.print(Integer.toHexString(mFragmentId));
+        writer.print(" mContainerId=#");
+        writer.print(Integer.toHexString(mContainerId));
+        writer.print(" mTag=");
+        writer.println(mTag);
+        writer.print(prefix);
+        writer.print("mState=");
+        writer.print(mState);
+        writer.print(" mWho=");
+        writer.print(mWho);
+        writer.print(" mBackStackNesting=");
+        writer.println(mBackStackNesting);
+        writer.print(prefix);
+        writer.print("mAdded=");
+        writer.print(mAdded);
+        writer.print(" mRemoving=");
+        writer.print(mRemoving);
+        writer.print(" mFromLayout=");
+        writer.print(mFromLayout);
+        writer.print(" mInLayout=");
+        writer.println(mInLayout);
+        writer.print(prefix);
+        writer.print("mHidden=");
+        writer.print(mHidden);
+        writer.print(" mDetached=");
+        writer.print(mDetached);
+        writer.print(" mMenuVisible=");
+        writer.print(mMenuVisible);
+        writer.print(" mHasMenu=");
+        writer.println(mHasMenu);
+        writer.print(prefix);
+        writer.print("mRetainInstance=");
+        writer.print(mRetainInstance);
+        if (mFragmentManager != null) {
+            writer.print(prefix);
+            writer.print("mFragmentManager=");
+            writer.println(mFragmentManager);
+        }
+        if (mHost != null) {
+            writer.print(prefix);
+            writer.print("mHost=");
+            writer.println(mHost);
+        }
+        if (mParentFragment != null) {
+            writer.print(prefix);
+            writer.print("mParentFragment=");
+            writer.println(mParentFragment);
+        }
+        if (mArguments != null) {
+            writer.print(prefix);
+            writer.print("mArguments=");
+            writer.println(mArguments);
+        }
+        if (mSavedFragmentState != null) {
+            writer.print(prefix);
+            writer.print("mSavedFragmentState=");
+            writer.println(mSavedFragmentState);
+        }
+        if (mContainer != null) {
+            writer.print(prefix);
+            writer.print("mContainer=");
+            writer.println(mContainer);
+        }
+        if (mView != null) {
+            writer.print(prefix);
+            writer.print("mView=");
+            writer.println(mView);
+        }
+        writer.print(prefix);
+        writer.println("Child " + mChildFragmentManager + ":");
+        mChildFragmentManager.dump(prefix + "  ", fd, writer, args);
+    }
+
     @Nullable
     Fragment findFragmentByWho(@Nonnull String who) {
         if (who.equals(mWho)) {
@@ -997,6 +1141,13 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         mChildFragmentManager.dispatchViewCreated();
     }
 
+    void performActivityCreated(DataSet savedInstanceState) {
+        mChildFragmentManager.noteStateNotSaved();
+        mState = AWAITING_EXIT_EFFECTS;
+        //restoreViewState();
+        mChildFragmentManager.dispatchActivityCreated();
+    }
+
     void performStart() {
         mChildFragmentManager.noteStateNotSaved();
         mChildFragmentManager.execPendingActions(true);
@@ -1031,6 +1182,21 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
             mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
         }
         mChildFragmentManager.dispatchResume();
+    }
+
+    void noteStateNotSaved() {
+        mChildFragmentManager.noteStateNotSaved();
+    }
+
+    void performPrimaryNavigationFragmentChanged() {
+        boolean isPrimaryNavigationFragment = mFragmentManager.isPrimaryNavigation(this);
+        // Only send out the callback / dispatch if the state has changed
+        if (mIsPrimaryNavigationFragment == null
+                || mIsPrimaryNavigationFragment != isPrimaryNavigationFragment) {
+            mIsPrimaryNavigationFragment = isPrimaryNavigationFragment;
+            onPrimaryNavigationFragmentChanged(isPrimaryNavigationFragment);
+            mChildFragmentManager.dispatchPrimaryNavigationFragmentChanged();
+        }
     }
 
     void performPause() {
@@ -1113,5 +1279,246 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
             mChildFragmentManager.dispatchDestroy();
             mChildFragmentManager = new FragmentManager();
         }
+    }
+
+    void setOnStartEnterTransitionListener(OnStartEnterTransitionListener listener) {
+        ensureAnimationInfo();
+        if (listener == mAnimationInfo.mStartEnterTransitionListener) {
+            return;
+        }
+        if (listener != null && mAnimationInfo.mStartEnterTransitionListener != null) {
+            throw new IllegalStateException("Trying to set a replacement "
+                    + "startPostponedEnterTransition on " + this);
+        }
+        if (mAnimationInfo.mEnterTransitionPostponed) {
+            mAnimationInfo.mStartEnterTransitionListener = listener;
+        }
+        if (listener != null) {
+            listener.startListening();
+        }
+    }
+
+    private AnimationInfo ensureAnimationInfo() {
+        if (mAnimationInfo == null) {
+            mAnimationInfo = new AnimationInfo();
+        }
+        return mAnimationInfo;
+    }
+
+    void setAnimations(int enter, int exit, int popEnter, int popExit) {
+        if (mAnimationInfo == null && enter == 0 && exit == 0 && popEnter == 0 && popExit == 0) {
+            return; // no change!
+        }
+        ensureAnimationInfo().mEnterAnim = enter;
+        ensureAnimationInfo().mExitAnim = exit;
+        ensureAnimationInfo().mPopEnterAnim = popEnter;
+        ensureAnimationInfo().mPopExitAnim = popExit;
+    }
+
+    int getEnterAnim() {
+        if (mAnimationInfo == null) {
+            return 0;
+        }
+        return mAnimationInfo.mEnterAnim;
+    }
+
+    int getExitAnim() {
+        if (mAnimationInfo == null) {
+            return 0;
+        }
+        return mAnimationInfo.mExitAnim;
+    }
+
+    int getPopEnterAnim() {
+        if (mAnimationInfo == null) {
+            return 0;
+        }
+        return mAnimationInfo.mPopEnterAnim;
+    }
+
+    int getPopExitAnim() {
+        if (mAnimationInfo == null) {
+            return 0;
+        }
+        return mAnimationInfo.mPopExitAnim;
+    }
+
+    boolean getPopDirection() {
+        if (mAnimationInfo == null) {
+            return false;
+        }
+        return mAnimationInfo.mIsPop;
+    }
+
+    void setPopDirection(boolean isPop) {
+        if (mAnimationInfo == null) {
+            return; // no change!
+        }
+        ensureAnimationInfo().mIsPop = isPop;
+    }
+
+    int getNextTransition() {
+        if (mAnimationInfo == null) {
+            return 0;
+        }
+        return mAnimationInfo.mNextTransition;
+    }
+
+    void setNextTransition(int nextTransition) {
+        if (mAnimationInfo == null && nextTransition == 0) {
+            return; // no change!
+        }
+        ensureAnimationInfo();
+        mAnimationInfo.mNextTransition = nextTransition;
+    }
+
+    @Nonnull
+    ArrayList<String> getSharedElementSourceNames() {
+        if (mAnimationInfo == null || mAnimationInfo.mSharedElementSourceNames == null) {
+            return new ArrayList<>();
+        }
+        return mAnimationInfo.mSharedElementSourceNames;
+    }
+
+    @Nonnull
+    ArrayList<String> getSharedElementTargetNames() {
+        if (mAnimationInfo == null || mAnimationInfo.mSharedElementTargetNames == null) {
+            return new ArrayList<>();
+        }
+        return mAnimationInfo.mSharedElementTargetNames;
+    }
+
+    void setSharedElementNames(@Nullable ArrayList<String> sharedElementSourceNames,
+                               @Nullable ArrayList<String> sharedElementTargetNames) {
+        ensureAnimationInfo();
+        mAnimationInfo.mSharedElementSourceNames = sharedElementSourceNames;
+        mAnimationInfo.mSharedElementTargetNames = sharedElementTargetNames;
+    }
+
+    View getAnimatingAway() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mAnimatingAway;
+    }
+
+    void setAnimatingAway(View view) {
+        ensureAnimationInfo().mAnimatingAway = view;
+    }
+
+    void setAnimator(Animator animator) {
+        ensureAnimationInfo().mAnimator = animator;
+    }
+
+    Animator getAnimator() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mAnimator;
+    }
+
+    void setPostOnViewCreatedAlpha(float alpha) {
+        ensureAnimationInfo().mPostOnViewCreatedAlpha = alpha;
+    }
+
+    float getPostOnViewCreatedAlpha() {
+        if (mAnimationInfo == null) {
+            return 1f;
+        }
+        return mAnimationInfo.mPostOnViewCreatedAlpha;
+    }
+
+    void setFocusedView(View view) {
+        ensureAnimationInfo().mFocusedView = view;
+    }
+
+    View getFocusedView() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mFocusedView;
+    }
+
+    boolean isPostponed() {
+        if (mAnimationInfo == null) {
+            return false;
+        }
+        return mAnimationInfo.mEnterTransitionPostponed;
+    }
+
+    boolean isHideReplaced() {
+        if (mAnimationInfo == null) {
+            return false;
+        }
+        return mAnimationInfo.mIsHideReplaced;
+    }
+
+    void setHideReplaced(boolean replaced) {
+        ensureAnimationInfo().mIsHideReplaced = replaced;
+    }
+
+    /**
+     * Used internally to be notified when {@link #startPostponedEnterTransition()} has
+     * been called. This listener will only be called once and then be removed from the
+     * listeners.
+     */
+    interface OnStartEnterTransitionListener {
+        void onStartEnterTransition();
+
+        void startListening();
+    }
+
+    /**
+     * Contains all the animation and transition information for a fragment. This will only
+     * be instantiated for Fragments that have Views.
+     */
+    static class AnimationInfo {
+        // Non-null if the fragment's view hierarchy is currently animating away,
+        // meaning we need to wait a bit on completely destroying it.  This is the
+        // view that is animating.
+        View mAnimatingAway;
+
+        // Non-null if the fragment's view hierarchy is currently animating away with an
+        // animator instead of an animation.
+        Animator mAnimator;
+
+        // If app requests the animation direction, this is what to use
+        boolean mIsPop;
+
+        // All possible animations
+        int mEnterAnim;
+        int mExitAnim;
+        int mPopEnterAnim;
+        int mPopExitAnim;
+
+        // If app has requested a specific transition, this is the one to use.
+        int mNextTransition;
+
+        // If app has requested a specific set of shared element objects, this is the one to use.
+        ArrayList<String> mSharedElementSourceNames;
+        ArrayList<String> mSharedElementTargetNames;
+
+        Object mEnterTransition = null;
+        Object mReturnTransition = USE_DEFAULT_TRANSITION;
+        Object mExitTransition = null;
+        Object mReenterTransition = USE_DEFAULT_TRANSITION;
+        Object mSharedElementEnterTransition = null;
+        Object mSharedElementReturnTransition = USE_DEFAULT_TRANSITION;
+        Boolean mAllowReturnTransitionOverlap;
+        Boolean mAllowEnterTransitionOverlap;
+
+        float mPostOnViewCreatedAlpha = 1f;
+        View mFocusedView = null;
+
+        // True when postponeEnterTransition has been called and startPostponeEnterTransition
+        // hasn't been called yet.
+        boolean mEnterTransitionPostponed;
+
+        // Listener to wait for startPostponeEnterTransition. After being called, it will
+        // be set to null
+        OnStartEnterTransitionListener mStartEnterTransitionListener;
+
+        // True if the View was hidden, but the transition is handling the hide
+        boolean mIsHideReplaced;
     }
 }
