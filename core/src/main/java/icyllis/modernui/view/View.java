@@ -1136,6 +1136,8 @@ public class View implements Drawable.Callback {
      */
     private HandlerActionQueue mRunQueue;
 
+    private String mTransitionName;
+
     /**
      * Simple constructor to use when creating a view from code.
      */
@@ -3533,6 +3535,21 @@ public class View implements Drawable.Callback {
     public void setTranslationX(float translationX) {
         ensureTransformation();
         mTransformation.setTranslationX(translationX);
+    }
+
+    //TODO WIP, not working
+    public void setAlpha(float alpha) {
+    }
+
+    /**
+     * The opacity of the view. This is a value from 0 to 1, where 0 means the view is
+     * completely transparent and 1 means the view is completely opaque.
+     *
+     * <p>By default this is 1.0f.
+     * @return The opacity of the view.
+     */
+    public float getAlpha() {
+        return 1;
     }
 
     /**
@@ -6393,6 +6410,29 @@ public class View implements Drawable.Callback {
             scrollBar.setFrame(l, t, r, b);
         }
     }*/
+
+    /**
+     * Sets the name of the View to be used to identify Views in Transitions.
+     * Names should be unique in the View hierarchy.
+     *
+     * @param transitionName The name of the View to uniquely identify it for Transitions.
+     */
+    public final void setTransitionName(String transitionName) {
+        mTransitionName = transitionName;
+    }
+
+    /**
+     * Returns the name of the View to be used to identify Views in Transitions.
+     * Names should be unique in the View hierarchy.
+     *
+     * <p>This returns null if the View has not been given a name.</p>
+     *
+     * @return The name used of the View to be used to identify Views in Transitions or null
+     * if no name has been given.
+     */
+    public String getTransitionName() {
+        return mTransitionName;
+    }
 
     /**
      * Creates an image that the system displays during the drag and drop operation.

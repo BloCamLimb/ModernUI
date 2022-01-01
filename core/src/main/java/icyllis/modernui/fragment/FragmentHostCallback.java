@@ -23,6 +23,8 @@ import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 
 /**
  * Integration points with the Fragment host.
@@ -55,6 +57,25 @@ public abstract class FragmentHostCallback<E> implements FragmentContainer {
     @Nonnull
     final FragmentManager mFragmentManager = new FragmentManager();
 
+    /**
+     * Print internal state into the given stream.
+     *
+     * @param prefix Desired prefix to prepend at each line of output.
+     * @param fd The raw file descriptor that the dump is being sent to.
+     * @param writer The PrintWriter to which you should dump your state. This will be closed
+     *                  for you after you return.
+     * @param args additional arguments to the dump request.
+     */
+    public void onDump(@Nonnull String prefix, @Nullable FileDescriptor fd,
+                       @Nonnull PrintWriter writer, @Nullable String... args) {
+    }
+
+    /**
+     * Return the object that's currently hosting the fragment.
+     */
+    @Nullable
+    public abstract E onGetHost();
+
     @Nullable
     @Override
     public View onFindViewById(int id) {
@@ -63,12 +84,6 @@ public abstract class FragmentHostCallback<E> implements FragmentContainer {
 
     @Override
     public boolean onHasView() {
-        return false;
+        return true;
     }
-
-    /**
-     * Return the object that's currently hosting the fragment.
-     */
-    @Nullable
-    public abstract E onGetHost();
 }

@@ -23,6 +23,8 @@ import org.apache.logging.log4j.Marker;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.FileDescriptor;
+import java.io.PrintWriter;
 import java.util.*;
 
 import static icyllis.modernui.ModernUI.LOGGER;
@@ -339,5 +341,38 @@ final class FragmentStore {
         // Else, there's no other fragments in this container, so we
         // should just add the fragment to the end
         return -1;
+    }
+
+    void dump(@Nonnull String prefix, @Nullable FileDescriptor fd,
+              @Nonnull PrintWriter writer, @Nullable String... args) {
+        String innerPrefix = prefix + "    ";
+
+        if (!mActive.isEmpty()) {
+            writer.print(prefix);
+            writer.println("Active Fragments:");
+            for (FragmentStateManager fragmentStateManager : mActive.values()) {
+                writer.print(prefix);
+                if (fragmentStateManager != null) {
+                    Fragment f = fragmentStateManager.getFragment();
+                    writer.println(f);
+                    f.dump(innerPrefix, fd, writer, args);
+                } else {
+                    writer.println("null");
+                }
+            }
+        }
+
+        int count = mAdded.size();
+        if (count > 0) {
+            writer.print(prefix); writer.println("Added Fragments:");
+            for (int i = 0; i < count; i++) {
+                Fragment f = mAdded.get(i);
+                writer.print(prefix);
+                writer.print("  #");
+                writer.print(i);
+                writer.print(": ");
+                writer.println(f.toString());
+            }
+        }
     }
 }
