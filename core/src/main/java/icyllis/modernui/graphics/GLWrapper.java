@@ -19,8 +19,8 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.platform.Window;
+import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.Window;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.opengl.*;
@@ -114,7 +114,7 @@ public final class GLWrapper extends GL45C {
 
     @RenderThread
     public static void initialize(@Nonnull GLCapabilities caps) {
-        RenderCore.checkRenderThread();
+        Architect.checkRenderThread();
         if (sInitialized) {
             return;
         }
@@ -155,11 +155,11 @@ public final class GLWrapper extends GL45C {
 
         String glVersion = glGetString(GL_VERSION);
 
-        LOGGER.info(RenderCore.MARKER, "Graphics API: OpenGL {}", glVersion);
-        LOGGER.info(RenderCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+        LOGGER.info(Architect.MARKER, "Graphics API: OpenGL {}", glVersion);
+        LOGGER.info(Architect.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
 
         if (!caps.OpenGL45) {
-            LOGGER.debug(RenderCore.MARKER, "OpenGL 4.5 not requested, testing ARBs");
+            LOGGER.debug(Architect.MARKER, "OpenGL 4.5 not requested, testing ARBs");
             if (glVersion == null)
                 glVersion = "UNKNOWN";
             else {
@@ -292,7 +292,7 @@ public final class GLWrapper extends GL45C {
      */
     @RenderThread
     public static void resetFrame(@Nonnull Window window) {
-        RenderCore.checkRenderThread();
+        Architect.checkRenderThread();
         /*sViewportStack.clear();
 
         final Rect viewport = new Rect(0, 0, window.getWidth(), window.getHeight());
@@ -355,10 +355,10 @@ public final class GLWrapper extends GL45C {
 
     // r - the runnable that calls this method
     public static void deleteTextureAsync(int texture, @Nullable Runnable r) {
-        if (RenderCore.isOnRenderThread()) {
+        if (Architect.isOnRenderThread()) {
             glDeleteTextures(texture);
         } else {
-            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+            Architect.recordRenderCall(Objects.requireNonNullElseGet(r,
                     () -> (Runnable) () -> glDeleteTextures(texture)));
         }
     }
@@ -381,28 +381,28 @@ public final class GLWrapper extends GL45C {
     }*/
 
     public static void deleteBufferAsync(int buffer, @Nullable Runnable r) {
-        if (RenderCore.isOnRenderThread()) {
+        if (Architect.isOnRenderThread()) {
             glDeleteBuffers(buffer);
         } else {
-            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+            Architect.recordRenderCall(Objects.requireNonNullElseGet(r,
                     () -> (Runnable) () -> glDeleteBuffers(buffer)));
         }
     }
 
     public static void deleteFramebufferAsync(int framebuffer, @Nullable Runnable r) {
-        if (RenderCore.isOnRenderThread()) {
+        if (Architect.isOnRenderThread()) {
             glDeleteFramebuffers(framebuffer);
         } else {
-            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+            Architect.recordRenderCall(Objects.requireNonNullElseGet(r,
                     () -> (Runnable) () -> glDeleteFramebuffers(framebuffer)));
         }
     }
 
     public static void deleteRenderbufferAsync(int renderbuffer, @Nullable Runnable r) {
-        if (RenderCore.isOnRenderThread()) {
+        if (Architect.isOnRenderThread()) {
             glDeleteRenderbuffers(renderbuffer);
         } else {
-            RenderCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+            Architect.recordRenderCall(Objects.requireNonNullElseGet(r,
                     () -> (Runnable) () -> glDeleteRenderbuffers(renderbuffer)));
         }
     }

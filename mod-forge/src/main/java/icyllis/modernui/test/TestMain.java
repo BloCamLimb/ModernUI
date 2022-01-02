@@ -26,6 +26,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.core.Looper;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
@@ -37,9 +38,8 @@ import icyllis.modernui.graphics.texture.TextureManager;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.platform.NativeImage;
-import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.platform.Window;
+import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.core.Window;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
@@ -149,6 +149,8 @@ public class TestMain {
         /*System.setProperty("org.lwjgl.librarypath", nativesDir);*/
 
         ModernUI.initialize();
+
+        ModernUI.LOGGER.info(glfwGetTimerFrequency());
 
         /*ModernUI.LOGGER.info("Module: {}", TestMain.class.getModule());
         ModernUI.LOGGER.info("Main class loader: {}", TestMain.class.getClassLoader());
@@ -270,7 +272,7 @@ public class TestMain {
             return;
         try {
             Thread.currentThread().setName("Main-Thread");
-            RenderCore.initBackend();
+            Architect.initBackend();
             sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1600, 900);
             try (var c1 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
                  var bitmap1 = NativeImage.decode(null, c1);
@@ -330,7 +332,7 @@ public class TestMain {
     private static void runRenderThread() {
         final Window window = sWindow;
         window.makeCurrent();
-        RenderCore.initialize();
+        Architect.initOpenGL();
         GLCanvas canvas = GLCanvas.initialize();
         ShaderManager.getInstance().reload();
         Matrix4 projection = new Matrix4();
@@ -423,7 +425,7 @@ public class TestMain {
 
         //GLFW.glfwSwapInterval(1);
 
-        long lastTime = RenderCore.timeMillis();
+        long lastTime = Architect.timeMillis();
 
         Rect screenRect = new Rect(0, 0, window.getWidth(), window.getHeight());
 
@@ -449,7 +451,7 @@ public class TestMain {
         framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
 
         while (!window.shouldClose()) {
-            long time = RenderCore.timeMillis();
+            long time = Architect.timeMillis();
             long delta = time - lastTime;
             lastTime = time;
             GLWrapper.resetFrame(window);

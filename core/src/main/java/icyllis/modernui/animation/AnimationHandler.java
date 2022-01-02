@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.core.Architect;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 
@@ -37,7 +37,7 @@ public class AnimationHandler {
     private long mCurrentFrameTime;
 
     private AnimationHandler() {
-        mCurrentFrameTime = RenderCore.timeMillis();
+        mCurrentFrameTime = Architect.timeMillis();
     }
 
     @Nonnull
@@ -57,7 +57,7 @@ public class AnimationHandler {
     /**
      * Returns the current animation time in milliseconds used to update animations.
      * This value is updated when a new frame started, it's different from
-     * {@link RenderCore#timeMillis()} or {@link System#currentTimeMillis()}
+     * {@link Architect#timeMillis()} or {@link System#currentTimeMillis()}
      * which gives you a real current time.
      *
      * @return the current animation time in milliseconds
@@ -67,7 +67,7 @@ public class AnimationHandler {
     }
 
     private void doAnimationFrame(long frameTime) {
-        long currentTime = RenderCore.timeMillis();
+        long currentTime = Architect.timeMillis();
         mCurrentFrameTime = frameTime;
         for (FrameCallback callback : mCallbacks) {
             if (isCallbackDue(callback, currentTime)) {
@@ -85,7 +85,7 @@ public class AnimationHandler {
     public void register(@Nonnull FrameCallback callback, long delay) {
         boolean added = mCallbacks.addIfAbsent(callback);
         if (delay > 0) {
-            mDelayedStartTime.put(callback, RenderCore.timeMillis() + delay);
+            mDelayedStartTime.put(callback, Architect.timeMillis() + delay);
         } else if (!added) {
             mDelayedStartTime.removeLong(callback);
         }
@@ -133,7 +133,7 @@ public class AnimationHandler {
         /**
          * Run animation based on the frame time.
          *
-         * @param frameTime the frame start time, in the {@link RenderCore#timeMillis()} time base
+         * @param frameTime the frame start time, in the {@link Architect#timeMillis()} time base
          */
         void doAnimationFrame(long frameTime);
     }

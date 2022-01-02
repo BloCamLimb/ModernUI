@@ -19,7 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.core.Architect;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
 
@@ -92,12 +92,12 @@ public class LayoutPiece {
                 assert mAdvances != null;
             }
             if ((hint.mDescent & 0x80000000) != 0) {
-                if (RenderCore.isOnRenderThread()) {
+                if (Architect.isOnRenderThread()) {
                     mGlyphs = hint.mGlyphs;
                     mPositions = hint.mPositions;
                     assert mGlyphs != null;
                 } else {
-                    RenderCore.recordRenderCall(() -> {
+                    Architect.recordRenderCall(() -> {
                         mGlyphs = hint.mGlyphs;
                         mPositions = hint.mPositions;
                         assert mGlyphs != null;
@@ -136,10 +136,10 @@ public class LayoutPiece {
 
             if (layout) {
                 TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance);
-                if (RenderCore.isOnRenderThread()) {
+                if (Architect.isOnRenderThread()) {
                     textureWork.run();
                 } else {
-                    RenderCore.recordRenderCall(textureWork);
+                    Architect.recordRenderCall(textureWork);
                 }
             }
 
@@ -152,11 +152,11 @@ public class LayoutPiece {
             }
         }
         if (layout) {
-            if (RenderCore.isOnRenderThread()) {
+            if (Architect.isOnRenderThread()) {
                 mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
                 mPositions = positions.toFloatArray();
             } else {
-                RenderCore.recordRenderCall(() -> {
+                Architect.recordRenderCall(() -> {
                     mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
                     mPositions = positions.toFloatArray();
                 });

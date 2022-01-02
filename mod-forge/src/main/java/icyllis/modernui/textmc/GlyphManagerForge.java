@@ -21,8 +21,8 @@ package icyllis.modernui.textmc;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.graphics.texture.GLTexture;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.Typeface;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -275,7 +275,7 @@ public class GlyphManagerForge {
 
     @Deprecated
     public static GlyphManagerForge getInstance() {
-        RenderCore.checkRenderThread();
+        Architect.checkRenderThread();
         throw new UnsupportedOperationException();
     }
 

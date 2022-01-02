@@ -355,7 +355,7 @@ public final class Message {
     @Nonnull
     @Override
     public String toString() {
-        return toString(System.currentTimeMillis());
+        return toString(Architect.timeMillis());
     }
 
     @Nonnull

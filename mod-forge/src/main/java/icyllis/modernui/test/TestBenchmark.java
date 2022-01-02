@@ -21,35 +21,31 @@ package icyllis.modernui.test;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.DataSet;
-import icyllis.modernui.util.DataSetIO;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtIo;
 import org.github.jamm.MemoryMeter;
+import org.lwjgl.glfw.GLFW;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.*;
 
 @Fork(1)
 @Threads(1)
-@Warmup(iterations = 5, time = 1)
-@Measurement(iterations = 10, time = 2)
+@Warmup(iterations = 2, time = 1)
+@Measurement(iterations = 5, time = 1)
 public class TestBenchmark {
 
     public static void main(String[] args) throws RunnerException {
         new Runner(new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
                 .shouldFailOnError(true).shouldDoGC(true)
-                .jvmArgs("-server").build()).run();
+                /*.jvmArgs("-server")*/.build()).run();
         MemoryMeter meter = MemoryMeter.builder().build();
         ModernUI.LOGGER.info("CompoundTag: {}", TextUtils.binaryCompact((int) meter.measureDeep(sCompoundTag)));
         ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact((int) meter.measureDeep(sDataSet)));
@@ -85,6 +81,21 @@ public class TestBenchmark {
     }
 
     @Benchmark
+    public static void sysMilli() {
+        long v = System.currentTimeMillis();
+    }
+
+    @Benchmark
+    public static void sysNano() {
+        long v = System.nanoTime() / 10000000;
+    }
+
+    @Benchmark
+    public static void sysGLFW() {
+        long v = (long) GLFW.glfwGetTime() * 1000;
+    }
+
+    /*@Benchmark
     public static void dataSetDeflation() {
         try {
             DataSetIO.deflate(sDataSet, new FileOutputStream("F:/testdata_set1.dat"));
@@ -118,7 +129,7 @@ public class TestBenchmark {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }
+    }*/
 
     public static Object v;
     public static long i1;

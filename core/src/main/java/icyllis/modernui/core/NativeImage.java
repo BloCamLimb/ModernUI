@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.platform;
+package icyllis.modernui.core;
 
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
@@ -181,7 +181,7 @@ public final class NativeImage implements AutoCloseable {
     @Nonnull
     @RenderThread
     public static NativeImage download(@Nonnull Format format, @Nonnull GLTexture texture, boolean flipY) {
-        RenderCore.checkRenderThread();
+        Architect.checkRenderThread();
         final int width = texture.getWidth();
         final int height = texture.getHeight();
         final NativeImage nativeImage = new NativeImage(format, width, height, false);
@@ -221,7 +221,7 @@ public final class NativeImage implements AutoCloseable {
     @RenderThread
     public static NativeImage download(@Nonnull Format format, @Nonnull GLFramebuffer framebuffer,
                                        int colorBuffer, boolean flipY) {
-        RenderCore.checkRenderThread();
+        Architect.checkRenderThread();
         if (framebuffer.isMsaaEnabled()) {
             throw new IllegalArgumentException("Cannot get pixels from a multisampling target");
         }
@@ -262,7 +262,7 @@ public final class NativeImage implements AutoCloseable {
     public static NativeImage decode(@Nullable Format format, @Nonnull ReadableByteChannel channel) throws IOException {
         ByteBuffer p = null;
         try {
-            p = RenderCore.readInMemory(channel);
+            p = Architect.readInMemory(channel);
             return decode(format, p.rewind());
         } finally {
             MemoryUtil.memFree(p);
@@ -279,7 +279,7 @@ public final class NativeImage implements AutoCloseable {
     public static NativeImage decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
         ByteBuffer p = null;
         try {
-            p = RenderCore.readInMemory(stream);
+            p = Architect.readInMemory(stream);
             return decode(format, p.rewind());
         } finally {
             MemoryUtil.memFree(p);

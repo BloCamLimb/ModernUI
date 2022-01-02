@@ -19,9 +19,9 @@
 package icyllis.modernui.graphics.texture;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.graphics.GLWrapper;
-import icyllis.modernui.platform.NativeImage;
-import icyllis.modernui.platform.RenderCore;
+import icyllis.modernui.core.NativeImage;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -142,7 +142,7 @@ public class TextureManager {
         int width = image.getWidth();
         int height = image.getHeight();
         texture.setDimension(width, height, 1);
-        if (RenderCore.isOnRenderThread()) {
+        if (Architect.isOnRenderThread()) {
             texture.allocate2D(image.getInternalGlFormat(), width, height, mipmap ? 4 : 0);
             texture.upload(0, 0, 0, width, height, 0,
                     0, 0, 1, image.getGlFormat(), GLWrapper.GL_UNSIGNED_BYTE, image.getPixels());
@@ -153,7 +153,7 @@ public class TextureManager {
             image.close();
         } else {
             if (mipmap) {
-                RenderCore.recordRenderCall(() -> {
+                Architect.recordRenderCall(() -> {
                     int w = image.getWidth();
                     int h = image.getHeight();
                     texture.allocate2D(image.getInternalGlFormat(), w, h, 4);
@@ -164,7 +164,7 @@ public class TextureManager {
                     image.close();
                 });
             } else {
-                RenderCore.recordRenderCall(() -> {
+                Architect.recordRenderCall(() -> {
                     int w = image.getWidth();
                     int h = image.getHeight();
                     texture.allocate2D(image.getInternalGlFormat(), w, h, 0);

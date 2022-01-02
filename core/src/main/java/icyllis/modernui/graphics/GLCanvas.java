@@ -20,6 +20,7 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.graphics.shader.GLProgram;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.GLTexture;
@@ -29,7 +30,6 @@ import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.LayoutCache;
 import icyllis.modernui.text.LayoutPiece;
 import icyllis.modernui.text.TextPaint;
@@ -287,7 +287,7 @@ public final class GLCanvas extends Canvas {
 
     @RenderThread
     public static GLCanvas initialize() {
-        RenderCore.checkRenderThread();
+        Architect.checkRenderThread();
         if (INSTANCE == null) {
             INSTANCE = new GLCanvas();
             /*POS_COLOR.setBindingDivisor(INSTANCED_BINDING, 1);
@@ -349,7 +349,7 @@ public final class GLCanvas extends Canvas {
      */
     @RenderThread
     public void setProjection(@Nonnull Matrix4 projection) {
-        RenderCore.checkRenderThread();
+        Architect.checkRenderThread();
         projection.get(mProjectionUpload.rewind());
         mMatrixUBO.upload(0, 64, memAddress(mProjectionUpload.flip()));
     }
@@ -406,8 +406,8 @@ public final class GLCanvas extends Canvas {
 
     @RenderThread
     public void draw(@Nullable GLFramebuffer framebuffer) {
-        RenderCore.checkRenderThread();
-        RenderCore.flushRenderCalls();
+        Architect.checkRenderThread();
+        Architect.flushRenderCalls();
         if (mDrawOps.isEmpty()) {
             return;
         }

@@ -20,8 +20,8 @@ package icyllis.modernui.test.shader;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.graphics.shader.GLProgram;
-import icyllis.modernui.platform.RenderCore;
 import it.unimi.dsi.fastutil.objects.Object2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.resources.ResourceLocation;
@@ -59,7 +59,7 @@ public final class ShaderShard {
         ++mAttachCount;
         glAttachShader(program.get(), mId);
         if (mDeleted) {
-            ModernUI.LOGGER.warn(RenderCore.MARKER,
+            ModernUI.LOGGER.warn(Architect.MARKER,
                     "{} is marked as deleted, but the shader is still trying to attach to program {}",
                     this, program);
         }
@@ -74,7 +74,7 @@ public final class ShaderShard {
                 mAttachCount = Integer.MIN_VALUE;
             }
         } else {
-            ModernUI.LOGGER.warn(RenderCore.MARKER,
+            ModernUI.LOGGER.warn(Architect.MARKER,
                     "Try to detach {} from {}, but the shader is not attached to any program",
                     this, program);
         }
@@ -111,7 +111,7 @@ public final class ShaderShard {
             return shader;
         }
         try (InputStream stream = manager.getResource(location).getInputStream()) {
-            String src = RenderCore.readStringUTF8(stream);
+            String src = Architect.readStringUTF8(stream);
             if (src != null) {
                 int id = glCreateShader(type.type);
                 glShaderSource(id, src);

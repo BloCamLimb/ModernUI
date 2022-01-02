@@ -20,6 +20,7 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import net.minecraft.ChatFormatting;
+import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.event.TickEvent;
@@ -89,7 +90,7 @@ final class ServerHandler {
                 }
             }
             if (target < Integer.MAX_VALUE && target > current) {
-                shutdownTime = System.currentTimeMillis() + (target - current) * 1000L;
+                shutdownTime = Util.getMillis() + (target - current) * 1000L;
                 ModernUI.LOGGER.debug(ModernUI.MARKER, "Server will shutdown at {}",
                         SimpleDateFormat.getDateTimeInstance().format(new Date(shutdownTime)));
                 nextShutdownNotify = shutdownNotifyTimes[shutdownNotifyTimes.length - 1];
@@ -104,7 +105,7 @@ final class ServerHandler {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     void onLastEndTick(@Nonnull TickEvent.ServerTickEvent event) {
         if (event.phase == TickEvent.Phase.END && shutdownTime > 0) {
-            long countdown = shutdownTime - System.currentTimeMillis();
+            long countdown = shutdownTime - Util.getMillis();
             sendShutdownNotification(countdown);
             if (countdown <= 0) {
                 ServerLifecycleHooks.getCurrentServer().halt(false);
