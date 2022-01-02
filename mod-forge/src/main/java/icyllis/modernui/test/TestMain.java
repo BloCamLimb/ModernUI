@@ -23,10 +23,10 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.ColorEvaluator;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
+import icyllis.modernui.core.Looper;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
@@ -45,12 +45,9 @@ import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
-import icyllis.modernui.util.DataSet;
-import icyllis.modernui.util.DataSetIO;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Callback;
 import sun.misc.Unsafe;
 
@@ -58,7 +55,6 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;
@@ -71,7 +67,7 @@ import java.util.stream.Stream;
 import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.glfw.GLFW.*;
 
-@SuppressWarnings({"unused", "unchecked"})
+@SuppressWarnings({"unused"})
 public class TestMain {
 
     public static final Marker MARKER = MarkerManager.getMarker("Test");
@@ -83,10 +79,7 @@ public class TestMain {
 
     public static final boolean CREATE_WINDOW = true;
 
-    private static double nextTime = 0;
-    private static boolean needRedraw = true;
-
-    private static icyllis.modernui.platform.Window sWindow;
+    private static Window sWindow;
 
     /*
         Heading font size (In Minecraft: GUI scale 2)
@@ -157,7 +150,7 @@ public class TestMain {
 
         ModernUI.initialize();
 
-        ModernUI.LOGGER.info("Module: {}", TestMain.class.getModule());
+        /*ModernUI.LOGGER.info("Module: {}", TestMain.class.getModule());
         ModernUI.LOGGER.info("Main class loader: {}", TestMain.class.getClassLoader());
         ModernUI.LOGGER.info("System class loader: {}", ClassLoader.getSystemClassLoader());
         ModernUI.LOGGER.info("Bootstrap class loader: {}", Object.class.getClassLoader());
@@ -187,11 +180,11 @@ public class TestMain {
         GRAPHICS.setColor(Color.WHITE);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-        GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);*/
 
         //(sec23°)²+(sec22°)²-2sec23°sec22°cos45°=a²
         //θ=arccos((a²+(sec22°)²-(sec23°)²)/(2asec22°))
-        double sec22 = 1 / Math.cos(Math.toRadians(22));
+        /*double sec22 = 1 / Math.cos(Math.toRadians(22));
         double sec23 = 1 / Math.cos(Math.toRadians(23));
         double sec22_2 = sec22 * sec22;
         double sec23_2 = sec23 * sec23;
@@ -200,7 +193,7 @@ public class TestMain {
         double theta = Math.acos((a_2 + sec22_2 - sec23_2) / (2 * a * sec22));
         ModernUI.LOGGER.info(Math.toDegrees(theta));
 
-        ModernUI.LOGGER.info(Integer.toHexString(ColorEvaluator.evaluate(0.5f, 0xF0AADCF0, 0xF0FFC3F7)).toUpperCase(Locale.ROOT));
+        ModernUI.LOGGER.info(Integer.toHexString(ColorEvaluator.evaluate(0.5f, 0xF0AADCF0, 0xF0FFC3F7)).toUpperCase(Locale.ROOT));*/
 
         /*float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
@@ -317,9 +310,8 @@ public class TestMain {
                 }
             }, "Choose-Color").start();*/
 
-            while (sWindow == null || !sWindow.shouldClose()) {
-                glfwWaitEventsTimeout(1 / 288D);
-            }
+            Looper.run(sWindow);
+
             renderThread.interrupt();
         } finally {
             if (sWindow != null) {
@@ -429,7 +421,7 @@ public class TestMain {
         //editable.insert(0, "ABCD");
         editable.append("ABCDEF");
 
-        GLFW.glfwSwapInterval(1);
+        //GLFW.glfwSwapInterval(1);
 
         long lastTime = RenderCore.timeMillis();
 

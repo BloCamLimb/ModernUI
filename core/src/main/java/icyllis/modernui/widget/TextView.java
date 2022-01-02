@@ -23,7 +23,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.platform.Clipboard;
+import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;

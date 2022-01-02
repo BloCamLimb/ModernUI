@@ -88,6 +88,7 @@ public final class TextUtils {
 
     /**
      * Returns true if the string is null or 0-length.
+     *
      * @param str the string to be examined
      * @return true if str is null or zero length
      */
@@ -501,7 +502,7 @@ public final class TextUtils {
      * @return the layout direction. This may be one of:
      * {@link View#LAYOUT_DIRECTION_LTR} or
      * {@link View#LAYOUT_DIRECTION_RTL}.
-     *
+     * <p>
      * Be careful: this code will need to be updated when vertical scripts will be supported
      */
     public static int getLayoutDirectionFromLocale(@Nullable Locale locale) {
@@ -509,5 +510,60 @@ public final class TextUtils {
                 && ULocale.forLocale(locale).isRightToLeft())
                 ? View.LAYOUT_DIRECTION_RTL
                 : View.LAYOUT_DIRECTION_LTR;
+    }
+
+    /**
+     * Strip invalid surrogate pairs in the given string.
+     */
+    @Nonnull
+    public static String validateSurrogatePairs(@Nonnull String text) {
+        final int len = text.length();
+        if (len < 1000) {
+            final char[] buf = obtain(len);
+            int p = 0;
+            for (int i = 0; i < len; i++) {
+                final char _c1 = text.charAt(i);
+                if (Character.isHighSurrogate(_c1) && i + 1 < len) {
+                    final char _c2 = text.charAt(i + 1);
+                    if (Character.isLowSurrogate(_c2)) {
+                        buf[p++] = _c1;
+                        buf[p++] = _c2;
+                        ++i;
+                    } else if (Character.isSurrogate(_c1)) {
+                        buf[p++] = '\uFFFD';
+                    } else {
+                        buf[p++] = _c1;
+                    }
+                } else if (Character.isSurrogate(_c1)) {
+                    buf[p++] = '\uFFFD';
+                } else {
+                    buf[p++] = _c1;
+                }
+            }
+            text = new String(buf, 0, p);
+            recycle(buf);
+            return text;
+        } else {
+            final StringBuilder b = new StringBuilder();
+            for (int i = 0; i < len; i++) {
+                final char _c1 = text.charAt(i);
+                if (Character.isHighSurrogate(_c1) && i + 1 < len) {
+                    final char _c2 = text.charAt(i + 1);
+                    if (Character.isLowSurrogate(_c2)) {
+                        b.append(_c1).append(_c2);
+                        ++i;
+                    } else if (Character.isSurrogate(_c1)) {
+                        b.append('\uFFFD');
+                    } else {
+                        b.append(_c1);
+                    }
+                } else if (Character.isSurrogate(_c1)) {
+                    b.append('\uFFFD');
+                } else {
+                    b.append(_c1);
+                }
+            }
+            return b.toString();
+        }
     }
 }
