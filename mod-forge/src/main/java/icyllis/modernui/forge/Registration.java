@@ -21,11 +21,11 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.mcgui.OpenMenuEvent;
 import icyllis.modernui.mcgui.UIManager;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettings;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestContainerMenu;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.test.TestUI;
@@ -115,7 +115,7 @@ final class Registration {
     @SubscribeEvent
     static void loadingClient(ParticleFactoryRegisterEvent event) {
         // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread
-        RenderCore.initialize();
+        Architect.initOpenGL();
         UIManager.initialize();
     }
 

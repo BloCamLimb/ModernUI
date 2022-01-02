@@ -23,6 +23,7 @@ import icyllis.modernui.animation.*;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.TextureManager;
@@ -30,9 +31,8 @@ import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
-import icyllis.modernui.platform.NativeImage;
-import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.platform.Window;
+import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.core.Window;
 import icyllis.modernui.test.SpectrumGraph;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
@@ -83,7 +83,7 @@ public class BejeweledTwist {
     public BejeweledTwist() {
         Thread.currentThread().setName("Main-Thread");
         ModernUI.initialize();
-        RenderCore.initBackend();
+        Architect.initBackend();
         mWindow = Window.create("Bejeweled Twist", Window.State.WINDOWED, 1600, 900);
         try (var c1 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
              var bitmap1 = NativeImage.decode(null, c1);
@@ -208,7 +208,7 @@ public class BejeweledTwist {
 
     private void runRenderThread() {
         mWindow.makeCurrent();
-        RenderCore.initialize();
+        Architect.initOpenGL();
         GLCanvas canvas = GLCanvas.initialize();
         ShaderManager.getInstance().reload();
         GLFW.glfwSwapInterval(1);
@@ -223,9 +223,9 @@ public class BejeweledTwist {
         GLWrapper.glEnable(GL_MULTISAMPLE);
         GLWrapper.glDisable(GL_DEPTH_TEST);
 
-        long lastTime = RenderCore.timeMillis();
+        long lastTime = Architect.timeMillis();
         while (!mWindow.shouldClose()) {
-            long time = RenderCore.timeMillis();
+            long time = Architect.timeMillis();
             long delta = time - lastTime;
             lastTime = time;
             GLWrapper.resetFrame(mWindow);

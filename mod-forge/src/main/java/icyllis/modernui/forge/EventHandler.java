@@ -19,8 +19,8 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.mcgui.BlurHandler;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.test.TestContainerMenu;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import net.minecraft.client.ProgressOption;
@@ -127,8 +127,8 @@ final class EventHandler {
         @SubscribeEvent
         static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.END) {
-                RenderCore.flushMainCalls();
-                RenderCore.flushRenderCalls();
+                Architect.flushMainCalls();
+                Architect.flushRenderCalls();
             }
         }
 

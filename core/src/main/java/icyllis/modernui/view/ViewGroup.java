@@ -20,9 +20,9 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -399,7 +399,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     private void exitHoverTargets() {
         if (mHoveredSelf || mFirstHoverTarget != null) {
-            final long now = RenderCore.timeNanos();
+            final long now = Architect.timeNanos();
             MotionEvent event = MotionEvent.obtain(now,
                     MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
             dispatchHoverEvent(event);
@@ -420,7 +420,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 }
                 target.recycle();
 
-                final long now = RenderCore.timeNanos();
+                final long now = Architect.timeNanos();
                 MotionEvent event = MotionEvent.obtain(now,
                         MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
                 view.dispatchHoverEvent(event);
@@ -649,7 +649,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         if (target != null) {
             boolean syntheticEvent = false;
             if (event == null) {
-                final long time = RenderCore.timeNanos();
+                final long time = Architect.timeNanos();
                 event = MotionEvent.obtain(time,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 syntheticEvent = true;
@@ -671,7 +671,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             if (target.child == view) {
                 target.recycle();
 
-                final long now = RenderCore.timeNanos();
+                final long now = Architect.timeNanos();
                 MotionEvent event = MotionEvent.obtain(now,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 view.dispatchTouchEvent(event);

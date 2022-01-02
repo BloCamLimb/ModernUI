@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.platform;
+package icyllis.modernui.core;
 
 import icyllis.modernui.graphics.GLWrapper;
 import org.apache.logging.log4j.Marker;
@@ -36,38 +36,37 @@ import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
-import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static org.lwjgl.system.MemoryUtil.NULL;
+import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * The core class for the window system and its backend part.
+ * The core class for the window system and graphics backend.
  */
-public final class RenderCore {
+public final class Architect {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Graphics");
+    public static final Marker MARKER = MarkerManager.getMarker("Architect");
 
     private static volatile Thread sMainThread;
     private static volatile Thread sRenderThread;
 
-    private static final Queue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
-    private static final Queue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
+    private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
 
     /**
      * Initialize GLFW, call on JVM main thread.
      */
     public static void initBackend() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
-        if (GLFW.glfwSetErrorCallback(RenderCore::onError) != null || !GLFW.glfwInit()) {
+        if (GLFW.glfwSetErrorCallback(Architect::onError) != null || !GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
         sMainThread = Thread.currentThread();
     }
 
     private static void onError(int errorCode, long descPtr) {
-        String desc = descPtr == NULL ? "" : MemoryUtil.memUTF8(descPtr);
+        String desc = descPtr == NULL ? "" : memUTF8(descPtr);
         LOGGER.error(MARKER, "GLFW Error: 0x{} {}", Integer.toHexString(errorCode), desc);
     }
 
@@ -97,21 +96,25 @@ public final class RenderCore {
         sRenderCalls.offer(r);
     }
 
+    @SuppressWarnings("UnnecessaryLocalVariable")
     public static void flushMainCalls() {
+        final ConcurrentLinkedQueue<Runnable> queue = sMainCalls;
         Runnable r;
-        while ((r = sMainCalls.poll()) != null) r.run();
+        while ((r = queue.poll()) != null) r.run();
     }
 
+    @SuppressWarnings("UnnecessaryLocalVariable")
     public static void flushRenderCalls() {
+        final ConcurrentLinkedQueue<Runnable> queue = sRenderCalls;
         Runnable r;
-        while ((r = sRenderCalls.poll()) != null) r.run();
+        while ((r = queue.poll()) != null) r.run();
     }
 
     /**
      * Call after creating a Window on render thread.
      */
-    public static void initialize() {
-        synchronized (RenderCore.class) {
+    public static void initOpenGL() {
+        synchronized (Architect.class) {
             if (sRenderThread == null) {
                 sRenderThread = Thread.currentThread();
             } else {
@@ -161,30 +164,30 @@ public final class RenderCore {
      */
     @Nonnull
     public static ByteBuffer readInMemory(ReadableByteChannel channel) throws IOException {
-        ByteBuffer ptr = null;
+        ByteBuffer p = null;
         try {
             if (channel instanceof final SeekableByteChannel ch) {
                 long rem = ch.size() - ch.position();
                 if (rem > 0x7FFFFFFE) {
                     throw new IOException("File is too big, found " + rem + " bytes");
                 }
-                ptr = MemoryUtil.memAlloc((int) (rem + 1)); // +1 EOF
+                p = memAlloc((int) (rem + 1)); // +1 EOF
                 //noinspection StatementWithEmptyBody
-                while (ch.read(ptr) != -1) ;
+                while (ch.read(p) != -1) ;
             } else {
-                ptr = MemoryUtil.memAlloc(4096);
-                while (channel.read(ptr) != -1) {
-                    if (ptr.remaining() <= 0) {
-                        ptr = MemoryUtil.memRealloc(ptr, ptr.capacity() << 1);
+                p = memAlloc(4096);
+                while (channel.read(p) != -1) {
+                    if (p.remaining() <= 0) {
+                        p = memRealloc(p, p.capacity() << 1);
                     }
                 }
             }
         } catch (Throwable t) {
             // IMPORTANT: in case of memory leakage
-            MemoryUtil.memFree(ptr);
+            memFree(p);
             throw t;
         }
-        return ptr;
+        return p;
     }
 
     /**
@@ -212,11 +215,11 @@ public final class RenderCore {
         try {
             p = readInMemory(channel);
             final int l = p.position();
-            return MemoryUtil.memUTF8(p.rewind(), l);
+            return memUTF8(p.rewind(), l);
         } catch (IOException e) {
             return null;
         } finally {
-            MemoryUtil.memFree(p);
+            memFree(p);
         }
     }
 

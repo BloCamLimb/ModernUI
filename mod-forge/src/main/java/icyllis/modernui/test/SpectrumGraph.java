@@ -19,11 +19,11 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.audio.Track;
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.FourierTransform;
 import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.platform.RenderCore;
 
 import javax.annotation.Nonnull;
 
@@ -46,7 +46,7 @@ public class SpectrumGraph {
 
     public void updateAmplitudes() {
         int len = Math.min(mFFT.getAverageSize() - 5, mAmplitudes.length);
-        long time = RenderCore.timeMillis();
+        long time = Architect.timeMillis();
         int iOff;
         if (mCircular)
             iOff = (int) (time / 200);
@@ -72,7 +72,7 @@ public class SpectrumGraph {
     public void draw(@Nonnull Canvas canvas, float cx, float cy) {
         var paint = Paint.take();
         if (mCircular) {
-            long time = RenderCore.timeMillis();
+            long time = Architect.timeMillis();
             float b = 1.5f + MathUtil.sin(time / 600f) / 2;
             paint.setRGBA(160, 155, 230, (int) (64 * b));
             paint.setSmoothRadius(100);

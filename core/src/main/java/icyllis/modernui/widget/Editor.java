@@ -18,6 +18,7 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.core.Architect;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.method.MovementMethod;
@@ -85,7 +86,7 @@ public class Editor {
 
     boolean shouldRenderCursor() {
         if (isCursorVisible()) {
-            final long showCursorDelta = System.currentTimeMillis() - mShowCursor;
+            final long showCursorDelta = Architect.timeMillis() - mShowCursor;
             return showCursorDelta % (2 * BLINK) < BLINK;
         }
         return false;
@@ -112,7 +113,7 @@ public class Editor {
     }
 
     void onFocusChanged(boolean focused, int direction) {
-        mShowCursor = System.currentTimeMillis();
+        mShowCursor = Architect.timeMillis();
 
         if (focused) {
             int selStart = mTextView.getSelectionStart();
@@ -219,7 +220,7 @@ public class Editor {
 
     void makeBlink() {
         if (shouldBlink()) {
-            mShowCursor = System.currentTimeMillis();
+            mShowCursor = Architect.timeMillis();
             if (mBlink == null) {
                 mBlink = new Blink();
             }
