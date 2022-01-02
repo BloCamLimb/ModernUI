@@ -14,12 +14,12 @@ Releases for Minecraft Mod are available on [CurseForge](https://www.curseforge.
 If you have any questions, feel free to join our [Discord](https://discord.gg/kmyGKt2) server.
 ### License
 * Modern UI
-  - Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+  - Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
   - [![License](https://img.shields.io/badge/License-LGPL--3.0--or--later-blue.svg?style=flat-square)](https://www.gnu.org/licenses/lgpl-3.0.en.html)
   - Copyright (C) 2006 The Android Open Source Project
   - [![License](https://img.shields.io/badge/License-Apache%202.0-orange.svg?style=flat-square)](https://opensource.org/licenses/Apache-2.0)
 * Textures, Shaders, Models, Documents, Translations
-  - Copyright (C) 2019-2021 BloCamLimb et al.
+  - Copyright (C) 2019-2022 BloCamLimb et al.
   - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
 * Sounds
   - [![License](https://img.shields.io/badge/License-No%20Restriction-green.svg?style=flat-square)](https://creativecommons.org/publicdomain/zero/1.0/)
