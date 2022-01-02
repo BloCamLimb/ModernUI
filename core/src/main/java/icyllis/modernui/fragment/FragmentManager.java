@@ -63,6 +63,7 @@ public final class FragmentManager {
     // Constant IDs for Fragment package.
     static final int fragment_container_view_tag = 0x02020001;
     static final int visible_removing_fragment_view_tag = 0x02020002;
+    static final int special_effects_controller_view_tag = 0x02020003;
 
     /**
      * Control whether FragmentManager uses the new state manager that is responsible for:
@@ -163,6 +164,7 @@ public final class FragmentManager {
     Fragment mPrimaryNav;
     private FragmentFactory mFragmentFactory = null;
     private static final FragmentFactory sHostFragmentFactory = new FragmentFactory();
+    private SpecialEffectsControllerFactory mSpecialEffectsControllerFactory = null;
 
     private boolean mNeedMenuInvalidate;
     private boolean mStateSaved;
@@ -2364,6 +2366,27 @@ public final class FragmentManager {
             return mParent.mFragmentManager.getFragmentFactory();
         }
         return sHostFragmentFactory;
+    }
+
+    /**
+     * Gets the current {@link SpecialEffectsControllerFactory} used to instantiate new
+     * SpecialEffectsController instances.
+     *
+     * @return the current SpecialEffectsControllerFactory
+     */
+    @Nonnull
+    SpecialEffectsControllerFactory getSpecialEffectsControllerFactory() {
+        if (mSpecialEffectsControllerFactory != null) {
+            return mSpecialEffectsControllerFactory;
+        }
+        if (mParent != null) {
+            // This can't call setSpecialEffectsControllerFactory since we need to
+            // compute this each time getSpecialEffectsControllerFactory() is called
+            // so that if the parent's SpecialEffectsControllerFactory changes, we
+            // pick the change up here.
+            return mParent.mFragmentManager.getSpecialEffectsControllerFactory();
+        }
+        return null;
     }
 
     @Nonnull

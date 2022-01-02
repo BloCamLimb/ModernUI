@@ -61,21 +61,21 @@ abstract class SpecialEffectsController {
      * or create it using the given {@link SpecialEffectsControllerFactory} if it does not.
      *
      * @param container ViewGroup to find the associated SpecialEffectsController for.
-     * @param factory The factory to use to create a new SpecialEffectsController if one does
-     *                not already exist for this container.
+     * @param factory   The factory to use to create a new SpecialEffectsController if one does
+     *                  not already exist for this container.
      * @return a SpecialEffectsController for the given container
      */
     @Nonnull
     static SpecialEffectsController getOrCreateController(
             @Nonnull ViewGroup container,
             @Nonnull SpecialEffectsControllerFactory factory) {
-        Object controller = container.getTag(R.id.special_effects_controller_view_tag);
+        Object controller = container.getTag(FragmentManager.special_effects_controller_view_tag);
         if (controller instanceof SpecialEffectsController) {
             return (SpecialEffectsController) controller;
         }
         // Else, create a new SpecialEffectsController
         SpecialEffectsController newController = factory.createController(container);
-        container.setTag(R.id.special_effects_controller_view_tag, newController);
+        container.setTag(FragmentManager.special_effects_controller_view_tag, newController);
         return newController;
     }
 
@@ -263,7 +263,7 @@ abstract class SpecialEffectsController {
         }
         // If the container is not attached to the window, ignore the special effect
         // since none of the special effect systems will run them anyway.
-        if (!ViewCompat.isAttachedToWindow(mContainer)) {
+        if (!mContainer.isAttachedToWindow()) {
             forceCompleteAllOperations();
             mOperationDirectionIsPop = false;
             return;
@@ -301,7 +301,7 @@ abstract class SpecialEffectsController {
     }
 
     void forceCompleteAllOperations() {
-        boolean attachedToWindow = ViewCompat.isAttachedToWindow(mContainer);
+        boolean attachedToWindow = mContainer.isAttachedToWindow();
         synchronized (mPendingOperations) {
             updateFinalState();
             for (Operation operation : mPendingOperations) {
@@ -335,7 +335,7 @@ abstract class SpecialEffectsController {
     }
 
     private void updateFinalState() {
-        for (Operation operation: mPendingOperations) {
+        for (Operation operation : mPendingOperations) {
             // update the final state of adding operations
             if (operation.getLifecycleImpact() == Operation.LifecycleImpact.ADDING) {
                 Fragment fragment = operation.getFragment();
@@ -364,9 +364,9 @@ abstract class SpecialEffectsController {
      * properly cancelling the special effect when the signal is cancelled.
      *
      * @param operations the list of operations to execute in order.
-     * @param isPop whether this set of operations should be considered as triggered by a 'pop'.
-     *              This can be used to control the direction of any special effects if they
-     *              are not symmetric.
+     * @param isPop      whether this set of operations should be considered as triggered by a 'pop'.
+     *                   This can be used to control the direction of any special effects if they
+     *                   are not symmetric.
      */
     abstract void executeOperations(@Nonnull List<Operation> operations, boolean isPop);
 
@@ -513,9 +513,9 @@ abstract class SpecialEffectsController {
         /**
          * Construct a new Operation.
          *
-         * @param finalState What the final state after this operation should be.
-         * @param lifecycleImpact The impact on the fragment's lifecycle.
-         * @param fragment The Fragment being affected.
+         * @param finalState         What the final state after this operation should be.
+         * @param lifecycleImpact    The impact on the fragment's lifecycle.
+         * @param fragment           The Fragment being affected.
          * @param cancellationSignal A signal for handling cancellation
          */
         Operation(@Nonnull State finalState, @Nonnull LifecycleImpact lifecycleImpact,
@@ -554,6 +554,7 @@ abstract class SpecialEffectsController {
 
         /**
          * The Fragment being added / removed.
+         *
          * @return An {@link Fragment#isAdded() added} Fragment.
          */
         @Nonnull
@@ -648,7 +649,8 @@ abstract class SpecialEffectsController {
         /**
          * Callback for when the operation is about to start.
          */
-        void onStart() {}
+        void onStart() {
+        }
 
         /**
          * Add new {@link CancellationSignal} for special effects.
@@ -663,7 +665,7 @@ abstract class SpecialEffectsController {
         /**
          * Complete a {@link CancellationSignal} that was previously added with
          * {@link #markStartedSpecialEffect(CancellationSignal)}.
-         *
+         * <p>
          * This calls through to {@link Operation#complete()} when the last special effect is
          * complete.
          */

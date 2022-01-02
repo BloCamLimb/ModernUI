@@ -18,6 +18,8 @@
 
 package icyllis.modernui;
 
+import icyllis.modernui.core.Handler;
+import icyllis.modernui.core.Looper;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.view.ViewManager;
 import org.apache.logging.log4j.LogManager;
@@ -62,6 +64,10 @@ public class ModernUI {
     }
 
     protected final Path mAssetsDir = Path.of(String.valueOf(System.getenv("APP_ASSETS")));
+
+    private final Object mLock = new Object();
+
+    private volatile Handler mMainHandler;
 
     protected volatile ExecutorService mBackgroundExecutor;
     protected volatile ViewManager mViewManager;
@@ -135,6 +141,18 @@ public class ModernUI {
      */
     public boolean hasRtlSupport() {
         return true;
+    }
+
+    @Nonnull
+    public Handler getMainHandler() {
+        if (mMainHandler == null) {
+            synchronized (mLock) {
+                if (mMainHandler == null) {
+                    mMainHandler = Handler.createAsync(Looper.getMainLooper());
+                }
+            }
+        }
+        return mMainHandler;
     }
 
     @Nonnull

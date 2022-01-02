@@ -27,12 +27,6 @@ import javax.annotation.Nullable;
 
 public class TestFragment extends Fragment {
 
-    @Nullable
-    @Override
-    public View onCreateView() {
-        return null;
-    }
-
     private static class TestView extends View {
 
         @Override

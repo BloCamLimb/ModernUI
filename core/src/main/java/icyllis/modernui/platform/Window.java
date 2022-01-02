@@ -19,9 +19,9 @@
 package icyllis.modernui.platform;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.Clipboard;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
-import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.Callbacks;
 import org.lwjgl.glfw.GLFWImage;
 import org.lwjgl.system.MemoryStack;
