@@ -445,7 +445,7 @@ public class Handler {
         if (delayMillis < 0) {
             delayMillis = 0;
         }
-        return sendMessageAtTime(msg, Architect.timeMillis() + delayMillis);
+        return sendMessageAtTime(msg, ArchCore.timeMillis() + delayMillis);
     }
 
     /**

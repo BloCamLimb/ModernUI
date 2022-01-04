@@ -130,7 +130,7 @@ public final class Looper {
         final boolean logSlowDelivery = (slowDeliveryThresholdMs > 0) && (msg.when > 0);
         final boolean logSlowDispatch = (slowDispatchThresholdMs > 0);
 
-        final long dispatchStart = logSlowDelivery || logSlowDispatch ? Architect.timeMillis() : 0;
+        final long dispatchStart = logSlowDelivery || logSlowDispatch ? ArchCore.timeMillis() : 0;
         final long dispatchEnd;
         final Object token = observer == null ? null : observer.messageDispatchStarting();
         try {
@@ -138,7 +138,7 @@ public final class Looper {
             if (observer != null) {
                 observer.messageDispatched(token, msg);
             }
-            dispatchEnd = logSlowDispatch ? Architect.timeMillis() : 0;
+            dispatchEnd = logSlowDispatch ? ArchCore.timeMillis() : 0;
         } catch (Exception exception) {
             if (observer != null) {
                 observer.dispatchingThrewException(token, msg, exception);

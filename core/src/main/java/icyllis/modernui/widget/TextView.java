@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -3990,19 +3990,19 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         switch (id) {
             case ID_CUT -> {
                 CharSequence cut = mTransformed.subSequence(min, max);
-                Architect.recordMainCall(() -> Clipboard.setText(cut));
+                ArchCore.recordMainCall(() -> Clipboard.setText(cut));
                 getEditableText().delete(min, max);
                 return true;
             }
             case ID_COPY -> {
                 CharSequence copy = mTransformed.subSequence(min, max);
-                Architect.recordMainCall(() -> Clipboard.setText(copy));
+                ArchCore.recordMainCall(() -> Clipboard.setText(copy));
                 return true;
             }
             case ID_PASTE -> {
                 int aMax = max;
                 int aMin = min;
-                Architect.recordMainCall(() -> {
+                ArchCore.recordMainCall(() -> {
                     String replacement = Clipboard.getText();
                     if (replacement != null) {
                         post(() -> {

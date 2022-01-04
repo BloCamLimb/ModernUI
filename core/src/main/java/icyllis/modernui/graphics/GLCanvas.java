@@ -20,7 +20,7 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.shader.GLProgram;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.GLTexture;
@@ -56,18 +56,33 @@ import static org.lwjgl.system.MemoryUtil.*;
 
 /**
  * Modern OpenGL implementation to Canvas, handling multithreaded rendering.
+ * This requires OpenGL 4.5 core profile.
  * <p>
- * GLCanvas is highly integrated, you can't draw other things except those
- * defined in Canvas easily. This helps to build OpenGL buffers from UI thread,
- * using multiple vertex arrays, uniform buffers and vertex buffers. Later
- * calls OpenGL functions on the render thread.
+ * ModernUI Canvas is designed for high-performance real-time rendering of
+ * vector graphics with infinite precision. Thus, you can't draw other things
+ * except those defined in Canvas easily. All geometry instances will be
+ * redrawn/re-rendered every frame.
  * <p>
- * All drawing methods are recording commands on UI thread (or synchronized),
- * and {@link #draw} means calling OpenGL draw functions on the render thread.
+ * Modern UI doesn't make use of tessellation for non-primitives. Instead, we use
+ * analytic geometry algorithm in Fragment Shaders to get ideal solution with
+ * infinite precision. However, for stoke shaders, there will be a lot of discarded
+ * fragments that can not be avoided on the CPU side. And they're recomputed each
+ * frame. Especially the quadratic Bézier curve, the algorithm is very complex.
+ * And this can't draw cubic Bézier curves, the only way is through tessellation.
  * <p>
+ * This class helps to build OpenGL buffers from one thread, using multiple
+ * vertex arrays, uniform buffers and vertex buffers. All drawing methods are
+ * recording commands and must be called from a single thread. Later call
+ * {@link #draw(GLFramebuffer)} for calling OpenGL functions on the render thread.
  * The color buffer drawn to must be at index 0, and stencil buffer must be 8-bit.
  * <p>
- * Shader sources are defined in assets.
+ * For multiple off-screen rendering targets, Modern UI allocates up to four
+ * color buffers as attachments to the target framebuffer. This handles global
+ * alpha transformation.
+ * <p>
+ * For clipping, Modern UI uses stencil test as well as pre-clipping on CPU side.
+ * <p>
+ * GLSL shader sources are defined in assets.
  *
  * @author BloCamLimb
  */
@@ -287,7 +302,7 @@ public final class GLCanvas extends Canvas {
 
     @RenderThread
     public static GLCanvas initialize() {
-        Architect.checkRenderThread();
+        ArchCore.checkRenderThread();
         if (INSTANCE == null) {
             INSTANCE = new GLCanvas();
             /*POS_COLOR.setBindingDivisor(INSTANCED_BINDING, 1);
@@ -349,7 +364,7 @@ public final class GLCanvas extends Canvas {
      */
     @RenderThread
     public void setProjection(@Nonnull Matrix4 projection) {
-        Architect.checkRenderThread();
+        ArchCore.checkRenderThread();
         projection.get(mProjectionUpload.rewind());
         mMatrixUBO.upload(0, 64, memAddress(mProjectionUpload.flip()));
     }
@@ -406,8 +421,8 @@ public final class GLCanvas extends Canvas {
 
     @RenderThread
     public void draw(@Nullable GLFramebuffer framebuffer) {
-        Architect.checkRenderThread();
-        Architect.flushRenderCalls();
+        ArchCore.checkRenderThread();
+        ArchCore.flushRenderCalls();
         if (mDrawOps.isEmpty()) {
             return;
         }

@@ -19,7 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
 
@@ -92,12 +92,12 @@ public class LayoutPiece {
                 assert mAdvances != null;
             }
             if ((hint.mDescent & 0x80000000) != 0) {
-                if (Architect.isOnRenderThread()) {
+                if (ArchCore.isOnRenderThread()) {
                     mGlyphs = hint.mGlyphs;
                     mPositions = hint.mPositions;
                     assert mGlyphs != null;
                 } else {
-                    Architect.recordRenderCall(() -> {
+                    ArchCore.recordRenderCall(() -> {
                         mGlyphs = hint.mGlyphs;
                         mPositions = hint.mPositions;
                         assert mGlyphs != null;
@@ -136,10 +136,10 @@ public class LayoutPiece {
 
             if (layout) {
                 TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance);
-                if (Architect.isOnRenderThread()) {
+                if (ArchCore.isOnRenderThread()) {
                     textureWork.run();
                 } else {
-                    Architect.recordRenderCall(textureWork);
+                    ArchCore.recordRenderCall(textureWork);
                 }
             }
 
@@ -152,11 +152,11 @@ public class LayoutPiece {
             }
         }
         if (layout) {
-            if (Architect.isOnRenderThread()) {
+            if (ArchCore.isOnRenderThread()) {
                 mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
                 mPositions = positions.toFloatArray();
             } else {
-                Architect.recordRenderCall(() -> {
+                ArchCore.recordRenderCall(() -> {
                     mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
                     mPositions = positions.toFloatArray();
                 });

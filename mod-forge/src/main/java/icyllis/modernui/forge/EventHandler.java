@@ -19,7 +19,7 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.mcgui.BlurHandler;
 import icyllis.modernui.test.TestContainerMenu;
 import icyllis.modernui.textmc.TextLayoutEngine;
@@ -127,8 +127,8 @@ final class EventHandler {
         @SubscribeEvent
         static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.END) {
-                Architect.flushMainCalls();
-                Architect.flushRenderCalls();
+                ArchCore.flushMainCalls();
+                ArchCore.flushRenderCalls();
             }
         }
 

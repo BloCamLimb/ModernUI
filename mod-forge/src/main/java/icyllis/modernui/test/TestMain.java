@@ -26,7 +26,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.core.Looper;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
@@ -272,7 +272,7 @@ public class TestMain {
             return;
         try {
             Thread.currentThread().setName("Main-Thread");
-            Architect.initBackend();
+            ArchCore.initBackend();
             sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1600, 900);
             try (var c1 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
                  var bitmap1 = NativeImage.decode(null, c1);
@@ -332,7 +332,7 @@ public class TestMain {
     private static void runRenderThread() {
         final Window window = sWindow;
         window.makeCurrent();
-        Architect.initOpenGL();
+        ArchCore.initOpenGL();
         GLCanvas canvas = GLCanvas.initialize();
         ShaderManager.getInstance().reload();
         Matrix4 projection = new Matrix4();
@@ -425,7 +425,7 @@ public class TestMain {
 
         //GLFW.glfwSwapInterval(1);
 
-        long lastTime = Architect.timeMillis();
+        long lastTime = ArchCore.timeMillis();
 
         Rect screenRect = new Rect(0, 0, window.getWidth(), window.getHeight());
 
@@ -451,7 +451,7 @@ public class TestMain {
         framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
 
         while (!window.shouldClose()) {
-            long time = Architect.timeMillis();
+            long time = ArchCore.timeMillis();
             long delta = time - lastTime;
             lastTime = time;
             GLWrapper.resetFrame(window);

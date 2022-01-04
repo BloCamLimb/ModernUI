@@ -20,7 +20,7 @@ package icyllis.modernui.graphics.shader;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -71,7 +71,7 @@ public class ShaderManager {
 
     // internal use
     public void reload() {
-        Architect.checkRenderThread();
+        ArchCore.checkRenderThread();
         for (var map : mShaders.values()) {
             for (int shard : map.values()) {
                 glDeleteShader(shard);
@@ -140,7 +140,7 @@ public class ShaderManager {
      * @return the shader shard or 0 on failure
      */
     public int getShard(@Nonnull String namespace, @Nonnull String path, int type) {
-        Architect.checkRenderThread();
+        ArchCore.checkRenderThread();
         int shader = mShaders.computeIfAbsent(namespace, n -> {
             Object2IntMap<String> r = new Object2IntOpenHashMap<>();
             r.defaultReturnValue(-1);
@@ -168,7 +168,7 @@ public class ShaderManager {
             }
         }
         try (ReadableByteChannel channel = ModernUI.getInstance().getResourceAsChannel(namespace, path)) {
-            String source = Architect.readStringUTF8(channel);
+            String source = ArchCore.readStringUTF8(channel);
             if (source == null) {
                 ModernUI.LOGGER.error(MARKER, "Failed to read shader source {}:{}", namespace, path);
                 mShaders.get(namespace).putIfAbsent(path, 0);
@@ -206,7 +206,7 @@ public class ShaderManager {
     @SuppressWarnings("unchecked")
     @Nonnull
     public <T extends GLProgram> T create(@Nullable T t, int... shards) {
-        Architect.checkRenderThread();
+        ArchCore.checkRenderThread();
         int program;
         if (t != null && t.mProgram != 0) {
             program = t.mProgram;

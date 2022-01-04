@@ -20,7 +20,7 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.core.NativeImage;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -99,7 +99,7 @@ public class FontAtlas {
         for (var glyph : mGlyphs.int2ObjectEntrySet()) {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "GlyphCode {}: {}", glyph.getIntKey(), glyph.getValue());
         }
-        if (Architect.isOnRenderThread()) {
+        if (ArchCore.isOnRenderThread()) {
             try {
                 NativeImage.download(NativeImage.Format.RGBA, mTexture, false)
                         .saveDialog(NativeImage.SaveFormat.PNG, 0);
