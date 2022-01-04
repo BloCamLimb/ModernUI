@@ -27,7 +27,7 @@ import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.forge.MuiForgeApi;
 import icyllis.modernui.graphics.Canvas;
@@ -162,7 +162,7 @@ public final class UIManager extends ViewRootBase {
 
     @RenderThread
     public static void initialize() {
-        Architect.checkRenderThread();
+        ArchCore.checkRenderThread();
         if (sInstance == null) {
             final UIManager m = new UIManager();
             sInstance = m;
@@ -339,7 +339,7 @@ public final class UIManager extends ViewRootBase {
         if (delayMillis < 0) {
             delayMillis = 0;
         }
-        return mTasks.offer(TimedAction.obtain(r, Architect.timeMillis() + delayMillis));
+        return mTasks.offer(TimedAction.obtain(r, ArchCore.timeMillis() + delayMillis));
     }
 
     @Override
@@ -347,7 +347,7 @@ public final class UIManager extends ViewRootBase {
         if (delayMillis < 0) {
             delayMillis = 0;
         }
-        mAnimationTasks.offer(TimedAction.obtain(r, Architect.timeMillis() + delayMillis));
+        mAnimationTasks.offer(TimedAction.obtain(r, ArchCore.timeMillis() + delayMillis));
     }
 
     @Override
@@ -381,7 +381,7 @@ public final class UIManager extends ViewRootBase {
 
             try {
                 // 1. handle tasks
-                mUptimeMillis = Architect.timeMillis();
+                mUptimeMillis = ArchCore.timeMillis();
                 if (!mTasks.isEmpty()) {
                     // batched processing
                     mTasks.removeIf(mUiHandler);
@@ -452,7 +452,7 @@ public final class UIManager extends ViewRootBase {
      * @see MenuScreen
      */
     void onCursorPos() {
-        final long now = Architect.timeNanos();
+        final long now = ArchCore.timeNanos();
         float x = (float) minecraft.mouseHandler.xpos();
         float y = (float) minecraft.mouseHandler.ypos();
         MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_HOVER_MOVE,
@@ -478,7 +478,7 @@ public final class UIManager extends ViewRootBase {
         // and the screen must be a mui screen
         if (minecraft.getOverlay() == null && mScreen != null) {
             //ModernUI.LOGGER.info(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
-            final long now = Architect.timeNanos();
+            final long now = ArchCore.timeNanos();
             float x = (float) minecraft.mouseHandler.xpos();
             float y = (float) minecraft.mouseHandler.ypos();
             int buttonState = 0;
@@ -512,7 +512,7 @@ public final class UIManager extends ViewRootBase {
     // Hook method, DO NOT CALL
     public static void onScroll(double scrollX, double scrollY) {
         if (sInstance.mScreen != null) {
-            final long now = Architect.timeNanos();
+            final long now = ArchCore.timeNanos();
             float x = (float) sInstance.minecraft.mouseHandler.xpos();
             float y = (float) sInstance.minecraft.mouseHandler.ypos();
             MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_SCROLL,
@@ -533,7 +533,7 @@ public final class UIManager extends ViewRootBase {
     void onPostKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
         if (mScreen != null) {
             int action = event.getAction() == GLFW_RELEASE ? KeyEvent.ACTION_UP : KeyEvent.ACTION_DOWN;
-            KeyEvent keyEvent = KeyEvent.obtain(Architect.timeNanos(), action, event.getKey(), 0,
+            KeyEvent keyEvent = KeyEvent.obtain(ArchCore.timeNanos(), action, event.getKey(), 0,
                     event.getModifiers(), event.getScanCode(), 0);
             enqueueInputEvent(keyEvent);
             if (!mDecor.isFocused() && mDecor.hasFocus()) {
@@ -849,7 +849,7 @@ public final class UIManager extends ViewRootBase {
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             final long lastFrameTime = mFrameTimeMillis;
-            mFrameTimeMillis = Architect.timeMillis();
+            mFrameTimeMillis = ArchCore.timeMillis();
             final long deltaMillis = mFrameTimeMillis - lastFrameTime;
             mElapsedTimeMillis += deltaMillis;
             // coordinates UI thread

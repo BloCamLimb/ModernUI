@@ -27,7 +27,6 @@ import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import org.github.jamm.MemoryMeter;
-import org.lwjgl.glfw.GLFW;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -45,7 +44,7 @@ public class TestBenchmark {
         new Runner(new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
                 .shouldFailOnError(true).shouldDoGC(true)
-                /*.jvmArgs("-server")*/.build()).run();
+                .jvmArgs("-XX:+UseFMA").build()).run();
         MemoryMeter meter = MemoryMeter.builder().build();
         ModernUI.LOGGER.info("CompoundTag: {}", TextUtils.binaryCompact((int) meter.measureDeep(sCompoundTag)));
         ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact((int) meter.measureDeep(sDataSet)));
@@ -80,19 +79,29 @@ public class TestBenchmark {
         sCompoundTag.put("networks", listTag);
     }
 
+    public static boolean USE = true;
+    public static double a = 0.2, b = 0.3, c = 0.7;
+
     @Benchmark
-    public static void sysMilli() {
-        long v = System.currentTimeMillis();
+    public static void testFMA() {
+        double a = TestBenchmark.a;
+        double b = TestBenchmark.b;
+        double c = TestBenchmark.b;
+        for (int i = 0; i < 1000; i++) {
+            if (USE) {
+                double d = Math.fma(a, b, c);
+            }
+        }
     }
 
     @Benchmark
-    public static void sysNano() {
-        long v = System.nanoTime() / 10000000;
-    }
-
-    @Benchmark
-    public static void sysGLFW() {
-        long v = (long) GLFW.glfwGetTime() * 1000;
+    public static void testFormal() {
+        double a = TestBenchmark.a;
+        double b = TestBenchmark.b;
+        double c = TestBenchmark.b;
+        for (int i = 0; i < 1000; i++) {
+            double d = a * b + c;
+        }
     }
 
     /*@Benchmark

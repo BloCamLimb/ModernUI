@@ -23,7 +23,7 @@ import icyllis.modernui.animation.*;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.shader.ShaderManager;
 import icyllis.modernui.graphics.texture.TextureManager;
@@ -83,7 +83,7 @@ public class BejeweledTwist {
     public BejeweledTwist() {
         Thread.currentThread().setName("Main-Thread");
         ModernUI.initialize();
-        Architect.initBackend();
+        ArchCore.initBackend();
         mWindow = Window.create("Bejeweled Twist", Window.State.WINDOWED, 1600, 900);
         try (var c1 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
              var bitmap1 = NativeImage.decode(null, c1);
@@ -208,7 +208,7 @@ public class BejeweledTwist {
 
     private void runRenderThread() {
         mWindow.makeCurrent();
-        Architect.initOpenGL();
+        ArchCore.initOpenGL();
         GLCanvas canvas = GLCanvas.initialize();
         ShaderManager.getInstance().reload();
         GLFW.glfwSwapInterval(1);
@@ -223,9 +223,9 @@ public class BejeweledTwist {
         GLWrapper.glEnable(GL_MULTISAMPLE);
         GLWrapper.glDisable(GL_DEPTH_TEST);
 
-        long lastTime = Architect.timeMillis();
+        long lastTime = ArchCore.timeMillis();
         while (!mWindow.shouldClose()) {
-            long time = Architect.timeMillis();
+            long time = ArchCore.timeMillis();
             long delta = time - lastTime;
             lastTime = time;
             GLWrapper.resetFrame(mWindow);

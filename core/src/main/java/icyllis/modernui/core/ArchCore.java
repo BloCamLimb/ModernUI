@@ -44,9 +44,9 @@ import static org.lwjgl.system.MemoryUtil.*;
 /**
  * The core class for the window system and graphics backend.
  */
-public final class Architect {
+public final class ArchCore {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Architect");
+    public static final Marker MARKER = MarkerManager.getMarker("ArchCore");
 
     private static volatile Thread sMainThread;
     private static volatile Thread sRenderThread;
@@ -59,7 +59,7 @@ public final class Architect {
      */
     public static void initBackend() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
-        if (GLFW.glfwSetErrorCallback(Architect::onError) != null || !GLFW.glfwInit()) {
+        if (GLFW.glfwSetErrorCallback(ArchCore::onError) != null || !GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
         }
         sMainThread = Thread.currentThread();
@@ -114,7 +114,7 @@ public final class Architect {
      * Call after creating a Window on render thread.
      */
     public static void initOpenGL() {
-        synchronized (Architect.class) {
+        synchronized (ArchCore.class) {
             if (sRenderThread == null) {
                 sRenderThread = Thread.currentThread();
             } else {

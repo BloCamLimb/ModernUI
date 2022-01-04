@@ -20,7 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.Architect;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.util.Pool;
@@ -399,7 +399,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     private void exitHoverTargets() {
         if (mHoveredSelf || mFirstHoverTarget != null) {
-            final long now = Architect.timeNanos();
+            final long now = ArchCore.timeNanos();
             MotionEvent event = MotionEvent.obtain(now,
                     MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
             dispatchHoverEvent(event);
@@ -420,7 +420,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 }
                 target.recycle();
 
-                final long now = Architect.timeNanos();
+                final long now = ArchCore.timeNanos();
                 MotionEvent event = MotionEvent.obtain(now,
                         MotionEvent.ACTION_HOVER_EXIT, 0.0f, 0.0f, 0);
                 view.dispatchHoverEvent(event);
@@ -649,7 +649,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         if (target != null) {
             boolean syntheticEvent = false;
             if (event == null) {
-                final long time = Architect.timeNanos();
+                final long time = ArchCore.timeNanos();
                 event = MotionEvent.obtain(time,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 syntheticEvent = true;
@@ -671,7 +671,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             if (target.child == view) {
                 target.recycle();
 
-                final long now = Architect.timeNanos();
+                final long now = ArchCore.timeNanos();
                 MotionEvent event = MotionEvent.obtain(now,
                         MotionEvent.ACTION_CANCEL, 0.0f, 0.0f, 0);
                 view.dispatchTouchEvent(event);
