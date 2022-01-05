@@ -30,17 +30,31 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A canvas is used to draw contents for View, using shaders, such as
- * rectangles, round rectangles, circular arcs, lines, images etc.
+ * A Canvas is used to draw something for View via shaders, such as rectangles,
+ * round rectangles, circular arcs, lines, curves, images, laid-out glyphs etc.
  * <p>
- * A canvas contains a matrix/clip stack, build vertex/uniform buffers
- * and record draw commands for each primitives. It also controls the
- * color/stencil buffer. However, where to draw is undefined. For GUI,
- * all the contents are eventually drawn to the UI framebuffer.
+ * A Canvas contains a private state stack, builds global buffers and records
+ * "draw" commands for each primitive. The specified rendering target is
+ * implementation-dependant.
  * <p>
- * Note: there's no depth buffer in the UI framebuffer so depth test
- * appears to be disabled. All layers are considered translucent and
- * drawn from far to near, you cannot handle the z-order manually.
+ * Modern UI Canvas is designed for high-performance real-time rendering of
+ * vector graphics with infinite precision. Thus, you can't draw other things
+ * except those defined in Canvas easily. All geometry instances will be
+ * redrawn/re-rendered every frame.
+ * <p>
+ * Modern UI doesn't make use of tessellation for non-primitives. Instead, we use
+ * analytic geometry algorithm in Fragment Shaders to get ideal solution with
+ * infinite precision. However, for stoke shaders, there will be a lot of discarded
+ * fragments that can not be avoided on the CPU side. And they're recomputed each
+ * frame. Especially the quadratic Bézier curve, the algorithm is very complex.
+ * And this can't draw cubic Bézier curves, the only way is through tessellation.
+ * <p>
+ * Note: Modern UI supports multiple off-screen rendering targets. There's no
+ * depth buffer in the UI framebuffer, so depth test appears to be disabled.
+ * All layers are considered translucent and drawn from far to near, you cannot
+ * handle the z-order inside.
+ * <p>
+ * This API is stable, but there will be more drawing methods.
  *
  * @since 1.6
  */
@@ -266,7 +280,7 @@ public abstract class Canvas {
 
     /**
      * Return true if the specified rectangle, after being transformed by the
-     * current matrix, would lie completely outside of the current clip. Call
+     * current matrix, would lie completely outside the current clip. Call
      * this to check if an area you intend to draw into is clipped out (and
      * therefore you can skip making the draw calls). Note that all drawing
      * methods call this method by default.
@@ -281,7 +295,7 @@ public abstract class Canvas {
 
     /**
      * Return true if the specified rectangle, after being transformed by the
-     * current matrix, would lie completely outside of the current clip. Call
+     * current matrix, would lie completely outside the current clip. Call
      * this to check if an area you intend to draw into is clipped out (and
      * therefore you can skip making the draw calls). Note that all drawing
      * methods call this method by default.
@@ -514,14 +528,14 @@ public abstract class Canvas {
     /**
      * Draw a series of round lines.
      * <p>
-     * When discontinuous, each line is taken from 4 consecutive values in the pts array. Thus
+     * When discontinuous, each line is taken from 4 consecutive values in the pts array. Thus,
      * to draw 1 line, the array must contain at least 4 values. This is logically the same as
      * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
      * drawLine(pts[4], pts[5], pts[6], pts[7]) and so on.
      * <p>
      * When continuous, the first line is taken from 4 consecutive values in the pts
      * array, and each remaining line is taken from last 2 values and next 2 values in the array.
-     * Thus to draw 1 line, the array must contain at least 4 values. This is logically the same as
+     * Thus, to draw 1 line, the array must contain at least 4 values. This is logically the same as
      * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
      * drawLine(pts[2], pts[3], pts[4], pts[5]) and so on.
      *

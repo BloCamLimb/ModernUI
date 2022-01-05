@@ -20,6 +20,7 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.graphics.texture.TextureManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 
@@ -27,6 +28,7 @@ import javax.annotation.Nonnull;
  * This class represents OpenGL 2D textures at high-level, which is used for drawing
  * and processing in the application layer.
  */
+@ApiStatus.Experimental
 public class Image {
 
     private final GLTexture mTexture;
