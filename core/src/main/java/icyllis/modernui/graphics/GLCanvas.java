@@ -58,7 +58,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  * Modern OpenGL implementation to Canvas, handling multithreaded rendering.
  * This requires OpenGL 4.5 core profile.
  * <p>
- * ModernUI Canvas is designed for high-performance real-time rendering of
+ * Modern UI Canvas is designed for high-performance real-time rendering of
  * vector graphics with infinite precision. Thus, you can't draw other things
  * except those defined in Canvas easily. All geometry instances will be
  * redrawn/re-rendered every frame.
