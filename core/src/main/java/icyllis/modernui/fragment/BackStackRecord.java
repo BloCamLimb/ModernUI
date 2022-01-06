@@ -28,8 +28,11 @@ import java.util.ArrayList;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 
-final class BackStackRecord extends FragmentTransaction implements FragmentManager.BackStackEntry,
-        FragmentManager.OpGenerator {
+/**
+ * Entry of an operation on the fragment back stack.
+ */
+final class BackStackRecord extends FragmentTransaction implements
+        FragmentManager.BackStackEntry, FragmentManager.OpGenerator {
 
     final FragmentManager mManager;
 
@@ -52,10 +55,10 @@ final class BackStackRecord extends FragmentTransaction implements FragmentManag
             sb.append(mIndex);
         }
         if (mName != null) {
-            sb.append(" ");
+            sb.append(' ');
             sb.append(mName);
         }
-        sb.append("}");
+        sb.append('}');
         return sb.toString();
     }
 
@@ -288,9 +291,9 @@ final class BackStackRecord extends FragmentTransaction implements FragmentManag
         if (mCommitted) throw new IllegalStateException("commit already called");
         if (FragmentManager.DEBUG) {
             LOGGER.debug(FragmentManager.MARKER, "Commit: " + this);
-            PrintWriter w = new PrintWriter(new LogWriter(FragmentManager.MARKER));
-            dump("  ", w);
-            w.close();
+            try (var w = new PrintWriter(new LogWriter(FragmentManager.MARKER))) {
+                dump("  ", w);
+            }
         }
         mCommitted = true;
         if (mAddToBackStack) {
@@ -629,7 +632,7 @@ final class BackStackRecord extends FragmentTransaction implements FragmentManag
         }
     }
 
-    private static boolean isFragmentPostponed(Op op) {
+    private static boolean isFragmentPostponed(@Nonnull Op op) {
         final Fragment fragment = op.mFragment;
         return fragment != null && fragment.mAdded && fragment.mView != null && !fragment.mDetached
                 && !fragment.mHidden && fragment.isPostponed();

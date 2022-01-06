@@ -956,6 +956,23 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         mCalled = true;
     }
 
+    /**
+     * Begin postponed transitions after {@link #postponeEnterTransition()} was called.
+     * If postponeEnterTransition() was called, you must call startPostponedEnterTransition()
+     * or {@link FragmentManager#executePendingTransactions()} to complete the FragmentTransaction.
+     * If postponement was interrupted with {@link FragmentManager#executePendingTransactions()},
+     * before {@code startPostponedEnterTransition()}, animations may not run or may execute
+     * improperly.
+     */
+    public void startPostponedEnterTransition() {
+        if (mAnimationInfo == null || !ensureAnimationInfo().mEnterTransitionPostponed) {
+            // If you never called postponeEnterTransition(), there's nothing for us to do
+            return;
+        }
+        if (mHost == null) {
+            ensureAnimationInfo().mEnterTransitionPostponed = false;
+        }
+    }
 
     /**
      * Print the Fragments's state into the given stream.
