@@ -581,6 +581,14 @@ public class Handler {
         return mQueue;
     }
 
+    /**
+     * Returns whether this handler was queued from the current thread.
+     */
+    public final boolean isCurrentThread() {
+        Looper looper = Looper.myLooper();
+        return looper != null && looper.mQueue == mQueue;
+    }
+
     @Override
     public String toString() {
         return "Handler (" + getClass().getName() + ") {"

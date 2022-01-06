@@ -35,8 +35,10 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.MainThread;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,7 +47,7 @@ import javax.annotation.Nullable;
  * Class used to run a message loop for a thread.  Threads by default do
  * not have a message loop associated with them; to create one, call
  * {@link #prepare} in the thread that is to run the loop, and then
- * {@link #run} to have it process messages until the loop is stopped.
+ * {@link #loop} to have it process messages until the loop is stopped.
  *
  * <p>Most interaction with a message loop is through the
  * {@link Handler} class.
@@ -86,7 +88,7 @@ public final class Looper {
      * <p>
      * This gives you a chance to create handlers that then reference
      * this looper, before actually starting the loop. Be sure to call
-     * {@link #run()} after calling this method, and end it by calling
+     * {@link #loop()} after calling this method, and end it by calling
      * {@link #quit()}.
      *
      * @throws RuntimeException initializes twice
@@ -115,6 +117,7 @@ public final class Looper {
     /**
      * Poll and deliver single message, return true if the outer loop should continue.
      */
+    @ApiStatus.Internal
     public static boolean poll(@Nonnull final Looper me) {
         Message msg = me.mQueue.next(); // might block
         if (msg == null) {
@@ -167,10 +170,11 @@ public final class Looper {
     }
 
     /**
-     * Run the message queue in this thread. Be sure to call
-     * {@link #quit()} to end the loop.
+     * Enter the looper in this thread.
      */
-    public static void run() {
+    @ApiStatus.Internal
+    @Nonnull
+    public static Looper enter() {
         final Looper me = myLooper();
         if (me == null) {
             throw new RuntimeException("No Looper; Looper.prepare() wasn't called on this thread.");
@@ -181,6 +185,15 @@ public final class Looper {
         }
         me.mInLoop = true;
         me.mSlowDeliveryDetected = false;
+        return me;
+    }
+
+    /**
+     * Run the message queue in this thread. Be sure to call
+     * {@link #quit()} to end the loop.
+     */
+    public static void loop() {
+        final Looper me = enter();
         //noinspection StatementWithEmptyBody
         while (poll(me));
     }
@@ -193,7 +206,9 @@ public final class Looper {
      *
      * @param w the main window.
      */
-    public static void run(@Nonnull Window w) {
+    @ApiStatus.Internal
+    @MainThread
+    public static void loop(@Nonnull Window w) {
         final Looper me = new Looper(w.getHandle());
         sThreadLocal.set(me);
         sMainLooper = me;
@@ -259,7 +274,7 @@ public final class Looper {
     /**
      * Quits the looper.
      * <p>
-     * Causes the {@link #run} method to terminate without processing any
+     * Causes the {@link #loop} method to terminate without processing any
      * more messages in the message queue.
      * </p><p>
      * Any attempt to post messages to the queue after the looper is asked to quit will fail.
@@ -279,7 +294,7 @@ public final class Looper {
     /**
      * Quits the looper safely.
      * <p>
-     * Causes the {@link #run} method to terminate as soon as all remaining messages
+     * Causes the {@link #loop} method to terminate as soon as all remaining messages
      * in the message queue that are already due to be delivered have been handled.
      * However pending delayed messages with due times in the future will not be
      * delivered before the loop terminates.

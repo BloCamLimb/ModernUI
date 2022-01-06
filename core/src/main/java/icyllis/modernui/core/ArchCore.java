@@ -18,6 +18,7 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.GLWrapper;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -49,7 +50,8 @@ public final class ArchCore {
     public static final Marker MARKER = MarkerManager.getMarker("ArchCore");
 
     private static volatile Thread sMainThread;
-    private static volatile Thread sRenderThread;
+    private static Thread sRenderThread;
+    private static Thread sUiThread;
 
     private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
@@ -142,8 +144,24 @@ public final class ArchCore {
         GLWrapper.initialize(caps);
     }
 
-    public static boolean isInitialized() {
+    public static boolean hasRenderThread() {
         return sRenderThread != null;
+    }
+
+    @UiThread
+    public static void initUiThread() {
+        synchronized (ArchCore.class) {
+            if (sUiThread == null) {
+                sUiThread = Thread.currentThread();
+            } else {
+                throw new IllegalStateException("Initialize twice");
+            }
+        }
+    }
+
+    public static void checkUiThread() {
+        if (Thread.currentThread() != sUiThread)
+            throw new IllegalStateException("Not called from UI thread");
     }
 
     public static long timeNanos() {
