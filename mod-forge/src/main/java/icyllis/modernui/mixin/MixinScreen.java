@@ -19,7 +19,7 @@
 package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.mcgui.BlurHandler;
+import icyllis.modernui.forge.BlurHandler;
 import net.minecraft.client.gui.screens.Screen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

@@ -19,7 +19,7 @@
 package icyllis.modernui.mixin;
 
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.mcgui.TooltipRenderer;
+import icyllis.modernui.forge.TooltipRenderer;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTextTooltip;
 import net.minecraft.client.renderer.MultiBufferSource;

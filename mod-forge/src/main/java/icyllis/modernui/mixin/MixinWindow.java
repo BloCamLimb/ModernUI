@@ -64,7 +64,7 @@ public abstract class MixinWindow {
         }
         // See standards
         ViewConfiguration.get().setViewScale(newScale * 0.5f);
-        if (ArchCore.isInitialized() && newScale != oldScale) {
+        if (ArchCore.hasRenderThread() && newScale != oldScale) {
             TextLayoutEngine.getInstance().reload();
         }
         MuiForgeApi.dispatchOnDisplayResize(getWidth(), getHeight(), newScale, oldScale);

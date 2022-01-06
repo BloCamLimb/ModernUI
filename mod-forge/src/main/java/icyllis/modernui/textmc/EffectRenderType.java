@@ -38,30 +38,30 @@ public class EffectRenderType extends RenderType {
 
     static {
         STATES = ImmutableList.of(
-                RenderStateShard.NO_TEXTURE,
-                RenderStateShard.TRANSLUCENT_TRANSPARENCY,
-                RenderStateShard.LEQUAL_DEPTH_TEST,
-                RenderStateShard.CULL,
-                RenderStateShard.LIGHTMAP,
-                RenderStateShard.NO_OVERLAY,
-                RenderStateShard.NO_LAYERING,
-                RenderStateShard.MAIN_TARGET,
-                RenderStateShard.DEFAULT_TEXTURING,
-                RenderStateShard.COLOR_DEPTH_WRITE,
-                RenderStateShard.DEFAULT_LINE
+                NO_TEXTURE,
+                TRANSLUCENT_TRANSPARENCY,
+                LEQUAL_DEPTH_TEST,
+                CULL,
+                LIGHTMAP,
+                NO_OVERLAY,
+                NO_LAYERING,
+                MAIN_TARGET,
+                DEFAULT_TEXTURING,
+                COLOR_DEPTH_WRITE,
+                DEFAULT_LINE
         );
         SEE_THROUGH_STATES = ImmutableList.of(
-                RenderStateShard.NO_TEXTURE,
-                RenderStateShard.TRANSLUCENT_TRANSPARENCY,
-                RenderStateShard.NO_DEPTH_TEST,
-                RenderStateShard.CULL,
-                RenderStateShard.LIGHTMAP,
-                RenderStateShard.NO_OVERLAY,
-                RenderStateShard.NO_LAYERING,
-                RenderStateShard.MAIN_TARGET,
-                RenderStateShard.DEFAULT_TEXTURING,
-                RenderStateShard.COLOR_WRITE,
-                RenderStateShard.DEFAULT_LINE
+                NO_TEXTURE,
+                TRANSLUCENT_TRANSPARENCY,
+                NO_DEPTH_TEST,
+                CULL,
+                LIGHTMAP,
+                NO_OVERLAY,
+                NO_LAYERING,
+                MAIN_TARGET,
+                DEFAULT_TEXTURING,
+                COLOR_WRITE,
+                DEFAULT_LINE
         );
     }
 

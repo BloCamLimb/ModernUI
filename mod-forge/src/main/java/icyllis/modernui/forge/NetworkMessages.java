@@ -19,13 +19,11 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.mcgui.UIManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.RunningOnDifferentThreadException;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.api.distmarker.Dist;
@@ -75,9 +73,9 @@ public final class NetworkMessages {
         return sNetwork.dispatch(buf);
     }
 
-    // this class doesn't allow to load on dedicated server
+    // this class doesn't load on dedicated server
     @OnlyIn(Dist.CLIENT)
-    public static final class C {
+    private static final class C {
 
         private C() {
         }
@@ -100,7 +98,8 @@ public final class NetworkMessages {
 
         @SuppressWarnings("deprecation")
         private static void openMenu(@Nonnull FriendlyByteBuf payload, @Nonnull Supplier<LocalPlayer> player) {
-            Minecraft.getInstance().execute(() -> {
+            payload.retain();
+            Minecraft.getInstance().tell(() -> {
                 LocalPlayer p = player.get();
                 if (p != null) {
                     final int containerId = payload.readVarInt();
@@ -113,16 +112,17 @@ public final class NetworkMessages {
                         final AbstractContainerMenu menu = type.create(containerId, p.getInventory(), payload);
                         ResourceLocation key = Registry.MENU.getKey(type);
                         if (key != null) {
-                            success = MuiForgeApi.sUIManager.openMenu(p, menu, key.getNamespace());
+                            success = UIManager.sInstance.openMenu(p, menu, key.getNamespace());
                         }
                     }
                     if (!success) {
                         p.closeContainer(); // close server menu
                     }
                 }
-                payload.release();
+                if (!payload.release()) {
+                    throw new IllegalStateException("Bad de-allocation");
+                }
             });
-            throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
     }
 }

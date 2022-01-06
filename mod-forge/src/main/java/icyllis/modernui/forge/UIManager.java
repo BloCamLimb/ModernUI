@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.mcgui;
+package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
@@ -28,14 +28,12 @@ import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.forge.ModernUIForge;
-import icyllis.modernui.forge.MuiForgeApi;
+import icyllis.modernui.core.NativeImage;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.core.NativeImage;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
@@ -74,7 +72,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.LongConsumer;
@@ -84,7 +81,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**
- * Manage UI thread and connect Minecraft to Modern UI view system at bottom level.
+ * Manage UI thread and connect Minecraft to Modern UI view system at most bottom level.
  */
 @ApiStatus.Internal
 @NotThreadSafe
@@ -92,10 +89,10 @@ import static org.lwjgl.glfw.GLFW.*;
 public final class UIManager extends ViewRootBase {
 
     // logger marker
-    public static final Marker MARKER = MarkerManager.getMarker("UIManager");
+    static final Marker MARKER = MarkerManager.getMarker("UIManager");
 
     // config values
-    public static volatile boolean sPlaySoundOnLoaded;
+    static volatile boolean sPlaySoundOnLoaded;
 
     // the global instance
     static volatile UIManager sInstance;
@@ -161,31 +158,27 @@ public final class UIManager extends ViewRootBase {
     }
 
     @RenderThread
-    public static void initialize() {
+    static void initialize() {
         ArchCore.checkRenderThread();
         if (sInstance == null) {
             final UIManager m = new UIManager();
             sInstance = m;
-            if (m.mCanvas == null) {
-                m.mCanvas = GLCanvas.initialize();
-                glEnable(GL_MULTISAMPLE);
-                m.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
-                m.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
-                m.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
-                m.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
-                // no depth buffer
-                m.mFramebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
-                m.mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
-                new Thread(m::run, "UI thread").start();
-                ModernUI.LOGGER.info(MARKER, "UI system initialized");
-            }
-            try {
-                Field f = MuiForgeApi.class.getDeclaredField("sUIManager");
-                f.setAccessible(true);
-                f.set(null, m);
-            } catch (NoSuchFieldException | IllegalAccessException e) {
-                e.printStackTrace();
-            }
+            assert m.mCanvas == null;
+            m.mCanvas = GLCanvas.initialize();
+            glEnable(GL_MULTISAMPLE);
+            GLFramebuffer framebuffer = m.mFramebuffer;
+            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
+            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
+            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
+            // no depth buffer
+            framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+            framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+            new Thread(() -> {
+                sInstance.init();
+                sInstance.loop();
+            }, "UI thread").start();
+            ModernUI.LOGGER.info(MARKER, "UI system initialized");
         }
     }
 
@@ -200,8 +193,7 @@ public final class UIManager extends ViewRootBase {
         minecraft.setScreen(new SimpleScreen(this));
     }
 
-    // Internal method
-    public boolean openMenu(@Nonnull LocalPlayer p, @Nonnull AbstractContainerMenu menu, String namespace) {
+    boolean openMenu(@Nonnull LocalPlayer p, @Nonnull AbstractContainerMenu menu, String namespace) {
         if (!minecraft.isSameThread()) {
             throw new IllegalStateException("Not on main thread");
         }
@@ -222,7 +214,7 @@ public final class UIManager extends ViewRootBase {
      *
      * @return drawing time in milliseconds
      */
-    public long getElapsedTime() {
+    long getElapsedTime() {
         return mElapsedTimeMillis;
     }
 
@@ -231,22 +223,17 @@ public final class UIManager extends ViewRootBase {
      *
      * @return frame time in milliseconds
      */
-    public long getFrameTime() {
+    long getFrameTime() {
         return mFrameTimeMillis;
     }
 
     @Nullable
-    public ScreenCallback getCallback() {
+    ScreenCallback getCallback() {
         return mCallback;
     }
 
-    public FrameLayout getDecorView() {
+    FrameLayout getDecorView() {
         return mDecor;
-    }
-
-    @Override
-    public void checkThread() {
-        super.checkThread();
     }
 
     @Nonnull
@@ -358,7 +345,9 @@ public final class UIManager extends ViewRootBase {
     }
 
     @UiThread
-    private void run() {
+    private void init() {
+        long startTime = System.nanoTime();
+        ArchCore.initUiThread();
         initBase();
         mDecor = new DecorView();
         // make the root view clickable through, so that views can lose focus
@@ -375,35 +364,8 @@ public final class UIManager extends ViewRootBase {
         // kick-start
         scheduleTraversals();
         doTraversal();
-        ModernUI.LOGGER.info(MARKER, "View system initialized");
-        for (; ; ) {
-            LockSupport.park();
-
-            try {
-                // 1. handle tasks
-                mUptimeMillis = ArchCore.timeMillis();
-                if (!mTasks.isEmpty()) {
-                    // batched processing
-                    mTasks.removeIf(mUiHandler);
-                }
-
-                // 2. do input events
-                doProcessInputEvents();
-
-                // 3. do animations
-                mAnimationHandler.accept(mFrameTimeMillis);
-                if (!mAnimationTasks.isEmpty()) {
-                    mAnimationTasks.removeIf(mUiHandler);
-                }
-
-                // 4. do traversal
-                doTraversal();
-            } catch (Throwable t) {
-                ModernUI.LOGGER.error(MARKER, "An error occurred on UI thread", t);
-                Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(t, "Exception on UI thread"));
-                throw t;
-            }
-        }
+        startTime = System.nanoTime() - startTime;
+        ModernUI.LOGGER.info(MARKER, "View system initialized in {}ms", startTime / 1_000_000);
 
         // test stuff
         /*Paint paint = Paint.take();
@@ -441,6 +403,40 @@ public final class UIManager extends ViewRootBase {
         mCanvas.drawCircle(450, 30, 6, paint);
         mCanvas.drawCircle(510, 90, 6, paint);
         mCanvas.drawCircle(570, 30, 6, paint);*/
+    }
+
+    @SuppressWarnings("InfiniteLoopStatement")
+    @UiThread
+    private void loop() {
+        for (; ; ) {
+            LockSupport.park();
+
+            try {
+                // 1. handle tasks
+                mUptimeMillis = ArchCore.timeMillis();
+                if (!mTasks.isEmpty()) {
+                    // batched processing
+                    mTasks.removeIf(mUiHandler);
+                }
+
+                // 2. do input events
+                doProcessInputEvents();
+
+                // 3. do animations
+                mAnimationHandler.accept(mFrameTimeMillis);
+                if (!mAnimationTasks.isEmpty()) {
+                    mAnimationTasks.removeIf(mUiHandler);
+                }
+
+                // 4. do traversal
+                doTraversal();
+            } catch (Throwable t) {
+                ModernUI.LOGGER.error(MARKER, "An error occurred on UI thread", t);
+                dump();
+                Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(t, "Exception on UI thread"));
+                throw t;
+            }
+        }
     }
 
     /**
@@ -599,12 +595,12 @@ public final class UIManager extends ViewRootBase {
                 break;
 
             case GLFW_KEY_P:
-                printDebugInfo();
+                dump();
                 break;
         }
     }
 
-    private void printDebugInfo() {
+    private void dump() {
         StringBuilder builder = new StringBuilder();
         builder.append("Modern UI debug info\n");
 
@@ -711,7 +707,7 @@ public final class UIManager extends ViewRootBase {
                 } catch (Throwable t) {
                     ModernUI.LOGGER.fatal(MARKER,
                             "Failed to invoke rendering callbacks, please report the issue to related mods", t);
-                    printDebugInfo();
+                    dump();
                     throw t;
                 }
                 glDisable(GL_STENCIL_TEST);

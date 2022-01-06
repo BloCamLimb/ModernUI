@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,11 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.test.trash;
+package icyllis.modernui.test;
 
 import icyllis.modernui.animation.AnimatorSet;
 import icyllis.modernui.animation.ObjectAnimator;
-import icyllis.modernui.mcgui.Animation;
+import icyllis.modernui.test.Animation;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

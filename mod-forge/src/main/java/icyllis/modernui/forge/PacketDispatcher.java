@@ -42,7 +42,7 @@ import java.util.function.Consumer;
  *
  * @see NetworkHandler#dispatch(FriendlyByteBuf)
  */
-public class PacketDispatcher {
+public final class PacketDispatcher {
 
     private static final Pool<PacketDispatcher> sPool = Pools.concurrent(5);
 

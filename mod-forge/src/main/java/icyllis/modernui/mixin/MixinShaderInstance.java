@@ -22,7 +22,7 @@ import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLWrapper;
-import icyllis.modernui.mcgui.CanvasForge;
+import icyllis.modernui.forge.CanvasForge;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.renderer.ShaderInstance;
 import org.spongepowered.asm.mixin.Final;

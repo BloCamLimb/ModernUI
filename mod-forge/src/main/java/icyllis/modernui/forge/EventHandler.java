@@ -20,7 +20,6 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.mcgui.BlurHandler;
 import icyllis.modernui.test.TestContainerMenu;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import net.minecraft.client.ProgressOption;

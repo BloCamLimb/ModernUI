@@ -20,9 +20,6 @@ package icyllis.modernui.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.mcgui.BlurHandler;
-import icyllis.modernui.mcgui.TooltipRenderer;
-import icyllis.modernui.mcgui.UIManager;
 import icyllis.modernui.text.FontAtlas;
 import icyllis.modernui.text.GlyphManager;
 import icyllis.modernui.textmc.ModernFontRenderer;

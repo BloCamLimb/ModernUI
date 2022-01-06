@@ -21,7 +21,6 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.mcgui.UIManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -52,9 +51,6 @@ public final class MuiForgeApi {
     private static final CopyOnWriteArrayList<OnDisplayResizeListener> sOnDisplayResizeListeners =
             new CopyOnWriteArrayList<>();
 
-    // injected by the client framework
-    static UIManager sUIManager;
-
     private MuiForgeApi() {
     }
 
@@ -79,7 +75,7 @@ public final class MuiForgeApi {
      * @param provider a provider to create a menu on server side
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
-     * @see icyllis.modernui.mcgui.OpenMenuEvent
+     * @see OpenMenuEvent
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider) {
         openMenu(player, provider, (Consumer<FriendlyByteBuf>) null);
@@ -98,7 +94,7 @@ public final class MuiForgeApi {
      *                 the menu supplier that registered on client
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
-     * @see icyllis.modernui.mcgui.OpenMenuEvent
+     * @see OpenMenuEvent
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nonnull BlockPos pos) {
         openMenu(player, provider, buf -> buf.writeBlockPos(pos));
@@ -116,7 +112,7 @@ public final class MuiForgeApi {
      * @param writer   a data writer to send additional data to client, this will be passed
      *                 to the menu supplier (IContainerFactory) that registered on client
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
-     * @see icyllis.modernui.mcgui.OpenMenuEvent
+     * @see OpenMenuEvent
      */
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
@@ -150,7 +146,7 @@ public final class MuiForgeApi {
      */
     @OnlyIn(Dist.CLIENT)
     public static long getElapsedTime() {
-        return sUIManager.getElapsedTime();
+        return UIManager.sInstance.getElapsedTime();
     }
 
     /**
@@ -160,7 +156,7 @@ public final class MuiForgeApi {
      */
     @OnlyIn(Dist.CLIENT)
     public static long getFrameTime() {
-        return sUIManager.getFrameTime();
+        return UIManager.sInstance.getFrameTime();
     }
 
     @OnlyIn(Dist.CLIENT)

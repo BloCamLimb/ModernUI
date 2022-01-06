@@ -25,8 +25,6 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.mcgui.Animation;
-import icyllis.modernui.mcgui.Applier;
 import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.Spanned;

@@ -19,7 +19,7 @@
 package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.mcgui.TooltipRenderer;
+import icyllis.modernui.forge.TooltipRenderer;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientBundleTooltip;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

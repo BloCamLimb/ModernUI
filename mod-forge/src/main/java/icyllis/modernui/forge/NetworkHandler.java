@@ -36,8 +36,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.DistExecutor.SafeCallable;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.forgespi.language.IModFileInfo;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
@@ -48,16 +50,23 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
- * For handling a network channel faster, you can create an instance for your mod.
+ * This class is an ideal alternative to {@link NetworkRegistry} for experienced
+ * developers, you can create at most an instance (i.e. register a channel) on
+ * <code>FMLCommonSetupEvent</code> for your mod.
+ * <p>
+ * The purpose of this class is to provide a faster network message handler than Forge.
+ * Allows the message to be decoded and processed directly on the Netty thread.
+ * <b>Thus, you must be careful with thread-safety, and memory management.</b>
+ * If you are not familiar with these, please continue to use the API provided by Forge.
  */
 public class NetworkHandler {
 
     private static final HashMap<String, NetworkHandler> sNetworks = new HashMap<>();
 
-    private final ResourceLocation mName;
+    protected final ResourceLocation mName;
 
-    private final String mProtocol;
-    private final boolean mOptional;
+    protected final String mProtocol;
+    protected final boolean mOptional;
 
     @Nullable
     private final ClientListener mClientListener;
@@ -67,46 +76,48 @@ public class NetworkHandler {
 
     /**
      * Create a network handler of a mod. Note that this is a distribution-sensitive operation,
-     * you must be careful with the security of class loading.
+     * you must be careful with the class loading.
      *
-     * @param modid    the mod-id
-     * @param cli      listener for S->C messages, the inner supplier must be in another non-anonymous class
+     * @param id       the dependent mod-id
+     * @param cli      listener for S->C messages, the inner supplier must be in separated non-anonymous class
      * @param sli      listener for C->S messages, it is on logical server side
      * @param protocol network protocol, leaving empty will request the same version of mod(s)
      * @param optional when true it will accept if the channel absent on one side, or request same protocol
      * @throws IllegalArgumentException invalid mod-id
      */
-    public NetworkHandler(@Nonnull String modid, @Nullable Supplier<Supplier<ClientListener>> cli,
+    public NetworkHandler(@Nonnull String id, @Nullable Supplier<SafeCallable<ClientListener>> cli,
                           @Nullable ServerListener sli, @Nonnull String protocol, boolean optional) {
+        IModFileInfo file = null;
         // modid only starts with [a-z]
-        if (!modid.startsWith("_") && ModList.get().getModFileById(modid) == null) {
-            throw new IllegalArgumentException("No mod found that given by modid " + modid);
+        if (!id.startsWith("_") && (file = ModList.get().getModFileById(id)) == null) {
+            throw new IllegalArgumentException("No mod found that given by modid " + id);
         }
         if (protocol.isEmpty()) {
-            protocol = ModList.get().getModFileById(modid).getMods().stream()
-                    .map(iModInfo -> iModInfo.getVersion().getQualifier())
+            assert file != null;
+            protocol = file.getMods().stream()
+                    .map(mod -> mod.getVersion().getQualifier())
                     .collect(Collectors.joining(","));
         }
         mProtocol = protocol;
         mOptional = optional;
 
-        // Just register it to FML, we handle messages from a mixin hook
-        NetworkRegistry.ChannelBuilder
-                .named(mName = new ResourceLocation(ModernUI.ID, modid))
-                .networkProtocolVersion(this::getProtocol)
-                .clientAcceptedVersions(this::testServerProtocolOnClient)
-                .serverAcceptedVersions(this::testClientProtocolOnServer)
-                .eventNetworkChannel();
-        if (cli != null && FMLEnvironment.dist.isClient()) {
-            mClientListener = cli.get().get();
+        // just register to Forge, we handle messages from a mixin hook
+        NetworkRegistry.newEventChannel(
+                mName = new ResourceLocation(ModernUI.ID, id),
+                this::getProtocol,
+                this::testServerProtocolOnClient,
+                this::testClientProtocolOnServer);
+        if (cli != null) {
+            mClientListener = DistExecutor.safeCallWhenOn(Dist.CLIENT, cli);
         } else {
             mClientListener = null;
         }
         mServerListener = sli;
 
+        // Only lock on WRITE
         synchronized (sNetworks) {
-            // NetworkRegistry has duplication detection
-            sNetworks.put(modid, this);
+            // NetworkRegistry has safety check
+            sNetworks.put(id, this);
         }
     }
 
@@ -125,7 +136,7 @@ public class NetworkHandler {
      * @param protocol the protocol of this channel sent from server side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    private boolean testServerProtocolOnClient(@Nonnull String protocol) {
+    protected boolean testServerProtocolOnClient(@Nonnull String protocol) {
         return mOptional && protocol.equals(NetworkRegistry.ABSENT) || mProtocol.equals(protocol);
     }
 
@@ -135,35 +146,37 @@ public class NetworkHandler {
      * @param protocol the protocol of this channel sent from client side
      * @return {@code true} to accept the protocol, {@code false} otherwise
      */
-    private boolean testClientProtocolOnServer(@Nonnull String protocol) {
+    protected boolean testClientProtocolOnServer(@Nonnull String protocol) {
         return mOptional && protocol.equals(NetworkRegistry.ABSENT) || mProtocol.equals(protocol);
     }
 
+    // INTERNAL
     @OnlyIn(Dist.CLIENT)
     public static void onCustomPayload(@Nonnull ClientboundCustomPayloadPacket packet,
                                        @Nonnull Supplier<LocalPlayer> player) {
         ResourceLocation id = packet.getIdentifier();
         if (id.getNamespace().equals(ModernUI.ID)) {
-            FriendlyByteBuf payload = packet.getInternalData();
+            FriendlyByteBuf rawData = packet.getInternalData();
             NetworkHandler it = sNetworks.get(id.getPath());
             if (it != null && it.mClientListener != null) {
-                it.mClientListener.handle(payload.readShort(), payload, player);
+                it.mClientListener.handle(rawData.readShort(), rawData, player);
             }
-            payload.release();
+            rawData.release();
             throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
     }
 
+    // INTERNAL
     public static void onCustomPayload(@Nonnull ServerboundCustomPayloadPacket packet,
                                        @Nonnull Supplier<ServerPlayer> player) {
         ResourceLocation id = packet.getIdentifier();
         if (id.getNamespace().equals(ModernUI.ID)) {
-            FriendlyByteBuf payload = packet.getInternalData();
+            FriendlyByteBuf rawData = packet.getInternalData();
             NetworkHandler it = sNetworks.get(id.getPath());
             if (it != null && it.mServerListener != null) {
-                it.mServerListener.handle(payload.readShort(), payload, player);
+                it.mServerListener.handle(rawData.readShort(), rawData, player);
             }
-            payload.release();
+            rawData.release();
             throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
     }
@@ -359,11 +372,14 @@ public class NetworkHandler {
         return PacketDispatcher.obtain(mName, data);
     }
 
+    /**
+     * Callback for handling a server-to-client network message.
+     */
     @FunctionalInterface
     public interface ClientListener {
 
         /**
-         * Handle a server-to-client network message.
+         * Callback for handling a server-to-client network message.
          * <p>
          * This method is invoked on the Netty-IO thread, you need to consume or retain
          * the payload and then process it further through thread scheduling. In addition
@@ -372,20 +388,24 @@ public class NetworkHandler {
          * In the latter two cases, you must manually release the payload.
          * <p>
          * Note that the player supplier may return null if the connection is interrupted.
-         * In this case, the message handling should be ignored.
+         * In this case, the message handling should be ignored. If the message is handled
+         * now, then player must not return null.
          *
-         * @param index   message index
-         * @param payload message body
-         * @param player  the supplier to get the current client player, may return null
+         * @param index   the message index
+         * @param payload the message body
+         * @param player  the callback to get the current client player, may return null in the future
          */
         void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull Supplier<LocalPlayer> player);
     }
 
+    /**
+     * Callback for handling a client-to-server network message.
+     */
     @FunctionalInterface
     public interface ServerListener {
 
         /**
-         * Handle a client-to-server network message.
+         * Callback for handling a client-to-server network message.
          * <p>
          * This method is invoked on the Netty-IO thread, you need to consume or retain
          * the payload and then process it further through thread scheduling. In addition
@@ -393,12 +413,17 @@ public class NetworkHandler {
          * to prevent the payload from being released after this method call.
          * In the latter two cases, you must manually release the payload.
          * <p>
-         * Note that the player supplier may return null if the connection is interrupted.
-         * In this case, the message handling should be ignored.
+         * Note that the player supplier return the sender of the message, and may return
+         * null if the connection is interrupted. In this case, the message handling should
+         * be ignored. If the message is handled now, then player must not return null.
+         * <p>
+         * You should do safety check with player before making changes to the game world.
+         * Any player who can enter the server may hack the protocol to send packets.
+         * Do not trust any player UUID that requests permissions in the packet payload.
          *
-         * @param index   message index
-         * @param payload message body
-         * @param player  the supplier to get the current server player, may return null
+         * @param index   the message index
+         * @param payload the message body
+         * @param player  the callback to get the current server player (sender), may return null in the future
          */
         void handle(short index, @Nonnull FriendlyByteBuf payload, @Nonnull Supplier<ServerPlayer> player);
     }

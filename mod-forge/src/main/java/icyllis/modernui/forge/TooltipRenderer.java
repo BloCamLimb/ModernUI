@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.mcgui;
+package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -30,13 +30,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.network.chat.FormattedText;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.BufferUtils;
 
 import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
-import java.util.ArrayList;
 import java.util.List;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -45,21 +43,21 @@ import static icyllis.modernui.graphics.GLWrapper.*;
  * An extension that replaces vanilla tooltip style.
  */
 @ApiStatus.Internal
-public class TooltipRenderer {
+public final class TooltipRenderer {
 
     // config value
-    public static volatile boolean sTooltip = true;
+    static volatile boolean sTooltip = true;
 
-    public static int[] sFillColor = new int[4];
-    public static int[] sStrokeColor = new int[4];
+    static int[] sFillColor = new int[4];
+    static int[] sStrokeColor = new int[4];
 
     // space between mouse and tooltip
-    public static final int TOOLTIP_SPACE = 12;
-    public static final int H_BORDER = 4;
-    public static final int V_BORDER = 4;
+    private static final int TOOLTIP_SPACE = 12;
+    private static final int H_BORDER = 4;
+    private static final int V_BORDER = 4;
     //public static final int LINE_HEIGHT = 10;
     // extra space after first line
-    public static final int TITLE_GAP = 2;
+    private static final int TITLE_GAP = 2;
 
     //private static final List<FormattedText> sTempTexts = new ArrayList<>();
 
@@ -71,7 +69,7 @@ public class TooltipRenderer {
     private static boolean sDraw;
     public static float sAlpha;
 
-    public static void update(long deltaMillis) {
+    static void update(long deltaMillis) {
         if (sDraw) {
             if (sAlpha < 1) {
                 sAlpha = Math.min(sAlpha + deltaMillis * 0.01f, 1);
@@ -80,6 +78,9 @@ public class TooltipRenderer {
         } else if (sAlpha > 0) {
             sAlpha = Math.max(sAlpha - deltaMillis * 0.01f, 0);
         }
+    }
+
+    private TooltipRenderer() {
     }
 
     /*public static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull List<? extends FormattedText> texts,
@@ -252,10 +253,10 @@ public class TooltipRenderer {
         sTempTexts.clear();
     }*/
 
-    public static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull Window window, @Nonnull PoseStack poseStack,
-                                   @Nonnull List<ClientTooltipComponent> list, int mouseX, int mouseY,
-                                   @Nonnull Font font, float screenWidth, float screenHeight,
-                                   double cursorX, double cursorY, @Nonnull ItemRenderer itemRenderer) {
+    static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull Window window, @Nonnull PoseStack poseStack,
+                            @Nonnull List<ClientTooltipComponent> list, int mouseX, int mouseY,
+                            @Nonnull Font font, float screenWidth, float screenHeight,
+                            double cursorX, double cursorY, @Nonnull ItemRenderer itemRenderer) {
         sDraw = true;
 
         final float partialX = (float) (cursorX - (int) cursorX);

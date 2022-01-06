@@ -22,8 +22,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.mcgui.OpenMenuEvent;
-import icyllis.modernui.mcgui.UIManager;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettings;
 import icyllis.modernui.test.TestContainerMenu;
@@ -142,15 +140,18 @@ final class Registration {
         }
         bytes = ArrayUtils.addAll(bytes, ModList.get().getModFileById(ModernUI.ID).getLicense()
                 .getBytes(StandardCharsets.UTF_8));
-
+        if (bytes == null) {
+            throw new IllegalStateException("Modern UI is broken");
+        }
         NetworkMessages.sNetwork = new NetworkHandler("_root", () -> NetworkMessages::msg,
-                null, bytes == null ? "BROKEN" : digest(bytes), true);
+                null, digest(bytes), true);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 
         // give it a probe
         if (MuiForgeApi.isServerStarted()) {
-            ModernUI.LOGGER.fatal("Walking");
+            assert true : "YES";
+            assert false : "NO";
         }
     }
 

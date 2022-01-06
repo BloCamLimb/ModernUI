@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.mcgui;
+package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
@@ -47,10 +47,10 @@ public enum BlurHandler {
     /**
      * Config values
      */
-    public static volatile boolean sBlurEffect;
-    public static volatile float sAnimationDuration;
-    public static volatile float sBlurRadius;
-    public static int[] sBackgroundColor = new int[4];
+    static volatile boolean sBlurEffect;
+    static volatile float sAnimationDuration;
+    static volatile float sBlurRadius;
+    static final int[] sBackgroundColor = new int[4];
 
     //FIXME blur shader working
     private static boolean debugKey = true;
@@ -65,7 +65,7 @@ public enum BlurHandler {
     private final int[] mBackgroundColor = new int[4];
 
     /**
-     * If is playing animation
+     * If it is playing animation
      */
     private boolean mFadingIn;
 
@@ -83,7 +83,7 @@ public enum BlurHandler {
     /**
      * Use blur shader in game renderer post-processing.
      */
-    public void count(@Nullable Screen nextScreen) {
+    void count(@Nullable Screen nextScreen) {
         if (minecraft.level == null) {
             return;
         }
@@ -136,7 +136,7 @@ public enum BlurHandler {
     /**
      * Internal method, to re-blur after resources (including shaders) reloaded in the pause menu.
      */
-    public void forceBlur() {
+    void forceBlur() {
         // no need to check if is excluded, this method is only called by opened ModernUI Screen
         if (!sBlurEffect) {
             return;
@@ -151,7 +151,7 @@ public enum BlurHandler {
         }
     }
 
-    public void loadBlacklist(@Nullable List<? extends String> names) {
+    void loadBlacklist(@Nullable List<? extends String> names) {
         mBlacklist.clear();
         if (names != null) {
             for (String s : names) {
@@ -171,7 +171,7 @@ public enum BlurHandler {
     /**
      * Render tick, should called before rendering things
      */
-    public void update(long time) {
+    void update(long time) {
         if (mFadingIn) {
             float p = Math.min(time / sAnimationDuration, 1.0f);
             if (mBlurring) {

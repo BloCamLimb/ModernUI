@@ -312,7 +312,7 @@ public class TestMain {
                 }
             }, "Choose-Color").start();*/
 
-            Looper.run(sWindow);
+            Looper.loop(sWindow);
 
             renderThread.interrupt();
         } finally {
