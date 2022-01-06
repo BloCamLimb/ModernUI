@@ -18,7 +18,7 @@
 
 package icyllis.modernui.mixin;
 
-import icyllis.modernui.mcgui.UIManager;
+import icyllis.modernui.forge.UIManager;
 import net.minecraft.client.MouseHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

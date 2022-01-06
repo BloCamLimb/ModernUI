@@ -32,7 +32,7 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nonnull;
 
 @ApiStatus.Experimental
-public class ProjectBuilderModel extends BakedModelWrapper<BakedModel> {
+final class ProjectBuilderModel extends BakedModelWrapper<BakedModel> {
 
     public final BakedModel main;
     public final BakedModel cube;

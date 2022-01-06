@@ -22,7 +22,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.mcgui.ScreenCallback;
+import icyllis.modernui.forge.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;

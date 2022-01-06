@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.mcgui;
+package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.platform.Window;
@@ -63,7 +63,7 @@ import java.util.Queue;
 import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
- * CanvasForge is an extension to Canvas, which provides more drawing
+ * CanvasForge is an extension to {@link Canvas}, which provides more drawing
  * methods used in Minecraft on UI thread.
  *
  * @author BloCamLimb
@@ -122,13 +122,13 @@ public final class CanvasForge {
     /**
      * Draw an item stack. The client player may affect the rendering results.
      * <p>
-     * A paint may be used to tint the item, but multi-color is ignored.
+     * A paint may be used to tint the item, but multicolor is ignored.
      *
      * @param stack the item stack to draw
      * @param x     the center x pos
      * @param y     the center y pos
-     * @param size  the size in pixels, it's usually 32 sip
-     * @param paint the paint used to draw the item, can be null.
+     * @param size  the size in pixels, it's generally 32 sip
+     * @param paint the paint used to draw the item, can be null
      */
     public void drawItemStack(@Nonnull ItemStack stack, float x, float y, float size, @Nullable Paint paint) {
         final GLCanvas canvas = mCanvas;
@@ -143,7 +143,7 @@ public final class CanvasForge {
 
         canvas.restore();
 
-        final int color = paint == null ? -1 : paint.getColor();
+        final int color = paint == null ? ~0 : paint.getColor();
 
         DrawItem t = sDrawItemPool.acquire();
         if (t == null) {
@@ -336,6 +336,7 @@ public final class CanvasForge {
         }
     }
 
+    // fast rotate
     public interface FastShader {
 
         void fastApply(@Nonnull GLCanvas canvas, @Nonnull Object2IntMap<String> units);

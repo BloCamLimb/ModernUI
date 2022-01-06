@@ -28,7 +28,10 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 @OnlyIn(Dist.CLIENT)
-public class OptiFineIntegration {
+public final class OptiFineIntegration {
+
+    private OptiFineIntegration() {
+    }
 
     public static void openShadersGui() {
         Minecraft minecraft = Minecraft.getInstance();

@@ -25,7 +25,7 @@ import net.minecraftforge.client.IItemRenderProperties;
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
 
-public class ProjectBuilderItem extends Item {
+final class ProjectBuilderItem extends Item {
 
     ProjectBuilderItem(@Nonnull Properties props) {
         super(props);

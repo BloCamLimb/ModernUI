@@ -58,7 +58,7 @@ import java.util.*;
 import java.util.concurrent.Executor;
 
 /**
- * Mod context class.
+ * Mod class.
  */
 @Mod(ModernUI.ID)
 public final class ModernUIForge extends ModernUI {
@@ -233,22 +233,17 @@ public final class ModernUIForge extends ModernUI {
     @Nonnull
     @Override
     public ViewManager getViewManager() {
-        return MuiForgeApi.sUIManager.getDecorView();
-    }
-
-    @Override
-    public void checkUiThread() {
-        MuiForgeApi.sUIManager.checkThread();
+        return UIManager.sInstance.getDecorView();
     }
 
     @Override
     public boolean postOnUiThread(@Nonnull Runnable action) {
-        return MuiForgeApi.sUIManager.postDelayed(action, 0);
+        return UIManager.sInstance.postDelayed(action, 0);
     }
 
     @Override
     public boolean postOnUiThread(@Nonnull Runnable action, long delayMillis) {
-        return MuiForgeApi.sUIManager.postDelayed(action, delayMillis);
+        return UIManager.sInstance.postDelayed(action, delayMillis);
     }
 
     public static boolean isDeveloperMode() {

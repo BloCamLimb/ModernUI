@@ -34,7 +34,7 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nonnull;
 
 @ApiStatus.Experimental
-public class ProjectBuilderRenderer extends BlockEntityWithoutLevelRenderer {
+final class ProjectBuilderRenderer extends BlockEntityWithoutLevelRenderer {
 
     ProjectBuilderRenderer() {
         super(Minecraft.getInstance().getBlockEntityRenderDispatcher(), Minecraft.getInstance().getEntityModels());

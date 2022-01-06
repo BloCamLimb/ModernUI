@@ -22,7 +22,6 @@ import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.mixin.MixinClientLanguage;
-import icyllis.modernui.mcgui.Color3i;
 import icyllis.modernui.text.GlyphManager;
 import icyllis.modernui.text.TexturedGlyph;
 import icyllis.modernui.view.ViewConfiguration;

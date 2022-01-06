@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,8 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.mcgui;
+package icyllis.modernui.forge;
 
+import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import net.minecraftforge.api.distmarker.Dist;
@@ -50,7 +52,9 @@ public abstract class ScreenCallback {
      * Note that this callback object can be restarted even it was dead. But in this case,
      * you need to pay special attention to the lifecycle, since it is not associated with this object.
      */
+    @MainThread
     public final void startLifecycle() {
+        ArchCore.checkMainThread();
         UIManager.sInstance.openGui(this);
     }
 
