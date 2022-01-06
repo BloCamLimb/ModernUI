@@ -18,7 +18,7 @@
 
 package icyllis.modernui.fragment;
 
-import icyllis.modernui.lifecycle.ViewModelStoreOwner;
+import icyllis.modernui.core.Handler;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
@@ -43,10 +43,6 @@ import java.io.PrintWriter;
  *     the need to manually call
  *     {@link FragmentManager#popBackStackImmediate()} when handling the system
  *     back button.</li>
- *     <li><strong>{@link ViewModelStoreOwner}</strong>: Removes the need
- *     for your {@link FragmentController} to call
- *     {@link FragmentController#retainNestedNonConfig()} or
- *     {@link FragmentController#restoreAllState(Parcelable, FragmentManagerNonConfig)}.</li>
  * </ul>
  *
  * @param <E> the type of object that's currently hosting the fragments. An instance of this
@@ -55,16 +51,22 @@ import java.io.PrintWriter;
 public abstract class FragmentHostCallback<E> implements FragmentContainer {
 
     @Nonnull
+    final Handler mHandler;
+    @Nonnull
     final FragmentManager mFragmentManager = new FragmentManager();
+
+    public FragmentHostCallback(@Nonnull Handler handler) {
+        mHandler = handler;
+    }
 
     /**
      * Print internal state into the given stream.
      *
      * @param prefix Desired prefix to prepend at each line of output.
-     * @param fd The raw file descriptor that the dump is being sent to.
+     * @param fd     The raw file descriptor that the dump is being sent to.
      * @param writer The PrintWriter to which you should dump your state. This will be closed
-     *                  for you after you return.
-     * @param args additional arguments to the dump request.
+     *               for you after you return.
+     * @param args   additional arguments to the dump request.
      */
     public void onDump(@Nonnull String prefix, @Nullable FileDescriptor fd,
                        @Nonnull PrintWriter writer, @Nullable String... args) {

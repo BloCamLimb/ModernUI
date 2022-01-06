@@ -27,7 +27,6 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
 import it.unimi.dsi.fastutil.booleans.BooleanArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -55,7 +54,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * developer guide.
  */
 public final class FragmentManager {
-
+    // ForceInline
     static final boolean DEBUG = false;
     static final Marker MARKER = MarkerManager.getMarker("FragmentManager");
     static boolean USE_STATE_MANAGER = true;
@@ -176,6 +175,9 @@ public final class FragmentManager {
     private ArrayList<BackStackRecord> mTmpRecords;
     private BooleanArrayList mTmpIsPop;
     private ArrayList<Fragment> mTmpAddedFragments;
+
+    // Postponed transactions.
+    private ArrayList<StartEnterTransitionListener> mPostponedTransactions;
 
     private FragmentManagerViewModel mViewModel;
 
@@ -1399,18 +1401,17 @@ public final class FragmentManager {
      * a postponed transaction has been started with
      * {@link Fragment#startPostponedEnterTransition()}
      */
-    @SuppressWarnings("WeakerAccess") /* synthetic access */
     void scheduleCommit() {
-        /*synchronized (mPendingActions) {
+        synchronized (mPendingActions) {
             boolean postponeReady =
                     mPostponedTransactions != null && !mPostponedTransactions.isEmpty();
             boolean pendingReady = mPendingActions.size() == 1;
             if (postponeReady || pendingReady) {
-                mHost.getHandler().removeCallbacks(mExecCommit);
-                mHost.getHandler().post(mExecCommit);
+                mHost.mHandler.removeCallbacks(mExecCommit);
+                mHost.mHandler.post(mExecCommit);
                 updateOnBackPressedCallbackEnabled();
             }
-        }*/
+        }
     }
 
     int allocBackStackIndex() {
@@ -1436,9 +1437,9 @@ public final class FragmentManager {
             }
         }
 
-        /*if (Looper.myLooper() != mHost.getHandler().getLooper()) {
+        if (!mHost.mHandler.isCurrentThread()) {
             throw new IllegalStateException("Must be called from main thread of fragment host");
-        }*/
+        }
 
         if (!allowStateLoss) {
             checkStateLoss();
@@ -1516,7 +1517,7 @@ public final class FragmentManager {
      */
     private void executePostponedTransaction(@Nullable ArrayList<BackStackRecord> records,
                                              @Nullable BooleanArrayList isRecordPop) {
-        /*int numPostponed = mPostponedTransactions == null ? 0 : mPostponedTransactions.size();
+        int numPostponed = mPostponedTransactions == null ? 0 : mPostponedTransactions.size();
         for (int i = 0; i < numPostponed; i++) {
             StartEnterTransitionListener listener = mPostponedTransactions.get(i);
             if (records != null && !listener.mIsBack) {
@@ -1538,14 +1539,14 @@ public final class FragmentManager {
                 if (records != null && !listener.mIsBack
                         && (index = records.indexOf(listener.mRecord)) != -1
                         && isRecordPop != null
-                        && isRecordPop.get(index)) {
+                        && isRecordPop.getBoolean(index)) {
                     // This is popping a postponed transaction
                     listener.cancelTransaction();
                 } else {
                     listener.completeTransaction();
                 }
             }
-        }*/
+        }
     }
 
     /**
@@ -1793,13 +1794,13 @@ public final class FragmentManager {
             boolean isPostponed = record.isPostponed()
                     && !record.interactsWith(records, i + 1, endIndex);
             if (isPostponed) {
-                /*if (mPostponedTransactions == null) {
+                if (mPostponedTransactions == null) {
                     mPostponedTransactions = new ArrayList<>();
                 }
                 StartEnterTransitionListener listener =
                         new StartEnterTransitionListener(record, isPop);
                 mPostponedTransactions.add(listener);
-                record.setOnStartPostponedListener(listener);*/
+                record.setOnStartPostponedListener(listener);
 
                 // roll back the transaction
                 if (isPop) {
@@ -1837,7 +1838,6 @@ public final class FragmentManager {
      *                       This is false when the transaction is canceled when a postponed
      *                       transaction is popped.
      */
-    @SuppressWarnings("WeakerAccess") /* synthetic access */
     void completeExecute(@Nonnull BackStackRecord record, boolean isPop, boolean runTransitions,
                          boolean moveToState) {
         if (isPop) {
@@ -1978,11 +1978,11 @@ public final class FragmentManager {
                 controller.forcePostponedExecutePendingOperations();
             }
         } else {
-            /*if (mPostponedTransactions != null) {
+            if (mPostponedTransactions != null) {
                 while (!mPostponedTransactions.isEmpty()) {
                     mPostponedTransactions.remove(0).completeTransaction();
                 }
-            }*/
+            }
         }
     }
 
@@ -2043,7 +2043,7 @@ public final class FragmentManager {
                 didSomething |= mPendingActions.get(i).generateOps(records, isPop);
             }
             mPendingActions.clear();
-            //mHost.getHandler().removeCallbacks(mExecCommit);
+            mHost.mHandler.removeCallbacks(mExecCommit);
         }
         return didSomething;
     }
@@ -2490,15 +2490,16 @@ public final class FragmentManager {
      * An add or pop transaction to be scheduled for the UI thread.
      */
     interface OpGenerator {
+
         /**
-         * Generate transactions to add to {@code records} and whether or not the transaction is
+         * Generate transactions to add to {@code records} and whether the transaction is
          * an add or pop to {@code isRecordPop}.
          * <p>
          * records and isRecordPop must be added equally so that each transaction in records
-         * matches the boolean for whether or not it is a pop in isRecordPop.
+         * matches the boolean for whether it is a pop in isRecordPop.
          *
          * @param records     A list to add transactions to.
-         * @param isRecordPop A list to add whether or not the transactions added to records is
+         * @param isRecordPop A list to add whether the transactions added to <code>records</code> is
          *                    a pop transaction.
          * @return true if something was added or false otherwise.
          */
@@ -2511,6 +2512,7 @@ public final class FragmentManager {
      * transactions that will be popped if anything can be popped.
      */
     private class PopBackStackState implements OpGenerator {
+
         final String mName;
         final int mId;
         final int mFlags;
@@ -2535,6 +2537,80 @@ public final class FragmentManager {
                 }
             }
             return popBackStackState(records, isRecordPop, mName, mId, mFlags);
+        }
+    }
+
+    /**
+     * A listener for a postponed transaction. This waits until
+     * {@link Fragment#startPostponedEnterTransition()} is called or a transaction is started
+     * that interacts with this one, based on interactions with the fragment container.
+     */
+    static class StartEnterTransitionListener implements Fragment.OnStartEnterTransitionListener {
+
+        final boolean mIsBack;
+        final BackStackRecord mRecord;
+        private int mNumPostponed;
+
+        StartEnterTransitionListener(@Nonnull BackStackRecord record, boolean isBack) {
+            mIsBack = isBack;
+            mRecord = record;
+        }
+
+        /**
+         * Called from {@link Fragment#startPostponedEnterTransition()}, this decreases the
+         * number of Fragments that are postponed. This may cause the transaction to schedule
+         * to finish running and run transitions and animations.
+         */
+        @Override
+        public void onStartEnterTransition() {
+            mNumPostponed--;
+            if (mNumPostponed != 0) {
+                return;
+            }
+            mRecord.mManager.scheduleCommit();
+        }
+
+        /**
+         * Called from {@link Fragment#
+         * setOnStartEnterTransitionListener(Fragment.OnStartEnterTransitionListener)}, this
+         * increases the number of fragments that are postponed as part of this transaction.
+         */
+        @Override
+        public void startListening() {
+            mNumPostponed++;
+        }
+
+        /**
+         * @return true if there are no more postponed fragments as part of the transaction.
+         */
+        public boolean isReady() {
+            return mNumPostponed == 0;
+        }
+
+        /**
+         * Completes the transaction and start the animations and transitions. This may skip
+         * the transitions if this is called before all fragments have called
+         * {@link Fragment#startPostponedEnterTransition()}.
+         */
+        void completeTransaction() {
+            final boolean canceled;
+            canceled = mNumPostponed > 0;
+            FragmentManager manager = mRecord.mManager;
+            for (Fragment fragment : manager.getFragments()) {
+                fragment.setOnStartEnterTransitionListener(null);
+                if (canceled && fragment.isPostponed()) {
+                    fragment.startPostponedEnterTransition();
+                }
+            }
+            mRecord.mManager.completeExecute(mRecord, mIsBack, !canceled, true);
+        }
+
+        /**
+         * Cancels this transaction instead of completing it. That means that the state isn't
+         * changed, so the pop results in no change to the state.
+         */
+        void cancelTransaction() {
+            mRecord.mManager.completeExecute(mRecord, mIsBack, false, false);
         }
     }
 }

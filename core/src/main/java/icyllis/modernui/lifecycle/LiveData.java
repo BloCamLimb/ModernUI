@@ -20,6 +20,7 @@ package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.ArchCore;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -179,7 +180,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     public void observe(@Nonnull LifecycleOwner owner, @Nonnull Observer<? super T> observer) {
-        ModernUI.getInstance().checkUiThread();
+        ArchCore.checkUiThread();
         if (owner.getLifecycle().getCurrentState() == Lifecycle.State.DESTROYED) {
             // ignore
             return;
@@ -212,7 +213,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     public void observeForever(@Nonnull Observer<? super T> observer) {
-        ModernUI.getInstance().checkUiThread();
+        ArchCore.checkUiThread();
         AlwaysActiveObserver wrapper = new AlwaysActiveObserver(observer);
         ObserverWrapper existing = mObservers.putIfAbsent(wrapper);
         if (existing instanceof LiveData.LifecycleBoundObserver) {
@@ -232,7 +233,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     public void removeObserver(@Nonnull final Observer<? super T> observer) {
-        ModernUI.getInstance().checkUiThread();
+        ArchCore.checkUiThread();
         ObserverWrapper removed = mObservers.remove(observer);
         if (removed == null) {
             return;
@@ -248,7 +249,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     public void removeObservers(@Nonnull final LifecycleOwner owner) {
-        ModernUI.getInstance().checkUiThread();
+        ArchCore.checkUiThread();
         for (var entry : mObservers) {
             if (entry.isAttachedTo(owner)) {
                 removeObserver(entry.mObserver);
@@ -293,7 +294,7 @@ public abstract class LiveData<T> {
      */
     @UiThread
     protected void setValue(T value) {
-        ModernUI.getInstance().checkUiThread();
+        ArchCore.checkUiThread();
         mVersion++;
         mData = value;
         dispatchingValue(null);
