@@ -93,11 +93,14 @@ public final class Looper {
      *
      * @throws RuntimeException initializes twice
      */
-    public static void prepare() {
+    @Nonnull
+    public static Looper prepare() {
         if (sThreadLocal.get() != null) {
             throw new RuntimeException("Only one Looper may be created per thread");
         }
-        sThreadLocal.set(new Looper(0));
+        final Looper looper = new Looper(0);
+        sThreadLocal.set(looper);
+        return looper;
     }
 
     /**
