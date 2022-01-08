@@ -18,11 +18,11 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.forge.UICallback;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.forge.ScreenCallback;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
@@ -32,7 +32,7 @@ import javax.annotation.Nonnull;
 
 import static icyllis.modernui.view.ViewConfiguration.dp;
 
-public class TestUI extends ScreenCallback {
+public class TestUI extends UICallback {
 
     @Override
     protected void onCreate() {

@@ -18,12 +18,12 @@
 
 package icyllis.modernui.forge;
 
-import icyllis.modernui.ModernUI;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.api.distmarker.Dist;
@@ -39,7 +39,7 @@ import java.util.function.Supplier;
  */
 public final class NetworkMessages {
 
-    private static final int S2C_OPEN_MENU = 1;
+    private static final int S2C_OPEN_MENU = 0;
 
     static NetworkHandler sNetwork;
 
@@ -62,15 +62,14 @@ public final class NetworkMessages {
         return sNetwork.dispatcher(buf);
     }*/
 
-    @Nonnull
-    static PacketDispatcher openMenu(int containerId, int menuId, @Nullable Consumer<FriendlyByteBuf> writer) {
+    static void openMenu(int containerId, int menuId, @Nullable Consumer<FriendlyByteBuf> writer, ServerPlayer p) {
         FriendlyByteBuf buf = NetworkHandler.buffer(S2C_OPEN_MENU);
         buf.writeVarInt(containerId);
         buf.writeVarInt(menuId);
         if (writer != null) {
             writer.accept(buf);
         }
-        return sNetwork.dispatch(buf);
+        sNetwork.sendToPlayer(buf, p);
     }
 
     // this class doesn't load on dedicated server
@@ -98,29 +97,20 @@ public final class NetworkMessages {
 
         @SuppressWarnings("deprecation")
         private static void openMenu(@Nonnull FriendlyByteBuf payload, @Nonnull Supplier<LocalPlayer> player) {
+            final int containerId = payload.readVarInt();
+            // No barrier, SAFE
+            final MenuType<?> type = Registry.MENU.byIdOrThrow(payload.readVarInt());
             payload.retain();
-            Minecraft.getInstance().tell(() -> {
-                LocalPlayer p = player.get();
+            Minecraft.getInstance().execute(() -> {
+                final LocalPlayer p = player.get();
                 if (p != null) {
-                    final int containerId = payload.readVarInt();
-                    final int menuId = payload.readVarInt();
-                    final MenuType<?> type = Registry.MENU.byId(menuId);
-                    boolean success = false;
-                    if (type == null) {
-                        ModernUI.LOGGER.warn(UIManager.MARKER, "Trying to open invalid screen for menu id: {}", menuId);
-                    } else {
-                        final AbstractContainerMenu menu = type.create(containerId, p.getInventory(), payload);
-                        ResourceLocation key = Registry.MENU.getKey(type);
-                        if (key != null) {
-                            success = UIManager.sInstance.openMenu(p, menu, key.getNamespace());
-                        }
-                    }
-                    if (!success) {
-                        p.closeContainer(); // close server menu
-                    }
+                    final AbstractContainerMenu menu = type.create(containerId, p.getInventory(), payload);
+                    final ResourceLocation key = Registry.MENU.getKey(type);
+                    assert key != null;
+                    UIManager.sInstance.start(p, menu, key);
                 }
                 if (!payload.release()) {
-                    throw new IllegalStateException("Bad de-allocation");
+                    throw new IllegalStateException();
                 }
             });
         }

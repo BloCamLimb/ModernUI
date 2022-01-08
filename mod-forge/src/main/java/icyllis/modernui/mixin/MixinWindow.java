@@ -21,6 +21,7 @@ package icyllis.modernui.mixin;
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.forge.MuiForgeApi;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.textmc.TextLayoutEngine;
@@ -67,6 +68,6 @@ public abstract class MixinWindow {
         if (ArchCore.hasRenderThread() && newScale != oldScale) {
             TextLayoutEngine.getInstance().reload();
         }
-        MuiForgeApi.dispatchOnDisplayResize(getWidth(), getHeight(), newScale, oldScale);
+        ModernUIForge.dispatchOnDisplayResize(getWidth(), getHeight(), newScale, oldScale);
     }
 }

@@ -19,53 +19,56 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.widget.FrameLayout;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 
 /**
- * Callback for handling user interface lifecycle events.
+ * Callback for handling user interface lifecycle events. Methods will be invoked
+ * on UI thread unless otherwise specified.
  * <p>
- * Most methods are callbacks that will be invoked on UI thread. To initiate this on
- * the client side, call {@link #startLifecycle()} from client main thread.
- * In this case, this is served as a local interaction model, the server will not
- * intersect with this before. Otherwise, initiate this with a network model.
- *
- * @see OpenMenuEvent#setCallback(ScreenCallback)
+ * To initiate this on the client side, call {@link #startLifecycle()} from client
+ * main thread. In this case, this is served as a local interaction model, the server
+ * will not intersect with this before. Otherwise, initiate this with a network model
+ * via {@link OpenMenuEvent#setCallback(UICallback)}.
  */
 @OnlyIn(Dist.CLIENT)
-public abstract class ScreenCallback {
-
-    protected ScreenCallback() {
-    }
+@UiThread
+public abstract class UICallback {
 
     /**
-     * Start the lifecycle of application user interface with this callback and create views.
+     * Start the lifecycle of user interface with this callback and create views.
      * This method must be called from client main thread.
      * <p>
      * This is served as a local interaction model, the server will not intersect with this before.
      * <p>
-     * Note that this callback object can be restarted even it was dead. But in this case,
-     * you need to pay special attention to the lifecycle, since it is not associated with this object.
+     * Note that this callback can even be started multiple times. But in this case,
+     * you need to care about the lifecycle, since it is not associated with this object.
      */
     @MainThread
     public final void startLifecycle() {
         ArchCore.checkMainThread();
-        UIManager.sInstance.openGui(this);
+        UIManager.sInstance.start(this);
     }
 
+    /**
+     * Called when the UI is initializing currently. You should call
+     * {@link #setContentView(View, ViewGroup.LayoutParams)} to set the view.
+     */
     protected abstract void onCreate();
 
     /**
-     * Set the content view for the screen, this is the top-level view that users can add.
+     * Set the content view for the UI, this is the top-level view that apps can add.
      * After this method is called, all child views of the root view are removed.
      * <p>
      * Note that the layout params match the root view (a container view), it must be a subclass
-     * of FrameLayout, you can use {@link icyllis.modernui.widget.FrameLayout.LayoutParams} safely.
+     * of {@link FrameLayout}, thus you can use {@link FrameLayout.LayoutParams} safely.
      *
      * @param view   content view
      * @param params layout params of content view
@@ -74,6 +77,7 @@ public abstract class ScreenCallback {
         UIManager.sInstance.setContentView(view, params);
     }
 
+    //TODO
     protected void onDestroy() {
     }
 }

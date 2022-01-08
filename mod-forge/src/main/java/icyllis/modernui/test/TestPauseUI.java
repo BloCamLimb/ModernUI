@@ -31,7 +31,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.forge.CanvasForge;
-import icyllis.modernui.forge.ScreenCallback;
+import icyllis.modernui.forge.UICallback;
 import icyllis.modernui.text.SpannableString;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
@@ -56,7 +56,7 @@ import java.util.Locale;
 
 import static icyllis.modernui.view.ViewConfiguration.dp;
 
-public class TestPauseUI extends ScreenCallback {
+public class TestPauseUI extends UICallback {
 
     public static final int NETWORK_COLOR = 0xFF295E8A;
 

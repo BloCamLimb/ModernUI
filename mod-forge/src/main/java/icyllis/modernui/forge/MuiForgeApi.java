@@ -48,7 +48,7 @@ import java.util.function.Consumer;
 public final class MuiForgeApi {
 
     @GuardedBy("sOnDisplayResizeListeners")
-    private static final CopyOnWriteArrayList<OnDisplayResizeListener> sOnDisplayResizeListeners =
+    static final CopyOnWriteArrayList<OnDisplayResizeListener> sOnDisplayResizeListeners =
             new CopyOnWriteArrayList<>();
 
     private MuiForgeApi() {
@@ -132,14 +132,14 @@ public final class MuiForgeApi {
         }
         @SuppressWarnings("deprecation")
         int menuId = Registry.MENU.getId(menu.getType());
-        NetworkMessages.openMenu(menu.containerId, menuId, writer).sendToPlayer(p);
+        NetworkMessages.openMenu(menu.containerId, menuId, writer, p);
         p.initMenu(menu);
         p.containerMenu = menu;
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(p, menu));
     }
 
     /**
-     * Get the elapsed time since the current screen is set, updated every frame.
+     * Get the elapsed time since the current screen is set, updated every frame on Render thread.
      * Ignoring game paused.
      *
      * @return elapsed time in milliseconds
@@ -150,7 +150,7 @@ public final class MuiForgeApi {
     }
 
     /**
-     * Get synced UI frame time, updated every frame. Ignoring game paused.
+     * Get synced UI frame time, updated every frame on Render thread. Ignoring game paused.
      *
      * @return frame time in milliseconds
      */
@@ -215,7 +215,7 @@ public final class MuiForgeApi {
     /**
      * Registers a callback to be invoked at the beginning of {@link Minecraft#resizeDisplay()}.
      *
-     * @param listener l
+     * @param listener the listener to register
      * @see OnDisplayResizeListener
      */
     @OnlyIn(Dist.CLIENT)
@@ -236,15 +236,6 @@ public final class MuiForgeApi {
     public static void removeOnDisplayResizeListener(@Nonnull OnDisplayResizeListener listener) {
         synchronized (sOnDisplayResizeListeners) {
             sOnDisplayResizeListeners.remove(listener);
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static void dispatchOnDisplayResize(int width, int height, int guiScale, int oldGuiScale) {
-        synchronized (sOnDisplayResizeListeners) {
-            for (var l : sOnDisplayResizeListeners) {
-                l.onDisplayResize(width, height, guiScale, oldGuiScale);
-            }
         }
     }
 
