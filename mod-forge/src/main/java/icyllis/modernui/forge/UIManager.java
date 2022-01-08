@@ -21,7 +21,6 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.MainThread;
@@ -51,6 +50,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
@@ -77,11 +77,13 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 
+import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**
  * Manage UI thread and connect Minecraft to Modern UI view system at most bottom level.
+ * This class is public only for some hooking methods.
  */
 @ApiStatus.Internal
 @NotThreadSafe
@@ -114,7 +116,7 @@ public final class UIManager extends ViewRootBase {
     private MuiScreen mScreen;
 
     // application UI used to send lifecycle events
-    private ScreenCallback mCallback;
+    private UICallback mCallback;
 
     // a list of UI tasks
     private final ConcurrentLinkedQueue<TimedAction> mTasks = new ConcurrentLinkedQueue<>();
@@ -154,59 +156,55 @@ public final class UIManager extends ViewRootBase {
     private UIManager() {
         mAnimationHandler = AnimationHandler.init();
         mFramebuffer = new GLFramebuffer(4);
+        mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+        mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
+        mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
+        mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
+        // no depth buffer
+        mFramebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+        mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
         MinecraftForge.EVENT_BUS.register(this);
     }
 
     @RenderThread
     static void initialize() {
         ArchCore.checkRenderThread();
-        if (sInstance == null) {
-            final UIManager m = new UIManager();
-            sInstance = m;
-            assert m.mCanvas == null;
-            m.mCanvas = GLCanvas.initialize();
-            glEnable(GL_MULTISAMPLE);
-            GLFramebuffer framebuffer = m.mFramebuffer;
-            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
-            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
-            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
-            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
-            // no depth buffer
-            framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
-            framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
-            new Thread(() -> {
-                sInstance.init();
-                sInstance.loop();
-            }, "UI thread").start();
-            ModernUI.LOGGER.info(MARKER, "UI system initialized");
-        }
+        assert sInstance == null;
+        final UIManager mgr = new UIManager();
+        sInstance = mgr;
+        assert mgr.mCanvas == null;
+        mgr.mCanvas = GLCanvas.initialize();
+        glEnable(GL_MULTISAMPLE);
+        new Thread(() -> {
+            sInstance.init();
+            sInstance.loop();
+        }, "UI thread").start();
+        LOGGER.info(MARKER, "UI system initialized");
     }
 
     /**
-     * Open an application UI and create views.
+     * Schedule UI and create views.
      *
-     * @param callback the application user interface
-     * @see #start(MuiScreen)
+     * @param callback the user interface callbacks
      */
-    void openGui(@Nonnull ScreenCallback callback) {
+    void start(@Nonnull UICallback callback) {
         mCallback = callback;
-        minecraft.setScreen(new SimpleScreen(this));
+        minecraft.setScreen(new SimpleScreen());
     }
 
-    boolean openMenu(@Nonnull LocalPlayer p, @Nonnull AbstractContainerMenu menu, String namespace) {
-        if (!minecraft.isSameThread()) {
-            throw new IllegalStateException("Not on main thread");
-        }
-        OpenMenuEvent event = new OpenMenuEvent(menu);
-        ModernUIForge.fire(namespace, event);
-        ScreenCallback callback = event.getCallback();
+    void start(LocalPlayer p, AbstractContainerMenu menu, @Nonnull ResourceLocation key) {
+        assert minecraft.isSameThread();
+        final OpenMenuEvent event = new OpenMenuEvent(menu);
+        ModernUIForge.post(key.getNamespace(), event);
+        final UICallback callback = event.getCallback();
         if (callback == null) {
-            return false;
+            p.closeContainer(); // close server menu whatever it is
+            LOGGER.warn(MARKER, "No callback set, closing menus. Menu {} keyed {}", menu, key);
+            return;
         }
         mCallback = callback;
         p.containerMenu = menu;
-        minecraft.setScreen(new MenuScreen<>(menu, p.getInventory(), this));
-        return true;
+        minecraft.setScreen(new MenuScreen<>(menu, p.getInventory()));
     }
 
     /**
@@ -228,7 +226,7 @@ public final class UIManager extends ViewRootBase {
     }
 
     @Nullable
-    ScreenCallback getCallback() {
+    UICallback getCallback() {
         return mCallback;
     }
 
@@ -244,7 +242,7 @@ public final class UIManager extends ViewRootBase {
     }
 
     // Called when open a screen from Modern UI, or back to the screen
-    void start(@Nonnull MuiScreen screen) {
+    void create(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
             post(mPerformCreate);
             mScreen = screen;
@@ -365,7 +363,7 @@ public final class UIManager extends ViewRootBase {
         scheduleTraversals();
         doTraversal();
         startTime = System.nanoTime() - startTime;
-        ModernUI.LOGGER.info(MARKER, "View system initialized in {}ms", startTime / 1_000_000);
+        LOGGER.info(MARKER, "View system initialized in {}ms", startTime / 1_000_000);
 
         // test stuff
         /*Paint paint = Paint.take();
@@ -431,7 +429,7 @@ public final class UIManager extends ViewRootBase {
                 // 4. do traversal
                 doTraversal();
             } catch (Throwable t) {
-                ModernUI.LOGGER.error(MARKER, "An error occurred on UI thread", t);
+                LOGGER.error(MARKER, "An error occurred on UI thread", t);
                 dump();
                 Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(t, "Exception on UI thread"));
                 throw t;
@@ -587,7 +585,7 @@ public final class UIManager extends ViewRootBase {
             case GLFW_KEY_G:
                 if (minecraft.screen == null && minecraft.isLocalServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished()) {
-                    openGui(new TestPauseUI());
+                    start(new TestPauseUI());
                 }
                 /*minecraft.getLanguageManager().getLanguages().forEach(l ->
                         ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l
@@ -639,7 +637,7 @@ public final class UIManager extends ViewRootBase {
 
         String str = builder.toString();
 
-        ModernUI.LOGGER.info(MARKER, str);
+        LOGGER.info(MARKER, str);
         if (minecraft.level != null && ModernUIForge.isDeveloperMode()) {
             minecraft.gui.getChat().addMessage(Component.nullToEmpty(str));
         }
@@ -705,7 +703,7 @@ public final class UIManager extends ViewRootBase {
                 try {
                     canvas.draw(framebuffer);
                 } catch (Throwable t) {
-                    ModernUI.LOGGER.fatal(MARKER,
+                    LOGGER.fatal(MARKER,
                             "Failed to invoke rendering callbacks, please report the issue to related mods", t);
                     dump();
                     throw t;
@@ -807,7 +805,7 @@ public final class UIManager extends ViewRootBase {
         }
         mScreen = null;
         if (mCallback != null) {
-            final ScreenCallback callback = mCallback;
+            final UICallback callback = mCallback;
             post(callback::onDestroy);
             mCallback = null;
         }

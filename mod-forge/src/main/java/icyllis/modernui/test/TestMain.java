@@ -28,6 +28,8 @@ import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.core.Looper;
+import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.core.Window;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
@@ -38,8 +40,6 @@ import icyllis.modernui.graphics.texture.TextureManager;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.core.NativeImage;
-import icyllis.modernui.core.Window;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
@@ -61,9 +61,11 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
-import java.util.*;
+import java.util.Locale;
+import java.util.Objects;
 import java.util.stream.Stream;
 
+import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.graphics.GLWrapper.*;
 import static org.lwjgl.glfw.GLFW.*;
 
@@ -150,7 +152,7 @@ public class TestMain {
 
         ModernUI.initialize();
 
-        ModernUI.LOGGER.info(glfwGetTimerFrequency());
+        LOGGER.info(glfwGetTimerFrequency());
 
         /*ModernUI.LOGGER.info("Module: {}", TestMain.class.getModule());
         ModernUI.LOGGER.info("Main class loader: {}", TestMain.class.getClassLoader());
@@ -195,7 +197,8 @@ public class TestMain {
         double theta = Math.acos((a_2 + sec22_2 - sec23_2) / (2 * a * sec22));
         ModernUI.LOGGER.info(Math.toDegrees(theta));
 
-        ModernUI.LOGGER.info(Integer.toHexString(ColorEvaluator.evaluate(0.5f, 0xF0AADCF0, 0xF0FFC3F7)).toUpperCase(Locale.ROOT));*/
+        ModernUI.LOGGER.info(Integer.toHexString(ColorEvaluator.evaluate(0.5f, 0xF0AADCF0, 0xF0FFC3F7)).toUpperCase
+        (Locale.ROOT));*/
 
         /*float[] av = new float[]{1, 3, 2, 4.1f, 6, 0, 6, 0.5f, 5, 7, 11.3f, 9, 9.1f, 15, 8, 10};
         float[] bv = new float[]{9.1f, 2, 7, 5, 3.3f, 6.1f, 5.5f, 4, 0, 8, 3, 1, 2.7f, 3, 9, 2};
@@ -325,7 +328,7 @@ public class TestMain {
                     .filter(Objects::nonNull)
                     .forEach(Callback::free);
             glfwTerminate();
-            ModernUI.LOGGER.info(MARKER, "Stopped");
+            LOGGER.info(MARKER, "Stopped");
         }
     }
 
@@ -620,7 +623,7 @@ public class TestMain {
             GlyphVector vector = font.layoutGlyphVector(GRAPHICS.getFontRenderContext(),
                     s.toCharArray(), prevOffset, offset, Font.LAYOUT_RIGHT_TO_LEFT);
             for (int i = 0; i < vector.getNumGlyphs(); i++) {
-                ModernUI.LOGGER.info(MARKER, "GlyphCode: {}", vector.getGlyphCode(i));
+                LOGGER.info(MARKER, "GlyphCode: {}", vector.getGlyphCode(i));
             }
             prevOffset = offset;
         }
@@ -635,10 +638,10 @@ public class TestMain {
             if (unicode)
                 toEscapeChars(s.substring(start, end), start, end);
             else
-                ModernUI.LOGGER.info(s.substring(start, end));
+                LOGGER.info(s.substring(start, end));
             count++;
         }
-        ModernUI.LOGGER.info(MARKER, "Word break count: {}", count);
+        LOGGER.info(MARKER, "Word break count: {}", count);
     }
 
     public static void toEscapeChars(String t, int a, int b) {
@@ -647,7 +650,7 @@ public class TestMain {
             builder.append("\\u");
             builder.append(Integer.toString(((int) t.charAt(i)) | 0x10000, 16).substring(1));
         }
-        ModernUI.LOGGER.info(MARKER, "{} {}: {}", a, b, builder.toString());
+        LOGGER.info(MARKER, "{} {}: {}", a, b, builder.toString());
     }
 
     public static void breakSentences(String s) {
@@ -656,10 +659,10 @@ public class TestMain {
         iterator.setText(s);
         int start = iterator.first();
         for (int end = iterator.next(); end != BreakIterator.DONE; start = end, end = iterator.next()) {
-            ModernUI.LOGGER.info(s.substring(start, end));
+            LOGGER.info(s.substring(start, end));
             count++;
         }
-        ModernUI.LOGGER.info(MARKER, "Sentence break count: {}", count);
+        LOGGER.info(MARKER, "Sentence break count: {}", count);
     }
 
     public static void breakLines(String s, boolean unicode) {
@@ -671,17 +674,17 @@ public class TestMain {
             if (unicode)
                 toEscapeChars(s.substring(start, end), start, end);
             else
-                ModernUI.LOGGER.info(s.substring(start, end));
+                LOGGER.info(s.substring(start, end));
             count++;
         }
-        ModernUI.LOGGER.info(MARKER, "Sentence break count: {}", count);
+        LOGGER.info(MARKER, "Sentence break count: {}", count);
     }
 
     public static void testGraphemeBreak() {
         GraphemeBreak.sUseICU = true;
         String bengaliHello = "\u09b9\u09cd\u09af\u09be\u09b2\u09cb"; // two graphemes, first four chars and last two
         // chars
-        ModernUI.LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello, Locale.getDefault(),
+        LOGGER.info(MARKER, GraphemeBreak.getTextRunCursor(bengaliHello, Locale.getDefault(),
                 3, bengaliHello.length(), bengaliHello.length(), GraphemeBreak.BEFORE)); // output 4, correct
     }
 
@@ -695,7 +698,7 @@ public class TestMain {
         StringBuilder sb = new StringBuilder();
         sb.append("  ".repeat(Math.max(0, depth)));
         depth++;
-        ModernUI.LOGGER.info(MARKER, "{}{}", sb, node);
+        LOGGER.info(MARKER, "{}{}", sb, node);
         Node child = Node.AST_ADAPTER.getFirstChild(node);
         while (child != null) {
             iterateNode(child, depth);

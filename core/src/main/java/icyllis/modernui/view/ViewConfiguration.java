@@ -72,7 +72,7 @@ public class ViewConfiguration {
      * @return converted size in pixels
      */
     public static int dp(float sip) {
-        return Math.round(sip * get().mViewScale);
+        return (int) (sip * sInstance.mViewScale + 0.5f);
     }
 
     /**
@@ -82,7 +82,7 @@ public class ViewConfiguration {
      * @return converted size in pixels
      */
     public static int sp(float sip) {
-        return Math.round(sip * get().mViewScale);
+        return (int) (sip * sInstance.mViewScale + 0.5f);
     }
 
     /**

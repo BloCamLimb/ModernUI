@@ -32,24 +32,24 @@ import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 /**
- * This event occurred when the server requires the client to open a user
- * interface to display a container menu in a world, this event is cancelled
- * after setting the application screen. The menu is created on the client by
- * the registered {@link net.minecraftforge.network.IContainerFactory},
- * which contains custom network data from server, you can set the application
- * screen through the data and the menu type.  For example:
+ * This event is triggered when the server requires the client to open a user
+ * interface to display the container menu in world, this event is cancelled
+ * after setting the user interface. The menu is created on the client by
+ * registered {@link net.minecraftforge.network.IContainerFactory factory},
+ * which contains custom network data from server, you can set the user
+ * interface through the data and the menu type.  For example:
  *
  * <pre>
  * &#64;SubscribeEvent
- * static void onOpenMenu(OpenMenuEvent event) {
- *     if (event.getMenu().getType() == Registration.TEST_MENU) {
+ * static void onMenuOpen(OpenMenuEvent event) {
+ *     if (event.getMenu().getType() == Registry.TEST_MENU) {
  *         event.setCallback(new TestUI());
  *     }
  * }
  * </pre>
  * <p>
  * This event will be only posted to your own mod event bus on client main thread.
- * If no screen set along with this event, the server container menu will be closed.
+ * It's an error if no callback set along with this event.
  *
  * @see MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)
  */
@@ -61,7 +61,7 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
     private final AbstractContainerMenu mMenu;
 
     @Nullable
-    private ScreenCallback mCallback;
+    private UICallback mCallback;
 
     OpenMenuEvent(@Nonnull AbstractContainerMenu menu) {
         mMenu = menu;
@@ -78,12 +78,12 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
     }
 
     /**
-     * Set the application screen for the menu. The event will be canceled
+     * Set the user interface callback for the menu. The event will be auto canceled
      * if callback is available.
      *
-     * @param callback the application screen callback
+     * @param callback the UI callback
      */
-    public void setCallback(@Nullable ScreenCallback callback) {
+    public void setCallback(@Nullable UICallback callback) {
         mCallback = callback;
         if (callback != null && !isCanceled()) {
             setCanceled(true);
@@ -91,7 +91,7 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
     }
 
     @Nullable
-    public ScreenCallback getCallback() {
+    public UICallback getCallback() {
         return mCallback;
     }
 }

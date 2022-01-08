@@ -32,6 +32,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.data.loading.DatagenModLoader;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -58,7 +60,7 @@ import java.util.*;
 import java.util.concurrent.Executor;
 
 /**
- * Mod class.
+ * Mod class. INTERNAL.
  */
 @Mod(ModernUI.ID)
 public final class ModernUIForge extends ModernUI {
@@ -142,6 +144,16 @@ public final class ModernUIForge extends ModernUI {
         LOGGER.info(MARKER, "Modern UI initialized, FML mods: {}", sModEventBuses.size());
     }
 
+    // INTERNAL HOOK
+    @OnlyIn(Dist.CLIENT)
+    public static void dispatchOnDisplayResize(int width, int height, int guiScale, int oldGuiScale) {
+        synchronized (MuiForgeApi.sOnDisplayResizeListeners) {
+            for (var l : MuiForgeApi.sOnDisplayResizeListeners) {
+                l.onDisplayResize(width, height, guiScale, oldGuiScale);
+            }
+        }
+    }
+
     /*public static void warnSetup(String key, Object... args) {
         ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP, key, args));
     }*/
@@ -159,6 +171,7 @@ public final class ModernUIForge extends ModernUI {
             return mTypeface;
         }
         synchronized (this) {
+            // should be a worker thread
             if (mTypeface == null) {
                 Set<Font> set = new LinkedHashSet<>();
                 List<? extends String> configs = Config.CLIENT.fontFamily.get();
@@ -255,17 +268,16 @@ public final class ModernUIForge extends ModernUI {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public static <T extends Event & IModBusEvent> boolean fire(@Nullable String namespace, @Nonnull T event) {
-        if (namespace == null) {
+    public static <T extends Event & IModBusEvent> boolean post(@Nullable String s, @Nonnull T e) {
+        if (s == null) {
+            boolean handled = false;
             for (IEventBus bus : sModEventBuses.values()) {
-                if (bus.post(event)) {
-                    return true;
-                }
+                handled |= bus.post(e);
             }
+            return handled;
         } else {
-            IEventBus bus = sModEventBuses.get(namespace);
-            return bus != null && bus.post(event);
+            IEventBus bus = sModEventBuses.get(s);
+            return bus != null && bus.post(e);
         }
-        return false;
     }
 }

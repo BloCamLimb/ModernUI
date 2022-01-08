@@ -76,6 +76,8 @@ public class ModernUI {
         synchronized (ModernUI.class) {
             if (sInstance == null) {
                 sInstance = this;
+            } else {
+                throw new IllegalStateException("Multiple instances");
             }
         }
     }
@@ -85,14 +87,15 @@ public class ModernUI {
      *
      * @return the Modern UI
      */
+    //TODO
     public static ModernUI initialize() {
-        ModernUI it = new ModernUI();
-        it.mBackgroundExecutor = Executors.newWorkStealingPool();
+        final ModernUI me = new ModernUI();
+        me.mBackgroundExecutor = Executors.newWorkStealingPool();
         return sInstance;
     }
 
     /**
-     * Gets Modern UI instance.
+     * Get Modern UI instance.
      *
      * @return the Modern UI
      */
@@ -103,7 +106,7 @@ public class ModernUI {
     /**
      * Registers a target and a cleaning action to run when the target becomes phantom
      * reachable. It will be registered with the global cleaner shared across Modern UI.
-     * The action object should never hold any reference of the target object.
+     * The action object should never hold any reference to the target object.
      *
      * @param target the target to monitor
      * @param action a {@code Runnable} to invoke when the target becomes phantom reachable
@@ -131,7 +134,7 @@ public class ModernUI {
      */
     @Nonnull
     public Typeface getSelectedTypeface() {
-        return Typeface.INTERNAL;
+        return Typeface.DEFAULT;
     }
 
     /**
@@ -170,6 +173,7 @@ public class ModernUI {
      *
      * @return background executor
      */
+    @Deprecated
     @Nonnull
     public Executor getBackgroundExecutor() {
         return mBackgroundExecutor;
@@ -180,6 +184,7 @@ public class ModernUI {
      *
      * @return window view manager
      */
+    @Deprecated
     @Nonnull
     public ViewManager getViewManager() {
         return mViewManager;
@@ -191,6 +196,7 @@ public class ModernUI {
      * @param action runnable task
      * @return if successful
      */
+    @Deprecated
     public boolean postOnUiThread(@Nonnull Runnable action) {
         return false;
     }
@@ -202,6 +208,7 @@ public class ModernUI {
      * @param delayMillis delayed time to run the task in milliseconds
      * @return if successful
      */
+    @Deprecated
     public boolean postOnUiThread(@Nonnull Runnable action, long delayMillis) {
         return false;
     }

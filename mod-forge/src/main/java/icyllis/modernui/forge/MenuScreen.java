@@ -41,16 +41,12 @@ import javax.annotation.Nonnull;
  *
  * @param <T> the type of container menu
  * @see SimpleScreen
- * @see net.minecraft.client.gui.screens.MenuScreens.ScreenConstructor
  */
 @OnlyIn(Dist.CLIENT)
 final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> implements MuiScreen {
 
-    private final UIManager root;
-
-    MenuScreen(@Nonnull T menu, Inventory inventory, UIManager root) {
+    MenuScreen(@Nonnull T menu, Inventory inventory) {
         super(menu, inventory, TextComponent.EMPTY);
-        this.root = root;
     }
 
     /*@Override
@@ -65,7 +61,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     protected void init() {
         super.init();
-        root.start(this);
+        UIManager.sInstance.create(this);
     }
 
     @Override
@@ -73,11 +69,14 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
         this.width = width;
         this.height = height;
         init();
-        root.resize();
-        //MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget, this::widget));
+        UIManager.sInstance.resize();
+        //MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget,
+        // this::widget));
 
-        /*ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft.getMainWindow().getFramebufferWidth(),
-                minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft.getMainWindow().getHeight());*/
+        /*ModernUI.LOGGER.debug("Scaled: {}x{} Framebuffer: {}x{} Window: {}x{}", width, height, minecraft
+        .getMainWindow().getFramebufferWidth(),
+                minecraft.getMainWindow().getFramebufferHeight(), minecraft.getMainWindow().getWidth(), minecraft
+                .getMainWindow().getHeight());*/
     }
 
     private void widget(Widget widget) {
@@ -90,7 +89,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
         //TODO configurable bg
         renderBackground(poseStack);
-        root.render();
+        UIManager.sInstance.render();
     }
 
     @Override
@@ -100,25 +99,25 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     public void removed() {
         super.removed();
-        root.stop();
+        UIManager.sInstance.stop();
     }
 
     // IMPL - GuiEventListener
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        root.onCursorPos();
+        UIManager.sInstance.onCursorPos();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        root.onMouseButton();
+        UIManager.sInstance.onMouseButton();
         return true;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        root.onMouseButton();
+        UIManager.sInstance.onMouseButton();
         return true;
     }
 
@@ -138,7 +137,8 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
             return true;
         } else {
             InputConstants.Key mouseKey = InputConstants.getKey(keyCode, scanCode);
-            if (keyCode == GLFW.GLFW_KEY_ESCAPE || Objects.requireNonNull(this.minecraft).options.keyInventory.isActiveAndMatches(mouseKey)) {
+            if (keyCode == GLFW.GLFW_KEY_ESCAPE || Objects.requireNonNull(this.minecraft).options.keyInventory
+            .isActiveAndMatches(mouseKey)) {
                 if (host.onBackPressed()) {
                     return true;
                 }
@@ -160,7 +160,8 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
                     this.slotClicked(this.hoveredSlot, this.hoveredSlot.index, 0, ClickType.CLONE);
                     return true;
                 } else if (this.minecraft.options.keyDrop.isActiveAndMatches(mouseKey)) {
-                    this.slotClicked(this.hoveredSlot, this.hoveredSlot.index, hasControlDown() ? 1 : 0, ClickType.THROW);
+                    this.slotClicked(this.hoveredSlot, this.hoveredSlot.index, hasControlDown() ? 1 : 0, ClickType
+                    .THROW);
                     return true;
                 }
             } else return this.minecraft.options.keyDrop.isActiveAndMatches(mouseKey);
@@ -175,6 +176,6 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Override
     public boolean charTyped(char ch, int modifiers) {
-        return root.charTyped(ch);
+        return UIManager.sInstance.charTyped(ch);
     }
 }

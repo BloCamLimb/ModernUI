@@ -57,7 +57,7 @@ public class Typeface {
     public static final Typeface MONOSPACED;
 
     @Nonnull
-    public static final Typeface INTERNAL;
+    public static final Typeface DEFAULT;
 
     @Nonnull
     private static final Font sSansSerifFont;
@@ -73,11 +73,11 @@ public class Typeface {
         // Use Java's logical font as the default initial font if user does not override it in some configuration file
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
 
-        List<Font> p = new ArrayList<>();
+        List<Font> def = new ArrayList<>();
 
         try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
             Font font = Font.createFont(Font.TRUETYPE_FONT, stream);
-            p.add(font);
+            def.add(font);
         } catch (FontFormatException | IOException ignored) {
         }
 
@@ -88,8 +88,12 @@ public class Typeface {
             sAllFontFamilies.add(font);
             if (family.equals(Font.SANS_SERIF)) {
                 sansSerif = font;
-            } else if (p.isEmpty() && family.startsWith("SimHei")) {
-                p.add(font);
+            } else if (family.startsWith("Calibri") ||
+                    family.startsWith("Microsoft YaHei UI") ||
+                    family.startsWith("STHeiti") ||
+                    family.startsWith("Segoe UI") ||
+                    family.startsWith("SimHei")) {
+                def.add(font);
             }
         }
         if (sansSerif == null) {
@@ -98,8 +102,8 @@ public class Typeface {
         }
         sSansSerifFont = sansSerif;
 
-        p.add(sansSerif);
-        INTERNAL = new Typeface(p.toArray(new Font[0]));
+        def.add(sansSerif);
+        DEFAULT = new Typeface(def.toArray(new Font[0]));
 
         sFontFamilyNames = List.of(families);
 
