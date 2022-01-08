@@ -20,6 +20,7 @@ package icyllis.modernui.core;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * A Handler allows you to send and process {@link Message} and Runnable
@@ -86,7 +87,7 @@ public class Handler {
      *
      * @param looper The looper, must not be null.
      */
-    public Handler(@Nonnull Looper looper) {
+    public Handler(Looper looper) {
         this(looper, null, false);
     }
 
@@ -97,7 +98,7 @@ public class Handler {
      * @param looper   The looper, must not be null.
      * @param callback The callback interface in which to handle messages.
      */
-    public Handler(@Nonnull Looper looper, @Nonnull Callback callback) {
+    public Handler(Looper looper, Callback callback) {
         this(looper, callback, false);
     }
 
@@ -118,8 +119,8 @@ public class Handler {
      * @param async    If true, the handler calls {@link Message#setAsynchronous(boolean)} for
      *                 each {@link Message} that is sent to it or {@link Runnable} that is posted to it.
      */
-    private Handler(@Nonnull Looper looper, @Nullable Callback callback, boolean async) {
-        mQueue = looper.mQueue;
+    private Handler(Looper looper, Callback callback, boolean async) {
+        mQueue = Objects.requireNonNull(looper, "No Looper").mQueue;
         mCallback = callback;
         mAsynchronous = async;
     }
@@ -135,7 +136,7 @@ public class Handler {
      * @return a new async Handler instance
      */
     @Nonnull
-    public static Handler createAsync(@Nonnull Looper looper) {
+    public static Handler createAsync(Looper looper) {
         return new Handler(looper, null, true);
     }
 
@@ -147,11 +148,11 @@ public class Handler {
      * but not necessarily with respect to messages from other Handlers.</p>
      *
      * @param looper   the Looper that the new Handler should be bound to
-     * @param callback The callback interface in which to handle messages.
+     * @param callback the callback interface in which to handle messages.
      * @return a new async Handler instance
      */
     @Nonnull
-    public static Handler createAsync(@Nonnull Looper looper, @Nonnull Callback callback) {
+    public static Handler createAsync(Looper looper, Callback callback) {
         return new Handler(looper, callback, true);
     }
 
