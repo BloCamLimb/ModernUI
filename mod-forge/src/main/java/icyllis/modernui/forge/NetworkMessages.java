@@ -24,7 +24,6 @@ import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -100,14 +99,13 @@ public final class NetworkMessages {
             final int containerId = payload.readVarInt();
             // No barrier, SAFE
             final MenuType<?> type = Registry.MENU.byIdOrThrow(payload.readVarInt());
+            final ResourceLocation key = Registry.MENU.getKey(type);
+            assert key != null;
             payload.retain();
             Minecraft.getInstance().execute(() -> {
                 final LocalPlayer p = player.get();
                 if (p != null) {
-                    final AbstractContainerMenu menu = type.create(containerId, p.getInventory(), payload);
-                    final ResourceLocation key = Registry.MENU.getKey(type);
-                    assert key != null;
-                    UIManager.sInstance.start(p, menu, key);
+                    UIManager.sInstance.start(p, type.create(containerId, p.getInventory(), payload), key);
                 }
                 if (!payload.release()) {
                     throw new IllegalStateException();

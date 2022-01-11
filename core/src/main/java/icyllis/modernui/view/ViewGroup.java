@@ -2171,7 +2171,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @hide
      */
     public void requestTransitionStart(LayoutTransition transition) {
-        ViewRootBase viewAncestor = mAttachInfo != null ? mAttachInfo.mViewRootBase : null;
+        ViewRoot viewAncestor = mAttachInfo != null ? mAttachInfo.mViewRoot : null;
         if (viewAncestor != null) {
             viewAncestor.requestTransitionStart(transition);
         }
@@ -2397,6 +2397,17 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         if (clipChildren != previousValue) {
             setBooleanFlag(FLAG_CLIP_CHILDREN, clipChildren);
             invalidate();
+        }
+    }
+
+    @Override
+    void dispatchCancelPendingInputEvents() {
+        super.dispatchCancelPendingInputEvents();
+
+        final View[] children = mChildren;
+        final int count = mChildrenCount;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchCancelPendingInputEvents();
         }
     }
 

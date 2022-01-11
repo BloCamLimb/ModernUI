@@ -692,6 +692,24 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     }
 
     /**
+     * Called when a fragment loads an animator.
+     *
+     * @param transit  The value set in {@link FragmentTransaction#setTransition(int)} or 0 if not
+     *                 set.
+     * @param enter    {@code true} when the fragment is added/attached/shown or {@code false} when
+     *                 the fragment is removed/detached/hidden.
+     * @param nextAnim The resource set in
+     *                 {@link FragmentTransaction#setCustomAnimations(int, int)},
+     *                 {@link FragmentTransaction#setCustomAnimations(int, int, int, int)}, or
+     *                 0 if neither was called. The value will depend on the current operation.
+     */
+    @UiThread
+    @Nullable
+    public Animator onCreateAnimator(int transit, boolean enter, int nextAnim) {
+        return null;
+    }
+
+    /**
      * Called to do initial creation of a fragment.  This is called after
      * {@link #onAttach()} and before
      * {@link #onCreateView(ViewGroup, DataSet)}.

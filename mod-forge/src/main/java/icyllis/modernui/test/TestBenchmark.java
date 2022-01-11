@@ -18,15 +18,13 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.ModernUI;
-import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.DataSet;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import org.github.jamm.MemoryMeter;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -45,9 +43,9 @@ public class TestBenchmark {
                 .include(TestBenchmark.class.getSimpleName())
                 .shouldFailOnError(true).shouldDoGC(true)
                 .jvmArgs("-XX:+UseFMA").build()).run();
-        MemoryMeter meter = MemoryMeter.builder().build();
+        /*MemoryMeter meter = MemoryMeter.builder().build();
         ModernUI.LOGGER.info("CompoundTag: {}", TextUtils.binaryCompact((int) meter.measureDeep(sCompoundTag)));
-        ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact((int) meter.measureDeep(sDataSet)));
+        ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact((int) meter.measureDeep(sDataSet)));*/
     }
 
     public static DataSet sDataSet = new DataSet();
@@ -79,29 +77,27 @@ public class TestBenchmark {
         sCompoundTag.put("networks", listTag);
     }
 
-    public static boolean USE = true;
-    public static double a = 0.2, b = 0.3, c = 0.7;
+    static Object2ObjectOpenHashMap<Object, Object> map = new Object2ObjectOpenHashMap<>();
+    static HashMap<Object, Object> map2 = new HashMap<>();
 
-    @Benchmark
-    public static void testFMA() {
-        double a = TestBenchmark.a;
-        double b = TestBenchmark.b;
-        double c = TestBenchmark.b;
-        for (int i = 0; i < 1000; i++) {
-            if (USE) {
-                double d = Math.fma(a, b, c);
-            }
+
+    static {
+        for (int i = 0; i < 10000; i++) {
+            map.put(Integer.toString(i), "");
+        }
+        for (int i = 0; i < 10000; i++) {
+            map2.put(Integer.toString(i), "");
         }
     }
 
     @Benchmark
+    public static void testFastUtil() {
+        Object o = map.get("866");
+    }
+
+    @Benchmark
     public static void testFormal() {
-        double a = TestBenchmark.a;
-        double b = TestBenchmark.b;
-        double c = TestBenchmark.b;
-        for (int i = 0; i < 1000; i++) {
-            double d = a * b + c;
-        }
+        Object o = map2.get("866");
     }
 
     /*@Benchmark

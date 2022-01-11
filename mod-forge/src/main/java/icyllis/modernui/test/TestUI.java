@@ -19,6 +19,7 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.forge.UICallback;
+import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -34,9 +35,12 @@ import static icyllis.modernui.view.ViewConfiguration.dp;
 
 public class TestUI extends UICallback {
 
+    private static final int id_content = 0x7f020001;
+
     @Override
     protected void onCreate() {
         ScrollView contentView = new ScrollView();
+        contentView.setId(id_content);
         FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(dp(500), dp(480));
         contentViewParams.gravity = Gravity.CENTER;
 
@@ -67,5 +71,9 @@ public class TestUI extends UICallback {
         });
 
         setContentView(contentView, contentViewParams);
+
+        getFragmentManager().beginTransaction()
+                .add(id_content, new Fragment())
+                .commitNow();
     }
 }

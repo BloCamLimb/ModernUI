@@ -114,6 +114,7 @@ public final class MuiForgeApi {
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      * @see OpenMenuEvent
      */
+    @SuppressWarnings("deprecation")
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
         if (!(player instanceof ServerPlayer p)) {
@@ -130,9 +131,7 @@ public final class MuiForgeApi {
         if (menu == null) {
             return;
         }
-        @SuppressWarnings("deprecation")
-        int menuId = Registry.MENU.getId(menu.getType());
-        NetworkMessages.openMenu(menu.containerId, menuId, writer, p);
+        NetworkMessages.openMenu(menu.containerId, Registry.MENU.getId(menu.getType()), writer, p);
         p.initMenu(menu);
         p.containerMenu = menu;
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(p, menu));

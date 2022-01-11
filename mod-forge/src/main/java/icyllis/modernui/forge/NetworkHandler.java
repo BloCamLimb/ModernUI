@@ -56,7 +56,7 @@ import java.util.stream.Collectors;
  * <p>
  * The purpose of this class is to provide a faster network message handler than Forge.
  * Allows the message to be decoded and processed directly on the Netty thread.
- * <b>Thus, you must be careful with thread-safety, and memory management.</b>
+ * <b>Thus, you must be careful with thread-safety, and even memory management.</b>
  * If you are not familiar with these, please continue to use the API provided by Forge.
  */
 public class NetworkHandler {
@@ -78,7 +78,7 @@ public class NetworkHandler {
      * Create a network handler of a mod. Note that this is a distribution-sensitive operation,
      * you must be careful with the class loading.
      *
-     * @param id       the dependent mod-id
+     * @param id       the mod-id
      * @param cli      listener for S->C messages, the inner supplier must be in separated non-anonymous class
      * @param sli      listener for C->S messages, it is on logical server side
      * @param protocol network protocol, leaving empty will request the same version of mod(s)
@@ -89,7 +89,7 @@ public class NetworkHandler {
                           @Nullable ServerListener sli, @Nonnull String protocol, boolean optional) {
         IModFileInfo file = null;
         // modid only starts with [a-z]
-        if (!id.startsWith("_") && (file = ModList.get().getModFileById(id)) == null) {
+        if (!id.isEmpty() && (file = ModList.get().getModFileById(id)) == null) {
             throw new IllegalArgumentException("No mod found that given by modid " + id);
         }
         if (protocol.isEmpty()) {
@@ -156,12 +156,12 @@ public class NetworkHandler {
                                        @Nonnull Supplier<LocalPlayer> player) {
         ResourceLocation id = packet.getIdentifier();
         if (id.getNamespace().equals(ModernUI.ID)) {
-            FriendlyByteBuf rawData = packet.getInternalData();
-            NetworkHandler it = sNetworks.get(id.getPath());
-            if (it != null && it.mClientListener != null) {
-                it.mClientListener.handle(rawData.readShort(), rawData, player);
+            FriendlyByteBuf data = packet.getInternalData();
+            NetworkHandler h = sNetworks.get(id.getPath());
+            if (h != null && h.mClientListener != null) {
+                h.mClientListener.handle(data.readShort(), data, player);
             }
-            rawData.release();
+            data.release();
             throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
     }
@@ -171,12 +171,12 @@ public class NetworkHandler {
                                        @Nonnull Supplier<ServerPlayer> player) {
         ResourceLocation id = packet.getIdentifier();
         if (id.getNamespace().equals(ModernUI.ID)) {
-            FriendlyByteBuf rawData = packet.getInternalData();
-            NetworkHandler it = sNetworks.get(id.getPath());
-            if (it != null && it.mServerListener != null) {
-                it.mServerListener.handle(rawData.readShort(), rawData, player);
+            FriendlyByteBuf data = packet.getInternalData();
+            NetworkHandler h = sNetworks.get(id.getPath());
+            if (h != null && h.mServerListener != null) {
+                h.mServerListener.handle(data.readShort(), data, player);
             }
-            rawData.release();
+            data.release();
             throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
         }
     }

@@ -52,14 +52,18 @@ import org.lwjgl.system.Callback;
 import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
+import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.font.GlyphVector;
+import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -152,8 +156,6 @@ public class TestMain {
 
         ModernUI.initialize();
 
-        LOGGER.info(glfwGetTimerFrequency());
-
         /*ModernUI.LOGGER.info("Module: {}", TestMain.class.getModule());
         ModernUI.LOGGER.info("Main class loader: {}", TestMain.class.getClassLoader());
         ModernUI.LOGGER.info("System class loader: {}", ClassLoader.getSystemClassLoader());
@@ -172,7 +174,7 @@ public class TestMain {
 
         ArrayList<String> acc_c = new ArrayList<>();
         acc_c.add("d");
-        List<Object> acc_g = (List<Object>) (Object) acc_c;
+        List<Object> acc_g = (List<Object>) (Object) acc_c;*/
 
         IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
         GRAPHICS = IMAGE.createGraphics();
@@ -184,7 +186,15 @@ public class TestMain {
         GRAPHICS.setColor(Color.WHITE);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
-        GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);*/
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+        GRAPHICS.setStroke(new BasicStroke(6, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        GRAPHICS.draw(new RoundRectangle2D.Float(20, 20, 600, 600, 20, 20));
+        try {
+            ImageIO.write(IMAGE, "png", new File("F:/trrr.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         //(sec23°)²+(sec22°)²-2sec23°sec22°cos45°=a²
         //θ=arccos((a²+(sec22°)²-(sec23°)²)/(2asec22°))

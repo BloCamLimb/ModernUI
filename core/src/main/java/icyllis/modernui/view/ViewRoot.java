@@ -20,10 +20,15 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Handler;
+import icyllis.modernui.core.Looper;
+import icyllis.modernui.core.Message;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Rect;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,16 +36,14 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 /**
- * The top of a view hierarchy, implementing the needed protocol between View and
- * Window. There must also be methods handle the connection between Window and
- * ViewRootBase.
+ * The top of a view hierarchy, implementing the needed protocol between View and the Window.
  */
-public abstract class ViewRootBase implements ViewParent {
+@ApiStatus.Internal
+public abstract class ViewRoot implements ViewParent {
 
-    private static final Marker MARKER = MarkerManager.getMarker("ViewRootBase");
+    protected static final Marker MARKER = MarkerManager.getMarker("ViewRoot");
 
-    private final AttachInfo mAttachInfo;
-    protected Thread mThread;
+    private AttachInfo mAttachInfo;
 
     private final ConcurrentLinkedQueue<InputEvent> mInputEvents = new ConcurrentLinkedQueue<>();
 
@@ -60,55 +63,63 @@ public abstract class ViewRootBase implements ViewParent {
     private int mWidth;
     private int mHeight;
 
+    protected Handler mHandler;
+
     private ArrayList<LayoutTransition> mPendingTransitions;
 
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
-    protected ViewRootBase() {
-        mAttachInfo = new AttachInfo(this);
+    /**
+     * Lazily initialized.
+     *
+     * @see #init()
+     */
+    protected ViewRoot() {
     }
 
-    protected void initBase() {
-        synchronized (this) {
-            if (mThread != null) {
-                throw new IllegalStateException("Initialize twice");
-            }
-            mThread = Thread.currentThread();
-            try {
-                Class.forName("icyllis.modernui.text.BoringLayout");
-                Class.forName("icyllis.modernui.text.CharArrayIterator");
-                Class.forName("icyllis.modernui.text.CharSequenceIterator");
-                Class.forName("icyllis.modernui.text.Directions");
-                Class.forName("icyllis.modernui.text.DynamicLayout");
-                Class.forName("icyllis.modernui.text.GlyphManager");
-                Class.forName("icyllis.modernui.text.GraphemeBreak");
-                Class.forName("icyllis.modernui.text.Layout");
-                Class.forName("icyllis.modernui.text.LayoutCache");
-                Class.forName("icyllis.modernui.text.LayoutPiece");
-                Class.forName("icyllis.modernui.text.LineBreaker");
-                Class.forName("icyllis.modernui.text.MeasuredParagraph");
-                Class.forName("icyllis.modernui.text.MeasuredText");
-                Class.forName("icyllis.modernui.text.PrecomputedText");
-                Class.forName("icyllis.modernui.text.Selection");
-                Class.forName("icyllis.modernui.text.SpannableString");
-                Class.forName("icyllis.modernui.text.SpannableStringBuilder");
-                Class.forName("icyllis.modernui.text.SpannableStringInternal");
-                Class.forName("icyllis.modernui.text.StaticLayout");
-                Class.forName("icyllis.modernui.text.TabStops");
-                Class.forName("icyllis.modernui.text.TextDirectionHeuristics");
-                Class.forName("icyllis.modernui.text.TextLine");
-                Class.forName("icyllis.modernui.text.TextPaint");
-                Class.forName("icyllis.modernui.text.TextUtils");
-                Class.forName("icyllis.modernui.text.Typeface");
+    protected boolean handleMessage(Message msg) {
+        return true;
+    }
 
-                Class.forName("icyllis.modernui.widget.Editor");
-                Class.forName("icyllis.modernui.widget.LinearLayout");
-                Class.forName("icyllis.modernui.widget.ScrollView");
-                Class.forName("icyllis.modernui.widget.TextView");
-            } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
-            }
+    protected void init() {
+        ArchCore.initUiThread();
+        mHandler = new Handler(Looper.prepare(), this::handleMessage);
+        mAttachInfo = new AttachInfo(this, mHandler);
+
+        try {
+            Class.forName("icyllis.modernui.text.BoringLayout");
+            Class.forName("icyllis.modernui.text.CharArrayIterator");
+            Class.forName("icyllis.modernui.text.CharSequenceIterator");
+            Class.forName("icyllis.modernui.text.Directions");
+            Class.forName("icyllis.modernui.text.DynamicLayout");
+            Class.forName("icyllis.modernui.text.GlyphManager");
+            Class.forName("icyllis.modernui.text.GraphemeBreak");
+            Class.forName("icyllis.modernui.text.Layout");
+            Class.forName("icyllis.modernui.text.LayoutCache");
+            Class.forName("icyllis.modernui.text.LayoutPiece");
+            Class.forName("icyllis.modernui.text.LineBreaker");
+            Class.forName("icyllis.modernui.text.MeasuredParagraph");
+            Class.forName("icyllis.modernui.text.MeasuredText");
+            Class.forName("icyllis.modernui.text.PrecomputedText");
+            Class.forName("icyllis.modernui.text.Selection");
+            Class.forName("icyllis.modernui.text.SpannableString");
+            Class.forName("icyllis.modernui.text.SpannableStringBuilder");
+            Class.forName("icyllis.modernui.text.SpannableStringInternal");
+            Class.forName("icyllis.modernui.text.StaticLayout");
+            Class.forName("icyllis.modernui.text.TabStops");
+            Class.forName("icyllis.modernui.text.TextDirectionHeuristics");
+            Class.forName("icyllis.modernui.text.TextLine");
+            Class.forName("icyllis.modernui.text.TextPaint");
+            Class.forName("icyllis.modernui.text.TextUtils");
+            Class.forName("icyllis.modernui.text.Typeface");
+
+            Class.forName("icyllis.modernui.widget.Editor");
+            Class.forName("icyllis.modernui.widget.LinearLayout");
+            Class.forName("icyllis.modernui.widget.ScrollView");
+            Class.forName("icyllis.modernui.widget.TextView");
+        } catch (ClassNotFoundException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -164,12 +175,6 @@ public abstract class ViewRootBase implements ViewParent {
 
         //master.performDrag(DragEvent.ACTION_DRAG_STARTED);
         return true;
-    }
-
-    protected void checkThread() {
-        if (mThread != Thread.currentThread()) {
-            throw new IllegalStateException("Not called from UI thread");
-        }
     }
 
     @Override
@@ -257,7 +262,7 @@ public abstract class ViewRootBase implements ViewParent {
     }
 
     protected void doProcessInputEvents() {
-        checkThread();
+        ArchCore.checkUiThread();
         if (mView != null) {
             InputEvent e;
             while ((e = mInputEvents.poll()) != null) {
@@ -345,7 +350,7 @@ public abstract class ViewRootBase implements ViewParent {
     }
 
     void invalidate() {
-        checkThread();
+        ArchCore.checkUiThread();
         mInvalidated = true;
         if (!mWillDrawSoon) {
             if (mIsDrawing) {
@@ -406,7 +411,7 @@ public abstract class ViewRootBase implements ViewParent {
      */
     @Override
     public void requestLayout() {
-        checkThread();
+        ArchCore.checkUiThread();
         mLayoutRequested = true;
         scheduleTraversals();
     }
@@ -418,13 +423,13 @@ public abstract class ViewRootBase implements ViewParent {
 
     @Override
     public void requestChildFocus(View child, View focused) {
-        checkThread();
+        ArchCore.checkUiThread();
         scheduleTraversals();
     }
 
     @Override
     public void clearChildFocus(View child) {
-        checkThread();
+        ArchCore.checkUiThread();
         scheduleTraversals();
     }
 
@@ -433,7 +438,7 @@ public abstract class ViewRootBase implements ViewParent {
      */
     @Override
     public View focusSearch(View focused, int direction) {
-        checkThread();
+        ArchCore.checkUiThread();
         if (!(mView instanceof ViewGroup)) {
             return null;
         }
@@ -444,7 +449,7 @@ public abstract class ViewRootBase implements ViewParent {
     /*@Override
     public View keyboardNavigationClusterSearch(View currentCluster,
                                                 @FocusDirection int direction) {
-        checkThread();
+        ArchCore.checkUiThread();
         return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
                 mView, currentCluster, direction);
     }*/
@@ -455,7 +460,7 @@ public abstract class ViewRootBase implements ViewParent {
 
     @Override
     public void focusableViewAvailable(View v) {
-        checkThread();
+        ArchCore.checkUiThread();
         if (mView != null) {
             if (!mView.hasFocus()) {
                 // the one case where will transfer focus away from the current one

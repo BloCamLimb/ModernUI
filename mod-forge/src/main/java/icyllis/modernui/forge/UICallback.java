@@ -21,6 +21,7 @@ package icyllis.modernui.forge;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.fragment.FragmentManager;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
@@ -49,7 +50,7 @@ public abstract class UICallback {
      * This is served as a local interaction model, the server will not intersect with this before.
      * <p>
      * Note that this callback can even be started multiple times. But in this case,
-     * you need to care about the lifecycle, since it is not associated with this object.
+     * you need to care about the lifecycle, since it is not associated with this callback.
      */
     @MainThread
     public final void startLifecycle() {
@@ -58,7 +59,7 @@ public abstract class UICallback {
     }
 
     /**
-     * Called when the UI is initializing currently. You should call
+     * Called when the UI is initializing. You should call
      * {@link #setContentView(View, ViewGroup.LayoutParams)} to set the view.
      */
     protected abstract void onCreate();
@@ -79,5 +80,14 @@ public abstract class UICallback {
 
     //TODO
     protected void onDestroy() {
+    }
+
+    /**
+     * Return the FragmentManager for interacting with fragments associated
+     * with this callback.
+     */
+    @Nonnull
+    public FragmentManager getFragmentManager() {
+        return UIManager.sInstance.mFragments.getFragmentManager();
     }
 }

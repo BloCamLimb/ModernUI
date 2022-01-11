@@ -27,11 +27,17 @@ import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Handler;
+import icyllis.modernui.core.Looper;
 import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.fragment.FragmentController;
+import icyllis.modernui.fragment.FragmentHostCallback;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.texture.GLTexture;
+import icyllis.modernui.lifecycle.ViewModelStore;
+import icyllis.modernui.lifecycle.ViewModelStoreOwner;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.text.Editable;
@@ -88,7 +94,7 @@ import static org.lwjgl.glfw.GLFW.*;
 @ApiStatus.Internal
 @NotThreadSafe
 @OnlyIn(Dist.CLIENT)
-public final class UIManager extends ViewRootBase {
+public final class UIManager extends ViewRoot {
 
     // logger marker
     static final Marker MARKER = MarkerManager.getMarker("UIManager");
@@ -152,6 +158,9 @@ public final class UIManager extends ViewRootBase {
     private final Predicate<? super TimedAction> mUiHandler = task -> task.execute(mUptimeMillis);
 
     private final Runnable mPerformCreate = this::performCreate;
+
+    private ViewModelStore mViewModelStore;
+    FragmentController mFragments;
 
     private UIManager() {
         mAnimationHandler = AnimationHandler.init();
@@ -256,6 +265,7 @@ public final class UIManager extends ViewRootBase {
     void performCreate() {
         LayoutTransition transition = mDecor.getLayoutTransition();
         transition.disableTransitionType(LayoutTransition.APPEARING);
+        mFragments.dispatchCreate();
         mCallback.onCreate();
         transition.enableTransitionType(LayoutTransition.APPEARING);
         transition.enableTransitionType(LayoutTransition.DISAPPEARING);
@@ -343,22 +353,28 @@ public final class UIManager extends ViewRootBase {
     }
 
     @UiThread
-    private void init() {
+    @Override
+    protected void init() {
         long startTime = System.nanoTime();
-        ArchCore.initUiThread();
-        initBase();
+        super.init();
         mDecor = new DecorView();
         // make the root view clickable through, so that views can lose focus
         mDecor.setClickable(true);
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
-        {
-            LayoutTransition transition = new LayoutTransition();
-            transition.disableTransitionType(LayoutTransition.CHANGE_APPEARING);
-            transition.disableTransitionType(LayoutTransition.CHANGE_DISAPPEARING);
-            mDecor.setLayoutTransition(transition);
-        }
+
+        LayoutTransition transition = new LayoutTransition();
+        transition.disableTransitionType(LayoutTransition.CHANGE_APPEARING);
+        transition.disableTransitionType(LayoutTransition.CHANGE_DISAPPEARING);
+        mDecor.setLayoutTransition(transition);
+
         setView(mDecor);
+
+        mViewModelStore = new ViewModelStore();
+        mFragments = FragmentController.createController(this.new HostCallbacks());
+
+        mFragments.attachHost(null);
+
         // kick-start
         scheduleTraversals();
         doTraversal();
@@ -406,6 +422,7 @@ public final class UIManager extends ViewRootBase {
     @SuppressWarnings("InfiniteLoopStatement")
     @UiThread
     private void loop() {
+        Looper looper = Looper.myLooper();
         for (; ; ) {
             LockSupport.park();
 
@@ -711,18 +728,20 @@ public final class UIManager extends ViewRootBase {
                 glDisable(GL_STENCIL_TEST);
             }
         }
-        GLTexture texture = GLFramebuffer.swap(framebuffer, GL_COLOR_ATTACHMENT0);
+        if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
+            GLTexture texture = GLFramebuffer.swap(framebuffer, GL_COLOR_ATTACHMENT0);
 
-        // draw MSAA off-screen target to Minecraft main target (not the default framebuffer)
-        RenderSystem.blendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
+            // draw MSAA off-screen target to Minecraft main target (not the default framebuffer)
+            RenderSystem.blendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
 
-        // do alpha fade in
-        int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
-        alpha = alpha << 8 | alpha;
-        // premultiplied alpha
-        canvas.drawLayer(texture, width, height, alpha << 16 | alpha, true);
-        canvas.draw(null);
+            // do alpha fade in
+            int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
+            alpha = alpha << 8 | alpha;
+            // premultiplied alpha
+            canvas.drawLayer(texture, width, height, alpha << 16 | alpha, true);
+            canvas.draw(null);
+        }
 
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);
@@ -795,6 +814,7 @@ public final class UIManager extends ViewRootBase {
     }
 
     private final Runnable mPerformPostDestroy = () -> {
+        mFragments.dispatchDestroy();
         mDecor.getLayoutTransition().disableTransitionType(LayoutTransition.DISAPPEARING);
         mDecor.removeAllViews();
     };
@@ -847,7 +867,7 @@ public final class UIManager extends ViewRootBase {
             final long deltaMillis = mFrameTimeMillis - lastFrameTime;
             mElapsedTimeMillis += deltaMillis;
             // coordinates UI thread
-            LockSupport.unpark(mThread);
+            LockSupport.unpark(ArchCore.getUiThread());
             // update extension animations
             BlurHandler.INSTANCE.update(mElapsedTimeMillis);
             if (TooltipRenderer.sTooltip) {
@@ -864,6 +884,28 @@ public final class UIManager extends ViewRootBase {
                 }
             }
         }*/
+    }
+
+    @UiThread
+    class HostCallbacks extends FragmentHostCallback<Object> implements
+            ViewModelStoreOwner {
+        HostCallbacks() {
+            super(new Handler(Looper.myLooper()));
+            assert ArchCore.isOnUiThread();
+        }
+
+        @Nullable
+        @Override
+        public Object onGetHost() {
+            // intentionally null, UIManager is global
+            return null;
+        }
+
+        @Nonnull
+        @Override
+        public ViewModelStore getViewModelStore() {
+            return UIManager.this.mViewModelStore;
+        }
     }
 
     //boolean mPendingRepostCursorEvent = false;
