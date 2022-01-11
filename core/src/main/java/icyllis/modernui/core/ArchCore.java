@@ -18,6 +18,8 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.GLWrapper;
 import org.apache.logging.log4j.Marker;
@@ -43,7 +45,8 @@ import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * The core class for the window system and graphics backend.
+ * The core class for the window system and graphics backend,
+ * also provides utility methods of native operations and thread scheduling.
  */
 public final class ArchCore {
 
@@ -59,6 +62,7 @@ public final class ArchCore {
     /**
      * Initialize GLFW, call on JVM main thread.
      */
+    @MainThread
     public static void initBackend() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
         if (GLFW.glfwSetErrorCallback(ArchCore::onError) != null || !GLFW.glfwInit()) {
@@ -74,12 +78,27 @@ public final class ArchCore {
 
     public static void checkMainThread() {
         if (Thread.currentThread() != sMainThread)
-            throw new IllegalStateException("Not called from main thread");
+            throw new IllegalStateException("Not called from main thread. Current " + Thread.currentThread());
     }
 
     public static void checkRenderThread() {
         if (Thread.currentThread() != sRenderThread)
-            throw new IllegalStateException("Not called from render thread");
+            synchronized (ArchCore.class) {
+                if (sRenderThread == null)
+                    throw new IllegalStateException("Render thread was never initialized. " +
+                            "Please check whether the loader threw an exception before.");
+                else
+                    throw new IllegalStateException("Not called from render thread. Desired " + sRenderThread +
+                            " current " + Thread.currentThread());
+            }
+    }
+
+    public static Thread getMainThread() {
+        return sMainThread;
+    }
+
+    public static Thread getRenderThread() {
+        return sRenderThread;
     }
 
     public static boolean isOnMainThread() {
@@ -115,6 +134,7 @@ public final class ArchCore {
     /**
      * Call after creating a Window on render thread.
      */
+    @RenderThread
     public static void initOpenGL() {
         synchronized (ArchCore.class) {
             if (sRenderThread == null) {
@@ -161,7 +181,22 @@ public final class ArchCore {
 
     public static void checkUiThread() {
         if (Thread.currentThread() != sUiThread)
-            throw new IllegalStateException("Not called from UI thread");
+            synchronized (ArchCore.class) {
+                if (sUiThread == null)
+                    throw new IllegalStateException("UI thread was never initialized. " +
+                            "Please check whether the loader threw an exception before.");
+                else
+                    throw new IllegalStateException("Not called from UI thread. Desired " + sUiThread +
+                            " current " + Thread.currentThread());
+            }
+    }
+
+    public static Thread getUiThread() {
+        return sUiThread;
+    }
+
+    public static boolean isOnUiThread() {
+        return Thread.currentThread() == sUiThread;
     }
 
     public static long timeNanos() {

@@ -731,6 +731,12 @@ public class View implements Drawable.Callback {
      */
     static final int PFLAG3_IS_LAID_OUT = 0x4;
 
+    /**
+     * Flag indicating that an overridden method correctly called down to
+     * the superclass implementation as required by the API spec.
+     */
+    static final int PFLAG3_CALLED_SUPER = 0x10;
+
     int mPrivateFlags;
     int mPrivateFlags2;
     int mPrivateFlags3;
@@ -2030,7 +2036,7 @@ public class View implements Drawable.Callback {
         invalidate();
 
         if (!enabled) {
-            //cancelPendingInputEvents();
+            cancelPendingInputEvents();
         }
     }
 
@@ -2484,7 +2490,7 @@ public class View implements Drawable.Callback {
         }
 
         if (mAttachInfo != null) {
-            mAttachInfo.mViewRootBase.invalidate();
+            mAttachInfo.mViewRoot.invalidate();
         }
     }
 
@@ -3618,7 +3624,7 @@ public class View implements Drawable.Callback {
         }
         // transfer all pending tasks
         if (mRunQueue != null) {
-            mRunQueue.executeActions(info.mViewRootBase);
+            mRunQueue.executeActions(info.mViewRoot);
             mRunQueue = null;
         }
         onAttachedToWindow();
@@ -3708,7 +3714,37 @@ public class View implements Drawable.Callback {
      * the transaction completes, tracking already submitted transaction IDs, etc.</p>
      */
     public final void cancelPendingInputEvents() {
-        //TODO implement
+        dispatchCancelPendingInputEvents();
+    }
+
+    /**
+     * Called by {@link #cancelPendingInputEvents()} to cancel input events in flight.
+     * Overridden by ViewGroup to dispatch. Package scoped to prevent app-side meddling.
+     */
+    void dispatchCancelPendingInputEvents() {
+        mPrivateFlags3 &= ~PFLAG3_CALLED_SUPER;
+        onCancelPendingInputEvents();
+        if ((mPrivateFlags3 & PFLAG3_CALLED_SUPER) != PFLAG3_CALLED_SUPER) {
+            throw new IllegalStateException("View " + getClass().getSimpleName() +
+                    " did not call through to super.onCancelPendingInputEvents()");
+        }
+    }
+
+    /**
+     * Called as the result of a call to {@link #cancelPendingInputEvents()} on this view or
+     * a parent view.
+     *
+     * <p>This method is responsible for removing any pending high-level input events that were
+     * posted to the event queue to run later. Custom view classes that post their own deferred
+     * high-level events via {@link #post(Runnable)}, {@link #postDelayed(Runnable, long)} or
+     * {@link icyllis.modernui.core.Handler} should override this method, call
+     * <code>super.onCancelPendingInputEvents()</code> and remove those callbacks as appropriate.
+     * </p>
+     */
+    public void onCancelPendingInputEvents() {
+        //removePerformClickCallback();
+        cancelLongPress();
+        mPrivateFlags3 |= PFLAG3_CALLED_SUPER;
     }
 
     /**
@@ -5149,7 +5185,7 @@ public class View implements Drawable.Callback {
     public final boolean post(@Nonnull Runnable action) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            return attachInfo.mViewRootBase.post(action);
+            return attachInfo.mViewRoot.post(action);
         }
 
         // Postpone the runnable until we know on which thread it needs to run.
@@ -5176,7 +5212,7 @@ public class View implements Drawable.Callback {
     public final boolean postDelayed(@Nonnull Runnable action, long delayMillis) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            return attachInfo.mViewRootBase.postDelayed(action, delayMillis);
+            return attachInfo.mViewRoot.postDelayed(action, delayMillis);
         }
 
         // Postpone the runnable until we know on which thread it needs to run.
@@ -5196,7 +5232,7 @@ public class View implements Drawable.Callback {
     public final void postOnAnimation(@Nonnull Runnable action) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            attachInfo.mViewRootBase.postOnAnimation(action);
+            attachInfo.mViewRoot.postOnAnimation(action);
         } else {
             // Postpone the runnable until we know
             // on which thread it needs to run.
@@ -5217,7 +5253,7 @@ public class View implements Drawable.Callback {
     public final void postOnAnimationDelayed(@Nonnull Runnable action, long delayMillis) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            attachInfo.mViewRootBase.postOnAnimationDelayed(action, delayMillis);
+            attachInfo.mViewRoot.postOnAnimationDelayed(action, delayMillis);
         } else {
             // Postpone the runnable until we know
             // on which thread it needs to run.
@@ -5238,7 +5274,7 @@ public class View implements Drawable.Callback {
         if (action != null) {
             final AttachInfo attachInfo = mAttachInfo;
             if (attachInfo != null) {
-                attachInfo.mViewRootBase.removeCallbacks(action);
+                attachInfo.mViewRoot.removeCallbacks(action);
             }
             if (mRunQueue != null) {
                 mRunQueue.removeCallbacks(action);
@@ -5277,7 +5313,7 @@ public class View implements Drawable.Callback {
         // if we are not attached to our window
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            attachInfo.mViewRootBase.postDelayed(this::invalidate, delayMillis);
+            attachInfo.mViewRoot.postDelayed(this::invalidate, delayMillis);
         }
     }
 
@@ -5315,7 +5351,7 @@ public class View implements Drawable.Callback {
             ModernUI.LOGGER.error(VIEW_MARKER, "startDragAndDrop called out of a window");
             return false;
         }
-        return mAttachInfo.mViewRootBase.startDragAndDrop(this, localState, shadow, flags);
+        return mAttachInfo.mViewRoot.startDragAndDrop(this, localState, shadow, flags);
     }
 
     /**
@@ -6162,7 +6198,7 @@ public class View implements Drawable.Callback {
      * @param pointerIcon A PointerIcon instance which will be shown when the mouse hovers.
      */
     public void setPointerIcon(@Nullable PointerIcon pointerIcon) {
-        mAttachInfo.mViewRootBase.updatePointerIcon(pointerIcon);
+        mAttachInfo.mViewRoot.updatePointerIcon(pointerIcon);
     }
 
     /*

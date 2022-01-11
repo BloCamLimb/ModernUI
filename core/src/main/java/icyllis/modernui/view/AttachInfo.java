@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.core.Handler;
 import icyllis.modernui.math.PointF;
 import icyllis.modernui.math.RectF;
 
@@ -44,9 +45,15 @@ final class AttachInfo {
     final ViewTreeObserver mTreeObserver;
 
     /**
-     * The view root base.
+     * The view root.
      */
-    final ViewRootBase mViewRootBase;
+    final ViewRoot mViewRoot;
+
+    /**
+     * A Handler supplied by a view's {@link ViewRoot}. This
+     * handler can be used to pump events in the UI events queue.
+     */
+    final Handler mHandler;
 
     /**
      * Global to the view hierarchy used as a temporary for dealing with
@@ -59,8 +66,9 @@ final class AttachInfo {
      */
     final RectF mTmpTransformRect = new RectF();
 
-    AttachInfo(ViewRootBase viewRootBase) {
-        mViewRootBase = viewRootBase;
+    AttachInfo(ViewRoot viewRoot, Handler handler) {
+        mViewRoot = viewRoot;
+        mHandler = handler;
         mTreeObserver = new ViewTreeObserver();
     }
 }

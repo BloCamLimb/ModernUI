@@ -77,7 +77,7 @@ public class HandlerActionQueue {
         }
     }
 
-    public void executeActions(ViewRootBase handler) {
+    public void executeActions(ViewRoot handler) {
         synchronized (this) {
             final TimedAction[] actions = mActions;
             for (int i = 0, count = mCount; i < count; i++) {

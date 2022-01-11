@@ -141,17 +141,16 @@ final class Registration {
         bytes = ArrayUtils.addAll(bytes, ModList.get().getModFileById(ModernUI.ID).getLicense()
                 .getBytes(StandardCharsets.UTF_8));
         if (bytes == null) {
-            throw new IllegalStateException("Modern UI is broken");
+            throw new IllegalStateException();
         }
-        NetworkMessages.sNetwork = new NetworkHandler("_root", () -> NetworkMessages::msg,
+        NetworkMessages.sNetwork = new NetworkHandler("", () -> NetworkMessages::msg,
                 null, digest(bytes), true);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 
         // give it a probe
         if (MuiForgeApi.isServerStarted()) {
-            assert true : "YES";
-            assert false : "NO";
+            VertexConsumer.LOGGER.fatal("OK");
         }
     }
 

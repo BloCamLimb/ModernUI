@@ -55,7 +55,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
  */
 public final class FragmentManager {
     // ForceInline
-    static final boolean DEBUG = false;
+    static final boolean DEBUG = true;
     static final Marker MARKER = MarkerManager.getMarker("FragmentManager");
     static boolean USE_STATE_MANAGER = true;
 
