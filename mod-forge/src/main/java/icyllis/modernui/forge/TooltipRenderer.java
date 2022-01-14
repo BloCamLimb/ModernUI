@@ -46,7 +46,7 @@ import static icyllis.modernui.graphics.GLWrapper.*;
 public final class TooltipRenderer {
 
     // config value
-    static volatile boolean sTooltip = true;
+    public static volatile boolean sTooltip = true;
 
     static int[] sFillColor = new int[4];
     static int[] sStrokeColor = new int[4];
@@ -72,11 +72,11 @@ public final class TooltipRenderer {
     static void update(long deltaMillis) {
         if (sDraw) {
             if (sAlpha < 1) {
-                sAlpha = Math.min(sAlpha + deltaMillis * 0.01f, 1);
+                sAlpha = Math.min(sAlpha + deltaMillis * 0.005f, 1);
             }
             sDraw = false;
         } else if (sAlpha > 0) {
-            sAlpha = Math.max(sAlpha - deltaMillis * 0.01f, 0);
+            sAlpha = Math.max(sAlpha - deltaMillis * 0.005f, 0);
         }
     }
 
