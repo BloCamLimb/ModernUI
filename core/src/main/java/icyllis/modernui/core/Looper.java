@@ -38,7 +38,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.MainThread;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -120,8 +119,7 @@ public final class Looper {
     /**
      * Poll and deliver single message, return true if the outer loop should continue.
      */
-    @ApiStatus.Internal
-    public static boolean poll(@Nonnull final Looper me) {
+    private static boolean poll(@Nonnull final Looper me) {
         Message msg = me.mQueue.next(); // might block
         if (msg == null) {
             // No message indicates that the message queue is quitting.
@@ -173,11 +171,10 @@ public final class Looper {
     }
 
     /**
-     * Enter the looper in this thread.
+     * Run the message queue in this thread. Be sure to call
+     * {@link #quit()} to end the loop.
      */
-    @ApiStatus.Internal
-    @Nonnull
-    public static Looper enter() {
+    public static void loop() {
         final Looper me = myLooper();
         if (me == null) {
             throw new RuntimeException("No Looper; Looper.prepare() wasn't called on this thread.");
@@ -188,15 +185,6 @@ public final class Looper {
         }
         me.mInLoop = true;
         me.mSlowDeliveryDetected = false;
-        return me;
-    }
-
-    /**
-     * Run the message queue in this thread. Be sure to call
-     * {@link #quit()} to end the loop.
-     */
-    public static void loop() {
-        final Looper me = enter();
         //noinspection StatementWithEmptyBody
         while (poll(me));
     }
@@ -209,9 +197,10 @@ public final class Looper {
      *
      * @param w the main window.
      */
-    @ApiStatus.Internal
     @MainThread
     public static void loop(@Nonnull Window w) {
+        ArchCore.checkMainThread();
+        assert sMainLooper == null;
         final Looper me = new Looper(w.getHandle());
         sThreadLocal.set(me);
         sMainLooper = me;

@@ -401,7 +401,7 @@ public final class MessageQueue {
                 // and the message are the earliest asynchronous message in the queue.
                 needWake = mBlocked && p.target == null && msg.isAsynchronous();
                 Message prev;
-                for (; ; ) {
+                for (;;) {
                     prev = p;
                     p = p.next;
                     if (p == null || when < p.when) {
@@ -581,7 +581,7 @@ public final class MessageQueue {
                 removeAllMessagesLocked();
             } else {
                 Message n;
-                for (; ; ) {
+                for (;;) {
                     n = p.next;
                     if (n == null) {
                         return;
