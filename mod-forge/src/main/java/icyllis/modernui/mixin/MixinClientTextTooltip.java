@@ -38,9 +38,15 @@ public class MixinClientTextTooltip {
                     "(Lnet/minecraft/util/FormattedCharSequence;FFIZLcom/mojang/math/Matrix4f;" +
                     "Lnet/minecraft/client/renderer/MultiBufferSource;ZII)I"))
     private int drawText(@Nonnull Font font, FormattedCharSequence text, float x, float y,
-                          int color, boolean dropShadow, Matrix4f matrix, MultiBufferSource source,
-                          boolean seeThrough, int colorBackground, int packedLight) {
-        final int colorR = (Math.max((int) (TooltipRenderer.sAlpha * 255), 1) << 24) | 0xFFFFFF;
-        return font.drawInBatch(text, x, y, colorR, dropShadow, matrix, source, seeThrough, colorBackground, packedLight);
+                         int color, boolean dropShadow, Matrix4f matrix, MultiBufferSource source,
+                         boolean seeThrough, int colorBackground, int packedLight) {
+        if (TooltipRenderer.sTooltip) {
+            final int colorR = (Math.max((int) (TooltipRenderer.sAlpha * 255), 1) << 24) | (color & 0xFFFFFF);
+            return font.drawInBatch(text, x, y, colorR, dropShadow, matrix, source, seeThrough, colorBackground,
+                    packedLight);
+        } else {
+            return font.drawInBatch(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground,
+                    packedLight);
+        }
     }
 }
