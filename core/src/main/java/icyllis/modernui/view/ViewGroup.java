@@ -669,6 +669,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         TouchTarget target = mTouchTarget;
         if (target != null) {
             if (target.child == view) {
+                mTouchTarget = null;
                 target.recycle();
 
                 final long now = ArchCore.timeNanos();
