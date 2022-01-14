@@ -28,6 +28,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
+import java.awt.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -80,6 +81,8 @@ public class ModernUI {
                 throw new IllegalStateException("Multiple instances");
             }
         }
+        // should be true
+        LOGGER.info("AWT headless: {}", GraphicsEnvironment.isHeadless());
     }
 
     /**
@@ -188,28 +191,5 @@ public class ModernUI {
     @Nonnull
     public ViewManager getViewManager() {
         return mViewManager;
-    }
-
-    /**
-     * Post a task that will run on UI thread later.
-     *
-     * @param action runnable task
-     * @return if successful
-     */
-    @Deprecated
-    public boolean postOnUiThread(@Nonnull Runnable action) {
-        return false;
-    }
-
-    /**
-     * Post a task that will run on UI thread in specified milliseconds.
-     *
-     * @param action      runnable task
-     * @param delayMillis delayed time to run the task in milliseconds
-     * @return if successful
-     */
-    @Deprecated
-    public boolean postOnUiThread(@Nonnull Runnable action, long delayMillis) {
-        return false;
     }
 }

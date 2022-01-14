@@ -26,10 +26,7 @@ import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.Looper;
-import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.FragmentController;
 import icyllis.modernui.fragment.FragmentHostCallback;
 import icyllis.modernui.graphics.Canvas;
@@ -79,7 +76,6 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
 import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
 
@@ -105,6 +101,9 @@ public final class UIManager extends ViewRoot {
     // the global instance
     static volatile UIManager sInstance;
 
+    private static final int MSG_DO_FRAME = 1;
+    private static final int MSG_SET_FRAME = 2;
+
     // minecraft client
     private final Minecraft minecraft = Minecraft.getInstance();
 
@@ -125,7 +124,7 @@ public final class UIManager extends ViewRoot {
     private UICallback mCallback;
 
     // a list of UI tasks
-    private final ConcurrentLinkedQueue<TimedAction> mTasks = new ConcurrentLinkedQueue<>();
+    //private final ConcurrentLinkedQueue<TimedAction> mTasks = new ConcurrentLinkedQueue<>();
     private final ConcurrentLinkedQueue<TimedAction> mAnimationTasks = new ConcurrentLinkedQueue<>();
 
     // animation update callback
@@ -184,11 +183,22 @@ public final class UIManager extends ViewRoot {
         assert mgr.mCanvas == null;
         mgr.mCanvas = GLCanvas.initialize();
         glEnable(GL_MULTISAMPLE);
-        new Thread(() -> {
-            sInstance.init();
-            sInstance.loop();
-        }, "UI thread").start();
+        new Thread(UIManager::run, "UI thread").start();
         LOGGER.info(MARKER, "UI system initialized");
+    }
+
+    @UiThread
+    private static void run() {
+        sInstance.init();
+        try {
+            Looper.loop();
+        } catch (Throwable e) {
+            LOGGER.error(MARKER, "An error occurred on UI thread", e);
+            sInstance.dump();
+            if (!ModernUIForge.isDeveloperMode()) {
+                Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(e, "Exception on UI thread"));
+            }
+        }
     }
 
     /**
@@ -253,7 +263,7 @@ public final class UIManager extends ViewRoot {
     // Called when open a screen from Modern UI, or back to the screen
     void create(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
-            post(mPerformCreate);
+            mHandler.post(mPerformCreate);
             mScreen = screen;
 
             // init view of this UI
@@ -265,7 +275,7 @@ public final class UIManager extends ViewRoot {
     void performCreate() {
         LayoutTransition transition = mDecor.getLayoutTransition();
         transition.disableTransitionType(LayoutTransition.APPEARING);
-        mFragments.dispatchCreate();
+        mFragments.dispatchStart();
         mCallback.onCreate();
         transition.enableTransitionType(LayoutTransition.APPEARING);
         transition.enableTransitionType(LayoutTransition.DISAPPEARING);
@@ -322,21 +332,6 @@ public final class UIManager extends ViewRoot {
         }
     }
 
-    /**
-     * Post a task that will run on UI thread in specified milliseconds.
-     *
-     * @param r           runnable task
-     * @param delayMillis delayed time to run the task in milliseconds
-     * @return if successful
-     */
-    @Override
-    public boolean postDelayed(@Nonnull Runnable r, long delayMillis) {
-        if (delayMillis < 0) {
-            delayMillis = 0;
-        }
-        return mTasks.offer(TimedAction.obtain(r, ArchCore.timeMillis() + delayMillis));
-    }
-
     @Override
     public void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis) {
         if (delayMillis < 0) {
@@ -348,7 +343,7 @@ public final class UIManager extends ViewRoot {
     @Override
     public void removeCallbacks(@Nonnull Runnable r) {
         Predicate<? super TimedAction> pred = t -> t.remove(r);
-        mTasks.removeIf(pred);
+        //mTasks.removeIf(pred);
         mAnimationTasks.removeIf(pred);
     }
 
@@ -374,6 +369,8 @@ public final class UIManager extends ViewRoot {
         mFragments = FragmentController.createController(this.new HostCallbacks());
 
         mFragments.attachHost(null);
+        mFragments.dispatchCreate();
+        mFragments.dispatchActivityCreated();
 
         // kick-start
         scheduleTraversals();
@@ -419,39 +416,36 @@ public final class UIManager extends ViewRoot {
         mCanvas.drawCircle(570, 30, 6, paint);*/
     }
 
-    @SuppressWarnings("InfiniteLoopStatement")
     @UiThread
-    private void loop() {
-        Looper looper = Looper.myLooper();
-        for (; ; ) {
-            LockSupport.park();
+    private void doFrame() {
+        // 1. handle tasks
+        mUptimeMillis = ArchCore.timeMillis();
+        /*if (!mTasks.isEmpty()) {
+            // batched processing
+            mTasks.removeIf(mUiHandler);
+        }*/
 
-            try {
-                // 1. handle tasks
-                mUptimeMillis = ArchCore.timeMillis();
-                if (!mTasks.isEmpty()) {
-                    // batched processing
-                    mTasks.removeIf(mUiHandler);
-                }
+        // 2. do input events
+        doProcessInputEvents();
 
-                // 2. do input events
-                doProcessInputEvents();
-
-                // 3. do animations
-                mAnimationHandler.accept(mFrameTimeMillis);
-                if (!mAnimationTasks.isEmpty()) {
-                    mAnimationTasks.removeIf(mUiHandler);
-                }
-
-                // 4. do traversal
-                doTraversal();
-            } catch (Throwable t) {
-                LOGGER.error(MARKER, "An error occurred on UI thread", t);
-                dump();
-                Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(t, "Exception on UI thread"));
-                throw t;
-            }
+        // 3. do animations
+        mAnimationHandler.accept(mFrameTimeMillis);
+        if (!mAnimationTasks.isEmpty()) {
+            mAnimationTasks.removeIf(mUiHandler);
         }
+
+        // 4. do traversal
+        doTraversal();
+    }
+
+    @Override
+    protected boolean handleMessage(@Nonnull Message msg) {
+        if (msg.what == MSG_DO_FRAME) {
+            doFrame();
+        } else if (msg.what == MSG_SET_FRAME) {
+            setFrame(mWindow.getWidth(), mWindow.getHeight());
+        }
+        return true;
     }
 
     /**
@@ -592,11 +586,11 @@ public final class UIManager extends ViewRoot {
                 break;*/
 
             case GLFW_KEY_N:
-                post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_RTL));
+                mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_RTL));
                 break;
 
             case GLFW_KEY_M:
-                post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
+                mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
                 break;
 
             case GLFW_KEY_G:
@@ -668,7 +662,7 @@ public final class UIManager extends ViewRoot {
         /*if (mKeyboard != null) {
             return mKeyboard.onCharTyped(codePoint, modifiers);
         }*/
-        post(() -> {
+        Message msg = Message.obtain(mHandler, () -> {
             final Editable content;
             if (mDecor.findFocus() instanceof TextView tv && (content = tv.getEditableText()) != null) {
                 int selStart = tv.getSelectionStart();
@@ -679,6 +673,8 @@ public final class UIManager extends ViewRoot {
                 }
             }
         });
+        msg.setAsynchronous(true);
+        msg.sendToTarget();
         return true;//root.charTyped(codePoint, modifiers);
     }
 
@@ -727,20 +723,20 @@ public final class UIManager extends ViewRoot {
                 }
                 glDisable(GL_STENCIL_TEST);
             }
-        }
-        if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
-            GLTexture texture = GLFramebuffer.swap(framebuffer, GL_COLOR_ATTACHMENT0);
 
-            // draw MSAA off-screen target to Minecraft main target (not the default framebuffer)
-            RenderSystem.blendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-            glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
+            GLTexture texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+            if (texture.getWidth() > 0) {
+                // draw MSAA off-screen target to Minecraft main target (not the default framebuffer)
+                RenderSystem.blendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
 
-            // do alpha fade in
-            int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
-            alpha = alpha << 8 | alpha;
-            // premultiplied alpha
-            canvas.drawLayer(texture, width, height, alpha << 16 | alpha, true);
-            canvas.draw(null);
+                // do alpha fade in
+                int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
+                alpha = alpha << 8 | alpha;
+                // premultiplied alpha
+                canvas.drawLayer(texture, width, height, alpha << 16 | alpha, true);
+                canvas.draw(null);
+            }
         }
 
         glBindVertexArray(oldVertexArray);
@@ -803,18 +799,16 @@ public final class UIManager extends ViewRoot {
         }
     }
 
-    private final Runnable mSetFrame = () -> setFrame(mWindow.getWidth(), mWindow.getHeight());
-
     /**
      * Called when game window size changed, used to re-layout the window.
      */
     void resize() {
-        post(mSetFrame);
+        mHandler.sendEmptyMessage(MSG_SET_FRAME);
         mProjectionChanged = true;
     }
 
     private final Runnable mPerformPostDestroy = () -> {
-        mFragments.dispatchDestroy();
+        mFragments.dispatchStop();
         mDecor.getLayoutTransition().disableTransitionType(LayoutTransition.DISAPPEARING);
         mDecor.removeAllViews();
     };
@@ -826,14 +820,14 @@ public final class UIManager extends ViewRoot {
         mScreen = null;
         if (mCallback != null) {
             final UICallback callback = mCallback;
-            post(callback::onDestroy);
+            mHandler.post(callback::onDestroy);
             mCallback = null;
         }
         updatePointerIcon(null);
         applyPointerIcon();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
 
-        post(mPerformPostDestroy);
+        mHandler.post(mPerformPostDestroy);
     }
 
     @Deprecated
@@ -849,7 +843,7 @@ public final class UIManager extends ViewRoot {
         if (event.phase == TickEvent.Phase.START) {
             //++mTicks;
             if (mScreen != null && minecraft.screen == mScreen) {
-                post(mTick);
+                mHandler.post(mTick);
             }
         }
         /* else {
@@ -867,7 +861,9 @@ public final class UIManager extends ViewRoot {
             final long deltaMillis = mFrameTimeMillis - lastFrameTime;
             mElapsedTimeMillis += deltaMillis;
             // coordinates UI thread
-            LockSupport.unpark(ArchCore.getUiThread());
+            Message msg = mHandler.obtainMessage(MSG_DO_FRAME);
+            msg.setAsynchronous(true);
+            msg.sendToTarget();
             // update extension animations
             BlurHandler.INSTANCE.update(mElapsedTimeMillis);
             if (TooltipRenderer.sTooltip) {
@@ -897,8 +893,14 @@ public final class UIManager extends ViewRoot {
         @Nullable
         @Override
         public Object onGetHost() {
-            // intentionally null, UIManager is global
+            // intentionally null, activity is global
             return null;
+        }
+
+        @Nullable
+        @Override
+        public View onFindViewById(int id) {
+            return mDecor.findViewById(id);
         }
 
         @Nonnull

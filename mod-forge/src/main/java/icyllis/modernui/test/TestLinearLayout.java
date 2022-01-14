@@ -428,6 +428,12 @@ public class TestLinearLayout extends LinearLayout {
             canvas.setTextAlign(TextAlign.CENTER);
             canvas.drawText(str, getWidth() >> 1, 4);*/
         }
+
+        @Override
+        public void onHoverChanged(boolean hovered) {
+            super.onHoverChanged(hovered);
+            invalidate();
+        }
     }
 
     private static class DView extends View {

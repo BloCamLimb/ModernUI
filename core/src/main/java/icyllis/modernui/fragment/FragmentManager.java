@@ -2386,7 +2386,7 @@ public final class FragmentManager {
             // pick the change up here.
             return mParent.mFragmentManager.getSpecialEffectsControllerFactory();
         }
-        return null;
+        return DefaultSpecialEffectsController::new;
     }
 
     @Nonnull

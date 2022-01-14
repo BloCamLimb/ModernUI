@@ -82,8 +82,7 @@ public final class ModernUIForge extends ModernUI {
             } catch (Exception e) {
                 LOGGER.info(MARKER, "OptiFine installed...");
             }
-        } catch (ClassNotFoundException e) {
-            LOGGER.info("OptiFine not installed...");
+        } catch (ClassNotFoundException ignored) {
         }
     }
 
@@ -247,16 +246,6 @@ public final class ModernUIForge extends ModernUI {
     @Override
     public ViewManager getViewManager() {
         return UIManager.sInstance.getDecorView();
-    }
-
-    @Override
-    public boolean postOnUiThread(@Nonnull Runnable action) {
-        return UIManager.sInstance.postDelayed(action, 0);
-    }
-
-    @Override
-    public boolean postOnUiThread(@Nonnull Runnable action, long delayMillis) {
-        return UIManager.sInstance.postDelayed(action, delayMillis);
     }
 
     public static boolean isDeveloperMode() {

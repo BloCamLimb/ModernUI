@@ -45,6 +45,7 @@ import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
+import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -52,18 +53,15 @@ import org.lwjgl.system.Callback;
 import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
-import javax.imageio.ImageIO;
 import java.awt.*;
 import java.awt.font.GlyphVector;
-import java.awt.geom.RoundRectangle2D;
 import java.awt.image.BufferedImage;
-import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
@@ -161,13 +159,6 @@ public class TestMain {
         ModernUI.LOGGER.info("System class loader: {}", ClassLoader.getSystemClassLoader());
         ModernUI.LOGGER.info("Bootstrap class loader: {}", Object.class.getClassLoader());
 
-        try {
-            DataSet dataSet = DataSetIO.inflate(new FileInputStream("F:/ftestdata.dat"));
-            ModernUI.LOGGER.info(dataSet);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
         ArrayList<Object> acc_r = new ArrayList<>();
         acc_r.add("c");
         List<String> acc_f = (List<String>) (Object) acc_r;
@@ -176,7 +167,7 @@ public class TestMain {
         acc_c.add("d");
         List<Object> acc_g = (List<Object>) (Object) acc_c;*/
 
-        IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
+        /*IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
         GRAPHICS = IMAGE.createGraphics();
 
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
@@ -192,6 +183,13 @@ public class TestMain {
         GRAPHICS.draw(new RoundRectangle2D.Float(20, 20, 600, 600, 20, 20));
         try {
             ImageIO.write(IMAGE, "png", new File("F:/trrr.png"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }*/
+
+        try {
+            DataSet dataSet = DataSet.inflate(new FileInputStream("F:/ftestdata.dat"));
+            ModernUI.LOGGER.info(dataSet);
         } catch (IOException e) {
             e.printStackTrace();
         }
