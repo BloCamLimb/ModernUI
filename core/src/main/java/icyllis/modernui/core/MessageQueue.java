@@ -27,6 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayList;
+import java.util.concurrent.locks.LockSupport;
 
 /**
  * Low-level class holding the list of messages to be dispatched by a
@@ -41,6 +42,7 @@ public final class MessageQueue {
     private static final Marker MARKER = MarkerManager.getMarker("MessageQueue");
 
     private final long mWindow;
+    private final Thread mThread;
 
     @GuardedBy("this")
     Message mMessages;
@@ -63,6 +65,7 @@ public final class MessageQueue {
 
     MessageQueue(long window) {
         mWindow = window;
+        mThread = Thread.currentThread();
     }
 
     /**
@@ -146,7 +149,7 @@ public final class MessageQueue {
                 } else if (nextPollTimeoutMillis == 0) {
                     GLFW.glfwPollEvents();
                 } else {
-                    GLFW.glfwWaitEventsTimeout(nextPollTimeoutMillis / 1000.0);
+                    GLFW.glfwWaitEventsTimeout(nextPollTimeoutMillis / 1000D);
                 }
                 mPolling = false;
 
@@ -155,6 +158,15 @@ public final class MessageQueue {
                     mDisposed = true;
                     return null;
                 }
+            } else {
+                // Blocking
+                mPolling = true;
+                if (nextPollTimeoutMillis < 0) {
+                    LockSupport.park();
+                } else if (nextPollTimeoutMillis > 0) {
+                    LockSupport.parkNanos(nextPollTimeoutMillis * 1000L);
+                }
+                mPolling = false;
             }
 
             synchronized (this) {
@@ -346,8 +358,12 @@ public final class MessageQueue {
 
             // If the loop is quitting then it is already awake.
             // We can assume mDisposed is false because mQuitting is false.
-            if (needWake && !mQuitting && mWindow != 0) {
-                GLFW.glfwPostEmptyEvent();
+            if (needWake && !mQuitting) {
+                if (mWindow != 0) {
+                    GLFW.glfwPostEmptyEvent();
+                } else {
+                    LockSupport.unpark(mThread);
+                }
             }
         }
     }
@@ -400,8 +416,12 @@ public final class MessageQueue {
             }
 
             // We can assume mDisposed is false because mQuitting is false.
-            if (needWake && mWindow != 0) {
-                GLFW.glfwPostEmptyEvent();
+            if (needWake) {
+                if (mWindow != 0) {
+                    GLFW.glfwPostEmptyEvent();
+                } else {
+                    LockSupport.unpark(mThread);
+                }
             }
         }
         return true;
