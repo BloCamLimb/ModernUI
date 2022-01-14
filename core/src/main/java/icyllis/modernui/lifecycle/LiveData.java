@@ -18,7 +18,6 @@
 
 package icyllis.modernui.lifecycle;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.ArchCore;
 
@@ -281,7 +280,7 @@ public abstract class LiveData<T> {
         if (!postTask) {
             return;
         }
-        ModernUI.getInstance().postOnUiThread(mPostValueRunnable);
+        ArchCore.getUiHandler().post(mPostValueRunnable);
     }
 
     /**

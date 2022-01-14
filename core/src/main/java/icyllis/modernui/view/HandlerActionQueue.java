@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.core.Handler;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.TimedAction;
 
@@ -77,7 +78,7 @@ public class HandlerActionQueue {
         }
     }
 
-    public void executeActions(ViewRoot handler) {
+    public void executeActions(Handler handler) {
         synchronized (this) {
             final TimedAction[] actions = mActions;
             for (int i = 0, count = mCount; i < count; i++) {

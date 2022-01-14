@@ -427,7 +427,7 @@ public final class GLCanvas extends Canvas {
             return;
         }
         if (getSaveCount() != 1) {
-            throw new IllegalStateException("Unbalanced save-restore pair " + getSaveCount());
+            ModernUI.LOGGER.warn("Unbalanced save-restore pair {}", getSaveCount(), new Exception());
         }
         if (framebuffer != null) {
             framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).make(mWidth, mHeight, true);

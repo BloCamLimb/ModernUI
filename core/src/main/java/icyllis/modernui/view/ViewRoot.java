@@ -78,13 +78,13 @@ public abstract class ViewRoot implements ViewParent {
     protected ViewRoot() {
     }
 
-    protected boolean handleMessage(Message msg) {
+    protected boolean handleMessage(@Nonnull Message msg) {
         return true;
     }
 
     protected void init() {
         ArchCore.initUiThread();
-        mHandler = new Handler(Looper.prepare(), this::handleMessage);
+        mHandler = new Handler(Looper.myLooper(), this::handleMessage);
         mAttachInfo = new AttachInfo(this, mHandler);
 
         try {
@@ -193,6 +193,7 @@ public abstract class ViewRoot implements ViewParent {
     public void scheduleTraversals() {
         if (!mTraversalScheduled) {
             mTraversalScheduled = true;
+            mHandler.sendEmptyMessage(0);
         }
     }
 
@@ -364,14 +365,6 @@ public abstract class ViewRoot implements ViewParent {
     }
 
     /// START - Handler
-
-    protected boolean post(@Nonnull Runnable r) {
-        return postDelayed(r, 0);
-    }
-
-    protected boolean postDelayed(@Nonnull Runnable r, long delayMillis) {
-        return false;
-    }
 
     protected void postOnAnimation(@Nonnull Runnable r) {
         postOnAnimationDelayed(r, 0);

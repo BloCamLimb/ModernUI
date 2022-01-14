@@ -3552,6 +3552,7 @@ public class View implements Drawable.Callback {
      * completely transparent and 1 means the view is completely opaque.
      *
      * <p>By default this is 1.0f.
+     *
      * @return The opacity of the view.
      */
     public float getAlpha() {
@@ -3624,7 +3625,7 @@ public class View implements Drawable.Callback {
         }
         // transfer all pending tasks
         if (mRunQueue != null) {
-            mRunQueue.executeActions(info.mViewRoot);
+            mRunQueue.executeActions(info.mHandler);
             mRunQueue = null;
         }
         onAttachedToWindow();
@@ -5185,7 +5186,7 @@ public class View implements Drawable.Callback {
     public final boolean post(@Nonnull Runnable action) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            return attachInfo.mViewRoot.post(action);
+            return attachInfo.mHandler.post(action);
         }
 
         // Postpone the runnable until we know on which thread it needs to run.
@@ -5212,7 +5213,7 @@ public class View implements Drawable.Callback {
     public final boolean postDelayed(@Nonnull Runnable action, long delayMillis) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            return attachInfo.mViewRoot.postDelayed(action, delayMillis);
+            return attachInfo.mHandler.postDelayed(action, delayMillis);
         }
 
         // Postpone the runnable until we know on which thread it needs to run.
@@ -5274,6 +5275,7 @@ public class View implements Drawable.Callback {
         if (action != null) {
             final AttachInfo attachInfo = mAttachInfo;
             if (attachInfo != null) {
+                attachInfo.mHandler.removeCallbacks(action);
                 attachInfo.mViewRoot.removeCallbacks(action);
             }
             if (mRunQueue != null) {
@@ -5313,7 +5315,7 @@ public class View implements Drawable.Callback {
         // if we are not attached to our window
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            attachInfo.mViewRoot.postDelayed(this::invalidate, delayMillis);
+            attachInfo.mHandler.postDelayed(this::invalidate, delayMillis);
         }
     }
 

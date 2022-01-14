@@ -301,6 +301,14 @@ public final class Message {
     }
 
     /**
+     * Sends this Message to the Handler specified by {@link #getTarget}.
+     * Throws a null pointer exception if this field has not been set.
+     */
+    public void sendToTarget() {
+        target.sendMessage(this);
+    }
+
+    /**
      * Returns true if the message is asynchronous, meaning that it is not
      * subject to {@link Looper} synchronization barriers.
      *

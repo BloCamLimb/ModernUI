@@ -56,6 +56,8 @@ public final class ArchCore {
     private static Thread sRenderThread;
     private static Thread sUiThread;
 
+    private static Handler sUiHandler;
+
     private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
 
@@ -117,18 +119,14 @@ public final class ArchCore {
         sRenderCalls.offer(r);
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     public static void flushMainCalls() {
-        final ConcurrentLinkedQueue<Runnable> queue = sMainCalls;
         Runnable r;
-        while ((r = queue.poll()) != null) r.run();
+        while ((r = sMainCalls.poll()) != null) r.run();
     }
 
-    @SuppressWarnings("UnnecessaryLocalVariable")
     public static void flushRenderCalls() {
-        final ConcurrentLinkedQueue<Runnable> queue = sRenderCalls;
         Runnable r;
-        while ((r = queue.poll()) != null) r.run();
+        while ((r = sRenderCalls.poll()) != null) r.run();
     }
 
     /**
@@ -173,6 +171,7 @@ public final class ArchCore {
         synchronized (ArchCore.class) {
             if (sUiThread == null) {
                 sUiThread = Thread.currentThread();
+                sUiHandler = Handler.createAsync(Looper.prepare());
             } else {
                 throw new IllegalStateException("Initialize twice");
             }
@@ -193,6 +192,10 @@ public final class ArchCore {
 
     public static Thread getUiThread() {
         return sUiThread;
+    }
+
+    public static Handler getUiHandler() {
+        return sUiHandler;
     }
 
     public static boolean isOnUiThread() {
