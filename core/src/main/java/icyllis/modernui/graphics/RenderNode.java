@@ -25,8 +25,6 @@ import icyllis.modernui.view.View;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.modernui.math.MathUtil.toRadians;
-
 //TODO wip
 public final class RenderNode {
 
@@ -38,7 +36,7 @@ public final class RenderNode {
      * Stores the total transformation of the RenderNode based upon its
      * translate/rotate/scale properties.
      * <p>
-     * In the common translation-only case, the matrix isn't necessarily allocated,
+     * In the Z-translation-only case, the matrix isn't necessarily allocated,
      * and the mTranslation properties are used directly.
      */
     @Nullable
@@ -49,7 +47,7 @@ public final class RenderNode {
     @Nullable
     private Matrix4 mAnimationMatrix;
 
-    // Local properties
+    // Local rendering properties (on UI thread)
     private int mLeft;
     private int mTop;
     private int mRight;
@@ -102,9 +100,12 @@ public final class RenderNode {
                 mPivotY = mHeight / 2.0f;
             }
             final Matrix4 matrix = mMatrix;
-            // the order is important, no Z translation, we don't need depth test
+            // the order is important, also no Z translation, we don't need depth test
+            // depth and translucency sorting occurs at the application layer
             matrix.translateXY(mPivotX + mTranslationX, mPivotY + mTranslationY);
-            matrix.rotateByEuler(toRadians(mRotationX), toRadians(mRotationY), toRadians(mRotation));
+            matrix.rotateX((float) Math.toRadians(mRotationX));
+            matrix.rotateY((float) Math.toRadians(mRotationY));
+            matrix.rotateZ((float) Math.toRadians(mRotation));
             matrix.scaleXY(mScaleX, mScaleY);
             matrix.translateXY(-mPivotX, -mPivotY);
             return matrix;
@@ -143,8 +144,8 @@ public final class RenderNode {
      * {@link #setPosition(Rect)}.
      *
      * <p>This is equivalent to do a {@link Canvas#clipRect(Rect)} at the start of this
-     * RenderNode's display list. However, as this is a property of the RenderNode instead
-     * of part of the display list it can be more easily animated for transient additional
+     * RenderNode's renderer. However, as this is a property of the RenderNode instead
+     * of part of the renderer it can be more easily animated for transient additional
      * clipping. An example usage of this would be the {@link ChangeBounds}
      * transition animation with the resizeClip=true option.
      *
@@ -185,7 +186,7 @@ public final class RenderNode {
      * allows for a different clipping rectangle to be used in addition to or instead of the
      * {@link #setPosition(int, int, int, int)} or the RenderNode.
      *
-     * @param clipToBounds true if the display list should clip to its bounds, false otherwise.
+     * @param clipToBounds true if the renderer should clip to its bounds, false otherwise.
      * @return True if the value changed, false if the new value was the same as the previous value.
      */
     public boolean setClipToBounds(boolean clipToBounds) {
@@ -207,8 +208,8 @@ public final class RenderNode {
     }
 
     /**
-     * Set the Animation matrix on the display list. This matrix exists if an Animation is
-     * currently playing on a View, and is set on the display list during at draw() time. When
+     * Set the Animation matrix on the renderer. This matrix exists if an Animation is
+     * currently playing on a View, and is set on the renderer during at draw() time. When
      * the Animation finishes, the matrix should be cleared by sending <code>null</code>
      * for the matrix parameter.
      *
@@ -225,7 +226,7 @@ public final class RenderNode {
 
     /**
      * Returns the previously set Animation matrix. This matrix exists if an Animation is
-     * currently playing on a View, and is set on the display list during at draw() time.
+     * currently playing on a View, and is set on the renderer during at draw() time.
      * Returns <code>null</code> when there is no transformation provided by
      * {@link #setAnimationMatrix(Matrix4)}.
      *
@@ -238,9 +239,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the opacity level for the display list.
+     * Sets the opacity level for the renderer.
      *
-     * @param alpha The opacity of the display list, must be a value between 0.0f and 1.0f
+     * @param alpha The opacity of the renderer, must be a value between 0.0f and 1.0f
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setAlpha(float)
      * @see #getAlpha()
@@ -259,7 +260,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the opacity level of this display list.
+     * Returns the opacity level of this renderer.
      *
      * @return A value between 0.0f and 1.0f
      * @see #setAlpha(float)
@@ -293,9 +294,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the translation value for the display list on the X axis.
+     * Sets the translation value for the renderer on the X axis.
      *
-     * @param translationX The X axis translation value of the display list, in pixels
+     * @param translationX The X axis translation value of the renderer, in pixels
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setTranslationX(float)
      * @see #getTranslationX()
@@ -310,7 +311,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the translation value for this display list on the X axis, in pixels.
+     * Returns the translation value for this renderer on the X axis, in pixels.
      *
      * @see #setTranslationX(float)
      */
@@ -319,9 +320,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the translation value for the display list on the Y axis.
+     * Sets the translation value for the renderer on the Y axis.
      *
-     * @param translationY The Y axis translation value of the display list, in pixels
+     * @param translationY The Y axis translation value of the renderer, in pixels
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setTranslationY(float)
      * @see #getTranslationY()
@@ -336,7 +337,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the translation value for this display list on the Y axis, in pixels.
+     * Returns the translation value for this renderer on the Y axis, in pixels.
      *
      * @see #setTranslationY(float)
      */
@@ -345,7 +346,7 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the translation value for the display list on the Z axis.
+     * Sets the translation value for the renderer on the Z axis.
      *
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setTranslationZ(float)
@@ -361,7 +362,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the translation value for this display list on the Z axis.
+     * Returns the translation value for this renderer on the Z axis.
      *
      * @see #setTranslationZ(float)
      */
@@ -370,9 +371,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the rotation value for the display list around the Z axis.
+     * Sets the rotation value for the renderer around the Z axis.
      *
-     * @param rotation The rotation value of the display list, in degrees
+     * @param rotation The rotation value of the renderer, in degrees
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setRotation(float)
      * @see #getRotationZ()
@@ -387,7 +388,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the rotation value for this display list around the Z axis, in degrees.
+     * Returns the rotation value for this renderer around the Z axis, in degrees.
      *
      * @see #setRotationZ(float)
      */
@@ -396,9 +397,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the rotation value for the display list around the X axis.
+     * Sets the rotation value for the renderer around the X axis.
      *
-     * @param rotationX The rotation value of the display list, in degrees
+     * @param rotationX The rotation value of the renderer, in degrees
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setRotationX(float)
      * @see #getRotationX()
@@ -413,7 +414,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the rotation value for this display list around the X axis, in degrees.
+     * Returns the rotation value for this renderer around the X axis, in degrees.
      *
      * @see #setRotationX(float)
      */
@@ -422,9 +423,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the rotation value for the display list around the Y axis.
+     * Sets the rotation value for the renderer around the Y axis.
      *
-     * @param rotationY The rotation value of the display list, in degrees
+     * @param rotationY The rotation value of the renderer, in degrees
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setRotationY(float)
      * @see #getRotationY()
@@ -439,7 +440,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the rotation value for this display list around the Y axis, in degrees.
+     * Returns the rotation value for this renderer around the Y axis, in degrees.
      *
      * @see #setRotationY(float)
      */
@@ -448,9 +449,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the scale value for the display list on the X axis.
+     * Sets the scale value for the renderer on the X axis.
      *
-     * @param scaleX The scale value of the display list
+     * @param scaleX The scale value of the renderer
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setScaleX(float)
      * @see #getScaleX()
@@ -465,7 +466,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the scale value for this display list on the X axis.
+     * Returns the scale value for this renderer on the X axis.
      *
      * @see #setScaleX(float)
      */
@@ -474,9 +475,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the scale value for the display list on the Y axis.
+     * Sets the scale value for the renderer on the Y axis.
      *
-     * @param scaleY The scale value of the display list
+     * @param scaleY The scale value of the renderer
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setScaleY(float)
      * @see #getScaleY()
@@ -491,7 +492,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the scale value for this display list on the Y axis.
+     * Returns the scale value for this renderer on the Y axis.
      *
      * @see #setScaleY(float)
      */
@@ -500,9 +501,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the pivot value for the display list on the X axis
+     * Sets the pivot value for the renderer on the X axis
      *
-     * @param pivotX The pivot value of the display list on the X axis, in pixels
+     * @param pivotX The pivot value of the renderer on the X axis, in pixels
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setPivotX(float)
      * @see #getPivotX()
@@ -524,7 +525,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the pivot value for this display list on the X axis, in pixels.
+     * Returns the pivot value for this renderer on the X axis, in pixels.
      *
      * @see #setPivotX(float)
      */
@@ -533,9 +534,9 @@ public final class RenderNode {
     }
 
     /**
-     * Sets the pivot value for the display list on the Y axis
+     * Sets the pivot value for the renderer on the Y axis
      *
-     * @param pivotY The pivot value of the display list on the Y axis, in pixels
+     * @param pivotY The pivot value of the renderer on the Y axis, in pixels
      * @return True if the value changed, false if the new value was the same as the previous value.
      * @see View#setPivotY(float)
      * @see #getPivotY()
@@ -557,7 +558,7 @@ public final class RenderNode {
     }
 
     /**
-     * Returns the pivot value for this display list on the Y axis, in pixels.
+     * Returns the pivot value for this renderer on the Y axis, in pixels.
      *
      * @see #setPivotY(float)
      */

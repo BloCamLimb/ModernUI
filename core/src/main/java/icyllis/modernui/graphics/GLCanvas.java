@@ -1044,12 +1044,12 @@ public final class GLCanvas extends Canvas {
     }
 
     private void putRectColor(float left, float top, float right, float bottom, @Nonnull Paint paint) {
-        if (paint.isMultiColor()) {
+        if (paint.isGradient()) {
             final ByteBuffer buffer = checkPosColorMemory();
             final int[] colors = paint.getColors();
 
             // CCW
-            int color = colors[3];
+            int color = colors[2];
             byte r = (byte) ((color >> 16) & 0xff);
             byte g = (byte) ((color >> 8) & 0xff);
             byte b = (byte) (color & 0xff);
@@ -1058,7 +1058,7 @@ public final class GLCanvas extends Canvas {
                     .putFloat(bottom)
                     .put(r).put(g).put(b).put(a);
 
-            color = colors[2];
+            color = colors[3];
             r = (byte) ((color >> 16) & 0xff);
             g = (byte) ((color >> 8) & 0xff);
             b = (byte) (color & 0xff);
@@ -1114,12 +1114,12 @@ public final class GLCanvas extends Canvas {
                                 float u1, float v1, float u2, float v2) {
         if (paint == null) {
             putRectColorUV(left, top, right, bottom, ~0, u1, v1, u2, v2);
-        } else if (paint.isMultiColor()) {
+        } else if (paint.isGradient()) {
             final ByteBuffer buffer = checkPosColorTexMemory();
             final int[] colors = paint.getColors();
 
             // CCW
-            int color = colors[3];
+            int color = colors[2];
             byte r = (byte) ((color >> 16) & 0xff);
             byte g = (byte) ((color >> 8) & 0xff);
             byte b = (byte) (color & 0xff);
@@ -1129,7 +1129,7 @@ public final class GLCanvas extends Canvas {
                     .put(r).put(g).put(b).put(a)
                     .putFloat(u1).putFloat(v2);
 
-            color = colors[2];
+            color = colors[3];
             r = (byte) ((color >> 16) & 0xff);
             g = (byte) ((color >> 8) & 0xff);
             b = (byte) (color & 0xff);

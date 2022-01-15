@@ -541,7 +541,7 @@ public class TestMain {
                 //textLine.draw(canvas, 32, 400);
                 canvas.translate(40, 360);
                 paint.setRGBA(0, 0, 0, 128);
-                paint.setStyle(Paint.Style.STROKE);
+                paint.setStyle(Paint.Style.FILL);
                 paint.setStrokeWidth(8);
                 canvas.drawRoundRect(-6, -10, 606, 310, 12, Gravity.LEFT, paint);
                 dynamicLayout.draw(canvas);

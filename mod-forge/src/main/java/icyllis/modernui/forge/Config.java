@@ -221,11 +221,11 @@ final class Config {
                     .push("tooltip");
 
             tooltip = builder.comment(
-                    "Whether to enable Modern UI's tooltip style, or back to vanilla style.")
+                    "Whether to enable Modern UI tooltip style, or back to vanilla style.")
                     .define("enable", true);
             tooltipFill = builder.comment(
-                    "The tooltip FILL color in 0xAARRGGBB format. Default value: 0xD4000000",
-                    "Can be one to four values representing top left, top right, bottom right, bottom left color.",
+                    "The tooltip FILL color in 0xAARRGGBB format. Default: 0xD4000000",
+                    "Can be one to four values representing top left, top right, bottom left and bottom right color.",
                     "Multiple values produce a gradient effect, whereas one value produce a solid color.",
                     "When values is less than 4, the rest of the corner color will be replaced by the last value.")
                     .defineList("colorFill", () -> {
@@ -234,16 +234,16 @@ final class Config {
                         return list;
                     }, $ -> true);
             tooltipStroke = builder.comment(
-                    "The tooltip STROKE color in 0xAARRGGBB format. Default value: 0xF0AADCF0, 0xF0DAD0F4, 0xF0FFC3F7",
-                    "Can be one to four values representing top left, top right, bottom right, bottom left color.",
+                    "The tooltip STROKE color in 0xAARRGGBB format. Default: 0xF0AADCF0, 0xF0DAD0F4, ~ and 0xF0FFC3F7",
+                    "Can be one to four values representing top left, top right, bottom left and bottom right color.",
                     "Multiple values produce a gradient effect, whereas one value produce a solid color.",
                     "When values is less than 4, the rest of the corner color will be replaced by the last value.")
                     .defineList("colorStroke", () -> {
                         List<String> list = new ArrayList<>();
                         list.add("0xF0AADCF0");
                         list.add("0xF0DAD0F4");
-                        list.add("0xF0FFC3F7");
                         list.add("0xF0DAD0F4");
+                        list.add("0xF0FFC3F7");
                         return list;
                     }, $ -> true);
 
