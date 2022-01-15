@@ -29,7 +29,7 @@ public class Paint {
     private static final ThreadLocal<Paint> TLS = ThreadLocal.withInitial(Paint::new);
 
     private static final int STYLE_MASK = 0x3;
-    private static final int MULTI_COLOR_MASK = 0x4;
+    private static final int GRADIENT_MASK = 0x4;
 
     /**
      * The Style specifies if the primitive being drawn is filled, stroked, or
@@ -56,7 +56,7 @@ public class Paint {
     private float mStrokeWidth;
     private float mSmoothRadius;
 
-    private final int[] mColors = new int[4];
+    private int[] mColors;
 
     /**
      * Creates a new Paint.
@@ -91,11 +91,14 @@ public class Paint {
      *     paint.setColor(mColorA);
      *     canvas.drawRect(mRectA, paint);
      *     mDrawable.draw(canvas);
-     *     paint.reset(); // the drawable may use the paint
+     *     // the drawable may use the paint, so reset it
+     *     paint.reset();
      *     paint.setColor(mColorB);
      *     canvas.drawRect(mRectB, paint);
      * }
      * </pre>
+     * The API implementation requires that any method in {@link Canvas} must not
+     * modify the state of Paint.
      *
      * @return the thread-local paint
      */
@@ -108,6 +111,7 @@ public class Paint {
 
     /**
      * Set current paint color with alpha.
+     * Disable gradient colors if enabled.
      *
      * @param r red component [0, 255]
      * @param g green component [0, 255]
@@ -116,11 +120,12 @@ public class Paint {
      */
     public void setRGBA(int r, int g, int b, int a) {
         mColor = (a << 24) | (r << 16) | (g << 8) | b;
-        mFlags &= ~MULTI_COLOR_MASK;
+        mFlags &= ~GRADIENT_MASK;
     }
 
     /**
      * Set current paint color, with unchanged alpha.
+     * Disable gradient colors if enabled.
      *
      * @param r red component [0, 255]
      * @param g green component [0, 255]
@@ -128,27 +133,35 @@ public class Paint {
      */
     public void setRGB(int r, int g, int b) {
         mColor = (mColor & 0xFF000000) | (r << 16) | (g << 8) | b;
-        mFlags &= ~MULTI_COLOR_MASK;
+        mFlags &= ~GRADIENT_MASK;
     }
 
     /**
      * Set current paint color in 0xAARRGGBB format. The default color is white.
+     * Disable gradient colors if enabled.
      *
      * @param color the color to set
      */
     public void setColor(int color) {
         mColor = color;
-        mFlags &= ~MULTI_COLOR_MASK;
+        mFlags &= ~GRADIENT_MASK;
     }
 
     /**
      * Set current paint alpha value in integer form.
+     * If gradient colors are used, set alpha for all colors.
      *
      * @param a the new alpha value ranged from 0 to 255
      */
     public void setAlpha(int a) {
-        mColor = (mColor & 0xFFFFFF) | (a << 24);
-        mFlags &= ~MULTI_COLOR_MASK;
+        if ((mFlags & GRADIENT_MASK) == 0) {
+            mColor = (mColor & 0xFFFFFF) | (a << 24);
+        } else {
+            a <<= 24;
+            for (int i = 0; i < 4; i++) {
+                mColors[i] = (mColors[i] & 0xFFFFFF) | a;
+            }
+        }
     }
 
     /**
@@ -164,49 +177,74 @@ public class Paint {
     }
 
     /**
-     * Set the colors in ARGB and enable multi color mode. When enabled, a primitive
+     * Set the colors in ARGB and enable gradient mode. When enabled, a primitive
      * should use the colors sequentially, and {@link #setColor(int)} is ignored. You can
      * use this to make gradient effect or edge fading in one pass, without shaders.
      * <p>
-     * A Paint object has an unique private array storing these values, a copy of given array
-     * will be used. The colors are used in the order of top left, top right, bottom right
-     * and bottom left.
+     * A Paint object has a unique private array storing these values, a copy of given array
+     * will be used. The colors are used in the order of top left, top right, bottom left
+     * and bottom right, like "Z".
      * <p>
      * If the length of given array is less than 4, then rest color values are undefined.
      * If greater than 4, then rest values are ignored.
      * <p>
      * By default, this mode is disabled. Calling other methods like {@link #setColor(int)}
-     * or {@link #setAlpha(int)} disables the mode as well.
+     * except {@link #setAlpha(int)} disables the mode as well.
      *
      * @param colors a list of sequential colors, maximum count is 4
-     * @see #isMultiColor()
+     * @see #setColors(int, int, int, int)
+     * @see #isGradient()
      */
     public void setColors(@Nonnull int[] colors) {
-        int l = Math.min(colors.length, mColors.length);
-        System.arraycopy(colors, 0, mColors, 0, l);
-        mFlags |= MULTI_COLOR_MASK;
+        if (mColors == null) {
+            mColors = new int[4];
+        }
+        System.arraycopy(colors, 0, mColors, 0, Math.min(colors.length, 4));
+        mFlags |= GRADIENT_MASK;
     }
 
     /**
-     * Returns the backing array of the multi colors. Each call will return
+     * Set the colors in ARGB and enable gradient mode. When enabled, a primitive
+     * should use the colors sequentially, and {@link #setColor(int)} is ignored. You can
+     * use this to make gradient effect or edge fading in one pass, without shaders.
+     *
+     * @param tl the top-left color
+     * @param tr the top-right color
+     * @param bl the bottom-left color
+     * @param br the bottom-right color
+     * @see #setColors(int[])
+     * @see #isGradient()
+     */
+    public void setColors(int tl, int tr, int bl, int br) {
+        if (mColors == null) {
+            mColors = new int[4];
+        }
+        mColors[0] = tl;
+        mColors[1] = tr;
+        mColors[2] = bl;
+        mColors[3] = br;
+        mFlags |= GRADIENT_MASK;
+    }
+
+    /**
+     * Returns the backing array of the gradient colors. Each call will return
      * the same array object. Do not modify the elements of the array.
      *
-     * @return the backing array of the multi colors
+     * @return the backing array of the gradient colors, may be null
      * @see #setColors(int[])
      */
-    @Nonnull
     public int[] getColors() {
         return mColors;
     }
 
     /**
-     * Returns whether multiple colors is used.
+     * Returns whether gradient colors are used.
      *
-     * @return whether multi color mode is enabled
+     * @return whether gradient mode is enabled
      * @see #setColors(int[])
      */
-    public boolean isMultiColor() {
-        return (mFlags & MULTI_COLOR_MASK) != 0;
+    public boolean isGradient() {
+        return (mFlags & GRADIENT_MASK) != 0;
     }
 
     /**
@@ -250,9 +288,10 @@ public class Paint {
     }
 
     /**
-     * Get current smooth radius.
+     * Return the current smooth radius.
      * <p>
-     * Smooth radius is used to smooth and blur the edges of geometry. The default value is 2.0 px.
+     * Smooth radius is used to smooth and blur the edges of geometry by analytic geometry.
+     * The default value is 2.0 px.
      *
      * @return feather radius
      * @see #setSmoothRadius(float)
@@ -262,10 +301,11 @@ public class Paint {
     }
 
     /**
-     * Set the smooth radius in pixels for this paint. This method is expected to be rarely used.
+     * Set the smooth radius in pixels for this paint. This method is not a substitute for
+     * anti-aliasing and is rarely used.
      * <p>
-     * Smooth radius is used to smooth and blur the edges of geometry. The default value is 2.0 px.
-     * This value may be ignored by implementation.
+     * Smooth radius is used to smooth and blur the edges of geometry by analytic geometry.
+     * The default value is 2.0 px. This value may be ignored by some primitives.
      *
      * @param radius the new feather radius to set
      */
