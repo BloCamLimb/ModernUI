@@ -23,6 +23,7 @@ import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.RenderNode;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.*;
 import icyllis.modernui.text.TextUtils;
@@ -1005,27 +1006,24 @@ public class View implements Drawable.Callback {
     protected int mPaddingBottom;
 
     /**
-     * The transform matrix for the View. This transform is calculated internally
-     * based on the translation, rotation, and scale properties. This matrix
-     * affects the view both logically (such as for events) and visually.
+     * RenderNode holding View properties, potentially holding a DisplayList of View content.
+     * <p>
+     * When non-null and valid, this is expected to contain an up-to-date copy
+     * of the View content. Its DisplayList content is cleared on temporary detach and reset on
+     * cleanup.
      */
-    private Transformation mTransformation;
+    final RenderNode mRenderNode;
 
     /**
-     * The transition matrix for the View only used for transition animations. This
-     * is a separate object because it does not change the properties of the view,
-     * only visual effects are affected. This can be null if there is no animation.
+     * The opacity of the View. This is a value from 0 to 1, where 0 means
+     * completely transparent and 1 means completely opaque.
      */
-    @Nullable
-    private Matrix4 mTransitionMatrix;
+    private float mAlpha = 1f;
 
     /**
      * The opacity of the view as manipulated by the Fade transition. This is a
      * property only used by transitions, which is composited with the other alpha
      * values to calculate the final visual alpha value (offscreen rendering).
-     * <p>
-     * Note that a View has no alpha property, because alpha only affects visual
-     * effects, and will have an impact on performance.
      */
     private float mTransitionAlpha = 1f;
 
@@ -1159,6 +1157,7 @@ public class View implements Drawable.Callback {
 
         mUserPaddingStart = UNDEFINED_PADDING;
         mUserPaddingEnd = UNDEFINED_PADDING;
+        mRenderNode = new RenderNode();
     }
 
     /**
@@ -1172,8 +1171,8 @@ public class View implements Drawable.Callback {
             return;
         }
 
-        float alpha = mTransitionAlpha;
-        if (alpha <= 0) {
+        float alpha = mAlpha * mTransitionAlpha;
+        if (alpha <= 0.001f) {
             // completely transparent
             return;
         }
@@ -1185,8 +1184,8 @@ public class View implements Drawable.Callback {
         int saveCount = canvas.save();
         canvas.translate(mLeft, mTop);
 
-        if (mTransitionMatrix != null) {
-            canvas.multiply(mTransitionMatrix);
+        if (mRenderNode.getAnimationMatrix() != null) {
+            canvas.multiply(mRenderNode.getAnimationMatrix());
         }
         if (!identity) {
             canvas.multiply(getMatrix());
@@ -1201,7 +1200,7 @@ public class View implements Drawable.Callback {
         canvas.translate(-sx, -sy);
 
         if (hasSpace) {
-            if (alpha < 0.9961f) {
+            if (alpha < 0.999f) {
                 canvas.saveLayer(sx, sy, sx + mRight - mLeft, sy + mBottom - mTop, (int) (alpha * 255));
             }
 
@@ -3496,8 +3495,9 @@ public class View implements Drawable.Callback {
      * first to check if the operation can be skipped, because this method will
      * create the matrix if not available. However, if you want to change the
      * transform matrix, you should use methods such as {@link #setTranslationX(float)}.
+     * The return value may be null, indicating that it is identity.
      *
-     * @return the current transform matrix for the view
+     * @return the current transform matrix for the view, may be null
      * @see #hasIdentityMatrix()
      * @see #getRotation()
      * @see #getScaleX()
@@ -3505,10 +3505,8 @@ public class View implements Drawable.Callback {
      * @see #getPivotX()
      * @see #getPivotY()
      */
-    @Nonnull
     public final Matrix4 getMatrix() {
-        ensureTransformation();
-        return mTransformation.getMatrix();
+        return mRenderNode.getMatrix();
     }
 
     /**
@@ -3518,16 +3516,8 @@ public class View implements Drawable.Callback {
      * @see #getMatrix()
      */
     public final boolean hasIdentityMatrix() {
-        if (mTransformation == null) {
-            return true;
-        }
-        return mTransformation.getMatrix().isIdentity();
-    }
-
-    private void ensureTransformation() {
-        if (mTransformation == null) {
-            mTransformation = new Transformation();
-        }
+        Matrix4 matrix = mRenderNode.getMatrix();
+        return matrix == null || matrix.isIdentity();
     }
 
     /**
@@ -3539,12 +3529,12 @@ public class View implements Drawable.Callback {
      *                     in pixels.
      */
     public void setTranslationX(float translationX) {
-        ensureTransformation();
-        mTransformation.setTranslationX(translationX);
+        mRenderNode.setTranslationX(translationX);
     }
 
     //TODO WIP, not working
     public void setAlpha(float alpha) {
+        mAlpha = alpha;
     }
 
     /**
@@ -3585,36 +3575,35 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Changes the transition matrix on the view. This is only used in the transition animation
-     * framework, {@link Transition}. When the animation finishes, the matrix
+     * Changes the transformation matrix on the view. This is used in animation frameworks,
+     * such as {@link Transition}. When the animation finishes, the matrix
      * should be cleared by calling this method with <code>null</code> as the matrix parameter.
-     * <p>
-     * Note that this matrix only affects the visual effect of this view, you should never
-     * call this method. You should use methods such as {@link #setTranslationX(float)}} instead
-     * to change the transformation logically.
+     * Application developers should use transformation methods like {@link #setRotation(float)},
+     * {@link #setScaleX(float)}, {@link #setScaleX(float)}, {@link #setTranslationX(float)}}
+     * and {@link #setTranslationY(float)} (float)}} instead.
      *
-     * @param matrix the matrix, null indicates that the matrix should be cleared.
-     * @see #getTransitionMatrix()
+     * @param matrix The matrix, null indicates that the matrix should be cleared.
+     * @see #getAnimationMatrix()
      */
-    public final void setTransitionMatrix(@Nullable Matrix4 matrix) {
-        mTransitionMatrix = matrix;
+    public final void setAnimationMatrix(@Nullable Matrix4 matrix) {
+        mRenderNode.setAnimationMatrix(matrix);
     }
 
     /**
      * Changes the transition matrix on the view. This is only used in the transition animation
      * framework, {@link Transition}. Returns <code>null</code> when there is no
-     * transformation provided by {@link #setTransitionMatrix(Matrix4)}.
+     * transformation provided by {@link #setAnimationMatrix(Matrix4)}.
      * <p>
      * Note that this matrix only affects the visual effect of this view, you should never
      * call this method. You should use methods such as {@link #setTranslationX(float)}} instead
      * to change the transformation logically.
      *
      * @return the matrix, null indicates that the matrix should be cleared.
-     * @see #setTransitionMatrix(Matrix4)
+     * @see #setAnimationMatrix(Matrix4)
      */
     @Nullable
-    public final Matrix4 getTransitionMatrix() {
-        return mTransitionMatrix;
+    public final Matrix4 getAnimationMatrix() {
+        return mRenderNode.getAnimationMatrix();
     }
 
     void dispatchAttachedToWindow(AttachInfo info) {
