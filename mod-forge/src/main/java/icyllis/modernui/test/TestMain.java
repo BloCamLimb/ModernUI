@@ -194,6 +194,23 @@ public class TestMain {
             e.printStackTrace();
         }
 
+        Matrix4 matrix = Matrix4.identity();
+        Matrix4 mat2 = matrix.copy();
+        matrix.translate(800 + 300, 450 + 600, 200);
+        matrix.rotateByEuler(1, -1, 1);
+        matrix.scale(2, 2, 1);
+        matrix.translate(-800, -450, 0);
+
+        mat2.translate(300, 600, 200);
+        mat2.translate(800, 450, 0);
+        mat2.rotateByEuler(1, -1, 1);
+        mat2.translate(-800, -450, 0);
+        mat2.translate(800, 450, 0);
+        mat2.scale(2, 2, 1);
+        mat2.translate(-800, -450, 0);
+
+        LOGGER.info(matrix.equivalent(mat2));
+
         //(sec23°)²+(sec22°)²-2sec23°sec22°cos45°=a²
         //θ=arccos((a²+(sec22°)²-(sec23°)²)/(2asec22°))
         /*double sec22 = 1 / Math.cos(Math.toRadians(22));
@@ -461,6 +478,8 @@ public class TestMain {
         framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
         framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
 
+        glfwShowWindow(window.getHandle());
+
         while (!window.shouldClose()) {
             long time = ArchCore.timeMillis();
             long delta = time - lastTime;
@@ -504,6 +523,15 @@ public class TestMain {
                 canvas.drawRoundLine(120, 30, 60, 80, paint);
 
                 canvas.drawBezier(300, 100, 410, 210 + 100 * sin, 480, 170, paint);
+
+                canvas.save();
+                Matrix4 matrix = canvas.getMatrix();
+                matrix.translate(800, 450, 0);
+                matrix.rotateByEuler(1, -1, 1);
+                matrix.scale(2, 2, 1);
+                matrix.translate(600 - 800, 300 - 450, 0);
+                canvas.drawRect(0,  0, 100, 100, paint);
+                canvas.restore();
 
                 //canvas.rotate(30);
             /*String tcc = "今日も一日頑張るぞい";

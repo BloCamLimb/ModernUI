@@ -24,32 +24,34 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 /**
- * Represents a 4x4 row-major matrix, whereas OpenGL is column-major.
+ * Represents a 4x4 row-major matrix. Note that GLSL is column-major.
  */
 @SuppressWarnings("unused")
 public class Matrix4 implements Cloneable {
 
     // matrix elements, m(ij) (row, column)
     // directly use primitive type will be faster than array in Java
-    protected float m11;
-    protected float m12;
-    protected float m13;
-    protected float m14;
-    protected float m21;
-    protected float m22;
-    protected float m23;
-    protected float m24;
-    protected float m31;
-    protected float m32;
-    protected float m33;
-    protected float m34;
-    protected float m41;
-    protected float m42;
-    protected float m43;
-    protected float m44;
+    float m11;
+    float m12;
+    float m13;
+    float m14;
+    float m21;
+    float m22;
+    float m23;
+    float m24;
+    float m31;
+    float m32;
+    float m33;
+    float m34;
+    float m41;
+    float m42;
+    float m43;
+    float m44;
 
     /**
      * Create a zero matrix.
+     *
+     * @see #identity()
      */
     public Matrix4() {
     }
@@ -57,48 +59,32 @@ public class Matrix4 implements Cloneable {
     /**
      * Create a matrix from an array of elements, the ordering is
      * in row-major form.
-     * <table border="1">
-     *   <tr>
-     *     <td>a[0]</th>
-     *     <td>a[1]</th>
-     *     <td>a[2]</th>
-     *     <td>a[3]</th>
-     *   </tr>
-     *   <tr>
-     *     <td>a[4]</th>
-     *     <td>a[5]</th>
-     *     <td>a[6]</th>
-     *     <td>a[7]</th>
-     *   </tr>
-     *   <tr>
-     *     <td>a[8]</th>
-     *     <td>a[9]</th>
-     *     <td>a[10]</th>
-     *     <td>a[11]</th>
-     *   </tr>
-     *   <tr>
-     *     <td>a[12]</th>
-     *     <td>a[13]</th>
-     *     <td>a[14]</th>
-     *     <td>a[15]</th>
-     *   </tr>
-     * </table>
      *
-     * @param arr the data to copy from
+     * @param a the array to create from
+     * @see #set(float[])
      */
-    public Matrix4(@Nonnull float... arr) {
-        set(arr);
+    public Matrix4(@Nonnull float... a) {
+        set(a);
     }
 
     /**
-     * Create a copy of {@code mat} if it's not null, or a zero matrix otherwise.
+     * Create a matrix from an existing matrix.
+     *
+     * @param mat the matrix to create from
+     */
+    public Matrix4(@Nonnull Matrix4 mat) {
+        set(mat);
+    }
+
+    /**
+     * Create a copy of {@code mat} if it's not null, or a new identity matrix otherwise.
      *
      * @param mat the matrix to copy from
      * @return a copy of the matrix
      */
     @Nonnull
     public static Matrix4 copy(@Nullable Matrix4 mat) {
-        return mat == null ? new Matrix4() : mat.copy();
+        return mat == null ? identity() : mat.copy();
     }
 
     /**
@@ -204,7 +190,7 @@ public class Matrix4 implements Cloneable {
     @Nonnull
     public static Matrix4 makePerspective(float fov, float aspect, float near, float far) {
         Matrix4 mat = new Matrix4();
-        float y = 1.0f / MathUtil.tan(fov * 0.5f);
+        float y = (float) (1.0 / Math.tan(fov * 0.5));
         float invNF = 1.0f / (near - far);
         mat.m11 = y / aspect;
         mat.m22 = y;
@@ -217,75 +203,49 @@ public class Matrix4 implements Cloneable {
     /**
      * Add each element of the given matrix to the corresponding element of this matrix.
      *
-     * @param other the matrix to add to
+     * @param o the addend
      */
-    public void add(@Nonnull Matrix4 other) {
-        m11 += other.m11;
-        m12 += other.m12;
-        m13 += other.m13;
-        m14 += other.m14;
-        m21 += other.m21;
-        m22 += other.m22;
-        m23 += other.m23;
-        m24 += other.m24;
-        m31 += other.m31;
-        m32 += other.m32;
-        m33 += other.m33;
-        m34 += other.m34;
-        m41 += other.m41;
-        m42 += other.m42;
-        m43 += other.m43;
-        m44 += other.m44;
+    public void add(@Nonnull Matrix4 o) {
+        m11 += o.m11;
+        m12 += o.m12;
+        m13 += o.m13;
+        m14 += o.m14;
+        m21 += o.m21;
+        m22 += o.m22;
+        m23 += o.m23;
+        m24 += o.m24;
+        m31 += o.m31;
+        m32 += o.m32;
+        m33 += o.m33;
+        m34 += o.m34;
+        m41 += o.m41;
+        m42 += o.m42;
+        m43 += o.m43;
+        m44 += o.m44;
     }
 
     /**
      * Subtract each element of the given matrix from the corresponding element of this matrix.
      *
-     * @param other the matrix to subtract from
+     * @param o the subtrahend
      */
-    public void subtract(@Nonnull Matrix4 other) {
-        m11 -= other.m11;
-        m12 -= other.m12;
-        m13 -= other.m13;
-        m14 -= other.m14;
-        m21 -= other.m21;
-        m22 -= other.m22;
-        m23 -= other.m23;
-        m24 -= other.m24;
-        m31 -= other.m31;
-        m32 -= other.m32;
-        m33 -= other.m33;
-        m34 -= other.m34;
-        m41 -= other.m41;
-        m42 -= other.m42;
-        m43 -= other.m43;
-        m44 -= other.m44;
-    }
-
-    /**
-     * Multiply each element of this matrix by a factor.
-     *
-     * @param s the factor to multiply.
-     */
-    public void multiply(float s) {
-        if (s == 1.0f)
-            return;
-        m11 *= s;
-        m12 *= s;
-        m13 *= s;
-        m14 *= s;
-        m21 *= s;
-        m22 *= s;
-        m23 *= s;
-        m24 *= s;
-        m31 *= s;
-        m32 *= s;
-        m33 *= s;
-        m34 *= s;
-        m41 *= s;
-        m42 *= s;
-        m43 *= s;
-        m44 *= s;
+    public void sub(@Nonnull Matrix4 o) {
+        m11 -= o.m11;
+        m12 -= o.m12;
+        m13 -= o.m13;
+        m14 -= o.m14;
+        m21 -= o.m21;
+        m22 -= o.m22;
+        m23 -= o.m23;
+        m24 -= o.m24;
+        m31 -= o.m31;
+        m32 -= o.m32;
+        m33 -= o.m33;
+        m34 -= o.m34;
+        m41 -= o.m41;
+        m42 -= o.m42;
+        m43 -= o.m43;
+        m44 -= o.m44;
     }
 
     /**
@@ -487,29 +447,54 @@ public class Matrix4 implements Cloneable {
 
     /**
      * Set this matrix elements from an array.
+     * <table border="1">
+     *   <tr>
+     *     <td>a[0]</th>
+     *     <td>a[1]</th>
+     *     <td>a[2]</th>
+     *     <td>a[3]</th>
+     *   </tr>
+     *   <tr>
+     *     <td>a[4]</th>
+     *     <td>a[5]</th>
+     *     <td>a[6]</th>
+     *     <td>a[7]</th>
+     *   </tr>
+     *   <tr>
+     *     <td>a[8]</th>
+     *     <td>a[9]</th>
+     *     <td>a[10]</th>
+     *     <td>a[11]</th>
+     *   </tr>
+     *   <tr>
+     *     <td>a[12]</th>
+     *     <td>a[13]</th>
+     *     <td>a[14]</th>
+     *     <td>a[15]</th>
+     *   </tr>
+     * </table>
      *
-     * @param arr the array to copy from
-     * @see #Matrix4(float...)
+     * @param a the array to copy from
      */
-    public void set(@Nonnull float[] arr) {
-        if (arr.length < 16)
+    public void set(@Nonnull float[] a) {
+        if (a.length < 16)
             throw new IllegalArgumentException("The array length must be at least 16");
-        m11 = arr[0];
-        m12 = arr[1];
-        m13 = arr[2];
-        m14 = arr[3];
-        m21 = arr[4];
-        m22 = arr[5];
-        m23 = arr[6];
-        m24 = arr[7];
-        m31 = arr[8];
-        m32 = arr[9];
-        m33 = arr[10];
-        m34 = arr[11];
-        m41 = arr[12];
-        m42 = arr[13];
-        m43 = arr[14];
-        m44 = arr[15];
+        m11 = a[0];
+        m12 = a[1];
+        m13 = a[2];
+        m14 = a[3];
+        m21 = a[4];
+        m22 = a[5];
+        m23 = a[6];
+        m24 = a[7];
+        m31 = a[8];
+        m32 = a[9];
+        m33 = a[10];
+        m34 = a[11];
+        m41 = a[12];
+        m42 = a[13];
+        m43 = a[14];
+        m44 = a[15];
     }
 
     /**
@@ -545,22 +530,22 @@ public class Matrix4 implements Cloneable {
     public void set(@Nonnull FloatBuffer a) {
         if (a.remaining() < 16)
             throw new IllegalArgumentException("The array length must be at least 16");
-        m11 = a.get();
-        m12 = a.get();
-        m13 = a.get();
-        m14 = a.get();
-        m21 = a.get();
-        m22 = a.get();
-        m23 = a.get();
-        m24 = a.get();
-        m31 = a.get();
-        m32 = a.get();
-        m33 = a.get();
-        m34 = a.get();
-        m41 = a.get();
-        m42 = a.get();
-        m43 = a.get();
-        m44 = a.get();
+        m11 = a.get(0);
+        m12 = a.get(1);
+        m13 = a.get(2);
+        m14 = a.get(3);
+        m21 = a.get(4);
+        m22 = a.get(5);
+        m23 = a.get(6);
+        m24 = a.get(7);
+        m31 = a.get(8);
+        m32 = a.get(9);
+        m33 = a.get(10);
+        m34 = a.get(11);
+        m41 = a.get(12);
+        m42 = a.get(13);
+        m43 = a.get(14);
+        m44 = a.get(15);
     }
 
     /**
@@ -754,7 +739,7 @@ public class Matrix4 implements Cloneable {
      *
      * @return {@code true} if this matrix is invertible.
      */
-    public boolean inverse() {
+    public boolean invert() {
         // det of [row1,row2,column1,column2]
         final float det1_12 = m11 * m22 - m12 * m21;
         final float det1_13 = m11 * m23 - m13 * m21;
@@ -777,7 +762,8 @@ public class Matrix4 implements Cloneable {
             return false;
         }
 
-        // calc algebraic cofactor
+        // calc algebraic cofactor and transpose cofactor matrix
+        final float s = 1.0f / det;
         final float f31 = m42 * det1_34 - m43 * det1_24 + m44 * det1_23;
         final float f32 = -m41 * det1_34 + m43 * det1_14 - m44 * det1_13;
         final float f33 = m41 * det1_24 - m42 * det1_14 + m44 * det1_12;
@@ -786,8 +772,6 @@ public class Matrix4 implements Cloneable {
         final float f42 = m31 * det1_34 - m33 * det1_14 + m34 * det1_13;
         final float f43 = -m31 * det1_24 + m32 * det1_14 - m34 * det1_12;
         final float f44 = m31 * det1_23 - m32 * det1_13 + m33 * det1_12;
-
-        // calc algebraic cofactor
         final float f11 = m22 * det3_34 - m23 * det3_24 + m24 * det3_23;
         final float f12 = -m21 * det3_34 + m23 * det3_14 - m24 * det3_13;
         final float f13 = m21 * det3_24 - m22 * det3_14 + m24 * det3_12;
@@ -797,26 +781,68 @@ public class Matrix4 implements Cloneable {
         final float f23 = -m11 * det3_24 + m12 * det3_14 - m14 * det3_12;
         final float f24 = m11 * det3_23 - m12 * det3_13 + m13 * det3_12;
 
-        // transpose cofactor matrix
-        m11 = f11;
-        m21 = f12;
-        m31 = f13;
-        m41 = f14;
-        m12 = f21;
-        m22 = f22;
-        m32 = f23;
-        m42 = f24;
-        m13 = f31;
-        m23 = f32;
-        m33 = f33;
-        m43 = f34;
-        m14 = f41;
-        m24 = f42;
-        m34 = f43;
-        m44 = f44;
-        if (!MathUtil.approxEqual(det, 1.0f)) {
-            multiply(1.0f / det);
+        m11 = f11 * s;
+        m21 = f12 * s;
+        m31 = f13 * s;
+        m41 = f14 * s;
+        m12 = f21 * s;
+        m22 = f22 * s;
+        m32 = f23 * s;
+        m42 = f24 * s;
+        m13 = f31 * s;
+        m23 = f32 * s;
+        m33 = f33 * s;
+        m43 = f34 * s;
+        m14 = f41 * s;
+        m24 = f42 * s;
+        m34 = f43 * s;
+        m44 = f44 * s;
+        return true;
+    }
+
+    /**
+     * Calculate the inverse of this matrix.
+     *
+     * @param out the out matrix
+     * @return {@code true} if this matrix is invertible.
+     */
+    public boolean invert(@Nonnull Matrix4 out) {
+        final float a = m11 * m22 - m12 * m21;
+        final float b = m11 * m23 - m13 * m21;
+        final float c = m11 * m24 - m14 * m21;
+        final float d = m12 * m23 - m13 * m22;
+        final float e = m12 * m24 - m14 * m22;
+        final float f = m13 * m24 - m14 * m23;
+        final float g = m31 * m42 - m32 * m41;
+        final float h = m31 * m43 - m33 * m41;
+        final float i = m31 * m44 - m34 * m41;
+        final float j = m32 * m43 - m33 * m42;
+        final float k = m32 * m44 - m34 * m42;
+        final float l = m33 * m44 - m34 * m43;
+
+        final float det = a * l - b * k + c * j +
+                d * i - e * h + f * g;
+        if (MathUtil.approxZero(det)) {
+            return false;
         }
+        // calc algebraic cofactor and transpose cofactor matrix
+        final float s = 1.0f / det;
+        out.m11 = (m22 * l - m23 * k + m24 * j) * s;
+        out.m12 = (-m21 * l + m23 * i - m24 * h) * s;
+        out.m13 = (m21 * k - m22 * i + m24 * g) * s;
+        out.m14 = (-m21 * j + m22 * h - m23 * g) * s;
+        out.m21 = (-m12 * l + m13 * k - m14 * j) * s;
+        out.m22 = (m11 * l - m13 * i + m14 * h) * s;
+        out.m23 = (-m11 * k + m12 * i - m14 * g) * s;
+        out.m24 = (m11 * j - m12 * h + m13 * g) * s;
+        out.m31 = (m42 * f - m43 * e + m44 * d) * s;
+        out.m32 = (-m41 * f + m43 * c - m44 * b) * s;
+        out.m33 = (m41 * e - m42 * c + m44 * a) * s;
+        out.m34 = (-m41 * d + m42 * b - m43 * a) * s;
+        out.m41 = (-m32 * f + m33 * e - m34 * d) * s;
+        out.m42 = (m31 * f - m33 * c + m34 * b) * s;
+        out.m43 = (-m31 * e + m32 * c - m34 * a) * s;
+        out.m44 = (m31 * d - m32 * b + m33 * a) * s;
         return true;
     }
 
@@ -990,6 +1016,20 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Translates this matrix by given changes. This is equivalent to
+     * pre-multiplying by a translation matrix.
+     *
+     * @param dx the x-component of the translation
+     * @param dy the y-component of the translation
+     */
+    public void translateXY(float dx, float dy) {
+        m41 += dx * m11 + dy * m21;
+        m42 += dx * m12 + dy * m22;
+        m43 += dx * m13 + dy * m23;
+        m44 += dx * m14 + dy * m24;
+    }
+
+    /**
      * Sets this matrix to a translation matrix by given components.
      *
      * @param t the translation vector
@@ -1094,6 +1134,24 @@ public class Matrix4 implements Cloneable {
         m32 *= sz;
         m33 *= sz;
         m34 *= sz;
+    }
+
+    /**
+     * Scales this matrix by given vector. This is equivalent to
+     * pre-multiplying by a scale matrix.
+     *
+     * @param sx the x-component of the scale
+     * @param sy the y-component of the scale
+     */
+    public void scaleXY(float sx, float sy) {
+        m11 *= sx;
+        m12 *= sx;
+        m13 *= sx;
+        m14 *= sx;
+        m21 *= sy;
+        m22 *= sy;
+        m23 *= sy;
+        m24 *= sy;
     }
 
     /**
@@ -1235,17 +1293,15 @@ public class Matrix4 implements Cloneable {
      * @see #rotateX(float)
      */
     public void rotateByAxis(float x, float y, float z, float angle) {
-        if (angle == 0.0f || MathUtil.approxZero(x, y, z)) {
+        if (angle == 0.0f) {
             return;
         }
-        // don't try to understand these code
         angle *= 0.5f;
-        float f1 = MathUtil.sin(angle);
-        angle = MathUtil.cos(angle);
-        x *= f1;
-        y *= f1;
-        z *= f1;
-        f1 = 2.0f * x;
+        final float s = MathUtil.sin(angle);
+        x *= s;
+        y *= s;
+        z *= s;
+        float f1 = 2.0f * x;
         float f2 = 2.0f * y;
         float f3 = 2.0f * z;
 
@@ -1253,13 +1309,14 @@ public class Matrix4 implements Cloneable {
         float f5 = y * f2;
         float f6 = z * f3;
 
-        float f7 = f3 * angle;
-        float f8 = f2 * angle;
-        float f9 = f1 * angle;
+        final float c = MathUtil.cos(angle);
+        float f7 = f3 * c;
+        float f8 = f2 * c;
+        float f9 = f1 * c;
 
         float f11 = 1.0f - (f5 + f6);
         float f22 = 1.0f - (f4 + f6);
-        final float f33 = 1.0f - (f4 + f5);
+        float f33 = 1.0f - (f4 + f5);
         f2 *= x;
         x *= f3;
         f3 *= y;
@@ -1443,24 +1500,17 @@ public class Matrix4 implements Cloneable {
         float y3 = m12 * r.left + m22 * r.bottom + m42;
         float x4 = m11 * r.right + m21 * r.bottom + m41;
         float y4 = m12 * r.right + m22 * r.bottom + m42;
-        if (hasPerspective()) {
-            float w = m14 * r.left + m24 * r.top + m44;
-            w = 1.0f / w;
+        if (!isAffine()) {
+            float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
             x1 *= w;
             y1 *= w;
-
-            w = m14 * r.right + m24 * r.top + m44;
-            w = 1.0f / w;
+            w = 1.0f / (m14 * r.right + m24 * r.top + m44);
             x2 *= w;
             y2 *= w;
-
-            w = m14 * r.left + m24 * r.bottom + m44;
-            w = 1.0f / w;
+            w = 1.0f / (m14 * r.left + m24 * r.bottom + m44);
             x3 *= w;
             y3 *= w;
-
-            w = m14 * r.right + m24 * r.bottom + m44;
-            w = 1.0f / w;
+            w = 1.0f / (m14 * r.right + m24 * r.bottom + m44);
             x4 *= w;
             y4 *= w;
         }
@@ -1508,7 +1558,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Returns whether this matrix is equivalent to an identity matrix.
+     * Returns whether this matrix is approximately equivalent to an identity matrix.
      *
      * @return {@code true} if this matrix is identity.
      */
@@ -1526,8 +1576,11 @@ public class Matrix4 implements Cloneable {
      * @param mat the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean equivalent(@Nonnull Matrix4 mat) {
-        if (this == mat) return true;
+    public boolean equivalent(@Nullable Matrix4 mat) {
+        if (mat == this)
+            return true;
+        if (mat == null)
+            return false;
         return MathUtil.approxEqual(m11, mat.m11) &&
                 MathUtil.approxEqual(m12, mat.m12) &&
                 MathUtil.approxEqual(m13, mat.m13) &&
@@ -1620,6 +1673,9 @@ public class Matrix4 implements Cloneable {
                 '\n';
     }
 
+    /**
+     * @return a copy of this matrix
+     */
     @Nonnull
     public Matrix4 copy() {
         try {

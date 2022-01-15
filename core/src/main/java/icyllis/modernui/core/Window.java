@@ -131,6 +131,7 @@ public final class Window implements AutoCloseable {
         glfwWindowHintString(GLFW_X11_CLASS_NAME, title);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, title);
         glfwWindowHint(GLFW_SAMPLES, 4);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
 
         // create window
         Monitor monitor = Monitor.getPrimary();
