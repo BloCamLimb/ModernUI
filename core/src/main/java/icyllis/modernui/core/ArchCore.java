@@ -56,6 +56,8 @@ public final class ArchCore {
     private static Thread sRenderThread;
     private static Thread sUiThread;
 
+    private static Boolean sGlOrVk;
+
     private static Handler sUiHandler;
 
     private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
@@ -65,7 +67,7 @@ public final class ArchCore {
      * Initialize GLFW, call on JVM main thread.
      */
     @MainThread
-    public static void initBackend() {
+    public static void init() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
         if (GLFW.glfwSetErrorCallback(ArchCore::onError) != null || !GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
@@ -73,9 +75,8 @@ public final class ArchCore {
         sMainThread = Thread.currentThread();
     }
 
-    private static void onError(int errorCode, long descPtr) {
-        String desc = descPtr == NULL ? "" : memUTF8(descPtr);
-        LOGGER.error(MARKER, "GLFW Error: 0x{} {}", Integer.toHexString(errorCode), desc);
+    private static void onError(int error, long description) {
+        LOGGER.error(MARKER, "GLFW Error: 0x{} {}", Integer.toHexString(error), memUTF8Safe(description));
     }
 
     public static void checkMainThread() {
@@ -120,13 +121,17 @@ public final class ArchCore {
     }
 
     public static void flushMainCalls() {
+        //noinspection UnnecessaryLocalVariable
+        final ConcurrentLinkedQueue<Runnable> queue = sMainCalls;
         Runnable r;
-        while ((r = sMainCalls.poll()) != null) r.run();
+        while ((r = queue.poll()) != null) r.run();
     }
 
     public static void flushRenderCalls() {
+        //noinspection UnnecessaryLocalVariable
+        final ConcurrentLinkedQueue<Runnable> queue = sRenderCalls;
         Runnable r;
-        while ((r = sRenderCalls.poll()) != null) r.run();
+        while ((r = queue.poll()) != null) r.run();
     }
 
     /**
@@ -140,6 +145,7 @@ public final class ArchCore {
             } else {
                 throw new IllegalStateException("Initialize twice");
             }
+            sGlOrVk = Boolean.TRUE;
         }
 
         // get or create
@@ -158,12 +164,37 @@ public final class ArchCore {
         if (caps == null) {
             throw new IllegalStateException("Failed to acquire OpenGL capabilities");
         }
-
         GLWrapper.initialize(caps);
     }
 
+    @RenderThread
+    public static void initVulkan() {
+        synchronized (ArchCore.class) {
+            if (sRenderThread == null) {
+                sRenderThread = Thread.currentThread();
+            } else {
+                throw new IllegalStateException("Initialize twice");
+            }
+            sGlOrVk = Boolean.FALSE;
+        }
+    }
+
+    /**
+     * Return whether render thread is initialized.
+     *
+     * @return whether render thread is initialized
+     */
     public static boolean hasRenderThread() {
         return sRenderThread != null;
+    }
+
+    /**
+     * Return the graphics backend API. True for OpenGL, False for Vulkan.
+     *
+     * @return the backend API
+     */
+    public static boolean isGlOrVk() {
+        return sGlOrVk;
     }
 
     @UiThread
@@ -178,6 +209,15 @@ public final class ArchCore {
         }
     }
 
+    /**
+     * Return whether UI thread is initialized.
+     *
+     * @return whether UI thread is initialized
+     */
+    public static boolean hasUiThread() {
+        return sUiThread != null;
+    }
+
     public static void checkUiThread() {
         if (Thread.currentThread() != sUiThread)
             synchronized (ArchCore.class) {
@@ -188,10 +228,6 @@ public final class ArchCore {
                     throw new IllegalStateException("Not called from UI thread. Desired " + sUiThread +
                             " current " + Thread.currentThread());
             }
-    }
-
-    public static Thread getUiThread() {
-        return sUiThread;
     }
 
     public static Handler getUiHandler() {
@@ -212,7 +248,7 @@ public final class ArchCore {
 
     /**
      * Allocates memory in native and read buffered resource.
-     * The memory must be manually freed by {@link MemoryUtil#memFree(Buffer)}.
+     * The memory MUST be manually freed by {@link MemoryUtil#memFree(Buffer)}.
      *
      * @param channel where to read input from
      * @return the native pointer to {@code unsigned char *data}
@@ -229,12 +265,13 @@ public final class ArchCore {
                 }
                 p = memAlloc((int) (rem + 1)); // +1 EOF
                 //noinspection StatementWithEmptyBody
-                while (ch.read(p) != -1) ;
+                while (ch.read(p) != -1);
             } else {
                 p = memAlloc(4096);
                 while (channel.read(p) != -1) {
                     if (p.remaining() <= 0) {
-                        p = memRealloc(p, p.capacity() << 1);
+                        int cap = p.capacity();
+                        p = memRealloc(p, cap + (cap >> 1));
                     }
                 }
             }

@@ -18,8 +18,9 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.texture.GLRenderbuffer;
-import icyllis.modernui.graphics.texture.GLTexture;
+import icyllis.modernui.graphics.opengl.GLObject;
+import icyllis.modernui.graphics.opengl.GLRenderbuffer;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.lwjgl.BufferUtils;

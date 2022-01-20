@@ -29,7 +29,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.GLCanvas;
+import icyllis.modernui.graphics.GLSurfaceCanvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.util.Pool;
@@ -89,7 +89,7 @@ public final class CanvasForge {
     private final ItemRenderer mRenderer = Minecraft.getInstance().getItemRenderer();
     private final TextureManager mTextureManager = Minecraft.getInstance().getTextureManager();
 
-    private volatile GLCanvas mCanvas;
+    private volatile GLSurfaceCanvas mCanvas;
 
     private CanvasForge() {
         for (int i = 0; i < 8; i++) {
@@ -131,7 +131,7 @@ public final class CanvasForge {
      * @param paint the paint used to draw the item, can be null
      */
     public void drawItemStack(@Nonnull ItemStack stack, float x, float y, float size, @Nullable Paint paint) {
-        final GLCanvas canvas = mCanvas;
+        final GLSurfaceCanvas canvas = mCanvas;
 
         canvas.save();
 
@@ -139,7 +139,7 @@ public final class CanvasForge {
         mat.translate(x, y, 0);
         mat.scale(size, -size, 1);
 
-        mat.get(mMatBuf.rewind());
+        mat.put(mMatBuf.rewind());
 
         canvas.restore();
 
@@ -209,7 +209,7 @@ public final class CanvasForge {
     @RenderThread
     private void end(@Nonnull ByteBuffer buffer, @Nonnull VertexFormat.Mode mode, @Nonnull VertexFormat format,
                      @Nonnull VertexFormat.IndexType indexType, int indexCount, boolean sequentialIndex) {
-        final GLCanvas canvas = mCanvas;
+        final GLSurfaceCanvas canvas = mCanvas;
 
         if (canvas.bindVertexArray(format.getOrCreateVertexArrayObject())) {
             // minecraft is stupid so that it clears these bindings after a draw call
@@ -339,6 +339,6 @@ public final class CanvasForge {
     // fast rotate
     public interface FastShader {
 
-        void fastApply(@Nonnull GLCanvas canvas, @Nonnull Object2IntMap<String> units);
+        void fastApply(@Nonnull GLSurfaceCanvas canvas, @Nonnull Object2IntMap<String> units);
     }
 }

@@ -26,6 +26,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.VisibleForTesting;
+import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -34,6 +36,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
+import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
@@ -54,6 +57,9 @@ public class ModernUI {
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
+    @VisibleForTesting
+    public static final Unsafe UNSAFE; // internal use, will be removed
+
     protected static volatile ModernUI sInstance;
 
     private static final Cleaner sCleaner = Cleaner.create();
@@ -61,6 +67,13 @@ public class ModernUI {
     static {
         if (Runtime.version().feature() < 17) {
             throw new RuntimeException("JRE 17 or above is required");
+        }
+        try {
+            final Field field = Unsafe.class.getDeclaredField("theUnsafe");
+            field.setAccessible(true);
+            UNSAFE = (Unsafe) field.get(null);
+        } catch (Exception e) {
+            throw new IllegalStateException("You're safe", e);
         }
     }
 

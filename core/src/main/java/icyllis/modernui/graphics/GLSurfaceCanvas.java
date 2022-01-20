@@ -21,11 +21,7 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.graphics.shader.GLProgram;
-import icyllis.modernui.graphics.shader.ShaderManager;
-import icyllis.modernui.graphics.texture.GLTexture;
-import icyllis.modernui.graphics.vertex.VertexAttrib;
-import icyllis.modernui.graphics.vertex.VertexFormat;
+import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
@@ -48,7 +44,6 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.annotation.Native;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.nio.IntBuffer;
 import java.util.*;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -70,9 +65,9 @@ import static org.lwjgl.system.MemoryUtil.*;
  * frame. Especially the quadratic Bézier curve, the algorithm is very complex.
  * And this can't draw cubic Bézier curves, the only way is through tessellation.
  * <p>
- * This class helps to build OpenGL buffers from one thread, using multiple
+ * This class is used to build OpenGL buffers from one thread, using multiple
  * vertex arrays, uniform buffers and vertex buffers. All drawing methods are
- * recording commands and must be called from a single thread. Later call
+ * recording commands and must be called from one thread. Later call
  * {@link #draw(GLFramebuffer)} for calling OpenGL functions on the render thread.
  * The color buffer drawn to must be at index 0, and stencil buffer must be 8-bit.
  * <p>
@@ -87,9 +82,9 @@ import static org.lwjgl.system.MemoryUtil.*;
  * @author BloCamLimb
  */
 @NotThreadSafe
-public final class GLCanvas extends Canvas {
+public final class GLSurfaceCanvas extends Canvas {
 
-    private static GLCanvas INSTANCE;
+    private static volatile GLSurfaceCanvas sInstance;
 
     // we have only one instance called on UI thread only
     private static final Pool<SaveState> sSaveStatePool = Pools.simple(20);
@@ -186,7 +181,7 @@ public final class GLCanvas extends Canvas {
     }
 
     // private stacks
-    private final Deque<SaveState> mSaveStates = new ArrayDeque<>();
+    private final ArrayDeque<SaveState> mSaveStates = new ArrayDeque<>();
 
     // recorded operations
     private final IntList mDrawOps = new IntArrayList();
@@ -220,7 +215,7 @@ public final class GLCanvas extends Canvas {
     private final GLBuffer mCircleUBO = new GLBuffer();
     private final GLBuffer mRoundRectUBO = new GLBuffer();
 
-    private final IntBuffer mUniformBuffers = memAllocInt(6);
+    private final long mUniformBuffers = nmemAlloc(24);
 
     private final ByteBuffer mLayerImageMemory = memAlloc(POS_COLOR_TEX_VERTEX_SIZE * 4);
 
@@ -252,7 +247,7 @@ public final class GLCanvas extends Canvas {
     private final FloatBuffer mProjectionUpload = memAllocFloat(16);
 
     @RenderThread
-    private GLCanvas() {
+    private GLSurfaceCanvas() {
         /*mProjectionUBO = glCreateBuffers();
         glNamedBufferStorage(mProjectionUBO, PROJECTION_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
 
@@ -275,17 +270,12 @@ public final class GLCanvas extends Canvas {
         mCircleUBO.allocate(CIRCLE_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
         mRoundRectUBO.allocate(ROUND_RECT_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
 
-        mUniformBuffers.put(mMatrixUBO.get())
-                .put(mSmoothUBO.get())
-                .put(mArcUBO.get())
-                .put(mBezierUBO.get())
-                .put(mCircleUBO.get())
-                .put(mRoundRectUBO.get())
-                .flip();
-        ModernUI.LOGGER.debug(MARKER,
-                "Uniform buffers: Matrix {}, Smooth {}, Arc {}, Bezier {}, Circle {}, RoundRect {}",
-                mUniformBuffers.get(0), mUniformBuffers.get(1), mUniformBuffers.get(2),
-                mUniformBuffers.get(3), mUniformBuffers.get(4), mUniformBuffers.get(5));
+        memPutInt(mUniformBuffers, mMatrixUBO.get());
+        memPutInt(mUniformBuffers + 4, mSmoothUBO.get());
+        memPutInt(mUniformBuffers + 8, mArcUBO.get());
+        memPutInt(mUniformBuffers + 12, mBezierUBO.get());
+        memPutInt(mUniformBuffers + 16, mCircleUBO.get());
+        memPutInt(mUniformBuffers + 20, mRoundRectUBO.get());
 
         POS_COLOR.setVertexBuffer(GENERIC_BINDING, mPosColorVBO, 0);
         POS_COLOR_TEX.setVertexBuffer(GENERIC_BINDING, mPosColorTexVBO, 0);
@@ -301,15 +291,15 @@ public final class GLCanvas extends Canvas {
     }
 
     @RenderThread
-    public static GLCanvas initialize() {
+    public static GLSurfaceCanvas initialize() {
         ArchCore.checkRenderThread();
-        if (INSTANCE == null) {
-            INSTANCE = new GLCanvas();
+        if (sInstance == null) {
+            sInstance = new GLSurfaceCanvas();
             /*POS_COLOR.setBindingDivisor(INSTANCED_BINDING, 1);
             POS_COLOR_TEX.setBindingDivisor(INSTANCED_BINDING, 1);*/
             ModernUI.LOGGER.info(MARKER, "GLCanvas initialized");
         }
-        return INSTANCE;
+        return sInstance;
     }
 
     /**
@@ -318,8 +308,8 @@ public final class GLCanvas extends Canvas {
      * @return the global instance
      */
     @VisibleForTesting
-    public static GLCanvas getInstance() {
-        return INSTANCE;
+    public static GLSurfaceCanvas getInstance() {
+        return sInstance;
     }
 
     private void onLoadShaders(@Nonnull ShaderManager manager) {
@@ -365,7 +355,7 @@ public final class GLCanvas extends Canvas {
     @RenderThread
     public void setProjection(@Nonnull Matrix4 projection) {
         ArchCore.checkRenderThread();
-        projection.get(mProjectionUpload.rewind());
+        projection.put(mProjectionUpload.rewind());
         mMatrixUBO.upload(0, 64, memAddress(mProjectionUpload.flip()));
     }
 
@@ -446,7 +436,7 @@ public final class GLCanvas extends Canvas {
         uploadBuffers();
 
         // uniform bindings are globally shared, we must re-bind before we use them
-        glBindBuffersBase(GL_UNIFORM_BUFFER, MATRIX_BLOCK_BINDING, mUniformBuffers);
+        nglBindBuffersBase(GL_UNIFORM_BUFFER, MATRIX_BLOCK_BINDING, 6, mUniformBuffers);
 
         glStencilFuncSeparate(GL_FRONT, GL_EQUAL, 0, 0xff);
         glStencilMaskSeparate(GL_FRONT, 0xff);
@@ -746,6 +736,10 @@ public final class GLCanvas extends Canvas {
         return mUniformMemory;
     }
 
+    public int getNativeMemoryUsage() {
+        return mPosColorMemory.capacity() + mPosColorTexMemory.capacity() + mPosTexMemory.capacity() + mUniformMemory.capacity();
+    }
+
     private static int grow(int cap) {
         return cap + (cap >> 1);
     }
@@ -765,7 +759,7 @@ public final class GLCanvas extends Canvas {
     private void drawMatrix(@Nonnull Matrix4 matrix) {
         if (!matrix.equivalent(mLastMatrix)) {
             mLastMatrix.set(matrix);
-            matrix.get(checkUniformMemory());
+            matrix.put(checkUniformMemory());
             mDrawOps.add(DRAW_MATRIX);
         }
     }
@@ -1685,7 +1679,7 @@ public final class GLCanvas extends Canvas {
         }
 
         @Nonnull
-        private TexturedGlyph[] build(@Nonnull GLCanvas canvas) {
+        private TexturedGlyph[] build(@Nonnull GLSurfaceCanvas canvas) {
             final TexturedGlyph[] glyphs = piece.getGlyphs();
             final float[] positions = piece.getPositions();
             piece = null;

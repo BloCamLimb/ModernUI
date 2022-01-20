@@ -24,7 +24,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.Image;
-import icyllis.modernui.graphics.texture.GLTexture;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
 import org.lwjgl.stb.STBIWriteCallbackI;

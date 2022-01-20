@@ -18,8 +18,8 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.texture.GLTexture;
-import icyllis.modernui.graphics.texture.TextureManager;
+import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.TextureManager;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;

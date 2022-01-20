@@ -34,12 +34,10 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.shader.ShaderManager;
-import icyllis.modernui.graphics.texture.GLTexture;
-import icyllis.modernui.graphics.texture.TextureManager;
-import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.opengl.ShaderManager;
+import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.TextureManager;
+import icyllis.modernui.math.*;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
@@ -50,7 +48,6 @@ import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
-import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -58,7 +55,6 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.FileInputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -125,17 +121,7 @@ public class TestMain {
         }
     }
 
-    private static final Unsafe UNSAFE;
-
-    static {
-        try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            UNSAFE = (Unsafe) field.get(null);
-        } catch (Exception e) {
-            throw new IllegalStateException("You're safe", e);
-        }
-    }
+    private static long sAS = 3;
 
     public static void main(String[] args) {
         /*String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
@@ -210,6 +196,10 @@ public class TestMain {
         mat2.translate(-800, -450, 0);
 
         LOGGER.info(matrix.equivalent(mat2));
+
+        Vector3 vector3 = new Vector3();
+        LOGGER.info(Math.toDegrees(Quaternion.makeEulerAngles(0, MathUtil.PI_DIV_2, MathUtil.PI).toAxisAngle(vector3)));
+        LOGGER.info(vector3);
 
         //(sec23°)²+(sec22°)²-2sec23°sec22°cos45°=a²
         //θ=arccos((a²+(sec22°)²-(sec23°)²)/(2asec22°))
@@ -300,7 +290,7 @@ public class TestMain {
             return;
         try {
             Thread.currentThread().setName("Main-Thread");
-            ArchCore.initBackend();
+            ArchCore.init();
             sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1600, 900);
             try (var c1 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
                  var bitmap1 = NativeImage.decode(null, c1);
@@ -361,7 +351,7 @@ public class TestMain {
         final Window window = sWindow;
         window.makeCurrent();
         ArchCore.initOpenGL();
-        GLCanvas canvas = GLCanvas.initialize();
+        GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         ShaderManager.getInstance().reload();
         Matrix4 projection = new Matrix4();
         //projection = Matrix4.makePerspective(MathUtil.PI_DIV_2, window.getAspectRatio(), 0.01f, 1000);
@@ -480,6 +470,8 @@ public class TestMain {
 
         glfwShowWindow(window.getHandle());
 
+        boolean note = false;
+
         while (!window.shouldClose()) {
             long time = ArchCore.timeMillis();
             long delta = time - lastTime;
@@ -525,12 +517,8 @@ public class TestMain {
                 canvas.drawBezier(300, 100, 410, 210 + 100 * sin, 480, 170, paint);
 
                 canvas.save();
-                Matrix4 matrix = canvas.getMatrix();
-                matrix.translate(800, 450, 0);
-                matrix.rotateByEuler(1, -1, 1);
-                matrix.scale(2, 2, 1);
-                matrix.translate(600 - 800, 300 - 450, 0);
-                canvas.drawRect(0,  0, 100, 100, paint);
+                canvas.scale(10, 10);
+                canvas.drawRoundRect(0, 0, 20, 20, 5, paint);
                 canvas.restore();
 
                 //canvas.rotate(30);
@@ -572,6 +560,11 @@ public class TestMain {
                 canvas.setProjection(projection.setOrthographic(window.getWidth(), -window.getHeight(), 0, 2000));
                 // render thread, wait UI thread
                 canvas.draw(framebuffer);
+
+                if (!note) {
+                    LOGGER.info(TextUtils.binaryCompact(canvas.getNativeMemoryUsage()));
+                    note = true;
+                }
             }
 
             glBlitNamedFramebuffer(framebuffer.get(), 0, 0, 0, window.getWidth(), window.getHeight(),

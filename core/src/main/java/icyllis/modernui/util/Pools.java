@@ -41,7 +41,7 @@ public final class Pools {
     }
 
     /**
-     * Creates a synchronized pool of objects.
+     * Creates a synchronized pool of objects. Note that the lock is self.
      *
      * @param maxPoolSize The max pool size.
      * @throws IllegalArgumentException If the max pool size is less than zero.
@@ -72,31 +72,23 @@ public final class Pools {
         @Nullable
         @Override
         public T acquire() {
-            if (mPoolSize <= 0)
+            if (mPoolSize == 0)
                 return null;
-            final int lastPooledIndex = mPoolSize - 1;
-            T instance = mPool[lastPooledIndex];
-            mPool[lastPooledIndex] = null;
-            mPoolSize--;
+            final int i = --mPoolSize;
+            T instance = mPool[i];
+            mPool[i] = null;
             return instance;
         }
 
         @Override
         public boolean release(@Nonnull T instance) {
-            if (isInPool(instance))
-                throw new IllegalStateException("Already in the pool!");
-            if (mPoolSize >= mPool.length)
+            if (mPoolSize == mPool.length)
                 return false;
-            mPool[mPoolSize] = instance;
-            mPoolSize++;
-            return true;
-        }
-
-        private boolean isInPool(@Nonnull T instance) {
-            for (int i = 0; i < mPoolSize; i++)
+            for (int i = mPoolSize - 1; i >= 0; i--)
                 if (mPool[i] == instance)
-                    return true;
-            return false;
+                    throw new IllegalStateException("Already in the pool!");
+            mPool[mPoolSize++] = instance;
+            return true;
         }
     }
 

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,27 +16,20 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.vertex;
-
-import icyllis.modernui.graphics.GLBuffer;
-import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.IntSet;
+package icyllis.modernui.graphics.opengl;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Comparator;
-import java.util.List;
-import java.util.stream.Collectors;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
 /**
- * Represents a set of vertex attribute specifications for a vertex shader.
+ * Represents a set of vertex attribute specifications used with a vertex shader.
  */
 public class VertexFormat {
 
-    private final Int2ObjectMap<List<VertexAttrib>> mAttributes;
+    private final VertexAttrib[][] mAttributes;
 
     private int mVertexArray = INVALID_ID;
 
@@ -45,18 +38,39 @@ public class VertexFormat {
      * <p>
      * Attribute index depends on the order of <code>attribs</code> and bindings,
      * you must use explicit attribute layout for the base attribute index,
-     * (layout = index). Each attribute takes up <code>getRepeat()</code> locations
-     * in total. Binding points are given priority to assign.
+     * (layout = index). Each attribute takes up <code>getCount()</code> locations
+     * in total. Binding points are given priority to assign, must be sequential.
      *
-     * @param attribs all attributes
+     * @param attribs all attribs
      */
     public VertexFormat(@Nonnull VertexAttrib... attribs) {
-        if (attribs.length == 0) {
-            throw new IllegalArgumentException("No attributes");
+        final int len = attribs.length;
+        if (len == 0) {
+            throw new IllegalArgumentException("No attribs");
         }
-        mAttributes = new Int2ObjectArrayMap<>(Arrays.stream(attribs)
-                .sorted(Comparator.comparingInt(VertexAttrib::getBinding))
-                .collect(Collectors.groupingBy(VertexAttrib::getBinding)));
+        // sequential generator
+        Arrays.sort(attribs, Comparator.comparingInt(VertexAttrib::getBinding));
+        mAttributes = new VertexAttrib[attribs[len - 1].getBinding() + 1][];
+        int pos = 0, binding = 0;
+        for (int i = 0; i <= len; i++) {
+            VertexAttrib a = i < len ? attribs[i] : null;
+            if (a != null && binding == a.getBinding()) {
+                continue;
+            }
+            VertexAttrib[] arr = new VertexAttrib[i - pos];
+            for (int j = pos, k = 0; j < i; j++, k++) {
+                arr[k] = attribs[j];
+            }
+            mAttributes[binding] = arr;
+            if (a == null) {
+                break;
+            }
+            pos = i;
+            for (int j = binding + 1; j < a.getBinding(); j++) {
+                mAttributes[j] = new VertexAttrib[0];
+            }
+            binding = a.getBinding();
+        }
     }
 
     /**
@@ -64,27 +78,33 @@ public class VertexFormat {
      */
     public int getVertexArray() {
         if (mVertexArray == INVALID_ID) {
-            final int array = glCreateVertexArrays();
-            int location = 0;
-            for (var attribs : mAttributes.values()) {
-                // relative offset in binding point
-                int offset = 0;
-                for (var a : attribs) {
-                    offset = a.setFormat(array, location, offset);
-                    location += a.getRepeat();
-                }
-            }
-            mVertexArray = array;
-            return array;
+            setFormat(mVertexArray = glCreateVertexArrays());
         }
         return mVertexArray;
     }
 
     /**
-     * @return a set of used binding points for this VertexFormat
+     * Configure a vertex array object sequentially.
+     *
+     * @param array a custom vertex array
      */
-    public IntSet getBindings() {
-        return mAttributes.keySet();
+    public void setFormat(int array) {
+        int location = 0;
+        for (var attribs : mAttributes) {
+            // relative offset in binding point
+            int offset = 0;
+            for (var a : attribs) {
+                offset = a.setFormat(array, location, offset);
+                location += a.getCount();
+            }
+        }
+    }
+
+    /**
+     * @return the max binding point of this VertexFormat
+     */
+    public int getMaxBinding() {
+        return mAttributes.length - 1;
     }
 
     /**
@@ -94,7 +114,7 @@ public class VertexFormat {
      * be {@link #getBindingSize(int)}
      *
      * @param binding the binding index
-     * @param buffer  the vertex buffer
+     * @param buffer  the vertex buffer object
      * @param offset  first vertex/instance data to the head of the buffer, in bytes
      */
     public void setVertexBuffer(int binding, @Nonnull GLBuffer buffer, int offset) {
@@ -129,29 +149,22 @@ public class VertexFormat {
      * @return total size in bytes
      */
     public int getBindingSize(int binding) {
-        List<VertexAttrib> attribs = mAttributes.get(binding);
-        if (attribs != null) {
-            int size = 0;
-            for (var a : attribs) {
-                size += a.getTotalSize();
-            }
-            return size;
+        int size = 0;
+        for (var a : mAttributes[binding]) {
+            size += a.getTotalSize();
         }
-        return 0;
+        return size;
     }
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-
-        VertexFormat that = (VertexFormat) o;
-
-        return mAttributes.equals(that.mAttributes);
+        return Arrays.deepEquals(mAttributes, ((VertexFormat) o).mAttributes);
     }
 
     @Override
     public int hashCode() {
-        return mAttributes.hashCode();
+        return Arrays.deepHashCode(mAttributes);
     }
 }
