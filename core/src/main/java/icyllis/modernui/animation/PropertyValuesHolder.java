@@ -21,10 +21,10 @@ package icyllis.modernui.animation;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.util.Property;
-import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Field;
+
+import static icyllis.modernui.ModernUI.UNSAFE;
 
 /**
  * This class holds information about a property and the values that that property
@@ -37,18 +37,6 @@ import java.lang.reflect.Field;
  * @param <P> the property value type for output
  */
 public class PropertyValuesHolder<T, V, P> implements Cloneable {
-
-    private static final Unsafe UNSAFE;
-
-    static {
-        try {
-            Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            UNSAFE = (Unsafe) field.get(null);
-        } catch (Exception e) {
-            throw new IllegalStateException("No UNSAFE, this should not happen in a desktop environment", e);
-        }
-    }
 
     @Nonnull
     Property<T, P> mProperty;

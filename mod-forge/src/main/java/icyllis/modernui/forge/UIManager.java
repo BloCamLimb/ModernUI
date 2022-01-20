@@ -30,9 +30,9 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.FragmentController;
 import icyllis.modernui.fragment.FragmentHostCallback;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.GLCanvas;
+import icyllis.modernui.graphics.GLSurfaceCanvas;
 import icyllis.modernui.graphics.GLFramebuffer;
-import icyllis.modernui.graphics.texture.GLTexture;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.lifecycle.ViewModelStore;
 import icyllis.modernui.lifecycle.ViewModelStoreOwner;
 import icyllis.modernui.math.Matrix4;
@@ -141,7 +141,7 @@ public final class UIManager extends ViewRoot {
 
     // lazy loading
     private final GLFramebuffer mFramebuffer;
-    GLCanvas mCanvas;
+    GLSurfaceCanvas mCanvas;
 
     private MotionEvent mPendingMouseEvent;
     private int mButtonState;
@@ -181,7 +181,7 @@ public final class UIManager extends ViewRoot {
         final UIManager mgr = new UIManager();
         sInstance = mgr;
         assert mgr.mCanvas == null;
-        mgr.mCanvas = GLCanvas.initialize();
+        mgr.mCanvas = GLSurfaceCanvas.initialize();
         glEnable(GL_MULTISAMPLE);
         new Thread(UIManager::run, "UI thread").start();
         LOGGER.info(MARKER, "UI system initialized");
@@ -692,7 +692,7 @@ public final class UIManager extends ViewRoot {
         int width = mWindow.getWidth();
         int height = mWindow.getHeight();
 
-        GLCanvas canvas = mCanvas;
+        GLSurfaceCanvas canvas = mCanvas;
         GLFramebuffer framebuffer = mFramebuffer;
 
         if (mProjectionChanged) {

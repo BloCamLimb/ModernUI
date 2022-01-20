@@ -19,8 +19,8 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.ShaderManager;
-import icyllis.modernui.graphics.texture.TextureManager;
+import icyllis.modernui.graphics.opengl.ShaderManager;
+import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.LayoutCache;
 import icyllis.modernui.text.Typeface;

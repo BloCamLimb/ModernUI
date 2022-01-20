@@ -23,6 +23,8 @@ import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
+import static org.lwjgl.system.MemoryUtil.memPutFloat;
+
 /**
  * Represents a 4x4 row-major matrix. Note that GLSL is column-major.
  */
@@ -530,22 +532,22 @@ public class Matrix4 implements Cloneable {
     public void set(@Nonnull FloatBuffer a) {
         if (a.remaining() < 16)
             throw new IllegalArgumentException("The array length must be at least 16");
-        m11 = a.get(0);
-        m12 = a.get(1);
-        m13 = a.get(2);
-        m14 = a.get(3);
-        m21 = a.get(4);
-        m22 = a.get(5);
-        m23 = a.get(6);
-        m24 = a.get(7);
-        m31 = a.get(8);
-        m32 = a.get(9);
-        m33 = a.get(10);
-        m34 = a.get(11);
-        m41 = a.get(12);
-        m42 = a.get(13);
-        m43 = a.get(14);
-        m44 = a.get(15);
+        m11 = a.get();
+        m12 = a.get();
+        m13 = a.get();
+        m14 = a.get();
+        m21 = a.get();
+        m22 = a.get();
+        m23 = a.get();
+        m24 = a.get();
+        m31 = a.get();
+        m32 = a.get();
+        m33 = a.get();
+        m34 = a.get();
+        m41 = a.get();
+        m42 = a.get();
+        m43 = a.get();
+        m44 = a.get();
     }
 
     /**
@@ -553,7 +555,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param a the array to store
      */
-    public void get(@Nonnull float[] a) {
+    public void put(@Nonnull float[] a) {
         if (a.length < 16)
             throw new IllegalArgumentException("The array length must be at least 16");
         a[0] = m11;
@@ -579,7 +581,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param a the pointer of the array to store
      */
-    public void get(@Nonnull FloatBuffer a) {
+    public void put(@Nonnull FloatBuffer a) {
         if (a.remaining() < 16)
             throw new IllegalArgumentException("The array length must be at least 16");
         a.put(m11);
@@ -605,7 +607,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param a the pointer of the array to store
      */
-    public void get(@Nonnull ByteBuffer a) {
+    public void put(@Nonnull ByteBuffer a) {
         if (a.remaining() < 64)
             throw new IllegalArgumentException("The array length must be at least 16");
         a.putFloat(m11);
@@ -624,6 +626,31 @@ public class Matrix4 implements Cloneable {
         a.putFloat(m42);
         a.putFloat(m43);
         a.putFloat(m44);
+    }
+
+    /**
+     * Get this matrix data, store them into an address (UNSAFE).
+     * NOTE: This method does not perform memory security checks.
+     *
+     * @param p the pointer of the array to store
+     */
+    public void put(long p) {
+        memPutFloat(p, m11);
+        memPutFloat(p + 4, m12);
+        memPutFloat(p + 8, m13);
+        memPutFloat(p + 12, m14);
+        memPutFloat(p + 16, m21);
+        memPutFloat(p + 20, m22);
+        memPutFloat(p + 24, m23);
+        memPutFloat(p + 28, m24);
+        memPutFloat(p + 32, m31);
+        memPutFloat(p + 36, m32);
+        memPutFloat(p + 40, m33);
+        memPutFloat(p + 44, m34);
+        memPutFloat(p + 48, m41);
+        memPutFloat(p + 52, m42);
+        memPutFloat(p + 56, m43);
+        memPutFloat(p + 60, m44);
     }
 
     /**
@@ -1653,24 +1680,17 @@ public class Matrix4 implements Cloneable {
 
     @Override
     public String toString() {
-        return "Matrix4:" +
-                '\n' + m11 +
-                ' ' + m12 +
-                ' ' + m13 +
-                ' ' + m14 +
-                '\n' + m21 +
-                ' ' + m22 +
-                ' ' + m23 +
-                ' ' + m24 +
-                '\n' + m31 +
-                ' ' + m32 +
-                ' ' + m33 +
-                ' ' + m34 +
-                '\n' + m41 +
-                ' ' + m42 +
-                ' ' + m43 +
-                ' ' + m44 +
-                '\n';
+        return String.format("""
+                        Matrix4:
+                        %10.5f %10.5f %10.5f %10.5f
+                        %10.5f %10.5f %10.5f %10.5f
+                        %10.5f %10.5f %10.5f %10.5f
+                        %10.5f %10.5f %10.5f %10.5f
+                        """,
+                m11, m12, m13, m14,
+                m21, m22, m23, m24,
+                m31, m32, m33, m34,
+                m41, m42, m43, m44);
     }
 
     /**

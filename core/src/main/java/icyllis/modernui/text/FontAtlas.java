@@ -21,7 +21,7 @@ package icyllis.modernui.text;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.graphics.texture.GLTexture;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.core.NativeImage;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;

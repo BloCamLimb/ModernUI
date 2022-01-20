@@ -21,7 +21,7 @@ package icyllis.modernui.test.shader;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.graphics.shader.GLProgram;
+import icyllis.modernui.graphics.opengl.GLProgram;
 import it.unimi.dsi.fastutil.objects.Object2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.resources.ResourceLocation;

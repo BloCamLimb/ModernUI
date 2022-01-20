@@ -19,7 +19,7 @@
 package icyllis.modernui.test.shader.program;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.shader.GLProgram;
+import icyllis.modernui.graphics.opengl.GLProgram;
 import net.minecraft.resources.ResourceLocation;
 import org.lwjgl.opengl.GL43C;
 

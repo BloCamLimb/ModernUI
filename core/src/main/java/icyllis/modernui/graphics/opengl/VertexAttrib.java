@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.vertex;
+package icyllis.modernui.graphics.opengl;
+
+import javax.annotation.Nonnull;
 
 import static icyllis.modernui.graphics.GLWrapper.*;
 
@@ -40,7 +42,7 @@ public class VertexAttrib {
      *                   range [-1, 1] or [0, 1] if it is signed or unsigned, respectively.
      *                   If not, then integer data is directly converted to floating point.
      */
-    public VertexAttrib(int binding, Src src, Dst dst, boolean normalized) {
+    public VertexAttrib(int binding, @Nonnull Src src, @Nonnull Dst dst, boolean normalized) {
         mBinding = binding;
         mSrc = src;
         mDst = dst;
@@ -57,12 +59,12 @@ public class VertexAttrib {
     }
 
     /**
-     * The repeat count. For example, mat4 is split into 4 vec4.
+     * The location count. For example, mat4 is split into four vec4.
      *
-     * @return repeat count
+     * @return location count
      */
-    public int getRepeat() {
-        return mDst.mRepeat;
+    public int getCount() {
+        return mDst.mCount;
     }
 
     /**
@@ -73,12 +75,10 @@ public class VertexAttrib {
      * @return next relative offset
      */
     public int setFormat(int array, int location, int offset) {
-        for (int i = 0; i < getRepeat(); i++) {
+        for (int i = 0; i < getCount(); i++) {
             glEnableVertexArrayAttrib(array, location);
             glVertexArrayAttribFormat(array, location, mDst.mSize, mSrc.mType, mNormalized, offset);
             glVertexArrayAttribBinding(array, location, mBinding);
-            /*ModernUI.LOGGER.info("Configure Vertex Attribute: {VAO={}, loc={}, bind={}, SRC={}, DST={}, REL_OFFSET={}}",
-                    array, location, mBinding, mSrc, mDst, offset);*/
             location++;
             offset += getStep();
         }
@@ -96,7 +96,7 @@ public class VertexAttrib {
      * @return the total size for this attribute in bytes
      */
     public int getTotalSize() {
-        return getStep() * getRepeat();
+        return getStep() * getCount();
     }
 
     @Override
@@ -115,8 +115,8 @@ public class VertexAttrib {
     @Override
     public int hashCode() {
         int result = mBinding;
-        result = 31 * result + (mSrc != null ? mSrc.hashCode() : 0);
-        result = 31 * result + (mDst != null ? mDst.hashCode() : 0);
+        result = 31 * result + mSrc.hashCode();
+        result = 31 * result + mDst.hashCode();
         result = 31 * result + (mNormalized ? 1 : 0);
         return result;
     }
@@ -158,11 +158,11 @@ public class VertexAttrib {
          * The number of components
          */
         private final int mSize;
-        private final int mRepeat;
+        private final int mCount;
 
-        Dst(int size, int repeat) {
+        Dst(int size, int count) {
             mSize = size;
-            mRepeat = repeat;
+            mCount = count;
         }
     }
 }

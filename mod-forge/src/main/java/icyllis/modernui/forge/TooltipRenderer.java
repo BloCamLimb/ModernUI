@@ -23,7 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.graphics.GLCanvas;
+import icyllis.modernui.graphics.GLSurfaceCanvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.Matrix4;
 import net.minecraft.client.gui.Font;
@@ -253,7 +253,7 @@ public final class TooltipRenderer {
         sTempTexts.clear();
     }*/
 
-    static void drawTooltip(@Nonnull GLCanvas canvas, @Nonnull Window window, @Nonnull PoseStack poseStack,
+    static void drawTooltip(@Nonnull GLSurfaceCanvas canvas, @Nonnull Window window, @Nonnull PoseStack poseStack,
                             @Nonnull List<ClientTooltipComponent> list, int mouseX, int mouseY,
                             @Nonnull Font font, float screenWidth, float screenHeight,
                             double cursorX, double cursorY, @Nonnull ItemRenderer itemRenderer) {

@@ -25,8 +25,8 @@ import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.shader.ShaderManager;
-import icyllis.modernui.graphics.texture.TextureManager;
+import icyllis.modernui.graphics.opengl.ShaderManager;
+import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
@@ -83,7 +83,7 @@ public class BejeweledTwist {
     public BejeweledTwist() {
         Thread.currentThread().setName("Main-Thread");
         ModernUI.initialize();
-        ArchCore.initBackend();
+        ArchCore.init();
         mWindow = Window.create("Bejeweled Twist", Window.State.WINDOWED, 1600, 900);
         try (var c1 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
              var bitmap1 = NativeImage.decode(null, c1);
@@ -209,7 +209,7 @@ public class BejeweledTwist {
     private void runRenderThread() {
         mWindow.makeCurrent();
         ArchCore.initOpenGL();
-        GLCanvas canvas = GLCanvas.initialize();
+        GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         ShaderManager.getInstance().reload();
         GLFW.glfwSwapInterval(1);
 

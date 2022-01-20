@@ -32,6 +32,8 @@ public final class RenderNode {
             CLIP_TO_BOUNDS = 0x1,
             CLIP_TO_CLIP_BOUNDS = 0x1 << 1;
 
+    private RecordingCanvas mCurrentRecordingCanvas;
+
     /**
      * Stores the total transformation of the RenderNode based upon its
      * translate/rotate/scale properties.
@@ -67,6 +69,7 @@ public final class RenderNode {
     private float mScaleY = 1;
     private float mPivotX;
     private float mPivotY;
+    private boolean mHasOverlappingRendering;
     private boolean mPivotExplicitlySet;
     private boolean mMatrixOrPivotDirty;
     @Nullable
@@ -77,6 +80,51 @@ public final class RenderNode {
      * drawing operations, and store / apply render properties when drawn.
      */
     public RenderNode() {
+    }
+
+    /**
+     * Starts recording a display list for the render node. All
+     * operations performed on the returned canvas are recorded and
+     * stored in this display list.
+     * <p>
+     * {@link #endRecording()} must be called when the recording is finished in order to apply
+     * the updated display list. Failing to call {@link #endRecording()} will result in an
+     * {@link IllegalStateException} if this method is called again.
+     *
+     * @param width  The width of the recording viewport. This will not alter the width of the
+     *               RenderNode itself, that must be set with {@link #setPosition(Rect)}.
+     * @param height The height of the recording viewport. This will not alter the height of the
+     *               RenderNode itself, that must be set with {@link #setPosition(Rect)}.
+     * @return A canvas to record drawing operations.
+     * @throws IllegalStateException If a recording is already in progress. That is, the previous
+     *                               call to this method did not call {@link #endRecording()} first.
+     * @see #endRecording()
+     * @see #hasDisplayList()
+     */
+    @Nonnull
+    public RecordingCanvas beginRecording(int width, int height) {
+        if (mCurrentRecordingCanvas != null) {
+            throw new IllegalStateException("Recording currently in progress - missing #endRecording() call?");
+        }
+        mCurrentRecordingCanvas = RecordingCanvas.obtain(this, width, height);
+        return mCurrentRecordingCanvas;
+    }
+
+    /**
+     * Ends the recording for this display list. Calling this method marks
+     * the display list valid and {@link #hasDisplayList()} will return true.
+     *
+     * @see #beginRecording(int, int)
+     * @see #hasDisplayList()
+     */
+    public void endRecording() {
+        if (mCurrentRecordingCanvas == null) {
+            throw new IllegalStateException("No recording in progress, forgot to call #beginRecording()?");
+        }
+        RecordingCanvas canvas = mCurrentRecordingCanvas;
+        mCurrentRecordingCanvas = null;
+        //canvas.finishRecording(this);
+        //canvas.recycle();
     }
 
     /**
@@ -781,5 +829,9 @@ public final class RenderNode {
             return true;
         }
         return false;
+    }
+
+    public boolean isTransitionLayer() {
+        return (mAlpha < 1 && mAlpha >= 0.001f && mHasOverlappingRendering);
     }
 }

@@ -20,7 +20,7 @@ package icyllis.modernui.mixin;
 
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.graphics.GLCanvas;
+import icyllis.modernui.graphics.GLSurfaceCanvas;
 import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.forge.CanvasForge;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
@@ -55,7 +55,7 @@ public class MixinShaderInstance implements CanvasForge.FastShader {
     private List<Uniform> uniforms;
 
     @Override
-    public void fastApply(@Nonnull GLCanvas canvas, @Nonnull Object2IntMap<String> units) {
+    public void fastApply(@Nonnull GLSurfaceCanvas canvas, @Nonnull Object2IntMap<String> units) {
         dirty = false;
         canvas.useProgram(programId);
 
