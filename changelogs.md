@@ -1,5 +1,46 @@
 Changelogs
 ===
+### Modern UI 3.3.0.98 (2022-01-23)
+#### Forge Extension 1.18.1-39.0.5
+* Stabilize Forge API and components
+* Add blur effect to screen background
+* Fix vanilla tooltip text not rendering
+#### Modern Text 1.18.1 (Embedded)
+* Fix underline and strikethrough not rendering
+* Close package, to be separated
+#### Core Framework 3.3
+* Merge view alpha property and transitions
+* Change paint properties
+* Change gradient color ordering
+* Add tree base for new render pipeline
+* Update Libraries
+  - Log4j 2.14.1 -> 2.17.0
+  - caffeine 3.0.4 -> 3.0.5
+  - icu4j 69.1 -> 70.1
+  - LWJGL 3.2.2 -> 3.3.0
+* Synchronize UI messages
+* Update shaders and canvas pipeline
+* Update high precision time source
+* Add new event loop framework (Fast blocking) (Big Update)
+  - Native Main Thread
+  - Async Tasks
+  - ...
+* Optimize bitmap I/O, add .jfif .jif detect
+* Add Fragment (inherited from Module) full support (Big Update)
+  - Back Stack
+  - State Manager
+  - Special Effects
+  - Callback
+  - ...
+* Add DataSet (Fast I/O and persistent storage)
+* Add tree observer methods
+* Add new movement method
+* Add fast key-held linked list with removal support
+* Add Lifecycle full support (Big Update)
+  - Live Data
+  - Observer
+  - ...
+
 ### Modern UI 3.2.0.97 (2021-12-07)
 #### Forge Extension 1.18-38.0.15
 * Port to 1.18, remove deprecated methods
@@ -171,7 +212,7 @@ Changelogs
 * Drop support for Java 10 or below
 * Add round lines and more drawing methods
 * Add image drawing and recycle bitmaps
-* Switch to multi-threaded rendering
+* Switch to multithreaded rendering
 * Add automatic vertex array object generation
 * Add vertex attributes and vertex buffer binding points
 * Introduce GLCanvas and update shaders

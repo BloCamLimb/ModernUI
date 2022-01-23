@@ -32,35 +32,32 @@ import net.minecraft.client.renderer.PostPass;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 @OnlyIn(Dist.CLIENT)
 public enum BlurHandler {
     INSTANCE;
 
+    // minecraft namespace
+    private static final ResourceLocation BLUR_POST_EFFECT = new ResourceLocation("shaders/post/blur_fast.json");
+
     /**
      * Config values
      */
     static volatile boolean sBlurEffect;
-    static volatile float sAnimationDuration;
-    static volatile float sBlurRadius;
+    static volatile float sAnimationDuration; // milliseconds
+    static volatile int sBlurRadius;
     static final int[] sBackgroundColor = new int[4];
-
-    //FIXME blur shader working
-    private static boolean debugKey = true;
-
-    // minecraft namespace
-    private final ResourceLocation mBlurPostEffect = new ResourceLocation("shaders/post/blur_fast.json");
 
     private final Minecraft minecraft = Minecraft.getInstance();
 
-    private final Set<Class<?>> mBlacklist = new HashSet<>();
+    private final ArrayList<Class<? extends Screen>> mBlacklist = new ArrayList<>();
 
     private final int[] mBackgroundColor = new int[4];
 
@@ -78,44 +75,43 @@ public enum BlurHandler {
      * If a screen excluded, the other screens that opened after this screen won't be blurred, unless current screen
      * closed
      */
-    private boolean mScreenOpened;
+    private boolean mHasScreen;
 
     /**
      * Use blur shader in game renderer post-processing.
      */
-    void count(@Nullable Screen nextScreen) {
+    void blur(@Nullable Screen nextScreen) {
         if (minecraft.level == null) {
             return;
         }
-        boolean excluded = false;
-        if (nextScreen != null && sBlurEffect && !(nextScreen instanceof MuiScreen)) {
-            Class<?> t = nextScreen.getClass();
-            if (t != null) {
-                for (Class<?> c : mBlacklist) {
-                    if (c.isAssignableFrom(t)) {
-                        excluded = true;
-                        break;
-                    }
+        boolean hasScreen = nextScreen != null;
+
+        boolean blocked = false;
+        if (hasScreen && sBlurEffect && !(nextScreen instanceof MuiScreen)) {
+            final Class<?> t = nextScreen.getClass();
+            for (Class<?> c : mBlacklist) {
+                if (c.isAssignableFrom(t)) {
+                    blocked = true;
+                    break;
                 }
             }
         }
-        boolean blurDisabled = excluded || !sBlurEffect || debugKey;
-        if (blurDisabled && excluded && mBlurring) {
+
+        if (blocked && mBlurring) {
             minecraft.gameRenderer.shutdownEffect();
             mFadingIn = false;
             mBlurring = false;
         }
 
-        boolean hasGui = nextScreen != null;
         GameRenderer gr = minecraft.gameRenderer;
-        if (hasGui && !mBlurring && !mScreenOpened) {
-            if (!blurDisabled && gr.currentEffect() == null && sBlurRadius > 1) {
-                gr.loadEffect(mBlurPostEffect);
+        if (hasScreen && !mHasScreen) {
+            if (!blocked && sBlurEffect && !mBlurring && gr.currentEffect() == null && sBlurRadius > 1) {
+                gr.loadEffect(BLUR_POST_EFFECT);
                 mBlurring = true;
-                if (sAnimationDuration <= 0) {
-                    updateRadius(sBlurRadius);
-                } else {
+                if (sAnimationDuration > 0) {
                     updateRadius(0);
+                } else {
+                    updateRadius(sBlurRadius);
                 }
             }
             if (sAnimationDuration > 0) {
@@ -125,12 +121,14 @@ public enum BlurHandler {
                 mFadingIn = false;
                 System.arraycopy(sBackgroundColor, 0, mBackgroundColor, 0, 4);
             }
-        } else if (!hasGui && mBlurring) {
-            gr.shutdownEffect();
+        } else if (!hasScreen) {
+            if (mBlurring) {
+                gr.shutdownEffect();
+                mBlurring = false;
+            }
             mFadingIn = false;
-            mBlurring = false;
         }
-        mScreenOpened = hasGui;
+        mHasScreen = hasScreen;
     }
 
     /**
@@ -144,26 +142,32 @@ public enum BlurHandler {
         if (minecraft.level != null && mBlurring) {
             GameRenderer gr = minecraft.gameRenderer;
             if (gr.currentEffect() == null) {
-                gr.loadEffect(mBlurPostEffect);
+                gr.loadEffect(BLUR_POST_EFFECT);
                 mFadingIn = true;
                 mBlurring = true;
             }
         }
     }
 
+    @SuppressWarnings("unchecked")
     void loadBlacklist(@Nullable List<? extends String> names) {
         mBlacklist.clear();
-        if (names != null) {
-            for (String s : names) {
-                if (s == null || s.isEmpty()) {
-                    continue;
-                }
-                try {
-                    Class<?> clazz = Class.forName(s);
-                    mBlacklist.add(clazz);
-                } catch (ClassNotFoundException e) {
-                    ModernUI.LOGGER.info(ModernUI.MARKER, "Failed to find blur blacklist class: {}", s);
-                }
+        if (names == null) {
+            return;
+        }
+        for (String s : names) {
+            if (StringUtils.isEmpty(s)) {
+                continue;
+            }
+            try {
+                Class<?> clazz = Class.forName(s);
+                mBlacklist.add((Class<? extends Screen>) clazz);
+            } catch (ClassNotFoundException e) {
+                ModernUI.LOGGER.warn(ModernUI.MARKER,
+                        "Failed to add blur blacklist {}: make sure class name exists", s, e);
+            } catch (ClassCastException e) {
+                ModernUI.LOGGER.warn(ModernUI.MARKER,
+                        "Failed to add blur blacklist {}: make sure class is a valid subclass of Screen", s, e);
             }
         }
     }
@@ -171,9 +175,9 @@ public enum BlurHandler {
     /**
      * Render tick, should called before rendering things
      */
-    void update(long time) {
+    void update(long timeMillis) {
         if (mFadingIn) {
-            float p = Math.min(time / sAnimationDuration, 1.0f);
+            float p = Math.min(timeMillis / sAnimationDuration, 1.0f);
             if (mBlurring) {
                 updateRadius(p * sBlurRadius);
             }
@@ -210,9 +214,9 @@ public enum BlurHandler {
         builder.vertex(matrix, x2, y1, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
         color = mBackgroundColor[0];
         builder.vertex(matrix, x1, y1, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
-        color = mBackgroundColor[3];
-        builder.vertex(matrix, x1, y2, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
         color = mBackgroundColor[2];
+        builder.vertex(matrix, x1, y2, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
+        color = mBackgroundColor[3];
         builder.vertex(matrix, x2, y2, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
         builder.end();
         BufferUploader.end(builder);

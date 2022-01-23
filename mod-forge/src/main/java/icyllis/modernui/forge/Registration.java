@@ -197,6 +197,15 @@ final class Registration {
             ModernUI.getInstance().getSelectedTypeface();
             TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
         });
+        MuiForgeApi.addOnDisplayResizeListener((width, height, newScale, oldScale) -> {
+            if (ArchCore.hasRenderThread() && newScale != oldScale) {
+                TextLayoutEngine.getInstance().reload();
+            }
+        });
+        MuiForgeApi.addOnDebugDumpListener(builder -> {
+            builder.append("Text Layout Entries: ");
+            builder.append(TextLayoutEngine.getInstance().countEntries());
+        });
 
         // Always replace static variable as an insurance policy
         /*AccessOption.setGuiScale(new CycleOption("options.guiScale",

@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics;
 
+import org.intellij.lang.annotations.MagicConstant;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -28,28 +30,20 @@ public class Paint {
 
     private static final ThreadLocal<Paint> TLS = ThreadLocal.withInitial(Paint::new);
 
-    private static final int STYLE_MASK = 0x3;
-    private static final int GRADIENT_MASK = 0x4;
+    /**
+     * Geometry drawn with this style will be filled, ignoring all
+     * stroke-related settings in the paint.
+     */
+    public static final int FILL = 0x0;
 
     /**
-     * The Style specifies if the primitive being drawn is filled, stroked, or
-     * both (in the same color). The default is FILL.
+     * Geometry drawn with this style will be stroked, respecting
+     * the stroke-related fields on the paint.
      */
-    public enum Style {
-        /**
-         * Geometry drawn with this style will be filled, ignoring all
-         * stroke-related settings in the paint.
-         */
-        FILL,
+    public static final int STROKE = 0x1;
 
-        /**
-         * Geometry drawn with this style will be stroked, respecting
-         * the stroke-related fields on the paint.
-         */
-        STROKE;
-
-        private static final Style[] VALUES = values();
-    }
+    private static final int STYLE_MASK = FILL | STROKE;
+    private static final int GRADIENT_MASK = 0x2;
 
     private int mColor;
     private int mFlags;
@@ -59,7 +53,7 @@ public class Paint {
     private int[] mColors;
 
     /**
-     * Creates a new Paint.
+     * Creates a new Paint with defaults.
      *
      * @see #take()
      */
@@ -68,11 +62,11 @@ public class Paint {
     }
 
     /**
-     * Reset the paint to defaults.
+     * Set the paint to defaults.
      */
     public void reset() {
-        mColor = ~0;
-        mFlags = 0;
+        mColor = 0xFFFFFFFF;
+        mFlags = FILL;
         mStrokeWidth = 2;
         mSmoothRadius = 2;
     }
@@ -97,7 +91,7 @@ public class Paint {
      *     canvas.drawRect(mRectB, paint);
      * }
      * </pre>
-     * The API implementation requires that any method in {@link Canvas} must not
+     * The API implementation requires that any method in {@link Canvas} must NOT
      * modify the state of Paint.
      *
      * @return the thread-local paint
@@ -154,13 +148,13 @@ public class Paint {
      * @param a the new alpha value ranged from 0 to 255
      */
     public void setAlpha(int a) {
-        if ((mFlags & GRADIENT_MASK) == 0) {
-            mColor = (mColor & 0xFFFFFF) | (a << 24);
-        } else {
+        if (isGradient()) {
             a <<= 24;
             for (int i = 0; i < 4; i++) {
                 mColors[i] = (mColors[i] & 0xFFFFFF) | a;
             }
+        } else {
+            mColor = (mColor & 0xFFFFFF) | (a << 24);
         }
     }
 
@@ -253,9 +247,8 @@ public class Paint {
      *
      * @return the paint's style setting (Fill, Stroke)
      */
-    @Nonnull
-    public Style getStyle() {
-        return Style.VALUES[mFlags & STYLE_MASK];
+    public int getStyle() {
+        return mFlags & STYLE_MASK;
     }
 
     /**
@@ -264,14 +257,14 @@ public class Paint {
      *
      * @param style the new style to set in the paint
      */
-    public void setStyle(@Nonnull Style style) {
-        mFlags = (mFlags & ~STYLE_MASK) | style.ordinal();
+    public void setStyle(@MagicConstant(intValues = {FILL, STROKE}) int style) {
+        mFlags = (mFlags & ~STYLE_MASK) | style;
     }
 
     /**
      * Return the width for stroking. The default value is 2.0 px.
      *
-     * @return the paint's stroke width, used whenever the paint's style is {@link Style#STROKE}
+     * @return the paint's stroke width, used whenever the paint's style is {@link Paint#STROKE}
      */
     public float getStrokeWidth() {
         return mStrokeWidth;
@@ -281,7 +274,7 @@ public class Paint {
      * Set the width for stroking. The default value is 2.0 px.
      *
      * @param width set the paint's stroke width, used whenever the paint's
-     *              style is {@link Style#STROKE}
+     *              style is {@link Paint#STROKE}
      */
     public void setStrokeWidth(float width) {
         mStrokeWidth = Math.max(0, width);

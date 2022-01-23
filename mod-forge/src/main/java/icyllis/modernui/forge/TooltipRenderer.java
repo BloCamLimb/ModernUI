@@ -310,12 +310,12 @@ public final class TooltipRenderer {
         canvas.save();
         RenderSystem.getModelViewMatrix().store(sMatBuf.rewind());
         sMyMat.set(sMatBuf.rewind());
-        canvas.multiply(sMyMat);
+        canvas.concat(sMyMat);
 
         mat.store(sMatBuf.rewind()); // Sodium check the remaining
         sMyMat.set(sMatBuf.rewind());
         //myMat.translate(0, 0, -2000);
-        canvas.multiply(sMyMat);
+        canvas.concat(sMyMat);
 
         Paint paint = Paint.take();
 
@@ -327,7 +327,7 @@ public final class TooltipRenderer {
             sColor[i] = (color & 0xFFFFFF) | (alpha << 24);
         }
         paint.setColors(sColor);
-        paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.FILL);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER,
                 tooltipY + tooltipHeight + V_BORDER, 3, paint);
@@ -338,7 +338,7 @@ public final class TooltipRenderer {
             sColor[i] = (color & 0xFFFFFF) | (alpha << 24);
         }
         paint.setColors(sColor);
-        paint.setStyle(Paint.Style.STROKE);
+        paint.setStyle(Paint.STROKE);
         paint.setStrokeWidth(1.5f);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER,

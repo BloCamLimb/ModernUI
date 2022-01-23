@@ -184,7 +184,7 @@ public class TestPauseUI extends UICallback {
             Paint paint = Paint.take();
             paint.setRGBA(0, 0, 0, 180);
             canvas.drawRoundRect(b.left + start, b.top + start, b.right - start, b.bottom - start, mRadius, paint);
-            paint.setStyle(Paint.Style.STROKE);
+            paint.setStyle(Paint.STROKE);
             paint.setStrokeWidth(stroke);
             paint.setColor(NETWORK_COLOR);
             canvas.drawRoundRect(b.left + start, b.top + start, b.right - start, b.bottom - start, mRadius, paint);
@@ -245,7 +245,7 @@ public class TestPauseUI extends UICallback {
             float start = mRadius * 0.5f;
 
             Paint paint = Paint.take();
-            paint.setStyle(Paint.Style.STROKE);
+            paint.setStyle(Paint.STROKE);
             paint.setStrokeWidth(mRadius);
             paint.setColor(NETWORK_COLOR);
             canvas.drawRoundRect(b.left + start, b.top + start, b.right - start, b.bottom - start, mRadius, paint);

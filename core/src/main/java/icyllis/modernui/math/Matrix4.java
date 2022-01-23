@@ -203,6 +203,27 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Create a new translation transformation matrix.
+     *
+     * @param x the x-component of the translation
+     * @param y the y-component of the translation
+     * @param z the z-component of the translation
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 makeTranslation(float x, float y, float z) {
+        Matrix4 mat = new Matrix4();
+        mat.m11 = 1.0f;
+        mat.m22 = 1.0f;
+        mat.m33 = 1.0f;
+        mat.m41 = x;
+        mat.m42 = y;
+        mat.m43 = z;
+        mat.m44 = 1.0f;
+        return mat;
+    }
+
+    /**
      * Add each element of the given matrix to the corresponding element of this matrix.
      *
      * @param o the addend
@@ -1061,8 +1082,8 @@ public class Matrix4 implements Cloneable {
      *
      * @param t the translation vector
      */
-    public void setTranslation(@Nonnull Vector3 t) {
-        setTranslation(t.x, t.y, t.z);
+    public void setToTranslation(@Nonnull Vector3 t) {
+        setToTranslation(t.x, t.y, t.z);
     }
 
     /**
@@ -1072,7 +1093,7 @@ public class Matrix4 implements Cloneable {
      * @param y the y-component of the translation
      * @param z the z-component of the translation
      */
-    public void setTranslation(float x, float y, float z) {
+    public void setToTranslation(float x, float y, float z) {
         m11 = 1.0f;
         m12 = 0.0f;
         m13 = 0.0f;
@@ -1182,22 +1203,22 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Sets this matrix to a scale matrix by given components.
+     * Sets this matrix to a scaling matrix by given components.
      *
      * @param s the scale vector
      */
-    public void setScale(@Nonnull Vector3 s) {
-        setScale(s.x, s.y, s.z);
+    public void setToScaling(@Nonnull Vector3 s) {
+        setToScaling(s.x, s.y, s.z);
     }
 
     /**
-     * Sets this matrix to a scale matrix by given components.
+     * Sets this matrix to a scaling matrix by given components.
      *
      * @param x the x-component of the scale
      * @param y the y-component of the scale
      * @param z the z-component of the scale
      */
-    public void setScale(float x, float y, float z) {
+    public void setToScaling(float x, float y, float z) {
         m11 = x;
         m12 = 0.0f;
         m13 = 0.0f;
@@ -1481,8 +1502,7 @@ public class Matrix4 implements Cloneable {
             vec.y = y;
             vec.z = z;
         } else {
-            float w = m14 * vec.x + m24 * vec.y + m34 * vec.z + m44;
-            w = 1.0f / w;
+            float w = 1.0f / (m14 * vec.x + m24 * vec.y + m34 * vec.z + m44);
             vec.x = x * w;
             vec.y = y * w;
             vec.z = z * w;
@@ -1500,13 +1520,12 @@ public class Matrix4 implements Cloneable {
         final float x = m11 * vec.x + m12 * vec.y + m13 * vec.z + m14;
         final float y = m21 * vec.x + m22 * vec.y + m23 * vec.z + m24;
         final float z = m31 * vec.x + m32 * vec.y + m33 * vec.z + m34;
-        if (isAffine()) {
+        if (!hasTranslation()) {
             vec.x = x;
             vec.y = y;
             vec.z = z;
         } else {
-            float w = m41 * vec.x + m42 * vec.y + m43 * vec.z + m44;
-            w = 1.0f / w;
+            float w = 1.0f / (m41 * vec.x + m42 * vec.y + m43 * vec.z + m44);
             vec.x = x * w;
             vec.y = y * w;
             vec.z = z * w;
@@ -1559,8 +1578,7 @@ public class Matrix4 implements Cloneable {
         } else {
             final float x = m11 * p.x + m21 * p.y + m41;
             final float y = m12 * p.x + m22 * p.y + m42;
-            float w = m14 * p.x + m24 * p.y + m44;
-            w = 1.0f / w;
+            float w = 1.0f / (m14 * p.x + m24 * p.y + m44);
             p.x = x * w;
             p.y = y * w;
         }

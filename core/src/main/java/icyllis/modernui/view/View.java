@@ -27,6 +27,7 @@ import icyllis.modernui.graphics.RenderNode;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.*;
 import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.SparseArray;
 import org.apache.logging.log4j.Marker;
@@ -1185,10 +1186,10 @@ public class View implements Drawable.Callback {
         canvas.translate(mLeft, mTop);
 
         if (mRenderNode.getAnimationMatrix() != null) {
-            canvas.multiply(mRenderNode.getAnimationMatrix());
+            canvas.concat(mRenderNode.getAnimationMatrix());
         }
         if (!identity) {
-            canvas.multiply(getMatrix());
+            canvas.concat(getMatrix());
         }
 
         // true if clip region is not empty, or quick rejected
@@ -3532,9 +3533,12 @@ public class View implements Drawable.Callback {
         mRenderNode.setTranslationX(translationX);
     }
 
-    //TODO WIP, not working
+    //TODO WIP
     public void setAlpha(float alpha) {
-        mAlpha = alpha;
+        if (mAlpha != alpha) {
+            mAlpha = alpha;
+            invalidate();
+        }
     }
 
     /**
@@ -3546,7 +3550,7 @@ public class View implements Drawable.Callback {
      * @return The opacity of the view.
      */
     public float getAlpha() {
-        return 1;
+        return mAlpha;
     }
 
     /**
@@ -6460,6 +6464,25 @@ public class View implements Drawable.Callback {
     public String getTransitionName() {
         return mTransitionName;
     }
+
+    // Properties
+    //
+    /**
+     * A Property wrapper around the <code>alpha</code> functionality handled by the
+     * {@link View#setAlpha(float)} and {@link View#getAlpha()} methods.
+     */
+    public static final FloatProperty<View> ALPHA = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setAlpha(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getAlpha();
+        }
+    };
 
     /**
      * Creates an image that the system displays during the drag and drop operation.

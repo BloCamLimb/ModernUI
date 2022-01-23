@@ -259,27 +259,27 @@ public class TestLinearLayout extends LinearLayout {
 
         Paint paint = Paint.take();
         paint.setAlpha(192);
-        paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.FILL);
         canvas.drawRoundRect(6, 90, 46, 104, 7, paint);
 
-        paint.setStyle(Paint.Style.STROKE);
+        paint.setStyle(Paint.STROKE);
         paint.setStrokeWidth(4.0f);
         canvas.save();
         canvas.rotate(-45);
         canvas.drawRoundRect(6, 110, 86, 124, 6, paint);
 
-        paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.FILL);
         canvas.drawRect(6, 126, 86, 156, paint);
         canvas.restore();
 
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
-        paint.setStyle(Paint.Style.STROKE);
+        paint.setStyle(Paint.STROKE);
         paint.setSmoothRadius(2.0f);
         paint.setStrokeWidth(10.0f);
         canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
 
-        paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.FILL);
         paint.setAlpha((int) (roundRectAlpha * 192));
         canvas.drawRoundRect(20, 480, 20 + mRoundRectLen * 1.6f, 480 + mRoundRectLen, 10, paint);
         paint.setAlpha(255);

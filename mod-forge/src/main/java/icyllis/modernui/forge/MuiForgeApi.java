@@ -50,6 +50,9 @@ public final class MuiForgeApi {
     @GuardedBy("sOnDisplayResizeListeners")
     static final CopyOnWriteArrayList<OnDisplayResizeListener> sOnDisplayResizeListeners =
             new CopyOnWriteArrayList<>();
+    @GuardedBy("sOnDebugDumpListeners")
+    static final CopyOnWriteArrayList<OnDebugDumpListener> sOnDebugDumpListeners =
+            new CopyOnWriteArrayList<>();
 
     private MuiForgeApi() {
     }
@@ -238,6 +241,33 @@ public final class MuiForgeApi {
         }
     }
 
+    /**
+     * Registers a callback to be called when Modern UI dumps its debug info to chat or console.
+     *
+     * @param listener the listener to register
+     * @see OnDebugDumpListener
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static void addOnDebugDumpListener(@Nonnull OnDebugDumpListener listener) {
+        synchronized (sOnDebugDumpListeners) {
+            if (!sOnDebugDumpListeners.contains(listener)) {
+                sOnDebugDumpListeners.add(listener);
+            }
+        }
+    }
+
+    /**
+     * Remove a registered OnDebugDumpListener.
+     *
+     * @param listener the listener to unregister
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static void removeOnDebugDumpListener(@Nonnull OnDebugDumpListener listener) {
+        synchronized (sOnDebugDumpListeners) {
+            sOnDebugDumpListeners.remove(listener);
+        }
+    }
+
     @FunctionalInterface
     public interface OnDisplayResizeListener {
 
@@ -251,6 +281,17 @@ public final class MuiForgeApi {
          * @param oldGuiScale the old gui scale, may be equal to the new gui scale
          */
         void onDisplayResize(int width, int height, int guiScale, int oldGuiScale);
+    }
+
+    @FunctionalInterface
+    public interface OnDebugDumpListener {
+
+        /**
+         * Called when Modern UI dumps its debug info to chat or console.
+         *
+         * @param builder the builder to add new lines
+         */
+        void onDebugDump(@Nonnull StringBuilder builder);
     }
 
     /* Screen */

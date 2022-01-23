@@ -33,6 +33,7 @@ import icyllis.modernui.text.TexturedGlyph;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
+import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntStack;
@@ -82,15 +83,12 @@ import static org.lwjgl.system.MemoryUtil.*;
  * @author BloCamLimb
  */
 @NotThreadSafe
-public final class GLSurfaceCanvas extends Canvas {
+public final class GLSurfaceCanvas extends GLCanvas {
 
     private static volatile GLSurfaceCanvas sInstance;
 
     // we have only one instance called on UI thread only
-    private static final Pool<SaveState> sSaveStatePool = Pools.simple(20);
     private static final Pool<DrawText> sDrawTextPool = Pools.simple(60);
-
-    private static final Matrix4 RESTORE_MAT;
 
     /**
      * Uniform block binding points (sequential)
@@ -135,25 +133,25 @@ public final class GLSurfaceCanvas extends Canvas {
     /**
      * Recording draw operations (sequential)
      */
-    public static final int DRAW_RECT = 1;
-    public static final int DRAW_IMAGE = 2;
-    public static final int DRAW_ROUND_RECT_FILL = 3;
-    public static final int DRAW_ROUND_IMAGE = 4;
-    public static final int DRAW_ROUND_RECT_STROKE = 5;
-    public static final int DRAW_CIRCLE_FILL = 6;
-    public static final int DRAW_CIRCLE_STROKE = 7;
-    public static final int DRAW_ARC_FILL = 8;
-    public static final int DRAW_ARC_STROKE = 9;
-    public static final int DRAW_BEZIER = 10;
-    public static final int DRAW_TEXT = 11;
-    public static final int DRAW_IMAGE_MS = 12;
-    public static final int DRAW_CLIP_PUSH = 13;
-    public static final int DRAW_CLIP_POP = 14;
-    public static final int DRAW_MATRIX = 15;
-    public static final int DRAW_SMOOTH = 16;
-    public static final int DRAW_LAYER_PUSH = 17;
-    public static final int DRAW_LAYER_POP = 18;
-    public static final int DRAW_CUSTOM = 19;
+    public static final byte DRAW_RECT = 1;
+    public static final byte DRAW_IMAGE = 2;
+    public static final byte DRAW_ROUND_RECT_FILL = 3;
+    public static final byte DRAW_ROUND_IMAGE = 4;
+    public static final byte DRAW_ROUND_RECT_STROKE = 5;
+    public static final byte DRAW_CIRCLE_FILL = 6;
+    public static final byte DRAW_CIRCLE_STROKE = 7;
+    public static final byte DRAW_ARC_FILL = 8;
+    public static final byte DRAW_ARC_STROKE = 9;
+    public static final byte DRAW_BEZIER = 10;
+    public static final byte DRAW_TEXT = 11;
+    public static final byte DRAW_IMAGE_MS = 12;
+    public static final byte DRAW_CLIP_PUSH = 13;
+    public static final byte DRAW_CLIP_POP = 14;
+    public static final byte DRAW_MATRIX = 15;
+    public static final byte DRAW_SMOOTH = 16;
+    public static final byte DRAW_LAYER_PUSH = 17;
+    public static final byte DRAW_LAYER_POP = 18;
+    public static final byte DRAW_CUSTOM = 19;
 
     /**
      * Uniform block sizes (maximum), use std140 layout
@@ -176,15 +174,10 @@ public final class GLSurfaceCanvas extends Canvas {
         POS_COLOR = new VertexFormat(POS, COLOR);
         POS_COLOR_TEX = new VertexFormat(POS, COLOR, UV);
         POS_TEX = new VertexFormat(POS, UV);
-        RESTORE_MAT = new Matrix4();
-        RESTORE_MAT.setTranslation(0, 0, -1000);
     }
 
-    // private stacks
-    private final ArrayDeque<SaveState> mSaveStates = new ArrayDeque<>();
-
     // recorded operations
-    private final IntList mDrawOps = new IntArrayList();
+    private final ByteArrayList mDrawOps = new ByteArrayList();
 
     // vertex buffer objects
     private final GLBuffer mPosColorVBO = new GLBuffer();
@@ -224,12 +217,6 @@ public final class GLSurfaceCanvas extends Canvas {
     private int mCurrProgram;
     private int mCurrVertexFormat;
 
-    private final Matrix4 mLastMatrix = new Matrix4();
-    private float mLastSmoothRadius;
-
-    private int mWidth;
-    private int mHeight;
-
     // absolute value presents the reference value, and sign represents whether to
     // update the stencil buffer (positive = update, or just change stencil func)
     private final IntList mClipRefs = new IntArrayList();
@@ -240,9 +227,6 @@ public final class GLSurfaceCanvas extends Canvas {
     private final Queue<GLTexture> mTextures = new ArrayDeque<>();
     private final List<DrawText> mDrawTexts = new ArrayList<>();
     private final Queue<Runnable> mCustoms = new ArrayDeque<>();
-
-    private final Rect mTmpRect = new Rect();
-    private final RectF mTmpRectF = new RectF();
 
     private final FloatBuffer mProjectionUpload = memAllocFloat(16);
 
@@ -285,7 +269,7 @@ public final class GLSurfaceCanvas extends Canvas {
                 "Vertex buffers: PosColor {}, PosColorTex {}, PosTex(Glyph) {}",
                 mPosColorVBO.get(), mPosColorTexVBO.get(), mPosTexVBO.get());
 
-        mSaveStates.push(new SaveState());
+        mSaves.push(new Save());
 
         ShaderManager.getInstance().addListener(this::onLoadShaders);
     }
@@ -297,7 +281,7 @@ public final class GLSurfaceCanvas extends Canvas {
             sInstance = new GLSurfaceCanvas();
             /*POS_COLOR.setBindingDivisor(INSTANCED_BINDING, 1);
             POS_COLOR_TEX.setBindingDivisor(INSTANCED_BINDING, 1);*/
-            ModernUI.LOGGER.info(MARKER, "GLCanvas initialized");
+            ModernUI.LOGGER.info(MARKER, "OpenGL surface canvas initialized");
         }
         return sInstance;
     }
@@ -363,24 +347,6 @@ public final class GLSurfaceCanvas extends Canvas {
     @RenderThread
     public FloatBuffer getProjection() {
         return mProjectionUpload.rewind();
-    }
-
-    /**
-     * Resets the clip bounds and matrix. This is required before drawing every frame.
-     *
-     * @param width  the width in pixels
-     * @param height the height in pixels
-     */
-    public void reset(int width, int height) {
-        SaveState s = getSaveState();
-        s.mBounds.set(0, 0, width, height);
-        s.mMatrix.set(RESTORE_MAT);
-        s.mRefVal = 0;
-        s.mColorBuf = 0;
-        mLastMatrix.setZero();
-        mLastSmoothRadius = -1;
-        mWidth = width;
-        mHeight = height;
     }
 
     @RenderThread
@@ -764,21 +730,6 @@ public final class GLSurfaceCanvas extends Canvas {
         }
     }
 
-    /**
-     * Gets the matrix for modification purposes.
-     *
-     * @return current model view matrix
-     */
-    @Nonnull
-    @Override
-    public Matrix4 getMatrix() {
-        return getSaveState().mMatrix;
-    }
-
-    @Nonnull
-    private SaveState getSaveState() {
-        return mSaveStates.getFirst();
-    }
 
     /**
      * Saves the current matrix and clip onto a private stack.
@@ -794,13 +745,13 @@ public final class GLSurfaceCanvas extends Canvas {
     public int save() {
         int saveCount = getSaveCount();
 
-        SaveState s = sSaveStatePool.acquire();
+        Save s = sSavePool.acquire();
         if (s == null) {
-            s = getSaveState().copy();
+            s = getSave().copy();
         } else {
-            s.set(getSaveState());
+            s.set(getSave());
         }
-        mSaveStates.push(s);
+        mSaves.push(s);
 
         return saveCount;
     }
@@ -809,17 +760,17 @@ public final class GLSurfaceCanvas extends Canvas {
     public int saveLayer(float left, float top, float right, float bottom, int alpha) {
         int saveCount = getSaveCount();
 
-        SaveState s = sSaveStatePool.acquire();
+        Save s = sSavePool.acquire();
         if (s == null) {
-            s = getSaveState().copy();
+            s = getSave().copy();
         } else {
-            s.set(getSaveState());
+            s.set(getSave());
         }
-        mSaveStates.push(s);
+        mSaves.push(s);
 
         if (alpha <= 0) {
             // will be quick rejected
-            s.mBounds.setEmpty();
+            s.mClip.setEmpty();
         } else if (alpha < 255 && s.mColorBuf < 3) {
             s.mColorBuf++;
             mLayerAlphas.add(alpha);
@@ -840,27 +791,17 @@ public final class GLSurfaceCanvas extends Canvas {
      */
     @Override
     public void restore() {
-        if (mSaveStates.size() < 1) {
+        if (mSaves.size() < 1) {
             throw new IllegalStateException("Underflow in restore");
         }
-        SaveState saveState = mSaveStates.pop();
-        if (saveState.mRefVal != getSaveState().mRefVal) {
-            restoreClipBatch(saveState.mBounds);
+        Save save = mSaves.pop();
+        if (save.mClipRef != getSave().mClipRef) {
+            restoreClipBatch(save.mClip);
         }
-        if (saveState.mColorBuf != getSaveState().mColorBuf) {
+        if (save.mColorBuf != getSave().mColorBuf) {
             restoreLayer();
         }
-        sSaveStatePool.release(saveState);
-    }
-
-    /**
-     * Returns the number of matrix/clip states on the Canvas' private stack.
-     * This will equal # save() calls - # restore() calls. The initial and
-     * minimum value are 1.
-     */
-    @Override
-    public int getSaveCount() {
-        return mSaveStates.size();
+        sSavePool.release(save);
     }
 
     /**
@@ -883,23 +824,23 @@ public final class GLSurfaceCanvas extends Canvas {
         if (saveCount < 1) {
             throw new IllegalArgumentException("Underflow in restoreToCount");
         }
-        Deque<SaveState> stack = mSaveStates;
+        Deque<Save> stack = mSaves;
 
-        SaveState lastPop = stack.pop();
-        final int topRef = lastPop.mRefVal;
+        Save lastPop = stack.pop();
+        final int topRef = lastPop.mClipRef;
         final int topBuf = lastPop.mColorBuf;
-        sSaveStatePool.release(lastPop);
+        sSavePool.release(lastPop);
 
         while (stack.size() > saveCount) {
             lastPop = stack.pop();
-            sSaveStatePool.release(lastPop);
+            sSavePool.release(lastPop);
         }
 
-        if (topRef != getSaveState().mRefVal) {
-            restoreClipBatch(lastPop.mBounds);
+        if (topRef != getSave().mClipRef) {
+            restoreClipBatch(lastPop.mClip);
         }
 
-        int bufDiff = topBuf - getSaveState().mColorBuf;
+        int bufDiff = topBuf - getSave().mColorBuf;
         while (bufDiff-- > 0) {
             restoreLayer();
         }
@@ -931,61 +872,32 @@ public final class GLSurfaceCanvas extends Canvas {
         }*/
         if (b.isEmpty()) {
             // taking the opposite number means that the clip rect is not to drawn
-            mClipRefs.add(-getSaveState().mRefVal);
+            mClipRefs.add(-getSave().mClipRef);
         } else {
-            drawMatrix(RESTORE_MAT);
+            drawMatrix(RESET_MATRIX);
             // must have a color
             putRectColor(b.left, b.top, b.right, b.bottom, ~0);
-            mClipRefs.add(getSaveState().mRefVal);
+            mClipRefs.add(getSave().mClipRef);
         }
         mDrawOps.add(DRAW_CLIP_POP);
     }
 
     private void restoreLayer() {
-        drawMatrix(RESTORE_MAT);
+        drawMatrix(RESET_MATRIX);
         mDrawOps.add(DRAW_LAYER_POP);
         drawMatrix();
     }
 
-    private static final class SaveState {
-
-        // maximum clip bounds transformed by model view matrix
-        private final Rect mBounds = new Rect();
-
-        // model view matrix
-        private final Matrix4 mMatrix = Matrix4.identity();
-
-        // stencil reference
-        private int mRefVal;
-
-        // stack depth of offscreen rendering target
-        private int mColorBuf;
-
-        private void set(@Nonnull SaveState s) {
-            mBounds.set(s.mBounds);
-            mMatrix.set(s.mMatrix);
-            mRefVal = s.mRefVal;
-            mColorBuf = s.mColorBuf;
-        }
-
-        // deep copy
-        @Nonnull
-        private SaveState copy() {
-            SaveState s = new SaveState();
-            s.set(this);
-            return s;
-        }
-    }
 
     @Override
     public boolean clipRect(float left, float top, float right, float bottom) {
-        final SaveState saveState = getSaveState();
+        final Save save = getSave();
         // empty rect, ignore it
         if (right <= left || bottom <= top) {
-            return !saveState.mBounds.isEmpty();
+            return !save.mClip.isEmpty();
         }
         // already empty, return false
-        if (saveState.mBounds.isEmpty()) {
+        if (save.mClip.isEmpty()) {
             return false;
         }
         RectF temp = mTmpRectF;
@@ -996,21 +908,21 @@ public final class GLSurfaceCanvas extends Canvas {
         temp.roundOut(test);
 
         // not empty and not changed, return true
-        if (test.contains(saveState.mBounds)) {
+        if (test.contains(save.mClip)) {
             return true;
         }
 
-        boolean intersects = saveState.mBounds.intersect(test);
-        saveState.mRefVal++;
+        boolean intersects = save.mClip.intersect(test);
+        save.mClipRef++;
         if (intersects) {
             drawMatrix();
             // updating stencil must have a color
             putRectColor(left, top, right, bottom, ~0);
-            mClipRefs.add(saveState.mRefVal);
+            mClipRefs.add(save.mClipRef);
         } else {
             // empty
-            mClipRefs.add(-saveState.mRefVal);
-            saveState.mBounds.setEmpty();
+            mClipRefs.add(-save.mClipRef);
+            save.mClip.setEmpty();
         }
         mDrawOps.add(DRAW_CLIP_PUSH);
         return intersects;
@@ -1022,7 +934,7 @@ public final class GLSurfaceCanvas extends Canvas {
         if (right <= left || bottom <= top) {
             return true;
         }
-        final Rect clip = getSaveState().mBounds;
+        final Rect clip = getSave().mClip;
         // already empty, reject
         if (clip.isEmpty()) {
             return true;
@@ -1214,8 +1126,8 @@ public final class GLSurfaceCanvas extends Canvas {
      * @param smooth current smooth
      */
     private void drawSmooth(float smooth) {
-        if (smooth != mLastSmoothRadius) {
-            mLastSmoothRadius = smooth;
+        if (smooth != mLastSmooth) {
+            mLastSmooth = smooth;
             checkUniformMemory()
                     .putFloat(smooth);
             mDrawOps.add(DRAW_SMOOTH);
@@ -1234,7 +1146,7 @@ public final class GLSurfaceCanvas extends Canvas {
         }
         sweepAngle %= 360;
         final float middleAngle = (startAngle % 360) + sweepAngle * 0.5f;
-        if (paint.getStyle() == Paint.Style.FILL) {
+        if (paint.getStyle() == Paint.FILL) {
             drawArcFill(cx, cy, radius, middleAngle, sweepAngle, paint);
         } else {
             drawArcStroke(cx, cy, radius, middleAngle, sweepAngle, paint);
@@ -1313,7 +1225,7 @@ public final class GLSurfaceCanvas extends Canvas {
         if (radius < 0.0001f) {
             return;
         }
-        if (paint.getStyle() == Paint.Style.FILL) {
+        if (paint.getStyle() == Paint.FILL) {
             drawCircleFill(cx, cy, radius, paint);
         } else {
             drawCircleStroke(cx, cy, radius, paint);
@@ -1484,7 +1396,7 @@ public final class GLSurfaceCanvas extends Canvas {
         if (radius < 0) {
             radius = 0;
         }
-        if (paint.getStyle() == Paint.Style.FILL) {
+        if (paint.getStyle() == Paint.FILL) {
             drawRoundRectFill(left, top, right, bottom, radius, sides, paint);
         } else {
             drawRoundRectStroke(left, top, right, bottom, radius, sides, paint);

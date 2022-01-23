@@ -88,10 +88,10 @@ public class TextRenderEffect {
     public static void drawUnderline(@Nonnull Matrix4f matrix, @Nonnull VertexConsumer builder, float start,
                                      float end, float y, int r, int g, int b, int a, int light) {
         y += UNDERLINE_OFFSET;
-        builder.vertex(matrix, start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
-        builder.vertex(matrix, end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
-        builder.vertex(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
-        builder.vertex(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
+        builder.vertex(matrix, start, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv(0, 1).uv2(light).endVertex();
+        builder.vertex(matrix, end, y + UNDERLINE_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv(1, 1).uv2(light).endVertex();
+        builder.vertex(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).uv(1, 0).uv2(light).endVertex();
+        builder.vertex(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).uv(0, 0).uv2(light).endVertex();
     }
 
     public static void drawStrikethrough(@Nonnull VertexConsumer builder, float start, float end, float y, int r,
@@ -106,10 +106,10 @@ public class TextRenderEffect {
     public static void drawStrikethrough(@Nonnull Matrix4f matrix, @Nonnull VertexConsumer builder, float start,
                                          float end, float y, int r, int g, int b, int a, int light) {
         y += STRIKETHROUGH_OFFSET;
-        builder.vertex(matrix, start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
-        builder.vertex(matrix, end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
-        builder.vertex(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
-        builder.vertex(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).uv2(light).endVertex();
+        builder.vertex(matrix, start, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv(0, 1).uv2(light).endVertex();
+        builder.vertex(matrix, end, y + STRIKETHROUGH_THICKNESS, EFFECT_DEPTH).color(r, g, b, a).uv(1, 1).uv2(light).endVertex();
+        builder.vertex(matrix, end, y, EFFECT_DEPTH).color(r, g, b, a).uv(1, 0).uv2(light).endVertex();
+        builder.vertex(matrix, start, y, EFFECT_DEPTH).color(r, g, b, a).uv(0, 0).uv2(light).endVertex();
     }
 
     /*@Nonnull
