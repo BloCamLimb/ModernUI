@@ -19,26 +19,49 @@
 package icyllis.modernui.textmc;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
+import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
+import java.nio.ByteBuffer;
 import java.util.Objects;
 
+import static org.lwjgl.opengl.GL11C.GL_ONE;
+import static org.lwjgl.opengl.GL11C.GL_RED;
+
+@RenderThread
 public class EffectRenderType extends RenderType {
 
+    private static final GLTexture WHITE = new GLTexture(GLWrapper.GL_TEXTURE_2D);
+
     private static final EffectRenderType INSTANCE = new EffectRenderType();
-    private static final EffectRenderType SEE_THROUGH = new EffectRenderType(ModernUI.ID + ":text_effect_see_through");
+    private static final EffectRenderType SEE_THROUGH = new EffectRenderType("modern_text_effect_see_through");
 
     private static final ImmutableList<RenderStateShard> STATES;
     private static final ImmutableList<RenderStateShard> SEE_THROUGH_STATES;
 
     static {
+        WHITE.allocate2D(NativeImage.Format.RED.internalGlFormat, 2, 2, 0);
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            ByteBuffer pixels = stack.malloc(4);
+            for (int i = 0; i < 4; i++) {
+                pixels.put((byte) 0xff);
+            }
+            WHITE.upload(0, 0, 0, 2, 2, 0, 0, 0, 1,
+                    NativeImage.Format.RED.glFormat, GLWrapper.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels.flip()));
+        }
+        WHITE.swizzleRGBA(GL_ONE, GL_ONE, GL_ONE, GL_RED);
         STATES = ImmutableList.of(
-                NO_TEXTURE,
+                TextRenderType.RENDERTYPE_MODERN_TEXT,
                 TRANSLUCENT_TRANSPARENCY,
                 LEQUAL_DEPTH_TEST,
                 CULL,
@@ -51,7 +74,7 @@ public class EffectRenderType extends RenderType {
                 DEFAULT_LINE
         );
         SEE_THROUGH_STATES = ImmutableList.of(
-                NO_TEXTURE,
+                TextRenderType.RENDERTYPE_MODERN_TEXT_SEE_THROUGH,
                 TRANSLUCENT_TRANSPARENCY,
                 NO_DEPTH_TEST,
                 CULL,
@@ -68,19 +91,27 @@ public class EffectRenderType extends RenderType {
     private final int hashCode;
 
     private EffectRenderType() {
-        super(ModernUI.ID + ":text_effect",
-                DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
+        super("modern_text_effect",
+                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
                 VertexFormat.Mode.QUADS, 256, false, true,
-                () -> STATES.forEach(RenderStateShard::setupRenderState),
+                () -> {
+                    STATES.forEach(RenderStateShard::setupRenderState);
+                    RenderSystem.enableTexture();
+                    RenderSystem.setShaderTexture(0, WHITE.get());
+                },
                 () -> STATES.forEach(RenderStateShard::clearRenderState));
         this.hashCode = Objects.hash(super.hashCode(), STATES);
     }
 
     private EffectRenderType(String t) {
         super(t,
-                DefaultVertexFormat.POSITION_COLOR_LIGHTMAP,
+                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
                 VertexFormat.Mode.QUADS, 256, false, true,
-                () -> SEE_THROUGH_STATES.forEach(RenderStateShard::setupRenderState),
+                () -> {
+                    SEE_THROUGH_STATES.forEach(RenderStateShard::setupRenderState);
+                    RenderSystem.enableTexture();
+                    RenderSystem.setShaderTexture(0, WHITE.get());
+                },
                 () -> SEE_THROUGH_STATES.forEach(RenderStateShard::clearRenderState));
         this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES);
     }

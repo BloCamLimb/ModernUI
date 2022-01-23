@@ -190,30 +190,30 @@ final class Config {
                     "The duration of GUI background color and blur radius animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 200, 0, 800);
             backgroundColor = builder.comment(
-                    "The GUI background color in world in 0xAARRGGBB format. Default value: 0x66000000",
-                    "Can be one to four values representing top left, top right, bottom right, bottom left color.",
+                    "The GUI background color in 0xAARRGGBB format. Default value: 0x66000000",
+                    "Can be one to four values representing top left, top right, bottom left, bottom right, color.",
                     "Multiple values produce a gradient effect, whereas one value produce a solid color.",
                     "When values is less than 4, the rest of the corner color will be replaced by the last value.")
                     .defineList("backgroundColor", () -> {
                         List<String> list = new ArrayList<>();
                         list.add("0x66000000");
                         return list;
-                    }, $ -> true);
+                    }, o -> true);
 
             blurEffect = builder.comment(
-                    "Add blur effect to world renderer when opened, it is incompatible with OptiFine's FXAA shader or" +
+                    "Add blur effect to world renderer when opened, it is incompatible with OptiFine's FXAA shader and" +
                             " some mods.")
                     .define("blurEffect", true);
             blurRadius = builder.comment(
-                    "The blur effect radius, higher values result in a small loss of performance.")
-                    .defineInRange("blurRadius", 10, 2, 18);
+                    "The 4-pass blur effect radius, higher values result in a small loss of performance.")
+                    .defineInRange("blurRadius", 9, 2, 18);
             blurBlacklist = builder.comment(
                     "A list of GUI screen superclasses that won't activate blur effect when opened.")
                     .defineList("blurBlacklist", () -> {
                         List<String> list = new ArrayList<>();
                         list.add(ChatScreen.class.getName());
                         return list;
-                    }, $ -> true);
+                    }, o -> true);
 
             builder.pop();
 
@@ -298,9 +298,12 @@ final class Config {
                         List<String> list = new ArrayList<>();
                         list.add("modernui:font/biliw.otf");
                         list.add("Calibri");
+                        list.add("Segoe UI");
+                        list.add("Noto Sans");
+                        list.add("Open Sans");
+                        list.add("San Francisco");
                         list.add("Microsoft YaHei UI");
                         list.add("STHeiti");
-                        list.add("Segoe UI");
                         list.add("SimHei");
                         list.add("SansSerif");
                         return list;

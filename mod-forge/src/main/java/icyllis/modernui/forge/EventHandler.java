@@ -108,12 +108,12 @@ final class EventHandler {
 
         @SubscribeEvent(priority = EventPriority.LOW)
         static void onGuiOpenL(@Nonnull ScreenOpenEvent event) {
-            BlurHandler.INSTANCE.count(event.getScreen());
             // This event should not be cancelled
             if (sCapturedVideoSettingsScreen != null) {
                 event.setScreen(sCapturedVideoSettingsScreen);
                 sCapturedVideoSettingsScreen = null;
             }
+            BlurHandler.INSTANCE.blur(event.getScreen());
         }
 
         @SubscribeEvent

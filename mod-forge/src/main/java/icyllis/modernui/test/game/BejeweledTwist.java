@@ -24,6 +24,8 @@ import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.core.Window;
 import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.opengl.ShaderManager;
 import icyllis.modernui.graphics.opengl.TextureManager;
@@ -31,8 +33,6 @@ import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
-import icyllis.modernui.core.NativeImage;
-import icyllis.modernui.core.Window;
 import icyllis.modernui.test.SpectrumGraph;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
@@ -248,19 +248,13 @@ public class BejeweledTwist {
         }
     }
 
-    private final int[] bgColor = new int[]{0x20000000, 0x20000000, 0x66000000, 0x66000000};
-
     private void tickDraw(Canvas canvas, long deltaMillis) {
         float cx = mWindow.getWidth() / 2f, cy = mWindow.getHeight() / 2f;
 
         Paint paint = Paint.take();
         float frac = MathUtil.clamp((float) ((mCursorY - mWindow.getHeight() + 250) / 250), 0, 1);
         int alpha = (int) MathUtil.lerp(frac, 0x66, 0xFF);
-        bgColor[2] &= 0xFFFFFF;
-        bgColor[3] &= 0xFFFFFF;
-        bgColor[2] |= alpha << 24;
-        bgColor[3] |= alpha << 24;
-        paint.setColors(bgColor);
+        paint.setColors(0x20000000, 0x20000000, alpha << 24, alpha << 24);
         canvas.drawRect(0, mWindow.getHeight() - 250, mWindow.getWidth(), mWindow.getHeight(), paint);
         paint.setColor(0x66000000);
         canvas.drawRect(cx - 100, 0, cx + 100, 90, paint);

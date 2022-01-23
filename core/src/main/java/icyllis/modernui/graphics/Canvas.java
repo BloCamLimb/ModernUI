@@ -30,29 +30,45 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A Canvas is used to draw something for View via shaders, such as rectangles,
- * round rectangles, circular arcs, lines, curves, images, laid-out glyphs etc.
+ * A Canvas is used to draw 2D geometries via 3D shaders, such as rectangles,
+ * round rectangles, circular arcs, lines, curves, images, textured glyphs etc.
  * <p>
- * A Canvas contains a private state stack, builds global buffers and records
- * "draw" commands for each primitive. The specified rendering target is
- * implementation-dependant.
+ * A Canvas contains a private save stack, builds 3D graphics buffers and records
+ * view system drawing operations for deferred rendering. The root rendering
+ * target (a custom framebuffer) is controlled by low-level.
  * <p>
- * Modern UI Canvas is designed for high-performance real-time rendering of
- * vector graphics with infinite precision. Thus, you can't draw other things
- * except those defined in Canvas easily. All geometry instances will be
- * redrawn/re-rendered every frame.
+ * Modern UI Canvas is designed for high-performance real-time rendering of vector
+ * graphics with infinite precision. Thus, you can't draw other things except
+ * those defined in Canvas easily. All geometries will be re-drawn and re-rendered
+ * every frame.
  * <p>
- * Modern UI doesn't make use of tessellation for non-primitives. Instead, we use
- * analytic geometry algorithm in Fragment Shaders to get ideal solution with
- * infinite precision. However, for stoke shaders, there will be a lot of discarded
- * fragments that can not be avoided on the CPU side. And they're recomputed each
- * frame. Especially the quadratic Bézier curve, the algorithm is very complex.
- * And this can't draw cubic Bézier curves, the only way is through tessellation.
+ * Modern UI doesn't make use of tessellation for non-primitives (3D graphics API).
+ * Instead, we use analytic geometry algorithm in Fragment Shaders to get ideal
+ * solution with infinite precision. However, for stoking shaders, there will be
+ * a lot of discarded fragments that can not be avoided on the CPU side. And
+ * they're recomputed each frame. Especially the quadratic Bézier curve, the
+ * algorithm is very complex. In additional, some geometry in other 2D graphics
+ * libraries cannot be drawn, like cubic Bézier curves.
  * <p>
- * Note: Modern UI supports multiple off-screen rendering targets. There's no
- * depth buffer in the UI framebuffer, so depth test appears to be disabled.
- * All layers are considered translucent and drawn from far to near, you cannot
- * handle the z-order inside.
+ * Modern UI supports multiple color buffers in one off-screen rendering target.
+ * Depth buffer has no use in the pipeline, so depth test appears to be disabled.
+ * All layers are considered translucent and drawn from far to near, z-ordering
+ * must be handled on application layer.
+ * <p>
+ * For tree rendering structures, each node uses child transition layers as needed
+ * for rendering. These transition layers are used for short-time alpha animation
+ * or transition animation. Using transition layers avoids creating a large number
+ * of useless framebuffers. Because these transition layers are color buffers in
+ * the same framebuffer. Correspondingly, you can also create dedicated layers
+ * according to actual needs, but Modern UI does not provide default implementation.
+ * <p>
+ * The projection matrix is globally shared, and the one of surface canvas must be
+ * an orthographic projection matrix. Canvas's matrix stack is the local model view
+ * matrix on client side, it must be an affine transformation. The pipeline will
+ * calculate the world coordinates in advance.
+ * <p>
+ * The stroke direction is the center, that is, inside and outside with stroke radius
+ * (half of stroke width).
  * <p>
  * This API is stable, but there will be more drawing methods.
  *
@@ -124,9 +140,11 @@ public abstract class Canvas {
     public abstract void restore();
 
     /**
-     * Returns the number of matrix/clip states on the Canvas' private stack.
+     * Returns the depth of matrix/clip states on the Canvas' private stack.
      * This will equal # save() calls - # restore() calls. The initial and
      * minimum value are 1.
+     *
+     * @return the save count
      */
     public abstract int getSaveCount();
 
@@ -148,31 +166,31 @@ public abstract class Canvas {
     public abstract void restoreToCount(int saveCount);
 
     /**
-     * Premultiply the current matrix by the specified translation
+     * Pre-multiply the current matrix by the specified translation.
      *
      * @param dx The distance to translate in X
      * @param dy The distance to translate in Y
      */
     public final void translate(float dx, float dy) {
         if (dx != 0.0f || dy != 0.0f) {
-            getMatrix().translate(dx, dy, 0);
+            getMatrix().translateXY(dx, dy);
         }
     }
 
     /**
-     * Premultiply the current matrix by the specified scale.
+     * Pre-multiply the current matrix by the specified scaling.
      *
      * @param sx The amount to scale in X
      * @param sy The amount to scale in Y
      */
     public final void scale(float sx, float sy) {
         if (sx != 1.0f || sy != 1.0f) {
-            getMatrix().scale(sx, sy, 1);
+            getMatrix().scaleXY(sx, sy);
         }
     }
 
     /**
-     * Premultiply the current matrix by the specified scale.
+     * Pre-multiply the current matrix by the specified scale.
      *
      * @param sx The amount to scale in X
      * @param sy The amount to scale in Y
@@ -182,14 +200,14 @@ public abstract class Canvas {
     public final void scale(float sx, float sy, float px, float py) {
         if (sx != 1.0f || sy != 1.0f) {
             Matrix4 matrix = getMatrix();
-            matrix.translate(px, py, 0);
-            matrix.scale(sx, sy, 1);
-            matrix.translate(-px, -py, 0);
+            matrix.translateXY(px, py);
+            matrix.scaleXY(sx, sy);
+            matrix.translateXY(-px, -py);
         }
     }
 
     /**
-     * Premultiply the current matrix by the specified rotation.
+     * Pre-multiply the current matrix by the specified rotation.
      *
      * @param degrees The angle to rotate, in degrees
      */
@@ -201,7 +219,7 @@ public abstract class Canvas {
 
     /**
      * Rotate canvas clockwise around the pivot point with specified angle, this is
-     * equivalent to premultiply the current matrix by the specified rotation.
+     * equivalent to pre-multiplying the current matrix by the specified rotation.
      *
      * @param degrees The amount to rotate, in degrees
      * @param px      The x-coord for the pivot point (unchanged by the rotation)
@@ -217,18 +235,18 @@ public abstract class Canvas {
     }
 
     /**
-     * Premultiply the current matrix by the specified matrix.
+     * Pre-multiply the current matrix by the specified matrix.
      *
      * @param matrix the matrix to multiply
      */
-    public final void multiply(@Nonnull Matrix4 matrix) {
+    public final void concat(@Nonnull Matrix4 matrix) {
         if (!matrix.isIdentity()) {
             getMatrix().multiply(matrix);
         }
     }
 
     /**
-     * Gets the backing matrix for <strong>modification purposes</strong>.
+     * Gets the backing matrix for local <strong>modification purposes</strong>.
      *
      * @return current model view matrix
      */
@@ -453,7 +471,7 @@ public abstract class Canvas {
      * @param image the image to be drawn
      * @param left  the position of the left side of the image being drawn
      * @param top   the position of the top side of the image being drawn
-     * @param paint the paint used to draw the image, null meaning a reset paint
+     * @param paint the paint used to draw the image, null meaning a default paint
      */
     public abstract void drawImage(@Nonnull Image image, float left, float top, @Nullable Paint paint);
 
@@ -465,7 +483,7 @@ public abstract class Canvas {
      * @param image the image to be drawn
      * @param src   the subset of the bitmap to be drawn, null meaning full image
      * @param dst   the rectangle that the image will be scaled/translated to fit into
-     * @param paint the paint used to draw the bitmap, null meaning a reset paint
+     * @param paint the paint used to draw the bitmap, null meaning a default paint
      */
     public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull RectF dst, @Nullable Paint paint) {
         if (src == null) {
@@ -485,7 +503,7 @@ public abstract class Canvas {
      * @param image the image to be drawn
      * @param src   the subset of the bitmap to be drawn, null meaning full image
      * @param dst   the rectangle that the image will be scaled/translated to fit into
-     * @param paint the paint used to draw the bitmap, null meaning a reset paint
+     * @param paint the paint used to draw the bitmap, null meaning a default paint
      */
     public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull Rect dst, @Nullable Paint paint) {
         if (src == null) {
@@ -503,7 +521,7 @@ public abstract class Canvas {
      * draw. The Style and smooth radius is ignored in the paint, images are always filled.
      *
      * @param image the image to be drawn
-     * @param paint the paint used to draw the bitmap, null meaning a reset paint
+     * @param paint the paint used to draw the bitmap, null meaning a default paint
      */
     public abstract void drawImage(@Nonnull Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
                                    float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint);

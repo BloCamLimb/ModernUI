@@ -108,17 +108,17 @@ public class SwitchButton extends CompoundButton {
         paint.setColor(mInsideColor);
         if (MathUtil.approxEqual(mInsideRadius, buttonRadius)) {
             // check a final state and simplify the drawing
-            paint.setStyle(Paint.Style.FILL);
+            paint.setStyle(Paint.FILL);
             canvas.drawRoundRect(mButtonLeft, mButtonTop, mButtonRight, mButtonBottom, buttonRadius, paint);
         } else {
             float thickness = mInsideRadius * 0.5f;
-            paint.setStyle(Paint.Style.STROKE);
+            paint.setStyle(Paint.STROKE);
             paint.setStrokeWidth(mInsideRadius);
             canvas.drawRoundRect(mButtonLeft + thickness, mButtonTop + thickness,
                     mButtonRight - thickness, mButtonBottom - thickness,
                     buttonRadius - thickness, paint);
             // fill in unchecked blanks
-            paint.setStyle(Paint.Style.FILL);
+            paint.setStyle(Paint.FILL);
             canvas.drawCircle(mButtonLeft + buttonRadius, thumbY,
                     buttonRadius - Math.max(thickness - 2f, 0), paint);
             canvas.drawRect(mButtonLeft + buttonRadius,
@@ -126,17 +126,17 @@ public class SwitchButton extends CompoundButton {
         }
 
         // draw border
-        paint.setStyle(Paint.Style.STROKE);
+        paint.setStyle(Paint.STROKE);
         paint.setStrokeWidth(mBorderWidth);
         paint.setColor(mUncheckedColor);
         canvas.drawRoundRect(mButtonLeft, mButtonTop, mButtonRight, mButtonBottom, buttonRadius, paint);
 
         // draw thumb
-        paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.FILL);
         paint.setColor(0xFFFFFFFF);
         canvas.drawCircle(thumbX, thumbY, buttonRadius, paint);
 
-        paint.setStyle(Paint.Style.STROKE);
+        paint.setStyle(Paint.STROKE);
         paint.setStrokeWidth(4f);
         paint.setColor(0xFFDDDDDD);
         canvas.drawCircle(thumbX, thumbY, buttonRadius - 1f, paint);

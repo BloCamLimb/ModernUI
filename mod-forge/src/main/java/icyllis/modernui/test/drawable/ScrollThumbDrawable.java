@@ -32,7 +32,7 @@ public class ScrollThumbDrawable extends Drawable {
         Paint paint = Paint.take();
         paint.reset();
         paint.setSmoothRadius(0);
-        paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.FILL);
         paint.setRGBA(128, 128, 128, 128);
         //canvas.drawRect(0, 0, getWidth(), getHeight(), paint);
     }

@@ -30,8 +30,8 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.FragmentController;
 import icyllis.modernui.fragment.FragmentHostCallback;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.GLSurfaceCanvas;
 import icyllis.modernui.graphics.GLFramebuffer;
+import icyllis.modernui.graphics.GLSurfaceCanvas;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.lifecycle.ViewModelStore;
 import icyllis.modernui.lifecycle.ViewModelStoreOwner;
@@ -39,12 +39,12 @@ import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
-import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.TimedAction;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.DecorView;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.TextView;
+import net.minecraft.ChatFormatting;
 import net.minecraft.CrashReport;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
@@ -52,7 +52,7 @@ import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -357,6 +357,7 @@ public final class UIManager extends ViewRoot {
         mDecor.setClickable(true);
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
+        mDecor.setId(UICallback.content);
 
         LayoutTransition transition = new LayoutTransition();
         transition.disableTransitionType(LayoutTransition.CHANGE_APPEARING);
@@ -440,10 +441,9 @@ public final class UIManager extends ViewRoot {
 
     @Override
     protected boolean handleMessage(@Nonnull Message msg) {
-        if (msg.what == MSG_DO_FRAME) {
-            doFrame();
-        } else if (msg.what == MSG_SET_FRAME) {
-            setFrame(mWindow.getWidth(), mWindow.getHeight());
+        switch (msg.what) {
+            case MSG_DO_FRAME -> doFrame();
+            case MSG_SET_FRAME -> setFrame(mWindow.getWidth(), mWindow.getHeight());
         }
         return true;
     }
@@ -453,8 +453,7 @@ public final class UIManager extends ViewRoot {
      *
      * @see org.lwjgl.glfw.GLFWCursorPosCallbackI
      * @see net.minecraft.client.MouseHandler
-     * @see SimpleScreen
-     * @see MenuScreen
+     * @see MuiScreen
      */
     void onCursorPos() {
         final long now = ArchCore.timeNanos();
@@ -560,7 +559,14 @@ public final class UIManager extends ViewRoot {
                 }
             }
         }
-        if (!ModernUIForge.isDeveloperMode() || event.getAction() != GLFW_PRESS || !Screen.hasControlDown()) {
+        if (event.getAction() != GLFW_PRESS || !Screen.hasControlDown()) {
+            return;
+        }
+        if (event.getKey() == GLFW_KEY_P) {
+            dump();
+            return;
+        }
+        if (!ModernUIForge.isDeveloperMode()) {
             return;
         }
         switch (event.getKey()) {
@@ -602,20 +608,16 @@ public final class UIManager extends ViewRoot {
                         ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l
                         .getJavaLocale()).isRightToLeft()));*/
                 break;
-
-            case GLFW_KEY_P:
-                dump();
-                break;
         }
     }
 
     private void dump() {
         StringBuilder builder = new StringBuilder();
-        builder.append("Modern UI debug info\n");
+        builder.append(">>> Modern UI debug info <<<\n");
 
-        builder.append("Use Modern UI: ");
-        builder.append(mScreen != null);
-        builder.append('\n');
+        builder.append("Graphics API: OpenGL ");
+        builder.append(glGetString(GL_VERSION));
+        builder.append("\nRender Pipeline: OpenGL 4.5 Core (ARB enabled)\n");
 
         builder.append("Container Menu: ");
         AbstractContainerMenu menu = null;
@@ -623,34 +625,38 @@ public final class UIManager extends ViewRoot {
             menu = minecraft.player.containerMenu;
         }
         if (menu != null) {
-            builder.append(menu.getClass().getName());
+            builder.append(menu.getClass().getSimpleName());
             builder.append('\n');
             try {
-                //noinspection ConstantConditions
-                String ns = menu.getType().getRegistryName().getNamespace();
-                builder.append("Namespace: ");
-                builder.append(ns);
+                ResourceLocation name = menu.getType().getRegistryName();
+                builder.append(" \u21B3Registry Name: ");
+                builder.append(name);
                 builder.append('\n');
             } catch (Exception ignored) {
             }
         } else {
-            builder.append("null");
+            builder.append((Object) null);
             builder.append('\n');
         }
 
-        builder.append("Callback or Screen: ");
-        builder.append(mCallback != null ? mCallback.getClass() : minecraft.screen == null ? null :
-                minecraft.screen.getClass());
-        builder.append('\n');
+        if (mCallback != null) {
+            builder.append("Callback: ");
+            builder.append(mCallback.getClass());
+            builder.append('\n');
+        } else if (minecraft.screen != null) {
+            builder.append("Screen: ");
+            builder.append(minecraft.screen.getClass());
+            builder.append('\n');
+        }
 
-        builder.append("Layout Cache Entries: ");
-        builder.append(TextLayoutEngine.getInstance().countEntries());
+        ModernUIForge.dispatchOnDebugDump(builder);
 
         String str = builder.toString();
 
-        LOGGER.info(MARKER, str);
-        if (minecraft.level != null && ModernUIForge.isDeveloperMode()) {
-            minecraft.gui.getChat().addMessage(Component.nullToEmpty(str));
+        if (minecraft.level != null) {
+            minecraft.gui.getChat().addMessage(new TextComponent(str).withStyle(ChatFormatting.GRAY));
+        } else {
+            LOGGER.info(MARKER, str);
         }
     }
 
@@ -777,7 +783,7 @@ public final class UIManager extends ViewRoot {
                 TestHUD.sTooltip = false;
                 return;
             }*/
-            final Window window = minecraft.getWindow();
+            final Window window = mWindow;
             // screen coordinates to pixels for rendering
             final MouseHandler mouseHandler = minecraft.mouseHandler;
             // screen coordinates to pixels for rendering

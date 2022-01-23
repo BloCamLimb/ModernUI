@@ -117,6 +117,11 @@ public final class ModernUIForge extends ModernUI {
 
         if (FMLEnvironment.dist.isClient()) {
             if (!isDataGen) {
+                try {
+                    Class.forName(BlurHandler.class.getName());
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
                 ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager())
                         .registerReloadListener(
                                 (ResourceManagerReloadListener) (manager) -> {
@@ -149,6 +154,15 @@ public final class ModernUIForge extends ModernUI {
         synchronized (MuiForgeApi.sOnDisplayResizeListeners) {
             for (var l : MuiForgeApi.sOnDisplayResizeListeners) {
                 l.onDisplayResize(width, height, guiScale, oldGuiScale);
+            }
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    static void dispatchOnDebugDump(@Nonnull StringBuilder builder) {
+        synchronized (MuiForgeApi.sOnDebugDumpListeners) {
+            for (var l : MuiForgeApi.sOnDebugDumpListeners) {
+                l.onDebugDump(builder);
             }
         }
     }

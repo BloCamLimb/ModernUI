@@ -946,7 +946,7 @@ public class TextLine {
                 Paint paint = Paint.take();
 
                 paint.setColor(wp.bgColor);
-                paint.setStyle(Paint.Style.FILL);
+                paint.setStyle(Paint.FILL);
                 c.drawRect(leftX, top, rightX, bottom, paint);
             }
 

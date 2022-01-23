@@ -43,6 +43,9 @@ import javax.annotation.Nonnull;
 @UiThread
 public abstract class UICallback {
 
+    // Constant IDs for Framework package.
+    public static final int content = 0x01020001;
+
     /**
      * Start the lifecycle of user interface with this callback and create views.
      * This method must be called from client main thread.

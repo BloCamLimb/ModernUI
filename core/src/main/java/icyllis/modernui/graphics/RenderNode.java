@@ -32,7 +32,7 @@ public final class RenderNode {
             CLIP_TO_BOUNDS = 0x1,
             CLIP_TO_CLIP_BOUNDS = 0x1 << 1;
 
-    private RecordingCanvas mCurrentRecordingCanvas;
+    private Canvas mCurrentRecordingCanvas;
 
     /**
      * Stores the total transformation of the RenderNode based upon its
@@ -102,11 +102,11 @@ public final class RenderNode {
      * @see #hasDisplayList()
      */
     @Nonnull
-    public RecordingCanvas beginRecording(int width, int height) {
+    public Canvas beginRecording(int width, int height) {
         if (mCurrentRecordingCanvas != null) {
             throw new IllegalStateException("Recording currently in progress - missing #endRecording() call?");
         }
-        mCurrentRecordingCanvas = RecordingCanvas.obtain(this, width, height);
+        //mCurrentRecordingCanvas = RecordingCanvas.obtain(this, width, height);
         return mCurrentRecordingCanvas;
     }
 
@@ -121,7 +121,7 @@ public final class RenderNode {
         if (mCurrentRecordingCanvas == null) {
             throw new IllegalStateException("No recording in progress, forgot to call #beginRecording()?");
         }
-        RecordingCanvas canvas = mCurrentRecordingCanvas;
+        Canvas canvas = mCurrentRecordingCanvas;
         mCurrentRecordingCanvas = null;
         //canvas.finishRecording(this);
         //canvas.recycle();

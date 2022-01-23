@@ -47,6 +47,7 @@ import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
@@ -180,26 +181,7 @@ public class TestMain {
             e.printStackTrace();
         }
 
-        Matrix4 matrix = Matrix4.identity();
-        Matrix4 mat2 = matrix.copy();
-        matrix.translate(800 + 300, 450 + 600, 200);
-        matrix.rotateByEuler(1, -1, 1);
-        matrix.scale(2, 2, 1);
-        matrix.translate(-800, -450, 0);
-
-        mat2.translate(300, 600, 200);
-        mat2.translate(800, 450, 0);
-        mat2.rotateByEuler(1, -1, 1);
-        mat2.translate(-800, -450, 0);
-        mat2.translate(800, 450, 0);
-        mat2.scale(2, 2, 1);
-        mat2.translate(-800, -450, 0);
-
-        LOGGER.info(matrix.equivalent(mat2));
-
-        Vector3 vector3 = new Vector3();
-        LOGGER.info(Math.toDegrees(Quaternion.makeEulerAngles(0, MathUtil.PI_DIV_2, MathUtil.PI).toAxisAngle(vector3)));
-        LOGGER.info(vector3);
+        ShaderManager.getInstance().addListener(mgr -> mgr.getShard(ModernUI.ID, "a.vert"));
 
         //(sec23°)²+(sec22°)²-2sec23°sec22°cos45°=a²
         //θ=arccos((a²+(sec22°)²-(sec23°)²)/(2asec22°))
@@ -496,7 +478,7 @@ public class TestMain {
                     drawOsuScore(canvas);
                 }
 
-                paint.setStyle(Paint.Style.STROKE);
+                paint.setStyle(Paint.STROKE);
                 float sin = MathUtil.sin(time / 300f);
                 paint.setRGBA(255, 255, 255, 255);
                 canvas.drawRoundRect(120, 120, 200, 250 - 50 * sin, 25 + 15 * sin, paint);
@@ -529,7 +511,7 @@ public class TestMain {
                 //textLine.draw(canvas, 32, 400);
                 canvas.translate(40, 360);
                 paint.setRGBA(0, 0, 0, 128);
-                paint.setStyle(Paint.Style.FILL);
+                paint.setStyle(Paint.FILL);
                 paint.setStrokeWidth(8);
                 canvas.drawRoundRect(-6, -10, 606, 310, 12, Gravity.LEFT, paint);
                 dynamicLayout.draw(canvas);
@@ -550,7 +532,7 @@ public class TestMain {
 
                 //paint.setStyle(Paint.Style.FILL);
                 //canvas.drawRoundRect(100, 840, 100 + playTime / graph.mSongLength * 1400000, 860, 10, paint);
-                paint.setStyle(Paint.Style.STROKE);
+                paint.setStyle(Paint.STROKE);
                 paint.setStrokeWidth(8);
                 paint.setRGBA(255, 255, 255, 192);
                 canvas.drawArc(800, 450, 100, -90,

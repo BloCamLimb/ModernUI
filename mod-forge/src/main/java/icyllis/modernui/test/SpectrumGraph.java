@@ -77,7 +77,7 @@ public class SpectrumGraph {
             paint.setRGBA(160, 155, 230, (int) (64 * b));
             paint.setSmoothRadius(100);
             paint.setStrokeWidth(200);
-            paint.setStyle(Paint.Style.STROKE);
+            paint.setStyle(Paint.STROKE);
             canvas.drawCircle(cx, cy, 130, paint);
             paint.reset();
             for (int i = 0; i < mAmplitudes.length; i++) {

@@ -53,7 +53,7 @@ vec3 solveCubic(float a, float b, float c) {
     return vec3(m + m, -n - m, n - m) * sqrt(-p / 3.0) + offset;
 }
 
-float bezier(vec2 A, vec2 B, vec2 C, vec2 p) {
+float distanceToBezier(vec2 A, vec2 B, vec2 C, vec2 p) {
     //B = mix(B + vec2(1e-4), B, sign(B * 2.0 - A - C));
     vec2 a = B - A, b = A - B * 2.0 + C, c = a * 2.0, d = A - p;
     vec3 k = vec3(3.*dot(a, b), 2.*dot(a, a)+dot(d, b), dot(d, a)) / dot(b, b);
@@ -67,7 +67,9 @@ float bezier(vec2 A, vec2 B, vec2 C, vec2 p) {
 }
 
 void main() {
-    float d = bezier(u_Bezier0, u_Bezier1, u_Bezier2, f_Position);
-    float a = 1.0 - smoothstep(u_StrokeRadius - u_SmoothRadius, u_StrokeRadius, d);
-    fragColor = vec4(f_Color.rgb, f_Color.a*a);
+    // distance to the curve border
+    float v = distanceToBezier(u_Bezier0, u_Bezier1, u_Bezier2, f_Position) - u_StrokeRadius;
+    // out of the curve, discard it
+    if (v >= 0.0) discard;
+    fragColor = vec4(f_Color.rgb, f_Color.a*(1.0-smoothstep(-u_SmoothRadius, 0.0, v)));
 }

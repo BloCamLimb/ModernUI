@@ -2078,7 +2078,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                     }
 
                     paint.setColor(mTextPaint.getColor());
-                    paint.setStyle(Paint.Style.STROKE);
+                    paint.setStyle(Paint.STROKE);
 
                     if (cursorOffsetVertical != 0) canvas.translate(0, cursorOffsetVertical);
                     canvas.drawRoundLines(mHighlightPath.elements(), 0, mHighlightPath.size(), false, paint);
@@ -2094,7 +2094,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 }
 
                 paint.setColor(mHighlightColor);
-                paint.setStyle(Paint.Style.FILL);
+                paint.setStyle(Paint.FILL);
 
                 if (cursorOffsetVertical != 0) canvas.translate(0, cursorOffsetVertical);
                 final float[] src = mHighlightPath.elements();

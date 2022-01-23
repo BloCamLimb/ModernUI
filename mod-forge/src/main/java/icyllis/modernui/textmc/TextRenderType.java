@@ -39,7 +39,7 @@ public class TextRenderType extends RenderType {
             SHADER_RL = new ResourceLocation(ModernUI.ID, "rendertype_modern_text"),
             SHADER_SEE_THROUGH_RL = new ResourceLocation(ModernUI.ID, "rendertype_modern_text_see_through");
 
-    private static final ShaderStateShard
+    static final ShaderStateShard
             RENDERTYPE_MODERN_TEXT = new ShaderStateShard(TextRenderType::getShader),
             RENDERTYPE_MODERN_TEXT_SEE_THROUGH = new ShaderStateShard(TextRenderType::getShaderSeeThrough);
 

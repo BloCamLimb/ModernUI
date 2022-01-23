@@ -21,7 +21,6 @@ package icyllis.modernui.test;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.test.Animation;
 import icyllis.modernui.forge.CanvasForge;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.Mth;
@@ -109,11 +108,11 @@ public class TestHUD {
         paint.setAlpha((int) (mBarAlpha * 0xff));
 
         paint.setRGB(255, 19, 19);
-        paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.FILL);
         //canvas.drawRoundRect(0, 25, right, 37, 6, paint);
 
         paint.setRGB(255, 255, 255);
-        paint.setStyle(Paint.Style.STROKE);
+        paint.setStyle(Paint.STROKE);
         //canvas.drawRoundRect(0, 25, 140, 37, 6, paint);
 
         int air = player.getAirSupply();
@@ -123,11 +122,11 @@ public class TestHUD {
         }
         right = air * 140f / player.getMaxAirSupply();
         paint.setRGB(86, 184, 255);
-        paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.FILL);
         //canvas.drawRoundRect(0, 11, right, 23, 6, paint);
 
         paint.setRGB(255, 255, 255);
-        paint.setStyle(Paint.Style.STROKE);
+        paint.setStyle(Paint.STROKE);
         //canvas.drawRoundRect(0, 11, 140, 23, 6, paint);
 
         int foodLevel = foodData.getFoodLevel();
@@ -137,11 +136,11 @@ public class TestHUD {
         }
         right = foodLevel * 7;
         paint.setRGB(184, 132, 88);
-        paint.setStyle(Paint.Style.FILL);
+        paint.setStyle(Paint.FILL);
         //canvas.drawRoundRect(0, -3, right, 9, 6, paint);
 
         paint.setRGB(255, 255, 255);
-        paint.setStyle(Paint.Style.STROKE);
+        paint.setStyle(Paint.STROKE);
         //canvas.drawRoundRect(0, -3, 140, 9, 6, paint);
 
         /*canvas.resetColor();

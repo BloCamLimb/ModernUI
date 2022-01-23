@@ -18,7 +18,6 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
@@ -329,23 +328,11 @@ public class LayoutTransition {
         defaultChange.setStartDelay(mChangingDelay);
         defaultChange.setInterpolator(mChangingInterpolator);
 
-        FloatProperty<View> alpha = new FloatProperty<>() {
-            @Override
-            public void setValue(@Nonnull View object, float value) {
-                object.setTransitionAlpha(value);
-            }
-
-            @Override
-            public Float get(@Nonnull View object) {
-                return object.getTransitionAlpha();
-            }
-        };
-
-        defaultFadeIn = ObjectAnimator.ofFloat(null, alpha, 0f, 1f);
+        defaultFadeIn = ObjectAnimator.ofFloat(null, View.ALPHA, 0f, 1f);
         defaultFadeIn.setDuration(DEFAULT_DURATION);
         defaultFadeIn.setStartDelay(mAppearingDelay);
         defaultFadeIn.setInterpolator(mAppearingInterpolator);
-        defaultFadeOut = ObjectAnimator.ofFloat(null, alpha, 1f, 0f);
+        defaultFadeOut = ObjectAnimator.ofFloat(null, View.ALPHA, 1f, 0f);
         defaultFadeOut.setDuration(DEFAULT_DURATION);
         defaultFadeOut.setStartDelay(mDisappearingDelay);
         defaultFadeOut.setInterpolator(mDisappearingInterpolator);
