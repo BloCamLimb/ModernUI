@@ -20,6 +20,7 @@ package icyllis.modernui.fragment;
 
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.lifecycle.Lifecycle;
+import icyllis.modernui.lifecycle.LifecycleOwner;
 import icyllis.modernui.lifecycle.ViewModelStore;
 import icyllis.modernui.lifecycle.ViewModelStoreOwner;
 import icyllis.modernui.util.DataSet;
@@ -54,40 +55,16 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * developer guide.
  */
 public final class FragmentManager {
-    // ForceInline
+
     static final boolean DEBUG = true;
+    static final boolean TRACE = true;
+
     static final Marker MARKER = MarkerManager.getMarker("FragmentManager");
-    static boolean USE_STATE_MANAGER = true;
 
     // Constant IDs for Fragment package.
     static final int fragment_container_view_tag = 0x02020001;
     static final int visible_removing_fragment_view_tag = 0x02020002;
     static final int special_effects_controller_view_tag = 0x02020003;
-
-    /**
-     * Control whether FragmentManager uses the new state manager that is responsible for:
-     * <ul>
-     *     <li>Moving Fragments through their lifecycle methods</li>
-     *     <li>Running animations and transitions</li>
-     *     <li>Handling postponed transactions</li>
-     * </ul>
-     * <p>
-     * This must only be changed <strong>before</strong> any fragment transactions are done
-     * (i.e., in your <code>Application</code> class or prior to <code>super.onCreate()</code>
-     * in every activity with the same value for all activities). Changing it after that point
-     * is <strong>not</strong> supported and can result in fragments not moving to their
-     * expected state.
-     * <p>
-     * This is <strong>enabled</strong> by default. Disabling it should only be used in
-     * cases where you are debugging a potential regression and as part of
-     * <a href="https://issuetracker.google.com/issues/new?component=460964">filing
-     * an issue</a> to verify and fix the regression.
-     *
-     * @param enabled Whether the new state manager should be enabled.
-     */
-    public static void enableNewStateManager(boolean enabled) {
-        USE_STATE_MANAGER = enabled;
-    }
 
     /**
      * Flag for {@link #popBackStack(String, int)}
@@ -145,11 +122,17 @@ public final class FragmentManager {
     private final FragmentStore mFragmentStore = new FragmentStore();
     ArrayList<BackStackRecord> mBackStack;
     private ArrayList<Fragment> mCreatedMenus;
+    private OnBackPressedDispatcher mOnBackPressedDispatcher;
+    private final OnBackPressedCallback mOnBackPressedCallback = new OnBackPressedCallback(false) {
+        @Override
+        public void handleOnBackPressed() {
+            FragmentManager.this.handleOnBackPressed();
+        }
+    };
 
     private final AtomicInteger mBackStackIndex = new AtomicInteger();
 
     private ArrayList<OnBackStackChangedListener> mBackStackChangeListeners;
-
     private final FragmentLifecycleCallbacksDispatcher mLifecycleCallbacksDispatcher =
             new FragmentLifecycleCallbacksDispatcher(this);
     private final CopyOnWriteArrayList<FragmentOnAttachListener> mOnAttachListeners =
@@ -164,6 +147,8 @@ public final class FragmentManager {
     private FragmentFactory mFragmentFactory = null;
     private static final FragmentFactory sHostFragmentFactory = new FragmentFactory();
     private SpecialEffectsControllerFactory mSpecialEffectsControllerFactory = null;
+    private static final SpecialEffectsControllerFactory sDefaultSpecialEffectsControllerFactory =
+            DefaultSpecialEffectsController::new;
 
     private boolean mNeedMenuInvalidate;
     private boolean mStateSaved;
@@ -176,9 +161,6 @@ public final class FragmentManager {
     private BooleanArrayList mTmpIsPop;
     private ArrayList<Fragment> mTmpAddedFragments;
 
-    // Postponed transactions.
-    private ArrayList<StartEnterTransitionListener> mPostponedTransactions;
-
     private FragmentManagerViewModel mViewModel;
 
     private final Runnable mExecCommit = () -> execPendingActions(true);
@@ -190,7 +172,7 @@ public final class FragmentManager {
     }
 
     private void throwException(@Nonnull RuntimeException ex) {
-        LOGGER.error(MARKER, "An exception occurred inside FragmentManager", ex);
+        LOGGER.error(MARKER, "FragmentManager throws an exception", ex);
         PrintWriter w = new PrintWriter(new LogWriter(MARKER));
         if (mHost != null) {
             try {
@@ -258,15 +240,15 @@ public final class FragmentManager {
         // See handleOnBackPressed() for more explanation
         synchronized (mPendingActions) {
             if (!mPendingActions.isEmpty()) {
-                //mOnBackPressedCallback.setEnabled(true);
+                mOnBackPressedCallback.setEnabled(true);
                 return;
             }
         }
         // This FragmentManager needs to have a back stack for this to be enabled
         // And the parent fragment, if it exists, needs to be the primary navigation
         // fragment.
-        /*mOnBackPressedCallback.setEnabled(getBackStackEntryCount() > 0
-                && isPrimaryNavigation(mParent));*/
+        mOnBackPressedCallback.setEnabled(getBackStackEntryCount() > 0
+                && isPrimaryNavigation(mParent));
     }
 
     /**
@@ -302,24 +284,36 @@ public final class FragmentManager {
         return parent.isMenuVisible();
     }
 
+    /**
+     * Recursively check up the FragmentManager hierarchy of Fragments to see
+     * if the fragment is hidden.
+     */
+    boolean isParentHidden(@Nullable Fragment parent) {
+        if (parent == null) {
+            return false;
+        }
+
+        return parent.isHidden();
+    }
+
     void handleOnBackPressed() {
         // First, execute any pending actions to make sure we're in an
         // up-to-date view of the world just in case anyone is queuing
         // up transactions that change the back stack then immediately
         // calling onBackPressed()
         execPendingActions(true);
-        //if (mOnBackPressedCallback.isEnabled()) {
-        // We still have a back stack, so we can pop
-        popBackStackImmediate();
-        //} else {
-        // Sigh. Due to FragmentManager's asynchronicity, we can
-        // get into cases where we *think* we can handle the back
-        // button but because of frame perfect dispatch, we fell
-        // on our face. Since our callback is disabled, we can
-        // re-trigger the onBackPressed() to dispatch to the next
-        // enabled callback
-        //mOnBackPressedDispatcher.onBackPressed();
-        //}
+        if (mOnBackPressedCallback.isEnabled()) {
+            // We still have a back stack, so we can pop
+            popBackStackImmediate();
+        } else {
+            // Sigh. Due to FragmentManager's asynchronicity, we can
+            // get into cases where we *think* we can handle the back
+            // button but because of frame perfect dispatch, we fell
+            // on our face. Since our callback is disabled, we can
+            // re-trigger the onBackPressed() to dispatch to the next
+            // enabled callback
+            mOnBackPressedDispatcher.onBackPressed();
+        }
     }
 
     /**
@@ -642,6 +636,7 @@ public final class FragmentManager {
         return mViewModel.getChildViewModel(f);
     }
 
+    //TODO review
     void addRetainedFragment(@Nonnull Fragment f) {
         mViewModel.addRetainedFragment(f);
     }
@@ -809,185 +804,12 @@ public final class FragmentManager {
                 return;
             }
             f.mDeferStart = false;
-            if (USE_STATE_MANAGER) {
-                fragmentStateManager.moveToExpectedState();
-            } else {
-                moveToState(f);
-            }
+            fragmentStateManager.moveToExpectedState();
         }
     }
 
     boolean isStateAtLeast(int state) {
         return mCurState >= state;
-    }
-
-    void moveToState(@Nonnull Fragment f, int newState) {
-        FragmentStateManager fragmentStateManager = mFragmentStore.getFragmentStateManager(f.mWho);
-        if (fragmentStateManager == null) {
-            // Ideally, we only call moveToState() on active Fragments. However,
-            // in restoreSaveState() we can call moveToState() on retained Fragments
-            // just to clean them up without them ever being added to mActive.
-            // For these cases, a brand new FragmentStateManager is enough.
-            fragmentStateManager = new FragmentStateManager(mLifecycleCallbacksDispatcher,
-                    mFragmentStore, f);
-            // Only allow this FragmentStateManager to go up to CREATED at the most
-            fragmentStateManager.setFragmentManagerState(Fragment.CREATED);
-        }
-        // When inflating an Activity view with a resource instead of using setContentView(), and
-        // that resource adds a fragment using the <fragment> tag (i.e. from layout and in layout),
-        // the fragment will move to the VIEW_CREATED state before the fragment manager
-        // moves to CREATED. So when moving the fragment manager moves to CREATED and the
-        // inflated fragment is already in VIEW_CREATED we need to move new state up from CREATED
-        // to VIEW_CREATED. This avoids accidentally moving the fragment back down to CREATED
-        // which would immediately destroy the Fragment's view. We rely on computeExpectedState()
-        // to pull the state back down if needed.
-        if (f.mFromLayout && f.mInLayout && f.mState == Fragment.VIEW_CREATED) {
-            newState = Math.max(newState, Fragment.VIEW_CREATED);
-        }
-        newState = Math.min(newState, fragmentStateManager.computeExpectedState());
-        if (f.mState <= newState) {
-            // If we are moving to the same state, we do not need to give up on the animation.
-            //if (f.mState < newState && !mExitAnimationCancellationSignals.isEmpty()) {
-            // The fragment is currently being animated...  but!  Now we
-            // want to move our state back up.  Give up on waiting for the
-            // animation and proceed from where we are.
-            //cancelExitAnimation(f);
-            //}
-            switch (f.mState) {
-                case Fragment.INITIALIZING:
-                    if (newState > Fragment.INITIALIZING) {
-                        fragmentStateManager.attach();
-                    }
-                    // fall through
-                case Fragment.ATTACHED:
-                    if (newState > Fragment.ATTACHED) {
-                        fragmentStateManager.create();
-                    }
-                    // fall through
-                case Fragment.CREATED:
-                    // We want to unconditionally run this anytime we do a moveToState that
-                    // moves the Fragment above INITIALIZING, including cases such as when
-                    // we move from CREATED => CREATED as part of the case fall through above.
-                    if (newState > Fragment.INITIALIZING) {
-                        fragmentStateManager.ensureInflatedView();
-                    }
-
-                    if (newState > Fragment.CREATED) {
-                        fragmentStateManager.createView();
-                    }
-                    // fall through
-                case Fragment.VIEW_CREATED:
-                    if (newState > Fragment.VIEW_CREATED) {
-                        fragmentStateManager.activityCreated();
-                    }
-                    // fall through
-                case Fragment.ACTIVITY_CREATED:
-                    if (newState > Fragment.ACTIVITY_CREATED) {
-                        fragmentStateManager.start();
-                    }
-                    // fall through
-                case Fragment.STARTED:
-                    if (newState > Fragment.STARTED) {
-                        fragmentStateManager.resume();
-                    }
-            }
-        } else if (f.mState > newState) {
-            switch (f.mState) {
-                case Fragment.RESUMED:
-                    if (newState < Fragment.RESUMED) {
-                        fragmentStateManager.pause();
-                    }
-                    // fall through
-                case Fragment.STARTED:
-                    if (newState < Fragment.STARTED) {
-                        fragmentStateManager.stop();
-                    }
-                    // fall through
-                case Fragment.ACTIVITY_CREATED:
-                    if (newState < Fragment.ACTIVITY_CREATED) {
-                        if (DEBUG) {
-                            LOGGER.debug(MARKER, "movefrom ACTIVITY_CREATED: " + f);
-                        }
-                        /*if (f.mView != null) {
-                            // Need to save the current view state if not
-                            // done already.
-                            if (mHost.onShouldSaveFragmentState(f) && f.mSavedViewState == null) {
-                                fragmentStateManager.saveViewState();
-                            }
-                        }*/
-                    }
-                    // fall through
-                case Fragment.VIEW_CREATED:
-                    if (newState < Fragment.VIEW_CREATED) {
-                        /*FragmentAnim.AnimationOrAnimator anim = null;
-                        if (f.mView != null && f.mContainer != null) {
-                            // Stop any current animations:
-                            f.mContainer.endViewTransition(f.mView);
-                            f.mView.clearAnimation();
-                            // If parent is being removed, no need to handle child animations.
-                            if (!f.isRemovingParent()) {
-                                if (mCurState > Fragment.INITIALIZING && !mDestroyed
-                                        && f.mView.getVisibility() == View.VISIBLE
-                                        && f.mPostponedAlpha >= 0) {
-                                    anim = FragmentAnim.loadAnimation(mHost.getContext(),
-                                            f, false, f.getPopDirection());
-                                }
-                                f.mPostponedAlpha = 0;
-                                // Robolectric tests do not post the animation like a real device
-                                // so we should keep up with the container and view in case the
-                                // fragment view is destroyed before we can remove it.
-                                ViewGroup container = f.mContainer;
-                                View view = f.mView;
-                                if (anim != null) {
-                                    FragmentAnim.animateRemoveFragment(f, anim,
-                                            mFragmentTransitionCallback);
-                                }
-                                container.removeView(view);
-                                if (DEBUG) {
-                                    LOGGER.debug(MARKER, "Removing view " + view + " for "
-                                            + "fragment " + f + " from container " + container);
-                                }
-                                // If the local container is different from the fragment
-                                // container, that means onAnimationEnd was called, onDestroyView
-                                // was dispatched and the fragment was already moved to state, so
-                                // we should early return here instead of attempting to move to
-                                // state again.
-                                if (container != f.mContainer) {
-                                    return;
-                                }
-                            }
-                        }
-                        // If a fragment has an exit animation (or transition), do not destroy
-                        // its view immediately and set the state after animating
-                        if (mExitAnimationCancellationSignals.get(f) == null) {
-                            fragmentStateManager.destroyFragmentView();
-                        }*/
-                    }
-                    // fall through
-                case Fragment.CREATED:
-                    if (newState < Fragment.CREATED) {
-                        //if (mExitAnimationCancellationSignals.get(f) != null) {
-                        // We are waiting for the fragment's view to finish animating away.
-                        //    newState = Fragment.CREATED;
-                        //} else {
-                        fragmentStateManager.destroy();
-                        //}
-                    }
-                    // fall through
-                case Fragment.ATTACHED:
-                    if (newState < Fragment.ATTACHED) {
-                        fragmentStateManager.detach();
-                    }
-            }
-        }
-
-        if (f.mState != newState) {
-            if (DEBUG) {
-                LOGGER.debug(MARKER, "moveToState: Fragment state for " + f + " not updated inline; "
-                        + "expected state " + newState + " found " + f.mState);
-            }
-            f.mState = newState;
-        }
     }
 
     /**
@@ -1000,123 +822,6 @@ public final class FragmentManager {
             if (container instanceof FragmentContainerView) {
                 ((FragmentContainerView) container).setDrawDisappearingViewsLast(!isPop);
             }
-        }
-    }
-
-    private void destroyFragmentView(@Nonnull Fragment fragment) {
-        fragment.performDestroyView();
-        mLifecycleCallbacksDispatcher.dispatchOnFragmentViewDestroyed(fragment, false);
-        fragment.mContainer = null;
-        fragment.mView = null;
-        // Set here to ensure that Observers are called after
-        // the Fragment's view is set to null
-        fragment.mViewLifecycleOwner = null;
-        fragment.mViewLifecycleOwnerLiveData.setValue(null);
-        fragment.mInLayout = false;
-    }
-
-    void moveToState(@Nonnull Fragment f) {
-        moveToState(f, mCurState);
-    }
-
-    /**
-     * Fragments that have been shown or hidden don't have their visibility changed or
-     * animations run during the {@link #showFragment(Fragment)} or {@link #hideFragment(Fragment)}
-     * calls. After fragments are brought to their final state in
-     * {@link #moveFragmentToExpectedState(Fragment)} the fragments that have been shown or
-     * hidden must have their visibility changed and their animations started here.
-     *
-     * @param fragment The fragment with mHiddenChanged = true that should change its View's
-     *                 visibility and start the show or hide animation.
-     */
-    private void completeShowHideFragment(@Nonnull final Fragment fragment) {
-        if (fragment.mView != null) {
-            /*FragmentAnim.AnimationOrAnimator anim = FragmentAnim.loadAnimation(
-                    mHost.getContext(), fragment, !fragment.mHidden, fragment.getPopDirection());
-            if (anim != null && anim.animator != null) {
-                anim.animator.setTarget(fragment.mView);
-                if (fragment.mHidden) {
-                    if (fragment.isHideReplaced()) {
-                        fragment.setHideReplaced(false);
-                    } else {
-                        final ViewGroup container = fragment.mContainer;
-                        final View animatingView = fragment.mView;
-                        container.startViewTransition(animatingView);
-                        // Delay the actual hide operation until the animation finishes,
-                        // otherwise the fragment will just immediately disappear
-                        anim.animator.addListener(new AnimatorListenerAdapter() {
-                            @Override
-                            public void onAnimationEnd(Animator animation) {
-                                container.endViewTransition(animatingView);
-                                animation.removeListener(this);
-                                if (fragment.mView != null && fragment.mHidden) {
-                                    fragment.mView.setVisibility(View.GONE);
-                                }
-                            }
-                        });
-                    }
-                } else {
-                    fragment.mView.setVisibility(View.VISIBLE);
-                }
-                anim.animator.start();
-            } else {
-                if (anim != null) {
-                    fragment.mView.startAnimation(anim.animation);
-                    anim.animation.start();
-                }
-                final int visibility = fragment.mHidden && !fragment.isHideReplaced()
-                        ? View.GONE
-                        : View.VISIBLE;
-                fragment.mView.setVisibility(visibility);
-                if (fragment.isHideReplaced()) {
-                    fragment.setHideReplaced(false);
-                }
-            }*/
-        }
-        invalidateMenuForFragment(fragment);
-        fragment.mHiddenChanged = false;
-        fragment.onHiddenChanged(fragment.mHidden);
-    }
-
-    /**
-     * Moves a fragment to its expected final state or the fragment manager's state, depending
-     * on whether the fragment manager's state is raised properly.
-     *
-     * @param f The fragment to change.
-     */
-    void moveFragmentToExpectedState(@Nonnull Fragment f) {
-        if (!mFragmentStore.containsActiveFragment(f.mWho)) {
-            if (DEBUG) {
-                LOGGER.debug(MARKER, "Ignoring moving " + f + " to state " + mCurState
-                        + "since it is not added to " + this);
-            }
-            return;
-        }
-        moveToState(f);
-
-        if (f.mView != null) {
-            /*if (f.mIsNewlyAdded && f.mContainer != null) {
-                // Make it visible and run the animations
-                if (f.mPostponedAlpha > 0f) {
-                    f.mView.setAlpha(f.mPostponedAlpha);
-                }
-                f.mPostponedAlpha = 0f;
-                f.mIsNewlyAdded = false;
-                // run animations:
-                FragmentAnim.AnimationOrAnimator anim = FragmentAnim.loadAnimation(
-                        mHost.getContext(), f, true, f.getPopDirection());
-                if (anim != null) {
-                    if (anim.animation != null) {
-                        f.mView.startAnimation(anim.animation);
-                    } else {
-                        anim.animator.setTarget(f.mView);
-                        anim.animator.start();
-                    }
-                }
-            }*/
-        }
-        if (f.mHiddenChanged) {
-            completeShowHideFragment(f);
         }
     }
 
@@ -1139,30 +844,7 @@ public final class FragmentManager {
         }
 
         mCurState = newState;
-
-        if (USE_STATE_MANAGER) {
-            mFragmentStore.moveToExpectedState();
-        } else {
-            // Must add them in the proper order. mActive fragments may be out of order
-            for (Fragment f : mFragmentStore.getFragments()) {
-                moveFragmentToExpectedState(f);
-            }
-
-            // Now iterate through all active fragments. These will include those that are removed
-            // and detached.
-            for (FragmentStateManager fragmentStateManager :
-                    mFragmentStore.getActiveFragmentStateManagers()) {
-                Fragment f = fragmentStateManager.getFragment();
-                if (!f.mIsNewlyAdded) {
-                    moveFragmentToExpectedState(f);
-                }
-                boolean beingRemoved = f.mRemoving && !f.isInBackStack();
-                if (beingRemoved) {
-                    mFragmentStore.makeInactive(fragmentStateManager);
-                }
-            }
-        }
-
+        mFragmentStore.moveToExpectedState();
         startPendingDeferredFragments();
 
         if (mNeedMenuInvalidate && mHost != null && mCurState == Fragment.RESUMED) {
@@ -1194,15 +876,14 @@ public final class FragmentManager {
         }
         FragmentStateManager fragmentStateManager = new FragmentStateManager(
                 mLifecycleCallbacksDispatcher, mFragmentStore, f);
-        // Restore state any state set via setInitialSavedState()
-        //fragmentStateManager.restoreState(mHost.getContext().getClassLoader());
         // Catch the FragmentStateManager up to our current state
         fragmentStateManager.setFragmentManagerState(mCurState);
         return fragmentStateManager;
     }
 
+    @Nonnull
     FragmentStateManager addFragment(@Nonnull Fragment fragment) {
-        //if (isLoggingEnabled(Log.VERBOSE)) Log.v(TAG, "add: " + fragment);
+        if (TRACE) LOGGER.info(MARKER, "add: " + fragment);
         FragmentStateManager fragmentStateManager = createOrGetFragmentStateManager(fragment);
         fragment.mFragmentManager = this;
         mFragmentStore.makeActive(fragmentStateManager);
@@ -1220,8 +901,8 @@ public final class FragmentManager {
     }
 
     void removeFragment(@Nonnull Fragment fragment) {
-        if (DEBUG) {
-            LOGGER.trace(MARKER, "remove: " + fragment + " nesting=" + fragment.mBackStackNesting);
+        if (TRACE) {
+            LOGGER.info(MARKER, "remove: " + fragment + " nesting=" + fragment.mBackStackNesting);
         }
         final boolean inactive = !fragment.isInBackStack();
         if (!fragment.mDetached || inactive) {
@@ -1235,13 +916,12 @@ public final class FragmentManager {
     }
 
     /**
-     * Marks a fragment as hidden to be later animated in with
-     * {@link #completeShowHideFragment(Fragment)}.
+     * Marks a fragment as hidden to be later animated.
      *
      * @param fragment The fragment to be shown.
      */
     void hideFragment(@Nonnull Fragment fragment) {
-        if (DEBUG) LOGGER.trace(MARKER, "hide: " + fragment);
+        if (TRACE) LOGGER.info(MARKER, "hide: " + fragment);
         if (!fragment.mHidden) {
             fragment.mHidden = true;
             // Toggle hidden changed so that if a fragment goes through show/hide/show
@@ -1252,13 +932,12 @@ public final class FragmentManager {
     }
 
     /**
-     * Marks a fragment as shown to be later animated in with
-     * {@link #completeShowHideFragment(Fragment)}.
+     * Marks a fragment as shown to be later animated.
      *
      * @param fragment The fragment to be shown.
      */
     void showFragment(@Nonnull Fragment fragment) {
-        if (DEBUG) LOGGER.trace(MARKER, "show: " + fragment);
+        if (TRACE) LOGGER.info(MARKER, "show: " + fragment);
         if (fragment.mHidden) {
             fragment.mHidden = false;
             // Toggle hidden changed so that if a fragment goes through show/hide/show
@@ -1268,12 +947,12 @@ public final class FragmentManager {
     }
 
     void detachFragment(@Nonnull Fragment fragment) {
-        if (DEBUG) LOGGER.trace(MARKER, "detach: " + fragment);
+        if (TRACE) LOGGER.info(MARKER, "detach: " + fragment);
         if (!fragment.mDetached) {
             fragment.mDetached = true;
             if (fragment.mAdded) {
                 // We are not already in back stack, so need to remove the fragment.
-                if (DEBUG) LOGGER.trace(MARKER, "remove from detach: " + fragment);
+                if (TRACE) LOGGER.info(MARKER, "remove from detach: " + fragment);
                 mFragmentStore.removeFragment(fragment);
                 if (isMenuAvailable(fragment)) {
                     mNeedMenuInvalidate = true;
@@ -1284,12 +963,12 @@ public final class FragmentManager {
     }
 
     void attachFragment(@Nonnull Fragment fragment) {
-        if (DEBUG) LOGGER.trace(MARKER, "attach: " + fragment);
+        if (TRACE) LOGGER.info(MARKER, "attach: " + fragment);
         if (fragment.mDetached) {
             fragment.mDetached = false;
             if (!fragment.mAdded) {
                 mFragmentStore.addFragment(fragment);
-                if (DEBUG) LOGGER.trace(MARKER, "add from attach: " + fragment);
+                if (TRACE) LOGGER.info(MARKER, "add from attach: " + fragment);
                 if (isMenuAvailable(fragment)) {
                     mNeedMenuInvalidate = true;
                 }
@@ -1328,6 +1007,7 @@ public final class FragmentManager {
         return mFragmentStore.findFragmentByTag(tag);
     }
 
+    @Nullable
     Fragment findFragmentByWho(@Nonnull String who) {
         return mFragmentStore.findFragmentByWho(who);
     }
@@ -1361,7 +1041,6 @@ public final class FragmentManager {
         // them.
         return mStateSaved || mStopped;
     }
-
 
     /**
      * Adds an action to the queue of pending actions.
@@ -1403,10 +1082,8 @@ public final class FragmentManager {
      */
     void scheduleCommit() {
         synchronized (mPendingActions) {
-            boolean postponeReady =
-                    mPostponedTransactions != null && !mPostponedTransactions.isEmpty();
             boolean pendingReady = mPendingActions.size() == 1;
-            if (postponeReady || pendingReady) {
+            if (pendingReady) {
                 mHost.mHandler.removeCallbacks(mExecCommit);
                 mHost.mHandler.post(mExecCommit);
                 updateOnBackPressedCallbackEnabled();
@@ -1448,12 +1125,6 @@ public final class FragmentManager {
         if (mTmpRecords == null) {
             mTmpRecords = new ArrayList<>();
             mTmpIsPop = new BooleanArrayList();
-        }
-        mExecutingActions = true;
-        try {
-            executePostponedTransaction(null, null);
-        } finally {
-            mExecutingActions = false;
         }
     }
 
@@ -1512,44 +1183,6 @@ public final class FragmentManager {
     }
 
     /**
-     * Complete the execution of transactions that have previously been postponed, but are
-     * now ready.
-     */
-    private void executePostponedTransaction(@Nullable ArrayList<BackStackRecord> records,
-                                             @Nullable BooleanArrayList isRecordPop) {
-        int numPostponed = mPostponedTransactions == null ? 0 : mPostponedTransactions.size();
-        for (int i = 0; i < numPostponed; i++) {
-            StartEnterTransitionListener listener = mPostponedTransactions.get(i);
-            if (records != null && !listener.mIsBack) {
-                int index = records.indexOf(listener.mRecord);
-                if (index != -1 && isRecordPop != null && isRecordPop.get(index)) {
-                    mPostponedTransactions.remove(i);
-                    i--;
-                    numPostponed--;
-                    listener.cancelTransaction();
-                    continue;
-                }
-            }
-            if (listener.isReady() || (records != null
-                    && listener.mRecord.interactsWith(records, 0, records.size()))) {
-                mPostponedTransactions.remove(i);
-                i--;
-                numPostponed--;
-                int index;
-                if (records != null && !listener.mIsBack
-                        && (index = records.indexOf(listener.mRecord)) != -1
-                        && isRecordPop != null
-                        && isRecordPop.getBoolean(index)) {
-                    // This is popping a postponed transaction
-                    listener.cancelTransaction();
-                } else {
-                    listener.completeTransaction();
-                }
-            }
-        }
-    }
-
-    /**
      * Remove redundant BackStackRecord operations and executes them. This method merges operations
      * of proximate records that allow reordering. See
      * {@link FragmentTransaction#setReorderingAllowed(boolean)}.
@@ -1573,9 +1206,6 @@ public final class FragmentManager {
             throw new IllegalStateException("Internal error with the back stack records");
         }
 
-        // Force start of any postponed transactions that interact with scheduled transactions:
-        executePostponedTransaction(records, isRecordPop);
-
         final int numRecords = records.size();
         int startIndex = 0;
         for (int recordNum = 0; recordNum < numRecords; recordNum++) {
@@ -1588,9 +1218,9 @@ public final class FragmentManager {
                 // execute all pop operations that don't allow reordering together or
                 // one add operation
                 int reorderingEnd = recordNum + 1;
-                if (isRecordPop.get(recordNum)) {
+                if (isRecordPop.getBoolean(recordNum)) {
                     while (reorderingEnd < numRecords
-                            && isRecordPop.get(reorderingEnd)
+                            && isRecordPop.getBoolean(reorderingEnd)
                             && !records.get(reorderingEnd).mReorderingAllowed) {
                         reorderingEnd++;
                     }
@@ -1612,7 +1242,7 @@ public final class FragmentManager {
      * @param records     A list of BackStackRecords that are to be executed
      * @param isRecordPop The direction that these records are being run.
      * @param startIndex  The index of the first record in <code>records</code> to be executed
-     * @param endIndex    One more than the final record index in <code>records</code> to executed.
+     * @param endIndex    One more than the final record index in <code>records</code> to be executed.
      */
     private void executeOpsTogether(@Nonnull ArrayList<BackStackRecord> records,
                                     @Nonnull BooleanArrayList isRecordPop, int startIndex, int endIndex) {
@@ -1627,7 +1257,7 @@ public final class FragmentManager {
         Fragment oldPrimaryNav = getPrimaryNavigationFragment();
         for (int recordNum = startIndex; recordNum < endIndex; recordNum++) {
             final BackStackRecord record = records.get(recordNum);
-            final boolean isPop = isRecordPop.get(recordNum);
+            final boolean isPop = isRecordPop.getBoolean(recordNum);
             if (!isPop) {
                 oldPrimaryNav = record.expandOps(mTmpAddedFragments, oldPrimaryNav);
             } else {
@@ -1638,92 +1268,65 @@ public final class FragmentManager {
         mTmpAddedFragments.clear();
 
         if (!allowReordering && mCurState >= Fragment.CREATED) {
-            if (USE_STATE_MANAGER) {
-                // When reordering isn't allowed, we may be operating on Fragments that haven't
-                // been made active
-                for (int index = startIndex; index < endIndex; index++) {
-                    BackStackRecord record = records.get(index);
-                    for (FragmentTransaction.Op op : record.mOps) {
-                        Fragment fragment = op.mFragment;
-                        if (fragment != null && fragment.mFragmentManager != null) {
-                            FragmentStateManager fragmentStateManager =
-                                    createOrGetFragmentStateManager(fragment);
-                            mFragmentStore.makeActive(fragmentStateManager);
-                        }
+            // When reordering isn't allowed, we may be operating on Fragments that haven't
+            // been made active
+            for (int index = startIndex; index < endIndex; index++) {
+                BackStackRecord record = records.get(index);
+                for (FragmentTransaction.Op op : record.mOps) {
+                    Fragment fragment = op.mFragment;
+                    if (fragment != null && fragment.mFragmentManager != null) {
+                        FragmentStateManager fragmentStateManager =
+                                createOrGetFragmentStateManager(fragment);
+                        mFragmentStore.makeActive(fragmentStateManager);
                     }
                 }
-            } else {
-                /*FragmentTransition.startTransitions(mHost.getContext(), mContainer,
-                        records, isRecordPop, startIndex, endIndex,
-                        false, mFragmentTransitionCallback);*/
             }
         }
         executeOps(records, isRecordPop, startIndex, endIndex);
 
-        if (USE_STATE_MANAGER) {
-            // The last operation determines the overall direction, this ensures that operations
-            // such as push, push, pop, push are correctly considered a push
-            boolean isPop = isRecordPop.getBoolean(endIndex - 1);
-            // Ensure that Fragments directly affected by operations
-            // are moved to their expected state in operation order
-            for (int index = startIndex; index < endIndex; index++) {
-                BackStackRecord record = records.get(index);
-                if (isPop) {
-                    // Pop operations get applied in reverse order
-                    for (int opIndex = record.mOps.size() - 1; opIndex >= 0; opIndex--) {
-                        FragmentTransaction.Op op = record.mOps.get(opIndex);
-                        Fragment fragment = op.mFragment;
-                        if (fragment != null) {
-                            FragmentStateManager fragmentStateManager =
-                                    createOrGetFragmentStateManager(fragment);
-                            fragmentStateManager.moveToExpectedState();
-                        }
-                    }
-                } else {
-                    for (FragmentTransaction.Op op : record.mOps) {
-                        Fragment fragment = op.mFragment;
-                        if (fragment != null) {
-                            FragmentStateManager fragmentStateManager =
-                                    createOrGetFragmentStateManager(fragment);
-                            fragmentStateManager.moveToExpectedState();
-                        }
+        // The last operation determines the overall direction, this ensures that operations
+        // such as push, push, pop, push are correctly considered a push
+        boolean isPop = isRecordPop.getBoolean(endIndex - 1);
+        // Ensure that Fragments directly affected by operations
+        // are moved to their expected state in operation order
+        for (int index = startIndex; index < endIndex; index++) {
+            BackStackRecord record = records.get(index);
+            if (isPop) {
+                // Pop operations get applied in reverse order
+                for (int opIndex = record.mOps.size() - 1; opIndex >= 0; opIndex--) {
+                    FragmentTransaction.Op op = record.mOps.get(opIndex);
+                    Fragment fragment = op.mFragment;
+                    if (fragment != null) {
+                        FragmentStateManager fragmentStateManager =
+                                createOrGetFragmentStateManager(fragment);
+                        fragmentStateManager.moveToExpectedState();
                     }
                 }
-
-            }
-            // And only then do we move all other fragments to the current state
-            moveToState(mCurState, true);
-            Set<SpecialEffectsController> changedControllers = collectChangedControllers(
-                    records, startIndex, endIndex);
-            for (SpecialEffectsController controller : changedControllers) {
-                controller.updateOperationDirection(isPop);
-                controller.markPostponedState();
-                controller.executePendingOperations();
-            }
-        } else {
-            int postponeIndex = endIndex;
-            if (allowReordering) {
-                ArrayList<Fragment> addedFragments = new ArrayList<>();
-                addAddedFragments(addedFragments);
-                postponeIndex = postponePostponableTransactions(records, isRecordPop,
-                        startIndex, endIndex, addedFragments);
-                makeRemovedFragmentsInvisible(addedFragments);
-            }
-
-            if (postponeIndex != startIndex && allowReordering) {
-                // need to run something now
-                if (mCurState >= Fragment.CREATED) {
-                    /*FragmentTransition.startTransitions(mHost.getContext(), mContainer,
-                            records, isRecordPop, startIndex,
-                            postponeIndex, true, mFragmentTransitionCallback);*/
+            } else {
+                for (FragmentTransaction.Op op : record.mOps) {
+                    Fragment fragment = op.mFragment;
+                    if (fragment != null) {
+                        FragmentStateManager fragmentStateManager =
+                                createOrGetFragmentStateManager(fragment);
+                        fragmentStateManager.moveToExpectedState();
+                    }
                 }
-                moveToState(mCurState, true);
             }
+
+        }
+        // And only then do we move all other fragments to the current state
+        moveToState(mCurState, true);
+        Set<SpecialEffectsController> changedControllers = collectChangedControllers(
+                records, startIndex, endIndex);
+        for (SpecialEffectsController controller : changedControllers) {
+            controller.updateOperationDirection(isPop);
+            controller.markPostponedState();
+            controller.executePendingOperations();
         }
 
         for (int recordNum = startIndex; recordNum < endIndex; recordNum++) {
             final BackStackRecord record = records.get(recordNum);
-            final boolean isPop = isRecordPop.get(recordNum);
+            isPop = isRecordPop.getBoolean(recordNum);
             if (isPop && record.mIndex >= 0) {
                 record.mIndex = -1;
             }
@@ -1734,6 +1337,7 @@ public final class FragmentManager {
         }
     }
 
+    @Nonnull
     private Set<SpecialEffectsController> collectChangedControllers(
             @Nonnull ArrayList<BackStackRecord> records, int startIndex, int endIndex) {
         Set<SpecialEffectsController> controllers = new HashSet<>();
@@ -1754,131 +1358,6 @@ public final class FragmentManager {
     }
 
     /**
-     * Any fragments that were removed because they have been postponed should have their views
-     * made invisible by setting their alpha to 0.
-     *
-     * @param fragments The fragments that were added during operation execution. Only the ones
-     *                  that are no longer added will have their alpha changed.
-     */
-    private void makeRemovedFragmentsInvisible(@Nonnull ArrayList<Fragment> fragments) {
-        final int numAdded = fragments.size();
-        for (int i = 0; i < numAdded; i++) {
-            final Fragment fragment = fragments.get(i);
-            if (!fragment.mAdded) {
-                final View view = fragment.requireView();
-                fragment.mPostponedAlpha = view.getAlpha();
-                view.setAlpha(0f);
-            }
-        }
-    }
-
-    /**
-     * Examine all transactions and determine which ones are marked as postponed. Those will
-     * have their operations rolled back and moved to the end of the record list (up to endIndex).
-     * It will also add the postponed transaction to the queue.
-     *
-     * @param records     A list of BackStackRecords that should be checked.
-     * @param isRecordPop The direction that these records are being run.
-     * @param startIndex  The index of the first record in <code>records</code> to be checked
-     * @param endIndex    One more than the final record index in <code>records</code> to be checked.
-     * @return The index of the first postponed transaction or endIndex if no transaction was
-     * postponed.
-     */
-    private int postponePostponableTransactions(@Nonnull ArrayList<BackStackRecord> records,
-                                                @Nonnull BooleanArrayList isRecordPop, int startIndex, int endIndex,
-                                                @Nonnull ArrayList<Fragment> added) {
-        int postponeIndex = endIndex;
-        for (int i = endIndex - 1; i >= startIndex; i--) {
-            final BackStackRecord record = records.get(i);
-            final boolean isPop = isRecordPop.getBoolean(i);
-            boolean isPostponed = record.isPostponed()
-                    && !record.interactsWith(records, i + 1, endIndex);
-            if (isPostponed) {
-                if (mPostponedTransactions == null) {
-                    mPostponedTransactions = new ArrayList<>();
-                }
-                StartEnterTransitionListener listener =
-                        new StartEnterTransitionListener(record, isPop);
-                mPostponedTransactions.add(listener);
-                record.setOnStartPostponedListener(listener);
-
-                // roll back the transaction
-                if (isPop) {
-                    record.executeOps();
-                } else {
-                    record.executePopOps(false);
-                }
-
-                // move to the end
-                postponeIndex--;
-                if (i != postponeIndex) {
-                    records.remove(i);
-                    records.add(postponeIndex, record);
-                }
-
-                // different views may be visible now
-                addAddedFragments(added);
-            }
-        }
-        return postponeIndex;
-    }
-
-    /**
-     * When a postponed transaction is ready to be started, this completes the transaction,
-     * removing, hiding, or showing views as well as starting the animations and transitions.
-     * <p>
-     * {@code runtransitions} is set to false when the transaction postponement was interrupted
-     * abnormally -- normally by a new transaction being started that affects the postponed
-     * transaction.
-     *
-     * @param record         The transaction to run
-     * @param isPop          true if record is popping or false if it is adding
-     * @param runTransitions true if the fragment transition should be run or false otherwise.
-     * @param moveToState    true if the state should be changed after executing the operations.
-     *                       This is false when the transaction is canceled when a postponed
-     *                       transaction is popped.
-     */
-    void completeExecute(@Nonnull BackStackRecord record, boolean isPop, boolean runTransitions,
-                         boolean moveToState) {
-        if (isPop) {
-            record.executePopOps(moveToState);
-        } else {
-            record.executeOps();
-        }
-        ArrayList<BackStackRecord> records = new ArrayList<>(1);
-        BooleanArrayList isRecordPop = new BooleanArrayList(1);
-        records.add(record);
-        isRecordPop.add(isPop);
-        if (runTransitions && mCurState >= Fragment.CREATED) {
-            /*FragmentTransition.startTransitions(mHost.getContext(), mContainer,
-                    records, isRecordPop, 0, 1, true,
-                    mFragmentTransitionCallback);*/
-        }
-        if (moveToState) {
-            moveToState(mCurState, true);
-        }
-
-        for (Fragment fragment : mFragmentStore.getActiveFragments()) {
-            // Allow added fragments to be removed during the pop since we aren't going
-            // to move them to the final state with moveToState(mCurState).
-            if (fragment != null) {
-                if (fragment.mView != null && fragment.mIsNewlyAdded
-                        && record.interactsWith(fragment.mContainerId)) {
-                    if (fragment.mPostponedAlpha > 0) {
-                        fragment.mView.setAlpha(fragment.mPostponedAlpha);
-                    }
-                    if (moveToState) {
-                        fragment.mPostponedAlpha = 0;
-                    } else {
-                        fragment.mPostponedAlpha = -1;
-                        fragment.mIsNewlyAdded = false;
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Run the operations in the BackStackRecords, either to push or pop.
      *
      * @param records     The list of records whose operations should be run.
@@ -1893,10 +1372,7 @@ public final class FragmentManager {
             final boolean isPop = isRecordPop.getBoolean(i);
             if (isPop) {
                 record.bumpBackStackNesting(-1);
-                // Only execute the add operations at the end of
-                // all transactions.
-                boolean moveToState = i == (endIndex - 1);
-                record.executePopOps(moveToState);
+                record.executePopOps();
             } else {
                 record.bumpBackStackNesting(1);
                 record.executeOps();
@@ -1921,6 +1397,7 @@ public final class FragmentManager {
         }
     }
 
+    @Nullable
     private ViewGroup getFragmentContainer(@Nonnull Fragment f) {
         // If there's already a container, just return it
         if (f.mContainer != null) {
@@ -1945,44 +1422,12 @@ public final class FragmentManager {
     }
 
     /**
-     * Ensure that fragments that are added are moved to at least the CREATED state.
-     * Any newly-added Views are inserted into {@code added} so that the Transaction can be
-     * postponed with {@link Fragment#postponeEnterTransition()}. They will later be made
-     * invisible (by setting their alpha to 0) if they have been removed when postponed.
-     */
-    private void addAddedFragments(@Nonnull ArrayList<Fragment> added) {
-        if (mCurState < Fragment.CREATED) {
-            return;
-        }
-        // We want to leave the fragment in the started state
-        final int state = Math.min(mCurState, Fragment.STARTED);
-        for (Fragment fragment : mFragmentStore.getFragments()) {
-            if (fragment.mState < state) {
-                moveToState(fragment, state);
-                if (fragment.mView != null && !fragment.mHidden && fragment.mIsNewlyAdded) {
-                    if (!added.contains(fragment)) {
-                        added.add(fragment);
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Starts all postponed transactions regardless of whether they are ready or not.
      */
     private void forcePostponedTransactions() {
-        if (USE_STATE_MANAGER) {
-            Set<SpecialEffectsController> controllers = collectAllSpecialEffectsController();
-            for (SpecialEffectsController controller : controllers) {
-                controller.forcePostponedExecutePendingOperations();
-            }
-        } else {
-            if (mPostponedTransactions != null) {
-                while (!mPostponedTransactions.isEmpty()) {
-                    mPostponedTransactions.remove(0).completeTransaction();
-                }
-            }
+        Set<SpecialEffectsController> controllers = collectAllSpecialEffectsController();
+        for (SpecialEffectsController controller : controllers) {
+            controller.forcePostponedExecutePendingOperations();
         }
     }
 
@@ -1991,29 +1436,21 @@ public final class FragmentManager {
      * This is used prior to saving the state so that the correct state is saved.
      */
     private void endAnimatingAwayFragments() {
-        if (USE_STATE_MANAGER) {
-            Set<SpecialEffectsController> controllers = collectAllSpecialEffectsController();
-            for (SpecialEffectsController controller : controllers) {
-                controller.forceCompleteAllOperations();
-            }
-        } else {
-            /*if (!mExitAnimationCancellationSignals.isEmpty()) {
-                for (Fragment fragment : mExitAnimationCancellationSignals.keySet()) {
-                    cancelExitAnimation(fragment);
-                    moveToState(fragment);
-                }
-            }*/
+        Set<SpecialEffectsController> controllers = collectAllSpecialEffectsController();
+        for (SpecialEffectsController controller : controllers) {
+            controller.forceCompleteAllOperations();
         }
     }
 
+    @Nonnull
     private Set<SpecialEffectsController> collectAllSpecialEffectsController() {
         Set<SpecialEffectsController> controllers = new HashSet<>();
         for (FragmentStateManager fragmentStateManager :
                 mFragmentStore.getActiveFragmentStateManagers()) {
             ViewGroup container = fragmentStateManager.getFragment().mContainer;
             if (container != null) {
-                /*controllers.add(SpecialEffectsController.getOrCreateController(container,
-                        getSpecialEffectsControllerFactory()));*/
+                controllers.add(SpecialEffectsController.getOrCreateController(container,
+                        getSpecialEffectsControllerFactory()));
             }
         }
         return controllers;
@@ -2029,7 +1466,6 @@ public final class FragmentManager {
      *                an entry for each entry in records to indicate whether it is a
      *                pop action.
      */
-    @SuppressWarnings("ForLoopReplaceableByForEach")
     private boolean generateOpsForPendingActions(@Nonnull ArrayList<BackStackRecord> records,
                                                  @Nonnull BooleanArrayList isPop) {
         boolean didSomething = false;
@@ -2037,13 +1473,16 @@ public final class FragmentManager {
             if (mPendingActions.isEmpty()) {
                 return false;
             }
-
-            final int numActions = mPendingActions.size();
-            for (int i = 0; i < numActions; i++) {
-                didSomething |= mPendingActions.get(i).generateOps(records, isPop);
+            try {
+                for (OpGenerator generator : mPendingActions) {
+                    didSomething |= generator.generateOps(records, isPop);
+                }
+            } finally {
+                // Whether generateOps succeeds or not, we clear the pending actions
+                // to avoid re-processing the same set of actions a second time
+                mPendingActions.clear();
+                mHost.mHandler.removeCallbacks(mExecCommit);
             }
-            mPendingActions.clear();
-            mHost.mHandler.removeCallbacks(mExecCommit);
         }
         return didSomething;
     }
@@ -2064,7 +1503,7 @@ public final class FragmentManager {
         }
     }
 
-    void addBackStackState(BackStackRecord state) {
+    void addBackStackState(@Nonnull BackStackRecord state) {
         if (mBackStack == null) {
             mBackStack = new ArrayList<>();
         }
@@ -2073,70 +1512,81 @@ public final class FragmentManager {
 
     boolean popBackStackState(@Nonnull ArrayList<BackStackRecord> records,
                               @Nonnull BooleanArrayList isRecordPop, @Nullable String name, int id, int flags) {
-        if (mBackStack == null) {
+        int index = findBackStackIndex(name, id, (flags & POP_BACK_STACK_INCLUSIVE) != 0);
+        if (index < 0) {
             return false;
         }
-        if (name == null && id < 0 && (flags & POP_BACK_STACK_INCLUSIVE) == 0) {
-            int last = mBackStack.size() - 1;
-            if (last < 0) {
-                return false;
-            }
-            records.add(mBackStack.remove(last));
+        for (int i = mBackStack.size() - 1; i >= index; i--) {
+            records.add(mBackStack.remove(i));
             isRecordPop.add(true);
-        } else {
-            int index = -1;
-            if (name != null || id >= 0) {
-                // If a name or ID is specified, look for that place in
-                // the stack.
-                index = mBackStack.size() - 1;
-                while (index >= 0) {
-                    BackStackRecord bss = mBackStack.get(index);
-                    if (name != null && name.equals(bss.getName())) {
-                        break;
-                    }
-                    if (id >= 0 && id == bss.mIndex) {
-                        break;
-                    }
-                    index--;
-                }
-                if (index < 0) {
-                    return false;
-                }
-                if ((flags & POP_BACK_STACK_INCLUSIVE) != 0) {
-                    index--;
-                    // Consume all following entries that match.
-                    while (index >= 0) {
-                        BackStackRecord bss = mBackStack.get(index);
-                        if ((name != null && name.equals(bss.getName()))
-                                || (id >= 0 && id == bss.mIndex)) {
-                            index--;
-                            continue;
-                        }
-                        break;
-                    }
-                }
-            }
-            if (index == mBackStack.size() - 1) {
-                return false;
-            }
-            for (int i = mBackStack.size() - 1; i > index; i--) {
-                records.add(mBackStack.remove(i));
-                isRecordPop.add(true);
-            }
         }
         return true;
     }
 
-    void restoreAllState(@Nullable DataSet state, @Nullable FragmentManagerViewModel nonConfig) {
-        if (mHost instanceof ViewModelStoreOwner) {
-            throw new IllegalStateException("You must use restoreSaveState when your "
-                    + "FragmentHostCallback implements ViewModelStoreOwner");
+    /**
+     * Find the index in the back stack associated with the given name / id.
+     * <p>
+     * When <code>inclusive</code> is <code>true</code>, the index of the matching record
+     * will be returned. When it is <code>false</code>, the index of the record directly
+     * after it will be returned. In cases where you are doing an inclusive search and
+     * multiple records have the same name / id, the index returned includes all
+     * consecutive matches following the first match.
+     *
+     * @param name      The name set via {@link FragmentTransaction#addToBackStack(String)}. Use
+     *                  <code>null</code> if you do not want to search by name.
+     * @param id        The id returned by {@link FragmentTransaction#commit()}. Use
+     *                  <code>-1</code> if you do not want to search by id.
+     * @param inclusive Whether to include the record specified by name or id.
+     */
+    private int findBackStackIndex(@Nullable String name, int id, boolean inclusive) {
+        if (mBackStack == null || mBackStack.isEmpty()) {
+            return -1;
         }
-        restoreSaveState(state);
-    }
-
-    void restoreSaveState(@Nullable DataSet state) {
-
+        if (name == null && id < 0) {
+            if (inclusive) {
+                return 0;
+            } else {
+                return mBackStack.size() - 1;
+            }
+        } else {
+            // If a name or ID is specified, look for that place in
+            // the stack.
+            int index = mBackStack.size() - 1;
+            while (index >= 0) {
+                BackStackRecord bss = mBackStack.get(index);
+                if (name != null && name.equals(bss.getName())) {
+                    break;
+                }
+                if (id >= 0 && id == bss.mIndex) {
+                    break;
+                }
+                index--;
+            }
+            if (index < 0) {
+                return index;
+            }
+            if (inclusive) {
+                // Consume all following entries that match.
+                while (index > 0) {
+                    BackStackRecord bss = mBackStack.get(index - 1);
+                    if ((name != null && name.equals(bss.getName()))
+                            || (id >= 0 && id == bss.mIndex)) {
+                        index--;
+                        continue;
+                    }
+                    break;
+                }
+            } else if (index == mBackStack.size() - 1) {
+                // For a non-inclusive search, finding the last record
+                // is the same as finding nothing at all since the
+                // matching record itself is not included
+                return -1;
+            } else {
+                // Non-inclusive, so skip the actual matching record
+                index++;
+            }
+            return index;
+        }
     }
 
     @Nonnull
@@ -2160,7 +1610,7 @@ public final class FragmentManager {
     }
 
     void attachController(@Nonnull FragmentHostCallback<?> host, @Nonnull FragmentContainer container,
-                          @Nullable Fragment parent) {
+                          @Nullable final Fragment parent) {
         if (mHost != null) {
             throw new IllegalStateException("Already attached");
         }
@@ -2170,6 +1620,19 @@ public final class FragmentManager {
 
         if (host instanceof FragmentOnAttachListener) {
             addFragmentOnAttachListener((FragmentOnAttachListener) host);
+        }
+
+        if (mParent != null) {
+            // Since the callback depends on us being the primary navigation fragment,
+            // update our callback now that we have a parent so that we have the correct
+            // state by default
+            updateOnBackPressedCallbackEnabled();
+        }
+        // Set up the OnBackPressedCallback
+        if (host instanceof OnBackPressedDispatcherOwner dispatcherOwner) {
+            mOnBackPressedDispatcher = dispatcherOwner.getOnBackPressedDispatcher();
+            LifecycleOwner owner = parent != null ? parent : dispatcherOwner;
+            mOnBackPressedDispatcher.addCallback(owner, mOnBackPressedCallback);
         }
 
         // Get the FragmentManagerViewModel
@@ -2264,6 +1727,12 @@ public final class FragmentManager {
         mHost = null;
         mContainer = null;
         mParent = null;
+        if (mOnBackPressedDispatcher != null) {
+            // mOnBackPressedDispatcher can hold a reference to the host,
+            // so we need to null it out to prevent memory leaks
+            mOnBackPressedCallback.remove();
+            mOnBackPressedDispatcher = null;
+        }
     }
 
     private void dispatchStateChange(int nextState) {
@@ -2271,8 +1740,9 @@ public final class FragmentManager {
             mExecutingActions = true;
             mFragmentStore.dispatchStateChange(nextState);
             moveToState(nextState, false);
-            if (USE_STATE_MANAGER) {
-
+            Set<SpecialEffectsController> controllers = collectAllSpecialEffectsController();
+            for (SpecialEffectsController controller : controllers) {
+                controller.forceCompleteAllOperations();
             }
         } finally {
             mExecutingActions = false;
@@ -2369,6 +1839,18 @@ public final class FragmentManager {
     }
 
     /**
+     * Set a {@link SpecialEffectsControllerFactory} for this FragmentManager that will be used
+     * to create new SpecialEffectsController instances from this point onward.
+     *
+     * @param specialEffectsControllerFactory the factory to use to create new
+     *                                        SpecialEffectsController instances.
+     */
+    void setSpecialEffectsControllerFactory(
+            @Nonnull SpecialEffectsControllerFactory specialEffectsControllerFactory) {
+        mSpecialEffectsControllerFactory = specialEffectsControllerFactory;
+    }
+
+    /**
      * Gets the current {@link SpecialEffectsControllerFactory} used to instantiate new
      * SpecialEffectsController instances.
      *
@@ -2386,7 +1868,7 @@ public final class FragmentManager {
             // pick the change up here.
             return mParent.mFragmentManager.getSpecialEffectsControllerFactory();
         }
-        return DefaultSpecialEffectsController::new;
+        return sDefaultSpecialEffectsControllerFactory;
     }
 
     @Nonnull
@@ -2452,6 +1934,15 @@ public final class FragmentManager {
         mOnAttachListeners.remove(listener);
     }
 
+    void dispatchOnHiddenChanged() {
+        for (Fragment fragment : mFragmentStore.getActiveFragments()) {
+            if (fragment != null) {
+                fragment.onHiddenChanged(fragment.isHidden());
+                fragment.mChildFragmentManager.dispatchOnHiddenChanged();
+            }
+        }
+    }
+
     // Checks if fragments that belong to this fragment manager (or their children) have menus,
     // and if they are visible.
     boolean checkForMenus() {
@@ -2482,6 +1973,8 @@ public final class FragmentManager {
             case FragmentTransaction.TRANSIT_FRAGMENT_OPEN -> FragmentTransaction.TRANSIT_FRAGMENT_CLOSE;
             case FragmentTransaction.TRANSIT_FRAGMENT_CLOSE -> FragmentTransaction.TRANSIT_FRAGMENT_OPEN;
             case FragmentTransaction.TRANSIT_FRAGMENT_FADE -> FragmentTransaction.TRANSIT_FRAGMENT_FADE;
+            case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN -> FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE;
+            case FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_CLOSE -> FragmentTransaction.TRANSIT_FRAGMENT_MATCH_ACTIVITY_OPEN;
             default -> 0;
         };
     }
@@ -2490,7 +1983,6 @@ public final class FragmentManager {
      * An add or pop transaction to be scheduled for the UI thread.
      */
     interface OpGenerator {
-
         /**
          * Generate transactions to add to {@code records} and whether the transaction is
          * an add or pop to {@code isRecordPop}.
@@ -2537,80 +2029,6 @@ public final class FragmentManager {
                 }
             }
             return popBackStackState(records, isRecordPop, mName, mId, mFlags);
-        }
-    }
-
-    /**
-     * A listener for a postponed transaction. This waits until
-     * {@link Fragment#startPostponedEnterTransition()} is called or a transaction is started
-     * that interacts with this one, based on interactions with the fragment container.
-     */
-    static class StartEnterTransitionListener implements Fragment.OnStartEnterTransitionListener {
-
-        final boolean mIsBack;
-        final BackStackRecord mRecord;
-        private int mNumPostponed;
-
-        StartEnterTransitionListener(@Nonnull BackStackRecord record, boolean isBack) {
-            mIsBack = isBack;
-            mRecord = record;
-        }
-
-        /**
-         * Called from {@link Fragment#startPostponedEnterTransition()}, this decreases the
-         * number of Fragments that are postponed. This may cause the transaction to schedule
-         * to finish running and run transitions and animations.
-         */
-        @Override
-        public void onStartEnterTransition() {
-            mNumPostponed--;
-            if (mNumPostponed != 0) {
-                return;
-            }
-            mRecord.mManager.scheduleCommit();
-        }
-
-        /**
-         * Called from {@link Fragment#
-         * setOnStartEnterTransitionListener(Fragment.OnStartEnterTransitionListener)}, this
-         * increases the number of fragments that are postponed as part of this transaction.
-         */
-        @Override
-        public void startListening() {
-            mNumPostponed++;
-        }
-
-        /**
-         * @return true if there are no more postponed fragments as part of the transaction.
-         */
-        public boolean isReady() {
-            return mNumPostponed == 0;
-        }
-
-        /**
-         * Completes the transaction and start the animations and transitions. This may skip
-         * the transitions if this is called before all fragments have called
-         * {@link Fragment#startPostponedEnterTransition()}.
-         */
-        void completeTransaction() {
-            final boolean canceled;
-            canceled = mNumPostponed > 0;
-            FragmentManager manager = mRecord.mManager;
-            for (Fragment fragment : manager.getFragments()) {
-                fragment.setOnStartEnterTransitionListener(null);
-                if (canceled && fragment.isPostponed()) {
-                    fragment.startPostponedEnterTransition();
-                }
-            }
-            mRecord.mManager.completeExecute(mRecord, mIsBack, !canceled, true);
-        }
-
-        /**
-         * Cancels this transaction instead of completing it. That means that the state isn't
-         * changed, so the pop results in no change to the state.
-         */
-        void cancelTransaction() {
-            mRecord.mManager.completeExecute(mRecord, mIsBack, false, false);
         }
     }
 }

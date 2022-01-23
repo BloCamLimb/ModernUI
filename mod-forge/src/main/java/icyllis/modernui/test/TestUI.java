@@ -18,62 +18,17 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.forge.UICallback;
-import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.Rect;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.widget.FrameLayout;
-import icyllis.modernui.widget.LinearLayout;
-import icyllis.modernui.widget.ScrollView;
-
-import javax.annotation.Nonnull;
-
-import static icyllis.modernui.view.ViewConfiguration.dp;
+import icyllis.modernui.fragment.FragmentTransaction;
 
 public class TestUI extends UICallback {
 
-    private static final int id_content = 0x7f020001;
-
     @Override
     protected void onCreate() {
-        ScrollView contentView = new ScrollView();
-        contentView.setId(id_content);
-        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(dp(500), dp(480));
-        contentViewParams.gravity = Gravity.CENTER;
-
-        LinearLayout ll = new TestLinearLayout();
-        contentView.addView(ll, new FrameLayout.LayoutParams(dp(400), dp(700)));
-
-        contentView.setBackground(new Drawable() {
-            //long lastTime = AnimationHandler.currentTimeMillis();
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
-                Rect b = getBounds();
-                paint.setRGBA(8, 8, 8, 80);
-                canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
-
-                /*SpectrumGraph graph = TestMain.sGraph;
-                long time = AnimationHandler.currentTimeMillis();
-                long delta = time - lastTime;
-                lastTime = time;
-                if (graph != null) {
-                    float playTime = TestMain.sTrack.getTime();
-                    graph.update(delta);
-                    graph.draw(canvas, getBounds().centerX(), getBounds().centerY());
-                    invalidateSelf();
-                }*/
-            }
-        });
-
-        setContentView(contentView, contentViewParams);
-
-        getFragmentManager().beginTransaction()
-                .add(id_content, new Fragment())
-                .commitNow();
+        ArchCore.getUiHandler().postDelayed(() -> getFragmentManager().beginTransaction()
+                .add(content, new TestFragment())
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
+                .commit(), 1000);
     }
 }

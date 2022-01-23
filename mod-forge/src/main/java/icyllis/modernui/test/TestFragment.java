@@ -18,14 +18,61 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.fragment.Fragment;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.math.Rect;
+import icyllis.modernui.util.DataSet;
+import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.widget.FrameLayout;
+import icyllis.modernui.widget.LinearLayout;
+import icyllis.modernui.widget.ScrollView;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static icyllis.modernui.view.ViewConfiguration.dp;
+
 public class TestFragment extends Fragment {
+
+    @Nullable
+    @Override
+    public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
+        ScrollView contentView = new ScrollView();
+        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(dp(500), dp(480));
+        contentViewParams.gravity = Gravity.CENTER;
+
+        LinearLayout ll = new TestLinearLayout();
+        contentView.addView(ll, new FrameLayout.LayoutParams(dp(400), dp(700)));
+
+        contentView.setBackground(new Drawable() {
+            //long lastTime = AnimationHandler.currentTimeMillis();
+
+            @Override
+            public void draw(@Nonnull Canvas canvas) {
+                Paint paint = Paint.take();
+                Rect b = getBounds();
+                paint.setRGBA(8, 8, 8, 80);
+                canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);
+
+                /*SpectrumGraph graph = TestMain.sGraph;
+                long time = AnimationHandler.currentTimeMillis();
+                long delta = time - lastTime;
+                lastTime = time;
+                if (graph != null) {
+                    float playTime = TestMain.sTrack.getTime();
+                    graph.update(delta);
+                    graph.draw(canvas, getBounds().centerX(), getBounds().centerY());
+                    invalidateSelf();
+                }*/
+            }
+        });
+        contentView.setLayoutParams(contentViewParams);
+        return contentView;
+    }
 
     private static class TestView extends View {
 
@@ -71,12 +118,13 @@ public class TestFragment extends Fragment {
             }
             *//*canvas.setAlpha(255);
             canvas.drawRoundedFrame(1, 26, 141, 40, 4);*//*
-            *//*canvas.setColor(53, 159, 210, 192);
+             *//*canvas.setColor(53, 159, 210, 192);
             canvas.drawRoundedFrame(0, 25, 140, 39, 4);*//*
             if (player != null) {
                 canvas.resetColor();
                 canvas.setTextAlign(TextAlign.RIGHT);
-                canvas.drawText(decimalFormat.format(player.getHealth()) + " / " + decimalFormat.format(player.getMaxHealth()), 137, 28);
+                canvas.drawText(decimalFormat.format(player.getHealth()) + " / " + decimalFormat.format(player
+                .getMaxHealth()), 137, 28);
             }
             RenderSystem.enableDepthTest();
             GL11.glPopMatrix();

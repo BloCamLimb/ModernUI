@@ -52,6 +52,14 @@ public interface TimeInterpolator {
     TimeInterpolator DECELERATE = in -> 1.0f - (1.0f - in) * (1.0f - in);
 
     /**
+     * The constant decelerate interpolator whose factor is 1.5.
+     *
+     * @see #decelerate(float)
+     */
+    @Nonnull
+    TimeInterpolator DECELERATE_CUBIC = in -> 1.0f - (1.0f - in) * (1.0f - in) * (1.0f - in);
+
+    /**
      * The interpolator where the rate of change starts and ends slowly but
      * accelerates through the middle.
      */
@@ -135,7 +143,10 @@ public interface TimeInterpolator {
     static TimeInterpolator decelerate(float factor) {
         if (factor == 1.0f)
             return DECELERATE;
-        return t -> (float) (1.0f - Math.pow(1.0f - t, factor * 2.0));
+        else if (factor == 1.5f)
+            return DECELERATE_CUBIC;
+        else
+            return t -> (float) (1.0f - Math.pow(1.0f - t, factor * 2.0));
     }
 
     /**
