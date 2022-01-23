@@ -32,9 +32,8 @@ import java.util.List;
 import static icyllis.modernui.ModernUI.LOGGER;
 
 /**
- * Controller for all "special effects" (such as Animation, Animator, framework Transition, and
- * AndroidX Transition) that can be applied to a Fragment as part of the addition or removal
- * of that Fragment from its container.
+ * Controller for all "special effects" (such as Animator, Transition) that can be applied to
+ * a Fragment as part of the addition or removal of that Fragment from its container.
  * <p>
  * Each SpecialEffectsController is responsible for a single {@link ViewGroup} container.
  */
@@ -81,9 +80,7 @@ abstract class SpecialEffectsController {
 
     private final ViewGroup mContainer;
 
-    @SuppressWarnings("WeakerAccess") /* synthetic access */
     final ArrayList<Operation> mPendingOperations = new ArrayList<>();
-    @SuppressWarnings("WeakerAccess") /* synthetic access */
     final ArrayList<Operation> mRunningOperations = new ArrayList<>();
 
     boolean mOperationDirectionIsPop = false;
@@ -152,37 +149,37 @@ abstract class SpecialEffectsController {
 
     void enqueueAdd(@Nonnull Operation.State finalState,
                     @Nonnull FragmentStateManager fragmentStateManager) {
-        if (FragmentManager.DEBUG) {
-            LOGGER.trace(FragmentManager.MARKER,
-                    "SpecialEffectsController: Enqueuing add operation for fragment "
-                            + fragmentStateManager.getFragment());
+        if (FragmentManager.TRACE) {
+            LOGGER.info(FragmentManager.MARKER,
+                    "SpecialEffectsController: Enqueuing add operation for fragment {}",
+                    fragmentStateManager.getFragment());
         }
         enqueue(finalState, Operation.LifecycleImpact.ADDING, fragmentStateManager);
     }
 
     void enqueueShow(@Nonnull FragmentStateManager fragmentStateManager) {
-        if (FragmentManager.DEBUG) {
-            LOGGER.trace(FragmentManager.MARKER,
-                    "SpecialEffectsController: Enqueuing show operation for fragment "
-                            + fragmentStateManager.getFragment());
+        if (FragmentManager.TRACE) {
+            LOGGER.info(FragmentManager.MARKER,
+                    "SpecialEffectsController: Enqueuing show operation for fragment {}",
+                    fragmentStateManager.getFragment());
         }
         enqueue(Operation.State.VISIBLE, Operation.LifecycleImpact.NONE, fragmentStateManager);
     }
 
     void enqueueHide(@Nonnull FragmentStateManager fragmentStateManager) {
-        if (FragmentManager.DEBUG) {
-            LOGGER.trace(FragmentManager.MARKER,
-                    "SpecialEffectsController: Enqueuing hide operation for fragment "
-                            + fragmentStateManager.getFragment());
+        if (FragmentManager.TRACE) {
+            LOGGER.info(FragmentManager.MARKER,
+                    "SpecialEffectsController: Enqueuing hide operation for fragment {}",
+                    fragmentStateManager.getFragment());
         }
         enqueue(Operation.State.GONE, Operation.LifecycleImpact.NONE, fragmentStateManager);
     }
 
     void enqueueRemove(@Nonnull FragmentStateManager fragmentStateManager) {
-        if (FragmentManager.DEBUG) {
-            LOGGER.trace(FragmentManager.MARKER,
-                    "SpecialEffectsController: Enqueuing remove operation for fragment "
-                            + fragmentStateManager.getFragment());
+        if (FragmentManager.TRACE) {
+            LOGGER.info(FragmentManager.MARKER,
+                    "SpecialEffectsController: Enqueuing remove operation for fragment {}",
+                    fragmentStateManager.getFragment());
         }
         enqueue(Operation.State.REMOVED, Operation.LifecycleImpact.REMOVING, fragmentStateManager);
     }
@@ -204,22 +201,16 @@ abstract class SpecialEffectsController {
                     finalState, lifecycleImpact, fragmentStateManager, signal);
             mPendingOperations.add(operation);
             // Ensure that we still run the applyState() call for pending operations
-            operation.addCompletionListener(new Runnable() {
-                @Override
-                public void run() {
-                    if (mPendingOperations.contains(operation)) {
-                        operation.getFinalState().applyState(operation.getFragment().mView);
-                    }
+            operation.addCompletionListener(() -> {
+                if (mPendingOperations.contains(operation)) {
+                    operation.getFinalState().applyState(operation.getFragment().mView);
                 }
             });
             // Ensure that we remove the Operation from the list of
             // operations when the operation is complete
-            operation.addCompletionListener(new Runnable() {
-                @Override
-                public void run() {
-                    mPendingOperations.remove(operation);
-                    mRunningOperations.remove(operation);
-                }
+            operation.addCompletionListener(() -> {
+                mPendingOperations.remove(operation);
+                mRunningOperations.remove(operation);
             });
         }
     }
@@ -251,6 +242,10 @@ abstract class SpecialEffectsController {
 
     void forcePostponedExecutePendingOperations() {
         if (mIsContainerPostponed) {
+            if (FragmentManager.TRACE) {
+                LOGGER.info(FragmentManager.MARKER,
+                        "SpecialEffectsController: Forcing postponed operations");
+            }
             mIsContainerPostponed = false;
             executePendingOperations();
         }
@@ -274,9 +269,9 @@ abstract class SpecialEffectsController {
                         new ArrayList<>(mRunningOperations);
                 mRunningOperations.clear();
                 for (Operation operation : currentlyRunningOperations) {
-                    if (FragmentManager.DEBUG) {
-                        LOGGER.trace(FragmentManager.MARKER,
-                                "SpecialEffectsController: Cancelling operation " + operation);
+                    if (FragmentManager.TRACE) {
+                        LOGGER.info(FragmentManager.MARKER,
+                                "SpecialEffectsController: Cancelling operation {}", operation);
                     }
                     operation.cancel();
                     if (!operation.isComplete()) {
@@ -291,16 +286,28 @@ abstract class SpecialEffectsController {
                 ArrayList<Operation> newPendingOperations = new ArrayList<>(mPendingOperations);
                 mPendingOperations.clear();
                 mRunningOperations.addAll(newPendingOperations);
+                if (FragmentManager.TRACE) {
+                    LOGGER.info(FragmentManager.MARKER,
+                            "SpecialEffectsController: Executing pending operations");
+                }
                 for (Operation operation : newPendingOperations) {
                     operation.onStart();
                 }
                 executeOperations(newPendingOperations, mOperationDirectionIsPop);
                 mOperationDirectionIsPop = false;
+                if (FragmentManager.TRACE) {
+                    LOGGER.info(FragmentManager.MARKER,
+                            "SpecialEffectsController: Finished executing pending operations");
+                }
             }
         }
     }
 
     void forceCompleteAllOperations() {
+        if (FragmentManager.TRACE) {
+            LOGGER.info(FragmentManager.MARKER,
+                    "SpecialEffectsController: Forcing all operations to complete");
+        }
         boolean attachedToWindow = mContainer.isAttachedToWindow();
         synchronized (mPendingOperations) {
             updateFinalState();
@@ -311,8 +318,8 @@ abstract class SpecialEffectsController {
             // First cancel running operations
             ArrayList<Operation> runningOperations = new ArrayList<>(mRunningOperations);
             for (Operation operation : runningOperations) {
-                if (FragmentManager.DEBUG) {
-                    LOGGER.trace(FragmentManager.MARKER,
+                if (FragmentManager.TRACE) {
+                    LOGGER.info(FragmentManager.MARKER,
                             "SpecialEffectsController: " + (attachedToWindow ? "" :
                                     "Container " + mContainer + " is not attached to window. ")
                                     + "Cancelling running operation " + operation);
@@ -323,8 +330,8 @@ abstract class SpecialEffectsController {
             // Then cancel pending operations
             ArrayList<Operation> pendingOperations = new ArrayList<>(mPendingOperations);
             for (Operation operation : pendingOperations) {
-                if (FragmentManager.DEBUG) {
-                    LOGGER.trace(FragmentManager.MARKER,
+                if (FragmentManager.TRACE) {
+                    LOGGER.info(FragmentManager.MARKER,
                             "SpecialEffectsController: " + (attachedToWindow ? "" :
                                     "Container " + mContainer + " is not attached to window. ")
                                     + "Cancelling pending operation " + operation);
@@ -347,7 +354,7 @@ abstract class SpecialEffectsController {
     }
 
     /**
-     * Execute all of the given operations.
+     * Execute all the given operations.
      * <p>
      * If there are no special effects for a given operation, the SpecialEffectsController
      * should call {@link Operation#complete()}. Otherwise, a
@@ -423,16 +430,12 @@ abstract class SpecialEffectsController {
              */
             @Nonnull
             static State from(int visibility) {
-                switch (visibility) {
-                    case View.VISIBLE:
-                        return VISIBLE;
-                    case View.INVISIBLE:
-                        return INVISIBLE;
-                    case View.GONE:
-                        return GONE;
-                    default:
-                        throw new IllegalArgumentException("Unknown visibility " + visibility);
-                }
+                return switch (visibility) {
+                    case View.VISIBLE -> VISIBLE;
+                    case View.INVISIBLE -> INVISIBLE;
+                    case View.GONE -> GONE;
+                    default -> throw new IllegalArgumentException("Unknown visibility " + visibility);
+                };
             }
 
             /**
@@ -442,38 +445,38 @@ abstract class SpecialEffectsController {
              */
             void applyState(@Nonnull View view) {
                 switch (this) {
-                    case REMOVED:
+                    case REMOVED -> {
                         ViewGroup parent = (ViewGroup) view.getParent();
                         if (parent != null) {
-                            if (FragmentManager.DEBUG) {
-                                LOGGER.trace(FragmentManager.MARKER, "SpecialEffectsController: Removing "
-                                        + "view " + view + " from container " + parent);
+                            if (FragmentManager.TRACE) {
+                                LOGGER.info(FragmentManager.MARKER,
+                                        "SpecialEffectsController: Removing view {} from container {}",
+                                        view, parent);
                             }
                             parent.removeView(view);
                         }
-                        break;
-                    case VISIBLE:
-                        if (FragmentManager.DEBUG) {
-                            LOGGER.trace(FragmentManager.MARKER, "SpecialEffectsController: Setting view "
-                                    + view + " to VISIBLE");
+                    }
+                    case VISIBLE -> {
+                        if (FragmentManager.TRACE) {
+                            LOGGER.info(FragmentManager.MARKER,
+                                    "SpecialEffectsController: Setting view {} to VISIBLE", view);
                         }
                         view.setVisibility(View.VISIBLE);
-                        break;
-                    case GONE:
-                        if (FragmentManager.DEBUG) {
-                            LOGGER.trace(FragmentManager.MARKER,
-                                    "SpecialEffectsController: Setting view " + view + " to GONE");
+                    }
+                    case GONE -> {
+                        if (FragmentManager.TRACE) {
+                            LOGGER.info(FragmentManager.MARKER,
+                                    "SpecialEffectsController: Setting view {} to GONE", view);
                         }
                         view.setVisibility(View.GONE);
-                        break;
-                    case INVISIBLE:
-                        if (FragmentManager.DEBUG) {
-                            LOGGER.trace(FragmentManager.MARKER,
-                                    "SpecialEffectsController: Setting view " + view + " to "
-                                            + "INVISIBLE");
+                    }
+                    case INVISIBLE -> {
+                        if (FragmentManager.TRACE) {
+                            LOGGER.info(FragmentManager.MARKER,
+                                    "SpecialEffectsController: Setting view {} to INVISIBLE", view);
                         }
                         view.setVisibility(View.INVISIBLE);
-                        break;
+                    }
                 }
             }
         }
@@ -524,12 +527,7 @@ abstract class SpecialEffectsController {
             mLifecycleImpact = lifecycleImpact;
             mFragment = fragment;
             // Connect the CancellationSignal to our own
-            cancellationSignal.setOnCancelListener(new CancellationSignal.OnCancelListener() {
-                @Override
-                public void onCancel() {
-                    cancel();
-                }
-            });
+            cancellationSignal.setOnCancelListener(this::cancel);
         }
 
         /**
@@ -569,24 +567,22 @@ abstract class SpecialEffectsController {
         @Nonnull
         @Override
         public String toString() {
-            StringBuilder sb = new StringBuilder();
-            sb.append("Operation ");
-            sb.append("{");
-            sb.append(Integer.toHexString(System.identityHashCode(this)));
-            sb.append("} ");
-            sb.append("{");
-            sb.append("mFinalState = ");
-            sb.append(mFinalState);
-            sb.append("} ");
-            sb.append("{");
-            sb.append("mLifecycleImpact = ");
-            sb.append(mLifecycleImpact);
-            sb.append("} ");
-            sb.append("{");
-            sb.append("mFragment = ");
-            sb.append(mFragment);
-            sb.append("}");
-            return sb.toString();
+            return "Operation " +
+                    "{" +
+                    Integer.toHexString(System.identityHashCode(this)) +
+                    "} " +
+                    "{" +
+                    "mFinalState = " +
+                    mFinalState +
+                    "} " +
+                    "{" +
+                    "mLifecycleImpact = " +
+                    mLifecycleImpact +
+                    "} " +
+                    "{" +
+                    "mFragment = " +
+                    mFragment +
+                    "}";
         }
 
         final void cancel() {
@@ -608,8 +604,8 @@ abstract class SpecialEffectsController {
             switch (lifecycleImpact) {
                 case ADDING:
                     if (mFinalState == State.REMOVED) {
-                        if (FragmentManager.DEBUG) {
-                            LOGGER.trace(FragmentManager.MARKER, "SpecialEffectsController: For fragment "
+                        if (FragmentManager.TRACE) {
+                            LOGGER.info(FragmentManager.MARKER, "SpecialEffectsController: For fragment "
                                     + mFragment + " mFinalState = REMOVED -> VISIBLE. "
                                     + "mLifecycleImpact = " + mLifecycleImpact + " to ADDING.");
                         }
@@ -620,8 +616,8 @@ abstract class SpecialEffectsController {
                     }
                     break;
                 case REMOVING:
-                    if (FragmentManager.DEBUG) {
-                        LOGGER.trace(FragmentManager.MARKER, "SpecialEffectsController: For fragment "
+                    if (FragmentManager.TRACE) {
+                        LOGGER.info(FragmentManager.MARKER, "SpecialEffectsController: For fragment "
                                 + mFragment + " mFinalState = " + mFinalState + " -> REMOVED. "
                                 + "mLifecycleImpact  = " + mLifecycleImpact + " to REMOVING.");
                     }
@@ -632,13 +628,14 @@ abstract class SpecialEffectsController {
                 case NONE:
                     // This is a hide or show operation
                     if (mFinalState != State.REMOVED) {
-                        if (FragmentManager.DEBUG) {
-                            LOGGER.trace(FragmentManager.MARKER, "SpecialEffectsController: For fragment "
+                        if (FragmentManager.TRACE) {
+                            LOGGER.info(FragmentManager.MARKER, "SpecialEffectsController: For fragment "
                                     + mFragment + " mFinalState = " + mFinalState + " -> "
                                     + finalState + ". ");
                         }
                         mFinalState = finalState;
                     }
+                    break;
             }
         }
 
@@ -688,8 +685,8 @@ abstract class SpecialEffectsController {
             if (mIsComplete) {
                 return;
             }
-            if (FragmentManager.DEBUG) {
-                LOGGER.trace(FragmentManager.MARKER,
+            if (FragmentManager.TRACE) {
+                LOGGER.info(FragmentManager.MARKER,
                         "SpecialEffectsController: " + this + " has called complete.");
             }
             mIsComplete = true;
@@ -700,6 +697,7 @@ abstract class SpecialEffectsController {
     }
 
     private static class FragmentStateManagerOperation extends Operation {
+
         @Nonnull
         private final FragmentStateManager mFragmentStateManager;
 
@@ -719,8 +717,8 @@ abstract class SpecialEffectsController {
                 View focusedView = fragment.mView.findFocus();
                 if (focusedView != null) {
                     fragment.setFocusedView(focusedView);
-                    if (FragmentManager.DEBUG) {
-                        LOGGER.trace(FragmentManager.MARKER, "requestFocus: Saved focused view " + focusedView
+                    if (FragmentManager.TRACE) {
+                        LOGGER.info(FragmentManager.MARKER, "requestFocus: Saved focused view " + focusedView
                                 + " for Fragment " + fragment);
                     }
                 }
@@ -738,6 +736,14 @@ abstract class SpecialEffectsController {
                     view.setVisibility(View.INVISIBLE);
                 }
                 view.setAlpha(fragment.getPostOnViewCreatedAlpha());
+            } else if (getLifecycleImpact() == LifecycleImpact.REMOVING) {
+                Fragment fragment = mFragmentStateManager.getFragment();
+                View view = fragment.requireView();
+                if (FragmentManager.TRACE) {
+                    LOGGER.info(FragmentManager.MARKER, "Clearing focus " + view.findFocus() + " on view "
+                            + view + " for Fragment " + fragment);
+                }
+                view.clearFocus();
             }
         }
 

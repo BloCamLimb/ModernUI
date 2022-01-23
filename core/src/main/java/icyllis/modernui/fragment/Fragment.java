@@ -21,6 +21,7 @@ package icyllis.modernui.fragment;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.Handler;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.View;
@@ -32,13 +33,14 @@ import java.io.FileDescriptor;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 /**
  * A Fragment is a piece of an application's user interface or behavior
  * that can be placed in a host object.  Interaction with fragments
  * is done through {@link FragmentManager}, which can be obtained via
- * {@link Fragment#getParentFragmentManager()} and other implementation
- * dependent methods.
+ * {@link Fragment#getParentFragmentManager()} and
+ * {@link FragmentController#getFragmentManager()}.
  * <p>
  * For more information about using fragments, read the Android Fragments
  * developer guide.
@@ -77,6 +79,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
 
     // If set this fragment is being removed from its activity.
     boolean mRemoving;
+
+    boolean mBeingSaved;
 
     // Set to true if this fragment was instantiated from a layout file.
     boolean mFromLayout;
@@ -164,18 +168,12 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     // without Views.
     AnimationInfo mAnimationInfo;
 
-    // True if the View was added, and its animation has yet to be run. This could
-    // also indicate that the fragment view hasn't been made visible, even if there is no
-    // animation for this fragment.
-    boolean mIsNewlyAdded;
+    // Runnable that is used to indicate if the Fragment has a postponed transition that is on a
+    // timeout.
+    Runnable mPostponedDurationRunnable = this::startPostponedEnterTransition;
 
     // True if mHidden has been changed and the animation should be scheduled.
     boolean mHiddenChanged;
-
-    // The alpha of the view when the view was added and then postponed. If the value is less
-    // than zero, this means that the view's add was canceled and should not participate in
-    // removal animations.
-    float mPostponedAlpha;
 
     // Keep track of whether this Fragment has run performCreate(). Retained instance
     // fragments can have mRetaining set to true without going through creation, so we must
@@ -209,8 +207,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * <p>Applications should generally not implement a constructor. Prefer
      * {@link #onAttach()} instead. It is the first place application code can run where
      * the fragment is ready to be used - the point where the fragment is actually associated with
-     * its context. Some applications may also want to implement {@link #onInflate} to retrieve
-     * attributes from a layout resource, although note this happens when the fragment is attached.
+     * its context.
      */
     public Fragment() {
         initLifecycle();
@@ -366,22 +363,23 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     @Nonnull
     @Override
     public String toString() {
-        StringBuilder s = new StringBuilder(128);
-        s.append(getClass().getSimpleName())
-                .append('{')
-                .append(Integer.toHexString(hashCode()))
-                .append('}')
-                .append(" (")
-                .append(mWho);
+        StringBuilder sb = new StringBuilder(128);
+        sb.append(getClass().getSimpleName());
+        sb.append("{");
+        sb.append(Integer.toHexString(System.identityHashCode(this)));
+        sb.append("}");
+        sb.append(" (");
+        sb.append(mWho);
         if (mFragmentId != 0) {
-            s.append(" id=0x")
-                    .append(Integer.toHexString(mFragmentId));
+            sb.append(" id=0x");
+            sb.append(Integer.toHexString(mFragmentId));
         }
         if (mTag != null) {
-            s.append(" tag=")
-                    .append(mTag);
+            sb.append(" tag=");
+            sb.append(mTag);
         }
-        return s.append(')').toString();
+        sb.append(")");
+        return sb.toString();
     }
 
     /**
@@ -584,16 +582,6 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     }
 
     /**
-     * Return <code>true</code> if this fragment or any of its ancestors are currently being removed
-     * from its activity.  This is <em>not</em> whether its activity is finishing, but rather
-     * whether it, or its ancestors are in the process of being removed from its activity.
-     */
-    final boolean isRemovingParent() {
-        Fragment parent = getParentFragment();
-        return parent != null && (parent.isRemoving() || parent.isRemovingParent());
-    }
-
-    /**
      * Return true if the layout is included as part of an activity view
      * hierarchy via the &lt;fragment&gt; tag.  This will always be true when
      * fragments are created through the &lt;fragment&gt; tag, <em>except</em>
@@ -630,7 +618,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * must be both started and not hidden.
      */
     public final boolean isHidden() {
-        return mHidden;
+        return mHidden || (mFragmentManager != null
+                && mFragmentManager.isParentHidden(mParentFragment));
     }
 
     final boolean hasOptionsMenu() {
@@ -975,6 +964,331 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     }
 
     /**
+     * Sets the Transition that will be used to move Views into the initial scene. The entering
+     * Views will be those that are regular Views or ViewGroups that have
+     * {@link ViewGroup#isTransitionGroup} return true. Typical Transitions will extend
+     * {@link Visibility} as entering is governed by changing visibility from
+     * {@link View#INVISIBLE} to {@link View#VISIBLE}. If <code>transition</code> is null,
+     * entering Views will remain unaffected.
+     *
+     * @param transition The Transition to use to move Views into the initial Scene.
+     */
+    public void setEnterTransition(@Nullable Object transition) {
+        ensureAnimationInfo().mEnterTransition = transition;
+    }
+
+    /**
+     * Returns the Transition that will be used to move Views into the initial scene. The entering
+     * Views will be those that are regular Views or ViewGroups that have
+     * {@link ViewGroup#isTransitionGroup} return true. Typical Transitions will extend
+     * {@link Visibility} as entering is governed by changing visibility from
+     * {@link View#INVISIBLE} to {@link View#VISIBLE}.
+     *
+     * @return the Transition to use to move Views into the initial Scene.
+     */
+    @Nullable
+    public Object getEnterTransition() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mEnterTransition;
+    }
+
+    /**
+     * Sets the Transition that will be used to move Views out of the scene when the Fragment is
+     * preparing to be removed, hidden, or detached because of popping the back stack. The exiting
+     * Views will be those that are regular Views or ViewGroups that have
+     * {@link ViewGroup#isTransitionGroup} return true. Typical Transitions will extend
+     * {@link Visibility} as entering is governed by changing visibility from
+     * {@link View#VISIBLE} to {@link View#INVISIBLE}. If <code>transition</code> is null,
+     * entering Views will remain unaffected. If nothing is set, the default will be to
+     * use the same value as set in {@link #setEnterTransition(Object)}.
+     *
+     * @param transition The Transition to use to move Views out of the Scene when the Fragment
+     *                   is preparing to close due to popping the back stack.
+     */
+    public void setReturnTransition(@Nullable Object transition) {
+        ensureAnimationInfo().mReturnTransition = transition;
+    }
+
+    /**
+     * Returns the Transition that will be used to move Views out of the scene when the Fragment is
+     * preparing to be removed, hidden, or detached because of popping the back stack. The exiting
+     * Views will be those that are regular Views or ViewGroups that have
+     * {@link ViewGroup#isTransitionGroup} return true. Typical Transitions will extend
+     * {@link Visibility} as entering is governed by changing visibility from
+     * {@link View#VISIBLE} to {@link View#INVISIBLE}. If nothing is set, the default will be to use
+     * the same transition as {@link #getEnterTransition()}.
+     *
+     * @return the Transition to use to move Views out of the Scene when the Fragment
+     * is preparing to close due to popping the back stack.
+     */
+    @Nullable
+    public Object getReturnTransition() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mReturnTransition == USE_DEFAULT_TRANSITION ? getEnterTransition()
+                : mAnimationInfo.mReturnTransition;
+    }
+
+    /**
+     * Sets the Transition that will be used to move Views out of the scene when the
+     * fragment is removed, hidden, or detached when not popping the back stack.
+     * The exiting Views will be those that are regular Views or ViewGroups that
+     * have {@link ViewGroup#isTransitionGroup} return true. Typical Transitions will extend
+     * {@link Visibility} as exiting is governed by changing visibility
+     * from {@link View#VISIBLE} to {@link View#INVISIBLE}. If transition is null, the views will
+     * remain unaffected.
+     *
+     * @param transition The Transition to use to move Views out of the Scene when the Fragment
+     *                   is being closed not due to popping the back stack.
+     */
+    public void setExitTransition(@Nullable Object transition) {
+        ensureAnimationInfo().mExitTransition = transition;
+    }
+
+    /**
+     * Returns the Transition that will be used to move Views out of the scene when the
+     * fragment is removed, hidden, or detached when not popping the back stack.
+     * The exiting Views will be those that are regular Views or ViewGroups that
+     * have {@link ViewGroup#isTransitionGroup} return true. Typical Transitions will extend
+     * {@link Visibility} as exiting is governed by changing visibility
+     * from {@link View#VISIBLE} to {@link View#INVISIBLE}. If transition is null, the views will
+     * remain unaffected.
+     *
+     * @return the Transition to use to move Views out of the Scene when the Fragment
+     * is being closed not due to popping the back stack.
+     */
+    @Nullable
+    public Object getExitTransition() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mExitTransition;
+    }
+
+    /**
+     * Sets the Transition that will be used to move Views in to the scene when returning due
+     * to popping a back stack. The entering Views will be those that are regular Views
+     * or ViewGroups that have {@link ViewGroup#isTransitionGroup} return true. Typical Transitions
+     * will extend {@link Visibility} as exiting is governed by changing
+     * visibility from {@link View#VISIBLE} to {@link View#INVISIBLE}. If transition is null,
+     * the views will remain unaffected. If nothing is set, the default will be to use the same
+     * transition as {@link #getExitTransition()}.
+     *
+     * @param transition The Transition to use to move Views into the scene when reentering from a
+     *                   previously-started Activity due to popping the back stack.
+     */
+    public void setReenterTransition(@Nullable Object transition) {
+        ensureAnimationInfo().mReenterTransition = transition;
+    }
+
+    /**
+     * Returns the Transition that will be used to move Views in to the scene when returning due
+     * to popping a back stack. The entering Views will be those that are regular Views
+     * or ViewGroups that have {@link ViewGroup#isTransitionGroup} return true. Typical Transitions
+     * will extend {@link Visibility} as exiting is governed by changing
+     * visibility from {@link View#VISIBLE} to {@link View#INVISIBLE}. If nothing is set, the
+     * default will be to use the same transition as {@link #getExitTransition()}.
+     *
+     * @return the Transition to use to move Views into the scene when reentering from a
+     * previously-started Activity due to popping the back stack.
+     */
+    @Nullable
+    public Object getReenterTransition() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mReenterTransition == USE_DEFAULT_TRANSITION ? getExitTransition()
+                : mAnimationInfo.mReenterTransition;
+    }
+
+    /**
+     * Sets the Transition that will be used for shared elements transferred into the content
+     * Scene. Typical Transitions will affect size and location, such as
+     * {@link ChangeBounds}. A null
+     * value will cause transferred shared elements to blink to the final position.
+     *
+     * @param transition The Transition to use for shared elements transferred into the content
+     *                   Scene.
+     */
+    public void setSharedElementEnterTransition(@Nullable Object transition) {
+        ensureAnimationInfo().mSharedElementEnterTransition = transition;
+    }
+
+    /**
+     * Returns the Transition that will be used for shared elements transferred into the content
+     * Scene. Typical Transitions will affect size and location, such as
+     * {@link ChangeBounds}. A null
+     * value will cause transferred shared elements to blink to the final position.
+     *
+     * @return The Transition to use for shared elements transferred into the content
+     * Scene.
+     */
+    @Nullable
+    public Object getSharedElementEnterTransition() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mSharedElementEnterTransition;
+    }
+
+    /**
+     * Sets the Transition that will be used for shared elements transferred back during a
+     * pop of the back stack. This Transition acts in the leaving Fragment.
+     * Typical Transitions will affect size and location, such as
+     * {@link ChangeBounds}. A null
+     * value will cause transferred shared elements to blink to the final position.
+     * If no value is set, the default will be to use the same value as
+     * {@link #setSharedElementEnterTransition(Object)}.
+     *
+     * @param transition The Transition to use for shared elements transferred out of the content
+     *                   Scene.
+     */
+    public void setSharedElementReturnTransition(@Nullable Object transition) {
+        ensureAnimationInfo().mSharedElementReturnTransition = transition;
+    }
+
+    /**
+     * Return the Transition that will be used for shared elements transferred back during a
+     * pop of the back stack. This Transition acts in the leaving Fragment.
+     * Typical Transitions will affect size and location, such as
+     * {@link ChangeBounds}. A null
+     * value will cause transferred shared elements to blink to the final position.
+     * If no value is set, the default will be to use the same value as
+     * {@link #setSharedElementEnterTransition(Object)}.
+     *
+     * @return The Transition to use for shared elements transferred out of the content
+     * Scene.
+     */
+    @Nullable
+    public Object getSharedElementReturnTransition() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mSharedElementReturnTransition == USE_DEFAULT_TRANSITION
+                ? getSharedElementEnterTransition()
+                : mAnimationInfo.mSharedElementReturnTransition;
+    }
+
+    /**
+     * Sets whether the exit transition and enter transition overlap or not.
+     * When true, the enter transition will start as soon as possible. When false, the
+     * enter transition will wait until the exit transition completes before starting.
+     *
+     * @param allow true to start the enter transition when possible or false to
+     *              wait until the exiting transition completes.
+     */
+    public void setAllowEnterTransitionOverlap(boolean allow) {
+        ensureAnimationInfo().mAllowEnterTransitionOverlap = allow;
+    }
+
+    /**
+     * Returns whether the exit transition and enter transition overlap or not.
+     * When true, the enter transition will start as soon as possible. When false, the
+     * enter transition will wait until the exit transition completes before starting.
+     *
+     * @return true when the enter transition should start as soon as possible or false to
+     * when it should wait until the exiting transition completes.
+     */
+    public boolean getAllowEnterTransitionOverlap() {
+        return mAnimationInfo == null || mAnimationInfo.mAllowEnterTransitionOverlap == null || mAnimationInfo.mAllowEnterTransitionOverlap;
+    }
+
+    /**
+     * Sets whether the return transition and reenter transition overlap or not.
+     * When true, the reenter transition will start as soon as possible. When false, the
+     * reenter transition will wait until the return transition completes before starting.
+     *
+     * @param allow true to start the reenter transition when possible or false to wait until the
+     *              return transition completes.
+     */
+    public void setAllowReturnTransitionOverlap(boolean allow) {
+        ensureAnimationInfo().mAllowReturnTransitionOverlap = allow;
+    }
+
+    /**
+     * Returns whether the return transition and reenter transition overlap or not.
+     * When true, the reenter transition will start as soon as possible. When false, the
+     * reenter transition will wait until the return transition completes before starting.
+     *
+     * @return true to start the reenter transition when possible or false to wait until the
+     * return transition completes.
+     */
+    public boolean getAllowReturnTransitionOverlap() {
+        return mAnimationInfo == null || mAnimationInfo.mAllowReturnTransitionOverlap == null || mAnimationInfo.mAllowReturnTransitionOverlap;
+    }
+
+    /**
+     * Postpone the entering Fragment transition until {@link #startPostponedEnterTransition()}
+     * or {@link FragmentManager#executePendingTransactions()} has been called.
+     * <p>
+     * This method gives the Fragment the ability to delay Fragment animations
+     * until all data is loaded. Until then, the added, shown, and
+     * attached Fragments will be INVISIBLE and removed, hidden, and detached Fragments won't
+     * be have their Views removed. The transaction runs when all postponed added Fragments in the
+     * transaction have called {@link #startPostponedEnterTransition()}.
+     * <p>
+     * This method should be called before being added to the FragmentTransaction or
+     * in {@link #onCreate(DataSet)}, {@link #onAttach()}, or
+     * {@link #onCreateView(ViewGroup, DataSet)}}.
+     * {@link #startPostponedEnterTransition()} must be called to allow the Fragment to
+     * start the transitions.
+     * <p>
+     * When a FragmentTransaction is started that may affect a postponed FragmentTransaction,
+     * based on which containers are in their operations, the postponed FragmentTransaction
+     * will have its start triggered. The early triggering may result in faulty or nonexistent
+     * animations in the postponed transaction. FragmentTransactions that operate only on
+     * independent containers will not interfere with each other's postponement.
+     * <p>
+     * Calling postponeEnterTransition on Fragments with a null View will not postpone the
+     * transition.
+     *
+     * @see FragmentTransaction#setReorderingAllowed(boolean)
+     */
+    public void postponeEnterTransition() {
+        ensureAnimationInfo().mEnterTransitionPostponed = true;
+    }
+
+    /**
+     * Postpone the entering Fragment transition for a given amount of time and then call
+     * {@link #startPostponedEnterTransition()}.
+     * <p>
+     * This method gives the Fragment the ability to delay Fragment animations for a given amount
+     * of time. Until then, the added, shown, and attached Fragments will be INVISIBLE and removed,
+     * hidden, and detached Fragments won't be have their Views removed. The transaction runs when
+     * all postponed added Fragments in the transaction have called
+     * {@link #startPostponedEnterTransition()}.
+     * <p>
+     * This method should be called before being added to the FragmentTransaction or
+     * in {@link #onCreate(DataSet)}, {@link #onAttach()}, or
+     * {@link #onCreateView(ViewGroup, DataSet)}}.
+     * <p>
+     * When a FragmentTransaction is started that may affect a postponed FragmentTransaction,
+     * based on which containers are in their operations, the postponed FragmentTransaction
+     * will have its start triggered. The early triggering may result in faulty or nonexistent
+     * animations in the postponed transaction. FragmentTransactions that operate only on
+     * independent containers will not interfere with each other's postponement.
+     * <p>
+     * Calling postponeEnterTransition on Fragments with a null View will not postpone the
+     * transition.
+     *
+     * @param duration The length of the delay in {@code timeUnit} units
+     * @param timeUnit The units of time for {@code duration}
+     * @see FragmentTransaction#setReorderingAllowed(boolean)
+     */
+    public final void postponeEnterTransition(long duration, @Nonnull TimeUnit timeUnit) {
+        ensureAnimationInfo().mEnterTransitionPostponed = true;
+        Handler handler;
+        if (mFragmentManager != null) {
+            handler = mFragmentManager.getHost().mHandler;
+            handler.removeCallbacks(mPostponedDurationRunnable);
+            handler.postDelayed(mPostponedDurationRunnable, timeUnit.toMillis(duration));
+        }
+    }
+
+    /**
      * Begin postponed transitions after {@link #postponeEnterTransition()} was called.
      * If postponeEnterTransition() was called, you must call startPostponedEnterTransition()
      * or {@link FragmentManager#executePendingTransactions()} to complete the FragmentTransaction.
@@ -989,11 +1303,42 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         }
         if (mHost == null) {
             ensureAnimationInfo().mEnterTransitionPostponed = false;
+        } else if (!mHost.mHandler.isCurrentThread()) {
+            mHost.mHandler.postAtFrontOfQueue(() -> callStartTransitionListener(false));
+        } else {
+            callStartTransitionListener(true);
         }
     }
 
     /**
-     * Print the Fragments's state into the given stream.
+     * Calls the start transition listener. This must be called on the UI thread.
+     *
+     * @param calledDirectly Whether this was called directly or if it was already posted
+     *                       to the UI thread
+     */
+    void callStartTransitionListener(boolean calledDirectly) {
+        if (mAnimationInfo != null) {
+            mAnimationInfo.mEnterTransitionPostponed = false;
+        }
+        if (mView != null && mContainer != null && mFragmentManager != null) {
+            // Mark the updated postponed state with the SpecialEffectsController immediately
+            final SpecialEffectsController controller = SpecialEffectsController
+                    .getOrCreateController(mContainer, mFragmentManager);
+            controller.markPostponedState();
+            if (calledDirectly) {
+                // But if this call was called directly, we need to post the
+                // executePendingOperations() to avoid re-entrant calls
+                // and avoid calling execute during layout / draw calls
+                mHost.mHandler.post(controller::executePendingOperations);
+            } else {
+                // We've already posted our call, so we can execute directly
+                controller.executePendingOperations();
+            }
+        }
+    }
+
+    /**
+     * Print the Fragment's state into the given stream.
      *
      * @param prefix Text to print at the front of each line.
      * @param fd     The raw file descriptor that the dump is being sent to.
@@ -1038,6 +1383,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         writer.print(prefix);
         writer.print("mRetainInstance=");
         writer.print(mRetainInstance);
+        writer.print(" mUserVisibleHint=");
+        writer.println(mUserVisibleHint);
         if (mFragmentManager != null) {
             writer.print(prefix);
             writer.print("mFragmentManager=");
@@ -1063,6 +1410,29 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
             writer.print("mSavedFragmentState=");
             writer.println(mSavedFragmentState);
         }
+        writer.print(prefix);
+        writer.print("mPopDirection=");
+        writer.println(getPopDirection());
+        if (getEnterAnim() != 0) {
+            writer.print(prefix);
+            writer.print("getEnterAnim=");
+            writer.println(getEnterAnim());
+        }
+        if (getExitAnim() != 0) {
+            writer.print(prefix);
+            writer.print("getExitAnim=");
+            writer.println(getExitAnim());
+        }
+        if (getPopEnterAnim() != 0) {
+            writer.print(prefix);
+            writer.print("getPopEnterAnim=");
+            writer.println(getPopEnterAnim());
+        }
+        if (getPopExitAnim() != 0) {
+            writer.print(prefix);
+            writer.print("getPopExitAnim=");
+            writer.println(getPopExitAnim());
+        }
         if (mContainer != null) {
             writer.print(prefix);
             writer.print("mContainer=");
@@ -1072,6 +1442,11 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
             writer.print(prefix);
             writer.print("mView=");
             writer.println(mView);
+        }
+        if (getAnimatingAway() != null) {
+            writer.print(prefix);
+            writer.print("mAnimatingAway=");
+            writer.println(getAnimatingAway());
         }
         writer.print(prefix);
         writer.println("Child " + mChildFragmentManager + ":");
@@ -1089,8 +1464,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     @Nonnull
     FragmentContainer createFragmentContainer() {
         return new FragmentContainer() {
-            @Override
             @Nullable
+            @Override
             public View onFindViewById(int id) {
                 if (mView == null) {
                     throw new IllegalStateException("Fragment " + Fragment.this
@@ -1155,9 +1530,8 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
             // Tell the fragment's new view about it before we tell anyone listening
             // to mViewLifecycleOwnerLiveData and before onViewCreated, so that calls to
             // ViewTree get() methods return something meaningful
-            /*ViewTreeLifecycleOwner.set(mView, mViewLifecycleOwner);
+            ViewTreeLifecycleOwner.set(mView, mViewLifecycleOwner);
             ViewTreeViewModelStoreOwner.set(mView, mViewLifecycleOwner);
-            ViewTreeSavedStateRegistryOwner.set(mView, mViewLifecycleOwner);*/
             // Then inform any Observers of the new LifecycleOwner
             mViewLifecycleOwnerLiveData.setValue(mViewLifecycleOwner);
         } else {
@@ -1176,13 +1550,13 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         mChildFragmentManager.dispatchViewCreated();
     }
 
-    void performActivityCreated(DataSet savedInstanceState) {
+    void performActivityCreated() {
         mChildFragmentManager.noteStateNotSaved();
         mState = AWAITING_EXIT_EFFECTS;
-        //restoreViewState();
         mChildFragmentManager.dispatchActivityCreated();
     }
 
+    @SuppressWarnings("ConstantConditions")
     void performStart() {
         mChildFragmentManager.noteStateNotSaved();
         mChildFragmentManager.execPendingActions(true);
@@ -1195,12 +1569,12 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         }
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
         if (mView != null) {
-            assert mViewLifecycleOwner != null;
             mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_START);
         }
         mChildFragmentManager.dispatchStart();
     }
 
+    @SuppressWarnings("ConstantConditions")
     void performResume() {
         mChildFragmentManager.noteStateNotSaved();
         mChildFragmentManager.execPendingActions(true);
@@ -1213,7 +1587,6 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         }
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
         if (mView != null) {
-            assert mViewLifecycleOwner != null;
             mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_RESUME);
         }
         mChildFragmentManager.dispatchResume();
@@ -1234,10 +1607,10 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     void performPause() {
         mChildFragmentManager.dispatchPause();
         if (mView != null) {
-            assert mViewLifecycleOwner != null;
             mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
         }
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_PAUSE);
@@ -1250,10 +1623,10 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     void performStop() {
         mChildFragmentManager.dispatchStop();
         if (mView != null) {
-            assert mViewLifecycleOwner != null;
             mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
         }
         mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
@@ -1266,14 +1639,12 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     void performDestroyView() {
         mChildFragmentManager.dispatchDestroyView();
-        if (mView != null) {
-            assert mViewLifecycleOwner != null;
-            if (mViewLifecycleOwner.getLifecycle().getCurrentState()
-                    .isAtLeast(Lifecycle.State.CREATED)) {
-                mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
-            }
+        if (mView != null && mViewLifecycleOwner.getLifecycle().getCurrentState()
+                .isAtLeast(Lifecycle.State.CREATED)) {
+            mViewLifecycleOwner.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
         }
         mState = CREATED;
         mCalled = false;
@@ -1313,23 +1684,6 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         if (!mChildFragmentManager.isDestroyed()) {
             mChildFragmentManager.dispatchDestroy();
             mChildFragmentManager = new FragmentManager();
-        }
-    }
-
-    void setOnStartEnterTransitionListener(OnStartEnterTransitionListener listener) {
-        ensureAnimationInfo();
-        if (listener == mAnimationInfo.mStartEnterTransitionListener) {
-            return;
-        }
-        if (listener != null && mAnimationInfo.mStartEnterTransitionListener != null) {
-            throw new IllegalStateException("Trying to set a replacement "
-                    + "startPostponedEnterTransition on " + this);
-        }
-        if (mAnimationInfo.mEnterTransitionPostponed) {
-            mAnimationInfo.mStartEnterTransitionListener = listener;
-        }
-        if (listener != null) {
-            listener.startListening();
         }
     }
 
@@ -1437,21 +1791,6 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         return mAnimationInfo.mAnimatingAway;
     }
 
-    void setAnimatingAway(View view) {
-        ensureAnimationInfo().mAnimatingAway = view;
-    }
-
-    void setAnimator(Animator animator) {
-        ensureAnimationInfo().mAnimator = animator;
-    }
-
-    Animator getAnimator() {
-        if (mAnimationInfo == null) {
-            return null;
-        }
-        return mAnimationInfo.mAnimator;
-    }
-
     void setPostOnViewCreatedAlpha(float alpha) {
         ensureAnimationInfo().mPostOnViewCreatedAlpha = alpha;
     }
@@ -1481,28 +1820,6 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         return mAnimationInfo.mEnterTransitionPostponed;
     }
 
-    boolean isHideReplaced() {
-        if (mAnimationInfo == null) {
-            return false;
-        }
-        return mAnimationInfo.mIsHideReplaced;
-    }
-
-    void setHideReplaced(boolean replaced) {
-        ensureAnimationInfo().mIsHideReplaced = replaced;
-    }
-
-    /**
-     * Used internally to be notified when {@link #startPostponedEnterTransition()} has
-     * been called. This listener will only be called once and then be removed from the
-     * listeners.
-     */
-    interface OnStartEnterTransitionListener {
-        void onStartEnterTransition();
-
-        void startListening();
-    }
-
     /**
      * Contains all the animation and transition information for a fragment. This will only
      * be instantiated for Fragments that have Views.
@@ -1512,10 +1829,6 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         // meaning we need to wait a bit on completely destroying it.  This is the
         // view that is animating.
         View mAnimatingAway;
-
-        // Non-null if the fragment's view hierarchy is currently animating away with an
-        // animator instead of an animation.
-        Animator mAnimator;
 
         // If app requests the animation direction, this is what to use
         boolean mIsPop;
@@ -1548,12 +1861,5 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         // True when postponeEnterTransition has been called and startPostponeEnterTransition
         // hasn't been called yet.
         boolean mEnterTransitionPostponed;
-
-        // Listener to wait for startPostponeEnterTransition. After being called, it will
-        // be set to null
-        OnStartEnterTransitionListener mStartEnterTransitionListener;
-
-        // True if the View was hidden, but the transition is handling the hide
-        boolean mIsHideReplaced;
     }
 }

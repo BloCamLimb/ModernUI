@@ -19,16 +19,17 @@
 package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.ArchCore;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
-import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.function.Supplier;
 
-import static icyllis.modernui.lifecycle.Lifecycle.Event.*;
-import static icyllis.modernui.lifecycle.Lifecycle.State.*;
+import static icyllis.modernui.lifecycle.Lifecycle.State.DESTROYED;
+import static icyllis.modernui.lifecycle.Lifecycle.State.INITIALIZED;
 
 /**
  * An implementation of {@link Lifecycle} that can handle multiple observers.
@@ -74,7 +75,7 @@ public class LifecycleRegistry extends Lifecycle {
     // newObserver should be brought only to CREATED state during the execution of
     // this onStart method. our invariant with mObserverMap doesn't help, because parent observer
     // is no longer in the map.
-    private final ArrayDeque<State> mParentStates = new ArrayDeque<>();
+    private final ArrayList<State> mParentStates = new ArrayList<>();
 
     /**
      * Creates a new LifecycleRegistry for the given provider.
@@ -96,6 +97,7 @@ public class LifecycleRegistry extends Lifecycle {
      */
     @UiThread
     public void setCurrentState(@Nonnull State state) {
+        ArchCore.checkUiThread();
         moveToState(state);
     }
 
@@ -108,8 +110,8 @@ public class LifecycleRegistry extends Lifecycle {
      * @param event The event that was received
      */
     public void handleLifecycleEvent(@Nonnull Event event) {
-        State next = getStateAfter(event);
-        moveToState(next);
+        ArchCore.checkUiThread();
+        moveToState(event.getTargetState());
     }
 
     private void moveToState(State next) {
@@ -140,12 +142,14 @@ public class LifecycleRegistry extends Lifecycle {
         ObserverWithState previous = mObserverMap.ceil(observer);
 
         State siblingState = previous != null ? previous.mState : null;
-        State parentState = mParentStates.peekFirst();
+        State parentState = !mParentStates.isEmpty() ? mParentStates.get(mParentStates.size() - 1)
+                : null;
         return min(min(mState, siblingState), parentState);
     }
 
     @Override
     public void addObserver(@Nonnull LifecycleObserver observer) {
+        ArchCore.checkUiThread();
         State initialState = mState == DESTROYED ? DESTROYED : INITIALIZED;
         ObserverWithState statefulObserver = new ObserverWithState(observer, initialState);
         ObserverWithState previous = mObserverMap.putIfAbsent(statefulObserver);
@@ -165,7 +169,11 @@ public class LifecycleRegistry extends Lifecycle {
         while ((statefulObserver.mState.compareTo(targetState) < 0
                 && mObserverMap.contains(observer))) {
             pushParentState(statefulObserver.mState);
-            statefulObserver.dispatchEvent(lifecycleOwner, upEvent(statefulObserver.mState));
+            final Event event = Event.upFrom(statefulObserver.mState);
+            if (event == null) {
+                throw new IllegalStateException("no event up from " + statefulObserver.mState);
+            }
+            statefulObserver.dispatchEvent(lifecycleOwner, event);
             popParentState();
             // mState / sibling may have been changed recalculate
             targetState = calculateTargetState(observer);
@@ -179,15 +187,16 @@ public class LifecycleRegistry extends Lifecycle {
     }
 
     private void popParentState() {
-        mParentStates.removeFirst();
+        mParentStates.remove(mParentStates.size() - 1);
     }
 
     private void pushParentState(State state) {
-        mParentStates.addFirst(state);
+        mParentStates.add(state);
     }
 
     @Override
     public void removeObserver(@Nonnull LifecycleObserver observer) {
+        ArchCore.checkUiThread();
         // we consciously decided not to send destruction events here in opposition to addObserver.
         // Our reasons for that:
         // 1. These events haven't yet happened at all. In contrast to events in addObservers, that
@@ -209,6 +218,7 @@ public class LifecycleRegistry extends Lifecycle {
      * @return The number of observers.
      */
     public int getObserverCount() {
+        ArchCore.checkUiThread();
         return mObserverMap.size();
     }
 
@@ -216,33 +226,6 @@ public class LifecycleRegistry extends Lifecycle {
     @Override
     public State getCurrentState() {
         return mState;
-    }
-
-    static State getStateAfter(Event event) {
-        return switch (event) {
-            case ON_CREATE, ON_STOP -> CREATED;
-            case ON_START, ON_PAUSE -> STARTED;
-            case ON_RESUME -> RESUMED;
-            case ON_DESTROY -> DESTROYED;
-        };
-    }
-
-    private static Event downEvent(State state) {
-        return switch (state) {
-            case CREATED -> ON_DESTROY;
-            case STARTED -> ON_STOP;
-            case RESUMED -> ON_PAUSE;
-            default -> throw new IllegalArgumentException("Unexpected state value " + state);
-        };
-    }
-
-    private static Event upEvent(State state) {
-        return switch (state) {
-            case INITIALIZED, DESTROYED -> ON_CREATE;
-            case CREATED -> ON_START;
-            case STARTED -> ON_RESUME;
-            default -> throw new IllegalArgumentException("Unexpected state value " + state);
-        };
     }
 
     private void forwardPass(LifecycleOwner lifecycleOwner) {
@@ -253,7 +236,11 @@ public class LifecycleRegistry extends Lifecycle {
             while ((observer.mState.compareTo(mState) < 0 && !mNewEventOccurred
                     && mObserverMap.contains(observer.mLifecycleObserver))) {
                 pushParentState(observer.mState);
-                observer.dispatchEvent(lifecycleOwner, upEvent(observer.mState));
+                final Event event = Event.upFrom(observer.mState);
+                if (event == null) {
+                    throw new IllegalStateException("no event up from " + observer.mState);
+                }
+                observer.dispatchEvent(lifecycleOwner, event);
                 popParentState();
             }
         }
@@ -266,8 +253,11 @@ public class LifecycleRegistry extends Lifecycle {
             ObserverWithState observer = descendingIterator.next();
             while ((observer.mState.compareTo(mState) > 0 && !mNewEventOccurred
                     && mObserverMap.contains(observer.mLifecycleObserver))) {
-                Event event = downEvent(observer.mState);
-                pushParentState(getStateAfter(event));
+                Event event = Event.downFrom(observer.mState);
+                if (event == null) {
+                    throw new IllegalStateException("no event down from " + observer.mState);
+                }
+                pushParentState(event.getTargetState());
                 observer.dispatchEvent(lifecycleOwner, event);
                 popParentState();
             }
@@ -316,8 +306,8 @@ public class LifecycleRegistry extends Lifecycle {
             return mLifecycleObserver;
         }
 
-        void dispatchEvent(LifecycleOwner owner, Event event) {
-            State newState = getStateAfter(event);
+        void dispatchEvent(LifecycleOwner owner, @Nonnull Event event) {
+            State newState = event.getTargetState();
             mState = min(mState, newState);
             switch (event) {
                 case ON_CREATE -> mLifecycleObserver.onCreate(owner);

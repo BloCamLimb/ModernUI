@@ -21,6 +21,7 @@ package icyllis.modernui.lifecycle;
 import icyllis.modernui.annotation.UiThread;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Defines an object that has a Lifecycle. {@link icyllis.modernui.fragment.Fragment}
@@ -108,7 +109,95 @@ public abstract class Lifecycle {
         /**
          * Constant for onDestroy event of the {@link LifecycleOwner}.
          */
-        ON_DESTROY
+        ON_DESTROY;
+
+        /**
+         * Returns the {@link Lifecycle.Event} that will be reported by a {@link Lifecycle}
+         * leaving the specified {@link Lifecycle.State} to a lower state, or {@code null}
+         * if there is no valid event that can move down from the given state.
+         *
+         * @param state the higher state that the returned event will transition down from
+         * @return the event moving down the lifecycle phases from state
+         */
+        @Nullable
+        public static Event downFrom(@Nonnull State state) {
+            return switch (state) {
+                case CREATED -> ON_DESTROY;
+                case STARTED -> ON_STOP;
+                case RESUMED -> ON_PAUSE;
+                default -> null;
+            };
+        }
+
+        /**
+         * Returns the {@link Lifecycle.Event} that will be reported by a {@link Lifecycle}
+         * entering the specified {@link Lifecycle.State} from a higher state, or {@code null}
+         * if there is no valid event that can move down to the given state.
+         *
+         * @param state the lower state that the returned event will transition down to
+         * @return the event moving down the lifecycle phases to state
+         */
+        @Nullable
+        public static Event downTo(@Nonnull State state) {
+            return switch (state) {
+                case DESTROYED -> ON_DESTROY;
+                case CREATED -> ON_STOP;
+                case STARTED -> ON_PAUSE;
+                default -> null;
+            };
+        }
+
+        /**
+         * Returns the {@link Lifecycle.Event} that will be reported by a {@link Lifecycle}
+         * leaving the specified {@link Lifecycle.State} to a higher state, or {@code null}
+         * if there is no valid event that can move up from the given state.
+         *
+         * @param state the lower state that the returned event will transition up from
+         * @return the event moving up the lifecycle phases from state
+         */
+        @Nullable
+        public static Event upFrom(@Nonnull State state) {
+            return switch (state) {
+                case INITIALIZED -> ON_CREATE;
+                case CREATED -> ON_START;
+                case STARTED -> ON_RESUME;
+                default -> null;
+            };
+        }
+
+        /**
+         * Returns the {@link Lifecycle.Event} that will be reported by a {@link Lifecycle}
+         * entering the specified {@link Lifecycle.State} from a lower state, or {@code null}
+         * if there is no valid event that can move up to the given state.
+         *
+         * @param state the higher state that the returned event will transition up to
+         * @return the event moving up the lifecycle phases to state
+         */
+        @Nullable
+        public static Event upTo(@Nonnull State state) {
+            return switch (state) {
+                case CREATED -> ON_CREATE;
+                case STARTED -> ON_START;
+                case RESUMED -> ON_RESUME;
+                default -> null;
+            };
+        }
+
+        /**
+         * Returns the new {@link Lifecycle.State} of a {@link Lifecycle} that just reported
+         * this {@link Lifecycle.Event}.
+         *
+         * @return the state that will result from this event
+         */
+        @Nonnull
+        public State getTargetState() {
+            return switch (this) {
+                case ON_CREATE, ON_STOP -> State.CREATED;
+                case ON_START, ON_PAUSE -> State.STARTED;
+                case ON_RESUME -> State.RESUMED;
+                case ON_DESTROY -> State.DESTROYED;
+            };
+        }
     }
 
     /**
