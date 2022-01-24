@@ -1,0 +1,30 @@
+modLoader="javafml"
+loaderVersion="[38,)"
+issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
+logoFile= "modernui_logo.png"
+license="Multi-licensing, see https://github.com/BloCamLimb/ModernUI for details"
+
+[[mods]]
+    modId="modernui"
+    version="${version}"
+    displayName="Modern UI"
+    displayURL="https://curseforge.com/minecraft/mc-mods/modern-ui"
+    authors="BloCamLimb"
+    credits="Khronos Group, LWJGL, The Android Open Source Project, et al."
+    description='''
+    Modern UI is a desktop application framework designed for standlone 2D and 3D rendering software development. It makes use of modern 3D graphical APIs and technologies to provide high real-time rendering performance. For good measure, Modern UI improves and optimizes a set of features used by Android Open Source Project and its own set of internationalization supporting text layout engine meeting Unicode specification.
+    This version is an official version that extends to Minecraft and Forge, which combines Modern UI with Minecraft and provides a large number of additional features and modding APIs.
+    '''
+
+[[dependencies.modernui]]
+    modId="forge"
+    mandatory=true
+    versionRange="[38.0.15,)"
+    ordering="NONE"
+    side="BOTH"
+[[dependencies.modernui]]
+    modId="minecraft"
+    mandatory=true
+    versionRange="[1.18, 1.19)"
+    ordering="NONE"
+    side="BOTH"

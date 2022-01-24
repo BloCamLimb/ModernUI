@@ -1,1 +1,0 @@
-MixinConnector: icyllis.modernui.forge.MixinConnector

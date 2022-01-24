@@ -1,0 +1,243 @@
+import net.fabricmc.loom.task.RemapJarTask
+
+plugins {
+    id 'dev.architectury.loom'
+    id 'com.matthewprenger.cursegradle'
+    id 'com.github.johnrengelman.shadow'
+}
+
+version = "${minecraft_version}-${core_version}"
+
+configurations {
+    shadow
+    /*library
+    implementation.extendsFrom(library)*/
+}
+
+loom {
+    silentMojangMappingsLicense()
+    forge {
+        dataGen {
+            mod 'modernui'
+        }
+        mixinConfig "mixins.modernui-forge.json"
+        mixinConfig "mixins.modernui-textmc.json"
+    }
+    launches {
+        data {
+            arg "--existing", file("src/main/resources").absolutePath
+        }
+    }
+    //runConfigs.each { it.setIdeConfigGenerated(true) }
+    addTaskBeforeRun(":${project.name}:classes")
+}
+
+repositories {
+    maven {
+        name "Progwml6 maven"
+        url "https://dvs1.progwml6.com/files/maven/"
+        content {
+            includeGroup 'mezz.jei'
+        }
+    }
+    maven {
+        url 'https://maven.parchmentmc.org/'
+        content {
+            includeGroup 'org.parchmentmc.data'
+        }
+    }
+    flatDir {
+        dir "${rootProject.projectDir}/libs"
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    //mappings minecraft.officialMojangMappings()
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${minecraft_version}:2021.12.19@zip" as String)
+    }
+    forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
+    modCompileOnly "mezz.jei:jei-${minecraft_version}:${jei_version}:api"
+    modRuntime "mezz.jei:jei-${minecraft_version}:${jei_version}"
+
+    implementation(forgeDependencies(project(':ModernUI-Core')))
+    shadow(project(':ModernUI-Core')) {
+        transitive = false
+    }
+
+    implementation "org.openjdk.jmh:jmh-core:1.34"
+    annotationProcessor "org.openjdk.jmh:jmh-generator-annprocess:1.34"
+    implementation "io.github.stephankoelle:jamm:0.4.1"
+
+    implementation(forgeDependencies("com.github.ben-manes.caffeine:caffeine:${caffeine_version}"))
+    implementation(forgeDependencies("com.vladsch.flexmark:flexmark:${flexmark_version}"))
+
+    shadow "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
+    shadow "com.vladsch.flexmark:flexmark:${flexmark_version}"
+
+    shadow ':ModernUI-Fonts-1.0'
+
+    /*implementation('org.apache.maven:maven-artifact') {
+        version {
+            strictly '3.6.3'
+        }
+    }*/
+
+    /*compile(project(":ModernUI-Core")) {
+        transitive = false
+    }*/
+    /*shadow(project(":ModernUI-Core")) {
+        transitive = false
+    }*/
+}
+
+shadowJar {
+    archiveClassifier.set("shadow")
+    configurations = [project.configurations.shadow]
+
+    dependencies {
+        exclude 'icu4j-59.1.jar'
+        exclude 'commons-logging-1.2.jar'
+    }
+
+    relocate 'com.google.errorprone.annotations', 'icyllis.annotations'
+    relocate 'org.checkerframe', 'icyllis.checkerframe'
+    relocate 'com.github.benmanes.caffeine', 'icyllis.caffeine'
+    relocate 'com.vladsch.flexmark', 'icyllis.flexmark'
+    relocate 'org.intellij.lang.annotations', 'icyllis.annotations'
+    relocate 'org.jetbrains.annotations', 'icyllis.annotations'
+
+    exclude 'META-INF/CHANGES'
+    exclude 'META-INF/DEPENDENCIES'
+    exclude 'META-INF/LICENSE**'
+    exclude 'META-INF/NOTICE**'
+    exclude 'META-INF/README**'
+    exclude 'META-INF/maven/**'
+}
+
+remapJar {
+    dependsOn(shadowJar)
+    input.set(shadowJar.archiveFile)
+    archiveClassifier.set("universal")
+}
+
+task remapMavenJar(type: RemapJarTask) {
+    dependsOn(jar)
+    input.set(jar.archiveFile)
+    toM.set("srg") // to srg names
+    addNestedDependencies.set(true)
+    remapAccessWidener.set(true)
+    archiveClassifier.set("maven")
+}
+
+if (project.hasProperty("jks")) {
+    remapJar.doLast {
+        ant.signjar(
+                keypass: project.getProperty("jks_keypass"),
+                storepass: project.getProperty("jks_pass"),
+                jar: remapJar.archiveFile.get(),
+                storetype: 'jks',
+                keystore: project.getProperty("jks"),
+                alias: project.getProperty("jks_alias")
+        )
+    }
+}
+
+processResources {
+    inputs.property 'version', core_version
+
+    filesMatching("META-INF/mods.toml") {
+        expand 'version': core_version
+    }
+}
+
+jar {
+    manifest {
+        attributes([
+                "Specification-Title"     : "ModernUI-Forge",
+                "Specification-Vendor"    : "BloCamLimb",
+                "Specification-Version"   : "2",
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : project.version,
+                "Implementation-Vendor"   : "BloCamLimb",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+publishing {
+    publications {
+        mavenForge(MavenPublication) {
+            artifact(remapMavenJar.archiveFile) {
+                builtBy build
+            }
+            artifact(sourcesJar.archiveFile) {
+                builtBy build
+                classifier 'sources'
+            }
+            artifactId = project.name
+            groupId = project.group
+            version = project.version
+
+            pom {
+                artifactId = project.name
+                groupId = project.group
+                version = project.version
+                name = rootProject.name
+                packaging = 'pom'
+                scm {
+                    url = 'https://github.com/BloCamLimb/ModernUI.git'
+                }
+                issueManagement {
+                    system = 'github'
+                    url = 'https://github.com/BloCamLimb/ModernUI/issues'
+                }
+                licenses {
+                    license {
+                        name = 'LGPL-3.0-or-later'
+                        url = 'https://www.gnu.org/licenses/lgpl-3.0.en.html'
+                        distribution = 'repo'
+                    }
+                }
+                // do not provide any dependencies here, since this is a minecraft development
+                /*withXml {
+                    def dependenciesNode = asNode().appendNode('dependencies')
+                    configurations.library.allDependencies.each {
+                        def dependencyNode = dependenciesNode.appendNode('dependency')
+                        dependencyNode.appendNode('groupId', it.group)
+                        dependencyNode.appendNode('artifactId', it.name)
+                        dependencyNode.appendNode('version', it.version)
+                        dependencyNode.appendNode('scope', 'compile')
+                    }
+                }*/
+            }
+        }
+    }
+}
+
+/*if (project.hasProperty('curseforge_api')) {
+    curseforge {
+        apiKey = project.getProperty('curseforge_api')
+        project {
+            id = '352491'
+            changelogType = 'markdown'
+            changelog = rootProject.file('changelogs.md')
+            releaseType = "${release_type}"
+            relations {
+                incompatible 'emojiful'
+            }
+            mainArtifact(remapJar) {
+                displayName = "${rootProject.name}-${rootProject.version}"
+            }
+            addGameVersion '1.16.5'
+        }
+        options {
+            debug = true
+            detectNewerJava = true
+            forgeGradleIntegration = false
+        }
+    }
+}*/
