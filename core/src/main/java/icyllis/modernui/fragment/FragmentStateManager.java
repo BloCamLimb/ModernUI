@@ -215,7 +215,7 @@ final class FragmentStateManager {
                         case Fragment.ACTIVITY_CREATED -> stop();
                         case Fragment.AWAITING_EXIT_EFFECTS -> {
                             if (FragmentManager.DEBUG) {
-                                LOGGER.debug(MARKER, "movefrom ACTIVITY_CREATED: " + mFragment);
+                                LOGGER.info(MARKER, "movefrom ACTIVITY_CREATED: " + mFragment);
                             }
                             if (mFragment.mView != null && mFragment.mContainer != null) {
                                 SpecialEffectsController controller = SpecialEffectsController
@@ -264,7 +264,7 @@ final class FragmentStateManager {
     void ensureInflatedView() {
         if (mFragment.mFromLayout && mFragment.mInLayout && !mFragment.mPerformedCreateView) {
             if (FragmentManager.DEBUG) {
-                LOGGER.debug(MARKER, "moveto CREATE_VIEW: " + mFragment);
+                LOGGER.info(MARKER, "moveto CREATE_VIEW: " + mFragment);
             }
             mFragment.performCreateView(/*mFragment.performGetLayoutInflater(
                     mFragment.mSavedFragmentState), */null, mFragment.mSavedFragmentState);
@@ -282,7 +282,7 @@ final class FragmentStateManager {
 
     void attach() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "moveto ATTACHED: " + mFragment);
+            LOGGER.info(MARKER, "moveto ATTACHED: " + mFragment);
         }
         mFragment.mHost = mFragment.mFragmentManager.getHost();
         mFragment.mParentFragment = mFragment.mFragmentManager.getParent();
@@ -293,7 +293,7 @@ final class FragmentStateManager {
 
     void create() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "moveto CREATED: " + mFragment);
+            LOGGER.info(MARKER, "moveto CREATED: " + mFragment);
         }
         if (!mFragment.mIsCreated) {
             mDispatcher.dispatchOnFragmentPreCreated(
@@ -314,7 +314,7 @@ final class FragmentStateManager {
             return;
         }
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "moveto CREATE_VIEW: {}", mFragment);
+            LOGGER.info(MARKER, "moveto CREATE_VIEW: {}", mFragment);
         }
         ViewGroup container = null;
         if (mFragment.mContainer != null) {
@@ -386,14 +386,14 @@ final class FragmentStateManager {
 
     void activityCreated() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "moveto ACTIVITY_CREATED: " + mFragment);
+            LOGGER.info(MARKER, "moveto ACTIVITY_CREATED: " + mFragment);
         }
         mFragment.performActivityCreated();
     }
 
     void start() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "moveto STARTED: " + mFragment);
+            LOGGER.info(MARKER, "moveto STARTED: " + mFragment);
         }
         mFragment.performStart();
         mDispatcher.dispatchOnFragmentStarted(mFragment, false);
@@ -401,7 +401,7 @@ final class FragmentStateManager {
 
     void resume() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "moveto RESUMED: " + mFragment);
+            LOGGER.info(MARKER, "moveto RESUMED: " + mFragment);
         }
         View focusedView = mFragment.getFocusedView();
         if (focusedView != null && isFragmentViewChild(focusedView)) {
@@ -436,7 +436,7 @@ final class FragmentStateManager {
 
     void pause() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "movefrom RESUMED: " + mFragment);
+            LOGGER.info(MARKER, "movefrom RESUMED: " + mFragment);
         }
         mFragment.performPause();
         mDispatcher.dispatchOnFragmentPaused(mFragment, false);
@@ -444,7 +444,7 @@ final class FragmentStateManager {
 
     void stop() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "movefrom STARTED: " + mFragment);
+            LOGGER.info(MARKER, "movefrom STARTED: " + mFragment);
         }
         mFragment.performStop();
         mDispatcher.dispatchOnFragmentStopped(mFragment, false);
@@ -452,7 +452,7 @@ final class FragmentStateManager {
 
     void destroyFragmentView() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "movefrom CREATE_VIEW: " + mFragment);
+            LOGGER.info(MARKER, "movefrom CREATE_VIEW: " + mFragment);
         }
         // In cases where we never got up to AWAITING_EXIT_EFFECTS, we
         // need to manually remove the view from the container to reverse
@@ -473,7 +473,7 @@ final class FragmentStateManager {
 
     void destroy() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "movefrom CREATED: " + mFragment);
+            LOGGER.info(MARKER, "movefrom CREATED: " + mFragment);
         }
         boolean beingRemoved = mFragment.mRemoving && !mFragment.isInBackStack();
         boolean shouldDestroy = beingRemoved
@@ -499,7 +499,7 @@ final class FragmentStateManager {
 
     void detach() {
         if (FragmentManager.DEBUG) {
-            LOGGER.debug(MARKER, "movefrom ATTACHED: " + mFragment);
+            LOGGER.info(MARKER, "movefrom ATTACHED: " + mFragment);
         }
         mFragment.performDetach();
         mDispatcher.dispatchOnFragmentDetached(
@@ -511,7 +511,7 @@ final class FragmentStateManager {
         boolean beingRemoved = mFragment.mRemoving && !mFragment.isInBackStack();
         if (beingRemoved || mFragmentStore.getViewModel().shouldDestroy(mFragment)) {
             if (FragmentManager.DEBUG) {
-                LOGGER.debug(MARKER, "initState called for fragment: " + mFragment);
+                LOGGER.info(MARKER, "initState called for fragment: " + mFragment);
             }
             mFragment.initState();
         }

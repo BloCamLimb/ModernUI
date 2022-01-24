@@ -334,10 +334,10 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
     // Called when open a screen from Modern UI, or back to the screen
     void open(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
-            mHandler.post(this::susLayoutTransition);
             if (mFragment != null) {
                 mFragments.getFragmentManager().beginTransaction()
                         .add(content, mFragment, "main")
+                        .runOnCommit(this::resetCanvasLocked)
                         .commit();
             }
             mHandler.post(this::revLayoutTransition);
@@ -861,9 +861,10 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         mHandler.sendEmptyMessage(MSG_SET_FRAME);
     }
 
-    private void performPostRemoved() {
-        beginRecording(mWindow.getWidth(), mWindow.getHeight());
-        //mDecor.removeAllViews();
+    private void resetCanvasLocked() {
+        synchronized (mRenderLock) {
+            mCanvas.reset(mWindow.getWidth(), mWindow.getHeight());
+        }
     }
 
     void removed() {
@@ -874,12 +875,12 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         if (mCallback != null) {
             mCallback = null;
         }
+        mHandler.post(this::susLayoutTransition);
         if (mFragment != null) {
             mFragments.getFragmentManager().beginTransaction()
                     .remove(mFragment)
                     .commit();
         }
-        mHandler.post(this::performPostRemoved);
         updatePointerIcon(null);
         applyPointerIcon();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
