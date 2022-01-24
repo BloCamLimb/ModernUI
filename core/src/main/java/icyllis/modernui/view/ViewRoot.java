@@ -307,6 +307,7 @@ public abstract class ViewRoot implements ViewParent {
                             }
                         }*/
                         //TODO focus
+                        onKeyEvent(event);
                     } else {
                         mView.dispatchPointerEvent((MotionEvent) e);
                     }
@@ -318,6 +319,9 @@ public abstract class ViewRoot implements ViewParent {
             // drop all
             mInputEvents.clear();
         }
+    }
+
+    protected void onKeyEvent(KeyEvent event) {
     }
 
     /*boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {

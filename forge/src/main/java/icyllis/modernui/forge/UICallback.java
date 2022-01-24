@@ -18,79 +18,104 @@
 
 package icyllis.modernui.forge;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.fragment.FragmentManager;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
-import icyllis.modernui.widget.FrameLayout;
+import icyllis.modernui.fragment.Fragment;
+import icyllis.modernui.view.KeyEvent;
+import net.minecraft.client.Minecraft;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
 
 /**
- * Callback for handling user interface lifecycle events. Methods will be invoked
- * on UI thread unless otherwise specified.
- * <p>
- * To initiate this on the client side, call {@link #startLifecycle()} from client
- * main thread. In this case, this is served as a local interaction model, the server
- * will not intersect with this before. Otherwise, initiate this with a network model
- * via {@link OpenMenuEvent#setCallback(UICallback)}.
+ * Callback of a screen. Methods will be invoked from different threads.
+ * Null represents using default values.
+ *
+ * @see MuiForgeApi#openGui(Fragment, UICallback)
+ * @see OpenMenuEvent#set(Fragment, UICallback)
  */
 @OnlyIn(Dist.CLIENT)
-@UiThread
-public abstract class UICallback {
-
-    // Constant IDs for Framework package.
-    public static final int content = 0x01020001;
+public class UICallback {
 
     /**
-     * Start the lifecycle of user interface with this callback and create views.
-     * This method must be called from client main thread.
+     * Determine whether the key event is considered as a back key.
+     * A back key will perform back stack operation and close the screen.
      * <p>
-     * This is served as a local interaction model, the server will not intersect with this before.
+     * Call Frequency: a key pressed at least.
      * <p>
-     * Note that this callback can even be started multiple times. But in this case,
-     * you need to care about the lifecycle, since it is not associated with this callback.
+     * Default value: Escape for {@link MuiForgeApi#openGui(Fragment)}, Escape and Inventory Key (default is E)
+     * for {@link MuiForgeApi#openMenu(Player, MenuConstructor)}.
+     *
+     * @param keyCode the key code, like {@link KeyEvent#KEY_E} (equivalent to GLFW)
+     * @param event   the key event
+     * @return whether the key event is considered as a back key
+     */
+    @UiThread
+    public boolean isBackKey(int keyCode, @Nonnull KeyEvent event) {
+        if (keyCode == KeyEvent.KEY_ESCAPE)
+            return true;
+        InputConstants.Key key = InputConstants.getKey(keyCode, event.getScanCode());
+        return Minecraft.getInstance().options.keyInventory.isActiveAndMatches(key);
+    }
+
+    /**
+     * Should the screen be closed from an input event.
+     *
+     * @return whether the screen should close
      */
     @MainThread
-    public final void startLifecycle() {
-        ArchCore.checkMainThread();
-        UIManager.sInstance.start(this);
+    public boolean shouldClose() {
+        return true;
     }
 
     /**
-     * Called when the UI is initializing. You should call
-     * {@link #setContentView(View, ViewGroup.LayoutParams)} to set the view.
-     */
-    protected abstract void onCreate();
-
-    /**
-     * Set the content view for the UI, this is the top-level view that apps can add.
-     * After this method is called, all child views of the root view are removed.
+     * Determine whether the screen should pause the game. This only works in a single-player
+     * world without opening to LAN. Menu screen never pause game.
      * <p>
-     * Note that the layout params match the root view (a container view), it must be a subclass
-     * of {@link FrameLayout}, thus you can use {@link FrameLayout.LayoutParams} safely.
+     * Call Frequency: each tick.
+     * <p>
+     * Default value: true for {@link MuiForgeApi#openGui(Fragment)}
      *
-     * @param view   content view
-     * @param params layout params of content view
+     * @return whether to pause game
      */
-    public void setContentView(@Nonnull View view, @Nonnull ViewGroup.LayoutParams params) {
-        UIManager.sInstance.setContentView(view, params);
-    }
-
-    //TODO
-    protected void onDestroy() {
+    @MainThread
+    public boolean isPauseScreen() {
+        return false;
     }
 
     /**
-     * Return the FragmentManager for interacting with fragments associated
-     * with this callback.
+     * Determine whether the screen should draw a default background. The background
+     * can be configured according to user preference.
+     * <p>
+     * Call Frequency: each frame.
+     * <p>
+     * Default value: false for {@link MuiForgeApi#openGui(Fragment)}, true for {@link MuiForgeApi#openMenu(Player,
+     * MenuConstructor)}.
+     *
+     * @return whether to draw a default background
      */
-    @Nonnull
-    public FragmentManager getFragmentManager() {
-        return UIManager.sInstance.mFragments.getFragmentManager();
+    @RenderThread
+    public boolean hasDefaultBackground() {
+        return true;
+    }
+
+    /**
+     * Determine whether the screen should blur the game scene when opened. The blur
+     * can be configured according to user preference.
+     * <p>
+     * Call Frequency: the screen is showing.
+     * <p>
+     * Default value: true
+     *
+     * @return whether the game world should be blurred
+     */
+    @RenderThread
+    public boolean shouldBlurBackground() {
+        return true;
     }
 }

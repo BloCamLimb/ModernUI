@@ -18,6 +18,7 @@
 
 package icyllis.modernui.forge;
 
+import icyllis.modernui.fragment.Fragment;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
@@ -43,7 +44,7 @@ import java.util.function.Consumer;
  * &#64;SubscribeEvent
  * static void onMenuOpen(OpenMenuEvent event) {
  *     if (event.getMenu().getType() == Registry.TEST_MENU) {
- *         event.setCallback(new TestUI());
+ *         event.set(new TestFragment());
  *     }
  * }
  * </pre>
@@ -55,11 +56,13 @@ import java.util.function.Consumer;
  */
 @Cancelable
 @OnlyIn(Dist.CLIENT)
-public class OpenMenuEvent extends Event implements IModBusEvent {
+public final class OpenMenuEvent extends Event implements IModBusEvent {
 
     @Nonnull
     private final AbstractContainerMenu mMenu;
 
+    @Nullable
+    private Fragment mFragment;
     @Nullable
     private UICallback mCallback;
 
@@ -78,20 +81,35 @@ public class OpenMenuEvent extends Event implements IModBusEvent {
     }
 
     /**
-     * Set the user interface callback for the menu. The event will be auto canceled
-     * if callback is available.
+     * Set the fragment for the menu. The event will be auto canceled.
      *
-     * @param callback the UI callback
+     * @param fragment the fragment
      */
-    public void setCallback(@Nullable UICallback callback) {
+    public void set(@Nonnull Fragment fragment) {
+        set(fragment, null);
+    }
+
+    /**
+     * Set the fragment for the menu. The event will be auto canceled.
+     *
+     * @param fragment the fragment
+     * @param callback the UI callback, null meaning a default setup
+     */
+    public void set(@Nonnull Fragment fragment, @Nullable UICallback callback) {
+        mFragment = fragment;
         mCallback = callback;
-        if (callback != null && !isCanceled()) {
+        if (!isCanceled()) {
             setCanceled(true);
         }
     }
 
     @Nullable
-    public UICallback getCallback() {
+    Fragment getFragment() {
+        return mFragment;
+    }
+
+    @Nullable
+    UICallback getCallback() {
         return mCallback;
     }
 }

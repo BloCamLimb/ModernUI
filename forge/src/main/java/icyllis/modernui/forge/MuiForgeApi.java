@@ -20,6 +20,10 @@ package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.math.MathUtil;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -141,12 +145,49 @@ public final class MuiForgeApi {
     }
 
     /**
+     * Start the lifecycle of user interface with the fragment and create views.
+     * This method must be called from client side main thread.
+     * <p>
+     * This is served as a local interaction model, the server will not intersect with this before.
+     * Otherwise, initiate this with a network model via {@link OpenMenuEvent#set(Fragment)})}.
+     * <p>
+     * Note that the fragment can even be reused, but it's not encouraged.
+     *
+     * @param fragment the fragment
+     */
+    @OnlyIn(Dist.CLIENT)
+    @MainThread
+    public static void openGui(@Nonnull Fragment fragment) {
+        openGui(fragment, null);
+    }
+
+    /**
+     * Start the lifecycle of user interface with the fragment and create views.
+     * This method must be called from client side main thread.
+     * <p>
+     * This is served as a local interaction model, the server will not intersect with this before.
+     * Otherwise, initiate this with a network model via {@link OpenMenuEvent#set(Fragment)})}.
+     * <p>
+     * Note that the fragment can even be reused, but it's not encouraged.
+     *
+     * @param fragment the fragment
+     * @param callback the UI callback, null meaning a default setup
+     */
+    @OnlyIn(Dist.CLIENT)
+    @MainThread
+    public static void openGui(@Nonnull Fragment fragment, @Nullable UICallback callback) {
+        ArchCore.checkMainThread();
+        UIManager.sInstance.start(fragment, callback);
+    }
+
+    /**
      * Get the elapsed time since the current screen is set, updated every frame on Render thread.
      * Ignoring game paused.
      *
      * @return elapsed time in milliseconds
      */
     @OnlyIn(Dist.CLIENT)
+    @RenderThread
     public static long getElapsedTime() {
         return UIManager.sInstance.getElapsedTime();
     }
@@ -157,6 +198,7 @@ public final class MuiForgeApi {
      * @return frame time in milliseconds
      */
     @OnlyIn(Dist.CLIENT)
+    @RenderThread
     public static long getFrameTime() {
         return UIManager.sInstance.getFrameTime();
     }

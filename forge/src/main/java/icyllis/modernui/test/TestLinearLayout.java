@@ -383,7 +383,6 @@ public class TestLinearLayout extends LinearLayout {
         return true;
     }
 
-    @Override
     public void tick() {
         ticks++;
         if ((ticks & 15) == 0) {
@@ -458,9 +457,7 @@ public class TestLinearLayout extends LinearLayout {
             canvas.drawText("G", 0, 1, offset, offsetY + 24, mTextPaint);
         }
 
-        @Override
         public void tick() {
-            super.tick();
             mTicks++;
             if (mTicks % 40 == 0) {
                 animation.invert();

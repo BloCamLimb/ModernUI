@@ -1441,13 +1441,6 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Called from client thread every tick on pre-tick, to update or cache something
-     */
-    @Deprecated
-    public void tick() {
-    }
-
-    /**
      * Specifies the rectangle area of this view and all its descendants.
      * <p>
      * Derived classes should NOT override this method for any reason.

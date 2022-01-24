@@ -2822,15 +2822,6 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    @Override
-    public void tick() {
-        final View[] views = mChildren;
-        final int count = mChildrenCount;
-        for (int i = 0; i < count; i++) {
-            views[i].tick();
-        }
-    }
-
     /**
      * Returns a safe set of layout parameters based on the supplied layout params.
      * When a ViewGroup is passed a View whose layout params do not pass the test of

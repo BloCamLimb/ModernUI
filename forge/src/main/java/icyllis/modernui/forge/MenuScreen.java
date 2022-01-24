@@ -19,9 +19,7 @@
 package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.ModernUI;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.components.Widget;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.world.entity.player.Inventory;
@@ -61,14 +59,12 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     protected void init() {
         super.init();
-        UIManager.sInstance.create(this);
+        UIManager.sInstance.open(this);
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        this.width = width;
-        this.height = height;
-        init();
+        super.resize(minecraft, width, height);
         UIManager.sInstance.resize();
         //MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget,
         // this::widget));
@@ -79,16 +75,11 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
                 .getMainWindow().getHeight());*/
     }
 
-    private void widget(Widget widget) {
-        if (widget != null) {
-            ModernUI.LOGGER.warn(UIManager.MARKER, "Usage of {} is deprecated in Modern UI", widget);
-        }
-    }
-
     @Override
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
-        //TODO configurable bg
-        renderBackground(poseStack);
+        if (UIManager.sInstance.mCallback == null || UIManager.sInstance.mCallback.hasDefaultBackground()) {
+            renderBackground(poseStack);
+        }
         UIManager.sInstance.render();
     }
 
@@ -99,7 +90,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     public void removed() {
         super.removed();
-        UIManager.sInstance.stop();
+        UIManager.sInstance.removed();
     }
 
     // IMPL - GuiEventListener
@@ -133,39 +124,6 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        /*if (host.screenKeyDown(keyCode, scanCode, modifiers)) {
-            return true;
-        } else {
-            InputConstants.Key mouseKey = InputConstants.getKey(keyCode, scanCode);
-            if (keyCode == GLFW.GLFW_KEY_ESCAPE || Objects.requireNonNull(this.minecraft).options.keyInventory
-            .isActiveAndMatches(mouseKey)) {
-                if (host.onBackPressed()) {
-                    return true;
-                }
-                Objects.requireNonNull(Objects.requireNonNull(this.minecraft).player).closeContainer();
-                return true;
-            }
-            if (keyCode == GLFW.GLFW_KEY_TAB) {
-                boolean searchNext = !hasShiftDown();
-                if (!host.sChangeKeyboard(searchNext)) {
-                    return host.sChangeKeyboard(searchNext);
-                }
-                return true;
-            }
-
-            if (this.checkHotbarKeyPressed(keyCode, scanCode))
-                return true;
-            if (this.hoveredSlot != null && this.hoveredSlot.hasItem()) {
-                if (this.minecraft.options.keyPickItem.isActiveAndMatches(mouseKey)) {
-                    this.slotClicked(this.hoveredSlot, this.hoveredSlot.index, 0, ClickType.CLONE);
-                    return true;
-                } else if (this.minecraft.options.keyDrop.isActiveAndMatches(mouseKey)) {
-                    this.slotClicked(this.hoveredSlot, this.hoveredSlot.index, hasControlDown() ? 1 : 0, ClickType
-                    .THROW);
-                    return true;
-                }
-            } else return this.minecraft.options.keyDrop.isActiveAndMatches(mouseKey);
-        }*/
         return false;
     }
 
