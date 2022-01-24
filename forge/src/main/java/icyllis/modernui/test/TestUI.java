@@ -24,11 +24,4 @@ import icyllis.modernui.fragment.FragmentTransaction;
 
 public class TestUI extends UICallback {
 
-    @Override
-    protected void onCreate() {
-        ArchCore.getUiHandler().postDelayed(() -> getFragmentManager().beginTransaction()
-                .add(content, new TestFragment())
-                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_FADE)
-                .commit(), 1000);
-    }
 }

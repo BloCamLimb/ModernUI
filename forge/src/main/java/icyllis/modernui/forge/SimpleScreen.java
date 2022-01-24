@@ -49,33 +49,36 @@ final class SimpleScreen extends Screen implements MuiScreen {
 
     @Override
     protected void init() {
-        UIManager.sInstance.create(this);
-        //TODO configurable
-        BlurHandler.INSTANCE.forceBlur();
+        super.init();
+        UIManager.sInstance.open(this);
+        if (UIManager.sInstance.mCallback == null || UIManager.sInstance.mCallback.shouldBlurBackground()) {
+            BlurHandler.INSTANCE.forceBlur();
+        }
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
-        this.width = width;
-        this.height = height;
+        super.resize(minecraft, width, height);
         UIManager.sInstance.resize();
     }
 
     @Override
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
+        if (UIManager.sInstance.mCallback != null && UIManager.sInstance.mCallback.hasDefaultBackground()) {
+            renderBackground(poseStack);
+        }
         UIManager.sInstance.render();
     }
 
     @Override
     public void removed() {
         super.removed();
-        UIManager.sInstance.stop();
+        UIManager.sInstance.removed();
     }
 
-    //TODO configurable
     @Override
     public boolean isPauseScreen() {
-        return false;
+        return UIManager.sInstance.mCallback == null || UIManager.sInstance.mCallback.isPauseScreen();
     }
 
     // IMPL - GuiEventListener
@@ -109,21 +112,6 @@ final class SimpleScreen extends Screen implements MuiScreen {
 
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        /*if (host.screenKeyDown(keyCode, scanCode, modifiers)) {
-            return true;
-        } else if (keyCode == GLFW.GLFW_KEY_ESCAPE && shouldCloseOnEsc()) {
-            if (host.onBackPressed()) {
-                return true;
-            }
-            host.closeGui();
-            return true;
-        } else if (keyCode == GLFW.GLFW_KEY_TAB) {
-            boolean searchNext = !hasShiftDown();
-            if (!host.sChangeKeyboard(searchNext)) {
-                return host.sChangeKeyboard(searchNext);
-            }
-            return true;
-        }*/
         return false;
     }
 

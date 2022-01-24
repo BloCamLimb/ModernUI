@@ -25,18 +25,19 @@ import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.forge.CanvasForge;
+import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.forge.CanvasForge;
-import icyllis.modernui.forge.UICallback;
 import icyllis.modernui.text.SpannableString;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.style.ForegroundColorSpan;
+import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.view.Gravity;
@@ -51,19 +52,21 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.Locale;
 
 import static icyllis.modernui.view.ViewConfiguration.dp;
 
-public class TestPauseUI extends UICallback {
+public class TestPauseFragment extends Fragment {
 
     public static final int NETWORK_COLOR = 0xFF295E8A;
 
     private Image mButtonIcon;
 
+    @Nullable
     @Override
-    protected void onCreate() {
+    public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
         var content = new LinearLayout();
         content.setOrientation(LinearLayout.VERTICAL);
 
@@ -160,8 +163,9 @@ public class TestPauseUI extends UICallback {
         int tabSize = dp(340);
         content.addView(tab, new LinearLayout.LayoutParams(tabSize, tabSize));
 
-        setContentView(content, new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+        content.setLayoutParams(new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER));
+        return content;
     }
 
     private static class TabBackground extends Drawable {

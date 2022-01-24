@@ -24,8 +24,8 @@ import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.forge.mixin.AccessOption;
 import icyllis.modernui.forge.mixin.AccessVideoSettings;
 import icyllis.modernui.test.TestContainerMenu;
-import icyllis.modernui.test.TestPauseUI;
-import icyllis.modernui.test.TestUI;
+import icyllis.modernui.test.TestFragment;
+import icyllis.modernui.test.TestPauseFragment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.Option;
 import net.minecraft.client.ProgressOption;
@@ -247,9 +247,9 @@ final class Registration {
     static void onMenuOpen(@Nonnull OpenMenuEvent event) {
         if (event.getMenu() instanceof TestContainerMenu c) {
             if (c.isDiamond()) {
-                event.setCallback(new TestUI());
+                event.set(new TestFragment());
             } else {
-                event.setCallback(new TestPauseUI());
+                event.set(new TestPauseFragment());
             }
         }
     }

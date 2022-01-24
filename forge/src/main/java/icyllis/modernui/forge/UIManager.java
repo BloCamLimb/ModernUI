@@ -27,21 +27,17 @@ import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.*;
-import icyllis.modernui.fragment.FragmentController;
-import icyllis.modernui.fragment.FragmentHostCallback;
+import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.GLSurfaceCanvas;
 import icyllis.modernui.graphics.opengl.GLTexture;
-import icyllis.modernui.lifecycle.ViewModelStore;
-import icyllis.modernui.lifecycle.ViewModelStoreOwner;
+import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.util.TimedAction;
 import icyllis.modernui.view.*;
-import icyllis.modernui.widget.DecorView;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.ChatFormatting;
@@ -90,79 +86,94 @@ import static org.lwjgl.glfw.GLFW.*;
 @ApiStatus.Internal
 @NotThreadSafe
 @OnlyIn(Dist.CLIENT)
-public final class UIManager extends ViewRoot {
+public final class UIManager extends ViewRoot implements LifecycleOwner {
 
-    // logger marker
+    // the logger marker
     static final Marker MARKER = MarkerManager.getMarker("UIManager");
 
-    // config values
+    // configs
     static volatile boolean sPlaySoundOnLoaded;
 
     // the global instance
     static volatile UIManager sInstance;
 
+    // message IDs
     private static final int MSG_DO_FRAME = 1;
     private static final int MSG_SET_FRAME = 2;
 
-    // minecraft client
+    // Constant IDs for Framework package.
+    private static final int content = 0x01020001;
+
+    // minecraft
     private final Minecraft minecraft = Minecraft.getInstance();
 
     // minecraft window
     private final Window mWindow = minecraft.getWindow();
 
     // the top-level view of the window
-    private DecorView mDecor;
+    private FrameLayout mDecor;
 
-    // true if there will be no screen to open
-    private boolean mCloseScreen;
 
-    // indicates whether the current screen is a Modern UI screen, also a callback to the screen
+    /// Task Handling \\\
+
+    // elapsed time from a screen open in milliseconds, Render thread
+    private long mElapsedTimeMillis;
+
+    // time for drawing, Render thread
+    private long mFrameTimeMillis;
+
+    // time for tasks, UI thread
+    private long mUptimeMillis;
+
+    // animation update callback
+    private final LongConsumer mAnimationHandler = AnimationHandler.init();
+    // other animation tasks
+    private final ConcurrentLinkedQueue<TimedAction> mAnimationTasks = new ConcurrentLinkedQueue<>();
+    private final Predicate<? super TimedAction> mAnimationTaskHandler = task -> task.execute(mUptimeMillis);
+
+
+    /// Rendering \\\
+
+    // the UI framebuffer
+    private final GLFramebuffer mFramebuffer;
+    GLSurfaceCanvas mCanvas;
+    private final Matrix4 mProjectionMatrix = new Matrix4();
+
+
+    /// User Interface \\\
+
+    // indicates whether the current screen is a Modern UI screen
     @Nullable
     private MuiScreen mScreen;
 
-    // application UI used to send lifecycle events
-    private UICallback mCallback;
-
-    // a list of UI tasks
-    //private final ConcurrentLinkedQueue<TimedAction> mTasks = new ConcurrentLinkedQueue<>();
-    private final ConcurrentLinkedQueue<TimedAction> mAnimationTasks = new ConcurrentLinkedQueue<>();
-
-    // animation update callback
-    private final LongConsumer mAnimationHandler;
-
-    // elapsed time from a gui open in milliseconds, update every frame
-    private long mElapsedTimeMillis;
-
-    // time for drawing
-    private long mFrameTimeMillis;
-
-    // time for tasks
-    private long mUptimeMillis;
-
-    // lazy loading
-    private final GLFramebuffer mFramebuffer;
-    GLSurfaceCanvas mCanvas;
-
-    private MotionEvent mPendingMouseEvent;
-    private int mButtonState;
-
     private boolean mFirstScreenOpened = false;
-    private boolean mProjectionChanged = false;
+    // true if there will be no screen to open
+    private boolean mCloseScreen;
 
-    private PointerIcon mOldCursor = PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT);
-    private PointerIcon mNewCursor = mOldCursor;
+    // the main fragment used to send lifecycle events
+    private Fragment mFragment;
+    UICallback mCallback;
 
-    private final Matrix4 mProjectionMatrix = new Matrix4();
 
-    private final Predicate<? super TimedAction> mUiHandler = task -> task.execute(mUptimeMillis);
+    /// Lifecycle \\\
 
-    private final Runnable mPerformCreate = this::performCreate;
+    final LifecycleRegistry mFragmentLifecycleRegistry = new LifecycleRegistry(this);
+    private final OnBackPressedDispatcher mOnBackPressedDispatcher =
+            new OnBackPressedDispatcher(() -> minecraft.tell(this::onBackPressed));
 
     private ViewModelStore mViewModelStore;
     FragmentController mFragments;
 
+
+    /// Input Event \\\
+
+    private MotionEvent mPendingMouseEvent;
+    private int mButtonState;
+
+    private PointerIcon mOldCursor = PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT);
+    private PointerIcon mNewCursor = mOldCursor;
+
     private UIManager() {
-        mAnimationHandler = AnimationHandler.init();
         mFramebuffer = new GLFramebuffer(4);
         mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
         mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
@@ -190,13 +201,17 @@ public final class UIManager extends ViewRoot {
     @UiThread
     private static void run() {
         sInstance.init();
-        try {
-            Looper.loop();
-        } catch (Throwable e) {
-            LOGGER.error(MARKER, "An error occurred on UI thread", e);
-            sInstance.dump();
-            if (!ModernUIForge.isDeveloperMode()) {
-                Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(e, "Exception on UI thread"));
+        for (; ; ) {
+            try {
+                Looper.loop();
+            } catch (Throwable e) {
+                LOGGER.error(MARKER, "An error occurred on UI thread", e);
+                // dev can add breakpoints
+                if (!ModernUIForge.isDeveloperMode()) {
+                    sInstance.dump();
+                    Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(e, "Exception on UI thread"));
+                    break;
+                }
             }
         }
     }
@@ -204,10 +219,14 @@ public final class UIManager extends ViewRoot {
     /**
      * Schedule UI and create views.
      *
+     * @param fragment the main fragment
      * @param callback the user interface callbacks
      */
-    void start(@Nonnull UICallback callback) {
+    @MainThread
+    void start(@Nonnull Fragment fragment, @Nullable UICallback callback) {
+        mFragment = fragment;
         mCallback = callback;
+        clearFramebuffer();
         minecraft.setScreen(new SimpleScreen());
     }
 
@@ -215,15 +234,61 @@ public final class UIManager extends ViewRoot {
         assert minecraft.isSameThread();
         final OpenMenuEvent event = new OpenMenuEvent(menu);
         ModernUIForge.post(key.getNamespace(), event);
-        final UICallback callback = event.getCallback();
-        if (callback == null) {
+        final Fragment fragment = event.getFragment();
+        if (fragment == null) {
             p.closeContainer(); // close server menu whatever it is
             LOGGER.warn(MARKER, "No callback set, closing menus. Menu {} keyed {}", menu, key);
             return;
         }
-        mCallback = callback;
+        mFragment = fragment;
+        mCallback = event.getCallback();
+        clearFramebuffer();
         p.containerMenu = menu;
         minecraft.setScreen(new MenuScreen<>(menu, p.getInventory()));
+    }
+
+    void clearFramebuffer() {
+        if (mFramebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
+            mFramebuffer.clearColorBuffer();
+            mFramebuffer.clearDepthStencilBuffer();
+        }
+    }
+
+    void onBackPressed() {
+        if (mScreen == null)
+            return;
+        if (mCallback != null && !mCallback.shouldClose()) {
+            return;
+        }
+        if (mScreen instanceof MenuScreen) {
+            if (minecraft.player != null) {
+                minecraft.player.closeContainer();
+            }
+        } else {
+            minecraft.setScreen(null);
+        }
+    }
+
+    @Override
+    protected void onKeyEvent(KeyEvent event) {
+        if (mScreen != null) {
+            final boolean back;
+            if (mCallback != null) {
+                back = mCallback.isBackKey(event.getKeyCode(), event);
+            } else if (mScreen instanceof MenuScreen) {
+                if (event.getKeyCode() == KeyEvent.KEY_ESCAPE) {
+                    back = true;
+                } else {
+                    InputConstants.Key key = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
+                    back = Minecraft.getInstance().options.keyInventory.isActiveAndMatches(key);
+                }
+            } else {
+                back = event.getKeyCode() == KeyEvent.KEY_ESCAPE;
+            }
+            if (back) {
+                mOnBackPressedDispatcher.onBackPressed();
+            }
+        }
     }
 
     /**
@@ -255,37 +320,43 @@ public final class UIManager extends ViewRoot {
 
     @Nonnull
     @Override
+    public Lifecycle getLifecycle() {
+        return mFragmentLifecycleRegistry;
+    }
+
+    @Nonnull
+    @Override
     protected Canvas beginRecording(int width, int height) {
         mCanvas.reset(width, height);
         return mCanvas;
     }
 
     // Called when open a screen from Modern UI, or back to the screen
-    void create(@Nonnull MuiScreen screen) {
+    void open(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
-            mHandler.post(mPerformCreate);
+            mHandler.post(this::susLayoutTransition);
+            if (mFragment != null) {
+                mFragments.getFragmentManager().beginTransaction()
+                        .add(content, mFragment, "main")
+                        .commit();
+            }
+            mHandler.post(this::revLayoutTransition);
             mScreen = screen;
-
-            // init view of this UI
         }
 
         resize();
     }
 
-    void performCreate() {
+    void susLayoutTransition() {
         LayoutTransition transition = mDecor.getLayoutTransition();
         transition.disableTransitionType(LayoutTransition.APPEARING);
-        mFragments.dispatchStart();
-        mCallback.onCreate();
-        transition.enableTransitionType(LayoutTransition.APPEARING);
-        transition.enableTransitionType(LayoutTransition.DISAPPEARING);
+        transition.disableTransitionType(LayoutTransition.DISAPPEARING);
     }
 
-    void setContentView(@Nonnull View view, @Nonnull ViewGroup.LayoutParams params) {
-        if (mScreen != null) {
-            mDecor.removeAllViews();
-            mDecor.addView(view, params);
-        }
+    void revLayoutTransition() {
+        LayoutTransition transition = mDecor.getLayoutTransition();
+        transition.enableTransitionType(LayoutTransition.APPEARING);
+        transition.enableTransitionType(LayoutTransition.DISAPPEARING);
     }
 
     @SubscribeEvent
@@ -301,7 +372,7 @@ public final class UIManager extends ViewRoot {
         }
 
         if (mCloseScreen) {
-            stop();
+            removed();
             return;
         }
 
@@ -352,12 +423,12 @@ public final class UIManager extends ViewRoot {
     protected void init() {
         long startTime = System.nanoTime();
         super.init();
-        mDecor = new DecorView();
+        mDecor = new FrameLayout();
         // make the root view clickable through, so that views can lose focus
         mDecor.setClickable(true);
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
-        mDecor.setId(UICallback.content);
+        mDecor.setId(content);
 
         LayoutTransition transition = new LayoutTransition();
         transition.disableTransitionType(LayoutTransition.CHANGE_APPEARING);
@@ -372,6 +443,7 @@ public final class UIManager extends ViewRoot {
         mFragments.attachHost(null);
         mFragments.dispatchCreate();
         mFragments.dispatchActivityCreated();
+        mFragments.dispatchStart();
 
         // kick-start
         scheduleTraversals();
@@ -432,7 +504,7 @@ public final class UIManager extends ViewRoot {
         // 3. do animations
         mAnimationHandler.accept(mFrameTimeMillis);
         if (!mAnimationTasks.isEmpty()) {
-            mAnimationTasks.removeIf(mUiHandler);
+            mAnimationTasks.removeIf(mAnimationTaskHandler);
         }
 
         // 4. do traversal
@@ -507,6 +579,7 @@ public final class UIManager extends ViewRoot {
     }
 
     void onMouseButton() {
+        // Only response at most one mouse button event each frame
         if (mPendingMouseEvent != null) {
             enqueueInputEvent(mPendingMouseEvent);
             mPendingMouseEvent = null;
@@ -527,12 +600,6 @@ public final class UIManager extends ViewRoot {
         }
     }
 
-    public static void onUnicodeChar(int codePoint) {
-        if (sInstance.mScreen != null) {
-
-        }
-    }
-
     @SubscribeEvent
     void onPostKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
         if (mScreen != null) {
@@ -540,24 +607,6 @@ public final class UIManager extends ViewRoot {
             KeyEvent keyEvent = KeyEvent.obtain(ArchCore.timeNanos(), action, event.getKey(), 0,
                     event.getModifiers(), event.getScanCode(), 0);
             enqueueInputEvent(keyEvent);
-            if (!mDecor.isFocused() && mDecor.hasFocus()) {
-                return;
-            }
-            if (event.getAction() == GLFW_PRESS) {
-                InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
-                if (mScreen instanceof MenuScreen<?>) {
-                    if (minecraft.options.keyInventory.isActiveAndMatches(key) || event.getKey() == GLFW_KEY_ESCAPE) {
-                        if (minecraft.player != null) {
-                            minecraft.player.closeContainer();
-                            return;
-                        }
-                    }
-                } else if (event.getKey() == GLFW_KEY_ESCAPE) {
-                    //TODO check should close on esc
-                    minecraft.setScreen(null);
-                    return;
-                }
-            }
         }
         if (event.getAction() != GLFW_PRESS || !Screen.hasControlDown()) {
             return;
@@ -599,11 +648,15 @@ public final class UIManager extends ViewRoot {
                 mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
                 break;
 
+            case GLFW_KEY_K:
+                mHandler.post(() -> mDecor.invalidate());
+                break;
+
             case GLFW_KEY_G:
-                if (minecraft.screen == null && minecraft.isLocalServer() &&
+                /*if (minecraft.screen == null && minecraft.isLocalServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished()) {
                     start(new TestPauseUI());
-                }
+                }*/
                 /*minecraft.getLanguageManager().getLanguages().forEach(l ->
                         ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l
                         .getJavaLocale()).isRightToLeft()));*/
@@ -701,10 +754,6 @@ public final class UIManager extends ViewRoot {
         GLSurfaceCanvas canvas = mCanvas;
         GLFramebuffer framebuffer = mFramebuffer;
 
-        if (mProjectionChanged) {
-            // Test
-            mProjectionChanged = false;
-        }
         // Flip Y, setting the origin to the top left
         canvas.setProjection(mProjectionMatrix.setOrthographic(width, -height, 0, 2000));
 
@@ -810,53 +859,30 @@ public final class UIManager extends ViewRoot {
      */
     void resize() {
         mHandler.sendEmptyMessage(MSG_SET_FRAME);
-        mProjectionChanged = true;
     }
 
-    private final Runnable mPerformPostDestroy = () -> {
-        mFragments.dispatchStop();
-        mDecor.getLayoutTransition().disableTransitionType(LayoutTransition.DISAPPEARING);
-        mDecor.removeAllViews();
-    };
+    private void performPostRemoved() {
+        beginRecording(mWindow.getWidth(), mWindow.getHeight());
+        //mDecor.removeAllViews();
+    }
 
-    void stop() {
+    void removed() {
         if ((!mCloseScreen && minecraft.player != null) || mScreen == null) {
             return;
         }
         mScreen = null;
         if (mCallback != null) {
-            final UICallback callback = mCallback;
-            mHandler.post(callback::onDestroy);
             mCallback = null;
         }
+        if (mFragment != null) {
+            mFragments.getFragmentManager().beginTransaction()
+                    .remove(mFragment)
+                    .commit();
+        }
+        mHandler.post(this::performPostRemoved);
         updatePointerIcon(null);
         applyPointerIcon();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-
-        mHandler.post(mPerformPostDestroy);
-    }
-
-    @Deprecated
-    private final Runnable mTick = () -> {
-        if (mView != null) {
-            mView.tick();
-        }
-    };
-
-    @Deprecated
-    @SubscribeEvent
-    void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.START) {
-            //++mTicks;
-            if (mScreen != null && minecraft.screen == mScreen) {
-                mHandler.post(mTick);
-            }
-        }
-        /* else {
-            if (mPendingRepostCursorEvent) {
-                onCursorPos();
-            }
-        }*/
     }
 
     @SubscribeEvent
@@ -890,7 +916,8 @@ public final class UIManager extends ViewRoot {
 
     @UiThread
     class HostCallbacks extends FragmentHostCallback<Object> implements
-            ViewModelStoreOwner {
+            ViewModelStoreOwner,
+            OnBackPressedDispatcherOwner {
         HostCallbacks() {
             super(new Handler(Looper.myLooper()));
             assert ArchCore.isOnUiThread();
@@ -913,6 +940,18 @@ public final class UIManager extends ViewRoot {
         @Override
         public ViewModelStore getViewModelStore() {
             return UIManager.this.mViewModelStore;
+        }
+
+        @Nonnull
+        @Override
+        public OnBackPressedDispatcher getOnBackPressedDispatcher() {
+            return mOnBackPressedDispatcher;
+        }
+
+        @Nonnull
+        @Override
+        public Lifecycle getLifecycle() {
+            return mFragmentLifecycleRegistry;
         }
     }
 
