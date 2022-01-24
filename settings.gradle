@@ -15,6 +15,6 @@ pluginManagement {
 
 rootProject.name = 'ModernUI'
 
-include 'core', 'mod-forge'
+include 'core', 'forge'
 project(':core').name = "ModernUI-Core"
-project(':mod-forge').name = "ModernUI-Forge"
+project(':forge').name = "ModernUI-Forge"

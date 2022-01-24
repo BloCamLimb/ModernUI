@@ -56,8 +56,8 @@ import static icyllis.modernui.ModernUI.LOGGER;
  */
 public final class FragmentManager {
 
-    static final boolean DEBUG = true;
-    static final boolean TRACE = true;
+    static final boolean DEBUG = false;
+    static final boolean TRACE = false;
 
     static final Marker MARKER = MarkerManager.getMarker("FragmentManager");
 
