@@ -330,6 +330,18 @@ public final class GLSurfaceCanvas extends GLCanvas {
         ModernUI.LOGGER.info(MARKER, "Loaded shader programs");
     }
 
+    @Override
+    public void reset(int width, int height) {
+        super.reset(width, height);
+        mDrawOps.clear();
+        mClipRefs.clear();
+        mLayerAlphas.clear();
+        mDrawTexts.clear();
+        mPosColorMemory.clear();
+        mPosColorTexMemory.clear();
+        mUniformMemory.clear();
+    }
+
     /**
      * Set global projection matrix. This is required when window size changed and
      * called before rendering. It should not change in a frame.
