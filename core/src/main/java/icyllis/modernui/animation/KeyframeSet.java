@@ -55,7 +55,7 @@ public class KeyframeSet<T> implements Keyframes<T> {
                 keyframes[i] = Keyframe.ofInt((float) i / (length - 1), values[i]);
             }
         }
-        return new IntKeyframeSet((IntKeyframe[]) keyframes);
+        return new IntKeyframeSet(keyframes);
     }
 
     @Nonnull
@@ -82,7 +82,32 @@ public class KeyframeSet<T> implements Keyframes<T> {
         if (badValue) {
             ModernUI.LOGGER.warn(Animator.MARKER, "Bad value (NaN) in float animator");
         }
-        return new FloatKeyframeSet((FloatKeyframe[]) keyframes);
+        return new FloatKeyframeSet(keyframes);
+    }
+
+    @Nonnull
+    public static KeyframeSet<?> ofKeyframe(@Nonnull Keyframe... keyframes) {
+        if (keyframes.length < 2)
+            throw new IllegalArgumentException();
+        boolean hasFloat = false;
+        boolean hasInt = false;
+        boolean hasOther = false;
+        for (Keyframe keyframe : keyframes) {
+            if (keyframe instanceof FloatKeyframe) {
+                hasFloat = true;
+            } else if (keyframe instanceof IntKeyframe) {
+                hasInt = true;
+            } else {
+                hasOther = true;
+            }
+        }
+        if (hasFloat && !hasInt && !hasOther) {
+            return new FloatKeyframeSet(keyframes);
+        } else if (hasInt && !hasFloat && !hasOther) {
+            return new IntKeyframeSet(keyframes);
+        } else {
+            return new KeyframeSet<>(keyframes);
+        }
     }
 
     @Nonnull

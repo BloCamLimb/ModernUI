@@ -64,7 +64,7 @@ final class SimpleScreen extends Screen implements MuiScreen {
 
     @Override
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
-        if (UIManager.sInstance.mCallback != null && UIManager.sInstance.mCallback.hasDefaultBackground()) {
+        if (UIManager.sInstance.mCallback == null || UIManager.sInstance.mCallback.hasDefaultBackground()) {
             renderBackground(poseStack);
         }
         UIManager.sInstance.render();

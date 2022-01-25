@@ -47,6 +47,8 @@
 
   "gui.modernui.tooltip.thanksOptifine": "此功能由OptiFine提供技术支持",
 
+  "key.modernui.openCenter": "打开操作中心",
+
   "message.modernui.server_shutdown_sec": "服务器将在 %s 秒内关闭",
   "message.modernui.server_shutdown_min": "服务器将在 %s 分钟内关闭",
 

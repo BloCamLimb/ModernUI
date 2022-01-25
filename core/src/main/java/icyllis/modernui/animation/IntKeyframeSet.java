@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
  */
 class IntKeyframeSet extends KeyframeSet<Integer> implements Keyframes.IntKeyframes {
 
-    public IntKeyframeSet(@Nonnull IntKeyframe[] keyframes) {
+    public IntKeyframeSet(@Nonnull Keyframe[] keyframes) {
         super(keyframes);
     }
 

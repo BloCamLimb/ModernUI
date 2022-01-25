@@ -22,6 +22,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.text.FontAtlas;
 import icyllis.modernui.text.GlyphManager;
+import net.minecraft.Util;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -46,8 +47,8 @@ import java.util.function.Function;
 @ApiStatus.Internal
 final class Config {
 
-    static final Client CLIENT;
-    private static final ForgeConfigSpec CLIENT_SPEC;
+    static Client CLIENT;
+    private static ForgeConfigSpec CLIENT_SPEC;
 
     static final Common COMMON;
     private static final ForgeConfigSpec COMMON_SPEC;
@@ -62,9 +63,6 @@ final class Config {
             builder = new ForgeConfigSpec.Builder();
             CLIENT = new Client(builder);
             CLIENT_SPEC = builder.build();
-        } else {
-            CLIENT = null;
-            CLIENT_SPEC = null;
         }
 
         builder = new ForgeConfigSpec.Builder();
@@ -154,14 +152,14 @@ final class Config {
     @OnlyIn(Dist.CLIENT)
     public static class Client {
 
-        private final ForgeConfigSpec.BooleanValue blurEffect;
-        private final ForgeConfigSpec.IntValue animationDuration;
-        private final ForgeConfigSpec.IntValue blurRadius;
-        private final ForgeConfigSpec.ConfigValue<List<? extends String>> backgroundColor;
-        private final ForgeConfigSpec.BooleanValue tooltip;
-        private final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipFill;
-        private final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipStroke;
-        private final ForgeConfigSpec.BooleanValue ding;
+        final ForgeConfigSpec.BooleanValue blurEffect;
+        final ForgeConfigSpec.IntValue animationDuration;
+        final ForgeConfigSpec.IntValue blurRadius;
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> backgroundColor;
+        final ForgeConfigSpec.BooleanValue tooltip;
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipFill;
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipStroke;
+        final ForgeConfigSpec.BooleanValue ding;
         //private final ForgeConfigSpec.BooleanValue hudBars;
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
@@ -283,12 +281,12 @@ final class Config {
                             "This list is only read once when the game is loaded. A game restart is required to reload")
                     .defineList("fontFamily", () -> {
                         List<String> list = new ArrayList<>();
-                        list.add("modernui:font/biliw.otf");
-                        list.add("Calibri");
                         list.add("Segoe UI");
+                        list.add("modernui:font/biliw.otf");
                         list.add("Noto Sans");
                         list.add("Open Sans");
                         list.add("San Francisco");
+                        list.add("Calibri");
                         list.add("Microsoft YaHei UI");
                         list.add("STHeiti");
                         list.add("SimHei");
@@ -297,6 +295,13 @@ final class Config {
                     }, s -> true);
 
             builder.pop();
+        }
+
+        void saveAndReload() {
+            Util.ioPool().execute(() -> {
+                CLIENT_SPEC.save();
+                reload();
+            });
         }
 
         private void reload() {

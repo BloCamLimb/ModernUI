@@ -3,12 +3,16 @@ Changelogs
 ### Modern UI 3.3.0.98 (2022-01-23)
 #### Forge Extension 1.18.1-39.0.5
 * Stabilize Forge API and components
+* Add Center UI (Ctrl+K)
+* Fix several transition and lifecycle bugs
 * Add blur effect to screen background
 * Fix vanilla tooltip text not rendering
-#### Modern Text 1.18.1 (Embedded)
+#### Modern Text Engine 1.18.1
+* Add bootstrap config, OR 1 to disable
 * Fix underline and strikethrough not rendering
-* Close package, to be separated
+* Close package
 #### Core Framework 3.3
+* Always linear sampling font textures
 * Merge view alpha property and transitions
 * Change paint properties
 * Change gradient color ordering
