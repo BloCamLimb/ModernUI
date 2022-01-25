@@ -50,7 +50,7 @@ final class SimpleScreen extends Screen implements MuiScreen {
     @Override
     protected void init() {
         super.init();
-        UIManager.sInstance.open(this);
+        UIManager.sInstance.initScreen(this);
         if (UIManager.sInstance.mCallback == null || UIManager.sInstance.mCallback.shouldBlurBackground()) {
             BlurHandler.INSTANCE.forceBlur();
         }

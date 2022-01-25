@@ -40,6 +40,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import static icyllis.modernui.ModernUI.LOGGER;
 import static java.lang.Math.max;
 
 /**
@@ -1507,25 +1508,44 @@ public class View implements Drawable.Callback {
      */
     protected boolean setFrame(int left, int top, int right, int bottom) {
         if (mLeft != left || mRight != right || mTop != top || mBottom != bottom) {
+            // Remember our drawn bit
+            int drawn = mPrivateFlags & PFLAG_DRAWN;
+
             int oldWidth = mRight - mLeft;
             int oldHeight = mBottom - mTop;
             int newWidth = right - left;
             int newHeight = bottom - top;
             boolean sizeChanged = (newWidth != oldWidth) || (newHeight != oldHeight);
 
+            invalidate();
+
             mLeft = left;
             mTop = top;
             mRight = right;
             mBottom = bottom;
+            mRenderNode.setPosition(mLeft, mTop, mRight, mBottom);
 
             mPrivateFlags |= PFLAG_HAS_BOUNDS;
 
             if (sizeChanged) {
-                onSizeChanged(newWidth, newHeight, oldWidth, oldHeight);
+                sizeChange(newWidth, newHeight, oldWidth, oldHeight);
             }
 
-            invalidate();
+            // If we are visible, force the DRAWN bit to on so that
+            // this invalidate will go through (at least to our parent).
+            // This is because someone may have invalidated this view
+            // before this call to setFrame came in, thereby clearing
+            // the DRAWN bit.
+            mPrivateFlags |= PFLAG_DRAWN;
+
+            // Reset drawn bit to original value (invalidate turns it off)
+            mPrivateFlags |= drawn;
+
+            //mDefaultFocusHighlightSizeChanged = true;
             mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+            /*if (mForegroundInfo != null) {
+                mForegroundInfo.mBoundsChanged = true;
+            }*/
             return true;
         }
         return false;
@@ -3164,9 +3184,31 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Set the horizontal scrolled position of your view. This will cause a call to
+     * {@link #onScrollChanged(int, int, int, int)} and the view will be
+     * invalidated.
+     *
+     * @param value the x position to scroll to
+     */
+    public void setScrollX(int value) {
+        scrollTo(value, mScrollY);
+    }
+
+    /**
+     * Set the vertical scrolled position of your view. This will cause a call to
+     * {@link #onScrollChanged(int, int, int, int)} and the view will be
+     * invalidated.
+     *
+     * @param value the y position to scroll to
+     */
+    public void setScrollY(int value) {
+        scrollTo(mScrollX, value);
+    }
+
+    /**
      * Return the scrolled left position of this view. This is the left edge of
      * the displayed part of your view. You do not need to draw any pixels
-     * farther left, since those are outside of the frame of your view on
+     * farther left, since those are outside the frame of your view on
      * screen.
      *
      * @return The left edge of the displayed part of your view, in pixels.
@@ -3178,7 +3220,7 @@ public class View implements Drawable.Callback {
     /**
      * Return the scrolled top position of this view. This is the top edge of
      * the displayed part of your view. You do not need to draw any pixels above
-     * it, since those are outside of the frame of your view on screen.
+     * it, since those are outside the frame of your view on screen.
      *
      * @return The top edge of the displayed part of your view, in pixels.
      */
@@ -3356,6 +3398,7 @@ public class View implements Drawable.Callback {
             int height = mBottom - mTop;
 
             mLeft = left;
+            mRenderNode.setLeft(left);
 
             sizeChange(mRight - mLeft, height, oldWidth, height);
 
@@ -3387,6 +3430,7 @@ public class View implements Drawable.Callback {
             int oldHeight = mBottom - mTop;
 
             mTop = top;
+            mRenderNode.setTop(mTop);
 
             sizeChange(width, mBottom - mTop, width, oldHeight);
 
@@ -3418,6 +3462,7 @@ public class View implements Drawable.Callback {
             int height = mBottom - mTop;
 
             mRight = right;
+            mRenderNode.setRight(mRight);
 
             sizeChange(mRight - mLeft, height, oldWidth, height);
 
@@ -3449,6 +3494,7 @@ public class View implements Drawable.Callback {
             int oldHeight = mBottom - mTop;
 
             mBottom = bottom;
+            mRenderNode.setBottom(mBottom);
 
             sizeChange(width, mBottom - mTop, width, oldHeight);
 
@@ -3460,23 +3506,23 @@ public class View implements Drawable.Callback {
         onSizeChanged(newWidth, newHeight, oldWidth, oldHeight);
         // If this isn't laid out yet, focus assignment will be handled during the "deferment/
         // backtracking" of requestFocus during layout, so don't touch focus here.
-        //TODO
-        /*if (isLayoutValid()
+        if (isLayoutValid()
                 // Don't touch focus if animating
                 && !(mParent instanceof ViewGroup && ((ViewGroup) mParent).isLayoutSuppressed())) {
             if (newWidth <= 0 || newHeight <= 0) {
                 if (hasFocus()) {
                     clearFocus();
-                    if (mParent instanceof ViewGroup) {
+                    //TODO
+                    /*if (mParent instanceof ViewGroup) {
                         ((ViewGroup) mParent).clearFocusedInCluster();
-                    }
+                    }*/
                 }
             } else if (oldWidth <= 0 || oldHeight <= 0) {
                 if (mParent != null && canTakeFocus()) {
                     mParent.focusableViewAvailable(this);
                 }
             }
-        }*/
+        }
     }
 
     /**
@@ -3487,11 +3533,11 @@ public class View implements Drawable.Callback {
      * Note that the matrix should be only used as read-only (like transforming
      * coordinates). In that case, you should call {@link #hasIdentityMatrix()}
      * first to check if the operation can be skipped, because this method will
-     * create the matrix if not available. However, if you want to change the
+     * return null if not available. However, if you want to change the
      * transform matrix, you should use methods such as {@link #setTranslationX(float)}.
      * The return value may be null, indicating that it is identity.
      *
-     * @return the current transform matrix for the view, may be null
+     * @return the current transform matrix for the view, may be null if identity
      * @see #hasIdentityMatrix()
      * @see #getRotation()
      * @see #getScaleX()
@@ -3501,6 +3547,18 @@ public class View implements Drawable.Callback {
      */
     public final Matrix4 getMatrix() {
         return mRenderNode.getMatrix();
+    }
+
+    /**
+     * Utility method to retrieve the inverse of the current mMatrix property.
+     * We cache the matrix to avoid recalculating it when transform properties
+     * have not changed.
+     *
+     * @return The inverse of the current matrix of this view, may be null if identity
+     * @see #hasIdentityMatrix()
+     */
+    public final Matrix4 getInverseMatrix() {
+        return mRenderNode.getInverseMatrix();
     }
 
     /**
@@ -3515,6 +3573,101 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * The visual x position of this view, in pixels. This is equivalent to the
+     * {@link #setTranslationX(float) translationX} property plus the current
+     * {@link #getLeft() left} property.
+     *
+     * @return The visual x position of this view, in pixels.
+     */
+    public float getX() {
+        return mLeft + getTranslationX();
+    }
+
+    /**
+     * Sets the visual x position of this view, in pixels. This is equivalent to setting the
+     * {@link #setTranslationX(float) translationX} property to be the difference between
+     * the x value passed in and the current {@link #getLeft() left} property.
+     *
+     * @param x The visual x position of this view, in pixels.
+     */
+    public void setX(float x) {
+        setTranslationX(x - mLeft);
+    }
+
+    /**
+     * The visual y position of this view, in pixels. This is equivalent to the
+     * {@link #setTranslationY(float) translationY} property plus the current
+     * {@link #getTop() top} property.
+     *
+     * @return The visual y position of this view, in pixels.
+     */
+    public float getY() {
+        return mTop + getTranslationY();
+    }
+
+    /**
+     * Sets the visual y position of this view, in pixels. This is equivalent to setting the
+     * {@link #setTranslationY(float) translationY} property to be the difference between
+     * the y value passed in and the current {@link #getTop() top} property.
+     *
+     * @param y The visual y position of this view, in pixels.
+     */
+    public void setY(float y) {
+        setTranslationY(y - mTop);
+    }
+
+    /**
+     * The visual z position of this view, in pixels. This is equivalent to the
+     * {@link #setTranslationZ(float) translationZ} property plus the current
+     * {@link #getElevation() elevation} property.
+     *
+     * @return The visual z position of this view, in pixels.
+     */
+    public float getZ() {
+        return getElevation() + getTranslationZ();
+    }
+
+    /**
+     * Sets the visual z position of this view, in pixels. This is equivalent to setting the
+     * {@link #setTranslationZ(float) translationZ} property to be the difference between
+     * the z value passed in and the current {@link #getElevation() elevation} property.
+     *
+     * @param z The visual z position of this view, in pixels.
+     */
+    public void setZ(float z) {
+        setTranslationZ(z - getElevation());
+    }
+
+    /**
+     * The base elevation of this view relative to its parent, in pixels.
+     *
+     * @return The base depth position of the view, in pixels.
+     */
+    public float getElevation() {
+        return mRenderNode.getElevation();
+    }
+
+    /**
+     * Sets the base elevation of this view, in pixels.
+     */
+    public void setElevation(float elevation) {
+        if (mRenderNode.setElevation(elevation)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The horizontal location of this view relative to its {@link #getLeft() left} position.
+     * This position is post-layout, in addition to wherever the object's
+     * layout placed it.
+     *
+     * @return The horizontal position of this view relative to its left position, in pixels.
+     */
+    public float getTranslationX() {
+        return mRenderNode.getTranslationX();
+    }
+
+    /**
      * Sets the horizontal location of this view relative to its {@link #getLeft() left} position.
      * This effectively positions the object post-layout, in addition to wherever the object's
      * layout placed it. This is not used for transition animation.
@@ -3523,7 +3676,285 @@ public class View implements Drawable.Callback {
      *                     in pixels.
      */
     public void setTranslationX(float translationX) {
-        mRenderNode.setTranslationX(translationX);
+        if (mRenderNode.setTranslationX(translationX)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The vertical location of this view relative to its {@link #getTop() top} position.
+     * This position is post-layout, in addition to wherever the object's
+     * layout placed it.
+     *
+     * @return The vertical position of this view relative to its top position,
+     * in pixels.
+     */
+    public float getTranslationY() {
+        return mRenderNode.getTranslationY();
+    }
+
+    /**
+     * Sets the vertical location of this view relative to its {@link #getTop() top} position.
+     * This effectively positions the object post-layout, in addition to wherever the object's
+     * layout placed it.
+     *
+     * @param translationY The vertical position of this view relative to its top position,
+     *                     in pixels.
+     */
+    public void setTranslationY(float translationY) {
+        if (mRenderNode.setTranslationY(translationY)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The depth location of this view relative to its {@link #getElevation() elevation}.
+     *
+     * @return The depth of this view relative to its elevation.
+     */
+    public float getTranslationZ() {
+        return mRenderNode.getTranslationZ();
+    }
+
+    /**
+     * Sets the depth location of this view relative to its {@link #getElevation() elevation}.
+     */
+    public void setTranslationZ(float translationZ) {
+        if (mRenderNode.setTranslationZ(translationZ)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The degrees that the view is rotated around the pivot point.
+     *
+     * @return The degrees of rotation.
+     * @see #setRotation(float)
+     * @see #getPivotX()
+     * @see #getPivotY()
+     */
+    public float getRotation() {
+        return mRenderNode.getRotationZ();
+    }
+
+    /**
+     * Sets the degrees that the view is rotated around the pivot point. Increasing values
+     * result in clockwise rotation.
+     *
+     * @param rotation The degrees of rotation.
+     * @see #getRotation()
+     * @see #getPivotX()
+     * @see #getPivotY()
+     * @see #setRotationX(float)
+     * @see #setRotationY(float)
+     */
+    public void setRotation(float rotation) {
+        if (mRenderNode.setRotationZ(rotation)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The degrees that the view is rotated around the vertical axis through the pivot point.
+     *
+     * @return The degrees of Y rotation.
+     * @see #getPivotX()
+     * @see #getPivotY()
+     * @see #setRotationY(float)
+     */
+    public float getRotationY() {
+        return mRenderNode.getRotationY();
+    }
+
+    /**
+     * Sets the degrees that the view is rotated around the vertical axis through the pivot point.
+     * Increasing values result in counter-clockwise rotation from the viewpoint of looking
+     * down the y-axis.
+     *
+     * @param rotationY The degrees of Y rotation.
+     * @see #getRotationY()
+     * @see #getPivotX()
+     * @see #getPivotY()
+     * @see #setRotation(float)
+     * @see #setRotationX(float)
+     */
+    public void setRotationY(float rotationY) {
+        if (mRenderNode.setRotationY(rotationY)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The degrees that the view is rotated around the horizontal axis through the pivot point.
+     *
+     * @return The degrees of X rotation.
+     * @see #getPivotX()
+     * @see #getPivotY()
+     * @see #setRotationX(float)
+     */
+    public float getRotationX() {
+        return mRenderNode.getRotationX();
+    }
+
+    /**
+     * Sets the degrees that the view is rotated around the horizontal axis through the pivot point.
+     * Increasing values result in clockwise rotation from the viewpoint of looking down the
+     * x-axis.
+     *
+     * @param rotationX The degrees of X rotation.
+     * @see #getRotationX()
+     * @see #getPivotX()
+     * @see #getPivotY()
+     * @see #setRotation(float)
+     * @see #setRotationY(float)
+     */
+    public void setRotationX(float rotationX) {
+        if (mRenderNode.setRotationX(rotationX)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The amount that the view is scaled in x around the pivot point, as a proportion of
+     * the view's unscaled width. A value of 1, the default, means that no scaling is applied.
+     *
+     * <p>By default, this is 1.0f.
+     *
+     * @return The scaling factor.
+     * @see #getPivotX()
+     * @see #getPivotY()
+     */
+    public float getScaleX() {
+        return mRenderNode.getScaleX();
+    }
+
+    /**
+     * Sets the amount that the view is scaled in x around the pivot point, as a proportion of
+     * the view's unscaled width. A value of 1 means that no scaling is applied.
+     *
+     * @param scaleX The scaling factor.
+     * @see #getPivotX()
+     * @see #getPivotY()
+     */
+    public void setScaleX(float scaleX) {
+        if (mRenderNode.setScaleX(scaleX)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The amount that the view is scaled in y around the pivot point, as a proportion of
+     * the view's unscaled height. A value of 1, the default, means that no scaling is applied.
+     *
+     * <p>By default, this is 1.0f.
+     *
+     * @return The scaling factor.
+     * @see #getPivotX()
+     * @see #getPivotY()
+     */
+    public float getScaleY() {
+        return mRenderNode.getScaleY();
+    }
+
+    /**
+     * Sets the amount that the view is scaled in Y around the pivot point, as a proportion of
+     * the view's unscaled width. A value of 1 means that no scaling is applied.
+     *
+     * @param scaleY The scaling factor.
+     * @see #getPivotX()
+     * @see #getPivotY()
+     */
+    public void setScaleY(float scaleY) {
+        if (mRenderNode.setScaleY(scaleY)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The x location of the point around which the view is {@link #setRotation(float) rotated}
+     * and {@link #setScaleX(float) scaled}.
+     *
+     * @return The x location of the pivot point.
+     * @see #getRotation()
+     * @see #getScaleX()
+     * @see #getScaleY()
+     * @see #getPivotY()
+     */
+    public float getPivotX() {
+        return mRenderNode.getPivotX();
+    }
+
+    /**
+     * Sets the x location of the point around which the view is
+     * {@link #setRotation(float) rotated} and {@link #setScaleX(float) scaled}.
+     * By default, the pivot point is centered on the object.
+     * Setting this property disables this behavior and causes the view to use only the
+     * explicitly set pivotX and pivotY values.
+     *
+     * @param pivotX The x location of the pivot point.
+     * @see #getRotation()
+     * @see #getScaleX()
+     * @see #getScaleY()
+     * @see #getPivotY()
+     */
+    public void setPivotX(float pivotX) {
+        if (mRenderNode.setPivotX(pivotX)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * The y location of the point around which the view is {@link #setRotation(float) rotated}
+     * and {@link #setScaleY(float) scaled}.
+     *
+     * @return The y location of the pivot point.
+     * @see #getRotation()
+     * @see #getScaleX()
+     * @see #getScaleY()
+     * @see #getPivotY()
+     */
+    public float getPivotY() {
+        return mRenderNode.getPivotY();
+    }
+
+    /**
+     * Sets the y location of the point around which the view is {@link #setRotation(float) rotated}
+     * and {@link #setScaleY(float) scaled}. By default, the pivot point is centered on the object.
+     * Setting this property disables this behavior and causes the view to use only the
+     * explicitly set pivotX and pivotY values.
+     *
+     * @param pivotY The y location of the pivot point.
+     * @see #getRotation()
+     * @see #getScaleX()
+     * @see #getScaleY()
+     * @see #getPivotY()
+     */
+    public void setPivotY(float pivotY) {
+        if (mRenderNode.setPivotY(pivotY)) {
+            invalidate();
+        }
+    }
+
+    /**
+     * Returns whether a pivot has been set by a call to {@link #setPivotX(float)} or
+     * {@link #setPivotY(float)}. If no pivot has been set then the pivot will be the center
+     * of the view.
+     *
+     * @return True if a pivot has been set, false if the default pivot is being used
+     */
+    public boolean isPivotSet() {
+        return mRenderNode.isPivotExplicitlySet();
+    }
+
+    /**
+     * Clears any pivot previously set by a call to  {@link #setPivotX(float)} or
+     * {@link #setPivotY(float)}. After calling this {@link #isPivotSet()} will be false
+     * and the pivot used for rotation will return to default of being centered on the view.
+     */
+    public void resetPivot() {
+        if (mRenderNode.resetPivot()) {
+            invalidate();
+        }
     }
 
     //TODO WIP
@@ -3577,7 +4008,7 @@ public class View implements Drawable.Callback {
      * should be cleared by calling this method with <code>null</code> as the matrix parameter.
      * Application developers should use transformation methods like {@link #setRotation(float)},
      * {@link #setScaleX(float)}, {@link #setScaleX(float)}, {@link #setTranslationX(float)}}
-     * and {@link #setTranslationY(float)} (float)}} instead.
+     * and {@link #setTranslationY(float)} instead.
      *
      * @param matrix The matrix, null indicates that the matrix should be cleared.
      * @see #getAnimationMatrix()
@@ -3622,7 +4053,7 @@ public class View implements Drawable.Callback {
                 li != null ? li.mOnAttachStateChangeListeners : null;
         if (listeners != null && listeners.size() > 0) {
             // NOTE: because of the use of CopyOnWriteArrayList, we *must* use an iterator to
-            // perform the dispatching. The iterator is a safe-guard against listeners that
+            // perform the dispatching. The iterator is a safeguard against listeners that
             // could mutate the list by calling the various add/remove methods. This prevents
             // the array from being modified while we iterate it.
             for (OnAttachStateChangeListener listener : listeners) {
@@ -3932,7 +4363,7 @@ public class View implements Drawable.Callback {
                             mPrivateFlags2 |= PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL;
                         }
                     } catch (AbstractMethodError e) {
-                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                        LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
                                 " does not fully implement ViewParent", e);
                     }
                     break;
@@ -3966,7 +4397,7 @@ public class View implements Drawable.Callback {
                 try {
                     return mParent.canResolveLayoutDirection();
                 } catch (AbstractMethodError e) {
-                    ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                    LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
                             " does not fully implement ViewParent", e);
                 }
             }
@@ -4106,7 +4537,7 @@ public class View implements Drawable.Callback {
                             return false;
                         }
                     } catch (AbstractMethodError e) {
-                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                        LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
                                 " does not fully implement ViewParent", e);
                         mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED |
                                 PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
@@ -4118,7 +4549,7 @@ public class View implements Drawable.Callback {
                     try {
                         parentResolvedDirection = mParent.getTextDirection();
                     } catch (AbstractMethodError e) {
-                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                        LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
                                 " does not fully implement ViewParent", e);
                         parentResolvedDirection = TEXT_DIRECTION_LTR;
                     }
@@ -4161,7 +4592,7 @@ public class View implements Drawable.Callback {
                 try {
                     return mParent.canResolveTextDirection();
                 } catch (AbstractMethodError e) {
-                    ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                    LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
                             " does not fully implement ViewParent", e);
                 }
             }
@@ -4302,7 +4733,7 @@ public class View implements Drawable.Callback {
                             return false;
                         }
                     } catch (AbstractMethodError e) {
-                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                        LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
                                 " does not fully implement ViewParent", e);
                         mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED |
                                 PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
@@ -4312,7 +4743,7 @@ public class View implements Drawable.Callback {
                     try {
                         parentResolvedTextAlignment = mParent.getTextAlignment();
                     } catch (AbstractMethodError e) {
-                        ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                        LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
                                 " does not fully implement ViewParent", e);
                         parentResolvedTextAlignment = TEXT_ALIGNMENT_GRAVITY;
                     }
@@ -4357,7 +4788,7 @@ public class View implements Drawable.Callback {
                 try {
                     return mParent.canResolveTextAlignment();
                 } catch (AbstractMethodError e) {
-                    ModernUI.LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
+                    LOGGER.error(VIEW_MARKER, mParent.getClass().getSimpleName() +
                             " does not fully implement ViewParent", e);
                 }
             }
@@ -5336,7 +5767,7 @@ public class View implements Drawable.Callback {
      */
     public final boolean startDragAndDrop(@Nullable Object localState, @Nullable DragShadow shadow, int flags) {
         if (mAttachInfo == null) {
-            ModernUI.LOGGER.error(VIEW_MARKER, "startDragAndDrop called out of a window");
+            LOGGER.error(VIEW_MARKER, "startDragAndDrop called out of a window");
             return false;
         }
         return mAttachInfo.mViewRoot.startDragAndDrop(this, localState, shadow, flags);
@@ -6478,6 +6909,193 @@ public class View implements Drawable.Callback {
     };
 
     /**
+     * A Property wrapper around the <code>translationX</code> functionality handled by the
+     * {@link View#setTranslationX(float)} and {@link View#getTranslationX()} methods.
+     */
+    public static final FloatProperty<View> TRANSLATION_X = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setTranslationX(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getTranslationX();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>translationY</code> functionality handled by the
+     * {@link View#setTranslationY(float)} and {@link View#getTranslationY()} methods.
+     */
+    public static final FloatProperty<View> TRANSLATION_Y = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setTranslationY(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getTranslationY();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>translationZ</code> functionality handled by the
+     * {@link View#setTranslationZ(float)} and {@link View#getTranslationZ()} methods.
+     */
+    public static final FloatProperty<View> TRANSLATION_Z = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setTranslationZ(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getTranslationZ();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>x</code> functionality handled by the
+     * {@link View#setX(float)} and {@link View#getX()} methods.
+     */
+    public static final FloatProperty<View> X = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setX(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getX();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>y</code> functionality handled by the
+     * {@link View#setY(float)} and {@link View#getY()} methods.
+     */
+    public static final FloatProperty<View> Y = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setY(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getY();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>z</code> functionality handled by the
+     * {@link View#setZ(float)} and {@link View#getZ()} methods.
+     */
+    public static final FloatProperty<View> Z = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setZ(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getZ();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>rotation</code> functionality handled by the
+     * {@link View#setRotation(float)} and {@link View#getRotation()} methods.
+     */
+    public static final FloatProperty<View> ROTATION = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setRotation(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getRotation();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>rotationX</code> functionality handled by the
+     * {@link View#setRotationX(float)} and {@link View#getRotationX()} methods.
+     */
+    public static final FloatProperty<View> ROTATION_X = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setRotationX(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getRotationX();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>rotationY</code> functionality handled by the
+     * {@link View#setRotationY(float)} and {@link View#getRotationY()} methods.
+     */
+    public static final FloatProperty<View> ROTATION_Y = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setRotationY(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getRotationY();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>scaleX</code> functionality handled by the
+     * {@link View#setScaleX(float)} and {@link View#getScaleX()} methods.
+     */
+    public static final FloatProperty<View> SCALE_X = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setScaleX(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getScaleX();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>scaleY</code> functionality handled by the
+     * {@link View#setScaleY(float)} and {@link View#getScaleY()} methods.
+     */
+    public static final FloatProperty<View> SCALE_Y = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, float value) {
+            object.setScaleY(value);
+        }
+
+        @Nonnull
+        @Override
+        public Float get(@Nonnull View object) {
+            return object.getScaleY();
+        }
+    };
+
+    /**
      * Creates an image that the system displays during the drag and drop operation.
      */
     public static class DragShadow {
@@ -6524,7 +7142,7 @@ public class View implements Drawable.Callback {
             if (view != null) {
                 view.onDraw(canvas);
             } else {
-                ModernUI.LOGGER.error(VIEW_MARKER, "No view found on draw shadow");
+                LOGGER.error(VIEW_MARKER, "No view found on draw shadow");
             }
         }
     }

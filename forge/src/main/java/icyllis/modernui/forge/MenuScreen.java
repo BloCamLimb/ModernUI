@@ -59,7 +59,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     protected void init() {
         super.init();
-        UIManager.sInstance.open(this);
+        UIManager.sInstance.initScreen(this);
     }
 
     @Override

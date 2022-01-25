@@ -86,7 +86,7 @@ import static org.lwjgl.glfw.GLFW.*;
 @ApiStatus.Internal
 @NotThreadSafe
 @OnlyIn(Dist.CLIENT)
-public final class UIManager extends ViewRoot implements LifecycleOwner {
+public final class UIManager implements LifecycleOwner {
 
     // the logger marker
     static final Marker MARKER = MarkerManager.getMarker("UIManager");
@@ -103,12 +103,16 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
 
     // Constant IDs for Framework package.
     private static final int content = 0x01020001;
+    private static final int fragment_container = 0x01020007;
 
     // minecraft
     private final Minecraft minecraft = Minecraft.getInstance();
 
     // minecraft window
     private final Window mWindow = minecraft.getWindow();
+
+    // the view root impl
+    private ViewRootImpl mViewRoot;
 
     // the top-level view of the window
     private FrameLayout mDecor;
@@ -157,12 +161,12 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
 
     /// Lifecycle \\\
 
-    final LifecycleRegistry mFragmentLifecycleRegistry = new LifecycleRegistry(this);
+    LifecycleRegistry mFragmentLifecycleRegistry;
     private final OnBackPressedDispatcher mOnBackPressedDispatcher =
             new OnBackPressedDispatcher(() -> minecraft.tell(this::onBackPressed));
 
     private ViewModelStore mViewModelStore;
-    FragmentController mFragments;
+    FragmentController mFragmentController;
 
 
     /// Input Event \\\
@@ -230,6 +234,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         minecraft.setScreen(new SimpleScreen());
     }
 
+    @MainThread
     void start(LocalPlayer p, AbstractContainerMenu menu, @Nonnull ResourceLocation key) {
         assert minecraft.isSameThread();
         final OpenMenuEvent event = new OpenMenuEvent(menu);
@@ -237,7 +242,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         final Fragment fragment = event.getFragment();
         if (fragment == null) {
             p.closeContainer(); // close server menu whatever it is
-            LOGGER.warn(MARKER, "No callback set, closing menus. Menu {} keyed {}", menu, key);
+            LOGGER.warn(MARKER, "No fragment set, closing {} keyed {}", menu, key);
             return;
         }
         mFragment = fragment;
@@ -269,28 +274,6 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         }
     }
 
-    @Override
-    protected void onKeyEvent(KeyEvent event) {
-        if (mScreen != null) {
-            final boolean back;
-            if (mCallback != null) {
-                back = mCallback.isBackKey(event.getKeyCode(), event);
-            } else if (mScreen instanceof MenuScreen) {
-                if (event.getKeyCode() == KeyEvent.KEY_ESCAPE) {
-                    back = true;
-                } else {
-                    InputConstants.Key key = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
-                    back = Minecraft.getInstance().options.keyInventory.isActiveAndMatches(key);
-                }
-            } else {
-                back = event.getKeyCode() == KeyEvent.KEY_ESCAPE;
-            }
-            if (back) {
-                mOnBackPressedDispatcher.onBackPressed();
-            }
-        }
-    }
-
     /**
      * Get elapsed time in UI, update every frame. Internal use only.
      *
@@ -309,11 +292,6 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         return mFrameTimeMillis;
     }
 
-    @Nullable
-    UICallback getCallback() {
-        return mCallback;
-    }
-
     FrameLayout getDecorView() {
         return mDecor;
     }
@@ -321,39 +299,34 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
     @Nonnull
     @Override
     public Lifecycle getLifecycle() {
+        // constant reference
         return mFragmentLifecycleRegistry;
     }
 
-    @Nonnull
-    @Override
-    protected Canvas beginRecording(int width, int height) {
-        mCanvas.reset(width, height);
-        return mCanvas;
-    }
-
     // Called when open a screen from Modern UI, or back to the screen
-    void open(@Nonnull MuiScreen screen) {
+    void initScreen(@Nonnull MuiScreen screen) {
         if (mScreen == null) {
             if (mFragment != null) {
-                mFragments.getFragmentManager().beginTransaction()
-                        .add(content, mFragment, "main")
-                        .runOnCommit(this::resetCanvasLocked)
+                mFragmentController.getFragmentManager().beginTransaction()
+                        .add(fragment_container, mFragment, "main")
+                        .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                        .runOnCommit(mViewRoot::resetCanvasLocked)
                         .commit();
             }
-            mHandler.post(this::revLayoutTransition);
+            mViewRoot.mHandler.post(this::restoreLayoutTransition);
             mScreen = screen;
         }
 
         resize();
     }
 
-    void susLayoutTransition() {
+    void suppressLayoutTransition() {
         LayoutTransition transition = mDecor.getLayoutTransition();
         transition.disableTransitionType(LayoutTransition.APPEARING);
         transition.disableTransitionType(LayoutTransition.DISAPPEARING);
     }
 
-    void revLayoutTransition() {
+    void restoreLayoutTransition() {
         LayoutTransition transition = mDecor.getLayoutTransition();
         transition.enableTransitionType(LayoutTransition.APPEARING);
         transition.enableTransitionType(LayoutTransition.DISAPPEARING);
@@ -390,11 +363,6 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         }
     }
 
-    @Override
-    protected void updatePointerIcon(@Nullable PointerIcon pointerIcon) {
-        mNewCursor = pointerIcon == null ? PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT) : pointerIcon;
-    }
-
     @MainThread
     private void applyPointerIcon() {
         if (mNewCursor != mOldCursor) {
@@ -403,26 +371,11 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         }
     }
 
-    @Override
-    public void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis) {
-        if (delayMillis < 0) {
-            delayMillis = 0;
-        }
-        mAnimationTasks.offer(TimedAction.obtain(r, ArchCore.timeMillis() + delayMillis));
-    }
-
-    @Override
-    public void removeCallbacks(@Nonnull Runnable r) {
-        Predicate<? super TimedAction> pred = t -> t.remove(r);
-        //mTasks.removeIf(pred);
-        mAnimationTasks.removeIf(pred);
-    }
-
     @UiThread
-    @Override
-    protected void init() {
+    private void init() {
         long startTime = System.nanoTime();
-        super.init();
+        mViewRoot = this.new ViewRootImpl();
+
         mDecor = new FrameLayout();
         // make the root view clickable through, so that views can lose focus
         mDecor.setClickable(true);
@@ -430,26 +383,34 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         mDecor.setWillNotDraw(true);
         mDecor.setId(content);
 
-        LayoutTransition transition = new LayoutTransition();
-        transition.disableTransitionType(LayoutTransition.CHANGE_APPEARING);
-        transition.disableTransitionType(LayoutTransition.CHANGE_DISAPPEARING);
-        mDecor.setLayoutTransition(transition);
+        FragmentContainerView fragmentContainerView = new FragmentContainerView();
+        fragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        fragmentContainerView.setWillNotDraw(true);
+        fragmentContainerView.setId(fragment_container);
+        mDecor.addView(fragmentContainerView);
 
-        setView(mDecor);
+        mDecor.setLayoutTransition(new LayoutTransition());
+        suppressLayoutTransition();
 
+        mViewRoot.setView(mDecor);
+
+        mFragmentLifecycleRegistry = new LifecycleRegistry(this);
         mViewModelStore = new ViewModelStore();
-        mFragments = FragmentController.createController(this.new HostCallbacks());
+        mFragmentController = FragmentController.createController(this.new HostCallbacks());
 
-        mFragments.attachHost(null);
-        mFragments.dispatchCreate();
-        mFragments.dispatchActivityCreated();
-        mFragments.dispatchStart();
+        mFragmentController.attachHost(null);
 
-        // kick-start
-        scheduleTraversals();
-        doTraversal();
-        startTime = System.nanoTime() - startTime;
-        LOGGER.info(MARKER, "View system initialized in {}ms", startTime / 1_000_000);
+        mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+        mFragmentController.dispatchCreate();
+
+        mFragmentController.dispatchActivityCreated();
+        mFragmentController.execPendingActions();
+
+        mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
+        mFragmentController.dispatchStart();
+
+        LOGGER.info(MARKER, "View system initialized in {}ms", System.nanoTime() - startTime / 1000000);
 
         // test stuff
         /*Paint paint = Paint.take();
@@ -489,37 +450,6 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         mCanvas.drawCircle(570, 30, 6, paint);*/
     }
 
-    @UiThread
-    private void doFrame() {
-        // 1. handle tasks
-        mUptimeMillis = ArchCore.timeMillis();
-        /*if (!mTasks.isEmpty()) {
-            // batched processing
-            mTasks.removeIf(mUiHandler);
-        }*/
-
-        // 2. do input events
-        doProcessInputEvents();
-
-        // 3. do animations
-        mAnimationHandler.accept(mFrameTimeMillis);
-        if (!mAnimationTasks.isEmpty()) {
-            mAnimationTasks.removeIf(mAnimationTaskHandler);
-        }
-
-        // 4. do traversal
-        doTraversal();
-    }
-
-    @Override
-    protected boolean handleMessage(@Nonnull Message msg) {
-        switch (msg.what) {
-            case MSG_DO_FRAME -> doFrame();
-            case MSG_SET_FRAME -> setFrame(mWindow.getWidth(), mWindow.getHeight());
-        }
-        return true;
-    }
-
     /**
      * From screen
      *
@@ -533,11 +463,11 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         float y = (float) minecraft.mouseHandler.ypos();
         MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_HOVER_MOVE,
                 x, y, 0);
-        enqueueInputEvent(event);
+        mViewRoot.enqueueInputEvent(event);
         //mPendingRepostCursorEvent = false;
         if (mButtonState > 0) {
             event = MotionEvent.obtain(now, MotionEvent.ACTION_MOVE, 0, x, y, 0, mButtonState, 0);
-            enqueueInputEvent(event);
+            mViewRoot.enqueueInputEvent(event);
         }
     }
 
@@ -581,7 +511,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
     void onMouseButton() {
         // Only response at most one mouse button event each frame
         if (mPendingMouseEvent != null) {
-            enqueueInputEvent(mPendingMouseEvent);
+            mViewRoot.enqueueInputEvent(mPendingMouseEvent);
             mPendingMouseEvent = null;
         }
     }
@@ -596,7 +526,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
                     x, y, 0);
             event.setAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
             event.setAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
-            sInstance.enqueueInputEvent(event);
+            sInstance.mViewRoot.enqueueInputEvent(event);
         }
     }
 
@@ -606,7 +536,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
             int action = event.getAction() == GLFW_RELEASE ? KeyEvent.ACTION_UP : KeyEvent.ACTION_DOWN;
             KeyEvent keyEvent = KeyEvent.obtain(ArchCore.timeNanos(), action, event.getKey(), 0,
                     event.getModifiers(), event.getScanCode(), 0);
-            enqueueInputEvent(keyEvent);
+            mViewRoot.enqueueInputEvent(keyEvent);
         }
         if (event.getAction() != GLFW_PRESS || !Screen.hasControlDown()) {
             return;
@@ -641,15 +571,15 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
                 break;*/
 
             case GLFW_KEY_N:
-                mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_RTL));
+                mViewRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_RTL));
                 break;
 
             case GLFW_KEY_M:
-                mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
+                mViewRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
                 break;
 
             case GLFW_KEY_K:
-                mHandler.post(() -> mDecor.invalidate());
+                mViewRoot.mHandler.post(() -> mDecor.invalidate());
                 break;
 
             case GLFW_KEY_G:
@@ -713,7 +643,6 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         }
     }
 
-    //TODO directly use code points
     boolean charTyped(char ch) {
         /*if (popup != null) {
             return popup.charTyped(codePoint, modifiers);
@@ -721,7 +650,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         /*if (mKeyboard != null) {
             return mKeyboard.onCharTyped(codePoint, modifiers);
         }*/
-        Message msg = Message.obtain(mHandler, () -> {
+        Message msg = Message.obtain(mViewRoot.mHandler, () -> {
             final Editable content;
             if (mDecor.findFocus() instanceof TextView tv && (content = tv.getEditableText()) != null) {
                 int selStart = tv.getSelectionStart();
@@ -752,7 +681,6 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         int height = mWindow.getHeight();
 
         GLSurfaceCanvas canvas = mCanvas;
-        GLFramebuffer framebuffer = mFramebuffer;
 
         // Flip Y, setting the origin to the top left
         canvas.setProjection(mProjectionMatrix.setOrthographic(width, -height, 0, 2000));
@@ -763,36 +691,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
-        // wait UI thread, if slow
-        synchronized (mRenderLock) {
-            if (mRedrawn) {
-                mRedrawn = false;
-                glEnable(GL_STENCIL_TEST);
-                try {
-                    canvas.draw(framebuffer);
-                } catch (Throwable t) {
-                    LOGGER.fatal(MARKER,
-                            "Failed to invoke rendering callbacks, please report the issue to related mods", t);
-                    dump();
-                    throw t;
-                }
-                glDisable(GL_STENCIL_TEST);
-            }
-
-            GLTexture texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
-            if (texture.getWidth() > 0) {
-                // draw MSAA off-screen target to Minecraft main target (not the default framebuffer)
-                RenderSystem.blendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-                glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
-
-                // do alpha fade in
-                int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
-                alpha = alpha << 8 | alpha;
-                // premultiplied alpha
-                canvas.drawLayer(texture, width, height, alpha << 16 | alpha, true);
-                canvas.draw(null);
-            }
-        }
+        mViewRoot.flushDrawCommands(canvas, mFramebuffer, width, height);
 
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);
@@ -858,13 +757,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
      * Called when game window size changed, used to re-layout the window.
      */
     void resize() {
-        mHandler.sendEmptyMessage(MSG_SET_FRAME);
-    }
-
-    private void resetCanvasLocked() {
-        synchronized (mRenderLock) {
-            mCanvas.reset(mWindow.getWidth(), mWindow.getHeight());
-        }
+        mViewRoot.mHandler.sendEmptyMessage(MSG_SET_FRAME);
     }
 
     void removed() {
@@ -875,13 +768,13 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         if (mCallback != null) {
             mCallback = null;
         }
-        mHandler.post(this::susLayoutTransition);
+        mViewRoot.mHandler.post(this::suppressLayoutTransition);
         if (mFragment != null) {
-            mFragments.getFragmentManager().beginTransaction()
+            mFragmentController.getFragmentManager().beginTransaction()
                     .remove(mFragment)
                     .commit();
         }
-        updatePointerIcon(null);
+        mViewRoot.updatePointerIcon(null);
         applyPointerIcon();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
     }
@@ -894,7 +787,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
             final long deltaMillis = mFrameTimeMillis - lastFrameTime;
             mElapsedTimeMillis += deltaMillis;
             // coordinates UI thread
-            Message msg = mHandler.obtainMessage(MSG_DO_FRAME);
+            Message msg = mViewRoot.mHandler.obtainMessage(MSG_DO_FRAME);
             msg.setAsynchronous(true);
             msg.sendToTarget();
             // update extension animations
@@ -913,6 +806,129 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
                 }
             }
         }*/
+    }
+
+    class ViewRootImpl extends ViewRoot {
+
+        @Nonnull
+        @Override
+        protected Canvas beginRecording(int width, int height) {
+            mCanvas.reset(width, height);
+            return mCanvas;
+        }
+
+        @Override
+        protected void onKeyEvent(KeyEvent event) {
+            if (mScreen != null && event.getAction() == KeyEvent.ACTION_DOWN) {
+                final boolean back;
+                if (mCallback != null) {
+                    back = mCallback.isBackKey(event.getKeyCode(), event);
+                } else if (mScreen instanceof MenuScreen) {
+                    if (event.getKeyCode() == KeyEvent.KEY_ESCAPE) {
+                        back = true;
+                    } else {
+                        InputConstants.Key key = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
+                        back = Minecraft.getInstance().options.keyInventory.isActiveAndMatches(key);
+                    }
+                } else {
+                    back = event.getKeyCode() == KeyEvent.KEY_ESCAPE;
+                }
+                if (back) {
+                    mOnBackPressedDispatcher.onBackPressed();
+                }
+            }
+        }
+
+        @Override
+        protected void updatePointerIcon(@Nullable PointerIcon pointerIcon) {
+            mNewCursor = pointerIcon == null ? PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT) : pointerIcon;
+        }
+
+        private void resetCanvasLocked() {
+            synchronized (mRenderLock) {
+                mCanvas.reset(mWindow.getWidth(), mWindow.getHeight());
+            }
+        }
+
+        @Override
+        public void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis) {
+            if (delayMillis < 0) {
+                delayMillis = 0;
+            }
+            mAnimationTasks.offer(TimedAction.obtain(r, ArchCore.timeMillis() + delayMillis));
+        }
+
+        @Override
+        public void removeCallbacks(@Nonnull Runnable r) {
+            Predicate<? super TimedAction> pred = t -> t.remove(r);
+            //mTasks.removeIf(pred);
+            mAnimationTasks.removeIf(pred);
+        }
+
+        @UiThread
+        private void doFrame() {
+            // 1. handle tasks
+            mUptimeMillis = ArchCore.timeMillis();
+            /*if (!mTasks.isEmpty()) {
+                // batched processing
+                mTasks.removeIf(mUiHandler);
+            }*/
+
+            // 2. do input events
+            doProcessInputEvents();
+
+            // 3. do animations
+            mAnimationHandler.accept(mFrameTimeMillis);
+            if (!mAnimationTasks.isEmpty()) {
+                mAnimationTasks.removeIf(mAnimationTaskHandler);
+            }
+
+            // 4. do traversal
+            doTraversal();
+        }
+
+        @Override
+        protected boolean handleMessage(@Nonnull Message msg) {
+            switch (msg.what) {
+                case MSG_DO_FRAME -> doFrame();
+                case MSG_SET_FRAME -> setFrame(mWindow.getWidth(), mWindow.getHeight());
+            }
+            return true;
+        }
+
+        @RenderThread
+        private void flushDrawCommands(GLSurfaceCanvas canvas, GLFramebuffer framebuffer, int width, int height) {
+            // wait UI thread, if slow
+            synchronized (mRenderLock) {
+                if (mRedrawn) {
+                    mRedrawn = false;
+                    glEnable(GL_STENCIL_TEST);
+                    try {
+                        canvas.draw(framebuffer);
+                    } catch (Throwable t) {
+                        LOGGER.fatal(MARKER,
+                                "Failed to invoke rendering callbacks, please report the issue to related mods", t);
+                        dump();
+                        throw t;
+                    }
+                    glDisable(GL_STENCIL_TEST);
+                }
+
+                GLTexture texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+                if (texture.getWidth() > 0) {
+                    // draw MSAA off-screen target to Minecraft main target (not the default framebuffer)
+                    RenderSystem.blendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+                    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
+
+                    // do alpha fade in
+                    int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
+                    alpha = alpha << 8 | alpha;
+                    // premultiplied alpha
+                    canvas.drawLayer(texture, width, height, alpha << 16 | alpha, true);
+                    canvas.draw(null);
+                }
+            }
+        }
     }
 
     @UiThread
@@ -940,7 +956,7 @@ public final class UIManager extends ViewRoot implements LifecycleOwner {
         @Nonnull
         @Override
         public ViewModelStore getViewModelStore() {
-            return UIManager.this.mViewModelStore;
+            return mViewModelStore;
         }
 
         @Nonnull

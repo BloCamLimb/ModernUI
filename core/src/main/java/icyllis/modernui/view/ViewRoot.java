@@ -43,7 +43,7 @@ public abstract class ViewRoot implements ViewParent {
 
     protected static final Marker MARKER = MarkerManager.getMarker("ViewRoot");
 
-    private AttachInfo mAttachInfo;
+    private final AttachInfo mAttachInfo;
 
     private final ConcurrentLinkedQueue<InputEvent> mInputEvents = new ConcurrentLinkedQueue<>();
 
@@ -63,26 +63,14 @@ public abstract class ViewRoot implements ViewParent {
     private int mWidth;
     private int mHeight;
 
-    protected Handler mHandler;
+    public final Handler mHandler;
 
     private ArrayList<LayoutTransition> mPendingTransitions;
 
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
-    /**
-     * Lazily initialized.
-     *
-     * @see #init()
-     */
     protected ViewRoot() {
-    }
-
-    protected boolean handleMessage(@Nonnull Message msg) {
-        return true;
-    }
-
-    protected void init() {
         ArchCore.initUiThread();
         mHandler = new Handler(Looper.myLooper(), this::handleMessage);
         mAttachInfo = new AttachInfo(this, mHandler);
@@ -123,19 +111,25 @@ public abstract class ViewRoot implements ViewParent {
         }
     }
 
-    protected void setView(@Nonnull View view) {
-        if (mView == null) {
-            mView = view;
+    protected boolean handleMessage(@Nonnull Message msg) {
+        return true;
+    }
+
+    public void setView(@Nonnull View view) {
+        synchronized (this) {
+            if (mView == null) {
+                mView = view;
             /*ViewGroup.LayoutParams params = view.getLayoutParams();
             // convert layout params
             if (!(params instanceof LayoutParams)) {
                 params = new LayoutParams();
                 view.setLayoutParams(params);
             }*/
-            mAttachInfo.mRootView = view;
-            mAttachInfo.mWindowVisibility = View.VISIBLE;
-            view.assignParent(this);
-            view.dispatchAttachedToWindow(mAttachInfo);
+                mAttachInfo.mRootView = view;
+                mAttachInfo.mWindowVisibility = View.VISIBLE;
+                view.assignParent(this);
+                view.dispatchAttachedToWindow(mAttachInfo);
+            }
         }
     }
 
@@ -258,7 +252,7 @@ public abstract class ViewRoot implements ViewParent {
     @Nonnull
     protected abstract Canvas beginRecording(int width, int height);
 
-    protected void enqueueInputEvent(@Nonnull InputEvent event) {
+    public void enqueueInputEvent(@Nonnull InputEvent event) {
         mInputEvents.offer(event);
     }
 
