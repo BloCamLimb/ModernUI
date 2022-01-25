@@ -21,8 +21,8 @@ package icyllis.modernui.text;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -54,7 +54,10 @@ public class FontAtlas {
      */
     private static final int GLYPH_BORDER = 1;
     private static final int INITIAL_SIZE = 256;
-    private static final int MIPMAP_LEVEL = 4;
+    /**
+     * Max mipmap level.
+     */
+    public static final int MIPMAP_LEVEL = 4;
 
     /**
      * Linear sampling with mipmaps;
@@ -148,7 +151,7 @@ public class FontAtlas {
         // never initialized
         if (mWidth == 0) {
             mWidth = mHeight = INITIAL_SIZE;
-            mTexture.allocate2DM(GL_R8, INITIAL_SIZE, INITIAL_SIZE, sLinearSampling ? MIPMAP_LEVEL : 0);
+            mTexture.allocate2DM(GL_R8, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
             // we have border that not upload data, so generate mipmap may leave undefined data
             mTexture.clear(0);
         } else {

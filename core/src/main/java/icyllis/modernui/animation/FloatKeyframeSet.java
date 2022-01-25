@@ -34,7 +34,7 @@ import javax.annotation.Nonnull;
  */
 class FloatKeyframeSet extends KeyframeSet<Float> implements Keyframes.FloatKeyframes {
 
-    public FloatKeyframeSet(@Nonnull FloatKeyframe[] keyframes) {
+    public FloatKeyframeSet(@Nonnull Keyframe[] keyframes) {
         super(keyframes);
     }
 

@@ -64,7 +64,9 @@ public class UICallback {
     }
 
     /**
-     * Should the screen be closed from an input event.
+     * Should the screen be closed by the user. Otherwise, it can only be closed programmatically.
+     * <p>
+     * Default value: true
      *
      * @return whether the screen should close
      */
@@ -79,7 +81,8 @@ public class UICallback {
      * <p>
      * Call Frequency: each tick.
      * <p>
-     * Default value: true for {@link MuiForgeApi#openGui(Fragment)}
+     * Default value: true for {@link MuiForgeApi#openGui(Fragment)}, false for
+     * {@link MuiForgeApi#openMenu(Player, MenuConstructor)}.
      *
      * @return whether to pause game
      */
@@ -94,8 +97,7 @@ public class UICallback {
      * <p>
      * Call Frequency: each frame.
      * <p>
-     * Default value: false for {@link MuiForgeApi#openGui(Fragment)}, true for {@link MuiForgeApi#openMenu(Player,
-     * MenuConstructor)}.
+     * Default value: true
      *
      * @return whether to draw a default background
      */

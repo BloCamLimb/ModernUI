@@ -26,10 +26,7 @@ import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
-import icyllis.modernui.text.LayoutCache;
-import icyllis.modernui.text.LayoutPiece;
-import icyllis.modernui.text.TextPaint;
-import icyllis.modernui.text.TexturedGlyph;
+import icyllis.modernui.text.*;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
@@ -208,12 +205,16 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final GLBuffer mCircleUBO = new GLBuffer();
     private final GLBuffer mRoundRectUBO = new GLBuffer();
 
+    // mag filter = linear
+    private final int mFontSampler;
+
     private final long mUniformBuffers = nmemAlloc(24);
 
     private final ByteBuffer mLayerImageMemory = memAlloc(POS_COLOR_TEX_VERTEX_SIZE * 4);
 
     // used in rendering, local states
     private int mCurrTexture;
+    private int mCurrSampler;
     private int mCurrProgram;
     private int mCurrVertexFormat;
 
@@ -260,6 +261,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
         memPutInt(mUniformBuffers + 12, mBezierUBO.get());
         memPutInt(mUniformBuffers + 16, mCircleUBO.get());
         memPutInt(mUniformBuffers + 20, mRoundRectUBO.get());
+
+        mFontSampler = glCreateSamplers();
+        glSamplerParameteri(mFontSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        // FontAtlas MAG_FILTER is NEAREST, but it's not smooth in UI animations
+        glSamplerParameteri(mFontSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glSamplerParameteri(mFontSampler, GL_TEXTURE_MIN_LOD, 0);
+        glSamplerParameteri(mFontSampler, GL_TEXTURE_MAX_LOD, FontAtlas.MIPMAP_LEVEL);
 
         POS_COLOR.setVertexBuffer(GENERIC_BINDING, mPosColorVBO, 0);
         POS_COLOR_TEX.setVertexBuffer(GENERIC_BINDING, mPosColorTexVBO, 0);
@@ -380,6 +388,14 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
+    public void bindSampler(int sampler) {
+        if (mCurrSampler != sampler) {
+            glBindSampler(0, sampler);
+            mCurrSampler = sampler;
+        }
+    }
+
+    @RenderThread
     public void bindTexture(int texture) {
         if (mCurrTexture != texture) {
             glBindTextureUnit(0, texture);
@@ -421,6 +437,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         mCurrVertexFormat = 0;
         mCurrProgram = 0;
+        mCurrSampler = 0;
         mCurrTexture = 0;
 
         long uniformDataPtr = memAddress(mUniformMemory.flip());
@@ -463,6 +480,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 case DRAW_ROUND_IMAGE -> {
                     bindVertexArray(POS_COLOR_TEX.getVertexArray());
                     useProgram(ROUND_RECT_TEX.get());
+                    bindSampler(0);
                     bindTexture(mTextures.remove().get());
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
@@ -472,6 +490,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 case DRAW_IMAGE -> {
                     bindVertexArray(POS_COLOR_TEX.getVertexArray());
                     useProgram(COLOR_TEX.get());
+                    bindSampler(0);
                     bindTexture(mTextures.remove().get());
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
@@ -479,6 +498,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 case DRAW_IMAGE_MS -> {
                     bindVertexArray(POS_COLOR_TEX.getVertexArray());
                     useProgram(COLOR_TEX_MS.get());
+                    bindSampler(0);
                     bindTexture(mTextures.remove().get());
                     glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
@@ -565,6 +585,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 case DRAW_TEXT -> {
                     bindVertexArray(POS_TEX.getVertexArray());
                     useProgram(ALPHA_TEX.get());
+                    bindSampler(mFontSampler);
                     mMatrixUBO.upload(128, 16, uniformDataPtr);
                     uniformDataPtr += 16;
 
@@ -608,6 +629,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
                     bindVertexArray(POS_COLOR_TEX.getVertexArray());
                     useProgram(COLOR_TEX_MS.get());
+                    bindSampler(0);
                     bindTexture(framebuffer.getAttachedTexture(colorBuffer).get());
                     framebuffer.setDrawBuffer(--colorBuffer);
                     glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -621,6 +643,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         assert mLayerStack.isEmpty();
         assert mTextures.isEmpty();
         assert mCustoms.isEmpty();
+
+        bindSampler(0);
 
         mDrawOps.clear();
         mClipRefs.clear();

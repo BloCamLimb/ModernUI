@@ -47,6 +47,8 @@
 
   "gui.modernui.tooltip.thanksOptifine": "This functionality is powered by OptiFine",
 
+  "key.modernui.openCenter": "Open Action Center",
+
   "message.modernui.server_shutdown_sec": "Server will shutdown in %s seconds",
   "message.modernui.server_shutdown_min": "Server will shutdown in %s minutes",
 

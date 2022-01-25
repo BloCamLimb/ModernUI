@@ -40,6 +40,7 @@ import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.client.event.ModelBakeEvent;
 import net.minecraftforge.client.event.ModelRegistryEvent;
 import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
@@ -198,6 +199,7 @@ final class Registration {
                         ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString(options
                         .guiScale))))
         );*/
+        ClientRegistry.registerKeyBinding(UIManager.OPEN_CENTER_KEY);
 
         Option[] settings = null;
         boolean captured = false;

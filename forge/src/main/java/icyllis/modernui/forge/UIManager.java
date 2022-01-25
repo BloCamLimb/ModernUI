@@ -43,6 +43,7 @@ import icyllis.modernui.widget.TextView;
 import net.minecraft.ChatFormatting;
 import net.minecraft.CrashReport;
 import net.minecraft.Util;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.screens.Screen;
@@ -59,6 +60,8 @@ import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.event.RenderTooltipEvent;
 import net.minecraftforge.client.event.ScreenOpenEvent;
 import net.minecraftforge.client.gui.ForgeIngameGui;
+import net.minecraftforge.client.settings.KeyConflictContext;
+import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -105,6 +108,10 @@ public final class UIManager implements LifecycleOwner {
     private static final int content = 0x01020001;
     private static final int fragment_container = 0x01020007;
 
+    static final KeyMapping OPEN_CENTER_KEY = new KeyMapping(
+            "key.modernui.openCenter", KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL,
+            InputConstants.Type.KEYSYM, GLFW_KEY_K, "Modern UI");
+
     // minecraft
     private final Minecraft minecraft = Minecraft.getInstance();
 
@@ -116,6 +123,7 @@ public final class UIManager implements LifecycleOwner {
 
     // the top-level view of the window
     private FrameLayout mDecor;
+    private FragmentContainerView mFragmentContainerView;
 
 
     /// Task Handling \\\
@@ -383,12 +391,12 @@ public final class UIManager implements LifecycleOwner {
         mDecor.setWillNotDraw(true);
         mDecor.setId(content);
 
-        FragmentContainerView fragmentContainerView = new FragmentContainerView();
-        fragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+        mFragmentContainerView = new FragmentContainerView();
+        mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.MATCH_PARENT));
-        fragmentContainerView.setWillNotDraw(true);
-        fragmentContainerView.setId(fragment_container);
-        mDecor.addView(fragmentContainerView);
+        mFragmentContainerView.setWillNotDraw(true);
+        mFragmentContainerView.setId(fragment_container);
+        mDecor.addView(mFragmentContainerView);
 
         mDecor.setLayoutTransition(new LayoutTransition());
         suppressLayoutTransition();
@@ -538,14 +546,15 @@ public final class UIManager implements LifecycleOwner {
                     event.getModifiers(), event.getScanCode(), 0);
             mViewRoot.enqueueInputEvent(keyEvent);
         }
-        if (event.getAction() != GLFW_PRESS || !Screen.hasControlDown()) {
+        if (event.getAction() != GLFW_PRESS) {
             return;
         }
-        if (event.getKey() == GLFW_KEY_P) {
-            dump();
+        InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
+        if (OPEN_CENTER_KEY.isActiveAndMatches(key)) {
+            start(new CenterFragment(), new UICallback());
             return;
         }
-        if (!ModernUIForge.isDeveloperMode()) {
+        if (!Screen.hasControlDown() || !ModernUIForge.isDeveloperMode()) {
             return;
         }
         switch (event.getKey()) {
@@ -568,7 +577,7 @@ public final class UIManager implements LifecycleOwner {
 
             case GLFW_KEY_J:
                 TestMain.sTrack.pause();
-                break;*/
+                break;
 
             case GLFW_KEY_N:
                 mViewRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_RTL));
@@ -576,10 +585,10 @@ public final class UIManager implements LifecycleOwner {
 
             case GLFW_KEY_M:
                 mViewRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
-                break;
+                break;*/
 
-            case GLFW_KEY_K:
-                mViewRoot.mHandler.post(() -> mDecor.invalidate());
+            case GLFW_KEY_P:
+                dump();
                 break;
 
             case GLFW_KEY_G:
@@ -772,6 +781,7 @@ public final class UIManager implements LifecycleOwner {
         if (mFragment != null) {
             mFragmentController.getFragmentManager().beginTransaction()
                     .remove(mFragment)
+                    .runOnCommit(mFragmentContainerView::removeAllViews)
                     .commit();
         }
         mViewRoot.updatePointerIcon(null);
@@ -820,6 +830,9 @@ public final class UIManager implements LifecycleOwner {
         @Override
         protected void onKeyEvent(KeyEvent event) {
             if (mScreen != null && event.getAction() == KeyEvent.ACTION_DOWN) {
+                if (!mDecor.isFocused() && mDecor.hasFocus()) {
+                    return;
+                }
                 final boolean back;
                 if (mCallback != null) {
                     back = mCallback.isBackKey(event.getKeyCode(), event);

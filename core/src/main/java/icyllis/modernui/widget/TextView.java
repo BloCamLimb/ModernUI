@@ -20,11 +20,11 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
 import icyllis.modernui.text.style.CharacterStyle;
@@ -1037,7 +1037,35 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     /**
-     * Sets the typeface and style in which the text should be displayed.
+     * Sets the default text style in which the text should be displayed.
+     *
+     * @param style the text style to set
+     * @see #getTextStyle()
+     */
+    public void setTextStyle(int style) {
+        if (style != mTextPaint.getFontStyle()) {
+            mTextPaint.setFontStyle(style);
+
+            if (mLayout != null) {
+                nullLayouts();
+                requestLayout();
+                invalidate();
+            }
+        }
+    }
+
+    /**
+     * Gets the current text style that is used to style the text.
+     *
+     * @return the current text style
+     * @see #setTextStyle(int)
+     */
+    public int getTextStyle() {
+        return mTextPaint.getFontStyle();
+    }
+
+    /**
+     * Sets the typeface in which the text should be displayed.
      *
      * @see #getTypeface()
      */

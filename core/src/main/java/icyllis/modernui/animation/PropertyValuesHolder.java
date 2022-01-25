@@ -190,6 +190,32 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
     }
 
     /**
+     * Constructs and returns a PropertyValuesHolder object with the specified float property and set
+     * of values.
+     * <p>
+     * Also, if any value is null, the value will be filled in when the animation
+     * starts in the same way. This mechanism of automatically getting null values only works
+     * if the PropertyValuesHolder object is used in conjunction with
+     * {@link ObjectAnimator}, since otherwise PropertyValuesHolder has
+     * no way of determining what the value should be.
+     *
+     * @param property The property associated with this set of values. Should not be null.
+     * @param values   The set of values to animate between.
+     * @throws IllegalArgumentException some keyframes are not float keyframes, or less than two
+     * @see Keyframe#ofFloat(float, float)
+     */
+    @Nonnull
+    public static <T> PropertyValuesHolder<T, Float, Float> ofKeyframe(
+            @Nonnull FloatProperty<T> property, @Nonnull Keyframe... values) {
+        Keyframes<?> keyframes = KeyframeSet.ofKeyframe(values);
+        if (keyframes instanceof Keyframes.FloatKeyframes) {
+            return new FloatPropertyValuesHolder<>(property, (Keyframes.FloatKeyframes) keyframes);
+        } else {
+            throw new IllegalArgumentException("Some keyframes are not float keyframes");
+        }
+    }
+
+    /**
      * Set the animated values for this object to this set of ints.
      * If there is only one value, it is assumed to be the end value of an animation,
      * and an initial value will be derived, if possible, by calling a getter function
