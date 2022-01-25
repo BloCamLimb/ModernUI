@@ -228,10 +228,10 @@ class TextRenderNode {
             if (builder == null) {
                 builder = source.getBuffer(EffectRenderType.getRenderType(seeThrough));
             }
-            builder.vertex(matrix, x - 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv2(packedLight).endVertex();
-            builder.vertex(matrix, x + mAdvance + 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv2(packedLight).endVertex();
-            builder.vertex(matrix, x + mAdvance + 1, y, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv2(packedLight).endVertex();
-            builder.vertex(matrix, x - 1, y, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv2(packedLight).endVertex();
+            builder.vertex(matrix, x - 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv(0, 1).uv2(packedLight).endVertex();
+            builder.vertex(matrix, x + mAdvance + 1, y + 9, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv(1, 1).uv2(packedLight).endVertex();
+            builder.vertex(matrix, x + mAdvance + 1, y, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv(1, 0).uv2(packedLight).endVertex();
+            builder.vertex(matrix, x - 1, y, TextRenderEffect.EFFECT_DEPTH).color(r, g, b, a).uv(0, 0).uv2(packedLight).endVertex();
         }
 
         return mAdvance;
@@ -240,9 +240,9 @@ class TextRenderNode {
     @Override
     public String toString() {
         return "TextRenderNode{" +
-                "mGlyphs=" + Arrays.toString(mGlyphs) +
-                ", mAdvance=" + mAdvance +
-                ", mHasEffect=" + mHasEffect +
+                "glyphs=" + Arrays.toString(mGlyphs) +
+                ", advance=" + mAdvance +
+                ", hasEffect=" + mHasEffect +
                 '}';
     }
 }
