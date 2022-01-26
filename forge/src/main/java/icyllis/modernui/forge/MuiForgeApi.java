@@ -176,7 +176,7 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @MainThread
     public static void openGui(@Nonnull Fragment fragment, @Nullable UICallback callback) {
-        ArchCore.checkMainThread();
+        ArchCore.checkRenderThread();
         UIManager.sInstance.start(fragment, callback);
     }
 
@@ -201,6 +201,16 @@ public final class MuiForgeApi {
     @RenderThread
     public static long getFrameTime() {
         return UIManager.sInstance.getFrameTime();
+    }
+
+    /**
+     * Post a runnable to be executed asynchronously on UI thread.
+     *
+     * @param r the Runnable that will be executed
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static void postToUiThread(@Nonnull Runnable r) {
+        ArchCore.getUiHandlerAsync().post(r);
     }
 
     @OnlyIn(Dist.CLIENT)
