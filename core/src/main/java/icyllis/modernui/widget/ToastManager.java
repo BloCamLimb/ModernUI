@@ -95,7 +95,7 @@ public class ToastManager {
 
         int delay = r.getDuration() == Toast.LENGTH_LONG ? LONG_DELAY : SHORT_DELAY;
         delay += 300; // animation
-        ArchCore.getUiHandler().postDelayed(mDurationReached, delay);
+        ArchCore.getUiHandlerAsync().postDelayed(mDurationReached, delay);
         mCurrentToastShown = r.mToken;
     }
 

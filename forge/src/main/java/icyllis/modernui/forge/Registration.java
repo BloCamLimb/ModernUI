@@ -186,7 +186,10 @@ final class Registration {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
-        Minecraft.getInstance().execute(() -> ModernUI.getInstance().getSelectedTypeface());
+        Minecraft.getInstance().execute(() -> {
+            ArchCore.initMainThread();
+            ModernUI.getInstance().getSelectedTypeface();
+        });
 
         // Always replace static variable as an insurance policy
         /*AccessOption.setGuiScale(new CycleOption("options.guiScale",

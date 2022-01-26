@@ -280,7 +280,7 @@ public abstract class LiveData<T> {
         if (!postTask) {
             return;
         }
-        ArchCore.getUiHandler().post(mPostValueRunnable);
+        ArchCore.getUiHandlerAsync().post(mPostValueRunnable);
     }
 
     /**

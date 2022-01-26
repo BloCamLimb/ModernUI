@@ -59,6 +59,7 @@ public final class ArchCore {
     private static Boolean sGlOrVk;
 
     private static Handler sUiHandler;
+    private static Handler sUiHandlerAsync;
 
     private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
@@ -77,6 +78,20 @@ public final class ArchCore {
 
     private static void onError(int error, long description) {
         LOGGER.error(MARKER, "GLFW Error: 0x{} {}", Integer.toHexString(error), memUTF8Safe(description));
+    }
+
+    /**
+     * Initialize only the main thread. Cannot be used with {@link #init()}.
+     */
+    @MainThread
+    public static void initMainThread() {
+        synchronized (ArchCore.class) {
+            if (sMainThread == null) {
+                sMainThread = Thread.currentThread();
+            } else {
+                throw new IllegalStateException("Initialize twice");
+            }
+        }
     }
 
     public static void checkMainThread() {
@@ -202,7 +217,8 @@ public final class ArchCore {
         synchronized (ArchCore.class) {
             if (sUiThread == null) {
                 sUiThread = Thread.currentThread();
-                sUiHandler = Handler.createAsync(Looper.prepare());
+                sUiHandler = new Handler(Looper.prepare());
+                sUiHandlerAsync = Handler.createAsync(Looper.myLooper());
             } else {
                 throw new IllegalStateException("Initialize twice");
             }
@@ -232,6 +248,10 @@ public final class ArchCore {
 
     public static Handler getUiHandler() {
         return sUiHandler;
+    }
+
+    public static Handler getUiHandlerAsync() {
+        return sUiHandlerAsync;
     }
 
     public static boolean isOnUiThread() {
