@@ -19,6 +19,8 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.fragment.Fragment;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
@@ -27,6 +29,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.Cancelable;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.fml.event.IModBusEvent;
+import net.minecraftforge.network.IContainerFactory;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,22 +38,25 @@ import java.util.function.Consumer;
 /**
  * This event is triggered when the server requires the client to open a user
  * interface to display the container menu in world, this event is cancelled
- * after setting the user interface. The menu is created on the client by
- * registered {@link net.minecraftforge.network.IContainerFactory factory},
- * which contains custom network data from server, you can set the user
- * interface through the data and the menu type.  For example:
- *
- * <pre>
- * &#64;SubscribeEvent
+ * after setting the user interface. The menu is created on the client from
+ * {@link IContainerFactory}, which contains custom network data from server,
+ * you can set the user interface through the data and the menu type.
+ * For example:
+ * <pre>{@code
+ * @SubscribeEvent
  * static void onMenuOpen(OpenMenuEvent event) {
- *     if (event.getMenu().getType() == Registry.TEST_MENU) {
- *         event.set(new TestFragment());
+ *     if (event.getMenu().getType() == MyRegistry.MY_MENU) {
+ *         event.set(new MyFragment());
  *     }
  * }
- * </pre>
+ * }</pre>
  * <p>
  * This event will be only posted to your own mod event bus on client main thread.
- * It's an error if no callback set along with this event.
+ * It's an error if no fragment set along with this event.
+ * <p>
+ * All menu types are registered via {@link net.minecraftforge.event.RegistryEvent.Register} ,
+ * use {@link net.minecraftforge.common.extensions.IForgeMenuType#create(IContainerFactory)}
+ * to create your registry entries when the registry event is triggered.
  *
  * @see MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)
  */
@@ -61,9 +67,7 @@ public final class OpenMenuEvent extends Event implements IModBusEvent {
     @Nonnull
     private final AbstractContainerMenu mMenu;
 
-    @Nullable
     private Fragment mFragment;
-    @Nullable
     private UICallback mCallback;
 
     OpenMenuEvent(@Nonnull AbstractContainerMenu menu) {
@@ -71,7 +75,8 @@ public final class OpenMenuEvent extends Event implements IModBusEvent {
     }
 
     /**
-     * Get the source of the event.
+     * Get the container menu to open, which is created from
+     * {@link IContainerFactory#create(int, Inventory, FriendlyByteBuf)}.
      *
      * @return the container menu
      */

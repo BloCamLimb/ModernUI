@@ -20,8 +20,9 @@ package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.graphics.GLWrapper;
 import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.graphics.GLWrapper;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -33,6 +34,7 @@ import java.util.Map;
 /**
  * This class maintains OpenGL 2D textures decoded from local client resources.
  */
+@ApiStatus.Internal
 public class TextureManager {
 
     private static final TextureManager INSTANCE = new TextureManager();
@@ -56,8 +58,12 @@ public class TextureManager {
     // internal use
     public void reload() {
         synchronized (mLock) {
-            // implicitly release textures, see cleaner
-            mTextures.clear();
+            // implicitly release textures
+            for (var v : mTextures.values()) {
+                for (var t : v.values()) {
+                    t.close();
+                }
+            }
             mTextures = new HashMap<>();
         }
     }
