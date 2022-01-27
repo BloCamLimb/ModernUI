@@ -25,28 +25,32 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nonnull;
 
 /**
- * This class represents OpenGL 2D textures at high-level, which is used for drawing
- * and processing in the application layer.
+ * This class is associated with an OpenGL 2D texture object or a Vulkan 2D image object,
+ * used with API drawing and processing methods.
  */
-@ApiStatus.Experimental
+//TODO wip
 public class Image {
 
     private final GLTexture mTexture;
 
+    @ApiStatus.Experimental
     public Image() {
         mTexture = new GLTexture(GLWrapper.GL_TEXTURE_2D);
     }
 
+    @ApiStatus.Experimental
     public Image(@Nonnull GLTexture texture) {
         mTexture = texture;
     }
 
     /**
      * Creates a new image object representing the target resource image.
+     * You should use a single image as the UI texture to avoid each icon creating its own image.
+     * Underlying resources are automatically released.
      *
      * @param namespace the application namespace
      * @param subPath   the sub path to the resource
-     * @return image
+     * @return the image
      */
     @Nonnull
     public static Image create(@Nonnull String namespace, @Nonnull String subPath) {
@@ -59,6 +63,7 @@ public class Image {
      *
      * @return OpenGL texture
      */
+    @ApiStatus.Experimental
     @Nonnull
     public final GLTexture getTexture() {
         return mTexture;
