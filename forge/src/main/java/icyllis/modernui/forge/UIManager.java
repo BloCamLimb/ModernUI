@@ -46,9 +46,11 @@ import net.minecraft.Util;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.MouseHandler;
+import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -66,6 +68,8 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
@@ -74,6 +78,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.LongConsumer;
 import java.util.function.Predicate;
@@ -112,11 +120,19 @@ public final class UIManager implements LifecycleOwner {
             "key.modernui.openCenter", KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL,
             InputConstants.Type.KEYSYM, GLFW_KEY_K, "Modern UI");
 
+    static final Method SEND_TO_CHAT = ObfuscationReflectionHelper.findMethod(ChatComponent.class, "m_93790_",
+            Component.class, int.class, int.class, boolean.class);
+
     // minecraft
     private final Minecraft minecraft = Minecraft.getInstance();
 
     // minecraft window
     private final Window mWindow = minecraft.getWindow();
+
+    // the UI thread
+    private volatile Thread mUiThread;
+    private volatile Looper mLooper;
+    private volatile boolean mRunning;
 
     // the view root impl
     private ViewRootImpl mViewRoot;
@@ -174,7 +190,7 @@ public final class UIManager implements LifecycleOwner {
             new OnBackPressedDispatcher(() -> minecraft.tell(this::onBackPressed));
 
     private ViewModelStore mViewModelStore;
-    FragmentController mFragmentController;
+    volatile FragmentController mFragmentController;
 
 
     /// Input Event \\\
@@ -206,25 +222,29 @@ public final class UIManager implements LifecycleOwner {
         assert mgr.mCanvas == null;
         mgr.mCanvas = GLSurfaceCanvas.initialize();
         glEnable(GL_MULTISAMPLE);
-        new Thread(UIManager::run, "UI thread").start();
+        (sInstance.mUiThread = new Thread(UIManager::run, "UI thread")).start();
+        sInstance.mRunning = true;
         LOGGER.info(MARKER, "UI system initialized");
     }
 
     @UiThread
     private static void run() {
         sInstance.init();
-        for (; ; ) {
+        while (true) {
             try {
                 Looper.loop();
             } catch (Throwable e) {
                 LOGGER.error(MARKER, "An error occurred on UI thread", e);
                 // dev can add breakpoints
-                if (!ModernUIForge.isDeveloperMode()) {
-                    sInstance.dump();
-                    Minecraft.getInstance().delayCrash(() -> CrashReport.forThrowable(e, "Exception on UI thread"));
-                    break;
+                if (sInstance.mRunning && ModernUIForge.isDeveloperMode()) {
+                    continue;
+                } else {
+                    Minecraft.getInstance().tell(sInstance::dump);
+                    Minecraft.getInstance().tell(() -> Minecraft.crash(
+                            CrashReport.forThrowable(e, "Exception on UI thread")));
                 }
             }
+            break;
         }
     }
 
@@ -250,7 +270,7 @@ public final class UIManager implements LifecycleOwner {
         final Fragment fragment = event.getFragment();
         if (fragment == null) {
             p.closeContainer(); // close server menu whatever it is
-            LOGGER.warn(MARKER, "No fragment set, closing {} keyed {}", menu, key);
+            LOGGER.debug(MARKER, "No fragment set, closing {} keyed {}", menu, key);
             return;
         }
         mFragment = fragment;
@@ -418,7 +438,9 @@ public final class UIManager implements LifecycleOwner {
         mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
         mFragmentController.dispatchStart();
 
-        LOGGER.info(MARKER, "View system initialized in {}ms", System.nanoTime() - startTime / 1000000);
+        mLooper = Objects.requireNonNull(Looper.myLooper());
+
+        LOGGER.info(MARKER, "View system initialized in {}ms", (System.nanoTime() - startTime) / 1000000);
 
         // test stuff
         /*Paint paint = Paint.take();
@@ -456,6 +478,17 @@ public final class UIManager implements LifecycleOwner {
         mCanvas.drawCircle(450, 30, 6, paint);
         mCanvas.drawCircle(510, 90, 6, paint);
         mCanvas.drawCircle(570, 30, 6, paint);*/
+    }
+
+    @UiThread
+    private void finish() {
+        mFragmentController.dispatchStop();
+        mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+
+        mFragmentController.dispatchDestroy();
+        mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+
+        mLooper.quitSafely();
     }
 
     /**
@@ -605,51 +638,61 @@ public final class UIManager implements LifecycleOwner {
 
     private void dump() {
         StringBuilder builder = new StringBuilder();
-        builder.append(">>> Modern UI debug info <<<\n");
+        try (var w = new PrintWriter(new StringBuilderWriter(builder))) {
+            dump(w);
+        }
+        String str = builder.toString();
+        if (minecraft.level != null) {
+            try {
+                SEND_TO_CHAT.invoke(minecraft.gui.getChat(), new TextComponent(str).withStyle(ChatFormatting.GRAY),
+                        0xCBD366, minecraft.gui.getGuiTicks(), false);
+            } catch (IllegalAccessException | InvocationTargetException ignored) {
+            }
+        }
+        LOGGER.info(MARKER, str);
+    }
 
-        builder.append("Graphics API: OpenGL ");
-        builder.append(glGetString(GL_VERSION));
-        builder.append("\nRender Pipeline: OpenGL 4.5 Core (ARB enabled)\n");
+    private void dump(@Nonnull PrintWriter w) {
+        w.println(">>> Modern UI debug info <<<");
 
-        builder.append("Container Menu: ");
+        w.print("Graphics API: OpenGL ");
+        w.println(glGetString(GL_VERSION));
+        w.println("Render Pipeline: OpenGL 4.5 Core (ARB enabled)");
+
+        w.print("Container Menu: ");
+        LocalPlayer player = minecraft.player;
         AbstractContainerMenu menu = null;
-        if (minecraft.player != null) {
-            menu = minecraft.player.containerMenu;
+        if (player != null) {
+            menu = player.containerMenu;
         }
         if (menu != null) {
-            builder.append(menu.getClass().getSimpleName());
-            builder.append('\n');
+            w.println(menu.getClass().getSimpleName());
             try {
                 ResourceLocation name = menu.getType().getRegistryName();
-                builder.append(" \u21B3Registry Name: ");
-                builder.append(name);
-                builder.append('\n');
+                w.print(" \u21B3Registry Name: ");
+                w.println(name);
             } catch (Exception ignored) {
             }
         } else {
-            builder.append((Object) null);
-            builder.append('\n');
+            w.println((Object) null);
         }
 
         if (mCallback != null) {
-            builder.append("Callback: ");
-            builder.append(mCallback.getClass());
-            builder.append('\n');
-        } else if (minecraft.screen != null) {
-            builder.append("Screen: ");
-            builder.append(minecraft.screen.getClass());
-            builder.append('\n');
-        }
-
-        ModernUIForge.dispatchOnDebugDump(builder);
-
-        String str = builder.toString();
-
-        if (minecraft.level != null) {
-            minecraft.gui.getChat().addMessage(new TextComponent(str).withStyle(ChatFormatting.GRAY));
+            w.print("Callback: ");
+            w.println(mCallback.getClass());
         } else {
-            LOGGER.info(MARKER, str);
+            Screen screen = minecraft.screen;
+            if (screen != null) {
+                w.print("Screen: ");
+                w.println(screen.getClass());
+            }
         }
+
+        if (mFragmentController != null) {
+            mFragmentController.getFragmentManager().dump("FM", null, w);
+        }
+
+        ModernUIForge.dispatchOnDebugDump(w);
     }
 
     boolean charTyped(char ch) {
@@ -797,13 +840,27 @@ public final class UIManager implements LifecycleOwner {
             final long deltaMillis = mFrameTimeMillis - lastFrameTime;
             mElapsedTimeMillis += deltaMillis;
             // coordinates UI thread
-            Message msg = mViewRoot.mHandler.obtainMessage(MSG_DO_FRAME);
-            msg.setAsynchronous(true);
-            msg.sendToTarget();
-            // update extension animations
-            BlurHandler.INSTANCE.update(mElapsedTimeMillis);
-            if (TooltipRenderer.sTooltip) {
-                TooltipRenderer.update(deltaMillis);
+            if (mRunning) {
+                // do not async, this is on main thread
+                mViewRoot.mHandler.sendEmptyMessage(MSG_DO_FRAME);
+                // update extension animations
+                BlurHandler.INSTANCE.update(mElapsedTimeMillis);
+                if (TooltipRenderer.sTooltip) {
+                    TooltipRenderer.update(deltaMillis);
+                }
+            }
+        } else {
+            // main thread
+            if (!minecraft.isRunning() && mRunning) {
+                LOGGER.info(MARKER, "Finishing UI thread");
+                mRunning = false;
+                mViewRoot.mHandler.post(this::finish);
+                try {
+                    // in case of GLFW is terminated too early
+                    mUiThread.join(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
         }
         /* else {
@@ -956,7 +1013,7 @@ public final class UIManager implements LifecycleOwner {
         @Nullable
         @Override
         public Object onGetHost() {
-            // intentionally null, activity is global
+            // intentionally null
             return null;
         }
 
