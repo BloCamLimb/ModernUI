@@ -87,8 +87,8 @@ public final class ModernUITextMC {
             }
         });
         MuiForgeApi.addOnDebugDumpListener(builder -> {
-            builder.append("Text Layout Entries: ");
-            builder.append(TextLayoutEngine.getInstance().countEntries());
+            builder.print("Text Layout Entries: ");
+            builder.println(TextLayoutEngine.getInstance().countEntries());
         });
     }
 

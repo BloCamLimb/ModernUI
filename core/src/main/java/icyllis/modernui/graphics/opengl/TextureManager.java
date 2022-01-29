@@ -42,8 +42,8 @@ public class TextureManager {
     public static final int CACHE_MASK = 0x1;
     public static final int MIPMAP_MASK = 0x2;
 
-    private Map<String, Map<String, GLTexture>> mTextures = new HashMap<>();
     private final Object mLock = new Object();
+    private Map<String, Map<String, GLTexture>> mTextures = new HashMap<>();
 
     private TextureManager() {
     }
@@ -58,12 +58,8 @@ public class TextureManager {
     // internal use
     public void reload() {
         synchronized (mLock) {
-            // implicitly release textures
-            for (var v : mTextures.values()) {
-                for (var t : v.values()) {
-                    t.close();
-                }
-            }
+            // see Cleaner
+            mTextures.clear();
             mTextures = new HashMap<>();
         }
     }

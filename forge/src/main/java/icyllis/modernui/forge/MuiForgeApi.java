@@ -41,6 +41,7 @@ import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
+import java.io.PrintWriter;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
@@ -72,9 +73,10 @@ public final class MuiForgeApi {
     }
 
     /**
-     * Open a container menu on server, generate an id represents the next screen (due to network latency).
-     * Then send a packet to the player to request the application user interface on client.
-     * This method must be called from server thread.
+     * Open a container menu on server, generating a container id represents the next screen
+     * (due to network latency). Then send a packet to the player to request the application
+     * user interface on client. This method must be called from server thread, this client
+     * will trigger a {@link OpenMenuEvent} later.
      * <p>
      * This is served as a client/server interaction model, there must be a running server.
      *
@@ -89,9 +91,10 @@ public final class MuiForgeApi {
     }
 
     /**
-     * Open a container menu on server, generate an id represents the next screen (due to network latency).
-     * Then send a packet to the player to request the application user interface on client.
-     * This method must be called from server thread.
+     * Open a container menu on server, generating a container id represents the next screen
+     * (due to network latency). Then send a packet to the player to request the application
+     * user interface on client. This method must be called from server thread, this client
+     * will trigger a {@link OpenMenuEvent} later.
      * <p>
      * This is served as a client/server interaction model, there must be a running server.
      *
@@ -108,9 +111,10 @@ public final class MuiForgeApi {
     }
 
     /**
-     * Open a container menu on server, generate an id represents the next screen (due to network latency).
-     * Then send a packet to the player to request the application user interface on client.
-     * This method must be called from server thread.
+     * Open a container menu on server, generating a container id represents the next screen
+     * (due to network latency). Then send a packet to the player to request the application
+     * user interface on client. This method must be called from server thread, this client
+     * will trigger a {@link OpenMenuEvent} later.
      * <p>
      * This is served as a client/server interaction model, there must be a running server.
      *
@@ -176,7 +180,7 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @MainThread
     public static void openGui(@Nonnull Fragment fragment, @Nullable UICallback callback) {
-        ArchCore.checkRenderThread();
+        ArchCore.checkMainThread();
         UIManager.sInstance.start(fragment, callback);
     }
 
@@ -189,6 +193,11 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @RenderThread
     public static long getElapsedTime() {
+        if (UIManager.sInstance == null) {
+            throw new IllegalStateException("UI system was never initialized. " +
+                    "Please check whether the loader threw an exception before. " +
+                    "Do NOT report this issue to Modern UI.");
+        }
         return UIManager.sInstance.getElapsedTime();
     }
 
@@ -205,6 +214,8 @@ public final class MuiForgeApi {
 
     /**
      * Post a runnable to be executed asynchronously on UI thread.
+     * This method is equivalent to calling {@link ArchCore#getUiHandlerAsync()},
+     * but {@link ArchCore} is not a stable API.
      *
      * @param r the Runnable that will be executed
      */
@@ -341,9 +352,9 @@ public final class MuiForgeApi {
         /**
          * Called when Modern UI dumps its debug info to chat or console.
          *
-         * @param builder the builder to add new lines
+         * @param writer the writer to add new lines
          */
-        void onDebugDump(@Nonnull StringBuilder builder);
+        void onDebugDump(@Nonnull PrintWriter writer);
     }
 
     /* Screen */

@@ -52,6 +52,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
@@ -154,10 +155,10 @@ public final class ModernUIForge extends ModernUI {
     }
 
     @OnlyIn(Dist.CLIENT)
-    static void dispatchOnDebugDump(@Nonnull StringBuilder builder) {
+    static void dispatchOnDebugDump(@Nonnull PrintWriter writer) {
         synchronized (MuiForgeApi.sOnDebugDumpListeners) {
             for (var l : MuiForgeApi.sOnDebugDumpListeners) {
-                l.onDebugDump(builder);
+                l.onDebugDump(writer);
             }
         }
     }
