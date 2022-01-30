@@ -34,6 +34,11 @@ final class AttachInfo {
     View mRootView;
 
     /**
+     * Indicates whether the view's window currently has the focus.
+     */
+    boolean mHasWindowFocus;
+
+    /**
      * The current visibility of the window.
      */
     int mWindowVisibility;

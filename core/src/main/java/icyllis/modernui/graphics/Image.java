@@ -48,13 +48,13 @@ public class Image {
      * You should use a single image as the UI texture to avoid each icon creating its own image.
      * Underlying resources are automatically released.
      *
-     * @param namespace the application namespace
-     * @param subPath   the sub path to the resource
+     * @param res  the application namespace
+     * @param path the sub path to the resource
      * @return the image
      */
     @Nonnull
-    public static Image create(@Nonnull String namespace, @Nonnull String subPath) {
-        return new Image(TextureManager.getInstance().getOrCreate(namespace, "textures/" + subPath,
+    public static Image create(@Nonnull String res, @Nonnull String path) {
+        return new Image(TextureManager.getInstance().getOrCreate(res, "textures/" + path,
                 TextureManager.CACHE_MASK | TextureManager.MIPMAP_MASK));
     }
 

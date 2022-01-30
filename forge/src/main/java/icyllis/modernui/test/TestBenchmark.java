@@ -18,6 +18,7 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.util.DataSet;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -25,6 +26,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import org.github.jamm.MemoryMeter;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
@@ -39,13 +41,21 @@ import java.util.*;
 public class TestBenchmark {
 
     public static void main(String[] args) throws RunnerException {
-        new Runner(new OptionsBuilder()
+        MemoryMeter meter = MemoryMeter.builder().build();
+
+        final int NUM_BITS = 9;
+        int[][] VIEW_STATE_SETS = new int[1 << NUM_BITS][];
+        for (int i = 0; i < VIEW_STATE_SETS.length; i++) {
+            final int numBits = Integer.bitCount(i);
+            final int[] set = new int[numBits];
+            VIEW_STATE_SETS[i] = set;
+        }
+
+        ModernUI.LOGGER.info(meter.measureDeep(VIEW_STATE_SETS));
+        /*new Runner(new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
                 .shouldFailOnError(true).shouldDoGC(true)
-                .jvmArgs("-XX:+UseFMA").build()).run();
-        /*MemoryMeter meter = MemoryMeter.builder().build();
-        ModernUI.LOGGER.info("CompoundTag: {}", TextUtils.binaryCompact((int) meter.measureDeep(sCompoundTag)));
-        ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact((int) meter.measureDeep(sDataSet)));*/
+                .jvmArgs("-XX:+UseFMA").build()).run();*/
     }
 
     public static DataSet sDataSet = new DataSet();

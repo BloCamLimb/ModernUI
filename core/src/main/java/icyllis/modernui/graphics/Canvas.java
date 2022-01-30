@@ -477,13 +477,13 @@ public abstract class Canvas {
 
     /**
      * Draw the specified image, scaling/translating automatically to fill the destination
-     * rectangle. If the source rectangle is not null, it specifies the subset of the bitmap to
+     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
      * draw. The Style and smooth radius is ignored in the paint, images are always filled.
      *
      * @param image the image to be drawn
-     * @param src   the subset of the bitmap to be drawn, null meaning full image
+     * @param src   the subset of the image to be drawn, null meaning full image
      * @param dst   the rectangle that the image will be scaled/translated to fit into
-     * @param paint the paint used to draw the bitmap, null meaning a default paint
+     * @param paint the paint used to draw the image, null meaning a default paint
      */
     public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull RectF dst, @Nullable Paint paint) {
         if (src == null) {
@@ -497,13 +497,13 @@ public abstract class Canvas {
 
     /**
      * Draw the specified image, scaling/translating automatically to fill the destination
-     * rectangle. If the source rectangle is not null, it specifies the subset of the bitmap to
+     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
      * draw. The Style and smooth radius is ignored in the paint, images are always filled.
      *
      * @param image the image to be drawn
-     * @param src   the subset of the bitmap to be drawn, null meaning full image
+     * @param src   the subset of the image to be drawn, null meaning full image
      * @param dst   the rectangle that the image will be scaled/translated to fit into
-     * @param paint the paint used to draw the bitmap, null meaning a default paint
+     * @param paint the paint used to draw the image, null meaning a default paint
      */
     public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull Rect dst, @Nullable Paint paint) {
         if (src == null) {
@@ -517,11 +517,11 @@ public abstract class Canvas {
 
     /**
      * Draw the specified image, scaling/translating automatically to fill the destination
-     * rectangle. If the source rectangle is not null, it specifies the subset of the bitmap to
+     * rectangle. If the source rectangle is not null, it specifies the subset of the image to
      * draw. The Style and smooth radius is ignored in the paint, images are always filled.
      *
      * @param image the image to be drawn
-     * @param paint the paint used to draw the bitmap, null meaning a default paint
+     * @param paint the paint used to draw the image, null meaning a default paint
      */
     public abstract void drawImage(@Nonnull Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
                                    float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint);
