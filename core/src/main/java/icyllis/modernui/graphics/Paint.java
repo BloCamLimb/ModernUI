@@ -62,6 +62,23 @@ public class Paint {
     }
 
     /**
+     * Create a new paint, initialized with the attributes in the specified
+     * paint parameter.
+     *
+     * @param paint Existing paint used to initialize the attributes of the
+     *              new paint.
+     */
+    public Paint(@Nonnull Paint paint) {
+        mColor = paint.mColor;
+        mFlags = paint.mFlags;
+        mStrokeWidth = paint.mStrokeWidth;
+        mSmoothRadius = paint.mSmoothRadius;
+        if (paint.mColors != null) {
+            setColors(paint.mColors);
+        }
+    }
+
+    /**
      * Set the paint to defaults.
      */
     public void reset() {
@@ -168,6 +185,17 @@ public class Paint {
      */
     public int getColor() {
         return mColor;
+    }
+
+    /**
+     * Helper to getColor() that just returns the color's alpha value. This is
+     * the same as calling getColor() >>> 24. It always returns a value between
+     * 0 (completely transparent) and 255 (completely opaque).
+     *
+     * @return the alpha component of the paint's color.
+     */
+    public int getAlpha() {
+        return mColor >>> 24;
     }
 
     /**

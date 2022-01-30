@@ -20,8 +20,10 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.RenderNode;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -30,6 +32,7 @@ import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.SparseArray;
+import icyllis.modernui.util.StateSet;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.glfw.GLFW;
@@ -301,8 +304,6 @@ public class View implements Drawable.Callback {
      */
     static final int PFLAG_INVALIDATED = 0x80000000;
 
-    private static final int PFLAG2_BACKGROUND_SIZE_CHANGED = 0x00000001;
-
     /**
      * Use with {@link #focusSearch(int)}. Move focus to the previous selectable
      * item.
@@ -361,6 +362,23 @@ public class View implements Drawable.Callback {
      * is smaller that the space the view would like to have.
      */
     public static final int MEASURED_STATE_TOO_SMALL = 0x01000000;
+
+    /**
+     * Indicates that this view has reported that it can accept the current drag's content.
+     * Cleared when the drag operation concludes.
+     *
+     * @hide
+     */
+    static final int PFLAG2_DRAG_CAN_ACCEPT = 0x00000001;
+
+    /**
+     * Indicates that this view is currently directly under the drag location in a
+     * drag-and-drop operation involving content that it can accept.  Cleared when
+     * the drag exits the view, or when the drag operation concludes.
+     *
+     * @hide
+     */
+    static final int PFLAG2_DRAG_HOVERED = 0x00000002;
 
     /**
      * A flag to indicate that the layout direction of this view has not been defined yet.
@@ -429,6 +447,8 @@ public class View implements Drawable.Callback {
      */
     static final int PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK = 0x0000000C
             << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
+
+    private static final int PFLAG2_BACKGROUND_SIZE_CHANGED = 0x10000000;
 
     /*
      * Array of horizontal layout direction flags for mapping attribute "layoutDirection" to correct
@@ -1123,6 +1143,11 @@ public class View implements Drawable.Callback {
     private ScrollCache mScrollCache;
 
     private int[] mDrawableState = null;
+
+    /**
+     * Animator that automatically runs based on state changes.
+     */
+    private StateListAnimator mStateListAnimator;
 
     /**
      * The layout parameters associated with this view and used by the parent
@@ -2516,6 +2541,35 @@ public class View implements Drawable.Callback {
     public void invalidateDrawable(@Nonnull Drawable drawable) {
         if (verifyDrawable(drawable)) {
             invalidate();
+        }
+    }
+
+    /**
+     * Schedules an action on a drawable to occur at a specified time.
+     *
+     * @param who  the recipient of the action
+     * @param what the action to run on the drawable
+     * @param when the time at which the action must occur. Uses the
+     *             {@link ArchCore#timeMillis()} timebase.
+     */
+    @Override
+    public void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
+        if (verifyDrawable(who)) {
+            final long delay = when - ArchCore.timeMillis();
+            postOnAnimationDelayed(what, delay);
+        }
+    }
+
+    /**
+     * Cancels a scheduled action on a drawable.
+     *
+     * @param who  the recipient of the action
+     * @param what the action to cancel
+     */
+    @Override
+    public void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
+        if (verifyDrawable(who)) {
+            removeCallbacks(what);
         }
     }
 
@@ -4034,6 +4088,41 @@ public class View implements Drawable.Callback {
         return mRenderNode.getAnimationMatrix();
     }
 
+
+    /**
+     * Returns the current StateListAnimator if exists.
+     *
+     * @return StateListAnimator or null if it does not exist
+     * @see #setStateListAnimator(StateListAnimator)
+     */
+    public StateListAnimator getStateListAnimator() {
+        return mStateListAnimator;
+    }
+
+    /**
+     * Attaches the provided StateListAnimator to this View.
+     * <p>
+     * Any previously attached StateListAnimator will be detached.
+     *
+     * @param stateListAnimator The StateListAnimator to update the view
+     * @see StateListAnimator
+     */
+    public void setStateListAnimator(@Nullable StateListAnimator stateListAnimator) {
+        if (mStateListAnimator == stateListAnimator) {
+            return;
+        }
+        if (mStateListAnimator != null) {
+            mStateListAnimator.setTarget(null);
+        }
+        mStateListAnimator = stateListAnimator;
+        if (stateListAnimator != null) {
+            stateListAnimator.setTarget(this);
+            if (isAttachedToWindow()) {
+                stateListAnimator.setState(getDrawableState());
+            }
+        }
+    }
+
     void dispatchAttachedToWindow(AttachInfo info) {
         mAttachInfo = info;
         if (mFloatingTreeObserver != null) {
@@ -4970,7 +5059,6 @@ public class View implements Drawable.Callback {
         }
     }
 
-
     /**
      * Resolve the Drawables depending on the layout direction. This is implicitly supposing
      * that the View directionality can and will be resolved before its Drawables.
@@ -5277,8 +5365,31 @@ public class View implements Drawable.Callback {
      *
      * @see Drawable#setState(int[])
      */
+    @CallSuper
     protected void drawableStateChanged() {
+        final int[] state = getDrawableState();
+        boolean changed = false;
 
+        final Drawable bg = mBackground;
+        if (bg != null && bg.isStateful()) {
+            changed = bg.setState(state);
+        }
+
+        if (mScrollCache != null) {
+            final Drawable scrollBar = mScrollCache.mScrollBar;
+            if (scrollBar != null && scrollBar.isStateful()) {
+                changed |= scrollBar.setState(state)
+                        && mScrollCache.mState != ScrollCache.OFF;
+            }
+        }
+
+        if (mStateListAnimator != null) {
+            mStateListAnimator.setState(state);
+        }
+
+        if (changed) {
+            invalidate();
+        }
     }
 
     /**
@@ -5307,12 +5418,87 @@ public class View implements Drawable.Callback {
      * @param extraSpace if non-zero, this is the number of extra entries you
      *                   would like in the returned array in which you can place your own
      *                   states.
-     * @return an array holding the current {@link Drawable} state of
-     * the view.
+     * @return an array holding the current {@link Drawable} state of the view.
      * @see #mergeDrawableStates(int[], int[])
      */
+    @Nonnull
     protected int[] onCreateDrawableState(int extraSpace) {
-        return new int[0];
+        if ((mViewFlags & DUPLICATE_PARENT_STATE) == DUPLICATE_PARENT_STATE &&
+                mParent instanceof View) {
+            return ((View) mParent).onCreateDrawableState(extraSpace);
+        }
+
+        int stateMask = 0;
+
+        final int privateFlags = mPrivateFlags;
+        if ((privateFlags & PFLAG_PRESSED) != 0) {
+            stateMask |= StateSet.VIEW_STATE_PRESSED;
+        }
+        if ((mViewFlags & ENABLED_MASK) == ENABLED) {
+            stateMask |= StateSet.VIEW_STATE_ENABLED;
+        }
+        if (isFocused()) {
+            stateMask |= StateSet.VIEW_STATE_FOCUSED;
+        }
+        if ((privateFlags & PFLAG_SELECTED) != 0) {
+            stateMask |= StateSet.VIEW_STATE_SELECTED;
+        }
+        if (hasWindowFocus()) {
+            stateMask |= StateSet.VIEW_STATE_WINDOW_FOCUSED;
+        }
+        if ((privateFlags & PFLAG_ACTIVATED) != 0) {
+            stateMask |= StateSet.VIEW_STATE_ACTIVATED;
+        }
+        if ((privateFlags & PFLAG_HOVERED) != 0) {
+            stateMask |= StateSet.VIEW_STATE_HOVERED;
+        }
+        final int privateFlags2 = mPrivateFlags2;
+        if ((privateFlags2 & PFLAG2_DRAG_CAN_ACCEPT) != 0) {
+            stateMask |= StateSet.VIEW_STATE_DRAG_CAN_ACCEPT;
+        }
+        if ((privateFlags2 & PFLAG2_DRAG_HOVERED) != 0) {
+            stateMask |= StateSet.VIEW_STATE_DRAG_HOVERED;
+        }
+
+        final int[] drawableState = StateSet.get(stateMask);
+
+        if (extraSpace == 0) {
+            return drawableState;
+        }
+
+        final int[] fullState;
+        if (drawableState.length > 0) {
+            fullState = new int[drawableState.length + extraSpace];
+            System.arraycopy(drawableState, 0, fullState, 0, drawableState.length);
+        } else {
+            fullState = new int[extraSpace];
+        }
+
+        return fullState;
+    }
+
+    /**
+     * Merge your own state values in <var>additionalState</var> into the base
+     * state values <var>baseState</var> that were returned by
+     * {@link #onCreateDrawableState(int)}.
+     *
+     * @param baseState       The base state values returned by
+     *                        {@link #onCreateDrawableState(int)}, which will be modified to also hold your
+     *                        own additional state values.
+     * @param additionalState The additional state values you would like
+     *                        added to <var>baseState</var>; this array is not modified.
+     * @return As a convenience, the <var>baseState</var> array you originally
+     * passed into the function is returned.
+     * @see #onCreateDrawableState(int)
+     */
+    @Nonnull
+    protected static int[] mergeDrawableStates(@Nonnull int[] baseState, @Nonnull int[] additionalState) {
+        int i = baseState.length - 1;
+        while (i >= 0 && baseState[i] == 0) {
+            i--;
+        }
+        System.arraycopy(additionalState, 0, baseState, i + 1, additionalState.length);
+        return baseState;
     }
 
     /**
@@ -5782,6 +5968,16 @@ public class View implements Drawable.Callback {
     //TODO
     public boolean onDragEvent(DragEvent event) {
         return true;
+    }
+
+    /**
+     * Returns true if this view is in a window that currently has window focus.
+     * Note that this is not the same as the view itself having focus.
+     *
+     * @return True if this view is in a window that currently has window focus.
+     */
+    public boolean hasWindowFocus() {
+        return mAttachInfo != null && mAttachInfo.mHasWindowFocus;
     }
 
     /**

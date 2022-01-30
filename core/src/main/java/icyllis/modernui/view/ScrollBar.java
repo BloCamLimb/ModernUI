@@ -292,4 +292,14 @@ final class ScrollBar extends Drawable implements Drawable.Callback {
     public void invalidateDrawable(@Nonnull Drawable drawable) {
         invalidateSelf();
     }
+
+    @Override
+    public void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
+        scheduleSelf(what, when);
+    }
+
+    @Override
+    public void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
+        unscheduleSelf(what);
+    }
 }

@@ -2084,6 +2084,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         super.drawableStateChanged();
     }
 
+    @Nonnull
     @Override
     protected int[] onCreateDrawableState(int extraSpace) {
         return super.onCreateDrawableState(extraSpace);
