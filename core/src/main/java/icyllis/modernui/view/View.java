@@ -20,6 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
@@ -1327,7 +1328,7 @@ public class View implements Drawable.Callback {
         }
         boolean invalidate = false;
         if (cache.mState == ScrollCache.FADING) {
-            long currentTime = AnimationHandler.currentTimeMillis();
+            long currentTime = AnimationUtils.currentAnimationTimeMillis();
             float fraction = (float) (currentTime - cache.mFadeStartTime) / cache.mFadeDuration;
             if (fraction >= 1.0f) {
                 cache.mState = ScrollCache.OFF;
@@ -3224,7 +3225,7 @@ public class View implements Drawable.Callback {
             } else {
                 startDelay = Math.max(0, startDelay);
             }
-            scrollCache.mFadeStartTime = AnimationHandler.currentTimeMillis() + startDelay;
+            scrollCache.mFadeStartTime = AnimationUtils.currentAnimationTimeMillis() + startDelay;
             scrollCache.mState = ScrollCache.ON;
             if (startDelay <= 0) {
                 scrollCache.mState = ScrollCache.FADING;
@@ -5467,7 +5468,7 @@ public class View implements Drawable.Callback {
         }
 
         final int[] fullState;
-        if (drawableState.length > 0) {
+        if (stateMask != 0) {
             fullState = new int[drawableState.length + extraSpace];
             System.arraycopy(drawableState, 0, fullState, 0, drawableState.length);
         } else {

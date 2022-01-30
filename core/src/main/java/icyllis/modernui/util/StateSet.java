@@ -49,17 +49,54 @@ public final class StateSet {
      */
     private static final int[][] VIEW_STATE_SETS;
 
+    /**
+     * A state specification that will be matched by all StateSets.
+     */
+    public static final int[] WILD_CARD = {};
+
     // Manually generated IDs
+    /**
+     * Set when a view's window has input focus.
+     */
     public static final int state_window_focused = 0x01010090;
+    /**
+     * Set when a view (or one of its parents) is currently selected.
+     */
     public static final int state_selected = 0x01010091;
+    /**
+     * Set when a view has input focus.
+     */
     public static final int state_focused = 0x01010092;
+    /**
+     * Set when a view is enabled.
+     */
     public static final int state_enabled = 0x01010093;
+    /**
+     * Set when the user is pressing down in a view.
+     */
     public static final int state_pressed = 0x01010094;
+    /**
+     * Set when a view or its parent has been "activated" meaning the user has currently
+     * marked it as being of interest.
+     */
     public static final int state_activated = 0x01010095;
+    /**
+     * Set when a pointer is hovering over a view.
+     */
     public static final int state_hovered = 0x01010096;
+    /**
+     * Set when a view that is capable of accepting a drop of the content currently
+     * being manipulated in a drag-and-drop operation.
+     */
     public static final int state_drag_can_accept = 0x01010097;
+    /**
+     * Set when a view is currently positioned over by a drag operation.
+     */
     public static final int state_drag_hovered = 0x01010098;
 
+    /**
+     * Called by View
+     */
     @ApiStatus.Internal
     public static final int
             VIEW_STATE_WINDOW_FOCUSED = 1,
@@ -72,7 +109,7 @@ public final class StateSet {
             VIEW_STATE_DRAG_CAN_ACCEPT = 1 << 7,
             VIEW_STATE_DRAG_HOVERED = 1 << 8;
 
-    static final int[] VIEW_STATE_IDS = new int[]{
+    private static final int[] VIEW_STATE_IDS = new int[]{
             state_window_focused, VIEW_STATE_WINDOW_FOCUSED,
             state_selected, VIEW_STATE_SELECTED,
             state_focused, VIEW_STATE_FOCUSED,
@@ -87,7 +124,8 @@ public final class StateSet {
     static {
         // 20KB
         VIEW_STATE_SETS = new int[1 << (VIEW_STATE_IDS.length >> 1)][];
-        for (int i = 0; i < VIEW_STATE_SETS.length; i++) {
+        VIEW_STATE_SETS[0] = WILD_CARD;
+        for (int i = 1; i < VIEW_STATE_SETS.length; i++) {
             final int numBits = Integer.bitCount(i);
             final int[] set = new int[numBits];
             int pos = 0;
@@ -96,38 +134,29 @@ public final class StateSet {
                     set[pos++] = VIEW_STATE_IDS[j];
                 }
             }
+            // pos == numBits
             VIEW_STATE_SETS[i] = set;
         }
-    }
-
-    @ApiStatus.Internal
-    public static int[] get(int mask) {
-        if (mask >= VIEW_STATE_SETS.length) {
-            throw new IllegalArgumentException("Invalid state set mask");
-        }
-        return VIEW_STATE_SETS[mask];
     }
 
     private StateSet() {
     }
 
     /**
-     * A state specification that will be matched by all StateSets.
+     * Called by View
      */
-    public static final int[] WILD_CARD = new int[0];
+    @ApiStatus.Internal
+    public static int[] get(int mask) {
+        return VIEW_STATE_SETS[mask];
+    }
 
     /**
-     * A state set that does not contain any valid states.
-     */
-    public static final int[] NOTHING = new int[]{0};
-
-    /**
-     * Return whether the stateSetOrSpec is matched by all StateSets.
+     * Return whether the state is matched by all StateSets.
      *
-     * @param stateSetOrSpec a state set or state spec.
+     * @param state a state set or state spec.
      */
-    public static boolean isWildCard(@Nonnull int[] stateSetOrSpec) {
-        return stateSetOrSpec.length == 0 || stateSetOrSpec[0] == 0;
+    public static boolean isWildCard(@Nonnull int[] state) {
+        return state.length == 0 || state[0] == 0;
     }
 
     /**
@@ -137,10 +166,8 @@ public final class StateSet {
      *                  prohibited (if negative) {@link View} states.
      * @param stateSet  an array of {@link View} states
      */
-    public static boolean stateSetMatches(int[] stateSpec, int[] stateSet) {
-        if (stateSet == null) {
-            return (stateSpec == null || isWildCard(stateSpec));
-        }
+    public static boolean stateSetMatches(@Nonnull int[] stateSpec, @Nonnull int[] stateSet) {
+        CYCLE:
         for (int stateSpecState : stateSpec) {
             if (stateSpecState == 0) {
                 // We've reached the end of the cases to match against.
@@ -154,7 +181,6 @@ public final class StateSet {
                 mustMatch = false;
                 stateSpecState = -stateSpecState;
             }
-            boolean found = false;
             for (int state : stateSet) {
                 if (state == 0) {
                     // We've reached the end of states to match.
@@ -163,21 +189,20 @@ public final class StateSet {
                         return false;
                     } else {
                         // Continue checking other must-not-match states.
-                        break;
+                        continue CYCLE;
                     }
                 }
                 if (state == stateSpecState) {
                     if (mustMatch) {
-                        found = true;
                         // Continue checking other must-match states.
-                        break;
+                        continue CYCLE;
                     } else {
                         // Any match of a must-not-match state returns false.
                         return false;
                     }
                 }
             }
-            if (mustMatch && !found) {
+            if (mustMatch) {
                 // We've reached the end of states to match, and we didn't
                 // find a must-match state.
                 return false;
@@ -222,16 +247,11 @@ public final class StateSet {
      * @return {@code true} if the attribute is contained in the state specs.
      */
     @ApiStatus.Internal
-    public static boolean containsAttribute(int[][] stateSpecs, int attr) {
-        if (stateSpecs != null) {
-            for (int[] spec : stateSpecs) {
-                if (spec == null) {
-                    break;
-                }
-                for (int specAttr : spec) {
-                    if (specAttr == attr || -specAttr == attr) {
-                        return true;
-                    }
+    public static boolean containsAttribute(@Nonnull int[][] stateSpecs, int attr) {
+        for (int[] spec : stateSpecs) {
+            for (int specAttr : spec) {
+                if (specAttr == attr || -specAttr == attr) {
+                    return true;
                 }
             }
         }

@@ -23,8 +23,7 @@ import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.util.Property;
 
 import javax.annotation.Nonnull;
-
-import static icyllis.modernui.ModernUI.UNSAFE;
+import javax.annotation.Nullable;
 
 /**
  * This class holds information about a property and the values that that property
@@ -38,7 +37,7 @@ import static icyllis.modernui.ModernUI.UNSAFE;
  */
 public class PropertyValuesHolder<T, V, P> implements Cloneable {
 
-    @Nonnull
+    @Nullable
     Property<T, P> mProperty;
 
     /**
@@ -67,35 +66,29 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
     private TypeConverter<V, P> mConverter;
 
     /**
+     * Internal utility constructor, used by the factory methods.
+     */
+    private PropertyValuesHolder() {
+    }
+
+    /**
      * Internal utility constructor, used by the factory methods to set the property.
      *
      * @param property The property for this holder.
      */
-    private PropertyValuesHolder(@Nonnull Property<T, P> property) {
+    private PropertyValuesHolder(@Nullable Property<T, P> property) {
         mProperty = property;
     }
 
     /**
-     * Constructs and returns a PropertyValuesHolder with a given property name and
-     * set of int values. In this case, a direct write/read operation on the field
-     * will be performed (i.e. no setter/getter methods).
+     * Constructs and returns a PropertyValuesHolder with a given set of int values.
      *
-     * @param clazz        The target class that the property belongs to.
-     * @param propertyName The name of the property being animated.
-     * @param values       The values that the named property will animate between.
+     * @param values The values that the named property will animate between.
      * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
      */
     @Nonnull
-    public static <T> PropertyValuesHolder<T, Integer, Integer> ofInt(@Nonnull Class<T> clazz,
-                                                                      @Nonnull String propertyName,
-                                                                      @Nonnull int... values) {
-        try {
-            long offset = UNSAFE.objectFieldOffset(clazz.getDeclaredField(propertyName));
-            return ofInt(new UnsafeIntProperty<>(offset), values);
-        } catch (NoSuchFieldException e) {
-            throw new IllegalArgumentException(
-                    "Cannot find the property " + propertyName + " in " + clazz.getName(), e);
-        }
+    public static PropertyValuesHolder<?, Integer, Integer> ofInt(@Nonnull int... values) {
+        return new IntPropertyValuesHolder<>(values);
     }
 
     /**
@@ -113,6 +106,17 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
     }
 
     /**
+     * Constructs and returns a PropertyValuesHolder with a given set of float values.
+     *
+     * @param values The values that the named property will animate between.
+     * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
+     */
+    @Nonnull
+    public static PropertyValuesHolder<?, Float, Float> ofFloat(@Nonnull float... values) {
+        return new FloatPropertyValuesHolder<>(values);
+    }
+
+    /**
      * Constructs and returns a PropertyValuesHolder with a given property and
      * set of float values.
      *
@@ -124,6 +128,32 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
     public static <T> PropertyValuesHolder<T, Float, Float> ofFloat(@Nonnull FloatProperty<T> property,
                                                                     @Nonnull float... values) {
         return new FloatPropertyValuesHolder<>(property, values);
+    }
+
+    /**
+     * Constructs and returns a PropertyValuesHolder with a given set of Object values.
+     * This variant also takes a TypeEvaluator because the system
+     * cannot automatically interpolate between objects of unknown type.
+     *
+     * <p><strong>Note:</strong> The Object values are stored as references to the original
+     * objects, which means that changes to those objects after this method is called will
+     * affect the values on the PropertyValuesHolder. If the objects will be mutated externally
+     * after this method is called, callers should pass a copy of those objects instead.
+     *
+     * @param evaluator A TypeEvaluator that will be called on each animation frame to
+     *                  provide the necessary interpolation between the Object values to derive the animated
+     *                  value.
+     * @param values    The values that the named property will animate between.
+     * @return PropertyValuesHolder The constructed PropertyValuesHolder object.
+     */
+    @Nonnull
+    @SafeVarargs
+    public static <V> PropertyValuesHolder<?, V, V> ofObject(
+            @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
+        PropertyValuesHolder<?, V, V> pvh = new PropertyValuesHolder<>();
+        pvh.setObjectValues(values);
+        pvh.setEvaluator(evaluator);
+        return pvh;
     }
 
     /**
@@ -147,10 +177,10 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
     @SafeVarargs
     public static <T, V> PropertyValuesHolder<T, V, V> ofObject(
             @Nonnull Property<T, V> property, @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
-        PropertyValuesHolder<T, V, V> v = new PropertyValuesHolder<>(property);
-        v.setObjectValues(values);
-        v.setEvaluator(evaluator);
-        return v;
+        PropertyValuesHolder<T, V, V> pvh = new PropertyValuesHolder<>(property);
+        pvh.setObjectValues(values);
+        pvh.setEvaluator(evaluator);
+        return pvh;
     }
 
     /**
@@ -182,11 +212,124 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
     public static <T, V, P> PropertyValuesHolder<T, V, P> ofObject(
             @Nonnull Property<T, P> property, @Nonnull TypeConverter<V, P> converter,
             @Nonnull TypeEvaluator<V> evaluator, @Nonnull V... values) {
-        PropertyValuesHolder<T, V, P> v = new PropertyValuesHolder<>(property);
-        v.setConverter(converter);
-        v.setObjectValues(values);
-        v.setEvaluator(evaluator);
-        return v;
+        PropertyValuesHolder<T, V, P> pvh = new PropertyValuesHolder<>(property);
+        pvh.setConverter(converter);
+        pvh.setObjectValues(values);
+        pvh.setEvaluator(evaluator);
+        return pvh;
+    }
+
+    /**
+     * Constructs and returns a PropertyValuesHolder object with the specified property name and set
+     * of values. These values can be of any type, but the type should be consistent so that
+     * an appropriate {@link TypeEvaluator} can be found that matches
+     * the common type.
+     * <p>If there is only one value, it is assumed to be the end value of an animation,
+     * and an initial value will be derived, if possible, by calling a getter function
+     * on the object. Also, if any value is null, the value will be filled in when the animation
+     * starts in the same way. This mechanism of automatically getting null values only works
+     * if the PropertyValuesHolder object is used in conjunction
+     * {@link ObjectAnimator}, and with a getter function
+     * derived automatically from <code>propertyName</code>, since otherwise PropertyValuesHolder has
+     * no way of determining what the value should be.
+     *
+     * @param values The set of values to animate between.
+     */
+    @Nonnull
+    public static PropertyValuesHolder<?, ?, ?> ofKeyframe(@Nonnull Keyframe... values) {
+        return ofKeyframes(KeyframeSet.ofKeyframe(values));
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    static PropertyValuesHolder<?, ?, ?> ofKeyframes(@Nonnull Keyframes<?> keyframes) {
+        if (keyframes instanceof Keyframes.IntKeyframes) {
+            return new IntPropertyValuesHolder<>((Keyframes.IntKeyframes) keyframes);
+        } else if (keyframes instanceof Keyframes.FloatKeyframes) {
+            return new FloatPropertyValuesHolder<>((Keyframes.FloatKeyframes) keyframes);
+        } else {
+            PropertyValuesHolder<?, Object, ?> pvh = new PropertyValuesHolder<>();
+            pvh.mKeyframes = (Keyframes<Object>) keyframes;
+            return pvh;
+        }
+    }
+
+    /**
+     * Constructs and returns a PropertyValuesHolder object with the specified property and set
+     * of values. These values can be of any type, but the type should be consistent so that
+     * an appropriate {@link TypeEvaluator} can be found that matches
+     * the common type.
+     * <p>If there is only one value, it is assumed to be the end value of an animation,
+     * and an initial value will be derived, if possible, by calling the property's
+     * {@link Property#get(Object)} function.
+     * Also, if any value is null, the value will be filled in when the animation
+     * starts in the same way. This mechanism of automatically getting null values only works
+     * if the PropertyValuesHolder object is used in conjunction with
+     * {@link ObjectAnimator}, since otherwise PropertyValuesHolder has
+     * no way of determining what the value should be.
+     *
+     * @param property The property associated with this set of values. Should not be null.
+     * @param values   The set of values to animate between.
+     */
+    @Nonnull
+    public static <T, P> PropertyValuesHolder<T, P, P> ofKeyframe(
+            @Nonnull Property<T, P> property, @Nonnull Keyframe... values) {
+        PropertyValuesHolder<T, P, P> pvh = new PropertyValuesHolder<>(property);
+        pvh.mKeyframes = new KeyframeSet<>(values);
+        return pvh;
+    }
+
+    /**
+     * Constructs and returns a PropertyValuesHolder object with the specified property and set
+     * of values. These values can be of any type, but the type should be consistent so that
+     * an appropriate {@link TypeEvaluator} can be found that matches
+     * the common type.
+     * <p>If there is only one value, it is assumed to be the end value of an animation,
+     * and an initial value will be derived, if possible, by calling the property's
+     * {@link Property#get(Object)} function.
+     * Also, if any value is null, the value will be filled in when the animation
+     * starts in the same way. This mechanism of automatically getting null values only works
+     * if the PropertyValuesHolder object is used in conjunction with
+     * {@link ObjectAnimator}, since otherwise PropertyValuesHolder has
+     * no way of determining what the value should be.
+     *
+     * @param property  The property associated with this set of values. Should not be null.
+     * @param converter Converts the animated object to the Property type.
+     * @param values    The set of values to animate between.
+     */
+    @Nonnull
+    public static <T, V, P> PropertyValuesHolder<T, V, P> ofKeyframe(
+            @Nonnull Property<T, P> property, @Nonnull TypeConverter<V, P> converter, @Nonnull Keyframe... values) {
+        PropertyValuesHolder<T, V, P> pvh = new PropertyValuesHolder<>(property);
+        pvh.mKeyframes = new KeyframeSet<>(values);
+        pvh.setConverter(converter);
+        return pvh;
+    }
+
+    /**
+     * Constructs and returns a PropertyValuesHolder object with the specified int property and set
+     * of values.
+     * <p>
+     * Also, if any value is null, the value will be filled in when the animation
+     * starts in the same way. This mechanism of automatically getting null values only works
+     * if the PropertyValuesHolder object is used in conjunction with
+     * {@link ObjectAnimator}, since otherwise PropertyValuesHolder has
+     * no way of determining what the value should be.
+     *
+     * @param property The property associated with this set of values. Should not be null.
+     * @param values   The set of values to animate between.
+     * @throws IllegalArgumentException some keyframes are not int keyframes, or less than two
+     * @see Keyframe#ofInt(float, int)
+     */
+    @Nonnull
+    public static <T> PropertyValuesHolder<T, Integer, Integer> ofKeyframe(
+            @Nonnull IntProperty<T> property, @Nonnull Keyframe... values) {
+        Keyframes<?> keyframes = KeyframeSet.ofKeyframe(values);
+        if (keyframes instanceof Keyframes.IntKeyframes) {
+            return new IntPropertyValuesHolder<>(property, (Keyframes.IntKeyframes) keyframes);
+        } else {
+            throw new IllegalArgumentException("Some keyframes are not int keyframes");
+        }
     }
 
     /**
@@ -250,6 +393,19 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
     }
 
     /**
+     * Set the animated values for this object to this set of Keyframes.
+     *
+     * @param values One or more values that the animation will animate between.
+     */
+    public final void setKeyframes(@Nonnull Keyframe... values) {
+        mKeyframes = new KeyframeSet<>(values);
+        // assume it's null
+        if (mEvaluator != null) {
+            mKeyframes.setEvaluator(mEvaluator);
+        }
+    }
+
+    /**
      * Set the animated values for this object to this set of Objects.
      * If there is only one value, it is assumed to be the end value of an animation,
      * and an initial value will be derived, if possible, by calling a getter function
@@ -298,17 +454,19 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
      * @param target The object on which the setter (and possibly getter) exist.
      */
     void setupSetterAndGetter(@Nonnull T target) {
-        V testValue = null;
-        Keyframe[] keyframes = mKeyframes.getKeyframes();
-        int count = keyframes == null ? 0 : keyframes.length;
-        for (int i = 0; i < count; i++) {
-            Keyframe kf = keyframes[i];
-            if (!kf.hasValue() || kf.mValueWasSetOnStart) {
-                if (testValue == null) {
-                    testValue = convertBack(mProperty.get(target));
+        if (mProperty != null) {
+            V testValue = null;
+            Keyframe[] keyframes = mKeyframes.getKeyframes();
+            int count = keyframes == null ? 0 : keyframes.length;
+            for (int i = 0; i < count; i++) {
+                Keyframe kf = keyframes[i];
+                if (!kf.hasValue() || kf.mValueWasSetOnStart) {
+                    if (testValue == null) {
+                        testValue = convertBack(mProperty.get(target));
+                    }
+                    kf.setValue(testValue);
+                    kf.mValueWasSetOnStart = true;
                 }
-                kf.setValue(testValue);
-                kf.mValueWasSetOnStart = true;
             }
         }
     }
@@ -335,6 +493,9 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
      * @param target The object which holds the start values that should be set.
      */
     void setupStartValue(@Nonnull T target) {
+        if (mProperty == null) {
+            return;
+        }
         Keyframe[] keyframes = mKeyframes.getKeyframes();
         if (keyframes.length > 0) {
             V value = convertBack(mProperty.get(target));
@@ -351,6 +512,9 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
      * @param target The object which holds the start values that should be set.
      */
     void setupEndValue(@Nonnull T target) {
+        if (mProperty == null) {
+            return;
+        }
         Keyframe[] keyframes = mKeyframes.getKeyframes();
         if (keyframes.length > 0) {
             V value = convertBack(mProperty.get(target));
@@ -362,14 +526,13 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
     public PropertyValuesHolder<T, V, P> clone() {
         try {
             @SuppressWarnings("unchecked")
-            PropertyValuesHolder<T, V, P> pvh = (PropertyValuesHolder<T, V, P>) super.clone();
-            pvh.mProperty = mProperty;
-            pvh.mKeyframes = mKeyframes.copy();
-            pvh.mEvaluator = mEvaluator;
-            return pvh;
+            PropertyValuesHolder<T, V, P> newPVH = (PropertyValuesHolder<T, V, P>) super.clone();
+            newPVH.mProperty = mProperty;
+            newPVH.mKeyframes = mKeyframes.copy();
+            newPVH.mEvaluator = mEvaluator;
+            return newPVH;
         } catch (CloneNotSupportedException e) {
-            // won't reach here
-            return null;
+            throw new InternalError(e);
         }
     }
 
@@ -382,7 +545,9 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
      * @param target The target object on which the value is set
      */
     void setAnimatedValue(@Nonnull T target) {
-        mProperty.set(target, getAnimatedValue());
+        if (mProperty != null) {
+            mProperty.set(target, getAnimatedValue());
+        }
     }
 
     /**
@@ -390,9 +555,11 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
      * to calculate animated values.
      */
     void init() {
-        // KeyframeSet knows how to evaluate the common types - only give it a custom
-        // evaluator if one has been set on this class
-        mKeyframes.setEvaluator(mEvaluator);
+        if (mEvaluator != null) {
+            // KeyframeSet knows how to evaluate the common types - only give it a custom
+            // evaluator if one has been set on this class
+            mKeyframes.setEvaluator(mEvaluator);
+        }
     }
 
     /**
@@ -404,7 +571,7 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
      * only values of type float and int (and their Object equivalents: Float
      * and Integer) are  correctly interpolated; all other types require setting a TypeEvaluator.
      */
-    public void setEvaluator(@Nonnull TypeEvaluator<V> evaluator) {
+    public void setEvaluator(TypeEvaluator<V> evaluator) {
         mEvaluator = evaluator;
         mKeyframes.setEvaluator(mEvaluator);
     }
@@ -444,7 +611,7 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
      *
      * @param property The property being animated.
      */
-    public void setProperty(@Nonnull Property<T, P> property) {
+    public void setProperty(@Nullable Property<T, P> property) {
         mProperty = property;
     }
 
@@ -460,19 +627,34 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
 
         private int mIntAnimatedValue;
 
+        private IntPropertyValuesHolder(@Nonnull Keyframes.IntKeyframes keyframes) {
+            mKeyframes = keyframes;
+        }
+
         /**
          * Internal utility constructor, used by the factory methods to set the property.
          *
          * @param property The property for this holder.
          */
-        private IntPropertyValuesHolder(@Nonnull IntProperty<T> property, Keyframes.IntKeyframes keyframes) {
+        private IntPropertyValuesHolder(@Nonnull IntProperty<T> property, @Nonnull Keyframes.IntKeyframes keyframes) {
             super(property);
             mKeyframes = keyframes;
         }
 
-        private IntPropertyValuesHolder(@Nonnull IntProperty<T> property, int... values) {
+        private IntPropertyValuesHolder(@Nonnull int... values) {
+            setIntValues(values);
+        }
+
+        private IntPropertyValuesHolder(@Nonnull IntProperty<T> property, @Nonnull int... values) {
             super(property);
             setIntValues(values);
+        }
+
+        @Override
+        public void setProperty(Property<T, Integer> property) {
+            if (property == null || property instanceof IntProperty<T>) {
+                super.setProperty(property);
+            }
         }
 
         @Override
@@ -482,7 +664,9 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
 
         @Override
         void setAnimatedValue(@Nonnull T target) {
-            ((IntProperty<T>) mProperty).setValue(target, mIntAnimatedValue);
+            if (mProperty != null) {
+                ((IntProperty<T>) mProperty).setValue(target, mIntAnimatedValue);
+            }
         }
 
         @Override
@@ -501,42 +685,39 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
         }
     }
 
-    static class UnsafeIntProperty<T> extends IntProperty<T> {
-
-        private final long mOffset;
-
-        private UnsafeIntProperty(long offset) {
-            mOffset = offset;
-        }
-
-        @Override
-        public void setValue(@Nonnull T object, int value) {
-            UNSAFE.putInt(object, mOffset, value);
-        }
-
-        @Override
-        public Integer get(@Nonnull T object) {
-            return UNSAFE.getInt(object, mOffset);
-        }
-    }
-
     static class FloatPropertyValuesHolder<T> extends PropertyValuesHolder<T, Float, Float> {
 
         private float mFloatAnimatedValue;
+
+        private FloatPropertyValuesHolder(@Nonnull Keyframes.FloatKeyframes keyframes) {
+            mKeyframes = keyframes;
+        }
 
         /**
          * Internal utility constructor, used by the factory methods to set the property.
          *
          * @param property The property for this holder.
          */
-        private FloatPropertyValuesHolder(@Nonnull FloatProperty<T> property, Keyframes.FloatKeyframes keyframes) {
+        private FloatPropertyValuesHolder(@Nonnull FloatProperty<T> property,
+                                          @Nonnull Keyframes.FloatKeyframes keyframes) {
             super(property);
             mKeyframes = keyframes;
         }
 
-        private FloatPropertyValuesHolder(@Nonnull FloatProperty<T> property, float... values) {
+        private FloatPropertyValuesHolder(@Nonnull float... values) {
+            setFloatValues(values);
+        }
+
+        private FloatPropertyValuesHolder(@Nonnull FloatProperty<T> property, @Nonnull float... values) {
             super(property);
             setFloatValues(values);
+        }
+
+        @Override
+        public void setProperty(Property<T, Float> property) {
+            if (property == null || property instanceof FloatProperty<T>) {
+                super.setProperty(property);
+            }
         }
 
         @Override
@@ -546,7 +727,9 @@ public class PropertyValuesHolder<T, V, P> implements Cloneable {
 
         @Override
         void setAnimatedValue(@Nonnull T target) {
-            ((FloatProperty<T>) mProperty).setValue(target, mFloatAnimatedValue);
+            if (mProperty != null) {
+                ((FloatProperty<T>) mProperty).setValue(target, mFloatAnimatedValue);
+            }
         }
 
         @Override

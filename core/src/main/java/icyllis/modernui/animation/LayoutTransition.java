@@ -874,11 +874,11 @@ public class LayoutTransition {
             }
         };
         // Remove the animation from the cache when it ends
-        anim.addListener(new Animator.AnimatorListener() {
+        anim.addListener(new AnimatorListener() {
 
             @SuppressWarnings("unchecked")
             @Override
-            public void onAnimationStart(@Nonnull Animator animator, boolean reverse) {
+            public void onAnimationStart(@Nonnull Animator animator) {
                 if (hasListeners()) {
                     ArrayList<TransitionListener> listeners =
                             (ArrayList<TransitionListener>) mListeners.clone();
@@ -893,7 +893,7 @@ public class LayoutTransition {
 
             @SuppressWarnings("unchecked")
             @Override
-            public void onAnimationEnd(@Nonnull Animator animator, boolean reverse) {
+            public void onAnimationEnd(@Nonnull Animator animator) {
                 currentChangingAnimations.remove(child);
                 if (hasListeners()) {
                     ArrayList<TransitionListener> listeners =
@@ -1097,10 +1097,10 @@ public class LayoutTransition {
         if (anim instanceof ObjectAnimator) {
             ((ObjectAnimator) anim).setCurrentPlayTime(0);
         }
-        anim.addListener(new Animator.AnimatorListener() {
+        anim.addListener(new AnimatorListener() {
             @SuppressWarnings("unchecked")
             @Override
-            public void onAnimationEnd(@Nonnull Animator anim, boolean reverse) {
+            public void onAnimationEnd(@Nonnull Animator anim) {
                 currentAppearingAnimations.remove(child);
                 if (hasListeners()) {
                     ArrayList<TransitionListener> listeners =
@@ -1145,10 +1145,10 @@ public class LayoutTransition {
         }
         anim.setTarget(child);
         final float preAnimAlpha = child.getTransitionAlpha();
-        anim.addListener(new Animator.AnimatorListener() {
+        anim.addListener(new AnimatorListener() {
             @SuppressWarnings("unchecked")
             @Override
-            public void onAnimationEnd(@Nonnull Animator anim, boolean reverse) {
+            public void onAnimationEnd(@Nonnull Animator anim) {
                 currentDisappearingAnimations.remove(child);
                 child.setTransitionAlpha(preAnimAlpha);
                 if (hasListeners()) {

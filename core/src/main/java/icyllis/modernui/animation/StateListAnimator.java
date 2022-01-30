@@ -40,16 +40,16 @@ public class StateListAnimator implements Cloneable {
     private int mLastMatch = -1;
     private Animator mRunningAnimator;
     private WeakReference<View> mViewRef;
-    private Animator.AnimatorListener mAnimatorListener;
+    private AnimatorListener mAnimatorListener;
 
     public StateListAnimator() {
         initAnimatorListener();
     }
 
     private void initAnimatorListener() {
-        mAnimatorListener = new Animator.AnimatorListener() {
+        mAnimatorListener = new AnimatorListener() {
             @Override
-            public void onAnimationEnd(@Nonnull Animator animation, boolean isReverse) {
+            public void onAnimationEnd(@Nonnull Animator animation) {
                 animation.setTarget(null);
                 if (mRunningAnimator == animation) {
                     mRunningAnimator = null;

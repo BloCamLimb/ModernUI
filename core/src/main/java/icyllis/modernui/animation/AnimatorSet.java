@@ -19,5 +19,5 @@
 package icyllis.modernui.animation;
 
 //TODO
-public final class AnimatorSet<T> {
+public final class AnimatorSet {
 }

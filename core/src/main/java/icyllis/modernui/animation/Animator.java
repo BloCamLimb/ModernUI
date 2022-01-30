@@ -20,11 +20,12 @@ package icyllis.modernui.animation;
 
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Set;
-import java.util.concurrent.CopyOnWriteArraySet;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * This is the base for classes which provide basic support for animations which can be
@@ -48,7 +49,7 @@ public abstract class Animator implements Cloneable {
      * The set of listeners to be sent events through the life of an animation.
      */
     @Nullable
-    Set<AnimatorListener> mListeners;
+    CopyOnWriteArrayList<AnimatorListener> mListeners;
 
     /**
      * Starts this animation. If the animation has a nonzero startDelay, the animation will start
@@ -153,7 +154,7 @@ public abstract class Animator implements Cloneable {
      *
      * @param duration The length of the animation, in milliseconds.
      */
-    public abstract void setDuration(long duration);
+    public abstract Animator setDuration(long duration);
 
     /**
      * Gets the duration of the animation.
@@ -199,7 +200,7 @@ public abstract class Animator implements Cloneable {
 
     /**
      * Returns whether this Animator has been started and not yet ended. For reusable
-     * Animators (which most Animators are, apart from the one-shot animator, this state
+     * Animators (which most Animators are, apart from the one-shot animator), this state
      * is a superset of {@link #isRunning()}, because an Animator with a nonzero
      * {@link #getStartDelay()} will return true during the delay phase, whereas
      * {@link #isRunning()} will return true only after the delay phase is complete.
@@ -218,9 +219,9 @@ public abstract class Animator implements Cloneable {
      */
     public final void addListener(@Nonnull AnimatorListener listener) {
         if (mListeners == null) {
-            mListeners = new CopyOnWriteArraySet<>();
+            mListeners = new CopyOnWriteArrayList<>();
         }
-        mListeners.add(listener);
+        mListeners.addIfAbsent(listener);
     }
 
     /**
@@ -240,7 +241,7 @@ public abstract class Animator implements Cloneable {
     }
 
     /**
-     * Removes all {@link #addListener(AnimatorListener)} listeners} from this object.
+     * Removes all {@link #addListener(AnimatorListener) listeners} from this object.
      */
     public final void removeAllListeners() {
         if (mListeners != null) {
@@ -256,7 +257,7 @@ public abstract class Animator implements Cloneable {
      * @return The set of listeners.
      */
     @Nullable
-    public final Set<AnimatorListener> getListeners() {
+    public final List<AnimatorListener> getListeners() {
         return mListeners;
     }
 
@@ -265,7 +266,7 @@ public abstract class Animator implements Cloneable {
         try {
             final Animator anim = (Animator) super.clone();
             if (mListeners != null) {
-                anim.mListeners = new CopyOnWriteArraySet<>(mListeners);
+                anim.mListeners = new CopyOnWriteArrayList<>(mListeners);
             }
             return anim;
         } catch (CloneNotSupportedException e) {
@@ -311,6 +312,24 @@ public abstract class Animator implements Cloneable {
     public void setTarget(@Nullable Object target) {
     }
 
+    // Hide reverse() and canReverse() for now since reverse() only work for simple
+    // cases, like we don't support sequential, neither startDelay.
+    //TODO: make reverse() works for all the Animators.
+    @ApiStatus.Internal
+    public boolean canReverse() {
+        return false;
+    }
+
+    @ApiStatus.Internal
+    public void reverse() {
+        throw new IllegalStateException("Reverse is not supported");
+    }
+
+    // Pulse an animation frame into the animation.
+    boolean pulseAnimationFrame(long frameTime) {
+        return false;
+    }
+
     /**
      * Internal use only.
      * This call starts the animation in regular or reverse direction without requiring them to
@@ -321,13 +340,29 @@ public abstract class Animator implements Cloneable {
      * @param inReverse whether the animation should play in reverse direction
      */
     void startWithoutPulsing(boolean inReverse) {
+        if (inReverse) {
+            reverse();
+        } else {
+            start();
+        }
+    }
+
+    /**
+     * Internal use only.
+     * Skips the animation value to end/start, depending on whether the play direction is forward
+     * or backward.
+     *
+     * @param inReverse whether the end value is based on a reverse direction. If yes, this is
+     *                  equivalent to skip to start value in a forward playing direction.
+     */
+    void skipToEndValue(boolean inReverse) {
     }
 
     /**
      * Internal use only.
      * <p>
      * Returns whether the animation has start/end values setup. For most of the animations, this
-     * should always be true. For ObjectAnimators, the start values are setup in the initialization
+     * should always be true. For ObjectAnimators, the start values are set up in the initialization
      * of the animation.
      */
     boolean isInitialized() {
@@ -335,65 +370,8 @@ public abstract class Animator implements Cloneable {
     }
 
     /**
-     * <p>An animation listener receives notifications from an animation.
-     * Notifications indicate animation related events, such as the end or the
-     * repetition of the animation.</p>
+     * Internal use only.
      */
-    public interface AnimatorListener {
-
-        /**
-         * <p>Notifies the start of the animation as well as the animation's overall play direction.
-         *
-         * @param animation The started animation.
-         * @param isReverse Whether the animation is playing in reverse.
-         */
-        default void onAnimationStart(@Nonnull Animator animation, boolean isReverse) {
-        }
-
-        /**
-         * <p>Notifies the end of the animation. This callback is not invoked
-         * for animations with repeat count set to INFINITE.</p>
-         *
-         * @param animation The animation which reached its end.
-         * @param isReverse Whether the animation is playing in reverse.
-         */
-        default void onAnimationEnd(@Nonnull Animator animation, boolean isReverse) {
-        }
-
-        /**
-         * <p>Notifies the cancellation of the animation. This callback is not invoked
-         * for animations with repeat count set to INFINITE.</p>
-         *
-         * @param animation The animation which was canceled.
-         */
-        default void onAnimationCancel(@Nonnull Animator animation) {
-        }
-
-        /**
-         * <p>Notifies the repetition of the animation.</p>
-         *
-         * @param animation The animation which was repeated.
-         */
-        default void onAnimationRepeat(@Nonnull Animator animation) {
-        }
-
-        /**
-         * <p>Notifies that the animation was paused.</p>
-         *
-         * @param animation The animation being paused.
-         * @see #pause()
-         */
-        default void onAnimationPause(@Nonnull Animator animation) {
-        }
-
-        /**
-         * <p>Notifies that the animation was resumed, after being
-         * previously paused.</p>
-         *
-         * @param animation The animation being resumed.
-         * @see #resume()
-         */
-        default void onAnimationResume(@Nonnull Animator animation) {
-        }
+    void animateBasedOnPlayTime(long currentPlayTime, long lastPlayTime, boolean inReverse) {
     }
 }

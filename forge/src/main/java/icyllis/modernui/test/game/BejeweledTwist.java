@@ -35,12 +35,14 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.test.SpectrumGraph;
 import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Callback;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -108,7 +110,17 @@ public class BejeweledTwist {
         }
 
         var anim = ObjectAnimator.ofPropertyValuesHolder(this,
-                PropertyValuesHolder.ofInt(BejeweledTwist.class, "mOffsetY", -600, 0));
+                PropertyValuesHolder.ofInt(new IntProperty<>() {
+                    @Override
+                    public void setValue(@Nonnull BejeweledTwist object, int value) {
+                        object.mOffsetY = value;
+                    }
+
+                    @Override
+                    public Integer get(@Nonnull BejeweledTwist object) {
+                        return object.mOffsetY;
+                    }
+                }, -600, 0));
         anim.setInterpolator(TimeInterpolator.BOUNCE);
         anim.setDuration(1000);
         mStartAnim = anim;

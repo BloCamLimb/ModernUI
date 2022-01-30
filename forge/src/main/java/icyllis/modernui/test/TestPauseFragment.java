@@ -21,10 +21,7 @@ package icyllis.modernui.test;
 import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.Animator;
-import icyllis.modernui.animation.LayoutTransition;
-import icyllis.modernui.animation.ObjectAnimator;
-import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.animation.*;
 import icyllis.modernui.forge.CanvasForge;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.Canvas;
@@ -318,9 +315,9 @@ public class TestPauseFragment extends Fragment {
             }, 0, dp(32));
             mRodAnimator.setInterpolator(TimeInterpolator.DECELERATE);
             mRodAnimator.setDuration(400);
-            mRodAnimator.addListener(new Animator.AnimatorListener() {
+            mRodAnimator.addListener(new AnimatorListener() {
                 @Override
-                public void onAnimationEnd(@Nonnull Animator animation, boolean isReverse) {
+                public void onAnimationEnd(@Nonnull Animator animation) {
                     mBoxAnimator.start();
                 }
             });
