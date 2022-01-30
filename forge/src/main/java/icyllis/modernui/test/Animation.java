@@ -164,9 +164,9 @@ public class Animation implements AnimationHandler.FrameCallback {
     }
 
     @Override
-    public void doAnimationFrame(long frameTime) {
+    public boolean doAnimationFrame(long frameTime) {
         if (frameTime <= startTime) {
-            return;
+            return false;
         }
         if (!started) {
             started = true;
@@ -184,7 +184,9 @@ public class Animation implements AnimationHandler.FrameCallback {
                 listeners.forEach(e -> e.onAnimationEnd(this, reversed));
             }
             AnimationHandler.getInstance().unregister(this);
+            return true;
         }
+        return false;
     }
 
     public int getDuration() {

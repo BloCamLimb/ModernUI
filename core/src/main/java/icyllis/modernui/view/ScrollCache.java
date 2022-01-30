@@ -64,9 +64,10 @@ final class ScrollCache implements AnimationHandler.FrameCallback {
     }
 
     @Override
-    public void doAnimationFrame(long frameTime) {
+    public boolean doAnimationFrame(long frameTime) {
         mState = FADING;
         mHost.invalidate();
         AnimationHandler.getInstance().unregister(this);
+        return true;
     }
 }

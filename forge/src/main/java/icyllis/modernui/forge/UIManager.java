@@ -22,6 +22,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
@@ -939,6 +940,7 @@ public final class UIManager implements LifecycleOwner {
         private void doFrame() {
             // 1. handle tasks
             mUptimeMillis = ArchCore.timeMillis();
+            AnimationUtils.lockAnimationClock(mFrameTimeMillis);
             /*if (!mTasks.isEmpty()) {
                 // batched processing
                 mTasks.removeIf(mUiHandler);
@@ -955,6 +957,8 @@ public final class UIManager implements LifecycleOwner {
 
             // 4. do traversal
             doTraversal();
+
+            AnimationUtils.unlockAnimationClock();
         }
 
         @Override

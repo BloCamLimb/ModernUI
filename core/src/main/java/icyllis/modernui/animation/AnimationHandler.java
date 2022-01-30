@@ -21,11 +21,13 @@ package icyllis.modernui.animation;
 import icyllis.modernui.core.ArchCore;
 import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.LongConsumer;
 
+@ApiStatus.Internal
 public class AnimationHandler {
 
     // support thread-local?
@@ -34,10 +36,7 @@ public class AnimationHandler {
     private final CopyOnWriteArrayList<FrameCallback> mCallbacks = new CopyOnWriteArrayList<>();
     private final Object2LongMap<FrameCallback> mDelayedStartTime = new Object2LongOpenHashMap<>();
 
-    private long mCurrentFrameTime;
-
     private AnimationHandler() {
-        mCurrentFrameTime = ArchCore.timeMillis();
     }
 
     @Nonnull
@@ -54,21 +53,8 @@ public class AnimationHandler {
         return sInstance;
     }
 
-    /**
-     * Returns the current animation time in milliseconds used to update animations.
-     * This value is updated when a new frame started, it's different from
-     * {@link ArchCore#timeMillis()} or {@link System#currentTimeMillis()}
-     * which gives you a real current time.
-     *
-     * @return the current animation time in milliseconds
-     */
-    public static long currentTimeMillis() {
-        return sInstance.mCurrentFrameTime;
-    }
-
     private void doAnimationFrame(long frameTime) {
         long currentTime = ArchCore.timeMillis();
-        mCurrentFrameTime = frameTime;
         for (FrameCallback callback : mCallbacks) {
             if (isCallbackDue(callback, currentTime)) {
                 callback.doAnimationFrame(frameTime);
@@ -135,6 +121,6 @@ public class AnimationHandler {
          *
          * @param frameTime the frame start time, in the {@link ArchCore#timeMillis()} time base
          */
-        void doAnimationFrame(long frameTime);
+        boolean doAnimationFrame(long frameTime);
     }
 }

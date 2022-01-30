@@ -19,6 +19,7 @@
 package icyllis.modernui.fragment;
 
 import icyllis.modernui.animation.Animator;
+import icyllis.modernui.animation.AnimatorListener;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.core.CancellationSignal;
@@ -160,9 +161,9 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
             }
             final View viewToAnimate = fragment.mView;
             container.startViewTransition(viewToAnimate);
-            animator.addListener(new Animator.AnimatorListener() {
+            animator.addListener(new AnimatorListener() {
                 @Override
-                public void onAnimationEnd(@Nonnull Animator anim, boolean isReverse) {
+                public void onAnimationEnd(@Nonnull Animator anim) {
                     container.endViewTransition(viewToAnimate);
                     if (isHideOperation) {
                         // Specifically for hide operations with Animator, we can't

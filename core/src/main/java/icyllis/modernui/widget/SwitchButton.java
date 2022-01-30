@@ -18,10 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.animation.Animator;
-import icyllis.modernui.animation.ColorEvaluator;
-import icyllis.modernui.animation.ObjectAnimator;
-import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.MathUtil;
@@ -61,7 +58,7 @@ public class SwitchButton extends CompoundButton {
         mAnimator = animator;
     }
 
-    private void onAnimationUpdate(@Nonnull ObjectAnimator animator) {
+    private void onAnimationUpdate(@Nonnull ValueAnimator animator) {
         float fraction = animator.getAnimatedFraction();
         if (!isChecked()) {
             fraction = 1f - fraction;
