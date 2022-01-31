@@ -19,7 +19,10 @@
 package icyllis.modernui.test.game;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.*;
+import icyllis.modernui.animation.AnimationHandler;
+import icyllis.modernui.animation.Animator;
+import icyllis.modernui.animation.ObjectAnimator;
+import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
@@ -109,18 +112,17 @@ public class BejeweledTwist {
             e.printStackTrace();
         }
 
-        var anim = ObjectAnimator.ofPropertyValuesHolder(this,
-                PropertyValuesHolder.ofInt(new IntProperty<>() {
-                    @Override
-                    public void setValue(@Nonnull BejeweledTwist object, int value) {
-                        object.mOffsetY = value;
-                    }
+        Animator anim = ObjectAnimator.ofInt(this, new IntProperty<>() {
+            @Override
+            public void setValue(@Nonnull BejeweledTwist object, int value) {
+                object.mOffsetY = value;
+            }
 
-                    @Override
-                    public Integer get(@Nonnull BejeweledTwist object) {
-                        return object.mOffsetY;
-                    }
-                }, -600, 0));
+            @Override
+            public Integer get(@Nonnull BejeweledTwist object) {
+                return object.mOffsetY;
+            }
+        }, -600, 0);
         anim.setInterpolator(TimeInterpolator.BOUNCE);
         anim.setDuration(1000);
         mStartAnim = anim;

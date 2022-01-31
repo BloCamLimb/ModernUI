@@ -104,9 +104,9 @@ public final class ObjectAnimator extends ValueAnimator {
     @Nonnull
     public static <T> ObjectAnimator ofColor(@Nullable T target, @Nonnull IntProperty<T> property,
                                              @Nonnull int... values) {
-        PropertyValuesHolder<T, Integer, Integer> v = PropertyValuesHolder.ofInt(property, values);
-        v.setEvaluator(ColorEvaluator.getInstance());
-        return ofPropertyValuesHolder(target, v);
+        PropertyValuesHolder pvh = PropertyValuesHolder.ofInt(property, values);
+        pvh.setEvaluator(ColorEvaluator.getInstance());
+        return ofPropertyValuesHolder(target, pvh);
     }
 
     /**
@@ -207,9 +207,8 @@ public final class ObjectAnimator extends ValueAnimator {
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
     @Nonnull
-    @SafeVarargs
-    public static <T> ObjectAnimator ofPropertyValuesHolder(@Nullable T target,
-                                                            @Nonnull PropertyValuesHolder<T, ?, ?>... values) {
+    public static ObjectAnimator ofPropertyValuesHolder(@Nullable Object target,
+                                                        @Nonnull PropertyValuesHolder... values) {
         ObjectAnimator anim = new ObjectAnimator();
         anim.setTarget(target);
         anim.setValues(values);
@@ -356,7 +355,7 @@ public final class ObjectAnimator extends ValueAnimator {
         }
         if (anim instanceof final ObjectAnimator it) {
             if (it.mAutoCancel) {
-                PropertyValuesHolder<?, ?, ?>[] itsValues = it.getValues();
+                PropertyValuesHolder[] itsValues = it.getValues();
                 if (it.getTarget() == getTarget() && mValues.length == itsValues.length) {
                     for (int i = 0; i < mValues.length; i++) {
                         if (!Objects.equals(mValues[i], itsValues[i])) {

@@ -20,7 +20,6 @@ package icyllis.modernui.animation;
 
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.core.Looper;
-import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -56,13 +55,13 @@ import java.util.Objects;
  * Animation</a> developer guide.</p>
  * </div>
  */
+@SuppressWarnings("unused")
 public class ValueAnimator extends Animator implements AnimationHandler.FrameCallback {
 
     /**
      * Internal usage, global config value.
      */
-    @ApiStatus.Internal
-    public static float sDurationScale = 1.0f;
+    static float sDurationScale = 1.0f;
 
     /*
      * Public constants
@@ -248,7 +247,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
     /**
      * The property/value sets being animated.
      */
-    PropertyValuesHolder<Object, ?, ?>[] mValues;
+    PropertyValuesHolder[] mValues;
 
     /**
      * Creates a new ValueAnimator object. This default constructor is primarily for
@@ -352,9 +351,8 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      *
      * @param values The set of values, per property, being animated between.
      */
-    @SuppressWarnings("unchecked")
-    public void setValues(@Nonnull PropertyValuesHolder<?, ?, ?>... values) {
-        mValues = (PropertyValuesHolder<Object, ?, ?>[]) values;
+    public void setValues(@Nonnull PropertyValuesHolder... values) {
+        mValues = values;
         // New property/values/target should cause re-initialization prior to starting
         mInitialized = false;
     }
@@ -368,7 +366,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * that define the animation.
      */
     @Nonnull
-    public PropertyValuesHolder<?, ?, ?>[] getValues() {
+    public PropertyValuesHolder[] getValues() {
         return mValues;
     }
 
@@ -742,10 +740,9 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      *
      * @param value the evaluator to be used this animation
      */
-    @SuppressWarnings("unchecked")
     public void setEvaluator(TypeEvaluator<?> value) {
         if (value != null && mValues != null && mValues.length > 0) {
-            ((PropertyValuesHolder<?, Object, ?>) mValues[0]).setEvaluator((TypeEvaluator<Object>) value);
+            mValues[0].setEvaluator(value);
         }
     }
 
@@ -1294,10 +1291,9 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
         anim.mSelfPulse = true;
         anim.mSuppressSelfPulseRequested = false;
 
-        PropertyValuesHolder<Object, ?, ?>[] oldValues = mValues;
+        PropertyValuesHolder[] oldValues = mValues;
         if (oldValues != null) {
             int numValues = oldValues.length;
-            //noinspection unchecked
             anim.mValues = new PropertyValuesHolder[numValues];
             for (int i = 0; i < numValues; ++i) {
                 anim.mValues[i] = oldValues[i].clone();

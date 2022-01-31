@@ -155,7 +155,7 @@ public class CenterFragment extends Fragment {
                     new LinearLayout.LayoutParams(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
-            base.postDelayed(() -> base.addView(screen, params), 200);
+            base.postDelayed(() -> base.addView(screen, params), 150);
         }
         RelativeLayout tooltip = new RelativeLayout();
         {
@@ -206,7 +206,7 @@ public class CenterFragment extends Fragment {
                     new LinearLayout.LayoutParams(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
-            base.postDelayed(() -> base.addView(tooltip, params), 400);
+            base.postDelayed(() -> base.addView(tooltip, params), 300);
         }
         RelativeLayout layout = new RelativeLayout();
         {
@@ -256,7 +256,7 @@ public class CenterFragment extends Fragment {
                     new LinearLayout.LayoutParams(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
-            base.postDelayed(() -> base.addView(layout, params), 600);
+            base.postDelayed(() -> base.addView(layout, params), 450);
         }
 
         base.setDividerDrawable(new Drawable() {
@@ -287,17 +287,17 @@ public class CenterFragment extends Fragment {
     @Override
     public Animator onCreateAnimator(int transit, boolean enter, int nextAnim) {
         if (enter && transit == FragmentTransaction.TRANSIT_FRAGMENT_OPEN) {
-            Keyframe keyframe = Keyframe.ofFloat(0, 0.75f);
-            Keyframe keyframe1 = Keyframe.ofFloat(1, 1);
-            keyframe1.setInterpolator(TimeInterpolator.OVERSHOOT);
-            PropertyValuesHolder<View, Float, Float> scaleX = PropertyValuesHolder.ofKeyframe(View.SCALE_X,
-                    keyframe, keyframe1);
-            PropertyValuesHolder<View, Float, Float> scaleY = PropertyValuesHolder.ofKeyframe(View.SCALE_Y,
-                    keyframe.copy(), keyframe1.copy());
-            PropertyValuesHolder<View, Float, Float> alpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0, 1);
+            Keyframe kfStart = Keyframe.ofFloat(0, 0.75f);
+            Keyframe kfEnd = Keyframe.ofFloat(1, 1);
+            kfEnd.setInterpolator(TimeInterpolator.OVERSHOOT);
+            PropertyValuesHolder scaleX = PropertyValuesHolder.ofKeyframe(View.SCALE_X,
+                    kfStart, kfEnd);
+            PropertyValuesHolder scaleY = PropertyValuesHolder.ofKeyframe(View.SCALE_Y,
+                    kfStart.copy(), kfEnd.copy());
+            PropertyValuesHolder alpha = PropertyValuesHolder.ofFloat(View.ALPHA, 0, 1);
             Animator animator = ObjectAnimator.ofPropertyValuesHolder(null, scaleX, scaleY, alpha);
             animator.setDuration(400);
-            animator.setInterpolator(TimeInterpolator.LINEAR);
+            animator.setInterpolator(null);
             return animator;
         }
         return super.onCreateAnimator(transit, enter, nextAnim);
