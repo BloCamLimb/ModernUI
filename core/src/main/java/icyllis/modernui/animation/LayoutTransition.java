@@ -268,52 +268,61 @@ public class LayoutTransition {
         mDisappearingAnim = defaultFadeOut;
     }
 
+    private static final IntProperty<View> LEFT = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setLeft(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getLeft();
+        }
+    };
+    private static final IntProperty<View> TOP = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setTop(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getTop();
+        }
+    };
+    private static final IntProperty<View> RIGHT = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setRight(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getRight();
+        }
+    };
+    private static final IntProperty<View> BOTTOM = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setBottom(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getBottom();
+        }
+    };
+
     private void initDefaultAnimators() {
         // "left" is just a placeholder; we'll put real properties/values in when needed
-        PropertyValuesHolder<View, ?, ?> pvhLeft = PropertyValuesHolder.ofInt(new IntProperty<>() {
-            @Override
-            public void setValue(@Nonnull View object, int value) {
-                object.setLeft(value);
-            }
-
-            @Override
-            public Integer get(@Nonnull View object) {
-                return object.getLeft();
-            }
-        }, 0, 1);
-        PropertyValuesHolder<View, ?, ?> pvhTop = PropertyValuesHolder.ofInt(new IntProperty<>() {
-            @Override
-            public void setValue(@Nonnull View object, int value) {
-                object.setTop(value);
-            }
-
-            @Override
-            public Integer get(@Nonnull View object) {
-                return object.getTop();
-            }
-        }, 0, 1);
-        PropertyValuesHolder<View, ?, ?> pvhRight = PropertyValuesHolder.ofInt(new IntProperty<>() {
-            @Override
-            public void setValue(@Nonnull View object, int value) {
-                object.setRight(value);
-            }
-
-            @Override
-            public Integer get(@Nonnull View object) {
-                return object.getRight();
-            }
-        }, 0, 1);
-        PropertyValuesHolder<View, ?, ?> pvhBottom = PropertyValuesHolder.ofInt(new IntProperty<>() {
-            @Override
-            public void setValue(@Nonnull View object, int value) {
-                object.setBottom(value);
-            }
-
-            @Override
-            public Integer get(@Nonnull View object) {
-                return object.getBottom();
-            }
-        }, 0, 1);
+        PropertyValuesHolder pvhLeft = PropertyValuesHolder.ofInt(LEFT, 0, 1);
+        PropertyValuesHolder pvhTop = PropertyValuesHolder.ofInt(TOP, 0, 1);
+        PropertyValuesHolder pvhRight = PropertyValuesHolder.ofInt(RIGHT, 0, 1);
+        PropertyValuesHolder pvhBottom = PropertyValuesHolder.ofInt(BOTTOM, 0, 1);
         /*PropertyValuesHolder pvhScrollX = PropertyValuesHolder.ofInt("scrollX", 0, 1);
         PropertyValuesHolder pvhScrollY = PropertyValuesHolder.ofInt("scrollY", 0, 1);*/
         defaultChangeIn = ObjectAnimator.ofPropertyValuesHolder(null,
@@ -812,7 +821,7 @@ public class LayoutTransition {
                     boolean valuesDiffer = false;
                     for (var pvh : anim.getValues()) {
                         if (pvh.mKeyframes instanceof KeyframeSet) {
-                            Keyframe[] keyframes = ((KeyframeSet<?>) pvh.mKeyframes).mKeyframes;
+                            Keyframe[] keyframes = ((KeyframeSet) pvh.mKeyframes).mKeyframes;
                             if (!keyframes[0].getValue().equals(
                                     keyframes[keyframes.length - 1].getValue())) {
                                 valuesDiffer = true;

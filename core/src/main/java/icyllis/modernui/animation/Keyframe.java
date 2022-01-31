@@ -63,7 +63,7 @@ public abstract class Keyframe {
      * (the default) results in linear interpolation over the interval.
      */
     @Nullable
-    private TimeInterpolator mInterpolator = null;
+    private TimeInterpolator mInterpolator;
 
     /**
      * Constructs a Keyframe object with the given time and value. The time defines the
@@ -231,9 +231,10 @@ public abstract class Keyframe {
         mInterpolator = interpolator;
     }
 
+    @Nonnull
     public abstract Keyframe copy();
 
-    static class ObjectKeyframe extends Keyframe {
+    static final class ObjectKeyframe extends Keyframe {
 
         /**
          * The value of the animation at the time mFraction.
@@ -257,6 +258,7 @@ public abstract class Keyframe {
             mHasValue = (value != null);
         }
 
+        @Nonnull
         @Override
         public ObjectKeyframe copy() {
             ObjectKeyframe kfClone = new ObjectKeyframe(getFraction(), hasValue() ? mValue : null);
@@ -269,7 +271,7 @@ public abstract class Keyframe {
     /**
      * Internal subclass used when the keyframe value is of primitive type int.
      */
-    static class IntKeyframe extends Keyframe {
+    static final class IntKeyframe extends Keyframe {
 
         int mValue;
 
@@ -288,7 +290,7 @@ public abstract class Keyframe {
         }
 
         @Override
-        public Object getValue() {
+        public Integer getValue() {
             return mValue;
         }
 
@@ -300,6 +302,7 @@ public abstract class Keyframe {
             }
         }
 
+        @Nonnull
         @Override
         public IntKeyframe copy() {
             IntKeyframe kfClone = mHasValue ?
@@ -314,7 +317,7 @@ public abstract class Keyframe {
     /**
      * Internal subclass used when the keyframe value is of primitive type float.
      */
-    static class FloatKeyframe extends Keyframe {
+    static final class FloatKeyframe extends Keyframe {
 
         float mValue;
 
@@ -333,7 +336,7 @@ public abstract class Keyframe {
         }
 
         @Override
-        public Object getValue() {
+        public Float getValue() {
             return mValue;
         }
 
@@ -345,6 +348,7 @@ public abstract class Keyframe {
             }
         }
 
+        @Nonnull
         @Override
         public FloatKeyframe copy() {
             FloatKeyframe kfClone = mHasValue ?

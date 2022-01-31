@@ -32,9 +32,10 @@ import javax.annotation.Nonnull;
  * TypeEvaluator set for the animation, so that values can be calculated without autoboxing to the
  * Object equivalents of these primitive types.</p>
  */
-class IntKeyframeSet extends KeyframeSet<Integer> implements Keyframes.IntKeyframes {
+@SuppressWarnings("unchecked")
+class IntKeyframeSet extends KeyframeSet implements Keyframes.IntKeyframes {
 
-    public IntKeyframeSet(@Nonnull Keyframe[] keyframes) {
+    IntKeyframeSet(@Nonnull Keyframe... keyframes) {
         super(keyframes);
     }
 
@@ -46,6 +47,11 @@ class IntKeyframeSet extends KeyframeSet<Integer> implements Keyframes.IntKeyfra
             newKeyframes[i] = (IntKeyframe) mKeyframes[i].copy();
         }
         return new IntKeyframeSet(newKeyframes);
+    }
+
+    @Override
+    public Integer getValue(float fraction) {
+        return getIntValue(fraction);
     }
 
     @Override
@@ -67,7 +73,7 @@ class IntKeyframeSet extends KeyframeSet<Integer> implements Keyframes.IntKeyfra
                     (nextKeyframe.getFraction() - prevFraction);
             return mEvaluator == null ?
                     prevValue + (int) (intervalFraction * (nextValue - prevValue)) :
-                    mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
+                    (int) mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
         } else if (fraction >= 1f) {
             final IntKeyframe prevKeyframe = (IntKeyframe) keyframes[length - 2];
             final IntKeyframe nextKeyframe = (IntKeyframe) keyframes[length - 1];
@@ -82,7 +88,7 @@ class IntKeyframeSet extends KeyframeSet<Integer> implements Keyframes.IntKeyfra
                     (nextKeyframe.getFraction() - prevFraction);
             return mEvaluator == null ?
                     prevValue + (int) (intervalFraction * (nextValue - prevValue)) :
-                    mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
+                    (int) mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
         }
         IntKeyframe prevKeyframe = (IntKeyframe) keyframes[0];
         for (int i = 1; i < length; ++i) {
@@ -94,12 +100,13 @@ class IntKeyframeSet extends KeyframeSet<Integer> implements Keyframes.IntKeyfra
                         (nextKeyframe.getFraction() - prevFraction);
                 final int prevValue = prevKeyframe.getIntValue();
                 final int nextValue = nextKeyframe.getIntValue();
+                // Apply interpolator on the proportional duration.
                 if (interpolator != null) {
                     intervalFraction = interpolator.getInterpolation(intervalFraction);
                 }
                 return mEvaluator == null ?
                         prevValue + (int) (intervalFraction * (nextValue - prevValue)) :
-                        mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
+                        (int) mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
             }
             prevKeyframe = nextKeyframe;
         }

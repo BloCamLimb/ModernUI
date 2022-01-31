@@ -30,21 +30,24 @@ import javax.annotation.Nonnull;
  * values between those keyframes for a given animation. The class internal to the animation
  * package because it is an implementation detail of how Keyframes are stored and used.
  */
-public class KeyframeSet<T> implements Keyframes<T> {
+@SuppressWarnings({"unchecked", "rawtypes"})
+public class KeyframeSet implements Keyframes {
 
     final Keyframe[] mKeyframes;
-    TypeEvaluator<T> mEvaluator;
+    TypeEvaluator mEvaluator;
 
-    public KeyframeSet(@Nonnull Keyframe[] keyframes) {
-        if (keyframes.length < 2)
+    KeyframeSet(@Nonnull Keyframe... keyframes) {
+        if (keyframes.length < 2) {
             throw new IllegalArgumentException("Keyframes < 2");
+        }
         mKeyframes = keyframes;
     }
 
     @Nonnull
-    public static Keyframes.IntKeyframes ofInt(@Nonnull int[] values) {
-        if (values.length == 0)
-            throw new IllegalArgumentException();
+    public static IntKeyframeSet ofInt(@Nonnull int... values) {
+        if (values.length == 0) {
+            throw new IllegalArgumentException("Length == 0");
+        }
         final int length = values.length;
         final Keyframe[] keyframes = new IntKeyframe[Math.max(length, 2)];
         if (length == 1) {
@@ -59,9 +62,10 @@ public class KeyframeSet<T> implements Keyframes<T> {
     }
 
     @Nonnull
-    public static Keyframes.FloatKeyframes ofFloat(@Nonnull float[] values) {
-        if (values.length == 0)
-            throw new IllegalArgumentException();
+    public static FloatKeyframeSet ofFloat(@Nonnull float... values) {
+        if (values.length == 0) {
+            throw new IllegalArgumentException("Length == 0");
+        }
         boolean badValue = false;
         final int length = values.length;
         final Keyframe[] keyframes = new FloatKeyframe[Math.max(length, 2)];
@@ -86,9 +90,28 @@ public class KeyframeSet<T> implements Keyframes<T> {
     }
 
     @Nonnull
-    public static KeyframeSet<?> ofKeyframe(@Nonnull Keyframe... keyframes) {
-        if (keyframes.length < 2)
-            throw new IllegalArgumentException();
+    public static Keyframes ofObject(@Nonnull Object... values) {
+        if (values.length == 0) {
+            throw new IllegalArgumentException("Length == 0");
+        }
+        final int length = values.length;
+        final Keyframe[] keyframes = new ObjectKeyframe[Math.max(length, 2)];
+        if (length == 1) {
+            keyframes[0] = Keyframe.ofObject(0f);
+            keyframes[1] = Keyframe.ofObject(1f, values[0]);
+        } else {
+            for (int i = 0; i < length; i++) {
+                keyframes[i] = Keyframe.ofObject((float) i / (length - 1), values[i]);
+            }
+        }
+        return new KeyframeSet(keyframes);
+    }
+
+    @Nonnull
+    public static KeyframeSet ofKeyframe(@Nonnull Keyframe... keyframes) {
+        if (keyframes.length < 2) {
+            throw new IllegalArgumentException("Keyframes < 2");
+        }
         boolean hasFloat = false;
         boolean hasInt = false;
         boolean hasOther = false;
@@ -106,56 +129,39 @@ public class KeyframeSet<T> implements Keyframes<T> {
         } else if (hasInt && !hasFloat && !hasOther) {
             return new IntKeyframeSet(keyframes);
         } else {
-            return new KeyframeSet<>(keyframes);
+            return new KeyframeSet(keyframes);
         }
-    }
-
-    @Nonnull
-    public static <T> Keyframes<T> ofObject(@Nonnull T[] values) {
-        if (values.length == 0)
-            throw new IllegalArgumentException();
-        final int length = values.length;
-        final Keyframe[] keyframes = new ObjectKeyframe[Math.max(length, 2)];
-        if (length == 1) {
-            keyframes[0] = Keyframe.ofObject(0f);
-            keyframes[1] = Keyframe.ofObject(1f, values[0]);
-        } else {
-            for (int i = 0; i < length; i++) {
-                keyframes[i] = Keyframe.ofObject((float) i / (length - 1), values[i]);
-            }
-        }
-        return new KeyframeSet<>(keyframes);
     }
 
     @Override
-    public void setEvaluator(TypeEvaluator<T> evaluator) {
+    public void setEvaluator(TypeEvaluator<?> evaluator) {
         mEvaluator = evaluator;
     }
 
     @Override
-    public KeyframeSet<T> copy() {
-        int numKeyframes = mKeyframes.length;
-        final Keyframe[] newKeyframes = new Keyframe[numKeyframes];
-        for (int i = 0; i < numKeyframes; ++i) {
-            newKeyframes[i] = mKeyframes[i].copy();
+    public KeyframeSet copy() {
+        Keyframe[] keyframes = mKeyframes;
+        int length = keyframes.length;
+        final Keyframe[] newKeyframes = new Keyframe[length];
+        for (int i = 0; i < length; ++i) {
+            newKeyframes[i] = keyframes[i].copy();
         }
-        return new KeyframeSet<>(newKeyframes);
+        return new KeyframeSet(newKeyframes);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public T getValue(float fraction) {
+    public Object getValue(float fraction) {
         final Keyframe[] keyframes = mKeyframes;
-        final TimeInterpolator interpolator;
         final int length = keyframes.length;
+        final TimeInterpolator interpolator;
         if (length == 2) {
             final Keyframe nextKeyframe = keyframes[1];
             interpolator = nextKeyframe.getInterpolator();
             if (interpolator != null) {
                 fraction = interpolator.getInterpolation(fraction);
             }
-            return mEvaluator.evaluate(fraction, (T) keyframes[0].getValue(),
-                    (T) nextKeyframe.getValue());
+            return mEvaluator.evaluate(fraction, keyframes[0].getValue(),
+                    nextKeyframe.getValue());
         }
         if (fraction <= 0f) {
             final Keyframe firstKeyframe = keyframes[0];
@@ -167,8 +173,8 @@ public class KeyframeSet<T> implements Keyframes<T> {
             final float prevFraction = firstKeyframe.getFraction();
             float intervalFraction = (fraction - prevFraction) /
                     (nextKeyframe.getFraction() - prevFraction);
-            return mEvaluator.evaluate(intervalFraction, (T) firstKeyframe.getValue(),
-                    (T) nextKeyframe.getValue());
+            return mEvaluator.evaluate(intervalFraction, firstKeyframe.getValue(),
+                    nextKeyframe.getValue());
         }
         if (fraction >= 1f) {
             final Keyframe prevKeyframe = keyframes[length - 2];
@@ -180,8 +186,8 @@ public class KeyframeSet<T> implements Keyframes<T> {
             final float prevFraction = prevKeyframe.getFraction();
             float intervalFraction = (fraction - prevFraction) /
                     (lastKeyframe.getFraction() - prevFraction);
-            return mEvaluator.evaluate(intervalFraction, (T) prevKeyframe.getValue(),
-                    (T) lastKeyframe.getValue());
+            return mEvaluator.evaluate(intervalFraction, prevKeyframe.getValue(),
+                    lastKeyframe.getValue());
         }
         Keyframe prevKeyframe = keyframes[0];
         for (int i = 1; i < length; ++i) {
@@ -191,19 +197,29 @@ public class KeyframeSet<T> implements Keyframes<T> {
                 final float prevFraction = prevKeyframe.getFraction();
                 float intervalFraction = (fraction - prevFraction) /
                         (nextKeyframe.getFraction() - prevFraction);
+                // Apply interpolator on the proportional duration.
                 if (interpolator != null) {
                     intervalFraction = interpolator.getInterpolation(intervalFraction);
                 }
-                return mEvaluator.evaluate(intervalFraction, (T) prevKeyframe.getValue(),
-                        (T) nextKeyframe.getValue());
+                return mEvaluator.evaluate(intervalFraction, prevKeyframe.getValue(),
+                        nextKeyframe.getValue());
             }
             prevKeyframe = nextKeyframe;
         }
-        return (T) prevKeyframe.getValue();
+        return prevKeyframe.getValue();
     }
 
     @Override
     public Keyframe[] getKeyframes() {
         return mKeyframes;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder(" ");
+        for (Keyframe keyframe : mKeyframes) {
+            sb.append(keyframe.getValue()).append("  ");
+        }
+        return sb.toString();
     }
 }

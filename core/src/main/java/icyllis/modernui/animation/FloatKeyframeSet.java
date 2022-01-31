@@ -32,9 +32,10 @@ import javax.annotation.Nonnull;
  * TypeEvaluator set for the animation, so that values can be calculated without autoboxing to the
  * Object equivalents of these primitive types.</p>
  */
-class FloatKeyframeSet extends KeyframeSet<Float> implements Keyframes.FloatKeyframes {
+@SuppressWarnings("unchecked")
+class FloatKeyframeSet extends KeyframeSet implements Keyframes.FloatKeyframes {
 
-    public FloatKeyframeSet(@Nonnull Keyframe[] keyframes) {
+    FloatKeyframeSet(@Nonnull Keyframe... keyframes) {
         super(keyframes);
     }
 
@@ -46,6 +47,11 @@ class FloatKeyframeSet extends KeyframeSet<Float> implements Keyframes.FloatKeyf
             newKeyframes[i] = (FloatKeyframe) mKeyframes[i].copy();
         }
         return new FloatKeyframeSet(newKeyframes);
+    }
+
+    @Override
+    public Float getValue(float fraction) {
+        return getFloatValue(fraction);
     }
 
     @Override
@@ -67,7 +73,7 @@ class FloatKeyframeSet extends KeyframeSet<Float> implements Keyframes.FloatKeyf
                     (nextKeyframe.getFraction() - prevFraction);
             return mEvaluator == null ?
                     prevValue + intervalFraction * (nextValue - prevValue) :
-                    mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
+                    (float) mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
         } else if (fraction >= 1f) {
             final FloatKeyframe prevKeyframe = (FloatKeyframe) keyframes[length - 2];
             final FloatKeyframe nextKeyframe = (FloatKeyframe) keyframes[length - 1];
@@ -82,7 +88,7 @@ class FloatKeyframeSet extends KeyframeSet<Float> implements Keyframes.FloatKeyf
                     (nextKeyframe.getFraction() - prevFraction);
             return mEvaluator == null ?
                     prevValue + intervalFraction * (nextValue - prevValue) :
-                    mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
+                    (float) mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
         }
         FloatKeyframe prevKeyframe = (FloatKeyframe) keyframes[0];
         for (int i = 1; i < length; ++i) {
@@ -94,12 +100,13 @@ class FloatKeyframeSet extends KeyframeSet<Float> implements Keyframes.FloatKeyf
                         (nextKeyframe.getFraction() - prevFraction);
                 final float prevValue = prevKeyframe.getFloatValue();
                 final float nextValue = nextKeyframe.getFloatValue();
+                // Apply interpolator on the proportional duration.
                 if (interpolator != null) {
                     intervalFraction = interpolator.getInterpolation(intervalFraction);
                 }
                 return mEvaluator == null ?
                         prevValue + intervalFraction * (nextValue - prevValue) :
-                        mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
+                        (float) mEvaluator.evaluate(intervalFraction, prevValue, nextValue);
             }
             prevKeyframe = nextKeyframe;
         }

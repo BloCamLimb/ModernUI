@@ -22,7 +22,7 @@ package icyllis.modernui.animation;
  * This interface abstracts a collection of Keyframe objects and is called by
  * ValueAnimator to calculate values between those keyframes for a given animation.
  */
-public interface Keyframes<T> {
+public interface Keyframes {
 
     /**
      * Sets the TypeEvaluator to be used when calculating animated values. This object
@@ -32,7 +32,7 @@ public interface Keyframes<T> {
      *
      * @param evaluator The TypeEvaluator to be used to calculate animated values.
      */
-    void setEvaluator(TypeEvaluator<T> evaluator);
+    void setEvaluator(TypeEvaluator<?> evaluator);
 
     /**
      * Gets the animated value, given the elapsed fraction of the animation (interpolated by the
@@ -46,7 +46,7 @@ public interface Keyframes<T> {
      * @param fraction The elapsed fraction of the animation
      * @return The animated value.
      */
-    T getValue(float fraction);
+    Object getValue(float fraction);
 
     /**
      * @return The backing array of all Keyframes contained by this. This may return null if this is
@@ -54,9 +54,9 @@ public interface Keyframes<T> {
      */
     Keyframe[] getKeyframes();
 
-    Keyframes<T> copy();
+    Keyframes copy();
 
-    interface IntKeyframes extends Keyframes<Integer> {
+    interface IntKeyframes extends Keyframes {
 
         /**
          * Works like {@link #getValue(float)}, but returning a primitive.
@@ -65,14 +65,9 @@ public interface Keyframes<T> {
          * @return The animated value.
          */
         int getIntValue(float fraction);
-
-        @Override
-        default Integer getValue(float fraction) {
-            return getIntValue(fraction);
-        }
     }
 
-    interface FloatKeyframes extends Keyframes<Float> {
+    interface FloatKeyframes extends Keyframes {
 
         /**
          * Works like {@link #getValue(float)}, but returning a primitive.
@@ -81,10 +76,5 @@ public interface Keyframes<T> {
          * @return The animated value.
          */
         float getFloatValue(float fraction);
-
-        @Override
-        default Float getValue(float fraction) {
-            return getFloatValue(fraction);
-        }
     }
 }
