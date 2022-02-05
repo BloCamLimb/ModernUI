@@ -101,7 +101,7 @@ public class ColorStateList {
      *
      * @param orig the source color state list
      */
-    private ColorStateList(ColorStateList orig) {
+    private ColorStateList(@Nullable ColorStateList orig) {
         if (orig != null) {
             mStateSpecs = orig.mStateSpecs;
             mDefaultColor = orig.mDefaultColor;

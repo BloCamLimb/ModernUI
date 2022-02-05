@@ -19,7 +19,6 @@
 package icyllis.modernui.animation;
 
 import icyllis.modernui.core.ArchCore;
-import it.unimi.dsi.fastutil.objects.Object2LongMap;
 import it.unimi.dsi.fastutil.objects.Object2LongOpenHashMap;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -30,27 +29,22 @@ import java.util.function.LongConsumer;
 @ApiStatus.Internal
 public class AnimationHandler {
 
-    // support thread-local?
-    private static volatile AnimationHandler sInstance;
+    private final static ThreadLocal<AnimationHandler> TLS = ThreadLocal.withInitial(AnimationHandler::new);
 
     private final CopyOnWriteArrayList<FrameCallback> mCallbacks = new CopyOnWriteArrayList<>();
-    private final Object2LongMap<FrameCallback> mDelayedStartTime = new Object2LongOpenHashMap<>();
+    private final Object2LongOpenHashMap<FrameCallback> mDelayedStartTime = new Object2LongOpenHashMap<>();
 
     private AnimationHandler() {
     }
 
     @Nonnull
-    public static synchronized LongConsumer init() {
-        if (sInstance == null) {
-            sInstance = new AnimationHandler();
-            return sInstance::doAnimationFrame;
-        } else {
-            throw new IllegalStateException();
-        }
+    public static AnimationHandler getInstance() {
+        return TLS.get();
     }
 
-    public static AnimationHandler getInstance() {
-        return sInstance;
+    @Nonnull
+    public LongConsumer getCallback() {
+        return this::doAnimationFrame;
     }
 
     private void doAnimationFrame(long frameTime) {
