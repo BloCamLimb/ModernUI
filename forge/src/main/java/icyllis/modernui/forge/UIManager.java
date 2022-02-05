@@ -155,7 +155,7 @@ public final class UIManager implements LifecycleOwner {
     private long mUptimeMillis;
 
     // animation update callback
-    private final LongConsumer mAnimationHandler = AnimationHandler.init();
+    private LongConsumer mAnimationHandler;
     // other animation tasks
     private final ConcurrentLinkedQueue<TimedAction> mAnimationTasks = new ConcurrentLinkedQueue<>();
     private final Predicate<? super TimedAction> mAnimationTaskHandler = task -> task.execute(mUptimeMillis);
@@ -404,6 +404,8 @@ public final class UIManager implements LifecycleOwner {
     private void init() {
         long startTime = System.nanoTime();
         mViewRoot = this.new ViewRootImpl();
+
+        mAnimationHandler = AnimationHandler.getInstance().getCallback();
 
         mDecor = new FrameLayout();
         // make the root view clickable through, so that views can lose focus
@@ -1002,6 +1004,11 @@ public final class UIManager implements LifecycleOwner {
                     canvas.draw(null);
                 }
             }
+        }
+
+        @Override
+        public void playSoundEffect(int effectId) {
+
         }
     }
 

@@ -63,7 +63,6 @@ public class BejeweledTwist {
 
     private final Window mWindow;
     private final Thread mRenderThread;
-    private final LongConsumer mAnimationHandler;
 
     private double mCursorX;
     private double mCursorY;
@@ -101,7 +100,6 @@ public class BejeweledTwist {
             e.printStackTrace();
         }
         mRenderThread = new Thread(this::runRenderThread, "Render-Thread");
-        mAnimationHandler = AnimationHandler.init();
 
         AudioManager.getInstance().initialize();
 
@@ -226,6 +224,7 @@ public class BejeweledTwist {
         GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         ShaderManager.getInstance().reload();
         GLFW.glfwSwapInterval(1);
+        final LongConsumer animationHandler = AnimationHandler.getInstance().getCallback();
 
         Matrix4 projection = new Matrix4();
         Rect screenRect = new Rect();
@@ -244,7 +243,7 @@ public class BejeweledTwist {
             lastTime = time;
             GLWrapper.resetFrame(mWindow);
 
-            mAnimationHandler.accept(time);
+            animationHandler.accept(time);
             if (mWindow.getWidth() > 0) {
                 canvas.reset(mWindow.getWidth(), mWindow.getHeight());
                 screenRect.set(0, 0, mWindow.getWidth(), mWindow.getHeight());
