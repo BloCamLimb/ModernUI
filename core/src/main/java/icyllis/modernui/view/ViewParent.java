@@ -105,12 +105,57 @@ public interface ViewParent {
     void focusableViewAvailable(View v);
 
     /**
+     * Shows the context menu for the specified view or its ancestors anchored
+     * to the specified view-relative coordinate.
+     * <p>
+     * In most cases, a subclass does not need to override this. However, if
+     * the subclass is added directly to the window manager (for example,
+     * {@link ViewManager#addView(View, ViewGroup.LayoutParams)})
+     * then it should override this and show the context menu.
+     *
+     * @param originalView the source view where the context menu was first
+     *                     invoked
+     * @param x            the X coordinate in pixels relative to the original view to
+     *                     which the menu should be anchored, or {@link Float#NaN} to
+     *                     disable anchoring
+     * @param y            the Y coordinate in pixels relative to the original view to
+     *                     which the menu should be anchored, or {@link Float#NaN} to
+     *                     disable anchoring
+     * @return {@code true} if the context menu was shown, {@code false}
+     * otherwise
+     */
+    boolean showContextMenuForChild(View originalView, float x, float y);
+
+    /**
+     * Have the parent populate the specified context menu if it has anything to
+     * add (and then recurse on its parent).
+     *
+     * @param menu The menu to populate
+     */
+    void createContextMenu(ContextMenu menu);
+
+    /**
      * This method is called on the parent when a child's drawable state
      * has changed.
      *
      * @param child The child whose drawable state has changed.
      */
     void childDrawableStateChanged(View child);
+
+    /**
+     * Start an action mode of a specific type for the specified view.
+     *
+     * <p>In most cases, a subclass does not need to override this. However, if the
+     * subclass is added directly to the window manager (for example,
+     * {@link ViewManager#addView(View, ViewGroup.LayoutParams)})
+     * then it should override this and start the action mode.</p>
+     *
+     * @param originalView The source view where the action mode was first invoked
+     * @param callback     The callback that will handle lifecycle events for the action mode
+     * @param type         One of {@link ActionMode#TYPE_PRIMARY} or {@link ActionMode#TYPE_FLOATING}.
+     * @return The new action mode if it was started, null otherwise
+     */
+    ActionMode startActionModeForChild(View originalView, ActionMode.Callback callback, int type);
 
     /**
      * Called when a child does not want this parent and its ancestors to
@@ -122,7 +167,7 @@ public interface ViewParent {
      * after this parent has received an up or a cancel.</p>
      *
      * @param disallowIntercept True if the child does not want the parent to
-     *            intercept touch events.
+     *                          intercept touch events.
      */
     void requestDisallowInterceptTouchEvent(boolean disallowIntercept);
 
@@ -142,11 +187,11 @@ public interface ViewParent {
      *       rectangle visible</li>
      * <ul>
      *
-     * @param child The direct child making the request.
+     * @param child     The direct child making the request.
      * @param rectangle The rectangle in the child's coordinates the child
-     *        wishes to be on the screen.
+     *                  wishes to be on the screen.
      * @param immediate True to forbid animated or delayed scrolling,
-     *        false otherwise
+     *                  false otherwise
      * @return Whether the group scrolled to handle the operation
      */
     boolean requestChildRectangleOnScreen(View child, Rect rectangle, boolean immediate);

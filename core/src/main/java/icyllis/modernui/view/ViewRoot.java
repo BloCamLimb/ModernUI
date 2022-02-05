@@ -514,6 +514,20 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     @Override
+    public boolean showContextMenuForChild(View originalView, float x, float y) {
+        return false;
+    }
+
+    @Override
+    public ActionMode startActionModeForChild(View originalView, ActionMode.Callback callback, int type) {
+        return null;
+    }
+
+    @Override
+    public void createContextMenu(ContextMenu menu) {
+    }
+
+    @Override
     public void childDrawableStateChanged(View child) {
     }
 
