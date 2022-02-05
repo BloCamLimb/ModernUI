@@ -46,7 +46,7 @@ public abstract class BaseMovementMethod implements MovementMethod {
 
     @Override
     public boolean onKeyDown(TextView widget, Spannable text, int keyCode, KeyEvent event) {
-        final int movementMods = event.getModifiers() & ~KeyEvent.MOD_SHIFT;
+        final int movementMods = event.getModifiers() & ~KeyEvent.META_SHIFT_ON;
         return handleMovementKey(widget, text, keyCode, movementMods);
     }
 
@@ -111,9 +111,9 @@ public abstract class BaseMovementMethod implements MovementMethod {
             case KeyEvent.KEY_LEFT:
                 if (movementMods == 0) {
                     return left(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_CTRL) != 0) {
+                } else if ((movementMods & KeyEvent.META_CTRL_ON) != 0) {
                     return leftWord(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_ALT) != 0) {
+                } else if ((movementMods & KeyEvent.META_ALT_ON) != 0) {
                     return lineStart(widget, buffer);
                 }
                 break;
@@ -121,9 +121,9 @@ public abstract class BaseMovementMethod implements MovementMethod {
             case KeyEvent.KEY_RIGHT:
                 if (movementMods == 0) {
                     return right(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_CTRL) != 0) {
+                } else if ((movementMods & KeyEvent.META_CTRL_ON) != 0) {
                     return rightWord(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_ALT) != 0) {
+                } else if ((movementMods & KeyEvent.META_ALT_ON) != 0) {
                     return lineEnd(widget, buffer);
                 }
                 break;
@@ -131,7 +131,7 @@ public abstract class BaseMovementMethod implements MovementMethod {
             case KeyEvent.KEY_UP:
                 if (movementMods == 0) {
                     return up(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_ALT) != 0) {
+                } else if ((movementMods & KeyEvent.META_ALT_ON) != 0) {
                     return top(widget, buffer);
                 }
                 break;
@@ -139,7 +139,7 @@ public abstract class BaseMovementMethod implements MovementMethod {
             case KeyEvent.KEY_DOWN:
                 if (movementMods == 0) {
                     return down(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_ALT) != 0) {
+                } else if ((movementMods & KeyEvent.META_ALT_ON) != 0) {
                     return bottom(widget, buffer);
                 }
                 break;
@@ -147,7 +147,7 @@ public abstract class BaseMovementMethod implements MovementMethod {
             case KeyEvent.KEY_PAGE_UP:
                 if (movementMods == 0) {
                     return pageUp(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_ALT) != 0) {
+                } else if ((movementMods & KeyEvent.META_ALT_ON) != 0) {
                     return top(widget, buffer);
                 }
                 break;
@@ -155,7 +155,7 @@ public abstract class BaseMovementMethod implements MovementMethod {
             case KeyEvent.KEY_PAGE_DOWN:
                 if (movementMods == 0) {
                     return pageDown(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_ALT) != 0) {
+                } else if ((movementMods & KeyEvent.META_ALT_ON) != 0) {
                     return bottom(widget, buffer);
                 }
                 break;
@@ -163,7 +163,7 @@ public abstract class BaseMovementMethod implements MovementMethod {
             case KeyEvent.KEY_HOME:
                 if (movementMods == 0) {
                     return home(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_CTRL) != 0) {
+                } else if ((movementMods & KeyEvent.META_CTRL_ON) != 0) {
                     return top(widget, buffer);
                 }
                 break;
@@ -171,7 +171,7 @@ public abstract class BaseMovementMethod implements MovementMethod {
             case KeyEvent.KEY_END:
                 if (movementMods == 0) {
                     return end(widget, buffer);
-                } else if ((movementMods & KeyEvent.MOD_CTRL) != 0) {
+                } else if ((movementMods & KeyEvent.META_CTRL_ON) != 0) {
                     return bottom(widget, buffer);
                 }
                 break;

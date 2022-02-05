@@ -134,7 +134,7 @@ public class Touch {
                         ds[0].mUsed = true;
                         boolean cap = event.isShiftPressed() ||
                                 event.isButtonPressed(MotionEvent.BUTTON_PRIMARY) ||
-                                TextKeyListener.getMetaState(buffer, KeyEvent.MOD_SHIFT) == 1;
+                                TextKeyListener.getMetaState(buffer, KeyEvent.META_SHIFT_ON) == 1;
 
                         float dx;
                         float dy;

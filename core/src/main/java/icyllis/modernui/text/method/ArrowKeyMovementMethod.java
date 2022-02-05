@@ -48,7 +48,7 @@ public class ArrowKeyMovementMethod extends BaseMovementMethod {
     }
 
     private static boolean isSelecting(Spannable buffer) {
-        return TextKeyListener.getMetaState(buffer, KeyEvent.MOD_SHIFT) != 0;
+        return TextKeyListener.getMetaState(buffer, KeyEvent.META_SHIFT_ON) != 0;
     }
 
     private static int getCurrentLineTop(Spannable buffer, Layout layout) {

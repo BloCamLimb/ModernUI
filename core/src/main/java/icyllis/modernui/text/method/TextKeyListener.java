@@ -109,8 +109,8 @@ public final class TextKeyListener {
      */
     public static int getMetaState(CharSequence text, int meta) {
         return switch (meta) {
-            case KeyEvent.MOD_SHIFT -> getActive(text, CAP);
-            case KeyEvent.MOD_ALT -> getActive(text, ALT);
+            case KeyEvent.META_SHIFT_ON -> getActive(text, CAP);
+            case KeyEvent.META_ALT_ON -> getActive(text, ALT);
             default -> 0;
         };
     }
@@ -222,7 +222,7 @@ public final class TextKeyListener {
     private boolean backspaceOrForwardDelete(TextView view, Editable content,
                                              KeyEvent event, boolean isForwardDelete) {
         // Ensure the key event does not have modifiers except ALT or SHIFT or CTRL.
-        if ((event.getModifiers() & ~(KeyEvent.MOD_SHIFT | KeyEvent.MOD_ALT | KeyEvent.MOD_CTRL)) != 0) {
+        if ((event.getModifiers() & ~(KeyEvent.META_SHIFT_ON | KeyEvent.META_ALT_ON | KeyEvent.META_CTRL_ON)) != 0) {
             return false;
         }
 

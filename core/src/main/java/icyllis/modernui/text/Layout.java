@@ -1488,8 +1488,8 @@ public abstract class Layout {
         boolean clamped = shouldClampCursor(line);
         float h1 = getPrimaryHorizontal(point, clamped) - 0.5f;
 
-        int caps = TextKeyListener.getMetaState(buffer, KeyEvent.MOD_SHIFT);
-        int fn = TextKeyListener.getMetaState(buffer, KeyEvent.MOD_ALT);
+        int caps = TextKeyListener.getMetaState(buffer, KeyEvent.META_SHIFT_ON);
+        int fn = TextKeyListener.getMetaState(buffer, KeyEvent.META_ALT_ON);
         int dist = (bottom - top) >> 3;
         top += dist;
         bottom -= dist;
