@@ -36,6 +36,7 @@ import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
@@ -939,6 +940,12 @@ public class View implements Drawable.Callback {
      * Mask for scrollbar style.
      */
     static final int SCROLLBARS_STYLE_MASK = 0x03000000;
+
+    /**
+     * View flag indicating whether this view should have sound effects enabled
+     * for events such as clicking and touching.
+     */
+    public static final int SOUND_EFFECTS_ENABLED = 0x08000000;
 
     /**
      * The view flags hold various views states.
@@ -4293,6 +4300,50 @@ public class View implements Drawable.Callback {
         return (mViewFlags & DRAW_MASK) == WILL_NOT_DRAW;
     }
 
+    /**
+     * Set whether this view should have sound effects enabled for events such as
+     * clicking and touching.
+     *
+     * <p>You may wish to disable sound effects for a view if you already play sounds,
+     * for instance, a dial key that plays dtmf tones.
+     *
+     * @param soundEffectsEnabled whether sound effects are enabled for this view.
+     * @see #isSoundEffectsEnabled()
+     * @see #playSoundEffect(int)
+     */
+    public void setSoundEffectsEnabled(boolean soundEffectsEnabled) {
+        setFlags(soundEffectsEnabled ? SOUND_EFFECTS_ENABLED : 0, SOUND_EFFECTS_ENABLED);
+    }
+
+    /**
+     * @return whether this view should have sound effects enabled for events such as
+     * clicking and touching.
+     * @see #setSoundEffectsEnabled(boolean)
+     * @see #playSoundEffect(int)
+     */
+    public boolean isSoundEffectsEnabled() {
+        return SOUND_EFFECTS_ENABLED == (mViewFlags & SOUND_EFFECTS_ENABLED);
+    }
+
+    /**
+     * Play a sound effect for this view.
+     *
+     * <p>The framework will play sound effects for some built in actions, such as
+     * clicking, but you may wish to play these effects in your widget,
+     * for instance, for internal navigation.
+     *
+     * <p>The sound effect will only be played if sound effects are enabled by the user, and
+     * {@link #isSoundEffectsEnabled()} is true.
+     *
+     * @param soundConstant One of the constants defined in {@link SoundEffectConstants}.
+     */
+    public void playSoundEffect(int soundConstant) {
+        if (mAttachInfo == null || mAttachInfo.mRootCallbacks == null || !isSoundEffectsEnabled()) {
+            return;
+        }
+        mAttachInfo.mRootCallbacks.playSoundEffect(soundConstant);
+    }
+
     /// SECTION START - Direction, RTL \\\
 
     /**
@@ -5779,6 +5830,19 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Gets the view root associated with the View.
+     *
+     * @return The view root, or null if none.
+     */
+    @ApiStatus.Internal
+    public ViewRoot getViewRootImpl() {
+        if (mAttachInfo != null) {
+            return mAttachInfo.mViewRoot;
+        }
+        return null;
+    }
+
+    /**
      * <p>Causes the Runnable to be added to the task queue.
      * The runnable will be run on the UI thread.</p>
      *
@@ -6669,7 +6733,7 @@ public class View implements Drawable.Callback {
     public boolean performClick() {
         final ListenerInfo li = mListenerInfo;
         if (li != null && li.mOnClickListener != null) {
-            //playSoundEffect(SoundEffectConstants.CLICK);
+            playSoundEffect(SoundEffectConstants.CLICK);
             li.mOnClickListener.onClick(this);
             return true;
         }

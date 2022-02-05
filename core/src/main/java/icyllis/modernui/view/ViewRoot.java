@@ -39,7 +39,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
  * The top of a view hierarchy, implementing the needed protocol between View and the Window.
  */
 @ApiStatus.Internal
-public abstract class ViewRoot implements ViewParent {
+public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     protected static final Marker MARKER = MarkerManager.getMarker("ViewRoot");
 
@@ -73,7 +73,7 @@ public abstract class ViewRoot implements ViewParent {
     protected ViewRoot() {
         ArchCore.initUiThread();
         mHandler = new Handler(Looper.myLooper(), this::handleMessage);
-        mAttachInfo = new AttachInfo(this, mHandler);
+        mAttachInfo = new AttachInfo(this, mHandler, this);
 
         try {
             Class.forName("icyllis.modernui.text.BoringLayout");
