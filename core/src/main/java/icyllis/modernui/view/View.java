@@ -34,10 +34,11 @@ import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.StateSet;
+import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
+import icyllis.modernui.view.menu.MenuBuilder;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
-import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -762,6 +763,12 @@ public class View implements Drawable.Callback {
      */
     static final int PFLAG3_CALLED_SUPER = 0x10;
 
+    /**
+     * Indicates that the user is currently touching the screen.
+     * Currently used for the tooltip positioning only.
+     */
+    private static final int PFLAG3_FINGER_DOWN = 0x20000;
+
     int mPrivateFlags;
     int mPrivateFlags2;
     int mPrivateFlags3;
@@ -946,6 +953,18 @@ public class View implements Drawable.Callback {
      * for events such as clicking and touching.
      */
     public static final int SOUND_EFFECTS_ENABLED = 0x08000000;
+
+    /**
+     * View flag indicating whether this view should have haptic feedback
+     * enabled for events such as long presses.
+     */
+    public static final int HAPTIC_FEEDBACK_ENABLED = 0x10000000;
+
+    /**
+     * <p>Indicates this view can display a tooltip on hover or long press.</p>
+     * {@hide}
+     */
+    static final int TOOLTIP = 0x40000000;
 
     /**
      * The view flags hold various views states.
@@ -1158,16 +1177,50 @@ public class View implements Drawable.Callback {
     private StateListAnimator mStateListAnimator;
 
     /**
+     * Count of how many windows this view has been attached to.
+     */
+    int mWindowAttachCount;
+
+    /**
      * The layout parameters associated with this view and used by the parent
      * {@link ViewGroup} to determine how this view should be laid out.
      */
     ViewGroup.LayoutParams mLayoutParams;
 
+    private CheckForLongPress mPendingCheckForLongPress;
+    private CheckForTap mPendingCheckForTap;
     private PerformClick mPerformClick;
     private UnsetPressedState mUnsetPressedState;
 
+    /**
+     * Whether the long press's action has been invoked.  The tap's action is invoked on the
+     * up event while a long press is invoked as soon as the long press duration is reached, so
+     * a long press could be performed before the tap is checked, in which case the tap's action
+     * should not be invoked.
+     */
+    private boolean mHasPerformedLongPress;
+
+    /**
+     * Whether a context click button is currently pressed down. This is true when the stylus is
+     * touching the screen and the primary button has been pressed, or if a mouse's right button is
+     * pressed. This is false once the button is released or if the stylus has been lifted.
+     */
+    private boolean mInContextButtonPress;
+
+    /**
+     * Whether the next up event should be ignored for the purposes of gesture recognition. This is
+     * true after a stylus button press has occurred, when the next up event should not be recognized
+     * as a tap.
+     */
+    private boolean mIgnoreNextUpEvent;
+
     @Nullable
     ListenerInfo mListenerInfo;
+
+    // Temporary values used to hold (x,y) coordinates when delegating from the
+    // two-arg performLongClick() method to the legacy no-arg version.
+    private float mLongClickX = Float.NaN;
+    private float mLongClickY = Float.NaN;
 
     /**
      * Queue of pending runnables. Used to postpone calls to post() until this
@@ -2239,6 +2292,24 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Sets the pressed state for this view and provides a touch coordinate for
+     * animation hinting.
+     *
+     * @param pressed Pass true to set the View's internal state to "pressed",
+     *                or false to reverts the View's internal state from a
+     *                previously set "pressed" state.
+     * @param x       The x coordinate of the touch that caused the press
+     * @param y       The y coordinate of the touch that caused the press
+     */
+    private void setPressed(boolean pressed, float x, float y) {
+        if (pressed) {
+            drawableHotspotChanged(x, y);
+        }
+
+        setPressed(pressed);
+    }
+
+    /**
      * Sets the pressed state for this view.
      *
      * @param pressed Pass true to set the View's internal state to "pressed", or false to reverts
@@ -2296,9 +2367,7 @@ public class View implements Drawable.Callback {
         //noinspection DoubleNegation
         if (((mPrivateFlags & PFLAG_SELECTED) != 0) != selected) {
             mPrivateFlags = (mPrivateFlags & ~PFLAG_SELECTED) | (selected ? PFLAG_SELECTED : 0);
-            if (!selected && (mViewFlags & ENABLED_MASK) == ENABLED_MASK && isPressed()) {
-                setPressed(false);
-            }
+            if (!selected) resetPressedState();
             invalidate();
             refreshDrawableState();
             dispatchSetSelected(selected);
@@ -2906,12 +2975,27 @@ public class View implements Drawable.Callback {
             if (isPressed()) {
                 setPressed(false);
             }
+            resetPressedState();
         }
 
         invalidate();
         ListenerInfo li = mListenerInfo;
         if (li != null && li.mOnFocusChangeListener != null) {
             li.mOnFocusChangeListener.onFocusChange(this, gainFocus);
+        }
+    }
+
+    private void resetPressedState() {
+        if ((mViewFlags & ENABLED_MASK) == DISABLED) {
+            return;
+        }
+
+        if (isPressed()) {
+            setPressed(false);
+
+            if (!mHasPerformedLongPress) {
+                removeLongPressCallback();
+            }
         }
     }
 
@@ -4133,6 +4217,7 @@ public class View implements Drawable.Callback {
 
     void dispatchAttachedToWindow(AttachInfo info) {
         mAttachInfo = info;
+        mWindowAttachCount++;
         if (mFloatingTreeObserver != null) {
             info.mTreeObserver.merge(mFloatingTreeObserver);
             mFloatingTreeObserver = null;
@@ -4161,7 +4246,20 @@ public class View implements Drawable.Callback {
 
     void dispatchDetachedFromWindow() {
         onDetachedFromWindow();
+
+        mPrivateFlags &= ~PFLAG_CANCEL_NEXT_UP_EVENT;
         mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
+
+        removeUnsetPressCallback();
+        removeLongPressCallback();
+        removePerformClickCallback();
+        //stopNestedScroll();
+
+        // Anything that started animating right before detach should already
+        // be in its final state when re-attached.
+        /*jumpDrawablesToCurrentState();
+
+        cleanupDraw();*/
 
         ListenerInfo li = mListenerInfo;
         final CopyOnWriteArrayList<OnAttachStateChangeListener> listeners =
@@ -4205,6 +4303,13 @@ public class View implements Drawable.Callback {
      */
     public boolean isAttachedToWindow() {
         return mAttachInfo != null;
+    }
+
+    /**
+     * @return The number of times this view has been attached to a window
+     */
+    protected int getWindowAttachCount() {
+        return mWindowAttachCount;
     }
 
     /**
@@ -4257,7 +4362,7 @@ public class View implements Drawable.Callback {
      * </p>
      */
     public void onCancelPendingInputEvents() {
-        //removePerformClickCallback();
+        removePerformClickCallback();
         cancelLongPress();
         mPrivateFlags3 |= PFLAG3_CALLED_SUPER;
     }
@@ -4326,6 +4431,31 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Set whether this view should have haptic feedback for events such as
+     * long presses.
+     *
+     * <p>You may wish to disable haptic feedback if your view already controls
+     * its own haptic feedback.
+     *
+     * @param hapticFeedbackEnabled whether haptic feedback enabled for this view.
+     * @see #isHapticFeedbackEnabled()
+     * @see #performHapticFeedback(int)
+     */
+    public void setHapticFeedbackEnabled(boolean hapticFeedbackEnabled) {
+        setFlags(hapticFeedbackEnabled ? HAPTIC_FEEDBACK_ENABLED : 0, HAPTIC_FEEDBACK_ENABLED);
+    }
+
+    /**
+     * @return whether this view should have haptic feedback enabled for events
+     * long presses.
+     * @see #setHapticFeedbackEnabled(boolean)
+     * @see #performHapticFeedback(int)
+     */
+    public boolean isHapticFeedbackEnabled() {
+        return HAPTIC_FEEDBACK_ENABLED == (mViewFlags & HAPTIC_FEEDBACK_ENABLED);
+    }
+
+    /**
      * Play a sound effect for this view.
      *
      * <p>The framework will play sound effects for some built in actions, such as
@@ -4342,6 +4472,46 @@ public class View implements Drawable.Callback {
             return;
         }
         mAttachInfo.mRootCallbacks.playSoundEffect(soundConstant);
+    }
+
+    /**
+     * BZZZTT!!1!
+     *
+     * <p>Provide haptic feedback to the user for this view.
+     *
+     * <p>The framework will provide haptic feedback for some built in actions,
+     * such as long presses, but you may wish to provide feedback for your
+     * own widget.
+     *
+     * <p>The feedback will only be performed if
+     * {@link #isHapticFeedbackEnabled()} is true.
+     *
+     * @param feedbackConstant One of the constants defined in
+     *                         {@link HapticFeedbackConstants}
+     */
+    public final boolean performHapticFeedback(int feedbackConstant) {
+        return performHapticFeedback(feedbackConstant, 0);
+    }
+
+    /**
+     * BZZZTT!!1!
+     *
+     * <p>Like {@link #performHapticFeedback(int)}, with additional options.
+     *
+     * @param feedbackConstant One of the constants defined in
+     *                         {@link HapticFeedbackConstants}
+     * @param flags            Additional flags as per {@link HapticFeedbackConstants}.
+     */
+    public boolean performHapticFeedback(int feedbackConstant, int flags) {
+        if (mAttachInfo == null) {
+            return false;
+        }
+        if ((flags & HapticFeedbackConstants.FLAG_IGNORE_VIEW_SETTING) == 0
+                && !isHapticFeedbackEnabled()) {
+            return false;
+        }
+        return mAttachInfo.mRootCallbacks.performHapticFeedback(feedbackConstant,
+                (flags & HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING) != 0);
     }
 
     /// SECTION START - Direction, RTL \\\
@@ -5091,6 +5261,37 @@ public class View implements Drawable.Callback {
      */
     public void forceLayout() {
         mPrivateFlags |= PFLAG_FORCE_LAYOUT;
+    }
+
+    /**
+     * This function is called whenever the view hotspot changes and needs to
+     * be propagated to drawables or child views managed by the view.
+     * <p>
+     * Dispatching to child views is handled by
+     * {@link #dispatchDrawableHotspotChanged(float, float)}.
+     * <p>
+     * Be sure to call through to the superclass when overriding this function.
+     *
+     * @param x hotspot x coordinate
+     * @param y hotspot y coordinate
+     */
+    @CallSuper
+    public void drawableHotspotChanged(float x, float y) {
+        if (mBackground != null) {
+            mBackground.setHotspot(x, y);
+        }
+
+        dispatchDrawableHotspotChanged(x, y);
+    }
+
+    /**
+     * Dispatches drawableHotspotChanged to all of this View's children.
+     *
+     * @param x hotspot x coordinate
+     * @param y hotspot y coordinate
+     * @see #drawableHotspotChanged(float, float)
+     */
+    public void dispatchDrawableHotspotChanged(float x, float y) {
     }
 
     /**
@@ -6128,13 +6329,40 @@ public class View implements Drawable.Callback {
     }
 
     private boolean dispatchGenericMotionEventInternal(MotionEvent event) {
+        //noinspection SimplifiableIfStatement
+        ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnGenericMotionListener != null
+                && (mViewFlags & ENABLED_MASK) == ENABLED
+                && li.mOnGenericMotionListener.onGenericMotion(this, event)) {
+            return true;
+        }
+
         if (onGenericMotionEvent(event)) {
             return true;
         }
-        if ((mViewFlags & ENABLED_MASK) == DISABLED) {
-            return false;
+
+        final int actionButton = event.getActionButton();
+        switch (event.getAction()) {
+            case MotionEvent.ACTION_BUTTON_PRESS:
+                if (isContextClickable() && !mInContextButtonPress && !mHasPerformedLongPress
+                        && (actionButton == MotionEvent.BUTTON_SECONDARY)) {
+                    if (performContextClick(event.getX(), event.getY())) {
+                        mInContextButtonPress = true;
+                        setPressed(true, event.getX(), event.getY());
+                        removeTapCallback();
+                        removeLongPressCallback();
+                        return true;
+                    }
+                }
+                break;
+
+            case MotionEvent.ACTION_BUTTON_RELEASE:
+                if (mInContextButtonPress && (actionButton == MotionEvent.BUTTON_SECONDARY)) {
+                    mInContextButtonPress = false;
+                    mIgnoreNextUpEvent = true;
+                }
+                break;
         }
-        final int action = event.getAction();
         return false;
     }
 
@@ -6284,6 +6512,12 @@ public class View implements Drawable.Callback {
      */
     public boolean onHoverEvent(@Nonnull MotionEvent event) {
         final int action = event.getAction();
+
+        if ((action == MotionEvent.ACTION_HOVER_ENTER || action == MotionEvent.ACTION_HOVER_MOVE)
+                && isOnScrollbar(event.getX(), event.getY())) {
+            awakenScrollBars();
+        }
+
         // If we consider ourselves hoverable, or if we're already hovered,
         // handle changing state in response to ENTER and EXIT events.
         if (isHoverable() || isHovered()) {
@@ -6304,6 +6538,7 @@ public class View implements Drawable.Callback {
             // return true.
             return true;
         }
+
         return false;
     }
 
@@ -6396,6 +6631,9 @@ public class View implements Drawable.Callback {
      * @see #getScrollY()
      */
     public void setOnScrollChangeListener(@Nullable OnScrollChangeListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
         getListenerInfo().mOnScrollChangeListener = l;
     }
 
@@ -6405,6 +6643,9 @@ public class View implements Drawable.Callback {
      * @param l The callback that will run.
      */
     public void setOnFocusChangeListener(@Nullable OnFocusChangeListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
         getListenerInfo().mOnFocusChangeListener = l;
     }
 
@@ -6489,6 +6730,9 @@ public class View implements Drawable.Callback {
      * @see #setClickable(boolean)
      */
     public void setOnClickListener(@Nullable OnClickListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
         if (!isClickable()) {
             setClickable(true);
         }
@@ -6505,6 +6749,75 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Register a callback to be invoked when this view is clicked and held. If this view is not
+     * long clickable, it becomes long clickable.
+     *
+     * @param l The callback that will run
+     * @see #setLongClickable(boolean)
+     */
+    public void setOnLongClickListener(@Nullable OnLongClickListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
+        if (!isLongClickable()) {
+            setLongClickable(true);
+        }
+        getListenerInfo().mOnLongClickListener = l;
+    }
+
+    /**
+     * Return whether this view has an attached OnLongClickListener.  Returns
+     * true if there is a listener, false if there is none.
+     */
+    public boolean hasOnLongClickListeners() {
+        ListenerInfo li = mListenerInfo;
+        return (li != null && li.mOnLongClickListener != null);
+    }
+
+    /**
+     * @return the registered {@link OnLongClickListener} if there is one, {@code null} otherwise.
+     * @hide
+     */
+    @Nullable
+    public OnLongClickListener getOnLongClickListener() {
+        ListenerInfo li = mListenerInfo;
+        return (li != null) ? li.mOnLongClickListener : null;
+    }
+
+    /**
+     * Register a callback to be invoked when this view is context clicked. If the view is not
+     * context clickable, it becomes context clickable.
+     *
+     * @param l The callback that will run
+     * @see #setContextClickable(boolean)
+     */
+    public void setOnContextClickListener(@Nullable OnContextClickListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
+        if (!isContextClickable()) {
+            setContextClickable(true);
+        }
+        getListenerInfo().mOnContextClickListener = l;
+    }
+
+    /**
+     * Register a callback to be invoked when the context menu for this view is
+     * being built. If this view is not long clickable, it becomes long clickable.
+     *
+     * @param l The callback that will run
+     */
+    public void setOnCreateContextMenuListener(@Nullable OnCreateContextMenuListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
+        if (!isLongClickable()) {
+            setLongClickable(true);
+        }
+        getListenerInfo().mOnCreateContextMenuListener = l;
+    }
+
+    /**
      * Register a callback to be invoked when a hardware key is pressed in this view.
      * Key presses in software input methods will generally not trigger the methods of
      * this listener.
@@ -6512,6 +6825,9 @@ public class View implements Drawable.Callback {
      * @param l the key listener to attach to this view
      */
     public void setOnKeyListener(@Nullable OnKeyListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
         getListenerInfo().mOnKeyListener = l;
     }
 
@@ -6521,7 +6837,22 @@ public class View implements Drawable.Callback {
      * @param l the touch listener to attach to this view
      */
     public void setOnTouchListener(@Nullable OnTouchListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
         getListenerInfo().mOnTouchListener = l;
+    }
+
+    /**
+     * Register a callback to be invoked when a generic motion event is sent to this view.
+     *
+     * @param l the generic motion listener to attach to this view
+     */
+    public void setOnGenericMotionListener(@Nullable OnGenericMotionListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
+        getListenerInfo().mOnGenericMotionListener = l;
     }
 
     /**
@@ -6530,7 +6861,25 @@ public class View implements Drawable.Callback {
      * @param l the hover listener to attach to this view
      */
     public void setOnHoverListener(@Nullable OnHoverListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
         getListenerInfo().mOnHoverListener = l;
+    }
+
+    /**
+     * Register a drag event listener callback object for this View. The parameter is
+     * an implementation of {@link OnDragListener}. To send a drag event to a
+     * View, the system calls the
+     * {@link OnDragListener#onDrag(View, DragEvent)} method.
+     *
+     * @param l An implementation of {@link OnDragListener}.
+     */
+    public void setOnDragListener(@Nullable OnDragListener l) {
+        if (l == null && mListenerInfo == null) {
+            return;
+        }
+        getListenerInfo().mOnDragListener = l;
     }
 
     /*
@@ -6638,6 +6987,8 @@ public class View implements Drawable.Callback {
      * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
     public boolean onTouchEvent(@Nonnull MotionEvent event) {
+        final float x = event.getX();
+        final float y = event.getY();
         final int viewFlags = mViewFlags;
         final int action = event.getAction();
 
@@ -6649,20 +7000,30 @@ public class View implements Drawable.Callback {
             if (action == MotionEvent.ACTION_UP && (mPrivateFlags & PFLAG_PRESSED) != 0) {
                 setPressed(false);
             }
+            mPrivateFlags3 &= ~PFLAG3_FINGER_DOWN;
             // A disabled view that is clickable still consumes the touch
             // events, it just doesn't respond to them.
             return clickable;
         }
 
-        if (!clickable) {
+        if (!clickable && (viewFlags & TOOLTIP) != TOOLTIP) {
             return false;
         }
 
         switch (action) {
             case MotionEvent.ACTION_UP -> {
+                mPrivateFlags3 &= ~PFLAG3_FINGER_DOWN;
+                if (!clickable) {
+                    removeTapCallback();
+                    removeLongPressCallback();
+                    mInContextButtonPress = false;
+                    mHasPerformedLongPress = false;
+                    mIgnoreNextUpEvent = false;
+                    break;
+                }
                 boolean prepressed = (mPrivateFlags & PFLAG_PREPRESSED) != 0;
                 if ((mPrivateFlags & PFLAG_PRESSED) != 0 || prepressed) {
-                    // take focus if we don't have it already, and we should in
+                    // take focus if we don't have it already and we should in
                     // touch mode.
                     boolean focusTaken = false;
                     if (isFocusable() && isFocusableInTouchMode() && !isFocused()) {
@@ -6674,18 +7035,24 @@ public class View implements Drawable.Callback {
                         // showed it as pressed.  Make it show the pressed
                         // state now (before scheduling the click) to ensure
                         // the user sees it.
-                        setPressed(true);
+                        setPressed(true, x, y);
                     }
 
-                    if (!focusTaken) {
-                        // Use a Runnable and post this rather than calling
-                        // performClick directly. This lets other visual state
-                        // of the view update before click actions start.
-                        if (mPerformClick == null) {
-                            mPerformClick = new PerformClick();
-                        }
-                        if (!post(mPerformClick)) {
-                            performClick();
+                    if (!mHasPerformedLongPress && !mIgnoreNextUpEvent) {
+                        // This is a tap, so remove the longpress check
+                        removeLongPressCallback();
+
+                        // Only perform take click actions if we were in the pressed state
+                        if (!focusTaken) {
+                            // Use a Runnable and post this rather than calling
+                            // performClick directly. This lets other visual state
+                            // of the view update before click actions start.
+                            if (mPerformClick == null) {
+                                mPerformClick = new PerformClick();
+                            }
+                            if (!post(mPerformClick)) {
+                                performClick();
+                            }
                         }
                     }
 
@@ -6697,16 +7064,149 @@ public class View implements Drawable.Callback {
                         postDelayed(mUnsetPressedState,
                                 ViewConfiguration.getPressedStateDuration());
                     } else if (!post(mUnsetPressedState)) {
-                        // If the post failed, un-press right now
+                        // If the post failed, unpress right now
                         mUnsetPressedState.run();
                     }
+
+                    removeTapCallback();
+                }
+                mIgnoreNextUpEvent = false;
+            }
+            case MotionEvent.ACTION_DOWN -> {
+                mHasPerformedLongPress = false;
+
+                if (!clickable) {
+                    checkForLongClick(
+                            ViewConfiguration.getLongPressTimeout(),
+                            x,
+                            y);
+                    break;
+                }
+
+                if (performButtonActionOnTouchDown(event)) {
+                    break;
+                }
+
+                // Walk up the hierarchy to determine if we're inside a scrolling container.
+                boolean isInScrollingContainer = isInScrollingContainer();
+
+                // For views inside a scrolling container, delay the pressed feedback for
+                // a short period in case this is a scroll.
+                if (isInScrollingContainer) {
+                    mPrivateFlags |= PFLAG_PREPRESSED;
+                    if (mPendingCheckForTap == null) {
+                        mPendingCheckForTap = new CheckForTap();
+                    }
+                    mPendingCheckForTap.x = event.getX();
+                    mPendingCheckForTap.y = event.getY();
+                    postDelayed(mPendingCheckForTap, ViewConfiguration.getTapTimeout());
+                } else {
+                    // Not inside a scrolling container, so show the feedback right away
+                    setPressed(true, x, y);
+                    checkForLongClick(
+                            ViewConfiguration.getLongPressTimeout(),
+                            x,
+                            y);
                 }
             }
-            case MotionEvent.ACTION_DOWN -> setPressed(true);
-            case MotionEvent.ACTION_CANCEL -> setPressed(false);
+            case MotionEvent.ACTION_CANCEL -> {
+                if (clickable) {
+                    setPressed(false);
+                }
+                removeTapCallback();
+                removeLongPressCallback();
+                mInContextButtonPress = false;
+                mHasPerformedLongPress = false;
+                mIgnoreNextUpEvent = false;
+                mPrivateFlags3 &= ~PFLAG3_FINGER_DOWN;
+            }
+            case MotionEvent.ACTION_MOVE -> {
+                if (clickable) {
+                    drawableHotspotChanged(x, y);
+                }
+
+                // Be lenient about moving outside of buttons
+                if (!pointInView(x, y, ViewConfiguration.get().getScaledTouchSlop())) {
+                    // Outside button
+                    // Remove any future long press/tap checks
+                    removeTapCallback();
+                    removeLongPressCallback();
+                    if ((mPrivateFlags & PFLAG_PRESSED) != 0) {
+                        setPressed(false);
+                    }
+                    mPrivateFlags3 &= ~PFLAG3_FINGER_DOWN;
+                }
+            }
         }
 
         return true;
+    }
+
+    /**
+     * @hide
+     */
+    public boolean isInScrollingContainer() {
+        ViewParent p = getParent();
+        while (p instanceof ViewGroup) {
+            if (((ViewGroup) p).shouldDelayChildPressedState()) {
+                return true;
+            }
+            p = p.getParent();
+        }
+        return false;
+    }
+
+    /**
+     * Remove the longpress detection timer.
+     */
+    private void removeLongPressCallback() {
+        if (mPendingCheckForLongPress != null) {
+            removeCallbacks(mPendingCheckForLongPress);
+        }
+    }
+
+    /**
+     * Return true if the long press callback is scheduled to run sometime in the future.
+     * Return false if there is no scheduled long press callback at the moment.
+     */
+    private boolean hasPendingLongPressCallback() {
+        if (mPendingCheckForLongPress == null) {
+            return false;
+        }
+        final AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo == null) {
+            return false;
+        }
+        return attachInfo.mHandler.hasCallbacks(mPendingCheckForLongPress);
+    }
+
+    /**
+     * Remove the pending click action
+     */
+    private void removePerformClickCallback() {
+        if (mPerformClick != null) {
+            removeCallbacks(mPerformClick);
+        }
+    }
+
+    /**
+     * Remove the prepress detection timer.
+     */
+    private void removeUnsetPressCallback() {
+        if ((mPrivateFlags & PFLAG_PRESSED) != 0 && mUnsetPressedState != null) {
+            setPressed(false);
+            removeCallbacks(mUnsetPressedState);
+        }
+    }
+
+    /**
+     * Remove the tap detection timer.
+     */
+    private void removeTapCallback() {
+        if (mPendingCheckForTap != null) {
+            mPrivateFlags &= ~PFLAG_PREPRESSED;
+            removeCallbacks(mPendingCheckForTap);
+        }
     }
 
     /**
@@ -6716,6 +7216,18 @@ public class View implements Drawable.Callback {
      * and then move around enough to cause scrolling.
      */
     public void cancelLongPress() {
+        removeLongPressCallback();
+
+        /*
+         * The prepressed state handled by the tap callback is a display
+         * construct, but the tap callback will post a long press callback
+         * less its own timeout. Remove it here.
+         */
+        removeTapCallback();
+    }
+
+    boolean isOnScrollbar(float x, float y) {
+        return false;
     }
 
     boolean isOnScrollbarThumb(float x, float y) {
@@ -6731,13 +7243,267 @@ public class View implements Drawable.Callback {
      * otherwise is returned.
      */
     public boolean performClick() {
+        final boolean result;
         final ListenerInfo li = mListenerInfo;
         if (li != null && li.mOnClickListener != null) {
             playSoundEffect(SoundEffectConstants.CLICK);
             li.mOnClickListener.onClick(this);
+            result = true;
+        } else {
+            result = false;
+        }
+        return result;
+    }
+
+    /**
+     * Directly call any attached OnClickListener.  Unlike {@link #performClick()},
+     * this only calls the listener, and does not do any associated clicking
+     * actions like reporting an accessibility event.
+     *
+     * @return True there was an assigned OnClickListener that was called, false
+     * otherwise is returned.
+     */
+    public boolean callOnClick() {
+        ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnClickListener != null) {
+            li.mOnClickListener.onClick(this);
             return true;
         }
         return false;
+    }
+
+    private void checkForLongClick(long delay, float x, float y) {
+        if ((mViewFlags & LONG_CLICKABLE) == LONG_CLICKABLE || (mViewFlags & TOOLTIP) == TOOLTIP) {
+            mHasPerformedLongPress = false;
+
+            if (mPendingCheckForLongPress == null) {
+                mPendingCheckForLongPress = new CheckForLongPress();
+            }
+            mPendingCheckForLongPress.setAnchor(x, y);
+            mPendingCheckForLongPress.rememberWindowAttachCount();
+            mPendingCheckForLongPress.rememberPressedState();
+            postDelayed(mPendingCheckForLongPress, delay);
+        }
+    }
+
+    /**
+     * Calls this view's OnLongClickListener, if it is defined. Invokes the
+     * context menu if the OnLongClickListener did not consume the event.
+     *
+     * @return {@code true} if one of the above receivers consumed the event,
+     * {@code false} otherwise
+     */
+    public boolean performLongClick() {
+        return performLongClickInternal(mLongClickX, mLongClickY);
+    }
+
+    /**
+     * Calls this view's OnLongClickListener, if it is defined. Invokes the
+     * context menu if the OnLongClickListener did not consume the event,
+     * anchoring it to an (x,y) coordinate.
+     *
+     * @param x x coordinate of the anchoring touch event, or {@link Float#NaN}
+     *          to disable anchoring
+     * @param y y coordinate of the anchoring touch event, or {@link Float#NaN}
+     *          to disable anchoring
+     * @return {@code true} if one of the above receivers consumed the event,
+     * {@code false} otherwise
+     */
+    public boolean performLongClick(float x, float y) {
+        mLongClickX = x;
+        mLongClickY = y;
+        final boolean handled = performLongClick();
+        mLongClickX = Float.NaN;
+        mLongClickY = Float.NaN;
+        return handled;
+    }
+
+    /**
+     * Calls this view's OnLongClickListener, if it is defined. Invokes the
+     * context menu if the OnLongClickListener did not consume the event,
+     * optionally anchoring it to an (x,y) coordinate.
+     *
+     * @param x x coordinate of the anchoring touch event, or {@link Float#NaN}
+     *          to disable anchoring
+     * @param y y coordinate of the anchoring touch event, or {@link Float#NaN}
+     *          to disable anchoring
+     * @return {@code true} if one of the above receivers consumed the event,
+     * {@code false} otherwise
+     */
+    private boolean performLongClickInternal(float x, float y) {
+        boolean handled = false;
+        final ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnLongClickListener != null) {
+            handled = li.mOnLongClickListener.onLongClick(View.this);
+        }
+        if (!handled) {
+            final boolean isAnchored = !Float.isNaN(x) && !Float.isNaN(y);
+            handled = isAnchored ? showContextMenu(x, y) : showContextMenu();
+        }
+        /*if ((mViewFlags & TOOLTIP) == TOOLTIP) {
+            if (!handled) {
+                handled = showLongClickTooltip((int) x, (int) y);
+            }
+        }*/
+        if (handled) {
+            performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
+        }
+        return handled;
+    }
+
+    /**
+     * Call this view's OnContextClickListener, if it is defined.
+     *
+     * @param x the x coordinate of the context click
+     * @param y the y coordinate of the context click
+     * @return True if there was an assigned OnContextClickListener that consumed the event, false
+     * otherwise.
+     */
+    public boolean performContextClick(float x, float y) {
+        return performContextClick();
+    }
+
+    /**
+     * Call this view's OnContextClickListener, if it is defined.
+     *
+     * @return True if there was an assigned OnContextClickListener that consumed the event, false
+     * otherwise.
+     */
+    public boolean performContextClick() {
+        boolean handled = false;
+        ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnContextClickListener != null) {
+            handled = li.mOnContextClickListener.onContextClick(View.this);
+        }
+        if (handled) {
+            performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
+        }
+        return handled;
+    }
+
+    /**
+     * Performs button-related actions during a touch down event.
+     *
+     * @param event The event.
+     * @return True if the down was consumed.
+     * @hide
+     */
+    protected boolean performButtonActionOnTouchDown(@Nonnull MotionEvent event) {
+        if ((event.getButtonState() & MotionEvent.BUTTON_SECONDARY) != 0) {
+            showContextMenu(event.getX(), event.getY());
+            mPrivateFlags |= PFLAG_CANCEL_NEXT_UP_EVENT;
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Shows the context menu for this view.
+     *
+     * @return {@code true} if the context menu was shown, {@code false}
+     * otherwise
+     * @see #showContextMenu(float, float)
+     */
+    public final boolean showContextMenu() {
+        return showContextMenu(Float.NaN, Float.NaN);
+    }
+
+    /**
+     * Shows the context menu for this view anchored to the specified
+     * view-relative coordinate.
+     *
+     * @param x the X coordinate in pixels relative to the view to which the
+     *          menu should be anchored, or {@link Float#NaN} to disable anchoring
+     * @param y the Y coordinate in pixels relative to the view to which the
+     *          menu should be anchored, or {@link Float#NaN} to disable anchoring
+     * @return {@code true} if the context menu was shown, {@code false}
+     * otherwise
+     */
+    public boolean showContextMenu(float x, float y) {
+        ViewParent parent = getParent();
+        if (parent == null) return false;
+        return parent.showContextMenuForChild(this, x, y);
+    }
+
+    /**
+     * Start an action mode with the default type {@link ActionMode#TYPE_PRIMARY}.
+     *
+     * @param callback Callback that will control the lifecycle of the action mode
+     * @return The new action mode if it is started, null otherwise
+     * @see ActionMode
+     * @see #startActionMode(ActionMode.Callback, int)
+     */
+    public final ActionMode startActionMode(ActionMode.Callback callback) {
+        return startActionMode(callback, ActionMode.TYPE_PRIMARY);
+    }
+
+    /**
+     * Start an action mode with the given type.
+     *
+     * @param callback Callback that will control the lifecycle of the action mode
+     * @param type     One of {@link ActionMode#TYPE_PRIMARY} or {@link ActionMode#TYPE_FLOATING}.
+     * @return The new action mode if it is started, null otherwise
+     * @see ActionMode
+     */
+    public ActionMode startActionMode(ActionMode.Callback callback, int type) {
+        ViewParent parent = getParent();
+        if (parent == null) return null;
+        return parent.startActionModeForChild(this, callback, type);
+    }
+
+    /**
+     * Show the context menu for this view. It is not safe to hold on to the
+     * menu after returning from this method.
+     * <p>
+     * You should normally not overload this method. Overload
+     * {@link #onCreateContextMenu(ContextMenu)} or define an
+     * {@link OnCreateContextMenuListener} to add items to the context menu.
+     *
+     * @param menu The context menu to populate
+     */
+    public final void createContextMenu(@Nonnull ContextMenu menu) {
+        ContextMenuInfo menuInfo = getContextMenuInfo();
+
+        // Sets the current menu info so all items added to menu will have
+        // my extra info set.
+        ((MenuBuilder) menu).setCurrentMenuInfo(menuInfo);
+
+        onCreateContextMenu(menu);
+        ListenerInfo li = mListenerInfo;
+        if (li != null && li.mOnCreateContextMenuListener != null) {
+            li.mOnCreateContextMenuListener.onCreateContextMenu(menu, this, menuInfo);
+        }
+
+        // Clear the extra information so subsequent items that aren't mine don't
+        // have my extra info.
+        ((MenuBuilder) menu).setCurrentMenuInfo(null);
+
+        if (mParent != null) {
+            mParent.createContextMenu(menu);
+        }
+    }
+
+    /**
+     * Views should implement this if they have extra information to associate
+     * with the context menu. The return result is supplied as a parameter to
+     * the {@link OnCreateContextMenuListener#onCreateContextMenu(ContextMenu, View, ContextMenuInfo)}
+     * callback.
+     *
+     * @return Extra information about the item for which the context menu
+     * should be shown. This information will vary across different
+     * subclasses of View.
+     */
+    protected ContextMenuInfo getContextMenuInfo() {
+        return null;
+    }
+
+    /**
+     * Views should implement this if the view itself is going to add items to
+     * the context menu.
+     *
+     * @param menu the context menu to populate
+     */
+    protected void onCreateContextMenu(@Nonnull ContextMenu menu) {
     }
 
     /**
@@ -6817,7 +7583,12 @@ public class View implements Drawable.Callback {
             }
             if ((mViewFlags & CLICKABLE) == CLICKABLE && isPressed()) {
                 setPressed(false);
-                return performClick();
+
+                if (!mHasPerformedLongPress) {
+                    // This is a tap, so remove the longpress check
+                    removeLongPressCallback();
+                    return performClick();
+                }
             }
         }
         return false;
@@ -6952,7 +7723,7 @@ public class View implements Drawable.Callback {
         return onMouseClicked(mouseX, mouseY, mouseButton);
     }*/
 
-    /**
+    /*
      * Called when mouse hovered on this view and a mouse button pressed.
      *
      * @param mouseX      relative mouse x pos
@@ -6961,11 +7732,11 @@ public class View implements Drawable.Callback {
      * @return {@code true} if action performed
      * @see GLFW
      */
-    protected boolean onMousePressed(double mouseX, double mouseY, int mouseButton) {
+    /*protected boolean onMousePressed(double mouseX, double mouseY, int mouseButton) {
         return false;
-    }
+    }*/
 
-    /**
+    /*
      * Called when mouse hovered on this view and a mouse button released.
      *
      * @param mouseX      relative mouse x pos
@@ -6974,11 +7745,11 @@ public class View implements Drawable.Callback {
      * @return {@code true} if action performed
      * @see GLFW
      */
-    protected boolean onMouseReleased(double mouseX, double mouseY, int mouseButton) {
+    /*protected boolean onMouseReleased(double mouseX, double mouseY, int mouseButton) {
         return false;
-    }
+    }*/
 
-    /**
+    /*
      * Called when mouse pressed and released on this view with the mouse button.
      * Called after onMouseReleased no matter whether it's consumed or not.
      *
@@ -6988,11 +7759,11 @@ public class View implements Drawable.Callback {
      * @return {@code true} if action performed
      * @see GLFW
      */
-    protected boolean onMouseClicked(double mouseX, double mouseY, int mouseButton) {
+    /*protected boolean onMouseClicked(double mouseX, double mouseY, int mouseButton) {
         return false;
-    }
+    }*/
 
-    /**
+    /*
      * Called when mouse hovered on this view and left button double clicked.
      * If no action performed in this method, onMousePressed will be called.
      *
@@ -7000,11 +7771,11 @@ public class View implements Drawable.Callback {
      * @param mouseY relative mouse y pos
      * @return {@code true} if action performed
      */
-    protected boolean onMouseDoubleClicked(double mouseX, double mouseY) {
+    /*protected boolean onMouseDoubleClicked(double mouseX, double mouseY) {
         return false;
-    }
+    }*/
 
-    /**
+    /*
      * Called when mouse hovered on this view and mouse scrolled.
      *
      * @param mouseX relative mouse x pos
@@ -7012,25 +7783,25 @@ public class View implements Drawable.Callback {
      * @param amount scroll amount
      * @return return {@code true} if action performed
      */
-    protected boolean onMouseScrolled(double mouseX, double mouseY, double amount) {
+    /*protected boolean onMouseScrolled(double mouseX, double mouseY, double amount) {
         return false;
-    }
+    }*/
 
-    /**
+    /*
      * Call when this view start to be listened as a draggable.
      */
-    protected void onStartDragging() {
+    /*protected void onStartDragging() {
 
-    }
+    }*/
 
-    /**
+    /*
      * Call when this view is no longer listened as a draggable.
      */
-    protected void onStopDragging() {
+    /*protected void onStopDragging() {
 
-    }
+    }*/
 
-    /**
+    /*
      * Called when mouse moved and dragged.
      *
      * @param mouseX relative mouse x pos
@@ -7039,25 +7810,25 @@ public class View implements Drawable.Callback {
      * @param deltaY mouse y pos change
      * @return {@code true} if action performed
      */
-    protected boolean onMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
+    /*protected boolean onMouseDragged(double mouseX, double mouseY, double deltaX, double deltaY) {
         return false;
-    }
+    }*/
 
-    /**
+    /*
      * Call when this view start to be listened as a keyboard listener.
      */
-    protected void onStartKeyboard() {
+    /*protected void onStartKeyboard() {
 
-    }
+    }*/
 
-    /**
+    /*
      * Call when this view is no longer listened as a keyboard listener.
      */
-    protected void onStopKeyboard() {
+    /*protected void onStopKeyboard() {
 
-    }
+    }*/
 
-    /**
+    /*
      * Called when a key pressed.
      *
      * @param keyCode   see {@link GLFW}, for example {@link GLFW#GLFW_KEY_W}
@@ -7065,11 +7836,11 @@ public class View implements Drawable.Callback {
      * @param modifiers modifier key
      * @return return {@code true} if action performed
      */
-    protected boolean onKeyPressed(int keyCode, int scanCode, int modifiers) {
+    /*protected boolean onKeyPressed(int keyCode, int scanCode, int modifiers) {
         return false;
-    }
+    }*/
 
-    /**
+    /*
      * Called when a key released.
      *
      * @param keyCode   see {@link GLFW}, for example {@link GLFW#GLFW_KEY_W}
@@ -7077,42 +7848,42 @@ public class View implements Drawable.Callback {
      * @param modifiers modifier key
      * @return return {@code true} if action performed
      */
-    protected boolean onKeyReleased(int keyCode, int scanCode, int modifiers) {
+    /*protected boolean onKeyReleased(int keyCode, int scanCode, int modifiers) {
         return false;
-    }
+    }*/
 
-    /**
+    /*
      * Called when a unicode character typed.
      *
      * @param codePoint char code
      * @param modifiers modifier key
      * @return return {@code true} if action performed
      */
-    protected boolean onCharTyped(char codePoint, int modifiers) {
+    /*protected boolean onCharTyped(char codePoint, int modifiers) {
         return false;
-    }
+    }*/
 
-    /**
+    /*
      * Called when click on scrollbar track and not on the thumb
      * and there was an scroll amount change
      *
      * @param vertical    {@code true} if scrollbar is vertical, horizontal otherwise
      * @param scrollDelta scroll amount change calculated by scrollbar
      */
-    protected void onScrollBarClicked(boolean vertical, float scrollDelta) {
+    /*protected void onScrollBarClicked(boolean vertical, float scrollDelta) {
 
-    }
+    }*/
 
-    /**
+    /*
      * Called when drag the scroll thumb and there was an scroll
      * amount change
      *
      * @param vertical    {@code true} if scrollbar is vertical, horizontal otherwise
      * @param scrollDelta scroll amount change calculated by scrollbar
      */
-    protected void onScrollBarDragged(boolean vertical, float scrollDelta) {
+    /*protected void onScrollBarDragged(boolean vertical, float scrollDelta) {
 
-    }
+    }*/
 
     /*
      * Layout scroll bars if enabled
@@ -7422,6 +8193,54 @@ public class View implements Drawable.Callback {
         }
     }
 
+    private final class CheckForLongPress implements Runnable {
+
+        private int mOriginalWindowAttachCount;
+        private float mX;
+        private float mY;
+        private boolean mOriginalPressedState;
+
+        private CheckForLongPress() {
+        }
+
+        @Override
+        public void run() {
+            if ((mOriginalPressedState == isPressed()) && (mParent != null)
+                    && mOriginalWindowAttachCount == mWindowAttachCount) {
+                if (performLongClick(mX, mY)) {
+                    mHasPerformedLongPress = true;
+                }
+            }
+        }
+
+        public void setAnchor(float x, float y) {
+            mX = x;
+            mY = y;
+        }
+
+        public void rememberWindowAttachCount() {
+            mOriginalWindowAttachCount = mWindowAttachCount;
+        }
+
+        public void rememberPressedState() {
+            mOriginalPressedState = isPressed();
+        }
+    }
+
+    private final class CheckForTap implements Runnable {
+
+        public float x;
+        public float y;
+
+        @Override
+        public void run() {
+            mPrivateFlags &= ~PFLAG_PREPRESSED;
+            setPressed(true, x, y);
+            final long delay = ViewConfiguration.getLongPressTimeout() - ViewConfiguration.getTapTimeout();
+            checkForLongClick(delay, x, y);
+        }
+    }
+
     private final class PerformClick implements Runnable {
 
         @Override
@@ -7447,6 +8266,8 @@ public class View implements Drawable.Callback {
 
         private OnHoverListener mOnHoverListener;
 
+        private OnGenericMotionListener mOnGenericMotionListener;
+
         private OnKeyListener mOnKeyListener;
 
         /**
@@ -7459,10 +8280,17 @@ public class View implements Drawable.Callback {
          */
         private OnLongClickListener mOnLongClickListener;
 
+        private OnDragListener mOnDragListener;
+
         /**
          * Listener used to dispatch context click events.
          */
         private OnContextClickListener mOnContextClickListener;
+
+        /**
+         * Listener used to build the context menu.
+         */
+        private OnCreateContextMenuListener mOnCreateContextMenuListener;
 
         protected OnScrollChangeListener mOnScrollChangeListener;
 
@@ -7522,6 +8350,25 @@ public class View implements Drawable.Callback {
         boolean onHover(View v, MotionEvent event);
     }
 
+    /**
+     * Interface definition for a callback to be invoked when a generic motion event is
+     * dispatched to this view. The callback will be invoked before the generic motion
+     * event is given to the view.
+     */
+    @FunctionalInterface
+    public interface OnGenericMotionListener {
+
+        /**
+         * Called when a generic motion event is dispatched to a view. This allows listeners to
+         * get a chance to respond before the target view.
+         *
+         * @param v     The view the generic motion event has been dispatched to.
+         * @param event The MotionEvent object containing full information about
+         *              the event.
+         * @return True if the listener has consumed the event, false otherwise.
+         */
+        boolean onGenericMotion(View v, MotionEvent event);
+    }
 
     /**
      * Interface definition for a callback to be invoked when a hardware key event is
@@ -7580,6 +8427,34 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Interface definition for a callback to be invoked when a drag is being dispatched
+     * to this view.  The callback will be invoked before the hosting view's own
+     * onDrag(event) method.  If the listener wants to fall back to the hosting view's
+     * onDrag(event) behavior, it should return 'false' from this callback.
+     *
+     * <div class="special reference">
+     * <h3>Developer Guides</h3>
+     * <p>For a guide to implementing drag and drop features, read the
+     * <a href="https://developer.android.com/guide/topics/ui/drag-drop.html">Drag and Drop</a> developer guide.</p>
+     * </div>
+     */
+    @FunctionalInterface
+    public interface OnDragListener {
+
+        /**
+         * Called when a drag event is dispatched to a view. This allows listeners
+         * to get a chance to override base View behavior.
+         *
+         * @param v     The View that received the drag event.
+         * @param event The {@link DragEvent} object for the drag event.
+         * @return {@code true} if the drag event was handled successfully, or {@code false}
+         * if the drag event was not handled. Note that {@code false} will trigger the View
+         * to call its {@link #onDragEvent(DragEvent) onDragEvent()} handler.
+         */
+        boolean onDrag(View v, DragEvent event);
+    }
+
+    /**
      * Interface definition for a callback to be invoked when a view is context clicked.
      */
     @FunctionalInterface
@@ -7592,6 +8467,26 @@ public class View implements Drawable.Callback {
          * @return true if the callback consumed the context click, false otherwise.
          */
         boolean onContextClick(View v);
+    }
+
+    /**
+     * Interface definition for a callback to be invoked when the context menu
+     * for this view is being built.
+     */
+    @FunctionalInterface
+    public interface OnCreateContextMenuListener {
+
+        /**
+         * Called when the context menu for this view is being built. It is not
+         * safe to hold onto the menu after this method returns.
+         *
+         * @param menu     The context menu that is being built
+         * @param v        The view for which the context menu is being built
+         * @param menuInfo Extra information about the item for which the
+         *                 context menu should be shown. This information will vary
+         *                 depending on the class of v.
+         */
+        void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo);
     }
 
     /**
