@@ -30,6 +30,7 @@ final class AttachInfo {
 
     interface Callbacks {
         void playSoundEffect(int effectId);
+        boolean performHapticFeedback(int effectId, boolean always);
     }
 
     final Callbacks mRootCallbacks;

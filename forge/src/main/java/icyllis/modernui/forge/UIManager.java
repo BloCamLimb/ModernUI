@@ -1010,6 +1010,11 @@ public final class UIManager implements LifecycleOwner {
         public void playSoundEffect(int effectId) {
 
         }
+
+        @Override
+        public boolean performHapticFeedback(int effectId, boolean always) {
+            return false;
+        }
     }
 
     @UiThread
