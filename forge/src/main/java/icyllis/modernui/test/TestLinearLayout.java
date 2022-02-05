@@ -364,7 +364,6 @@ public class TestLinearLayout extends LinearLayout {
         GL11.glDisable(GL11.GL_STENCIL_TEST);*/
     }
 
-    @Override
     protected boolean onMousePressed(double mouseX, double mouseY, int mouseButton) {
         if (!b) {
             cAnim.start();
@@ -377,7 +376,6 @@ public class TestLinearLayout extends LinearLayout {
         return true;
     }
 
-    @Override
     protected boolean onMouseReleased(double mouseX, double mouseY, int mouseButton) {
         f = 1;
         return true;

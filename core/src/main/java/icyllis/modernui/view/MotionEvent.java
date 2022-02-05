@@ -183,7 +183,7 @@ public final class MotionEvent extends InputEvent {
      * {@link View#onTouchEvent(MotionEvent)}.
      * </p>
      */
-    private static final int ACTION_BUTTON_PRESS = 11;
+    public static final int ACTION_BUTTON_PRESS = 11;
 
     /**
      * Constant for {@link #getActionMasked}: A button has been released.
@@ -196,7 +196,7 @@ public final class MotionEvent extends InputEvent {
      * {@link View#onTouchEvent(MotionEvent)}.
      * </p>
      */
-    private static final int ACTION_BUTTON_RELEASE = 12;
+    public static final int ACTION_BUTTON_RELEASE = 12;
 
     /**
      * Bits in the action code that represent a pointer index, used with
@@ -1028,7 +1028,7 @@ public final class MotionEvent extends InputEvent {
      * @return true if the SHIFT key is pressed, false otherwise
      */
     public boolean isShiftPressed() {
-        return (mModifiers & KeyEvent.MOD_SHIFT) != 0;
+        return (mModifiers & KeyEvent.META_SHIFT_ON) != 0;
     }
 
     /**
@@ -1038,7 +1038,7 @@ public final class MotionEvent extends InputEvent {
      * @return true if the CTRL key is pressed, false otherwise
      */
     public boolean isCtrlPressed() {
-        return (mModifiers & KeyEvent.MOD_CTRL) != 0;
+        return (mModifiers & KeyEvent.META_CTRL_ON) != 0;
     }
 
     /**
@@ -1047,7 +1047,7 @@ public final class MotionEvent extends InputEvent {
      * @return true if the ALT key is pressed, false otherwise
      */
     public boolean isAltPressed() {
-        return (mModifiers & KeyEvent.MOD_ALT) != 0;
+        return (mModifiers & KeyEvent.META_ALT_ON) != 0;
     }
 
     /**
