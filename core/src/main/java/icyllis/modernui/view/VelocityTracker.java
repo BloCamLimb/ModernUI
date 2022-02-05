@@ -821,7 +821,7 @@ public final class VelocityTracker {
                 int n = degree + 1;
                 xDet = solveLeastSquares(mTmpTime, mTmpX, mTmpW, m, n, outEstimator.xCoeff);
                 yDet = solveLeastSquares(mTmpTime, mTmpY, mTmpW, m, n, outEstimator.yCoeff);
-                if (xDet == xDet && yDet == yDet) {
+                if (!Float.isNaN(xDet) && !Float.isNaN(yDet)) {
                     outEstimator.time = newestTime;
                     outEstimator.degree = degree;
                     outEstimator.confidence = xDet * yDet;

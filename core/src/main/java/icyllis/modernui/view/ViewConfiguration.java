@@ -34,6 +34,20 @@ public class ViewConfiguration {
     private static final int PRESSED_STATE_DURATION = 64;
 
     /**
+     * Defines the default duration in milliseconds before a press turns into
+     * a long press
+     * @hide
+     */
+    private static final int DEFAULT_LONG_PRESS_TIMEOUT = 400;
+
+    /**
+     * Defines the duration in milliseconds we will wait to see if a touch event
+     * is a tap or a scroll. If the user does not move within this interval, it is
+     * considered to be a tap.
+     */
+    private static final int TAP_TIMEOUT = 100;
+
+    /**
      * Distance a touch can wander before we think the user is scrolling in dips.
      * Note that this value defined here is only used as a fallback by legacy/misbehaving
      * applications that do not provide a Context for determining density/configuration-dependent
@@ -91,6 +105,23 @@ public class ViewConfiguration {
      */
     public static int getPressedStateDuration() {
         return PRESSED_STATE_DURATION;
+    }
+
+    /**
+     * @return the duration in milliseconds before a press turns into
+     * a long press
+     */
+    public static int getLongPressTimeout() {
+        return DEFAULT_LONG_PRESS_TIMEOUT;
+    }
+
+    /**
+     * @return the duration in milliseconds we will wait to see if a touch event
+     * is a tap or a scroll. If the user does not move within this interval, it is
+     * considered to be a tap.
+     */
+    public static int getTapTimeout() {
+        return TAP_TIMEOUT;
     }
 
     @ApiStatus.Internal
