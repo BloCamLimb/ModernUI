@@ -69,8 +69,6 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     private static final int FLAG_ADD_STATES_FROM_CHILDREN = 0x2000;
 
-    private static final int FLAG_MASK_FOCUSABILITY = 0x60000;
-
     /**
      * This view will get focus before any of its descendants.
      */
@@ -87,12 +85,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     public static final int FOCUS_BLOCK_DESCENDANTS = 0x60000;
 
-    /**
-     * Used to map between enum in attributes and flag values.
-     */
-    private static final int[] DESCENDANT_FOCUSABILITY_FLAGS =
-            {FOCUS_BEFORE_DESCENDANTS, FOCUS_AFTER_DESCENDANTS,
-                    FOCUS_BLOCK_DESCENDANTS};
+    private static final int FLAG_MASK_FOCUSABILITY = 0x60000;
 
     /**
      * When set, this ViewGroup should not intercept touch events.
@@ -105,6 +98,18 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * onAttached calls when a ViewGroup adds children in its own onAttached method.
      */
     private static final int FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW = 0x400000;
+
+    /**
+     * When set, focus will not be permitted to enter this group if a touchscreen is present.
+     */
+    static final int FLAG_TOUCHSCREEN_BLOCKS_FOCUS = 0x4000000;
+
+    /**
+     * Used to map between enum in attributes and flag values.
+     */
+    private static final int[] DESCENDANT_FOCUSABILITY_FLAGS =
+            {FOCUS_BEFORE_DESCENDANTS, FOCUS_AFTER_DESCENDANTS,
+                    FOCUS_BLOCK_DESCENDANTS};
 
     private int mGroupFlags;
 
@@ -1989,6 +1994,19 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
+    public boolean showContextMenuForChild(View originalView, float x, float y) {
+        return mParent != null && mParent.showContextMenuForChild(originalView, x, y);
+    }
+
+    @Override
+    public ActionMode startActionModeForChild(View originalView, ActionMode.Callback callback, int type) {
+        if (mParent != null) {
+            return mParent.startActionModeForChild(originalView, callback, type);
+        }
+        return null;
+    }
+
+    @Override
     public void dispatchSetSelected(boolean selected) {
         final View[] children = mChildren;
         final int count = mChildrenCount;
@@ -2017,6 +2035,44 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             // Clearing a pressed state always propagates.
             if (!pressed || (!child.isClickable() && !child.isLongClickable())) {
                 child.setPressed(pressed);
+            }
+        }
+    }
+
+    /**
+     * Dispatches drawable hotspot changes to child views that meet at least
+     * one of the following criteria:
+     * <ul>
+     *     <li>Returns {@code false} from both {@link View#isClickable()} and
+     *     {@link View#isLongClickable()}</li>
+     *     <li>Requests duplication of parent state via
+     *     {@link View#setDuplicateParentStateEnabled(boolean)}</li>
+     * </ul>
+     *
+     * @param x hotspot x coordinate
+     * @param y hotspot y coordinate
+     * @see #drawableHotspotChanged(float, float)
+     */
+    @Override
+    public void dispatchDrawableHotspotChanged(float x, float y) {
+        final int count = mChildrenCount;
+        if (count == 0) {
+            return;
+        }
+
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            final View child = children[i];
+            // Children that are clickable on their own should not
+            // receive hotspots when their parent view does.
+            final boolean nonActionable = !child.isClickable() && !child.isLongClickable();
+            final boolean duplicatesState = (child.mViewFlags & DUPLICATE_PARENT_STATE) != 0;
+            if (nonActionable || duplicatesState) {
+                final float[] point = getTempLocationF();
+                point[0] = x;
+                point[1] = y;
+                transformPointToViewLocal(point, child);
+                child.drawableHotspotChanged(point[0], point[1]);
             }
         }
     }
@@ -2820,6 +2876,19 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         for (int i = 0; i < count; i++) {
             children[i].dispatchVisibilityChanged(changedView, visibility);
         }
+    }
+
+    /**
+     * Return true if the pressed state should be delayed for children or descendants of this
+     * ViewGroup. Generally, this should be done for containers that can scroll, such as a List.
+     * This prevents the pressed state from appearing when the user is actually trying to scroll
+     * the content.
+     *
+     * The default implementation returns true for compatibility reasons. Subclasses that do
+     * not scroll should generally override this method and return false.
+     */
+    public boolean shouldDelayChildPressedState() {
+        return true;
     }
 
     /**
