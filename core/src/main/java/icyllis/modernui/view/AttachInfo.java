@@ -28,6 +28,12 @@ import icyllis.modernui.math.RectF;
  */
 final class AttachInfo {
 
+    interface Callbacks {
+        void playSoundEffect(int effectId);
+    }
+
+    final Callbacks mRootCallbacks;
+
     /**
      * The top view of the hierarchy.
      */
@@ -71,9 +77,10 @@ final class AttachInfo {
      */
     final RectF mTmpTransformRect = new RectF();
 
-    AttachInfo(ViewRoot viewRoot, Handler handler) {
+    AttachInfo(ViewRoot viewRoot, Handler handler, Callbacks callbacks) {
         mViewRoot = viewRoot;
         mHandler = handler;
+        mRootCallbacks = callbacks;
         mTreeObserver = new ViewTreeObserver();
     }
 }

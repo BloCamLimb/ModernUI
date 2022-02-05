@@ -86,6 +86,38 @@ public final class GrowingArrayUtils {
     }
 
     /**
+     * Primitive long version of {@link #append(Object[], int, Object)}.
+     */
+    @Nonnull
+    public static long[] append(@Nonnull long[] array, int currentSize, long element) {
+        assert currentSize <= array.length;
+
+        if (currentSize + 1 > array.length) {
+            long[] newArray = new long[growSize(currentSize)];
+            System.arraycopy(array, 0, newArray, 0, currentSize);
+            array = newArray;
+        }
+        array[currentSize] = element;
+        return array;
+    }
+
+    /**
+     * Primitive boolean version of {@link #append(Object[], int, Object)}.
+     */
+    @Nonnull
+    public static boolean[] append(@Nonnull boolean[] array, int currentSize, boolean element) {
+        assert currentSize <= array.length;
+
+        if (currentSize + 1 > array.length) {
+            boolean[] newArray = new boolean[growSize(currentSize)];
+            System.arraycopy(array, 0, newArray, 0, currentSize);
+            array = newArray;
+        }
+        array[currentSize] = element;
+        return array;
+    }
+
+    /**
      * Inserts an element into the array at the specified index, growing the array if there is no
      * more room.
      *
@@ -132,6 +164,46 @@ public final class GrowingArrayUtils {
         }
 
         int[] newArray = new int[growSize(currentSize)];
+        System.arraycopy(array, 0, newArray, 0, index);
+        newArray[index] = element;
+        System.arraycopy(array, index, newArray, index + 1, array.length - index);
+        return newArray;
+    }
+
+    /**
+     * Primitive long version of {@link #insert(Object[], int, int, Object)}.
+     */
+    @Nonnull
+    public static long[] insert(@Nonnull long[] array, int currentSize, int index, long element) {
+        assert currentSize <= array.length;
+
+        if (currentSize < array.length) {
+            System.arraycopy(array, index, array, index + 1, currentSize - index);
+            array[index] = element;
+            return array;
+        }
+
+        long[] newArray = new long[growSize(currentSize)];
+        System.arraycopy(array, 0, newArray, 0, index);
+        newArray[index] = element;
+        System.arraycopy(array, index, newArray, index + 1, array.length - index);
+        return newArray;
+    }
+
+    /**
+     * Primitive boolean version of {@link #insert(Object[], int, int, Object)}.
+     */
+    @Nonnull
+    public static boolean[] insert(@Nonnull boolean[] array, int currentSize, int index, boolean element) {
+        assert currentSize <= array.length;
+
+        if (currentSize < array.length) {
+            System.arraycopy(array, index, array, index + 1, currentSize - index);
+            array[index] = element;
+            return array;
+        }
+
+        boolean[] newArray = new boolean[growSize(currentSize)];
         System.arraycopy(array, 0, newArray, 0, index);
         newArray[index] = element;
         System.arraycopy(array, index, newArray, index + 1, array.length - index);
