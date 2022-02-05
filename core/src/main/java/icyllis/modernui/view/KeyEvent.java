@@ -156,15 +156,15 @@ public class KeyEvent extends InputEvent {
     public static final int KEY_RIGHT_SUPER = GLFW.GLFW_KEY_RIGHT_SUPER;
     public static final int KEY_MENU = GLFW.GLFW_KEY_MENU;
 
-    public static final int MOD_SHIFT = GLFW.GLFW_MOD_SHIFT;
-    public static final int MOD_CTRL;
-    public static final int MOD_ALT = GLFW.GLFW_MOD_ALT;
+    public static final int META_SHIFT_ON = GLFW.GLFW_MOD_SHIFT;
+    public static final int META_CTRL_ON;
+    public static final int META_ALT_ON = GLFW.GLFW_MOD_ALT;
 
     static {
         if (Platform.get() == Platform.MACOSX) {
-            MOD_CTRL = GLFW.GLFW_MOD_SUPER;
+            META_CTRL_ON = GLFW.GLFW_MOD_SUPER;
         } else {
-            MOD_CTRL = GLFW.GLFW_MOD_CONTROL;
+            META_CTRL_ON = GLFW.GLFW_MOD_CONTROL;
         }
     }
 
@@ -310,7 +310,7 @@ public class KeyEvent extends InputEvent {
      * @return true if the SHIFT key is pressed, false otherwise
      */
     public final boolean isShiftPressed() {
-        return (mModifiers & MOD_SHIFT) != 0;
+        return (mModifiers & META_SHIFT_ON) != 0;
     }
 
     /**
@@ -320,7 +320,7 @@ public class KeyEvent extends InputEvent {
      * @return true if the CTRL key is pressed, false otherwise
      */
     public final boolean isCtrlPressed() {
-        return (mModifiers & MOD_CTRL) != 0;
+        return (mModifiers & META_CTRL_ON) != 0;
     }
 
     /**
@@ -329,7 +329,7 @@ public class KeyEvent extends InputEvent {
      * @return true if the ALT key is pressed, false otherwise
      */
     public final boolean isAltPressed() {
-        return (mModifiers & MOD_ALT) != 0;
+        return (mModifiers & META_ALT_ON) != 0;
     }
 
     /**
@@ -357,6 +357,53 @@ public class KeyEvent extends InputEvent {
      */
     public final boolean isNumLockOn() {
         return (mModifiers & GLFW.GLFW_MOD_NUM_LOCK) != 0;
+    }
+
+    /**
+     * Returns the alphabetic character represented by the key. You should check if this is a PRESS action.
+     *
+     * @return the alphabetic character represented by the key
+     */
+    public final char getMappedChar() {
+        return switch (mKeyCode) {
+            case KEY_0, KEY_KP_0 -> '0';
+            case KEY_1, KEY_KP_1 -> '1';
+            case KEY_2, KEY_KP_2 -> '2';
+            case KEY_3, KEY_KP_3 -> '3';
+            case KEY_4, KEY_KP_4 -> '4';
+            case KEY_5, KEY_KP_5 -> '5';
+            case KEY_6, KEY_KP_6 -> '6';
+            case KEY_7, KEY_KP_7 -> '7';
+            case KEY_8, KEY_KP_8 -> '8';
+            case KEY_9, KEY_KP_9 -> '9';
+            case KEY_A -> 'A';
+            case KEY_B -> 'B';
+            case KEY_C -> 'C';
+            case KEY_D -> 'D';
+            case KEY_E -> 'E';
+            case KEY_F -> 'F';
+            case KEY_G -> 'G';
+            case KEY_H -> 'H';
+            case KEY_I -> 'I';
+            case KEY_J -> 'J';
+            case KEY_K -> 'K';
+            case KEY_L -> 'L';
+            case KEY_M -> 'M';
+            case KEY_N -> 'N';
+            case KEY_O -> 'O';
+            case KEY_P -> 'P';
+            case KEY_Q -> 'Q';
+            case KEY_R -> 'R';
+            case KEY_S -> 'S';
+            case KEY_T -> 'T';
+            case KEY_U -> 'U';
+            case KEY_V -> 'V';
+            case KEY_W -> 'W';
+            case KEY_X -> 'X';
+            case KEY_Y -> 'Y';
+            case KEY_Z -> 'Z';
+            default -> 0;
+        };
     }
 
     /**
