@@ -50,6 +50,11 @@ final class AttachInfo {
     int mWindowVisibility;
 
     /**
+     * Indicates whether the view's window is currently in touch mode.
+     */
+    boolean mInTouchMode = true;
+
+    /**
      * The view tree observer used to dispatch global events like
      * layout, pre-draw, touch mode change, etc.
      */

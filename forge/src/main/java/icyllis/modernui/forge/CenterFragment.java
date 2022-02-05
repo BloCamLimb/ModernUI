@@ -28,7 +28,6 @@ import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.InputFilter;
-import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.method.DigitsInputFilter;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.Gravity;
@@ -50,40 +49,38 @@ public class CenterFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
-        LinearLayout base = new LinearLayout();
+        var base = new LinearLayout();
         base.setOrientation(LinearLayout.VERTICAL);
         base.setBackground(new Background());
         {
-            TextView title = new TextView();
+            var title = new TextView();
             title.setText("Modern UI Center");
             title.setTextSize(18);
             title.setTextStyle(FontPaint.BOLD);
 
-            LinearLayout.LayoutParams params =
-                    new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT);
+            var params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(0, dp(12), 0, dp(18));
             base.addView(title, params);
         }
-        RelativeLayout screen = new RelativeLayout();
+        var screen = new RelativeLayout();
         {
-            TextView title = new TextView();
+            var title = new TextView();
             title.setText("Screen");
             title.setTextSize(16);
             title.setTextColor(THEME_COLOR);
             title.setId(15);
 
-            RelativeLayout.LayoutParams params =
-                    new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT);
+            var params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
             params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             params.addRule(RelativeLayout.ALIGN_PARENT_START);
             params.setMargins(dp(6), dp(6), dp(6), dp(6));
             screen.addView(title, params);
 
             {
-                TextView view = new TextView();
+                var view = new TextView();
                 view.setText("Blur Radius");
                 view.setTextSize(14);
                 view.setId(16);
@@ -94,13 +91,10 @@ public class CenterFragment extends Fragment {
                 params.addRule(RelativeLayout.ALIGN_START, 15);
                 screen.addView(view, params);
 
-                TextView input = new TextView();
-                input.setText(Config.CLIENT.blurRadius.get().toString(), TextView.BufferType.EDITABLE);
+                var input = new EditText();
+                input.setText(Config.CLIENT.blurRadius.get().toString());
                 input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
                 input.setTextSize(14);
-                input.setGravity(Gravity.CENTER_VERTICAL);
-                input.setFocusableInTouchMode(true);
-                input.setMovementMethod(ArrowKeyMovementMethod.getInstance());
                 input.setFilters(new InputFilter[]{DigitsInputFilter.getInstance((Locale) null),
                         new InputFilter.LengthFilter(2)});
                 input.setOnFocusChangeListener((__, hasFocus) -> {
@@ -123,7 +117,7 @@ public class CenterFragment extends Fragment {
             }
 
             {
-                TextView view = new TextView();
+                var view = new TextView();
                 view.setText("Blur Effect");
                 view.setTextSize(14);
                 view.setId(18);
@@ -134,7 +128,7 @@ public class CenterFragment extends Fragment {
                 params.addRule(RelativeLayout.ALIGN_START, 16);
                 screen.addView(view, params);
 
-                SwitchButton button = new SwitchButton();
+                var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
                 button.setChecked(Config.CLIENT.blurEffect.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -151,30 +145,28 @@ public class CenterFragment extends Fragment {
             }
         }
         {
-            LinearLayout.LayoutParams params =
-                    new LinearLayout.LayoutParams(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
+            var params = new LinearLayout.LayoutParams(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
             base.postDelayed(() -> base.addView(screen, params), 150);
         }
-        RelativeLayout tooltip = new RelativeLayout();
+        var tooltip = new RelativeLayout();
         {
-            TextView title = new TextView();
+            var title = new TextView();
             title.setText("Tooltip");
             title.setTextSize(16);
             title.setTextColor(THEME_COLOR);
             title.setId(25);
 
-            RelativeLayout.LayoutParams params =
-                    new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT);
+            var params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
             params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             params.addRule(RelativeLayout.ALIGN_PARENT_START);
             params.setMargins(dp(6), dp(6), dp(6), dp(6));
             tooltip.addView(title, params);
 
             {
-                TextView view = new TextView();
+                var view = new TextView();
                 view.setText("Enable");
                 view.setTextSize(14);
                 view.setId(26);
@@ -185,7 +177,7 @@ public class CenterFragment extends Fragment {
                 params.addRule(RelativeLayout.ALIGN_START, 25);
                 tooltip.addView(view, params);
 
-                SwitchButton button = new SwitchButton();
+                var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
                 button.setChecked(Config.CLIENT.tooltip.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -202,30 +194,28 @@ public class CenterFragment extends Fragment {
             }
         }
         {
-            LinearLayout.LayoutParams params =
-                    new LinearLayout.LayoutParams(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
+            var params = new LinearLayout.LayoutParams(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
             base.postDelayed(() -> base.addView(tooltip, params), 300);
         }
-        RelativeLayout layout = new RelativeLayout();
+        var layout = new RelativeLayout();
         {
-            TextView title = new TextView();
+            var title = new TextView();
             title.setText("Layout");
             title.setTextSize(16);
             title.setTextColor(THEME_COLOR);
             title.setId(35);
 
-            RelativeLayout.LayoutParams params =
-                    new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                            ViewGroup.LayoutParams.WRAP_CONTENT);
+            var params = new RelativeLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
             params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             params.addRule(RelativeLayout.ALIGN_PARENT_START);
             params.setMargins(dp(6), dp(6), dp(6), dp(6));
             layout.addView(title, params);
 
             {
-                TextView view = new TextView();
+                var view = new TextView();
                 view.setText("RTL Layout");
                 view.setTextSize(14);
                 view.setId(36);
@@ -236,7 +226,7 @@ public class CenterFragment extends Fragment {
                 params.addRule(RelativeLayout.ALIGN_START, 35);
                 layout.addView(view, params);
 
-                SwitchButton button = new SwitchButton();
+                var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
                 button.setChecked(UIManager.sInstance.getDecorView().isLayoutRtl());
                 button.setOnCheckedChangeListener((__, checked) ->
@@ -252,8 +242,7 @@ public class CenterFragment extends Fragment {
             }
         }
         {
-            LinearLayout.LayoutParams params =
-                    new LinearLayout.LayoutParams(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
+            var params = new LinearLayout.LayoutParams(dp(350), ViewGroup.LayoutParams.WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
             base.postDelayed(() -> base.addView(layout, params), 450);
@@ -277,7 +266,7 @@ public class CenterFragment extends Fragment {
 
         base.setLayoutTransition(new LayoutTransition());
 
-        FrameLayout.LayoutParams baseParams = new FrameLayout.LayoutParams(dp(720), dp(450));
+        var baseParams = new FrameLayout.LayoutParams(dp(720), dp(450));
         baseParams.gravity = Gravity.CENTER;
         base.setLayoutParams(baseParams);
         return base;
