@@ -6872,6 +6872,20 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Returns whether the device is currently in touch mode.  Touch mode is entered
+     * once the user begins interacting with the device by touch, and affects various
+     * things like whether focus is always visible to the user.
+     *
+     * @return Whether the device is in touch mode.
+     */
+    public boolean isInTouchMode() {
+        if (mAttachInfo != null) {
+            return mAttachInfo.mInTouchMode;
+        }
+        return false;
+    }
+
+    /**
      * Set the pointer icon for the current view.
      * Passing {@code null} will restore the pointer icon to its default value.
      *

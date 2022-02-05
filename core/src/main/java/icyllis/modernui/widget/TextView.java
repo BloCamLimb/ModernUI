@@ -30,6 +30,8 @@ import icyllis.modernui.text.method.*;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.ParagraphStyle;
 import icyllis.modernui.text.style.UpdateAppearance;
+import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -40,7 +42,8 @@ import java.util.ArrayList;
 import java.util.Locale;
 
 /**
- * A user interface element that displays text to the user and provides user-editable text.
+ * A user interface element that displays text to the user. To provide user-editable text,
+ * see {@link EditText}.
  * <p>
  * To display a styled text, use a {@link Spannable} with markup objects, like {@link CharacterStyle}.
  * TextView will hold a copy of your text after calling {@link #setText(CharSequence, BufferType)}.
@@ -52,28 +55,11 @@ import java.util.Locale;
  *  Spannable spannable = (Spannable) textView.getText();
  *  spannable.setSpan(new ForegroundColorSpan(0xfff699b4), 0, 8, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
  * </pre>
- *
- * <p>
- * To create an EditText (an editable TextView):
- * <pre>
- *  TextView editText = new TextView();
- *  editText.setText("", TextView.BufferType.EDITABLE);
- *  editText.setFocusableInTouchMode(true);
- *  editText.setMovementMethod(ArrowKeyMovementMethod.getInstance());
- * </pre>
- * <p>
- * To make it a single line EditText (a text field):
- * <pre>
- *  editText.setSingleLine();
- * </pre>
- * To make it a password EditText:
- * <pre>
- *  editText.setTransformationMethod(PasswordTransformationMethod.getInstance());
- * </pre>
  * If you want a non-editable text to be selected, see {@link #setTextIsSelectable(boolean)}.
  * <p>
  * Explore the methods in this class to find more usage
  */
+@SuppressWarnings("unused")
 public class TextView extends View implements ViewTreeObserver.OnPreDrawListener {
 
     /**
@@ -102,9 +88,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     private static final int CHANGE_WATCHER_PRIORITY = 100;
 
-    private int mCurTextColor = 0xFFFFFFFF;
+    private ColorStateList mTextColor;
+    private ColorStateList mHintTextColor;
+    private ColorStateList mLinkTextColor;
 
-    private int mCurHintTextColor = 0xFFFFFFFF;
+    private int mCurTextColor;
+
+    private int mCurHintTextColor;
 
     private Editable.Factory mEditableFactory = Editable.DEFAULT_FACTORY;
     private Spannable.Factory mSpannableFactory = Spannable.DEFAULT_FACTORY;
@@ -206,6 +196,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     private Editor mEditor;
 
     public TextView() {
+        setTextColor(0xFFFFFFFF);
     }
 
     /**
@@ -1139,13 +1130,40 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * Sets the text color for all the states (normal, selected,
      * focused) to be this color.
      *
-     * @param color a color value in the form 0xAARRGGBB
+     * @param color A color value in the form 0xAARRGGBB.
+     * @see #setTextColor(ColorStateList)
+     * @see #getTextColors()
      */
     public void setTextColor(int color) {
-        if (mCurTextColor != color) {
-            mCurTextColor = color;
-            invalidate();
+        mTextColor = ColorStateList.valueOf(color);
+        updateTextColors();
+    }
+
+    /**
+     * Sets the text color.
+     *
+     * @see #setTextColor(int)
+     * @see #getTextColors()
+     * @see #setHintTextColor(ColorStateList)
+     * @see #setLinkTextColor(ColorStateList)
+     */
+    public void setTextColor(ColorStateList colors) {
+        if (colors == null) {
+            throw new NullPointerException();
         }
+
+        mTextColor = colors;
+        updateTextColors();
+    }
+
+    /**
+     * Gets the text colors for the different states (normal, selected, focused) of the TextView.
+     *
+     * @see #setTextColor(ColorStateList)
+     * @see #setTextColor(int)
+     */
+    public final ColorStateList getTextColors() {
+        return mTextColor;
     }
 
     /**
@@ -1234,13 +1252,37 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * Sets the color of the hint text for all the states (disabled, focussed, selected...) of this
      * TextView.
      *
+     * @see #setHintTextColor(ColorStateList)
+     * @see #getHintTextColors()
      * @see #setTextColor(int)
      */
     public final void setHintTextColor(int color) {
-        if (mCurHintTextColor != color) {
-            mCurHintTextColor = color;
-            invalidate();
-        }
+        mHintTextColor = ColorStateList.valueOf(color);
+        updateTextColors();
+    }
+
+    /**
+     * Sets the color of the hint text.
+     *
+     * @see #getHintTextColors()
+     * @see #setHintTextColor(int)
+     * @see #setTextColor(ColorStateList)
+     * @see #setLinkTextColor(ColorStateList)
+     */
+    public final void setHintTextColor(ColorStateList colors) {
+        mHintTextColor = colors;
+        updateTextColors();
+    }
+
+    /**
+     * @return the color of the hint text, for the different states of this TextView.
+     * @see #setHintTextColor(ColorStateList)
+     * @see #setHintTextColor(int)
+     * @see #setTextColor(ColorStateList)
+     * @see #setLinkTextColor(ColorStateList)
+     */
+    public final ColorStateList getHintTextColors() {
+        return mHintTextColor;
     }
 
     /**
@@ -1250,6 +1292,40 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public final int getCurrentHintTextColor() {
         return mCurHintTextColor;
+    }
+
+    /**
+     * Sets the color of links in the text.
+     *
+     * @see #setLinkTextColor(ColorStateList)
+     * @see #getLinkTextColors()
+     */
+    public final void setLinkTextColor(int color) {
+        mLinkTextColor = ColorStateList.valueOf(color);
+        updateTextColors();
+    }
+
+    /**
+     * Sets the color of links in the text.
+     *
+     * @see #setLinkTextColor(int)
+     * @see #getLinkTextColors()
+     * @see #setTextColor(ColorStateList)
+     * @see #setHintTextColor(ColorStateList)
+     */
+    public final void setLinkTextColor(ColorStateList colors) {
+        mLinkTextColor = colors;
+        updateTextColors();
+    }
+
+    /**
+     * @return the list of colors used to paint the links in the text, for the different states of
+     * this TextView
+     * @see #setLinkTextColor(ColorStateList)
+     * @see #setLinkTextColor(int)
+     */
+    public final ColorStateList getLinkTextColors() {
+        return mLinkTextColor;
     }
 
     /**
@@ -2077,17 +2153,78 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         setText(mText, selectable ? BufferType.SPANNABLE : BufferType.NORMAL);
     }
 
-    //TODO drawable states
+    private void updateTextColors() {
+        boolean inval = false;
+        final int[] drawableState = getDrawableState();
+        int color = mTextColor.getColorForState(drawableState, 0);
+        if (color != mCurTextColor) {
+            mCurTextColor = color;
+            inval = true;
+        }
+        /*if (mLinkTextColor != null) {
+            color = mLinkTextColor.getColorForState(drawableState, 0);
+            if (color != mTextPaint.linkColor) {
+                mTextPaint.linkColor = color;
+                inval = true;
+            }
+        }*/
+        if (mHintTextColor != null) {
+            color = mHintTextColor.getColorForState(drawableState, 0);
+            if (color != mCurHintTextColor) {
+                mCurHintTextColor = color;
+                if (mText.length() == 0) {
+                    inval = true;
+                }
+            }
+        }
+        if (inval) {
+            // Text needs to be redrawn with the new color
+            invalidate();
+        }
+    }
 
     @Override
     protected void drawableStateChanged() {
         super.drawableStateChanged();
+
+        if (mTextColor != null && mTextColor.isStateful()
+                || (mHintTextColor != null && mHintTextColor.isStateful())
+                || (mLinkTextColor != null && mLinkTextColor.isStateful())) {
+            updateTextColors();
+        }
+
+        if (mDrawables != null) {
+            final int[] state = getDrawableState();
+            for (Drawable dr : mDrawables.mShowing) {
+                if (dr != null && dr.isStateful() && dr.setState(state)) {
+                    invalidateDrawable(dr);
+                }
+            }
+        }
     }
 
     @Nonnull
     @Override
     protected int[] onCreateDrawableState(int extraSpace) {
-        return super.onCreateDrawableState(extraSpace);
+        final int[] drawableState = super.onCreateDrawableState(extraSpace);
+
+        if (isTextSelectable()) {
+            // Disable pressed state, which was introduced when TextView was made clickable.
+            // Prevents text color change.
+            // setClickable(false) would have a similar effect, but it also disables focus changes
+            // and long press actions, which are both needed by text selection.
+            final int length = drawableState.length;
+            for (int i = 0; i < length; i++) {
+                if (drawableState[i] == StateSet.state_pressed) {
+                    final int[] nonPressedState = new int[length - 1];
+                    System.arraycopy(drawableState, 0, nonPressedState, 0, i);
+                    System.arraycopy(drawableState, i + 1, nonPressedState, i, length - i - 1);
+                    return nonPressedState;
+                }
+            }
+        }
+
+        return drawableState;
     }
 
     private void drawHighlight(@Nonnull Canvas canvas, int cursorOffsetVertical) {
@@ -2207,7 +2344,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         Layout layout = mLayout;
 
         if (mHint != null && mText.length() == 0) {
-            color = mCurHintTextColor;
+            if (mHintTextColor != null) {
+                color = mCurHintTextColor;
+            }
 
             layout = mHintLayout;
         }
