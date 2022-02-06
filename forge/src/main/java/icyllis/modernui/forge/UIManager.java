@@ -737,8 +737,7 @@ public final class UIManager implements LifecycleOwner {
 
         GLSurfaceCanvas canvas = mCanvas;
 
-        // Flip Y, setting the origin to the top left
-        canvas.setProjection(mProjectionMatrix.setOrthographic(width, -height, 0, 2000));
+        canvas.setProjection(mProjectionMatrix.setOrthographic(width, height, 0, 3000));
 
         // This is on Main thread
         applyPointerIcon();

@@ -18,16 +18,13 @@
 
 package icyllis.modernui;
 
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.Looper;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.view.ViewManager;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.jetbrains.annotations.VisibleForTesting;
-import sun.misc.Unsafe;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -36,19 +33,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
-import java.lang.reflect.Field;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 
 /**
  * The core class of Modern UI.
+ * <p>
+ * This class (and its subclasses) can ONLY be used internally.
  */
+@ApiStatus.Internal
 public class ModernUI {
 
     public static final String ID = "modernui"; // as well as the namespace
@@ -56,9 +52,6 @@ public class ModernUI {
 
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
-
-    @VisibleForTesting
-    public static final Unsafe UNSAFE; // internal use, will be removed
 
     protected static volatile ModernUI sInstance;
 
@@ -68,22 +61,11 @@ public class ModernUI {
         if (Runtime.version().feature() < 17) {
             throw new RuntimeException("JRE 17 or above is required");
         }
-        try {
-            final Field field = Unsafe.class.getDeclaredField("theUnsafe");
-            field.setAccessible(true);
-            UNSAFE = (Unsafe) field.get(null);
-        } catch (Exception e) {
-            throw new IllegalStateException("You're safe", e);
-        }
     }
 
+    //TODO
     protected final Path mAssetsDir = Path.of(String.valueOf(System.getenv("APP_ASSETS")));
 
-    private final Object mLock = new Object();
-
-    private volatile Handler mMainHandler;
-
-    protected volatile ExecutorService mBackgroundExecutor;
     protected volatile ViewManager mViewManager;
 
     public ModernUI() {
@@ -105,8 +87,7 @@ public class ModernUI {
      */
     //TODO
     public static ModernUI initialize() {
-        final ModernUI me = new ModernUI();
-        me.mBackgroundExecutor = Executors.newWorkStealingPool();
+        new ModernUI();
         return sInstance;
     }
 
@@ -163,45 +144,20 @@ public class ModernUI {
     }
 
     @Nonnull
-    public Handler getMainHandler() {
-        if (mMainHandler == null) {
-            synchronized (mLock) {
-                if (mMainHandler == null) {
-                    mMainHandler = Handler.createAsync(Looper.getMainLooper());
-                }
-            }
-        }
-        return mMainHandler;
+    public InputStream getResourceStream(@Nonnull String res, @Nonnull String path) throws IOException {
+        return new FileInputStream(mAssetsDir.resolve(res).resolve(path).toFile());
     }
 
     @Nonnull
-    public InputStream getResourceAsStream(@Nonnull String namespace, @Nonnull String path) throws IOException {
-        return new FileInputStream(mAssetsDir.resolve(namespace).resolve(path).toFile());
-    }
-
-    @Nonnull
-    public ReadableByteChannel getResourceAsChannel(@Nonnull String namespace, @Nonnull String path) throws IOException {
-        return FileChannel.open(mAssetsDir.resolve(namespace).resolve(path), StandardOpenOption.READ);
+    public ReadableByteChannel getResourceChannel(@Nonnull String res, @Nonnull String path) throws IOException {
+        return FileChannel.open(mAssetsDir.resolve(res).resolve(path), StandardOpenOption.READ);
     }
 
     /**
-     * Get the executor for background tasks. This should be a ForkJoinPool in asyncMode.
-     *
-     * @return background executor
-     */
-    @Deprecated
-    @Nonnull
-    public Executor getBackgroundExecutor() {
-        return mBackgroundExecutor;
-    }
-
-    /**
-     * Get the view manager of the application window.
+     * Get the view manager of the application window (i.e. main window).
      *
      * @return window view manager
      */
-    @Deprecated
-    @Nonnull
     public ViewManager getViewManager() {
         return mViewManager;
     }
