@@ -143,7 +143,7 @@ public class Matrix4 implements Cloneable {
         Matrix4 mat = new Matrix4();
         float invNF = 1.0f / (near - far);
         mat.m11 = 2.0f / width;
-        mat.m22 = 2.0f / height;
+        mat.m22 = -2.0f / height;
         mat.m33 = 2.0f * invNF;
         mat.m41 = -1.0f;
         mat.m42 = 1.0f;
@@ -956,7 +956,7 @@ public class Matrix4 implements Cloneable {
         m13 = 0.0f;
         m14 = 0.0f;
         m21 = 0.0f;
-        m22 = 2.0f / height;
+        m22 = -2.0f / height;
         m23 = 0.0f;
         m24 = 0.0f;
         m31 = 0.0f;

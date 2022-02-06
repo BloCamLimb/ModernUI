@@ -47,7 +47,6 @@ import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.lwjgl.glfw.GLFW;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
@@ -274,11 +273,11 @@ public class TestMain {
             Thread.currentThread().setName("Main-Thread");
             ArchCore.init();
             sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1600, 900);
-            try (var c1 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
+            try (var c1 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo16x.png");
                  var bitmap1 = NativeImage.decode(null, c1);
-                 var c2 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo32x.png");
+                 var c2 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo32x.png");
                  var bitmap2 = NativeImage.decode(null, c2);
-                 var c3 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo48x.png");
+                 var c3 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo48x.png");
                  var bitmap3 = NativeImage.decode(null, c3)) {
                 sWindow.setIcon(bitmap1, bitmap2, bitmap3);
             } catch (IOException e) {
@@ -539,7 +538,7 @@ public class TestMain {
                         360 * (playTime / sTrack.getLength()), paint);
 
                 // OpenGL coordinates origin is bottom left, we flip it to top left
-                canvas.setProjection(projection.setOrthographic(window.getWidth(), -window.getHeight(), 0, 2000));
+                canvas.setProjection(projection.setOrthographic(window.getWidth(), window.getHeight(), 0, 3000));
                 // render thread, wait UI thread
                 canvas.draw(framebuffer);
 

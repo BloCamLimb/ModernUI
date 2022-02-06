@@ -26,7 +26,6 @@ import icyllis.modernui.text.LayoutCache;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.ModernUITextMC;
 import icyllis.modernui.view.ViewManager;
-import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
@@ -58,7 +57,6 @@ import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
-import java.util.concurrent.Executor;
 
 /**
  * Mod class. INTERNAL.
@@ -236,23 +234,16 @@ public final class ModernUIForge extends ModernUI {
 
     @Nonnull
     @Override
-    public InputStream getResourceAsStream(@Nonnull String namespace, @Nonnull String path) throws IOException {
-        return Minecraft.getInstance().getResourceManager().getResource(new ResourceLocation(namespace, path)).getInputStream();
+    public InputStream getResourceStream(@Nonnull String res, @Nonnull String path) throws IOException {
+        return Minecraft.getInstance().getResourceManager().getResource(new ResourceLocation(res, path)).getInputStream();
     }
 
     @Nonnull
     @Override
-    public ReadableByteChannel getResourceAsChannel(@Nonnull String namespace, @Nonnull String path) throws IOException {
-        return Channels.newChannel(getResourceAsStream(namespace, path));
+    public ReadableByteChannel getResourceChannel(@Nonnull String res, @Nonnull String path) throws IOException {
+        return Channels.newChannel(getResourceStream(res, path));
     }
 
-    @Nonnull
-    @Override
-    public Executor getBackgroundExecutor() {
-        return Util.backgroundExecutor();
-    }
-
-    @Nonnull
     @Override
     public ViewManager getViewManager() {
         return UIManager.sInstance.getDecorView();

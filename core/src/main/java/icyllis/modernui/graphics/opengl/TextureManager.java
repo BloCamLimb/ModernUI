@@ -91,7 +91,7 @@ public class TextureManager {
         } else {
             texture = new GLTexture(GLWrapper.GL_TEXTURE_2D);
         }
-        try (InputStream stream = ModernUI.getInstance().getResourceAsStream(namespace, path)) {
+        try (InputStream stream = ModernUI.getInstance().getResourceStream(namespace, path)) {
             NativeImage image = NativeImage.decode(null, stream);
             create(texture, image, (flags & MIPMAP_MASK) != 0);
         } catch (IOException e) {

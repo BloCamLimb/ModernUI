@@ -89,11 +89,11 @@ public class BejeweledTwist {
         ModernUI.initialize();
         ArchCore.init();
         mWindow = Window.create("Bejeweled Twist", Window.State.WINDOWED, 1600, 900);
-        try (var c1 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo16x.png");
+        try (var c1 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo16x.png");
              var bitmap1 = NativeImage.decode(null, c1);
-             var c2 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo32x.png");
+             var c2 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo32x.png");
              var bitmap2 = NativeImage.decode(null, c2);
-             var c3 = ModernUI.getInstance().getResourceAsChannel(ModernUI.ID, "AppLogo48x.png");
+             var c3 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo48x.png");
              var bitmap3 = NativeImage.decode(null, c3)) {
             mWindow.setIcon(bitmap1, bitmap2, bitmap3);
         } catch (IOException e) {
@@ -252,7 +252,7 @@ public class BejeweledTwist {
                 canvas.drawImage(mBG, mBGSrc, screenRect, paint);
                 tickDraw(canvas, delta);
 
-                canvas.setProjection(projection.setOrthographic(mWindow.getWidth(), -mWindow.getHeight(), 0, 2000));
+                canvas.setProjection(projection.setOrthographic(mWindow.getWidth(), mWindow.getHeight(), 0, 3000));
                 // render thread, wait UI thread
                 canvas.draw(null);
             }

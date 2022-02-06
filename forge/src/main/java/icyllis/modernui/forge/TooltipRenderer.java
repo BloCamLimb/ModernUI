@@ -293,7 +293,8 @@ public final class TooltipRenderer {
         RenderSystem.defaultBlendFunc();
 
         poseStack.pushPose();
-        poseStack.translate(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
+        // because of the order of draw calls, we actually don't need z-shifting
+        poseStack.translate(0, 0, 400);
         final Matrix4f mat = poseStack.last().pose();
 
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
@@ -312,9 +313,12 @@ public final class TooltipRenderer {
         sMyMat.set(sMatBuf.rewind());
         canvas.concat(sMyMat);
 
-        mat.store(sMatBuf.rewind()); // Sodium check the remaining
+        // Sodium check the remaining
+        mat.store(sMatBuf.rewind());
         sMyMat.set(sMatBuf.rewind());
-        //myMat.translate(0, 0, -2000);
+        // RenderSystem.getModelViewMatrix() has Z translation normalized to -1
+        // We have to offset against our canvas Z translation, see restore matrix in GLCanvas
+        sMyMat.translate(0, 0, 3000);
         canvas.concat(sMyMat);
 
         Paint paint = Paint.take();

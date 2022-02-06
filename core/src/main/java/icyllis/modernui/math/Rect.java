@@ -56,6 +56,22 @@ public class Rect {
     }
 
     /**
+     * Create a new rectangle, initialized with the values in the specified
+     * rectangle (which is left unmodified).
+     *
+     * @param r The rectangle whose coordinates are copied into the new
+     *          rectangle.
+     */
+    public Rect(@Nullable Rect r) {
+        if (r != null) {
+            left = r.left;
+            top = r.top;
+            right = r.right;
+            bottom = r.bottom;
+        }
+    }
+
+    /**
      * Returns a copy of {@code r} if it is not {@code null}, or
      * an empty Rect otherwise.
      *

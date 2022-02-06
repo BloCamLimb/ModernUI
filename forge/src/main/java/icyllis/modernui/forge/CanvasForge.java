@@ -136,7 +136,8 @@ public final class CanvasForge {
         canvas.save();
 
         Matrix4 mat = canvas.getMatrix();
-        mat.translate(x, y, 0);
+        // items are 3D, do not clip them in Z direction
+        mat.translate(x, y, 400);
         mat.scale(size, -size, 1);
 
         mat.put(mMatBuf.rewind());
