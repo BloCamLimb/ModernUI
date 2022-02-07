@@ -35,7 +35,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.GuardedBy;
 import java.util.ArrayDeque;
 
-import static icyllis.modernui.view.ViewConfiguration.dp;
+import static icyllis.modernui.view.View.dp;
 
 public class ToastManager {
 

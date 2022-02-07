@@ -1585,6 +1585,26 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Map a point in the X-Y plane.
+     *
+     * @param p the point to transform
+     */
+    public void transformPoint(@Nonnull float[] p) {
+        if (isAffine()) {
+            final float x = m11 * p[0] + m21 * p[1] + m41;
+            final float y = m12 * p[0] + m22 * p[1] + m42;
+            p[0] = x;
+            p[1] = y;
+        } else {
+            final float x = m11 * p[0] + m21 * p[1] + m41;
+            final float y = m12 * p[0] + m22 * p[1] + m42;
+            float w = 1.0f / (m14 * p[0] + m24 * p[1] + m44);
+            p[0] = x * w;
+            p[1] = y * w;
+        }
+    }
+
+    /**
      * Returns whether this matrix is seen as an affine transformation.
      * Otherwise, there's a perspective projection.
      *

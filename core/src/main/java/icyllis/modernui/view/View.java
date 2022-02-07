@@ -19,17 +19,22 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.RenderNode;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.*;
+import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.Point;
+import icyllis.modernui.math.Rect;
+import icyllis.modernui.math.RectF;
 import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.transition.Transition;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.SparseArray;
@@ -38,20 +43,70 @@ import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 import icyllis.modernui.view.menu.MenuBuilder;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.jetbrains.annotations.ApiStatus;
+import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static java.lang.Math.max;
 
 /**
- * View is the basic component of UI. View has its own rectangular area on screen,
- * which is also responsible for drawing and event handling.
+ * <p>
+ * This class represents the basic building block for user interface components. A View
+ * occupies a rectangular area on the screen and is responsible for drawing and
+ * event handling. View is the base class for <em>widgets</em>, which are
+ * used to create interactive UI components (buttons, text fields, etc.). The
+ * {@link ViewGroup} subclass is the base class for <em>layouts</em>, which
+ * are invisible containers that hold other Views (or other ViewGroups) and define
+ * their layout properties.
+ * </p>
+ *
+ * <div class="special reference">
+ * <h3>Developer Guides</h3>
+ * <p>For information about using this class to develop your application's user interface,
+ * read the <a href="https://developer.android.com/guide/topics/ui/index.html">User Interface</a>
+ * developer guide.
+ * </div>
+ *
+ * <a name="Using"></a>
+ * <h3>Using Views</h3>
+ * <p>
+ * All of the views in a window are arranged in a single tree. You can add views
+ * from code. There are many specialized subclasses of views that act as controls or
+ * are capable of displaying text, images, or other content.
+ * </p>
+ * <p>
+ * Once you have created a tree of views, there are typically a few types of
+ * common operations you may wish to perform:
+ * <ul>
+ * <li><strong>Set properties:</strong> for example setting the text of a
+ * {@link icyllis.modernui.widget.TextView}. The available properties and the methods
+ * that set them will vary among the different subclasses of views.</li>
+ * <li><strong>Set focus:</strong> The framework will handle moving focus in
+ * response to user input. To force focus to a specific view, call
+ * {@link #requestFocus()}.</li>
+ * <li><strong>Set up listeners:</strong> Views allow clients to set listeners
+ * that will be notified when something interesting happens to the view. For
+ * example, all views will let you set a listener to be notified when the view
+ * gains or loses focus. You can register such a listener using
+ * {@link #setOnFocusChangeListener(OnFocusChangeListener)}.
+ * Other view subclasses offer more specialized listeners. For example, a Button
+ * exposes a listener to notify clients when the button is clicked.</li>
+ * <li><strong>Set visibility:</strong> You can hide or show views using
+ * {@link #setVisibility(int)}.</li>
+ * </ul>
+ * </p>
+ * <p><em>
+ * Note: Modern UI view system is responsible for measuring, laying out and
+ * drawing views. You should not call methods that perform these actions on
+ * views yourself unless you are actually implementing a {@link ViewGroup}.
+ * </em></p>
+ *
  * <p>
  * Measure ...
  * <p>
@@ -73,21 +128,736 @@ import static java.lang.Math.max;
  * <p>
  * Custom View ...
  *
+ * @see ViewGroup
  * @since 2.0
  */
+@SuppressWarnings({"unused", "MagicConstant"})
 @UiThread
-@SuppressWarnings("unused")
 public class View implements Drawable.Callback {
 
     /**
-     * Log marker.
+     * The logging marker used by this class with {@link org.apache.logging.log4j.Logger}.
      */
-    public static final Marker VIEW_MARKER = MarkerManager.getMarker("View");
+    protected static final Marker VIEW_MARKER = MarkerManager.getMarker("View");
 
     /**
      * Used to mark a View that has no ID.
      */
     public static final int NO_ID = -1;
+
+    @MagicConstant(intValues = {NOT_FOCUSABLE, FOCUSABLE, FOCUSABLE_AUTO})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Focusable {
+    }
+
+    /**
+     * This view does not want keystrokes.
+     * <p>
+     * Use with {@link #setFocusable(int)}.
+     */
+    public static final int NOT_FOCUSABLE = 0x00000000;
+
+    /**
+     * This view wants keystrokes.
+     * <p>
+     * Use with {@link #setFocusable(int)}.
+     */
+    public static final int FOCUSABLE = 0x00000001;
+
+    /**
+     * This view determines focusability automatically. This is the default.
+     * <p>
+     * Use with {@link #setFocusable(int)}.
+     */
+    public static final int FOCUSABLE_AUTO = 0x00000010;
+
+    /**
+     * Mask for use with setFlags indicating bits used for focus.
+     */
+    private static final int FOCUSABLE_MASK = 0x00000011;
+
+    @MagicConstant(intValues = {VISIBLE, INVISIBLE, GONE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Visibility {
+    }
+
+    /**
+     * This view is visible.
+     * Use with {@link #setVisibility}.
+     */
+    public static final int VISIBLE = 0x00000000;
+
+    /**
+     * This view is invisible, but it still takes up space for layout purposes.
+     * Use with {@link #setVisibility}.
+     */
+    public static final int INVISIBLE = 0x00000004;
+
+    /**
+     * This view is invisible, and it doesn't take any space for layout
+     * purposes. Use with {@link #setVisibility}.
+     */
+    public static final int GONE = 0x00000008;
+
+    /**
+     * Mask for use with setFlags indicating bits used for visibility.
+     * {@hide}
+     */
+    static final int VISIBILITY_MASK = 0x0000000C;
+
+    /**
+     * This view is enabled. Interpretation varies by subclass.
+     * Use with ENABLED_MASK when calling setFlags.
+     * {@hide}
+     */
+    static final int ENABLED = 0x00000000;
+
+    /**
+     * This view is disabled. Interpretation varies by subclass.
+     * Use with ENABLED_MASK when calling setFlags.
+     * {@hide}
+     */
+    static final int DISABLED = 0x00000020;
+
+    /**
+     * Mask for use with setFlags indicating bits used for indicating whether
+     * this view is enabled
+     * {@hide}
+     */
+    static final int ENABLED_MASK = 0x00000020;
+
+    /**
+     * This view won't draw. {@link #onDraw(Canvas)} won't be
+     * called and further optimizations will be performed. It is okay to have
+     * this flag set and a background. Use with DRAW_MASK when calling setFlags.
+     * {@hide}
+     */
+    static final int WILL_NOT_DRAW = 0x00000080;
+
+    /**
+     * Mask for use with setFlags indicating bits used for indicating whether
+     * this view is will draw
+     * {@hide}
+     */
+    static final int DRAW_MASK = 0x00000080;
+
+    /**
+     * <p>This view doesn't show scrollbars.</p>
+     * {@hide}
+     */
+    static final int SCROLLBARS_NONE = 0x00000000;
+
+    /**
+     * <p>This view shows horizontal scrollbars.</p>
+     * {@hide}
+     */
+    static final int SCROLLBARS_HORIZONTAL = 0x00000100;
+
+    /**
+     * <p>This view shows vertical scrollbars.</p>
+     * {@hide}
+     */
+    static final int SCROLLBARS_VERTICAL = 0x00000200;
+
+    /**
+     * <p>Mask for use with setFlags indicating bits used for indicating which
+     * scrollbars are enabled.</p>
+     * {@hide}
+     */
+    static final int SCROLLBARS_MASK = 0x00000300;
+
+    /**
+     * <p>This view doesn't show fading edges.</p>
+     * {@hide}
+     */
+    static final int FADING_EDGE_NONE = 0x00000000;
+
+    /**
+     * <p>This view shows horizontal fading edges.</p>
+     * {@hide}
+     */
+    static final int FADING_EDGE_HORIZONTAL = 0x00001000;
+
+    /**
+     * <p>This view shows vertical fading edges.</p>
+     * {@hide}
+     */
+    static final int FADING_EDGE_VERTICAL = 0x00002000;
+
+    /**
+     * <p>Mask for use with setFlags indicating bits used for indicating which
+     * fading edges are enabled.</p>
+     * {@hide}
+     */
+    static final int FADING_EDGE_MASK = 0x00003000;
+
+    /**
+     * <p>Indicates this view can be clicked. When clickable, a View reacts
+     * to clicks by notifying the OnClickListener.<p>
+     * {@hide}
+     */
+    static final int CLICKABLE = 0x00004000;
+
+    /**
+     * <p>Indicates this view can take / keep focus when int touch mode.</p>
+     * {@hide}
+     */
+    static final int FOCUSABLE_IN_TOUCH_MODE = 0x00040000;
+
+    /**
+     * <p>
+     * Indicates this view can be long clicked. When long clickable, a View
+     * reacts to long clicks by notifying the OnLongClickListener or showing a
+     * context menu.
+     * </p>
+     * {@hide}
+     */
+    static final int LONG_CLICKABLE = 0x00200000;
+
+    /**
+     * <p>Indicates that this view gets its drawable states from its direct parent
+     * and ignores its original internal states.</p>
+     *
+     * @hide
+     */
+    static final int DUPLICATE_PARENT_STATE = 0x00400000;
+
+    /**
+     * <p>
+     * Indicates this view can be context clicked. When context clickable, a View reacts to a
+     * context click (e.g. a primary stylus button press or right mouse click) by notifying the
+     * OnContextClickListener.
+     * </p>
+     * {@hide}
+     */
+    static final int CONTEXT_CLICKABLE = 0x00800000;
+
+    @MagicConstant(intValues = {
+            SCROLLBARS_INSIDE_OVERLAY,
+            SCROLLBARS_INSIDE_INSET,
+            SCROLLBARS_OUTSIDE_OVERLAY,
+            SCROLLBARS_OUTSIDE_INSET
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ScrollBarStyle {
+    }
+
+    /**
+     * The scrollbar style to display the scrollbars inside the content area,
+     * without increasing the padding. The scrollbars will be overlaid with
+     * translucency on the view's content.
+     */
+    public static final int SCROLLBARS_INSIDE_OVERLAY = 0;
+
+    /**
+     * The scrollbar style to display the scrollbars inside the padded area,
+     * increasing the padding of the view. The scrollbars will not overlap the
+     * content area of the view.
+     */
+    public static final int SCROLLBARS_INSIDE_INSET = 0x01000000;
+
+    /**
+     * The scrollbar style to display the scrollbars at the edge of the view,
+     * without increasing the padding. The scrollbars will be overlaid with
+     * translucency.
+     */
+    public static final int SCROLLBARS_OUTSIDE_OVERLAY = 0x02000000;
+
+    /**
+     * The scrollbar style to display the scrollbars at the edge of the view,
+     * increasing the padding of the view. The scrollbars will only overlap the
+     * background, if any.
+     */
+    public static final int SCROLLBARS_OUTSIDE_INSET = 0x03000000;
+
+    /**
+     * Mask to check if the scrollbar style is overlay or inset.
+     * {@hide}
+     */
+    static final int SCROLLBARS_INSET_MASK = 0x01000000;
+
+    /**
+     * Mask to check if the scrollbar style is inside or outside.
+     * {@hide}
+     */
+    static final int SCROLLBARS_OUTSIDE_MASK = 0x02000000;
+
+    /**
+     * Mask for scrollbar style.
+     * {@hide}
+     */
+    static final int SCROLLBARS_STYLE_MASK = 0x03000000;
+
+    /**
+     * View flag indicating whether this view should have sound effects enabled
+     * for events such as clicking and touching.
+     */
+    public static final int SOUND_EFFECTS_ENABLED = 0x08000000;
+
+    /**
+     * View flag indicating whether this view should have haptic feedback
+     * enabled for events such as long presses.
+     */
+    public static final int HAPTIC_FEEDBACK_ENABLED = 0x10000000;
+
+    /**
+     * <p>Indicates this view can display a tooltip on hover or long press.</p>
+     * {@hide}
+     */
+    static final int TOOLTIP = 0x40000000;
+
+    @MagicConstant(flags = {
+            FOCUSABLES_ALL,
+            FOCUSABLES_TOUCH_MODE
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface FocusableMode {
+    }
+
+    /**
+     * View flag indicating whether {@link #addFocusables(ArrayList, int, int)}
+     * should add all focusable Views regardless if they are focusable in touch mode.
+     */
+    public static final int FOCUSABLES_ALL = 0x00000000;
+
+    /**
+     * View flag indicating whether {@link #addFocusables(ArrayList, int, int)}
+     * should add only Views focusable in touch mode.
+     */
+    public static final int FOCUSABLES_TOUCH_MODE = 0x00000001;
+
+    @MagicConstant(intValues = {
+            FOCUS_BACKWARD,
+            FOCUS_FORWARD,
+            FOCUS_LEFT,
+            FOCUS_UP,
+            FOCUS_RIGHT,
+            FOCUS_DOWN
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface FocusDirection {
+    }
+
+    @MagicConstant(intValues = {
+            FOCUS_LEFT,
+            FOCUS_UP,
+            FOCUS_RIGHT,
+            FOCUS_DOWN
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface FocusRealDirection {
+        // Like @FocusDirection, but without forward/backward
+    }
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus to the previous selectable
+     * item.
+     */
+    public static final int FOCUS_BACKWARD = 0x00000001;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus to the next selectable
+     * item.
+     */
+    public static final int FOCUS_FORWARD = 0x00000002;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus to the left.
+     */
+    public static final int FOCUS_LEFT = 0x00000011;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus up.
+     */
+    public static final int FOCUS_UP = 0x00000021;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus to the right.
+     */
+    public static final int FOCUS_RIGHT = 0x00000042;
+
+    /**
+     * Use with {@link #focusSearch(int)}. Move focus down.
+     */
+    public static final int FOCUS_DOWN = 0x00000082;
+
+    /**
+     * Bits of {@link #getMeasuredWidthAndState()} and
+     * {@link #getMeasuredWidthAndState()} that provide the actual measured size.
+     */
+    public static final int MEASURED_SIZE_MASK = 0x00ffffff;
+
+    /**
+     * Bits of {@link #getMeasuredWidthAndState()} and
+     * {@link #getMeasuredWidthAndState()} that provide the additional state bits.
+     */
+    public static final int MEASURED_STATE_MASK = 0xff000000;
+
+    /**
+     * Bit shift of {@link #MEASURED_STATE_MASK} to get to the height bits
+     * for functions that combine both width and height into a single int,
+     * such as {@link #getMeasuredState()} and the childState argument of
+     * {@link #resolveSizeAndState(int, int, int)}.
+     */
+    public static final int MEASURED_HEIGHT_STATE_SHIFT = 16;
+
+    /**
+     * Bit of {@link #getMeasuredWidthAndState()} and
+     * {@link #getMeasuredWidthAndState()} that indicates the measured size
+     * is smaller that the space the view would like to have.
+     */
+    public static final int MEASURED_STATE_TOO_SMALL = 0x01000000;
+
+    // Base View state sets
+    // Singles
+    /**
+     * Indicates the view has no states set. States are used with
+     * {@link Drawable} to change the drawing of the
+     * view depending on its state.
+     *
+     * @see Drawable
+     * @see #getDrawableState()
+     */
+    protected static final int[] EMPTY_STATE_SET;
+    /**
+     * Indicates the view is enabled. States are used with
+     * {@link Drawable} to change the drawing of the
+     * view depending on its state.
+     *
+     * @see Drawable
+     * @see #getDrawableState()
+     */
+    protected static final int[] ENABLED_STATE_SET;
+    /**
+     * Indicates the view is focused. States are used with
+     * {@link Drawable} to change the drawing of the
+     * view depending on its state.
+     *
+     * @see Drawable
+     * @see #getDrawableState()
+     */
+    protected static final int[] FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is selected. States are used with
+     * {@link Drawable} to change the drawing of the
+     * view depending on its state.
+     *
+     * @see Drawable
+     * @see #getDrawableState()
+     */
+    protected static final int[] SELECTED_STATE_SET;
+    /**
+     * Indicates the view is pressed. States are used with
+     * {@link Drawable} to change the drawing of the
+     * view depending on its state.
+     *
+     * @see Drawable
+     * @see #getDrawableState()
+     */
+    protected static final int[] PRESSED_STATE_SET;
+    /**
+     * Indicates the view's window has focus. States are used with
+     * {@link Drawable} to change the drawing of the
+     * view depending on its state.
+     *
+     * @see Drawable
+     * @see #getDrawableState()
+     */
+    protected static final int[] WINDOW_FOCUSED_STATE_SET;
+    // Doubles
+    /**
+     * Indicates the view is enabled and has the focus.
+     *
+     * @see #ENABLED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     */
+    protected static final int[] ENABLED_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is enabled and selected.
+     *
+     * @see #ENABLED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     */
+    protected static final int[] ENABLED_SELECTED_STATE_SET;
+    /**
+     * Indicates the view is enabled and that its window has focus.
+     *
+     * @see #ENABLED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] ENABLED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is focused and selected.
+     *
+     * @see #FOCUSED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     */
+    protected static final int[] FOCUSED_SELECTED_STATE_SET;
+    /**
+     * Indicates the view has the focus and that its window has the focus.
+     *
+     * @see #FOCUSED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] FOCUSED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is selected and that its window has the focus.
+     *
+     * @see #SELECTED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] SELECTED_WINDOW_FOCUSED_STATE_SET;
+    // Triples
+    /**
+     * Indicates the view is enabled, focused and selected.
+     *
+     * @see #ENABLED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     */
+    protected static final int[] ENABLED_FOCUSED_SELECTED_STATE_SET;
+    /**
+     * Indicates the view is enabled, focused and its window has the focus.
+     *
+     * @see #ENABLED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] ENABLED_FOCUSED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is enabled, selected and its window has the focus.
+     *
+     * @see #ENABLED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] ENABLED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is focused, selected and its window has the focus.
+     *
+     * @see #FOCUSED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is enabled, focused, selected and its window
+     * has the focus.
+     *
+     * @see #ENABLED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] ENABLED_FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed and its window has the focus.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed and selected.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     */
+    protected static final int[] PRESSED_SELECTED_STATE_SET;
+    /**
+     * Indicates the view is pressed, selected and its window has the focus.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed and focused.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed, focused and its window has the focus.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_FOCUSED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed, focused and selected.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_FOCUSED_SELECTED_STATE_SET;
+    /**
+     * Indicates the view is pressed, focused, selected and its window has the focus.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed and enabled.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #ENABLED_STATE_SET
+     */
+    protected static final int[] PRESSED_ENABLED_STATE_SET;
+    /**
+     * Indicates the view is pressed, enabled and its window has the focus.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #ENABLED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_ENABLED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed, enabled and selected.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #ENABLED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     */
+    protected static final int[] PRESSED_ENABLED_SELECTED_STATE_SET;
+    /**
+     * Indicates the view is pressed, enabled, selected and its window has the
+     * focus.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #ENABLED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_ENABLED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed, enabled and focused.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #ENABLED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_ENABLED_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed, enabled, focused and its window has the
+     * focus.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #ENABLED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_ENABLED_FOCUSED_WINDOW_FOCUSED_STATE_SET;
+    /**
+     * Indicates the view is pressed, enabled, focused and selected.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #ENABLED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_ENABLED_FOCUSED_SELECTED_STATE_SET;
+    /**
+     * Indicates the view is pressed, enabled, focused, selected and its window
+     * has the focus.
+     *
+     * @see #PRESSED_STATE_SET
+     * @see #ENABLED_STATE_SET
+     * @see #SELECTED_STATE_SET
+     * @see #FOCUSED_STATE_SET
+     * @see #WINDOW_FOCUSED_STATE_SET
+     */
+    protected static final int[] PRESSED_ENABLED_FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET;
+
+    static {
+        EMPTY_STATE_SET = StateSet.WILD_CARD;
+
+        WINDOW_FOCUSED_STATE_SET = StateSet.get(StateSet.VIEW_STATE_WINDOW_FOCUSED);
+
+        SELECTED_STATE_SET = StateSet.get(StateSet.VIEW_STATE_SELECTED);
+        SELECTED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_SELECTED);
+
+        FOCUSED_STATE_SET = StateSet.get(StateSet.VIEW_STATE_FOCUSED);
+        FOCUSED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_FOCUSED);
+        FOCUSED_SELECTED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_SELECTED | StateSet.VIEW_STATE_FOCUSED);
+        FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_SELECTED
+                        | StateSet.VIEW_STATE_FOCUSED);
+
+        ENABLED_STATE_SET = StateSet.get(StateSet.VIEW_STATE_ENABLED);
+        ENABLED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_ENABLED);
+        ENABLED_SELECTED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_SELECTED | StateSet.VIEW_STATE_ENABLED);
+        ENABLED_SELECTED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_SELECTED
+                        | StateSet.VIEW_STATE_ENABLED);
+        ENABLED_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_FOCUSED | StateSet.VIEW_STATE_ENABLED);
+        ENABLED_FOCUSED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_FOCUSED
+                        | StateSet.VIEW_STATE_ENABLED);
+        ENABLED_FOCUSED_SELECTED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_SELECTED | StateSet.VIEW_STATE_FOCUSED
+                        | StateSet.VIEW_STATE_ENABLED);
+        ENABLED_FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_SELECTED
+                        | StateSet.VIEW_STATE_FOCUSED | StateSet.VIEW_STATE_ENABLED);
+
+        PRESSED_STATE_SET = StateSet.get(StateSet.VIEW_STATE_PRESSED);
+        PRESSED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_SELECTED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_SELECTED | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_SELECTED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_SELECTED
+                        | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_FOCUSED | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_FOCUSED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_FOCUSED
+                        | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_FOCUSED_SELECTED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_SELECTED | StateSet.VIEW_STATE_FOCUSED
+                        | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_SELECTED
+                        | StateSet.VIEW_STATE_FOCUSED | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_ENABLED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_ENABLED | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_ENABLED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_ENABLED
+                        | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_ENABLED_SELECTED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_SELECTED | StateSet.VIEW_STATE_ENABLED
+                        | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_ENABLED_SELECTED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_SELECTED
+                        | StateSet.VIEW_STATE_ENABLED | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_ENABLED_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_FOCUSED | StateSet.VIEW_STATE_ENABLED
+                        | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_ENABLED_FOCUSED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_FOCUSED
+                        | StateSet.VIEW_STATE_ENABLED | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_ENABLED_FOCUSED_SELECTED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_SELECTED | StateSet.VIEW_STATE_FOCUSED
+                        | StateSet.VIEW_STATE_ENABLED | StateSet.VIEW_STATE_PRESSED);
+        PRESSED_ENABLED_FOCUSED_SELECTED_WINDOW_FOCUSED_STATE_SET = StateSet.get(
+                StateSet.VIEW_STATE_WINDOW_FOCUSED | StateSet.VIEW_STATE_SELECTED
+                        | StateSet.VIEW_STATE_FOCUSED | StateSet.VIEW_STATE_ENABLED
+                        | StateSet.VIEW_STATE_PRESSED);
+    }
 
     /**
      * Temporary Rect currently for use in setBackground().  This will probably
@@ -129,7 +899,6 @@ public class View implements Drawable.Callback {
      *       1                           PFLAG_CANCEL_NEXT_UP_EVENT
      *      1                            PFLAG_AWAKEN_SCROLL_BARS_ON_ATTACH
      *     1                             PFLAG_HOVERED
-     *    1                              PFLAG_NOTIFY_AUTOFILL_MANAGER_ON_CLICK
      *   1                               PFLAG_ACTIVATED
      *  1                                PFLAG_INVALIDATED
      * |-------|-------|-------|-------|
@@ -161,7 +930,7 @@ public class View implements Drawable.Callback {
     /**
      * When this flag is set, this view is running an animation on behalf of its
      * children and should therefore not cancel invalidate requests, even if they
-     * lie outside this view's bounds.
+     * lie outside of this view's bounds.
      * <p>
      * {@hide}
      */
@@ -279,7 +1048,7 @@ public class View implements Drawable.Callback {
      * Indicates that we should awaken scroll bars once attached
      * <p>
      * PLEASE NOTE: This flag is now unused as we now send onVisibilityChanged
-     * during window attachment, and it is no longer needed. Feel free to repurpose it.
+     * during window attachment and it is no longer needed. Feel free to repurpose it.
      *
      * @hide
      */
@@ -307,64 +1076,45 @@ public class View implements Drawable.Callback {
      */
     static final int PFLAG_INVALIDATED = 0x80000000;
 
-    /**
-     * Use with {@link #focusSearch(int)}. Move focus to the previous selectable
-     * item.
-     */
-    public static final int FOCUS_BACKWARD = 0x00000001;
+    /* End of masks for mPrivateFlags */
 
-    /**
-     * Use with {@link #focusSearch(int)}. Move focus to the next selectable
-     * item.
+    /*
+     * Masks for mPrivateFlags2, as generated by dumpFlags():
+     *
+     * |-------|-------|-------|-------|
+     *                                 1 PFLAG2_DRAG_CAN_ACCEPT
+     *                                1  PFLAG2_DRAG_HOVERED
+     *                              11   PFLAG2_LAYOUT_DIRECTION_MASK
+     *                             1     PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL
+     *                            1      PFLAG2_LAYOUT_DIRECTION_RESOLVED
+     *                            11     PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK
+     *                           1       PFLAG2_TEXT_DIRECTION_FLAGS[1]
+     *                          1        PFLAG2_TEXT_DIRECTION_FLAGS[2]
+     *                          11       PFLAG2_TEXT_DIRECTION_FLAGS[3]
+     *                         1         PFLAG2_TEXT_DIRECTION_FLAGS[4]
+     *                         1 1       PFLAG2_TEXT_DIRECTION_FLAGS[5]
+     *                         11        PFLAG2_TEXT_DIRECTION_FLAGS[6]
+     *                         111       PFLAG2_TEXT_DIRECTION_FLAGS[7]
+     *                         111       PFLAG2_TEXT_DIRECTION_MASK
+     *                        1          PFLAG2_TEXT_DIRECTION_RESOLVED
+     *                       1           PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT
+     *                     111           PFLAG2_TEXT_DIRECTION_RESOLVED_MASK
+     *                    1              PFLAG2_TEXT_ALIGNMENT_FLAGS[1]
+     *                   1               PFLAG2_TEXT_ALIGNMENT_FLAGS[2]
+     *                   11              PFLAG2_TEXT_ALIGNMENT_FLAGS[3]
+     *                  1                PFLAG2_TEXT_ALIGNMENT_FLAGS[4]
+     *                  1 1              PFLAG2_TEXT_ALIGNMENT_FLAGS[5]
+     *                  11               PFLAG2_TEXT_ALIGNMENT_FLAGS[6]
+     *                  111              PFLAG2_TEXT_ALIGNMENT_MASK
+     *                 1                 PFLAG2_TEXT_ALIGNMENT_RESOLVED
+     *                1                  PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT
+     *              111                  PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK
+     *     1                             PFLAG2_VIEW_QUICK_REJECTED
+     *    1                              PFLAG2_PADDING_RESOLVED
+     *   1                               PFLAG2_DRAWABLE_RESOLVED
+     *  1                                PFLAG2_HAS_TRANSIENT_STATE
+     * |-------|-------|-------|-------|
      */
-    public static final int FOCUS_FORWARD = 0x00000002;
-
-    /**
-     * Use with {@link #focusSearch(int)}. Move focus to the left.
-     */
-    public static final int FOCUS_LEFT = 0x00000011;
-
-    /**
-     * Use with {@link #focusSearch(int)}. Move focus up.
-     */
-    public static final int FOCUS_UP = 0x00000021;
-
-    /**
-     * Use with {@link #focusSearch(int)}. Move focus to the right.
-     */
-    public static final int FOCUS_RIGHT = 0x00000042;
-
-    /**
-     * Use with {@link #focusSearch(int)}. Move focus down.
-     */
-    public static final int FOCUS_DOWN = 0x00000082;
-
-    /**
-     * Bits of {@link #getMeasuredWidthAndState()} and
-     * {@link #getMeasuredWidthAndState()} that provide the actual measured size.
-     */
-    public static final int MEASURED_SIZE_MASK = 0x00ffffff;
-
-    /**
-     * Bits of {@link #getMeasuredWidthAndState()} and
-     * {@link #getMeasuredWidthAndState()} that provide the additional state bits.
-     */
-    public static final int MEASURED_STATE_MASK = 0xff000000;
-
-    /**
-     * Bit shift of {@link #MEASURED_STATE_MASK} to get to the height bits
-     * for functions that combine both width and height into a single int,
-     * such as {@link #getMeasuredState()} and the childState argument of
-     * {@link #resolveSizeAndState(int, int, int)}.
-     */
-    public static final int MEASURED_HEIGHT_STATE_SHIFT = 16;
-
-    /**
-     * Bit of {@link #getMeasuredWidthAndState()} and
-     * {@link #getMeasuredWidthAndState()} that indicates the measured size
-     * is smaller that the space the view would like to have.
-     */
-    public static final int MEASURED_STATE_TOO_SMALL = 0x01000000;
 
     /**
      * Indicates that this view has reported that it can accept the current drag's content.
@@ -382,6 +1132,25 @@ public class View implements Drawable.Callback {
      * @hide
      */
     static final int PFLAG2_DRAG_HOVERED = 0x00000002;
+
+    @MagicConstant(intValues = {
+            LAYOUT_DIRECTION_LTR,
+            LAYOUT_DIRECTION_RTL,
+            LAYOUT_DIRECTION_INHERIT,
+            LAYOUT_DIRECTION_LOCALE
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface LayoutDir {
+        // Not called LayoutDirection to avoid conflict with class util.LayoutDirection
+    }
+
+    @MagicConstant(intValues = {
+            LAYOUT_DIRECTION_LTR,
+            LAYOUT_DIRECTION_RTL
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ResolvedLayoutDir {
+    }
 
     /**
      * A flag to indicate that the layout direction of this view has not been defined yet.
@@ -450,8 +1219,6 @@ public class View implements Drawable.Callback {
      */
     static final int PFLAG2_LAYOUT_DIRECTION_RESOLVED_MASK = 0x0000000C
             << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT;
-
-    private static final int PFLAG2_BACKGROUND_SIZE_CHANGED = 0x10000000;
 
     /*
      * Array of horizontal layout direction flags for mapping attribute "layoutDirection" to correct
@@ -600,6 +1367,19 @@ public class View implements Drawable.Callback {
     static final int PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT =
             TEXT_DIRECTION_RESOLVED_DEFAULT << PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT;
 
+    @MagicConstant(intValues = {
+            TEXT_ALIGNMENT_INHERIT,
+            TEXT_ALIGNMENT_GRAVITY,
+            TEXT_ALIGNMENT_CENTER,
+            TEXT_ALIGNMENT_TEXT_START,
+            TEXT_ALIGNMENT_TEXT_END,
+            TEXT_ALIGNMENT_VIEW_START,
+            TEXT_ALIGNMENT_VIEW_END
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface TextAlignment {
+    }
+
     /**
      * Default text alignment. The text alignment of this View is inherited from its parent.
      * Use with {@link #setTextAlignment(int)}
@@ -722,6 +1502,13 @@ public class View implements Drawable.Callback {
             TEXT_ALIGNMENT_RESOLVED_DEFAULT << PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT;
 
     /**
+     * Flag indicating whether a view failed the quickReject() check in draw(). This condition
+     * is used to check whether later changes to the view's transform should invalidate the
+     * view to force the quickReject test to run again.
+     */
+    static final int PFLAG2_VIEW_QUICK_REJECTED = 0x10000000;
+
+    /**
      * Flag indicating that start/end padding has been resolved into left/right padding
      * for use in measurement, layout, drawing, etc. This is set by {@link #resolvePadding()}
      * and checked by {@link #measure(int, int)} to determine if padding needs to be resolved
@@ -751,11 +1538,66 @@ public class View implements Drawable.Callback {
             PFLAG2_PADDING_RESOLVED |
             PFLAG2_DRAWABLE_RESOLVED;
 
+    // There are a couple of flags left in mPrivateFlags2
+
+    /* End of masks for mPrivateFlags2 */
+
+    /*
+     * Masks for mPrivateFlags3, as generated by dumpFlags():
+     *
+     * |-------|-------|-------|-------|
+     *                                 1 PFLAG3_VIEW_IS_ANIMATING_TRANSFORM
+     *                                1  PFLAG3_VIEW_IS_ANIMATING_ALPHA
+     *                               1   PFLAG3_IS_LAID_OUT
+     *                              1    PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT
+     *                             1     PFLAG3_CALLED_SUPER
+     *                            1      PFLAG3_APPLYING_INSETS
+     *                           1       PFLAG3_FITTING_SYSTEM_WINDOWS
+     *                          1        PFLAG3_NESTED_SCROLLING_ENABLED
+     *                         1         PFLAG3_SCROLL_INDICATOR_TOP
+     *                        1          PFLAG3_SCROLL_INDICATOR_BOTTOM
+     *                       1           PFLAG3_SCROLL_INDICATOR_LEFT
+     *                      1            PFLAG3_SCROLL_INDICATOR_RIGHT
+     *                     1             PFLAG3_SCROLL_INDICATOR_START
+     *                    1              PFLAG3_SCROLL_INDICATOR_END
+     *                   1               PFLAG3_ASSIST_BLOCKED
+     *                  1                PFLAG3_CLUSTER
+     *                1                  PFLAG3_FINGER_DOWN
+     *               1                   PFLAG3_FOCUSED_BY_DEFAULT
+     *          1                        PFLAG3_OVERLAPPING_RENDERING_FORCED_VALUE
+     *         1                         PFLAG3_HAS_OVERLAPPING_RENDERING_FORCED
+     *        1                          PFLAG3_TEMPORARY_DETACH
+     *       1                           PFLAG3_NO_REVEAL_ON_FOCUS
+     *     1                             PFLAG3_SCREEN_READER_FOCUSABLE
+     *    1                              PFLAG3_AGGREGATED_VISIBLE
+     * |-------|-------|-------|-------|
+     */
+
+    /**
+     * Flag indicating that view has a transform animation set on it. This is used to track whether
+     * an animation is cleared between successive frames, in order to tell the associated
+     * DisplayList to clear its animation matrix.
+     */
+    static final int PFLAG3_VIEW_IS_ANIMATING_TRANSFORM = 0x1;
+
+    /**
+     * Flag indicating that view has an alpha animation set on it. This is used to track whether an
+     * animation is cleared between successive frames, in order to tell the associated
+     * DisplayList to restore its alpha value.
+     */
+    static final int PFLAG3_VIEW_IS_ANIMATING_ALPHA = 0x2;
+
     /**
      * Flag indicating that the view has been through at least one layout since it
      * was last attached to a window.
      */
     static final int PFLAG3_IS_LAID_OUT = 0x4;
+
+    /**
+     * Flag indicating that a call to measure() was skipped and should be done
+     * instead when layout() is invoked.
+     */
+    static final int PFLAG3_MEASURE_NEEDED_BEFORE_LAYOUT = 0x8;
 
     /**
      * Flag indicating that an overridden method correctly called down to
@@ -764,251 +1606,444 @@ public class View implements Drawable.Callback {
     static final int PFLAG3_CALLED_SUPER = 0x10;
 
     /**
+     * Flag indicating that we're in the process of applying window insets.
+     */
+    static final int PFLAG3_APPLYING_INSETS = 0x20;
+
+    /**
+     * Flag indicating that we're in the process of fitting system windows using the old method.
+     */
+    static final int PFLAG3_FITTING_SYSTEM_WINDOWS = 0x40;
+
+    /**
+     * Flag indicating that nested scrolling is enabled for this view.
+     * The view will optionally cooperate with views up its parent chain to allow for
+     * integrated nested scrolling along the same axis.
+     */
+    static final int PFLAG3_NESTED_SCROLLING_ENABLED = 0x80;
+
+    /**
+     * Flag indicating that the bottom scroll indicator should be displayed
+     * when this view can scroll up.
+     */
+    static final int PFLAG3_SCROLL_INDICATOR_TOP = 0x0100;
+
+    /**
+     * Flag indicating that the bottom scroll indicator should be displayed
+     * when this view can scroll down.
+     */
+    static final int PFLAG3_SCROLL_INDICATOR_BOTTOM = 0x0200;
+
+    /**
+     * Flag indicating that the left scroll indicator should be displayed
+     * when this view can scroll left.
+     */
+    static final int PFLAG3_SCROLL_INDICATOR_LEFT = 0x0400;
+
+    /**
+     * Flag indicating that the right scroll indicator should be displayed
+     * when this view can scroll right.
+     */
+    static final int PFLAG3_SCROLL_INDICATOR_RIGHT = 0x0800;
+
+    /**
+     * Flag indicating that the start scroll indicator should be displayed
+     * when this view can scroll in the start direction.
+     */
+    static final int PFLAG3_SCROLL_INDICATOR_START = 0x1000;
+
+    /**
+     * Flag indicating that the end scroll indicator should be displayed
+     * when this view can scroll in the end direction.
+     */
+    static final int PFLAG3_SCROLL_INDICATOR_END = 0x2000;
+
+    static final int DRAG_MASK = PFLAG2_DRAG_CAN_ACCEPT | PFLAG2_DRAG_HOVERED;
+
+    static final int SCROLL_INDICATORS_NONE = 0x0000;
+
+    /**
+     * Mask for use with setFlags indicating bits used for indicating which
+     * scroll indicators are enabled.
+     */
+    static final int SCROLL_INDICATORS_PFLAG3_MASK = PFLAG3_SCROLL_INDICATOR_TOP
+            | PFLAG3_SCROLL_INDICATOR_BOTTOM | PFLAG3_SCROLL_INDICATOR_LEFT
+            | PFLAG3_SCROLL_INDICATOR_RIGHT | PFLAG3_SCROLL_INDICATOR_START
+            | PFLAG3_SCROLL_INDICATOR_END;
+
+    /**
+     * Left-shift required to translate between public scroll indicator flags
+     * and internal PFLAGS3 flags. When used as a right-shift, translates
+     * PFLAGS3 flags to public flags.
+     */
+    static final int SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT = 8;
+
+    @Retention(RetentionPolicy.SOURCE)
+    @MagicConstant(flags = {
+            SCROLL_INDICATOR_TOP,
+            SCROLL_INDICATOR_BOTTOM,
+            SCROLL_INDICATOR_LEFT,
+            SCROLL_INDICATOR_RIGHT,
+            SCROLL_INDICATOR_START,
+            SCROLL_INDICATOR_END,
+    })
+    public @interface ScrollIndicators {
+    }
+
+    /**
+     * Scroll indicator direction for the top edge of the view.
+     *
+     * @see #setScrollIndicators(int)
+     * @see #setScrollIndicators(int, int)
+     * @see #getScrollIndicators()
+     */
+    public static final int SCROLL_INDICATOR_TOP =
+            PFLAG3_SCROLL_INDICATOR_TOP >> SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT;
+
+    /**
+     * Scroll indicator direction for the bottom edge of the view.
+     *
+     * @see #setScrollIndicators(int)
+     * @see #setScrollIndicators(int, int)
+     * @see #getScrollIndicators()
+     */
+    public static final int SCROLL_INDICATOR_BOTTOM =
+            PFLAG3_SCROLL_INDICATOR_BOTTOM >> SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT;
+
+    /**
+     * Scroll indicator direction for the left edge of the view.
+     *
+     * @see #setScrollIndicators(int)
+     * @see #setScrollIndicators(int, int)
+     * @see #getScrollIndicators()
+     */
+    public static final int SCROLL_INDICATOR_LEFT =
+            PFLAG3_SCROLL_INDICATOR_LEFT >> SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT;
+
+    /**
+     * Scroll indicator direction for the right edge of the view.
+     *
+     * @see #setScrollIndicators(int)
+     * @see #setScrollIndicators(int, int)
+     * @see #getScrollIndicators()
+     */
+    public static final int SCROLL_INDICATOR_RIGHT =
+            PFLAG3_SCROLL_INDICATOR_RIGHT >> SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT;
+
+    /**
+     * Scroll indicator direction for the starting edge of the view.
+     * <p>
+     * Resolved according to the view's layout direction, see
+     * {@link #getLayoutDirection()} for more information.
+     *
+     * @see #setScrollIndicators(int)
+     * @see #setScrollIndicators(int, int)
+     * @see #getScrollIndicators()
+     */
+    public static final int SCROLL_INDICATOR_START =
+            PFLAG3_SCROLL_INDICATOR_START >> SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT;
+
+    /**
+     * Scroll indicator direction for the ending edge of the view.
+     * <p>
+     * Resolved according to the view's layout direction, see
+     * {@link #getLayoutDirection()} for more information.
+     *
+     * @see #setScrollIndicators(int)
+     * @see #setScrollIndicators(int, int)
+     * @see #getScrollIndicators()
+     */
+    public static final int SCROLL_INDICATOR_END =
+            PFLAG3_SCROLL_INDICATOR_END >> SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT;
+
+    /**
+     * Flag indicating that the view is a root of a keyboard navigation cluster.
+     *
+     * @see #isKeyboardNavigationCluster()
+     * @see #setKeyboardNavigationCluster(boolean)
+     */
+    private static final int PFLAG3_CLUSTER = 0x8000;
+
+    /**
      * Indicates that the user is currently touching the screen.
      * Currently used for the tooltip positioning only.
      */
     private static final int PFLAG3_FINGER_DOWN = 0x20000;
 
+    /**
+     * Flag indicating that this view is the default-focus view.
+     *
+     * @see #isFocusedByDefault()
+     * @see #setFocusedByDefault(boolean)
+     */
+    private static final int PFLAG3_FOCUSED_BY_DEFAULT = 0x40000;
+
+    /**
+     * Whether this view has rendered elements that overlap (see {@link
+     * #hasOverlappingRendering()}, {@link #forceHasOverlappingRendering(boolean)}, and
+     * {@link #getHasOverlappingRendering()} ). The value in this bit is only valid when
+     * PFLAG3_HAS_OVERLAPPING_RENDERING_FORCED has been set. Otherwise, the value is
+     * determined by whatever {@link #hasOverlappingRendering()} returns.
+     */
+    private static final int PFLAG3_OVERLAPPING_RENDERING_FORCED_VALUE = 0x800000;
+
+    /**
+     * Whether {@link #forceHasOverlappingRendering(boolean)} has been called. When true, value
+     * in PFLAG3_OVERLAPPING_RENDERING_FORCED_VALUE is valid.
+     */
+    private static final int PFLAG3_HAS_OVERLAPPING_RENDERING_FORCED = 0x1000000;
+
+    /**
+     * Flag indicating that the view is temporarily detached from the parent view.
+     *
+     * @see #onStartTemporaryDetach()
+     * @see #onFinishTemporaryDetach()
+     */
+    static final int PFLAG3_TEMPORARY_DETACH = 0x2000000;
+
+    /**
+     * Flag indicating that the view does not wish to be revealed within its parent
+     * hierarchy when it gains focus. Expressed in the negative since the historical
+     * default behavior is to reveal on focus; this flag suppresses that behavior.
+     *
+     * @see #setRevealOnFocusHint(boolean)
+     * @see #getRevealOnFocusHint()
+     */
+    private static final int PFLAG3_NO_REVEAL_ON_FOCUS = 0x4000000;
+
+    /**
+     * Works like focusable for screen readers, but without the side effects on input focus.
+     *
+     * @see #setScreenReaderFocusable(boolean)
+     */
+    private static final int PFLAG3_SCREEN_READER_FOCUSABLE = 0x10000000;
+
+    /**
+     * The last aggregated visibility. Used to detect when it truly changes.
+     */
+    private static final int PFLAG3_AGGREGATED_VISIBLE = 0x20000000;
+
+    /* End of masks for mPrivateFlags3 */
+
+    /*
+     * Masks for mPrivateFlags4, as generated by dumpFlags():
+     *
+     * |-------|-------|-------|-------|
+     *                    1             PFLAG4_ALLOW_CLICK_WHEN_DISABLED
+     *                   1              PFLAG4_DETACHED
+     *                  1               PFLAG4_HAS_TRANSLATION_TRANSIENT_STATE
+     * |-------|-------|-------|-------|
+     */
+
+    /**
+     * Indicates if the view can receive click events when disabled.
+     */
+    private static final int PFLAG4_ALLOW_CLICK_WHEN_DISABLED = 0x000001000;
+
+    /**
+     * Indicates if the view is just detached.
+     */
+    private static final int PFLAG4_DETACHED = 0x000002000;
+
+    /**
+     * Indicates that the view has transient state because the system is translating it.
+     */
+    private static final int PFLAG4_HAS_TRANSLATION_TRANSIENT_STATE = 0x000004000;
+
+    /* End of masks for mPrivateFlags4 */
+
+    /**
+     * Always allow a user to over-scroll this view, provided it is a
+     * view that can scroll.
+     *
+     * @see #getOverScrollMode()
+     * @see #setOverScrollMode(int)
+     */
+    public static final int OVER_SCROLL_ALWAYS = 0;
+
+    /**
+     * Allow a user to over-scroll this view only if the content is large
+     * enough to meaningfully scroll, provided it is a view that can scroll.
+     *
+     * @see #getOverScrollMode()
+     * @see #setOverScrollMode(int)
+     */
+    public static final int OVER_SCROLL_IF_CONTENT_SCROLLS = 1;
+
+    /**
+     * Never allow a user to over-scroll this view.
+     *
+     * @see #getOverScrollMode()
+     * @see #setOverScrollMode(int)
+     */
+    public static final int OVER_SCROLL_NEVER = 2;
+
+    @MagicConstant(flags = {SCROLL_AXIS_NONE, SCROLL_AXIS_HORIZONTAL, SCROLL_AXIS_VERTICAL})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface ScrollAxis {
+    }
+
+    /**
+     * Indicates no axis of view scrolling.
+     */
+    public static final int SCROLL_AXIS_NONE = 0;
+
+    /**
+     * Indicates scrolling along the horizontal axis.
+     */
+    public static final int SCROLL_AXIS_HORIZONTAL = 1;
+
+    /**
+     * Indicates scrolling along the vertical axis.
+     */
+    public static final int SCROLL_AXIS_VERTICAL = 1 << 1;
+
+    @MagicConstant(intValues = {TYPE_TOUCH, TYPE_NON_TOUCH})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface NestedScrollType {
+    }
+
+    /**
+     * Indicates that the input type for the gesture is from a user touching the screen.
+     */
+    public static final int TYPE_TOUCH = 0;
+
+    /**
+     * Indicates that the input type for the gesture is caused by something which is not a user
+     * touching a screen. This is usually from a fling which is settling.
+     */
+    public static final int TYPE_NON_TOUCH = 1;
+
+    /**
+     * Controls the over-scroll mode for this view.
+     * See {@link #overScrollBy(int, int, int, int, int, int, int, int, boolean)},
+     * {@link #OVER_SCROLL_ALWAYS}, {@link #OVER_SCROLL_IF_CONTENT_SCROLLS},
+     * and {@link #OVER_SCROLL_NEVER}.
+     */
+    private int mOverScrollMode;
+
     int mPrivateFlags;
     int mPrivateFlags2;
     int mPrivateFlags3;
+    int mPrivateFlags4;
 
     /**
-     * This view does not want keystrokes.
-     * <p>
-     * Use with {@link #setFocusable(int)}.
-     */
-    public static final int NOT_FOCUSABLE = 0x00000000;
-
-    /**
-     * This view wants keystrokes.
-     * <p>
-     * Use with {@link #setFocusable(int)}.
-     */
-    public static final int FOCUSABLE = 0x00000001;
-
-    /**
-     * This view determines focusability automatically. This is the default.
-     * <p>
-     * Use with {@link #setFocusable(int)}.
-     */
-    public static final int FOCUSABLE_AUTO = 0x00000010;
-
-    /**
-     * Mask for use with setFlags indicating bits used for focus.
-     */
-    private static final int FOCUSABLE_MASK = 0x00000011;
-
-    /**
-     * This view is visible.
-     * Use with {@link #setVisibility}.
-     */
-    public static final int VISIBLE = 0x00000000;
-
-    /**
-     * This view is invisible, but it still takes up space for layout purposes.
-     * Use with {@link #setVisibility}.
-     */
-    public static final int INVISIBLE = 0x00000004;
-
-    /**
-     * This view is invisible, and it doesn't take any space for layout
-     * purposes. Use with {@link #setVisibility}.
-     */
-    public static final int GONE = 0x00000008;
-
-    /**
-     * Mask for use with setFlags indicating bits used for visibility.
-     */
-    static final int VISIBILITY_MASK = 0x0000000C;
-
-    /**
-     * This view is enabled. Interpretation varies by subclass.
-     * Use with ENABLED_MASK when calling setFlags.
-     */
-    static final int ENABLED = 0x00000000;
-
-    /**
-     * This view is disabled. Interpretation varies by subclass.
-     * Use with ENABLED_MASK when calling setFlags.
-     */
-    static final int DISABLED = 0x00000020;
-
-    /**
-     * Mask for use with setFlags indicating bits used for indicating whether
-     * this view is enabled
-     */
-    static final int ENABLED_MASK = 0x00000020;
-
-    /**
-     * This view won't draw. {@link #onDraw(Canvas)} won't be
-     * called and further optimizations will be performed. It is okay to have
-     * this flag set and a background. Use with DRAW_MASK when calling setFlags.
-     */
-    static final int WILL_NOT_DRAW = 0x00000080;
-
-    /**
-     * Mask for use with setFlags indicating bits used for indicating whether
-     * this view is will draw
-     */
-    static final int DRAW_MASK = 0x00000080;
-
-    /**
-     * This view doesn't show scrollbars.
-     */
-    static final int SCROLLBARS_NONE = 0x00000000;
-
-    /**
-     * This view shows horizontal scrollbar.
-     */
-    static final int SCROLLBARS_HORIZONTAL = 0x00000100;
-
-    /**
-     * This view shows vertical scrollbar.
-     */
-    static final int SCROLLBARS_VERTICAL = 0x00000200;
-
-    /**
-     * Mask for use with setFlags indicating bits used for indicating which
-     * scrollbars are enabled.
-     */
-    static final int SCROLLBARS_MASK = 0x00000300;
-
-    /**
-     * Indicates this view can be clicked. When clickable, a View reacts
-     * to clicks by notifying the OnClickListener.
-     */
-    static final int CLICKABLE = 0x00004000;
-
-    /**
-     * Indicates this view can take / keep focus when int touch mode.
-     */
-    static final int FOCUSABLE_IN_TOUCH_MODE = 0x00040000;
-
-    /**
-     * Indicates this view can be long clicked. When long clickable, a View
-     * reacts to long clicks by notifying the OnLongClickListener or showing a
-     * context menu.
-     */
-    static final int LONG_CLICKABLE = 0x00200000;
-
-    /**
-     * Indicates that this view gets its drawable states from its direct parent
-     * and ignores its original internal states.
-     */
-    static final int DUPLICATE_PARENT_STATE = 0x00400000;
-
-    /**
-     * Indicates this view can be context clicked. When context clickable, a View reacts to a
-     * context click (e.g. a primary stylus button press or right mouse click) by notifying the
-     * OnContextClickListener.
-     */
-    static final int CONTEXT_CLICKABLE = 0x00800000;
-
-    /**
-     * The scrollbar style to display the scrollbars inside the content area,
-     * without increasing the padding. The scrollbars will be overlaid with
-     * translucency on the view's content.
-     */
-    public static final int SCROLLBARS_INSIDE_OVERLAY = 0x00000000;
-
-    /**
-     * The scrollbar style to display the scrollbars inside the padded area,
-     * increasing the padding of the view. The scrollbars will not overlap the
-     * content area of the view.
-     */
-    public static final int SCROLLBARS_INSIDE_INSET = 0x01000000;
-
-    /**
-     * The scrollbar style to display the scrollbars at the edge of the view,
-     * without increasing the padding. The scrollbars will be overlaid with
-     * translucency.
-     */
-    public static final int SCROLLBARS_OUTSIDE_OVERLAY = 0x02000000;
-
-    /**
-     * The scrollbar style to display the scrollbars at the edge of the view,
-     * increasing the padding of the view. The scrollbars will only overlap the
-     * background, if any.
-     */
-    public static final int SCROLLBARS_OUTSIDE_INSET = 0x03000000;
-
-    /**
-     * Mask to check if the scrollbar style is overlay or inset.
-     */
-    static final int SCROLLBARS_INSET_MASK = 0x01000000;
-
-    /**
-     * Mask to check if the scrollbar style is inside or outside.
-     */
-    static final int SCROLLBARS_OUTSIDE_MASK = 0x02000000;
-
-    /**
-     * Mask for scrollbar style.
-     */
-    static final int SCROLLBARS_STYLE_MASK = 0x03000000;
-
-    /**
-     * View flag indicating whether this view should have sound effects enabled
-     * for events such as clicking and touching.
-     */
-    public static final int SOUND_EFFECTS_ENABLED = 0x08000000;
-
-    /**
-     * View flag indicating whether this view should have haptic feedback
-     * enabled for events such as long presses.
-     */
-    public static final int HAPTIC_FEEDBACK_ENABLED = 0x10000000;
-
-    /**
-     * <p>Indicates this view can display a tooltip on hover or long press.</p>
+     * The parent this view is attached to.
      * {@hide}
-     */
-    static final int TOOLTIP = 0x40000000;
-
-    /**
-     * The view flags hold various views states.
-     */
-    int mViewFlags;
-
-    /**
-     * Parent view of this view
      *
-     * @see #assignParent(ViewParent)
+     * @see #getParent()
      */
     ViewParent mParent;
 
     /**
-     * Internal use
+     * {@hide}
+     * <p>
+     * Not available for general use. If you need help, hang up and then dial one of the following
+     * public APIs:
+     *
+     * @see #isAttachedToWindow() for current attach state
+     * @see #onAttachedToWindow() for subclasses performing work when becoming attached
+     * @see #onDetachedFromWindow() for subclasses performing work when becoming detached
+     * @see OnAttachStateChangeListener for other code performing work on attach/detach
+     * @see #getHandler() for posting messages to this view's UI thread/looper
+     * @see #getParent() for interacting with the parent chain
+     * @see #getRootView() for the view at the root of the attached hierarchy
+     * @see #hasWindowFocus() for whether the attached window is currently focused
+     * @see #getWindowVisibility() for checking the visibility of the attached window
      */
     AttachInfo mAttachInfo;
 
     /**
-     * View id to identify this view in the hierarchy.
-     * <p>
-     * {@link #getId()}
-     * {@link #setId(int)}
+     * Reference count for transient state.
+     *
+     * @see #setHasTransientState(boolean)
      */
-    int mId = NO_ID;
+    int mTransientStateCount = 0;
+
+    /**
+     * Count of how many windows this view has been attached to.
+     */
+    int mWindowAttachCount;
+
+    /**
+     * The layout parameters associated with this view and used by the parent
+     * {@link ViewGroup} to determine how this view should be
+     * laid out.
+     * <p>
+     * The field should not be used directly. Instead {@link #getLayoutParams()} and {@link
+     * #setLayoutParams(ViewGroup.LayoutParams)} should be used. The setter guarantees internal
+     * state correctness of the class.
+     * {@hide}
+     */
+    ViewGroup.LayoutParams mLayoutParams;
+
+    /**
+     * The view flags hold various views states.
+     * <p>
+     * Use {@link #setTransitionVisibility(int)} to change the visibility of this view without
+     * triggering updates.
+     * {@hide}
+     */
+    int mViewFlags;
+
+    /**
+     * Map used to store views' tags.
+     */
+    private SparseArray<Object> mKeyedTags;
+
+    /**
+     * The view's identifier.
+     * {@hide}
+     *
+     * @see #setId(int)
+     * @see #getId()
+     */
+    int mID = NO_ID;
+
+    /**
+     * RenderNode holding View properties, potentially holding a DisplayList of View content.
+     * <p>
+     * When non-null and valid, this is expected to contain an up-to-date copy
+     * of the View content. Its DisplayList content is cleared on temporary detach and reset on
+     * cleanup.
+     */
+    final RenderNode mRenderNode = new RenderNode();
+
+    /**
+     * The opacity of the View. This is a value from 0 to 1, where 0 means
+     * completely transparent and 1 means completely opaque.
+     */
+    private float mAlpha = 1f;
+
+    /**
+     * The opacity of the view as manipulated by the Fade transition. This is a
+     * property only used by transitions, which is composited with the other alpha
+     * values to calculate the final visual alpha value (offscreen rendering).
+     */
+    private float mTransitionAlpha = 1f;
 
     /**
      * The distance in pixels from the left edge of this view's parent
      * to the left edge of this view.
+     * {@hide}
      */
     int mLeft;
     /**
      * The distance in pixels from the left edge of this view's parent
      * to the right edge of this view.
+     * {@hide}
      */
     int mRight;
     /**
      * The distance in pixels from the top edge of this view's parent
      * to the top edge of this view.
+     * {@hide}
      */
     int mTop;
     /**
      * The distance in pixels from the top edge of this view's parent
      * to the bottom edge of this view.
+     * {@hide}
      */
     int mBottom;
 
@@ -1055,55 +2090,25 @@ public class View implements Drawable.Callback {
     protected int mPaddingBottom;
 
     /**
-     * RenderNode holding View properties, potentially holding a DisplayList of View content.
-     * <p>
-     * When non-null and valid, this is expected to contain an up-to-date copy
-     * of the View content. Its DisplayList content is cleared on temporary detach and reset on
-     * cleanup.
-     */
-    final RenderNode mRenderNode;
-
-    /**
-     * The opacity of the View. This is a value from 0 to 1, where 0 means
-     * completely transparent and 1 means completely opaque.
-     */
-    private float mAlpha = 1f;
-
-    /**
-     * The opacity of the view as manipulated by the Fade transition. This is a
-     * property only used by transitions, which is composited with the other alpha
-     * values to calculate the final visual alpha value (offscreen rendering).
-     */
-    private float mTransitionAlpha = 1f;
-
-    private int mMinWidth;
-    private int mMinHeight;
-
-    /**
-     * Special tree observer used when mAttachInfo is null.
-     */
-    private ViewTreeObserver mFloatingTreeObserver;
-
-    /**
      * The right padding after RTL resolution, but before taking account of scroll bars.
      *
      * @hide
      */
-    protected int mUserPaddingRight;
+    int mUserPaddingRight;
 
     /**
      * The resolved bottom padding before taking account of scroll bars.
      *
      * @hide
      */
-    protected int mUserPaddingBottom;
+    int mUserPaddingBottom;
 
     /**
      * The left padding after RTL resolution, but before taking account of scroll bars.
      *
      * @hide
      */
-    protected int mUserPaddingLeft;
+    int mUserPaddingLeft;
 
     /**
      * Cache the paddingStart set by the user to append to the scrollbar's size.
@@ -1116,16 +2121,16 @@ public class View implements Drawable.Callback {
     int mUserPaddingEnd;
 
     /**
-     * The left padding as set by a setter method, a background's padding, or via XML property
-     * resolution. This value is the padding before LTR resolution or taking account of scrollbars.
+     * The left padding as set by a setter method, a background's padding.
+     * This value is the padding before LTR resolution or taking account of scrollbars.
      *
      * @hide
      */
     int mUserPaddingLeftInitial;
 
     /**
-     * The right padding as set by a setter method, a background's padding, or via XML property
-     * resolution. This value is the padding before LTR resolution or taking account of scrollbars.
+     * The right padding as set by a setter method, a background's padding.
+     * This value is the padding before LTR resolution or taking account of scrollbars.
      *
      * @hide
      */
@@ -1138,34 +2143,68 @@ public class View implements Drawable.Callback {
 
     /**
      * Cache if a left padding has been defined explicitly via padding, horizontal padding,
-     * or leftPadding in XML, or by setPadding(...) or setRelativePadding(...)
+     * or by setPadding(...) or setRelativePadding(...)
      */
     private boolean mLeftPaddingDefined = false;
 
     /**
      * Cache if a right padding has been defined explicitly via padding, horizontal padding,
-     * or rightPadding in XML, or by setPadding(...) or setRelativePadding(...)
+     * or by setPadding(...) or setRelativePadding(...)
      */
     private boolean mRightPaddingDefined = false;
 
     /**
-     * Map used to store views' tags.
+     * Width as measured during measure pass.
+     * {@hide}
      */
-    private SparseArray<Object> mKeyedTags;
+    int mMeasuredWidth;
 
     /**
-     * Cached previous measure spec to avoid unnecessary measurements
+     * Height as measured during measure pass.
+     * {@hide}
      */
-    private int mOldWidthMeasureSpec = Integer.MIN_VALUE;
-    private int mOldHeightMeasureSpec = Integer.MIN_VALUE;
+    int mMeasuredHeight;
 
     /**
-     * The measurement result in onMeasure(), used to layout
+     * @hide
      */
-    private int mMeasuredWidth;
-    private int mMeasuredHeight;
+    int mOldWidthMeasureSpec = Integer.MIN_VALUE;
+    /**
+     * @hide
+     */
+    int mOldHeightMeasureSpec = Integer.MIN_VALUE;
 
     private Drawable mBackground;
+    private boolean mBackgroundSizeChanged;
+
+    private ForegroundInfo mForegroundInfo;
+
+    private Drawable mScrollIndicatorDrawable;
+
+    /**
+     * Whether this View should use a default focus highlight when it gets focused but doesn't
+     * have {@link icyllis.modernui.R.attr#state_focused} defined in its background.
+     */
+    boolean mDefaultFocusHighlightEnabled = true;
+
+    /**
+     * The default focus highlight.
+     *
+     * @see #mDefaultFocusHighlightEnabled
+     * @see Drawable#hasFocusStateSpecified()
+     */
+    private Drawable mDefaultFocusHighlight;
+    private Drawable mDefaultFocusHighlightCache;
+    private boolean mDefaultFocusHighlightSizeChanged;
+
+    private String mTransitionName;
+
+    ListenerInfo mListenerInfo;
+
+    // Temporary values used to hold (x,y) coordinates when delegating from the
+    // two-arg performLongClick() method to the legacy no-arg version.
+    private float mLongClickX = Float.NaN;
+    private float mLongClickY = Float.NaN;
 
     private ScrollCache mScrollCache;
 
@@ -1177,15 +2216,41 @@ public class View implements Drawable.Callback {
     private StateListAnimator mStateListAnimator;
 
     /**
-     * Count of how many windows this view has been attached to.
+     * When this view has focus and the next focus is {@link #FOCUS_LEFT},
+     * the user may specify which view to go to next.
      */
-    int mWindowAttachCount;
+    private int mNextFocusLeftId = View.NO_ID;
 
     /**
-     * The layout parameters associated with this view and used by the parent
-     * {@link ViewGroup} to determine how this view should be laid out.
+     * When this view has focus and the next focus is {@link #FOCUS_RIGHT},
+     * the user may specify which view to go to next.
      */
-    ViewGroup.LayoutParams mLayoutParams;
+    private int mNextFocusRightId = View.NO_ID;
+
+    /**
+     * When this view has focus and the next focus is {@link #FOCUS_UP},
+     * the user may specify which view to go to next.
+     */
+    private int mNextFocusUpId = View.NO_ID;
+
+    /**
+     * When this view has focus and the next focus is {@link #FOCUS_DOWN},
+     * the user may specify which view to go to next.
+     */
+    private int mNextFocusDownId = View.NO_ID;
+
+    /**
+     * When this view has focus and the next focus is {@link #FOCUS_FORWARD},
+     * the user may specify which view to go to next.
+     */
+    int mNextFocusForwardId = View.NO_ID;
+
+    /**
+     * User-specified next keyboard navigation cluster in the {@link #FOCUS_FORWARD} direction.
+     *
+     * @see #findUserSetNextKeyboardNavigationCluster(View, int)
+     */
+    int mNextClusterForwardId = View.NO_ID;
 
     private CheckForLongPress mPendingCheckForLongPress;
     private CheckForTap mPendingCheckForTap;
@@ -1214,13 +2279,33 @@ public class View implements Drawable.Callback {
      */
     private boolean mIgnoreNextUpEvent;
 
-    @Nullable
-    ListenerInfo mListenerInfo;
+    /**
+     * The minimum height of the view. We'll try our best to have the height
+     * of this view to at least this amount.
+     */
+    private int mMinHeight;
 
-    // Temporary values used to hold (x,y) coordinates when delegating from the
-    // two-arg performLongClick() method to the legacy no-arg version.
-    private float mLongClickX = Float.NaN;
-    private float mLongClickY = Float.NaN;
+    /**
+     * The minimum width of the view. We'll try our best to have the width
+     * of this view to at least this amount.
+     */
+    private int mMinWidth;
+
+    /**
+     * Special tree observer used when mAttachInfo is null.
+     */
+    private ViewTreeObserver mFloatingTreeObserver;
+
+    /**
+     * The currently active parent view for receiving delegated nested scrolling events.
+     * This is set by {@link #startNestedScroll(int, int)} during a touch interaction and cleared
+     * by {@link #stopNestedScroll(int)} at the same point where we clear
+     * requestDisallowInterceptTouchEvent.
+     */
+    private ViewParent mNestedScrollingParentTouch;
+    private ViewParent mNestedScrollingParentNonTouch;
+
+    private int[] mTempNestedScrollConsumed;
 
     /**
      * Queue of pending runnables. Used to postpone calls to post() until this
@@ -1228,13 +2313,11 @@ public class View implements Drawable.Callback {
      */
     private HandlerActionQueue mRunQueue;
 
-    private String mTransitionName;
-
     /**
      * Simple constructor to use when creating a view from code.
      */
     public View() {
-        mViewFlags = FOCUSABLE_AUTO;
+        mViewFlags = SOUND_EFFECTS_ENABLED | HAPTIC_FEEDBACK_ENABLED | FOCUSABLE_AUTO;
         // Set some flags defaults
         mPrivateFlags2 =
                 (LAYOUT_DIRECTION_DEFAULT << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT) |
@@ -1243,9 +2326,9 @@ public class View implements Drawable.Callback {
                         (TEXT_ALIGNMENT_DEFAULT << PFLAG2_TEXT_ALIGNMENT_MASK_SHIFT) |
                         (PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT);
 
+        setOverScrollMode(OVER_SCROLL_IF_CONTENT_SCROLLS);
         mUserPaddingStart = UNDEFINED_PADDING;
         mUserPaddingEnd = UNDEFINED_PADDING;
-        mRenderNode = new RenderNode();
     }
 
     /**
@@ -1326,9 +2409,9 @@ public class View implements Drawable.Callback {
         if (background == null) {
             return;
         }
-        if ((mPrivateFlags2 & PFLAG2_BACKGROUND_SIZE_CHANGED) != 0) {
+        if (mBackgroundSizeChanged) {
             background.setBounds(0, 0, mRight - mLeft, mBottom - mTop);
-            mPrivateFlags2 &= ~PFLAG2_BACKGROUND_SIZE_CHANGED;
+            mBackgroundSizeChanged = false;
         }
 
         final int scrollX = mScrollX;
@@ -1371,7 +2454,98 @@ public class View implements Drawable.Callback {
      * @param canvas the canvas to draw content
      */
     public void onDrawForeground(@Nonnull Canvas canvas) {
+        onDrawScrollIndicators(canvas);
         onDrawScrollBars(canvas);
+
+        final Drawable foreground = mForegroundInfo != null ? mForegroundInfo.mDrawable : null;
+        if (foreground != null) {
+            if (mForegroundInfo.mBoundsChanged) {
+                mForegroundInfo.mBoundsChanged = false;
+                final Rect selfBounds = mForegroundInfo.mSelfBounds;
+                final Rect overlayBounds = mForegroundInfo.mOverlayBounds;
+
+                if (mForegroundInfo.mInsidePadding) {
+                    selfBounds.set(0, 0, getWidth(), getHeight());
+                } else {
+                    selfBounds.set(getPaddingLeft(), getPaddingTop(),
+                            getWidth() - getPaddingRight(), getHeight() - getPaddingBottom());
+                }
+
+                final int ld = getLayoutDirection();
+                Gravity.apply(mForegroundInfo.mGravity, foreground.getIntrinsicWidth(),
+                        foreground.getIntrinsicHeight(), selfBounds, overlayBounds, ld);
+                foreground.setBounds(overlayBounds);
+            }
+
+            foreground.draw(canvas);
+        }
+    }
+
+    private void onDrawScrollIndicators(@Nonnull Canvas c) {
+        if ((mPrivateFlags3 & SCROLL_INDICATORS_PFLAG3_MASK) == 0) {
+            // No scroll indicators enabled.
+            return;
+        }
+
+        final Drawable dr = mScrollIndicatorDrawable;
+        if (dr == null) {
+            // Scroll indicators aren't supported here.
+            return;
+        }
+
+        if (mAttachInfo == null) {
+            // View is not attached.
+            return;
+        }
+
+        final int h = dr.getIntrinsicHeight();
+        final int w = dr.getIntrinsicWidth();
+        final Rect rect = mAttachInfo.mTmpInvalRect;
+        getScrollIndicatorBounds(rect);
+
+        if ((mPrivateFlags3 & PFLAG3_SCROLL_INDICATOR_TOP) != 0) {
+            final boolean canScrollUp = canScrollVertically(-1);
+            if (canScrollUp) {
+                dr.setBounds(rect.left, rect.top, rect.right, rect.top + h);
+                dr.draw(c);
+            }
+        }
+
+        if ((mPrivateFlags3 & PFLAG3_SCROLL_INDICATOR_BOTTOM) != 0) {
+            final boolean canScrollDown = canScrollVertically(1);
+            if (canScrollDown) {
+                dr.setBounds(rect.left, rect.bottom - h, rect.right, rect.bottom);
+                dr.draw(c);
+            }
+        }
+
+        final int leftRtl;
+        final int rightRtl;
+        if (getLayoutDirection() == LAYOUT_DIRECTION_RTL) {
+            leftRtl = PFLAG3_SCROLL_INDICATOR_END;
+            rightRtl = PFLAG3_SCROLL_INDICATOR_START;
+        } else {
+            leftRtl = PFLAG3_SCROLL_INDICATOR_START;
+            rightRtl = PFLAG3_SCROLL_INDICATOR_END;
+        }
+
+        final int leftMask = PFLAG3_SCROLL_INDICATOR_LEFT | leftRtl;
+        if ((mPrivateFlags3 & leftMask) != 0) {
+            final boolean canScrollLeft = canScrollHorizontally(-1);
+            if (canScrollLeft) {
+                dr.setBounds(rect.left, rect.top, rect.left + w, rect.bottom);
+                dr.draw(c);
+            }
+        }
+
+        final int rightMask = PFLAG3_SCROLL_INDICATOR_RIGHT | rightRtl;
+        if ((mPrivateFlags3 & rightMask) != 0) {
+            final boolean canScrollRight = canScrollHorizontally(1);
+            if (canScrollRight) {
+                dr.setBounds(rect.right - w, rect.top, rect.right, rect.bottom);
+                dr.draw(c);
+            }
+        }
     }
 
     /**
@@ -1395,15 +2569,17 @@ public class View implements Drawable.Callback {
                 return;
             } else {
                 int alpha = 255 - (int) (fraction * 255);
-                cache.mScrollBar.setAlpha(alpha);
+                cache.mScrollBar.mutate().setAlpha(alpha);
             }
             invalidate = true;
         } else {
-            cache.mScrollBar.setAlpha(255);
+            cache.mScrollBar.mutate().setAlpha(255);
         }
 
-        boolean drawHorizontalScrollBar = isHorizontalScrollBarEnabled();
-        boolean drawVerticalScrollBar = isVerticalScrollBarEnabled();
+        final boolean drawHorizontalScrollBar = isHorizontalScrollBarEnabled();
+        final boolean drawVerticalScrollBar = isVerticalScrollBarEnabled()
+                && !isVerticalScrollBarHidden();
+
         if (drawVerticalScrollBar || drawHorizontalScrollBar) {
             final ScrollBar scrollBar = cache.mScrollBar;
 
@@ -1435,96 +2611,6 @@ public class View implements Drawable.Callback {
                 }
             }
         }
-    }
-
-    private void getHorizontalScrollBarBounds(@Nullable Rect drawBounds,
-                                              @Nullable Rect touchBounds) {
-        final Rect bounds = drawBounds != null ? drawBounds : touchBounds;
-        if (bounds == null) {
-            return;
-        }
-        final boolean drawVerticalScrollBar = isVerticalScrollBarEnabled();
-        final int size = getHorizontalScrollbarHeight();
-        final int verticalScrollBarGap = drawVerticalScrollBar ?
-                getVerticalScrollbarWidth() : 0;
-        final int width = mRight - mLeft;
-        final int height = mBottom - mTop;
-        bounds.top = mScrollY + height - size;
-        bounds.left = mScrollX;
-        bounds.right = mScrollX + width - verticalScrollBarGap;
-        bounds.bottom = bounds.top + size;
-
-        if (touchBounds == null) {
-            return;
-        }
-        if (touchBounds != bounds) {
-            touchBounds.set(bounds);
-        }
-    }
-
-    private void getVerticalScrollBarBounds(@Nullable Rect drawBounds, @Nullable Rect touchBounds) {
-        final Rect bounds = drawBounds != null ? drawBounds : touchBounds;
-        if (bounds == null) {
-            return;
-        }
-        final int size = getVerticalScrollbarWidth();
-        final int width = mRight - mLeft;
-        final int height = mBottom - mTop;
-        bounds.left = mScrollX + width - size;
-        bounds.top = mScrollY;
-        bounds.right = bounds.left + size;
-        bounds.bottom = mScrollY + height;
-
-        if (touchBounds == null) {
-            return;
-        }
-        if (touchBounds != bounds) {
-            touchBounds.set(bounds);
-        }
-    }
-
-    /**
-     * Returns the width of the vertical scrollbar.
-     *
-     * @return The width in pixels of the vertical scrollbar or 0 if there
-     * is no vertical scrollbar.
-     */
-    public int getVerticalScrollbarWidth() {
-        ScrollCache cache = mScrollCache;
-        if (cache != null) {
-            ScrollBar scrollBar = cache.mScrollBar;
-            if (scrollBar != null) {
-                int size = scrollBar.getSize(true);
-                if (size <= 0) {
-                    size = cache.mScrollBarSize;
-                }
-                return size;
-            }
-            return 0;
-        }
-        return 0;
-    }
-
-    /**
-     * Returns the height of the horizontal scrollbar.
-     *
-     * @return The height in pixels of the horizontal scrollbar or 0 if
-     * there is no horizontal scrollbar.
-     */
-    protected int getHorizontalScrollbarHeight() {
-        ScrollCache cache = mScrollCache;
-        if (cache != null) {
-            ScrollBar scrollBar = cache.mScrollBar;
-            if (scrollBar != null) {
-                int size = scrollBar.getSize(false);
-                if (size <= 0) {
-                    size = cache.mScrollBarSize;
-                }
-                return size;
-            }
-            return 0;
-        }
-        return 0;
     }
 
     /**
@@ -1627,11 +2713,11 @@ public class View implements Drawable.Callback {
             // Reset drawn bit to original value (invalidate turns it off)
             mPrivateFlags |= drawn;
 
-            //mDefaultFocusHighlightSizeChanged = true;
-            mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
-            /*if (mForegroundInfo != null) {
+            mDefaultFocusHighlightSizeChanged = true;
+            mBackgroundSizeChanged = true;
+            if (mForegroundInfo != null) {
                 mForegroundInfo.mBoundsChanged = true;
-            }*/
+            }
             return true;
         }
         return false;
@@ -1646,7 +2732,6 @@ public class View implements Drawable.Callback {
      * @param prevHeight previous height
      */
     protected void onSizeChanged(int width, int height, int prevWidth, int prevHeight) {
-
     }
 
     /**
@@ -1925,6 +3010,26 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Utility to get the size in pixels that matches the view layout standards.
+     *
+     * @param v scaling-independent pixel, relative to other views
+     * @return converted size in pixels
+     */
+    public static int dp(float v) {
+        return ViewConfiguration.get().dp(v);
+    }
+
+    /**
+     * Utility to get the size in pixels that matches the text layout standards.
+     *
+     * @param v scaling-independent pixel, relative to other texts
+     * @return converted size in pixels
+     */
+    public static int sp(float v) {
+        return ViewConfiguration.get().sp(v);
+    }
+
+    /**
      * Returns the suggested minimum height that the view should use. This
      * returns the maximum of the view's minimum height
      * and the background's minimum height
@@ -1936,7 +3041,7 @@ public class View implements Drawable.Callback {
      * @return The suggested minimum height of the view.
      */
     protected int getSuggestedMinimumHeight() {
-        return (mBackground == null) ? mMinHeight : max(mMinHeight, mBackground.getMinimumHeight());
+        return (mBackground == null) ? mMinHeight : Math.max(mMinHeight, mBackground.getMinimumHeight());
     }
 
     /**
@@ -1951,7 +3056,7 @@ public class View implements Drawable.Callback {
      * @return The suggested minimum width of the view.
      */
     protected int getSuggestedMinimumWidth() {
-        return (mBackground == null) ? mMinWidth : max(mMinWidth, mBackground.getMinimumWidth());
+        return (mBackground == null) ? mMinWidth : Math.max(mMinWidth, mBackground.getMinimumWidth());
     }
 
     /**
@@ -2026,6 +3131,29 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * {@hide}
+     *
+     * @param isRoot true if the view belongs to the root namespace, false
+     *               otherwise
+     */
+    public void setIsRootNamespace(boolean isRoot) {
+        if (isRoot) {
+            mPrivateFlags |= PFLAG_IS_ROOT_NAMESPACE;
+        } else {
+            mPrivateFlags &= ~PFLAG_IS_ROOT_NAMESPACE;
+        }
+    }
+
+    /**
+     * {@hide}
+     *
+     * @return true if the view belongs to the root namespace, false otherwise
+     */
+    public boolean isRootNamespace() {
+        return (mPrivateFlags & PFLAG_IS_ROOT_NAMESPACE) != 0;
+    }
+
+    /**
      * Returns this view's identifier.
      *
      * @return a positive integer used to identify the view or {@link #NO_ID}
@@ -2034,7 +3162,7 @@ public class View implements Drawable.Callback {
      * @see #findViewById(int)
      */
     public int getId() {
-        return mId;
+        return mID;
     }
 
     /**
@@ -2048,7 +3176,7 @@ public class View implements Drawable.Callback {
      * @see #findViewById(int)
      */
     public void setId(int id) {
-        mId = id;
+        mID = id;
     }
 
     /**
@@ -2090,6 +3218,7 @@ public class View implements Drawable.Callback {
      *
      * @return One of {@link #VISIBLE}, {@link #INVISIBLE}, or {@link #GONE}.
      */
+    @Visibility
     public int getVisibility() {
         return mViewFlags & VISIBILITY_MASK;
     }
@@ -2099,7 +3228,7 @@ public class View implements Drawable.Callback {
      *
      * @param visibility One of {@link #VISIBLE}, {@link #INVISIBLE}, or {@link #GONE}.
      */
-    public void setVisibility(int visibility) {
+    public void setVisibility(@Visibility int visibility) {
         setFlags(visibility, VISIBILITY_MASK);
     }
 
@@ -2153,6 +3282,7 @@ public class View implements Drawable.Callback {
      *
      * @return One of {@link #NOT_FOCUSABLE}, {@link #FOCUSABLE}, or {@link #FOCUSABLE_AUTO}.
      */
+    @Focusable
     public int getFocusable() {
         return (mViewFlags & FOCUSABLE_AUTO) > 0 ? FOCUSABLE_AUTO : mViewFlags & FOCUSABLE;
     }
@@ -2183,7 +3313,7 @@ public class View implements Drawable.Callback {
      *                  or {@link #FOCUSABLE_AUTO}.
      * @see #setFocusableInTouchMode(boolean)
      */
-    public void setFocusable(int focusable) {
+    public void setFocusable(@Focusable int focusable) {
         if ((focusable & (FOCUSABLE_AUTO | FOCUSABLE)) == 0) {
             setFlags(0, FOCUSABLE_IN_TOUCH_MODE);
         }
@@ -2577,7 +3707,9 @@ public class View implements Drawable.Callback {
 
         if ((changed & DRAW_MASK) != 0) {
             if ((mViewFlags & WILL_NOT_DRAW) != 0) {
-                if (mBackground != null) {
+                if (mBackground != null
+                        || mDefaultFocusHighlight != null
+                        || (mForegroundInfo != null && mForegroundInfo.mDrawable != null)) {
                     mPrivateFlags &= ~PFLAG_SKIP_DRAW;
                 } else {
                     mPrivateFlags |= PFLAG_SKIP_DRAW;
@@ -2657,10 +3789,23 @@ public class View implements Drawable.Callback {
      * @param direction The direction of the focus
      * @return A list of focusable views
      */
-    public ArrayList<View> getFocusables(int direction) {
+    @Nonnull
+    public final ArrayList<View> getFocusables(@FocusDirection int direction) {
         ArrayList<View> result = new ArrayList<>(24);
         addFocusables(result, direction);
         return result;
+    }
+
+    /**
+     * Add any focusable views that are descendants of this view (possibly
+     * including this view if it is focusable itself) to views.  If we are in touch mode,
+     * only add views that are also focusable in touch mode.
+     *
+     * @param views     Focusable views found so far
+     * @param direction The direction of the focus
+     */
+    public final void addFocusables(ArrayList<View> views, @FocusDirection int direction) {
+        addFocusables(views, direction, isInTouchMode() ? FOCUSABLES_TOUCH_MODE : FOCUSABLES_ALL);
     }
 
     /**
@@ -2675,8 +3820,13 @@ public class View implements Drawable.Callback {
      *                  the number of focusables.
      * @param direction The direction of the focus.
      */
-    public void addFocusables(@Nonnull ArrayList<View> views, int direction) {
+    public void addFocusables(@Nonnull ArrayList<View> views, @FocusDirection int direction,
+                              @FocusableMode int focusableMode) {
         if (!canTakeFocus()) {
+            return;
+        }
+        if ((focusableMode & FOCUSABLES_TOUCH_MODE) == FOCUSABLES_TOUCH_MODE
+                && !isFocusableInTouchMode()) {
             return;
         }
         views.add(this);
@@ -2851,6 +4001,32 @@ public class View implements Drawable.Callback {
         }
 
         return scrolled;
+    }
+
+    /**
+     * Find the nearest keyboard navigation cluster in the specified direction.
+     * This does not actually give focus to that cluster.
+     *
+     * @param currentCluster The starting point of the search. Null means the current cluster is not
+     *                       found yet
+     * @param direction      Direction to look
+     * @return The nearest keyboard navigation cluster in the specified direction, or null if none
+     * can be found
+     */
+    public View keyboardNavigationClusterSearch(View currentCluster, @FocusDirection int direction) {
+        /*if (isKeyboardNavigationCluster()) {
+            currentCluster = this;
+        }
+        if (isRootNamespace()) {
+            // Root namespace means we should consider ourselves the top of the
+            // tree for group searching; otherwise we could be group searching
+            // into other tabs.  see LocalActivityManager and TabHost for more info.
+            return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
+                    this, currentCluster, direction);
+        } else if (mParent != null) {
+            return mParent.keyboardNavigationClusterSearch(currentCluster, direction);
+        }*/
+        return null;
     }
 
     /**
@@ -3036,6 +4212,147 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Gets the id of the view to use when the next focus is {@link #FOCUS_LEFT}.
+     *
+     * @return The next focus ID, or {@link #NO_ID} if the framework should decide automatically.
+     */
+    public int getNextFocusLeftId() {
+        return mNextFocusLeftId;
+    }
+
+    /**
+     * Sets the id of the view to use when the next focus is {@link #FOCUS_LEFT}.
+     *
+     * @param nextFocusLeftId The next focus ID, or {@link #NO_ID} if the framework should
+     *                        decide automatically.
+     */
+    public void setNextFocusLeftId(int nextFocusLeftId) {
+        mNextFocusLeftId = nextFocusLeftId;
+    }
+
+    /**
+     * Gets the id of the view to use when the next focus is {@link #FOCUS_RIGHT}.
+     *
+     * @return The next focus ID, or {@link #NO_ID} if the framework should decide automatically.
+     */
+    public int getNextFocusRightId() {
+        return mNextFocusRightId;
+    }
+
+    /**
+     * Sets the id of the view to use when the next focus is {@link #FOCUS_RIGHT}.
+     *
+     * @param nextFocusRightId The next focus ID, or {@link #NO_ID} if the framework should
+     *                         decide automatically.
+     */
+    public void setNextFocusRightId(int nextFocusRightId) {
+        mNextFocusRightId = nextFocusRightId;
+    }
+
+    /**
+     * Gets the id of the view to use when the next focus is {@link #FOCUS_UP}.
+     *
+     * @return The next focus ID, or {@link #NO_ID} if the framework should decide automatically.
+     */
+    public int getNextFocusUpId() {
+        return mNextFocusUpId;
+    }
+
+    /**
+     * Sets the id of the view to use when the next focus is {@link #FOCUS_UP}.
+     *
+     * @param nextFocusUpId The next focus ID, or {@link #NO_ID} if the framework should
+     *                      decide automatically.
+     */
+    public void setNextFocusUpId(int nextFocusUpId) {
+        mNextFocusUpId = nextFocusUpId;
+    }
+
+    /**
+     * Gets the id of the view to use when the next focus is {@link #FOCUS_DOWN}.
+     *
+     * @return The next focus ID, or {@link #NO_ID} if the framework should decide automatically.
+     */
+    public int getNextFocusDownId() {
+        return mNextFocusDownId;
+    }
+
+    /**
+     * Sets the id of the view to use when the next focus is {@link #FOCUS_DOWN}.
+     *
+     * @param nextFocusDownId The next focus ID, or {@link #NO_ID} if the framework should
+     *                        decide automatically.
+     */
+    public void setNextFocusDownId(int nextFocusDownId) {
+        mNextFocusDownId = nextFocusDownId;
+    }
+
+    /**
+     * Gets the id of the view to use when the next focus is {@link #FOCUS_FORWARD}.
+     *
+     * @return The next focus ID, or {@link #NO_ID} if the framework should decide automatically.
+     */
+    public int getNextFocusForwardId() {
+        return mNextFocusForwardId;
+    }
+
+    /**
+     * Sets the id of the view to use when the next focus is {@link #FOCUS_FORWARD}.
+     *
+     * @param nextFocusForwardId The next focus ID, or {@link #NO_ID} if the framework should
+     *                           decide automatically.
+     * @attr ref android.R.styleable#View_nextFocusForward
+     */
+    public void setNextFocusForwardId(int nextFocusForwardId) {
+        mNextFocusForwardId = nextFocusForwardId;
+    }
+
+    /**
+     * Gets the id of the root of the next keyboard navigation cluster.
+     *
+     * @return The next keyboard navigation cluster ID, or {@link #NO_ID} if the framework should
+     * decide automatically.
+     */
+    public int getNextClusterForwardId() {
+        return mNextClusterForwardId;
+    }
+
+    /**
+     * Sets the id of the view to use as the root of the next keyboard navigation cluster.
+     *
+     * @param nextClusterForwardId The next cluster ID, or {@link #NO_ID} if the framework should
+     *                             decide automatically.
+     */
+    public void setNextClusterForwardId(int nextClusterForwardId) {
+        mNextClusterForwardId = nextClusterForwardId;
+    }
+
+    /**
+     * Returns the visibility of this view and all of its ancestors
+     *
+     * @return True if this view and all of its ancestors are {@link #VISIBLE}
+     */
+    public boolean isShown() {
+        View current = this;
+        //noinspection ConstantConditions
+        do {
+            if ((current.mViewFlags & VISIBILITY_MASK) != VISIBLE) {
+                return false;
+            }
+            ViewParent parent = current.mParent;
+            if (parent == null) {
+                return false; // We are not attached to the view root
+            }
+            if (!(parent instanceof View)) {
+                return true;
+            }
+            current = (View) parent;
+        } while (current != null);
+
+        return false;
+    }
+
+    /**
      * Define whether the horizontal scrollbar should have or not.
      *
      * @param enabled true if the horizontal scrollbar should be enabled
@@ -3044,6 +4361,7 @@ public class View implements Drawable.Callback {
     public void setHorizontalScrollBarEnabled(boolean enabled) {
         if (isHorizontalScrollBarEnabled() != enabled) {
             mViewFlags ^= SCROLLBARS_HORIZONTAL;
+            resolvePadding();
         }
     }
 
@@ -3056,6 +4374,7 @@ public class View implements Drawable.Callback {
     public void setVerticalScrollBarEnabled(boolean enabled) {
         if (isVerticalScrollBarEnabled() != enabled) {
             mViewFlags ^= SCROLLBARS_VERTICAL;
+            resolvePadding();
         }
     }
 
@@ -3079,6 +4398,22 @@ public class View implements Drawable.Callback {
         return (mViewFlags & SCROLLBARS_VERTICAL) != 0;
     }
 
+    private void initializeScrollIndicatorsInternal() {
+        // Some day maybe we'll break this into top/left/start/etc. and let the
+        // client control it. Until then, you can have any scroll indicator you
+        // want as long as it's a 1dp foreground-colored rectangle.
+        if (mScrollIndicatorDrawable == null) {
+            mScrollIndicatorDrawable = new Drawable() {
+                @Override
+                public void draw(@Nonnull Canvas canvas) {
+                    Paint paint = Paint.take();
+                    paint.setRGBA(0, 0, 0, 0x1f);
+                    canvas.drawRect(getBounds(), paint);
+                }
+            };
+        }
+    }
+
     private void initScrollCache() {
         if (mScrollCache == null) {
             mScrollCache = new ScrollCache(this);
@@ -3090,8 +4425,134 @@ public class View implements Drawable.Callback {
 
         if (mScrollCache.mScrollBar == null) {
             mScrollCache.mScrollBar = new ScrollBar();
+            mScrollCache.mScrollBar.setState(getDrawableState());
             mScrollCache.mScrollBar.setCallback(this);
         }
+    }
+
+    /**
+     * Define whether scrollbars will fade when the view is not scrolling.
+     *
+     * @param fadeScrollbars whether to enable fading
+     */
+    public void setScrollbarFadingEnabled(boolean fadeScrollbars) {
+        initScrollCache();
+        final ScrollCache scrollCache = mScrollCache;
+        scrollCache.mFadeScrollBars = fadeScrollbars;
+        if (fadeScrollbars) {
+            scrollCache.mState = ScrollCache.OFF;
+        } else {
+            scrollCache.mState = ScrollCache.ON;
+        }
+    }
+
+    /**
+     * Returns true if scrollbars will fade when this view is not scrolling
+     *
+     * @return true if scrollbar fading is enabled
+     */
+    public boolean isScrollbarFadingEnabled() {
+        return mScrollCache != null && mScrollCache.mFadeScrollBars;
+    }
+
+    private ScrollCache getScrollCache() {
+        initScrollCache();
+        return mScrollCache;
+    }
+
+    /**
+     * Returns the delay before scrollbars fade.
+     *
+     * @return the delay before scrollbars fade
+     */
+    public int getScrollBarDefaultDelayBeforeFade() {
+        return mScrollCache == null ? ViewConfiguration.getScrollDefaultDelay() :
+                mScrollCache.mDefaultDelayBeforeFade;
+    }
+
+    /**
+     * Define the delay before scrollbars fade.
+     *
+     * @param scrollBarDefaultDelayBeforeFade - the delay before scrollbars fade
+     */
+    public void setScrollBarDefaultDelayBeforeFade(int scrollBarDefaultDelayBeforeFade) {
+        getScrollCache().mDefaultDelayBeforeFade = scrollBarDefaultDelayBeforeFade;
+    }
+
+    /**
+     * Returns the scrollbar fade duration.
+     *
+     * @return the scrollbar fade duration, in milliseconds
+     */
+    public int getScrollBarFadeDuration() {
+        return mScrollCache == null ? ViewConfiguration.getScrollBarFadeDuration() :
+                mScrollCache.mFadeDuration;
+    }
+
+    /**
+     * Define the scrollbar fade duration.
+     *
+     * @param scrollBarFadeDuration - the scrollbar fade duration, in milliseconds
+     */
+    public void setScrollBarFadeDuration(int scrollBarFadeDuration) {
+        getScrollCache().mFadeDuration = scrollBarFadeDuration;
+    }
+
+    /**
+     * Returns the scrollbar size.
+     *
+     * @return the scrollbar size
+     */
+    public int getScrollBarSize() {
+        return mScrollCache == null ? ViewConfiguration.get().getScaledScrollBarSize() :
+                mScrollCache.mScrollBarSize;
+    }
+
+    /**
+     * Define the scrollbar size.
+     *
+     * @param scrollBarSize - the scrollbar size
+     */
+    public void setScrollBarSize(int scrollBarSize) {
+        getScrollCache().mScrollBarSize = scrollBarSize;
+    }
+
+    /**
+     * <p>Specify the style of the scrollbars. The scrollbars can be overlaid or
+     * inset. When inset, they add to the padding of the view. And the scrollbars
+     * can be drawn inside the padding area or on the edge of the view. For example,
+     * if a view has a background drawable and you want to draw the scrollbars
+     * inside the padding specified by the drawable, you can use
+     * SCROLLBARS_INSIDE_OVERLAY or SCROLLBARS_INSIDE_INSET. If you want them to
+     * appear at the edge of the view, ignoring the padding, then you can use
+     * SCROLLBARS_OUTSIDE_OVERLAY or SCROLLBARS_OUTSIDE_INSET.</p>
+     *
+     * @param style the style of the scrollbars. Should be one of
+     *              SCROLLBARS_INSIDE_OVERLAY, SCROLLBARS_INSIDE_INSET,
+     *              SCROLLBARS_OUTSIDE_OVERLAY or SCROLLBARS_OUTSIDE_INSET.
+     * @see #SCROLLBARS_INSIDE_OVERLAY
+     * @see #SCROLLBARS_INSIDE_INSET
+     * @see #SCROLLBARS_OUTSIDE_OVERLAY
+     * @see #SCROLLBARS_OUTSIDE_INSET
+     */
+    public void setScrollBarStyle(int style) {
+        if (style != (mViewFlags & SCROLLBARS_STYLE_MASK)) {
+            mViewFlags = (mViewFlags & ~SCROLLBARS_STYLE_MASK) | (style & SCROLLBARS_STYLE_MASK);
+            resolvePadding();
+        }
+    }
+
+    /**
+     * <p>Returns the current scrollbar style.</p>
+     *
+     * @return the current scrollbar style
+     * @see #SCROLLBARS_INSIDE_OVERLAY
+     * @see #SCROLLBARS_INSIDE_INSET
+     * @see #SCROLLBARS_OUTSIDE_OVERLAY
+     * @see #SCROLLBARS_OUTSIDE_INSET
+     */
+    public int getScrollBarStyle() {
+        return mViewFlags & SCROLLBARS_STYLE_MASK;
     }
 
     /**
@@ -3224,21 +4685,6 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * This is called in response to an internal scroll in this view (i.e., the
-     * view scrolled its own contents). This is typically as a result of
-     * {@link #scrollBy(int, int)} or {@link #scrollTo(int, int)} having been
-     * called.
-     *
-     * @param l    Current horizontal scroll origin.
-     * @param t    Current vertical scroll origin.
-     * @param oldl Previous horizontal scroll origin.
-     * @param oldt Previous vertical scroll origin.
-     */
-    protected void onScrollChanged(int l, int t, int oldl, int oldt) {
-
-    }
-
-    /**
      * <p>Trigger the scrollbars to draw. When invoked this method starts an
      * animation to fade the scrollbars out after a default delay. If a subclass
      * provides animated scrolling, the start delay should equal the duration
@@ -3267,7 +4713,7 @@ public class View implements Drawable.Callback {
      * @see #setVerticalScrollBarEnabled(boolean)
      */
     protected final boolean awakenScrollBars() {
-        return mScrollCache != null && awakenScrollBars(500);
+        return mScrollCache != null && awakenScrollBars(mScrollCache.mDefaultDelayBeforeFade);
     }
 
     /**
@@ -3305,27 +4751,37 @@ public class View implements Drawable.Callback {
      */
     protected boolean awakenScrollBars(int startDelay) {
         final ScrollCache scrollCache = mScrollCache;
+
         if (scrollCache == null || !scrollCache.mFadeScrollBars) {
             return false;
         }
+
         initializeScrollBarDrawable();
+
         if (isHorizontalScrollBarEnabled() || isVerticalScrollBarEnabled()) {
+
             if (scrollCache.mState == ScrollCache.OFF) {
                 // first takes longer
-                startDelay = Math.max(1250, startDelay);
+                startDelay = Math.max(1500, startDelay);
             } else {
                 startDelay = Math.max(0, startDelay);
             }
-            scrollCache.mFadeStartTime = AnimationUtils.currentAnimationTimeMillis() + startDelay;
+
+            // Tell mScrollCache when we should start fading. This may
+            // extend the fade start time if one was already scheduled
+            long fadeStartTime = AnimationUtils.currentAnimationTimeMillis() + startDelay;
+            scrollCache.mFadeStartTime = fadeStartTime;
             scrollCache.mState = ScrollCache.ON;
-            if (startDelay <= 0) {
-                scrollCache.mState = ScrollCache.FADING;
-            } else if (mAttachInfo != null) {
-                AnimationHandler.getInstance().register(scrollCache, startDelay);
+
+            if (mAttachInfo != null) {
+                mAttachInfo.mHandler.removeCallbacks(scrollCache);
+                mAttachInfo.mHandler.postAtTime(scrollCache, fadeStartTime);
             }
+
             invalidate();
             return true;
         }
+
         return false;
     }
 
@@ -3487,6 +4943,842 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Check if this view can be scrolled horizontally in a certain direction.
+     *
+     * @param direction Negative to check scrolling left, positive to check scrolling right.
+     * @return true if this view can be scrolled in the specified direction, false otherwise.
+     */
+    public boolean canScrollHorizontally(int direction) {
+        final int offset = computeHorizontalScrollOffset();
+        final int range = computeHorizontalScrollRange() - computeHorizontalScrollExtent();
+        if (range == 0) return false;
+        if (direction < 0) {
+            return offset > 0;
+        } else {
+            return offset < range - 1;
+        }
+    }
+
+    /**
+     * Check if this view can be scrolled vertically in a certain direction.
+     *
+     * @param direction Negative to check scrolling up, positive to check scrolling down.
+     * @return true if this view can be scrolled in the specified direction, false otherwise.
+     */
+    public boolean canScrollVertically(int direction) {
+        final int offset = computeVerticalScrollOffset();
+        final int range = computeVerticalScrollRange() - computeVerticalScrollExtent();
+        if (range == 0) return false;
+        if (direction < 0) {
+            return offset > 0;
+        } else {
+            return offset < range - 1;
+        }
+    }
+
+    void getScrollIndicatorBounds(@Nonnull Rect out) {
+        out.left = mScrollX;
+        out.right = mScrollX + mRight - mLeft;
+        out.top = mScrollY;
+        out.bottom = mScrollY + mBottom - mTop;
+    }
+
+    private void getHorizontalScrollBarBounds(@Nullable Rect drawBounds,
+                                              @Nullable Rect touchBounds) {
+        final Rect bounds = drawBounds != null ? drawBounds : touchBounds;
+        if (bounds == null) {
+            return;
+        }
+        final int inside = (mViewFlags & SCROLLBARS_OUTSIDE_MASK) == 0 ? ~0 : 0;
+        final boolean drawVerticalScrollBar = isVerticalScrollBarEnabled()
+                && !isVerticalScrollBarHidden();
+        final int size = getHorizontalScrollbarHeight();
+        final int verticalScrollBarGap = drawVerticalScrollBar ?
+                getVerticalScrollbarWidth() : 0;
+        final int width = mRight - mLeft;
+        final int height = mBottom - mTop;
+        bounds.top = mScrollY + height - size - (mUserPaddingBottom & inside);
+        bounds.left = mScrollX + (mPaddingLeft & inside);
+        bounds.right = mScrollX + width - (mUserPaddingRight & inside) - verticalScrollBarGap;
+        bounds.bottom = bounds.top + size;
+
+        if (touchBounds == null) {
+            return;
+        }
+        if (touchBounds != bounds) {
+            touchBounds.set(bounds);
+        }
+        final int minTouchTarget = mScrollCache.mScrollBarMinTouchTarget;
+        if (touchBounds.height() < minTouchTarget) {
+            final int adjust = (minTouchTarget - touchBounds.height()) / 2;
+            touchBounds.bottom = Math.min(touchBounds.bottom + adjust, mScrollY + height);
+            touchBounds.top = touchBounds.bottom - minTouchTarget;
+        }
+        if (touchBounds.width() < minTouchTarget) {
+            final int adjust = (minTouchTarget - touchBounds.width()) / 2;
+            touchBounds.left -= adjust;
+            touchBounds.right = touchBounds.left + minTouchTarget;
+        }
+    }
+
+    private void getVerticalScrollBarBounds(@Nullable Rect drawBounds, @Nullable Rect touchBounds) {
+        final Rect bounds = drawBounds != null ? drawBounds : touchBounds;
+        if (bounds == null) {
+            return;
+        }
+        final int inside = (mViewFlags & SCROLLBARS_OUTSIDE_MASK) == 0 ? ~0 : 0;
+        final int size = getVerticalScrollbarWidth();
+        final boolean layoutRtl = isLayoutRtl();
+        final int width = mRight - mLeft;
+        final int height = mBottom - mTop;
+        if (layoutRtl) {
+            bounds.left = mScrollX + (mUserPaddingLeft & inside);
+        } else {
+            bounds.left = mScrollX + width - size - (mUserPaddingRight & inside);
+        }
+        bounds.top = mScrollY + (mPaddingTop & inside);
+        bounds.right = bounds.left + size;
+        bounds.bottom = mScrollY + height - (mUserPaddingBottom & inside);
+
+        if (touchBounds == null) {
+            return;
+        }
+        if (touchBounds != bounds) {
+            touchBounds.set(bounds);
+        }
+        final int minTouchTarget = mScrollCache.mScrollBarMinTouchTarget;
+        if (touchBounds.width() < minTouchTarget) {
+            final int adjust = (minTouchTarget - touchBounds.width()) / 2;
+            if (layoutRtl) {
+                touchBounds.left = Math.max(touchBounds.left + adjust, mScrollX);
+                touchBounds.right = touchBounds.left + minTouchTarget;
+            } else {
+                touchBounds.right = Math.min(touchBounds.right + adjust, mScrollX + width);
+                touchBounds.left = touchBounds.right - minTouchTarget;
+            }
+        }
+        if (touchBounds.height() < minTouchTarget) {
+            final int adjust = (minTouchTarget - touchBounds.height()) / 2;
+            touchBounds.top -= adjust;
+            touchBounds.bottom = touchBounds.top + minTouchTarget;
+        }
+    }
+
+    /**
+     * Override this if the vertical scrollbar needs to be hidden in a subclass, like when
+     * FastScroller is visible.
+     *
+     * @return whether to temporarily hide the vertical scrollbar
+     * @hide
+     */
+    protected boolean isVerticalScrollBarHidden() {
+        return false;
+    }
+
+    boolean isOnScrollbar(float x, float y) {
+        if (mScrollCache == null) {
+            return false;
+        }
+        x += getScrollX();
+        y += getScrollY();
+        final boolean canScrollVertically =
+                computeVerticalScrollRange() > computeVerticalScrollExtent();
+        if (isVerticalScrollBarEnabled() && !isVerticalScrollBarHidden() && canScrollVertically) {
+            final Rect touchBounds = mScrollCache.mScrollBarTouchBounds;
+            getVerticalScrollBarBounds(null, touchBounds);
+            if (touchBounds.contains((int) x, (int) y)) {
+                return true;
+            }
+        }
+        final boolean canScrollHorizontally =
+                computeHorizontalScrollRange() > computeHorizontalScrollExtent();
+        if (isHorizontalScrollBarEnabled() && canScrollHorizontally) {
+            final Rect touchBounds = mScrollCache.mScrollBarTouchBounds;
+            getHorizontalScrollBarBounds(null, touchBounds);
+            return touchBounds.contains((int) x, (int) y);
+        }
+        return false;
+    }
+
+    boolean isOnScrollbarThumb(float x, float y) {
+        return isOnVerticalScrollbarThumb(x, y) || isOnHorizontalScrollbarThumb(x, y);
+    }
+
+    private boolean isOnVerticalScrollbarThumb(float x, float y) {
+        if (mScrollCache == null || !isVerticalScrollBarEnabled() || isVerticalScrollBarHidden()) {
+            return false;
+        }
+        final int range = computeVerticalScrollRange();
+        final int extent = computeVerticalScrollExtent();
+        if (range > extent) {
+            x += getScrollX();
+            y += getScrollY();
+            final Rect bounds = mScrollCache.mScrollBarBounds;
+            final Rect touchBounds = mScrollCache.mScrollBarTouchBounds;
+            getVerticalScrollBarBounds(bounds, touchBounds);
+            final int offset = computeVerticalScrollOffset();
+            final int thumbLength = ScrollCache.getThumbLength(bounds.height(), bounds.width(),
+                    extent, range);
+            final int thumbOffset = ScrollCache.getThumbOffset(bounds.height(), thumbLength,
+                    extent, range, offset);
+            final int thumbTop = bounds.top + thumbOffset;
+            final int adjust = Math.max(mScrollCache.mScrollBarMinTouchTarget - thumbLength, 0) / 2;
+            return x >= touchBounds.left && x <= touchBounds.right
+                    && y >= thumbTop - adjust && y <= thumbTop + thumbLength + adjust;
+        }
+        return false;
+    }
+
+    private boolean isOnHorizontalScrollbarThumb(float x, float y) {
+        if (mScrollCache == null || !isHorizontalScrollBarEnabled()) {
+            return false;
+        }
+        final int range = computeHorizontalScrollRange();
+        final int extent = computeHorizontalScrollExtent();
+        if (range > extent) {
+            x += getScrollX();
+            y += getScrollY();
+            final Rect bounds = mScrollCache.mScrollBarBounds;
+            final Rect touchBounds = mScrollCache.mScrollBarTouchBounds;
+            getHorizontalScrollBarBounds(bounds, touchBounds);
+            final int offset = computeHorizontalScrollOffset();
+
+            final int thumbLength = ScrollCache.getThumbLength(bounds.width(), bounds.height(),
+                    extent, range);
+            final int thumbOffset = ScrollCache.getThumbOffset(bounds.width(), thumbLength,
+                    extent, range, offset);
+            final int thumbLeft = bounds.left + thumbOffset;
+            final int adjust = Math.max(mScrollCache.mScrollBarMinTouchTarget - thumbLength, 0) / 2;
+            return x >= thumbLeft - adjust && x <= thumbLeft + thumbLength + adjust
+                    && y >= touchBounds.top && y <= touchBounds.bottom;
+        }
+        return false;
+    }
+
+    boolean isDraggingScrollBar() {
+        return mScrollCache != null
+                && mScrollCache.mScrollBarDraggingState != ScrollCache.NOT_DRAGGING;
+    }
+
+    /**
+     * Sets the state of all scroll indicators.
+     * <p>
+     * See {@link #setScrollIndicators(int, int)} for usage information.
+     *
+     * @param indicators a bitmask of indicators that should be enabled, or
+     *                   {@code 0} to disable all indicators
+     * @see #setScrollIndicators(int, int)
+     * @see #getScrollIndicators()
+     */
+    public void setScrollIndicators(@ScrollIndicators int indicators) {
+        setScrollIndicators(indicators,
+                SCROLL_INDICATORS_PFLAG3_MASK >>> SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT);
+    }
+
+    /**
+     * Sets the state of the scroll indicators specified by the mask. To change
+     * all scroll indicators at once, see {@link #setScrollIndicators(int)}.
+     * <p>
+     * When a scroll indicator is enabled, it will be displayed if the view
+     * can scroll in the direction of the indicator.
+     * <p>
+     * Multiple indicator types may be enabled or disabled by passing the
+     * logical OR of the desired types. If multiple types are specified, they
+     * will all be set to the same enabled state.
+     * <p>
+     * For example, to enable the top scroll indicatorExample: {@code setScrollIndicators
+     *
+     * @param indicators the indicator direction, or the logical OR of multiple
+     *                   indicator directions. One or more of:
+     *                   <ul>
+     *                     <li>{@link #SCROLL_INDICATOR_TOP}</li>
+     *                     <li>{@link #SCROLL_INDICATOR_BOTTOM}</li>
+     *                     <li>{@link #SCROLL_INDICATOR_LEFT}</li>
+     *                     <li>{@link #SCROLL_INDICATOR_RIGHT}</li>
+     *                     <li>{@link #SCROLL_INDICATOR_START}</li>
+     *                     <li>{@link #SCROLL_INDICATOR_END}</li>
+     *                   </ul>
+     * @see #setScrollIndicators(int)
+     * @see #getScrollIndicators()
+     */
+    public void setScrollIndicators(@ScrollIndicators int indicators, @ScrollIndicators int mask) {
+        // Shift and sanitize mask.
+        mask <<= SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT;
+        mask &= SCROLL_INDICATORS_PFLAG3_MASK;
+
+        // Shift and mask indicators.
+        indicators <<= SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT;
+        indicators &= mask;
+
+        // Merge with non-masked flags.
+        final int updatedFlags = indicators | (mPrivateFlags3 & ~mask);
+
+        if (mPrivateFlags3 != updatedFlags) {
+            mPrivateFlags3 = updatedFlags;
+
+            if (indicators != 0) {
+                initializeScrollIndicatorsInternal();
+            }
+            invalidate();
+        }
+    }
+
+    /**
+     * Returns a bitmask representing the enabled scroll indicators.
+     * <p>
+     * For example, if the top and left scroll indicators are enabled and all
+     * other indicators are disabled, the return value will be
+     * {@code View.SCROLL_INDICATOR_TOP | View.SCROLL_INDICATOR_LEFT}.
+     * <p>
+     * To check whether the bottom scroll indicator is enabled, use the value
+     * of {@code (getScrollIndicators() & View.SCROLL_INDICATOR_BOTTOM) != 0}.
+     *
+     * @return a bitmask representing the enabled scroll indicators
+     */
+    public int getScrollIndicators() {
+        return (mPrivateFlags3 & SCROLL_INDICATORS_PFLAG3_MASK)
+                >>> SCROLL_INDICATORS_TO_PFLAGS3_LSHIFT;
+    }
+
+    /**
+     * Returns the width of the vertical scrollbar.
+     *
+     * @return The width in pixels of the vertical scrollbar or 0 if there
+     * is no vertical scrollbar.
+     */
+    public int getVerticalScrollbarWidth() {
+        ScrollCache cache = mScrollCache;
+        if (cache != null) {
+            ScrollBar scrollBar = cache.mScrollBar;
+            if (scrollBar != null) {
+                int size = scrollBar.getSize(true);
+                if (size <= 0) {
+                    size = cache.mScrollBarSize;
+                }
+                return size;
+            }
+            return 0;
+        }
+        return 0;
+    }
+
+    /**
+     * Returns the height of the horizontal scrollbar.
+     *
+     * @return The height in pixels of the horizontal scrollbar or 0 if
+     * there is no horizontal scrollbar.
+     */
+    protected int getHorizontalScrollbarHeight() {
+        ScrollCache cache = mScrollCache;
+        if (cache != null) {
+            ScrollBar scrollBar = cache.mScrollBar;
+            if (scrollBar != null) {
+                int size = scrollBar.getSize(false);
+                if (size <= 0) {
+                    size = cache.mScrollBarSize;
+                }
+                return size;
+            }
+            return 0;
+        }
+        return 0;
+    }
+
+    /**
+     * Called by a parent to request that a child update its values for mScrollX
+     * and mScrollY if necessary. This will typically be done if the child is
+     * animating a scroll using a Scroller.
+     */
+    public void computeScroll() {
+    }
+
+    /**
+     * This is called in response to an internal scroll in this view (i.e., the
+     * view scrolled its own contents). This is typically as a result of
+     * {@link #scrollBy(int, int)} or {@link #scrollTo(int, int)} having been
+     * called.
+     *
+     * @param l    Current horizontal scroll origin.
+     * @param t    Current vertical scroll origin.
+     * @param oldl Previous horizontal scroll origin.
+     * @param oldt Previous vertical scroll origin.
+     */
+    protected void onScrollChanged(int l, int t, int oldl, int oldt) {
+        mBackgroundSizeChanged = true;
+        mDefaultFocusHighlightSizeChanged = true;
+        if (mForegroundInfo != null) {
+            mForegroundInfo.mBoundsChanged = true;
+        }
+
+        final AttachInfo ai = mAttachInfo;
+        if (ai != null) {
+            ai.mViewScrollChanged = true;
+        }
+
+        if (mListenerInfo != null && mListenerInfo.mOnScrollChangeListener != null) {
+            mListenerInfo.mOnScrollChangeListener.onScrollChange(this, l, t, oldl, oldt);
+        }
+    }
+
+    /**
+     * Scroll the view with standard behavior for scrolling beyond the normal
+     * content boundaries. Views that call this method should override
+     * {@link #onOverScrolled(int, int, boolean, boolean)} to respond to the
+     * results of an over-scroll operation.
+     * <p>
+     * Views can use this method to handle any touch or fling-based scrolling.
+     *
+     * @param deltaX         Change in X in pixels
+     * @param deltaY         Change in Y in pixels
+     * @param scrollX        Current X scroll value in pixels before applying deltaX
+     * @param scrollY        Current Y scroll value in pixels before applying deltaY
+     * @param scrollRangeX   Maximum content scroll range along the X axis
+     * @param scrollRangeY   Maximum content scroll range along the Y axis
+     * @param maxOverScrollX Number of pixels to overscroll by in either direction
+     *                       along the X axis.
+     * @param maxOverScrollY Number of pixels to overscroll by in either direction
+     *                       along the Y axis.
+     * @param isTouchEvent   true if this scroll operation is the result of a touch event.
+     * @return true if scrolling was clamped to an over-scroll boundary along either
+     * axis, false otherwise.
+     */
+    protected boolean overScrollBy(int deltaX, int deltaY,
+                                   int scrollX, int scrollY,
+                                   int scrollRangeX, int scrollRangeY,
+                                   int maxOverScrollX, int maxOverScrollY,
+                                   boolean isTouchEvent) {
+        final int overScrollMode = mOverScrollMode;
+        final boolean canScrollHorizontal =
+                computeHorizontalScrollRange() > computeHorizontalScrollExtent();
+        final boolean canScrollVertical =
+                computeVerticalScrollRange() > computeVerticalScrollExtent();
+        final boolean overScrollHorizontal = overScrollMode == OVER_SCROLL_ALWAYS ||
+                (overScrollMode == OVER_SCROLL_IF_CONTENT_SCROLLS && canScrollHorizontal);
+        final boolean overScrollVertical = overScrollMode == OVER_SCROLL_ALWAYS ||
+                (overScrollMode == OVER_SCROLL_IF_CONTENT_SCROLLS && canScrollVertical);
+
+        int newScrollX = scrollX + deltaX;
+        if (!overScrollHorizontal) {
+            maxOverScrollX = 0;
+        }
+
+        int newScrollY = scrollY + deltaY;
+        if (!overScrollVertical) {
+            maxOverScrollY = 0;
+        }
+
+        // Clamp values if at the limits and record
+        final int left = -maxOverScrollX;
+        final int right = maxOverScrollX + scrollRangeX;
+        final int top = -maxOverScrollY;
+        final int bottom = maxOverScrollY + scrollRangeY;
+
+        boolean clampedX = false;
+        if (newScrollX > right) {
+            newScrollX = right;
+            clampedX = true;
+        } else if (newScrollX < left) {
+            newScrollX = left;
+            clampedX = true;
+        }
+
+        boolean clampedY = false;
+        if (newScrollY > bottom) {
+            newScrollY = bottom;
+            clampedY = true;
+        } else if (newScrollY < top) {
+            newScrollY = top;
+            clampedY = true;
+        }
+
+        onOverScrolled(newScrollX, newScrollY, clampedX, clampedY);
+
+        return clampedX || clampedY;
+    }
+
+    /**
+     * Called by {@link #overScrollBy(int, int, int, int, int, int, int, int, boolean)} to
+     * respond to the results of an over-scroll operation.
+     *
+     * @param scrollX  New X scroll value in pixels
+     * @param scrollY  New Y scroll value in pixels
+     * @param clampedX True if scrollX was clamped to an over-scroll boundary
+     * @param clampedY True if scrollY was clamped to an over-scroll boundary
+     */
+    protected void onOverScrolled(int scrollX, int scrollY,
+                                  boolean clampedX, boolean clampedY) {
+        // Intentionally empty.
+    }
+
+    /**
+     * Returns the over-scroll mode for this view. The result will be
+     * one of {@link #OVER_SCROLL_ALWAYS}, {@link #OVER_SCROLL_IF_CONTENT_SCROLLS}
+     * (allow over-scrolling only if the view content is larger than the container),
+     * or {@link #OVER_SCROLL_NEVER}.
+     *
+     * @return This view's over-scroll mode.
+     */
+    public int getOverScrollMode() {
+        return mOverScrollMode;
+    }
+
+    /**
+     * Set the over-scroll mode for this view. Valid over-scroll modes are
+     * {@link #OVER_SCROLL_ALWAYS}, {@link #OVER_SCROLL_IF_CONTENT_SCROLLS}
+     * (allow over-scrolling only if the view content is larger than the container),
+     * or {@link #OVER_SCROLL_NEVER}.
+     * <p>
+     * Setting the over-scroll mode of a view will have an effect only if the
+     * view is capable of scrolling.
+     *
+     * @param overScrollMode The new over-scroll mode for this view.
+     */
+    public void setOverScrollMode(int overScrollMode) {
+        if (overScrollMode != OVER_SCROLL_ALWAYS &&
+                overScrollMode != OVER_SCROLL_IF_CONTENT_SCROLLS &&
+                overScrollMode != OVER_SCROLL_NEVER) {
+            throw new IllegalArgumentException("Invalid overscroll mode " + overScrollMode);
+        }
+        mOverScrollMode = overScrollMode;
+    }
+
+    /// Start - Nested Scrolling \\\
+
+    /**
+     * Enable or disable nested scrolling for this view.
+     *
+     * <p>If this property is set to true the view will be permitted to initiate nested
+     * scrolling operations with a compatible parent view in the current hierarchy. If this
+     * view does not implement nested scrolling this will have no effect. Disabling nested scrolling
+     * while a nested scroll is in progress has the effect of {@link #stopNestedScroll(int) stopping}
+     * the nested scroll.</p>
+     *
+     * @param enabled true to enable nested scrolling, false to disable
+     * @see #isNestedScrollingEnabled()
+     */
+    public void setNestedScrollingEnabled(boolean enabled) {
+        if (enabled) {
+            mPrivateFlags3 |= PFLAG3_NESTED_SCROLLING_ENABLED;
+        } else if (isNestedScrollingEnabled()) {
+            stopNestedScroll(TYPE_TOUCH);
+            mPrivateFlags3 &= ~PFLAG3_NESTED_SCROLLING_ENABLED;
+        }
+    }
+
+    /**
+     * Returns true if nested scrolling is enabled for this view.
+     *
+     * <p>If nested scrolling is enabled and this View class implementation supports it,
+     * this view will act as a nested scrolling child view when applicable, forwarding data
+     * about the scroll operation in progress to a compatible and cooperating nested scrolling
+     * parent.</p>
+     *
+     * @return true if nested scrolling is enabled
+     * @see #setNestedScrollingEnabled(boolean)
+     */
+    public boolean isNestedScrollingEnabled() {
+        return (mPrivateFlags3 & PFLAG3_NESTED_SCROLLING_ENABLED) ==
+                PFLAG3_NESTED_SCROLLING_ENABLED;
+    }
+
+    /**
+     * Begin a nestable scroll operation along the given axes, for the given input type.
+     *
+     * <p>A view starting a nested scroll promises to abide by the following contract:</p>
+     *
+     * <p>The view will call startNestedScroll upon initiating a scroll operation. In the case
+     * of a touch scroll type this corresponds to the initial {@link MotionEvent#ACTION_DOWN}.
+     * In the case of touch scrolling the nested scroll will be terminated automatically in
+     * the same manner as {@link ViewParent#requestDisallowInterceptTouchEvent(boolean)}.
+     * In the event of programmatic scrolling the caller must explicitly call
+     * {@link #stopNestedScroll(int)} to indicate the end of the nested scroll.</p>
+     *
+     * <p>If <code>startNestedScroll</code> returns true, a cooperative parent was found.
+     * If it returns false the caller may ignore the rest of this contract until the next scroll.
+     * Calling startNestedScroll while a nested scroll is already in progress will return true.</p>
+     *
+     * <p>At each incremental step of the scroll the caller should invoke
+     * {@link #dispatchNestedPreScroll(int, int, int[], int[], int) dispatchNestedPreScroll}
+     * once it has calculated the requested scrolling delta. If it returns true the nested scrolling
+     * parent at least partially consumed the scroll and the caller should adjust the amount it
+     * scrolls by.</p>
+     *
+     * <p>After applying the remainder of the scroll delta the caller should invoke
+     * {@link #dispatchNestedScroll(int, int, int, int, int[], int, int[]) dispatchNestedScroll}, passing
+     * both the delta consumed and the delta unconsumed. A nested scrolling parent may treat
+     * these values differently. See
+     * {@link ViewParent#onNestedScroll(View, int, int, int, int, int, int[])}.
+     * </p>
+     *
+     * @param axes Flags consisting of a combination of {@link View#SCROLL_AXIS_HORIZONTAL}
+     *             and/or {@link View#SCROLL_AXIS_VERTICAL}.
+     * @param type the type of input which cause this scroll event
+     * @return true if a cooperative parent was found and nested scrolling has been enabled for
+     * the current gesture.
+     * @see #stopNestedScroll(int)
+     * @see #dispatchNestedPreScroll(int, int, int[], int[], int)
+     * @see #dispatchNestedScroll(int, int, int, int, int[], int, int[])
+     */
+    public boolean startNestedScroll(@ScrollAxis int axes, @NestedScrollType int type) {
+        if (hasNestedScrollingParent(type)) {
+            // Already in progress
+            return true;
+        }
+        if (isNestedScrollingEnabled()) {
+            ViewParent p = getParent();
+            View child = this;
+            while (p != null) {
+                if (p.onStartNestedScroll(child, this, axes, type)) {
+                    if (type == TYPE_NON_TOUCH) {
+                        mNestedScrollingParentNonTouch = p;
+                    } else {
+                        mNestedScrollingParentTouch = p;
+                    }
+                    p.onNestedScrollAccepted(child, this, axes, type);
+                    return true;
+                }
+                if (p instanceof View) {
+                    child = (View) p;
+                }
+                p = p.getParent();
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Stop a nested scroll in progress for the given input type.
+     *
+     * <p>Calling this method when a nested scroll is not currently in progress is harmless.</p>
+     *
+     * @param type the type of input which cause this scroll event
+     * @see #startNestedScroll(int, int)
+     */
+    public void stopNestedScroll(@NestedScrollType int type) {
+        if (type == TYPE_NON_TOUCH) {
+            if (mNestedScrollingParentNonTouch != null) {
+                mNestedScrollingParentNonTouch.onStopNestedScroll(this, type);
+                mNestedScrollingParentNonTouch = null;
+            }
+        } else {
+            if (mNestedScrollingParentTouch != null) {
+                mNestedScrollingParentTouch.onStopNestedScroll(this, type);
+                mNestedScrollingParentTouch = null;
+            }
+        }
+    }
+
+    /**
+     * Returns true if this view has a nested scrolling parent for the given input type.
+     *
+     * <p>The presence of a nested scrolling parent indicates that this view has initiated
+     * a nested scroll and it was accepted by an ancestor view further up the view hierarchy.</p>
+     *
+     * @param type the type of input which cause this scroll event
+     * @return whether this view has a nested scrolling parent
+     */
+    public boolean hasNestedScrollingParent(@NestedScrollType int type) {
+        if (type == TYPE_NON_TOUCH) {
+            return mNestedScrollingParentNonTouch != null;
+        } else {
+            return mNestedScrollingParentTouch != null;
+        }
+    }
+
+    /**
+     * Dispatch one step of a nested scroll in progress.
+     *
+     * <p>Implementations of views that support nested scrolling should call this to report
+     * info about a scroll in progress to the current nested scrolling parent. If a nested scroll
+     * is not currently in progress or nested scrolling is not
+     * {@link #isNestedScrollingEnabled() enabled} for this view this method does nothing.
+     *
+     * <p>Compatible View implementations should also call
+     * {@link #dispatchNestedPreScroll(int, int, int[], int[], int) dispatchNestedPreScroll} before
+     * consuming a component of the scroll event themselves.
+     *
+     * <p>The original nested scrolling child (where the input events were received to start the
+     * scroll) must provide a non-null <code>consumed</code> parameter with values {0, 0}.
+     *
+     * @param dxConsumed     Horizontal distance in pixels consumed by this view during this scroll step
+     * @param dyConsumed     Vertical distance in pixels consumed by this view during this scroll step
+     * @param dxUnconsumed   Horizontal scroll distance in pixels not consumed by this view
+     * @param dyUnconsumed   Horizontal scroll distance in pixels not consumed by this view
+     * @param offsetInWindow Optional. If not null, on return this will contain the offset
+     *                       in local view coordinates of this view from before this operation
+     *                       to after it completes. View implementations may use this to adjust
+     *                       expected input coordinate tracking.
+     * @param type           the type of input which cause this scroll event
+     * @param consumed       Output. Upon this method returning, will contain the original values plus any
+     *                       scroll distances consumed by all of this view's nested scrolling parents up
+     *                       the view hierarchy. Index 0 for the x dimension, and index 1 for the y
+     *                       dimension
+     * @return true if the event was dispatched, false if it could not be dispatched.
+     * @see ViewParent#onNestedScroll(View, int, int, int, int, int, int[])
+     */
+    public boolean dispatchNestedScroll(int dxConsumed, int dyConsumed, int dxUnconsumed, int dyUnconsumed,
+                                        @Nullable int[] offsetInWindow, @NestedScrollType int type,
+                                        @Nonnull int[] consumed) {
+        if (isNestedScrollingEnabled()) {
+            final ViewParent parent = type == TYPE_NON_TOUCH ? mNestedScrollingParentNonTouch :
+                    mNestedScrollingParentTouch;
+            if (parent == null) {
+                return false;
+            }
+
+            if (dxConsumed != 0 || dyConsumed != 0 || dxUnconsumed != 0 || dyUnconsumed != 0) {
+                int startX = 0;
+                int startY = 0;
+                if (offsetInWindow != null) {
+                    getLocationInWindow(offsetInWindow);
+                    startX = offsetInWindow[0];
+                    startY = offsetInWindow[1];
+                }
+
+                parent.onNestedScroll(this, dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, type, consumed);
+
+                if (offsetInWindow != null) {
+                    getLocationInWindow(offsetInWindow);
+                    offsetInWindow[0] -= startX;
+                    offsetInWindow[1] -= startY;
+                }
+                return true;
+            } else if (offsetInWindow != null) {
+                // No motion, no dispatch. Keep offsetInWindow up to date.
+                offsetInWindow[0] = 0;
+                offsetInWindow[1] = 0;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Dispatch one step of a nested scroll in progress before this view consumes any portion of it.
+     *
+     * <p>Nested pre-scroll events are to nested scroll events what touch intercept is to touch.
+     * <code>dispatchNestedPreScroll</code> offers an opportunity for the parent view in a nested
+     * scrolling operation to consume some or all of the scroll operation before the child view
+     * consumes it.</p>
+     *
+     * @param dx             Horizontal scroll distance in pixels
+     * @param dy             Vertical scroll distance in pixels
+     * @param consumed       Output. If not null, consumed[0] will contain the consumed component of dx
+     *                       and consumed[1] the consumed dy.
+     * @param offsetInWindow Optional. If not null, on return this will contain the offset
+     *                       in local view coordinates of this view from before this operation
+     *                       to after it completes. View implementations may use this to adjust
+     *                       expected input coordinate tracking.
+     * @param type           the type of input which cause this scroll event
+     * @return true if the parent consumed some or all of the scroll delta
+     * @see #dispatchNestedScroll(int, int, int, int, int[], int, int[])
+     */
+    public boolean dispatchNestedPreScroll(int dx, int dy, @Nullable int[] consumed,
+                                           @Nullable int[] offsetInWindow, @NestedScrollType int type) {
+        if (isNestedScrollingEnabled()) {
+            final ViewParent parent = type == TYPE_NON_TOUCH ? mNestedScrollingParentNonTouch :
+                    mNestedScrollingParentTouch;
+            if (parent == null) {
+                return false;
+            }
+
+            if (dx != 0 || dy != 0) {
+                int startX = 0;
+                int startY = 0;
+                if (offsetInWindow != null) {
+                    getLocationInWindow(offsetInWindow);
+                    startX = offsetInWindow[0];
+                    startY = offsetInWindow[1];
+                }
+
+                if (consumed == null) {
+                    if (mTempNestedScrollConsumed == null) {
+                        mTempNestedScrollConsumed = new int[2];
+                    }
+                    consumed = mTempNestedScrollConsumed;
+                }
+                consumed[0] = 0;
+                consumed[1] = 0;
+                parent.onNestedPreScroll(this, dx, dy, consumed, type);
+
+                if (offsetInWindow != null) {
+                    getLocationInWindow(offsetInWindow);
+                    offsetInWindow[0] -= startX;
+                    offsetInWindow[1] -= startY;
+                }
+                return consumed[0] != 0 || consumed[1] != 0;
+            } else if (offsetInWindow != null) {
+                offsetInWindow[0] = 0;
+                offsetInWindow[1] = 0;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Dispatch a fling to a nested scrolling parent.
+     *
+     * <p>This method should be used to indicate that a nested scrolling child has detected
+     * suitable conditions for a fling. Generally this means that a touch scroll has ended with a
+     * {@link VelocityTracker velocity} in the direction of scrolling that meets or exceeds
+     * the {@link ViewConfiguration#getScaledMinimumFlingVelocity() minimum fling velocity}
+     * along a scrollable axis.</p>
+     *
+     * <p>If a nested scrolling child view would normally fling but it is at the edge of
+     * its own content, it can use this method to delegate the fling to its nested scrolling
+     * parent instead. The parent may optionally consume the fling or observe a child fling.</p>
+     *
+     * @param velocityX Horizontal fling velocity in pixels per second
+     * @param velocityY Vertical fling velocity in pixels per second
+     * @param consumed  true if the child consumed the fling, false otherwise
+     * @return true if the nested scrolling parent consumed or otherwise reacted to the fling
+     */
+    public boolean dispatchNestedFling(float velocityX, float velocityY, boolean consumed) {
+        if (isNestedScrollingEnabled() && mNestedScrollingParentTouch != null) {
+            return mNestedScrollingParentTouch.onNestedFling(this, velocityX, velocityY, consumed);
+        }
+        return false;
+    }
+
+    /**
+     * Dispatch a fling to a nested scrolling parent before it is processed by this view.
+     *
+     * <p>Nested pre-fling events are to nested fling events what touch intercept is to touch
+     * and what nested pre-scroll is to nested scroll. <code>dispatchNestedPreFling</code>
+     * offsets an opportunity for the parent view in a nested fling to fully consume the fling
+     * before the child view consumes it. If this method returns <code>true</code>, a nested
+     * parent view consumed the fling and this view should not scroll as a result.</p>
+     *
+     * <p>For a better user experience, only one view in a nested scrolling chain should consume
+     * the fling at a time. If a parent view consumed the fling this method will return false.
+     * Custom view implementations should account for this in two ways:</p>
+     *
+     * <ul>
+     *     <li>If a custom view is paged and needs to settle to a fixed page-point, do not
+     *     call <code>dispatchNestedPreFling</code>; consume the fling and settle to a valid
+     *     position regardless.</li>
+     *     <li>If a nested parent does consume the fling, this view should not scroll at all,
+     *     even to settle back to a valid idle position.</li>
+     * </ul>
+     *
+     * <p>Views should also not offer fling velocities to nested parent views along an axis
+     * where scrolling is not currently supported; a {@link icyllis.modernui.widget.ScrollView ScrollView}
+     * should not offer a horizontal fling velocity to its parents since scrolling along that
+     * axis is not permitted and carrying velocity along that motion does not make sense.</p>
+     *
+     * @param velocityX Horizontal fling velocity in pixels per second
+     * @param velocityY Vertical fling velocity in pixels per second
+     * @return true if a nested scrolling parent consumed the fling
+     */
+    public boolean dispatchNestedPreFling(float velocityX, float velocityY) {
+        if (isNestedScrollingEnabled() && mNestedScrollingParentTouch != null) {
+            return mNestedScrollingParentTouch.onNestedPreFling(this, velocityX, velocityY);
+        }
+        return false;
+    }
+
+    /// End - Nested Scrolling \\\
+
+    /**
      * Get the width of the view.
      *
      * @return the width in pixels
@@ -3548,7 +5840,11 @@ public class View implements Drawable.Callback {
 
             sizeChange(mRight - mLeft, height, oldWidth, height);
 
-            mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+            mBackgroundSizeChanged = true;
+            mDefaultFocusHighlightSizeChanged = true;
+            if (mForegroundInfo != null) {
+                mForegroundInfo.mBoundsChanged = true;
+            }
         }
     }
 
@@ -3580,7 +5876,11 @@ public class View implements Drawable.Callback {
 
             sizeChange(width, mBottom - mTop, width, oldHeight);
 
-            mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+            mBackgroundSizeChanged = true;
+            mDefaultFocusHighlightSizeChanged = true;
+            if (mForegroundInfo != null) {
+                mForegroundInfo.mBoundsChanged = true;
+            }
         }
     }
 
@@ -3612,7 +5912,11 @@ public class View implements Drawable.Callback {
 
             sizeChange(mRight - mLeft, height, oldWidth, height);
 
-            mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+            mBackgroundSizeChanged = true;
+            mDefaultFocusHighlightSizeChanged = true;
+            if (mForegroundInfo != null) {
+                mForegroundInfo.mBoundsChanged = true;
+            }
         }
     }
 
@@ -3644,7 +5948,11 @@ public class View implements Drawable.Callback {
 
             sizeChange(width, mBottom - mTop, width, oldHeight);
 
-            mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+            mBackgroundSizeChanged = true;
+            mDefaultFocusHighlightSizeChanged = true;
+            if (mForegroundInfo != null) {
+                mForegroundInfo.mBoundsChanged = true;
+            }
         }
     }
 
@@ -4180,7 +6488,6 @@ public class View implements Drawable.Callback {
         return mRenderNode.getAnimationMatrix();
     }
 
-
     /**
      * Returns the current StateListAnimator if exists.
      *
@@ -4253,7 +6560,7 @@ public class View implements Drawable.Callback {
         removeUnsetPressCallback();
         removeLongPressCallback();
         removePerformClickCallback();
-        //stopNestedScroll();
+        stopNestedScroll(TYPE_TOUCH);
 
         // Anything that started animating right before detach should already
         // be in its final state when re-attached.
@@ -4310,6 +6617,77 @@ public class View implements Drawable.Callback {
      */
     protected int getWindowAttachCount() {
         return mWindowAttachCount;
+    }
+
+    /**
+     * Indicates whether the view is currently tracking transient state that the
+     * app should not need to concern itself with saving and restoring, but that
+     * the framework should take special note to preserve when possible.
+     *
+     * <p>A view with transient state cannot be trivially rebound from an external
+     * data source, such as an adapter binding item views in a list. This may be
+     * because the view is performing an animation, tracking user selection
+     * of content, or similar.</p>
+     *
+     * @return true if the view has transient state
+     */
+    public boolean hasTransientState() {
+        return (mPrivateFlags2 & PFLAG2_HAS_TRANSIENT_STATE) == PFLAG2_HAS_TRANSIENT_STATE;
+    }
+
+    /**
+     * Set whether this view is currently tracking transient state that the
+     * framework should attempt to preserve when possible. This flag is reference counted,
+     * so every call to setHasTransientState(true) should be paired with a later call
+     * to setHasTransientState(false).
+     *
+     * <p>A view with transient state cannot be trivially rebound from an external
+     * data source, such as an adapter binding item views in a list. This may be
+     * because the view is performing an animation, tracking user selection
+     * of content, or similar.</p>
+     *
+     * @param hasTransientState true if this view has transient state
+     */
+    public void setHasTransientState(boolean hasTransientState) {
+        final boolean oldHasTransientState = hasTransientState();
+        mTransientStateCount = hasTransientState ? mTransientStateCount + 1 :
+                mTransientStateCount - 1;
+        if (mTransientStateCount < 0) {
+            mTransientStateCount = 0;
+        } else if ((hasTransientState && mTransientStateCount == 1) ||
+                (!hasTransientState && mTransientStateCount == 0)) {
+            // update flag if we've just incremented up from 0 or decremented down to 0
+            mPrivateFlags2 = (mPrivateFlags2 & ~PFLAG2_HAS_TRANSIENT_STATE) |
+                    (hasTransientState ? PFLAG2_HAS_TRANSIENT_STATE : 0);
+            final boolean newHasTransientState = hasTransientState();
+            if (mParent != null && newHasTransientState != oldHasTransientState) {
+                mParent.childHasTransientStateChanged(this, newHasTransientState);
+            }
+        }
+    }
+
+    /**
+     * Set the view is tracking translation transient state. This flag is used to check if the view
+     * need to call setHasTransientState(false) to reset transient state that set when starting
+     * translation.
+     *
+     * @param hasTranslationTransientState true if this view has translation transient state
+     * @hide
+     */
+    public void setHasTranslationTransientState(boolean hasTranslationTransientState) {
+        if (hasTranslationTransientState) {
+            mPrivateFlags4 |= PFLAG4_HAS_TRANSLATION_TRANSIENT_STATE;
+        } else {
+            mPrivateFlags4 &= ~PFLAG4_HAS_TRANSLATION_TRANSIENT_STATE;
+        }
+    }
+
+    /**
+     * @hide
+     */
+    public boolean hasTranslationTransientState() {
+        return (mPrivateFlags4 & PFLAG4_HAS_TRANSLATION_TRANSIENT_STATE)
+                == PFLAG4_HAS_TRANSLATION_TRANSIENT_STATE;
     }
 
     /**
@@ -5280,6 +7658,12 @@ public class View implements Drawable.Callback {
         if (mBackground != null) {
             mBackground.setHotspot(x, y);
         }
+        if (mDefaultFocusHighlight != null) {
+            mDefaultFocusHighlight.setHotspot(x, y);
+        }
+        if (mForegroundInfo != null && mForegroundInfo.mDrawable != null) {
+            mForegroundInfo.mDrawable.setHotspot(x, y);
+        }
 
         dispatchDrawableHotspotChanged(x, y);
     }
@@ -5339,12 +7723,12 @@ public class View implements Drawable.Callback {
         if (mBackground != null) {
             mBackground.setLayoutDirection(layoutDirection);
         }
-        /*if (mForegroundInfo != null && mForegroundInfo.mDrawable != null) {
+        if (mForegroundInfo != null && mForegroundInfo.mDrawable != null) {
             mForegroundInfo.mDrawable.setLayoutDirection(layoutDirection);
         }
         if (mDefaultFocusHighlight != null) {
             mDefaultFocusHighlight.setLayoutDirection(layoutDirection);
-        }*/
+        }
         mPrivateFlags2 |= PFLAG2_DRAWABLE_RESOLVED;
         onResolveDrawables(layoutDirection);
     }
@@ -5416,31 +7800,21 @@ public class View implements Drawable.Callback {
         boolean changed = false;
 
         // Common case is there are no scroll bars.
-        /*if ((viewFlags & (SCROLLBARS_VERTICAL|SCROLLBARS_HORIZONTAL)) != 0) {
+        if ((viewFlags & (SCROLLBARS_VERTICAL|SCROLLBARS_HORIZONTAL)) != 0) {
             if ((viewFlags & SCROLLBARS_VERTICAL) != 0) {
                 final int offset = (viewFlags & SCROLLBARS_INSET_MASK) == 0
                         ? 0 : getVerticalScrollbarWidth();
-                switch (mVerticalScrollbarPosition) {
-                    case SCROLLBAR_POSITION_DEFAULT:
-                        if (isLayoutRtl()) {
-                            left += offset;
-                        } else {
-                            right += offset;
-                        }
-                        break;
-                    case SCROLLBAR_POSITION_RIGHT:
-                        right += offset;
-                        break;
-                    case SCROLLBAR_POSITION_LEFT:
-                        left += offset;
-                        break;
+                if (isLayoutRtl()) {
+                    left += offset;
+                } else {
+                    right += offset;
                 }
             }
             if ((viewFlags & SCROLLBARS_HORIZONTAL) != 0) {
                 bottom += (viewFlags & SCROLLBARS_INSET_MASK) == 0
                         ? 0 : getHorizontalScrollbarHeight();
             }
-        }*/
+        }
 
         if (mPaddingLeft != left) {
             changed = true;
@@ -5604,7 +7978,8 @@ public class View implements Drawable.Callback {
         // Avoid verifying the scroll bar drawable so that we don't end up in
         // an invalidation loop. This effectively prevents the scroll bar
         // drawable from triggering invalidations and scheduling runnables.
-        return drawable == mBackground;
+        return drawable == mBackground || (mForegroundInfo != null && mForegroundInfo.mDrawable == drawable)
+                || (mDefaultFocusHighlight == drawable);
     }
 
     /**
@@ -5625,7 +8000,17 @@ public class View implements Drawable.Callback {
 
         final Drawable bg = mBackground;
         if (bg != null && bg.isStateful()) {
-            changed = bg.setState(state);
+            changed |= bg.setState(state);
+        }
+
+        final Drawable hl = mDefaultFocusHighlight;
+        if (hl != null && hl.isStateful()) {
+            changed |= hl.setState(state);
+        }
+
+        final Drawable fg = mForegroundInfo != null ? mForegroundInfo.mDrawable : null;
+        if (fg != null && fg.isStateful()) {
+            changed |= fg.setState(state);
         }
 
         if (mScrollCache != null) {
@@ -5639,6 +8024,11 @@ public class View implements Drawable.Callback {
         if (mStateListAnimator != null) {
             mStateListAnimator.setState(state);
         }
+
+        /*if (!isAggregatedVisible()) {
+            // If we're not visible, skip any animated changes
+            jumpDrawablesToCurrentState();
+        }*/
 
         if (changed) {
             invalidate();
@@ -5826,7 +8216,9 @@ public class View implements Drawable.Callback {
         } else {
             /* Remove the background */
             mBackground = null;
-            if ((mViewFlags & WILL_NOT_DRAW) != 0) {
+            if ((mViewFlags & WILL_NOT_DRAW) != 0
+                    && (mDefaultFocusHighlight == null)
+                    && (mForegroundInfo == null || mForegroundInfo.mDrawable == null)) {
                 mPrivateFlags |= PFLAG_SKIP_DRAW;
             }
 
@@ -5846,7 +8238,7 @@ public class View implements Drawable.Callback {
             requestLayout();
         }
 
-        mPrivateFlags2 |= PFLAG2_BACKGROUND_SIZE_CHANGED;
+        mBackgroundSizeChanged = true;
         invalidate();
     }
 
@@ -5868,7 +8260,57 @@ public class View implements Drawable.Callback {
      * @see #onDrawForeground(Canvas)
      */
     public Drawable getForeground() {
-        return null;
+        return mForegroundInfo != null ? mForegroundInfo.mDrawable : null;
+    }
+
+    /**
+     * Supply a Drawable that is to be rendered on top of all of the content in the view.
+     *
+     * @param foreground the Drawable to be drawn on top of the children
+     */
+    public void setForeground(Drawable foreground) {
+        if (mForegroundInfo == null) {
+            if (foreground == null) {
+                // Nothing to do.
+                return;
+            }
+            mForegroundInfo = new ForegroundInfo();
+        }
+
+        if (foreground == mForegroundInfo.mDrawable) {
+            // Nothing to do
+            return;
+        }
+
+        if (mForegroundInfo.mDrawable != null) {
+            if (isAttachedToWindow()) {
+                mForegroundInfo.mDrawable.setVisible(false, false);
+            }
+            mForegroundInfo.mDrawable.setCallback(null);
+            //unscheduleDrawable(mForegroundInfo.mDrawable);
+        }
+
+        mForegroundInfo.mDrawable = foreground;
+        mForegroundInfo.mBoundsChanged = true;
+        if (foreground != null) {
+            if ((mPrivateFlags & PFLAG_SKIP_DRAW) != 0) {
+                mPrivateFlags &= ~PFLAG_SKIP_DRAW;
+            }
+            foreground.setLayoutDirection(getLayoutDirection());
+            if (foreground.isStateful()) {
+                foreground.setState(getDrawableState());
+            }
+            if (isAttachedToWindow()) {
+                foreground.setVisible(getWindowVisibility() == VISIBLE && isShown(), false);
+            }
+            // Set callback last, since the view may still be initializing.
+            foreground.setCallback(this);
+        } else if ((mViewFlags & WILL_NOT_DRAW) != 0 && mBackground == null
+                && (mDefaultFocusHighlight == null)) {
+            mPrivateFlags |= PFLAG_SKIP_DRAW;
+        }
+        requestLayout();
+        invalidate();
     }
 
     /**
@@ -5880,7 +8322,43 @@ public class View implements Drawable.Callback {
      * @hide internal use only; only used by FrameLayout and internal screen layouts.
      */
     public boolean isForegroundInsidePadding() {
-        return true;
+        return mForegroundInfo == null || mForegroundInfo.mInsidePadding;
+    }
+
+    /**
+     * Describes how the foreground is positioned.
+     *
+     * @return foreground gravity.
+     * @see #setForegroundGravity(int)
+     */
+    public int getForegroundGravity() {
+        return mForegroundInfo != null ? mForegroundInfo.mGravity
+                : Gravity.START | Gravity.TOP;
+    }
+
+    /**
+     * Describes how the foreground is positioned. Defaults to START and TOP.
+     *
+     * @param gravity see {@link Gravity}
+     * @see #getForegroundGravity()
+     */
+    public void setForegroundGravity(int gravity) {
+        if (mForegroundInfo == null) {
+            mForegroundInfo = new ForegroundInfo();
+        }
+
+        if (mForegroundInfo.mGravity != gravity) {
+            if ((gravity & Gravity.RELATIVE_HORIZONTAL_GRAVITY_MASK) == 0) {
+                gravity |= Gravity.START;
+            }
+
+            if ((gravity & Gravity.VERTICAL_GRAVITY_MASK) == 0) {
+                gravity |= Gravity.TOP;
+            }
+
+            mForegroundInfo.mGravity = gravity;
+            requestLayout();
+        }
     }
 
     /**
@@ -5928,38 +8406,66 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Computes the coordinates of this view in its window.
+     * <p>Computes the coordinates of this view in its window. The argument
+     * must be an array of two integers. After the method returns, the array
+     * contains the x and y location in that order.</p>
      *
-     * @param out the point in which to hold the coordinates
+     * @param outLocation an array of two integers in which to hold the coordinates
      */
-    public void getLocationInWindow(@Nonnull Point out) {
+    public void getLocationInWindow(@Nonnull int[] outLocation) {
+        if (outLocation.length < 2) {
+            throw new IllegalArgumentException("outLocation must be an array of two integers");
+        }
+
+        outLocation[0] = 0;
+        outLocation[1] = 0;
+
+        transformFromViewToWindowSpace(outLocation);
+    }
+
+    /**
+     * @hide
+     */
+    public void transformFromViewToWindowSpace(@Nonnull int[] inOutLocation) {
+        if (inOutLocation.length < 2) {
+            throw new IllegalArgumentException("inOutLocation must be an array of two integers");
+        }
+
         if (mAttachInfo == null) {
-            out.set(0, 0);
+            // When the view is not attached to a window, this method does not make sense
+            inOutLocation[0] = inOutLocation[1] = 0;
             return;
         }
 
-        PointF p = mAttachInfo.mTmpTransformLocation;
-        p.set(0, 0);
+        float[] position = mAttachInfo.mTmpTransformLocation;
+        position[0] = inOutLocation[0];
+        position[1] = inOutLocation[1];
 
         if (!hasIdentityMatrix()) {
-            getMatrix().transform(p);
+            getMatrix().transformPoint(position);
         }
 
-        p.offset(mLeft, mTop);
+        position[0] += mLeft;
+        position[1] += mTop;
 
-        ViewParent parent = mParent;
-        while (parent instanceof View v) {
-            p.offset(-v.mScrollX, -v.mScrollY);
+        ViewParent viewParent = mParent;
+        while (viewParent instanceof final View view) {
 
-            if (!v.hasIdentityMatrix()) {
-                v.getMatrix().transform(p);
+            position[0] -= view.mScrollX;
+            position[1] -= view.mScrollY;
+
+            if (!view.hasIdentityMatrix()) {
+                view.getMatrix().transformPoint(position);
             }
 
-            p.offset(v.mLeft, v.mTop);
-            parent = v.mParent;
+            position[0] += view.mLeft;
+            position[1] += view.mTop;
+
+            viewParent = view.mParent;
         }
 
-        p.round(out);
+        inOutLocation[0] = Math.round(position[0]);
+        inOutLocation[1] = Math.round(position[1]);
     }
 
     /**
@@ -6000,22 +8506,23 @@ public class View implements Drawable.Callback {
     @SuppressWarnings("unchecked")
     @Nullable
     <T extends View> T findViewTraversal(int id) {
-        if (id == mId) {
+        if (id == mID) {
             return (T) this;
         }
         return null;
     }
 
-    /*boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
-        if ((mViewFlags & ENABLED_MASK) == DISABLED) {
-            return false;
+    /**
+     * @return A handler associated with the thread running the View. This
+     * handler can be used to pump events in the UI events queue.
+     */
+    public Handler getHandler() {
+        final AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            return attachInfo.mHandler;
         }
-        if (x >= mLeft && x < mRight && y >= mTop && y < mBottom) {
-            route.add(this);
-            return true;
-        }
-        return false;
-    }*/
+        return null;
+    }
 
     /**
      * Returns the queue of runnable for this view.
@@ -6035,7 +8542,6 @@ public class View implements Drawable.Callback {
      *
      * @return The view root, or null if none.
      */
-    @ApiStatus.Internal
     public ViewRoot getViewRootImpl() {
         if (mAttachInfo != null) {
             return mAttachInfo.mViewRoot;
@@ -6186,14 +8692,6 @@ public class View implements Drawable.Callback {
         if (attachInfo != null) {
             attachInfo.mHandler.postDelayed(this::invalidate, delayMillis);
         }
-    }
-
-    /**
-     * Called by a parent to request that a child update its values for mScrollX
-     * and mScrollY if necessary. This will typically be done if the child is
-     * animating a scroll using a Scroller.
-     */
-    public void computeScroll() {
     }
 
     /**
@@ -6409,7 +8907,7 @@ public class View implements Drawable.Callback {
      * @param event the generic motion event being processed.
      * @return {@code true} if the event was consumed by the view, {@code false} otherwise
      */
-    public boolean onGenericMotionEvent(MotionEvent event) {
+    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
         /*final double mouseX = event.getX();
         final double mouseY = event.getY();
         final int action = event.getAction();
@@ -6960,7 +9458,13 @@ public class View implements Drawable.Callback {
      * @return {@code true} if the event was handled by the view, {@code false} otherwise
      */
     public boolean dispatchTouchEvent(@Nonnull MotionEvent event) {
-        boolean result = false;
+        int action = event.getAction();
+        if (action == MotionEvent.ACTION_DOWN) {
+            // Defensive cleanup for new gesture
+            stopNestedScroll(TYPE_TOUCH);
+        }
+
+        boolean result = (mViewFlags & ENABLED_MASK) == ENABLED && handleScrollBarDragging(event);
 
         ListenerInfo li = mListenerInfo;
         if (li != null && li.mOnTouchListener != null
@@ -6971,6 +9475,15 @@ public class View implements Drawable.Callback {
 
         if (!result && onTouchEvent(event)) {
             result = true;
+        }
+
+        // Clean up after nested scrolls if this is the end of a gesture;
+        // also cancel it if we tried an ACTION_DOWN but we didn't want the rest
+        // of the gesture.
+        if (action == MotionEvent.ACTION_UP ||
+                action == MotionEvent.ACTION_CANCEL ||
+                (action == MotionEvent.ACTION_DOWN && !result)) {
+            stopNestedScroll(TYPE_TOUCH);
         }
 
         return result;
@@ -7143,6 +9656,108 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Handles scroll bar dragging by mouse input.
+     *
+     * @param event The motion event.
+     * @return true if the event was handled as a scroll bar dragging, false otherwise.
+     * @hide
+     */
+    protected boolean handleScrollBarDragging(MotionEvent event) {
+        if (mScrollCache == null) {
+            return false;
+        }
+        final float x = event.getX();
+        final float y = event.getY();
+        final int action = event.getAction();
+        if ((mScrollCache.mScrollBarDraggingState == ScrollCache.NOT_DRAGGING
+                && action != MotionEvent.ACTION_DOWN)
+                || !event.isButtonPressed(MotionEvent.BUTTON_PRIMARY)) {
+            mScrollCache.mScrollBarDraggingState = ScrollCache.NOT_DRAGGING;
+            return false;
+        }
+
+        switch (action) {
+            case MotionEvent.ACTION_MOVE:
+                if (mScrollCache.mScrollBarDraggingState
+                        == ScrollCache.DRAGGING_VERTICAL_SCROLL_BAR) {
+                    final Rect bounds = mScrollCache.mScrollBarBounds;
+                    getVerticalScrollBarBounds(bounds, null);
+                    final int range = computeVerticalScrollRange();
+                    final int offset = computeVerticalScrollOffset();
+                    final int extent = computeVerticalScrollExtent();
+
+                    final int thumbLength = ScrollCache.getThumbLength(
+                            bounds.height(), bounds.width(), extent, range);
+                    final int thumbOffset = ScrollCache.getThumbOffset(
+                            bounds.height(), thumbLength, extent, range, offset);
+
+                    final float diff = y - mScrollCache.mScrollBarDraggingPos;
+                    final float maxThumbOffset = bounds.height() - thumbLength;
+                    final float newThumbOffset =
+                            Math.min(Math.max(thumbOffset + diff, 0.0f), maxThumbOffset);
+                    final int height = getHeight();
+                    if (Math.round(newThumbOffset) != thumbOffset && maxThumbOffset > 0
+                            && height > 0 && extent > 0) {
+                        final int newY = Math.round((range - extent)
+                                / ((float) extent / height) * (newThumbOffset / maxThumbOffset));
+                        if (newY != getScrollY()) {
+                            mScrollCache.mScrollBarDraggingPos = y;
+                            setScrollY(newY);
+                        }
+                    }
+                    return true;
+                }
+                if (mScrollCache.mScrollBarDraggingState
+                        == ScrollCache.DRAGGING_HORIZONTAL_SCROLL_BAR) {
+                    final Rect bounds = mScrollCache.mScrollBarBounds;
+                    getHorizontalScrollBarBounds(bounds, null);
+                    final int range = computeHorizontalScrollRange();
+                    final int offset = computeHorizontalScrollOffset();
+                    final int extent = computeHorizontalScrollExtent();
+
+                    final int thumbLength = ScrollCache.getThumbLength(
+                            bounds.width(), bounds.height(), extent, range);
+                    final int thumbOffset = ScrollCache.getThumbOffset(
+                            bounds.width(), thumbLength, extent, range, offset);
+
+                    final float diff = x - mScrollCache.mScrollBarDraggingPos;
+                    final float maxThumbOffset = bounds.width() - thumbLength;
+                    final float newThumbOffset =
+                            Math.min(Math.max(thumbOffset + diff, 0.0f), maxThumbOffset);
+                    final int width = getWidth();
+                    if (Math.round(newThumbOffset) != thumbOffset && maxThumbOffset > 0
+                            && width > 0 && extent > 0) {
+                        final int newX = Math.round((range - extent)
+                                / ((float) extent / width) * (newThumbOffset / maxThumbOffset));
+                        if (newX != getScrollX()) {
+                            mScrollCache.mScrollBarDraggingPos = x;
+                            setScrollX(newX);
+                        }
+                    }
+                    return true;
+                }
+            case MotionEvent.ACTION_DOWN:
+                if (mScrollCache.mState == ScrollCache.OFF) {
+                    return false;
+                }
+                if (isOnVerticalScrollbarThumb(x, y)) {
+                    mScrollCache.mScrollBarDraggingState =
+                            ScrollCache.DRAGGING_VERTICAL_SCROLL_BAR;
+                    mScrollCache.mScrollBarDraggingPos = y;
+                    return true;
+                }
+                if (isOnHorizontalScrollbarThumb(x, y)) {
+                    mScrollCache.mScrollBarDraggingState =
+                            ScrollCache.DRAGGING_HORIZONTAL_SCROLL_BAR;
+                    mScrollCache.mScrollBarDraggingPos = x;
+                    return true;
+                }
+        }
+        mScrollCache.mScrollBarDraggingState = ScrollCache.NOT_DRAGGING;
+        return false;
+    }
+
+    /**
      * @hide
      */
     public boolean isInScrollingContainer() {
@@ -7224,14 +9839,6 @@ public class View implements Drawable.Callback {
          * less its own timeout. Remove it here.
          */
         removeTapCallback();
-    }
-
-    boolean isOnScrollbar(float x, float y) {
-        return false;
-    }
-
-    boolean isOnScrollbarThumb(float x, float y) {
-        return false;
     }
 
     /**
@@ -7504,6 +10111,17 @@ public class View implements Drawable.Callback {
      * @param menu the context menu to populate
      */
     protected void onCreateContextMenu(@Nonnull ContextMenu menu) {
+    }
+
+    /**
+     * Return the global {@link KeyEvent.DispatcherState KeyEvent.DispatcherState}
+     * for this view's window.  Returns null if the view is not currently attached
+     * to the window.  Normally you will not need to use this directly, but
+     * just use the standard high-level event callbacks like
+     * {@link #onKeyDown(int, KeyEvent)}.
+     */
+    public KeyEvent.DispatcherState getKeyDispatcherState() {
+        return mAttachInfo != null ? mAttachInfo.mKeyDispatchState : null;
     }
 
     /**
@@ -7885,32 +10503,22 @@ public class View implements Drawable.Callback {
 
     }*/
 
-    /*
-     * Layout scroll bars if enabled
+    /**
+     * Changes the visibility of this View without triggering any other changes. This should only
+     * be used by animation frameworks, such as {@link Transition}, where
+     * visibility changes should not adjust focus or trigger a new layout. Application developers
+     * should use {@link #setVisibility} instead to ensure that the hierarchy is correctly updated.
+     *
+     * <p>Only call this method when a temporary visibility must be applied during an
+     * animation and the original visibility value is guaranteed to be reset after the
+     * animation completes. Use {@link #setVisibility} in all other cases.</p>
+     *
+     * @param visibility One of {@link #VISIBLE}, {@link #INVISIBLE}, or {@link #GONE}.
+     * @see #setVisibility(int)
      */
-    /*private void layoutScrollBars() {
-        ScrollBar scrollBar = verticalScrollBar;
-        if (scrollBar != null) {
-            int thickness = scrollBar.getSize();
-            int r = mRight - scrollBar.getRightPadding();
-            int l = Math.max(r - thickness, mLeft);
-            int t = mTop + scrollBar.getTopPadding();
-            int b = mBottom - scrollBar.getBottomPadding();
-            scrollBar.setFrame(l, t, r, b);
-        }
-        scrollBar = horizontalScrollBar;
-        if (scrollBar != null) {
-            int thickness = scrollBar.getSize();
-            int b = mBottom - scrollBar.getBottomPadding();
-            int t = Math.max(b - thickness, mTop);
-            int l = mLeft + scrollBar.getLeftPadding();
-            int r = mRight - scrollBar.getRightPadding();
-            if (isVerticalScrollBarEnabled()) {
-                r -= verticalScrollBar.getWidth();
-            }
-            scrollBar.setFrame(l, t, r, b);
-        }
-    }*/
+    public final void setTransitionVisibility(int visibility) {
+        mViewFlags = (mViewFlags & ~View.VISIBILITY_MASK) | visibility;
+    }
 
     /**
      * Sets the name of the View to be used to identify Views in Transitions.
@@ -8255,6 +10863,16 @@ public class View implements Drawable.Callback {
         public void run() {
             setPressed(false);
         }
+    }
+
+    private static class ForegroundInfo {
+
+        private Drawable mDrawable;
+        private int mGravity = Gravity.FILL;
+        private boolean mInsidePadding = true;
+        private boolean mBoundsChanged = true;
+        private final Rect mSelfBounds = new Rect();
+        private final Rect mOverlayBounds = new Rect();
     }
 
     static class ListenerInfo {

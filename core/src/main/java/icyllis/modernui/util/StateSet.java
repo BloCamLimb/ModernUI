@@ -18,6 +18,7 @@
 
 package icyllis.modernui.util;
 
+import icyllis.modernui.R;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -45,7 +46,7 @@ public final class StateSet {
 
     /**
      * The order here is very important to
-     * {@link View#getDrawableState()}
+     * {@link View#getDrawableState()}.
      */
     private static final int[][] VIEW_STATE_SETS;
 
@@ -54,48 +55,8 @@ public final class StateSet {
      */
     public static final int[] WILD_CARD = {};
 
-    // Manually generated IDs
     /**
-     * Set when a view's window has input focus.
-     */
-    public static final int state_window_focused = 0x01010090;
-    /**
-     * Set when a view (or one of its parents) is currently selected.
-     */
-    public static final int state_selected = 0x01010091;
-    /**
-     * Set when a view has input focus.
-     */
-    public static final int state_focused = 0x01010092;
-    /**
-     * Set when a view is enabled.
-     */
-    public static final int state_enabled = 0x01010093;
-    /**
-     * Set when the user is pressing down in a view.
-     */
-    public static final int state_pressed = 0x01010094;
-    /**
-     * Set when a view or its parent has been "activated" meaning the user has currently
-     * marked it as being of interest.
-     */
-    public static final int state_activated = 0x01010095;
-    /**
-     * Set when a pointer is hovering over a view.
-     */
-    public static final int state_hovered = 0x01010096;
-    /**
-     * Set when a view that is capable of accepting a drop of the content currently
-     * being manipulated in a drag-and-drop operation.
-     */
-    public static final int state_drag_can_accept = 0x01010097;
-    /**
-     * Set when a view is currently positioned over by a drag operation.
-     */
-    public static final int state_drag_hovered = 0x01010098;
-
-    /**
-     * Called by View
+     * Called by View.
      */
     @ApiStatus.Internal
     public static final int
@@ -110,15 +71,15 @@ public final class StateSet {
             VIEW_STATE_DRAG_HOVERED = 1 << 8;
 
     private static final int[] VIEW_STATE_IDS = new int[]{
-            state_window_focused, VIEW_STATE_WINDOW_FOCUSED,
-            state_selected, VIEW_STATE_SELECTED,
-            state_focused, VIEW_STATE_FOCUSED,
-            state_enabled, VIEW_STATE_ENABLED,
-            state_pressed, VIEW_STATE_PRESSED,
-            state_activated, VIEW_STATE_ACTIVATED,
-            state_hovered, VIEW_STATE_HOVERED,
-            state_drag_can_accept, VIEW_STATE_DRAG_CAN_ACCEPT,
-            state_drag_hovered, VIEW_STATE_DRAG_HOVERED
+            R.attr.state_window_focused, VIEW_STATE_WINDOW_FOCUSED,
+            R.attr.state_selected, VIEW_STATE_SELECTED,
+            R.attr.state_focused, VIEW_STATE_FOCUSED,
+            R.attr.state_enabled, VIEW_STATE_ENABLED,
+            R.attr.state_pressed, VIEW_STATE_PRESSED,
+            R.attr.state_activated, VIEW_STATE_ACTIVATED,
+            R.attr.state_hovered, VIEW_STATE_HOVERED,
+            R.attr.state_drag_can_accept, VIEW_STATE_DRAG_CAN_ACCEPT,
+            R.attr.state_drag_hovered, VIEW_STATE_DRAG_HOVERED
     };
 
     static {
@@ -134,7 +95,6 @@ public final class StateSet {
                     set[pos++] = VIEW_STATE_IDS[j];
                 }
             }
-            // pos == numBits
             VIEW_STATE_SETS[i] = set;
         }
     }
@@ -143,7 +103,7 @@ public final class StateSet {
     }
 
     /**
-     * Called by View
+     * Called by View.
      */
     @ApiStatus.Internal
     public static int[] get(int mask) {

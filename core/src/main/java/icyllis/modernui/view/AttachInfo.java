@@ -20,6 +20,7 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.math.PointF;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 
 /**
@@ -29,7 +30,9 @@ import icyllis.modernui.math.RectF;
 final class AttachInfo {
 
     interface Callbacks {
+
         void playSoundEffect(int effectId);
+
         boolean performHapticFeedback(int effectId, boolean always);
     }
 
@@ -40,10 +43,12 @@ final class AttachInfo {
      */
     View mRootView;
 
+    final KeyEvent.DispatcherState mKeyDispatchState = new KeyEvent.DispatcherState();
+
     /**
      * Indicates whether the view's window currently has the focus.
      */
-    boolean mHasWindowFocus;
+    boolean mHasWindowFocus = true;
 
     /**
      * The current visibility of the window.
@@ -54,6 +59,11 @@ final class AttachInfo {
      * Indicates whether the view's window is currently in touch mode.
      */
     boolean mInTouchMode = true;
+
+    /**
+     * Set to true if a view has been scrolled.
+     */
+    boolean mViewScrollChanged;
 
     /**
      * The view tree observer used to dispatch global events like
@@ -76,7 +86,13 @@ final class AttachInfo {
      * Global to the view hierarchy used as a temporary for dealing with
      * x/y location when view is transformed.
      */
-    final PointF mTmpTransformLocation = new PointF();
+    final float[] mTmpTransformLocation = new float[2];
+
+    /**
+     * Temporary for use in computing invalidate rectangles while
+     * calling up the hierarchy.
+     */
+    final Rect mTmpInvalRect = new Rect();
 
     /**
      * Temporary for use in computing hit areas with transformed views

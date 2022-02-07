@@ -26,6 +26,7 @@ import icyllis.modernui.core.Looper;
 import icyllis.modernui.core.Message;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.view.View.FocusDirection;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
@@ -231,6 +232,12 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                     }
                     mPendingTransitions.clear();
                 }
+
+                if (mAttachInfo.mViewScrollChanged) {
+                    mAttachInfo.mViewScrollChanged = false;
+                    mAttachInfo.mTreeObserver.dispatchOnScrollChanged();
+                }
+
                 if (mInvalidated) {
                     mIsDrawing = true;
                     Canvas canvas = beginRecording(width, height);
@@ -437,13 +444,19 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         return null;
     }
 
-    /*@Override
+    @Override
     public View keyboardNavigationClusterSearch(View currentCluster,
                                                 @FocusDirection int direction) {
         ArchCore.checkUiThread();
-        return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
-                mView, currentCluster, direction);
-    }*/
+        /*return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
+                mView, currentCluster, direction);*/
+        return null;
+    }
+
+    @Override
+    public void childHasTransientStateChanged(View child, boolean hasTransientState) {
+        // Do nothing.
+    }
 
     @Override
     public void bringChildToFront(View child) {
@@ -534,6 +547,43 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     @Override
     public void requestDisallowInterceptTouchEvent(boolean disallowIntercept) {
         // no op
+    }
+
+    @Override
+    public boolean onStartNestedScroll(@Nonnull View child, @Nonnull View target, int axes, int type) {
+        return false;
+    }
+
+    @Override
+    public void onNestedScrollAccepted(@Nonnull View child, @Nonnull View target, int axes, int type) {
+    }
+
+    @Override
+    public void onStopNestedScroll(@Nonnull View target, int type) {
+    }
+
+    @Override
+    public void onNestedScroll(@Nonnull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
+                               int dyUnconsumed, int type, @Nonnull int[] consumed) {
+    }
+
+    @Override
+    public void onNestedPreScroll(@Nonnull View target, int dx, int dy, @Nonnull int[] consumed, int type) {
+    }
+
+    @Override
+    public boolean onNestedFling(@Nonnull View target, float velocityX, float velocityY, boolean consumed) {
+        return false;
+    }
+
+    @Override
+    public boolean onNestedPreFling(@Nonnull View target, float velocityX, float velocityY) {
+        return false;
+    }
+
+    @Override
+    public int getNestedScrollAxes() {
+        return View.SCROLL_AXIS_NONE;
     }
 
     /**
