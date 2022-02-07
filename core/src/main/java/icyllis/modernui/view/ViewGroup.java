@@ -58,6 +58,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     static final int FLAG_CLIP_CHILDREN = 0x1;
 
     /**
+     * When set, ViewGroup excludes the padding area from the invalidate rectangle
+     * Set by default
+     */
+    private static final int FLAG_CLIP_TO_PADDING = 0x2;
+
+    /**
      * When set, the drawing method will call {@link #getChildDrawingOrder(int, int)}
      * to get the index of the child to draw for that iteration.
      */
@@ -163,6 +169,11 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     // being removed that should not actually be removed from the parent yet because they are
     // being animated.
     private ArrayList<View> mTransitioningViews;
+
+    private int mChildCountWithTransientState = 0;
+
+    private int mNestedScrollAxesTouch;
+    private int mNestedScrollAxesNonTouch;
 
     // List of children changing visibility. This is used to potentially keep rendering
     // views during a transition when they otherwise would have become gone/invisible
@@ -1790,18 +1801,18 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public void addFocusables(@Nonnull ArrayList<View> views, int direction) {
+    public void addFocusables(@Nonnull ArrayList<View> views, int direction, int focusableMode) {
         final int focusableCount = views.size();
 
         final int descendantFocusability = getDescendantFocusability();
 
         if (descendantFocusability == FOCUS_BLOCK_DESCENDANTS) {
-            super.addFocusables(views, direction);
+            super.addFocusables(views, direction, focusableMode);
             return;
         }
 
         if (descendantFocusability == FOCUS_BEFORE_DESCENDANTS) {
-            super.addFocusables(views, direction);
+            super.addFocusables(views, direction, focusableMode);
         }
 
         int count = 0;
@@ -1815,7 +1826,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         //FIXME
         //FocusFinder.sort(children, 0, count, this, isLayoutRtl());
         for (int i = 0; i < count; ++i) {
-            children[i].addFocusables(views, direction);
+            children[i].addFocusables(views, direction, focusableMode);
         }
 
         // When set to FOCUS_AFTER_DESCENDANTS, we only add ourselves if
@@ -1823,7 +1834,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         // to avoid the focus search finding layouts when a more precise search
         // among the focusable children would be more interesting.
         if (descendantFocusability == FOCUS_AFTER_DESCENDANTS && focusableCount == views.size()) {
-            super.addFocusables(views, direction);
+            super.addFocusables(views, direction, focusableMode);
         }
     }
 
@@ -1857,6 +1868,29 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         if (mParent != null) {
             mParent.requestChildFocus(this, focused);
         }
+    }
+
+    /**
+     * Called when a child view has changed whether it is tracking transient state.
+     */
+    @Override
+    public void childHasTransientStateChanged(View child, boolean childHasTransientState) {
+        final boolean oldHasTransientState = hasTransientState();
+        if (childHasTransientState) {
+            mChildCountWithTransientState++;
+        } else {
+            mChildCountWithTransientState--;
+        }
+
+        final boolean newHasTransientState = hasTransientState();
+        if (mParent != null && oldHasTransientState != newHasTransientState) {
+            mParent.childHasTransientStateChanged(this, newHasTransientState);
+        }
+    }
+
+    @Override
+    public boolean hasTransientState() {
+        return mChildCountWithTransientState > 0 || super.hasTransientState();
     }
 
     @Override
@@ -2006,6 +2040,38 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return null;
     }
 
+
+    /**
+     * Sets whether this ViewGroup will clip its children to its padding and resize (but not
+     * clip) any EdgeEffect to the padded region, if padding is present.
+     * <p>
+     * By default, children are clipped to the padding of their parent
+     * ViewGroup. This clipping behavior is only enabled if padding is non-zero.
+     *
+     * @param clipToPadding true to clip children to the padding of the group, and resize (but
+     *                      not clip) any EdgeEffect to the padded region. False otherwise.
+     */
+    public void setClipToPadding(boolean clipToPadding) {
+        if (hasBooleanFlag(FLAG_CLIP_TO_PADDING) != clipToPadding) {
+            setBooleanFlag(FLAG_CLIP_TO_PADDING, clipToPadding);
+            invalidate();
+        }
+    }
+
+    /**
+     * Returns whether this ViewGroup will clip its children to its padding, and resize (but
+     * not clip) any EdgeEffect to the padded region, if padding is present.
+     * <p>
+     * By default, children are clipped to the padding of their parent
+     * Viewgroup. This clipping behavior is only enabled if padding is non-zero.
+     *
+     * @return true if this ViewGroup clips children to its padding and resizes (but doesn't
+     * clip) any EdgeEffect to the padded region, false otherwise.
+     */
+    public boolean getClipToPadding() {
+        return hasBooleanFlag(FLAG_CLIP_TO_PADDING);
+    }
+
     @Override
     public void dispatchSetSelected(boolean selected) {
         final View[] children = mChildren;
@@ -2081,7 +2147,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     @Nullable
     @Override
     final <T extends View> T findViewTraversal(int id) {
-        if (id == mId) {
+        if (id == mID) {
             return (T) this;
         }
 
@@ -2110,6 +2176,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             requestLayout();
             invalidate();
         }
+    }
+
+    private boolean hasBooleanFlag(int flag) {
+        return (mGroupFlags & flag) == flag;
     }
 
     private void setBooleanFlag(int flag, boolean value) {
@@ -2883,12 +2953,67 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * ViewGroup. Generally, this should be done for containers that can scroll, such as a List.
      * This prevents the pressed state from appearing when the user is actually trying to scroll
      * the content.
-     *
+     * <p>
      * The default implementation returns true for compatibility reasons. Subclasses that do
      * not scroll should generally override this method and return false.
      */
     public boolean shouldDelayChildPressedState() {
         return true;
+    }
+
+    @Override
+    public boolean onStartNestedScroll(@Nonnull View child, @Nonnull View target, int axes, int type) {
+        return false;
+    }
+
+    @Override
+    public void onNestedScrollAccepted(@Nonnull View child, @Nonnull View target, int axes, int type) {
+        if (type == TYPE_NON_TOUCH) {
+            mNestedScrollAxesNonTouch = axes;
+        } else {
+            mNestedScrollAxesTouch = axes;
+        }
+    }
+
+    @Override
+    public void onStopNestedScroll(@Nonnull View target, int type) {
+        // Stop any recursive nested scrolling.
+        stopNestedScroll(type);
+        if (type == TYPE_NON_TOUCH) {
+            mNestedScrollAxesNonTouch = SCROLL_AXIS_NONE;
+        } else {
+            mNestedScrollAxesTouch = SCROLL_AXIS_NONE;
+        }
+    }
+
+    @Override
+    public void onNestedScroll(@Nonnull View target, int dxConsumed, int dyConsumed, int dxUnconsumed,
+                               int dyUnconsumed, int type, @Nonnull int[] consumed) {
+        // Re-dispatch up the tree by default
+        dispatchNestedScroll(dxConsumed, dyConsumed, dxUnconsumed, dyUnconsumed, null, type, consumed);
+    }
+
+    @Override
+    public void onNestedPreScroll(@Nonnull View target, int dx, int dy, @Nonnull int[] consumed, int type) {
+        // Re-dispatch up the tree by default
+        dispatchNestedPreScroll(dx, dy, consumed, null, type);
+    }
+
+    @Override
+    public boolean onNestedFling(@Nonnull View target, float velocityX, float velocityY, boolean consumed) {
+        // Re-dispatch up the tree by default
+        return dispatchNestedFling(velocityX, velocityY, consumed);
+    }
+
+    @Override
+    public boolean onNestedPreFling(@Nonnull View target, float velocityX, float velocityY) {
+        // Re-dispatch up the tree by default
+        return dispatchNestedPreFling(velocityX, velocityY);
+    }
+
+    @Override
+    public int getNestedScrollAxes() {
+        return mNestedScrollAxesTouch | mNestedScrollAxesNonTouch;
     }
 
     /**

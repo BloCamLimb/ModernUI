@@ -34,7 +34,7 @@ import icyllis.modernui.widget.ScrollView;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.modernui.view.ViewConfiguration.dp;
+import static icyllis.modernui.view.View.dp;
 
 public class TestFragment extends Fragment {
 

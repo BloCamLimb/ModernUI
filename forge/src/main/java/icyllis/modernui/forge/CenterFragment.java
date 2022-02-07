@@ -39,7 +39,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Locale;
 
-import static icyllis.modernui.view.ViewConfiguration.dp;
+import static icyllis.modernui.view.View.dp;
 
 public class CenterFragment extends Fragment {
 

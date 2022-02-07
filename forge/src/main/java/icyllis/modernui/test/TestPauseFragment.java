@@ -39,7 +39,6 @@ import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewConfiguration;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
@@ -53,7 +52,7 @@ import javax.annotation.Nullable;
 import java.util.Date;
 import java.util.Locale;
 
-import static icyllis.modernui.view.ViewConfiguration.dp;
+import static icyllis.modernui.view.View.dp;
 
 public class TestPauseFragment extends Fragment {
 
@@ -173,7 +172,7 @@ public class TestPauseFragment extends Fragment {
         public TabBackground() {
             mRadius = dp(16);
             mTextPaint = new TextPaint();
-            mTextPaint.setFontSize(ViewConfiguration.sp(16));
+            mTextPaint.setFontSize(View.sp(16));
         }
 
         @Override

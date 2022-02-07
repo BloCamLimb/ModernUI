@@ -34,6 +34,7 @@ public final class ViewTreeObserver {
 
     private CopyOnWriteArray<OnGlobalLayoutListener> mOnGlobalLayoutListeners;
     private CopyOnWriteArray<OnPreDrawListener> mOnPreDrawListeners;
+    private CopyOnWriteArray<OnScrollChangedListener> mOnScrollChangedListeners;
 
     private boolean mAlive = true;
 
@@ -70,6 +71,20 @@ public final class ViewTreeObserver {
         boolean onPreDraw();
     }
 
+    /**
+     * Interface definition for a callback to be invoked when
+     * something in the view tree has been scrolled.
+     */
+    @FunctionalInterface
+    public interface OnScrollChangedListener {
+
+        /**
+         * Callback method to be invoked when something in the view tree
+         * has been scrolled.
+         */
+        void onScrollChanged();
+    }
+
     ViewTreeObserver() {
     }
 
@@ -94,6 +109,14 @@ public final class ViewTreeObserver {
                 mOnPreDrawListeners.addAll(observer.mOnPreDrawListeners);
             } else {
                 mOnPreDrawListeners = observer.mOnPreDrawListeners;
+            }
+        }
+
+        if (observer.mOnScrollChangedListeners != null) {
+            if (mOnScrollChangedListeners != null) {
+                mOnScrollChangedListeners.addAll(observer.mOnScrollChangedListeners);
+            } else {
+                mOnScrollChangedListeners = observer.mOnScrollChangedListeners;
             }
         }
 
@@ -157,6 +180,35 @@ public final class ViewTreeObserver {
             return;
         }
         mOnPreDrawListeners.remove(victim);
+    }
+
+    /**
+     * Register a callback to be invoked when a view has been scrolled.
+     *
+     * @param listener The callback to add
+     * @throws IllegalStateException If {@link #isAlive()} returns false
+     */
+    public void addOnScrollChangedListener(@Nonnull OnScrollChangedListener listener) {
+        checkIsAlive();
+        if (mOnScrollChangedListeners == null) {
+            mOnScrollChangedListeners = new CopyOnWriteArray<>();
+        }
+        mOnScrollChangedListeners.add(listener);
+    }
+
+    /**
+     * Remove a previously installed scroll-changed callback
+     *
+     * @param victim The callback to remove
+     * @throws IllegalStateException If {@link #isAlive()} returns false
+     * @see #addOnScrollChangedListener(OnScrollChangedListener)
+     */
+    public void removeOnScrollChangedListener(@Nonnull OnScrollChangedListener victim) {
+        checkIsAlive();
+        if (mOnScrollChangedListeners == null) {
+            return;
+        }
+        mOnScrollChangedListeners.remove(victim);
     }
 
     private void checkIsAlive() {
@@ -234,6 +286,28 @@ public final class ViewTreeObserver {
             }
         }
         return cancelDraw;
+    }
+
+    /**
+     * Notifies registered listeners that something has scrolled.
+     */
+    public void dispatchOnScrollChanged() {
+        // NOTE: because of the use of CopyOnWriteArrayList, we *must* use an iterator to
+        // perform the dispatching. The iterator is a safeguard against listeners that
+        // could mutate the list by calling the various add/remove methods. This prevents
+        // the array from being modified while we iterate it.
+        final CopyOnWriteArray<OnScrollChangedListener> listeners = mOnScrollChangedListeners;
+        if (listeners != null && listeners.size() > 0) {
+            CopyOnWriteArray.Access<OnScrollChangedListener> access = listeners.start();
+            try {
+                int count = access.size();
+                for (int i = 0; i < count; i++) {
+                    access.get(i).onScrollChanged();
+                }
+            } finally {
+                listeners.end();
+            }
+        }
     }
 
     /**

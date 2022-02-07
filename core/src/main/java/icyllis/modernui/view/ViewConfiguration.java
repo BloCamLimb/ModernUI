@@ -28,6 +28,22 @@ public class ViewConfiguration {
     private static final ViewConfiguration sInstance = new ViewConfiguration();
 
     /**
+     * Defines the width of the horizontal scrollbar and the height of the vertical scrollbar in
+     * dips
+     */
+    private static final int SCROLL_BAR_SIZE = 8;
+
+    /**
+     * Duration of the fade when scrollbars fade away in milliseconds
+     */
+    private static final int SCROLL_BAR_FADE_DURATION = 500;
+
+    /**
+     * Default delay before the scrollbars fade in milliseconds
+     */
+    private static final int SCROLL_BAR_DEFAULT_DELAY = 600;
+
+    /**
      * Defines the duration in milliseconds of the pressed state in child
      * components.
      */
@@ -36,7 +52,6 @@ public class ViewConfiguration {
     /**
      * Defines the default duration in milliseconds before a press turns into
      * a long press
-     * @hide
      */
     private static final int DEFAULT_LONG_PRESS_TIMEOUT = 400;
 
@@ -52,22 +67,55 @@ public class ViewConfiguration {
      * Note that this value defined here is only used as a fallback by legacy/misbehaving
      * applications that do not provide a Context for determining density/configuration-dependent
      * values.
-     * <p>
-     * To alter this value, see the configuration resource config_viewConfigurationTouchSlop
-     * in frameworks/base/core/res/res/values/config.xml or the appropriate device resource overlay.
-     * It may be appropriate to tweak this on a device-specific basis in an overlay based on
-     * the characteristics of the touch panel and firmware.
      */
     private static final int TOUCH_SLOP = 8;
+
+    /**
+     * Defines the minimum size of the touch target for a scrollbar in dips
+     */
+    private static final int MIN_SCROLLBAR_TOUCH_TARGET = 48;
+
+    /**
+     * Minimum velocity to initiate a fling, as measured in dips per second
+     */
+    private static final int MINIMUM_FLING_VELOCITY = 50;
+
+    /**
+     * Maximum velocity to initiate a fling, as measured in dips per second
+     */
+    private static final int MAXIMUM_FLING_VELOCITY = 8000;
 
     /**
      * View scale factor, depends on user preference or display device.
      */
     private float mViewScale = 1.0f;
+    private float mTextScale = 1.0f;
+    private float mScaledTextScale = 1.0f;
 
+    private int mEdgeSlop;
+    private int mFadingEdgeLength;
+    private int mMinimumFlingVelocity = MINIMUM_FLING_VELOCITY;
+    private int mScaledMinimumFlingVelocity = MINIMUM_FLING_VELOCITY;
+    private int mMaximumFlingVelocity = MAXIMUM_FLING_VELOCITY;
+    private int mScaledMaximumFlingVelocity = MAXIMUM_FLING_VELOCITY;
+    private int mScrollbarSize = SCROLL_BAR_SIZE;
+    private int mScaledScrollbarSize = SCROLL_BAR_SIZE;
     private int mTouchSlop = TOUCH_SLOP;
+    private int mScaledTouchSlop = TOUCH_SLOP;
+    private int mMinScalingSpan;
+    private int mHoverSlop;
+    private int mMinScrollbarTouchTarget = MIN_SCROLLBAR_TOUCH_TARGET;
+    private int mScaledMinScrollbarTouchTarget = MIN_SCROLLBAR_TOUCH_TARGET;
+    private int mDoubleTapTouchSlop;
+    private int mPagingTouchSlop;
+    private int mDoubleTapSlop;
+    private int mWindowTouchSlop;
+    private int mOverscrollDistance;
+    private int mOverflingDistance;
+    private float mVerticalScrollFactor;
+    private float mHorizontalScrollFactor;
 
-    public ViewConfiguration() {
+    ViewConfiguration() {
     }
 
     /**
@@ -79,24 +127,70 @@ public class ViewConfiguration {
         return sInstance;
     }
 
+    @ApiStatus.Internal
+    public void setViewScale(float scale) {
+        mViewScale = scale;
+        mScaledTextScale = scale * mTextScale;
+
+        mScaledScrollbarSize = dp(mScrollbarSize);
+        mScaledTouchSlop = dp(mTouchSlop);
+        mScaledMinScrollbarTouchTarget = dp(mMinScrollbarTouchTarget);
+        mScaledMinimumFlingVelocity = dp(mMinimumFlingVelocity);
+        mScaledMaximumFlingVelocity = dp(mMaximumFlingVelocity);
+    }
+
+    @ApiStatus.Internal
+    public void setTextScale(float scale) {
+        mTextScale = scale;
+        mScaledTextScale = scale * mViewScale;
+    }
+
+    /**
+     * @return the current view scale is used to convert scale-independent pixels to pixels
+     */
+    public float getViewScale() {
+        return mViewScale;
+    }
+
+    /**
+     * @return the current scaled text scale is used to convert scale-independent pixels to pixels
+     */
+    public float getTextScale() {
+        return mTextScale;
+    }
+
     /**
      * Get the size in pixels that matches the view layout standards.
      *
-     * @param sip scaling-independent pixel, relative to other views
+     * @param v scaling-independent pixel, relative to other views
      * @return converted size in pixels
      */
-    public static int dp(float sip) {
-        return (int) (sip * sInstance.mViewScale + 0.5f);
+    public int dp(float v) {
+        return (int) (v * mViewScale + 0.5f);
     }
 
     /**
      * Get the size in pixels that matches the text layout standards.
      *
-     * @param sip scaling-independent pixel, relative to other texts
+     * @param v scaling-independent pixel, relative to other texts
      * @return converted size in pixels
      */
-    public static int sp(float sip) {
-        return (int) (sip * sInstance.mViewScale + 0.5f);
+    public int sp(float v) {
+        return (int) (v * mScaledTextScale + 0.5f);
+    }
+
+    /**
+     * @return Duration of the fade when scrollbars fade away in milliseconds
+     */
+    public static int getScrollBarFadeDuration() {
+        return SCROLL_BAR_FADE_DURATION;
+    }
+
+    /**
+     * @return Default delay before the scrollbars fade in milliseconds
+     */
+    public static int getScrollDefaultDelay() {
+        return SCROLL_BAR_DEFAULT_DELAY;
     }
 
     /**
@@ -125,26 +219,68 @@ public class ViewConfiguration {
     }
 
     @ApiStatus.Internal
-    public void setViewScale(float scale) {
-        mViewScale = scale;
-    }
-
-    /**
-     * @return the current view scale is used to convert scale-independent pixels to pixels
-     */
-    public float getViewScale() {
-        return mViewScale;
+    public void setScrollbarSize(int scrollbarSize) {
+        mScrollbarSize = scrollbarSize;
+        mScaledScrollbarSize = dp(scrollbarSize);
     }
 
     @ApiStatus.Internal
     public void setTouchSlop(int touchSlop) {
         mTouchSlop = touchSlop;
+        mScaledTouchSlop = dp(touchSlop);
+    }
+
+    @ApiStatus.Internal
+    public void setMinScrollbarTouchTarget(int minScrollbarTouchTarget) {
+        mMinScrollbarTouchTarget = minScrollbarTouchTarget;
+        mScaledMinScrollbarTouchTarget = dp(minScrollbarTouchTarget);
+    }
+
+    @ApiStatus.Internal
+    public void setMinimumFlingVelocity(int minimumFlingVelocity) {
+        mMinimumFlingVelocity = minimumFlingVelocity;
+        mScaledMinimumFlingVelocity = dp(minimumFlingVelocity);
+    }
+
+    @ApiStatus.Internal
+    public void setMaximumFlingVelocity(int maximumFlingVelocity) {
+        mMaximumFlingVelocity = maximumFlingVelocity;
+        mScaledMaximumFlingVelocity = dp(maximumFlingVelocity);
+    }
+
+    /**
+     * @return The width of the horizontal scrollbar and the height of the vertical
+     * scrollbar in pixels
+     */
+    public int getScaledScrollBarSize() {
+        return mScaledScrollbarSize;
     }
 
     /**
      * @return Distance in pixels a touch can wander before we think the user is scrolling
      */
     public int getScaledTouchSlop() {
-        return mTouchSlop;
+        return mScaledTouchSlop;
+    }
+
+    /**
+     * @return the minimum size of the scrollbar thumb's touch target in pixels
+     */
+    public int getScaledMinScrollbarTouchTarget() {
+        return mScaledMinScrollbarTouchTarget;
+    }
+
+    /**
+     * @return Minimum velocity to initiate a fling, as measured in pixels per second.
+     */
+    public int getScaledMinimumFlingVelocity() {
+        return mScaledMinimumFlingVelocity;
+    }
+
+    /**
+     * @return Maximum velocity to initiate a fling, as measured in pixels per second.
+     */
+    public int getScaledMaximumFlingVelocity() {
+        return mScaledMaximumFlingVelocity;
     }
 }

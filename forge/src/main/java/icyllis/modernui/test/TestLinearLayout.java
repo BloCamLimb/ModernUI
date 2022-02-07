@@ -46,8 +46,6 @@ import net.minecraft.ChatFormatting;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.modernui.view.ViewConfiguration.dp;
-
 public class TestLinearLayout extends LinearLayout {
 
     private float c = 10;

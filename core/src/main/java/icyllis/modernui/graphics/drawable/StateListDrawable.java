@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.modernui.R;
 import icyllis.modernui.util.StateSet;
 
 import javax.annotation.Nonnull;
@@ -216,7 +217,7 @@ public class StateListDrawable extends DrawableContainer {
         }
 
         boolean hasFocusStateSpecified() {
-            return StateSet.containsAttribute(mStateSets, StateSet.state_focused);
+            return StateSet.containsAttribute(mStateSets, R.attr.state_focused);
         }
 
         @Nonnull

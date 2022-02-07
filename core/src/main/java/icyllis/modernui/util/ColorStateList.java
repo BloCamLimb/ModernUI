@@ -18,6 +18,7 @@
 
 package icyllis.modernui.util;
 
+import icyllis.modernui.R;
 import icyllis.modernui.view.View;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -147,7 +148,7 @@ public class ColorStateList {
      */
     @ApiStatus.Internal
     public boolean hasFocusStateSpecified() {
-        return StateSet.containsAttribute(mStateSpecs, StateSet.state_focused);
+        return StateSet.containsAttribute(mStateSpecs, R.attr.state_focused);
     }
 
     /**

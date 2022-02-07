@@ -19,6 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.R;
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.graphics.Canvas;
@@ -31,7 +32,6 @@ import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.ParagraphStyle;
 import icyllis.modernui.text.style.UpdateAppearance;
 import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import org.jetbrains.annotations.VisibleForTesting;
@@ -1017,7 +1017,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      */
     public void setTextSize(float size) {
         if (size != mTextPaint.getFontSize()) {
-            mTextPaint.setFontSize(ViewConfiguration.sp(size));
+            mTextPaint.setFontSize(sp(size));
 
             if (mLayout != null) {
                 nullLayouts();
@@ -2215,7 +2215,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             // and long press actions, which are both needed by text selection.
             final int length = drawableState.length;
             for (int i = 0; i < length; i++) {
-                if (drawableState[i] == StateSet.state_pressed) {
+                if (drawableState[i] == R.attr.state_pressed) {
                     final int[] nonPressedState = new int[length - 1];
                     System.arraycopy(drawableState, 0, nonPressedState, 0, i);
                     System.arraycopy(drawableState, i + 1, nonPressedState, i, length - i - 1);
@@ -3893,7 +3893,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    public boolean onGenericMotionEvent(MotionEvent event) {
+    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
         if (mMovement != null && mSpannable != null && mLayout != null) {
             if (mMovement.onGenericMotionEvent(this, mSpannable, event)) {
                 return true;

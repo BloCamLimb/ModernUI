@@ -18,28 +18,29 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.math.Rect;
 
 /**
- * Controls the scroll bar rendering for View only.
+ * <p>ScrollCache holds various fields used by a View when scrolling
+ * is supported. This avoids keeping too many unused fields in most
+ * instances of View.</p>
  */
-final class ScrollCache implements AnimationHandler.FrameCallback {
+final class ScrollCache implements Runnable {
 
     /**
      * Scrollbars are not visible
      */
-    static final int OFF = 0;
+    public static final int OFF = 0;
 
     /**
      * Scrollbars are visible
      */
-    static final int ON = 1;
+    public static final int ON = 1;
 
     /**
      * Scrollbars are fading away
      */
-    static final int FADING = 2;
+    public static final int FADING = 2;
 
     private final View mHost;
 
@@ -50,24 +51,58 @@ final class ScrollCache implements AnimationHandler.FrameCallback {
 
     ScrollBar mScrollBar;
 
-    int mScrollBarSize = 12;
+    int mScrollBarSize;
+    int mScrollBarMinTouchTarget;
 
     boolean mFadeScrollBars = true;
+
     long mFadeStartTime;
-    long mFadeDuration = 500;
+
+    int mDefaultDelayBeforeFade;
+    int mFadeDuration;
 
     final Rect mScrollBarBounds = new Rect();
     final Rect mScrollBarTouchBounds = new Rect();
 
+    static final int NOT_DRAGGING = 0;
+    static final int DRAGGING_VERTICAL_SCROLL_BAR = 1;
+    static final int DRAGGING_HORIZONTAL_SCROLL_BAR = 2;
+
+    int mScrollBarDraggingState = NOT_DRAGGING;
+
+    float mScrollBarDraggingPos;
+
     ScrollCache(View host) {
         mHost = host;
+        ViewConfiguration cfg = ViewConfiguration.get();
+        mScrollBarSize = cfg.getScaledScrollBarSize();
+        mScrollBarMinTouchTarget = cfg.getScaledMinScrollbarTouchTarget();
+        mDefaultDelayBeforeFade = ViewConfiguration.getScrollDefaultDelay();
+        mFadeDuration = ViewConfiguration.getScrollBarFadeDuration();
     }
 
     @Override
-    public boolean doAnimationFrame(long frameTime) {
+    public void run() {
         mState = FADING;
         mHost.invalidate();
-        AnimationHandler.getInstance().unregister(this);
-        return true;
+    }
+
+    public static int getThumbLength(int size, int thickness, int extent, int range) {
+        // Avoid the tiny thumb.
+        final int minLength = thickness * 2;
+        int length = Math.round((float) size * extent / range);
+        if (length < minLength) {
+            length = minLength;
+        }
+        return length;
+    }
+
+    public static int getThumbOffset(int size, int thumbLength, int extent, int range, int offset) {
+        // Avoid the too-big thumb.
+        int thumbOffset = Math.round((float) (size - thumbLength) * offset / (range - extent));
+        if (thumbOffset > size - thumbLength) {
+            thumbOffset = size - thumbLength;
+        }
+        return thumbOffset;
     }
 }
