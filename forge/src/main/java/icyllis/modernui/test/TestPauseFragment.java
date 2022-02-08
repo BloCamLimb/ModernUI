@@ -32,7 +32,6 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.SpannableString;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
-import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.FloatProperty;
@@ -40,9 +39,9 @@ import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.widget.EditText;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
-import icyllis.modernui.widget.TextView;
 import icyllis.modernui.widget.Toast;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -113,7 +112,7 @@ public class TestPauseFragment extends Fragment {
         tab.setBackground(new TabBackground());
 
         for (int i = 0; i < 3; i++) {
-            var v = new TextView();
+            var v = new EditText();
             v.setText(switch (i) {
                 case 0:
                     yield "Flux Point";
@@ -121,7 +120,7 @@ public class TestPauseFragment extends Fragment {
                     yield "0";
                 default:
                     yield "800000";
-            }, TextView.BufferType.EDITABLE);
+            });
             v.setHint(switch (i) {
                 case 0:
                     yield "Flux Point";
@@ -130,11 +129,8 @@ public class TestPauseFragment extends Fragment {
                 default:
                     yield "Transfer Limit";
             });
-            v.setFocusableInTouchMode(true);
-            v.setMovementMethod(ArrowKeyMovementMethod.getInstance());
             v.setSingleLine();
             v.setBackground(new TextFieldBackground());
-            v.setGravity(Gravity.CENTER_VERTICAL);
             v.setTextSize(16);
             v.setCompoundDrawablesRelativeWithIntrinsicBounds(
                     new TextFieldStart(mButtonIcon, (((i + 1) % 3) + 1) * 64), null, null, null);

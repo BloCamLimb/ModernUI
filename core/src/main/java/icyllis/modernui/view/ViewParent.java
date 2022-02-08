@@ -18,6 +18,7 @@
 
 package icyllis.modernui.view;
 
+import icyllis.modernui.math.Point;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.View.NestedScrollType;
 import icyllis.modernui.view.View.ScrollAxis;
@@ -68,6 +69,28 @@ public interface ViewParent {
      * @param child The view that is giving up focus
      */
     void clearChildFocus(View child);
+
+    /**
+     * Compute the visible part of a rectangular region defined in terms of a child view's
+     * coordinates.
+     *
+     * <p>Returns the clipped visible part of the rectangle <code>r</code>, defined in the
+     * <code>child</code>'s local coordinate system. <code>r</code> is modified by this method to
+     * contain the result, expressed in the global (root) coordinate system.</p>
+     *
+     * <p>The resulting rectangle is always axis aligned. If a rotation is applied to a node in the
+     * View hierarchy, the result is the axis-aligned bounding box of the visible rectangle.</p>
+     *
+     * @param child  A child View, whose rectangular visible region we want to compute
+     * @param r      The input rectangle, defined in the child coordinate system. Will be overwritten to
+     *               contain the resulting visible rectangle, expressed in global (root) coordinates
+     * @param offset The input coordinates of a point, defined in the child coordinate system.
+     *               As with the <code>r</code> parameter, this will be overwritten to contain the global (root)
+     *               coordinates of that point.
+     *               A <code>null</code> value is valid (in case you are not interested in this result)
+     * @return true if the resulting rectangle is not empty, false otherwise
+     */
+    boolean getChildVisibleRect(View child, Rect r, @Nullable Point offset);
 
     /**
      * Find the nearest view in the specified direction that wants to take focus

@@ -10261,6 +10261,46 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * If some part of this view is not clipped by any of its parents, then
+     * return that area in r in global (root) coordinates. To convert r to local
+     * coordinates (without taking possible View rotations into account), offset
+     * it by -globalOffset (e.g. r.offset(-globalOffset.x, -globalOffset.y)).
+     * If the view is completely clipped or translated out, return false.
+     *
+     * @param r If true is returned, r holds the global coordinates of the
+     *        visible portion of this view.
+     * @param globalOffset If true is returned, globalOffset holds the dx,dy
+     *        between this view and its root. globalOffset may be null.
+     * @return true if r is non-empty (i.e. part of the view is visible at the
+     *         root level.
+     */
+    public boolean getGlobalVisibleRect(@Nonnull Rect r, @Nullable Point globalOffset) {
+        int width = mRight - mLeft;
+        int height = mBottom - mTop;
+        if (width > 0 && height > 0) {
+            r.set(0, 0, width, height);
+            if (globalOffset != null) {
+                globalOffset.set(-mScrollX, -mScrollY);
+            }
+            return mParent == null || mParent.getChildVisibleRect(this, r, globalOffset);
+        }
+        return false;
+    }
+
+    public final boolean getGlobalVisibleRect(@Nonnull Rect r) {
+        return getGlobalVisibleRect(r, null);
+    }
+
+    public final boolean getLocalVisibleRect(@Nonnull Rect r) {
+        final Point offset = mAttachInfo != null ? mAttachInfo.mPoint : new Point();
+        if (getGlobalVisibleRect(r, offset)) {
+            r.offset(-offset.x, -offset.y); // make r local
+            return true;
+        }
+        return false;
+    }
+
+    /**
      * Returns whether the device is currently in touch mode.  Touch mode is entered
      * once the user begins interacting with the device by touch, and affects various
      * things like whether focus is always visible to the user.

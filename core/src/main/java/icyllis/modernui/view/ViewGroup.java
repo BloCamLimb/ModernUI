@@ -22,7 +22,9 @@ import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.math.Point;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.math.RectF;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -62,6 +64,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * Set by default
      */
     private static final int FLAG_CLIP_TO_PADDING = 0x2;
+
+    /**
+     * If set, this ViewGroup has padding; if unset there is no padding and we don't need
+     * to clip it, even if FLAG_CLIP_TO_PADDING is set
+     */
+    private static final int FLAG_PADDING_NOT_NULL = 0x20;
 
     /**
      * When set, the drawing method will call {@link #getChildDrawingOrder(int, int)}
@@ -116,6 +124,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     private static final int[] DESCENDANT_FOCUSABILITY_FLAGS =
             {FOCUS_BEFORE_DESCENDANTS, FOCUS_AFTER_DESCENDANTS,
                     FOCUS_BLOCK_DESCENDANTS};
+
+    /**
+     * We clip to padding when FLAG_CLIP_TO_PADDING and FLAG_PADDING_NOT_NULL
+     * are set at the same time.
+     */
+    protected static final int CLIP_TO_PADDING_MASK = FLAG_CLIP_TO_PADDING | FLAG_PADDING_NOT_NULL;
 
     private int mGroupFlags;
 
@@ -1987,6 +2001,78 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return null;
     }
 
+    @Override
+    public boolean getChildVisibleRect(View child, Rect r, @Nullable Point offset) {
+        return getChildVisibleRect(child, r, offset, false);
+    }
+
+    /**
+     * @param forceParentCheck true to guarantee that this call will propagate to all ancestors,
+     *      false otherwise
+     *
+     * @hide
+     */
+    public boolean getChildVisibleRect(@Nonnull View child, Rect r, @Nullable Point offset, boolean forceParentCheck) {
+        // It doesn't make a whole lot of sense to call this on a view that isn't attached,
+        // but for some simple tests it can be useful. If we don't have attach info this
+        // will allocate memory.
+        final RectF rect = mAttachInfo != null ? mAttachInfo.mTmpTransformRect : new RectF();
+        rect.set(r);
+
+        if (!child.hasIdentityMatrix()) {
+            child.getMatrix().transform(rect);
+        }
+
+        final int dx = child.mLeft - mScrollX;
+        final int dy = child.mTop - mScrollY;
+
+        rect.offset(dx, dy);
+
+        if (offset != null) {
+            if (!child.hasIdentityMatrix()) {
+                float[] position = mAttachInfo != null ? mAttachInfo.mTmpTransformLocation
+                        : new float[2];
+                position[0] = offset.x;
+                position[1] = offset.y;
+                child.getMatrix().transformPoint(position);
+                offset.x = Math.round(position[0]);
+                offset.y = Math.round(position[1]);
+            }
+            offset.x += dx;
+            offset.y += dy;
+        }
+
+        final int width = mRight - mLeft;
+        final int height = mBottom - mTop;
+
+        boolean rectIsVisible = true;
+        if (mParent == null ||
+                (mParent instanceof ViewGroup && ((ViewGroup) mParent).getClipChildren())) {
+            // Clip to bounds.
+            rectIsVisible = rect.intersect(0, 0, width, height);
+        }
+
+        if ((forceParentCheck || rectIsVisible)
+                && (mGroupFlags & CLIP_TO_PADDING_MASK) == CLIP_TO_PADDING_MASK) {
+            // Clip to padding.
+            rectIsVisible = rect.intersect(mPaddingLeft, mPaddingTop,
+                    width - mPaddingRight, height - mPaddingBottom);
+        }
+
+        r.set((int) Math.floor(rect.left), (int) Math.floor(rect.top),
+                (int) Math.ceil(rect.right), (int) Math.ceil(rect.bottom));
+
+        if ((forceParentCheck || rectIsVisible) && mParent != null) {
+            if (mParent instanceof ViewGroup) {
+                rectIsVisible = ((ViewGroup) mParent)
+                        .getChildVisibleRect(this, r, offset, forceParentCheck);
+            } else {
+                rectIsVisible = mParent.getChildVisibleRect(this, r, offset);
+            }
+        }
+        return rectIsVisible;
+    }
+
     /**
      * Find the nearest view in the specified direction that wants to take
      * focus.
@@ -2908,6 +2994,20 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             view.dispatchDetachedFromWindow();
         }
         super.dispatchDetachedFromWindow();
+    }
+
+    /**
+     * @hide
+     */
+    @Override
+    protected void internalSetPadding(int left, int top, int right, int bottom) {
+        super.internalSetPadding(left, top, right, bottom);
+
+        if ((mPaddingLeft | mPaddingTop | mPaddingRight | mPaddingBottom) != 0) {
+            mGroupFlags |= FLAG_PADDING_NOT_NULL;
+        } else {
+            mGroupFlags &= ~FLAG_PADDING_NOT_NULL;
+        }
     }
 
     /**
