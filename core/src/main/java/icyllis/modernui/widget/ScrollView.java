@@ -54,12 +54,12 @@ public class ScrollView extends FrameLayout {
      */
     private VelocityTracker mVelocityTracker;
 
-    private int mTouchSlop;
-    private int mMinimumVelocity;
-    private int mMaximumVelocity;
+    private final int mTouchSlop;
+    private final int mMinimumVelocity;
+    private final int mMaximumVelocity;
 
-    private int mOverscrollDistance;
-    private int mOverflingDistance;
+    private final int mOverscrollDistance;
+    private final int mOverflingDistance;
 
     /**
      * Used during scrolling to retrieve the new offset within the window.
@@ -107,14 +107,15 @@ public class ScrollView extends FrameLayout {
             }
         });
         setFocusable(true);
+        setFocusableInTouchMode(true);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setWillNotDraw(false);
         final ViewConfiguration configuration = ViewConfiguration.get();
         mTouchSlop = configuration.getScaledTouchSlop();
         mMinimumVelocity = configuration.getScaledMinimumFlingVelocity();
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
-        mOverscrollDistance = 0;
-        mOverflingDistance = 6;
+        mOverscrollDistance = configuration.getScaledOverscrollDistance();
+        mOverflingDistance = configuration.getScaledOverflingDistance();
     }
 
     private boolean inChild(int x, int y) {
@@ -189,7 +190,7 @@ public class ScrollView extends FrameLayout {
         }
 
         switch (action) {
-            case MotionEvent.ACTION_MOVE: {
+            case MotionEvent.ACTION_MOVE -> {
                 final int y = (int) ev.getY();
                 final int yDiff = Math.abs(y - mLastMotionY);
                 if (yDiff > mTouchSlop && (getNestedScrollAxes() & SCROLL_AXIS_VERTICAL) == 0) {
@@ -203,12 +204,10 @@ public class ScrollView extends FrameLayout {
                         parent.requestDisallowInterceptTouchEvent(true);
                     }
                 }
-                break;
             }
-
-            case MotionEvent.ACTION_DOWN: {
+            case MotionEvent.ACTION_DOWN -> {
                 final int y = (int) ev.getY();
-                if (!inChild((int) ev.getX(), (int) y)) {
+                if (!inChild((int) ev.getX(), y)) {
                     mIsBeingDragged = false;
                     recycleVelocityTracker();
                     break;
@@ -231,11 +230,8 @@ public class ScrollView extends FrameLayout {
                 mScroller.computeScrollOffset();
                 mIsBeingDragged = !mScroller.isFinished();
                 startNestedScroll(SCROLL_AXIS_VERTICAL, TYPE_TOUCH);
-                break;
             }
-
-            case MotionEvent.ACTION_CANCEL:
-            case MotionEvent.ACTION_UP:
+            case MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
                 /* Release the drag */
                 mIsBeingDragged = false;
                 recycleVelocityTracker();
@@ -243,7 +239,7 @@ public class ScrollView extends FrameLayout {
                     invalidate();
                 }
                 stopNestedScroll(TYPE_TOUCH);
-                break;
+            }
         }
 
         /*
@@ -350,11 +346,6 @@ public class ScrollView extends FrameLayout {
 
                     final int oldY = mScrollY;
                     final int range = getScrollRange();
-                    final int overscrollMode = getOverScrollMode();
-                    boolean canOverscroll = overscrollMode == OVER_SCROLL_ALWAYS ||
-                            (overscrollMode == OVER_SCROLL_IF_CONTENT_SCROLLS && range > 0);
-
-                    final float displacement = ev.getX() / getWidth();
 
                     // Calling overScrollBy will call onOverScrolled, which
                     // calls onScrollChanged if applicable.
@@ -371,8 +362,6 @@ public class ScrollView extends FrameLayout {
                         mLastMotionY -= mScrollOffset[1];
                         vtev.offsetLocation(0, mScrollOffset[1]);
                         mNestedYOffset += mScrollOffset[1];
-                    } else if (canOverscroll && deltaY != 0f) {
-                        final int pulledToY = oldY + deltaY;
                     }
                 }
                 break;
@@ -413,7 +402,7 @@ public class ScrollView extends FrameLayout {
         final boolean canFling = (mScrollY > 0 || velocityY > 0) &&
                 (mScrollY < getScrollRange() || velocityY < 0);
         if (!dispatchNestedPreFling(0, velocityY)) {
-            final boolean consumed = dispatchNestedFling(0, velocityY, canFling);
+            dispatchNestedFling(0, velocityY, canFling);
             if (canFling) {
                 fling(velocityY);
             }
@@ -453,7 +442,7 @@ public class ScrollView extends FrameLayout {
             if (oldX != x || oldY != y) {
                 final int range = getScrollRange();
                 overScrollBy(x - oldX, y - oldY, oldX, oldY, 0, range,
-                        0, 6, false);
+                        0, mOverflingDistance, false);
                 onScrollChanged(mScrollX, mScrollY, oldX, oldY);
             }
 
