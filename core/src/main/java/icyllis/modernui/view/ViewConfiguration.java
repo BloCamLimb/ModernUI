@@ -73,7 +73,7 @@ public class ViewConfiguration {
     /**
      * Defines the minimum size of the touch target for a scrollbar in dips
      */
-    private static final int MIN_SCROLLBAR_TOUCH_TARGET = 48;
+    private static final int MIN_SCROLLBAR_TOUCH_TARGET = 16;
 
     /**
      * Minimum velocity to initiate a fling, as measured in dips per second
@@ -84,6 +84,16 @@ public class ViewConfiguration {
      * Maximum velocity to initiate a fling, as measured in dips per second
      */
     private static final int MAXIMUM_FLING_VELOCITY = 8000;
+
+    /**
+     * Max distance in dips to overscroll for edge effects
+     */
+    private static final int OVERSCROLL_DISTANCE = 0;
+
+    /**
+     * Max distance in dips to overfling for edge effects
+     */
+    private static final int OVERFLING_DISTANCE = 12;
 
     /**
      * View scale factor, depends on user preference or display device.
@@ -110,8 +120,10 @@ public class ViewConfiguration {
     private int mPagingTouchSlop;
     private int mDoubleTapSlop;
     private int mWindowTouchSlop;
-    private int mOverscrollDistance;
-    private int mOverflingDistance;
+    private int mOverscrollDistance = OVERSCROLL_DISTANCE;
+    private int mScaledOverscrollDistance = OVERSCROLL_DISTANCE;
+    private int mOverflingDistance = OVERFLING_DISTANCE;
+    private int mScaledOverflingDistance = OVERFLING_DISTANCE;
     private float mVerticalScrollFactor;
     private float mHorizontalScrollFactor;
 
@@ -129,6 +141,9 @@ public class ViewConfiguration {
 
     @ApiStatus.Internal
     public void setViewScale(float scale) {
+        if (mViewScale == scale) {
+            return;
+        }
         mViewScale = scale;
         mScaledTextScale = scale * mTextScale;
 
@@ -137,10 +152,15 @@ public class ViewConfiguration {
         mScaledMinScrollbarTouchTarget = dp(mMinScrollbarTouchTarget);
         mScaledMinimumFlingVelocity = dp(mMinimumFlingVelocity);
         mScaledMaximumFlingVelocity = dp(mMaximumFlingVelocity);
+        mScaledOverscrollDistance = dp(mOverscrollDistance);
+        mScaledOverflingDistance = dp(mOverflingDistance);
     }
 
     @ApiStatus.Internal
     public void setTextScale(float scale) {
+        if (mTextScale == scale) {
+            return;
+        }
         mTextScale = scale;
         mScaledTextScale = scale * mViewScale;
     }
@@ -248,6 +268,18 @@ public class ViewConfiguration {
         mScaledMaximumFlingVelocity = dp(maximumFlingVelocity);
     }
 
+    @ApiStatus.Internal
+    public void setOverscrollDistance(int overscrollDistance) {
+        mOverscrollDistance = overscrollDistance;
+        mScaledOverscrollDistance = dp(overscrollDistance);
+    }
+
+    @ApiStatus.Internal
+    public void setOverflingDistance(int overflingDistance) {
+        mOverflingDistance = overflingDistance;
+        mScaledOverflingDistance = dp(overflingDistance);
+    }
+
     /**
      * @return The width of the horizontal scrollbar and the height of the vertical
      * scrollbar in pixels
@@ -282,5 +314,21 @@ public class ViewConfiguration {
      */
     public int getScaledMaximumFlingVelocity() {
         return mScaledMaximumFlingVelocity;
+    }
+
+    /**
+     * @return The maximum distance a View should overscroll by when showing edge effects (in
+     * pixels).
+     */
+    public int getScaledOverscrollDistance() {
+        return mScaledOverscrollDistance;
+    }
+
+    /**
+     * @return The maximum distance a View should overfling by when showing edge effects (in
+     * pixels).
+     */
+    public int getScaledOverflingDistance() {
+        return mScaledOverflingDistance;
     }
 }

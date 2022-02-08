@@ -794,9 +794,7 @@ public final class UIManager implements LifecycleOwner {
             double cursorY = mouseHandler.ypos() *
                     (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
             //if (event.getLines().isEmpty()) {
-            TooltipRenderer.drawTooltip(mCanvas, window, event.getPoseStack(), event.getComponents(),
-                    event.getX(), event.getY(), event.getFont(), event.getScreenWidth(),
-                    event.getScreenHeight(), cursorX, cursorY, minecraft.getItemRenderer());
+            mViewRoot.drawExtTooltipLocked(event, cursorX, cursorY); // need a lock
             /*} else {
                 TooltipRenderer.drawTooltip(mCanvas, event.getLines(), event.getFontRenderer(), event.getStack(),
                         event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY,
@@ -1001,6 +999,16 @@ public final class UIManager implements LifecycleOwner {
                     // premultiplied alpha
                     canvas.drawLayer(texture, width, height, alpha << 16 | alpha, true);
                     canvas.draw(null);
+                }
+            }
+        }
+
+        private void drawExtTooltipLocked(@Nonnull RenderTooltipEvent.Pre event, double cursorX, double cursorY) {
+            synchronized (mRenderLock) {
+                if (!mRedrawn) {
+                    TooltipRenderer.drawTooltip(mCanvas, mWindow, event.getPoseStack(), event.getComponents(),
+                            event.getX(), event.getY(), event.getFont(), event.getScreenWidth(),
+                            event.getScreenHeight(), cursorX, cursorY, minecraft.getItemRenderer());
                 }
             }
         }
