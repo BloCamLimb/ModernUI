@@ -29,7 +29,6 @@ import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
-import icyllis.modernui.text.method.ArrowKeyMovementMethod;
 import icyllis.modernui.text.method.ScrollingMovementMethod;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
@@ -39,6 +38,7 @@ import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.widget.EditText;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.SwitchButton;
 import icyllis.modernui.widget.TextView;
@@ -154,15 +154,12 @@ public class TestLinearLayout extends LinearLayout {
             } else if (i == 2) {
                 continue;
             } else if (i == 3) {
-                TextView textField = new TextView();
+                EditText textField = new EditText();
                 v = textField;
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
-                textField.setText("", TextView.BufferType.EDITABLE);
                 textField.setHint("Your Name");
                 textField.setSingleLine();
-                textField.setFocusableInTouchMode(true);
-                textField.setMovementMethod(ArrowKeyMovementMethod.getInstance());
                 //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 textField.setPadding(dp(12), 0, dp(12), 0);
             } else {

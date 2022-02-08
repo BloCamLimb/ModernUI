@@ -25,6 +25,7 @@ import icyllis.modernui.core.Handler;
 import icyllis.modernui.core.Looper;
 import icyllis.modernui.core.Message;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.math.Point;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.View.FocusDirection;
 import org.apache.logging.log4j.Marker;
@@ -310,7 +311,14 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                         //TODO focus
                         onKeyEvent(event);
                     } else {
-                        mView.dispatchPointerEvent((MotionEvent) e);
+                        MotionEvent ev = (MotionEvent) e;
+                        if (dispatchTouchEvent(ev)) {
+                            return;
+                        }
+                        if (mView.dispatchPointerEvent(ev)) {
+                            continue;
+                        }
+                        onTouchEvent(ev);
                     }
                 } finally {
                     e.recycle();
@@ -320,6 +328,13 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             // drop all
             mInputEvents.clear();
         }
+    }
+
+    protected boolean dispatchTouchEvent(MotionEvent event) {
+        return false;
+    }
+
+    protected void onTouchEvent(MotionEvent event) {
     }
 
     protected void onKeyEvent(KeyEvent event) {
@@ -399,6 +414,14 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     @Override
     public ViewParent getParent() {
         return null;
+    }
+
+    @Override
+    public boolean getChildVisibleRect(View child, Rect r, @Nullable Point offset) {
+        if (child != mView) {
+            throw new RuntimeException();
+        }
+        return r.intersect(0, 0, mWidth, mHeight);
     }
 
     /**

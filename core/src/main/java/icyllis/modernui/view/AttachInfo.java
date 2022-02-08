@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.core.Handler;
+import icyllis.modernui.math.Point;
 import icyllis.modernui.math.PointF;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
@@ -98,6 +99,11 @@ final class AttachInfo {
      * Temporary for use in computing hit areas with transformed views
      */
     final RectF mTmpTransformRect = new RectF();
+
+    /**
+     * Point used to compute visible regions.
+     */
+    final Point mPoint = new Point();
 
     AttachInfo(ViewRoot viewRoot, Handler handler, Callbacks callbacks) {
         mViewRoot = viewRoot;

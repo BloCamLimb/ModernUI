@@ -35,10 +35,12 @@ import icyllis.modernui.graphics.GLSurfaceCanvas;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.util.TimedAction;
 import icyllis.modernui.view.*;
+import icyllis.modernui.widget.EditText;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.ChatFormatting;
@@ -877,6 +879,8 @@ public final class UIManager implements LifecycleOwner {
 
     class ViewRootImpl extends ViewRoot {
 
+        private final Rect mGlobalRect = new Rect();
+
         @Nonnull
         @Override
         protected Canvas beginRecording(int width, int height) {
@@ -885,11 +889,22 @@ public final class UIManager implements LifecycleOwner {
         }
 
         @Override
+        protected boolean dispatchTouchEvent(MotionEvent event) {
+            if (mScreen != null && event.getAction() == MotionEvent.ACTION_DOWN) {
+                View v = mDecor.findFocus();
+                if (v instanceof EditText) {
+                    v.getGlobalVisibleRect(mGlobalRect);
+                    if (!mGlobalRect.contains((int) event.getRawX(), (int) event.getRawY())) {
+                        v.clearFocus();
+                    }
+                }
+            }
+            return super.dispatchTouchEvent(event);
+        }
+
+        @Override
         protected void onKeyEvent(KeyEvent event) {
             if (mScreen != null && event.getAction() == KeyEvent.ACTION_DOWN) {
-                if (!mDecor.isFocused() && mDecor.hasFocus()) {
-                    return;
-                }
                 final boolean back;
                 if (mCallback != null) {
                     back = mCallback.isBackKey(event.getKeyCode(), event);
@@ -904,7 +919,11 @@ public final class UIManager implements LifecycleOwner {
                     back = event.getKeyCode() == KeyEvent.KEY_ESCAPE;
                 }
                 if (back) {
-                    mOnBackPressedDispatcher.onBackPressed();
+                    if (!mDecor.isFocused() && mDecor.hasFocus()) {
+                        mDecor.requestFocus();
+                    } else {
+                        mOnBackPressedDispatcher.onBackPressed();
+                    }
                 }
             }
         }
@@ -1005,7 +1024,7 @@ public final class UIManager implements LifecycleOwner {
 
         private void drawExtTooltipLocked(@Nonnull RenderTooltipEvent.Pre event, double cursorX, double cursorY) {
             synchronized (mRenderLock) {
-                if (!mRedrawn) {
+                if (!mRedrawn || mScreen == null) {
                     TooltipRenderer.drawTooltip(mCanvas, mWindow, event.getPoseStack(), event.getComponents(),
                             event.getX(), event.getY(), event.getFont(), event.getScreenWidth(),
                             event.getScreenHeight(), cursorX, cursorY, minecraft.getItemRenderer());
@@ -1015,7 +1034,6 @@ public final class UIManager implements LifecycleOwner {
 
         @Override
         public void playSoundEffect(int effectId) {
-
         }
 
         @Override

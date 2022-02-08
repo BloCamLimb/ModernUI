@@ -107,7 +107,6 @@ public class ScrollView extends FrameLayout {
             }
         });
         setFocusable(true);
-        setFocusableInTouchMode(true);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setWillNotDraw(false);
         final ViewConfiguration configuration = ViewConfiguration.get();
