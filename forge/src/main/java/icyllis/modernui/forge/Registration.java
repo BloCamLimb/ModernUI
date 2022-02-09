@@ -35,7 +35,6 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
@@ -53,7 +52,6 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.registries.IForgeRegistry;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -78,21 +76,12 @@ final class Registration {
     private Registration() {
     }
 
-    @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
-    static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
-        // sounds can be on both side, but these are GUI sounds, so client only
-        final IForgeRegistry<SoundEvent> registry = event.getRegistry();
-        registry.register(new SoundEvent(new ResourceLocation(ModernUI.ID, "button1"))
-                .setRegistryName("button1"));
-        registry.register(new SoundEvent(new ResourceLocation(ModernUI.ID, "button2"))
-                .setRegistryName("button2"));
-    }
-
     @SubscribeEvent
     static void registerMenus(@Nonnull RegistryEvent.Register<MenuType<?>> event) {
-        event.getRegistry().register(IForgeMenuType.create(TestContainerMenu::new)
-                .setRegistryName("test"));
+        if (ModernUIForge.sDevelopment) {
+            event.getRegistry().register(IForgeMenuType.create(TestContainerMenu::new)
+                    .setRegistryName("test"));
+        }
     }
 
     @SubscribeEvent
@@ -107,7 +96,7 @@ final class Registration {
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void loadingClient(ParticleFactoryRegisterEvent event) {
-        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread
+        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread (render thread)
         ArchCore.initOpenGL();
         UIManager.initialize();
     }
