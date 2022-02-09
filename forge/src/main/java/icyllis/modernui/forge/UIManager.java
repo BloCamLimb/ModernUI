@@ -1034,6 +1034,9 @@ public final class UIManager implements LifecycleOwner {
 
         @Override
         public void playSoundEffect(int effectId) {
+            if (effectId == SoundEffectConstants.CLICK) {
+                minecraft.tell(() -> minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MuiRegistries.BUTTON_CLICK_2, 1.0f)));
+            }
         }
 
         @Override

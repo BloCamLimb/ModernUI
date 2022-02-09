@@ -101,6 +101,8 @@ public final class ModernUIForge extends ModernUI {
         if (r != null && r.length > 0 && dir.getName().equals(NAME_CPT)) {
             sDevelopment = true;
             LOGGER.debug(MARKER, "Auto detected in development environment");
+        } else if (!FMLEnvironment.production) {
+            sDevelopment = true;
         } else if (ModernUI.class.getSigners() == null) {
             LOGGER.warn(MARKER, "Signature is missing");
         }
