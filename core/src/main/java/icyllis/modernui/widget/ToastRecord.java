@@ -18,14 +18,14 @@
 
 package icyllis.modernui.widget;
 
-public class ToastRecord {
+public final class ToastRecord {
 
     public final Toast mToken;
     public final CharSequence mText;
 
     private int mDuration;
 
-    public ToastRecord(Toast token, CharSequence text, int duration) {
+    ToastRecord(Toast token, CharSequence text, int duration) {
         mToken = token;
         mText = text;
         mDuration = duration;

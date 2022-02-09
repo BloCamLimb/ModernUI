@@ -20,7 +20,6 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.math.Point;
-import icyllis.modernui.math.PointF;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 
@@ -60,6 +59,11 @@ final class AttachInfo {
      * Indicates whether the view's window is currently in touch mode.
      */
     boolean mInTouchMode = true;
+
+    /**
+     * Set if the visibility of any views has changed.
+     */
+    boolean mViewVisibilityChanged;
 
     /**
      * Set to true if a view has been scrolled.

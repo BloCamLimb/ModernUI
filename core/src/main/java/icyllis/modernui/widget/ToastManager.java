@@ -37,9 +37,9 @@ import java.util.ArrayDeque;
 
 import static icyllis.modernui.view.View.dp;
 
-public class ToastManager {
+public final class ToastManager {
 
-    public static final Marker MARKER = MarkerManager.getMarker("Toast");
+    static final Marker MARKER = MarkerManager.getMarker("Toast");
 
     static final ToastManager sInstance = new ToastManager();
 
@@ -48,7 +48,7 @@ public class ToastManager {
     static final int LONG_DELAY = 3500; // 3.5 seconds
     static final int SHORT_DELAY = 2000; // 2 seconds
 
-    private final ArrayDeque<ToastRecord> mToastQueue = new ArrayDeque<>();
+    private final ArrayDeque<ToastRecord> mToastQueue = new ArrayDeque<>(MAX_TOASTS);
 
     @GuardedBy("mToastQueue")
     private Toast mCurrentToastShown;
@@ -127,7 +127,7 @@ public class ToastManager {
                 record.update(duration);
             } else {
                 if (mToastQueue.size() >= MAX_TOASTS) {
-                    ModernUI.LOGGER.error(MARKER, "App has already queued {} toasts. Not showing more.",
+                    ModernUI.LOGGER.error(MARKER, "System has already queued {} toasts. Not showing more.",
                             mToastQueue.size());
                     return;
                 }

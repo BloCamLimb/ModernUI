@@ -3425,18 +3425,13 @@ public class View implements Drawable.Callback {
      * Sets the pressed state for this view and provides a touch coordinate for
      * animation hinting.
      *
-     * @param pressed Pass true to set the View's internal state to "pressed",
-     *                or false to reverts the View's internal state from a
-     *                previously set "pressed" state.
-     * @param x       The x coordinate of the touch that caused the press
-     * @param y       The y coordinate of the touch that caused the press
+     * @param x The x coordinate of the touch that caused the press
+     * @param y The y coordinate of the touch that caused the press
      */
-    private void setPressed(boolean pressed, float x, float y) {
-        if (pressed) {
-            drawableHotspotChanged(x, y);
-        }
+    private void setPressed(float x, float y) {
+        drawableHotspotChanged(x, y);
 
-        setPressed(pressed);
+        setPressed(true);
     }
 
     /**
@@ -3613,6 +3608,9 @@ public class View implements Drawable.Callback {
                     && ((privateFlags & PFLAG_FOCUSED) != 0)) {
                 /* Give up focus if we are no longer focusable */
                 clearFocus();
+                /*if (mParent instanceof ViewGroup) {
+                    ((ViewGroup) mParent).clearFocusedInCluster();
+                }*/
             } else if (((old & FOCUSABLE) == NOT_FOCUSABLE)
                     && ((privateFlags & PFLAG_FOCUSED) == 0)) {
                 /*
@@ -3650,9 +3648,14 @@ public class View implements Drawable.Callback {
                 // setFlags invocation.
                 shouldNotifyFocusableAvailable = canTakeFocus();
             } else {
-                if (isFocused())
+                if (isFocused()) {
                     clearFocus();
+                }
             }
+        }
+
+        if (shouldNotifyFocusableAvailable && mParent != null) {
+            mParent.focusableViewAvailable(this);
         }
 
         /* Check if the GONE bit has changed */
@@ -3662,6 +3665,9 @@ public class View implements Drawable.Callback {
             if (((mViewFlags & VISIBILITY_MASK) == GONE)) {
                 if (hasFocus()) {
                     clearFocus();
+                    /*if (mParent instanceof ViewGroup) {
+                        ((ViewGroup) mParent).clearFocusedInCluster();
+                    }*/
                 }
                 if (mParent instanceof View) {
                     // GONE views noop invalidation, so invalidate the parent
@@ -3670,6 +3676,9 @@ public class View implements Drawable.Callback {
                 // Mark the view drawn to ensure that it gets invalidated properly the next
                 // time it is visible and gets invalidated
                 mPrivateFlags |= PFLAG_DRAWN;
+            }
+            if (mAttachInfo != null) {
+                mAttachInfo.mViewVisibilityChanged = true;
             }
         }
 
@@ -3686,22 +3695,41 @@ public class View implements Drawable.Callback {
                 if (getRootView() != this) {
                     if (hasFocus()) {
                         clearFocus();
+                        /*if (mParent instanceof ViewGroup) {
+                            ((ViewGroup) mParent).clearFocusedInCluster();
+                        }*/
                     }
                 }
+            }
+            if (mAttachInfo != null) {
+                mAttachInfo.mViewVisibilityChanged = true;
             }
         }
 
         if ((changed & VISIBILITY_MASK) != 0) {
+            // If the view is invisible, cleanup its display list to free up resources
+            if (newVisibility != VISIBLE && mAttachInfo != null) {
+                //cleanupDraw();
+            }
+
             if (mParent instanceof ViewGroup parent) {
                 parent.onChildVisibilityChanged(this, (changed & VISIBILITY_MASK),
                         newVisibility);
                 parent.invalidate();
-            } else if (mParent instanceof View) {
-                ((View) mParent).invalidate();
             }
 
             if (mAttachInfo != null) {
                 dispatchVisibilityChanged(this, newVisibility);
+
+                // Aggregated visibility changes are dispatched to attached views
+                // in visible windows where the parent is currently shown/drawn
+                // or the parent is not a ViewGroup (and therefore assumed to be a ViewRoot),
+                // discounting clipping or overlapping. This makes it a good place
+                // to change animation states.
+                if (mParent != null && getWindowVisibility() == VISIBLE &&
+                        ((!(mParent instanceof ViewGroup)) || ((ViewGroup) mParent).isShown())) {
+                    dispatchVisibilityAggregated(newVisibility == VISIBLE);
+                }
             }
         }
 
@@ -4714,6 +4742,18 @@ public class View implements Drawable.Callback {
      */
     protected final boolean awakenScrollBars() {
         return mScrollCache != null && awakenScrollBars(mScrollCache.mDefaultDelayBeforeFade);
+    }
+
+    /**
+     * Trigger the scrollbars to draw.
+     * This method differs from awakenScrollBars() only in its default duration.
+     * initialAwakenScrollBars() will show the scroll bars for longer than
+     * usual to give the user more of a chance to notice them.
+     *
+     * @return true if the animation is played, false otherwise.
+     */
+    private boolean initialAwakenScrollBars() {
+        return mScrollCache != null && awakenScrollBars(mScrollCache.mDefaultDelayBeforeFade * 4);
     }
 
     /**
@@ -6522,9 +6562,19 @@ public class View implements Drawable.Callback {
         }
     }
 
-    void dispatchAttachedToWindow(AttachInfo info) {
+    /**
+     * Return the visibility value of the least visible component passed.
+     */
+    int combineVisibility(int vis1, int vis2) {
+        // This works because VISIBLE < INVISIBLE < GONE.
+        return Math.max(vis1, vis2);
+    }
+
+    void dispatchAttachedToWindow(AttachInfo info, int visibility) {
         mAttachInfo = info;
         mWindowAttachCount++;
+        // We will need to evaluate the drawable state at least once.
+        mPrivateFlags |= PFLAG_DRAWABLE_STATE_DIRTY;
         if (mFloatingTreeObserver != null) {
             info.mTreeObserver.merge(mFloatingTreeObserver);
             mFloatingTreeObserver = null;
@@ -6535,7 +6585,6 @@ public class View implements Drawable.Callback {
             mRunQueue = null;
         }
         onAttachedToWindow();
-        mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
 
         ListenerInfo li = mListenerInfo;
         final CopyOnWriteArrayList<OnAttachStateChangeListener> listeners =
@@ -6549,13 +6598,47 @@ public class View implements Drawable.Callback {
                 listener.onViewAttachedToWindow(this);
             }
         }
+
+        int vis = info.mWindowVisibility;
+        if (vis != GONE) {
+            onWindowVisibilityChanged(vis);
+            if (isShown()) {
+                // Calling onVisibilityAggregated directly here since the subtree will also
+                // receive dispatchAttachedToWindow and this same call
+                onVisibilityAggregated(vis == VISIBLE);
+            }
+        }
+
+        // Send onVisibilityChanged directly instead of dispatchVisibilityChanged.
+        // As all views in the subtree will already receive dispatchAttachedToWindow
+        // traversing the subtree again here is not desired.
+        onVisibilityChanged(this, visibility);
+
+        if ((mPrivateFlags & PFLAG_DRAWABLE_STATE_DIRTY) != 0) {
+            // If nobody has evaluated the drawable state yet, then do it now.
+            refreshDrawableState();
+        }
     }
 
     void dispatchDetachedFromWindow() {
+        AttachInfo info = mAttachInfo;
+        if (info != null) {
+            int vis = info.mWindowVisibility;
+            if (vis != GONE) {
+                onWindowVisibilityChanged(GONE);
+                if (isShown()) {
+                    // Invoking onVisibilityAggregated directly here since the subtree
+                    // will also receive detached from window
+                    onVisibilityAggregated(false);
+                }
+            }
+        }
+
         onDetachedFromWindow();
 
         mPrivateFlags &= ~PFLAG_CANCEL_NEXT_UP_EVENT;
         mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
+        mPrivateFlags3 &= ~PFLAG3_TEMPORARY_DETACH;
 
         removeUnsetPressCallback();
         removeLongPressCallback();
@@ -6594,6 +6677,7 @@ public class View implements Drawable.Callback {
      * @see #onDetachedFromWindow()
      */
     protected void onAttachedToWindow() {
+        mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
     }
 
     /**
@@ -6743,6 +6827,42 @@ public class View implements Drawable.Callback {
         removePerformClickCallback();
         cancelLongPress();
         mPrivateFlags3 |= PFLAG3_CALLED_SUPER;
+    }
+
+    /**
+     * <p>Enables or disables the duplication of the parent's state into this view. When
+     * duplication is enabled, this view gets its drawable state from its parent rather
+     * than from its own internal properties.</p>
+     *
+     * <p>Note: in the current implementation, setting this property to true after the
+     * view was added to a ViewGroup might have no effect at all. This property should
+     * always be used from XML or set to true before adding this view to a ViewGroup.</p>
+     *
+     * <p>Note: if this view's parent addStateFromChildren property is enabled and this
+     * property is enabled, an exception will be thrown.</p>
+     *
+     * <p>Note: if the child view uses and updates additional states which are unknown to the
+     * parent, these states should not be affected by this method.</p>
+     *
+     * @param enabled True to enable duplication of the parent's drawable state, false
+     *                to disable it.
+     * @see #getDrawableState()
+     * @see #isDuplicateParentStateEnabled()
+     */
+    public void setDuplicateParentStateEnabled(boolean enabled) {
+        setFlags(enabled ? DUPLICATE_PARENT_STATE : 0, DUPLICATE_PARENT_STATE);
+    }
+
+    /**
+     * <p>Indicates whether this duplicates its drawable state from its parent.</p>
+     *
+     * @return True if this view's drawable state is duplicated from the parent,
+     * false otherwise
+     * @see #getDrawableState()
+     * @see #setDuplicateParentStateEnabled(boolean)
+     */
+    public boolean isDuplicateParentStateEnabled() {
+        return (mViewFlags & DUPLICATE_PARENT_STATE) == DUPLICATE_PARENT_STATE;
     }
 
     /**
@@ -7800,7 +7920,7 @@ public class View implements Drawable.Callback {
         boolean changed = false;
 
         // Common case is there are no scroll bars.
-        if ((viewFlags & (SCROLLBARS_VERTICAL|SCROLLBARS_HORIZONTAL)) != 0) {
+        if ((viewFlags & (SCROLLBARS_VERTICAL | SCROLLBARS_HORIZONTAL)) != 0) {
             if ((viewFlags & SCROLLBARS_VERTICAL) != 0) {
                 final int offset = (viewFlags & SCROLLBARS_INSET_MASK) == 0
                         ? 0 : getVerticalScrollbarWidth();
@@ -8781,6 +8901,90 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Dispatch a window visibility change down the view hierarchy.
+     * ViewGroups should override to route to their children.
+     *
+     * @param visibility The new visibility of the window.
+     * @see #onWindowVisibilityChanged(int)
+     */
+    public void dispatchWindowVisibilityChanged(@Visibility int visibility) {
+        onWindowVisibilityChanged(visibility);
+    }
+
+    /**
+     * Called when the window containing has change its visibility
+     * (between {@link #GONE}, {@link #INVISIBLE}, and {@link #VISIBLE}).  Note
+     * that this tells you whether or not your window is being made visible
+     * to the window manager; this does <em>not</em> tell you whether or not
+     * your window is obscured by other windows on the screen, even if it
+     * is itself visible.
+     *
+     * @param visibility The new visibility of the window.
+     */
+    protected void onWindowVisibilityChanged(@Visibility int visibility) {
+        if (visibility == VISIBLE) {
+            initialAwakenScrollBars();
+        }
+    }
+
+    /**
+     * @return true if this view and all ancestors are visible as of the last
+     * {@link #onVisibilityAggregated(boolean)} call.
+     */
+    boolean isAggregatedVisible() {
+        return (mPrivateFlags3 & PFLAG3_AGGREGATED_VISIBLE) != 0;
+    }
+
+    /**
+     * Internal dispatching method for {@link #onVisibilityAggregated}. Overridden by
+     * ViewGroup. Intended to only be called when {@link #isAttachedToWindow()},
+     * {@link #getWindowVisibility()} is {@link #VISIBLE} and this view's parent {@link #isShown()}.
+     *
+     * @param isVisible true if this view's visibility to the user is uninterrupted by its
+     *                  ancestors or by window visibility
+     * @return true if this view is visible to the user, not counting clipping or overlapping
+     */
+    boolean dispatchVisibilityAggregated(boolean isVisible) {
+        final boolean thisVisible = getVisibility() == VISIBLE;
+        // If we're not visible but something is telling us we are, ignore it.
+        if (thisVisible || !isVisible) {
+            onVisibilityAggregated(isVisible);
+        }
+        return thisVisible && isVisible;
+    }
+
+    /**
+     * Called when the user-visibility of this View is potentially affected by a change
+     * to this view itself, an ancestor view or the window this view is attached to.
+     *
+     * @param isVisible true if this view and all of its ancestors are {@link #VISIBLE}
+     *                  and this view's window is also visible
+     */
+    @CallSuper
+    public void onVisibilityAggregated(boolean isVisible) {
+        // Update our internal visibility tracking so we can detect changes
+        boolean oldVisible = isAggregatedVisible();
+        mPrivateFlags3 = isVisible ? (mPrivateFlags3 | PFLAG3_AGGREGATED_VISIBLE)
+                : (mPrivateFlags3 & ~PFLAG3_AGGREGATED_VISIBLE);
+        if (isVisible && mAttachInfo != null) {
+            initialAwakenScrollBars();
+        }
+
+        final Drawable dr = mBackground;
+        if (dr != null && isVisible != dr.isVisible()) {
+            dr.setVisible(isVisible, false);
+        }
+        final Drawable hl = mDefaultFocusHighlight;
+        if (hl != null && isVisible != hl.isVisible()) {
+            hl.setVisible(isVisible, false);
+        }
+        final Drawable fg = mForegroundInfo != null ? mForegroundInfo.mDrawable : null;
+        if (fg != null && isVisible != fg.isVisible()) {
+            fg.setVisible(isVisible, false);
+        }
+    }
+
+    /**
      * Dispatch a pointer event.
      * <p>
      * Dispatches touch related pointer events to {@link #onTouchEvent(MotionEvent)} and all
@@ -8846,7 +9050,7 @@ public class View implements Drawable.Callback {
                         && (actionButton == MotionEvent.BUTTON_SECONDARY)) {
                     if (performContextClick(event.getX(), event.getY())) {
                         mInContextButtonPress = true;
-                        setPressed(true, event.getX(), event.getY());
+                        setPressed(event.getX(), event.getY());
                         removeTapCallback();
                         removeLongPressCallback();
                         return true;
@@ -9548,7 +9752,7 @@ public class View implements Drawable.Callback {
                         // showed it as pressed.  Make it show the pressed
                         // state now (before scheduling the click) to ensure
                         // the user sees it.
-                        setPressed(true, x, y);
+                        setPressed(x, y);
                     }
 
                     if (!mHasPerformedLongPress && !mIgnoreNextUpEvent) {
@@ -9615,7 +9819,7 @@ public class View implements Drawable.Callback {
                     postDelayed(mPendingCheckForTap, ViewConfiguration.getTapTimeout());
                 } else {
                     // Not inside a scrolling container, so show the feedback right away
-                    setPressed(true, x, y);
+                    setPressed(x, y);
                     checkForLongClick(
                             ViewConfiguration.getLongPressTimeout(),
                             x,
@@ -10267,12 +10471,12 @@ public class View implements Drawable.Callback {
      * it by -globalOffset (e.g. r.offset(-globalOffset.x, -globalOffset.y)).
      * If the view is completely clipped or translated out, return false.
      *
-     * @param r If true is returned, r holds the global coordinates of the
-     *        visible portion of this view.
+     * @param r            If true is returned, r holds the global coordinates of the
+     *                     visible portion of this view.
      * @param globalOffset If true is returned, globalOffset holds the dx,dy
-     *        between this view and its root. globalOffset may be null.
+     *                     between this view and its root. globalOffset may be null.
      * @return true if r is non-empty (i.e. part of the view is visible at the
-     *         root level.
+     * root level.
      */
     public boolean getGlobalVisibleRect(@Nonnull Rect r, @Nullable Point globalOffset) {
         int width = mRight - mLeft;
@@ -10298,6 +10502,34 @@ public class View implements Drawable.Callback {
             return true;
         }
         return false;
+    }
+
+    /**
+     * Offset this view's vertical location by the specified number of pixels.
+     *
+     * @param offset the number of pixels to offset the view by
+     */
+    public void offsetTopAndBottom(int offset) {
+        if (offset != 0) {
+            mTop += offset;
+            mBottom += offset;
+            mRenderNode.offsetTopAndBottom(offset);
+            invalidate();
+        }
+    }
+
+    /**
+     * Offset this view's horizontal location by the specified amount of pixels.
+     *
+     * @param offset the number of pixels to offset the view by
+     */
+    public void offsetLeftAndRight(int offset) {
+        if (offset != 0) {
+            mLeft += offset;
+            mRight += offset;
+            mRenderNode.offsetLeftAndRight(offset);
+            invalidate();
+        }
     }
 
     /**
@@ -10883,7 +11115,7 @@ public class View implements Drawable.Callback {
         @Override
         public void run() {
             mPrivateFlags &= ~PFLAG_PREPRESSED;
-            setPressed(true, x, y);
+            setPressed(x, y);
             final long delay = ViewConfiguration.getLongPressTimeout() - ViewConfiguration.getTapTimeout();
             checkForLongClick(delay, x, y);
         }

@@ -78,6 +78,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     static final int FLAG_USE_CHILD_DRAWING_ORDER = 0x400;
 
     /**
+     * When set, this group will go through its list of children to notify them of
+     * any drawable state change.
+     */
+    private static final int FLAG_NOTIFY_CHILDREN_ON_DRAWABLE_STATE_CHANGE = 0x10000;
+
+    /**
      * When set, this ViewGroup's drawable states also include those
      * of its children.
      */
@@ -206,13 +212,39 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     @Override
     protected void dispatchDraw(@Nonnull Canvas canvas) {
-        final View[] views = mChildren;
-        final int count = mChildrenCount;
-        final boolean clip = (mGroupFlags & FLAG_CLIP_CHILDREN) != 0;
-        for (int i = 0; i < count; i++) {
-            View child = views[i];
+        final int childrenCount = mChildrenCount;
+        final View[] children = mChildren;
+
+        final int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
+        int transientIndex = transientCount != 0 ? 0 : -1;
+
+        for (int i = 0; i < childrenCount; i++) {
+            while (transientIndex >= 0 && mTransientIndices.getInt(transientIndex) == i) {
+                final View transientChild = mTransientViews.get(transientIndex);
+                if ((transientChild.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                    drawChild(canvas, transientChild, 0);
+                }
+                transientIndex++;
+                if (transientIndex >= transientCount) {
+                    transientIndex = -1;
+                }
+            }
+
+            View child = children[i];
             if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
-                child.draw(canvas, this, clip);
+                drawChild(canvas, child, 0);
+            }
+        }
+
+        while (transientIndex >= 0) {
+            // there may be additional transient views after the normal views
+            final View transientChild = mTransientViews.get(transientIndex);
+            if ((transientChild.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                drawChild(canvas, transientChild, 0);
+            }
+            transientIndex++;
+            if (transientIndex >= transientCount) {
+                break;
             }
         }
         // Draw any disappearing views that have animations
@@ -221,9 +253,23 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             // Go backwards -- we may delete as animations finish
             for (int i = disappearingChildren.size() - 1; i >= 0; i--) {
                 final View child = disappearingChildren.get(i);
-                child.draw(canvas, this, clip);
+                drawChild(canvas, child, 0);
             }
         }
+    }
+
+    /**
+     * Draw one child of this View Group. This method is responsible for getting
+     * the canvas in the right state. This includes clipping, translating so
+     * that the child's scrolled origin is at 0, 0, and applying any animation
+     * transformations.
+     *
+     * @param canvas      The canvas on which to draw the child
+     * @param child       Who to draw
+     * @param drawingTime The time at which draw is occurring
+     */
+    protected void drawChild(@Nonnull Canvas canvas, @Nonnull View child, long drawingTime) {
+        child.draw(canvas, this, (mGroupFlags & FLAG_CLIP_CHILDREN) != 0);
     }
 
     @Override
@@ -1034,7 +1080,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
         view.mParent = this;
         if (mAttachInfo != null) {
-            view.dispatchAttachedToWindow(mAttachInfo);
+            view.dispatchAttachedToWindow(mAttachInfo, (mViewFlags & VISIBILITY_MASK));
         }
         invalidate();
     }
@@ -1292,7 +1338,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
         AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null && (mGroupFlags & FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW) == 0) {
-            child.dispatchAttachedToWindow(attachInfo);
+            child.dispatchAttachedToWindow(mAttachInfo, (mViewFlags & VISIBILITY_MASK));
         }
 
         if (child.isLayoutDirectionInherited()) {
@@ -1300,6 +1346,14 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
 
         onViewAdded(child);
+
+        if ((child.mViewFlags & DUPLICATE_PARENT_STATE) == DUPLICATE_PARENT_STATE) {
+            mGroupFlags |= FLAG_NOTIFY_CHILDREN_ON_DRAWABLE_STATE_CHANGE;
+        }
+
+        if (child.hasTransientState()) {
+            childHasTransientStateChanged(child, true);
+        }
 
         if (mTransientIndices != null) {
             final int transientCount = mTransientIndices.size();
@@ -1318,14 +1372,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *
      * @param child the added child view
      */
-    public void onViewAdded(View child) {
-    }
-
-    void dispatchViewRemoved(View child) {
-        onViewRemoved(child);
-        /*if (mOnHierarchyChangeListener != null) {
-            mOnHierarchyChangeListener.onChildViewRemoved(this, child);
-        }*/
+    protected void onViewAdded(View child) {
     }
 
     /**
@@ -1334,7 +1381,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      *
      * @param child the removed child view
      */
-    public void onViewRemoved(View child) {
+    protected void onViewRemoved(View child) {
     }
 
     /**
@@ -1580,7 +1627,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             }
         }
 
-        dispatchViewRemoved(view);
+        onViewRemoved(view);
 
         int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
         for (int i = 0; i < transientCount; ++i) {
@@ -1670,13 +1717,13 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 view.dispatchDetachedFromWindow();
             }
 
-            /*if (view.hasTransientState()) {
+            if (view.hasTransientState()) {
                 childHasTransientStateChanged(view, false);
             }
 
-            needGlobalAttributesUpdate(false);*/
+            /*needGlobalAttributesUpdate(false);*/
 
-            dispatchViewRemoved(view);
+            onViewRemoved(view);
         }
 
         removeFromArray(start, count);
@@ -1755,11 +1802,11 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 view.dispatchDetachedFromWindow();
             }
 
-            /*if (view.hasTransientState()) {
+            if (view.hasTransientState()) {
                 childHasTransientStateChanged(view, false);
-            }*/
+            }
 
-            dispatchViewRemoved(view);
+            onViewRemoved(view);
 
             view.mParent = null;
             children[i] = null;
@@ -2001,6 +2048,88 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return null;
     }
 
+    /**
+     * Offset a rectangle that is in a descendant's coordinate
+     * space into our coordinate space.
+     *
+     * @param descendant A descendant of this view
+     * @param rect       A rectangle defined in descendant's coordinate space.
+     */
+    public final void offsetDescendantRectToMyCoords(View descendant, Rect rect) {
+        offsetRectBetweenParentAndChild(descendant, rect, true, false);
+    }
+
+    /**
+     * Offset a rectangle that is in our coordinate space into an ancestor's
+     * coordinate space.
+     *
+     * @param descendant A descendant of this view
+     * @param rect       A rectangle defined in descendant's coordinate space.
+     */
+    public final void offsetRectIntoDescendantCoords(View descendant, Rect rect) {
+        offsetRectBetweenParentAndChild(descendant, rect, false, false);
+    }
+
+    /**
+     * Helper method that offsets a rect either from parent to descendant or
+     * descendant to parent.
+     */
+    void offsetRectBetweenParentAndChild(View descendant, Rect rect,
+                                         boolean offsetFromChildToParent, boolean clipToBounds) {
+
+        // already in the same coord system :)
+        if (descendant == this) {
+            return;
+        }
+
+        ViewParent theParent = descendant.mParent;
+
+        // search and offset up to the parent
+        while (theParent instanceof View && theParent != this) {
+
+            if (offsetFromChildToParent) {
+                rect.offset(descendant.mLeft - descendant.mScrollX,
+                        descendant.mTop - descendant.mScrollY);
+                if (clipToBounds) {
+                    View p = (View) theParent;
+                    boolean intersected = rect.intersect(0, 0, p.mRight - p.mLeft,
+                            p.mBottom - p.mTop);
+                    if (!intersected) {
+                        rect.setEmpty();
+                    }
+                }
+            } else {
+                if (clipToBounds) {
+                    View p = (View) theParent;
+                    boolean intersected = rect.intersect(0, 0, p.mRight - p.mLeft,
+                            p.mBottom - p.mTop);
+                    if (!intersected) {
+                        rect.setEmpty();
+                    }
+                }
+                rect.offset(descendant.mScrollX - descendant.mLeft,
+                        descendant.mScrollY - descendant.mTop);
+            }
+
+            descendant = (View) theParent;
+            theParent = descendant.mParent;
+        }
+
+        // now that we are up to this view, need to offset one more time
+        // to get into our coordinate space
+        if (theParent == this) {
+            if (offsetFromChildToParent) {
+                rect.offset(descendant.mLeft - descendant.mScrollX,
+                        descendant.mTop - descendant.mScrollY);
+            } else {
+                rect.offset(descendant.mScrollX - descendant.mLeft,
+                        descendant.mScrollY - descendant.mTop);
+            }
+        } else {
+            throw new IllegalArgumentException("parameter must be a descendant of this view");
+        }
+    }
+
     @Override
     public boolean getChildVisibleRect(View child, Rect r, @Nullable Point offset) {
         return getChildVisibleRect(child, r, offset, false);
@@ -2008,8 +2137,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     /**
      * @param forceParentCheck true to guarantee that this call will propagate to all ancestors,
-     *      false otherwise
-     *
+     *                         false otherwise
      * @hide
      */
     public boolean getChildVisibleRect(@Nonnull View child, Rect r, @Nullable Point offset, boolean forceParentCheck) {
@@ -2336,6 +2464,57 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     public final int getChildDrawingOrder(int drawingPosition) {
         return getChildDrawingOrder(getChildCount(), drawingPosition);
+    }
+
+    @Override
+    protected void drawableStateChanged() {
+        super.drawableStateChanged();
+
+        if ((mGroupFlags & FLAG_NOTIFY_CHILDREN_ON_DRAWABLE_STATE_CHANGE) != 0) {
+            if ((mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) != 0) {
+                throw new IllegalStateException("addStateFromChildren cannot be enabled if a"
+                        + " child has duplicateParentState set to true");
+            }
+
+            final View[] children = mChildren;
+            final int count = mChildrenCount;
+
+            for (int i = 0; i < count; i++) {
+                final View child = children[i];
+                if ((child.mViewFlags & DUPLICATE_PARENT_STATE) != 0) {
+                    child.refreshDrawableState();
+                }
+            }
+        }
+    }
+
+    @Override
+    protected int[] onCreateDrawableState(int extraSpace) {
+        if ((mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) == 0) {
+            return super.onCreateDrawableState(extraSpace);
+        }
+
+        int need = 0;
+        int n = getChildCount();
+        for (int i = 0; i < n; i++) {
+            int[] childState = getChildAt(i).getDrawableState();
+
+            if (childState != null) {
+                need += childState.length;
+            }
+        }
+
+        int[] state = super.onCreateDrawableState(extraSpace + need);
+
+        for (int i = 0; i < n; i++) {
+            int[] childState = getChildAt(i).getDrawableState();
+
+            if (childState != null) {
+                state = mergeDrawableStates(state, childState);
+            }
+        }
+
+        return state;
     }
 
     /**
@@ -2949,21 +3128,23 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    final void dispatchAttachedToWindow(AttachInfo info) {
+    final void dispatchAttachedToWindow(AttachInfo info, int visibility) {
         mGroupFlags |= FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
-        super.dispatchAttachedToWindow(info);
+        super.dispatchAttachedToWindow(info, visibility);
         mGroupFlags &= ~FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
 
         final int count = mChildrenCount;
         final View[] children = mChildren;
         for (int i = 0; i < count; i++) {
             final View child = children[i];
-            child.dispatchAttachedToWindow(info);
+            child.dispatchAttachedToWindow(info,
+                    combineVisibility(visibility, child.getVisibility()));
         }
         final int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
         for (int i = 0; i < transientCount; ++i) {
             View view = mTransientViews.get(i);
-            view.dispatchAttachedToWindow(info);
+            view.dispatchAttachedToWindow(info,
+                    combineVisibility(visibility, view.getVisibility()));
         }
     }
 
@@ -3046,6 +3227,32 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         for (int i = 0; i < count; i++) {
             children[i].dispatchVisibilityChanged(changedView, visibility);
         }
+    }
+
+    @Override
+    public void dispatchWindowVisibilityChanged(int visibility) {
+        super.dispatchWindowVisibilityChanged(visibility);
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchWindowVisibilityChanged(visibility);
+        }
+    }
+
+    @Override
+    boolean dispatchVisibilityAggregated(boolean isVisible) {
+        isVisible = super.dispatchVisibilityAggregated(isVisible);
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            // Only dispatch to visible children. Not visible children and their subtrees already
+            // know that they aren't visible and that's not going to change as a result of
+            // whatever triggered this dispatch.
+            if (children[i].getVisibility() == VISIBLE) {
+                children[i].dispatchVisibilityAggregated(isVisible);
+            }
+        }
+        return isVisible;
     }
 
     /**

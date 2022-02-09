@@ -18,6 +18,8 @@
 
 package icyllis.modernui.widget;
 
+import org.intellij.lang.annotations.MagicConstant;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -37,7 +39,7 @@ import javax.annotation.Nonnull;
  * Note that toasts being sent from the background are rate limited, so avoid sending
  * such toasts in quick succession.
  */
-public class Toast {
+public final class Toast {
 
     /**
      * Show the view or text notification for a short period of time.  This time
@@ -77,8 +79,9 @@ public class Toast {
      *                 {@link #LENGTH_LONG}
      */
     @Nonnull
-    public static Toast makeText(@Nonnull CharSequence text, int duration) {
-        Toast toast = new Toast();
+    public static Toast makeText(@Nonnull CharSequence text,
+                                 @MagicConstant(intValues = {LENGTH_SHORT, LENGTH_LONG}) int duration) {
+        final Toast toast = new Toast();
         toast.mText = text;
         toast.mDuration = duration;
         return toast;
