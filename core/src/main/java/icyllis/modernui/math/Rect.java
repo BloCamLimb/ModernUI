@@ -510,6 +510,17 @@ public class Rect {
                 ", " + bottom + ")";
     }
 
+    /**
+     * Return a string representation of the rectangle in a compact form.
+     * @hide
+     */
+    @Nonnull
+    public String toShortString() {
+        return "[" + left + ',' +
+                top + "][" + right +
+                ',' + bottom + ']';
+    }
+
     @Nonnull
     public Rect copy() {
         return new Rect(left, top, right, bottom);

@@ -121,16 +121,11 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         synchronized (this) {
             if (mView == null) {
                 mView = view;
-            /*ViewGroup.LayoutParams params = view.getLayoutParams();
-            // convert layout params
-            if (!(params instanceof LayoutParams)) {
-                params = new LayoutParams();
-                view.setLayoutParams(params);
-            }*/
                 mAttachInfo.mRootView = view;
                 mAttachInfo.mWindowVisibility = View.VISIBLE;
                 view.assignParent(this);
-                view.dispatchAttachedToWindow(mAttachInfo);
+                view.dispatchAttachedToWindow(mAttachInfo, View.VISIBLE);
+                view.dispatchWindowVisibilityChanged(View.VISIBLE);
             }
         }
     }
