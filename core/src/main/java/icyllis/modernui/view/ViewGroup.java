@@ -23,6 +23,7 @@ import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Point;
+import icyllis.modernui.math.PointF;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.util.Pool;
@@ -190,14 +191,18 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     // being animated.
     private ArrayList<View> mTransitioningViews;
 
+    // List of children changing visibility. This is used to potentially keep rendering
+    // views during a transition when they otherwise would have become gone/invisible
+    private ArrayList<View> mVisibilityChangingChildren;
+
+    // Temporary holder of presorted children, only used for
+    // input/software draw dispatch for correctly Z ordering.
+    private ArrayList<View> mPreSortedChildren;
+
     private int mChildCountWithTransientState = 0;
 
     private int mNestedScrollAxesTouch;
     private int mNestedScrollAxesNonTouch;
-
-    // List of children changing visibility. This is used to potentially keep rendering
-    // views during a transition when they otherwise would have become gone/invisible
-    private ArrayList<View> mVisibilityChangingChildren;
 
     // Used to manage the list of transient views, added by addTransientView()
     private IntArrayList mTransientIndices = null;
@@ -217,7 +222,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
         final int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
         int transientIndex = transientCount != 0 ? 0 : -1;
-
+        final ArrayList<View> preorderedList = buildOrderedChildList();
+        final boolean customOrder = preorderedList == null
+                && isChildrenDrawingOrderEnabled();
         for (int i = 0; i < childrenCount; i++) {
             while (transientIndex >= 0 && mTransientIndices.getInt(transientIndex) == i) {
                 final View transientChild = mTransientViews.get(transientIndex);
@@ -230,12 +237,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 }
             }
 
-            View child = children[i];
+            final int childIndex = getAndVerifyPreorderedIndex(childrenCount, i, customOrder);
+            final View child = getAndVerifyPreorderedView(preorderedList, children, childIndex);
             if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
                 drawChild(canvas, child, 0);
             }
         }
-
         while (transientIndex >= 0) {
             // there may be additional transient views after the normal views
             final View transientChild = mTransientViews.get(transientIndex);
@@ -247,6 +254,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 break;
             }
         }
+        if (preorderedList != null) {
+            preorderedList.clear();
+        }
+
         // Draw any disappearing views that have animations
         if (mDisappearingChildren != null) {
             final ArrayList<View> disappearingChildren = mDisappearingChildren;
@@ -305,7 +316,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    protected boolean dispatchHoverEvent(MotionEvent event) {
+    protected boolean dispatchHoverEvent(@Nonnull MotionEvent event) {
         final int action = event.getAction();
 
         final boolean intercepted = onInterceptHoverEvent(event);
@@ -323,13 +334,14 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             final float y = event.getY();
             final View[] children = mChildren;
             final int childrenCount = mChildrenCount;
-            final boolean customOrder = isChildrenDrawingOrderEnabled();
+            final ArrayList<View> preorderedList = buildOrderedChildList();
+            final boolean customOrder = preorderedList == null && isChildrenDrawingOrderEnabled();
             HoverTarget lastHoverTarget = null;
             for (int i = childrenCount - 1; i >= 0; i--) {
                 final int childIndex = getAndVerifyPreorderedIndex(
                         childrenCount, i, customOrder);
                 final View child = getAndVerifyPreorderedView(
-                        null, children, childIndex);
+                        preorderedList, children, childIndex);
                 if (!child.canReceivePointerEvents()
                         || !isTransformedTouchPointInView(x, y, child, null)) {
                     continue;
@@ -382,7 +394,6 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                         handled = dispatchTransformedGenericPointerEvent(
                                 event, child); // enter
                         event.setAction(action);
-
                     }
                     // Send the move as is.
                     handled |= dispatchTransformedGenericPointerEvent(
@@ -391,6 +402,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 if (handled) {
                     break;
                 }
+            }
+            if (preorderedList != null) {
+                preorderedList.clear();
             }
         }
 
@@ -470,6 +484,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             }
         }
 
+        // Done.
         return handled;
     }
 
@@ -516,7 +531,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @param child The view to send the event to.
      * @return {@code true} if the child handled the event.
      */
-    private boolean dispatchTransformedGenericPointerEvent(MotionEvent event, View child) {
+    private boolean dispatchTransformedGenericPointerEvent(@Nonnull MotionEvent event, @Nonnull View child) {
         boolean handled;
         final float offsetX = mScrollX - child.mLeft;
         final float offsetY = mScrollY - child.mTop;
@@ -563,13 +578,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @return True if the view group would like to intercept the hover event
      * and prevent its children from receiving it.
      */
-    public boolean onInterceptHoverEvent(MotionEvent event) {
-        /*final int action = event.getAction();
+    public boolean onInterceptHoverEvent(@Nonnull MotionEvent event) {
+        final int action = event.getAction();
         final float x = event.getX();
         final float y = event.getY();
         return (action == MotionEvent.ACTION_HOVER_MOVE
-                || action == MotionEvent.ACTION_HOVER_ENTER) && isOnScrollbar(x, y);*/
-        return false;
+                || action == MotionEvent.ACTION_HOVER_ENTER) && isOnScrollbar(x, y);
     }
 
     @Override
@@ -580,27 +594,35 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             final float x = event.getX();
             final float y = event.getY();
 
-            final boolean customOrder = isChildrenDrawingOrderEnabled();
+            final ArrayList<View> preorderedList = buildOrderedChildList();
+            final boolean customOrder = preorderedList == null
+                    && isChildrenDrawingOrderEnabled();
             final View[] children = mChildren;
             for (int i = childrenCount - 1; i >= 0; i--) {
                 final int childIndex = getAndVerifyPreorderedIndex(childrenCount, i, customOrder);
-                final View child = getAndVerifyPreorderedView(null, children, childIndex);
+                final View child = getAndVerifyPreorderedView(preorderedList, children, childIndex);
                 if (!child.canReceivePointerEvents()
                         || !isTransformedTouchPointInView(x, y, child, null)) {
                     continue;
                 }
 
                 if (dispatchTransformedGenericPointerEvent(event, child)) {
+                    if (preorderedList != null) {
+                        preorderedList.clear();
+                    }
                     return true;
                 }
             }
+            if (preorderedList != null) {
+                preorderedList.clear();
+            }
         }
 
-        // Send to this view group.
+        // No child handled the event.  Send it to this view group.
         return super.dispatchGenericPointerEvent(event);
     }
 
-    private static View getAndVerifyPreorderedView(ArrayList<View> preorderedList, View[] children,
+    private static View getAndVerifyPreorderedView(@Nullable ArrayList<View> preorderedList, View[] children,
                                                    int childIndex) {
         final View child;
         if (preorderedList != null) {
@@ -796,13 +818,21 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         TouchTarget newTouchTarget = null;
         boolean dispatchedToNewTarget = false;
         if (!canceled && !intercepted && action == MotionEvent.ACTION_DOWN && mChildrenCount > 0) {
+            final int childrenCount = mChildrenCount;
             final float x = ev.getX();
             final float y = ev.getY();
-
-            //TODO ordering
+            // Find a child that can receive the event.
+            // Scan children from front to back.
+            final ArrayList<View> preorderedList = buildOrderedChildList();
+            final boolean customOrder = preorderedList == null
+                    && isChildrenDrawingOrderEnabled();
             final View[] children = mChildren;
-            for (int i = mChildrenCount - 1; i >= 0; i--) {
-                final View child = children[i];
+            for (int i = childrenCount - 1; i >= 0; i--) {
+                final int childIndex = getAndVerifyPreorderedIndex(
+                        childrenCount, i, customOrder);
+                final View child = getAndVerifyPreorderedView(
+                        preorderedList, children, childIndex);
+
                 if (!child.canReceivePointerEvents()
                         || !isTransformedTouchPointInView(x, y, child, null)) {
                     continue;
@@ -814,6 +844,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                     dispatchedToNewTarget = true;
                     break;
                 }
+            }
+            if (preorderedList != null) {
+                preorderedList.clear();
             }
         }
 
@@ -903,7 +936,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * The current target will receive an ACTION_CANCEL event, and no further
      * messages will be delivered here.
      */
-    public boolean onInterceptTouchEvent(MotionEvent ev) {
+    public boolean onInterceptTouchEvent(@Nonnull MotionEvent ev) {
         return ev.getAction() == MotionEvent.ACTION_DOWN
                 && ev.isButtonPressed(MotionEvent.BUTTON_PRIMARY)
                 && isOnScrollbarThumb(ev.getX(), ev.getY());
@@ -972,16 +1005,15 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * into its coordinate space.
      * Child must not be null.
      */
-    boolean isTransformedTouchPointInView(float x, float y, View child,
-                                          float[] outLocalPoint) {
+    boolean isTransformedTouchPointInView(float x, float y, @Nonnull View child,
+                                          @Nullable PointF outLocalPoint) {
         final float[] point = getTempLocationF();
         point[0] = x;
         point[1] = y;
         transformPointToViewLocal(point, child);
         final boolean isInView = child.pointInView(point[0], point[1]);
         if (isInView && outLocalPoint != null) {
-            outLocalPoint[0] = point[0];
-            outLocalPoint[1] = point[1];
+            outLocalPoint.set(point[0], point[1]);
         }
         return isInView;
     }
@@ -2466,6 +2498,51 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return getChildDrawingOrder(getChildCount(), drawingPosition);
     }
 
+    private boolean hasChildWithZ() {
+        for (int i = 0; i < mChildrenCount; i++) {
+            if (mChildren[i].getZ() != 0) return true;
+        }
+        return false;
+    }
+
+    /**
+     * Populates (and returns) mPreSortedChildren with a pre-ordered list of the View's children,
+     * sorted first by Z, then by child drawing order (if applicable). This list must be cleared
+     * after use to avoid leaking child Views.
+     * <p>
+     * Uses a stable, insertion sort which is commonly O(n) for ViewGroups with very few elevated
+     * children.
+     */
+    @Nullable
+    ArrayList<View> buildOrderedChildList() {
+        final int childrenCount = mChildrenCount;
+        if (childrenCount <= 1 || !hasChildWithZ()) return null;
+
+        if (mPreSortedChildren == null) {
+            mPreSortedChildren = new ArrayList<>(childrenCount);
+        } else {
+            // callers should clear, so clear shouldn't be necessary, but for safety...
+            mPreSortedChildren.clear();
+            mPreSortedChildren.ensureCapacity(childrenCount);
+        }
+
+        final boolean customOrder = isChildrenDrawingOrderEnabled();
+        for (int i = 0; i < childrenCount; i++) {
+            // add next child (in child order) to end of list
+            final int childIndex = getAndVerifyPreorderedIndex(childrenCount, i, customOrder);
+            final View nextChild = mChildren[childIndex];
+            final float currentZ = nextChild.getZ();
+
+            // insert ahead of any Views with greater Z
+            int insertIndex = i;
+            while (insertIndex > 0 && mPreSortedChildren.get(insertIndex - 1).getZ() > currentZ) {
+                insertIndex--;
+            }
+            mPreSortedChildren.add(insertIndex, nextChild);
+        }
+        return mPreSortedChildren;
+    }
+
     @Override
     protected void drawableStateChanged() {
         super.drawableStateChanged();
@@ -2488,6 +2565,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
+    @Nonnull
     @Override
     protected int[] onCreateDrawableState(int extraSpace) {
         if ((mGroupFlags & FLAG_ADD_STATES_FROM_CHILDREN) == 0) {
@@ -2510,7 +2588,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             int[] childState = getChildAt(i).getDrawableState();
 
             if (childState != null) {
-                state = mergeDrawableStates(state, childState);
+                mergeDrawableStates(state, childState);
             }
         }
 
@@ -2967,12 +3045,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                     // Child wants to be our size... find out how big it should
                     // be
                     resultSize = size;
-                    resultMode = MeasureSpec.UNSPECIFIED;
+                    //resultMode = MeasureSpec.UNSPECIFIED;
                 } else if (childDimension == LayoutParams.WRAP_CONTENT) {
                     // Child wants to determine its own size.... find out how
                     // big it should be
                     resultSize = size;
-                    resultMode = MeasureSpec.UNSPECIFIED;
+                    //resultMode = MeasureSpec.UNSPECIFIED;
                 }
                 break;
         }
@@ -3210,7 +3288,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                     // Only track this on disappearing views - appearing views are already visible
                     // and don't need special handling during drawChild()
                     if (mVisibilityChangingChildren == null) {
-                        mVisibilityChangingChildren = new ArrayList<View>();
+                        mVisibilityChangingChildren = new ArrayList<>();
                     }
                     mVisibilityChangingChildren.add(child);
                     addDisappearingView(child);

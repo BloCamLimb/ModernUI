@@ -38,10 +38,7 @@ import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
-import icyllis.modernui.widget.EditText;
-import icyllis.modernui.widget.LinearLayout;
-import icyllis.modernui.widget.SwitchButton;
-import icyllis.modernui.widget.TextView;
+import icyllis.modernui.widget.*;
 import net.minecraft.ChatFormatting;
 
 import javax.annotation.Nonnull;
@@ -80,6 +77,8 @@ public class TestLinearLayout extends LinearLayout {
     private int ticks;
 
     private final TextView mTextView;
+
+    PopupWindow mPopupWindow = new PopupWindow();
 
     public TestLinearLayout() {
         setOrientation(VERTICAL);
@@ -144,10 +143,19 @@ public class TestLinearLayout extends LinearLayout {
                 SwitchButton switchButton = new SwitchButton();
                 v = switchButton;
                 switchButton.setOnCheckedChangeListener((button, checked) -> {
-                    if (checked) {
+                    /*if (checked) {
                         button.post(() -> addView(mTextView, 2));
                     } else {
                         button.post(() -> removeView(mTextView));
+                    }*/
+                    if (checked) {
+                        mPopupWindow.setContentView(mTextView);
+                        mPopupWindow.setWidth(400);
+                        mPopupWindow.setHeight(200);
+                        mPopupWindow.setOutsideTouchable(true);
+                        mPopupWindow.showAsDropDown(button, 0, 0);
+                    } else {
+                        mPopupWindow.dismiss();
                     }
                 });
                 p = new LinearLayout.LayoutParams(dp(100), dp(36));
@@ -159,7 +167,7 @@ public class TestLinearLayout extends LinearLayout {
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
                 textField.setHint("Your Name");
-                textField.setSingleLine();
+                //textField.setSingleLine();
                 //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 textField.setPadding(dp(12), 0, dp(12), 0);
             } else {

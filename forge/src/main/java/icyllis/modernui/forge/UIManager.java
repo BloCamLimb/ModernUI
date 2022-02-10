@@ -21,6 +21,7 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.R;
 import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.LayoutTransition;
@@ -40,8 +41,8 @@ import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.util.TimedAction;
 import icyllis.modernui.view.*;
+import icyllis.modernui.widget.CoordinatorLayout;
 import icyllis.modernui.widget.EditText;
-import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.TextView;
 import net.minecraft.ChatFormatting;
 import net.minecraft.CrashReport;
@@ -115,8 +116,6 @@ public final class UIManager implements LifecycleOwner {
     private static final int MSG_DO_FRAME = 1;
     private static final int MSG_SET_FRAME = 2;
 
-    // Constant IDs for Framework package.
-    private static final int content = 0x01020001;
     private static final int fragment_container = 0x01020007;
 
     static final KeyMapping OPEN_CENTER_KEY = new KeyMapping(
@@ -141,7 +140,7 @@ public final class UIManager implements LifecycleOwner {
     private ViewRootImpl mViewRoot;
 
     // the top-level view of the window
-    private FrameLayout mDecor;
+    private CoordinatorLayout mDecor;
     private FragmentContainerView mFragmentContainerView;
 
 
@@ -323,7 +322,7 @@ public final class UIManager implements LifecycleOwner {
         return mFrameTimeMillis;
     }
 
-    FrameLayout getDecorView() {
+    CoordinatorLayout getDecorView() {
         return mDecor;
     }
 
@@ -409,12 +408,12 @@ public final class UIManager implements LifecycleOwner {
 
         mAnimationHandler = AnimationHandler.getInstance().getCallback();
 
-        mDecor = new FrameLayout();
+        mDecor = new CoordinatorLayout();
         // make the root view clickable through, so that views can lose focus
         mDecor.setClickable(true);
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
-        mDecor.setId(content);
+        mDecor.setId(R.id.content);
 
         mFragmentContainerView = new FragmentContainerView();
         mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1035,7 +1034,7 @@ public final class UIManager implements LifecycleOwner {
         @Override
         public void playSoundEffect(int effectId) {
             if (effectId == SoundEffectConstants.CLICK) {
-                minecraft.tell(() -> minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MuiRegistries.BUTTON_CLICK_2, 1.0f)));
+                minecraft.tell(() -> minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MuiRegistries.BUTTON_CLICK_1, 1.0f)));
             }
         }
 

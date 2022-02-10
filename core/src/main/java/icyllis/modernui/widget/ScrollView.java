@@ -160,7 +160,7 @@ public class ScrollView extends FrameLayout {
 
 
     @Override
-    public boolean onInterceptTouchEvent(MotionEvent ev) {
+    public boolean onInterceptTouchEvent(@Nonnull MotionEvent ev) {
         /*
          * This method JUST determines whether we want to intercept the motion.
          * If we return true, onMotionEvent will be called and we do the actual

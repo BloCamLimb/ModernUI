@@ -9078,7 +9078,7 @@ public class View implements Drawable.Callback {
      * @param event The motion event to be dispatched.
      * @return True if the event was handled by the view, false otherwise.
      */
-    protected boolean dispatchHoverEvent(MotionEvent event) {
+    protected boolean dispatchHoverEvent(@Nonnull MotionEvent event) {
         ListenerInfo li = mListenerInfo;
         if (li != null && li.mOnHoverListener != null
                 && (mViewFlags & ENABLED_MASK) == ENABLED

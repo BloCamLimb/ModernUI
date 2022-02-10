@@ -34,10 +34,12 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.opengl.ShaderManager;
 import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.ShaderManager;
 import icyllis.modernui.graphics.opengl.TextureManager;
-import icyllis.modernui.math.*;
+import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
@@ -298,13 +300,13 @@ public class TestMain {
             }, "Open-File").start();*/
             /*new Thread(() -> {
                 try {
-                    Thread.sleep(1000);
+                    Thread.sleep(3000);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
                 try (MemoryStack stack = MemoryStack.stackPush()) {
                     ByteBuffer buffer = stack.malloc(3);
-                    String c = TinyFileDialogs.tinyfd_colorChooser("Choose a color", null, buffer, buffer);
+                    String c = TinyFileDialogs.tinyfd_colorChooser((ByteBuffer) null, null, buffer, buffer);
                     if (c != null) {
                         ModernUI.LOGGER.info("Choose color {}", c);
                     }
