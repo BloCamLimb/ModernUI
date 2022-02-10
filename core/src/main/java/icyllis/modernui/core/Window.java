@@ -34,7 +34,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.system.MemoryUtil.memPutAddress;
 
 /**
- * Represents a window to operating system, which provides OpenGL context.
+ * Represents a window to operating system, which provides 3D graphics context.
  */
 public final class Window implements AutoCloseable {
 

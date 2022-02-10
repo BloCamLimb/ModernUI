@@ -22,7 +22,9 @@ import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.math.RectF;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.*;
@@ -71,6 +73,9 @@ import java.util.List;
  */
 @SuppressWarnings("unused")
 public class CoordinatorLayout extends FrameLayout {
+
+    private static final ThreadLocal<Matrix4> sMatrix = ThreadLocal.withInitial(Matrix4::identity);
+    private static final ThreadLocal<RectF> sRectF = ThreadLocal.withInitial(RectF::new);
 
     private static final int TYPE_ON_INTERCEPT = 0;
     private static final int TYPE_ON_TOUCH = 1;
@@ -424,6 +429,53 @@ public class CoordinatorLayout extends FrameLayout {
         Collections.reverse(mDependencySortedChildren);
     }
 
+    /**
+     * Retrieve the transformed bounding rect of an arbitrary descendant view.
+     * This does not need to be a direct child.
+     *
+     * @param descendant descendant view to reference
+     * @param out        rect to set to the bounds of the descendant view
+     */
+    void getDescendantRect(@Nonnull View descendant, @Nonnull Rect out) {
+        out.set(0, 0, descendant.getWidth(), descendant.getHeight());
+        offsetDescendantRect(descendant, out);
+    }
+
+    /**
+     * This is a port of the common
+     * {@link ViewGroup#offsetDescendantRectToMyCoords(View, Rect)}
+     * from the framework, but adapted to take transformations into account. The result
+     * will be the bounding rect of the real transformed rect.
+     *
+     * @param descendant view defining the original coordinate system of rect
+     * @param rect       (in/out) the rect to offset from descendant to this view's coordinate system
+     */
+    void offsetDescendantRect(View descendant, Rect rect) {
+        Matrix4 m = sMatrix.get();
+        m.setIdentity();
+
+        offsetDescendantMatrix(descendant, m);
+
+        RectF rectF = sRectF.get();
+        rectF.set(rect);
+        m.transform(rectF);
+        rectF.round(rect);
+    }
+
+    private void offsetDescendantMatrix(@Nonnull View view, Matrix4 m) {
+        final ViewParent parent = view.getParent();
+        if (parent instanceof final View vp && parent != this) {
+            offsetDescendantMatrix(vp, m);
+            m.translateXY(-vp.getScrollX(), -vp.getScrollY());
+        }
+
+        m.translateXY(view.getLeft(), view.getTop());
+
+        if (!view.getMatrix().isIdentity()) {
+            m.multiply(view.getMatrix());
+        }
+    }
+
     @Override
     protected int getSuggestedMinimumWidth() {
         return Math.max(super.getSuggestedMinimumWidth(), getPaddingLeft() + getPaddingRight());
@@ -560,7 +612,7 @@ public class CoordinatorLayout extends FrameLayout {
      * {@link #recordLastChildRect(View, Rect)}.
      *
      * @param child child view to retrieve from
-     * @param out   rect to set to the outpur values
+     * @param out   rect to set to the output values
      */
     void getLastChildRect(@Nonnull View child, @Nonnull Rect out) {
         final LayoutParams lp = (LayoutParams) child.getLayoutParams();
@@ -582,7 +634,7 @@ public class CoordinatorLayout extends FrameLayout {
             return;
         }
         if (transform) {
-            offsetDescendantRectToMyCoords(child, out);
+            getDescendantRect(child, out);
         } else {
             out.set(child.getLeft(), child.getTop(), child.getRight(), child.getBottom());
         }
@@ -694,7 +746,7 @@ public class CoordinatorLayout extends FrameLayout {
         final Rect anchorRect = acquireTempRect();
         final Rect childRect = acquireTempRect();
         try {
-            offsetDescendantRectToMyCoords(anchor, anchorRect);
+            getDescendantRect(anchor, anchorRect);
             getDesiredAnchoredChildRect(child, layoutDirection, anchorRect, childRect);
             child.layout(childRect.left, childRect.top, childRect.right, childRect.bottom);
         } finally {
@@ -730,7 +782,7 @@ public class CoordinatorLayout extends FrameLayout {
     /**
      * Return the given gravity value, but if either or both of the axes doesn't have any gravity
      * specified, the default value (start or top) is specified. This should be used for children
-     * that are not anchored to another view or a keyline.
+     * that are not anchored to another view.
      */
     private static int resolveGravity(int gravity) {
         if ((gravity & Gravity.HORIZONTAL_GRAVITY_MASK) == Gravity.NO_GRAVITY) {
@@ -777,7 +829,7 @@ public class CoordinatorLayout extends FrameLayout {
      * dependency on another view. This allows CoordinatorLayout to account for layout
      * changes and animations that occur outside of the normal layout pass.
      * <p>
-     * It can also be ran as part of the nested scrolling dispatch to ensure that any offsetting
+     * It can also be run as part of the nested scrolling dispatch to ensure that any offsetting
      * is completed within the correct coordinate window.
      * <p>
      * The offsetting behavior implemented here does not store the computed offset in
@@ -1111,7 +1163,7 @@ public class CoordinatorLayout extends FrameLayout {
             final Rect childRect = acquireTempRect();
             final Rect desiredChildRect = acquireTempRect();
 
-            offsetDescendantRectToMyCoords(lp.mAnchorView, anchorRect);
+            getDescendantRect(lp.mAnchorView, anchorRect);
             getChildRect(child, false, childRect);
 
             int childWidth = child.getMeasuredWidth();
@@ -1214,6 +1266,13 @@ public class CoordinatorLayout extends FrameLayout {
     protected LayoutParams generateLayoutParams(@Nonnull ViewGroup.LayoutParams p) {
         if (p instanceof LayoutParams) {
             return new LayoutParams((LayoutParams) p);
+        } else if (p instanceof FrameLayout.LayoutParams vp) {
+            // consider CoordinatorLayout is a subclass of FrameLayout
+            LayoutParams lp = new LayoutParams(vp);
+            if (vp.gravity != FrameLayout.LayoutParams.UNSPECIFIED_GRAVITY) {
+                lp.gravity = vp.gravity;
+            }
+            return lp;
         } else if (p instanceof MarginLayoutParams) {
             return new LayoutParams((MarginLayoutParams) p);
         }
