@@ -18,7 +18,6 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.util.IntProperty;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewParent;
@@ -268,65 +267,16 @@ public class LayoutTransition {
         mDisappearingAnim = defaultFadeOut;
     }
 
-    private static final IntProperty<View> LEFT = new IntProperty<>() {
-        @Override
-        public void setValue(@Nonnull View object, int value) {
-            object.setLeft(value);
-        }
-
-        @Nonnull
-        @Override
-        public Integer get(@Nonnull View object) {
-            return object.getLeft();
-        }
-    };
-    private static final IntProperty<View> TOP = new IntProperty<>() {
-        @Override
-        public void setValue(@Nonnull View object, int value) {
-            object.setTop(value);
-        }
-
-        @Nonnull
-        @Override
-        public Integer get(@Nonnull View object) {
-            return object.getTop();
-        }
-    };
-    private static final IntProperty<View> RIGHT = new IntProperty<>() {
-        @Override
-        public void setValue(@Nonnull View object, int value) {
-            object.setRight(value);
-        }
-
-        @Nonnull
-        @Override
-        public Integer get(@Nonnull View object) {
-            return object.getRight();
-        }
-    };
-    private static final IntProperty<View> BOTTOM = new IntProperty<>() {
-        @Override
-        public void setValue(@Nonnull View object, int value) {
-            object.setBottom(value);
-        }
-
-        @Nonnull
-        @Override
-        public Integer get(@Nonnull View object) {
-            return object.getBottom();
-        }
-    };
-
     private void initDefaultAnimators() {
         // "left" is just a placeholder; we'll put real properties/values in when needed
-        PropertyValuesHolder pvhLeft = PropertyValuesHolder.ofInt(LEFT, 0, 1);
-        PropertyValuesHolder pvhTop = PropertyValuesHolder.ofInt(TOP, 0, 1);
-        PropertyValuesHolder pvhRight = PropertyValuesHolder.ofInt(RIGHT, 0, 1);
-        PropertyValuesHolder pvhBottom = PropertyValuesHolder.ofInt(BOTTOM, 0, 1);
-        /*PropertyValuesHolder pvhScrollX = PropertyValuesHolder.ofInt("scrollX", 0, 1);
-        PropertyValuesHolder pvhScrollY = PropertyValuesHolder.ofInt("scrollY", 0, 1);*/
+        PropertyValuesHolder pvhLeft = PropertyValuesHolder.ofInt(View.LEFT, 0, 1);
+        PropertyValuesHolder pvhTop = PropertyValuesHolder.ofInt(View.TOP, 0, 1);
+        PropertyValuesHolder pvhRight = PropertyValuesHolder.ofInt(View.RIGHT, 0, 1);
+        PropertyValuesHolder pvhBottom = PropertyValuesHolder.ofInt(View.BOTTOM, 0, 1);
+        PropertyValuesHolder pvhScrollX = PropertyValuesHolder.ofInt(View.SCROLL_X, 0, 1);
+        PropertyValuesHolder pvhScrollY = PropertyValuesHolder.ofInt(View.SCROLL_Y, 0, 1);
         defaultChangeIn = ObjectAnimator.ofPropertyValuesHolder(null,
-                pvhLeft, pvhTop, pvhRight, pvhBottom);
+                pvhLeft, pvhTop, pvhRight, pvhBottom, pvhScrollX, pvhScrollY);
         defaultChangeIn.setDuration(DEFAULT_DURATION);
         defaultChangeIn.setStartDelay(mChangingAppearingDelay);
         defaultChangeIn.setInterpolator(mChangingAppearingInterpolator);
