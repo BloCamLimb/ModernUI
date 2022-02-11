@@ -19,6 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.MeasureSpec;
 import icyllis.modernui.view.View;
@@ -56,6 +57,37 @@ public class FrameLayout extends ViewGroup {
     private final ArrayList<View> mMatchParentChildren = new ArrayList<>(1);
 
     public FrameLayout() {
+    }
+
+    /**
+     * Describes how the foreground is positioned. Defaults to START and TOP.
+     *
+     * @param foregroundGravity See {@link Gravity}
+     * @see #getForegroundGravity()
+     */
+    public void setForegroundGravity(int foregroundGravity) {
+        if (getForegroundGravity() != foregroundGravity) {
+            super.setForegroundGravity(foregroundGravity);
+
+            // calling get* again here because the set above may apply default constraints
+            final Drawable foreground = getForeground();
+            if (getForegroundGravity() == Gravity.FILL && foreground != null) {
+                Rect padding = new Rect();
+                if (foreground.getPadding(padding)) {
+                    mForegroundPaddingLeft = padding.left;
+                    mForegroundPaddingTop = padding.top;
+                    mForegroundPaddingRight = padding.right;
+                    mForegroundPaddingBottom = padding.bottom;
+                }
+            } else {
+                mForegroundPaddingLeft = 0;
+                mForegroundPaddingTop = 0;
+                mForegroundPaddingRight = 0;
+                mForegroundPaddingBottom = 0;
+            }
+
+            requestLayout();
+        }
     }
 
     private int getPaddingLeftWithForeground() {

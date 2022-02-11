@@ -2932,12 +2932,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     protected void measureChild(@Nonnull View child, int parentWidthSpec,
                                 int parentHeightSpec) {
-        LayoutParams lp = child.getLayoutParams();
+        final LayoutParams lp = child.getLayoutParams();
 
-        int childWidthMeasureSpec = getChildMeasureSpec(parentWidthSpec,
-                0, lp.width);
-        int childHeightMeasureSpec = getChildMeasureSpec(parentHeightSpec,
-                0, lp.height);
+        final int childWidthMeasureSpec = getChildMeasureSpec(parentWidthSpec,
+                mPaddingLeft + mPaddingRight, lp.width);
+        final int childHeightMeasureSpec = getChildMeasureSpec(parentHeightSpec,
+                mPaddingTop + mPaddingBottom, lp.height);
 
         child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
     }
@@ -2959,13 +2959,13 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     protected void measureChildWithMargins(@Nonnull View child,
                                            int parentWidthSpec, int widthUsed,
                                            int parentHeightSpec, int heightUsed) {
-        MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
+        final MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
 
-        int childWidthMeasureSpec = getChildMeasureSpec(parentWidthSpec,
-                lp.leftMargin + lp.rightMargin
+        final int childWidthMeasureSpec = getChildMeasureSpec(parentWidthSpec,
+                mPaddingLeft + mPaddingRight + lp.leftMargin + lp.rightMargin
                         + widthUsed, lp.width);
-        int childHeightMeasureSpec = getChildMeasureSpec(parentHeightSpec,
-                lp.topMargin + lp.bottomMargin
+        final int childHeightMeasureSpec = getChildMeasureSpec(parentHeightSpec,
+                mPaddingTop + mPaddingBottom + lp.topMargin + lp.bottomMargin
                         + heightUsed, lp.height);
 
         child.measure(childWidthMeasureSpec, childHeightMeasureSpec);

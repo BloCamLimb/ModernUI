@@ -27,6 +27,7 @@ import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
 import icyllis.modernui.widget.ScrollView;
@@ -41,14 +42,15 @@ public class TestFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
-        ScrollView contentView = new ScrollView();
-        FrameLayout.LayoutParams contentViewParams = new FrameLayout.LayoutParams(dp(500), dp(480));
-        contentViewParams.gravity = Gravity.CENTER;
+        ScrollView base = new ScrollView();
 
-        LinearLayout ll = new TestLinearLayout();
-        contentView.addView(ll, new FrameLayout.LayoutParams(dp(400), dp(700)));
+        {
+            LinearLayout content = new TestLinearLayout();
+            var params = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+            base.addView(content, params);
+        }
 
-        contentView.setBackground(new Drawable() {
+        base.setBackground(new Drawable() {
             //long lastTime = AnimationHandler.currentTimeMillis();
 
             @Override
@@ -70,8 +72,12 @@ public class TestFragment extends Fragment {
                 }*/
             }
         });
-        contentView.setLayoutParams(contentViewParams);
-        return contentView;
+        {
+            var params = new FrameLayout.LayoutParams(dp(480), dp(360));
+            params.gravity = Gravity.CENTER;
+            base.setLayoutParams(params);
+        }
+        return base;
     }
 
     private static class TestView extends View {
