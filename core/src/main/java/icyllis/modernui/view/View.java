@@ -35,10 +35,7 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.transition.Transition;
-import icyllis.modernui.util.FloatProperty;
-import icyllis.modernui.util.LayoutDirection;
-import icyllis.modernui.util.SparseArray;
-import icyllis.modernui.util.StateSet;
+import icyllis.modernui.util.*;
 import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 import icyllis.modernui.view.menu.MenuBuilder;
 import org.apache.logging.log4j.Marker;
@@ -4329,7 +4326,6 @@ public class View implements Drawable.Callback {
      *
      * @param nextFocusForwardId The next focus ID, or {@link #NO_ID} if the framework should
      *                           decide automatically.
-     * @attr ref android.R.styleable#View_nextFocusForward
      */
     public void setNextFocusForwardId(int nextFocusForwardId) {
         mNextFocusForwardId = nextFocusForwardId;
@@ -11018,6 +11014,120 @@ public class View implements Drawable.Callback {
         @Override
         public Float get(@Nonnull View object) {
             return object.getScaleY();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>left</code> functionality handled by the
+     * {@link View#setLeft(int)} and {@link View#getLeft()} methods.
+     * <p>
+     * This is not encouraged and should be regarded as internal use only.
+     */
+    public static final IntProperty<View> LEFT = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setLeft(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getLeft();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>top</code> functionality handled by the
+     * {@link View#setTop(int)} and {@link View#getTop()} methods.
+     * <p>
+     * This is not encouraged and should be regarded as internal use only.
+     */
+    public static final IntProperty<View> TOP = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setTop(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getTop();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>right</code> functionality handled by the
+     * {@link View#setRight(int)} and {@link View#getRight()} methods.
+     * <p>
+     * This is not encouraged and should be regarded as internal use only.
+     */
+    public static final IntProperty<View> RIGHT = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setRight(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getRight();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>bottom</code> functionality handled by the
+     * {@link View#setBottom(int)} and {@link View#getBottom()} methods.
+     * <p>
+     * This is not encouraged and should be regarded as internal use only.
+     */
+    public static final IntProperty<View> BOTTOM = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setBottom(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getBottom();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>scrollX</code> functionality handled by the
+     * {@link View#setScrollX(int)} and {@link View#getScrollX()} methods.
+     * <p>
+     * This is not encouraged and should be regarded as internal use only.
+     */
+    public static final IntProperty<View> SCROLL_X = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setScrollX(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getScrollX();
+        }
+    };
+
+    /**
+     * A Property wrapper around the <code>scrollY</code> functionality handled by the
+     * {@link View#setScrollY(int)} and {@link View#getScrollY()} methods.
+     * <p>
+     * This is not encouraged and should be regarded as internal use only.
+     */
+    public static final IntProperty<View> SCROLL_Y = new IntProperty<>() {
+        @Override
+        public void setValue(@Nonnull View object, int value) {
+            object.setScrollY(value);
+        }
+
+        @Nonnull
+        @Override
+        public Integer get(@Nonnull View object) {
+            return object.getScrollY();
         }
     };
 
