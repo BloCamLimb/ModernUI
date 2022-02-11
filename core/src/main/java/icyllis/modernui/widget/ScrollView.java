@@ -25,6 +25,7 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.*;
 
 import javax.annotation.Nonnull;
+import java.util.List;
 
 /**
  * A view group that allows the view hierarchy placed within it to be scrolled.
@@ -32,15 +33,50 @@ import javax.annotation.Nonnull;
  * To add multiple views within the scroll view, make
  * the direct child you add a view group, for example {@link LinearLayout}, and
  * place additional views within that LinearLayout.
+ *
+ * <p>Never add a {@link RecyclerView} or {@link ListView} to
+ * a scroll view. Doing so results in poor user interface performance and a poor user
+ * experience.</p>
  */
 public class ScrollView extends FrameLayout {
 
-    private final OverScroller mScroller = new OverScroller();
+    private final Rect mTempRect = new Rect();
+
+    private final OverScroller mScroller;
+
+    /**
+     * Tracks the state of the top edge glow.
+     * <p>
+     * Even though this field is practically final, we cannot make it final because there are apps
+     * setting it via reflection and they need to keep working until they target Q.
+     */
+    private final EdgeEffect mEdgeGlowTop;
+
+    /**
+     * Tracks the state of the bottom edge glow.
+     * <p>
+     * Even though this field is practically final, we cannot make it final because there are apps
+     * setting it via reflection and they need to keep working until they target Q.
+     */
+    private final EdgeEffect mEdgeGlowBottom;
 
     /**
      * Position of the last motion event.
      */
     private int mLastMotionY;
+
+    /**
+     * True when the layout has changed but the traversal has not come through yet.
+     * Ideally the view hierarchy would keep track of this for us.
+     */
+    private boolean mIsLayoutDirty = true;
+
+    /**
+     * The child to give focus to in the event that a child has requested focus while the
+     * layout is dirty. This prevents the scroll from being wrong if the child has not been
+     * laid out before requesting focus.
+     */
+    private View mChildToScrollTo = null;
 
     /**
      * True if the user is currently dragging this ScrollView around. This is
@@ -54,12 +90,20 @@ public class ScrollView extends FrameLayout {
      */
     private VelocityTracker mVelocityTracker;
 
+    /**
+     * When set to true, the scroll view measure its child to make it fill the currently
+     * visible area.
+     */
+    private boolean mFillViewport;
+
     private final int mTouchSlop;
     private final int mMinimumVelocity;
     private final int mMaximumVelocity;
 
     private final int mOverscrollDistance;
     private final int mOverflingDistance;
+
+    private final float mVerticalScrollFactor;
 
     /**
      * Used during scrolling to retrieve the new offset within the window.
@@ -69,44 +113,11 @@ public class ScrollView extends FrameLayout {
     private int mNestedYOffset;
 
     public ScrollView() {
-        setVerticalScrollBarEnabled(true);
-        setVerticalScrollbarThumbDrawable(new Drawable() {
-            private int alpha = 255;
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
-                paint.setRGBA(84, 190, 196, (int) (alpha * 0.5));
-                Rect bounds = getBounds();
-                canvas.drawRoundRect(bounds.left, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
-                        bounds.width() / 2f - 0.5f, paint);
-            }
-
-            @Override
-            public void setAlpha(int alpha) {
-                this.alpha = alpha;
-            }
-        });
-        setVerticalScrollbarTrackDrawable(new Drawable() {
-            private int alpha = 255;
-
-            @Override
-            public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
-                paint.setRGBA(128, 128, 128, (int) (alpha * 0.75));
-                paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(3);
-                Rect bounds = getBounds();
-                canvas.drawRoundRect(bounds.left, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
-                        bounds.width() / 2f - 0.5f, paint);
-            }
-
-            @Override
-            public void setAlpha(int alpha) {
-                this.alpha = alpha;
-            }
-        });
+        mScroller = new OverScroller();
+        mEdgeGlowTop = new EdgeEffect();
+        mEdgeGlowBottom = new EdgeEffect();
         setFocusable(true);
+        setFocusableInTouchMode(true);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setWillNotDraw(false);
         final ViewConfiguration configuration = ViewConfiguration.get();
@@ -115,6 +126,248 @@ public class ScrollView extends FrameLayout {
         mMaximumVelocity = configuration.getScaledMaximumFlingVelocity();
         mOverscrollDistance = configuration.getScaledOverscrollDistance();
         mOverflingDistance = configuration.getScaledOverflingDistance();
+        mVerticalScrollFactor = configuration.getScaledVerticalScrollFactor();
+
+        setVerticalScrollBarEnabled(true);
+        setVerticalScrollbarThumbDrawable(new Drawable() {
+            private int mAlpha = 255;
+
+            @Override
+            public void draw(@Nonnull Canvas canvas) {
+                Paint paint = Paint.take();
+                paint.setRGBA(84, 190, 196, (int) (mAlpha * 0.5));
+                Rect bounds = getBounds();
+                canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
+                        bounds.width() / 2f - 1, paint);
+            }
+
+            @Override
+            public void setAlpha(int alpha) {
+                this.mAlpha = alpha;
+            }
+        });
+        setVerticalScrollbarTrackDrawable(new Drawable() {
+            private int mAlpha = 255;
+
+            @Override
+            public void draw(@Nonnull Canvas canvas) {
+                Paint paint = Paint.take();
+                paint.setRGBA(128, 128, 128, (int) (mAlpha * 0.75));
+                paint.setStyle(Paint.STROKE);
+                paint.setStrokeWidth(3);
+                Rect bounds = getBounds();
+                canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
+                        bounds.width() / 2f - 1, paint);
+            }
+
+            @Override
+            public void setAlpha(int alpha) {
+                this.mAlpha = alpha;
+            }
+        });
+    }
+
+    @Override
+    public boolean shouldDelayChildPressedState() {
+        return true;
+    }
+
+    /**
+     * Sets the edge effect color for both top and bottom edge effects.
+     *
+     * @param color The color for the edge effects.
+     * @see #setTopEdgeEffectColor(int)
+     * @see #setBottomEdgeEffectColor(int)
+     * @see #getTopEdgeEffectColor()
+     * @see #getBottomEdgeEffectColor()
+     */
+    public void setEdgeEffectColor(int color) {
+        setTopEdgeEffectColor(color);
+        setBottomEdgeEffectColor(color);
+    }
+
+    /**
+     * Sets the bottom edge effect color.
+     *
+     * @param color The color for the bottom edge effect.
+     * @see #setTopEdgeEffectColor(int)
+     * @see #setEdgeEffectColor(int)
+     * @see #getTopEdgeEffectColor()
+     * @see #getBottomEdgeEffectColor()
+     */
+    public void setBottomEdgeEffectColor(int color) {
+        mEdgeGlowBottom.setColor(color);
+    }
+
+    /**
+     * Sets the top edge effect color.
+     *
+     * @param color The color for the top edge effect.
+     * @see #setBottomEdgeEffectColor(int)
+     * @see #setEdgeEffectColor(int)
+     * @see #getTopEdgeEffectColor()
+     * @see #getBottomEdgeEffectColor()
+     */
+    public void setTopEdgeEffectColor(int color) {
+        mEdgeGlowTop.setColor(color);
+    }
+
+    /**
+     * Returns the top edge effect color.
+     *
+     * @return The top edge effect color.
+     * @see #setEdgeEffectColor(int)
+     * @see #setTopEdgeEffectColor(int)
+     * @see #setBottomEdgeEffectColor(int)
+     * @see #getBottomEdgeEffectColor()
+     */
+    public int getTopEdgeEffectColor() {
+        return mEdgeGlowTop.getColor();
+    }
+
+    /**
+     * Returns the bottom edge effect color.
+     *
+     * @return The bottom edge effect color.
+     * @see #setEdgeEffectColor(int)
+     * @see #setTopEdgeEffectColor(int)
+     * @see #setBottomEdgeEffectColor(int)
+     * @see #getTopEdgeEffectColor()
+     */
+    public int getBottomEdgeEffectColor() {
+        return mEdgeGlowBottom.getColor();
+    }
+
+    @Override
+    public void addView(@Nonnull View child) {
+        if (getChildCount() > 0) {
+            throw new IllegalStateException("ScrollView can host only one direct child");
+        }
+        super.addView(child);
+    }
+
+    @Override
+    public void addView(@Nonnull View child, int index) {
+        if (getChildCount() > 0) {
+            throw new IllegalStateException("ScrollView can host only one direct child");
+        }
+        super.addView(child, index);
+    }
+
+    @Override
+    public void addView(@Nonnull View child, @Nonnull ViewGroup.LayoutParams params) {
+        if (getChildCount() > 0) {
+            throw new IllegalStateException("ScrollView can host only one direct child");
+        }
+        super.addView(child, params);
+    }
+
+    @Override
+    public void addView(@Nonnull View child, int index, @Nonnull ViewGroup.LayoutParams params) {
+        if (getChildCount() > 0) {
+            throw new IllegalStateException("ScrollView can host only one direct child");
+        }
+        super.addView(child, index, params);
+    }
+
+    /**
+     * Indicates whether this ScrollView's content is stretched to fill the viewport.
+     *
+     * @return True if the content fills the viewport, false otherwise.
+     */
+    public boolean isFillViewport() {
+        return mFillViewport;
+    }
+
+    /**
+     * Indicates this ScrollView whether it should stretch its content height to fill
+     * the viewport or not.
+     *
+     * @param fillViewport True to stretch the content's height to the viewport's
+     *                     boundaries, false otherwise.
+     */
+    public void setFillViewport(boolean fillViewport) {
+        if (fillViewport != mFillViewport) {
+            mFillViewport = fillViewport;
+            requestLayout();
+        }
+    }
+
+    @Override
+    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+
+        if (!mFillViewport) {
+            return;
+        }
+
+        final int heightMode = MeasureSpec.getMode(heightMeasureSpec);
+        if (heightMode == MeasureSpec.UNSPECIFIED) {
+            return;
+        }
+
+        if (getChildCount() > 0) {
+            final View child = getChildAt(0);
+            final FrameLayout.LayoutParams lp = (LayoutParams) child.getLayoutParams();
+            final int widthPadding = mPaddingLeft + mPaddingRight + lp.leftMargin + lp.rightMargin;
+            final int heightPadding = mPaddingTop + mPaddingBottom + lp.topMargin + lp.bottomMargin;
+
+            final int desiredHeight = getMeasuredHeight() - heightPadding;
+            if (child.getMeasuredHeight() < desiredHeight) {
+                final int childWidthMeasureSpec = getChildMeasureSpec(
+                        widthMeasureSpec, widthPadding, lp.width);
+                final int childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
+                        desiredHeight, MeasureSpec.EXACTLY);
+                child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+            }
+        }
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(@Nonnull KeyEvent event) {
+        // Let the focused view and/or our descendants get the key first
+        return super.dispatchKeyEvent(event) || executeKeyEvent(event);
+    }
+
+    /**
+     * You can call this function yourself to have the scroll view perform
+     * scrolling from a key event, just as if the event had been dispatched to
+     * it by the view hierarchy.
+     *
+     * @param event The key event to execute.
+     * @return Return true if the event was handled, else false.
+     */
+    public boolean executeKeyEvent(@Nonnull KeyEvent event) {
+        mTempRect.setEmpty();
+
+        /*if (!canScroll()) {
+            if (isFocused() && event.getKeyCode() != KeyEvent.KEYCODE_BACK) {
+                View currentFocused = findFocus();
+                if (currentFocused == this) currentFocused = null;
+                View nextFocused = FocusFinder.getInstance().findNextFocus(this,
+                        currentFocused, View.FOCUS_DOWN);
+                return nextFocused != null
+                        && nextFocused != this
+                        && nextFocused.requestFocus(View.FOCUS_DOWN);
+            }
+            return false;
+        }*/
+
+        boolean handled = false;
+        if (event.getAction() == KeyEvent.ACTION_DOWN) {
+            switch (event.getKeyCode()) {
+                case KeyEvent.KEY_UP -> handled = arrowScroll(View.FOCUS_UP);
+                case KeyEvent.KEY_DOWN -> handled = arrowScroll(View.FOCUS_DOWN);
+                case KeyEvent.KEY_HOME -> handled = fullScroll(View.FOCUS_UP);
+                case KeyEvent.KEY_END -> handled = fullScroll(View.FOCUS_DOWN);
+                case KeyEvent.KEY_SPACE -> handled = pageScroll(event.isShiftPressed() ? View.FOCUS_UP :
+                        View.FOCUS_DOWN);
+                case KeyEvent.KEY_PAGE_UP -> handled = pageScroll(View.FOCUS_UP);
+                case KeyEvent.KEY_PAGE_DOWN -> handled = pageScroll(View.FOCUS_DOWN);
+            }
+        }
+
+        return handled;
     }
 
     private boolean inChild(int x, int y) {
@@ -157,7 +410,6 @@ public class ScrollView extends FrameLayout {
         }
         super.requestDisallowInterceptTouchEvent(disallowIntercept);
     }
-
 
     @Override
     public boolean onInterceptTouchEvent(@Nonnull MotionEvent ev) {
@@ -227,7 +479,15 @@ public class ScrollView extends FrameLayout {
                  * isFinished() is correct.
                  */
                 mScroller.computeScrollOffset();
-                mIsBeingDragged = !mScroller.isFinished();
+                mIsBeingDragged = !mScroller.isFinished() || !mEdgeGlowBottom.isFinished()
+                        || !mEdgeGlowTop.isFinished();
+                // Catch the edge effect if it is active.
+                if (!mEdgeGlowTop.isFinished()) {
+                    mEdgeGlowTop.onPullDistance(0f, ev.getX() / getWidth());
+                }
+                if (!mEdgeGlowBottom.isFinished()) {
+                    mEdgeGlowBottom.onPullDistance(0f, 1f - ev.getX() / getWidth());
+                }
                 startNestedScroll(SCROLL_AXIS_VERTICAL, TYPE_TOUCH);
             }
             case MotionEvent.ACTION_CANCEL, MotionEvent.ACTION_UP -> {
@@ -248,36 +508,8 @@ public class ScrollView extends FrameLayout {
         return mIsBeingDragged;
     }
 
-    @Override
-    public void addView(@Nonnull View child) {
-        if (getChildCount() > 0) {
-            throw new IllegalStateException("ScrollView can host only one direct child");
-        }
-        super.addView(child);
-    }
-
-    @Override
-    public void addView(@Nonnull View child, int index) {
-        if (getChildCount() > 0) {
-            throw new IllegalStateException("ScrollView can host only one direct child");
-        }
-        super.addView(child, index);
-    }
-
-    @Override
-    public void addView(@Nonnull View child, @Nonnull ViewGroup.LayoutParams params) {
-        if (getChildCount() > 0) {
-            throw new IllegalStateException("ScrollView can host only one direct child");
-        }
-        super.addView(child, params);
-    }
-
-    @Override
-    public void addView(@Nonnull View child, int index, @Nonnull ViewGroup.LayoutParams params) {
-        if (getChildCount() > 0) {
-            throw new IllegalStateException("ScrollView can host only one direct child");
-        }
-        super.addView(child, index, params);
+    private boolean shouldDisplayEdgeEffects() {
+        return getOverScrollMode() != OVER_SCROLL_NEVER;
     }
 
     @Override
@@ -296,6 +528,7 @@ public class ScrollView extends FrameLayout {
         switch (action) {
             case MotionEvent.ACTION_DOWN: {
                 if (getChildCount() == 0) {
+                    vtev.recycle();
                     return false;
                 }
                 if (!mScroller.isFinished()) {
@@ -319,7 +552,6 @@ public class ScrollView extends FrameLayout {
                 break;
             }
             case MotionEvent.ACTION_MOVE:
-
                 final int y = (int) ev.getY();
                 int deltaY = mLastMotionY - y;
                 if (dispatchNestedPreScroll(0, deltaY, mScrollConsumed, mScrollOffset, TYPE_TOUCH)) {
@@ -345,6 +577,24 @@ public class ScrollView extends FrameLayout {
 
                     final int oldY = mScrollY;
                     final int range = getScrollRange();
+                    final int overscrollMode = getOverScrollMode();
+                    boolean canOverscroll = overscrollMode == OVER_SCROLL_ALWAYS ||
+                            (overscrollMode == OVER_SCROLL_IF_CONTENT_SCROLLS && range > 0);
+
+                    final float displacement = ev.getX() / getWidth();
+                    if (canOverscroll) {
+                        int consumed = 0;
+                        if (deltaY < 0 && mEdgeGlowBottom.getDistance() != 0f) {
+                            consumed = Math.round(getHeight()
+                                    * mEdgeGlowBottom.onPullDistance((float) deltaY / getHeight(),
+                                    1 - displacement));
+                        } else if (deltaY > 0 && mEdgeGlowTop.getDistance() != 0f) {
+                            consumed = Math.round(-getHeight()
+                                    * mEdgeGlowTop.onPullDistance((float) -deltaY / getHeight(),
+                                    displacement));
+                        }
+                        deltaY -= consumed;
+                    }
 
                     // Calling overScrollBy will call onOverScrolled, which
                     // calls onScrollChanged if applicable.
@@ -357,10 +607,29 @@ public class ScrollView extends FrameLayout {
                     final int scrolledDeltaY = mScrollY - oldY;
                     final int unconsumedY = deltaY - scrolledDeltaY;
                     if (dispatchNestedScroll(0, scrolledDeltaY, 0, unconsumedY, mScrollOffset, TYPE_TOUCH,
-                            new int[2])) {
+                            mScrollConsumed)) {
                         mLastMotionY -= mScrollOffset[1];
                         vtev.offsetLocation(0, mScrollOffset[1]);
                         mNestedYOffset += mScrollOffset[1];
+                    } else if (canOverscroll && deltaY != 0f) {
+                        final int pulledToY = oldY + deltaY;
+                        if (pulledToY < 0) {
+                            mEdgeGlowTop.onPullDistance((float) -deltaY / getHeight(),
+                                    displacement);
+                            if (!mEdgeGlowBottom.isFinished()) {
+                                mEdgeGlowBottom.onRelease();
+                            }
+                        } else if (pulledToY > range) {
+                            mEdgeGlowBottom.onPullDistance((float) deltaY / getHeight(),
+                                    1.f - displacement);
+                            if (!mEdgeGlowTop.isFinished()) {
+                                mEdgeGlowTop.onRelease();
+                            }
+                        }
+                        if (shouldDisplayEdgeEffects()
+                                && (!mEdgeGlowTop.isFinished() || !mEdgeGlowBottom.isFinished())) {
+                            invalidate();
+                        }
                     }
                 }
                 break;
@@ -397,21 +666,394 @@ public class ScrollView extends FrameLayout {
         return true;
     }
 
-    private void flingWithNestedDispatch(int velocityY) {
-        final boolean canFling = (mScrollY > 0 || velocityY > 0) &&
-                (mScrollY < getScrollRange() || velocityY < 0);
-        if (!dispatchNestedPreFling(0, velocityY)) {
-            dispatchNestedFling(0, velocityY, canFling);
-            if (canFling) {
-                fling(velocityY);
+    @Override
+    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_SCROLL) {
+            final float axisValue = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
+            final int delta = Math.round(axisValue * mVerticalScrollFactor);
+            //TODO make mouse scroll behave like touch screen (edge effects, nested scrolling)
+            if (smoothScrollBy(-delta)) {
+                return true;
             }
         }
+        return super.onGenericMotionEvent(event);
     }
 
-    private void endDrag() {
-        mIsBeingDragged = false;
+    @Override
+    protected void onOverScrolled(int scrollX, int scrollY, boolean clampedX, boolean clampedY) {
+        // Treat animating scrolls differently; see #computeScroll() for why.
+        if (!mScroller.isFinished()) {
+            final int oldX = mScrollX;
+            final int oldY = mScrollY;
+            mScrollX = scrollX;
+            mScrollY = scrollY;
+            onScrollChanged(mScrollX, mScrollY, oldX, oldY);
+            if (clampedY) {
+                mScroller.springBack(mScrollX, mScrollY, 0, 0, 0, getScrollRange());
+            }
+        } else {
+            super.scrollTo(scrollX, scrollY);
+        }
+        awakenScrollBars();
+    }
 
-        recycleVelocityTracker();
+    private int getScrollRange() {
+        int scrollRange = 0;
+        if (getChildCount() > 0) {
+            View child = getChildAt(0);
+            scrollRange = Math.max(0,
+                    child.getHeight() - (getHeight() - mPaddingBottom - mPaddingTop));
+        }
+        return scrollRange;
+    }
+
+    /**
+     * <p>
+     * Finds the next focusable component that fits in the specified bounds.
+     * </p>
+     *
+     * @param topFocus look for a candidate is the one at the top of the bounds
+     *                 if topFocus is true, or at the bottom of the bounds if topFocus is
+     *                 false
+     * @param top      the top offset of the bounds in which a focusable must be
+     *                 found
+     * @param bottom   the bottom offset of the bounds in which a focusable must
+     *                 be found
+     * @return the next focusable component in the bounds or null if none can
+     * be found
+     */
+    private View findFocusableViewInBounds(boolean topFocus, int top, int bottom) {
+
+        List<View> focusables = getFocusables(View.FOCUS_FORWARD);
+        View focusCandidate = null;
+
+        /*
+         * A fully contained focusable is one where its top is below the bound's
+         * top, and its bottom is above the bound's bottom. A partially
+         * contained focusable is one where some part of it is within the
+         * bounds, but it also has some part that is not within bounds.  A fully contained
+         * focusable is preferred to a partially contained focusable.
+         */
+        boolean foundFullyContainedFocusable = false;
+
+        for (View view : focusables) {
+            int viewTop = view.getTop();
+            int viewBottom = view.getBottom();
+
+            if (top < viewBottom && viewTop < bottom) {
+                /*
+                 * the focusable is in the target area, it is a candidate for
+                 * focusing
+                 */
+
+                final boolean viewIsFullyContained = (top < viewTop) &&
+                        (viewBottom < bottom);
+
+                if (focusCandidate == null) {
+                    /* No candidate, take this one */
+                    focusCandidate = view;
+                    foundFullyContainedFocusable = viewIsFullyContained;
+                } else {
+                    final boolean viewIsCloserToBoundary =
+                            (topFocus && viewTop < focusCandidate.getTop()) ||
+                                    (!topFocus && viewBottom > focusCandidate
+                                            .getBottom());
+
+                    if (foundFullyContainedFocusable) {
+                        if (viewIsFullyContained && viewIsCloserToBoundary) {
+                            /*
+                             * We're dealing with only fully contained views, so
+                             * it has to be closer to the boundary to beat our
+                             * candidate
+                             */
+                            focusCandidate = view;
+                        }
+                    } else {
+                        if (viewIsFullyContained) {
+                            /* Any fully contained view beats a partially contained view */
+                            focusCandidate = view;
+                            foundFullyContainedFocusable = true;
+                        } else if (viewIsCloserToBoundary) {
+                            /*
+                             * Partially contained view beats another partially
+                             * contained view if it's closer
+                             */
+                            focusCandidate = view;
+                        }
+                    }
+                }
+            }
+        }
+
+        return focusCandidate;
+    }
+
+    /**
+     * <p>Handles scrolling in response to a "page up/down" shortcut press. This
+     * method will scroll the view by one page up or down and give the focus
+     * to the topmost/bottommost component in the new visible area. If no
+     * component is a good candidate for focus, this scrollview reclaims the
+     * focus.</p>
+     *
+     * @param direction the scroll direction: {@link View#FOCUS_UP}
+     *                  to go one page up or
+     *                  {@link View#FOCUS_DOWN} to go one page down
+     * @return true if the key event is consumed by this method, false otherwise
+     */
+    public boolean pageScroll(int direction) {
+        boolean down = direction == View.FOCUS_DOWN;
+        int height = getHeight();
+
+        if (down) {
+            mTempRect.top = getScrollY() + height;
+            int count = getChildCount();
+            if (count > 0) {
+                View view = getChildAt(count - 1);
+                if (mTempRect.top + height > view.getBottom()) {
+                    mTempRect.top = view.getBottom() - height;
+                }
+            }
+        } else {
+            mTempRect.top = getScrollY() - height;
+            if (mTempRect.top < 0) {
+                mTempRect.top = 0;
+            }
+        }
+        mTempRect.bottom = mTempRect.top + height;
+
+        return scrollAndFocus(direction, mTempRect.top, mTempRect.bottom);
+    }
+
+    /**
+     * <p>Handles scrolling in response to a "home/end" shortcut press. This
+     * method will scroll the view to the top or bottom and give the focus
+     * to the topmost/bottommost component in the new visible area. If no
+     * component is a good candidate for focus, this scrollview reclaims the
+     * focus.</p>
+     *
+     * @param direction the scroll direction: {@link View#FOCUS_UP}
+     *                  to go the top of the view or
+     *                  {@link View#FOCUS_DOWN} to go the bottom
+     * @return true if the key event is consumed by this method, false otherwise
+     */
+    public boolean fullScroll(int direction) {
+        boolean down = direction == View.FOCUS_DOWN;
+        int height = getHeight();
+
+        mTempRect.top = 0;
+        mTempRect.bottom = height;
+
+        if (down) {
+            int count = getChildCount();
+            if (count > 0) {
+                View view = getChildAt(count - 1);
+                mTempRect.bottom = view.getBottom() + mPaddingBottom;
+                mTempRect.top = mTempRect.bottom - height;
+            }
+        }
+
+        return scrollAndFocus(direction, mTempRect.top, mTempRect.bottom);
+    }
+
+    /**
+     * <p>Scrolls the view to make the area defined by <code>top</code> and
+     * <code>bottom</code> visible. This method attempts to give the focus
+     * to a component visible in this area. If no component can be focused in
+     * the new visible area, the focus is reclaimed by this ScrollView.</p>
+     *
+     * @param direction the scroll direction: {@link View#FOCUS_UP}
+     *                  to go upward, {@link View#FOCUS_DOWN} to downward
+     * @param top       the top offset of the new area to be made visible
+     * @param bottom    the bottom offset of the new area to be made visible
+     * @return true if the key event is consumed by this method, false otherwise
+     */
+    private boolean scrollAndFocus(int direction, int top, int bottom) {
+        boolean handled = true;
+
+        int height = getHeight();
+        int containerTop = getScrollY();
+        int containerBottom = containerTop + height;
+        boolean up = direction == View.FOCUS_UP;
+
+        View newFocused = findFocusableViewInBounds(up, top, bottom);
+        if (newFocused == null) {
+            newFocused = this;
+        }
+
+        if (top >= containerTop && bottom <= containerBottom) {
+            handled = false;
+        } else {
+            int delta = up ? (top - containerTop) : (bottom - containerBottom);
+            if (delta != 0) {
+                smoothScrollBy(delta);
+            }
+        }
+
+        if (newFocused != findFocus()) newFocused.requestFocus(direction);
+
+        return handled;
+    }
+
+    /**
+     * Handle scrolling in response to an up or down arrow click.
+     *
+     * @param direction The direction corresponding to the arrow key that was
+     *                  pressed
+     * @return True if we consumed the event, false otherwise
+     */
+    public boolean arrowScroll(int direction) {
+
+        View currentFocused = findFocus();
+        if (currentFocused == this) currentFocused = null;
+
+        //View nextFocused = FocusFinder.getInstance().findNextFocus(this, currentFocused, direction);
+
+        final int maxJump = (int) (getHeight() * 0.5f);
+
+        /*if (nextFocused != null && isWithinDeltaOfScreen(nextFocused, maxJump, getHeight())) {
+            nextFocused.getDrawingRect(mTempRect);
+            offsetDescendantRectToMyCoords(nextFocused, mTempRect);
+            int scrollDelta = computeScrollDeltaToGetChildRectOnScreen(mTempRect);
+            doScrollY(scrollDelta);
+            nextFocused.requestFocus(direction);
+        } else */
+        {
+            // no new focus
+            int scrollDelta = maxJump;
+
+            if (direction == View.FOCUS_UP && getScrollY() < scrollDelta) {
+                scrollDelta = getScrollY();
+            } else if (direction == View.FOCUS_DOWN) {
+                if (getChildCount() > 0) {
+                    int daBottom = getChildAt(0).getBottom();
+                    int screenBottom = getScrollY() + getHeight() - mPaddingBottom;
+                    if (daBottom - screenBottom < maxJump) {
+                        scrollDelta = daBottom - screenBottom;
+                    }
+                }
+            }
+            if (scrollDelta == 0) {
+                return false;
+            }
+            smoothScrollBy(direction == View.FOCUS_DOWN ? scrollDelta : -scrollDelta);
+        }
+
+        if (currentFocused != null && currentFocused.isFocused()
+                && isOffScreen(currentFocused)) {
+            // previously focused item still has focus and is offscreen, give
+            // it up (take it back to ourselves)
+            // (also, need to temporarily force FOCUS_BEFORE_DESCENDANTS so we are
+            // sure to
+            // get it)
+            final int descendantFocusability = getDescendantFocusability();  // save
+            setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
+            requestFocus();
+            setDescendantFocusability(descendantFocusability);  // restore
+        }
+        return true;
+    }
+
+    /**
+     * @return whether the descendant of this scroll view is scrolled offscreen.
+     */
+    private boolean isOffScreen(@Nonnull View descendant) {
+        return !isWithinDeltaOfScreen(descendant, 0, getHeight());
+    }
+
+    /**
+     * @return whether the descendant of this scroll view is within delta
+     * pixels of being on the screen.
+     */
+    private boolean isWithinDeltaOfScreen(@Nonnull View descendant, int delta, int height) {
+        descendant.getDrawingRect(mTempRect);
+        offsetDescendantRectToMyCoords(descendant, mTempRect);
+
+        return (mTempRect.bottom + delta) >= getScrollY()
+                && (mTempRect.top - delta) <= (getScrollY() + height);
+    }
+
+    /**
+     * Like {@link View#scrollBy}, but scroll smoothly instead of immediately.
+     *
+     * @param delta the number of pixels to scroll by on the Y axis
+     * @return if actually scrolled
+     */
+    public final boolean smoothScrollBy(int delta) {
+        if (getChildCount() == 0) {
+            // Nothing to do.
+            return false;
+        }
+        delta = Math.max(0, Math.min(mScroller.getFinalY() + delta, getScrollRange())) - mScrollY;
+        if (delta != 0) {
+            mScroller.startScroll(mScrollX, mScrollY, 0, delta);
+            invalidate();
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * <p>The scroll range of a scroll view is the overall height of all of its
+     * children.</p>
+     */
+    @Override
+    protected int computeVerticalScrollRange() {
+        final int count = getChildCount();
+        final int contentHeight = getHeight() - mPaddingBottom - mPaddingTop;
+        if (count == 0) {
+            return contentHeight;
+        }
+
+        int scrollRange = getChildAt(0).getBottom();
+        final int scrollY = mScrollY;
+        final int overscrollBottom = Math.max(0, scrollRange - contentHeight);
+        if (scrollY < 0) {
+            scrollRange -= scrollY;
+        } else if (scrollY > overscrollBottom) {
+            scrollRange += scrollY - overscrollBottom;
+        }
+
+        return scrollRange;
+    }
+
+    @Override
+    protected int computeVerticalScrollOffset() {
+        return Math.max(0, super.computeVerticalScrollOffset());
+    }
+
+    @Override
+    protected void measureChild(@Nonnull View child, int parentWidthMeasureSpec,
+                                int parentHeightMeasureSpec) {
+        ViewGroup.LayoutParams lp = child.getLayoutParams();
+
+        int childWidthMeasureSpec;
+        int childHeightMeasureSpec;
+
+        childWidthMeasureSpec = getChildMeasureSpec(parentWidthMeasureSpec, mPaddingLeft
+                + mPaddingRight, lp.width);
+        final int verticalPadding = mPaddingTop + mPaddingBottom;
+        childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
+                Math.max(0, MeasureSpec.getSize(parentHeightMeasureSpec) - verticalPadding),
+                MeasureSpec.UNSPECIFIED);
+
+        child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
+    }
+
+    @Override
+    protected void measureChildWithMargins(@Nonnull View child, int parentWidthMeasureSpec, int widthUsed,
+                                           int parentHeightMeasureSpec, int heightUsed) {
+        final MarginLayoutParams lp = (MarginLayoutParams) child.getLayoutParams();
+
+        final int childWidthMeasureSpec = getChildMeasureSpec(parentWidthMeasureSpec,
+                mPaddingLeft + mPaddingRight + lp.leftMargin + lp.rightMargin
+                        + widthUsed, lp.width);
+        final int usedTotal = mPaddingTop + mPaddingBottom + lp.topMargin + lp.bottomMargin +
+                heightUsed;
+        final int childHeightMeasureSpec = MeasureSpec.makeMeasureSpec(
+                Math.max(0, MeasureSpec.getSize(parentHeightMeasureSpec) - usedTotal),
+                MeasureSpec.UNSPECIFIED);
+
+        child.measure(childWidthMeasureSpec, childHeightMeasureSpec);
     }
 
     @Override
@@ -440,9 +1082,21 @@ public class ScrollView extends FrameLayout {
 
             if (oldX != x || oldY != y) {
                 final int range = getScrollRange();
+                final int overscrollMode = getOverScrollMode();
+                final boolean canOverscroll = overscrollMode == OVER_SCROLL_ALWAYS ||
+                        (overscrollMode == OVER_SCROLL_IF_CONTENT_SCROLLS && range > 0);
+
                 overScrollBy(x - oldX, y - oldY, oldX, oldY, 0, range,
                         0, mOverflingDistance, false);
                 onScrollChanged(mScrollX, mScrollY, oldX, oldY);
+
+                if (canOverscroll) {
+                    if (y < 0 && oldY >= 0) {
+                        mEdgeGlowTop.onAbsorb((int) mScroller.getCurrVelocity());
+                    } else if (y > range && oldY <= range) {
+                        mEdgeGlowBottom.onAbsorb((int) mScroller.getCurrVelocity());
+                    }
+                }
             }
 
             if (!awakenScrollBars()) {
@@ -452,98 +1106,47 @@ public class ScrollView extends FrameLayout {
         }
     }
 
-    @Override
-    protected void onOverScrolled(int scrollX, int scrollY, boolean clampedX, boolean clampedY) {
-        // Treat animating scrolls differently; see #computeScroll() for why.
-        if (!mScroller.isFinished()) {
-            final int oldX = mScrollX;
-            final int oldY = mScrollY;
-            mScrollX = scrollX;
-            mScrollY = scrollY;
-            onScrollChanged(mScrollX, mScrollY, oldX, oldY);
-            if (clampedY) {
-                mScroller.springBack(mScrollX, mScrollY, 0, 0, 0, getScrollRange());
+    /**
+     * Scrolls the view to the given child.
+     *
+     * @param child the View to scroll to
+     */
+    public void scrollToDescendant(@Nonnull View child) {
+        if (!mIsLayoutDirty) {
+            child.getDrawingRect(mTempRect);
+
+            /* Offset from child's local coordinates to ScrollView coordinates */
+            offsetDescendantRectToMyCoords(child, mTempRect);
+
+            int scrollDelta = computeScrollDeltaToGetChildRectOnScreen(mTempRect);
+
+            if (scrollDelta != 0) {
+                scrollBy(0, scrollDelta);
             }
         } else {
-            super.scrollTo(scrollX, scrollY);
+            mChildToScrollTo = child;
         }
-
-        awakenScrollBars();
-    }
-
-    private int getScrollRange() {
-        int scrollRange = 0;
-        if (getChildCount() > 0) {
-            View child = getChildAt(0);
-            scrollRange = Math.max(0,
-                    child.getHeight() - (getHeight() - mPaddingBottom - mPaddingTop));
-        }
-        return scrollRange;
     }
 
     /**
-     * Fling the scroll view
+     * If rect is offscreen, scroll just enough to get it (or at least the
+     * first screen size chunk of it) on screen.
      *
-     * @param velocityY The initial velocity in the Y direction. Positive
-     *                  numbers mean that the finger/cursor is moving down the screen,
-     *                  which means we want to scroll towards the top.
+     * @param rect      The rectangle.
+     * @param immediate True to scroll immediately without animation
+     * @return true if scrolling was performed
      */
-    public void fling(int velocityY) {
-        if (getChildCount() > 0) {
-            int height = getHeight() - mPaddingBottom - mPaddingTop;
-            int bottom = getChildAt(0).getHeight();
-
-            mScroller.fling(mScrollX, mScrollY, 0, velocityY, 0, 0, 0,
-                    Math.max(0, bottom - height), 0, height / 2);
-
-            invalidate();
+    private boolean scrollToChildRect(Rect rect, boolean immediate) {
+        final int delta = computeScrollDeltaToGetChildRectOnScreen(rect);
+        if (delta != 0) {
+            if (immediate) {
+                scrollBy(0, delta);
+            } else {
+                smoothScrollBy(delta);
+            }
+            return true;
         }
-    }
-
-    /**
-     * <p>The scroll range of a scroll view is the overall height of all of its
-     * children.</p>
-     */
-    @Override
-    protected int computeVerticalScrollRange() {
-        final int count = getChildCount();
-        final int contentHeight = getHeight();
-        if (count == 0) {
-            return contentHeight;
-        }
-
-        int scrollRange = getChildAt(0).getBottom();
-        final int scrollY = mScrollY;
-        final int overscrollBottom = Math.max(0, scrollRange - contentHeight);
-        if (scrollY < 0) {
-            scrollRange -= scrollY;
-        } else if (scrollY > overscrollBottom) {
-            scrollRange += scrollY - overscrollBottom;
-        }
-
-        return scrollRange;
-    }
-
-    @Override
-    protected int computeVerticalScrollOffset() {
-        return Math.max(0, super.computeVerticalScrollOffset());
-    }
-
-    @Override
-    public boolean onGenericMotionEvent(@Nonnull MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_SCROLL) {
-            float delta = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
-            final int height = getHeight();
-            final int bottom = getChildAt(0).getHeight();
-            final int maxY = Math.max(0, bottom - height);
-            final int scrollY = mScrollY;
-            int dy = Math.round(delta * -60.0f * ViewConfiguration.get().getViewScale());
-            dy = Math.max(0, Math.min(mScroller.getFinalY() + dy, maxY)) - scrollY;
-            mScroller.startScroll(mScrollX, scrollY, 0, dy);
-            invalidate();
-            return dy > 0;
-        }
-        return super.onGenericMotionEvent(event);
+        return false;
     }
 
     /**
@@ -610,96 +1213,118 @@ public class ScrollView extends FrameLayout {
         return scrollToChildRect(rectangle, immediate);
     }
 
-    /**
-     * If rect is off screen, scroll just enough to get it (or at least the
-     * first screen size chunk of it) on screen.
-     *
-     * @param rect      The rectangle.
-     * @param immediate True to scroll immediately without animation
-     * @return true if scrolling was performed
-     */
-    private boolean scrollToChildRect(Rect rect, boolean immediate) {
-        final int delta = computeScrollDeltaToGetChildRectOnScreen(rect);
-        final boolean scroll = delta != 0;
-        if (scroll) {
-            if (immediate) {
-                scrollBy(0, delta);
-            } else {
-                smoothScrollBy(0, delta);
+    @Override
+    public void requestLayout() {
+        mIsLayoutDirty = true;
+        super.requestLayout();
+    }
+
+    @Override
+    protected void onLayout(boolean changed, int l, int t, int r, int b) {
+        super.onLayout(changed, l, t, r, b);
+        mIsLayoutDirty = false;
+        // Give a child focus if it needs it
+        if (mChildToScrollTo != null && isViewDescendantOf(mChildToScrollTo, this)) {
+            scrollToDescendant(mChildToScrollTo);
+        }
+        mChildToScrollTo = null;
+
+        if (!isLaidOut()) {
+            final int childHeight = (getChildCount() > 0) ? getChildAt(0).getMeasuredHeight() : 0;
+            final int scrollRange = Math.max(0,
+                    childHeight - (b - t - mPaddingBottom - mPaddingTop));
+
+            // Don't forget to clamp
+            if (mScrollY > scrollRange) {
+                mScrollY = scrollRange;
+            } else if (mScrollY < 0) {
+                mScrollY = 0;
             }
         }
-        return scroll;
+
+        // Calling this with the present values causes it to re-claim them
+        scrollTo(mScrollX, mScrollY);
+    }
+
+    @Override
+    protected void onSizeChanged(int w, int h, int prevWidth, int prevHeight) {
+        super.onSizeChanged(w, h, prevWidth, prevHeight);
+
+        View currentFocused = findFocus();
+        if (currentFocused == null || currentFocused == this) {
+            return;
+        }
+
+        // If the currently-focused view was visible on the screen when the
+        // screen was at the old height, then scroll the screen to make that
+        // view visible with the new screen height.
+        if (isWithinDeltaOfScreen(currentFocused, 0, prevHeight)) {
+            currentFocused.getDrawingRect(mTempRect);
+            offsetDescendantRectToMyCoords(currentFocused, mTempRect);
+            int scrollDelta = computeScrollDeltaToGetChildRectOnScreen(mTempRect);
+            if (scrollDelta != 0) {
+                smoothScrollBy(scrollDelta);
+            }
+        }
     }
 
     /**
-     * Like {@link View#scrollBy}, but scroll smoothly instead of immediately.
-     *
-     * @param dx the number of pixels to scroll by on the X axis
-     * @param dy the number of pixels to scroll by on the Y axis
+     * Return true if child is a descendant of parent, (or equal to the parent).
      */
-    public final void smoothScrollBy(int dx, int dy) {
-        if (getChildCount() == 0) {
-            // Nothing to do.
-            return;
+    private static boolean isViewDescendantOf(View child, View parent) {
+        if (child == parent) {
+            return true;
         }
-        final int height = getHeight() - mPaddingBottom - mPaddingTop;
-        final int bottom = getChildAt(0).getHeight();
-        final int maxY = Math.max(0, bottom - height);
-        final int scrollY = mScrollY;
-        dy = Math.max(0, Math.min(scrollY + dy, maxY)) - scrollY;
 
-        mScroller.startScroll(mScrollX, scrollY, 0, dy);
-        invalidate();
+        final ViewParent theParent = child.getParent();
+        return (theParent instanceof ViewGroup) && isViewDescendantOf((View) theParent, parent);
     }
 
-    /*@Override
-    protected void onScrollBarClicked(boolean vertical, float scrollDelta) {
-        scrollController.scrollBy(scrollDelta);
+    /**
+     * Fling the scroll view
+     *
+     * @param velocityY The initial velocity in the Y direction. Positive
+     *                  numbers mean that the finger/cursor is moving down the screen,
+     *                  which means we want to scroll towards the top.
+     */
+    public void fling(int velocityY) {
+        if (getChildCount() > 0) {
+            int height = getHeight() - mPaddingBottom - mPaddingTop;
+            int bottom = getChildAt(0).getHeight();
+
+            mScroller.fling(mScrollX, mScrollY, 0, velocityY, 0, 0, 0,
+                    Math.max(0, bottom - height), 0, height / 2);
+
+            invalidate();
+        }
     }
 
-    @Override
-    protected void onScrollBarDragged(boolean vertical, float scrollDelta) {
-        scrollController.scrollBy(scrollDelta);
-        scrollController.abortAnimation();
+    private void flingWithNestedDispatch(int velocityY) {
+        final boolean canFling = (mScrollY > 0 || velocityY > 0) &&
+                (mScrollY < getScrollRange() || velocityY < 0);
+        if (!dispatchNestedPreFling(0, velocityY)) {
+            final boolean consumed = dispatchNestedFling(0, velocityY, canFling);
+            if (canFling) {
+                fling(velocityY);
+            } else if (!consumed) {
+                if (!mEdgeGlowTop.isFinished()) {
+                    mEdgeGlowTop.onAbsorb(-velocityY);
+                } else if (!mEdgeGlowBottom.isFinished()) {
+                    mEdgeGlowBottom.onAbsorb(velocityY);
+                }
+            }
+        }
     }
 
-    @Override
-    public void onScrollAmountUpdated(ScrollController controller, float amount) {
-        mScrollY = (int) amount;
-        if (getVerticalScrollBar() != null) {
-            getVerticalScrollBar().setParameters(scrollRange, mScrollY, getHeight());
-        }
-        invalidate();
-    }*/
+    private void endDrag() {
+        mIsBeingDragged = false;
 
-    private static int clamp(int n, int my, int child) {
-        if (my >= child || n < 0) {
-            /* my >= child is this case:
-             *                    |--------------- me ---------------|
-             *     |------ child ------|
-             * or
-             *     |--------------- me ---------------|
-             *            |------ child ------|
-             * or
-             *     |--------------- me ---------------|
-             *                                  |------ child ------|
-             *
-             * n < 0 is this case:
-             *     |------ me ------|
-             *                    |-------- child --------|
-             *     |-- mScrollX --|
-             */
-            return 0;
+        recycleVelocityTracker();
+
+        if (shouldDisplayEdgeEffects()) {
+            mEdgeGlowTop.onRelease();
+            mEdgeGlowBottom.onRelease();
         }
-        if ((my + n) > child) {
-            /* this case:
-             *                    |------ me ------|
-             *     |------ child ------|
-             *     |-- mScrollX --|
-             */
-            return child - my;
-        }
-        return n;
     }
 
     /**
@@ -751,5 +1376,94 @@ public class ScrollView extends FrameLayout {
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void onDrawForeground(@Nonnull Canvas canvas) {
+        super.onDrawForeground(canvas);
+        if (shouldDisplayEdgeEffects()) {
+            final int scrollY = mScrollY;
+            final boolean clipToPadding = getClipToPadding();
+            if (!mEdgeGlowTop.isFinished()) {
+                canvas.save();
+                final int width;
+                final int height;
+                final float translateX;
+                final float translateY;
+                if (clipToPadding) {
+                    width = getWidth() - mPaddingLeft - mPaddingRight;
+                    height = getHeight() - mPaddingTop - mPaddingBottom;
+                    translateX = mPaddingLeft;
+                    translateY = mPaddingTop;
+                } else {
+                    width = getWidth();
+                    height = getHeight();
+                    translateX = 0;
+                    translateY = 0;
+                }
+                canvas.translate(translateX, Math.min(0, scrollY) + translateY);
+                mEdgeGlowTop.setSize(width, height);
+                if (mEdgeGlowTop.draw(canvas)) {
+                    invalidate();
+                }
+                canvas.restore();
+            }
+            if (!mEdgeGlowBottom.isFinished()) {
+                canvas.save();
+                final int width;
+                final int height;
+                final float translateX;
+                final float translateY;
+                if (clipToPadding) {
+                    width = getWidth() - mPaddingLeft - mPaddingRight;
+                    height = getHeight() - mPaddingTop - mPaddingBottom;
+                    translateX = mPaddingLeft;
+                    translateY = mPaddingTop;
+                } else {
+                    width = getWidth();
+                    height = getHeight();
+                    translateX = 0;
+                    translateY = 0;
+                }
+                canvas.translate(-width + translateX,
+                        Math.max(getScrollRange(), scrollY) + height + translateY);
+                canvas.rotate(180, width, 0);
+                mEdgeGlowBottom.setSize(width, height);
+                if (mEdgeGlowBottom.draw(canvas)) {
+                    invalidate();
+                }
+                canvas.restore();
+            }
+        }
+    }
+
+    private static int clamp(int n, int my, int child) {
+        if (my >= child || n < 0) {
+            /* my >= child is this case:
+             *                    |--------------- me ---------------|
+             *     |------ child ------|
+             * or
+             *     |--------------- me ---------------|
+             *            |------ child ------|
+             * or
+             *     |--------------- me ---------------|
+             *                                  |------ child ------|
+             *
+             * n < 0 is this case:
+             *     |------ me ------|
+             *                    |-------- child --------|
+             *     |-- mScrollX --|
+             */
+            return 0;
+        }
+        if ((my + n) > child) {
+            /* this case:
+             *                    |------ me ------|
+             *     |------ child ------|
+             *     |-- mScrollX --|
+             */
+            return child - my;
+        }
+        return n;
     }
 }

@@ -3789,8 +3789,14 @@ public class View implements Drawable.Callback {
     @Override
     public void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
         if (verifyDrawable(who)) {
-            final long delay = when - ArchCore.timeMillis();
-            postOnAnimationDelayed(what, delay);
+            if (mAttachInfo != null) {
+                mAttachInfo.mHandler.postAtTime(what, who, when);
+            } else {
+                // Postpone the runnable until we know
+                // on which thread it needs to run.
+                final long delay = when - ArchCore.timeMillis();
+                getRunQueue().postDelayed(what, delay);
+            }
         }
     }
 
@@ -3803,7 +3809,27 @@ public class View implements Drawable.Callback {
     @Override
     public void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
         if (verifyDrawable(who)) {
-            removeCallbacks(what);
+            final AttachInfo attachInfo = mAttachInfo;
+            if (attachInfo != null) {
+                attachInfo.mHandler.removeCallbacks(what, who);
+            }
+            if (mRunQueue != null) {
+                mRunQueue.removeCallbacks(what);
+            }
+        }
+    }
+
+    /**
+     * Unschedule any events associated with the given Drawable.  This can be
+     * used when selecting a new Drawable into a view, so that the previous
+     * one is completely unscheduled.
+     *
+     * @param who The Drawable to unschedule.
+     * @see #drawableStateChanged
+     */
+    public void unscheduleDrawable(Drawable who) {
+        if (mAttachInfo != null && who != null) {
+            mAttachInfo.mHandler.removeCallbacksAndMessages(who);
         }
     }
 
@@ -8085,8 +8111,9 @@ public class View implements Drawable.Callback {
      * @param drawable The Drawable to verify.  Return true if it is one you are
      *                 displaying, else return the result of calling through to the
      *                 super class.
-     * @return boolean If true than the Drawable is being displayed in the
+     * @return boolean If true then the Drawable is being displayed in the
      * view; else false and it is not allowed to animate.
+     * @see #unscheduleDrawable(Drawable)
      * @see #drawableStateChanged()
      */
     @CallSuper
@@ -8281,7 +8308,11 @@ public class View implements Drawable.Callback {
          * to clear the previous drawable. setVisible first while we still have the callback set.
          */
         if (mBackground != null) {
+            if (isAttachedToWindow()) {
+                mBackground.setVisible(false, false);
+            }
             mBackground.setCallback(null);
+            unscheduleDrawable(mBackground);
         }
 
         if (background != null) {
@@ -8403,7 +8434,7 @@ public class View implements Drawable.Callback {
                 mForegroundInfo.mDrawable.setVisible(false, false);
             }
             mForegroundInfo.mDrawable.setCallback(null);
-            //unscheduleDrawable(mForegroundInfo.mDrawable);
+            unscheduleDrawable(mForegroundInfo.mDrawable);
         }
 
         mForegroundInfo.mDrawable = foreground;

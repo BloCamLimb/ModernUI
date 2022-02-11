@@ -96,6 +96,18 @@ public class ViewConfiguration {
     private static final int OVERFLING_DISTANCE = 12;
 
     /**
+     * Amount to scroll in response to a horizontal {@link MotionEvent#ACTION_SCROLL} event,
+     * in dips per axis value.
+     */
+    private static final float HORIZONTAL_SCROLL_FACTOR = 64;
+
+    /**
+     * Amount to scroll in response to a vertical {@link MotionEvent#ACTION_SCROLL} event,
+     * in dips per axis value.
+     */
+    private static final float VERTICAL_SCROLL_FACTOR = 64;
+
+    /**
      * View scale factor, depends on user preference or display device.
      */
     private float mViewScale = 1.0f;
@@ -124,8 +136,10 @@ public class ViewConfiguration {
     private int mScaledOverscrollDistance = OVERSCROLL_DISTANCE;
     private int mOverflingDistance = OVERFLING_DISTANCE;
     private int mScaledOverflingDistance = OVERFLING_DISTANCE;
-    private float mVerticalScrollFactor;
-    private float mHorizontalScrollFactor;
+    private float mVerticalScrollFactor = VERTICAL_SCROLL_FACTOR;
+    private float mScaledVerticalScrollFactor = VERTICAL_SCROLL_FACTOR;
+    private float mHorizontalScrollFactor = HORIZONTAL_SCROLL_FACTOR;
+    private float mScaledHorizontalScrollFactor = HORIZONTAL_SCROLL_FACTOR;
 
     ViewConfiguration() {
     }
@@ -154,6 +168,8 @@ public class ViewConfiguration {
         mScaledMaximumFlingVelocity = dp(mMaximumFlingVelocity);
         mScaledOverscrollDistance = dp(mOverscrollDistance);
         mScaledOverflingDistance = dp(mOverflingDistance);
+        mScaledVerticalScrollFactor = dp(mVerticalScrollFactor);
+        mScaledHorizontalScrollFactor = dp(mHorizontalScrollFactor);
     }
 
     @ApiStatus.Internal
@@ -280,6 +296,18 @@ public class ViewConfiguration {
         mScaledOverflingDistance = dp(overflingDistance);
     }
 
+    @ApiStatus.Internal
+    public void setVerticalScrollFactor(float verticalScrollFactor) {
+        mVerticalScrollFactor = verticalScrollFactor;
+        mScaledVerticalScrollFactor = dp(verticalScrollFactor);
+    }
+
+    @ApiStatus.Internal
+    public void setHorizontalScrollFactor(float horizontalScrollFactor) {
+        mHorizontalScrollFactor = horizontalScrollFactor;
+        mScaledHorizontalScrollFactor = dp(horizontalScrollFactor);
+    }
+
     /**
      * @return The width of the horizontal scrollbar and the height of the vertical
      * scrollbar in pixels
@@ -330,5 +358,21 @@ public class ViewConfiguration {
      */
     public int getScaledOverflingDistance() {
         return mScaledOverflingDistance;
+    }
+
+    /**
+     * @return Amount to scroll in response to a horizontal {@link MotionEvent#ACTION_SCROLL} event.
+     * Multiply this by the event's axis value to obtain the number of pixels to be scrolled.
+     */
+    public float getScaledHorizontalScrollFactor() {
+        return mScaledHorizontalScrollFactor;
+    }
+
+    /**
+     * @return Amount to scroll in response to a vertical {@link MotionEvent#ACTION_SCROLL} event.
+     * Multiply this by the event's axis value to obtain the number of pixels to be scrolled.
+     */
+    public float getScaledVerticalScrollFactor() {
+        return mScaledVerticalScrollFactor;
     }
 }

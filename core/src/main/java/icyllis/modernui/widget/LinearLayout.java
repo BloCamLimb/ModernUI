@@ -32,6 +32,26 @@ import javax.annotation.Nullable;
  * A layout that arranges other views either horizontally in a single column
  * or vertically in a single row.
  *
+ * <p>Set {@link #setOrientation(int)} to specify
+ * whether child views are displayed in a row or column.</p>
+ *
+ * <p>To control how linear layout aligns all the views it contains, set a value for
+ * {@link #setGravity(int)}.  For example, the
+ * snippet above sets android:gravity to "center".  The value you set affects
+ * both horizontal and vertical alignment of all child views within the single row or column.</p>
+ *
+ * <p>You can set
+ * {@link LinearLayout.LayoutParams#weight}
+ * on individual child views to specify how linear layout divides remaining space amongst
+ * the views it contains. See the
+ * <a href="https://developer.android.com/guide/topics/ui/layout/linear.html">Linear Layout</a>
+ * guide for an example.</p>
+ *
+ * <p>See
+ * {@link LinearLayout.LayoutParams LinearLayout.LayoutParams}
+ * to learn about other attributes you can set on a child view to affect its
+ * position and size in the containing linear layout.</p>
+ *
  * @since 2.0
  */
 public class LinearLayout extends ViewGroup {

@@ -39,7 +39,6 @@ import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.*;
-import net.minecraft.ChatFormatting;
 
 import javax.annotation.Nonnull;
 
@@ -98,6 +97,8 @@ public class TestLinearLayout extends LinearLayout {
         });
         setShowDividers(SHOW_DIVIDER_MIDDLE | SHOW_DIVIDER_END);
 
+        setPadding(dp(12), dp(12), dp(12), dp(12));
+
         setDividerPadding(dp(8));
 
         String text;
@@ -136,7 +137,7 @@ public class TestLinearLayout extends LinearLayout {
 
         mTextView = tv;
 
-        for (int i = 0; i < 8; i++) {
+        for (int i = 0; i < 10; i++) {
             View v;
             LinearLayout.LayoutParams p;
             if (i == 4) {
@@ -171,8 +172,8 @@ public class TestLinearLayout extends LinearLayout {
                 //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 textField.setPadding(dp(12), 0, dp(12), 0);
             } else {
-                v = new CView();
-                p = new LinearLayout.LayoutParams(dp(200), dp(36));
+                v = new CView(i);
+                p = new LinearLayout.LayoutParams(dp(200), dp(50));
             }
             v.setClickable(true);
             addView(v, p);
@@ -415,18 +416,21 @@ public class TestLinearLayout extends LinearLayout {
 
     private static class CView extends View {
 
+        private final String mIndex;
+        TextPaint mTextPaint = new TextPaint();
+
+        public CView(int index) {
+            mIndex = Integer.toString(index);
+        }
+
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            String str = ChatFormatting.UNDERLINE + "Modern" + ChatFormatting.AQUA + " UI"/* + TextFormatting
-            .OBFUSCATED + "\u0629\u064a\u0628\u0631\u0639\u0644\u0627" + TextFormatting.STRIKETHROUGH + "\u2642"*/;
             if (isHovered()) {
                 Paint paint = Paint.take();
                 paint.setRGBA(140, 200, 240, 128);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
+                canvas.drawText(mIndex, 0, mIndex.length(), 20, getHeight() >> 1, mTextPaint);
             }
-            /*canvas.resetColor();
-            canvas.setTextAlign(TextAlign.CENTER);
-            canvas.drawText(str, getWidth() >> 1, 4);*/
         }
 
         @Override
@@ -449,13 +453,16 @@ public class TestLinearLayout extends LinearLayout {
         public DView(TimeInterpolator interpolator, int offset) {
             this.offset = offset;
             animation = new Animation(200)
-                    .applyTo(new Applier(0, 60, () -> offsetY, v -> offsetY = v).setInterpolator(interpolator));
+                    .applyTo(new Applier(0, 60, () -> offsetY, v -> {
+                        offsetY = v;
+                        invalidate();
+                    }).setInterpolator(interpolator));
             animation.invertFull();
         }
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.drawText("G", 0, 1, offset, offsetY + 24, mTextPaint);
+            canvas.drawText("DView", 0, 5, offset, offsetY + 24, mTextPaint);
         }
 
         public void tick() {

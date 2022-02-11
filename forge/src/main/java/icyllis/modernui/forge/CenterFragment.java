@@ -49,6 +49,8 @@ public class CenterFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
+        final int dp6 = dp(6);
+
         var base = new LinearLayout();
         base.setOrientation(LinearLayout.VERTICAL);
         base.setBackground(new Background());
@@ -76,7 +78,7 @@ public class CenterFragment extends Fragment {
                     ViewGroup.LayoutParams.WRAP_CONTENT);
             params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             params.addRule(RelativeLayout.ALIGN_PARENT_START);
-            params.setMargins(dp(6), dp(6), dp(6), dp(6));
+            params.setMargins(dp6, dp6, dp6, dp6);
             screen.addView(title, params);
 
             {
@@ -97,6 +99,7 @@ public class CenterFragment extends Fragment {
                 input.setTextSize(14);
                 input.setFilters(new InputFilter[]{DigitsInputFilter.getInstance((Locale) null),
                         new InputFilter.LengthFilter(2)});
+                input.setPadding(dp(4), dp(4), dp(4), dp(4));
                 input.setOnFocusChangeListener((__, hasFocus) -> {
                     if (!hasFocus) {
                         int radius = Integer.parseInt(input.getText().toString());
@@ -112,7 +115,7 @@ public class CenterFragment extends Fragment {
                 params = new RelativeLayout.LayoutParams(dp(40), ViewGroup.LayoutParams.WRAP_CONTENT);
                 params.addRule(RelativeLayout.ALIGN_BASELINE, 16);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp(6), 0, dp(6), 0);
+                params.setMargins(dp6, 0, dp6, 0);
                 screen.addView(input, params);
             }
 
@@ -140,7 +143,7 @@ public class CenterFragment extends Fragment {
                 params = new RelativeLayout.LayoutParams(dp(36), dp(16));
                 params.addRule(RelativeLayout.ALIGN_TOP, 18);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp(6), dp(3), dp(6), dp(3));
+                params.setMargins(dp6, dp(3), dp6, dp(3));
                 screen.addView(button, params);
             }
         }
@@ -162,7 +165,7 @@ public class CenterFragment extends Fragment {
                     ViewGroup.LayoutParams.WRAP_CONTENT);
             params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             params.addRule(RelativeLayout.ALIGN_PARENT_START);
-            params.setMargins(dp(6), dp(6), dp(6), dp(6));
+            params.setMargins(dp6, dp6, dp6, dp6);
             tooltip.addView(title, params);
 
             {
@@ -189,7 +192,7 @@ public class CenterFragment extends Fragment {
                 params = new RelativeLayout.LayoutParams(dp(36), dp(16));
                 params.addRule(RelativeLayout.ALIGN_TOP, 26);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp(6), dp(3), dp(6), dp(3));
+                params.setMargins(dp6, dp(3), dp6, dp(3));
                 tooltip.addView(button, params);
             }
         }
@@ -211,7 +214,7 @@ public class CenterFragment extends Fragment {
                     ViewGroup.LayoutParams.WRAP_CONTENT);
             params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
             params.addRule(RelativeLayout.ALIGN_PARENT_START);
-            params.setMargins(dp(6), dp(6), dp(6), dp(6));
+            params.setMargins(dp6, dp6, dp6, dp6);
             layout.addView(title, params);
 
             {
@@ -237,7 +240,7 @@ public class CenterFragment extends Fragment {
                 params = new RelativeLayout.LayoutParams(dp(36), dp(16));
                 params.addRule(RelativeLayout.ALIGN_TOP, 36);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp(6), dp(3), dp(6), dp(3));
+                params.setMargins(dp6, dp(3), dp6, dp(3));
                 layout.addView(button, params);
             }
         }
