@@ -24,6 +24,7 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Common base class of common implementation for an {@link Adapter} that can be
@@ -79,7 +80,7 @@ public abstract class BaseAdapter implements ListAdapter, SpinnerAdapter {
 
     @Nonnull
     @Override
-    public View getDropDownView(int position, @Nonnull View convertView, @Nonnull ViewGroup parent) {
+    public View getDropDownView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
         return getView(position, convertView, parent);
     }
 

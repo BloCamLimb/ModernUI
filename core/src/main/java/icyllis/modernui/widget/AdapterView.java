@@ -539,6 +539,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * @return The data corresponding to the currently selected item, or
      * null if there is nothing selected.
      */
+    @Nullable
     public Object getSelectedItem() {
         T adapter = getAdapter();
         int selection = getSelectedItemPosition();
@@ -735,6 +736,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * @param position Which data to get
      * @return The data associated with the specified position in the list
      */
+    @Nullable
     public Object getItemAtPosition(int position) {
         T adapter = getAdapter();
         return (adapter == null || position < 0) ? null : adapter.getItem(position);
