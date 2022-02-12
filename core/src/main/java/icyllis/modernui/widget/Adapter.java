@@ -23,7 +23,7 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
 import javax.annotation.Nonnull;
-import javax.annotation.ParametersAreNonnullByDefault;
+import javax.annotation.Nullable;
 
 /**
  * An Adapter object acts as a bridge between an {@link AdapterView} and the
@@ -31,9 +31,8 @@ import javax.annotation.ParametersAreNonnullByDefault;
  * The Adapter is also responsible for making a {@link View} for
  * each item in the data set.
  *
- * @see android.widget.ArrayAdapter
+ * @see ArrayAdapter
  */
-@ParametersAreNonnullByDefault
 public interface Adapter {
 
     /**
@@ -41,7 +40,7 @@ public interface Adapter {
      *
      * @param observer the object that gets notified when the data set changes.
      */
-    void registerDataSetObserver(DataSetObserver observer);
+    void registerDataSetObserver(@Nonnull DataSetObserver observer);
 
     /**
      * Unregister an observer that has previously been registered with this
@@ -49,7 +48,7 @@ public interface Adapter {
      *
      * @param observer the object to unregister.
      */
-    void unregisterDataSetObserver(DataSetObserver observer);
+    void unregisterDataSetObserver(@Nonnull DataSetObserver observer);
 
     /**
      * How many items are in the data set represented by this Adapter.
@@ -65,7 +64,7 @@ public interface Adapter {
      *                 data set.
      * @return The data at the specified position.
      */
-    @Nonnull
+    @Nullable
     Object getItem(int position);
 
     /**
@@ -101,7 +100,7 @@ public interface Adapter {
      * @return A View corresponding to the data at the specified position.
      */
     @Nonnull
-    View getView(int position, View convertView, ViewGroup parent);
+    View getView(int position, @Nullable View convertView, @Nonnull ViewGroup parent);
 
     /**
      * An item view type that causes the {@link AdapterView} to ignore the item

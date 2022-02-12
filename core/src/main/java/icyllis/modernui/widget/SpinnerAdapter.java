@@ -22,6 +22,7 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Extended {@link Adapter} that is the bridge between a
@@ -45,5 +46,5 @@ public interface SpinnerAdapter extends Adapter {
      * @return a {@link View} corresponding to the data at the specified position.
      */
     @Nonnull
-    View getDropDownView(int position, @Nonnull View convertView, @Nonnull ViewGroup parent);
+    View getDropDownView(int position, @Nullable View convertView, @Nonnull ViewGroup parent);
 }

@@ -24,9 +24,10 @@ import java.util.Objects;
 /**
  * A runnable action with an execution time.
  */
+@Deprecated
 public class TimedAction {
 
-    private static final Pool<TimedAction> sPool = Pools.concurrent(100);
+    //private static final Pool<TimedAction> sPool = Pools.concurrent(100);
 
     public Runnable action;
     public long time;
@@ -41,8 +42,7 @@ public class TimedAction {
      */
     @Nonnull
     public static TimedAction obtain() {
-        TimedAction a = sPool.acquire();
-        return a == null ? new TimedAction() : a;
+        return new TimedAction();
     }
 
     /**
@@ -69,7 +69,7 @@ public class TimedAction {
     public boolean execute(long now) {
         if (now >= time) {
             action.run();
-            recycle();
+            action = null;
             return true;
         }
         return false;
@@ -84,17 +84,9 @@ public class TimedAction {
      */
     public boolean remove(Runnable otherAction) {
         if (Objects.equals(action, otherAction)) {
-            recycle();
+            action = null;
             return true;
         }
         return false;
-    }
-
-    /**
-     * Releases a TimedAction instance to the global pool.
-     */
-    public void recycle() {
-        action = null;
-        sPool.release(this);
     }
 }

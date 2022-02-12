@@ -34,6 +34,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 
 /**
  * <p>
@@ -110,8 +111,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     /**
      * When set, this ViewGroup should not intercept touch events.
+     * {@hide}
      */
-    private static final int FLAG_DISALLOW_INTERCEPT = 0x80000;
+    protected static final int FLAG_DISALLOW_INTERCEPT = 0x80000;
 
     /**
      * When set, this ViewGroup will not dispatch onAttachedToWindow calls
@@ -1018,9 +1020,16 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return isInView;
     }
 
-    void transformPointToViewLocal(float[] point, View child) {
+    /**
+     * @hide
+     */
+    protected void transformPointToViewLocal(@Nonnull float[] point, @Nonnull View child) {
         point[0] += mScrollX - child.mLeft;
         point[1] += mScrollY - child.mTop;
+
+        if (!child.hasIdentityMatrix()) {
+            child.getInverseMatrix().transformPoint(point);
+        }
     }
 
     @Override
@@ -1321,6 +1330,15 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         child.mParent = null;
         addViewInner(child, index, params, preventRequestLayout);
         return true;
+    }
+
+    /**
+     * Prevents the specified child to be laid out during the next layout pass.
+     *
+     * @param child the child on which to perform the cleanup
+     */
+    protected void cleanupLayoutState(@Nonnull View child) {
+        child.mPrivateFlags &= ~View.PFLAG_FORCE_LAYOUT;
     }
 
     private void addViewInner(@Nonnull final View child, int index, @Nonnull LayoutParams params,
@@ -1859,6 +1877,191 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     /**
+     * Finishes the removal of a detached view. This method will dispatch the detached from
+     * window event and notify the hierarchy change listener.
+     * <p>
+     * This method is intended to be lightweight and makes no assumptions about whether the
+     * parent or child should be redrawn. Proper use of this method will include also making
+     * any appropriate {@link #requestLayout()} or {@link #invalidate()} calls.
+     * For example, callers can {@link #post(Runnable) post} a {@link Runnable}
+     * which performs a {@link #requestLayout()} on the next frame, after all detach/remove
+     * calls are finished, causing layout to be run prior to redrawing the view hierarchy.
+     *
+     * @param child   the child to be definitely removed from the view hierarchy
+     * @param animate if true and the view has an animation, the view is placed in the
+     *                disappearing views list, otherwise, it is detached from the window
+     * @see #attachViewToParent(View, int, ViewGroup.LayoutParams)
+     * @see #detachAllViewsFromParent()
+     * @see #detachViewFromParent(View)
+     * @see #detachViewFromParent(int)
+     */
+    protected void removeDetachedView(@Nonnull View child, boolean animate) {
+        if (mTransition != null) {
+            mTransition.removeChild(this, child);
+        }
+
+        if (child == mFocused) {
+            child.clearFocus();
+        }
+        /*if (child == mDefaultFocus) {
+            clearDefaultFocus(child);
+        }
+        if (child == mFocusedInCluster) {
+            clearFocusedInCluster(child);
+        }*/
+
+        cancelTouchTarget(child);
+        cancelHoverTarget(child);
+
+        if (mTransitioningViews != null && mTransitioningViews.contains(child)) {
+            addDisappearingView(child);
+        } else if (child.mAttachInfo != null) {
+            child.dispatchDetachedFromWindow();
+        }
+
+        if (child.hasTransientState()) {
+            childHasTransientStateChanged(child, false);
+        }
+
+        onViewRemoved(child);
+    }
+
+    /**
+     * Attaches a view to this view group. Attaching a view assigns this group as the parent,
+     * sets the layout parameters and puts the view in the list of children so that
+     * it can be retrieved by calling {@link #getChildAt(int)}.
+     * <p>
+     * This method is intended to be lightweight and makes no assumptions about whether the
+     * parent or child should be redrawn. Proper use of this method will include also making
+     * any appropriate {@link #requestLayout()} or {@link #invalidate()} calls.
+     * For example, callers can {@link #post(Runnable) post} a {@link Runnable}
+     * which performs a {@link #requestLayout()} on the next frame, after all detach/attach
+     * calls are finished, causing layout to be run prior to redrawing the view hierarchy.
+     * <p>
+     * This method should be called only for views which were detached from their parent.
+     *
+     * @param child  the child to attach
+     * @param index  the index at which the child should be attached
+     * @param params the layout parameters of the child
+     * @see #removeDetachedView(View, boolean)
+     * @see #detachAllViewsFromParent()
+     * @see #detachViewFromParent(View)
+     * @see #detachViewFromParent(int)
+     */
+    protected void attachViewToParent(View child, int index, LayoutParams params) {
+        child.mLayoutParams = params;
+
+        if (index < 0) {
+            index = mChildrenCount;
+        }
+
+        addInArray(child, index);
+
+        child.mParent = this;
+        child.mPrivateFlags = (child.mPrivateFlags & ~PFLAG_DIRTY_MASK
+                & ~PFLAG_DRAWING_CACHE_VALID)
+                | PFLAG_DRAWN | PFLAG_INVALIDATED;
+        mPrivateFlags |= PFLAG_INVALIDATED;
+
+        if (child.hasFocus()) {
+            requestChildFocus(child, child.findFocus());
+        }
+        dispatchVisibilityAggregated(isAttachedToWindow() && getWindowVisibility() == VISIBLE
+                && isShown());
+    }
+
+    /**
+     * Detaches a view from its parent. Detaching a view should be followed
+     * either by a call to
+     * {@link #attachViewToParent(View, int, ViewGroup.LayoutParams)}
+     * or a call to {@link #removeDetachedView(View, boolean)}. Detachment should only be
+     * temporary; reattachment or removal should happen within the same drawing cycle as
+     * detachment. When a view is detached, its parent is null and cannot be retrieved by a
+     * call to {@link #getChildAt(int)}.
+     *
+     * @param child the child to detach
+     * @see #detachViewFromParent(int)
+     * @see #detachViewsFromParent(int, int)
+     * @see #detachAllViewsFromParent()
+     * @see #attachViewToParent(View, int, ViewGroup.LayoutParams)
+     * @see #removeDetachedView(View, boolean)
+     */
+    protected void detachViewFromParent(View child) {
+        removeFromArray(indexOfChild(child));
+    }
+
+    /**
+     * Detaches a view from its parent. Detaching a view should be followed
+     * either by a call to
+     * {@link #attachViewToParent(View, int, ViewGroup.LayoutParams)}
+     * or a call to {@link #removeDetachedView(View, boolean)}. Detachment should only be
+     * temporary; reattachment or removal should happen within the same drawing cycle as
+     * detachment. When a view is detached, its parent is null and cannot be retrieved by a
+     * call to {@link #getChildAt(int)}.
+     *
+     * @param index the index of the child to detach
+     * @see #detachViewFromParent(View)
+     * @see #detachAllViewsFromParent()
+     * @see #detachViewsFromParent(int, int)
+     * @see #attachViewToParent(View, int, ViewGroup.LayoutParams)
+     * @see #removeDetachedView(View, boolean)
+     */
+    protected void detachViewFromParent(int index) {
+        removeFromArray(index);
+    }
+
+    /**
+     * Detaches a range of views from their parents. Detaching a view should be followed
+     * either by a call to
+     * {@link #attachViewToParent(View, int, ViewGroup.LayoutParams)}
+     * or a call to {@link #removeDetachedView(View, boolean)}. Detachment should only be
+     * temporary; reattachment or removal should happen within the same drawing cycle as
+     * detachment. When a view is detached, its parent is null and cannot be retrieved by a
+     * call to {@link #getChildAt(int)}.
+     *
+     * @param start the first index of the childrend range to detach
+     * @param count the number of children to detach
+     * @see #detachViewFromParent(View)
+     * @see #detachViewFromParent(int)
+     * @see #detachAllViewsFromParent()
+     * @see #attachViewToParent(View, int, ViewGroup.LayoutParams)
+     * @see #removeDetachedView(View, boolean)
+     */
+    protected void detachViewsFromParent(int start, int count) {
+        removeFromArray(Math.max(0, start), Math.min(mChildrenCount, count));
+    }
+
+    /**
+     * Detaches all views from the parent. Detaching a view should be followed
+     * either by a call to
+     * {@link #attachViewToParent(View, int, ViewGroup.LayoutParams)}
+     * or a call to {@link #removeDetachedView(View, boolean)}. Detachment should only be
+     * temporary; reattachment or removal should happen within the same drawing cycle as
+     * detachment. When a view is detached, its parent is null and cannot be retrieved by a
+     * call to {@link #getChildAt(int)}.
+     *
+     * @see #detachViewFromParent(View)
+     * @see #detachViewFromParent(int)
+     * @see #detachViewsFromParent(int, int)
+     * @see #attachViewToParent(View, int, ViewGroup.LayoutParams)
+     * @see #removeDetachedView(View, boolean)
+     */
+    protected void detachAllViewsFromParent() {
+        final int count = mChildrenCount;
+        if (count <= 0) {
+            return;
+        }
+
+        final View[] children = mChildren;
+        mChildrenCount = 0;
+
+        for (int i = count - 1; i >= 0; i--) {
+            children[i].mParent = null;
+            children[i] = null;
+        }
+    }
+
+    /**
      * Gets the descendant focusability of this view group.  The descendant
      * focusability defines the relationship between this view group and its
      * descendants when looking for a view to take focus in
@@ -1891,6 +2094,16 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
         mGroupFlags &= ~FLAG_MASK_FOCUSABILITY;
         mGroupFlags |= (focusability & FLAG_MASK_FOCUSABILITY);
+    }
+
+    @Override
+    public void dispatchWindowFocusChanged(boolean hasFocus) {
+        super.dispatchWindowFocusChanged(hasFocus);
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchWindowFocusChanged(hasFocus);
+        }
     }
 
     @Override
@@ -1929,6 +2142,69 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         if (descendantFocusability == FOCUS_AFTER_DESCENDANTS && focusableCount == views.size()) {
             super.addFocusables(views, direction, focusableMode);
         }
+    }
+
+    @Override
+    public void addTouchables(@Nonnull ArrayList<View> views) {
+        super.addTouchables(views);
+
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+
+        for (int i = 0; i < count; i++) {
+            final View child = children[i];
+            if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                child.addTouchables(views);
+            }
+        }
+    }
+
+    /**
+     * Set whether this ViewGroup should ignore focus requests for itself and its children.
+     * If this option is enabled and the ViewGroup or a descendant currently has focus, focus
+     * will proceed forward.
+     *
+     * @param touchscreenBlocksFocus true to enable blocking focus in the presence of a touchscreen
+     */
+    public void setTouchscreenBlocksFocus(boolean touchscreenBlocksFocus) {
+        if (touchscreenBlocksFocus) {
+            mGroupFlags |= FLAG_TOUCHSCREEN_BLOCKS_FOCUS;
+            if (hasFocus() && !isKeyboardNavigationCluster()) {
+                final View focusedChild = getDeepestFocusedChild();
+                if (!focusedChild.isFocusableInTouchMode()) {
+                    final View newFocus = focusSearch(FOCUS_FORWARD);
+                    if (newFocus != null) {
+                        newFocus.requestFocus();
+                    }
+                }
+            }
+        } else {
+            mGroupFlags &= ~FLAG_TOUCHSCREEN_BLOCKS_FOCUS;
+        }
+    }
+
+    private void setTouchscreenBlocksFocusNoRefocus(boolean touchscreenBlocksFocus) {
+        if (touchscreenBlocksFocus) {
+            mGroupFlags |= FLAG_TOUCHSCREEN_BLOCKS_FOCUS;
+        } else {
+            mGroupFlags &= ~FLAG_TOUCHSCREEN_BLOCKS_FOCUS;
+        }
+    }
+
+    /**
+     * Check whether this ViewGroup should ignore focus requests for itself and its children.
+     */
+    public boolean getTouchscreenBlocksFocus() {
+        return (mGroupFlags & FLAG_TOUCHSCREEN_BLOCKS_FOCUS) != 0;
+    }
+
+    boolean shouldBlockFocusForTouchscreen() {
+        // There is a special case for keyboard-navigation clusters. We allow cluster navigation
+        // to jump into blockFocusForTouchscreen ViewGroups which are clusters. Once in the
+        // cluster, focus is free to move around within it.
+        return getTouchscreenBlocksFocus()
+                && !(isKeyboardNavigationCluster()
+                && (hasFocus() || (findKeyboardNavigationCluster() != this)));
     }
 
     @Override
@@ -2059,6 +2335,27 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     /**
+     * Returns the focused child of this view, if any. The child may have focus
+     * or contain focus.
+     *
+     * @return the focused child or null.
+     */
+    public View getFocusedChild() {
+        return mFocused;
+    }
+
+    View getDeepestFocusedChild() {
+        View v = this;
+        while (v != null) {
+            if (v.isFocused()) {
+                return v;
+            }
+            v = v instanceof ViewGroup ? ((ViewGroup) v).getFocusedChild() : null;
+        }
+        return null;
+    }
+
+    /**
      * Returns true if this view has or contains focus
      *
      * @return true if this view has or contains focus
@@ -2068,6 +2365,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return (mPrivateFlags & PFLAG_FOCUSED) != 0 || mFocused != null;
     }
 
+    @Nullable
     @Override
     public View findFocus() {
         if (isFocused()) {
@@ -2159,6 +2457,19 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             }
         } else {
             throw new IllegalArgumentException("parameter must be a descendant of this view");
+        }
+    }
+
+    /**
+     * Offset the vertical location of all children of this view by the specified number of pixels.
+     *
+     * @param offset the number of pixels to offset
+     */
+    public void offsetChildrenTopAndBottom(int offset) {
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].offsetTopAndBottom(offset);
         }
     }
 
@@ -2389,10 +2700,37 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    @SuppressWarnings("unchecked")
     @Nullable
     @Override
-    final <T extends View> T findViewTraversal(int id) {
+    @SuppressWarnings("unchecked")
+    protected <T extends View> T findViewByPredicateTraversal(@Nonnull Predicate<View> predicate,
+                                                              @Nullable View childToSkip) {
+        if (predicate.test(this)) {
+            return (T) this;
+        }
+
+        final View[] where = mChildren;
+        final int len = mChildrenCount;
+
+        for (int i = 0; i < len; i++) {
+            View v = where[i];
+
+            if (v != childToSkip && (v.mPrivateFlags & PFLAG_IS_ROOT_NAMESPACE) == 0) {
+                v = v.findViewByPredicate(predicate);
+
+                if (v != null) {
+                    return (T) v;
+                }
+            }
+        }
+
+        return null;
+    }
+
+    @Nullable
+    @Override
+    @SuppressWarnings("unchecked")
+    protected <T extends View> T findViewTraversal(int id) {
         if (id == mID) {
             return (T) this;
         }
@@ -2424,11 +2762,11 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
     }
 
-    private boolean hasBooleanFlag(int flag) {
+    protected boolean hasBooleanFlag(int flag) {
         return (mGroupFlags & flag) == flag;
     }
 
-    private void setBooleanFlag(int flag, boolean value) {
+    protected void setBooleanFlag(int flag, boolean value) {
         if (value) {
             mGroupFlags |= flag;
         } else {
@@ -3203,6 +3541,36 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     public boolean isLayoutSuppressed() {
         return mSuppressLayout;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @hide
+     */
+    @Override
+    public void dispatchStartTemporaryDetach() {
+        super.dispatchStartTemporaryDetach();
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchStartTemporaryDetach();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @hide
+     */
+    @Override
+    public void dispatchFinishTemporaryDetach() {
+        super.dispatchFinishTemporaryDetach();
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchFinishTemporaryDetach();
+        }
     }
 
     @Override

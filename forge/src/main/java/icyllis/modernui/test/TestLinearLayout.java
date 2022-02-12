@@ -101,6 +101,10 @@ public class TestLinearLayout extends LinearLayout {
 
         setDividerPadding(dp(8));
 
+        setClickable(true);
+        setFocusable(true);
+        setFocusableInTouchMode(true);
+
         String text;
         text = "\t\t\u0639\u0646\u062f\u0645\u0627\u0020\u064a\u0631\u064a\u062f\u0020\u0627\u0644\u0639\u0627" +
                 "\u0644\u0645\u0020\u0623\u0646\u0020\u202a\u064a\u062a\u0643\u0644\u0651\u0645\u0020\u202c\u0020" +

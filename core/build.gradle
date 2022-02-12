@@ -2,6 +2,15 @@ import org.gradle.internal.os.OperatingSystem
 
 version = "${core_version}"
 
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+            //exclude '**/modernui/widget/.java'
+        }
+    }
+}
+
 dependencies {
     runtimeOnly "org.apache.logging.log4j:log4j-core:${log4j_version}"
     compileOnly "org.apache.logging.log4j:log4j-api:${log4j_version}"

@@ -117,7 +117,6 @@ public class ScrollView extends FrameLayout {
         mEdgeGlowTop = new EdgeEffect();
         mEdgeGlowBottom = new EdgeEffect();
         setFocusable(true);
-        setFocusableInTouchMode(true);
         setDescendantFocusability(FOCUS_AFTER_DESCENDANTS);
         setWillNotDraw(false);
         final ViewConfiguration configuration = ViewConfiguration.get();
@@ -1363,6 +1362,7 @@ public class ScrollView extends FrameLayout {
         scrollBy(0, dyUnconsumed);
         final int myConsumed = mScrollY - oldScrollY;
         final int myUnconsumed = dyUnconsumed - myConsumed;
+        consumed[1] += myConsumed;
         dispatchNestedScroll(0, myConsumed, 0, myUnconsumed, null, type, consumed);
     }
 

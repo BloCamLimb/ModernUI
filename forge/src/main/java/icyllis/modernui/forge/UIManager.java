@@ -37,6 +37,9 @@ import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.test.TestFragment;
+import icyllis.modernui.test.TestListFragment;
+import icyllis.modernui.test.TestPauseFragment;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.util.TimedAction;
@@ -76,6 +79,7 @@ import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
+import org.checkerframework.checker.guieffect.qual.UI;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -608,12 +612,16 @@ public final class UIManager implements LifecycleOwner {
                 });
                 break;
 
-            /*case GLFW_KEY_H:
-                TestMain.sTrack.play();
+            case GLFW_KEY_H:
+                start(new TestFragment(), new UICallback());
                 break;
 
             case GLFW_KEY_J:
-                TestMain.sTrack.pause();
+                start(new TestPauseFragment(), new UICallback());
+                break;
+
+            case GLFW_KEY_U:
+                start(new TestListFragment(), new UICallback());
                 break;
 
             case GLFW_KEY_N:
@@ -622,7 +630,7 @@ public final class UIManager implements LifecycleOwner {
 
             case GLFW_KEY_M:
                 mViewRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
-                break;*/
+                break;
 
             case GLFW_KEY_P:
                 dump();

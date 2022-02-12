@@ -84,7 +84,6 @@ public class HandlerActionQueue {
             for (int i = 0, count = mCount; i < count; i++) {
                 final TimedAction action = actions[i];
                 handler.postDelayed(action.action, action.time);
-                action.recycle();
             }
 
             mActions = null;

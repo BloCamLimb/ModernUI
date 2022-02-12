@@ -21,6 +21,8 @@ package icyllis.modernui.widget;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.TimeInterpolator;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -34,7 +36,7 @@ public class OverScroller {
     private final SplineScroller mScrollerX = new SplineScroller();
     private final SplineScroller mScrollerY = new SplineScroller();
 
-    private final TimeInterpolator mInterpolator;
+    private TimeInterpolator mInterpolator;
 
     private final boolean mFlywheel;
 
@@ -48,13 +50,17 @@ public class OverScroller {
         this(null);
     }
 
-    public OverScroller(TimeInterpolator interpolator) {
+    public OverScroller(@Nullable TimeInterpolator interpolator) {
         this(interpolator, true);
     }
 
-    public OverScroller(TimeInterpolator interpolator, boolean flywheel) {
+    public OverScroller(@Nullable TimeInterpolator interpolator, boolean flywheel) {
         mInterpolator = Objects.requireNonNullElse(interpolator, TimeInterpolator.DECELERATE);
         mFlywheel = flywheel;
+    }
+
+    void setInterpolator(@Nullable TimeInterpolator interpolator) {
+        mInterpolator = Objects.requireNonNullElse(interpolator, TimeInterpolator.VISCOUS_FLUID);
     }
 
     /**
