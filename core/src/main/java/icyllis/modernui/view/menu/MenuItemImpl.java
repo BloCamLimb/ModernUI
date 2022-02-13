@@ -21,7 +21,6 @@ package icyllis.modernui.view.menu;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.*;
-import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -83,7 +82,7 @@ public final class MenuItemImpl implements MenuItem {
      * Current use case is for context menu: Extra information linked to the
      * View that added this item to the context menu.
      */
-    private ContextMenuInfo mMenuInfo;
+    private Object mMenuInfo;
 
     private CharSequence mContentDescription;
     private CharSequence mTooltipText;
@@ -99,8 +98,8 @@ public final class MenuItemImpl implements MenuItem {
      * @param categoryOrder The ordering for this item.
      * @param title         The text to display for the item.
      */
-    MenuItemImpl(MenuBuilder menu, int group, int id, int categoryOrder, int ordering,
-                 CharSequence title, int showAsAction) {
+    MenuItemImpl(@Nonnull MenuBuilder menu, int group, int id, int categoryOrder, int ordering,
+                 @Nullable CharSequence title, int showAsAction) {
         mMenu = menu;
         mId = id;
         mGroup = group;
@@ -496,12 +495,12 @@ public final class MenuItemImpl implements MenuItem {
         return mTitle != null ? mTitle.toString() : "";
     }
 
-    void setMenuInfo(ContextMenuInfo menuInfo) {
+    void setMenuInfo(Object menuInfo) {
         mMenuInfo = menuInfo;
     }
 
     @Override
-    public ContextMenuInfo getMenuInfo() {
+    public Object getMenuInfo() {
         return mMenuInfo;
     }
 

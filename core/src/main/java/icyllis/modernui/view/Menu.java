@@ -18,11 +18,11 @@
 
 package icyllis.modernui.view;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * Interface for managing the items in a menu.
- * <p>
- * By default, every Activity supports an options menu of actions or options.
- * You can add items to this menu and handle clicks on your additions.
  * <p>
  * Different menu types support different features:
  * <ol>
@@ -39,35 +39,29 @@ package icyllis.modernui.view;
  * <div class="special reference">
  * <h3>Developer Guides</h3>
  * <p>For more information about creating menus, read the
- * <a href="https://developer.android.com/guide/topics/ui/menus.html">Menus</a> developer guide.</p>
+ * <a href="https://developer.android.com/guide/topics/ui/menus">Menus</a> developer guide.</p>
  * </div>
  */
 public interface Menu {
 
     /**
      * This is the part of an order integer that the user can provide.
-     *
-     * @hide
      */
     int USER_MASK = 0x0000ffff;
+
     /**
      * Bit shift of the user portion of the order integer.
-     *
-     * @hide
      */
     int USER_SHIFT = 0;
 
     /**
      * This is the part of an order integer that supplies the category of the
      * item.
-     *
-     * @hide
      */
     int CATEGORY_MASK = 0xffff0000;
+
     /**
      * Bit shift of the category portion of the order integer.
-     *
-     * @hide
      */
     int CATEGORY_SHIFT = 16;
 
@@ -133,6 +127,7 @@ public interface Menu {
      * @param title The text to display for the item.
      * @return The newly added menu item.
      */
+    @Nonnull
     MenuItem add(CharSequence title);
 
     /**
@@ -150,6 +145,7 @@ public interface Menu {
      * @param title   The text to display for the item.
      * @return The newly added menu item.
      */
+    @Nonnull
     MenuItem add(int groupId, int itemId, int order, CharSequence title);
 
     /**
@@ -160,7 +156,8 @@ public interface Menu {
      * @param title The text to display for the item.
      * @return The newly added sub-menu
      */
-    SubMenu addSubMenu(final CharSequence title);
+    @Nonnull
+    SubMenu addSubMenu(CharSequence title);
 
     /**
      * Add a new sub-menu to the menu. This item displays the given
@@ -182,7 +179,8 @@ public interface Menu {
      * @param title   The text to display for the item.
      * @return The newly added sub-menu
      */
-    SubMenu addSubMenu(final int groupId, final int itemId, int order, final CharSequence title);
+    @Nonnull
+    SubMenu addSubMenu(int groupId, int itemId, int order, CharSequence title);
 
     /**
      * Remove the item with the given identifier.
@@ -258,6 +256,7 @@ public interface Menu {
      * @return The menu item object, or null if there is no item with
      * this identifier.
      */
+    @Nullable
     MenuItem findItem(int id);
 
     /**
@@ -275,6 +274,7 @@ public interface Menu {
      * @return The menu item.
      * @throws IndexOutOfBoundsException when {@code index < 0 || >= size()}
      */
+    @Nonnull
     MenuItem getItem(int index);
 
     /**
@@ -293,7 +293,7 @@ public interface Menu {
      * true; else returns false.
      * @see #FLAG_PERFORM_NO_CLOSE
      */
-    boolean performShortcut(int keyCode, KeyEvent event, int flags);
+    boolean performShortcut(int keyCode, @Nonnull KeyEvent event, int flags);
 
     /**
      * Is a keypress one of the defined shortcut keys for this window.
@@ -301,7 +301,7 @@ public interface Menu {
      * @param keyCode the key code from {@link KeyEvent} to check.
      * @param event   the {@link KeyEvent} to use to help check.
      */
-    boolean isShortcutKey(int keyCode, KeyEvent event);
+    boolean isShortcutKey(int keyCode, @Nonnull KeyEvent event);
 
     /**
      * Execute the menu item action associated with the given menu identifier.
@@ -326,6 +326,5 @@ public interface Menu {
     /**
      * Enable or disable the group dividers.
      */
-    default void setGroupDividerEnabled(boolean groupDividerEnabled) {
-    }
+    void setGroupDividerEnabled(boolean groupDividerEnabled);
 }

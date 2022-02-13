@@ -97,8 +97,7 @@ public class CenterFragment extends Fragment {
                 input.setText(Config.CLIENT.blurRadius.get().toString());
                 input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
                 input.setTextSize(14);
-                input.setFilters(new InputFilter[]{DigitsInputFilter.getInstance((Locale) null),
-                        new InputFilter.LengthFilter(2)});
+                input.setFilters(DigitsInputFilter.getInstance((Locale) null), new InputFilter.LengthFilter(2));
                 input.setPadding(dp(4), dp(4), dp(4), dp(4));
                 input.setOnFocusChangeListener((__, hasFocus) -> {
                     if (!hasFocus) {

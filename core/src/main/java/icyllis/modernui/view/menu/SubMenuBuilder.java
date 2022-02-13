@@ -24,6 +24,8 @@ import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.view.SubMenu;
 import icyllis.modernui.view.View;
 
+import javax.annotation.Nonnull;
+
 /**
  * The model for a sub menu, which is an extension of the menu.  Most methods are proxied to
  * the parent menu.
@@ -62,6 +64,7 @@ public class SubMenuBuilder extends MenuBuilder implements SubMenu {
         return mParentMenu;
     }
 
+    @Nonnull
     @Override
     public MenuItem getItem() {
         return mItem;
@@ -83,22 +86,26 @@ public class SubMenuBuilder extends MenuBuilder implements SubMenu {
                 mParentMenu.dispatchMenuItemSelected(menu, item);
     }
 
+    @Nonnull
     @Override
     public SubMenu setIcon(Drawable icon) {
         mItem.setIcon(icon);
         return this;
     }
 
+    @Nonnull
     @Override
     public SubMenu setHeaderIcon(Drawable icon) {
         return (SubMenu) super.setHeaderIconInt(icon);
     }
 
+    @Nonnull
     @Override
     public SubMenu setHeaderTitle(CharSequence title) {
         return (SubMenu) super.setHeaderTitleInt(title);
     }
 
+    @Nonnull
     @Override
     public SubMenu setHeaderView(View view) {
         return (SubMenu) super.setHeaderViewInt(view);

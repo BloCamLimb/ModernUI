@@ -28,7 +28,6 @@ import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.SparseBooleanArray;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
-import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 import it.unimi.dsi.fastutil.longs.Long2IntMap;
 import it.unimi.dsi.fastutil.longs.Long2IntMaps;
 import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
@@ -385,7 +384,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      */
     int mResurrectToPosition = INVALID_POSITION;
 
-    private ContextMenuInfo mContextMenuInfo = null;
+    private Object mContextMenuInfo = null;
 
     /**
      * Maximum distance to record overscroll
@@ -1613,13 +1612,10 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      */
     boolean touchModeDrawsInPressedState() {
         // FIXME use isPressed for this
-        switch (mTouchMode) {
-            case TOUCH_MODE_TAP:
-            case TOUCH_MODE_DONE_WAITING:
-                return true;
-            default:
-                return false;
-        }
+        return switch (mTouchMode) {
+            case TOUCH_MODE_TAP, TOUCH_MODE_DONE_WAITING -> true;
+            default -> false;
+        };
     }
 
     /**
@@ -1914,7 +1910,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      * @return The extra information that should be returned by
      * {@link #getContextMenuInfo()}.
      */
-    ContextMenuInfo createContextMenuInfo(View view, int position, long id) {
+    Object createContextMenuInfo(View view, int position, long id) {
         return new AdapterContextMenuInfo(view, position, id);
     }
 
@@ -2098,7 +2094,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    protected ContextMenuInfo getContextMenuInfo() {
+    protected Object getContextMenuInfo() {
         return mContextMenuInfo;
     }
 
@@ -2617,18 +2613,10 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         }
         vtev.offsetLocation(0, mNestedYOffset);
         switch (action) {
-            case MotionEvent.ACTION_DOWN -> {
-                onTouchDown(ev);
-            }
-            case MotionEvent.ACTION_MOVE -> {
-                onTouchMove(ev, vtev);
-            }
-            case MotionEvent.ACTION_UP -> {
-                onTouchUp(ev);
-            }
-            case MotionEvent.ACTION_CANCEL -> {
-                onTouchCancel();
-            }
+            case MotionEvent.ACTION_DOWN -> onTouchDown(ev);
+            case MotionEvent.ACTION_MOVE -> onTouchMove(ev, vtev);
+            case MotionEvent.ACTION_UP -> onTouchUp(ev);
+            case MotionEvent.ACTION_CANCEL -> onTouchCancel();
         }
 
         if (mVelocityTracker != null) {
@@ -4703,11 +4691,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         private SparseArray<View> mTransientStateViews;
         private Long2ObjectOpenHashMap<View> mTransientStateViewsById;
 
+        @SuppressWarnings("unchecked")
         public void setViewTypeCount(int viewTypeCount) {
             if (viewTypeCount < 1) {
                 throw new IllegalArgumentException("Can't have a viewTypeCount < 1");
             }
-            //noinspection unchecked
             ArrayList<View>[] scrapViews = new ArrayList[viewTypeCount];
             for (int i = 0; i < viewTypeCount; i++) {
                 scrapViews[i] = new ArrayList<>();

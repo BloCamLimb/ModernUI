@@ -20,7 +20,6 @@ package icyllis.modernui.util;
 
 import icyllis.modernui.R;
 import icyllis.modernui.view.View;
-import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 
@@ -58,7 +57,6 @@ public final class StateSet {
     /**
      * Called by View.
      */
-    @ApiStatus.Internal
     public static final int
             VIEW_STATE_WINDOW_FOCUSED = 1,
             VIEW_STATE_SELECTED = 1 << 1,
@@ -105,7 +103,6 @@ public final class StateSet {
     /**
      * Called by View.
      */
-    @ApiStatus.Internal
     public static int[] get(int mask) {
         return VIEW_STATE_SETS[mask];
     }
@@ -206,7 +203,6 @@ public final class StateSet {
      * @param attr       an attribute we're looking for.
      * @return {@code true} if the attribute is contained in the state specs.
      */
-    @ApiStatus.Internal
     public static boolean containsAttribute(@Nonnull int[][] stateSpecs, int attr) {
         for (int[] spec : stateSpecs) {
             for (int specAttr : spec) {

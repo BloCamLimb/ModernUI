@@ -589,7 +589,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    protected boolean dispatchGenericPointerEvent(MotionEvent event) {
+    protected boolean dispatchGenericPointerEvent(@Nonnull MotionEvent event) {
         // Send the event to the child under the pointer.
         final int childrenCount = mChildrenCount;
         if (childrenCount != 0) {
@@ -2900,6 +2900,16 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                     child.refreshDrawableState();
                 }
             }
+        }
+    }
+
+    @Override
+    public void jumpDrawablesToCurrentState() {
+        super.jumpDrawablesToCurrentState();
+        final View[] children = mChildren;
+        final int count = mChildrenCount;
+        for (int i = 0; i < count; i++) {
+            children[i].jumpDrawablesToCurrentState();
         }
     }
 

@@ -1930,7 +1930,7 @@ public class ListView extends AbsListView {
             if (isAttachedToWindow
                     && (((AbsListView.LayoutParams) child.getLayoutParams()).scrappedFromPosition)
                     != position) {
-                //child.jumpDrawablesToCurrentState();
+                child.jumpDrawablesToCurrentState();
             }
         } else {
             p.forceAdd = false;

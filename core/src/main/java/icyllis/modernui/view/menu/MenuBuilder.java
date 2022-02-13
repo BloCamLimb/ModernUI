@@ -20,9 +20,9 @@ package icyllis.modernui.view.menu;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.view.*;
-import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
@@ -102,7 +102,7 @@ public class MenuBuilder implements Menu {
      * extra information that should be passed along.  This is the current menu info that
      * should be set on all items added to this menu.
      */
-    private ContextMenuInfo mCurrentMenuInfo;
+    private Object mCurrentMenuInfo;
 
     /**
      * Header title for menu types that have a header (context and submenus)
@@ -262,7 +262,7 @@ public class MenuBuilder implements Menu {
      * Adds an item to the menu.  The other add methods funnel to this.
      */
     @Nonnull
-    private MenuItem addInternal(int group, int id, int categoryOrder, CharSequence title) {
+    private MenuItemImpl addInternal(int group, int id, int categoryOrder, @Nullable CharSequence title) {
         final int ordering = getOrdering(categoryOrder);
 
         final MenuItemImpl item = new MenuItemImpl(this, group, id, categoryOrder, ordering, title,
@@ -279,24 +279,28 @@ public class MenuBuilder implements Menu {
         return item;
     }
 
+    @Nonnull
     @Override
-    public MenuItem add(CharSequence title) {
-        return addInternal(0, 0, 0, title);
+    public MenuItem add(@Nullable CharSequence title) {
+        return addInternal(NONE, NONE, NONE, title);
     }
 
+    @Nonnull
     @Override
-    public MenuItem add(int group, int id, int categoryOrder, CharSequence title) {
+    public MenuItem add(int group, int id, int categoryOrder, @Nullable CharSequence title) {
         return addInternal(group, id, categoryOrder, title);
     }
 
+    @Nonnull
     @Override
-    public SubMenu addSubMenu(CharSequence title) {
-        return addSubMenu(0, 0, 0, title);
+    public SubMenu addSubMenu(@Nullable CharSequence title) {
+        return addSubMenu(NONE, NONE, NONE, title);
     }
 
+    @Nonnull
     @Override
-    public SubMenu addSubMenu(int group, int id, int categoryOrder, CharSequence title) {
-        final MenuItemImpl item = (MenuItemImpl) addInternal(group, id, categoryOrder, title);
+    public SubMenu addSubMenu(int group, int id, int categoryOrder, @Nullable CharSequence title) {
+        final MenuItemImpl item = addInternal(group, id, categoryOrder, title);
         final SubMenuBuilder subMenu = new SubMenuBuilder(this, item);
         item.setSubMenu(subMenu);
 
@@ -438,6 +442,7 @@ public class MenuBuilder implements Menu {
         return false;
     }
 
+    @Nullable
     @Override
     public MenuItem findItem(int id) {
         final int size = size();
@@ -500,13 +505,14 @@ public class MenuBuilder implements Menu {
     /**
      * {@inheritDoc}
      */
+    @Nonnull
     @Override
     public MenuItem getItem(int index) {
         return mItems.get(index);
     }
 
     @Override
-    public boolean isShortcutKey(int keyCode, KeyEvent event) {
+    public boolean isShortcutKey(int keyCode, @Nonnull KeyEvent event) {
         return findItemWithShortcutForKey(event) != null;
     }
 
@@ -596,7 +602,7 @@ public class MenuBuilder implements Menu {
     }
 
     @Override
-    public boolean performShortcut(int keyCode, KeyEvent event, int flags) {
+    public boolean performShortcut(int keyCode, @Nonnull KeyEvent event, int flags) {
         final MenuItemImpl item = findItemWithShortcutForKey(event);
 
         boolean handled = false;
@@ -908,7 +914,7 @@ public class MenuBuilder implements Menu {
         onItemsChanged(false);
     }
 
-    private void setHeaderInternal(final CharSequence title, final Drawable icon, final View view) {
+    private void setHeaderInternal(@Nullable CharSequence title, @Nullable Drawable icon, @Nullable View view) {
         if (view != null) {
             mHeaderView = view;
 
@@ -996,7 +1002,7 @@ public class MenuBuilder implements Menu {
      *
      * @param menuInfo The extra menu information to add.
      */
-    public void setCurrentMenuInfo(ContextMenuInfo menuInfo) {
+    public void setCurrentMenuInfo(Object menuInfo) {
         mCurrentMenuInfo = menuInfo;
     }
 
