@@ -25,6 +25,7 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.Spannable;
 import icyllis.modernui.text.Spanned;
@@ -175,11 +176,24 @@ public class TestLinearLayout extends LinearLayout {
                 //textField.setSingleLine();
                 //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 textField.setPadding(dp(12), 0, dp(12), 0);
+            } else if (i == 5) {
+                RadioGroup group = new RadioGroup();
+                v = group;
+                for (int j = 0; j < 3; j++) {
+                    RadioButton button = new MaterialRadioButton();
+                    button.setText("Item " + j);
+                    button.setTextSize(16);
+                    button.setId(9 + j);
+                    group.addView(button);
+                }
+                p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
             } else {
                 v = new CView(i);
                 p = new LinearLayout.LayoutParams(dp(200), dp(50));
             }
             v.setClickable(true);
+            p.gravity = Gravity.CENTER;
             addView(v, p);
         }
         addView(new DView(TimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(dp(120),

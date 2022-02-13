@@ -20,7 +20,6 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.util.ColorStateList;
-import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -508,7 +507,7 @@ public interface MenuItem {
      * menu item to the menu. This can be null.
      * @see View.OnCreateContextMenuListener
      */
-    ContextMenuInfo getMenuInfo();
+    Object getMenuInfo();
 
     /**
      * Sets how this item should display in the presence of an Action Bar.

@@ -1931,7 +1931,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * Sets the list of input filters that will be used if the buffer is
      * Editable. Has no effect otherwise.
      */
-    public void setFilters(@Nonnull InputFilter[] filters) {
+    public void setFilters(@Nonnull InputFilter... filters) {
         mFilters = filters;
 
         if (mText instanceof Editable) {
@@ -2100,6 +2100,18 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             }
         }
         return verified;
+    }
+
+    @Override
+    public void jumpDrawablesToCurrentState() {
+        super.jumpDrawablesToCurrentState();
+        if (mDrawables != null) {
+            for (Drawable dr : mDrawables.mShowing) {
+                if (dr != null) {
+                    dr.jumpToCurrentState();
+                }
+            }
+        }
     }
 
     /**
@@ -2273,6 +2285,13 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
     }
 
+    /**
+     * @hide
+     */
+    public int getHorizontalOffsetForDrawables() {
+        return 0;
+    }
+
     @Override
     protected void onDraw(@Nonnull Canvas canvas) {
         final int compoundPaddingLeft = getCompoundPaddingLeft();
@@ -2292,12 +2311,18 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             int vspace = getHeight() - compoundPaddingBottom - compoundPaddingTop;
             int hspace = getWidth() - compoundPaddingRight - compoundPaddingLeft;
 
+            final boolean isLayoutRtl = isLayoutRtl();
+            int offset = getHorizontalOffsetForDrawables();
+            final int leftOffset = isLayoutRtl ? 0 : offset;
+            final int rightOffset = isLayoutRtl ? offset : 0;
+
             // IMPORTANT: The coordinates computed are also used in invalidateDrawable()
             // Make sure to update invalidateDrawable() when changing this code.
             if (dr.mShowing[Drawables.LEFT] != null) {
                 canvas.save();
-                canvas.translate(scrollX + mPaddingLeft,
-                        scrollY + compoundPaddingTop + (vspace - dr.mDrawableHeightLeft) / 2f);
+                offset = (vspace - dr.mDrawableHeightLeft) / 2;
+                canvas.translate(scrollX + mPaddingLeft + leftOffset,
+                        scrollY + compoundPaddingTop + offset);
                 dr.mShowing[Drawables.LEFT].draw(canvas);
                 canvas.restore();
             }
@@ -2306,9 +2331,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             // Make sure to update invalidateDrawable() when changing this code.
             if (dr.mShowing[Drawables.RIGHT] != null) {
                 canvas.save();
+                offset = (vspace - dr.mDrawableHeightRight) / 2;
                 canvas.translate(scrollX + getWidth() - mPaddingRight
-                                - dr.mDrawableSizeRight,
-                        scrollY + compoundPaddingTop + (vspace - dr.mDrawableHeightRight) / 2f);
+                                - dr.mDrawableSizeRight - rightOffset,
+                        scrollY + compoundPaddingTop + offset);
                 dr.mShowing[Drawables.RIGHT].draw(canvas);
                 canvas.restore();
             }
@@ -2317,8 +2343,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             // Make sure to update invalidateDrawable() when changing this code.
             if (dr.mShowing[Drawables.TOP] != null) {
                 canvas.save();
+                offset = (hspace - dr.mDrawableWidthTop) / 2;
                 canvas.translate(scrollX + compoundPaddingLeft
-                        + (hspace - dr.mDrawableWidthTop) / 2f, scrollY + mPaddingTop);
+                        + offset, scrollY + mPaddingTop);
                 dr.mShowing[Drawables.TOP].draw(canvas);
                 canvas.restore();
             }
@@ -2327,8 +2354,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             // Make sure to update invalidateDrawable() when changing this code.
             if (dr.mShowing[Drawables.BOTTOM] != null) {
                 canvas.save();
-                canvas.translate(scrollX + compoundPaddingLeft
-                                + (hspace - dr.mDrawableWidthBottom) / 2f,
+                offset = (hspace - dr.mDrawableWidthBottom) / 2;
+                canvas.translate(scrollX + compoundPaddingLeft + offset,
                         scrollY + getHeight() - mPaddingBottom - dr.mDrawableSizeBottom);
                 dr.mShowing[Drawables.BOTTOM].draw(canvas);
                 canvas.restore();

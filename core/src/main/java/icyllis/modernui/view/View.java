@@ -36,7 +36,6 @@ import icyllis.modernui.math.RectF;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.util.*;
-import icyllis.modernui.view.ContextMenu.ContextMenuInfo;
 import icyllis.modernui.view.menu.MenuBuilder;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -6811,9 +6810,9 @@ public class View implements Drawable.Callback {
 
         // Anything that started animating right before detach should already
         // be in its final state when re-attached.
-        /*jumpDrawablesToCurrentState();
+        jumpDrawablesToCurrentState();
 
-        cleanupDraw();*/
+        /*cleanupDraw();*/
 
         ListenerInfo li = mListenerInfo;
         final CopyOnWriteArrayList<OnAttachStateChangeListener> listeners =
@@ -6840,8 +6839,11 @@ public class View implements Drawable.Callback {
      *
      * @see #onDetachedFromWindow()
      */
+    @CallSuper
     protected void onAttachedToWindow() {
         mPrivateFlags3 &= ~PFLAG3_IS_LAID_OUT;
+
+        jumpDrawablesToCurrentState();
     }
 
     /**
@@ -8031,7 +8033,7 @@ public class View implements Drawable.Callback {
      * @see #LAYOUT_DIRECTION_LTR
      * @see #LAYOUT_DIRECTION_RTL
      */
-    public void onResolveDrawables(int layoutDirection) {
+    public void onResolveDrawables(@ResolvedLayoutDir int layoutDirection) {
     }
 
     /**
@@ -8310,10 +8312,10 @@ public class View implements Drawable.Callback {
             mStateListAnimator.setState(state);
         }
 
-        /*if (!isAggregatedVisible()) {
+        if (!isAggregatedVisible()) {
             // If we're not visible, skip any animated changes
             jumpDrawablesToCurrentState();
-        }*/
+        }
 
         if (changed) {
             invalidate();
@@ -8430,6 +8432,29 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Call {@link Drawable#jumpToCurrentState() Drawable.jumpToCurrentState()}
+     * on all Drawable objects associated with this view.
+     * <p>
+     * Also calls {@link StateListAnimator#jumpToCurrentState()} if there is a StateListAnimator
+     * attached to this view.
+     */
+    @CallSuper
+    public void jumpDrawablesToCurrentState() {
+        if (mBackground != null) {
+            mBackground.jumpToCurrentState();
+        }
+        if (mStateListAnimator != null) {
+            mStateListAnimator.jumpToCurrentState();
+        }
+        if (mDefaultFocusHighlight != null) {
+            mDefaultFocusHighlight.jumpToCurrentState();
+        }
+        if (mForegroundInfo != null && mForegroundInfo.mDrawable != null) {
+            mForegroundInfo.mDrawable.jumpToCurrentState();
+        }
+    }
+
+    /**
      * Set the background to a given Drawable, or remove the background. If the
      * background has padding, this View's padding is set to the background's
      * padding. However, when a background is removed, this View's padding isn't
@@ -8537,6 +8562,7 @@ public class View implements Drawable.Callback {
      * @return The drawable used as the background for this view, if any.
      * @see #setBackground(Drawable)
      */
+    @Nullable
     public Drawable getBackground() {
         return mBackground;
     }
@@ -8548,6 +8574,7 @@ public class View implements Drawable.Callback {
      * @return a Drawable or null if no foreground was set
      * @see #onDrawForeground(Canvas)
      */
+    @Nullable
     public Drawable getForeground() {
         return mForegroundInfo != null ? mForegroundInfo.mDrawable : null;
     }
@@ -8557,7 +8584,7 @@ public class View implements Drawable.Callback {
      *
      * @param foreground the Drawable to be drawn on top of the children
      */
-    public void setForeground(Drawable foreground) {
+    public void setForeground(@Nullable Drawable foreground) {
         if (mForegroundInfo == null) {
             if (foreground == null) {
                 // Nothing to do.
@@ -9336,7 +9363,7 @@ public class View implements Drawable.Callback {
      * @param event The motion event to be dispatched.
      * @return True if the event was handled by the view, false otherwise.
      */
-    protected boolean dispatchGenericPointerEvent(MotionEvent event) {
+    protected boolean dispatchGenericPointerEvent(@Nonnull MotionEvent event) {
         return false;
     }
 
@@ -10421,7 +10448,7 @@ public class View implements Drawable.Callback {
         boolean handled = false;
         ListenerInfo li = mListenerInfo;
         if (li != null && li.mOnContextClickListener != null) {
-            handled = li.mOnContextClickListener.onContextClick(View.this);
+            handled = li.mOnContextClickListener.onContextClick(this);
         }
         if (handled) {
             performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK);
@@ -10437,7 +10464,8 @@ public class View implements Drawable.Callback {
      * @hide
      */
     protected boolean performButtonActionOnTouchDown(@Nonnull MotionEvent event) {
-        if ((event.getButtonState() & MotionEvent.BUTTON_SECONDARY) != 0) {
+        // Added: check if the view is context clickable
+        if (isContextClickable() && (event.getButtonState() & MotionEvent.BUTTON_SECONDARY) != 0) {
             showContextMenu(event.getX(), event.getY());
             mPrivateFlags |= PFLAG_CANCEL_NEXT_UP_EVENT;
             return true;
@@ -10510,7 +10538,7 @@ public class View implements Drawable.Callback {
      * @param menu The context menu to populate
      */
     public final void createContextMenu(@Nonnull ContextMenu menu) {
-        ContextMenuInfo menuInfo = getContextMenuInfo();
+        Object menuInfo = getContextMenuInfo();
 
         // Sets the current menu info so all items added to menu will have
         // my extra info set.
@@ -10534,14 +10562,14 @@ public class View implements Drawable.Callback {
     /**
      * Views should implement this if they have extra information to associate
      * with the context menu. The return result is supplied as a parameter to
-     * the {@link OnCreateContextMenuListener#onCreateContextMenu(ContextMenu, View, ContextMenuInfo)}
+     * the {@link OnCreateContextMenuListener#onCreateContextMenu(ContextMenu, View, Object)}
      * callback.
      *
      * @return Extra information about the item for which the context menu
      * should be shown. This information will vary across different
      * subclasses of View.
      */
-    protected ContextMenuInfo getContextMenuInfo() {
+    protected Object getContextMenuInfo() {
         return null;
     }
 
@@ -11798,7 +11826,7 @@ public class View implements Drawable.Callback {
          *                 context menu should be shown. This information will vary
          *                 depending on the class of v.
          */
-        void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo);
+        void onCreateContextMenu(ContextMenu menu, View v, Object menuInfo);
     }
 
     /**

@@ -19,7 +19,8 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.widget.AdapterView;
+
+import javax.annotation.Nonnull;
 
 /**
  * Extension of {@link Menu} for context menus providing functionality to modify
@@ -30,7 +31,7 @@ import icyllis.modernui.widget.AdapterView;
  * <div class="special reference">
  * <h3>Developer Guides</h3>
  * <p>For information about creating menus, read the
- * <a href="https://developer.android.com/guide/topics/ui/menus.html">Menus</a> developer guide.</p>
+ * <a href="https://developer.android.com/guide/topics/ui/menus">Menus</a> developer guide.</p>
  * </div>
  */
 public interface ContextMenu extends Menu {
@@ -41,6 +42,7 @@ public interface ContextMenu extends Menu {
      * @param title The character sequence used for the title.
      * @return This ContextMenu so additional setters can be called.
      */
+    @Nonnull
     ContextMenu setHeaderTitle(CharSequence title);
 
     /**
@@ -50,6 +52,7 @@ public interface ContextMenu extends Menu {
      * @param icon The {@link Drawable} used for the icon.
      * @return This ContextMenu so additional setters can be called.
      */
+    @Nonnull
     ContextMenu setHeaderIcon(Drawable icon);
 
     /**
@@ -60,18 +63,11 @@ public interface ContextMenu extends Menu {
      * @param view The {@link View} used for the header.
      * @return This ContextMenu so additional setters can be called.
      */
+    @Nonnull
     ContextMenu setHeaderView(View view);
 
     /**
      * Clears the header of the context menu.
      */
     void clearHeader();
-
-    /**
-     * Additional information regarding the creation of the context menu.  For example,
-     * {@link AdapterView}s use this to pass the exact item position within the adapter
-     * that initiated the context menu.
-     */
-    interface ContextMenuInfo {
-    }
 }

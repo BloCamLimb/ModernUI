@@ -23,6 +23,10 @@ public final class R {
     public static final class attr {
 
         /**
+         * State identifier indicating that the object is currently checked.
+         */
+        public static final int state_checked = 0x010100a0;
+        /**
          * State identifier indicating the popup will be above the anchor.
          */
         public static final int state_above_anchor = 0x010100aa;

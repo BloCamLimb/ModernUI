@@ -20,6 +20,8 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 
+import javax.annotation.Nonnull;
+
 /**
  * Subclass of {@link Menu} for sub menus.
  * <p>
@@ -28,7 +30,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
  * <div class="special reference">
  * <h3>Developer Guides</h3>
  * <p>For information about creating menus, read the
- * <a href="https://developer.android.com/guide/topics/ui/menus.html">Menus</a> developer guide.</p>
+ * <a href="https://developer.android.com/guide/topics/ui/menus">Menus</a> developer guide.</p>
  * </div>
  */
 public interface SubMenu extends Menu {
@@ -39,6 +41,7 @@ public interface SubMenu extends Menu {
      * @param title The character sequence used for the title.
      * @return This SubMenu so additional setters can be called.
      */
+    @Nonnull
     SubMenu setHeaderTitle(CharSequence title);
 
     /**
@@ -48,6 +51,7 @@ public interface SubMenu extends Menu {
      * @param icon The {@link Drawable} used for the icon.
      * @return This SubMenu so additional setters can be called.
      */
+    @Nonnull
     SubMenu setHeaderIcon(Drawable icon);
 
     /**
@@ -58,6 +62,7 @@ public interface SubMenu extends Menu {
      * @param view The {@link View} used for the header.
      * @return This SubMenu so additional setters can be called.
      */
+    @Nonnull
     SubMenu setHeaderView(View view);
 
     /**
@@ -72,6 +77,7 @@ public interface SubMenu extends Menu {
      * @return This SubMenu so additional setters can be called.
      * @see MenuItem#setIcon(Drawable)
      */
+    @Nonnull
     SubMenu setIcon(Drawable icon);
 
     /**
@@ -80,5 +86,6 @@ public interface SubMenu extends Menu {
      *
      * @return The {@link MenuItem} that launches the submenu when invoked.
      */
+    @Nonnull
     MenuItem getItem();
 }
