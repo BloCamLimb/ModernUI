@@ -79,7 +79,6 @@ import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
-import org.checkerframework.checker.guieffect.qual.UI;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -201,7 +200,6 @@ public final class UIManager implements LifecycleOwner {
 
     /// Input Event \\\
 
-    private MotionEvent mPendingMouseEvent;
     private int mButtonState;
 
     private PointerIcon mOldCursor = PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT);
@@ -388,7 +386,7 @@ public final class UIManager implements LifecycleOwner {
             mElapsedTimeMillis = 0;
         }
         if (mScreen != next && mScreen != null) {
-            onCursorPos();
+            onHoverMove(false);
         }
         // for non-mui screens
         if (mScreen == null) {
@@ -430,6 +428,8 @@ public final class UIManager implements LifecycleOwner {
         suppressLayoutTransition();
 
         mViewRoot.setView(mDecor);
+
+        mDecor.getViewTreeObserver().addOnScrollChangedListener(() -> onHoverMove(false));
 
         mFragmentLifecycleRegistry = new LifecycleRegistry(this);
         mViewModelStore = new ViewModelStore();
@@ -502,11 +502,12 @@ public final class UIManager implements LifecycleOwner {
     /**
      * From screen
      *
+     * @param natural natural or synthetic
      * @see org.lwjgl.glfw.GLFWCursorPosCallbackI
      * @see net.minecraft.client.MouseHandler
      * @see MuiScreen
      */
-    void onCursorPos() {
+    void onHoverMove(boolean natural) {
         final long now = ArchCore.timeNanos();
         float x = (float) minecraft.mouseHandler.xpos();
         float y = (float) minecraft.mouseHandler.ypos();
@@ -514,21 +515,19 @@ public final class UIManager implements LifecycleOwner {
                 x, y, 0);
         mViewRoot.enqueueInputEvent(event);
         //mPendingRepostCursorEvent = false;
-        if (mButtonState > 0) {
+        if (natural && mButtonState > 0) {
             event = MotionEvent.obtain(now, MotionEvent.ACTION_MOVE, 0, x, y, 0, mButtonState, 0);
             mViewRoot.enqueueInputEvent(event);
         }
     }
 
     /**
-     * Intercept the Forge event
-     *
      * @see org.lwjgl.glfw.GLFWMouseButtonCallbackI
      * @see net.minecraft.client.MouseHandler
      * @see net.minecraftforge.client.event.InputEvent
      */
     @SubscribeEvent
-    void onMouseButton(@Nonnull InputEvent.RawMouseEvent event) {
+    void onPostMouseInput(@Nonnull InputEvent.MouseInputEvent event) {
         // We should ensure (overlay == null && screen != null)
         // and the screen must be a mui screen
         if (minecraft.getOverlay() == null && mScreen != null) {
@@ -548,20 +547,10 @@ public final class UIManager implements LifecycleOwner {
                     MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP;
             if ((action == MotionEvent.ACTION_DOWN && (buttonState ^ actionButton) == 0)
                     || (action == MotionEvent.ACTION_UP && buttonState == 0)) {
-                if (mPendingMouseEvent != null) {
-                    mPendingMouseEvent.recycle();
-                }
-                mPendingMouseEvent = MotionEvent.obtain(now, action, actionButton,
+                MotionEvent ev = MotionEvent.obtain(now, action, actionButton,
                         x, y, event.getModifiers(), buttonState, 0);
+                mViewRoot.enqueueInputEvent(ev);
             }
-        }
-    }
-
-    void onMouseButton() {
-        // Only response at most one mouse button event each frame
-        if (mPendingMouseEvent != null) {
-            mViewRoot.enqueueInputEvent(mPendingMouseEvent);
-            mPendingMouseEvent = null;
         }
     }
 
@@ -1041,9 +1030,9 @@ public final class UIManager implements LifecycleOwner {
 
         @Override
         public void playSoundEffect(int effectId) {
-            if (effectId == SoundEffectConstants.CLICK) {
+            /*if (effectId == SoundEffectConstants.CLICK) {
                 minecraft.tell(() -> minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MuiRegistries.BUTTON_CLICK_1, 1.0f)));
-            }
+            }*/
         }
 
         @Override

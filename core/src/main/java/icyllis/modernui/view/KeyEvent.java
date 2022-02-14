@@ -456,45 +456,11 @@ public class KeyEvent extends InputEvent {
      * @return the alphabetic character represented by the key
      */
     public final char getMappedChar() {
-        return switch (mKeyCode) {
-            case KEY_0, KEY_KP_0 -> '0';
-            case KEY_1, KEY_KP_1 -> '1';
-            case KEY_2, KEY_KP_2 -> '2';
-            case KEY_3, KEY_KP_3 -> '3';
-            case KEY_4, KEY_KP_4 -> '4';
-            case KEY_5, KEY_KP_5 -> '5';
-            case KEY_6, KEY_KP_6 -> '6';
-            case KEY_7, KEY_KP_7 -> '7';
-            case KEY_8, KEY_KP_8 -> '8';
-            case KEY_9, KEY_KP_9 -> '9';
-            case KEY_A -> 'A';
-            case KEY_B -> 'B';
-            case KEY_C -> 'C';
-            case KEY_D -> 'D';
-            case KEY_E -> 'E';
-            case KEY_F -> 'F';
-            case KEY_G -> 'G';
-            case KEY_H -> 'H';
-            case KEY_I -> 'I';
-            case KEY_J -> 'J';
-            case KEY_K -> 'K';
-            case KEY_L -> 'L';
-            case KEY_M -> 'M';
-            case KEY_N -> 'N';
-            case KEY_O -> 'O';
-            case KEY_P -> 'P';
-            case KEY_Q -> 'Q';
-            case KEY_R -> 'R';
-            case KEY_S -> 'S';
-            case KEY_T -> 'T';
-            case KEY_U -> 'U';
-            case KEY_V -> 'V';
-            case KEY_W -> 'W';
-            case KEY_X -> 'X';
-            case KEY_Y -> 'Y';
-            case KEY_Z -> 'Z';
-            default -> 0;
-        };
+        String s = GLFW.glfwGetKeyName(mKeyCode, mScanCode);
+        if (s != null && s.length() == 1) {
+            return s.charAt(0);
+        }
+        return 0;
     }
 
     /**

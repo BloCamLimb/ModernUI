@@ -37,6 +37,10 @@ import javax.annotation.Nullable;
  */
 public abstract class CompoundButton extends Button implements Checkable {
 
+    protected static final int[] CHECKED_STATE_SET = {
+            R.attr.state_checked
+    };
+
     private boolean mChecked;
     private boolean mBroadcasting;
 
@@ -45,10 +49,6 @@ public abstract class CompoundButton extends Button implements Checkable {
     private boolean mHasButtonTint = false;
 
     private OnCheckedChangeListener mOnCheckedChangeListener;
-
-    public static final int[] CHECKED_STATE_SET = {
-            R.attr.state_checked
-    };
 
     public CompoundButton() {
         setGravity(Gravity.CENTER_VERTICAL | Gravity.START);

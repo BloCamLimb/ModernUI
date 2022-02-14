@@ -97,19 +97,17 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        UIManager.sInstance.onCursorPos();
+        UIManager.sInstance.onHoverMove(true);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int mouseButton) {
-        UIManager.sInstance.onMouseButton();
-        return true;
+        return false;
     }
 
     @Override
     public boolean mouseReleased(double mouseX, double mouseY, int mouseButton) {
-        UIManager.sInstance.onMouseButton();
-        return true;
+        return false;
     }
 
     @Override

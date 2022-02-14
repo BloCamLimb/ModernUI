@@ -72,7 +72,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
         return mState.hasFocusStateSpecified();
     }
 
-    @Nonnull
+    @Nullable
     @Override
     public Drawable getCurrent() {
         return mColorDrawable;

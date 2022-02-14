@@ -1082,8 +1082,8 @@ public class Matrix4 implements Cloneable {
      *
      * @param t the translation vector
      */
-    public void setToTranslation(@Nonnull Vector3 t) {
-        setToTranslation(t.x, t.y, t.z);
+    public void setTranslate(@Nonnull Vector3 t) {
+        setTranslate(t.x, t.y, t.z);
     }
 
     /**
@@ -1093,7 +1093,7 @@ public class Matrix4 implements Cloneable {
      * @param y the y-component of the translation
      * @param z the z-component of the translation
      */
-    public void setToTranslation(float x, float y, float z) {
+    public void setTranslate(float x, float y, float z) {
         m11 = 1.0f;
         m12 = 0.0f;
         m13 = 0.0f;
@@ -1207,8 +1207,8 @@ public class Matrix4 implements Cloneable {
      *
      * @param s the scale vector
      */
-    public void setToScaling(@Nonnull Vector3 s) {
-        setToScaling(s.x, s.y, s.z);
+    public void setScale(@Nonnull Vector3 s) {
+        setScale(s.x, s.y, s.z);
     }
 
     /**
@@ -1218,7 +1218,7 @@ public class Matrix4 implements Cloneable {
      * @param y the y-component of the scale
      * @param z the z-component of the scale
      */
-    public void setToScaling(float x, float y, float z) {
+    public void setScale(float x, float y, float z) {
         m11 = x;
         m12 = 0.0f;
         m13 = 0.0f;

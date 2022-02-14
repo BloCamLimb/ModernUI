@@ -84,24 +84,23 @@ public class MenuAdapter extends BaseAdapter {
     @Nonnull
     @Override
     public View getView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
-        /*if (convertView == null) {
-            convertView = new ListMenuItemView();
+        final ListMenuItemView view;
+        if (convertView == null) {
+            view = new ListMenuItemView();
+        } else {
+            view = (ListMenuItemView) convertView;
         }
 
         final int currGroupId = getItem(position).getGroupId();
-        final int prevGroupId =
-                position - 1 >= 0 ? getItem(position - 1).getGroupId() : currGroupId;
+        final int prevGroupId = position - 1 >= 0 ? getItem(position - 1).getGroupId() : currGroupId;
         // Show a divider if adjacent items are in different groups.
-        ((ListMenuItemView) convertView)
-                .setGroupDividerEnabled(mAdapterMenu.isGroupDividerEnabled()
-                        && (currGroupId != prevGroupId));
+        view.setGroupDividerEnabled(mAdapterMenu.isGroupDividerEnabled() && (currGroupId != prevGroupId));
 
-        MenuView.ItemView itemView = (MenuView.ItemView) convertView;
         if (mForceShowIcon) {
-            ((ListMenuItemView) convertView).setForceShowIcon(true);
+            view.setForceShowIcon(true);
         }
-        itemView.initialize(getItem(position), 0);*/
-        return convertView;
+        view.initialize(getItem(position), 0);
+        return view;
     }
 
     void findExpandedIndex() {

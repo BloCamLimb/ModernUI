@@ -280,6 +280,37 @@ public final class MenuItemImpl implements MenuItem {
     }
 
     /**
+     * @return The label to show for the shortcut. This includes the chording
+     * key (for example 'Menu+a'). Also, any non-human readable
+     * characters should be human-readable (for example 'Menu+enter').
+     */
+    @Nonnull
+    String getShortcutLabel() {
+
+        char shortcut = getShortcut();
+        if (shortcut == 0) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder();
+
+        final int modifiers =
+                mMenu.isQwertyMode() ? mShortcutAlphabeticModifiers : mShortcutNumericModifiers;
+        appendModifier(sb, modifiers, KeyEvent.META_CTRL_ON, "Ctrl + ");
+        appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "Alt + ");
+        appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "Shirt + ");
+
+        sb.append(shortcut);
+
+        return sb.toString();
+    }
+
+    private static void appendModifier(StringBuilder sb, int mask, int modifier, String label) {
+        if ((mask & modifier) == modifier) {
+            sb.append(label);
+        }
+    }
+
+    /**
      * @return Whether this menu item should be showing shortcuts (depends on
      * whether the menu should show shortcuts and whether this item has
      * a shortcut defined)

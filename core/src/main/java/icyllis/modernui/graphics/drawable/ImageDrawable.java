@@ -44,7 +44,7 @@ public class ImageDrawable extends Drawable {
     private ImageState mImageState;
     private int mBlendColor;
 
-    private boolean mFullSrcRect = true;
+    private boolean mFullImage = true;
     private boolean mDstRectAndInsetsDirty = true;
     private boolean mMutated;
 
@@ -135,7 +135,7 @@ public class ImageDrawable extends Drawable {
                 invalidateSelf();
             }
         }
-        mFullSrcRect = false;
+        mFullImage = false;
     }
 
     /**
@@ -145,14 +145,14 @@ public class ImageDrawable extends Drawable {
      */
     public void setSrcRect(@Nullable Rect srcRect) {
         if (srcRect == null) {
-            mFullSrcRect = true;
+            mFullImage = true;
         } else {
             if (mSrcRect == null) {
                 mSrcRect = srcRect.copy();
             } else {
                 mSrcRect.set(srcRect);
             }
-            mFullSrcRect = false;
+            mFullImage = false;
         }
     }
 
@@ -223,10 +223,10 @@ public class ImageDrawable extends Drawable {
         final Paint paint = state.mPaint;
 
         final int restoreAlpha;
-        if (state.mBaseAlpha != 1.0f) {
-            final Paint p = getPaint();
-            restoreAlpha = p.getAlpha();
-            p.setAlpha((int) (restoreAlpha * state.mBaseAlpha + 0.5f));
+        if (mBlendColor >>> 24 != 0xFF) {
+            restoreAlpha = paint.getAlpha();
+            paint.setColor(mBlendColor);
+            paint.setAlpha(restoreAlpha * (mBlendColor >>> 24) >>> 8);
         } else {
             restoreAlpha = -1;
         }
@@ -241,7 +241,7 @@ public class ImageDrawable extends Drawable {
             canvas.scale(-1.0f, 1.0f);
         }
 
-        canvas.drawImage(image, mFullSrcRect ? null : mSrcRect, mDstRect, paint);
+        canvas.drawImage(image, mFullImage ? null : mSrcRect, mDstRect, paint);
 
         if (needMirroring) {
             canvas.restore();
@@ -267,10 +267,15 @@ public class ImageDrawable extends Drawable {
     }
 
     @Override
-    public void setTintList(ColorStateList tint) {
+    public void setTintList(@Nullable ColorStateList tint) {
         final ImageState state = mImageState;
         if (state.mTint != tint) {
             state.mTint = tint;
+            if (tint == null) {
+                mBlendColor = ~0;
+            } else {
+                mBlendColor = tint.getColorForState(getState(), ~0);
+            }
             invalidateSelf();
         }
     }
@@ -301,6 +306,7 @@ public class ImageDrawable extends Drawable {
     protected boolean onStateChange(@Nonnull int[] stateSet) {
         final ImageState state = mImageState;
         if (state.mTint != null) {
+            mBlendColor = state.mTint.getColorForState(stateSet, ~0);
             return true;
         }
         return false;
@@ -340,7 +346,6 @@ public class ImageDrawable extends Drawable {
         ColorStateList mTint = null;
 
         int mGravity = Gravity.FILL;
-        float mBaseAlpha = 1.0f;
 
         boolean mAutoMirrored = false;
 
@@ -353,7 +358,6 @@ public class ImageDrawable extends Drawable {
             mImage = imageState.mImage;
             mTint = imageState.mTint;
             mGravity = imageState.mGravity;
-            mBaseAlpha = imageState.mBaseAlpha;
             mPaint = new Paint(imageState.mPaint);
             mAutoMirrored = imageState.mAutoMirrored;
         }
@@ -384,6 +388,10 @@ public class ImageDrawable extends Drawable {
      * after inflating or applying a theme.
      */
     private void updateLocalState() {
-        mBlendColor = mImageState.mTint.getColorForState(getState(), ~0);
+        if (mImageState.mTint == null) {
+            mBlendColor = ~0;
+        } else {
+            mBlendColor = mImageState.mTint.getColorForState(getState(), ~0);
+        }
     }
 }

@@ -21,7 +21,6 @@ package icyllis.modernui.material;
 import icyllis.modernui.R;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.util.ColorStateList;
@@ -29,23 +28,23 @@ import icyllis.modernui.util.StateSet;
 import icyllis.modernui.widget.RadioButton;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
+/**
+ * A fake material design.
+ */
 public class MaterialRadioButton extends RadioButton {
 
-    private static final int[][] ENABLED_CHECKED_STATES =
-            new int[][]{
-                    new int[]{R.attr.state_enabled, R.attr.state_checked}, // [0]
-                    new int[]{R.attr.state_enabled, -R.attr.state_checked}, // [1]
-                    new int[]{-R.attr.state_enabled} // [2]
-            };
+    private static final int[][] ENABLED_CHECKED_STATES = {
+            new int[]{R.attr.state_enabled, R.attr.state_checked}, // [0]
+            new int[]{R.attr.state_enabled, -R.attr.state_checked}, // [1]
+            StateSet.WILD_CARD // [2]
+    };
 
-    private static final int[] COLORS =
-            new int[]{
-                    0xFFAADCF0,
-                    0xFF8A8A8A,
-                    0xFF616161
-            };
+    private static final int[] COLORS = {
+            0xFFAADCF0,
+            0xFF8A8A8A,
+            0xFF616161
+    };
 
     public MaterialRadioButton() {
         StateListDrawable drawable = new StateListDrawable();
@@ -57,76 +56,13 @@ public class MaterialRadioButton extends RadioButton {
         setButtonTintList(new ColorStateList(ENABLED_CHECKED_STATES, COLORS));
     }
 
-    private static abstract class BaseDrawable extends Drawable {
+    private static class CheckedDrawable extends MaterialDrawable {
 
-        final float mRadius;
+        private final float mRadius;
 
-        private ColorStateList mTint;
-        int mColor = ~0;
-        int mAlpha = 255;
-
-        public BaseDrawable() {
+        CheckedDrawable() {
             mRadius = dp(4);
         }
-
-        static int modulateAlpha(int paintAlpha, int alpha) {
-            int scale = alpha + (alpha >>> 7); // convert to 0..256
-            return paintAlpha * scale >>> 8;
-        }
-
-        @Override
-        public void setTintList(@Nullable ColorStateList tint) {
-            mTint = tint;
-            if (tint != null) {
-                mColor = tint.getColorForState(getState(), ~0);
-            } else {
-                mColor = ~0;
-            }
-            invalidateSelf();
-        }
-
-        @Override
-        protected boolean onStateChange(@Nonnull int[] stateSet) {
-            if (mTint != null) {
-                mColor = mTint.getColorForState(stateSet, ~0);
-                return true;
-            }
-            return false;
-        }
-
-        @Override
-        public boolean isStateful() {
-            return super.isStateful() || (mTint != null && mTint.isStateful());
-        }
-
-        @Override
-        public boolean hasFocusStateSpecified() {
-            return mTint != null && mTint.hasFocusStateSpecified();
-        }
-
-        @Override
-        public void setAlpha(int alpha) {
-            mAlpha = alpha;
-            invalidateSelf();
-        }
-
-        @Override
-        public int getAlpha() {
-            return mAlpha;
-        }
-
-        @Override
-        public int getIntrinsicWidth() {
-            return (int) (mRadius * 6);
-        }
-
-        @Override
-        public int getIntrinsicHeight() {
-            return (int) (mRadius * 6);
-        }
-    }
-
-    private static class CheckedDrawable extends BaseDrawable {
 
         @Override
         public void draw(@Nonnull Canvas canvas) {
@@ -143,9 +79,27 @@ public class MaterialRadioButton extends RadioButton {
                 canvas.drawCircle(cx, cy, mRadius * 1.6f, paint);
             }
         }
+
+        @Override
+        public int getIntrinsicWidth() {
+            // 24dp
+            return (int) (mRadius * 6);
+        }
+
+        @Override
+        public int getIntrinsicHeight() {
+            // 24dp
+            return (int) (mRadius * 6);
+        }
     }
 
-    private static class UncheckedDrawable extends BaseDrawable {
+    private static class UncheckedDrawable extends MaterialDrawable {
+
+        private final float mRadius;
+
+        UncheckedDrawable() {
+            mRadius = dp(4);
+        }
 
         @Override
         public void draw(@Nonnull Canvas canvas) {
@@ -160,6 +114,18 @@ public class MaterialRadioButton extends RadioButton {
                 paint.setStrokeWidth(mRadius * 0.5f);
                 canvas.drawCircle(cx, cy, mRadius * 1.6f, paint);
             }
+        }
+
+        @Override
+        public int getIntrinsicWidth() {
+            // 24dp
+            return (int) (mRadius * 6);
+        }
+
+        @Override
+        public int getIntrinsicHeight() {
+            // 24dp
+            return (int) (mRadius * 6);
         }
     }
 }

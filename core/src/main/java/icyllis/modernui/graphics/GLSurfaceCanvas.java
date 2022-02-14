@@ -130,6 +130,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     /**
      * Recording draw operations (sequential)
      */
+    public static final byte DRAW_TRIANGLE = 0;
     public static final byte DRAW_RECT = 1;
     public static final byte DRAW_IMAGE = 2;
     public static final byte DRAW_ROUND_RECT_FILL = 3;
@@ -455,6 +456,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         for (int op : mDrawOps) {
             switch (op) {
+                case DRAW_TRIANGLE -> {
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(COLOR_FILL.get());
+                    glDrawArrays(GL_TRIANGLES, posColorIndex, 3);
+                    posColorIndex += 3;
+                }
                 case DRAW_RECT -> {
                     bindVertexArray(POS_COLOR.getVertexArray());
                     useProgram(COLOR_FILL.get());
@@ -1300,6 +1307,35 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 .putFloat(radius - strokeRadius) // inner radius
                 .putFloat(maxRadius);
         mDrawOps.add(DRAW_CIRCLE_STROKE);
+    }
+
+    @Override
+    public void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2, @Nonnull Paint paint) {
+        float left = Math.min(Math.min(x0, x1), x2);
+        float top = Math.min(Math.min(y0, y1), y2);
+        float right = Math.max(Math.max(x0, x1), x2);
+        float bottom = Math.max(Math.max(y0, y1), y2);
+        if (quickReject(left, top, right, bottom)) {
+            return;
+        }
+        drawMatrix();
+        int color = paint.getColor();
+        ByteBuffer buffer = checkPosColorMemory();
+        byte r = (byte) ((color >> 16) & 0xff);
+        byte g = (byte) ((color >> 8) & 0xff);
+        byte b = (byte) (color & 0xff);
+        byte a = (byte) (color >>> 24);
+        // CCW
+        buffer.putFloat(x0)
+                .putFloat(y0)
+                .put(r).put(g).put(b).put(a);
+        buffer.putFloat(x1)
+                .putFloat(y1)
+                .put(r).put(g).put(b).put(a);
+        buffer.putFloat(x2)
+                .putFloat(y2)
+                .put(r).put(g).put(b).put(a);
+        mDrawOps.add(DRAW_TRIANGLE);
     }
 
     @Override

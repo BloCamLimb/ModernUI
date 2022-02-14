@@ -506,7 +506,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         }
     }
 
-    @Nonnull
+    @Nullable
     @Override
     public Drawable getCurrent() {
         return mCurrDrawable;
