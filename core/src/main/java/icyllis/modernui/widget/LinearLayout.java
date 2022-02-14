@@ -172,6 +172,7 @@ public class LinearLayout extends ViewGroup {
      * @return the divider Drawable that will divide each item.
      * @see #setDividerDrawable(Drawable)
      */
+    @Nullable
     public Drawable getDividerDrawable() {
         return mDivider;
     }
@@ -182,7 +183,7 @@ public class LinearLayout extends ViewGroup {
      * @param divider Drawable that will divide each item.
      * @see #setShowDividers(int)
      */
-    public void setDividerDrawable(Drawable divider) {
+    public void setDividerDrawable(@Nullable Drawable divider) {
         if (divider == mDivider) {
             return;
         }
@@ -198,7 +199,6 @@ public class LinearLayout extends ViewGroup {
         setWillNotDraw(!isShowingDividers());
         requestLayout();
     }
-
 
     /**
      * Set padding displayed on both ends of dividers. For a vertical layout, the padding is applied

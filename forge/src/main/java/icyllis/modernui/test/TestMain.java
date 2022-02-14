@@ -499,6 +499,8 @@ public class TestMain {
 
                 canvas.drawBezier(300, 100, 410, 210 + 100 * sin, 480, 170, paint);
 
+                canvas.drawTriangle(170, 140, 120, 90, 70, 140, paint);
+
                 canvas.save();
                 canvas.scale(10, 10);
                 canvas.drawRoundRect(0, 0, 20, 20, 5, paint);

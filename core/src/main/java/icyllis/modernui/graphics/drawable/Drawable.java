@@ -516,7 +516,7 @@ public abstract class Drawable {
      * {@link StateListDrawable} and {@link LevelListDrawable} this will be the child drawable
      * currently in use.
      */
-    @Nonnull
+    @Nullable
     public Drawable getCurrent() {
         return this;
     }

@@ -78,6 +78,8 @@ public final class R {
 
         public static final int content = 0x01020002;
 
+        public static final int title = 0x01020016;
+
         static {
             __();
         }

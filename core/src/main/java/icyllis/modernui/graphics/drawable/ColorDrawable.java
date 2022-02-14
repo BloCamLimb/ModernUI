@@ -154,7 +154,7 @@ public class ColorDrawable extends Drawable {
      */
     @Override
     public void setAlpha(int alpha) {
-        alpha += alpha >> 7;   // make it 0..256
+        alpha &= 0xFF;
         final int baseAlpha = mColorState.mBaseColor >>> 24;
         final int useAlpha = baseAlpha * alpha >> 8;
         final int useColor = (mColorState.mBaseColor << 8 >>> 8) | (useAlpha << 24);

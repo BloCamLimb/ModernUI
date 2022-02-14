@@ -20,6 +20,8 @@ package icyllis.modernui.view.menu;
 
 import icyllis.modernui.graphics.drawable.Drawable;
 
+import javax.annotation.Nonnull;
+
 /**
  * Minimal interface for a menu view.  {@link #initialize(MenuBuilder)} must be called for the
  * menu to be functional.
@@ -58,7 +60,7 @@ public interface MenuView {
          *                 {@link MenuBuilder#TYPE_ICON}, {@link MenuBuilder#TYPE_EXPANDED},
          *                 {@link MenuBuilder#TYPE_DIALOG}).
          */
-        void initialize(MenuItemImpl itemData, int menuType);
+        void initialize(@Nonnull MenuItemImpl itemData, int menuType);
 
         /**
          * Gets the item data that this view is displaying.

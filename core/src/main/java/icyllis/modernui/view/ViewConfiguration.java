@@ -202,7 +202,7 @@ public class ViewConfiguration {
      * @return converted size in pixels
      */
     public int dp(float v) {
-        return (int) (v * mViewScale + 0.5f);
+        return Math.round(v * mViewScale);
     }
 
     /**
@@ -212,7 +212,7 @@ public class ViewConfiguration {
      * @return converted size in pixels
      */
     public int sp(float v) {
-        return (int) (v * mScaledTextScale + 0.5f);
+        return Math.round(v * mScaledTextScale);
     }
 
     /**

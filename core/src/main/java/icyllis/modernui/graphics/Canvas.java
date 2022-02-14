@@ -384,7 +384,8 @@ public abstract class Canvas {
      * @param p2    the end control point of the Bézier curve
      * @param paint the paint used to draw the Bézier curve
      */
-    public final void drawBezier(@Nonnull PointF p0, @Nonnull PointF p1, @Nonnull PointF p2, @Nonnull Paint paint) {
+    public final void drawBezier(@Nonnull PointF p0, @Nonnull PointF p1, @Nonnull PointF p2,
+                                 @Nonnull Paint paint) {
         drawBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, paint);
     }
 
@@ -428,6 +429,38 @@ public abstract class Canvas {
      * @param paint  The paint used to draw the circle
      */
     public abstract void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint);
+
+    /**
+     * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
+     * <p>
+     * The Style is ignored in the paint, triangles are always "filled".
+     * The smooth radius and gradient color are ignored as well.
+     *
+     * @param p0    the first vertex
+     * @param p1    the second vertex
+     * @param p2    the last vertex
+     * @param paint the paint used to draw the triangle
+     */
+    public final void drawTriangle(@Nonnull PointF p0, @Nonnull PointF p1, @Nonnull PointF p2, @Nonnull Paint paint) {
+        drawTriangle(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, paint);
+    }
+
+    /**
+     * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
+     * <p>
+     * The Style is ignored in the paint, triangles are always "filled".
+     * The smooth radius and gradient color are ignored as well.
+     *
+     * @param x0    the x-coordinate of the first vertex
+     * @param y0    the y-coordinate of the first vertex
+     * @param x1    the x-coordinate of the second vertex
+     * @param y1    the y-coordinate of the second vertex
+     * @param x2    the x-coordinate of the last vertex
+     * @param y2    the y-coordinate of the last vertex
+     * @param paint the paint used to draw the triangle
+     */
+    public abstract void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2,
+                                      @Nonnull Paint paint);
 
     /**
      * Draw the specified Rect using the specified Paint. The rectangle will be filled or framed

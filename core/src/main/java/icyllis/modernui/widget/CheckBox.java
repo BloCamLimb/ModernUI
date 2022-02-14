@@ -19,8 +19,13 @@
 package icyllis.modernui.widget;
 
 /**
+ * <p>
  * A checkbox is a specific type of two-states button that can be either
  * checked or unchecked.
+ * </p>
+ *
+ * <p>See the <a href="https://developer.android.com/guide/topics/ui/controls/checkbox">Checkboxes</a>
+ * guide.</p>
  */
 public class CheckBox extends CompoundButton {
 
