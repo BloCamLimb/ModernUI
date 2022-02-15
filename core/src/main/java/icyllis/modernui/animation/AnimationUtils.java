@@ -65,9 +65,8 @@ public final class AnimationUtils {
 
     /**
      * Returns the current animation time in milliseconds used to update animations.
-     * This value is updated when a new frame started, it's different from
-     * {@link ArchCore#timeMillis()} or {@link System#currentTimeMillis()}
-     * which gives you a real current time.
+     * This value is updated and synced when a new frame started, it's different from
+     * {@link ArchCore#timeMillis()} which gives you a real current time.
      *
      * @return the current animation time in milliseconds
      */

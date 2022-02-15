@@ -22,14 +22,8 @@ import java.lang.annotation.*;
 
 /**
  * Denotes that the annotated method should only be called on the render thread,
- * which has the OpenGL context shared between windows.
- * <p>
- * Example:
- * <pre><code>
- *  &#64;RenderThread
- *  public void createTexture() {
- *      // something here
- *  }</code></pre>
+ * which has the 3D graphics context shared between windows.
+ * Render thread can sometimes be the same thread as main thread.
  */
 @Documented
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})

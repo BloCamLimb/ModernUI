@@ -1248,7 +1248,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
             return;
         }
         AnimationHandler handler = AnimationHandler.getInstance();
-        handler.unregister(this);
+        handler.removeCallback(this);
     }
 
     private void addAnimationCallback() {
@@ -1256,7 +1256,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
             return;
         }
         AnimationHandler handler = AnimationHandler.getInstance();
-        handler.register(this, 0);
+        handler.addFrameCallback(this, 0);
     }
 
     @Nonnull

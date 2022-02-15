@@ -65,7 +65,7 @@ public final class ArchCore {
     private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
 
     /**
-     * Initialize GLFW, call on JVM main thread.
+     * Initialize GLFW, call on JVM main thread. This method also specify the main thread.
      */
     @MainThread
     public static void init() {
@@ -246,10 +246,27 @@ public final class ArchCore {
             }
     }
 
+    /**
+     * Returns the shared {@link Handler} that created on UI thread, if initialized.
+     * It can be used for thread scheduling of callback operations.
+     *
+     * @return the shared UI handler
+     * @see #getUiHandlerAsync()
+     */
     public static Handler getUiHandler() {
         return sUiHandler;
     }
 
+    /**
+     * Returns the shared {@link Handler} that created on UI thread, if initialized.
+     * It can be used for thread scheduling of callback operations.
+     * <p>
+     * Differently from {@link #getUiHandler()}, this is an async version.
+     * Messages sent to an async handler are guaranteed to be ordered with respect to one another,
+     * but not necessarily with respect to messages from other Handlers.
+     *
+     * @return the shared UI handler
+     */
     public static Handler getUiHandlerAsync() {
         return sUiHandlerAsync;
     }
@@ -258,10 +275,32 @@ public final class ArchCore {
         return Thread.currentThread() == sUiThread;
     }
 
+    /**
+     * Returns the current value of GLFW's highest-resolution monotonic time source,
+     * in nanoseconds. The resolution of the timer is system dependent, but is usually
+     * on the order of a few micro- or nanoseconds. The timer measures time elapsed
+     * since GLFW was initialized.
+     * <p>
+     * This is a bit faster than {@link System#nanoTime()}. All input events and
+     * frame events use this time base, but in advanced frameworks (such as animations),
+     * you should NOT use this time base.
+     *
+     * @return current time in nanoseconds
+     */
     public static long timeNanos() {
         return (long) (GLFW.glfwGetTime() * 1.0E9);
     }
 
+    /**
+     * Returns the current value of GLFW's highest-resolution monotonic time source,
+     * in milliseconds. The resolution of the timer is system dependent, but is usually
+     * on the order of a few micro- or nanoseconds. The timer measures time elapsed
+     * since GLFW was initialized.
+     * <p>
+     * You should NOT use this time base in advanced frameworks (such as animations).
+     *
+     * @return current time in milliseconds
+     */
     public static long timeMillis() {
         return (long) (GLFW.glfwGetTime() * 1.0E3);
     }
@@ -341,18 +380,4 @@ public final class ArchCore {
     public static String readStringUTF8(InputStream stream) {
         return readStringUTF8(Channels.newChannel(stream));
     }
-
-    /*@Nonnull
-    public static UniformFloat getUniformFloat(@Nonnull ShaderProgram shader, String name) {
-        return new UniformFloat(GL20.glGetUniformLocation(shader.getProgram(), name));
-    }
-
-    @Nonnull
-    public static UniformMatrix4f getUniformMatrix4f(@Nonnull ShaderProgram shader, String name) {
-        int loc = GL20.glGetUniformLocation(shader.getProgram(), name);
-        if (loc == -1) {
-            throw new RuntimeException();
-        }
-        return new UniformMatrix4f(loc);
-    }*/
 }

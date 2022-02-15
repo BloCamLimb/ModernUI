@@ -22,7 +22,8 @@ import java.lang.annotation.*;
 
 /**
  * Denotes that the annotated method should only be called on the JVM main thread,
- * the thread is used for GLFW operations and callbacks.
+ * the thread is used for handling events from the operating system.
+ * Main thread can sometimes be the same thread as render thread.
  */
 @Documented
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})

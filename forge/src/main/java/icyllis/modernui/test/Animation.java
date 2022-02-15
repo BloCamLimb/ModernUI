@@ -107,7 +107,7 @@ public class Animation implements AnimationHandler.FrameCallback {
         if (appliers != null) {
             appliers.forEach(e -> e.record(reversed, isFull));
         }
-        AnimationHandler.getInstance().register(this, 0);
+        AnimationHandler.getInstance().addFrameCallback(this, 0);
     }
 
     /**
@@ -132,7 +132,7 @@ public class Animation implements AnimationHandler.FrameCallback {
         if (appliers != null) {
             appliers.forEach(e -> e.record(reversed, isFull));
         }
-        AnimationHandler.getInstance().register(this, 0);
+        AnimationHandler.getInstance().addFrameCallback(this, 0);
     }
 
     /**
@@ -140,7 +140,7 @@ public class Animation implements AnimationHandler.FrameCallback {
      */
     public void cancel() {
         started = false;
-        AnimationHandler.getInstance().unregister(this);
+        AnimationHandler.getInstance().removeCallback(this);
     }
 
     public void skipToStart() {
@@ -183,7 +183,7 @@ public class Animation implements AnimationHandler.FrameCallback {
             if (listeners != null) {
                 listeners.forEach(e -> e.onAnimationEnd(this, reversed));
             }
-            AnimationHandler.getInstance().unregister(this);
+            AnimationHandler.getInstance().removeCallback(this);
             return true;
         }
         return false;

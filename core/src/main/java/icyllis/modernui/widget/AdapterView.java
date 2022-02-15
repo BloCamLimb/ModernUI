@@ -243,7 +243,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
          * @param position The position of the view in the adapter.
          * @param id       The row id of the item that was clicked.
          */
-        void onItemClick(AdapterView<?> parent, View view, int position, long id);
+        void onItemClick(@Nonnull AdapterView<?> parent, View view, int position, long id);
     }
 
     /**
@@ -798,8 +798,8 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
         public void run() {
             mPendingSelectionNotifier = null;
 
-            if (mDataChanged && getViewRootImpl() != null
-                    && getViewRootImpl().isLayoutRequested()) {
+            if (mDataChanged && getViewRoot() != null
+                    && getViewRoot().isLayoutRequested()) {
                 // Data has changed between when this SelectionNotifier was
                 // posted and now. Postpone the notification until the next
                 // layout is complete, and we run checkSelectionChanged().
