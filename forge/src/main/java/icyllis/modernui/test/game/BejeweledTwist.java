@@ -224,7 +224,6 @@ public class BejeweledTwist {
         GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         ShaderManager.getInstance().reload();
         GLFW.glfwSwapInterval(1);
-        final LongConsumer animationHandler = AnimationHandler.getInstance().getCallback();
 
         Matrix4 projection = new Matrix4();
         Rect screenRect = new Rect();
@@ -243,7 +242,7 @@ public class BejeweledTwist {
             lastTime = time;
             GLWrapper.resetFrame(mWindow);
 
-            animationHandler.accept(time);
+            //animationHandler.accept(time);
             if (mWindow.getWidth() > 0) {
                 canvas.reset(mWindow.getWidth(), mWindow.getHeight());
                 screenRect.set(0, 0, mWindow.getWidth(), mWindow.getHeight());

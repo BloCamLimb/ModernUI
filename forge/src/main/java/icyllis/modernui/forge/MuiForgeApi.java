@@ -209,7 +209,18 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @RenderThread
     public static long getFrameTime() {
-        return UIManager.sInstance.getFrameTime();
+        return getFrameTimeNanos() / 1000000;
+    }
+
+    /**
+     * Get synced UI frame time, updated every frame on Render thread. Ignoring game paused.
+     *
+     * @return frame time in nanoseconds
+     */
+    @OnlyIn(Dist.CLIENT)
+    @RenderThread
+    public static long getFrameTimeNanos() {
+        return UIManager.sInstance.getFrameTimeNanos();
     }
 
     /**

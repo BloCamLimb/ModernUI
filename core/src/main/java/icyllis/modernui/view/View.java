@@ -24,6 +24,7 @@ import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Choreographer;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
@@ -3787,14 +3788,15 @@ public class View implements Drawable.Callback {
      *             {@link ArchCore#timeMillis()} timebase.
      */
     @Override
-    public void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
+    public final void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
         if (verifyDrawable(who)) {
+            // Postpone the runnable until we know
+            // on which thread it needs to run.
+            final long delay = when - ArchCore.timeMillis();
             if (mAttachInfo != null) {
-                mAttachInfo.mHandler.postAtTime(what, who, when);
+                mAttachInfo.mViewRoot.mChoreographer.postCallbackDelayed(
+                        Choreographer.CALLBACK_ANIMATION, what, who, delay);
             } else {
-                // Postpone the runnable until we know
-                // on which thread it needs to run.
-                final long delay = when - ArchCore.timeMillis();
                 getRunQueue().postDelayed(what, delay);
             }
         }
@@ -3807,11 +3809,11 @@ public class View implements Drawable.Callback {
      * @param what the action to cancel
      */
     @Override
-    public void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
+    public final void unscheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what) {
         if (verifyDrawable(who)) {
-            final AttachInfo attachInfo = mAttachInfo;
-            if (attachInfo != null) {
-                attachInfo.mHandler.removeCallbacks(what, who);
+            if (mAttachInfo != null) {
+                mAttachInfo.mViewRoot.mChoreographer.removeCallbacks(
+                        Choreographer.CALLBACK_ANIMATION, what, who);
             }
             if (mRunQueue != null) {
                 mRunQueue.removeCallbacks(what);
@@ -3827,9 +3829,10 @@ public class View implements Drawable.Callback {
      * @param who The Drawable to unschedule.
      * @see #drawableStateChanged
      */
-    public void unscheduleDrawable(Drawable who) {
+    public final void unscheduleDrawable(@Nullable Drawable who) {
         if (mAttachInfo != null && who != null) {
-            mAttachInfo.mHandler.removeCallbacksAndMessages(who);
+            mAttachInfo.mViewRoot.mChoreographer.removeCallbacks(
+                    Choreographer.CALLBACK_ANIMATION, null, who);
         }
     }
 
@@ -8865,7 +8868,8 @@ public class View implements Drawable.Callback {
      * @return A handler associated with the thread running the View. This
      * handler can be used to pump events in the UI events queue.
      */
-    public Handler getHandler() {
+    @Nullable
+    public final Handler getHandler() {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
             return attachInfo.mHandler;
@@ -8891,7 +8895,8 @@ public class View implements Drawable.Callback {
      *
      * @return The view root, or null if none.
      */
-    public ViewRoot getViewRootImpl() {
+    @Nullable
+    public final ViewRoot getViewRoot() {
         if (mAttachInfo != null) {
             return mAttachInfo.mViewRoot;
         }
@@ -8957,7 +8962,8 @@ public class View implements Drawable.Callback {
     public final void postOnAnimation(@Nonnull Runnable action) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            attachInfo.mViewRoot.postOnAnimation(action);
+            attachInfo.mViewRoot.mChoreographer.postCallback(
+                    Choreographer.CALLBACK_ANIMATION, action, null);
         } else {
             // Postpone the runnable until we know
             // on which thread it needs to run.
@@ -8978,7 +8984,8 @@ public class View implements Drawable.Callback {
     public final void postOnAnimationDelayed(@Nonnull Runnable action, long delayMillis) {
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            attachInfo.mViewRoot.postOnAnimationDelayed(action, delayMillis);
+            attachInfo.mViewRoot.mChoreographer.postCallbackDelayed(
+                    Choreographer.CALLBACK_ANIMATION, action, null, delayMillis);
         } else {
             // Postpone the runnable until we know
             // on which thread it needs to run.
@@ -9000,7 +9007,8 @@ public class View implements Drawable.Callback {
             final AttachInfo attachInfo = mAttachInfo;
             if (attachInfo != null) {
                 attachInfo.mHandler.removeCallbacks(action);
-                attachInfo.mViewRoot.removeCallbacks(action);
+                attachInfo.mViewRoot.mChoreographer.removeCallbacks(
+                        Choreographer.CALLBACK_ANIMATION, action, null);
             }
             if (mRunQueue != null) {
                 mRunQueue.removeCallbacks(action);

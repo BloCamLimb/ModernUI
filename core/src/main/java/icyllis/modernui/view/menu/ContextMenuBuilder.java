@@ -41,7 +41,6 @@ import javax.annotation.Nonnull;
 public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {
 
     public ContextMenuBuilder() {
-        super();
     }
 
     @Nonnull

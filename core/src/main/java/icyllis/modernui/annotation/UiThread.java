@@ -23,8 +23,9 @@ import java.lang.annotation.*;
 /**
  * Denotes that the annotated method should only be called on the UI thread,
  * which is used for handling UI events and recording drawing contents for
- * the UI on application side, there will no OpenGL context on this thread.
- * Input events from the window for UI part should be posted to this thread.
+ * the UI on application side, there will no graphics context on this thread.
+ * All input events from the window for UI should be posted to this thread.
+ * UI thread is never be main thread or render thread.
  */
 @Documented
 @Target({ElementType.METHOD, ElementType.CONSTRUCTOR, ElementType.TYPE})

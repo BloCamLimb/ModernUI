@@ -19,11 +19,9 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.animation.LayoutTransition;
+import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.core.Handler;
-import icyllis.modernui.core.Looper;
-import icyllis.modernui.core.Message;
+import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Point;
 import icyllis.modernui.math.Rect;
@@ -47,9 +45,12 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     private final AttachInfo mAttachInfo;
 
+    protected static final int MSG_PROCESS_INPUT_EVENTS = 19;
+
     private final ConcurrentLinkedQueue<InputEvent> mInputEvents = new ConcurrentLinkedQueue<>();
 
-    private boolean mTraversalScheduled;
+    protected boolean mTraversalScheduled;
+    int mTraversalBarrier;
     private boolean mWillDrawSoon;
     private boolean mIsDrawing;
     private boolean mLayoutRequested;
@@ -57,6 +58,8 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     private boolean mKeepInvalidated;
 
     private boolean hasDragOperation;
+
+    boolean mProcessInputEventsScheduled;
 
     protected final Object mRenderLock = new Object();
     protected boolean mRedrawn;
@@ -66,6 +69,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     private int mHeight;
 
     public final Handler mHandler;
+    public final Choreographer mChoreographer;
 
     private ArrayList<LayoutTransition> mPendingTransitions;
 
@@ -75,6 +79,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     protected ViewRoot() {
         ArchCore.initUiThread();
         mHandler = new Handler(Looper.myLooper(), this::handleMessage);
+        mChoreographer = Choreographer.getInstance();
         mAttachInfo = new AttachInfo(this, mHandler, this);
 
         try {
@@ -114,6 +119,12 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     protected boolean handleMessage(@Nonnull Message msg) {
+        switch (msg.what) {
+            case MSG_PROCESS_INPUT_EVENTS -> {
+                mProcessInputEventsScheduled = false;
+                doProcessInputEvents();
+            }
+        }
         return true;
     }
 
@@ -130,7 +141,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         }
     }
 
-    protected void setFrame(int width, int height) {
+    public void setFrame(int width, int height) {
         if (width != mWidth || height != mHeight) {
             mWidth = width;
             mHeight = height;
@@ -173,18 +184,42 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         return false;
     }
 
+    private void scheduleProcessInputEvents() {
+        if (!mProcessInputEventsScheduled) {
+            mProcessInputEventsScheduled = true;
+            Message msg = mHandler.obtainMessage(MSG_PROCESS_INPUT_EVENTS);
+            msg.setAsynchronous(true);
+            mHandler.sendMessage(msg);
+        }
+    }
+
+    final Runnable mTraversalRunnable = this::doTraversal;
+
+    @UiThread
+    protected void scheduleTraversals() {
+        if (!mTraversalScheduled) {
+            mTraversalScheduled = true;
+            mTraversalBarrier = mHandler.getQueue().postSyncBarrier();
+            mChoreographer.postCallback(Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
+        }
+    }
+
+    @UiThread
+    protected void unscheduleTraversals() {
+        if (mTraversalScheduled) {
+            mTraversalScheduled = false;
+            mHandler.getQueue().removeSyncBarrier(mTraversalBarrier);
+            mChoreographer.removeCallbacks(Choreographer.CALLBACK_TRAVERSAL, mTraversalRunnable, null);
+        }
+    }
+
     @UiThread
     protected void doTraversal() {
         if (mTraversalScheduled) {
             mTraversalScheduled = false;
-            performTraversal();
-        }
-    }
+            mHandler.getQueue().removeSyncBarrier(mTraversalBarrier);
 
-    public void scheduleTraversals() {
-        if (!mTraversalScheduled) {
-            mTraversalScheduled = true;
-            mHandler.sendEmptyMessage(0);
+            performTraversal();
         }
     }
 
@@ -255,12 +290,13 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     @Nonnull
     protected abstract Canvas beginRecording(int width, int height);
 
+    @MainThread
     public void enqueueInputEvent(@Nonnull InputEvent event) {
         mInputEvents.offer(event);
+        scheduleProcessInputEvents();
     }
 
-    protected void doProcessInputEvents() {
-        ArchCore.checkUiThread();
+    private void doProcessInputEvents() {
         if (mView != null) {
             InputEvent e;
             while ((e = mInputEvents.poll()) != null) {
@@ -378,20 +414,6 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     protected void updatePointerIcon(@Nullable PointerIcon pointerIcon) {
     }
-
-    /// START - Handler
-
-    protected void postOnAnimation(@Nonnull Runnable r) {
-        postOnAnimationDelayed(r, 0);
-    }
-
-    protected void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis) {
-    }
-
-    protected void removeCallbacks(@Nonnull Runnable r) {
-    }
-
-    /// END - Handler
 
     /**
      * Return true if child is an ancestor of parent, (or equal to the parent).

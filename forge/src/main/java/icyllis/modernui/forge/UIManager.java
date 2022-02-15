@@ -22,8 +22,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.R;
-import icyllis.modernui.animation.AnimationHandler;
-import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
@@ -42,7 +40,6 @@ import icyllis.modernui.test.TestListFragment;
 import icyllis.modernui.test.TestPauseFragment;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
-import icyllis.modernui.util.TimedAction;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.CoordinatorLayout;
 import icyllis.modernui.widget.EditText;
@@ -89,9 +86,6 @@ import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.function.LongConsumer;
-import java.util.function.Predicate;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -114,10 +108,6 @@ public final class UIManager implements LifecycleOwner {
 
     // the global instance
     static volatile UIManager sInstance;
-
-    // message IDs
-    private static final int MSG_DO_FRAME = 1;
-    private static final int MSG_SET_FRAME = 2;
 
     private static final int fragment_container = 0x01020007;
 
@@ -153,16 +143,7 @@ public final class UIManager implements LifecycleOwner {
     private long mElapsedTimeMillis;
 
     // time for drawing, Render thread
-    private long mFrameTimeMillis;
-
-    // time for tasks, UI thread
-    private long mUptimeMillis;
-
-    // animation update callback
-    private LongConsumer mAnimationHandler;
-    // other animation tasks
-    private final ConcurrentLinkedQueue<TimedAction> mAnimationTasks = new ConcurrentLinkedQueue<>();
-    private final Predicate<? super TimedAction> mAnimationTaskHandler = task -> task.execute(mUptimeMillis);
+    private long mFrameTimeNanos;
 
 
     /// Rendering \\\
@@ -318,10 +299,10 @@ public final class UIManager implements LifecycleOwner {
     /**
      * Get synced frame time, update every frame
      *
-     * @return frame time in milliseconds
+     * @return frame time in nanoseconds
      */
-    long getFrameTime() {
-        return mFrameTimeMillis;
+    long getFrameTimeNanos() {
+        return mFrameTimeNanos;
     }
 
     CoordinatorLayout getDecorView() {
@@ -407,8 +388,6 @@ public final class UIManager implements LifecycleOwner {
     private void init() {
         long startTime = System.nanoTime();
         mViewRoot = this.new ViewRootImpl();
-
-        mAnimationHandler = AnimationHandler.getInstance().getCallback();
 
         mDecor = new CoordinatorLayout();
         // make the root view clickable through, so that views can lose focus
@@ -803,11 +782,13 @@ public final class UIManager implements LifecycleOwner {
         }
     }
 
+    private final Runnable mResizeRunnable = () -> mViewRoot.setFrame(mWindow.getWidth(), mWindow.getHeight());
+
     /**
      * Called when game window size changed, used to re-layout the window.
      */
     void resize() {
-        mViewRoot.mHandler.sendEmptyMessage(MSG_SET_FRAME);
+        mViewRoot.mHandler.post(mResizeRunnable);
     }
 
     void removed() {
@@ -833,14 +814,13 @@ public final class UIManager implements LifecycleOwner {
     @SubscribeEvent
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            final long lastFrameTime = mFrameTimeMillis;
-            mFrameTimeMillis = ArchCore.timeMillis();
-            final long deltaMillis = mFrameTimeMillis - lastFrameTime;
+            final long lastFrameTime = mFrameTimeNanos;
+            mFrameTimeNanos = ArchCore.timeNanos();
+            final long deltaMillis = (mFrameTimeNanos - lastFrameTime) / 1000000;
             mElapsedTimeMillis += deltaMillis;
             // coordinates UI thread
             if (mRunning) {
-                // do not async, this is on main thread
-                mViewRoot.mHandler.sendEmptyMessage(MSG_DO_FRAME);
+                mViewRoot.mChoreographer.scheduleFrameAsync(mFrameTimeNanos);
                 // update extension animations
                 BlurHandler.INSTANCE.update(mElapsedTimeMillis);
                 if (TooltipRenderer.sTooltip) {
@@ -901,6 +881,10 @@ public final class UIManager implements LifecycleOwner {
         @Override
         protected void onKeyEvent(KeyEvent event) {
             if (mScreen != null && event.getAction() == KeyEvent.ACTION_DOWN) {
+                View v = mDecor.findFocus();
+                if (v instanceof EditText) {
+                    return;
+                }
                 final boolean back;
                 if (mCallback != null) {
                     back = mCallback.isBackKey(event.getKeyCode(), event);
@@ -933,55 +917,6 @@ public final class UIManager implements LifecycleOwner {
             synchronized (mRenderLock) {
                 mCanvas.reset(mWindow.getWidth(), mWindow.getHeight());
             }
-        }
-
-        @Override
-        public void postOnAnimationDelayed(@Nonnull Runnable r, long delayMillis) {
-            if (delayMillis < 0) {
-                delayMillis = 0;
-            }
-            mAnimationTasks.offer(TimedAction.obtain(r, ArchCore.timeMillis() + delayMillis));
-        }
-
-        @Override
-        public void removeCallbacks(@Nonnull Runnable r) {
-            Predicate<? super TimedAction> pred = t -> t.remove(r);
-            //mTasks.removeIf(pred);
-            mAnimationTasks.removeIf(pred);
-        }
-
-        @UiThread
-        private void doFrame() {
-            // 1. handle tasks
-            mUptimeMillis = ArchCore.timeMillis();
-            AnimationUtils.lockAnimationClock(mFrameTimeMillis);
-            /*if (!mTasks.isEmpty()) {
-                // batched processing
-                mTasks.removeIf(mUiHandler);
-            }*/
-
-            // 2. do input events
-            doProcessInputEvents();
-
-            // 3. do animations
-            mAnimationHandler.accept(mFrameTimeMillis);
-            if (!mAnimationTasks.isEmpty()) {
-                mAnimationTasks.removeIf(mAnimationTaskHandler);
-            }
-
-            // 4. do traversal
-            doTraversal();
-
-            AnimationUtils.unlockAnimationClock();
-        }
-
-        @Override
-        protected boolean handleMessage(@Nonnull Message msg) {
-            switch (msg.what) {
-                case MSG_DO_FRAME -> doFrame();
-                case MSG_SET_FRAME -> setFrame(mWindow.getWidth(), mWindow.getHeight());
-            }
-            return true;
         }
 
         @RenderThread
@@ -1031,7 +966,8 @@ public final class UIManager implements LifecycleOwner {
         @Override
         public void playSoundEffect(int effectId) {
             /*if (effectId == SoundEffectConstants.CLICK) {
-                minecraft.tell(() -> minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MuiRegistries.BUTTON_CLICK_1, 1.0f)));
+                minecraft.tell(() -> minecraft.getSoundManager().play(SimpleSoundInstance.forUI(MuiRegistries
+                .BUTTON_CLICK_1, 1.0f)));
             }*/
         }
 

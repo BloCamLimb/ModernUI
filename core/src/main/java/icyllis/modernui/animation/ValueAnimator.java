@@ -1220,13 +1220,13 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
 
     private void removeAnimationCallback() {
         if (mSelfPulse) {
-            AnimationHandler.getInstance().unregister(this);
+            AnimationHandler.getInstance().removeCallback(this);
         }
     }
 
     private void addAnimationCallback() {
         if (mSelfPulse) {
-            AnimationHandler.getInstance().register(this, 0);
+            AnimationHandler.getInstance().addFrameCallback(this, 0);
         }
     }
 

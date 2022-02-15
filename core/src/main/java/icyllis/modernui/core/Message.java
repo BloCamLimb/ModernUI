@@ -63,7 +63,7 @@ public final class Message {
 
     /**
      * The targeted delivery time of this message. The time-base is
-     * {@link System#currentTimeMillis()}.
+     * {@link ArchCore#timeMillis()}.
      */
     long when;
 

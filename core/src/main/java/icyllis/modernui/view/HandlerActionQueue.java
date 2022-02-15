@@ -20,14 +20,13 @@ package icyllis.modernui.view;
 
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.util.GrowingArrayUtils;
-import icyllis.modernui.util.TimedAction;
 
 /**
  * Class used to enqueue pending work from Views when no Window is attached.
  */
 public class HandlerActionQueue {
 
-    private TimedAction[] mActions;
+    private HandlerAction[] mActions;
     private int mCount;
 
     public void post(Runnable action) {
@@ -35,13 +34,13 @@ public class HandlerActionQueue {
     }
 
     public void postDelayed(Runnable action, long delayMillis) {
-        final TimedAction timedAction = TimedAction.obtain(action, delayMillis);
+        final HandlerAction handlerAction = new HandlerAction(action, delayMillis);
 
         synchronized (this) {
             if (mActions == null) {
-                mActions = new TimedAction[2];
+                mActions = new HandlerAction[4];
             }
-            mActions = GrowingArrayUtils.append(mActions, mCount, timedAction);
+            mActions = GrowingArrayUtils.append(mActions, mCount, handlerAction);
             mCount++;
         }
     }
@@ -51,9 +50,9 @@ public class HandlerActionQueue {
             final int count = mCount;
             int j = 0;
 
-            final TimedAction[] actions = mActions;
+            final HandlerAction[] actions = mActions;
             for (int i = 0; i < count; i++) {
-                if (actions[i].remove(action)) {
+                if (actions[i].matches(action)) {
                     // Remove this action by overwriting it within
                     // this loop or nulling it out later.
                     continue;
@@ -80,10 +79,10 @@ public class HandlerActionQueue {
 
     public void executeActions(Handler handler) {
         synchronized (this) {
-            final TimedAction[] actions = mActions;
+            final HandlerAction[] actions = mActions;
             for (int i = 0, count = mCount; i < count; i++) {
-                final TimedAction action = actions[i];
-                handler.postDelayed(action.action, action.time);
+                final HandlerAction handlerAction = actions[i];
+                handler.postDelayed(handlerAction.action, handlerAction.delay);
             }
 
             mActions = null;
@@ -106,6 +105,14 @@ public class HandlerActionQueue {
         if (index >= mCount) {
             throw new IndexOutOfBoundsException();
         }
-        return mActions[index].time;
+        return mActions[index].delay;
+    }
+
+    private record HandlerAction(Runnable action, long delay) {
+
+        public boolean matches(Runnable otherAction) {
+            return otherAction == null && action == null
+                    || action != null && action.equals(otherAction);
+        }
     }
 }

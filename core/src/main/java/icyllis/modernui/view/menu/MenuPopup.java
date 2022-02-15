@@ -25,6 +25,7 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -44,7 +45,7 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
      * submenu to be shown immediately (that is, if this MenuPopup implementation is capable of
      * showing its own submenus).
      *
-     * @param menu
+     * @param menu menu
      */
     public abstract void addMenu(MenuBuilder menu);
 
@@ -77,7 +78,7 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
      * Set whether a title entry should be shown in the popup menu (if a title exists for the
      * menu).
      *
-     * @param showTitle
+     * @param showTitle show title
      */
     public abstract void setShowTitle(boolean showTitle);
 
@@ -114,7 +115,7 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
     }
 
     @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+    public void onItemClick(@Nonnull AdapterView<?> parent, View view, int position, long id) {
         ListAdapter outerAdapter = (ListAdapter) parent.getAdapter();
         MenuAdapter wrappedAdapter = toMenuAdapter(outerAdapter);
 
@@ -126,10 +127,9 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
     /**
      * Measures the width of the given menu view.
      *
-     * @param view The view to measure.
      * @return The width.
      */
-    protected static int measureIndividualMenuWidth(ListAdapter adapter, ViewGroup parent,
+    protected static int measureIndividualMenuWidth(@Nonnull ListAdapter adapter, @Nullable ViewGroup parent,
                                                     int maxAllowedWidth) {
         // Menus don't tend to be long, so this is more valid than it looks.
         int maxWidth = 0;
@@ -168,9 +168,6 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
      * Converts the given ListAdapter originating from a menu, to a MenuAdapter, accounting for
      * the possibility of the parameter adapter actually wrapping the MenuAdapter. (That could
      * happen if a header view was added on the menu.)
-     *
-     * @param adapter
-     * @return
      */
     protected static MenuAdapter toMenuAdapter(ListAdapter adapter) {
         if (adapter instanceof HeaderViewListAdapter) {
@@ -187,10 +184,9 @@ public abstract class MenuPopup implements ShowableListMenu, MenuPresenter, Adap
      * take into account whether the menu items are being shown as part of the popup or or being
      * shown as actions in the action bar.
      *
-     * @param menu
      * @return Whether to preserve icon spacing.
      */
-    protected static boolean shouldPreserveIconSpacing(MenuBuilder menu) {
+    protected static boolean shouldPreserveIconSpacing(@Nonnull MenuBuilder menu) {
         boolean preserveIconSpacing = false;
         final int count = menu.size();
 
