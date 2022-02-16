@@ -97,7 +97,7 @@ public final class Looper {
         if (sThreadLocal.get() != null) {
             throw new RuntimeException("Only one Looper may be created per thread");
         }
-        final Looper looper = new Looper(0);
+        final Looper looper = new Looper(null);
         sThreadLocal.set(looper);
         return looper;
     }
@@ -190,7 +190,7 @@ public final class Looper {
     }
 
     /**
-     * Run the main event loop. This must be called from the entry point of the application.
+     * Prepare the main event loop. This must be called from the entry point of the application.
      * <p>
      * Main looper cannot quit via {@link #quit()}, but it will quit right after the main window
      * is marked closed.
@@ -198,16 +198,14 @@ public final class Looper {
      * @param w the main window.
      */
     @MainThread
-    public static void loop(@Nonnull Window w) {
+    public static void prepare(@Nonnull MainWindow w) {
         ArchCore.checkMainThread();
-        assert sMainLooper == null;
-        final Looper me = new Looper(w.getHandle());
+        if (sMainLooper != null) {
+            throw new IllegalStateException();
+        }
+        final Looper me = new Looper(w);
         sThreadLocal.set(me);
         sMainLooper = me;
-        me.mInLoop = true;
-        me.mSlowDeliveryDetected = false;
-        //noinspection StatementWithEmptyBody
-        while (poll(me));
     }
 
     private static boolean showSlowLog(long threshold, long measureStart, long measureEnd,
@@ -243,7 +241,7 @@ public final class Looper {
         return sThreadLocal.get().mQueue;
     }
 
-    private Looper(long w) {
+    private Looper(MainWindow w) {
         mQueue = new MessageQueue(w);
         mThread = Thread.currentThread();
     }

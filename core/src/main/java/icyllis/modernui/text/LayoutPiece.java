@@ -97,7 +97,7 @@ public class LayoutPiece {
                     mPositions = hint.mPositions;
                     assert mGlyphs != null;
                 } else {
-                    ArchCore.recordRenderCall(() -> {
+                    ArchCore.postOnRenderThread(() -> {
                         mGlyphs = hint.mGlyphs;
                         mPositions = hint.mPositions;
                         assert mGlyphs != null;
@@ -139,7 +139,7 @@ public class LayoutPiece {
                 if (ArchCore.isOnRenderThread()) {
                     textureWork.run();
                 } else {
-                    ArchCore.recordRenderCall(textureWork);
+                    ArchCore.postOnRenderThread(textureWork);
                 }
             }
 
@@ -156,7 +156,7 @@ public class LayoutPiece {
                 mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
                 mPositions = positions.toFloatArray();
             } else {
-                ArchCore.recordRenderCall(() -> {
+                ArchCore.postOnRenderThread(() -> {
                     mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
                     mPositions = positions.toFloatArray();
                 });

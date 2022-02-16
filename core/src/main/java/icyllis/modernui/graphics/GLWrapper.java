@@ -358,7 +358,7 @@ public final class GLWrapper extends GL45C {
         if (ArchCore.isOnRenderThread()) {
             glDeleteTextures(texture);
         } else {
-            ArchCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+            ArchCore.postOnRenderThread(Objects.requireNonNullElseGet(r,
                     () -> () -> glDeleteTextures(texture)));
         }
     }
@@ -384,7 +384,7 @@ public final class GLWrapper extends GL45C {
         if (ArchCore.isOnRenderThread()) {
             glDeleteBuffers(buffer);
         } else {
-            ArchCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+            ArchCore.postOnRenderThread(Objects.requireNonNullElseGet(r,
                     () -> () -> glDeleteBuffers(buffer)));
         }
     }
@@ -393,7 +393,7 @@ public final class GLWrapper extends GL45C {
         if (ArchCore.isOnRenderThread()) {
             glDeleteFramebuffers(framebuffer);
         } else {
-            ArchCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+            ArchCore.postOnRenderThread(Objects.requireNonNullElseGet(r,
                     () -> () -> glDeleteFramebuffers(framebuffer)));
         }
     }
@@ -402,7 +402,7 @@ public final class GLWrapper extends GL45C {
         if (ArchCore.isOnRenderThread()) {
             glDeleteRenderbuffers(renderbuffer);
         } else {
-            ArchCore.recordRenderCall(Objects.requireNonNullElseGet(r,
+            ArchCore.postOnRenderThread(Objects.requireNonNullElseGet(r,
                     () -> () -> glDeleteRenderbuffers(renderbuffer)));
         }
     }

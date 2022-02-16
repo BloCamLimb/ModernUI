@@ -155,7 +155,7 @@ public class TextureManager {
             image.close();
         } else {
             if (mipmap) {
-                ArchCore.recordRenderCall(() -> {
+                ArchCore.postOnRenderThread(() -> {
                     int w = image.getWidth();
                     int h = image.getHeight();
                     texture.allocate2D(image.getInternalGlFormat(), w, h, 4);
@@ -166,7 +166,7 @@ public class TextureManager {
                     image.close();
                 });
             } else {
-                ArchCore.recordRenderCall(() -> {
+                ArchCore.postOnRenderThread(() -> {
                     int w = image.getWidth();
                     int h = image.getHeight();
                     texture.allocate2D(image.getInternalGlFormat(), w, h, 0);

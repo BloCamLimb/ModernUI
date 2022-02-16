@@ -4185,19 +4185,19 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         switch (id) {
             case ID_CUT -> {
                 CharSequence cut = mTransformed.subSequence(min, max);
-                ArchCore.recordMainCall(() -> Clipboard.setText(cut));
+                ArchCore.executeOnMainThread(() -> Clipboard.setText(cut));
                 getEditableText().delete(min, max);
                 return true;
             }
             case ID_COPY -> {
                 CharSequence copy = mTransformed.subSequence(min, max);
-                ArchCore.recordMainCall(() -> Clipboard.setText(copy));
+                ArchCore.executeOnMainThread(() -> Clipboard.setText(copy));
                 return true;
             }
             case ID_PASTE -> {
                 int aMax = max;
                 int aMin = min;
-                ArchCore.recordMainCall(() -> {
+                ArchCore.executeOnMainThread(() -> {
                     String replacement = Clipboard.getText();
                     if (replacement != null) {
                         post(() -> {

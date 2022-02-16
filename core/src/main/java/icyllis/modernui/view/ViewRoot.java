@@ -45,6 +45,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     private final AttachInfo mAttachInfo;
 
+    private static final int MSG_INVALIDATE = 1;
     protected static final int MSG_PROCESS_INPUT_EVENTS = 19;
 
     private final ConcurrentLinkedQueue<InputEvent> mInputEvents = new ConcurrentLinkedQueue<>();
@@ -120,6 +121,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     protected boolean handleMessage(@Nonnull Message msg) {
         switch (msg.what) {
+            case MSG_INVALIDATE -> ((View) msg.obj).invalidate();
             case MSG_PROCESS_INPUT_EVENTS -> {
                 mProcessInputEventsScheduled = false;
                 doProcessInputEvents();
@@ -147,6 +149,10 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             mHeight = height;
             requestLayout();
         }
+    }
+
+    public View getView() {
+        return mView;
     }
 
     boolean startDragAndDrop(@Nonnull View view, @Nullable Object data, @Nullable View.DragShadow shadow, int flags) {
@@ -410,6 +416,75 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             }
             scheduleTraversals();
         }
+    }
+
+    final class InvalidateOnAnimationRunnable implements Runnable {
+
+        private boolean mPosted;
+        private final ArrayList<View> mViews = new ArrayList<>();
+        private View[] mTempViews;
+
+        public void addView(View view) {
+            synchronized (this) {
+                mViews.add(view);
+                postIfNeededLocked();
+            }
+        }
+
+        public void removeView(View view) {
+            synchronized (this) {
+                mViews.remove(view);
+
+                if (mPosted && mViews.isEmpty()) {
+                    mChoreographer.removeCallbacks(Choreographer.CALLBACK_ANIMATION, this, null);
+                    mPosted = false;
+                }
+            }
+        }
+
+        @Override
+        public void run() {
+            final int viewCount;
+            synchronized (this) {
+                mPosted = false;
+
+                viewCount = mViews.size();
+                if (viewCount != 0) {
+                    mTempViews = mViews.toArray(mTempViews != null
+                            ? mTempViews : new View[viewCount]);
+                    mViews.clear();
+                }
+            }
+
+            for (int i = 0; i < viewCount; i++) {
+                mTempViews[i].invalidate();
+                mTempViews[i] = null;
+            }
+        }
+
+        private void postIfNeededLocked() {
+            if (!mPosted) {
+                mChoreographer.postCallback(Choreographer.CALLBACK_ANIMATION, this, null);
+                mPosted = true;
+            }
+        }
+    }
+
+    final InvalidateOnAnimationRunnable mInvalidateOnAnimationRunnable =
+            new InvalidateOnAnimationRunnable();
+
+    public void dispatchInvalidateDelayed(View view, long delayMilliseconds) {
+        Message msg = mHandler.obtainMessage(MSG_INVALIDATE, view);
+        mHandler.sendMessageDelayed(msg, delayMilliseconds);
+    }
+
+    public void dispatchInvalidateOnAnimation(View view) {
+        mInvalidateOnAnimationRunnable.addView(view);
+    }
+
+    public void cancelInvalidate(View view) {
+        mHandler.removeMessages(MSG_INVALIDATE, view);
+        mInvalidateOnAnimationRunnable.removeView(view);
     }
 
     protected void updatePointerIcon(@Nullable PointerIcon pointerIcon) {

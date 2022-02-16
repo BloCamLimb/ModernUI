@@ -162,7 +162,6 @@ public final class NativeImage implements AutoCloseable {
         String path = openDialogGet();
         if (path != null) {
             try (FileChannel channel = FileChannel.open(Path.of(path), StandardOpenOption.READ)) {
-                // not to close native image but the stream
                 return decode(format, channel);
             }
         }
@@ -253,7 +252,7 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Decodes an image from channel. This method doesn't close the channel.
+     * Decodes an image from channel. This method closes the channel automatically.
      *
      * @param format  the format to convert to, or {@code null} to use format in file
      * @param channel input channel
@@ -261,7 +260,7 @@ public final class NativeImage implements AutoCloseable {
     @Nonnull
     public static NativeImage decode(@Nullable Format format, @Nonnull ReadableByteChannel channel) throws IOException {
         ByteBuffer p = null;
-        try {
+        try (channel) {
             p = ArchCore.readInMemory(channel);
             return decode(format, p.rewind());
         } finally {
@@ -270,7 +269,7 @@ public final class NativeImage implements AutoCloseable {
     }
 
     /**
-     * Decodes an image from input stream. This method doesn't close input stream.
+     * Decodes an image from input stream. This method closes the input stream automatically.
      *
      * @param format the format to convert to, or {@code null} to use format in file
      * @param stream input stream
@@ -278,7 +277,7 @@ public final class NativeImage implements AutoCloseable {
     @Nonnull
     public static NativeImage decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
         ByteBuffer p = null;
-        try {
+        try (stream) {
             p = ArchCore.readInMemory(stream);
             return decode(format, p.rewind());
         } finally {

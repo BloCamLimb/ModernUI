@@ -40,7 +40,6 @@ import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.GuardedBy;
 import java.io.PrintWriter;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
@@ -52,10 +51,8 @@ import java.util.function.Consumer;
  */
 public final class MuiForgeApi {
 
-    @GuardedBy("sOnDisplayResizeListeners")
     static final CopyOnWriteArrayList<OnDisplayResizeListener> sOnDisplayResizeListeners =
             new CopyOnWriteArrayList<>();
-    @GuardedBy("sOnDebugDumpListeners")
     static final CopyOnWriteArrayList<OnDebugDumpListener> sOnDebugDumpListeners =
             new CopyOnWriteArrayList<>();
 
@@ -296,10 +293,9 @@ public final class MuiForgeApi {
      */
     @OnlyIn(Dist.CLIENT)
     public static void addOnDisplayResizeListener(@Nonnull OnDisplayResizeListener listener) {
-        synchronized (sOnDisplayResizeListeners) {
-            if (!sOnDisplayResizeListeners.contains(listener)) {
-                sOnDisplayResizeListeners.add(listener);
-            }
+        // may be duplicated
+        if (!sOnDisplayResizeListeners.contains(listener)) {
+            sOnDisplayResizeListeners.add(listener);
         }
     }
 
@@ -310,9 +306,7 @@ public final class MuiForgeApi {
      */
     @OnlyIn(Dist.CLIENT)
     public static void removeOnDisplayResizeListener(@Nonnull OnDisplayResizeListener listener) {
-        synchronized (sOnDisplayResizeListeners) {
-            sOnDisplayResizeListeners.remove(listener);
-        }
+        sOnDisplayResizeListeners.remove(listener);
     }
 
     /**
@@ -323,10 +317,9 @@ public final class MuiForgeApi {
      */
     @OnlyIn(Dist.CLIENT)
     public static void addOnDebugDumpListener(@Nonnull OnDebugDumpListener listener) {
-        synchronized (sOnDebugDumpListeners) {
-            if (!sOnDebugDumpListeners.contains(listener)) {
-                sOnDebugDumpListeners.add(listener);
-            }
+        // may be duplicated
+        if (!sOnDebugDumpListeners.contains(listener)) {
+            sOnDebugDumpListeners.add(listener);
         }
     }
 
@@ -337,9 +330,7 @@ public final class MuiForgeApi {
      */
     @OnlyIn(Dist.CLIENT)
     public static void removeOnDebugDumpListener(@Nonnull OnDebugDumpListener listener) {
-        synchronized (sOnDebugDumpListeners) {
-            sOnDebugDumpListeners.remove(listener);
-        }
+        sOnDebugDumpListeners.remove(listener);
     }
 
     @FunctionalInterface

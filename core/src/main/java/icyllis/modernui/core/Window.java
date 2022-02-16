@@ -18,7 +18,6 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.ModernUI;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import org.lwjgl.glfw.Callbacks;
@@ -27,6 +26,7 @@ import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
 import java.nio.IntBuffer;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -34,9 +34,10 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 import static org.lwjgl.system.MemoryUtil.memPutAddress;
 
 /**
- * Represents a window to operating system, which provides 3D graphics context.
+ * Represents a Window to operating system, which provides 3D graphics context.
  */
-public final class Window implements AutoCloseable {
+@NotThreadSafe
+public class Window implements AutoCloseable {
 
     private static final Long2ObjectMap<Window> sWindows = new Long2ObjectArrayMap<>();
 
@@ -118,17 +119,13 @@ public final class Window implements AutoCloseable {
      * These windows are displayed between TYPE_APPLICATION_MEDIA and the
      * application window.  They should be translucent to be useful.  This
      * is a big ugly hack so:
-     *
-     * @hide
      */
     public static final int TYPE_APPLICATION_MEDIA_OVERLAY = FIRST_SUB_WINDOW + 4;
 
     /**
-     * Window type: a above sub-panel on top of an application window and it's
+     * Window type: an above sub-panel on top of an application window and it's
      * sub-panel windows. These windows are displayed on top of their attached window
      * and any {@link #TYPE_APPLICATION_SUB_PANEL} panels.
-     *
-     * @hide
      */
     public static final int TYPE_APPLICATION_ABOVE_SUB_PANEL = FIRST_SUB_WINDOW + 5;
 
@@ -167,8 +164,6 @@ public final class Window implements AutoCloseable {
      * Window type: the drag-and-drop pseudo-window.  There is only one
      * drag layer (at most), and it is placed on top of all other windows.
      * In multiuser systems shows only on the owning user's window.
-     *
-     * @hide
      */
     public static final int TYPE_DRAG = FIRST_SYSTEM_WINDOW + 3;
 
@@ -192,136 +187,15 @@ public final class Window implements AutoCloseable {
      */
     public static final int LAST_SYSTEM_WINDOW = 2999;
 
-    private final long mHandle;
+    // for directly access in subclasses
+    protected final long mHandle;
 
-    private int mXPos;
-    private int mYPos;
-    private int mScreenWidth;
-    private int mScreenHeight;
-
-    private int mFramebufferWidth;
-    private int mFramebufferHeight;
-
-    private int mWindowedX;
-    private int mWindowedY;
-
-    private float mContentScaleX;
-    private float mContentScaleY;
-
-    @Nonnull
-    private State mState;
-    // previously maximized
-    private boolean mMaximized;
-    private boolean mBorderless;
-    private boolean mFullscreen;
-
-    private boolean mRefresh;
-
-    private Window(long handle, @Nonnull State state, boolean borderless, boolean fullscreen) {
+    protected Window(long handle) {
+        ArchCore.checkMainThread();
         mHandle = handle;
-        sWindows.putIfAbsent(handle, this);
-
-        // set callbacks
-        glfwSetWindowPosCallback(handle, this::callbackPos);
-        glfwSetWindowSizeCallback(handle, this::callbackSize);
-        glfwSetWindowRefreshCallback(handle, this::callbackRefresh);
-        glfwSetWindowFocusCallback(handle, this::callbackFocus);
-        glfwSetWindowIconifyCallback(handle, this::callbackIconify);
-        glfwSetWindowMaximizeCallback(handle, this::callbackMaximize);
-        glfwSetFramebufferSizeCallback(handle, this::callbackFramebufferSize);
-        glfwSetWindowContentScaleCallback(handle, this::callbackContentScale);
-
-        glfwSetKeyCallback(handle, (window, keycode, scancode, action, mods) -> {
-            if (keycode == GLFW_KEY_ESCAPE) {
-                glfwSetWindowShouldClose(mHandle, true);
-            }
-            if (action == GLFW_PRESS && (mods & GLFW_MOD_CONTROL) != 0 && keycode == GLFW_KEY_V) {
-                ModernUI.LOGGER.info("Paste: {}", Clipboard.getText());
-            }
-        });
-        /*glfwSetCharCallback(handle, (window, ch) -> {
-            ModernUI.LOGGER.info(MarkerManager.getMarker("Input"), "InputChar: {}", ch);
-        });*/
-
-        // initialize values
-        Monitor monitor = Monitor.getPrimary();
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer w = stack.mallocInt(1);
-            IntBuffer h = stack.mallocInt(1);
-            glfwGetWindowSize(handle, w, h);
-            mScreenWidth = w.get(0);
-            mScreenHeight = h.get(0);
-
-            w.position(0);
-            h.position(0);
-            glfwGetFramebufferSize(handle, w, h);
-            mFramebufferWidth = w.get(0);
-            mFramebufferHeight = h.get(0);
-
-            // center window
-            if (!mFullscreen && monitor != null) {
-                VideoMode m = monitor.getCurrentMode();
-                glfwSetWindowPos(handle, (m.getWidth() - mScreenWidth) / 2 + monitor.getXPos(),
-                        (m.getHeight() - mScreenHeight) / 2 + monitor.getYPos());
-            }
+        if (sWindows.put(handle, this) != null) {
+            throw new IllegalStateException("Duplicated window: 0x" + Long.toHexString(handle));
         }
-
-        mState = state;
-        mBorderless = borderless;
-        mFullscreen = fullscreen;
-
-        mRefresh = true;
-    }
-
-    @Nonnull
-    public static Window create(@Nonnull String title, @Nonnull State state, int width, int height) {
-        // set hints
-        glfwDefaultWindowHints();
-        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
-        glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
-        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
-        glfwWindowHintString(GLFW_X11_CLASS_NAME, title);
-        glfwWindowHintString(GLFW_X11_INSTANCE_NAME, title);
-        glfwWindowHint(GLFW_SAMPLES, 4);
-        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-
-        // create window
-        Monitor monitor = Monitor.getPrimary();
-        long handle;
-        boolean borderless = false;
-        boolean fullscreen = false;
-        switch (state) {
-            case FULLSCREEN_BORDERLESS:
-                glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-                if (monitor != null) {
-                    VideoMode m = monitor.getCurrentMode();
-                    handle = glfwCreateWindow(m.getWidth(), m.getHeight(), title, NULL, NULL);
-                } else {
-                    handle = glfwCreateWindow(width, height, title, NULL, NULL);
-                }
-                borderless = true;
-                break;
-            case FULLSCREEN:
-                if (monitor != null) {
-                    if (width <= 0 || height <= 0) {
-                        VideoMode m = monitor.getCurrentMode();
-                        handle = glfwCreateWindow(m.getWidth(), m.getHeight(), title, monitor.getHandle(), NULL);
-                    } else {
-                        handle = glfwCreateWindow(width, height, title, monitor.getHandle(), NULL);
-                    }
-                    fullscreen = true;
-                    break;
-                }
-                // FALLTHROUGH
-            default:
-                handle = glfwCreateWindow(width, height, title, NULL, NULL);
-                break;
-        }
-
-        if (handle == NULL) {
-            throw new IllegalStateException("Failed to create window");
-        }
-        return new Window(handle, state, borderless, fullscreen);
     }
 
     @Nullable
@@ -330,7 +204,7 @@ public final class Window implements AutoCloseable {
     }
 
     /**
-     * Get the pointer of this window in the window system.
+     * Get the pointer of this window in the GLFW window system.
      *
      * @return the handle of the window
      */
@@ -338,56 +212,54 @@ public final class Window implements AutoCloseable {
         return mHandle;
     }
 
-    private void callbackPos(long window, int xPos, int yPos) {
-        mXPos = xPos;
-        mYPos = yPos;
+    /**
+     * Gets whether this window is marked should be closed. For example, by clicking
+     * the close button in the title bar.
+     *
+     * @return {@code true} if this window should be closed
+     */
+    public boolean shouldClose() {
+        return glfwWindowShouldClose(mHandle);
     }
 
-    private void callbackSize(long window, int width, int height) {
-        mScreenWidth = width;
-        mScreenHeight = height;
+    /**
+     * Sets the value of the close flag of the specified window. This can be used to
+     * override the user's attempt to close the window, or to signal that it should
+     * be closed.
+     *
+     * @param value should close
+     */
+    public void setShouldClose(boolean value) {
+        glfwSetWindowShouldClose(mHandle, value);
     }
 
-    private void callbackRefresh(long window) {
-        if (!mRefresh) {
-            mRefresh = true;
+    /**
+     * Sets window title.
+     */
+    public void setTitle(@Nonnull String title) {
+        glfwSetWindowTitle(mHandle, title);
+    }
+
+    /**
+     * Sets window icon.
+     */
+    public void setIcon(@Nonnull NativeImage... icons) {
+        if (icons.length == 0) {
+            nglfwSetWindowIcon(mHandle, 0, NULL);
+            return;
         }
-    }
-
-    private void callbackFocus(long window, boolean focused) {
-
-    }
-
-    private void callbackIconify(long window, boolean iconified) {
-        if (iconified) {
-            mState = State.MINIMIZED;
-        } else if (mMaximized) {
-            mState = State.MAXIMIZED;
-        } else {
-            mState = State.WINDOWED;
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            GLFWImage.Buffer images = GLFWImage.malloc(icons.length, stack);
+            for (int i = 0; i < icons.length; i++) {
+                NativeImage icon = icons[i];
+                images.position(i);
+                images.width(icon.getWidth());
+                images.height(icon.getHeight());
+                memPutAddress(images.address() + GLFWImage.PIXELS, icon.getPixels());
+            }
+            images.flip();
+            glfwSetWindowIcon(mHandle, images);
         }
-    }
-
-    private void callbackMaximize(long window, boolean maximized) {
-        if (maximized) {
-            mState = State.MAXIMIZED;
-        } else {
-            mState = State.WINDOWED;
-        }
-        mMaximized = maximized;
-    }
-
-    private void callbackFramebufferSize(long window, int width, int height) {
-        mFramebufferWidth = width;
-        mFramebufferHeight = height;
-    }
-
-    private void callbackContentScale(long window, float scaleX, float scaleY) {
-
-    }
-
-    private void applyMode() {
-        glfwSetWindowMonitor(mHandle, glfwGetPrimaryMonitor(), 0, 0, 1920, 1080, 144);
     }
 
     /**
@@ -399,26 +271,46 @@ public final class Window implements AutoCloseable {
     }
 
     /**
-     * Gets whether this window should be closed. For example, by clicking
-     * the close button in the title bar.
-     *
-     * @return {@code true} if this window should be closed
-     */
-    public boolean shouldClose() {
-        return glfwWindowShouldClose(mHandle);
-    }
-
-    public boolean isRefresh() {
-        return mRefresh;
-    }
-
-    /**
-     * Swaps the default framebuffer in the current OpenGL context to the
-     * operating system.
+     * Swaps the front and back buffers of the specified window when rendering
+     * with OpenGL.
      */
     public void swapBuffers() {
         glfwSwapBuffers(mHandle);
-        mRefresh = false;
+    }
+
+    /**
+     * Sets the swap interval for the current OpenGL context.
+     *
+     * @param interval the interval
+     */
+    public void swapInterval(int interval) {
+        glfwSwapInterval(interval);
+    }
+
+    /**
+     * Returns the framebuffer width for this window in pixels.
+     *
+     * @return the framebuffer width
+     */
+    public int getWidth() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer w = stack.mallocInt(1);
+            glfwGetFramebufferSize(mHandle, w, null);
+            return w.get(0);
+        }
+    }
+
+    /**
+     * Returns the framebuffer height for this window in pixels.
+     *
+     * @return the framebuffer height
+     */
+    public int getHeight() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer h = stack.mallocInt(1);
+            glfwGetFramebufferSize(mHandle, null, h);
+            return h.get(0);
+        }
     }
 
     /**
@@ -427,8 +319,12 @@ public final class Window implements AutoCloseable {
      *
      * @return the x-coordinate of this window
      */
-    public int getXPos() {
-        return mXPos;
+    public int getScreenY() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer w = stack.mallocInt(1);
+            glfwGetWindowPos(mHandle, w, null);
+            return w.get(0);
+        }
     }
 
     /**
@@ -437,26 +333,12 @@ public final class Window implements AutoCloseable {
      *
      * @return the y-coordinate of this window
      */
-    public int getYPos() {
-        return mYPos;
-    }
-
-    /**
-     * Returns the framebuffer width for this window in pixels.
-     *
-     * @return framebuffer width
-     */
-    public int getWidth() {
-        return mFramebufferWidth;
-    }
-
-    /**
-     * Returns the framebuffer height for this window in pixels.
-     *
-     * @return framebuffer height
-     */
-    public int getHeight() {
-        return mFramebufferHeight;
+    public int getScreenX() {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer h = stack.mallocInt(1);
+            glfwGetWindowPos(mHandle, null, h);
+            return h.get(0);
+        }
     }
 
     /**
@@ -465,7 +347,11 @@ public final class Window implements AutoCloseable {
      * @return window width
      */
     public int getScreenWidth() {
-        return mScreenWidth;
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer w = stack.mallocInt(1);
+            glfwGetWindowSize(mHandle, w, null);
+            return w.get(0);
+        }
     }
 
     /**
@@ -474,43 +360,31 @@ public final class Window implements AutoCloseable {
      * @return window height
      */
     public int getScreenHeight() {
-        return mScreenHeight;
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer h = stack.mallocInt(1);
+            glfwGetWindowSize(mHandle, null, h);
+            return h.get(0);
+        }
     }
 
-    public final float getAspectRatio() {
-        return (float) mFramebufferWidth / mFramebufferHeight;
+    public void minimize() {
+        glfwIconifyWindow(mHandle);
+    }
+
+    public void restore() {
+        glfwRestoreWindow(mHandle);
     }
 
     public void maximize() {
         glfwMaximizeWindow(mHandle);
     }
 
-    /**
-     * Sets window icon.
-     *
-     * @param lp 16*16
-     * @param mp 32*32
-     * @param hp 48*48
-     */
-    public void setIcon(@Nonnull NativeImage lp, @Nonnull NativeImage mp, @Nonnull NativeImage hp) {
-        GLFWImage.Buffer images = GLFWImage.mallocStack(3);
-        images.position(0);
-        images.width(lp.getWidth());
-        images.height(lp.getHeight());
-        memPutAddress(images.address() + GLFWImage.PIXELS, lp.getPixels());
+    public void show() {
+        glfwShowWindow(mHandle);
+    }
 
-        images.position(1);
-        images.width(mp.getWidth());
-        images.height(mp.getHeight());
-        memPutAddress(images.address() + GLFWImage.PIXELS, mp.getPixels());
-
-        images.position(2);
-        images.width(hp.getWidth());
-        images.height(hp.getHeight());
-        memPutAddress(images.address() + GLFWImage.PIXELS, hp.getPixels());
-
-        images.position(0);
-        glfwSetWindowIcon(mHandle, images);
+    public void hide() {
+        glfwHideWindow(mHandle);
     }
 
     /**
@@ -518,7 +392,9 @@ public final class Window implements AutoCloseable {
      */
     @Override
     public void close() {
-        sWindows.remove(mHandle);
+        if (sWindows.remove(mHandle) == null) {
+            return;
+        }
         Callbacks.glfwFreeCallbacks(mHandle);
         glfwDestroyWindow(mHandle);
     }

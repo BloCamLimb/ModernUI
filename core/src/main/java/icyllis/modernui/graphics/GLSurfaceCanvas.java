@@ -34,7 +34,6 @@ import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntStack;
-import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -230,6 +229,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final List<DrawText> mDrawTexts = new ArrayList<>();
     private final Queue<Runnable> mCustoms = new ArrayDeque<>();
 
+    private final Matrix4 mProjection = new Matrix4();
     private final FloatBuffer mProjectionUpload = memAllocFloat(16);
 
     @RenderThread
@@ -300,7 +300,6 @@ public final class GLSurfaceCanvas extends GLCanvas {
      *
      * @return the global instance
      */
-    @VisibleForTesting
     public static GLSurfaceCanvas getInstance() {
         return sInstance;
     }
@@ -351,17 +350,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mUniformMemory.clear();
     }
 
-    /**
-     * Set global projection matrix. This is required when window size changed and
-     * called before rendering. It should not change in a frame.
-     *
-     * @param projection the project matrix to replace current one
-     */
     @RenderThread
     public void setProjection(@Nonnull Matrix4 projection) {
-        ArchCore.checkRenderThread();
-        projection.put(mProjectionUpload.rewind());
-        mMatrixUBO.upload(0, 64, memAddress(mProjectionUpload.flip()));
+        projection.put(mProjectionUpload.clear());
     }
 
     @Nonnull
@@ -427,6 +418,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
             framebuffer.clearDepthStencilBuffer();
             framebuffer.bindDraw();
         }
+
+        // upload projection matrix
+        mMatrixUBO.upload(0, 64, memAddress(mProjectionUpload.flip()));
 
         uploadBuffers();
 

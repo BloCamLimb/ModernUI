@@ -57,7 +57,7 @@ public class TestListFragment extends Fragment {
                 return 2;
             }
         });
-        listView.setLayoutParams(new FrameLayout.LayoutParams(dp(200), dp(150), Gravity.CENTER));
+        listView.setLayoutParams(new FrameLayout.LayoutParams(dp(400), dp(300), Gravity.CENTER));
         return listView;
     }
 
@@ -65,7 +65,7 @@ public class TestListFragment extends Fragment {
 
         @Override
         public int getCount() {
-            return 19;
+            return 40;
         }
 
         @Nullable

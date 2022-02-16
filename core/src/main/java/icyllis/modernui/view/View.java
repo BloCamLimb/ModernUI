@@ -4861,7 +4861,7 @@ public class View implements Drawable.Callback {
             mScrollY = y;
             onScrollChanged(mScrollX, mScrollY, oldX, oldY);
             if (!awakenScrollBars()) {
-                invalidate();
+                postInvalidateOnAnimation();
             }
         }
     }
@@ -4966,6 +4966,9 @@ public class View implements Drawable.Callback {
 
         if (isHorizontalScrollBarEnabled() || isVerticalScrollBarEnabled()) {
 
+            // Invalidate to show the scrollbars
+            postInvalidateOnAnimation();
+
             if (scrollCache.mState == ScrollCache.OFF) {
                 // first takes longer
                 startDelay = Math.max(1500, startDelay);
@@ -4984,7 +4987,6 @@ public class View implements Drawable.Callback {
                 mAttachInfo.mHandler.postAtTime(scrollCache, fadeStartTime);
             }
 
-            invalidate();
             return true;
         }
 
@@ -9042,12 +9044,30 @@ public class View implements Drawable.Callback {
      * @see #invalidate()
      * @see #postInvalidate()
      */
-    public final void postInvalidateDelayed(long delayMillis) {
+    public final void postInvalidateDelayed(long delayMilliseconds) {
         // We try only with the AttachInfo because there's no point in invalidating
         // if we are not attached to our window
         final AttachInfo attachInfo = mAttachInfo;
         if (attachInfo != null) {
-            attachInfo.mHandler.postDelayed(this::invalidate, delayMillis);
+            attachInfo.mViewRoot.dispatchInvalidateDelayed(this, delayMilliseconds);
+        }
+    }
+
+    /**
+     * <p>Cause an invalidate to happen on the next animation time step, typically the
+     * next display frame.</p>
+     *
+     * <p>This method can be invoked from outside of the UI thread
+     * only when this View is attached to a window.</p>
+     *
+     * @see #invalidate()
+     */
+    public final void postInvalidateOnAnimation() {
+        // We try only with the AttachInfo because there's no point in invalidating
+        // if we are not attached to our window
+        final AttachInfo attachInfo = mAttachInfo;
+        if (attachInfo != null) {
+            attachInfo.mViewRoot.dispatchInvalidateOnAnimation(this);
         }
     }
 
@@ -11157,6 +11177,57 @@ public class View implements Drawable.Callback {
      */
     public String getTransitionName() {
         return mTransitionName;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder(128);
+        out.append(getClass().getName());
+        out.append('{');
+        out.append(Integer.toHexString(System.identityHashCode(this)));
+        out.append(' ');
+        switch (mViewFlags & VISIBILITY_MASK) {
+            case VISIBLE -> out.append('V');
+            case INVISIBLE -> out.append('I');
+            case GONE -> out.append('G');
+            default -> out.append('.');
+        }
+        out.append((mViewFlags & FOCUSABLE) == FOCUSABLE ? 'F' : '.');
+        out.append((mViewFlags & ENABLED_MASK) == ENABLED ? 'E' : '.');
+        out.append((mViewFlags & DRAW_MASK) == WILL_NOT_DRAW ? '.' : 'D');
+        out.append((mViewFlags & SCROLLBARS_HORIZONTAL) != 0 ? 'H' : '.');
+        out.append((mViewFlags & SCROLLBARS_VERTICAL) != 0 ? 'V' : '.');
+        out.append((mViewFlags & CLICKABLE) != 0 ? 'C' : '.');
+        out.append((mViewFlags & LONG_CLICKABLE) != 0 ? 'L' : '.');
+        out.append((mViewFlags & CONTEXT_CLICKABLE) != 0 ? 'X' : '.');
+        out.append(' ');
+        out.append((mPrivateFlags & PFLAG_IS_ROOT_NAMESPACE) != 0 ? 'R' : '.');
+        out.append((mPrivateFlags & PFLAG_FOCUSED) != 0 ? 'F' : '.');
+        out.append((mPrivateFlags & PFLAG_SELECTED) != 0 ? 'S' : '.');
+        if ((mPrivateFlags & PFLAG_PREPRESSED) != 0) {
+            out.append('p');
+        } else {
+            out.append((mPrivateFlags & PFLAG_PRESSED) != 0 ? 'P' : '.');
+        }
+        out.append((mPrivateFlags & PFLAG_HOVERED) != 0 ? 'H' : '.');
+        out.append((mPrivateFlags & PFLAG_ACTIVATED) != 0 ? 'A' : '.');
+        out.append((mPrivateFlags & PFLAG_INVALIDATED) != 0 ? 'I' : '.');
+        out.append((mPrivateFlags & PFLAG_DIRTY_MASK) != 0 ? 'D' : '.');
+        out.append(' ');
+        out.append(mLeft);
+        out.append(',');
+        out.append(mTop);
+        out.append('-');
+        out.append(mRight);
+        out.append(',');
+        out.append(mBottom);
+        final int id = getId();
+        if (id != NO_ID) {
+            out.append(" #");
+            out.append(Integer.toHexString(id));
+        }
+        out.append("}");
+        return out.toString();
     }
 
     // Properties

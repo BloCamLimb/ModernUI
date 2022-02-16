@@ -494,7 +494,7 @@ public class ScrollView extends FrameLayout {
                 mIsBeingDragged = false;
                 recycleVelocityTracker();
                 if (mScroller.springBack(mScrollX, mScrollY, 0, 0, 0, getScrollRange())) {
-                    invalidate();
+                    postInvalidateOnAnimation();
                 }
                 stopNestedScroll(TYPE_TOUCH);
             }
@@ -627,7 +627,7 @@ public class ScrollView extends FrameLayout {
                         }
                         if (shouldDisplayEdgeEffects()
                                 && (!mEdgeGlowTop.isFinished() || !mEdgeGlowBottom.isFinished())) {
-                            invalidate();
+                            postInvalidateOnAnimation();
                         }
                     }
                 }
@@ -642,7 +642,7 @@ public class ScrollView extends FrameLayout {
                         flingWithNestedDispatch(-initialVelocity);
                     } else if (mScroller.springBack(mScrollX, mScrollY, 0, 0, 0,
                             getScrollRange())) {
-                        invalidate();
+                        postInvalidateOnAnimation();
                     }
 
                     endDrag();
@@ -651,7 +651,7 @@ public class ScrollView extends FrameLayout {
             case MotionEvent.ACTION_CANCEL:
                 if (mIsBeingDragged && getChildCount() > 0) {
                     if (mScroller.springBack(mScrollX, mScrollY, 0, 0, 0, getScrollRange())) {
-                        invalidate();
+                        postInvalidateOnAnimation();
                     }
                     endDrag();
                 }
@@ -985,7 +985,7 @@ public class ScrollView extends FrameLayout {
         delta = Math.max(0, Math.min(mScroller.getFinalY() + delta, getScrollRange())) - mScrollY;
         if (delta != 0) {
             mScroller.startScroll(mScrollX, mScrollY, 0, delta);
-            invalidate();
+            postInvalidateOnAnimation();
             return true;
         }
         return false;
@@ -1100,7 +1100,7 @@ public class ScrollView extends FrameLayout {
 
             if (!awakenScrollBars()) {
                 // Keep on drawing until the animation has finished.
-                postInvalidate();
+                postInvalidateOnAnimation();
             }
         }
     }
@@ -1294,7 +1294,7 @@ public class ScrollView extends FrameLayout {
             mScroller.fling(mScrollX, mScrollY, 0, velocityY, 0, 0, 0,
                     Math.max(0, bottom - height), 0, height / 2);
 
-            invalidate();
+            postInvalidateOnAnimation();
         }
     }
 
@@ -1404,7 +1404,7 @@ public class ScrollView extends FrameLayout {
                 canvas.translate(translateX, Math.min(0, scrollY) + translateY);
                 mEdgeGlowTop.setSize(width, height);
                 if (mEdgeGlowTop.draw(canvas)) {
-                    invalidate();
+                    postInvalidateOnAnimation();
                 }
                 canvas.restore();
             }
@@ -1430,7 +1430,7 @@ public class ScrollView extends FrameLayout {
                 canvas.rotate(180, width, 0);
                 mEdgeGlowBottom.setSize(width, height);
                 if (mEdgeGlowBottom.draw(canvas)) {
-                    invalidate();
+                    postInvalidateOnAnimation();
                 }
                 canvas.restore();
             }

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -48,7 +48,7 @@ public class TestLinearLayout extends LinearLayout {
     private float c = 10;
     private float f = 0;
 
-    private final Animation cAnim;
+    /*private final Animation cAnim;
 
     private final Animation circleAnimation1;
     private final Animation circleAnimation2;
@@ -56,10 +56,10 @@ public class TestLinearLayout extends LinearLayout {
     private final Animation circleAnimation4;
     private final Animation iconRadiusAni;
     private final Animation arcStartAni;
-    private final Animation arcEndAni;
+    private final Animation arcEndAni;*/
 
     private final Animator mRoundRectLenAnim;
-    private final Animation roundRectAlphaAni;
+    //private final Animation roundRectAlphaAni;
 
     private float circleAcc1;
     private float circleAcc2;
@@ -173,6 +173,7 @@ public class TestLinearLayout extends LinearLayout {
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
                 textField.setHint("Your Name");
+                textField.setTextSize(16);
                 //textField.setSingleLine();
                 //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 textField.setPadding(dp(12), 0, dp(12), 0);
@@ -200,7 +201,7 @@ public class TestLinearLayout extends LinearLayout {
                 dp(40)));
 
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
-        cAnim = new Animation(200)
+        /*cAnim = new Animation(200)
                 .applyTo(new Applier(20, 0, () -> this.c, v -> this.c = v)
                         .setInterpolator(TimeInterpolator.DECELERATE)
                 );
@@ -238,7 +239,7 @@ public class TestLinearLayout extends LinearLayout {
         arcEndAni = new Animation(800)
                 .applyTo(new Applier(-90, 270, () -> arcEnd, v -> arcEnd = v)
                         .setInterpolator(TimeInterpolator.ACCELERATE)
-                );
+                );*/
 
         ObjectAnimator anim = ObjectAnimator.ofFloat(this, sRoundRectLengthProp, 0, 80);
         anim.setDuration(400);
@@ -246,8 +247,8 @@ public class TestLinearLayout extends LinearLayout {
         anim.addUpdateListener(a -> invalidate());
         mRoundRectLenAnim = anim;
 
-        roundRectAlphaAni = new Animation(250)
-                .applyTo(new Applier(0, 1, () -> roundRectAlpha, v -> roundRectAlpha = v));
+        /*roundRectAlphaAni = new Animation(250)
+                .applyTo(new Applier(0, 1, () -> roundRectAlpha, v -> roundRectAlpha = v));*/
 
         setLayoutTransition(new LayoutTransition());
     }
@@ -387,14 +388,14 @@ public class TestLinearLayout extends LinearLayout {
     }
 
     protected boolean onMousePressed(double mouseX, double mouseY, int mouseButton) {
-        if (!b) {
+        /*if (!b) {
             cAnim.start();
             b = true;
         } else {
             cAnim.invert();
             b = false;
         }
-        f = 0.95f;
+        f = 0.95f;*/
         return true;
     }
 
@@ -404,7 +405,7 @@ public class TestLinearLayout extends LinearLayout {
     }
 
     public void tick() {
-        ticks++;
+        /*ticks++;
         if ((ticks & 15) == 0) {
             if (!b) {
                 cAnim.start();
@@ -429,7 +430,7 @@ public class TestLinearLayout extends LinearLayout {
             circleAnimation3.startFull();
         } else if (a == 7) {
             circleAnimation4.startFull();
-        }
+        }*/
     }
 
     private static class CView extends View {
@@ -460,7 +461,7 @@ public class TestLinearLayout extends LinearLayout {
 
     private static class DView extends View {
 
-        private final Animation animation;
+        //private final Animation animation;
 
         private float offsetY;
 
@@ -470,12 +471,12 @@ public class TestLinearLayout extends LinearLayout {
 
         public DView(TimeInterpolator interpolator, int offset) {
             this.offset = offset;
-            animation = new Animation(200)
+            /*animation = new Animation(200)
                     .applyTo(new Applier(0, 60, () -> offsetY, v -> {
                         offsetY = v;
                         invalidate();
                     }).setInterpolator(interpolator));
-            animation.invertFull();
+            animation.invertFull();*/
         }
 
         @Override
@@ -483,13 +484,13 @@ public class TestLinearLayout extends LinearLayout {
             canvas.drawText("DView", 0, 5, offset, offsetY + 24, mTextPaint);
         }
 
-        public void tick() {
+        /*public void tick() {
             mTicks++;
             if (mTicks % 40 == 0) {
                 animation.invert();
             } else if (mTicks % 20 == 0) {
                 animation.start();
             }
-        }
+        }*/
     }
 }

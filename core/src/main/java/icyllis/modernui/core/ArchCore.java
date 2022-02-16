@@ -26,6 +26,7 @@ import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
@@ -56,8 +57,7 @@ public final class ArchCore {
     private static Thread sRenderThread;
     private static Thread sUiThread;
 
-    private static Boolean sGlOrVk;
-
+    private static volatile Handler sMainHandlerAsync;
     private static Handler sUiHandler;
     private static Handler sUiHandlerAsync;
 
@@ -68,7 +68,7 @@ public final class ArchCore {
      * Initialize GLFW, call on JVM main thread. This method also specify the main thread.
      */
     @MainThread
-    public static void init() {
+    public static void initialize() {
         LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
         if (GLFW.glfwSetErrorCallback(ArchCore::onError) != null || !GLFW.glfwInit()) {
             throw new IllegalStateException("Failed to initialize GLFW");
@@ -81,7 +81,20 @@ public final class ArchCore {
     }
 
     /**
-     * Initialize only the main thread. Cannot be used with {@link #init()}.
+     * Terminates the GLFW.
+     */
+    @MainThread
+    public static void terminate() {
+        GLFWErrorCallback cb = GLFW.glfwSetErrorCallback(null);
+        if (cb != null) {
+            cb.free();
+        }
+        GLFW.glfwTerminate();
+        LOGGER.info(MARKER, "Terminated GLFW");
+    }
+
+    /**
+     * Initialize only the main thread. Cannot be used with {@link #initialize()}.
      */
     @MainThread
     public static void initMainThread() {
@@ -127,14 +140,53 @@ public final class ArchCore {
         return Thread.currentThread() == sRenderThread;
     }
 
-    public static void recordMainCall(@Nonnull Runnable r) {
-        sMainCalls.offer(r);
+    /**
+     * Returns a shared main thread handler. The handler is not always available. Consider
+     * {@link #executeOnMainThread(Runnable)} instead.
+     *
+     * @return async main handler
+     */
+    public static Handler getMainHandlerAsync() {
+        if (sMainHandlerAsync == null) {
+            synchronized (ArchCore.class) {
+                if (sMainHandlerAsync == null) {
+                    sMainHandlerAsync = Handler.createAsync(Looper.getMainLooper());
+                }
+            }
+        }
+        return sMainHandlerAsync;
     }
 
-    public static void recordRenderCall(@Nonnull Runnable r) {
+    /**
+     * This should be rarely used. Only when the render thread and the main thread are the same thread,
+     * and you need to call some methods that must be called on the main thread.
+     *
+     * @param r the runnable
+     */
+    public static void executeOnMainThread(@Nonnull Runnable r) {
+        if (isOnMainThread()) {
+            r.run();
+        } else {
+            if (Looper.getMainLooper() == null) {
+                sMainCalls.offer(r);
+            } else {
+                getMainHandlerAsync().post(r);
+            }
+        }
+    }
+
+    /**
+     * Post a delayed operation that will be executed on render thread.
+     *
+     * @param r the runnable
+     */
+    public static void postOnRenderThread(@Nonnull Runnable r) {
         sRenderCalls.offer(r);
     }
 
+    /**
+     * Flush main thread calls. Use only if the application is not running independently.
+     */
     public static void flushMainCalls() {
         //noinspection UnnecessaryLocalVariable
         final ConcurrentLinkedQueue<Runnable> queue = sMainCalls;
@@ -142,6 +194,9 @@ public final class ArchCore {
         while ((r = queue.poll()) != null) r.run();
     }
 
+    /**
+     * Flush render thread calls.
+     */
     public static void flushRenderCalls() {
         //noinspection UnnecessaryLocalVariable
         final ConcurrentLinkedQueue<Runnable> queue = sRenderCalls;
@@ -160,7 +215,6 @@ public final class ArchCore {
             } else {
                 throw new IllegalStateException("Initialize twice");
             }
-            sGlOrVk = Boolean.TRUE;
         }
 
         // get or create
@@ -182,18 +236,6 @@ public final class ArchCore {
         GLWrapper.initialize(caps);
     }
 
-    @RenderThread
-    public static void initVulkan() {
-        synchronized (ArchCore.class) {
-            if (sRenderThread == null) {
-                sRenderThread = Thread.currentThread();
-            } else {
-                throw new IllegalStateException("Initialize twice");
-            }
-            sGlOrVk = Boolean.FALSE;
-        }
-    }
-
     /**
      * Return whether render thread is initialized.
      *
@@ -203,35 +245,17 @@ public final class ArchCore {
         return sRenderThread != null;
     }
 
-    /**
-     * Return the graphics backend API. True for OpenGL, False for Vulkan.
-     *
-     * @return the backend API
-     */
-    public static boolean isGlOrVk() {
-        return sGlOrVk;
-    }
-
     @UiThread
     public static void initUiThread() {
         synchronized (ArchCore.class) {
             if (sUiThread == null) {
                 sUiThread = Thread.currentThread();
-                sUiHandler = new Handler(Looper.prepare());
+                sUiHandler = new Handler(Looper.myLooper());
                 sUiHandlerAsync = Handler.createAsync(Looper.myLooper());
             } else {
                 throw new IllegalStateException("Initialize twice");
             }
         }
-    }
-
-    /**
-     * Return whether UI thread is initialized.
-     *
-     * @return whether UI thread is initialized
-     */
-    public static boolean hasUiThread() {
-        return sUiThread != null;
     }
 
     public static void checkUiThread() {
@@ -244,6 +268,23 @@ public final class ArchCore {
                     throw new IllegalStateException("Not called from UI thread. Desired " + sUiThread +
                             " current " + Thread.currentThread());
             }
+    }
+
+    public static Thread getUiThread() {
+        return sUiThread;
+    }
+
+    public static boolean isOnUiThread() {
+        return Thread.currentThread() == sUiThread;
+    }
+
+    /**
+     * Return whether UI thread is initialized.
+     *
+     * @return whether UI thread is initialized
+     */
+    public static boolean hasUiThread() {
+        return sUiThread != null;
     }
 
     /**
@@ -269,10 +310,6 @@ public final class ArchCore {
      */
     public static Handler getUiHandlerAsync() {
         return sUiHandlerAsync;
-    }
-
-    public static boolean isOnUiThread() {
-        return Thread.currentThread() == sUiThread;
     }
 
     /**
@@ -324,7 +361,7 @@ public final class ArchCore {
                 }
                 p = memAlloc((int) (rem + 1)); // +1 EOF
                 //noinspection StatementWithEmptyBody
-                while (ch.read(p) != -1);
+                while (ch.read(p) != -1) ;
             } else {
                 p = memAlloc(4096);
                 while (channel.read(p) != -1) {
