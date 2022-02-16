@@ -18,15 +18,37 @@
 
 package icyllis.modernui;
 
+import icyllis.modernui.annotation.MainThread;
+import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.core.Window;
+import icyllis.modernui.core.*;
+import icyllis.modernui.fragment.*;
+import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.GLFramebuffer;
+import icyllis.modernui.graphics.GLSurfaceCanvas;
+import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.ShaderManager;
+import icyllis.modernui.graphics.opengl.TextureManager;
+import icyllis.modernui.lifecycle.*;
+import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.Typeface;
-import icyllis.modernui.view.ViewManager;
+import icyllis.modernui.view.*;
+import icyllis.modernui.widget.CoordinatorLayout;
+import icyllis.modernui.widget.EditText;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
+import org.lwjgl.glfw.GLFWMonitorCallback;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.awt.*;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -39,13 +61,14 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
 
+import static icyllis.modernui.graphics.GLWrapper.*;
+import static org.lwjgl.glfw.GLFW.*;
+
 /**
  * The core class of Modern UI.
- * <p>
- * This class (and its subclasses) can ONLY be used internally.
  */
 @ApiStatus.Internal
-public class ModernUI {
+public class ModernUI implements AutoCloseable, LifecycleOwner {
 
     public static final String ID = "modernui"; // as well as the namespace
     public static final String NAME_CPT = "ModernUI";
@@ -53,9 +76,13 @@ public class ModernUI {
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
+    public static final Path ASSETS_DIR = Path.of(String.valueOf(System.getProperty("icyllis.modernui.AssetsDir")));
+
     protected static volatile ModernUI sInstance;
 
     private static final Cleaner sCleaner = Cleaner.create();
+
+    private static final int fragment_container = 0x01020007;
 
     static {
         if (Runtime.version().feature() < 17) {
@@ -63,10 +90,19 @@ public class ModernUI {
         }
     }
 
-    //TODO
-    protected final Path mAssetsDir = Path.of(String.valueOf(System.getenv("APP_ASSETS")));
+    private volatile MainWindow mWindow;
 
-    protected volatile ViewManager mViewManager;
+    private ViewRootImpl mRoot;
+    private CoordinatorLayout mDecor;
+    private FragmentContainerView mFragmentContainerView;
+
+    private LifecycleRegistry mLifecycleRegistry;
+    private OnBackPressedDispatcher mOnBackPressedDispatcher;
+
+    private ViewModelStore mViewModelStore;
+    private FragmentController mFragmentController;
+
+    private Looper mUiLooper;
 
     public ModernUI() {
         synchronized (ModernUI.class) {
@@ -78,17 +114,6 @@ public class ModernUI {
         }
         // should be true
         LOGGER.info("AWT headless: {}", GraphicsEnvironment.isHeadless());
-    }
-
-    /**
-     * Initializes the Modern UI with the default application setups.
-     *
-     * @return the Modern UI
-     */
-    //TODO
-    public static ModernUI initialize() {
-        new ModernUI();
-        return sInstance;
     }
 
     /**
@@ -112,6 +137,184 @@ public class ModernUI {
     @Nonnull
     public static Cleanable registerCleanup(@Nonnull Object target, @Nonnull Runnable action) {
         return sCleaner.register(target, action);
+    }
+
+    /**
+     * Runs the Modern UI with the default application setups.
+     * This method is only called by the <code>main()</code> on the main thread.
+     */
+    @MainThread
+    public void run(@Nonnull Fragment fragment) {
+        ArchCore.initialize();
+
+        LOGGER.info(MARKER, "Initializing window system");
+        Monitor monitor = Monitor.getPrimary();
+
+        glfwDefaultWindowHints();
+        glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+        glfwWindowHint(GLFW_CONTEXT_CREATION_API, GLFW_NATIVE_CONTEXT_API);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_ANY_PROFILE);
+        glfwWindowHintString(GLFW_X11_CLASS_NAME, NAME_CPT);
+        glfwWindowHintString(GLFW_X11_INSTANCE_NAME, NAME_CPT);
+        glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
+        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
+        if (monitor == null) {
+            mWindow = MainWindow.initialize(NAME_CPT, 1280, 720);
+        } else {
+            VideoMode mode = monitor.getCurrentMode();
+            mWindow = MainWindow.initialize(NAME_CPT, (int) (mode.getWidth() * 0.75f),
+                    (int) (mode.getHeight() * 0.75f));
+        }
+
+        LOGGER.info(MARKER, "Preparing threads");
+        Looper.prepare(mWindow);
+
+        new Thread(this::runRender, "Render-Thread").start();
+        new Thread(() -> runUI(fragment), "UI-Thread").start();
+
+        try (NativeImage i16 = NativeImage.decode(null, getResourceChannel(ID, "AppLogo16x.png"));
+             NativeImage i32 = NativeImage.decode(null, getResourceChannel(ID, "AppLogo32x.png"));
+             NativeImage i48 = NativeImage.decode(null, getResourceChannel(ID, "AppLogo48x.png"))) {
+            mWindow.setIcon(i16, i32, i48);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        LOGGER.info(MARKER, "Looping main thread");
+        Looper.loop();
+    }
+
+    @RenderThread
+    private void runRender() {
+        LOGGER.info(MARKER, "Initializing render thread");
+        final Window window = mWindow;
+        window.makeCurrent();
+        ArchCore.initOpenGL();
+
+        final GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
+        ShaderManager.getInstance().reload();
+
+        glEnable(GL_CULL_FACE);
+        glEnable(GL_BLEND);
+        glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        glDisable(GL_DEPTH_TEST);
+        glEnable(GL_STENCIL_TEST);
+        glEnable(GL_MULTISAMPLE);
+
+        final GLFramebuffer framebuffer = new GLFramebuffer(4);
+        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
+        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
+        framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
+        framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+        framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+        final Matrix4 projection = new Matrix4();
+
+        window.swapInterval(1);
+        LOGGER.info(MARKER, "Looping render thread");
+
+        while (!window.shouldClose()) {
+            int width = window.getWidth(), height = window.getHeight();
+            glBindFramebuffer(GL_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
+            resetFrame(mWindow);
+            if (mRoot != null) {
+                canvas.setProjection(projection.setOrthographic(width, height, 0, 3000));
+                mRoot.flushDrawCommands(canvas, framebuffer);
+            }
+            if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
+                glBlitNamedFramebuffer(framebuffer.get(), DEFAULT_FRAMEBUFFER, 0, 0,
+                        width, height, 0, 0,
+                        width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+            }
+            if (mRoot != null) {
+                mRoot.mChoreographer.scheduleFrameAsync(ArchCore.timeNanos());
+            }
+            mWindow.swapBuffers();
+        }
+        LOGGER.info(MARKER, "Quited render thread");
+    }
+
+    @UiThread
+    private void runUI(@Nonnull Fragment fragment) {
+        LOGGER.info(MARKER, "Initializing UI thread");
+        mUiLooper = Looper.prepare();
+
+        ViewConfiguration.get().setViewScale(2);
+
+        mRoot = new ViewRootImpl();
+
+        mDecor = new CoordinatorLayout();
+        mDecor.setClickable(true);
+        mDecor.setFocusableInTouchMode(true);
+        mDecor.setWillNotDraw(true);
+        mDecor.setId(R.id.content);
+
+        mFragmentContainerView = new FragmentContainerView();
+        mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        mFragmentContainerView.setWillNotDraw(true);
+        mFragmentContainerView.setId(fragment_container);
+        mDecor.addView(mFragmentContainerView);
+
+        try {
+            GLTexture texture = TextureManager.getInstance().create(
+                    FileChannel.open(Path.of("F:", "eromanga.png"), StandardOpenOption.READ), true);
+            Image image = new Image(texture);
+            Drawable drawable = new ImageDrawable(image);
+            drawable.setTint(0xFF808080);
+            mDecor.setBackground(drawable);
+        } catch (IOException ignored) {
+        }
+
+        mRoot.setView(mDecor);
+
+        LOGGER.info(MARKER, "Installing view protocol");
+
+        mWindow.install(mRoot);
+
+        mLifecycleRegistry = new LifecycleRegistry(this);
+        mOnBackPressedDispatcher = new OnBackPressedDispatcher(() -> mWindow.setShouldClose(true));
+        mViewModelStore = new ViewModelStore();
+        mFragmentController = FragmentController.createController(new HostCallbacks());
+
+        mFragmentController.attachHost(null);
+
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE);
+        mFragmentController.dispatchCreate();
+
+        mFragmentController.dispatchActivityCreated();
+        mFragmentController.execPendingActions();
+
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
+        mFragmentController.dispatchStart();
+
+        LOGGER.info(MARKER, "Starting main fragment");
+
+        mFragmentController.getFragmentManager().beginTransaction()
+                .add(fragment_container, fragment, "main")
+                .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                .commit();
+
+        ArchCore.executeOnMainThread(mWindow::show);
+
+        LOGGER.info(MARKER, "Looping UI thread");
+
+        Looper.loop();
+
+        mFragmentController.dispatchStop();
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
+
+        mFragmentController.dispatchDestroy();
+        mLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
+
+        LOGGER.info(MARKER, "Quited UI thread");
+    }
+
+    @Nonnull
+    @Override
+    public Lifecycle getLifecycle() {
+        return mLifecycleRegistry;
     }
 
     /**
@@ -145,12 +348,12 @@ public class ModernUI {
 
     @Nonnull
     public InputStream getResourceStream(@Nonnull String res, @Nonnull String path) throws IOException {
-        return new FileInputStream(mAssetsDir.resolve(res).resolve(path).toFile());
+        return new FileInputStream(ASSETS_DIR.resolve(res).resolve(path).toFile());
     }
 
     @Nonnull
     public ReadableByteChannel getResourceChannel(@Nonnull String res, @Nonnull String path) throws IOException {
-        return FileChannel.open(mAssetsDir.resolve(res).resolve(path), StandardOpenOption.READ);
+        return FileChannel.open(ASSETS_DIR.resolve(res).resolve(path), StandardOpenOption.READ);
     }
 
     /**
@@ -159,6 +362,131 @@ public class ModernUI {
      * @return window view manager
      */
     public ViewManager getViewManager() {
-        return mViewManager;
+        return mDecor;
+    }
+
+    @Override
+    public void close() {
+        if (mUiLooper != null) {
+            LOGGER.info(MARKER, "Quiting UI thread");
+            ArchCore.getUiHandlerAsync().post(() -> mUiLooper.quitSafely());
+            try {
+                ArchCore.getUiThread().join(1000);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+
+        if (mWindow != null) {
+            mWindow.close();
+            LOGGER.info(MARKER, "Closed main window");
+        }
+        GLFWMonitorCallback cb = glfwSetMonitorCallback(null);
+        if (cb != null) {
+            cb.free();
+        }
+        ArchCore.terminate();
+    }
+
+    @UiThread
+    class ViewRootImpl extends ViewRoot {
+
+        private final Rect mGlobalRect = new Rect();
+
+        @Nonnull
+        @Override
+        protected Canvas beginRecording(int width, int height) {
+            GLSurfaceCanvas canvas = GLSurfaceCanvas.getInstance();
+            canvas.reset(width, height);
+            return canvas;
+        }
+
+        @Override
+        protected boolean dispatchTouchEvent(MotionEvent event) {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                View v = mView.findFocus();
+                if (v instanceof EditText) {
+                    v.getGlobalVisibleRect(mGlobalRect);
+                    if (!mGlobalRect.contains((int) event.getRawX(), (int) event.getRawY())) {
+                        v.clearFocus();
+                    }
+                }
+            }
+            return super.dispatchTouchEvent(event);
+        }
+
+        @Override
+        protected void onKeyEvent(KeyEvent event) {
+            if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                if (event.getKeyCode() == KeyEvent.KEY_ESCAPE) {
+                    View v = mView.findFocus();
+                    if (v instanceof EditText) {
+                        mView.requestFocus();
+                    } else {
+                        mOnBackPressedDispatcher.onBackPressed();
+                    }
+                }
+            }
+        }
+
+        @RenderThread
+        private void flushDrawCommands(GLSurfaceCanvas canvas, GLFramebuffer framebuffer) {
+            synchronized (mRenderLock) {
+                if (mRedrawn) {
+                    mRedrawn = false;
+                    canvas.draw(framebuffer);
+                }
+            }
+        }
+
+        @Override
+        public void playSoundEffect(int effectId) {
+        }
+
+        @Override
+        public boolean performHapticFeedback(int effectId, boolean always) {
+            return false;
+        }
+    }
+
+    @UiThread
+    class HostCallbacks extends FragmentHostCallback<Object> implements
+            ViewModelStoreOwner,
+            OnBackPressedDispatcherOwner {
+        HostCallbacks() {
+            super(new Handler(Looper.myLooper()));
+            assert ArchCore.isOnUiThread();
+        }
+
+        @Nullable
+        @Override
+        public Object onGetHost() {
+            // intentionally null
+            return null;
+        }
+
+        @Nullable
+        @Override
+        public View onFindViewById(int id) {
+            return mDecor.findViewById(id);
+        }
+
+        @Nonnull
+        @Override
+        public ViewModelStore getViewModelStore() {
+            return mViewModelStore;
+        }
+
+        @Nonnull
+        @Override
+        public OnBackPressedDispatcher getOnBackPressedDispatcher() {
+            return mOnBackPressedDispatcher;
+        }
+
+        @Nonnull
+        @Override
+        public Lifecycle getLifecycle() {
+            return mLifecycleRegistry;
+        }
     }
 }

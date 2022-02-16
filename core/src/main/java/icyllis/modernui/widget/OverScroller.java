@@ -21,7 +21,6 @@ package icyllis.modernui.widget;
 import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.TimeInterpolator;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
 

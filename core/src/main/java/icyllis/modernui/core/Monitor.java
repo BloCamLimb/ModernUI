@@ -18,8 +18,11 @@
 
 package icyllis.modernui.core;
 
+import icyllis.modernui.annotation.MainThread;
 import it.unimi.dsi.fastutil.longs.Long2ObjectArrayMap;
-import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.objects.ObjectCollection;
+import it.unimi.dsi.fastutil.objects.ObjectCollections;
+import org.jetbrains.annotations.UnmodifiableView;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -29,31 +32,45 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.IntBuffer;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * Represents a Monitor (sometimes known as Display) that connected to
- * your operating system.
+ * Represents a currently connected Monitor (sometimes known as Display).
+ * All methods must be called on the main thread and after GLFW initialization.
+ * This class can only be used when the application runs independently.
  */
+@MainThread
 public final class Monitor {
 
-    private static final Long2ObjectMap<Monitor> sMonitors = new Long2ObjectArrayMap<>();
+    private static final Long2ObjectArrayMap<Monitor> sMonitors = new Long2ObjectArrayMap<>();
+    private static final ObjectCollection<Monitor> sMonitorsView = ObjectCollections.unmodifiable(sMonitors.values());
+    private static final CopyOnWriteArrayList<MonitorEventListener> sListeners = new CopyOnWriteArrayList<>();
 
     static {
-        GLFW.glfwSetMonitorCallback(Monitor::onMonitorChanged);
+        GLFW.glfwSetMonitorCallback(Monitor::onMonitorCallback);
         PointerBuffer pointers = GLFW.glfwGetMonitors();
         if (pointers != null) {
             for (int i = 0; i < pointers.limit(); ++i) {
-                long ptr = pointers.get(i);
-                sMonitors.put(ptr, new Monitor(ptr));
+                long p = pointers.get(i);
+                sMonitors.put(p, new Monitor(p));
             }
         }
     }
 
-    private static void onMonitorChanged(long monitor, int event) {
+    private static void onMonitorCallback(long monitor, int event) {
         if (event == GLFW.GLFW_CONNECTED) {
-            sMonitors.put(monitor, new Monitor(monitor));
+            Monitor mon = new Monitor(monitor);
+            sMonitors.put(monitor, mon);
+            for (MonitorEventListener listener : sListeners) {
+                listener.onMonitorConnected(mon);
+            }
         } else if (event == GLFW.GLFW_DISCONNECTED) {
-            sMonitors.remove(monitor);
+            Monitor mon = sMonitors.remove(monitor);
+            if (mon != null) {
+                for (MonitorEventListener listener : sListeners) {
+                    listener.onMonitorDisconnected(mon);
+                }
+            }
         }
     }
 
@@ -67,9 +84,19 @@ public final class Monitor {
         return sMonitors.get(GLFW.glfwGetPrimaryMonitor());
     }
 
-    @Nonnull
+    @UnmodifiableView
     public static Collection<Monitor> getAll() {
-        return sMonitors.values();
+        return sMonitorsView;
+    }
+
+    public static void addMonitorEventListener(@Nonnull MonitorEventListener listener) {
+        if (!sListeners.contains(listener)) {
+            sListeners.add(listener);
+        }
+    }
+
+    public static void removeMonitorEventListener(@Nonnull MonitorEventListener listener) {
+        sListeners.remove(listener);
     }
 
     private final long mHandle;
@@ -110,18 +137,18 @@ public final class Monitor {
     }
 
     /**
-     * Get the x-coordinate of this monitor in virtual screen coordinates.
+     * Get the x position of this monitor in virtual screen coordinates.
      *
-     * @return the x-coordinate
+     * @return the x position
      */
     public int getXPos() {
         return mXPos;
     }
 
     /**
-     * Get the y-coordinate of this monitor in virtual screen coordinates.
+     * Get the y position of this monitor in virtual screen coordinates.
      *
-     * @return the y-coordinate
+     * @return the y position
      */
     public int getYPos() {
         return mYPos;
@@ -136,9 +163,10 @@ public final class Monitor {
         return new VideoMode(mode);
     }
 
-    @Nullable
+    @Nonnull
     public String getName() {
-        return GLFW.glfwGetMonitorName(mHandle);
+        String s = GLFW.glfwGetMonitorName(mHandle);
+        return s == null ? "" : s;
     }
 
     /**
@@ -163,5 +191,12 @@ public final class Monitor {
                 .sorted((c1, c2) -> c2.getHeight() - c1.getHeight())
                 .max(Comparator.comparingInt(VideoMode::getRefreshRate))
                 .orElse(mVideoModes[0]);
+    }
+
+    public interface MonitorEventListener {
+
+        void onMonitorConnected(@Nonnull Monitor monitor);
+
+        void onMonitorDisconnected(@Nonnull Monitor monitor);
     }
 }

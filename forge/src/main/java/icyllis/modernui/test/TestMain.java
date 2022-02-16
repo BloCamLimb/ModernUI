@@ -26,10 +26,8 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
-import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.core.Looper;
-import icyllis.modernui.core.NativeImage;
 import icyllis.modernui.core.Window;
+import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
@@ -45,7 +43,6 @@ import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
-import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -55,7 +52,6 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
@@ -79,9 +75,9 @@ public class TestMain {
     private static BufferedImage IMAGE;
     private static Graphics2D GRAPHICS;
 
-    public static final boolean CREATE_WINDOW = true;
+    public static final boolean CREATE_WINDOW = false;
 
-    private static Window sWindow;
+    private static MainWindow sWindow;
 
     /*
         Heading font size (In Minecraft: GUI scale 2)
@@ -140,8 +136,6 @@ public class TestMain {
 
         /*System.setProperty("org.lwjgl.librarypath", nativesDir);*/
 
-        ModernUI.initialize();
-
         /*ModernUI.LOGGER.info("Module: {}", TestMain.class.getModule());
         ModernUI.LOGGER.info("Main class loader: {}", TestMain.class.getClassLoader());
         ModernUI.LOGGER.info("System class loader: {}", ClassLoader.getSystemClassLoader());
@@ -175,14 +169,12 @@ public class TestMain {
             e.printStackTrace();
         }*/
 
-        try {
+        /*try {
             DataSet dataSet = DataSet.inflate(new FileInputStream("F:/ftestdata.dat"));
             ModernUI.LOGGER.info(dataSet);
         } catch (IOException e) {
             e.printStackTrace();
-        }
-
-        ShaderManager.getInstance().addListener(mgr -> mgr.getShard(ModernUI.ID, "a.vert"));
+        }*/
 
         //(sec23°)²+(sec22°)²-2sec23°sec22°cos45°=a²
         //θ=arccos((a²+(sec22°)²-(sec23°)²)/(2asec22°))
@@ -269,12 +261,21 @@ public class TestMain {
             e.printStackTrace();
         }*/
         //ModernUI.LOGGER.info(Gravity.TOP & Gravity.BOTTOM);
-        if (!CREATE_WINDOW)
+        if (!CREATE_WINDOW) {
+            Thread.currentThread().setName("Main-Thread");
+            try (ModernUI modernUI = new ModernUI()) {
+                modernUI.run(new TestFragment());
+            }
+            AudioManager.getInstance().close();
+            LOGGER.info(MARKER, "Stopped");
             return;
+        }
+        new ModernUI();
+        ShaderManager.getInstance().addListener(mgr -> mgr.getShard(ModernUI.ID, "a.vert"));
         try {
             Thread.currentThread().setName("Main-Thread");
-            ArchCore.init();
-            sWindow = Window.create("Modern UI Layout Editor", Window.State.WINDOWED, 1600, 900);
+            ArchCore.initialize();
+            sWindow = MainWindow.initialize("Modern UI Layout Editor", 1600, 900);
             try (var c1 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo16x.png");
                  var bitmap1 = NativeImage.decode(null, c1);
                  var c2 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo32x.png");
@@ -313,7 +314,8 @@ public class TestMain {
                 }
             }, "Choose-Color").start();*/
 
-            Looper.loop(sWindow);
+            Looper.prepare(sWindow);
+            Looper.loop();
 
             renderThread.interrupt();
         } finally {
@@ -541,8 +543,6 @@ public class TestMain {
                 canvas.drawArc(800, 450, 100, -90,
                         360 * (playTime / sTrack.getLength()), paint);
 
-                // OpenGL coordinates origin is bottom left, we flip it to top left
-                canvas.setProjection(projection.setOrthographic(window.getWidth(), window.getHeight(), 0, 3000));
                 // render thread, wait UI thread
                 canvas.draw(framebuffer);
 

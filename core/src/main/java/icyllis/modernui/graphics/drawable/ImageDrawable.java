@@ -223,7 +223,7 @@ public class ImageDrawable extends Drawable {
         final Paint paint = state.mPaint;
 
         final int restoreAlpha;
-        if (mBlendColor >>> 24 != 0xFF) {
+        if (mBlendColor >>> 24 != 0) {
             restoreAlpha = paint.getAlpha();
             paint.setColor(mBlendColor);
             paint.setAlpha(restoreAlpha * (mBlendColor >>> 24) >>> 8);

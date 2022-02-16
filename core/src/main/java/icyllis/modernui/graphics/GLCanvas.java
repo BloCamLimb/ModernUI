@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.core.Window;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
@@ -33,7 +34,7 @@ public abstract class GLCanvas extends Canvas {
     static final Pool<Save> sSavePool = Pools.concurrent(60);
 
     // see window
-    static final Matrix4 RESET_MATRIX = Matrix4.makeTranslation(0, 0, -3000);
+    static final Matrix4 RESET_MATRIX = Matrix4.makeTranslation(0, 0, -Window.LAST_SYSTEM_WINDOW - 1);
 
     // local MCRec stack
     final ArrayDeque<Save> mSaves = new ArrayDeque<>();

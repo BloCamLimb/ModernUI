@@ -19,7 +19,6 @@
 package icyllis.modernui.test.game;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
@@ -27,6 +26,7 @@ import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.MainWindow;
 import icyllis.modernui.core.NativeImage;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.graphics.*;
@@ -51,7 +51,6 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.util.Objects;
 import java.util.Random;
-import java.util.function.LongConsumer;
 import java.util.stream.Stream;
 
 import static org.lwjgl.glfw.GLFW.*;
@@ -86,9 +85,9 @@ public class BejeweledTwist {
 
     public BejeweledTwist() {
         Thread.currentThread().setName("Main-Thread");
-        ModernUI.initialize();
-        ArchCore.init();
-        mWindow = Window.create("Bejeweled Twist", Window.State.WINDOWED, 1600, 900);
+        new ModernUI();
+        ArchCore.initialize();
+        mWindow = MainWindow.initialize("Bejeweled Twist", 1600, 900);
         try (var c1 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo16x.png");
              var bitmap1 = NativeImage.decode(null, c1);
              var c2 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo32x.png");
@@ -251,7 +250,6 @@ public class BejeweledTwist {
                 canvas.drawImage(mBG, mBGSrc, screenRect, paint);
                 tickDraw(canvas, delta);
 
-                canvas.setProjection(projection.setOrthographic(mWindow.getWidth(), mWindow.getHeight(), 0, 3000));
                 // render thread, wait UI thread
                 canvas.draw(null);
             }

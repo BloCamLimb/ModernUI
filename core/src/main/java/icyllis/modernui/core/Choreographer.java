@@ -75,10 +75,6 @@ public final class Choreographer {
 
     // Thread local storage for the choreographer.
     private static final ThreadLocal<Choreographer> sThreadInstance = ThreadLocal.withInitial(() -> {
-        // main thread and render thread are special threads, they are not necessarily looper threads
-        if (ArchCore.isOnMainThread()) {
-            throw new IllegalStateException("The main thread cannot have a choreographer!");
-        }
         if (ArchCore.isOnRenderThread()) {
             throw new IllegalStateException("The render thread cannot have a choreographer!");
         }
@@ -155,7 +151,7 @@ public final class Choreographer {
     /**
      * Gets the choreographer for the calling thread.  Must be called from
      * a thread that already has a {@link Looper} associated with it.
-     * Must be called from neither main thread nor render thread.
+     * Must NOT be called from render thread.
      *
      * @return The choreographer for this thread.
      * @throws IllegalStateException if the thread does not have a looper

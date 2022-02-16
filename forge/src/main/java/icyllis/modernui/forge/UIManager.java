@@ -43,7 +43,6 @@ import icyllis.modernui.text.Selection;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.CoordinatorLayout;
 import icyllis.modernui.widget.EditText;
-import icyllis.modernui.widget.TextView;
 import net.minecraft.ChatFormatting;
 import net.minecraft.CrashReport;
 import net.minecraft.Util;
@@ -85,7 +84,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Objects;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.graphics.GLWrapper.*;
@@ -130,7 +128,7 @@ public final class UIManager implements LifecycleOwner {
     private volatile boolean mRunning;
 
     // the view root impl
-    private ViewRootImpl mViewRoot;
+    private ViewRootImpl mRoot;
 
     // the top-level view of the window
     private CoordinatorLayout mDecor;
@@ -323,10 +321,10 @@ public final class UIManager implements LifecycleOwner {
                 mFragmentController.getFragmentManager().beginTransaction()
                         .add(fragment_container, mFragment, "main")
                         .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                        .runOnCommit(mViewRoot::resetCanvasLocked)
+                        .runOnCommit(mRoot::resetCanvasLocked)
                         .commit();
             }
-            mViewRoot.mHandler.post(this::restoreLayoutTransition);
+            mRoot.mHandler.post(this::restoreLayoutTransition);
             mScreen = screen;
         }
 
@@ -387,7 +385,9 @@ public final class UIManager implements LifecycleOwner {
     @UiThread
     private void init() {
         long startTime = System.nanoTime();
-        mViewRoot = this.new ViewRootImpl();
+        mLooper = Looper.prepare();
+
+        mRoot = this.new ViewRootImpl();
 
         mDecor = new CoordinatorLayout();
         // make the root view clickable through, so that views can lose focus
@@ -406,7 +406,7 @@ public final class UIManager implements LifecycleOwner {
         mDecor.setLayoutTransition(new LayoutTransition());
         suppressLayoutTransition();
 
-        mViewRoot.setView(mDecor);
+        mRoot.setView(mDecor);
 
         mDecor.getViewTreeObserver().addOnScrollChangedListener(() -> onHoverMove(false));
 
@@ -424,8 +424,6 @@ public final class UIManager implements LifecycleOwner {
 
         mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
         mFragmentController.dispatchStart();
-
-        mLooper = Objects.requireNonNull(Looper.myLooper());
 
         LOGGER.info(MARKER, "View system initialized in {}ms", (System.nanoTime() - startTime) / 1000000);
 
@@ -488,15 +486,17 @@ public final class UIManager implements LifecycleOwner {
      */
     void onHoverMove(boolean natural) {
         final long now = ArchCore.timeNanos();
-        float x = (float) minecraft.mouseHandler.xpos();
-        float y = (float) minecraft.mouseHandler.ypos();
+        float x = (float) (minecraft.mouseHandler.xpos() *
+                mWindow.getWidth() / mWindow.getScreenWidth());
+        float y = (float) (minecraft.mouseHandler.ypos() *
+                mWindow.getHeight() / mWindow.getScreenHeight());
         MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_HOVER_MOVE,
                 x, y, 0);
-        mViewRoot.enqueueInputEvent(event);
+        mRoot.enqueueInputEvent(event);
         //mPendingRepostCursorEvent = false;
         if (natural && mButtonState > 0) {
             event = MotionEvent.obtain(now, MotionEvent.ACTION_MOVE, 0, x, y, 0, mButtonState, 0);
-            mViewRoot.enqueueInputEvent(event);
+            mRoot.enqueueInputEvent(event);
         }
     }
 
@@ -512,8 +512,10 @@ public final class UIManager implements LifecycleOwner {
         if (minecraft.getOverlay() == null && mScreen != null) {
             //ModernUI.LOGGER.info(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
             final long now = ArchCore.timeNanos();
-            float x = (float) minecraft.mouseHandler.xpos();
-            float y = (float) minecraft.mouseHandler.ypos();
+            float x = (float) (minecraft.mouseHandler.xpos() *
+                    mWindow.getWidth() / mWindow.getScreenWidth());
+            float y = (float) (minecraft.mouseHandler.ypos() *
+                    mWindow.getHeight() / mWindow.getScreenHeight());
             int buttonState = 0;
             for (int i = 0; i < 5; i++) {
                 if (glfwGetMouseButton(mWindow.getWindow(), i) == GLFW_PRESS) {
@@ -528,7 +530,8 @@ public final class UIManager implements LifecycleOwner {
                     || (action == MotionEvent.ACTION_UP && buttonState == 0)) {
                 MotionEvent ev = MotionEvent.obtain(now, action, actionButton,
                         x, y, event.getModifiers(), buttonState, 0);
-                mViewRoot.enqueueInputEvent(ev);
+                mRoot.enqueueInputEvent(ev);
+                //LOGGER.info("Enqueue mouse event: {}", ev);
             }
         }
     }
@@ -537,13 +540,17 @@ public final class UIManager implements LifecycleOwner {
     public static void onScroll(double scrollX, double scrollY) {
         if (sInstance.mScreen != null) {
             final long now = ArchCore.timeNanos();
-            float x = (float) sInstance.minecraft.mouseHandler.xpos();
-            float y = (float) sInstance.minecraft.mouseHandler.ypos();
+            final Window window = sInstance.mWindow;
+            final MouseHandler mouseHandler = sInstance.minecraft.mouseHandler;
+            float x = (float) (mouseHandler.xpos() *
+                    window.getWidth() / window.getScreenWidth());
+            float y = (float) (mouseHandler.ypos() *
+                    window.getHeight() / window.getScreenHeight());
             MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_SCROLL,
                     x, y, 0);
             event.setAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
             event.setAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
-            sInstance.mViewRoot.enqueueInputEvent(event);
+            sInstance.mRoot.enqueueInputEvent(event);
         }
     }
 
@@ -553,7 +560,7 @@ public final class UIManager implements LifecycleOwner {
             int action = event.getAction() == GLFW_RELEASE ? KeyEvent.ACTION_UP : KeyEvent.ACTION_DOWN;
             KeyEvent keyEvent = KeyEvent.obtain(ArchCore.timeNanos(), action, event.getKey(), 0,
                     event.getModifiers(), event.getScanCode(), 0);
-            mViewRoot.enqueueInputEvent(keyEvent);
+            mRoot.enqueueInputEvent(keyEvent);
         }
         if (event.getAction() != GLFW_PRESS) {
             return;
@@ -593,11 +600,11 @@ public final class UIManager implements LifecycleOwner {
                 break;
 
             case GLFW_KEY_N:
-                mViewRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_RTL));
+                mRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_RTL));
                 break;
 
             case GLFW_KEY_M:
-                mViewRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
+                mRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
                 break;
 
             case GLFW_KEY_P:
@@ -633,11 +640,7 @@ public final class UIManager implements LifecycleOwner {
     }
 
     private void dump(@Nonnull PrintWriter w) {
-        w.println(">>> Modern UI debug info <<<");
-
-        w.print("Graphics API: OpenGL ");
-        w.println(glGetString(GL_VERSION));
-        w.println("Render Pipeline: OpenGL 4.5 Core (ARB enabled)");
+        w.println(">>> Modern UI dump data <<<");
 
         w.print("Container Menu: ");
         LocalPlayer player = minecraft.player;
@@ -649,7 +652,7 @@ public final class UIManager implements LifecycleOwner {
             w.println(menu.getClass().getSimpleName());
             try {
                 ResourceLocation name = menu.getType().getRegistryName();
-                w.print(" \u21B3Registry Name: ");
+                w.print("  Registry Name: ");
                 w.println(name);
             } catch (Exception ignored) {
             }
@@ -669,7 +672,7 @@ public final class UIManager implements LifecycleOwner {
         }
 
         if (mFragmentController != null) {
-            mFragmentController.getFragmentManager().dump("FM", null, w);
+            mFragmentController.getFragmentManager().dump("", null, w);
         }
 
         ModernUIForge.dispatchOnDebugDump(w);
@@ -682,11 +685,11 @@ public final class UIManager implements LifecycleOwner {
         /*if (mKeyboard != null) {
             return mKeyboard.onCharTyped(codePoint, modifiers);
         }*/
-        Message msg = Message.obtain(mViewRoot.mHandler, () -> {
-            final Editable content;
-            if (mDecor.findFocus() instanceof TextView tv && (content = tv.getEditableText()) != null) {
-                int selStart = tv.getSelectionStart();
-                int selEnd = tv.getSelectionEnd();
+        Message msg = Message.obtain(mRoot.mHandler, () -> {
+            if (mDecor.findFocus() instanceof EditText text) {
+                final Editable content = text.getText();
+                int selStart = text.getSelectionStart();
+                int selEnd = text.getSelectionEnd();
                 if (selStart >= 0 && selEnd >= 0) {
                     Selection.setSelection(content, Math.max(selStart, selEnd));
                     content.replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd), String.valueOf(ch));
@@ -709,20 +712,13 @@ public final class UIManager implements LifecycleOwner {
         // and our framebuffer is always a transparent layer
         RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-        int width = mWindow.getWidth();
-        int height = mWindow.getHeight();
-
-        GLSurfaceCanvas canvas = mCanvas;
-
-        canvas.setProjection(mProjectionMatrix.setOrthographic(width, height, 0, 3000));
-
-        // This is on Main thread
         applyPointerIcon();
 
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
-        mViewRoot.flushDrawCommands(canvas, mFramebuffer, width, height);
+        mCanvas.setProjection(mProjectionMatrix.setOrthographic(mWindow.getWidth(), mWindow.getHeight(), 0, 3000));
+        mRoot.flushDrawCommands(mCanvas, mFramebuffer, mWindow.getWidth(), mWindow.getHeight());
 
         glBindVertexArray(oldVertexArray);
         glUseProgram(oldProgram);
@@ -771,7 +767,7 @@ public final class UIManager implements LifecycleOwner {
             double cursorY = mouseHandler.ypos() *
                     (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
             //if (event.getLines().isEmpty()) {
-            mViewRoot.drawExtTooltipLocked(event, cursorX, cursorY); // need a lock
+            mRoot.drawExtTooltipLocked(event, cursorX, cursorY); // need a lock
             /*} else {
                 TooltipRenderer.drawTooltip(mCanvas, event.getLines(), event.getFontRenderer(), event.getStack(),
                         event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY,
@@ -782,13 +778,13 @@ public final class UIManager implements LifecycleOwner {
         }
     }
 
-    private final Runnable mResizeRunnable = () -> mViewRoot.setFrame(mWindow.getWidth(), mWindow.getHeight());
+    private final Runnable mResizeRunnable = () -> mRoot.setFrame(mWindow.getWidth(), mWindow.getHeight());
 
     /**
      * Called when game window size changed, used to re-layout the window.
      */
     void resize() {
-        mViewRoot.mHandler.post(mResizeRunnable);
+        mRoot.mHandler.post(mResizeRunnable);
     }
 
     void removed() {
@@ -799,14 +795,14 @@ public final class UIManager implements LifecycleOwner {
         if (mCallback != null) {
             mCallback = null;
         }
-        mViewRoot.mHandler.post(this::suppressLayoutTransition);
+        mRoot.mHandler.post(this::suppressLayoutTransition);
         if (mFragment != null) {
             mFragmentController.getFragmentManager().beginTransaction()
                     .remove(mFragment)
                     .runOnCommit(mFragmentContainerView::removeAllViews)
                     .commit();
         }
-        mViewRoot.updatePointerIcon(null);
+        mRoot.updatePointerIcon(null);
         applyPointerIcon();
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
     }
@@ -820,7 +816,7 @@ public final class UIManager implements LifecycleOwner {
             mElapsedTimeMillis += deltaMillis;
             // coordinates UI thread
             if (mRunning) {
-                mViewRoot.mChoreographer.scheduleFrameAsync(mFrameTimeNanos);
+                mRoot.mChoreographer.scheduleFrameAsync(mFrameTimeNanos);
                 // update extension animations
                 BlurHandler.INSTANCE.update(mElapsedTimeMillis);
                 if (TooltipRenderer.sTooltip) {
@@ -832,7 +828,7 @@ public final class UIManager implements LifecycleOwner {
             if (!minecraft.isRunning() && mRunning) {
                 LOGGER.info(MARKER, "Finishing UI thread");
                 mRunning = false;
-                mViewRoot.mHandler.post(this::finish);
+                mRoot.mHandler.post(this::finish);
                 try {
                     // in case of GLFW is terminated too early
                     mUiThread.join(1000);
@@ -853,6 +849,7 @@ public final class UIManager implements LifecycleOwner {
         }*/
     }
 
+    @UiThread
     class ViewRootImpl extends ViewRoot {
 
         private final Rect mGlobalRect = new Rect();
@@ -881,10 +878,6 @@ public final class UIManager implements LifecycleOwner {
         @Override
         protected void onKeyEvent(KeyEvent event) {
             if (mScreen != null && event.getAction() == KeyEvent.ACTION_DOWN) {
-                View v = mDecor.findFocus();
-                if (v instanceof EditText) {
-                    return;
-                }
                 final boolean back;
                 if (mCallback != null) {
                     back = mCallback.isBackKey(event.getKeyCode(), event);
@@ -899,8 +892,11 @@ public final class UIManager implements LifecycleOwner {
                     back = event.getKeyCode() == KeyEvent.KEY_ESCAPE;
                 }
                 if (back) {
-                    if (!mDecor.isFocused() && mDecor.hasFocus()) {
-                        mDecor.requestFocus();
+                    View v = mDecor.findFocus();
+                    if (v instanceof EditText) {
+                        if (event.getKeyCode() == KeyEvent.KEY_ESCAPE) {
+                            mDecor.requestFocus();
+                        }
                     } else {
                         mOnBackPressedDispatcher.onBackPressed();
                     }

@@ -263,6 +263,43 @@ public final class MotionEvent extends InputEvent {
      */
     public static final int BUTTON_FORWARD = 1 << 4;
 
+    // Symbolic names of all button states in bit order from least significant
+    // to most significant.
+    private static final String[] BUTTON_SYMBOLIC_NAMES = new String[]{
+            "BUTTON_PRIMARY",
+            "BUTTON_SECONDARY",
+            "BUTTON_TERTIARY",
+            "BUTTON_BACK",
+            "BUTTON_FORWARD",
+            "BUTTON_STYLUS_PRIMARY",
+            "BUTTON_STYLUS_SECONDARY",
+            "0x00000080",
+            "0x00000100",
+            "0x00000200",
+            "0x00000400",
+            "0x00000800",
+            "0x00001000",
+            "0x00002000",
+            "0x00004000",
+            "0x00008000",
+            "0x00010000",
+            "0x00020000",
+            "0x00040000",
+            "0x00080000",
+            "0x00100000",
+            "0x00200000",
+            "0x00400000",
+            "0x00800000",
+            "0x01000000",
+            "0x02000000",
+            "0x04000000",
+            "0x08000000",
+            "0x10000000",
+            "0x20000000",
+            "0x40000000",
+            "0x80000000",
+    };
+
     /**
      * Tool type constant: Unknown tool type.
      * This constant is used when the tool type is not known or is not relevant,
@@ -1081,19 +1118,21 @@ public final class MotionEvent extends InputEvent {
     @Override
     public String toString() {
         StringBuilder msg = new StringBuilder();
-        msg.append("MotionEvent{action=")
+        msg.append("MotionEvent { action=")
                 .append(actionToString(getAction()));
         msg.append(", x=")
                 .append(getX());
         msg.append(", y=")
                 .append(getY());
+        msg.append(", buttonState=")
+                .append(buttonStateToString(getButtonState()));
         if (mFlags != 0) {
             msg.append(", flags=0x")
                     .append(Integer.toHexString(mFlags));
         }
         msg.append(", eventTime=")
                 .append(getEventTime());
-        msg.append("}");
+        msg.append(" }");
         return msg.toString();
     }
 
@@ -1138,6 +1177,42 @@ public final class MotionEvent extends InputEvent {
             case ACTION_POINTER_UP -> "ACTION_POINTER_UP(" + index + ")";
             default -> Integer.toString(action);
         };
+    }
+
+    /**
+     * Returns a string that represents the symbolic name of the specified combined
+     * button state flags such as "0", "BUTTON_PRIMARY",
+     * "BUTTON_PRIMARY|BUTTON_SECONDARY" or an equivalent numeric constant such as "0x10000000"
+     * if unknown.
+     *
+     * @param buttonState The button state.
+     * @return The symbolic name of the specified combined button state flags.
+     */
+    public static String buttonStateToString(int buttonState) {
+        if (buttonState == 0) {
+            return "0";
+        }
+        StringBuilder result = null;
+        int i = 0;
+        while (buttonState != 0) {
+            final boolean isSet = (buttonState & 1) != 0;
+            buttonState >>>= 1; // unsigned shift!
+            if (isSet) {
+                final String name = BUTTON_SYMBOLIC_NAMES[i];
+                if (result == null) {
+                    if (buttonState == 0) {
+                        return name;
+                    }
+                    result = new StringBuilder(name);
+                } else {
+                    result.append('|');
+                    result.append(name);
+                }
+            }
+            i += 1;
+        }
+        assert result != null;
+        return result.toString();
     }
 
     /**
