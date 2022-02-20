@@ -168,10 +168,10 @@ public class RadioGroup extends LinearLayout {
         void onCheckedChanged(RadioGroup group, int checkedId);
     }
 
-    private class CheckedStateTracker implements CompoundButton.OnCheckedChangeListener {
+    private class CheckedStateTracker implements Checkable.OnCheckedChangeListener {
 
         @Override
-        public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+        public void onCheckedChanged(View buttonView, boolean isChecked) {
             // prevents from infinite recursion
             if (!mProtectFromCheckedChange) {
                 setCheckedStateForView(mCheckedId, false);

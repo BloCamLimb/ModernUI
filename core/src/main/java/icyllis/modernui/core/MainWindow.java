@@ -48,7 +48,7 @@ public final class MainWindow extends Window {
     private int mWidth;
     private int mHeight;
 
-    private ViewRoot mRoot;
+    private volatile ViewRoot mRoot;
 
     private int mButtonState;
 
@@ -176,7 +176,7 @@ public final class MainWindow extends Window {
 
     public void center(@Nonnull Monitor monitor) {
         VideoMode mode = monitor.getCurrentMode();
-        glfwSetWindowPos(mHeight, (mode.getWidth() - mScreenWidth) / 2 + monitor.getXPos(),
+        glfwSetWindowPos(mHandle, (mode.getWidth() - mScreenWidth) / 2 + monitor.getXPos(),
                 (mode.getHeight() - mScreenHeight) / 2 + monitor.getYPos());
     }
 

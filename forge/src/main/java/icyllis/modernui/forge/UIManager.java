@@ -395,6 +395,8 @@ public final class UIManager implements LifecycleOwner {
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
         mDecor.setId(R.id.content);
+        mDecor.setLayoutDirection(
+                Config.CLIENT.forceRtl.get() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
 
         mFragmentContainerView = new FragmentContainerView();
         mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -473,7 +475,7 @@ public final class UIManager implements LifecycleOwner {
         mFragmentController.dispatchDestroy();
         mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
 
-        mLooper.quitSafely();
+        mRoot.mHandler.postDelayed(mLooper::quitSafely, 60);
     }
 
     /**

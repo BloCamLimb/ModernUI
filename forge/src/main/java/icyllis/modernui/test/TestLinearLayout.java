@@ -25,6 +25,7 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.Spannable;
@@ -187,6 +188,14 @@ public class TestLinearLayout extends LinearLayout {
                     button.setId(9 + j);
                     group.addView(button);
                 }
+                p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
+            } else if (i == 6) {
+                CheckBox checkBox = new MaterialCheckBox();
+                v = checkBox;
+                checkBox.setText("Checkbox 0");
+                checkBox.setTextSize(16);
+                checkBox.setGravity(Gravity.END);
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
             } else {

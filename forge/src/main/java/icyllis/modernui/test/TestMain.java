@@ -110,18 +110,24 @@ public class TestMain {
     public static Track sTrack;
 
     static {
-        AudioManager.getInstance().initialize();
-        try {
-            sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:/10.ogg"))));
-            sGraph = new SpectrumGraph(sTrack, true, 300);
-        } catch (Exception e) {
-            e.printStackTrace();
+        if (CREATE_WINDOW) {
+            AudioManager.getInstance().initialize();
+            try {
+                sTrack = new Track(new OggDecoder(FileChannel.open(Path.of("F:/10.ogg"))));
+                sGraph = new SpectrumGraph(sTrack, true, 300);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    private static long sAS = 3;
-
     public static void main(String[] args) {
+        if (!CREATE_WINDOW) {
+            try (ModernUI modernUI = new ModernUI()) {
+                modernUI.run(new TestFragment());
+            }
+            return;
+        }
         /*String s = "\u0641\u0647\u0648\u064a\u062a\u062d\u062f\u0651\u062b\u0020\u0628\u0644\u063a\u0629\u0020";
         Font font = ALL_FONTS.stream().filter(f -> f.canDisplayUpTo("\u0641\u0647\u0648") == -1).findFirst().get();
         GlyphVector vector = font.layoutGlyphVector(GRAPHICS.getFontRenderContext(),
@@ -261,15 +267,6 @@ public class TestMain {
             e.printStackTrace();
         }*/
         //ModernUI.LOGGER.info(Gravity.TOP & Gravity.BOTTOM);
-        if (!CREATE_WINDOW) {
-            Thread.currentThread().setName("Main-Thread");
-            try (ModernUI modernUI = new ModernUI()) {
-                modernUI.run(new TestFragment());
-            }
-            AudioManager.getInstance().close();
-            LOGGER.info(MARKER, "Stopped");
-            return;
-        }
         new ModernUI();
         ShaderManager.getInstance().addListener(mgr -> mgr.getShard(ModernUI.ID, "a.vert"));
         try {

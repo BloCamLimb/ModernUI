@@ -102,7 +102,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     private ViewModelStore mViewModelStore;
     private FragmentController mFragmentController;
 
-    private Looper mUiLooper;
+    private volatile Looper mUiLooper;
 
     public ModernUI() {
         synchronized (ModernUI.class) {
@@ -112,8 +112,6 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
                 throw new IllegalStateException("Multiple instances");
             }
         }
-        // should be true
-        LOGGER.info("AWT headless: {}", GraphicsEnvironment.isHeadless());
     }
 
     /**
@@ -145,6 +143,10 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      */
     @MainThread
     public void run(@Nonnull Fragment fragment) {
+        Thread.currentThread().setName("Main-Thread");
+        // should be true
+        LOGGER.info("AWT headless: {}", GraphicsEnvironment.isHeadless());
+
         ArchCore.initialize();
 
         LOGGER.info(MARKER, "Initializing window system");
@@ -157,13 +159,14 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         glfwWindowHintString(GLFW_X11_CLASS_NAME, NAME_CPT);
         glfwWindowHintString(GLFW_X11_INSTANCE_NAME, NAME_CPT);
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
-        glfwWindowHint(GLFW_MAXIMIZED, GLFW_TRUE);
         if (monitor == null) {
+            LOGGER.info(MARKER, "No monitor connected");
             mWindow = MainWindow.initialize(NAME_CPT, 1280, 720);
         } else {
             VideoMode mode = monitor.getCurrentMode();
             mWindow = MainWindow.initialize(NAME_CPT, (int) (mode.getWidth() * 0.75f),
                     (int) (mode.getHeight() * 0.75f));
+            mWindow.center(monitor);
         }
 
         LOGGER.info(MARKER, "Preparing threads");
@@ -294,6 +297,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         mFragmentController.getFragmentManager().beginTransaction()
                 .add(fragment_container, fragment, "main")
                 .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                .addToBackStack("main")
                 .commit();
 
         ArchCore.executeOnMainThread(mWindow::show);
@@ -367,25 +371,39 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
 
     @Override
     public void close() {
-        if (mUiLooper != null) {
-            LOGGER.info(MARKER, "Quiting UI thread");
-            ArchCore.getUiHandlerAsync().post(() -> mUiLooper.quitSafely());
-            try {
-                ArchCore.getUiThread().join(1000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        try {
+            if (mUiLooper != null) {
+                LOGGER.info(MARKER, "Quiting UI thread");
+                try {
+                    ArchCore.getUiHandlerAsync().post(() -> mUiLooper.quitSafely());
+                } finally {
+                    try {
+                        ArchCore.getUiThread().join(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
-        }
+            if (ArchCore.hasRenderThread()) {
+                try {
+                    ArchCore.getRenderThread().join(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
 
-        if (mWindow != null) {
-            mWindow.close();
-            LOGGER.info(MARKER, "Closed main window");
+            if (mWindow != null) {
+                mWindow.close();
+                LOGGER.info(MARKER, "Closed main window");
+            }
+            GLFWMonitorCallback cb = glfwSetMonitorCallback(null);
+            if (cb != null) {
+                cb.free();
+            }
+        } finally {
+            ArchCore.terminate();
         }
-        GLFWMonitorCallback cb = glfwSetMonitorCallback(null);
-        if (cb != null) {
-            cb.free();
-        }
-        ArchCore.terminate();
+        LOGGER.info(MARKER, "Stopped");
     }
 
     @UiThread

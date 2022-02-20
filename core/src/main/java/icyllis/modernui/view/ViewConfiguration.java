@@ -31,7 +31,7 @@ public class ViewConfiguration {
      * Defines the width of the horizontal scrollbar and the height of the vertical scrollbar in
      * dips
      */
-    private static final int SCROLL_BAR_SIZE = 8;
+    public static final int SCROLL_BAR_SIZE = 8;
 
     /**
      * Duration of the fade when scrollbars fade away in milliseconds
@@ -68,78 +68,78 @@ public class ViewConfiguration {
      * applications that do not provide a Context for determining density/configuration-dependent
      * values.
      */
-    private static final int TOUCH_SLOP = 8;
+    public static final int TOUCH_SLOP = 8;
 
     /**
      * Defines the minimum size of the touch target for a scrollbar in dips
      */
-    private static final int MIN_SCROLLBAR_TOUCH_TARGET = 16;
+    public static final int MIN_SCROLLBAR_TOUCH_TARGET = 16;
 
     /**
      * Minimum velocity to initiate a fling, as measured in dips per second
      */
-    private static final int MINIMUM_FLING_VELOCITY = 50;
+    public static final int MINIMUM_FLING_VELOCITY = 50;
 
     /**
      * Maximum velocity to initiate a fling, as measured in dips per second
      */
-    private static final int MAXIMUM_FLING_VELOCITY = 8000;
+    public static final int MAXIMUM_FLING_VELOCITY = 8000;
 
     /**
      * Max distance in dips to overscroll for edge effects
      */
-    private static final int OVERSCROLL_DISTANCE = 0;
+    public static final int OVERSCROLL_DISTANCE = 0;
 
     /**
      * Max distance in dips to overfling for edge effects
      */
-    private static final int OVERFLING_DISTANCE = 12;
+    public static final int OVERFLING_DISTANCE = 12;
 
     /**
      * Amount to scroll in response to a horizontal {@link MotionEvent#ACTION_SCROLL} event,
      * in dips per axis value.
      */
-    private static final float HORIZONTAL_SCROLL_FACTOR = 64;
+    public static final float HORIZONTAL_SCROLL_FACTOR = 64;
 
     /**
      * Amount to scroll in response to a vertical {@link MotionEvent#ACTION_SCROLL} event,
      * in dips per axis value.
      */
-    private static final float VERTICAL_SCROLL_FACTOR = 64;
+    public static final float VERTICAL_SCROLL_FACTOR = 64;
 
     /**
      * View scale factor, depends on user preference or display device.
      */
-    private float mViewScale = 1.0f;
-    private float mTextScale = 1.0f;
-    private float mScaledTextScale = 1.0f;
+    private volatile float mViewScale = 1.0f;
+    private volatile float mFontScale = 1.0f;
+    private volatile float mScaledFontScale = 1.0f;
 
-    private int mEdgeSlop;
-    private int mFadingEdgeLength;
-    private int mMinimumFlingVelocity = MINIMUM_FLING_VELOCITY;
-    private int mScaledMinimumFlingVelocity = MINIMUM_FLING_VELOCITY;
-    private int mMaximumFlingVelocity = MAXIMUM_FLING_VELOCITY;
-    private int mScaledMaximumFlingVelocity = MAXIMUM_FLING_VELOCITY;
-    private int mScrollbarSize = SCROLL_BAR_SIZE;
-    private int mScaledScrollbarSize = SCROLL_BAR_SIZE;
-    private int mTouchSlop = TOUCH_SLOP;
-    private int mScaledTouchSlop = TOUCH_SLOP;
-    private int mMinScalingSpan;
-    private int mHoverSlop;
-    private int mMinScrollbarTouchTarget = MIN_SCROLLBAR_TOUCH_TARGET;
-    private int mScaledMinScrollbarTouchTarget = MIN_SCROLLBAR_TOUCH_TARGET;
-    private int mDoubleTapTouchSlop;
-    private int mPagingTouchSlop;
-    private int mDoubleTapSlop;
-    private int mWindowTouchSlop;
-    private int mOverscrollDistance = OVERSCROLL_DISTANCE;
-    private int mScaledOverscrollDistance = OVERSCROLL_DISTANCE;
-    private int mOverflingDistance = OVERFLING_DISTANCE;
-    private int mScaledOverflingDistance = OVERFLING_DISTANCE;
-    private float mVerticalScrollFactor = VERTICAL_SCROLL_FACTOR;
-    private float mScaledVerticalScrollFactor = VERTICAL_SCROLL_FACTOR;
-    private float mHorizontalScrollFactor = HORIZONTAL_SCROLL_FACTOR;
-    private float mScaledHorizontalScrollFactor = HORIZONTAL_SCROLL_FACTOR;
+    private volatile int mEdgeSlop;
+    private volatile int mFadingEdgeLength;
+    private volatile int mMinimumFlingVelocity = MINIMUM_FLING_VELOCITY;
+    private volatile int mScaledMinimumFlingVelocity = MINIMUM_FLING_VELOCITY;
+    private volatile int mMaximumFlingVelocity = MAXIMUM_FLING_VELOCITY;
+    private volatile int mScaledMaximumFlingVelocity = MAXIMUM_FLING_VELOCITY;
+    private volatile int mScrollbarSize = SCROLL_BAR_SIZE;
+    private volatile int mScaledScrollbarSize = SCROLL_BAR_SIZE;
+    private volatile int mTouchSlop = TOUCH_SLOP;
+    private volatile int mScaledTouchSlop = TOUCH_SLOP;
+    private volatile int mMinScalingSpan;
+    private volatile int mHoverSlop;
+    private volatile int mMinScrollbarTouchTarget = MIN_SCROLLBAR_TOUCH_TARGET;
+    private volatile int mScaledMinScrollbarTouchTarget = MIN_SCROLLBAR_TOUCH_TARGET;
+    private volatile int mDoubleTapTouchSlop;
+    private volatile int mPagingTouchSlop;
+    private volatile int mDoubleTapSlop;
+    private volatile int mWindowTouchSlop;
+    private volatile int mOverscrollDistance = OVERSCROLL_DISTANCE;
+    private volatile int mScaledOverscrollDistance = OVERSCROLL_DISTANCE;
+    private volatile int mOverflingDistance = OVERFLING_DISTANCE;
+    private volatile int mScaledOverflingDistance = OVERFLING_DISTANCE;
+    private volatile float mVerticalScrollFactor = VERTICAL_SCROLL_FACTOR;
+    private volatile float mScaledVerticalScrollFactor = VERTICAL_SCROLL_FACTOR;
+    private volatile float mHorizontalScrollFactor = HORIZONTAL_SCROLL_FACTOR;
+    private volatile float mScaledHorizontalScrollFactor = HORIZONTAL_SCROLL_FACTOR;
 
     ViewConfiguration() {
     }
@@ -159,7 +159,7 @@ public class ViewConfiguration {
             return;
         }
         mViewScale = scale;
-        mScaledTextScale = scale * mTextScale;
+        mScaledFontScale = scale * mFontScale;
 
         mScaledScrollbarSize = dp(mScrollbarSize);
         mScaledTouchSlop = dp(mTouchSlop);
@@ -173,12 +173,12 @@ public class ViewConfiguration {
     }
 
     @ApiStatus.Internal
-    public void setTextScale(float scale) {
-        if (mTextScale == scale) {
+    public void setFontScale(float scale) {
+        if (mFontScale == scale) {
             return;
         }
-        mTextScale = scale;
-        mScaledTextScale = scale * mViewScale;
+        mFontScale = scale;
+        mScaledFontScale = scale * mViewScale;
     }
 
     /**
@@ -189,10 +189,10 @@ public class ViewConfiguration {
     }
 
     /**
-     * @return the current scaled text scale is used to convert scale-independent pixels to pixels
+     * @return the current font scale is used to convert view pixels to pixels
      */
-    public float getTextScale() {
-        return mTextScale;
+    public float getFontScale() {
+        return mFontScale;
     }
 
     /**
@@ -212,7 +212,7 @@ public class ViewConfiguration {
      * @return converted size in pixels
      */
     public int sp(float v) {
-        return Math.round(v * mScaledTextScale);
+        return Math.round(v * mScaledFontScale);
     }
 
     /**
@@ -308,11 +308,56 @@ public class ViewConfiguration {
         mScaledHorizontalScrollFactor = dp(horizontalScrollFactor);
     }
 
+    @ApiStatus.Internal
+    public int getScrollbarSize() {
+        return mScrollbarSize;
+    }
+
+    @ApiStatus.Internal
+    public int getTouchSlop() {
+        return mTouchSlop;
+    }
+
+    @ApiStatus.Internal
+    public int getMinScrollbarTouchTarget() {
+        return mMinScrollbarTouchTarget;
+    }
+
+    @ApiStatus.Internal
+    public int getMinimumFlingVelocity() {
+        return mMinimumFlingVelocity;
+    }
+
+    @ApiStatus.Internal
+    public int getMaximumFlingVelocity() {
+        return mMaximumFlingVelocity;
+    }
+
+    @ApiStatus.Internal
+    public int getOverscrollDistance() {
+        return mOverscrollDistance;
+    }
+
+    @ApiStatus.Internal
+    public int getOverflingDistance() {
+        return mOverflingDistance;
+    }
+
+    @ApiStatus.Internal
+    public float getVerticalScrollFactor() {
+        return mVerticalScrollFactor;
+    }
+
+    @ApiStatus.Internal
+    public float getHorizontalScrollFactor() {
+        return mHorizontalScrollFactor;
+    }
+
     /**
      * @return The width of the horizontal scrollbar and the height of the vertical
      * scrollbar in pixels
      */
-    public int getScaledScrollBarSize() {
+    public int getScaledScrollbarSize() {
         return mScaledScrollbarSize;
     }
 
@@ -361,18 +406,18 @@ public class ViewConfiguration {
     }
 
     /**
-     * @return Amount to scroll in response to a horizontal {@link MotionEvent#ACTION_SCROLL} event.
-     * Multiply this by the event's axis value to obtain the number of pixels to be scrolled.
-     */
-    public float getScaledHorizontalScrollFactor() {
-        return mScaledHorizontalScrollFactor;
-    }
-
-    /**
      * @return Amount to scroll in response to a vertical {@link MotionEvent#ACTION_SCROLL} event.
      * Multiply this by the event's axis value to obtain the number of pixels to be scrolled.
      */
     public float getScaledVerticalScrollFactor() {
         return mScaledVerticalScrollFactor;
+    }
+
+    /**
+     * @return Amount to scroll in response to a horizontal {@link MotionEvent#ACTION_SCROLL} event.
+     * Multiply this by the event's axis value to obtain the number of pixels to be scrolled.
+     */
+    public float getScaledHorizontalScrollFactor() {
+        return mScaledHorizontalScrollFactor;
     }
 }
