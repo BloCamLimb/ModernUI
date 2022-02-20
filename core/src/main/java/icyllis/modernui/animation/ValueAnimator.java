@@ -20,6 +20,7 @@ package icyllis.modernui.animation;
 
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.core.Looper;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -61,7 +62,8 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
     /**
      * Internal usage, global config value.
      */
-    static float sDurationScale = 1.0f;
+    @ApiStatus.Internal
+    public static volatile float sDurationScale = 1.0f;
 
     /*
      * Public constants

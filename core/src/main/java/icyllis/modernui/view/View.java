@@ -4698,7 +4698,7 @@ public class View implements Drawable.Callback {
      * @return the scrollbar size
      */
     public int getScrollBarSize() {
-        return mScrollCache == null ? ViewConfiguration.get().getScaledScrollBarSize() :
+        return mScrollCache == null ? ViewConfiguration.get().getScaledScrollbarSize() :
                 mScrollCache.mScrollBarSize;
     }
 

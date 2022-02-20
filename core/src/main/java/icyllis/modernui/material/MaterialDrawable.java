@@ -33,7 +33,7 @@ public abstract class MaterialDrawable extends Drawable {
     protected int mColor = ~0;
     protected int mAlpha = 255;
 
-    protected static int modulateAlpha(int paintAlpha, int alpha) {
+    public static int modulateAlpha(int paintAlpha, int alpha) {
         return paintAlpha * (alpha & 0xFF) >>> 8;
     }
 

@@ -37,7 +37,7 @@ import javax.annotation.Nullable;
  */
 public abstract class CompoundButton extends Button implements Checkable {
 
-    protected static final int[] CHECKED_STATE_SET = {
+    public static final int[] CHECKED_STATE_SET = {
             R.attr.state_checked
     };
 
@@ -45,8 +45,8 @@ public abstract class CompoundButton extends Button implements Checkable {
     private boolean mBroadcasting;
 
     private Drawable mButtonDrawable;
-    private ColorStateList mButtonTintList = null;
-    private boolean mHasButtonTint = false;
+    private ColorStateList mButtonTintList;
+    private boolean mHasButtonTint;
 
     private OnCheckedChangeListener mOnCheckedChangeListener;
 
@@ -306,21 +306,5 @@ public abstract class CompoundButton extends Button implements Checkable {
         if (mButtonDrawable != null) {
             mButtonDrawable.jumpToCurrentState();
         }
-    }
-
-    /**
-     * Interface definition for a callback to be invoked when the checked state
-     * of a compound button changed.
-     */
-    @FunctionalInterface
-    public interface OnCheckedChangeListener {
-
-        /**
-         * Called when the checked state of a compound button has changed.
-         *
-         * @param buttonView The compound button view whose state has changed.
-         * @param isChecked  The new checked state of buttonView.
-         */
-        void onCheckedChanged(CompoundButton buttonView, boolean isChecked);
     }
 }

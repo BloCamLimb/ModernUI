@@ -75,7 +75,7 @@ final class ScrollCache implements Runnable {
     ScrollCache(View host) {
         mHost = host;
         ViewConfiguration cfg = ViewConfiguration.get();
-        mScrollBarSize = cfg.getScaledScrollBarSize();
+        mScrollBarSize = cfg.getScaledScrollbarSize();
         mScrollBarMinTouchTarget = cfg.getScaledMinScrollbarTouchTarget();
         mDefaultDelayBeforeFade = ViewConfiguration.getScrollDefaultDelay();
         mFadeDuration = ViewConfiguration.getScrollBarFadeDuration();

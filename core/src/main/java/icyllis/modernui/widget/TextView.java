@@ -115,6 +115,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     Drawables mDrawables;
 
+    @ResolvedLayoutDir
     private int mLastLayoutDirection = LAYOUT_DIRECTION_UNDEFINED;
 
     // Do not update following mText/mSpannable/mPrecomputed except for setTextInternal()
@@ -2244,7 +2245,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         if (mMovement != null && (isFocused() || isPressed()) && selStart >= 0) {
             final int selEnd = getSelectionEnd();
             Paint paint = Paint.take();
-            paint.setStrokeWidth(4);
+            paint.setStrokeWidth(dp(2));
             if (selStart == selEnd) {
                 if (mEditor != null && mEditor.shouldRenderCursor()) {
                     if (mHighlightPathBogus) {
@@ -2378,6 +2379,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             layout = mHintLayout;
         }
 
+        if (layout.getLineCount() == 0) {
+            return;
+        }
+
         mTextPaint.setColor(color);
 
         int extendedPaddingTop = getExtendedPaddingTop();
@@ -2388,7 +2393,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
         float clipLeft = compoundPaddingLeft + scrollX;
         float clipTop = (scrollY == 0) ? 0 : extendedPaddingTop + scrollY;
-        float clipRight = getWidth() - getCompoundPaddingRight() + scrollX;
+        float clipRight = getWidth() - compoundPaddingRight + scrollX;
         float clipBottom = getHeight() + scrollY
                 - ((scrollY == maxScrollY) ? 0 : extendedPaddingBottom);
 
@@ -4281,7 +4286,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @hide
      */
     @Override
-    public void onResolveDrawables(int layoutDirection) {
+    public void onResolveDrawables(@ResolvedLayoutDir int layoutDirection) {
         // No need to resolve twice
         if (mLastLayoutDirection == layoutDirection) {
             return;

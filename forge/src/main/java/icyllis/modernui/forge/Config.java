@@ -20,8 +20,11 @@ package icyllis.modernui.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.text.FontAtlas;
 import icyllis.modernui.text.GlyphManager;
+import icyllis.modernui.view.View;
+import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.Util;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
@@ -152,6 +155,13 @@ final class Config {
     @OnlyIn(Dist.CLIENT)
     public static class Client {
 
+        public static final int ANIM_DURATION_MIN = 0;
+        public static final int ANIM_DURATION_MAX = 800;
+        public static final int BLUR_RADIUS_MIN = 2;
+        public static final int BLUR_RADIUS_MAX = 18;
+        public static final float FONT_SCALE_MIN = 0.5f;
+        public static final float FONT_SCALE_MAX = 2.0f;
+
         final ForgeConfigSpec.BooleanValue blurEffect;
         final ForgeConfigSpec.IntValue animationDuration;
         final ForgeConfigSpec.IntValue blurRadius;
@@ -161,11 +171,23 @@ final class Config {
         final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipStroke;
         final ForgeConfigSpec.BooleanValue ding;
         //private final ForgeConfigSpec.BooleanValue hudBars;
+        final ForgeConfigSpec.BooleanValue forceRtl;
+        final ForgeConfigSpec.DoubleValue fontScale;
+
+        final ForgeConfigSpec.IntValue scrollbarSize;
+        final ForgeConfigSpec.IntValue touchSlop;
+        final ForgeConfigSpec.IntValue minScrollbarTouchTarget;
+        final ForgeConfigSpec.IntValue minimumFlingVelocity;
+        final ForgeConfigSpec.IntValue maximumFlingVelocity;
+        final ForgeConfigSpec.IntValue overscrollDistance;
+        final ForgeConfigSpec.IntValue overflingDistance;
+        final ForgeConfigSpec.DoubleValue verticalScrollFactor;
+        final ForgeConfigSpec.DoubleValue horizontalScrollFactor;
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
-        private final ForgeConfigSpec.BooleanValue bitmapLike;
-        private final ForgeConfigSpec.BooleanValue linearSampling;
+        final ForgeConfigSpec.BooleanValue bitmapLike;
+        final ForgeConfigSpec.BooleanValue linearSampling;
         final ForgeConfigSpec.ConfigValue<List<? extends String>> fontFamily;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
@@ -174,7 +196,7 @@ final class Config {
 
             animationDuration = builder.comment(
                             "The duration of GUI background color and blur radius animation in milliseconds. (0 = OFF)")
-                    .defineInRange("animationDuration", 200, 0, 800);
+                    .defineInRange("animationDuration", 200, ANIM_DURATION_MIN, ANIM_DURATION_MAX);
             backgroundColor = builder.comment(
                             "The GUI background color in 0xAARRGGBB format. Default value: 0x66000000",
                             "Can be one to four values representing top left, top right, bottom left and bottom right" +
@@ -194,7 +216,7 @@ final class Config {
                     .define("blurEffect", true);
             blurRadius = builder.comment(
                             "The 4-pass blur effect radius, higher values result in a small loss of performance.")
-                    .defineInRange("blurRadius", 9, 2, 18);
+                    .defineInRange("blurRadius", 9, BLUR_RADIUS_MIN, BLUR_RADIUS_MAX);
             blurBlacklist = builder.comment(
                             "A list of GUI screen superclasses that won't activate blur effect when opened.")
                     .defineList("blurBlacklist", () -> {
@@ -251,6 +273,36 @@ final class Config {
             /*hudBars = builder.comment(
                     "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
                     .define("hudBars", false);*/
+
+            builder.pop();
+
+            builder.comment("View system config, only applied to Modern UI Core.")
+                    .push("view");
+
+            forceRtl = builder.comment("Force layout direction to RTL, otherwise, the current Locale setting.")
+                    .define("forceRtl", false);
+            fontScale = builder.comment("The global font scale used with sp units.")
+                    .defineInRange("fontScale", 1.0f, FONT_SCALE_MIN, FONT_SCALE_MAX);
+            scrollbarSize = builder.comment("Default scrollbar size in dips.")
+                    .defineInRange("scrollbarSize", ViewConfiguration.SCROLL_BAR_SIZE, 0, 1024);
+            touchSlop = builder.comment("Distance a touch can wander before we think the user is scrolling in dips.")
+                    .defineInRange("touchSlop", ViewConfiguration.TOUCH_SLOP, 0, 1024);
+            minScrollbarTouchTarget = builder.comment("Minimum size of the touch target for a scrollbar in dips.")
+                    .defineInRange("minScrollbarTouchTarget", ViewConfiguration.MIN_SCROLLBAR_TOUCH_TARGET, 0, 1024);
+            minimumFlingVelocity = builder.comment("Minimum velocity to initiate a fling in dips per second.")
+                    .defineInRange("minimumFlingVelocity", ViewConfiguration.MINIMUM_FLING_VELOCITY, 0, 32767);
+            maximumFlingVelocity = builder.comment("Maximum velocity to initiate a fling in dips per second.")
+                    .defineInRange("maximumFlingVelocity", ViewConfiguration.MAXIMUM_FLING_VELOCITY, 0, 32767);
+            overscrollDistance = builder.comment("Max distance in dips to overscroll for edge effects.")
+                    .defineInRange("overscrollDistance", ViewConfiguration.OVERSCROLL_DISTANCE, 0, 1024);
+            overflingDistance = builder.comment("Max distance in dips to overfling for edge effects.")
+                    .defineInRange("overflingDistance", ViewConfiguration.OVERFLING_DISTANCE, 0, 1024);
+            verticalScrollFactor = builder.comment("Amount to scroll in response to a vertical scroll event, in dips " +
+                            "per axis value.")
+                    .defineInRange("verticalScrollFactor", ViewConfiguration.VERTICAL_SCROLL_FACTOR, 0, 1024);
+            horizontalScrollFactor = builder.comment("Amount to scroll in response to a horizontal scroll event, in " +
+                            "dips per axis value.")
+                    .defineInRange("horizontalScrollFactor", ViewConfiguration.HORIZONTAL_SCROLL_FACTOR, 0, 1024);
 
             builder.pop();
 
@@ -359,6 +411,23 @@ final class Config {
 
             UIManager.sPlaySoundOnLoaded = ding.get();
             //TestHUD.sBars = hudBars.get();
+            ArchCore.getUiHandlerAsync().post(() -> {
+                View view = UIManager.sInstance.getDecorView();
+                if (view != null) {
+                    view.setLayoutDirection(
+                            forceRtl.get() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
+                }
+                ViewConfiguration.get().setFontScale(fontScale.get().floatValue());
+                ViewConfiguration.get().setScrollbarSize(scrollbarSize.get());
+                ViewConfiguration.get().setTouchSlop(touchSlop.get());
+                ViewConfiguration.get().setMinScrollbarTouchTarget(minScrollbarTouchTarget.get());
+                ViewConfiguration.get().setMinimumFlingVelocity(minimumFlingVelocity.get());
+                ViewConfiguration.get().setMaximumFlingVelocity(maximumFlingVelocity.get());
+                ViewConfiguration.get().setOverscrollDistance(overscrollDistance.get());
+                ViewConfiguration.get().setOverflingDistance(overflingDistance.get());
+                ViewConfiguration.get().setVerticalScrollFactor(verticalScrollFactor.get().floatValue());
+                ViewConfiguration.get().setHorizontalScrollFactor(horizontalScrollFactor.get().floatValue());
+            });
 
             GlyphManager.sBitmapLike = bitmapLike.get();
             FontAtlas.sLinearSampling = linearSampling.get();

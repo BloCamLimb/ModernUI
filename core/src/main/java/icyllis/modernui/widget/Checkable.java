@@ -18,6 +18,8 @@
 
 package icyllis.modernui.widget;
 
+import icyllis.modernui.view.View;
+
 /**
  * Defines an extension for views that make them checkable.
  */
@@ -41,4 +43,20 @@ public interface Checkable {
      * Change the checked state of the view to the inverse of its current state
      */
     void toggle();
+
+    /**
+     * Interface definition for a callback to be invoked when the checked state
+     * of a checkable view changed.
+     */
+    @FunctionalInterface
+    interface OnCheckedChangeListener {
+
+        /**
+         * Called when the checked state of a checkable view has changed.
+         *
+         * @param buttonView The checkable view whose state has changed.
+         * @param isChecked  The new checked state of buttonView.
+         */
+        void onCheckedChanged(View buttonView, boolean isChecked);
+    }
 }
