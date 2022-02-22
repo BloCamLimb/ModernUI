@@ -56,7 +56,7 @@ public abstract class AbsSpinner extends AdapterView<SpinnerAdapter> {
 
     AbsSpinner() {
         setFocusable(true);
-        setWillNotDraw(false);
+        setWillNotDraw(true);
     }
 
     /**

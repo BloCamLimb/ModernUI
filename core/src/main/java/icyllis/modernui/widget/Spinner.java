@@ -55,14 +55,23 @@ public class Spinner extends AbsSpinner {
 
     public Spinner() {
         mPopup = new DropdownPopup();
-        mPopup.setOverlapAnchor(true);
+        //mPopup.setOverlapAnchor(true);
         mPopup.setBackgroundDrawable(new Drawable() {
+            private final int mRadius = dp(2);
+
             @Override
             public void draw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.take();
                 paint.setColor(0xff303030);
                 Rect b = getBounds();
-                canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 4, paint);
+                canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, mRadius, paint);
+            }
+
+            @Override
+            public boolean getPadding(@Nonnull Rect padding) {
+                int r = (int) Math.ceil(mRadius / 2f);
+                padding.set(r, r, r, r);
+                return true;
             }
         });
         mDropDownWidth = LayoutParams.WRAP_CONTENT;

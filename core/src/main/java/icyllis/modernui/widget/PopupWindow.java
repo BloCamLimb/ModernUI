@@ -36,6 +36,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 
+import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
@@ -1773,7 +1774,7 @@ public class PopupWindow {
             final int x = (int) ev.getX();
             final int y = (int) ev.getY();
             if (mOutsideTouchable && ev.getAction() == MotionEvent.ACTION_DOWN &&
-                    x < child.getLeft() || x >= child.getRight() || y < child.getTop() || y >= child.getBottom()) {
+                    (x < child.getLeft() || x >= child.getRight() || y < child.getTop() || y >= child.getBottom())) {
                 dismiss();
                 return true;
             }
@@ -1783,7 +1784,7 @@ public class PopupWindow {
         @Override
         public boolean onTouchEvent(@Nonnull CoordinatorLayout parent, @Nonnull DecorView child,
                                     @Nonnull MotionEvent ev) {
-            return false;
+            return child.dispatchTouchEvent(ev);
         }
     }
 

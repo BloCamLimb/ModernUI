@@ -37,12 +37,12 @@ import icyllis.modernui.text.style.ForegroundColorSpan;
 import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.util.FloatProperty;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 
 import javax.annotation.Nonnull;
+
+import static icyllis.modernui.ModernUI.LOGGER;
 
 public class TestLinearLayout extends LinearLayout {
 
@@ -201,12 +201,25 @@ public class TestLinearLayout extends LinearLayout {
             } else if (i == 7) {
                 Spinner spinner = new Spinner();
                 v = spinner;
-                spinner.setAdapter(new TestListFragment.MyAdapter(15));
+                spinner.setAdapter(new TestListFragment.MyAdapter(25));
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
             } else {
                 v = new CView(i);
                 p = new LinearLayout.LayoutParams(dp(200), dp(50));
+            }
+            if (i == 8) {
+                v.setOnCreateContextMenuListener((menu, v1, menuInfo) -> {
+                    menu.setQwertyMode(true);
+                    menu.setGroupDividerEnabled(true);
+                    MenuItem item = menu.add("Edit");
+                    item.setCheckable(true);
+                    item.setAlphabeticShortcut('c', KeyEvent.META_CTRL_ON);
+                    SubMenu subMenu = menu.addSubMenu("Create");
+                    subMenu.add("Document");
+                    subMenu.add("Image");
+                    menu.add(1, Menu.NONE, Menu.NONE, "Disconnect");
+                });
             }
             v.setClickable(true);
             p.gravity = Gravity.CENTER;

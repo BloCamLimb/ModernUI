@@ -22,6 +22,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.Gravity;
@@ -332,7 +333,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
     }
 
     private void insertCheckBox() {
-        mCheckBox = new CheckBox();
+        mCheckBox = new MaterialCheckBox();
         mCheckBox.setFocusable(false);
         mCheckBox.setClickable(false);
         mCheckBox.setDuplicateParentStateEnabled(true);
