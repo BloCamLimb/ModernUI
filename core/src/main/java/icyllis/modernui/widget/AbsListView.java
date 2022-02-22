@@ -1075,10 +1075,8 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
             @Override
             public void draw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.take();
-                paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(4);
-                Rect b = getBounds();
-                canvas.drawRoundRect(b.left + 2, b.top + 2, b.right - 2, b.bottom - 2, 4, paint);
+                paint.setAlpha(25);
+                canvas.drawRect(getBounds(), paint);
             }
         });
     }

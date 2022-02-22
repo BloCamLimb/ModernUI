@@ -10621,8 +10621,8 @@ public class View implements Drawable.Callback {
      * @hide
      */
     protected boolean performButtonActionOnTouchDown(@Nonnull MotionEvent event) {
-        // Added: check if the view is context clickable
-        if (isContextClickable() && (event.getButtonState() & MotionEvent.BUTTON_SECONDARY) != 0) {
+        // Added: check if the view is long clickable
+        if (isLongClickable() && (event.getButtonState() & MotionEvent.BUTTON_SECONDARY) != 0) {
             showContextMenu(event.getX(), event.getY());
             mPrivateFlags |= PFLAG_CANCEL_NEXT_UP_EVENT;
             return true;

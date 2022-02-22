@@ -25,6 +25,7 @@ import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ShowableListMenu;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -670,6 +671,11 @@ public class ListPopupWindow implements ShowableListMenu {
         return mDropDownList;
     }
 
+    @Nonnull
+    DropDownListView createDropDownListView(boolean hijackFocus) {
+        return new DropDownListView(hijackFocus);
+    }
+
     /**
      * <p>Builds the popup window's content and returns the height the popup
      * should have. Returns -1 when the content already exists.</p>
@@ -695,7 +701,7 @@ public class ListPopupWindow implements ShowableListMenu {
                 }
             };
 
-            mDropDownList = new DropDownListView(!mModal);
+            mDropDownList = createDropDownListView(!mModal);
             if (mDropDownListHighlight != null) {
                 mDropDownList.setSelector(mDropDownListHighlight);
             }

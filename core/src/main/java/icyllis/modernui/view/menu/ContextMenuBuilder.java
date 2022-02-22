@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
  * <p>
  * To use this class, instantiate it via {@link #ContextMenuBuilder()},
  * and optionally populate it with any of your custom items.  Finally,
- * call {@link #showDialog(View, IBinder)} which will populate the menu
+ * call {@link #showPopup(View, float, float)} which will populate the menu
  * with a view's context menu items and show the context menu.
  */
 public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {
@@ -64,5 +64,23 @@ public class ContextMenuBuilder extends MenuBuilder implements ContextMenu {
         return this;
     }
 
-    //TODO show the menu
+    public MenuPopupHelper showPopup(View originalView, float x, float y) {
+        if (originalView != null) {
+            // Let relevant views and their populate context listeners populate
+            // the context menu
+            originalView.createContextMenu(this);
+        }
+
+        if (getVisibleItems().size() > 0) {
+            int[] location = new int[2];
+            assert originalView != null;
+            originalView.getLocationInWindow(location);
+
+            final MenuPopupHelper helper = new MenuPopupHelper(this, originalView, false);
+            helper.show(Math.round(x), Math.round(y));
+            return helper;
+        }
+
+        return null;
+    }
 }

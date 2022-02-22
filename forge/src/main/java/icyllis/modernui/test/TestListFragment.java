@@ -63,6 +63,17 @@ public class TestListFragment extends Fragment {
 
     public static class MyAdapter extends BaseAdapter {
 
+        private static final String[] STUFF = {
+                "Apple",
+                "Banana",
+                "Cherry",
+                "Grapes",
+                "Mango",
+                "Orange",
+                "Strawberry",
+                "Watermelon"
+        };
+
         public final int mCount;
 
         public MyAdapter(int count) {
@@ -94,9 +105,12 @@ public class TestListFragment extends Fragment {
             } else {
                 tv = (TextView) convertView;
             }
-            tv.setText("Data Entry " + position);
+            String s = STUFF[position % STUFF.length];
+            int index = position / STUFF.length;
+            tv.setText(s + " " + index);
             tv.setLayoutParams(new LayoutParams(LayoutParams.WRAP_CONTENT, LayoutParams.WRAP_CONTENT));
-            tv.setPadding(dp(4), dp(4), dp(4), dp(4));
+            tv.setPadding(dp(8), 0, dp(8), 0);
+            tv.setTextSize(16);
             return tv;
         }
     }

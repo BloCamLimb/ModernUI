@@ -41,6 +41,8 @@ import icyllis.modernui.test.TestPauseFragment;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
 import icyllis.modernui.view.*;
+import icyllis.modernui.view.menu.ContextMenuBuilder;
+import icyllis.modernui.view.menu.MenuHelper;
 import icyllis.modernui.widget.CoordinatorLayout;
 import icyllis.modernui.widget.EditText;
 import net.minecraft.ChatFormatting;
@@ -859,6 +861,9 @@ public final class UIManager implements LifecycleOwner {
 
         private final Rect mGlobalRect = new Rect();
 
+        ContextMenuBuilder mContextMenu;
+        MenuHelper mContextMenuHelper;
+
         @Nonnull
         @Override
         protected Canvas beginRecording(int width, int height) {
@@ -975,6 +980,36 @@ public final class UIManager implements LifecycleOwner {
         @Override
         public boolean performHapticFeedback(int effectId, boolean always) {
             return false;
+        }
+
+        @Override
+        public boolean showContextMenuForChild(View originalView, float x, float y) {
+            if (mContextMenuHelper != null) {
+                mContextMenuHelper.dismiss();
+                mContextMenuHelper = null;
+            }
+
+            if (mContextMenu == null) {
+                mContextMenu = new ContextMenuBuilder();
+                //mContextMenu.setCallback(callback);
+            } else {
+                mContextMenu.clearAll();
+            }
+
+            final MenuHelper helper;
+            final boolean isPopup = !Float.isNaN(x) && !Float.isNaN(y);
+            if (isPopup) {
+                helper = mContextMenu.showPopup(originalView, x, y);
+            } else {
+                helper = mContextMenu.showPopup(originalView, 0, 0);
+            }
+
+            if (helper != null) {
+                //helper.setPresenterCallback(callback);
+            }
+
+            mContextMenuHelper = helper;
+            return helper != null;
         }
     }
 
