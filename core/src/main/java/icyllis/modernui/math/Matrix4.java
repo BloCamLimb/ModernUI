@@ -1070,11 +1070,62 @@ public class Matrix4 implements Cloneable {
      * @param dx the x-component of the translation
      * @param dy the y-component of the translation
      */
-    public void translateXY(float dx, float dy) {
+    public void translate(float dx, float dy) {
         m41 += dx * m11 + dy * m21;
         m42 += dx * m12 + dy * m22;
         m43 += dx * m13 + dy * m23;
         m44 += dx * m14 + dy * m24;
+    }
+
+    /**
+     * Post-translates this matrix by given changes. This is equivalent to
+     * post-multiplying by a translation matrix. (this * tr)
+     *
+     * @param t the translation vector
+     */
+    public void postTranslate(@Nonnull Vector3 t) {
+        postTranslate(t.x, t.y, t.z);
+    }
+
+    /**
+     * Post-translates this matrix by given changes. This is equivalent to
+     * post-multiplying by a translation matrix.
+     *
+     * @param dx the x-component of the translation
+     * @param dy the y-component of the translation
+     * @param dz the z-component of the translation
+     */
+    public void postTranslate(float dx, float dy, float dz) {
+        m11 += dx * m14;
+        m12 += dy * m14;
+        m13 += dz * m14;
+        m21 += dx * m24;
+        m22 += dy * m24;
+        m23 += dz * m24;
+        m31 += dx * m34;
+        m32 += dy * m34;
+        m33 += dz * m34;
+        m41 += dx * m44;
+        m42 += dy * m44;
+        m43 += dz * m44;
+    }
+
+    /**
+     * Post-translates this matrix by given changes. This is equivalent to
+     * post-multiplying by a translation matrix.
+     *
+     * @param dx the x-component of the translation
+     * @param dy the y-component of the translation
+     */
+    public void postTranslate(float dx, float dy) {
+        m11 += dx * m14;
+        m12 += dy * m14;
+        m21 += dx * m24;
+        m22 += dy * m24;
+        m31 += dx * m34;
+        m32 += dy * m34;
+        m41 += dx * m44;
+        m42 += dy * m44;
     }
 
     /**
@@ -1191,7 +1242,7 @@ public class Matrix4 implements Cloneable {
      * @param sx the x-component of the scale
      * @param sy the y-component of the scale
      */
-    public void scaleXY(float sx, float sy) {
+    public void scale(float sx, float sy) {
         m11 *= sx;
         m12 *= sx;
         m13 *= sx;
@@ -1601,6 +1652,26 @@ public class Matrix4 implements Cloneable {
             float w = 1.0f / (m14 * p[0] + m24 * p[1] + m44);
             p[0] = x * w;
             p[1] = y * w;
+        }
+    }
+
+    public float transformPointX(float x, float y) {
+        if (isAffine()) {
+            return m11 * x + m21 * y + m41;
+        } else {
+            final float f = m11 * x + m21 * y + m41;
+            float w = 1.0f / (m14 * x + m24 * y + m44);
+            return f * w;
+        }
+    }
+
+    public float transformPointY(float x, float y) {
+        if (isAffine()) {
+            return m12 * x + m22 * y + m42;
+        } else {
+            final float f = m12 * x + m22 * y + m42;
+            float w = 1.0f / (m14 * x + m24 * y + m44);
+            return f * w;
         }
     }
 

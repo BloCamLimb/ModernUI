@@ -78,7 +78,7 @@ public abstract class BaseAdapter implements ListAdapter, SpinnerAdapter {
         return true;
     }
 
-    @Nonnull
+    @Nullable
     @Override
     public View getDropDownView(int position, @Nullable View convertView, @Nonnull ViewGroup parent) {
         return getView(position, convertView, parent);

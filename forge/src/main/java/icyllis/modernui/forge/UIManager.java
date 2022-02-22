@@ -469,12 +469,16 @@ public final class UIManager implements LifecycleOwner {
 
     @UiThread
     private void finish() {
+        LOGGER.info(MARKER, "Quiting UI thread");
+
         mFragmentController.dispatchStop();
         mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_STOP);
 
         mFragmentController.dispatchDestroy();
         mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY);
 
+        // must delay, some messages are not enqueued
+        // currently it is a bit longer than a game tick
         mRoot.mHandler.postDelayed(mLooper::quitSafely, 60);
     }
 
@@ -828,7 +832,6 @@ public final class UIManager implements LifecycleOwner {
         } else {
             // main thread
             if (!minecraft.isRunning() && mRunning) {
-                LOGGER.info(MARKER, "Finishing UI thread");
                 mRunning = false;
                 mRoot.mHandler.post(this::finish);
                 try {

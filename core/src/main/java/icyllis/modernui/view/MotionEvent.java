@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import org.lwjgl.glfw.GLFW;
@@ -423,8 +424,7 @@ public final class MotionEvent extends InputEvent {
     private int mModifiers;
     private int mButtonState;
 
-    private float mXOffset;
-    private float mYOffset;
+    private final Matrix4 mTransform = new Matrix4();
     private float mRawXCursorPosition;
     private float mRawYCursorPosition;
 
@@ -486,8 +486,7 @@ public final class MotionEvent extends InputEvent {
         mFlags = other.mFlags;
         mModifiers = other.mModifiers;
         mButtonState = other.mButtonState;
-        mXOffset = other.mXOffset;
-        mYOffset = other.mYOffset;
+        mTransform.set(other.mTransform);
         mRawXCursorPosition = other.mRawXCursorPosition;
         mRawYCursorPosition = other.mRawYCursorPosition;
         mEventTime = other.mEventTime;
@@ -513,8 +512,7 @@ public final class MotionEvent extends InputEvent {
         mFlags = flags;
         mModifiers = modifiers;
         mButtonState = buttonState;
-        mXOffset = 0;
-        mYOffset = 0;
+        mTransform.setIdentity();
         mRawXCursorPosition = rawXCursorPosition;
         mRawYCursorPosition = rawYCursorPosition;
         mEventTime = eventTime;
@@ -557,8 +555,8 @@ public final class MotionEvent extends InputEvent {
      */
     @Deprecated
     private void setCursorPosition(float x, float y) {
-        mRawXCursorPosition = x - mXOffset;
-        mRawYCursorPosition = y - mYOffset;
+        /*mRawXCursorPosition = x - mXOffset;
+        mRawYCursorPosition = y - mYOffset;*/
     }
 
     /**
@@ -783,12 +781,12 @@ public final class MotionEvent extends InputEvent {
         if (pointerIndex < 0 || pointerIndex >= getPointerCount()) {
             throw new IllegalArgumentException("pointerIndex out of range");
         }
-        float value = getRawPointerCoords(pointerIndex).getAxisValue(axis);
-        return switch (axis) {
+        /*return switch (axis) {
             case AXIS_X -> value + mXOffset;
             case AXIS_Y -> value + mYOffset;
             default -> value;
-        };
+        };*/
+        return getRawPointerCoords(pointerIndex).getAxisValue(axis);
     }
 
     /**
@@ -870,7 +868,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_X
      */
     public float getX() {
-        return mRawXCursorPosition + mXOffset;
+        return mTransform.transformPointX(mRawXCursorPosition, mRawYCursorPosition);
     }
 
     /**
@@ -880,7 +878,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_Y
      */
     public float getY() {
-        return mRawYCursorPosition + mYOffset;
+        return mTransform.transformPointY(mRawXCursorPosition, mRawYCursorPosition);
     }
 
     /**
@@ -991,7 +989,8 @@ public final class MotionEvent extends InputEvent {
      */
     @Deprecated
     private float getXCursorPosition() {
-        return mRawXCursorPosition + mXOffset;
+        /*return mRawXCursorPosition + mXOffset;*/
+        return 0;
     }
 
     /**
@@ -1000,7 +999,8 @@ public final class MotionEvent extends InputEvent {
      */
     @Deprecated
     private float getYCursorPosition() {
-        return mRawYCursorPosition + mYOffset;
+        /*return mRawYCursorPosition + mYOffset;*/
+        return 0;
     }
 
     /**
@@ -1010,8 +1010,7 @@ public final class MotionEvent extends InputEvent {
      * @param deltaY Amount to add to the current Y coordinate of the event.
      */
     public void offsetLocation(float deltaX, float deltaY) {
-        mXOffset += deltaX;
-        mYOffset += deltaY;
+        mTransform.translate(deltaX, deltaY);
     }
 
     /**
@@ -1025,6 +1024,15 @@ public final class MotionEvent extends InputEvent {
         float oldX = getX();
         float oldY = getY();
         offsetLocation(x - oldX, y - oldY);
+    }
+
+    /**
+     * Applies a transformation matrix to all of the points in the event.
+     *
+     * @param matrix The transformation matrix to apply.
+     */
+    public void transform(@Nonnull Matrix4 matrix) {
+        mTransform.multiply(matrix);
     }
 
     /**

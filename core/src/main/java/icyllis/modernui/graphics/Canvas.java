@@ -173,7 +173,7 @@ public abstract class Canvas {
      */
     public final void translate(float dx, float dy) {
         if (dx != 0.0f || dy != 0.0f) {
-            getMatrix().translateXY(dx, dy);
+            getMatrix().translate(dx, dy);
         }
     }
 
@@ -185,7 +185,7 @@ public abstract class Canvas {
      */
     public final void scale(float sx, float sy) {
         if (sx != 1.0f || sy != 1.0f) {
-            getMatrix().scaleXY(sx, sy);
+            getMatrix().scale(sx, sy);
         }
     }
 
@@ -200,9 +200,9 @@ public abstract class Canvas {
     public final void scale(float sx, float sy, float px, float py) {
         if (sx != 1.0f || sy != 1.0f) {
             Matrix4 matrix = getMatrix();
-            matrix.translateXY(px, py);
-            matrix.scaleXY(sx, sy);
-            matrix.translateXY(-px, -py);
+            matrix.translate(px, py);
+            matrix.scale(sx, sy);
+            matrix.translate(-px, -py);
         }
     }
 

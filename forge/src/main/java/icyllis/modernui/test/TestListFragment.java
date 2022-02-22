@@ -43,7 +43,7 @@ public class TestListFragment extends Fragment {
     @Override
     public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
         ListView listView = new ListView();
-        listView.setAdapter(new MyAdapter());
+        listView.setAdapter(new MyAdapter(40));
         listView.setDivider(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
@@ -61,11 +61,17 @@ public class TestListFragment extends Fragment {
         return listView;
     }
 
-    private static class MyAdapter extends BaseAdapter {
+    public static class MyAdapter extends BaseAdapter {
+
+        public final int mCount;
+
+        public MyAdapter(int count) {
+            mCount = count;
+        }
 
         @Override
         public int getCount() {
-            return 40;
+            return mCount;
         }
 
         @Nullable

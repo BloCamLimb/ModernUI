@@ -533,6 +533,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * @return The view corresponding to the currently selected item, or null
      * if nothing is selected
      */
+    @Nullable
     public abstract View getSelectedView();
 
     /**
@@ -1053,7 +1054,6 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      *
      * @param position Our current position
      */
-
     void setSelectedPositionInt(int position) {
         mSelectedPosition = position;
         mSelectedRowId = getItemIdAtPosition(position);
@@ -1065,7 +1065,6 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
      * @param position Intended value for mSelectedPosition the next time we go
      *                 through layout
      */
-
     void setNextSelectedPositionInt(int position) {
         mNextSelectedPosition = position;
         mNextSelectedRowId = getItemIdAtPosition(position);

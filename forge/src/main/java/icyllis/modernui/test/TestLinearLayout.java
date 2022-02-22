@@ -198,6 +198,12 @@ public class TestLinearLayout extends LinearLayout {
                 checkBox.setGravity(Gravity.END);
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
+            } else if (i == 7) {
+                Spinner spinner = new Spinner();
+                v = spinner;
+                spinner.setAdapter(new TestListFragment.MyAdapter(15));
+                p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
+                        ViewGroup.LayoutParams.WRAP_CONTENT);
             } else {
                 v = new CView(i);
                 p = new LinearLayout.LayoutParams(dp(200), dp(50));

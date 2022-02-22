@@ -85,8 +85,9 @@ public interface Adapter {
 
     /**
      * Get a View that displays the data at the specified position in the data set. You can
-     * create a View manually. When the View is inflated, the parent View (GridView, ListView...)
-     * will apply default layout parameters.
+     * create a View manually.
+     * <p>
+     * This method should not return null unless the item count is zero.
      *
      * @param position    The position of the item within the adapter's data set of the item whose view
      *                    we want.
@@ -99,7 +100,6 @@ public interface Adapter {
      * @param parent      The parent that this view will eventually be attached to
      * @return A View corresponding to the data at the specified position.
      */
-    @Nonnull
     View getView(int position, @Nullable View convertView, @Nonnull ViewGroup parent);
 
     /**

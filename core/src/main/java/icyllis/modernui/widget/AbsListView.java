@@ -675,7 +675,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
      * {@inheritDoc}
      */
     @Override
-    public void setAdapter(ListAdapter adapter) {
+    public void setAdapter(@Nullable ListAdapter adapter) {
         if (adapter != null) {
             mAdapterHasStableIds = mAdapter.hasStableIds();
             if (mChoiceMode != CHOICE_MODE_NONE && mAdapterHasStableIds &&

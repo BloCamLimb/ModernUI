@@ -535,12 +535,40 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     private boolean dispatchTransformedGenericPointerEvent(@Nonnull MotionEvent event, @Nonnull View child) {
         boolean handled;
+        if (!child.hasIdentityMatrix()) {
+            MotionEvent transformedEvent = getTransformedMotionEvent(event, child);
+            handled = child.dispatchGenericMotionEvent(transformedEvent);
+            transformedEvent.recycle();
+        } else {
+            final float offsetX = mScrollX - child.mLeft;
+            final float offsetY = mScrollY - child.mTop;
+            event.offsetLocation(offsetX, offsetY);
+            handled = child.dispatchGenericMotionEvent(event);
+            event.offsetLocation(-offsetX, -offsetY);
+        }
+        return handled;
+    }
+
+    /**
+     * Returns a MotionEvent that's been transformed into the child's local coordinates.
+     * <p>
+     * It's the responsibility of the caller to recycle it once they're finished with it.
+     *
+     * @param event The event to transform.
+     * @param child The view whose coordinate space is to be used.
+     * @return A copy of the the given MotionEvent, transformed into the given View's coordinate
+     * space.
+     */
+    @Nonnull
+    private MotionEvent getTransformedMotionEvent(@Nonnull MotionEvent event, @Nonnull View child) {
         final float offsetX = mScrollX - child.mLeft;
         final float offsetY = mScrollY - child.mTop;
-        event.offsetLocation(offsetX, offsetY);
-        handled = child.dispatchGenericMotionEvent(event);
-        event.offsetLocation(-offsetX, -offsetY);
-        return handled;
+        final MotionEvent transformedEvent = event.copy();
+        transformedEvent.offsetLocation(offsetX, offsetY);
+        if (!child.hasIdentityMatrix()) {
+            transformedEvent.transform(child.getInverseMatrix());
+        }
+        return transformedEvent;
     }
 
     /**
@@ -992,8 +1020,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             final float offsetX = mScrollX - child.mLeft;
             final float offsetY = mScrollY - child.mTop;
             transformedEvent.offsetLocation(offsetX, offsetY);
-            //TODO
-            //transformedEvent.transform(child.getInverseMatrix());
+            if (!child.hasIdentityMatrix()) {
+                transformedEvent.transform(child.getInverseMatrix());
+            }
 
             handled = child.dispatchTouchEvent(transformedEvent);
 
@@ -2999,15 +3028,15 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      * @hide
      */
     @Override
-    public boolean resolveRtlProperties() {
-        final boolean result = super.resolveRtlProperties();
+    public boolean resolveRtlPropertiesIfNeeded() {
+        final boolean result = super.resolveRtlPropertiesIfNeeded();
         // We don't need to resolve the children RTL properties if nothing has changed for the parent
         if (result) {
             int count = getChildCount();
             for (int i = 0; i < count; i++) {
                 final View child = getChildAt(i);
                 if (child.isLayoutDirectionInherited()) {
-                    child.resolveRtlProperties();
+                    child.resolveRtlPropertiesIfNeeded();
                 }
             }
         }
