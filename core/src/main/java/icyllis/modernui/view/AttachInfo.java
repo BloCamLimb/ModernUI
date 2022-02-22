@@ -19,6 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.core.Handler;
+import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Point;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
@@ -105,9 +106,20 @@ final class AttachInfo {
     final RectF mTmpTransformRect = new RectF();
 
     /**
+     * Temporary for use in transforming invalidation rect
+     */
+    final Matrix4 mTmpMatrix = new Matrix4();
+
+    /**
      * Point used to compute visible regions.
      */
     final Point mPoint = new Point();
+
+    /**
+     * Used to track which View originated a requestLayout() call, used when
+     * requestLayout() is called during layout.
+     */
+    View mViewRequestingLayout;
 
     AttachInfo(ViewRoot viewRoot, Handler handler, Callbacks callbacks) {
         mViewRoot = viewRoot;

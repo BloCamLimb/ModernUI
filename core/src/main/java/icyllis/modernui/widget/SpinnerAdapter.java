@@ -36,6 +36,8 @@ public interface SpinnerAdapter extends Adapter {
     /**
      * Gets a {@link View} that displays in the drop-down popup
      * the data at the specified position in the data set.
+     * <p>
+     * This method should not return null unless the item count is zero.
      *
      * @param position    index of the item whose view we want.
      * @param convertView the old view to reuse, if possible. Note: You should
@@ -45,6 +47,5 @@ public interface SpinnerAdapter extends Adapter {
      * @param parent      the parent that this view will eventually be attached to
      * @return a {@link View} corresponding to the data at the specified position.
      */
-    @Nonnull
     View getDropDownView(int position, @Nullable View convertView, @Nonnull ViewGroup parent);
 }

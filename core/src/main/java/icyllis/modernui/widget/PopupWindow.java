@@ -1242,49 +1242,12 @@ public class PopupWindow {
      * shown.
      */
     public int getMaxAvailableHeight(@Nonnull View anchor, int yOffset) {
-        return getMaxAvailableHeight(anchor, yOffset, false);
-    }
-
-    /**
-     * Returns the maximum height that is available for the popup to be
-     * completely shown, optionally ignoring any bottom decorations such as
-     * the input method. It is recommended that this height be the maximum for
-     * the popup's height, otherwise it is possible that the popup will be
-     * clipped.
-     *
-     * @param anchor                  The view on which the popup window must be anchored.
-     * @param yOffset                 y offset from the view's bottom edge
-     * @param ignoreBottomDecorations if true, the height returned will be
-     *                                all the way to the bottom of the display, ignoring any
-     *                                bottom decorations
-     * @return The maximum available height for the popup to be completely
-     * shown.
-     */
-    public int getMaxAvailableHeight(
-            @Nonnull View anchor, int yOffset, boolean ignoreBottomDecorations) {
-        Rect displayFrame;
-        final Rect visibleDisplayFrame = new Rect();
-
-        /*final View appView = anchor.getRootView();
-        appView.getWindowVisibleDisplayFrame(visibleDisplayFrame);
-        if (ignoreBottomDecorations) {
-            // In the ignore bottom decorations case we want to
-            // still respect all other decorations so we use the inset visible
-            // frame on the top right and left and take the bottom
-            // value from the full frame.
-            displayFrame = new Rect();
-            anchor.getWindowDisplayFrame(displayFrame);
-            displayFrame.top = visibleDisplayFrame.top;
-            displayFrame.right = visibleDisplayFrame.right;
-            displayFrame.left = visibleDisplayFrame.left;
-        } else {
-            displayFrame = visibleDisplayFrame;
-        }
+        final View appView = anchor.getRootView();
 
         final int[] anchorPos = mTmpDrawingLocation;
-        anchor.getLocationOnScreen(anchorPos);
+        anchor.getLocationInWindow(anchorPos);
 
-        final int bottomEdge = displayFrame.bottom;
+        final int bottomEdge = appView.getBottom();
 
         final int distanceToBottom;
         if (mOverlapAnchor) {
@@ -1292,7 +1255,7 @@ public class PopupWindow {
         } else {
             distanceToBottom = bottomEdge - (anchorPos[1] + anchor.getHeight()) - yOffset;
         }
-        final int distanceToTop = anchorPos[1] - displayFrame.top + yOffset;
+        final int distanceToTop = anchorPos[1] - appView.getTop() + yOffset;
 
         // anchorPos[1] is distance from anchor to top of screen
         int returnedHeight = Math.max(distanceToBottom, distanceToTop);
@@ -1301,8 +1264,7 @@ public class PopupWindow {
             returnedHeight -= mTempRect.top + mTempRect.bottom;
         }
 
-        return returnedHeight;*/
-        return 0;
+        return returnedHeight;
     }
 
     /**

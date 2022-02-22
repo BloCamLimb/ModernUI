@@ -18,16 +18,6 @@
 
 package icyllis.modernui.widget;
 
-/*
- * Implementation Notes:
- *
- * Some terminology:
- *
- *     index    - index of the items that are currently visible
- *     position - index of the items in the cursor
- */
-
-
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.MathUtil;
@@ -49,7 +39,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * immediately below the previous view in the list.  For a more modern, flexible, and performant
  * approach to displaying lists, use {@link RecyclerView}.</p>
  *
- * <p>A list view is an <a href="https://developer.android.com/guide/topics/ui/declaring-layout.html#AdapterViews">
+ * <p>A list view is an <a href="https://developer.android.com/guide/topics/ui/declaring-layout#AdapterViews">
  * adapter view</a> that does not know the details, such as type and contents, of the views it
  * contains. Instead list view requests views on demand from a {@link ListAdapter} as needed,
  * such as to display new views as the user scrolls up or down.</p>
@@ -57,7 +47,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * <p>In order to display items in the list, call {@link #setAdapter(ListAdapter adapter)}
  * to associate an adapter with the list.  For a simple example, see the discussion of filling an
  * adapter view with text in the
- * <a href="https://developer.android.com/guide/topics/ui/declaring-layout.html#FillingTheLayout">
+ * <a href="https://developer.android.com/guide/topics/ui/declaring-layout#FillingTheLayout">
  * Layouts</a> guide.</p>
  *
  * <p>To display a more custom view for each item in your dataset, implement a ListAdapter.
@@ -84,18 +74,18 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * avoid a lag in response to user scrolls.  To take advantage of this feature, check if the
  * {@code convertView} provided to {@code getView(...)} is null before creating or inflating a new
  * view object.  See
- * <a href="https://developer.android.com/training/improving-layouts/smooth-scrolling.html">
+ * <a href="https://developer.android.com/training/improving-layouts/smooth-scrolling">
  * Making ListView Scrolling Smooth</a> for more ways to ensure a smooth user experience.</p>
  *
  * <p>To specify an action when a user clicks or taps on a single list item, see
- * <a href="https://developer.android.com/guide/topics/ui/declaring-layout.html#HandlingUserSelections">
+ * <a href="https://developer.android.com/guide/topics/ui/declaring-layout#HandlingUserSelections">
  * Handling click events</a>.</p>
  *
  * <p>To learn how to populate a list view with a CursorAdapter, see the discussion of filling an
  * adapter view with text in the
- * <a href="https://developer.android.com/guide/topics/ui/declaring-layout.html#FillingTheLayout">
+ * <a href="https://developer.android.com/guide/topics/ui/declaring-layout#FillingTheLayout">
  * Layouts</a> guide.
- * See <a href="https://developer.android.com/guide/topics/ui/layout/listview.html">
+ * See <a href="https://developer.android.com/guide/topics/ui/layout/listview">
  * Using a Loader</a>
  * to learn how to avoid blocking the main thread when using a cursor.</p>
  */
@@ -426,7 +416,7 @@ public class ListView extends AbsListView {
      * @see #getAdapter()
      */
     @Override
-    public void setAdapter(ListAdapter adapter) {
+    public void setAdapter(@Nullable ListAdapter adapter) {
         if (mAdapter != null && mDataSetObserver != null) {
             mAdapter.unregisterDataSetObserver(mDataSetObserver);
         }
@@ -1939,7 +1929,7 @@ public class ListView extends AbsListView {
             }
             addViewInLayout(child, flowDown ? -1 : 0, p, true);
             // add view in layout will reset the RTL properties. We have to re-resolve them
-            child.resolveRtlProperties();
+            child.resolveRtlPropertiesIfNeeded();
         }
 
         if (needToMeasure) {

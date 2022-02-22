@@ -2746,27 +2746,26 @@ public class View implements Drawable.Callback {
      * @see #onMeasure(int, int)
      */
     public final void measure(int widthMeasureSpec, int heightMeasureSpec) {
-        boolean needsLayout = (mPrivateFlags & PFLAG_FORCE_LAYOUT) != 0;
+        boolean needsLayout = (mPrivateFlags & PFLAG_FORCE_LAYOUT) == PFLAG_FORCE_LAYOUT;
 
         if (!needsLayout) {
-            boolean specChanged =
-                    widthMeasureSpec != mOldWidthMeasureSpec
-                            || heightMeasureSpec != mOldHeightMeasureSpec;
-            boolean isSpecExactly =
-                    MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY
-                            && MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY;
-            boolean matchesSpecSize =
-                    getMeasuredWidth() == MeasureSpec.getSize(widthMeasureSpec)
-                            && getMeasuredHeight() == MeasureSpec.getSize(heightMeasureSpec);
-            needsLayout = specChanged
-                    && (!isSpecExactly || !matchesSpecSize);
+            // Optimize layout by avoiding an extra EXACTLY pass when the view is
+            // already measured as the correct size. In API 23 and below, this
+            // extra pass is required to make LinearLayout re-distribute weight.
+            final boolean specChanged = widthMeasureSpec != mOldWidthMeasureSpec
+                    || heightMeasureSpec != mOldHeightMeasureSpec;
+            final boolean isSpecExactly = MeasureSpec.getMode(widthMeasureSpec) == MeasureSpec.EXACTLY
+                    && MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY;
+            final boolean matchesSpecSize = getMeasuredWidth() == MeasureSpec.getSize(widthMeasureSpec)
+                    && getMeasuredHeight() == MeasureSpec.getSize(heightMeasureSpec);
+            needsLayout |= specChanged && (!isSpecExactly || !matchesSpecSize);
         }
 
         if (needsLayout) {
             // remove the flag first anyway
             mPrivateFlags &= ~PFLAG_MEASURED_DIMENSION_SET;
 
-            resolveRtlProperties();
+            resolveRtlPropertiesIfNeeded();
 
             // measure ourselves, this should set the measured dimension flag back
             onMeasure(widthMeasureSpec, heightMeasureSpec);
@@ -3936,6 +3935,16 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Gives focus to the default-focus view in the view hierarchy that has this view as a root.
+     * If the default-focus view cannot be found, falls back to calling {@link #requestFocus(int)}.
+     *
+     * @return Whether this view or one of its descendants actually took focus
+     */
+    public boolean restoreDefaultFocus() {
+        return requestFocus(View.FOCUS_DOWN);
+    }
+
+    /**
      * Call this to try to give focus to a specific view or to one of its
      * descendants and give it a hint about what direction focus is heading.
      * <p>
@@ -4915,11 +4924,11 @@ public class View implements Drawable.Callback {
      * This method differs from awakenScrollBars() only in its default duration.
      * initialAwakenScrollBars() will show the scroll bars for longer than
      * usual to give the user more of a chance to notice them.
-     *
-     * @return true if the animation is played, false otherwise.
      */
-    private boolean initialAwakenScrollBars() {
-        return mScrollCache != null && awakenScrollBars(mScrollCache.mDefaultDelayBeforeFade * 4);
+    private void initialAwakenScrollBars() {
+        if (mScrollCache != null) {
+            awakenScrollBars(mScrollCache.mDefaultDelayBeforeFade * 4);
+        }
     }
 
     /**
@@ -7224,7 +7233,7 @@ public class View implements Drawable.Callback {
             mPrivateFlags2 |=
                     ((layoutDirection << PFLAG2_LAYOUT_DIRECTION_MASK_SHIFT) & PFLAG2_LAYOUT_DIRECTION_MASK);
             // We need to resolve all RTL properties as they all depend on layout direction
-            resolveRtlProperties();
+            resolveRtlPropertiesIfNeeded();
             requestLayout();
             invalidate();
         }
@@ -7255,9 +7264,10 @@ public class View implements Drawable.Callback {
     /**
      * Resolve all RTL related properties.
      *
+     * @return true if resolution of RTL properties has been done
      * @hide
      */
-    public boolean resolveRtlProperties() {
+    public boolean resolveRtlPropertiesIfNeeded() {
         // Overall check
         if ((mPrivateFlags2 & ALL_RTL_PROPERTIES_RESOLVED) == ALL_RTL_PROPERTIES_RESOLVED) {
             return false;
@@ -7902,15 +7912,50 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Request layout if layout information changed.
-     * This will schedule a layout pass of the view tree.
+     * Returns whether the view hierarchy is currently undergoing a layout pass. This
+     * information is useful to avoid situations such as calling {@link #requestLayout()} during
+     * a layout pass.
+     *
+     * @return whether the view hierarchy is currently undergoing a layout pass
      */
+    public final boolean isInLayout() {
+        ViewRoot viewRoot = getViewRoot();
+        return viewRoot != null && viewRoot.isInLayout();
+    }
+
+    /**
+     * Call this when something has changed which has invalidated the
+     * layout of this view. This will schedule a layout pass of the view
+     * tree. This should not be called while the view hierarchy is currently in a layout
+     * pass ({@link #isInLayout()}. If layout is happening, the request may be honored at the
+     * end of the current layout pass (and then layout will run again) or after the current
+     * frame is drawn and the next layout occurs.
+     *
+     * <p>Subclasses which override this method should call the superclass method to
+     * handle possible request-during-layout errors correctly.</p>
+     */
+    @CallSuper
     public void requestLayout() {
+        if (mAttachInfo != null && mAttachInfo.mViewRequestingLayout == null) {
+            // Only trigger request-during-layout logic if this is the view requesting it,
+            // not the views in its parent hierarchy
+            ViewRoot viewRoot = getViewRoot();
+            if (viewRoot != null && viewRoot.isInLayout()) {
+                if (!viewRoot.requestLayoutDuringLayout(this)) {
+                    return;
+                }
+            }
+            mAttachInfo.mViewRequestingLayout = this;
+        }
+
         mPrivateFlags |= PFLAG_FORCE_LAYOUT;
         mPrivateFlags |= PFLAG_INVALIDATED;
 
         if (mParent != null && !mParent.isLayoutRequested()) {
             mParent.requestLayout();
+        }
+        if (mAttachInfo != null && mAttachInfo.mViewRequestingLayout == this) {
+            mAttachInfo.mViewRequestingLayout = null;
         }
     }
 
@@ -7925,11 +7970,13 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Add a mark to force this view to be laid out during the next
-     * layout pass.
+     * Forces this view to be laid out during the next layout pass.
+     * This method does not call requestLayout() or forceLayout()
+     * on the parent.
      */
     public void forceLayout() {
         mPrivateFlags |= PFLAG_FORCE_LAYOUT;
+        mPrivateFlags |= PFLAG_INVALIDATED;
     }
 
     /**
@@ -8724,6 +8771,88 @@ public class View implements Drawable.Callback {
         }
 
         return v;
+    }
+
+    /**
+     * Transforms a motion event from view-local coordinates to on-screen
+     * coordinates.
+     *
+     * @param ev the view-local motion event
+     * @return false if the transformation could not be applied
+     * @hide
+     */
+    public boolean toGlobalMotionEvent(@Nonnull MotionEvent ev) {
+        final AttachInfo info = mAttachInfo;
+        if (info == null) {
+            return false;
+        }
+
+        final Matrix4 m = info.mTmpMatrix;
+        m.setIdentity();
+        transformMatrixToGlobal(m);
+        ev.transform(m);
+        return true;
+    }
+
+    /**
+     * Transforms a motion event from on-screen coordinates to view-local
+     * coordinates.
+     *
+     * @param ev the on-screen motion event
+     * @return false if the transformation could not be applied
+     * @hide
+     */
+    public boolean toLocalMotionEvent(@Nonnull MotionEvent ev) {
+        final AttachInfo info = mAttachInfo;
+        if (info == null) {
+            return false;
+        }
+
+        final Matrix4 m = info.mTmpMatrix;
+        m.setIdentity();
+        transformMatrixToLocal(m);
+        ev.transform(m);
+        return true;
+    }
+
+    /**
+     * Modifies the input matrix such that it maps view-local coordinates to
+     * on-screen coordinates.
+     *
+     * @param matrix input matrix to modify
+     */
+    public void transformMatrixToGlobal(@Nonnull Matrix4 matrix) {
+        final ViewParent parent = mParent;
+        if (parent instanceof final View vp) {
+            vp.transformMatrixToGlobal(matrix);
+            matrix.translate(-vp.mScrollX, -vp.mScrollY);
+        }
+
+        matrix.translate(mLeft, mTop);
+
+        if (!hasIdentityMatrix()) {
+            matrix.multiply(getMatrix());
+        }
+    }
+
+    /**
+     * Modifies the input matrix such that it maps on-screen coordinates to
+     * view-local coordinates.
+     *
+     * @param matrix input matrix to modify
+     */
+    public void transformMatrixToLocal(@Nonnull Matrix4 matrix) {
+        final ViewParent parent = mParent;
+        if (parent instanceof final View vp) {
+            vp.transformMatrixToLocal(matrix);
+            matrix.postTranslate(vp.mScrollX, vp.mScrollY);
+        }
+
+        matrix.postTranslate(-mLeft, -mTop);
+
+        if (!hasIdentityMatrix()) {
+            matrix.postMultiply(getInverseMatrix());
+        }
     }
 
     /**
@@ -10808,7 +10937,7 @@ public class View implements Drawable.Callback {
      *
      * @hide
      */
-    protected boolean pointInView(float localX, float localY, float slop) {
+    public boolean pointInView(float localX, float localY, float slop) {
         return localX >= -slop && localY >= -slop && localX < ((mRight - mLeft) + slop) &&
                 localY < ((mBottom - mTop) + slop);
     }

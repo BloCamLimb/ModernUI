@@ -150,12 +150,12 @@ public final class RenderNode {
             final Matrix4 matrix = mMatrix;
             // the order is important, also no Z translation, we don't need depth test
             // depth and translucency sorting occurs at the application layer
-            matrix.translateXY(mPivotX + mTranslationX, mPivotY + mTranslationY);
+            matrix.translate(mPivotX + mTranslationX, mPivotY + mTranslationY);
             matrix.rotateX((float) Math.toRadians(mRotationX));
             matrix.rotateY((float) Math.toRadians(mRotationY));
             matrix.rotateZ((float) Math.toRadians(mRotation));
-            matrix.scaleXY(mScaleX, mScaleY);
-            matrix.translateXY(-mPivotX, -mPivotY);
+            matrix.scale(mScaleX, mScaleY);
+            matrix.translate(-mPivotX, -mPivotY);
             return matrix;
         }
         return mMatrix;

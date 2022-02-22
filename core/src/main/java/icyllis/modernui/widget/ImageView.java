@@ -699,7 +699,7 @@ public class ImageView extends View {
                 }
 
                 mDrawMatrix.setTranslate(Math.round(dx), Math.round(dy), 0);
-                mDrawMatrix.scaleXY(scale, scale);
+                mDrawMatrix.scale(scale, scale);
             } else if (ScaleType.CENTER_INSIDE == mScaleType) {
                 mDrawMatrix = mMatrix;
                 float scale;
@@ -717,7 +717,7 @@ public class ImageView extends View {
                 dy = Math.round((vheight - dheight * scale) * 0.5f);
 
                 mDrawMatrix.setTranslate(dx, dy, 0);
-                mDrawMatrix.scaleXY(scale, scale);
+                mDrawMatrix.scale(scale, scale);
             } else {
                 mDrawMatrix = mMatrix;
                 float tx = 0, sx = (float) vwidth / dwidth;
@@ -753,7 +753,7 @@ public class ImageView extends View {
                 }
 
                 mDrawMatrix.setTranslate(tx, ty, 0);
-                mDrawMatrix.scaleXY(sx, sy);
+                mDrawMatrix.scale(sx, sy);
             }
         }
     }

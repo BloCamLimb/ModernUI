@@ -466,10 +466,10 @@ public class CoordinatorLayout extends FrameLayout {
         final ViewParent parent = view.getParent();
         if (parent instanceof final View vp && parent != this) {
             offsetDescendantMatrix(vp, m);
-            m.translateXY(-vp.getScrollX(), -vp.getScrollY());
+            m.translate(-vp.getScrollX(), -vp.getScrollY());
         }
 
-        m.translateXY(view.getLeft(), view.getTop());
+        m.translate(view.getLeft(), view.getTop());
 
         if (!view.getMatrix().isIdentity()) {
             m.multiply(view.getMatrix());
