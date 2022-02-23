@@ -212,13 +212,19 @@ public class TestLinearLayout extends LinearLayout {
                 v.setOnCreateContextMenuListener((menu, v1, menuInfo) -> {
                     menu.setQwertyMode(true);
                     menu.setGroupDividerEnabled(true);
-                    MenuItem item = menu.add("Edit");
-                    item.setCheckable(true);
-                    item.setAlphabeticShortcut('c', KeyEvent.META_CTRL_ON);
-                    SubMenu subMenu = menu.addSubMenu("Create");
+                    MenuItem item;
+                    item = menu.add(2, Menu.NONE, Menu.NONE, "Align start");
+                    item.setAlphabeticShortcut('s', KeyEvent.META_CTRL_ON);
+                    item.setChecked(true);
+                    item = menu.add(2, Menu.NONE, Menu.NONE, "Align center");
+                    item.setAlphabeticShortcut('d', KeyEvent.META_CTRL_ON);
+                    item = menu.add(2, Menu.NONE, Menu.NONE, "Align end");
+                    item.setAlphabeticShortcut('f', KeyEvent.META_CTRL_ON);
+                    menu.setGroupCheckable(2, true, true);
+                    SubMenu subMenu = menu.addSubMenu("New");
                     subMenu.add("Document");
                     subMenu.add("Image");
-                    menu.add(1, Menu.NONE, Menu.NONE, "Disconnect");
+                    menu.add(1, Menu.NONE, Menu.NONE, "Delete");
                 });
             }
             v.setClickable(true);

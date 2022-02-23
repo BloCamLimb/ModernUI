@@ -114,7 +114,7 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
 
         mPopup = new MenuPopupWindow();
         mPopup.setBackgroundDrawable(new Drawable() {
-            private final int mRadius = dp(2);
+            private final int mRadius = dp(8);
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
