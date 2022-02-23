@@ -70,51 +70,44 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
                 return dp(1);
             }
         });
+        setDividerPadding(dp(2));
 
         {
             mContent = new LinearLayout();
-            mContent.setPaddingRelative(0, 0, 0, dp(16));
             mContent.setDuplicateParentStateEnabled(true);
+            mContent.setPaddingRelative(dp(4), dp(2), dp(16), dp(2));
+
+            // Checkbox, and/or radio button will be inserted here.
 
             // Icon will be inserted here.
 
-            // The title and summary have some gap between them,
-            // and this 'group' should be centered vertically.
+            // The title and summary have some gap between them.
             {
-                RelativeLayout group = new RelativeLayout();
-                group.setDuplicateParentStateEnabled(true);
-
-                {
-                    mTitleView = new TextView();
-                    mTitleView.setId(R.id.title);
-                    mTitleView.setTextSize(22);
-                    mTitleView.setSingleLine();
-                    mTitleView.setDuplicateParentStateEnabled(true);
-                    mTitleView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
-
-                    var params = new RelativeLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
-                    params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                    params.addRule(RelativeLayout.ALIGN_PARENT_START);
-                    group.addView(mTitleView, params);
-                }
-
-                {
-                    mShortcutView = new TextView();
-                    mShortcutView.setTextSize(16);
-                    mShortcutView.setSingleLine();
-                    mShortcutView.setDuplicateParentStateEnabled(true);
-                    mShortcutView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
-
-                    var params = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                    params.addRule(RelativeLayout.BELOW, R.id.title);
-                    params.addRule(RelativeLayout.ALIGN_PARENT_START);
-                    group.addView(mShortcutView, params);
-                }
+                mTitleView = new TextView();
+                mTitleView.setId(R.id.title);
+                mTitleView.setTextSize(16);
+                mTitleView.setSingleLine();
+                mTitleView.setDuplicateParentStateEnabled(true);
+                mTitleView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
 
                 var params = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1);
                 params.gravity = Gravity.CENTER_VERTICAL;
                 params.setMarginStart(dp(16));
-                mContent.addView(group, params);
+                mContent.addView(mTitleView, params);
+            }
+
+            {
+                mShortcutView = new TextView();
+                mShortcutView.setTextSize(14);
+                mShortcutView.setTextColor(0xFFCECECE);
+                mShortcutView.setSingleLine();
+                mShortcutView.setDuplicateParentStateEnabled(true);
+                mShortcutView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
+
+                var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                params.gravity = Gravity.CENTER_VERTICAL;
+                params.setMarginStart(dp(16));
+                mContent.addView(mShortcutView, params);
             }
 
             {
@@ -129,9 +122,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
                 mContent.addView(mSubMenuArrowView, params);
             }
 
-            // Checkbox, and/or radio button will be inserted here.
-
-            addView(mContent, MATCH_PARENT, dp(48));
+            addView(mContent, MATCH_PARENT, WRAP_CONTENT);
         }
 
         setLayoutParams(new ViewGroup.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
@@ -318,7 +309,11 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
         params.gravity = Gravity.CENTER_VERTICAL;
         params.setMarginsRelative(dp(8), dp(8), dp(-8), dp(8));
         mIconView.setLayoutParams(params);
-        addContentView(mIconView, 0);
+        if (mRadioButton != null || mCheckBox != null) {
+            addContentView(mIconView, 1);
+        } else {
+            addContentView(mIconView, 0);
+        }
     }
 
     private void insertRadioButton() {
@@ -329,7 +324,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
         var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
         params.gravity = Gravity.CENTER_VERTICAL;
         mRadioButton.setLayoutParams(params);
-        addContentView(mRadioButton);
+        addContentView(mRadioButton, 0);
     }
 
     private void insertCheckBox() {
@@ -340,7 +335,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
         var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
         params.gravity = Gravity.CENTER_VERTICAL;
         mCheckBox.setLayoutParams(params);
-        addContentView(mCheckBox);
+        addContentView(mCheckBox, 0);
     }
 
     @Override
@@ -362,24 +357,23 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
         if ((getShowDividers() == SHOW_DIVIDER_NONE) == groupDividerEnabled) {
             if (groupDividerEnabled) {
                 setShowDividers(SHOW_DIVIDER_BEGINNING);
-                setPadding(0, dp(4), 0, 0);
-                mContent.setPaddingRelative(0, dp(4), 0, dp(16));
+                setPadding(0, dp(2), 0, 0);
             } else {
                 setShowDividers(SHOW_DIVIDER_NONE);
                 setPadding(0, 0, 0, 0);
-                mContent.setPaddingRelative(0, 0, 0, dp(16));
             }
         }
     }
 
     @Override
-    public void adjustListItemSelectionBounds(Rect rect) {
+    public void adjustListItemSelectionBounds(@Nonnull Rect rect) {
+        rect.inset(dp(4), dp(2));
         if (getShowDividers() != SHOW_DIVIDER_NONE) {
             // groupDivider is a part of MenuItemListView.
             // If ListMenuItem with divider enabled is hovered/clicked, divider also gets selected.
             // Clipping the selector bounds from the top divider portion when divider is enabled,
             // so that divider does not get selected on hover or click.
-            rect.top += dp(1 + 4 + 4);
+            rect.top += dp(1 + 4);
         }
     }
 }

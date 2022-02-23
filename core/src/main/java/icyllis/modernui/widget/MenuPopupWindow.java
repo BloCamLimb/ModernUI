@@ -22,6 +22,7 @@ import icyllis.modernui.transition.Transition;
 import icyllis.modernui.view.KeyEvent;
 import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.view.MotionEvent;
+import icyllis.modernui.view.View;
 import icyllis.modernui.view.menu.ListMenuItemView;
 import icyllis.modernui.view.menu.MenuAdapter;
 import icyllis.modernui.view.menu.MenuBuilder;
@@ -46,6 +47,7 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
     DropDownListView createDropDownListView(boolean hijackFocus) {
         MenuDropDownListView view = new MenuDropDownListView(hijackFocus);
         view.setHoverListener(this);
+        view.setPadding(0, View.dp(2), 0, View.dp(2));
         return view;
     }
 
@@ -116,7 +118,7 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
         }
 
         @Override
-        public boolean onKeyDown(int keyCode, KeyEvent event) {
+        public boolean onKeyDown(int keyCode, @Nonnull KeyEvent event) {
             ListMenuItemView selectedItem = (ListMenuItemView) getSelectedView();
             if (selectedItem != null && keyCode == mAdvanceKey) {
                 if (selectedItem.isEnabled() && selectedItem.getItemData().hasSubMenu()) {
@@ -138,15 +140,14 @@ public class MenuPopupWindow extends ListPopupWindow implements MenuItemHoverLis
         }
 
         @Override
-        public boolean onHoverEvent(MotionEvent ev) {
+        public boolean onHoverEvent(@Nonnull MotionEvent ev) {
             // Dispatch any changes in hovered item index to the listener.
             if (mHoverListener != null) {
                 // The adapter may be wrapped. Adjust the index if necessary.
                 final int headersCount;
                 final MenuAdapter menuAdapter;
                 final ListAdapter adapter = getAdapter();
-                if (adapter instanceof HeaderViewListAdapter) {
-                    final HeaderViewListAdapter headerAdapter = (HeaderViewListAdapter) adapter;
+                if (adapter instanceof final HeaderViewListAdapter headerAdapter) {
                     headersCount = headerAdapter.getHeadersCount();
                     menuAdapter = (MenuAdapter) headerAdapter.getWrappedAdapter();
                 } else {

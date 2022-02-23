@@ -299,7 +299,7 @@ public final class MenuItemImpl implements MenuItem {
         appendModifier(sb, modifiers, KeyEvent.META_ALT_ON, "Alt + ");
         appendModifier(sb, modifiers, KeyEvent.META_SHIFT_ON, "Shirt + ");
 
-        sb.append(shortcut);
+        sb.append(Character.toUpperCase(shortcut));
 
         return sb.toString();
     }
