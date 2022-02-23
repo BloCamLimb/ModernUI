@@ -19,23 +19,28 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.DataSet;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.Tag;
 import org.github.jamm.MemoryMeter;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
 import org.openjdk.jmh.runner.options.OptionsBuilder;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.*;
 
-@Fork(1)
-@Threads(1)
+@Fork(2)
+@Threads(2)
 @Warmup(iterations = 2, time = 1)
 @Measurement(iterations = 5, time = 1)
 public class TestBenchmark {
@@ -43,77 +48,50 @@ public class TestBenchmark {
     public static void main(String[] args) throws RunnerException {
         MemoryMeter meter = MemoryMeter.builder().build();
 
-        final int NUM_BITS = 9;
-        int[][] VIEW_STATE_SETS = new int[1 << NUM_BITS][];
-        for (int i = 0; i < VIEW_STATE_SETS.length; i++) {
-            final int numBits = Integer.bitCount(i);
-            final int[] set = new int[numBits];
-            VIEW_STATE_SETS[i] = set;
-        }
-
-        ModernUI.LOGGER.info(meter.measureDeep(VIEW_STATE_SETS));
-        /*new Runner(new OptionsBuilder()
+        new Runner(new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
                 .shouldFailOnError(true).shouldDoGC(true)
-                .jvmArgs("-XX:+UseFMA").build()).run();*/
+                .jvmArgs("-XX:+UseFMA").build()).run();
+
+        ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact((int) meter.measureDeep(sDataSet)));
+        ModernUI.LOGGER.info("CompoundTag: {}", TextUtils.binaryCompact((int) meter.measureDeep(sCompoundTag)));
     }
 
     public static DataSet sDataSet = new DataSet();
     public static CompoundTag sCompoundTag = new CompoundTag();
 
     static {
-        sDataSet.putInt("uniqueID", 1007);
+        sDataSet.putInt(1, 1007);
         List<DataSet> list = new ArrayList<>();
         for (int i = 0; i < 1007; i++) {
             DataSet set = new DataSet();
-            set.putInt("id", i + 1);
-            set.putInt("color", 0xFF7766);
-            set.putUUID("ownerUUID", UUID.randomUUID());
-            set.putString("p", "abcedf");
+            set.putInt(2, i + 1);
+            set.putInt(3, 0xFF7766);
+            set.putUUID(4, UUID.randomUUID());
+            set.putString(5, "abcedf");
+            set.putIntArray(6, new int[]{3, 0, 5, 2, 7, 7, 7, 7});
             list.add(set);
         }
-        sDataSet.put("networks", list);
+        sDataSet.put(7, list);
 
-        sCompoundTag.putInt("uniqueID", 1007);
+        sCompoundTag.putInt("uid", 1007);
         ListTag listTag = new ListTag();
         for (int i = 0; i < 1007; i++) {
             CompoundTag tag = new CompoundTag();
             tag.putInt("id", i + 1);
             tag.putInt("color", 0xFF7766);
-            tag.putUUID("ownerUUID", UUID.randomUUID());
-            tag.putString("p", "abcedf");
+            tag.putUUID("owner", UUID.randomUUID());
+            tag.putString("pw", "abcedf");
+            tag.putIntArray("data", new int[]{3, 0, 5, 2, 7, 7, 7, 7});
             listTag.add(tag);
         }
         sCompoundTag.put("networks", listTag);
     }
 
-    static Object2ObjectOpenHashMap<Object, Object> map = new Object2ObjectOpenHashMap<>();
-    static HashMap<Object, Object> map2 = new HashMap<>();
-
-
-    static {
-        for (int i = 0; i < 10000; i++) {
-            map.put(Integer.toString(i), "");
-        }
-        for (int i = 0; i < 10000; i++) {
-            map2.put(Integer.toString(i), "");
-        }
-    }
-
     @Benchmark
-    public static void testFastUtil() {
-        Object o = map.get("866");
-    }
-
-    @Benchmark
-    public static void testFormal() {
-        Object o = map2.get("866");
-    }
-
-    /*@Benchmark
     public static void dataSetDeflation() {
         try {
-            DataSetIO.deflate(sDataSet, new FileOutputStream("F:/testdata_set1.dat"));
+            DataSet.deflate(sDataSet, new FileOutputStream("F:/testdata_set1.dat"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -131,7 +109,7 @@ public class TestBenchmark {
     @Benchmark
     public static void dataSetInflation() {
         try {
-            DataSetIO.inflate(new FileInputStream("F:/testdata_set1.dat"));
+            DataSet.inflate(new FileInputStream("F:/testdata_set1.dat"));
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -144,7 +122,7 @@ public class TestBenchmark {
         } catch (IOException e) {
             e.printStackTrace();
         }
-    }*/
+    }
 
     public static Object v;
     public static long i1;
