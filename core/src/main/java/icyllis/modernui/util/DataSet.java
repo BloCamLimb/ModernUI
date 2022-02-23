@@ -25,12 +25,11 @@ import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
 import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap.Entry;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import org.apache.logging.log4j.Marker;
@@ -40,17 +39,19 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.ParametersAreNonnullByDefault;
 import java.io.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 /**
- * A DataSet (sometimes known as DataStore) encapsulates a mapping from String keys
+ * A DataSet (sometimes known as DataStore) encapsulates a mapping from integer keys
  * to primitive values. The specified data types can safely be persisted to and
  * restored from local storage and network in bytes. Though other data types can also
  * be put into the dataset for in-memory operations, they will be silently ignored
  * during IO. A dataset object can be put into other datasets (exclude self) to
- * construct a tree structure. Neither key nor value can be null.
+ * construct a tree structure. Object values can not be null.
  * <p>
  * The default constructor seeks the balance between memory usage and IO performance
  * (data insertion and deletion, inflation and deflation, and network serialization).
@@ -76,24 +77,18 @@ public class DataSet {
     private static final byte VAL_LONG = 4;
     private static final byte VAL_FLOAT = 5;
     private static final byte VAL_DOUBLE = 6;
-    private static final byte VAL_BYTE_ARRAY = 7;
-    private static final byte VAL_SHORT_ARRAY = 8;
-    private static final byte VAL_INT_ARRAY = 9;
-    private static final byte VAL_LONG_ARRAY = 10;
-    private static final byte VAL_FLOAT_ARRAY = 11;
-    private static final byte VAL_DOUBLE_ARRAY = 12;
-    private static final byte VAL_STRING = 13;
-    private static final byte VAL_UUID = 14;
-    private static final byte VAL_LIST = 15;
-    private static final byte VAL_DATA_SET = 16;
+    private static final byte VAL_STRING = 7;
+    private static final byte VAL_UUID = 8;
+    private static final byte VAL_LIST = 9;
+    private static final byte VAL_DATA_SET = 10;
 
-    protected final Map<String, Object> mMap;
+    protected final Int2ObjectMap<Object> mMap;
 
     /**
-     * Create a new DataSet using an <code>Object2ObjectOpenHashMap</code> with a load factor of 0.8f.
+     * Create a new DataSet using an <code>Int2ObjectOpenHashMap</code> with a load factor of 0.8f.
      */
     public DataSet() {
-        mMap = new Object2ObjectOpenHashMap<>(12, 0.8f);
+        mMap = new Int2ObjectOpenHashMap<>(12, 0.8f);
     }
 
     /**
@@ -101,7 +96,7 @@ public class DataSet {
      *
      * @param map the backing map
      */
-    public DataSet(Map<String, Object> map) {
+    public DataSet(Int2ObjectMap<Object> map) {
         mMap = map;
     }
 
@@ -161,7 +156,7 @@ public class DataSet {
      * @param key the key whose presence in this data set is to be tested
      * @return {@code true} if this data set contains a mapping for the specified key
      */
-    public boolean contains(String key) {
+    public boolean contains(int key) {
         return mMap.containsKey(key);
     }
 
@@ -173,7 +168,7 @@ public class DataSet {
      * @return the value to which the specified key is mapped, or
      * {@code null} if this map contains no mapping for the key
      */
-    public Object get(String key) {
+    public Object get(int key) {
         return mMap.get(key);
     }
 
@@ -187,7 +182,7 @@ public class DataSet {
      * {@code null} if this map contains no mapping for the key
      */
     @SuppressWarnings("unchecked")
-    public <T> T getValue(String key) {
+    public <T> T getValue(int key) {
         Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -208,7 +203,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the byte value to which the specified key is mapped
      */
-    public byte getByte(String key) {
+    public byte getByte(int key) {
         return getByte(key, (byte) 0);
     }
 
@@ -221,7 +216,7 @@ public class DataSet {
      * @param defValue the value to return if key does not exist
      * @return the byte value to which the specified key is mapped
      */
-    public byte getByte(String key, byte defValue) {
+    public byte getByte(int key, byte defValue) {
         Object o = mMap.get(key);
         if (o == null) {
             return defValue;
@@ -242,7 +237,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the short value to which the specified key is mapped
      */
-    public short getShort(String key) {
+    public short getShort(int key) {
         return getShort(key, (short) 0);
     }
 
@@ -255,7 +250,7 @@ public class DataSet {
      * @param defValue the value to return if key does not exist
      * @return the short value to which the specified key is mapped
      */
-    public short getShort(String key, short defValue) {
+    public short getShort(int key, short defValue) {
         Object o = mMap.get(key);
         if (o == null) {
             return defValue;
@@ -276,7 +271,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the int value to which the specified key is mapped
      */
-    public int getInt(String key) {
+    public int getInt(int key) {
         return getInt(key, 0);
     }
 
@@ -289,7 +284,7 @@ public class DataSet {
      * @param defValue the value to return if key does not exist
      * @return the int value to which the specified key is mapped
      */
-    public int getInt(String key, int defValue) {
+    public int getInt(int key, int defValue) {
         Object o = mMap.get(key);
         if (o == null) {
             return defValue;
@@ -310,7 +305,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the long value to which the specified key is mapped
      */
-    public long getLong(String key) {
+    public long getLong(int key) {
         return getLong(key, 0L);
     }
 
@@ -323,7 +318,7 @@ public class DataSet {
      * @param defValue the value to return if key does not exist
      * @return the long value to which the specified key is mapped
      */
-    public long getLong(String key, long defValue) {
+    public long getLong(int key, long defValue) {
         Object o = mMap.get(key);
         if (o == null) {
             return defValue;
@@ -344,7 +339,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the float value to which the specified key is mapped
      */
-    public float getFloat(String key) {
+    public float getFloat(int key) {
         return getFloat(key, 0.0f);
     }
 
@@ -357,7 +352,7 @@ public class DataSet {
      * @param defValue the value to return if key does not exist
      * @return the float value to which the specified key is mapped
      */
-    public float getFloat(String key, float defValue) {
+    public float getFloat(int key, float defValue) {
         Object o = mMap.get(key);
         if (o == null) {
             return defValue;
@@ -378,7 +373,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the double value to which the specified key is mapped
      */
-    public double getDouble(String key) {
+    public double getDouble(int key) {
         return getDouble(key, 0.0);
     }
 
@@ -391,7 +386,7 @@ public class DataSet {
      * @param defValue the value to return if key does not exist
      * @return the double value to which the specified key is mapped
      */
-    public double getDouble(String key, double defValue) {
+    public double getDouble(int key, double defValue) {
         Object o = mMap.get(key);
         if (o == null) {
             return defValue;
@@ -412,7 +407,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the boolean value to which the specified key is mapped
      */
-    public boolean getBoolean(String key) {
+    public boolean getBoolean(int key) {
         return getBoolean(key, false);
     }
 
@@ -425,7 +420,7 @@ public class DataSet {
      * @param defValue the value to return if key does not exist
      * @return the boolean value to which the specified key is mapped
      */
-    public boolean getBoolean(String key, boolean defValue) {
+    public boolean getBoolean(int key, boolean defValue) {
         Object o = mMap.get(key);
         if (o == null) {
             return defValue;
@@ -441,17 +436,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
+     * If the length is variable, use {@link #getByteList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the byte[] value to which the specified key is mapped, or null
      */
-    public byte[] getByteArray(String key) {
+    public byte[] getByteArray(int key) {
         Object o = mMap.get(key);
         if (o == null) {
             return null;
         }
         try {
-            return (byte[]) o;
+            return ((ByteArrayList) o).elements();
         } catch (ClassCastException e) {
             typeWarning(key, o, "byte[]", e);
             return null;
@@ -461,17 +457,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
+     * If the length is variable, use {@link #getShortList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the short[] value to which the specified key is mapped, or null
      */
-    public short[] getShortArray(String key) {
+    public short[] getShortArray(int key) {
         Object o = mMap.get(key);
         if (o == null) {
             return null;
         }
         try {
-            return (short[]) o;
+            return ((ShortArrayList) o).elements();
         } catch (ClassCastException e) {
             typeWarning(key, o, "short[]", e);
             return null;
@@ -481,17 +478,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
+     * If the length is variable, use {@link #getIntList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the int[] value to which the specified key is mapped, or null
      */
-    public int[] getIntArray(String key) {
+    public int[] getIntArray(int key) {
         Object o = mMap.get(key);
         if (o == null) {
             return null;
         }
         try {
-            return (int[]) o;
+            return ((IntArrayList) o).elements();
         } catch (ClassCastException e) {
             typeWarning(key, o, "int[]", e);
             return null;
@@ -501,17 +499,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
+     * If the length is variable, use {@link #getLongList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the long[] value to which the specified key is mapped, or null
      */
-    public long[] getLongArray(String key) {
+    public long[] getLongArray(int key) {
         Object o = mMap.get(key);
         if (o == null) {
             return null;
         }
         try {
-            return (long[]) o;
+            return ((LongArrayList) o).elements();
         } catch (ClassCastException e) {
             typeWarning(key, o, "long[]", e);
             return null;
@@ -521,17 +520,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
+     * If the length is variable, use {@link #getFloatList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the float[] value to which the specified key is mapped, or null
      */
-    public float[] getFloatArray(String key) {
+    public float[] getFloatArray(int key) {
         Object o = mMap.get(key);
         if (o == null) {
             return null;
         }
         try {
-            return (float[]) o;
+            return ((FloatArrayList) o).elements();
         } catch (ClassCastException e) {
             typeWarning(key, o, "float[]", e);
             return null;
@@ -541,17 +541,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
+     * If the length is variable, use {@link #getDoubleList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the double[] value to which the specified key is mapped, or null
      */
-    public double[] getDoubleArray(String key) {
+    public double[] getDoubleArray(int key) {
         Object o = mMap.get(key);
         if (o == null) {
             return null;
         }
         try {
-            return (double[]) o;
+            return ((DoubleArrayList) o).elements();
         } catch (ClassCastException e) {
             typeWarning(key, o, "double[]", e);
             return null;
@@ -565,7 +566,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the String value to which the specified key is mapped, or null
      */
-    public String getString(String key) {
+    public String getString(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -589,7 +590,7 @@ public class DataSet {
      * if no valid String object is currently mapped to that key.
      */
     @Nonnull
-    public String getString(String key, String defValue) {
+    public String getString(int key, String defValue) {
         final Object o = mMap.get(key);
         if (o == null) {
             return defValue;
@@ -609,7 +610,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the UUID value to which the specified key is mapped, or null
      */
-    public UUID getUUID(String key) {
+    public UUID getUUID(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -633,7 +634,7 @@ public class DataSet {
      * if no valid UUID object is currently mapped to that key.
      */
     @Nonnull
-    public UUID getUUID(String key, UUID defValue) {
+    public UUID getUUID(int key, UUID defValue) {
         final Object o = mMap.get(key);
         if (o == null) {
             return defValue;
@@ -658,7 +659,7 @@ public class DataSet {
      * @return the List value to which the specified key is mapped, or null
      */
     @SuppressWarnings("unchecked")
-    public <T> List<T> getList(String key) {
+    public <T> List<T> getList(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -685,7 +686,7 @@ public class DataSet {
      * @return the List value to which the specified key is mapped
      */
     @Nonnull
-    public <T> List<T> computeList(String key) {
+    public <T> List<T> acquireList(int key) {
         List<T> list = getList(key);
         if (list == null) {
             list = new ArrayList<>();
@@ -701,7 +702,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the DataSet value to which the specified key is mapped, or null
      */
-    public DataSet getDataSet(String key) {
+    public DataSet getDataSet(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -724,7 +725,7 @@ public class DataSet {
      * @return the DataSet value to which the specified key is mapped
      */
     @Nonnull
-    public DataSet computeDataSet(String key) {
+    public DataSet acquireDataSet(int key) {
         DataSet set = getDataSet(key);
         if (set == null) {
             set = new DataSet();
@@ -740,7 +741,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the ByteList value to which the specified key is mapped, or null
      */
-    public ByteList getByteList(String key) {
+    public ByteList getByteList(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -763,7 +764,7 @@ public class DataSet {
      * @return the ByteList value to which the specified key is mapped, or null
      */
     @Nonnull
-    public ByteList computeByteList(String key) {
+    public ByteList acquireByteList(int key) {
         ByteList list = getByteList(key);
         if (list == null) {
             list = new ByteArrayList();
@@ -779,7 +780,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the ShortList value to which the specified key is mapped, or null
      */
-    public ShortList getShortList(String key) {
+    public ShortList getShortList(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -802,7 +803,7 @@ public class DataSet {
      * @return the ShortList value to which the specified key is mapped, or null
      */
     @Nonnull
-    public ShortList computeShortList(String key) {
+    public ShortList acquireShortList(int key) {
         ShortList list = getShortList(key);
         if (list == null) {
             list = new ShortArrayList();
@@ -818,7 +819,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the IntList value to which the specified key is mapped, or null
      */
-    public IntList getIntList(String key) {
+    public IntList getIntList(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -841,7 +842,7 @@ public class DataSet {
      * @return the IntList value to which the specified key is mapped, or null
      */
     @Nonnull
-    public IntList computeIntList(String key) {
+    public IntList acquireIntList(int key) {
         IntList list = getIntList(key);
         if (list == null) {
             list = new IntArrayList();
@@ -857,7 +858,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the LongList value to which the specified key is mapped, or null
      */
-    public LongList getLongList(String key) {
+    public LongList getLongList(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -880,7 +881,7 @@ public class DataSet {
      * @return the LongList value to which the specified key is mapped, or null
      */
     @Nonnull
-    public LongList computeLongList(String key) {
+    public LongList acquireLongList(int key) {
         LongList list = getLongList(key);
         if (list == null) {
             list = new LongArrayList();
@@ -896,7 +897,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the FloatList value to which the specified key is mapped, or null
      */
-    public FloatList getFloatList(String key) {
+    public FloatList getFloatList(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -919,7 +920,7 @@ public class DataSet {
      * @return the FloatList value to which the specified key is mapped, or null
      */
     @Nonnull
-    public FloatList computeFloatList(String key) {
+    public FloatList acquireFloatList(int key) {
         FloatList list = getFloatList(key);
         if (list == null) {
             list = new FloatArrayList();
@@ -935,7 +936,7 @@ public class DataSet {
      * @param key the key whose associated value is to be returned
      * @return the DoubleList value to which the specified key is mapped, or null
      */
-    public DoubleList getDoubleList(String key) {
+    public DoubleList getDoubleList(int key) {
         final Object o = mMap.get(key);
         if (o == null) {
             return null;
@@ -958,7 +959,7 @@ public class DataSet {
      * @return the DoubleList value to which the specified key is mapped, or null
      */
     @Nonnull
-    public DoubleList computeDoubleList(String key) {
+    public DoubleList acquireDoubleList(int key) {
         DoubleList list = getDoubleList(key);
         if (list == null) {
             list = new DoubleArrayList();
@@ -980,7 +981,7 @@ public class DataSet {
      * {@code null} if there was no mapping for {@code key}.
      */
     @Nullable
-    public Object put(String key, Object value) {
+    public Object put(int key, Object value) {
         if (value == this) {
             throw new IllegalArgumentException("You can't put yourself");
         }
@@ -993,8 +994,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the byte value to be associated with the specified key
      */
-    public void putByte(String key, byte value) {
-        mMap.put(key, value);
+    public void putByte(int key, byte value) {
+        mMap.put(key, Byte.valueOf(value));
     }
 
     /**
@@ -1003,8 +1004,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the short value to be associated with the specified key
      */
-    public void putShort(String key, short value) {
-        mMap.put(key, value);
+    public void putShort(int key, short value) {
+        mMap.put(key, Short.valueOf(value));
     }
 
     /**
@@ -1013,8 +1014,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the int value to be associated with the specified key
      */
-    public void putInt(String key, int value) {
-        mMap.put(key, value);
+    public void putInt(int key, int value) {
+        mMap.put(key, Integer.valueOf(value));
     }
 
     /**
@@ -1023,8 +1024,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the long value to be associated with the specified key
      */
-    public void putLong(String key, long value) {
-        mMap.put(key, value);
+    public void putLong(int key, long value) {
+        mMap.put(key, Long.valueOf(value));
     }
 
     /**
@@ -1033,8 +1034,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the float value to be associated with the specified key
      */
-    public void putFloat(String key, float value) {
-        mMap.put(key, value);
+    public void putFloat(int key, float value) {
+        mMap.put(key, Float.valueOf(value));
     }
 
     /**
@@ -1043,8 +1044,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the double value to be associated with the specified key
      */
-    public void putDouble(String key, double value) {
-        mMap.put(key, value);
+    public void putDouble(int key, double value) {
+        mMap.put(key, Double.valueOf(value));
     }
 
     /**
@@ -1053,8 +1054,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the boolean value to be associated with the specified key
      */
-    public void putBoolean(String key, boolean value) {
-        mMap.put(key, (byte) (value ? 1 : 0));
+    public void putBoolean(int key, boolean value) {
+        mMap.put(key, Byte.valueOf((byte) (value ? 1 : 0)));
     }
 
     /**
@@ -1063,7 +1064,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the String value to be associated with the specified key
      */
-    public void putString(String key, String value) {
+    public void putString(int key, String value) {
         mMap.put(key, value);
     }
 
@@ -1073,7 +1074,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the UUID value to be associated with the specified key
      */
-    public void putUUID(String key, UUID value) {
+    public void putUUID(int key, UUID value) {
         mMap.put(key, value);
     }
 
@@ -1089,7 +1090,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the List value to be associated with the specified key
      */
-    public void putList(String key, List<?> value) {
+    public void putList(int key, List<?> value) {
         mMap.put(key, value);
     }
 
@@ -1099,7 +1100,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the DataSet value to be associated with the specified key
      */
-    public void putDataSet(String key, DataSet value) {
+    public void putDataSet(int key, DataSet value) {
         if (value == this) {
             throw new IllegalArgumentException("You can't put yourself");
         }
@@ -1112,19 +1113,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the byte[] value to be associated with the specified key
      */
-    public void putByteArray(String key, byte[] value) {
-        mMap.put(key, value);
-    }
-
-    /**
-     * Inserts a byte[] value into the mapping, replacing any existing value for the given key.
-     * A new array created from the ByteList will be used.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the byte[] source value to be associated with the specified key
-     */
-    public void putByteArray(String key, ByteList value) {
-        putByteArray(key, value.toByteArray());
+    public void putByteArray(int key, byte[] value) {
+        mMap.put(key, ByteArrayList.wrap(value));
     }
 
     /**
@@ -1135,7 +1125,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the ByteList value to be associated with the specified key
      */
-    public void putByteList(String key, ByteList value) {
+    public void putByteList(int key, ByteList value) {
         mMap.put(key, value);
     }
 
@@ -1145,19 +1135,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the short[] value to be associated with the specified key
      */
-    public void putShortArray(String key, short[] value) {
-        mMap.put(key, value);
-    }
-
-    /**
-     * Inserts a short[] value into the mapping, replacing any existing value for the given key.
-     * A new array created from the ShortList will be used.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the short[] source value to be associated with the specified key
-     */
-    public void putShortArray(String key, ShortList value) {
-        putShortArray(key, value.toShortArray());
+    public void putShortArray(int key, short[] value) {
+        mMap.put(key, ShortArrayList.wrap(value));
     }
 
     /**
@@ -1168,7 +1147,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the ShortList value to be associated with the specified key
      */
-    public void putShortList(String key, ShortList value) {
+    public void putShortList(int key, ShortList value) {
         mMap.put(key, value);
     }
 
@@ -1178,19 +1157,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the int[] value to be associated with the specified key
      */
-    public void putIntArray(String key, int[] value) {
-        mMap.put(key, value);
-    }
-
-    /**
-     * Inserts an int[] value into the mapping, replacing any existing value for the given key.
-     * A new array created from the IntList will be used.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the int[] source value to be associated with the specified key
-     */
-    public void putIntArray(String key, IntList value) {
-        putIntArray(key, value.toIntArray());
+    public void putIntArray(int key, int[] value) {
+        mMap.put(key, IntArrayList.wrap(value));
     }
 
     /**
@@ -1201,7 +1169,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the IntList value to be associated with the specified key
      */
-    public void putIntList(String key, IntList value) {
+    public void putIntList(int key, IntList value) {
         mMap.put(key, value);
     }
 
@@ -1211,19 +1179,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the long[] value to be associated with the specified key
      */
-    public void putLongArray(String key, long[] value) {
-        mMap.put(key, value);
-    }
-
-    /**
-     * Inserts a long[] value into the mapping, replacing any existing value for the given key.
-     * A new array created from the LongList will be used.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the long[] source value to be associated with the specified key
-     */
-    public void putLongArray(String key, LongList value) {
-        putLongArray(key, value.toLongArray());
+    public void putLongArray(int key, long[] value) {
+        mMap.put(key, LongArrayList.wrap(value));
     }
 
     /**
@@ -1234,7 +1191,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the LongList value to be associated with the specified key
      */
-    public void putLongList(String key, LongList value) {
+    public void putLongList(int key, LongList value) {
         mMap.put(key, value);
     }
 
@@ -1244,19 +1201,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the float[] value to be associated with the specified key
      */
-    public void putFloatArray(String key, float[] value) {
-        mMap.put(key, value);
-    }
-
-    /**
-     * Inserts a float[] value into the mapping, replacing any existing value for the given key.
-     * A new array created from the FloatList will be used.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the float[] source value to be associated with the specified key
-     */
-    public void putFloatArray(String key, FloatList value) {
-        putFloatArray(key, value.toFloatArray());
+    public void putFloatArray(int key, float[] value) {
+        mMap.put(key, FloatArrayList.wrap(value));
     }
 
     /**
@@ -1267,7 +1213,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the FloatList value to be associated with the specified key
      */
-    public void putFloatList(String key, FloatList value) {
+    public void putFloatList(int key, FloatList value) {
         mMap.put(key, value);
     }
 
@@ -1277,19 +1223,8 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the double[] value to be associated with the specified key
      */
-    public void putDoubleArray(String key, double[] value) {
-        mMap.put(key, value);
-    }
-
-    /**
-     * Inserts a double[] value into the mapping, replacing any existing value for the given key.
-     * A new array created from the DoubleList will be used.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the double[] source value to be associated with the specified key
-     */
-    public void putDoubleArray(String key, DoubleList value) {
-        putDoubleArray(key, value.toDoubleArray());
+    public void putDoubleArray(int key, double[] value) {
+        mMap.put(key, DoubleArrayList.wrap(value));
     }
 
     /**
@@ -1300,7 +1235,7 @@ public class DataSet {
      * @param key   the key with which the specified value is to be associated
      * @param value the DoubleList value to be associated with the specified key
      */
-    public void putDoubleList(String key, DoubleList value) {
+    public void putDoubleList(int key, DoubleList value) {
         mMap.put(key, value);
     }
 
@@ -1318,7 +1253,7 @@ public class DataSet {
      * @return the previous value associated with {@code key}, or
      * {@code null} if there was no mapping for {@code key}.
      */
-    public Object remove(String key) {
+    public Object remove(int key) {
         return mMap.remove(key);
     }
 
@@ -1326,7 +1261,7 @@ public class DataSet {
      * @return a set view of the keys contained in this map
      */
     @Nonnull
-    public Set<String> keys() {
+    public IntSet keys() {
         return mMap.keySet();
     }
 
@@ -1342,19 +1277,16 @@ public class DataSet {
         return mMap.hashCode();
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public String toString() {
-        final Set<Map.Entry<String, Object>> entries = mMap.entrySet();
-        final Iterator<Map.Entry<String, Object>> it = entries instanceof Object2ObjectMap.FastEntrySet ?
-                ((Object2ObjectMap.FastEntrySet) entries).fastIterator() : entries.iterator();
+        final ObjectIterator<Entry<Object>> it = Int2ObjectMaps.fastIterator(mMap);
         if (!it.hasNext())
             return "{}";
         final StringBuilder s = new StringBuilder();
         s.append('{');
         for (; ; ) {
-            Map.Entry<String, Object> e = it.next();
-            s.append(e.getKey());
+            Entry<Object> e = it.next();
+            s.append(e.getIntKey());
             s.append('=');
             s.append(e.getValue());
             if (!it.hasNext())
@@ -1363,13 +1295,13 @@ public class DataSet {
         }
     }
 
-    static void typeWarning(String key, Object value, String className,
+    static void typeWarning(int key, Object value, String className,
                             ClassCastException e) {
         typeWarning(key, value, className, "<null>", e);
     }
 
     // Log a message if the value was non-null but not of the expected type
-    static void typeWarning(String key, Object value, String className,
+    static void typeWarning(int key, Object value, String className,
                             Object defaultValue, ClassCastException e) {
         ModernUI.LOGGER.warn(MARKER, "Key {} expected {} but value was a {}. The default value {} was returned.",
                 key, className, value.getClass().getName(), defaultValue);
@@ -1466,58 +1398,6 @@ public class DataSet {
                 for (DataSet set : (List<DataSet>) list) {
                     writeDataSet(set, output);
                 }
-            } else if (e instanceof byte[]) {
-                output.writeByte(VAL_BYTE_ARRAY);
-                output.writeInt(size);
-                for (byte[] a : (List<byte[]>) list) {
-                    output.writeInt(a.length);
-                    output.write(a);
-                }
-            } else if (e instanceof short[]) {
-                output.writeByte(VAL_SHORT_ARRAY);
-                output.writeInt(size);
-                for (short[] a : (List<short[]>) list) {
-                    output.writeInt(a.length);
-                    for (short s : a) {
-                        output.writeShort(s);
-                    }
-                }
-            } else if (e instanceof int[]) {
-                output.writeByte(VAL_INT_ARRAY);
-                output.writeInt(size);
-                for (int[] a : (List<int[]>) list) {
-                    output.writeInt(a.length);
-                    for (int i : a) {
-                        output.writeInt(i);
-                    }
-                }
-            } else if (e instanceof long[]) {
-                output.writeByte(VAL_LONG_ARRAY);
-                output.writeInt(size);
-                for (long[] a : (List<long[]>) list) {
-                    output.writeInt(a.length);
-                    for (long l : a) {
-                        output.writeLong(l);
-                    }
-                }
-            } else if (e instanceof float[]) {
-                output.writeByte(VAL_FLOAT_ARRAY);
-                output.writeInt(size);
-                for (float[] a : (List<float[]>) list) {
-                    output.writeInt(a.length);
-                    for (float f : a) {
-                        output.writeFloat(f);
-                    }
-                }
-            } else if (e instanceof double[]) {
-                output.writeByte(VAL_DOUBLE_ARRAY);
-                output.writeInt(size);
-                for (double[] a : (List<double[]>) list) {
-                    output.writeInt(a.length);
-                    for (double d : a) {
-                        output.writeDouble(d);
-                    }
-                }
             }
         }
     }
@@ -1529,94 +1409,51 @@ public class DataSet {
      * @param output the data output
      * @throws IOException if an I/O error occurs
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public static void writeDataSet(DataSet set, DataOutput output) throws IOException {
-        final Set<Map.Entry<String, Object>> entries = set.mMap.entrySet();
-        for (final Iterator<Map.Entry<String, Object>> it = entries instanceof Object2ObjectMap.FastEntrySet ?
-                ((Object2ObjectMap.FastEntrySet) entries).fastIterator() : entries.iterator(); it.hasNext(); ) {
-            final Map.Entry<String, Object> entry = it.next();
+        for (final ObjectIterator<Entry<Object>> it = Int2ObjectMaps.fastIterator(set.mMap); it.hasNext(); ) {
+            final Entry<Object> entry = it.next();
             final Object v = entry.getValue();
             if (v instanceof Byte) {
                 output.writeByte(VAL_BYTE);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 output.writeByte((byte) v);
             } else if (v instanceof Short) {
                 output.writeByte(VAL_SHORT);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 output.writeShort((short) v);
             } else if (v instanceof Integer) {
                 output.writeByte(VAL_INT);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 output.writeInt((int) v);
             } else if (v instanceof Long) {
                 output.writeByte(VAL_LONG);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 output.writeLong((long) v);
             } else if (v instanceof Float) {
                 output.writeByte(VAL_FLOAT);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 output.writeFloat((float) v);
             } else if (v instanceof Double) {
                 output.writeByte(VAL_DOUBLE);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 output.writeDouble((double) v);
             } else if (v instanceof String) {
                 output.writeByte(VAL_STRING);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 output.writeUTF((String) v);
             } else if (v instanceof UUID u) {
                 output.writeByte(VAL_UUID);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 output.writeLong(u.getMostSignificantBits());
                 output.writeLong(u.getLeastSignificantBits());
             } else if (v instanceof List) {
                 output.writeByte(VAL_LIST);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 writeList((List<?>) v, output);
             } else if (v instanceof DataSet) {
                 output.writeByte(VAL_DATA_SET);
-                output.writeUTF(entry.getKey());
+                output.writeInt(entry.getIntKey());
                 writeDataSet((DataSet) v, output);
-            } else if (v instanceof byte[] a) {
-                output.writeByte(VAL_BYTE_ARRAY);
-                output.writeUTF(entry.getKey());
-                output.writeInt(a.length);
-                output.write(a);
-            } else if (v instanceof short[] a) {
-                output.writeByte(VAL_SHORT_ARRAY);
-                output.writeUTF(entry.getKey());
-                output.writeInt(a.length);
-                for (short s : a) {
-                    output.writeShort(s);
-                }
-            } else if (v instanceof int[] a) {
-                output.writeByte(VAL_INT_ARRAY);
-                output.writeUTF(entry.getKey());
-                output.writeInt(a.length);
-                for (int i : a) {
-                    output.writeInt(i);
-                }
-            } else if (v instanceof long[] a) {
-                output.writeByte(VAL_LONG_ARRAY);
-                output.writeUTF(entry.getKey());
-                output.writeInt(a.length);
-                for (long l : a) {
-                    output.writeLong(l);
-                }
-            } else if (v instanceof float[] a) {
-                output.writeByte(VAL_FLOAT_ARRAY);
-                output.writeUTF(entry.getKey());
-                output.writeInt(a.length);
-                for (float f : a) {
-                    output.writeFloat(f);
-                }
-            } else if (v instanceof double[] a) {
-                output.writeByte(VAL_DOUBLE_ARRAY);
-                output.writeUTF(entry.getKey());
-                output.writeInt(a.length);
-                for (double d : a) {
-                    output.writeDouble(d);
-                }
             }
         }
         output.writeByte(VAL_NULL);
@@ -1679,76 +1516,6 @@ public class DataSet {
                 }
                 return list;
             }
-            case VAL_BYTE_ARRAY -> {
-                ArrayList<byte[]> list = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) {
-                    int l = input.readInt();
-                    byte[] val = new byte[l];
-                    input.readFully(val, 0, l);
-                    list.add(val);
-                }
-                return list;
-            }
-            case VAL_SHORT_ARRAY -> {
-                ArrayList<short[]> list = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) {
-                    int l = input.readInt();
-                    short[] val = new short[l];
-                    for (int j = 0; j < l; j++) {
-                        val[j] = input.readShort();
-                    }
-                    list.add(val);
-                }
-                return list;
-            }
-            case VAL_INT_ARRAY -> {
-                ArrayList<int[]> list = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) {
-                    int l = input.readInt();
-                    int[] val = new int[l];
-                    for (int j = 0; j < l; j++) {
-                        val[j] = input.readInt();
-                    }
-                    list.add(val);
-                }
-                return list;
-            }
-            case VAL_LONG_ARRAY -> {
-                ArrayList<long[]> list = new ArrayList<>(size);
-                for (long i = 0; i < size; i++) {
-                    int l = input.readInt();
-                    long[] val = new long[l];
-                    for (int j = 0; j < l; j++) {
-                        val[j] = input.readLong();
-                    }
-                    list.add(val);
-                }
-                return list;
-            }
-            case VAL_FLOAT_ARRAY -> {
-                ArrayList<float[]> list = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) {
-                    int l = input.readInt();
-                    float[] val = new float[l];
-                    for (int j = 0; j < l; j++) {
-                        val[j] = input.readFloat();
-                    }
-                    list.add(val);
-                }
-                return list;
-            }
-            case VAL_DOUBLE_ARRAY -> {
-                ArrayList<double[]> list = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) {
-                    int l = input.readInt();
-                    double[] val = new double[l];
-                    for (int j = 0; j < l; j++) {
-                        val[j] = input.readDouble();
-                    }
-                    list.add(val);
-                }
-                return list;
-            }
             case VAL_STRING -> {
                 ArrayList<String> list = new ArrayList<>(size);
                 for (int i = 0; i < size; i++) {
@@ -1791,63 +1558,17 @@ public class DataSet {
     @Nonnull
     public static DataSet readDataSet(DataInput input) throws IOException {
         final DataSet set = new DataSet();
-        final Map<String, Object> map = set.mMap;
+        final Int2ObjectMap<Object> map = set.mMap;
         byte id;
         while ((id = input.readByte()) != VAL_NULL) {
-            final String key = input.readUTF();
+            final int key = input.readInt();
             switch (id) {
-                case VAL_BYTE -> map.put(key, input.readByte());
-                case VAL_SHORT -> map.put(key, input.readShort());
-                case VAL_INT -> map.put(key, input.readInt());
-                case VAL_LONG -> map.put(key, input.readLong());
-                case VAL_FLOAT -> map.put(key, input.readFloat());
-                case VAL_DOUBLE -> map.put(key, input.readDouble());
-                case VAL_BYTE_ARRAY -> {
-                    int len = input.readInt();
-                    byte[] val = new byte[len];
-                    input.readFully(val, 0, len);
-                    map.put(key, val);
-                }
-                case VAL_SHORT_ARRAY -> {
-                    int len = input.readInt();
-                    short[] val = new short[len];
-                    for (int i = 0; i < len; i++) {
-                        val[i] = input.readShort();
-                    }
-                    map.put(key, val);
-                }
-                case VAL_INT_ARRAY -> {
-                    int len = input.readInt();
-                    int[] val = new int[len];
-                    for (int i = 0; i < len; i++) {
-                        val[i] = input.readInt();
-                    }
-                    map.put(key, val);
-                }
-                case VAL_LONG_ARRAY -> {
-                    int len = input.readInt();
-                    long[] val = new long[len];
-                    for (int i = 0; i < len; i++) {
-                        val[i] = input.readLong();
-                    }
-                    map.put(key, val);
-                }
-                case VAL_FLOAT_ARRAY -> {
-                    int len = input.readInt();
-                    float[] val = new float[len];
-                    for (int i = 0; i < len; i++) {
-                        val[i] = input.readFloat();
-                    }
-                    map.put(key, val);
-                }
-                case VAL_DOUBLE_ARRAY -> {
-                    int len = input.readInt();
-                    double[] val = new double[len];
-                    for (int i = 0; i < len; i++) {
-                        val[i] = input.readDouble();
-                    }
-                    map.put(key, val);
-                }
+                case VAL_BYTE -> map.put(key, Byte.valueOf(input.readByte()));
+                case VAL_SHORT -> map.put(key, Short.valueOf(input.readShort()));
+                case VAL_INT -> map.put(key, Integer.valueOf(input.readInt()));
+                case VAL_LONG -> map.put(key, Long.valueOf(input.readLong()));
+                case VAL_FLOAT -> map.put(key, Float.valueOf(input.readFloat()));
+                case VAL_DOUBLE -> map.put(key, Double.valueOf(input.readDouble()));
                 case VAL_STRING -> map.put(key, input.readUTF());
                 case VAL_UUID -> map.put(key, new UUID(input.readLong(), input.readLong()));
                 case VAL_LIST -> map.put(key, readList(input));

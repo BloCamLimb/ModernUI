@@ -475,14 +475,14 @@ public final class FragmentManager {
     /**
      * Put a reference to a fragment in a DataSet.  This DataSet can be
      * persisted as saved state, and when later restoring
-     * {@link #getFragment(DataSet, String)} will return the current
+     * {@link #getFragment(DataSet, int)} will return the current
      * instance of the same fragment.
      *
      * @param bundle   The bundle in which to put the fragment reference.
      * @param key      The name of the entry in the bundle.
      * @param fragment The Fragment whose reference is to be stored.
      */
-    public void putFragment(@Nonnull DataSet bundle, @Nonnull String key,
+    public void putFragment(@Nonnull DataSet bundle, int key,
                             @Nonnull Fragment fragment) {
         if (fragment.mFragmentManager != this) {
             throwException(new IllegalStateException("Fragment " + fragment
@@ -493,7 +493,7 @@ public final class FragmentManager {
 
     /**
      * Retrieve the current Fragment instance for a reference previously
-     * placed with {@link #putFragment(DataSet, String, Fragment)}.
+     * placed with {@link #putFragment(DataSet, int, Fragment)}.
      *
      * @param bundle The bundle from which to retrieve the fragment reference.
      * @param key    The name of the entry in the bundle.
@@ -501,7 +501,7 @@ public final class FragmentManager {
      * the given reference.
      */
     @Nullable
-    public Fragment getFragment(@Nonnull DataSet bundle, @Nonnull String key) {
+    public Fragment getFragment(@Nonnull DataSet bundle, int key) {
         String who = bundle.getString(key);
         if (who == null) {
             return null;
