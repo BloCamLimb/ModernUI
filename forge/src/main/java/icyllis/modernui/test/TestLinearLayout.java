@@ -27,10 +27,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
-import icyllis.modernui.text.FontPaint;
-import icyllis.modernui.text.Spannable;
-import icyllis.modernui.text.Spanned;
-import icyllis.modernui.text.TextPaint;
+import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.ScrollingMovementMethod;
 import icyllis.modernui.text.style.AbsoluteSizeSpan;
 import icyllis.modernui.text.style.ForegroundColorSpan;
@@ -38,9 +35,15 @@ import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.*;
+import icyllis.modernui.view.Menu;
+import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.widget.*;
 
 import javax.annotation.Nonnull;
+
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 
@@ -201,7 +204,7 @@ public class TestLinearLayout extends LinearLayout {
             } else if (i == 7) {
                 Spinner spinner = new Spinner();
                 v = spinner;
-                spinner.setAdapter(new TestListFragment.MyAdapter(25));
+                spinner.setAdapter(new ArrayAdapter<>(new ArrayList<>(Typeface.getFontFamilyNames())));
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
             } else {
