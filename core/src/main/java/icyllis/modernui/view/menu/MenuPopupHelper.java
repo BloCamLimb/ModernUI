@@ -22,6 +22,7 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
+import icyllis.modernui.widget.PopupMenu;
 import icyllis.modernui.widget.PopupWindow;
 
 import javax.annotation.Nonnull;
@@ -42,15 +43,20 @@ public class MenuPopupHelper implements MenuHelper {
     private MenuPopup mPopup;
     private PopupWindow.OnDismissListener mOnDismissListener;
 
+    /**
+     * Listener used to proxy dismiss callbacks to the helper's owner.
+     */
+    private final PopupWindow.OnDismissListener mInternalOnDismissListener = this::onDismiss;
+
     public MenuPopupHelper(@Nonnull MenuBuilder menu) {
         this(menu, null, false);
     }
 
-    public MenuPopupHelper(@Nonnull MenuBuilder menu, @Nonnull View anchorView) {
+    public MenuPopupHelper(@Nonnull MenuBuilder menu, View anchorView) {
         this(menu, anchorView, false);
     }
 
-    public MenuPopupHelper(@Nonnull MenuBuilder menu, @Nonnull View anchorView, boolean overflowOnly) {
+    public MenuPopupHelper(@Nonnull MenuBuilder menu, View anchorView, boolean overflowOnly) {
         mMenu = menu;
         mAnchorView = anchorView;
         mOverflowOnly = overflowOnly;
@@ -286,14 +292,4 @@ public class MenuPopupHelper implements MenuHelper {
             mPopup.setCallback(cb);
         }
     }
-
-    /**
-     * Listener used to proxy dismiss callbacks to the helper's owner.
-     */
-    private final PopupWindow.OnDismissListener mInternalOnDismissListener = new PopupWindow.OnDismissListener() {
-        @Override
-        public void onDismiss() {
-            MenuPopupHelper.this.onDismiss();
-        }
-    };
 }

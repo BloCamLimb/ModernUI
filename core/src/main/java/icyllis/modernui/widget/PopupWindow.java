@@ -36,7 +36,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 
-import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
@@ -118,7 +117,6 @@ public class PopupWindow {
     private int mWindowLayoutType = Window.TYPE_APPLICATION_PANEL;
 
     private OnDismissListener mOnDismissListener;
-    private boolean mIgnoreCheekPress = false;
 
     private int mGravity = Gravity.NO_GRAVITY;
 
@@ -317,15 +315,7 @@ public class PopupWindow {
      * @see #getEpicenterBounds()
      */
     public void setEpicenterBounds(@Nullable Rect bounds) {
-        if (bounds == null) {
-            mEpicenterBounds = null;
-            return;
-        }
-        if (mEpicenterBounds == null) {
-            mEpicenterBounds = bounds.copy();
-        } else {
-            mEpicenterBounds.set(bounds);
-        }
+        mEpicenterBounds = bounds != null ? bounds.copy() : null;
     }
 
     /**
@@ -334,6 +324,7 @@ public class PopupWindow {
      * @return the background drawable or {@code null} if not set
      * @see #setBackgroundDrawable(Drawable)
      */
+    @Nullable
     public Drawable getBackground() {
         return mBackground;
     }
@@ -345,7 +336,7 @@ public class PopupWindow {
      * @param background the popup's background
      * @see #getBackground()
      */
-    public void setBackgroundDrawable(Drawable background) {
+    public void setBackgroundDrawable(@Nullable Drawable background) {
         mBackground = background;
 
         // If this is a StateListDrawable, try to find and store the drawable to be
@@ -734,11 +725,12 @@ public class PopupWindow {
      * {@link Gravity#NO_GRAVITY} is similar to specifying <code>Gravity.LEFT | Gravity.TOP</code>.
      * </p>
      *
+     * @param parent  a parent view to get the window
      * @param gravity the gravity which controls the placement of the popup window
      * @param x       the popup's x location offset
      * @param y       the popup's y location offset
      */
-    public void showAtLocation(int gravity, int x, int y) {
+    public void showAtLocation(@Nonnull View parent, int gravity, int x, int y) {
         if (mIsShowing || mContentView == null) {
             return;
         }
@@ -751,13 +743,13 @@ public class PopupWindow {
         mIsDropdown = false;
         mGravity = gravity;
 
-        /*final WindowManager.LayoutParams p = createPopupLayoutParams(token);
+        final CoordinatorLayout.LayoutParams p = new CoordinatorLayout.LayoutParams(mWidth, mHeight);
+        p.gravity = gravity;
+        p.setMarginStart(x);
+        p.topMargin = y;
         preparePopup();
 
-        p.x = x;
-        p.y = y;
-
-        invokePopup(p);*/
+        invokePopup(p);
     }
 
     /**
@@ -827,7 +819,6 @@ public class PopupWindow {
         mIsDropdown = true;
 
         final var p = new CoordinatorLayout.LayoutParams(mWidth, mHeight);
-
         preparePopup();
 
         final boolean aboveAnchor = findDropDownPosition(anchor, p, xOff, yOff,
@@ -1051,7 +1042,7 @@ public class PopupWindow {
         final int[] drawingLocation = mTmpDrawingLocation;
         drawingLocation[0] = screenLocation[0] - appScreenLocation[0];
         drawingLocation[1] = screenLocation[1] - appScreenLocation[1];
-        outParams.leftMargin = drawingLocation[0] + xOffset;
+        outParams.leftMargin = (drawingLocation[0] + xOffset);
         outParams.topMargin = drawingLocation[1] + anchorHeight + yOffset;
 
         // Let the window manager know to align the top to y.
@@ -1063,9 +1054,9 @@ public class PopupWindow {
         // corner of the anchor (still accounting for offsets).
         final int hGrav = Gravity.getAbsoluteGravity(gravity, anchor.getLayoutDirection())
                 & Gravity.HORIZONTAL_GRAVITY_MASK;
-        if (hGrav == Gravity.RIGHT) {
+        /*if (hGrav == Gravity.RIGHT) {
             outParams.leftMargin += anchorWidth;
-        }
+        }*/
 
         // First, attempt to fit the popup vertically without resizing.
         final boolean fitsVertical = tryFitVertical(outParams, yOffset, height,
@@ -1344,6 +1335,7 @@ public class PopupWindow {
      * exit transitions
      * @hide
      */
+    @Nullable
     protected final Rect getTransitionEpicenter() {
         final View anchor = mAnchor != null ? mAnchor.get() : null;
         final View decor = mDecorView;
@@ -1351,8 +1343,10 @@ public class PopupWindow {
             return null;
         }
 
-        /*final int[] anchorLocation = anchor.getLocationOnScreen();
-        final int[] popupLocation = mDecorView.getLocationOnScreen();
+        final int[] anchorLocation = mTmpScreenLocation;
+        anchor.getLocationInWindow(anchorLocation);
+        final int[] popupLocation = mTmpAppLocation;
+        mDecorView.getLocationInWindow(popupLocation);
 
         // Compute the position of the anchor relative to the popup.
         final Rect bounds = new Rect(0, 0, anchor.getWidth(), anchor.getHeight());
@@ -1364,7 +1358,7 @@ public class PopupWindow {
             final int offsetY = bounds.top;
             bounds.set(mEpicenterBounds);
             bounds.offset(offsetX, offsetY);
-        }*/
+        }
 
         return null;
     }
@@ -1416,44 +1410,17 @@ public class PopupWindow {
      * <ul>
      *     <li>{@link #setClippingEnabled(boolean)}</li>
      *     <li>{@link #setFocusable(boolean)}</li>
-     *     <li>{@link #setIgnoreCheekPress()}</li>
-     *     <li>{@link #setInputMethodMode(int)}</li>
      *     <li>{@link #setTouchable(boolean)}</li>
-     *     <li>{@link #setAnimationStyle(int)}</li>
-     *     <li>{@link #setTouchModal(boolean)} (boolean)}</li>
+     *     <li>{@link #setTouchModal(boolean)}</li>
      *     <li>{@link #setIsClippedToScreen(boolean)}</li>
      * </ul>
      */
     public void update() {
-        if (!isShowing() || !hasContentView()) {
+        if (!mIsShowing || mContentView == null) {
             return;
         }
 
-        /*final WindowManager.LayoutParams p = getDecorViewLayoutParams();
-
-        boolean update = false;
-
-        final int newAnim = computeAnimationResource();
-        if (newAnim != p.windowAnimations) {
-            p.windowAnimations = newAnim;
-            update = true;
-        }
-
-        final int newFlags = computeFlags(p.flags);
-        if (newFlags != p.flags) {
-            p.flags = newFlags;
-            update = true;
-        }
-
-        final int newGravity = computeGravity();
-        if (newGravity != p.gravity) {
-            p.gravity = newGravity;
-            update = true;
-        }
-
-        if (update) {
-            update(mAnchor != null ? mAnchor.get() : null, p);
-        }*/
+        mContentView.setFocusable(mFocusable);
     }
 
     /**
@@ -1474,8 +1441,8 @@ public class PopupWindow {
      * @param height the new height in pixels, must be >= 0 or -1 to ignore
      */
     public void update(int width, int height) {
-        /*final WindowManager.LayoutParams p = getDecorViewLayoutParams();
-        update(p.x, p.y, width, height, false);*/
+        final CoordinatorLayout.LayoutParams p = getDecorViewLayoutParams();
+        update(p.leftMargin, p.topMargin, width, height, false);
     }
 
     /**
@@ -1510,80 +1477,53 @@ public class PopupWindow {
      *               {@code false} to only reposition if needed
      */
     public void update(int x, int y, int width, int height, boolean force) {
-        /*if (width >= 0) {
-            mLastWidth = width;
+        if (width >= 0) {
             setWidth(width);
         }
 
         if (height >= 0) {
-            mLastHeight = height;
             setHeight(height);
         }
 
-        if (!isShowing() || !hasContentView()) {
+        if (!mIsShowing || mContentView == null) {
             return;
         }
 
-        final WindowManager.LayoutParams p = getDecorViewLayoutParams();
+        final CoordinatorLayout.LayoutParams p = getDecorViewLayoutParams();
 
         boolean update = force;
 
-        final int finalWidth = mWidthMode < 0 ? mWidthMode : mLastWidth;
-        if (width != -1 && p.width != finalWidth) {
-            p.width = mLastWidth = finalWidth;
+        if (width != -1 && p.width != mWidth) {
+            p.width = mWidth;
             update = true;
         }
 
-        final int finalHeight = mHeightMode < 0 ? mHeightMode : mLastHeight;
-        if (height != -1 && p.height != finalHeight) {
-            p.height = mLastHeight = finalHeight;
+        if (height != -1 && p.height != mHeight) {
+            p.height = mHeight;
             update = true;
         }
 
-        if (p.x != x) {
-            p.x = x;
+        if (p.leftMargin != x) {
+            p.leftMargin = x;
             update = true;
         }
 
-        if (p.y != y) {
-            p.y = y;
+        if (p.topMargin != y) {
+            p.topMargin = y;
             update = true;
         }
 
-        final int newAnim = computeAnimationResource();
-        if (newAnim != p.windowAnimations) {
-            p.windowAnimations = newAnim;
-            update = true;
-        }
-
-        final int newFlags = computeFlags(p.flags);
-        if (newFlags != p.flags) {
-            p.flags = newFlags;
-            update = true;
-        }
-
-        final int newGravity = computeGravity();
-        if (newGravity != p.gravity) {
-            p.gravity = newGravity;
-            update = true;
-        }
+        mContentView.setFocusable(mFocusable);
 
         View anchor = null;
-        int newAccessibilityIdOfAnchor = -1;
 
         if (mAnchor != null && mAnchor.get() != null) {
             anchor = mAnchor.get();
-            newAccessibilityIdOfAnchor = anchor.getAccessibilityViewId();
-        }
-
-        if (newAccessibilityIdOfAnchor != p.accessibilityIdOfAnchor) {
-            p.accessibilityIdOfAnchor = newAccessibilityIdOfAnchor;
-            update = true;
         }
 
         if (update) {
             update(anchor, p);
-        }*/
+        }
     }
 
     /**
@@ -1660,12 +1600,12 @@ public class PopupWindow {
             mAnchorYOff = yoff;
         }
 
-        /*final WindowManager.LayoutParams p = getDecorViewLayoutParams();
+        final CoordinatorLayout.LayoutParams p = getDecorViewLayoutParams();
         final int oldGravity = p.gravity;
         final int oldWidth = p.width;
         final int oldHeight = p.height;
-        final int oldX = p.x;
-        final int oldY = p.y;
+        final int oldX = p.leftMargin;
+        final int oldY = p.topMargin;
 
         // If an explicit width/height has not specified, use the most recent
         // explicitly specified value (either from setWidth/Height or update).
@@ -1680,7 +1620,7 @@ public class PopupWindow {
                 width, height, gravity, true);
         updateAboveAnchor(aboveAnchor);
 
-        final boolean paramsChanged = oldGravity != p.gravity || oldX != p.x || oldY != p.y
+        final boolean paramsChanged = oldGravity != p.gravity || oldX != p.leftMargin || oldY != p.topMargin
                 || oldWidth != p.width || oldHeight != p.height;
 
         // If width and mWidth were both < 0 then we have a MATCH_PARENT or
@@ -1689,7 +1629,7 @@ public class PopupWindow {
         // absolute values.
         final int newWidth = width < 0 ? width : p.width;
         final int newHeight = height < 0 ? height : p.height;
-        update(p.x, p.y, newWidth, newHeight, paramsChanged);*/
+        update(p.leftMargin, p.topMargin, newWidth, newHeight, paramsChanged);
     }
 
     /**
@@ -1831,13 +1771,11 @@ public class PopupWindow {
 
                 if (event.getAction() == KeyEvent.ACTION_DOWN && event.getRepeatCount() == 0) {
                     final KeyEvent.DispatcherState state = getKeyDispatcherState();
-                    if (state != null) {
-                        state.startTracking(event, this);
-                    }
+                    state.startTracking(event, this);
                     return true;
                 } else if (event.getAction() == KeyEvent.ACTION_UP) {
                     final KeyEvent.DispatcherState state = getKeyDispatcherState();
-                    if (state != null && state.isTracking(event) && !event.isCanceled()) {
+                    if (state.isTracking(event) && !event.isCanceled()) {
                         dismiss();
                         return true;
                     }

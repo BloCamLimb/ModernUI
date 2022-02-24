@@ -19,9 +19,33 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.view.ViewGroup;
+import org.intellij.lang.annotations.MagicConstant;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 //TODO developing
 public class GridLayout extends ViewGroup {
+
+    // Public constants
+
+    @MagicConstant(intValues = {
+            HORIZONTAL,
+            VERTICAL
+    })
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Orientation {
+    }
+
+    /**
+     * The horizontal orientation.
+     */
+    public static final int HORIZONTAL = LinearLayout.HORIZONTAL;
+
+    /**
+     * The vertical orientation.
+     */
+    public static final int VERTICAL = LinearLayout.VERTICAL;
 
     /**
      * The constant used to indicate that a value is undefined.
@@ -34,11 +58,10 @@ public class GridLayout extends ViewGroup {
      */
     public static final int UNDEFINED = Integer.MIN_VALUE;
 
-
     /**
-     * @see #setOrientation(Orientation)
+     * @see #setOrientation(int)
      */
-    private Orientation orientation = Orientation.HORIZONTAL;
+    private int orientation = HORIZONTAL;
 
     @Override
     protected void onLayout(boolean changed, int left, int top, int right, int bottom) {
@@ -54,7 +77,7 @@ public class GridLayout extends ViewGroup {
      *  </li>
      *  <li>
      *      To control which axis should be processed first during the layout operation:
-     *      when orientation is {@link Orientation#HORIZONTAL} the horizontal axis is laid out first.
+     *      when orientation is {@link #HORIZONTAL} the horizontal axis is laid out first.
      *  </li>
      * </ul>
      * <p>
@@ -72,12 +95,12 @@ public class GridLayout extends ViewGroup {
      * GridLayout, so it's fine to leave GridLayout in {@code HORIZONTAL} mode even if
      * the height of the intended layout greatly exceeds its width.
      * <p>
-     * The default value of this property is {@link Orientation#HORIZONTAL}.
+     * The default value of this property is {@link #HORIZONTAL}.
      *
-     * @param orientation either {@link Orientation#HORIZONTAL} or {@link Orientation#VERTICAL}
+     * @param orientation either {@link #HORIZONTAL} or {@link #VERTICAL}
      * @see #getOrientation()
      */
-    public void setOrientation(Orientation orientation) {
+    public void setOrientation(@Orientation int orientation) {
         if (this.orientation != orientation) {
             this.orientation = orientation;
             requestLayout();
@@ -87,10 +110,10 @@ public class GridLayout extends ViewGroup {
     /**
      * Returns the current orientation.
      *
-     * @return either {@link Orientation#HORIZONTAL} or {@link Orientation#VERTICAL}
-     * @see #setOrientation(Orientation)
+     * @return either {@link #HORIZONTAL} or {@link #VERTICAL}
+     * @see #setOrientation(int)
      */
-    public Orientation getOrientation() {
+    public int getOrientation() {
         return orientation;
     }
 

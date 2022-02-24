@@ -72,7 +72,7 @@ import java.util.List;
  * views do not overlap.</p>
  */
 @SuppressWarnings("unused")
-public class CoordinatorLayout extends FrameLayout {
+public class CoordinatorLayout extends ViewGroup {
 
     private static final ThreadLocal<Matrix4> sMatrix = ThreadLocal.withInitial(Matrix4::identity);
     private static final ThreadLocal<RectF> sRectF = ThreadLocal.withInitial(RectF::new);
@@ -1287,7 +1287,7 @@ public class CoordinatorLayout extends FrameLayout {
 
     @Override
     protected boolean checkLayoutParams(ViewGroup.LayoutParams p) {
-        return p instanceof LayoutParams && super.checkLayoutParams(p);
+        return p instanceof LayoutParams;
     }
 
     @Override
