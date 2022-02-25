@@ -178,6 +178,7 @@ public class TestLinearLayout extends LinearLayout {
                         ViewGroup.LayoutParams.WRAP_CONTENT);
                 textField.setHint("Your Name");
                 textField.setTextSize(16);
+                textField.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 //textField.setSingleLine();
                 //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 textField.setPadding(dp(12), 0, dp(12), 0);

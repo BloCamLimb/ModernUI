@@ -23,6 +23,9 @@ import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.lifecycle.*;
+import icyllis.modernui.transition.AutoTransition;
+import icyllis.modernui.transition.Transition;
+import icyllis.modernui.transition.Visibility;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
@@ -47,7 +50,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
 
-    static final Object USE_DEFAULT_TRANSITION = new Object();
+    static final Transition USE_DEFAULT_TRANSITION = new AutoTransition();
 
     static final int INITIALIZING = -1;          // Not yet attached.
     static final int ATTACHED = 0;               // Attached to the host.
@@ -973,7 +976,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      *
      * @param transition The Transition to use to move Views into the initial Scene.
      */
-    public void setEnterTransition(@Nullable Object transition) {
+    public void setEnterTransition(@Nullable Transition transition) {
         ensureAnimationInfo().mEnterTransition = transition;
     }
 
@@ -987,7 +990,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @return the Transition to use to move Views into the initial Scene.
      */
     @Nullable
-    public Object getEnterTransition() {
+    public Transition getEnterTransition() {
         if (mAnimationInfo == null) {
             return null;
         }
@@ -1002,12 +1005,12 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * {@link Visibility} as entering is governed by changing visibility from
      * {@link View#VISIBLE} to {@link View#INVISIBLE}. If <code>transition</code> is null,
      * entering Views will remain unaffected. If nothing is set, the default will be to
-     * use the same value as set in {@link #setEnterTransition(Object)}.
+     * use the same value as set in {@link #setEnterTransition(Transition)}.
      *
      * @param transition The Transition to use to move Views out of the Scene when the Fragment
      *                   is preparing to close due to popping the back stack.
      */
-    public void setReturnTransition(@Nullable Object transition) {
+    public void setReturnTransition(@Nullable Transition transition) {
         ensureAnimationInfo().mReturnTransition = transition;
     }
 
@@ -1024,7 +1027,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * is preparing to close due to popping the back stack.
      */
     @Nullable
-    public Object getReturnTransition() {
+    public Transition getReturnTransition() {
         if (mAnimationInfo == null) {
             return null;
         }
@@ -1044,7 +1047,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @param transition The Transition to use to move Views out of the Scene when the Fragment
      *                   is being closed not due to popping the back stack.
      */
-    public void setExitTransition(@Nullable Object transition) {
+    public void setExitTransition(@Nullable Transition transition) {
         ensureAnimationInfo().mExitTransition = transition;
     }
 
@@ -1061,7 +1064,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * is being closed not due to popping the back stack.
      */
     @Nullable
-    public Object getExitTransition() {
+    public Transition getExitTransition() {
         if (mAnimationInfo == null) {
             return null;
         }
@@ -1080,7 +1083,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @param transition The Transition to use to move Views into the scene when reentering from a
      *                   previously-started Activity due to popping the back stack.
      */
-    public void setReenterTransition(@Nullable Object transition) {
+    public void setReenterTransition(@Nullable Transition transition) {
         ensureAnimationInfo().mReenterTransition = transition;
     }
 
@@ -1096,7 +1099,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * previously-started Activity due to popping the back stack.
      */
     @Nullable
-    public Object getReenterTransition() {
+    public Transition getReenterTransition() {
         if (mAnimationInfo == null) {
             return null;
         }
@@ -1113,7 +1116,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * @param transition The Transition to use for shared elements transferred into the content
      *                   Scene.
      */
-    public void setSharedElementEnterTransition(@Nullable Object transition) {
+    public void setSharedElementEnterTransition(@Nullable Transition transition) {
         ensureAnimationInfo().mSharedElementEnterTransition = transition;
     }
 
@@ -1127,7 +1130,7 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * Scene.
      */
     @Nullable
-    public Object getSharedElementEnterTransition() {
+    public Transition getSharedElementEnterTransition() {
         if (mAnimationInfo == null) {
             return null;
         }
@@ -1141,12 +1144,12 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * {@link ChangeBounds}. A null
      * value will cause transferred shared elements to blink to the final position.
      * If no value is set, the default will be to use the same value as
-     * {@link #setSharedElementEnterTransition(Object)}.
+     * {@link #setSharedElementEnterTransition(Transition)}.
      *
      * @param transition The Transition to use for shared elements transferred out of the content
      *                   Scene.
      */
-    public void setSharedElementReturnTransition(@Nullable Object transition) {
+    public void setSharedElementReturnTransition(@Nullable Transition transition) {
         ensureAnimationInfo().mSharedElementReturnTransition = transition;
     }
 
@@ -1157,13 +1160,13 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
      * {@link ChangeBounds}. A null
      * value will cause transferred shared elements to blink to the final position.
      * If no value is set, the default will be to use the same value as
-     * {@link #setSharedElementEnterTransition(Object)}.
+     * {@link #setSharedElementEnterTransition(Transition)}.
      *
      * @return The Transition to use for shared elements transferred out of the content
      * Scene.
      */
     @Nullable
-    public Object getSharedElementReturnTransition() {
+    public Transition getSharedElementReturnTransition() {
         if (mAnimationInfo == null) {
             return null;
         }
@@ -1846,12 +1849,12 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         ArrayList<String> mSharedElementSourceNames;
         ArrayList<String> mSharedElementTargetNames;
 
-        Object mEnterTransition = null;
-        Object mReturnTransition = USE_DEFAULT_TRANSITION;
-        Object mExitTransition = null;
-        Object mReenterTransition = USE_DEFAULT_TRANSITION;
-        Object mSharedElementEnterTransition = null;
-        Object mSharedElementReturnTransition = USE_DEFAULT_TRANSITION;
+        Transition mEnterTransition = null;
+        Transition mReturnTransition = USE_DEFAULT_TRANSITION;
+        Transition mExitTransition = null;
+        Transition mReenterTransition = USE_DEFAULT_TRANSITION;
+        Transition mSharedElementEnterTransition = null;
+        Transition mSharedElementReturnTransition = USE_DEFAULT_TRANSITION;
         Boolean mAllowReturnTransitionOverlap;
         Boolean mAllowEnterTransitionOverlap;
 
