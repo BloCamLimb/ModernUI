@@ -22,6 +22,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.transition.AutoTransition;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 
@@ -131,6 +132,8 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
                 return true;
             }
         });
+        mPopup.setEnterTransition(new AutoTransition());
+        mPopup.setExitTransition(new AutoTransition());
 
         // Present the menu using our context, not the menu builder's context.
         menu.addMenuPresenter(this);

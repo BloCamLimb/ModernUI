@@ -20,7 +20,7 @@ package icyllis.modernui.animation;
 
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.core.Looper;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import icyllis.modernui.util.ArrayMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -79,7 +79,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
      * to a single node representing that Animator, not create a new Node
      * if one already exists.
      */
-    private Object2ObjectOpenHashMap<Animator, Node> mNodeMap = new Object2ObjectOpenHashMap<>();
+    private ArrayMap<Animator, Node> mNodeMap = new ArrayMap<>();
 
     /**
      * Contains the start and end events of all the nodes. All these events are sorted in this list.
@@ -1281,17 +1281,18 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
         anim.mSeekState = new SeekState();
         anim.mSelfPulse = true;
         anim.mPlayingSet = new ArrayList<>();
-        anim.mNodeMap = new Object2ObjectOpenHashMap<>();
+        anim.mNodeMap = new ArrayMap<>();
         anim.mNodes = new ArrayList<>(nodeCount);
         anim.mEvents = new ArrayList<>();
         anim.mAnimationEndListener = new AnimatorListener() {
             @Override
             public void onAnimationEnd(@Nonnull Animator animation) {
-                if (anim.mNodeMap.get(animation) == null) {
+                final Node node = anim.mNodeMap.get(animation);
+                if (node == null) {
                     throw new RuntimeException("Error: animation ended is not in the node"
                             + " map");
                 }
-                anim.mNodeMap.get(animation).mEnded = true;
+                node.mEnded = true;
             }
         };
         anim.mReversing = false;

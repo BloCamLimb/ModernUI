@@ -35,6 +35,7 @@ import icyllis.modernui.math.Point;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
 import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.util.*;
 import icyllis.modernui.view.menu.MenuBuilder;
@@ -6649,7 +6650,7 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * This property is intended only for use by the Fade transition, which animates it
+     * This property is intended only for use by the {@link Fade} transition, which animates it
      * to produce a visual translucency that does not side effect (or get affected by)
      * the real alpha property. This value is composited with the other alpha value
      * (and the AlphaAnimation value, when that is present) to produce a final visual
@@ -6663,7 +6664,7 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * This property is intended only for use by the Fade transition, which animates
+     * This property is intended only for use by the {@link Fade} transition, which animates
      * it to produce a visual translucency that does not side effect (or get affected
      * by) the real alpha property. This value is composited with the other alpha
      * value (and the AlphaAnimation value, when that is present) to produce a final

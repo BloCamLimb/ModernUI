@@ -372,7 +372,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                 }
                 if (!gone) {
                     if (validLayoutRequesters == null) {
-                        validLayoutRequesters = new ArrayList<View>();
+                        validLayoutRequesters = new ArrayList<>();
                     }
                     validLayoutRequesters.add(view);
                 }
@@ -528,17 +528,17 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     /*boolean onCursorPosEvent(LinkedList<View> route, double x, double y) {
-        if (mView != null) {
-            return mView.onCursorPosEvent(route, x, y);
+        if (view != null) {
+            return view.onCursorPosEvent(route, x, y);
         }
         return false;
     }
 
     boolean onMouseEvent(MotionEvent event) {
-        if (mView != null) {
-            final boolean handled = mView.onGenericMotionEvent(event);
+        if (view != null) {
+            final boolean handled = view.onGenericMotionEvent(event);
             if (!handled && event.getAction() == MotionEvent.ACTION_MOVE) {
-                mView.ensureMouseHoverExit();
+                view.ensureMouseHoverExit();
             }
             return handled;
         }
@@ -546,8 +546,8 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     void ensureMouseHoverExit() {
-        if (mView != null) {
-            mView.ensureMouseHoverExit();
+        if (view != null) {
+            view.ensureMouseHoverExit();
         }
     }*/
 
@@ -705,7 +705,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         if (!(mView instanceof ViewGroup)) {
             return null;
         }
-        //return FocusFinder.getInstance().findNextFocus((ViewGroup) mView, focused, direction);
+        //return FocusFinder.getInstance().findNextFocus((ViewGroup) view, focused, direction);
         return null;
     }
 
@@ -714,7 +714,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                                                 @FocusDirection int direction) {
         ArchCore.checkUiThread();
         /*return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
-                mView, currentCluster, direction);*/
+                view, currentCluster, direction);*/
         return null;
     }
 

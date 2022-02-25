@@ -122,6 +122,10 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     private static final int FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW = 0x400000;
 
+    static final int FLAG_IS_TRANSITION_GROUP = 0x1000000;
+
+    static final int FLAG_IS_TRANSITION_GROUP_SET = 0x2000000;
+
     /**
      * When set, focus will not be permitted to enter this group if a touchscreen is present.
      */
@@ -908,6 +912,40 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             resetTouchState();
         }
         return handled;
+    }
+
+    /**
+     * Returns true if this ViewGroup should be considered as a single entity for removal
+     * when executing an Activity transition. If this is false, child elements will move
+     * individually during the transition.
+     *
+     * @return True if the ViewGroup should be acted on together during an Activity transition.
+     * The default value is true when there is a non-null background or if
+     * {@link #getTransitionName()} is not null and false otherwise.
+     */
+    public boolean isTransitionGroup() {
+        if ((mGroupFlags & FLAG_IS_TRANSITION_GROUP_SET) != 0) {
+            return ((mGroupFlags & FLAG_IS_TRANSITION_GROUP) != 0);
+        } else {
+            return getBackground() != null || getTransitionName() != null;
+        }
+    }
+
+    /**
+     * Changes whether or not this ViewGroup should be treated as a single entity during
+     * Activity Transitions.
+     * @param isTransitionGroup Whether or not the ViewGroup should be treated as a unit
+     *                          in Activity transitions. If false, the ViewGroup won't transition,
+     *                          only its children. If true, the entire ViewGroup will transition
+     *                          together.
+     */
+    public void setTransitionGroup(boolean isTransitionGroup) {
+        mGroupFlags |= FLAG_IS_TRANSITION_GROUP_SET;
+        if (isTransitionGroup) {
+            mGroupFlags |= FLAG_IS_TRANSITION_GROUP;
+        } else {
+            mGroupFlags &= ~FLAG_IS_TRANSITION_GROUP;
+        }
     }
 
     @Override

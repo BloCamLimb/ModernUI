@@ -57,7 +57,7 @@ public final class GrowingArrayUtils {
 
         if (currentSize >= array.length) {
             Class<? extends Object[]> newType = array.getClass();
-            int newLength = GrowingArrayUtils.growSize(currentSize);
+            int newLength = growSize(currentSize);
             @SuppressWarnings("unchecked")
             T[] newArray = newType == Object[].class
                     ? (T[]) new Object[newLength]
@@ -92,7 +92,7 @@ public final class GrowingArrayUtils {
     public static long[] append(@Nonnull long[] array, int currentSize, long element) {
         assert currentSize <= array.length;
 
-        if (currentSize + 1 > array.length) {
+        if (currentSize >= array.length) {
             long[] newArray = new long[growSize(currentSize)];
             System.arraycopy(array, 0, newArray, 0, currentSize);
             array = newArray;
@@ -108,7 +108,7 @@ public final class GrowingArrayUtils {
     public static boolean[] append(@Nonnull boolean[] array, int currentSize, boolean element) {
         assert currentSize <= array.length;
 
-        if (currentSize + 1 > array.length) {
+        if (currentSize >= array.length) {
             boolean[] newArray = new boolean[growSize(currentSize)];
             System.arraycopy(array, 0, newArray, 0, currentSize);
             array = newArray;
@@ -139,7 +139,7 @@ public final class GrowingArrayUtils {
         }
 
         Class<? extends Object[]> newType = array.getClass();
-        int newLength = GrowingArrayUtils.growSize(currentSize);
+        int newLength = growSize(currentSize);
         @SuppressWarnings("unchecked")
         T[] newArray = newType == Object[].class
                 ? (T[]) new Object[newLength]
