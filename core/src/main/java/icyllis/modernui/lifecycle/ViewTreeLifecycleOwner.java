@@ -18,6 +18,7 @@
 
 package icyllis.modernui.lifecycle;
 
+import icyllis.modernui.R;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewParent;
 
@@ -29,8 +30,6 @@ import javax.annotation.Nullable;
  * the given view.
  */
 public class ViewTreeLifecycleOwner {
-
-    private static final int view_tree_lifecycle_owner = 0x03020001;
 
     private ViewTreeLifecycleOwner() {
         // No instances
@@ -50,7 +49,7 @@ public class ViewTreeLifecycleOwner {
      * @param lifecycleOwner LifecycleOwner representing the manager of the given view
      */
     public static void set(@Nonnull View view, @Nullable LifecycleOwner lifecycleOwner) {
-        view.setTag(view_tree_lifecycle_owner, lifecycleOwner);
+        view.setTag(R.id.view_tree_lifecycle_owner, lifecycleOwner);
     }
 
     /**
@@ -64,11 +63,11 @@ public class ViewTreeLifecycleOwner {
      */
     @Nullable
     public static LifecycleOwner get(@Nonnull View view) {
-        LifecycleOwner found = (LifecycleOwner) view.getTag(view_tree_lifecycle_owner);
+        LifecycleOwner found = (LifecycleOwner) view.getTag(R.id.view_tree_lifecycle_owner);
         if (found != null) return found;
         ViewParent parent = view.getParent();
         while (found == null && parent instanceof final View parentView) {
-            found = (LifecycleOwner) parentView.getTag(view_tree_lifecycle_owner);
+            found = (LifecycleOwner) parentView.getTag(R.id.view_tree_lifecycle_owner);
             parent = parentView.getParent();
         }
         return found;

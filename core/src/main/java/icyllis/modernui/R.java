@@ -80,6 +80,22 @@ public final class R {
 
         public static final int title = 0x01020016;
 
+        /// INTERNAL BELOW \\\
+
+        // Constant IDs for Fragment package.
+        public static final int fragment_container_view_tag = 0x02020001;
+        public static final int visible_removing_fragment_view_tag = 0x02020002;
+        public static final int special_effects_controller_view_tag = 0x02020003;
+
+        // Constant IDs for Lifecycle package.
+        public static final int view_tree_lifecycle_owner = 0x03020001;
+        public static final int view_tree_view_model_store_owner = 0x03020002;
+
+        // Constant IDs for Transition package.
+        public static final int transition_current_scene = 0x04020001;
+        public static final int save_overlay_view = 0x04020002;
+        public static final int transition_position = 0x04020003;
+
         static {
             __();
         }

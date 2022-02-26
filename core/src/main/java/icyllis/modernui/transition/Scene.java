@@ -18,6 +18,7 @@
 
 package icyllis.modernui.transition;
 
+import icyllis.modernui.R;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 
@@ -32,9 +33,6 @@ import javax.annotation.Nullable;
  * scene change.
  */
 public class Scene {
-
-    static final int transition_current_scene = 0x04020001;
-    static final int save_overlay_view = 0x04020002;
 
     private final ViewGroup mSceneRoot;
     private View mLayout; // alternative to layoutId
@@ -132,7 +130,7 @@ public class Scene {
      * @param sceneRoot The ViewGroup on which the current scene is being set
      */
     static void setCurrentScene(@Nonnull ViewGroup sceneRoot, @Nullable Scene scene) {
-        sceneRoot.setTag(transition_current_scene, scene);
+        sceneRoot.setTag(R.id.transition_current_scene, scene);
     }
 
     /**
@@ -145,7 +143,7 @@ public class Scene {
      */
     @Nullable
     public static Scene getCurrentScene(@Nonnull ViewGroup sceneRoot) {
-        return (Scene) sceneRoot.getTag(transition_current_scene);
+        return (Scene) sceneRoot.getTag(R.id.transition_current_scene);
     }
 
     /**

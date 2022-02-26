@@ -170,7 +170,7 @@ public class Fade extends Visibility {
 
         @Override
         public void onAnimationStart(@Nonnull Animator animation) {
-            // we can just use temp framebuffers now
+            // TODO we just use multiple color buffers now, see GLSurfaceCanvas
             /*if (mView.hasOverlappingRendering() &&
                     mView.getLayerType() == View.LAYER_TYPE_NONE) {
                 mLayerTypeChanged = true;

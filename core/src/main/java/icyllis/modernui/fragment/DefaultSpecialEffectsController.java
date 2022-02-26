@@ -18,6 +18,7 @@
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
 import icyllis.modernui.animation.ObjectAnimator;
@@ -783,8 +784,8 @@ class DefaultSpecialEffectsController extends SpecialEffectsController {
             // after all records in a transaction have been executed and the visible removing
             // fragment has the correct animation, so it is time to clear it.
             if (fragment.mContainer != null
-                    && fragment.mContainer.getTag(FragmentManager.visible_removing_fragment_view_tag) != null) {
-                fragment.mContainer.setTag(FragmentManager.visible_removing_fragment_view_tag, null);
+                    && fragment.mContainer.getTag(R.id.visible_removing_fragment_view_tag) != null) {
+                fragment.mContainer.setTag(R.id.visible_removing_fragment_view_tag, null);
             }
             // If there is a transition on the container, clear those set on the fragment
             if (fragment.mContainer != null && fragment.mContainer.getLayoutTransition() != null) {
