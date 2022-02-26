@@ -18,6 +18,7 @@
 
 package icyllis.modernui.transition;
 
+import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.AnimatorListener;
 import icyllis.modernui.view.View;
@@ -325,7 +326,7 @@ public abstract class Visibility extends Transition {
         View viewToKeep = null;
         boolean reusingOverlayView = false;
 
-        View savedOverlayView = (View) startView.getTag(Scene.save_overlay_view);
+        View savedOverlayView = (View) startView.getTag(R.id.save_overlay_view);
         if (savedOverlayView != null) {
             // we've already created overlay for the start view.
             // it means that we are applying two visibility
@@ -368,12 +369,12 @@ public abstract class Visibility extends Transition {
                     TransitionValues endParentValues = getMatchedTransitionValues(startParent, true);
                     VisibilityInfo parentVisibilityInfo =
                             getVisibilityChangeInfo(startParentValues, endParentValues);
+                    //TODO overlay?? same below
                     if (!parentVisibilityInfo.mVisibilityChange) {
-                        //TODO
                         /*overlayView = TransitionUtils.copyViewImage(sceneRoot, startView,
                                 startParent);*/
                     } else {
-                        int id = startParent.getId();
+                        /*int id = startParent.getId();
                         if (startParent.getParent() == null && id != View.NO_ID
                                 && sceneRoot.findViewById(id) != null && mCanRemoveViews) {
                             // no parent, but its parent is unparented  but the parent
@@ -381,9 +382,10 @@ public abstract class Visibility extends Transition {
                             // and it is safe to un-parent startView
                             overlayView = startView;
                         } else {
-                            // TODO: Handle this case as well
-                        }
+
+                        }*/
                     }
+                    overlayView = startView;
                 }
             }
         }
@@ -398,13 +400,15 @@ public abstract class Visibility extends Transition {
                 overlayView.offsetLeftAndRight((screenX - loc[0]) - overlayView.getLeft());
                 overlayView.offsetTopAndBottom((screenY - loc[1]) - overlayView.getTop());
                 //ViewGroupUtils.getOverlay(sceneRoot).add(overlayView);
+                sceneRoot.startViewTransition(overlayView);
             }
             Animator animator = onDisappear(sceneRoot, overlayView, startValues, endValues);
             if (!reusingOverlayView) {
                 if (animator == null) {
                     //ViewGroupUtils.getOverlay(sceneRoot).remove(overlayView);
+                    sceneRoot.endViewTransition(overlayView);
                 } else {
-                    startView.setTag(Scene.save_overlay_view, overlayView);
+                    startView.setTag(R.id.save_overlay_view, overlayView);
                     final View finalOverlayView = overlayView;
                     final ViewGroup overlayHost = sceneRoot;
                     addListener(new TransitionListener() {
@@ -412,12 +416,14 @@ public abstract class Visibility extends Transition {
                         @Override
                         public void onTransitionPause(@Nonnull Transition transition) {
                             //ViewGroupUtils.getOverlay(overlayHost).remove(finalOverlayView);
+                            overlayHost.endViewTransition(finalOverlayView);
                         }
 
                         @Override
                         public void onTransitionResume(@Nonnull Transition transition) {
                             if (finalOverlayView.getParent() == null) {
                                 //ViewGroupUtils.getOverlay(overlayHost).add(finalOverlayView);
+                                overlayHost.startViewTransition(finalOverlayView);
                             } else {
                                 cancel();
                             }
@@ -425,8 +431,9 @@ public abstract class Visibility extends Transition {
 
                         @Override
                         public void onTransitionEnd(@Nonnull Transition transition) {
-                            startView.setTag(Scene.save_overlay_view, null);
+                            startView.setTag(R.id.save_overlay_view, null);
                             //ViewGroupUtils.getOverlay(overlayHost).remove(finalOverlayView);
+                            overlayHost.endViewTransition(finalOverlayView);
                             transition.removeListener(this);
                         }
                     });

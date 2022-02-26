@@ -18,6 +18,7 @@
 
 package icyllis.modernui.lifecycle;
 
+import icyllis.modernui.R;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewParent;
 
@@ -29,8 +30,6 @@ import javax.annotation.Nullable;
  * {@link ViewModelStore} for the given view.
  */
 public class ViewTreeViewModelStoreOwner {
-
-    private static final int view_tree_view_model_store_owner = 0x03020002;
 
     private ViewTreeViewModelStoreOwner() {
         // No instances
@@ -51,7 +50,7 @@ public class ViewTreeViewModelStoreOwner {
      * @param viewModelStoreOwner ViewModelStoreOwner associated with the given view
      */
     public static void set(@Nonnull View view, @Nullable ViewModelStoreOwner viewModelStoreOwner) {
-        view.setTag(view_tree_view_model_store_owner, viewModelStoreOwner);
+        view.setTag(R.id.view_tree_view_model_store_owner, viewModelStoreOwner);
     }
 
     /**
@@ -64,11 +63,11 @@ public class ViewTreeViewModelStoreOwner {
      */
     @Nullable
     public static ViewModelStoreOwner get(@Nonnull View view) {
-        ViewModelStoreOwner found = (ViewModelStoreOwner) view.getTag(view_tree_view_model_store_owner);
+        ViewModelStoreOwner found = (ViewModelStoreOwner) view.getTag(R.id.view_tree_view_model_store_owner);
         if (found != null) return found;
         ViewParent parent = view.getParent();
         while (found == null && parent instanceof final View parentView) {
-            found = (ViewModelStoreOwner) parentView.getTag(view_tree_view_model_store_owner);
+            found = (ViewModelStoreOwner) parentView.getTag(R.id.view_tree_view_model_store_owner);
             parent = parentView.getParent();
         }
         return found;

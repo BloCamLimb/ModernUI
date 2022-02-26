@@ -1789,7 +1789,7 @@ public class PopupWindow {
          */
         public void requestEnterTransition(@Nullable Transition transition) {
             final ViewTreeObserver observer = getViewTreeObserver();
-            if (observer != null && transition != null) {
+            if (transition != null) {
                 final Transition enterTransition = transition.clone();
 
                 // Postpone the enter transition after the first layout pass.
@@ -1797,9 +1797,7 @@ public class PopupWindow {
                     @Override
                     public void onGlobalLayout() {
                         final ViewTreeObserver observer = getViewTreeObserver();
-                        if (observer != null) {
-                            observer.removeOnGlobalLayoutListener(this);
-                        }
+                        observer.removeOnGlobalLayoutListener(this);
 
                         final Rect epicenter = getTransitionEpicenter();
                         enterTransition.setEpicenterCallback(t -> epicenter);

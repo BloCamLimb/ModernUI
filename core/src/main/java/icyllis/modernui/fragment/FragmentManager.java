@@ -18,6 +18,7 @@
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.lifecycle.Lifecycle;
 import icyllis.modernui.lifecycle.LifecycleOwner;
@@ -60,11 +61,6 @@ public final class FragmentManager {
     static final boolean TRACE = false;
 
     static final Marker MARKER = MarkerManager.getMarker("FragmentManager");
-
-    // Constant IDs for Fragment package.
-    static final int fragment_container_view_tag = 0x02020001;
-    static final int visible_removing_fragment_view_tag = 0x02020002;
-    static final int special_effects_controller_view_tag = 0x02020003;
 
     /**
      * Flag for {@link #popBackStack(String, int)}
@@ -567,7 +563,7 @@ public final class FragmentManager {
      */
     @Nullable
     static Fragment getViewFragment(@Nonnull View view) {
-        Object tag = view.getTag(fragment_container_view_tag);
+        Object tag = view.getTag(R.id.fragment_container_view_tag);
         if (tag instanceof Fragment) {
             return (Fragment) tag;
         }
@@ -1390,8 +1386,8 @@ public final class FragmentManager {
         ViewGroup container = getFragmentContainer(f);
         if (container != null &&
                 f.getEnterAnim() + f.getExitAnim() + f.getPopEnterAnim() + f.getPopExitAnim() > 0) {
-            if (container.getTag(visible_removing_fragment_view_tag) == null) {
-                container.setTag(visible_removing_fragment_view_tag, f);
+            if (container.getTag(R.id.visible_removing_fragment_view_tag) == null) {
+                container.setTag(R.id.visible_removing_fragment_view_tag, f);
             }
             f.setPopDirection(f.getPopDirection());
         }

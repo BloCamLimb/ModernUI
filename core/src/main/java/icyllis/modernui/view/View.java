@@ -8919,6 +8919,17 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * <p>Computes the coordinates of this view on the screen. The argument
+     * must be an array of two integers. After the method returns, the array
+     * contains the x and y location in that order.</p>
+     *
+     * @param outLocation an array of two integers in which to hold the coordinates
+     */
+    public void getLocationOnScreen(int[] outLocation) {
+        getLocationInWindow(outLocation);
+    }
+
+    /**
      * <p>Computes the coordinates of this view in its window. The argument
      * must be an array of two integers. After the method returns, the array
      * contains the x and y location in that order.</p>

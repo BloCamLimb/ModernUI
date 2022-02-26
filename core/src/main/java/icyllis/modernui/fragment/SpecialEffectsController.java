@@ -18,6 +18,7 @@
 
 package icyllis.modernui.fragment;
 
+import icyllis.modernui.R;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.core.CancellationSignal;
 import icyllis.modernui.view.View;
@@ -68,13 +69,13 @@ abstract class SpecialEffectsController {
     static SpecialEffectsController getOrCreateController(
             @Nonnull ViewGroup container,
             @Nonnull SpecialEffectsControllerFactory factory) {
-        Object controller = container.getTag(FragmentManager.special_effects_controller_view_tag);
+        Object controller = container.getTag(R.id.special_effects_controller_view_tag);
         if (controller instanceof SpecialEffectsController) {
             return (SpecialEffectsController) controller;
         }
         // Else, create a new SpecialEffectsController
         SpecialEffectsController newController = factory.createController(container);
-        container.setTag(FragmentManager.special_effects_controller_view_tag, newController);
+        container.setTag(R.id.special_effects_controller_view_tag, newController);
         return newController;
     }
 
