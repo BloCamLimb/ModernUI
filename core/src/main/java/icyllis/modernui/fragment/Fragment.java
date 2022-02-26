@@ -967,6 +967,28 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
     }
 
     /**
+     * When custom transitions are used with Fragments, the enter transition callback
+     * is called when this Fragment is attached or detached when not popping the back stack.
+     *
+     * @param callback Used to manipulate the shared element transitions on this Fragment
+     *                 when added not as a pop from the back stack.
+     */
+    public void setEnterSharedElementCallback(@Nullable SharedElementCallback callback) {
+        ensureAnimationInfo().mEnterTransitionCallback = callback;
+    }
+
+    /**
+     * When custom transitions are used with Fragments, the exit transition callback
+     * is called when this Fragment is attached or detached when popping the back stack.
+     *
+     * @param callback Used to manipulate the shared element transitions on this Fragment
+     *                 when added as a pop from the back stack.
+     */
+    public void setExitSharedElementCallback(@Nullable SharedElementCallback callback) {
+        ensureAnimationInfo().mExitTransitionCallback = callback;
+    }
+
+    /**
      * Sets the Transition that will be used to move Views into the initial scene. The entering
      * Views will be those that are regular Views or ViewGroups that have
      * {@link ViewGroup#isTransitionGroup} return true. Typical Transitions will extend
@@ -1787,6 +1809,23 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         mAnimationInfo.mSharedElementTargetNames = sharedElementTargetNames;
     }
 
+    @Nullable
+    SharedElementCallback getEnterTransitionCallback() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mEnterTransitionCallback;
+    }
+
+    @Nullable
+    SharedElementCallback getExitTransitionCallback() {
+        if (mAnimationInfo == null) {
+            return null;
+        }
+        return mAnimationInfo.mExitTransitionCallback;
+    }
+
+    @Nullable
     View getAnimatingAway() {
         if (mAnimationInfo == null) {
             return null;
@@ -1857,6 +1896,9 @@ public class Fragment implements LifecycleOwner, ViewModelStoreOwner {
         Transition mSharedElementReturnTransition = USE_DEFAULT_TRANSITION;
         Boolean mAllowReturnTransitionOverlap;
         Boolean mAllowEnterTransitionOverlap;
+
+        SharedElementCallback mEnterTransitionCallback = null;
+        SharedElementCallback mExitTransitionCallback = null;
 
         float mPostOnViewCreatedAlpha = 1f;
         View mFocusedView = null;

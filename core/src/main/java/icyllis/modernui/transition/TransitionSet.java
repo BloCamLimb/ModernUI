@@ -515,7 +515,7 @@ public class TransitionSet extends Transition {
     }
 
     @Override
-    protected void cancel() {
+    public void cancel() {
         super.cancel();
         for (Transition transition : mTransitions) {
             transition.cancel();
