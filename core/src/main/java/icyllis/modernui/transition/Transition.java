@@ -1742,7 +1742,7 @@ public abstract class Transition implements Cloneable {
     /**
      * This method cancels a transition that is currently running.
      */
-    protected void cancel() {
+    public void cancel() {
         for (int i = mCurrentAnimators.size() - 1; i >= 0; i--) {
             mCurrentAnimators.get(i).cancel();
         }

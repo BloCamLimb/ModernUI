@@ -8742,6 +8742,7 @@ public class View implements Drawable.Callback {
      *
      * @return The ViewTreeObserver for this view's hierarchy.
      */
+    @Nonnull
     public final ViewTreeObserver getViewTreeObserver() {
         if (mAttachInfo != null) {
             return mAttachInfo.mTreeObserver;
@@ -8853,6 +8854,67 @@ public class View implements Drawable.Callback {
 
         if (!hasIdentityMatrix()) {
             matrix.postMultiply(getInverseMatrix());
+        }
+    }
+
+    /**
+     * Gets the location of this view in screen coordinates.
+     *
+     * @param outRect The output location
+     */
+    public void getBoundsOnScreen(@Nonnull Rect outRect) {
+        getBoundsOnScreen(outRect, false);
+    }
+
+    /**
+     * Gets the location of this view in screen coordinates.
+     *
+     * @param outRect The output location
+     * @param clipToParent Whether to clip child bounds to the parent ones.
+     */
+    public void getBoundsOnScreen(@Nonnull Rect outRect, boolean clipToParent) {
+        if (mAttachInfo == null) {
+            return;
+        }
+
+        RectF position = mAttachInfo.mTmpTransformRect;
+        position.set(0, 0, mRight - mLeft, mBottom - mTop);
+        mapRectFromViewToScreenCoords(position, clipToParent);
+        position.round(outRect);
+    }
+
+    /**
+     * Map a rectangle from view-relative coordinates to screen-relative coordinates
+     *
+     * @param rect The rectangle to be mapped
+     * @param clipToParent Whether to clip child bounds to the parent ones.
+     */
+    public void mapRectFromViewToScreenCoords(@Nonnull RectF rect, boolean clipToParent) {
+        if (!hasIdentityMatrix()) {
+            getMatrix().transform(rect);
+        }
+
+        rect.offset(mLeft, mTop);
+
+        ViewParent parent = mParent;
+        while (parent instanceof View parentView) {
+
+            rect.offset(-parentView.mScrollX, -parentView.mScrollY);
+
+            if (clipToParent) {
+                rect.left = Math.max(rect.left, 0);
+                rect.top = Math.max(rect.top, 0);
+                rect.right = Math.min(rect.right, parentView.getWidth());
+                rect.bottom = Math.min(rect.bottom, parentView.getHeight());
+            }
+
+            if (!parentView.hasIdentityMatrix()) {
+                parentView.getMatrix().transform(rect);
+            }
+
+            rect.offset(parentView.mLeft, parentView.mTop);
+
+            parent = parentView.mParent;
         }
     }
 
