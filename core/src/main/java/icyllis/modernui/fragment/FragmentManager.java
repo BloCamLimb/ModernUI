@@ -20,10 +20,7 @@ package icyllis.modernui.fragment;
 
 import icyllis.modernui.R;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.lifecycle.Lifecycle;
-import icyllis.modernui.lifecycle.LifecycleOwner;
-import icyllis.modernui.lifecycle.ViewModelStore;
-import icyllis.modernui.lifecycle.ViewModelStoreOwner;
+import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
@@ -36,10 +33,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -55,7 +49,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * For more information about using fragments, read the Android Fragments
  * developer guide.
  */
-public final class FragmentManager {
+public final class FragmentManager implements FragmentResultOwner {
 
     static final boolean DEBUG = false;
     static final boolean TRACE = false;
@@ -112,6 +106,38 @@ public final class FragmentManager {
         void onBackStackChanged();
     }
 
+    /**
+     * A {@link FragmentResultListener} that is lifecycle aware so that
+     * the listener can be fired when the lifecycle is {@link Lifecycle.State#STARTED}.
+     */
+    private static class LifecycleAwareResultListener implements FragmentResultListener {
+
+        private final Lifecycle mLifecycle;
+        private final FragmentResultListener mListener;
+        private final LifecycleObserver mObserver;
+
+        LifecycleAwareResultListener(@Nonnull Lifecycle lifecycle,
+                                     @Nonnull FragmentResultListener listener,
+                                     @Nonnull LifecycleObserver observer) {
+            mLifecycle = lifecycle;
+            mListener = listener;
+            mObserver = observer;
+        }
+
+        public boolean isAtLeast(Lifecycle.State state) {
+            return mLifecycle.getCurrentState().isAtLeast(state);
+        }
+
+        @Override
+        public void onFragmentResult(@Nonnull String requestKey, @Nonnull DataSet result) {
+            mListener.onFragmentResult(requestKey, result);
+        }
+
+        public void removeObserver() {
+            mLifecycle.removeObserver(mObserver);
+        }
+    }
+
     private final ArrayList<OpGenerator> mPendingActions = new ArrayList<>();
     private boolean mExecutingActions;
 
@@ -127,6 +153,11 @@ public final class FragmentManager {
     };
 
     private final AtomicInteger mBackStackIndex = new AtomicInteger();
+
+    private final Map<String, DataSet> mResults =
+            Collections.synchronizedMap(new HashMap<>());
+    private final Map<String, LifecycleAwareResultListener> mResultListeners =
+            Collections.synchronizedMap(new HashMap<>());
 
     private ArrayList<OnBackStackChangedListener> mBackStackChangeListeners;
     private final FragmentLifecycleCallbacksDispatcher mLifecycleCallbacksDispatcher =
@@ -468,17 +499,95 @@ public final class FragmentManager {
         }
     }
 
+    @Override
+    public void setFragmentResult(@Nonnull String requestKey, @Nonnull DataSet result) {
+        // Check if there is a listener waiting for a result with this key
+        LifecycleAwareResultListener resultListener = mResultListeners.get(requestKey);
+        // if there is and it is started, fire the callback
+        if (resultListener != null && resultListener.isAtLeast(Lifecycle.State.STARTED)) {
+            resultListener.onFragmentResult(requestKey, result);
+        } else {
+            // else, save the result for later
+            mResults.put(requestKey, result);
+        }
+        if (TRACE) {
+            LOGGER.info(MARKER, "Setting fragment result with key " + requestKey + " and "
+                    + "result " + result);
+        }
+    }
+
+    @Override
+    public void clearFragmentResult(@Nonnull String requestKey) {
+        mResults.remove(requestKey);
+        if (TRACE) {
+            LOGGER.info(MARKER, "Clearing fragment result with key " + requestKey);
+        }
+    }
+
+    @Override
+    public void setFragmentResultListener(@Nonnull final String requestKey,
+                                          @Nonnull final LifecycleOwner lifecycleOwner,
+                                          @Nonnull final FragmentResultListener listener) {
+        final Lifecycle lifecycle = lifecycleOwner.getLifecycle();
+        if (lifecycle.getCurrentState() == Lifecycle.State.DESTROYED) {
+            return;
+        }
+
+        LifecycleObserver observer = new LifecycleObserver() {
+            @Override
+            public void onStateChanged(@Nonnull LifecycleOwner source,
+                                       @Nonnull Lifecycle.Event event) {
+                if (event == Lifecycle.Event.ON_START) {
+                    // once we are started, check for any stored results
+                    DataSet storedResult = mResults.get(requestKey);
+                    if (storedResult != null) {
+                        // if there is a result, fire the callback
+                        listener.onFragmentResult(requestKey, storedResult);
+                        // and clear the result
+                        clearFragmentResult(requestKey);
+                    }
+                }
+
+                if (event == Lifecycle.Event.ON_DESTROY) {
+                    lifecycle.removeObserver(this);
+                    mResultListeners.remove(requestKey);
+                }
+            }
+        };
+        lifecycle.addObserver(observer);
+        LifecycleAwareResultListener storedListener = mResultListeners.put(requestKey,
+                new LifecycleAwareResultListener(lifecycle, listener, observer));
+        if (storedListener != null) {
+            storedListener.removeObserver();
+        }
+        if (TRACE) {
+            LOGGER.info(MARKER, "Setting FragmentResultListener with key " + requestKey
+                    + " lifecycleOwner " + lifecycle + " and listener " + listener);
+        }
+    }
+
+    @Override
+    public void clearFragmentResultListener(@Nonnull String requestKey) {
+        LifecycleAwareResultListener listener = mResultListeners.remove(requestKey);
+        if (listener != null) {
+            listener.removeObserver();
+        }
+        if (TRACE) {
+            LOGGER.info(MARKER, "Clearing FragmentResultListener for key " + requestKey);
+        }
+    }
+
     /**
      * Put a reference to a fragment in a DataSet.  This DataSet can be
      * persisted as saved state, and when later restoring
-     * {@link #getFragment(DataSet, int)} will return the current
+     * {@link #getFragment(DataSet, String)} will return the current
      * instance of the same fragment.
      *
      * @param bundle   The bundle in which to put the fragment reference.
      * @param key      The name of the entry in the bundle.
      * @param fragment The Fragment whose reference is to be stored.
      */
-    public void putFragment(@Nonnull DataSet bundle, int key,
+    public void putFragment(@Nonnull DataSet bundle, @Nonnull String key,
                             @Nonnull Fragment fragment) {
         if (fragment.mFragmentManager != this) {
             throwException(new IllegalStateException("Fragment " + fragment
@@ -489,7 +598,7 @@ public final class FragmentManager {
 
     /**
      * Retrieve the current Fragment instance for a reference previously
-     * placed with {@link #putFragment(DataSet, int, Fragment)}.
+     * placed with {@link #putFragment(DataSet, String, Fragment)}.
      *
      * @param bundle The bundle from which to retrieve the fragment reference.
      * @param key    The name of the entry in the bundle.
@@ -497,7 +606,7 @@ public final class FragmentManager {
      * the given reference.
      */
     @Nullable
-    public Fragment getFragment(@Nonnull DataSet bundle, int key) {
+    public Fragment getFragment(@Nonnull DataSet bundle, @Nonnull String key) {
         String who = bundle.getString(key);
         if (who == null) {
             return null;
