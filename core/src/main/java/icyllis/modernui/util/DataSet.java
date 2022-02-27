@@ -30,7 +30,6 @@ import it.unimi.dsi.fastutil.longs.LongArrayList;
 import it.unimi.dsi.fastutil.longs.LongList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectIterator;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortList;
 import org.apache.logging.log4j.Marker;
@@ -75,7 +74,7 @@ import java.util.zip.GZIPOutputStream;
  * Format conversion between common data-interchange formats such as JSON and Minecraft NBT
  * can be easily done. The default implementations are not provided here.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "unchecked", "rawtypes"})
 @NotThreadSafe
 @ParametersAreNonnullByDefault
 public class DataSet {
@@ -222,7 +221,6 @@ public class DataSet {
      * @return the value to which the specified key is mapped, or
      * {@code null} if this map contains no mapping for the key
      */
-    @SuppressWarnings("unchecked")
     public <T> T getValue(int key) {
         Object o = mIntMap.get(key);
         if (o == null) {
@@ -245,7 +243,6 @@ public class DataSet {
      * @return the value to which the specified key is mapped, or
      * {@code null} if this map contains no mapping for the key
      */
-    @SuppressWarnings("unchecked")
     public <T> T getValue(String key) {
         Object o = mStringMap.get(key);
         if (o == null) {
@@ -1174,7 +1171,6 @@ public class DataSet {
      * @param <T> the element type
      * @return the List value to which the specified key is mapped, or null
      */
-    @SuppressWarnings("unchecked")
     public <T> List<T> getList(int key) {
         final Object o = mIntMap.get(key);
         if (o == null) {
@@ -1261,7 +1257,6 @@ public class DataSet {
      * @param <T> the element type
      * @return the List value to which the specified key is mapped, or null
      */
-    @SuppressWarnings("unchecked")
     public <T> List<T> getList(String key) {
         final Object o = mStringMap.get(key);
         if (o == null) {
@@ -2399,6 +2394,25 @@ public class DataSet {
         return mStringMap.keySet();
     }
 
+    @Nullable
+    public Iterator<Int2ObjectMap.Entry<Object>> intEntryIterator() {
+        if (mIntMap.isEmpty()) {
+            return null;
+        } else {
+            return Int2ObjectMaps.fastIterator(mIntMap);
+        }
+    }
+
+    @Nullable
+    public Iterator<Map.Entry<String, Object>> stringEntryIterator() {
+        if (mStringMap.isEmpty()) {
+            return null;
+        }
+        final Set<Map.Entry<String, Object>> entries = mStringMap.entrySet();
+        return entries instanceof Object2ObjectMap.FastEntrySet ?
+                ((Object2ObjectMap.FastEntrySet) entries).fastIterator() : entries.iterator();
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -2417,7 +2431,6 @@ public class DataSet {
         return result;
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @Override
     public String toString() {
         if (isEmpty()) {
@@ -2425,8 +2438,8 @@ public class DataSet {
         }
         final StringBuilder s = new StringBuilder();
         s.append('{');
-        if (!mIntMap.isEmpty()) {
-            final ObjectIterator<Int2ObjectMap.Entry<Object>> it = Int2ObjectMaps.fastIterator(mIntMap);
+        final Iterator<Int2ObjectMap.Entry<Object>> it = intEntryIterator();
+        if (it != null) {
             while (it.hasNext()) {
                 Int2ObjectMap.Entry<Object> e = it.next();
                 s.append(e.getIntKey());
@@ -2435,12 +2448,10 @@ public class DataSet {
                 s.append(',').append(' ');
             }
         }
-        if (!mStringMap.isEmpty()) {
-            final Set<Map.Entry<String, Object>> entries = mStringMap.entrySet();
-            final Iterator<Map.Entry<String, Object>> it = entries instanceof Object2ObjectMap.FastEntrySet ?
-                    ((Object2ObjectMap.FastEntrySet) entries).fastIterator() : entries.iterator();
-            while (it.hasNext()) {
-                Map.Entry<String, Object> e = it.next();
+        final Iterator<Map.Entry<String, Object>> stringIt = stringEntryIterator();
+        if (stringIt != null) {
+            while (stringIt.hasNext()) {
+                Map.Entry<String, Object> e = stringIt.next();
                 s.append(e.getKey());
                 s.append('=');
                 s.append(e.getValue());
@@ -2484,7 +2495,6 @@ public class DataSet {
      * @param output the data output
      * @throws IOException if an IO error occurs
      */
-    @SuppressWarnings("unchecked")
     private static void writeList(List<?> list, DataOutput output) throws IOException {
         final int size = list.size();
         if (list instanceof ByteArrayList) {
@@ -2579,11 +2589,10 @@ public class DataSet {
      * @param output the data output
      * @throws IOException if an IO error occurs
      */
-    @SuppressWarnings({"unchecked", "rawtypes"})
     public static void writeDataSet(DataSet set, DataOutput output) throws IOException {
-        if (!set.mIntMap.isEmpty()) {
-            for (final ObjectIterator<Int2ObjectMap.Entry<Object>> it = Int2ObjectMaps.fastIterator(set.mIntMap);
-                 it.hasNext(); ) {
+        final Iterator<Int2ObjectMap.Entry<Object>> it = set.intEntryIterator();
+        if (it != null) {
+            while (it.hasNext()) {
                 final Int2ObjectMap.Entry<Object> entry = it.next();
                 final Object v = entry.getValue();
                 if (v instanceof Byte) {
@@ -2631,11 +2640,10 @@ public class DataSet {
             }
         }
         output.writeByte(VAL_NULL);
-        if (!set.mStringMap.isEmpty()) {
-            final Set<Map.Entry<String, Object>> entries = set.mStringMap.entrySet();
-            for (final Iterator<Map.Entry<String, Object>> it = entries instanceof Object2ObjectMap.FastEntrySet ?
-                    ((Object2ObjectMap.FastEntrySet) entries).fastIterator() : entries.iterator(); it.hasNext(); ) {
-                final Map.Entry<String, Object> entry = it.next();
+        final Iterator<Map.Entry<String, Object>> stringIt = set.stringEntryIterator();
+        if (stringIt != null) {
+            while (stringIt.hasNext()) {
+                final Map.Entry<String, Object> entry = stringIt.next();
                 final Object v = entry.getValue();
                 if (v instanceof Byte) {
                     output.writeByte(VAL_BYTE);

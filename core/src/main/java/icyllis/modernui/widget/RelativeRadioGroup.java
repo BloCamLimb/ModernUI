@@ -34,9 +34,9 @@ import javax.annotation.Nullable;
  * remove the checked state.</p>
  *
  * @see RadioButton
- * @see RelativeRadioGroup
+ * @see RadioGroup
  */
-public class RadioGroup extends LinearLayout {
+public class RelativeRadioGroup extends RelativeLayout {
 
     // holds the checked id; the selection is empty by default
     private int mCheckedId = NO_ID;
@@ -47,16 +47,15 @@ public class RadioGroup extends LinearLayout {
     @Nullable
     private OnCheckedChangeListener mOnCheckedChangeListener;
 
-    public RadioGroup() {
-        setOrientation(VERTICAL);
+    public RelativeRadioGroup() {
     }
 
     @Override
     protected void onViewAdded(View child) {
         super.onViewAdded(child);
         if (child instanceof RadioButton button) {
-            if (child.getId() == NO_ID) {
-                child.setId(generateViewId());
+            if (button.getId() == NO_ID) {
+                button.setId(generateViewId());
             }
             if (button.isChecked()) {
                 setCheckedStateForView(mCheckedId, false);
@@ -169,7 +168,7 @@ public class RadioGroup extends LinearLayout {
          * @param group     the group in which the checked radio button has changed
          * @param checkedId the unique identifier of the newly checked radio button
          */
-        void onCheckedChanged(RadioGroup group, int checkedId);
+        void onCheckedChanged(RelativeRadioGroup group, int checkedId);
     }
 
     private class CheckedStateTracker implements Checkable.OnCheckedChangeListener {
