@@ -171,7 +171,7 @@ public class CenterFragment extends Fragment {
 
                 var input = new EditText();
                 input.setText(Config.CLIENT.animationDuration.get().toString());
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(3));
                 input.setPadding(dp(4), 0, dp(4), 0);
@@ -240,7 +240,7 @@ public class CenterFragment extends Fragment {
 
                 var input = new EditText();
                 input.setText(Config.CLIENT.blurRadius.get().toString());
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
                 input.setPadding(dp(4), 0, dp(4), 0);
@@ -503,7 +503,7 @@ public class CenterFragment extends Fragment {
 
                 var input = new EditText();
                 input.setText(Config.CLIENT.fontScale.get().toString());
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
                         new InputFilter.LengthFilter(4));
@@ -546,7 +546,7 @@ public class CenterFragment extends Fragment {
 
                 var input = new EditText();
                 input.setText(Float.toString(ValueAnimator.sDurationScale));
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
                         new InputFilter.LengthFilter(4));
@@ -620,7 +620,7 @@ public class CenterFragment extends Fragment {
 
                 var input = new EditText();
                 input.setText(Config.CLIENT.verticalScrollFactor.get().toString());
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
                         new InputFilter.LengthFilter(6));
@@ -663,7 +663,7 @@ public class CenterFragment extends Fragment {
 
                 var input = new EditText();
                 input.setText(Config.CLIENT.horizontalScrollFactor.get().toString());
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
                         new InputFilter.LengthFilter(6));
@@ -720,7 +720,7 @@ public class CenterFragment extends Fragment {
 
         var input = new EditText();
         input.setText(config.get().toString());
-        input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+        input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
         input.setTextSize(14);
         input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(5));
         input.setPadding(dp(4), 0, dp(4), 0);

@@ -537,7 +537,6 @@ public class Spinner extends AbsSpinner {
             return mAdapter == null ? 0 : mAdapter.getCount();
         }
 
-        @Nullable
         @Override
         public Object getItem(int position) {
             return mAdapter == null ? null : mAdapter.getItem(position);

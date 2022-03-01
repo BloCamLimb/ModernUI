@@ -166,7 +166,6 @@ public class HeaderViewListAdapter implements WrapperListAdapter, Filterable {
         return mFooterViewInfos.get(adjPosition - adapterCount).isSelectable;
     }
 
-    @Nullable
     @Override
     public Object getItem(int position) {
         // Header (negative positions will throw an IndexOutOfBoundsException)

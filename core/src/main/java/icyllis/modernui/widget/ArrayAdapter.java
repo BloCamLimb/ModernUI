@@ -273,7 +273,6 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
         return mObjects.size();
     }
 
-    @Nullable
     @Override
     public T getItem(int position) {
         return mObjects.get(position);

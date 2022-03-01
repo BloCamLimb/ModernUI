@@ -62,9 +62,8 @@ public interface Adapter {
      *
      * @param position Position of the item whose data we want within the adapter's
      *                 data set.
-     * @return The data at the specified position.
+     * @return The data at the specified position, may be null.
      */
-    @Nullable
     Object getItem(int position);
 
     /**
