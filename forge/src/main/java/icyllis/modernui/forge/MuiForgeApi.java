@@ -159,7 +159,7 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @MainThread
     public static void openGui(@Nonnull Fragment fragment) {
-        openGui(fragment, null);
+        UIManager.sInstance.start(fragment, null);
     }
 
     /**
@@ -177,7 +177,6 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @MainThread
     public static void openGui(@Nonnull Fragment fragment, @Nullable UICallback callback) {
-        ArchCore.checkMainThread();
         UIManager.sInstance.start(fragment, callback);
     }
 
@@ -191,9 +190,8 @@ public final class MuiForgeApi {
     @RenderThread
     public static long getElapsedTime() {
         if (UIManager.sInstance == null) {
-            throw new IllegalStateException("UI system was never initialized. " +
-                    "Please check whether the loader threw an exception before. " +
-                    "Do NOT report this issue to Modern UI.");
+            // the game is failed to launch
+            return ArchCore.timeMillis();
         }
         return UIManager.sInstance.getElapsedTime();
     }
