@@ -18,8 +18,25 @@
 
 package icyllis.modernui.forge;
 
+import icyllis.modernui.fragment.Fragment;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 /**
  * A convenient way to check instanceof MenuScreen or SimpleScreen
  */
 public sealed interface MuiScreen permits MenuScreen, SimpleScreen {
+
+    /**
+     * @return the main fragment
+     */
+    @Nonnull
+    Fragment getFragment();
+
+    /**
+     * @return a callback describes the screen properties
+     */
+    @Nullable
+    UICallback getCallback();
 }

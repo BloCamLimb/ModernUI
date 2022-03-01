@@ -125,12 +125,12 @@ public final class UIManager implements LifecycleOwner {
     private final Window mWindow = minecraft.getWindow();
 
     // the UI thread
-    private volatile Thread mUiThread;
+    private final Thread mUiThread;
     private volatile Looper mLooper;
     private volatile boolean mRunning;
 
     // the view root impl
-    private ViewRootImpl mRoot;
+    private volatile ViewRootImpl mRoot;
 
     // the top-level view of the window
     private CoordinatorLayout mDecor;
@@ -150,23 +150,17 @@ public final class UIManager implements LifecycleOwner {
 
     // the UI framebuffer
     private final GLFramebuffer mFramebuffer;
-    GLSurfaceCanvas mCanvas;
+    final GLSurfaceCanvas mCanvas;
     private final Matrix4 mProjectionMatrix = new Matrix4();
 
 
     /// User Interface \\\
 
-    // indicates whether the current screen is a Modern UI screen
+    // indicates the current Modern UI screen
     @Nullable
-    private MuiScreen mScreen;
+    volatile MuiScreen mScreen;
 
     private boolean mFirstScreenOpened = false;
-    // true if there will be no screen to open
-    private boolean mCloseScreen;
-
-    // the main fragment used to send lifecycle events
-    private Fragment mFragment;
-    UICallback mCallback;
 
 
     /// Lifecycle \\\
@@ -183,10 +177,12 @@ public final class UIManager implements LifecycleOwner {
 
     private int mButtonState;
 
-    private PointerIcon mOldCursor = PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT);
-    private PointerIcon mNewCursor = mOldCursor;
+    private volatile PointerIcon mOldCursor = PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT);
+    private volatile PointerIcon mNewCursor = mOldCursor;
 
     private UIManager() {
+        mCanvas = GLSurfaceCanvas.initialize();
+        glEnable(GL_MULTISAMPLE);
         mFramebuffer = new GLFramebuffer(4);
         mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
         mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
@@ -195,37 +191,39 @@ public final class UIManager implements LifecycleOwner {
         // no depth buffer
         mFramebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
         mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+
+        // events
         MinecraftForge.EVENT_BUS.register(this);
+        MuiForgeApi.addOnWindowResizeListener(((width, height, guiScale, oldGuiScale) -> resize()));
+
+        mUiThread = new Thread(this::run, "UI thread");
+        mUiThread.start();
+
+        mRunning = true;
     }
 
     @RenderThread
     static void initialize() {
         ArchCore.checkRenderThread();
         assert sInstance == null;
-        final UIManager mgr = new UIManager();
-        sInstance = mgr;
-        assert mgr.mCanvas == null;
-        mgr.mCanvas = GLSurfaceCanvas.initialize();
-        glEnable(GL_MULTISAMPLE);
-        (sInstance.mUiThread = new Thread(UIManager::run, "UI thread")).start();
-        sInstance.mRunning = true;
+        sInstance = new UIManager();
         LOGGER.info(MARKER, "UI system initialized");
     }
 
     @UiThread
-    private static void run() {
-        sInstance.init();
+    private void run() {
+        init();
         while (true) {
             try {
                 Looper.loop();
             } catch (Throwable e) {
                 LOGGER.error(MARKER, "An error occurred on UI thread", e);
                 // dev can add breakpoints
-                if (sInstance.mRunning && ModernUIForge.isDeveloperMode()) {
+                if (mRunning && ModernUIForge.isDeveloperMode()) {
                     continue;
                 } else {
-                    Minecraft.getInstance().tell(sInstance::dump);
-                    Minecraft.getInstance().tell(() -> Minecraft.crash(
+                    minecraft.tell(this::dump);
+                    minecraft.tell(() -> Minecraft.crash(
                             CrashReport.forThrowable(e, "Exception on UI thread")));
                 }
             }
@@ -241,10 +239,7 @@ public final class UIManager implements LifecycleOwner {
      */
     @MainThread
     void start(@Nonnull Fragment fragment, @Nullable UICallback callback) {
-        mFragment = fragment;
-        mCallback = callback;
-        clearFramebuffer();
-        minecraft.setScreen(new SimpleScreen());
+        minecraft.setScreen(new SimpleScreen(this, fragment, callback));
     }
 
     @MainThread
@@ -255,30 +250,23 @@ public final class UIManager implements LifecycleOwner {
         final Fragment fragment = event.getFragment();
         if (fragment == null) {
             p.closeContainer(); // close server menu whatever it is
-            LOGGER.debug(MARKER, "No fragment set, closing {} keyed {}", menu, key);
-            return;
-        }
-        mFragment = fragment;
-        mCallback = event.getCallback();
-        clearFramebuffer();
-        p.containerMenu = menu;
-        minecraft.setScreen(new MenuScreen<>(menu, p.getInventory()));
-    }
-
-    void clearFramebuffer() {
-        if (mFramebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
-            mFramebuffer.clearColorBuffer();
-            mFramebuffer.clearDepthStencilBuffer();
+            if (ModernUIForge.isDeveloperMode()) {
+                LOGGER.warn(MARKER, "No fragment set, closing menu {}, registry key {}", menu, key);
+            }
+        } else {
+            p.containerMenu = menu;
+            minecraft.setScreen(new MenuScreen<>(menu, p.getInventory(), this, fragment, event.getCallback()));
         }
     }
 
     void onBackPressed() {
-        if (mScreen == null)
+        final MuiScreen screen = mScreen;
+        if (screen == null)
             return;
-        if (mCallback != null && !mCallback.shouldClose()) {
+        if (screen.getCallback() != null && !screen.getCallback().shouldClose()) {
             return;
         }
-        if (mScreen instanceof MenuScreen) {
+        if (screen instanceof MenuScreen) {
             if (minecraft.player != null) {
                 minecraft.player.closeContainer();
             }
@@ -318,19 +306,18 @@ public final class UIManager implements LifecycleOwner {
 
     // Called when open a screen from Modern UI, or back to the screen
     void initScreen(@Nonnull MuiScreen screen) {
-        if (mScreen == null) {
-            if (mFragment != null) {
-                mFragmentController.getFragmentManager().beginTransaction()
-                        .add(fragment_container, mFragment, "main")
-                        .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
-                        .runOnCommit(mRoot::resetCanvasLocked)
-                        .commit();
+        if (mScreen != screen) {
+            if (mScreen != null) {
+                LOGGER.warn(MARKER, "You cannot set multiple screens.");
+                removed();
             }
+            mFragmentController.getFragmentManager().beginTransaction()
+                    .add(fragment_container, screen.getFragment(), "main")
+                    .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
+                    .commit();
             mRoot.mHandler.post(this::restoreLayoutTransition);
-            mScreen = screen;
         }
-
-        resize();
+        mScreen = screen;
     }
 
     void suppressLayoutTransition() {
@@ -348,7 +335,8 @@ public final class UIManager implements LifecycleOwner {
     @SubscribeEvent
     void onGuiOpen(@Nonnull ScreenOpenEvent event) {
         final Screen next = event.getScreen();
-        mCloseScreen = next == null;
+        // true if there will be no screen to open
+        boolean closeScreen = next == null;
 
         if (!mFirstScreenOpened) {
             if (sPlaySoundOnLoaded) {
@@ -357,7 +345,7 @@ public final class UIManager implements LifecycleOwner {
             mFirstScreenOpened = true;
         }
 
-        if (mCloseScreen) {
+        if (closeScreen) {
             removed();
             return;
         }
@@ -411,6 +399,7 @@ public final class UIManager implements LifecycleOwner {
         suppressLayoutTransition();
 
         mRoot.setView(mDecor);
+        resize();
 
         mDecor.getViewTreeObserver().addOnScrollChangedListener(() -> onHoverMove(false));
 
@@ -668,15 +657,10 @@ public final class UIManager implements LifecycleOwner {
             w.println((Object) null);
         }
 
-        if (mCallback != null) {
-            w.print("Callback: ");
-            w.println(mCallback.getClass());
-        } else {
-            Screen screen = minecraft.screen;
-            if (screen != null) {
-                w.print("Screen: ");
-                w.println(screen.getClass());
-            }
+        Screen screen = minecraft.screen;
+        if (screen != null) {
+            w.print("Screen: ");
+            w.println(screen.getClass());
         }
 
         if (mFragmentController != null) {
@@ -686,7 +670,7 @@ public final class UIManager implements LifecycleOwner {
         ModernUIForge.dispatchOnDebugDump(w);
     }
 
-    boolean charTyped(char ch) {
+    boolean onCharTyped(char ch) {
         /*if (popup != null) {
             return popup.charTyped(codePoint, modifiers);
         }*/
@@ -725,7 +709,9 @@ public final class UIManager implements LifecycleOwner {
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
-        mCanvas.setProjection(mProjectionMatrix.setOrthographic(mWindow.getWidth(), mWindow.getHeight(), 0, 3000));
+        //TODO multiple canvas instances, tooltip use this now, but different thread
+        mCanvas.setProjection(mProjectionMatrix.setOrthographic(
+                mWindow.getWidth(), mWindow.getHeight(), 0, icyllis.modernui.core.Window.LAST_SYSTEM_WINDOW + 1));
         mRoot.flushDrawCommands(mCanvas, mFramebuffer, mWindow.getWidth(), mWindow.getHeight());
 
         glBindVertexArray(oldVertexArray);
@@ -792,27 +778,23 @@ public final class UIManager implements LifecycleOwner {
      * Called when game window size changed, used to re-layout the window.
      */
     void resize() {
-        mRoot.mHandler.post(mResizeRunnable);
+        if (mRoot != null) {
+            mRoot.mHandler.post(mResizeRunnable);
+        }
     }
 
     void removed() {
-        if ((!mCloseScreen && minecraft.player != null) || mScreen == null) {
+        if (mScreen == null) {
             return;
         }
-        mScreen = null;
-        if (mCallback != null) {
-            mCallback = null;
-        }
         mRoot.mHandler.post(this::suppressLayoutTransition);
-        if (mFragment != null) {
-            mFragmentController.getFragmentManager().beginTransaction()
-                    .remove(mFragment)
-                    .runOnCommit(mFragmentContainerView::removeAllViews)
-                    .commit();
-        }
+        mFragmentController.getFragmentManager().beginTransaction()
+                .remove(mScreen.getFragment())
+                .runOnCommit(mFragmentContainerView::removeAllViews)
+                .commit();
+        mScreen = null;
         mRoot.updatePointerIcon(null);
         applyPointerIcon();
-        minecraft.keyboardHandler.setSendRepeatsToGui(false);
     }
 
     @SubscribeEvent
@@ -842,6 +824,9 @@ public final class UIManager implements LifecycleOwner {
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
+            } else if (minecraft.isRunning() && mRunning && mScreen == null) {
+                // Render the UI above everything
+                render();
             }
         }
         /* else {
@@ -887,16 +872,17 @@ public final class UIManager implements LifecycleOwner {
 
         @Override
         protected void onKeyEvent(KeyEvent event) {
-            if (mScreen != null && event.getAction() == KeyEvent.ACTION_DOWN) {
+            final MuiScreen screen = mScreen;
+            if (screen != null && event.getAction() == KeyEvent.ACTION_DOWN) {
                 final boolean back;
-                if (mCallback != null) {
-                    back = mCallback.isBackKey(event.getKeyCode(), event);
-                } else if (mScreen instanceof MenuScreen) {
+                if (screen.getCallback() != null) {
+                    back = screen.getCallback().isBackKey(event.getKeyCode(), event);
+                } else if (screen instanceof MenuScreen) {
                     if (event.getKeyCode() == KeyEvent.KEY_ESCAPE) {
                         back = true;
                     } else {
                         InputConstants.Key key = InputConstants.getKey(event.getKeyCode(), event.getScanCode());
-                        back = Minecraft.getInstance().options.keyInventory.isActiveAndMatches(key);
+                        back = minecraft.options.keyInventory.isActiveAndMatches(key);
                     }
                 } else {
                     back = event.getKeyCode() == KeyEvent.KEY_ESCAPE;
@@ -919,21 +905,17 @@ public final class UIManager implements LifecycleOwner {
             mNewCursor = pointerIcon == null ? PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT) : pointerIcon;
         }
 
-        private void resetCanvasLocked() {
-            synchronized (mRenderLock) {
-                mCanvas.reset(mWindow.getWidth(), mWindow.getHeight());
-            }
-        }
-
         @RenderThread
         private void flushDrawCommands(GLSurfaceCanvas canvas, GLFramebuffer framebuffer, int width, int height) {
             // wait UI thread, if slow
             synchronized (mRenderLock) {
+                boolean blit = true;
+
                 if (mRedrawn) {
                     mRedrawn = false;
                     glEnable(GL_STENCIL_TEST);
                     try {
-                        canvas.draw(framebuffer);
+                        blit = canvas.draw(framebuffer);
                     } catch (Throwable t) {
                         LOGGER.fatal(MARKER,
                                 "Failed to invoke rendering callbacks, please report the issue to related mods", t);
@@ -943,8 +925,8 @@ public final class UIManager implements LifecycleOwner {
                     glDisable(GL_STENCIL_TEST);
                 }
 
-                GLTexture texture = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
-                if (texture.getWidth() > 0) {
+                final GLTexture layer = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+                if (blit && layer.getWidth() > 0) {
                     // draw MSAA off-screen target to Minecraft main target (not the default framebuffer)
                     RenderSystem.blendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
@@ -953,7 +935,7 @@ public final class UIManager implements LifecycleOwner {
                     int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
                     alpha = alpha << 8 | alpha;
                     // premultiplied alpha
-                    canvas.drawLayer(texture, width, height, alpha << 16 | alpha, true);
+                    canvas.drawLayer(layer, width, height, alpha << 16 | alpha, true);
                     canvas.draw(null);
                 }
             }
@@ -961,7 +943,7 @@ public final class UIManager implements LifecycleOwner {
 
         private void drawExtTooltipLocked(@Nonnull RenderTooltipEvent.Pre event, double cursorX, double cursorY) {
             synchronized (mRenderLock) {
-                if (!mRedrawn || mScreen == null) {
+                if (!mRedrawn) {
                     TooltipRenderer.drawTooltip(mCanvas, mWindow, event.getPoseStack(), event.getComponents(),
                             event.getX(), event.getY(), event.getFont(), event.getScreenWidth(),
                             event.getScreenHeight(), cursorX, cursorY, minecraft.getItemRenderer());
