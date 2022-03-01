@@ -156,7 +156,7 @@ public final class UIManager implements LifecycleOwner {
 
     /// User Interface \\\
 
-    // indicates the current Modern UI screen
+    // indicates the current Modern UI screen, updated on main thread
     @Nullable
     volatile MuiScreen mScreen;
 
@@ -239,11 +239,15 @@ public final class UIManager implements LifecycleOwner {
      */
     @MainThread
     void start(@Nonnull Fragment fragment, @Nullable UICallback callback) {
+        if (!minecraft.isSameThread()) {
+            throw new IllegalStateException("Not called from main thread");
+        }
         minecraft.setScreen(new SimpleScreen(this, fragment, callback));
     }
 
     @MainThread
     void start(LocalPlayer p, AbstractContainerMenu menu, @Nonnull ResourceLocation key) {
+        // internally called, so no explicitly checks
         assert minecraft.isSameThread();
         final OpenMenuEvent event = new OpenMenuEvent(menu);
         ModernUIForge.post(key.getNamespace(), event);
@@ -251,6 +255,7 @@ public final class UIManager implements LifecycleOwner {
         if (fragment == null) {
             p.closeContainer(); // close server menu whatever it is
             if (ModernUIForge.isDeveloperMode()) {
+                // only log to devs
                 LOGGER.warn(MARKER, "No fragment set, closing menu {}, registry key {}", menu, key);
             }
         } else {
@@ -259,6 +264,7 @@ public final class UIManager implements LifecycleOwner {
         }
     }
 
+    @MainThread
     void onBackPressed() {
         final MuiScreen screen = mScreen;
         if (screen == null)
@@ -300,11 +306,12 @@ public final class UIManager implements LifecycleOwner {
     @Nonnull
     @Override
     public Lifecycle getLifecycle() {
-        // constant reference
+        // STRONG reference "this"
         return mFragmentLifecycleRegistry;
     }
 
     // Called when open a screen from Modern UI, or back to the screen
+    @MainThread
     void initScreen(@Nonnull MuiScreen screen) {
         if (mScreen != screen) {
             if (mScreen != null) {
@@ -320,12 +327,14 @@ public final class UIManager implements LifecycleOwner {
         mScreen = screen;
     }
 
+    @UiThread
     void suppressLayoutTransition() {
         LayoutTransition transition = mDecor.getLayoutTransition();
         transition.disableTransitionType(LayoutTransition.APPEARING);
         transition.disableTransitionType(LayoutTransition.DISAPPEARING);
     }
 
+    @UiThread
     void restoreLayoutTransition() {
         LayoutTransition transition = mDecor.getLayoutTransition();
         transition.enableTransitionType(LayoutTransition.APPEARING);
@@ -385,8 +394,7 @@ public final class UIManager implements LifecycleOwner {
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
         mDecor.setId(R.id.content);
-        mDecor.setLayoutDirection(
-                Config.CLIENT.forceRtl.get() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
+        updateLayoutDir();
 
         mFragmentContainerView = new FragmentContainerView();
         mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -481,6 +489,7 @@ public final class UIManager implements LifecycleOwner {
      * @see net.minecraft.client.MouseHandler
      * @see MuiScreen
      */
+    @MainThread
     void onHoverMove(boolean natural) {
         final long now = ArchCore.timeNanos();
         float x = (float) (minecraft.mouseHandler.xpos() *
@@ -670,6 +679,7 @@ public final class UIManager implements LifecycleOwner {
         ModernUIForge.dispatchOnDebugDump(w);
     }
 
+    @MainThread
     boolean onCharTyped(char ch) {
         /*if (popup != null) {
             return popup.charTyped(codePoint, modifiers);
@@ -709,7 +719,7 @@ public final class UIManager implements LifecycleOwner {
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
-        //TODO multiple canvas instances, tooltip use this now, but different thread
+        // TODO need multiple canvas instances, tooltip shares this now, but different thread
         mCanvas.setProjection(mProjectionMatrix.setOrthographic(
                 mWindow.getWidth(), mWindow.getHeight(), 0, icyllis.modernui.core.Window.LAST_SYSTEM_WINDOW + 1));
         mRoot.flushDrawCommands(mCanvas, mFramebuffer, mWindow.getWidth(), mWindow.getHeight());
@@ -777,19 +787,32 @@ public final class UIManager implements LifecycleOwner {
     /**
      * Called when game window size changed, used to re-layout the window.
      */
+    @MainThread
     void resize() {
         if (mRoot != null) {
             mRoot.mHandler.post(mResizeRunnable);
         }
     }
 
+    @UiThread
+    void updateLayoutDir() {
+        if (mDecor == null) {
+            return;
+        }
+        mDecor.setLayoutDirection(
+                Config.CLIENT.forceRtl.get() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
+        mDecor.forceLayout();
+    }
+
+    @MainThread
     void removed() {
-        if (mScreen == null) {
+        MuiScreen screen = mScreen;
+        if (screen == null) {
             return;
         }
         mRoot.mHandler.post(this::suppressLayoutTransition);
         mFragmentController.getFragmentManager().beginTransaction()
-                .remove(mScreen.getFragment())
+                .remove(screen.getFragment())
                 .runOnCommit(mFragmentContainerView::removeAllViews)
                 .commit();
         mScreen = null;

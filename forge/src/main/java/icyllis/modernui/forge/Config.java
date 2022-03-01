@@ -412,11 +412,7 @@ final class Config {
             UIManager.sPlaySoundOnLoaded = ding.get();
             //TestHUD.sBars = hudBars.get();
             ArchCore.getUiHandlerAsync().post(() -> {
-                View view = UIManager.sInstance.getDecorView();
-                if (view != null) {
-                    view.setLayoutDirection(
-                            forceRtl.get() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
-                }
+                UIManager.sInstance.updateLayoutDir();
                 ViewConfiguration.get().setFontScale(fontScale.get().floatValue());
                 ViewConfiguration.get().setScrollbarSize(scrollbarSize.get());
                 ViewConfiguration.get().setTouchSlop(touchSlop.get());
