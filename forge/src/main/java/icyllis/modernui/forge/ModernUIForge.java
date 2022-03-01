@@ -25,6 +25,7 @@ import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.LayoutCache;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.ModernUITextMC;
+import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
@@ -123,6 +124,11 @@ public final class ModernUIForge extends ModernUI {
                                 (ResourceManagerReloadListener) (manager) -> {
                                     ShaderManager.getInstance().reload();
                                     TextureManager.getInstance().reload();
+                                    View view = UIManager.sInstance.getDecorView();
+                                    if (view != null) {
+                                        // Language may change, so that RTL may change
+                                        view.forceLayout();
+                                    }
                                 }
                         );
             }
@@ -146,20 +152,16 @@ public final class ModernUIForge extends ModernUI {
 
     // INTERNAL HOOK
     @OnlyIn(Dist.CLIENT)
-    public static void dispatchOnDisplayResize(int width, int height, int guiScale, int oldGuiScale) {
-        synchronized (MuiForgeApi.sOnDisplayResizeListeners) {
-            for (var l : MuiForgeApi.sOnDisplayResizeListeners) {
-                l.onDisplayResize(width, height, guiScale, oldGuiScale);
-            }
+    public static void dispatchOnWindowResize(int width, int height, int guiScale, int oldGuiScale) {
+        for (var l : MuiForgeApi.sOnWindowResizeListeners) {
+            l.onWindowResize(width, height, guiScale, oldGuiScale);
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     static void dispatchOnDebugDump(@Nonnull PrintWriter writer) {
-        synchronized (MuiForgeApi.sOnDebugDumpListeners) {
-            for (var l : MuiForgeApi.sOnDebugDumpListeners) {
-                l.onDebugDump(writer);
-            }
+        for (var l : MuiForgeApi.sOnDebugDumpListeners) {
+            l.onDebugDump(writer);
         }
     }
 

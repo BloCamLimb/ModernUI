@@ -88,9 +88,10 @@ public enum BlurHandler {
 
         boolean blocked = false;
         if (hasScreen && sBlurEffect) {
-            if (nextScreen instanceof MuiScreen) {
-                if (UIManager.sInstance.mCallback != null) {
-                    blocked = !UIManager.sInstance.mCallback.shouldBlurBackground();
+            if (nextScreen instanceof MuiScreen screen) {
+                UICallback callback = screen.getCallback();
+                if (callback != null) {
+                    blocked = !callback.shouldBlurBackground();
                 }
             } else {
                 final Class<?> t = nextScreen.getClass();

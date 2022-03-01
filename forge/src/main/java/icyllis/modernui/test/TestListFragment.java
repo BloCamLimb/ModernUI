@@ -85,7 +85,6 @@ public class TestListFragment extends Fragment {
             return mCount;
         }
 
-        @Nullable
         @Override
         public Object getItem(int position) {
             return null;

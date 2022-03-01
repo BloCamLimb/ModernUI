@@ -81,7 +81,7 @@ public final class ModernUITextMC {
             ModernUI.getInstance().getSelectedTypeface();
             TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
         });
-        MuiForgeApi.addOnDisplayResizeListener((width, height, newScale, oldScale) -> {
+        MuiForgeApi.addOnWindowResizeListener((width, height, newScale, oldScale) -> {
             if (ArchCore.hasRenderThread() && newScale != oldScale) {
                 TextLayoutEngine.getInstance().reload();
             }

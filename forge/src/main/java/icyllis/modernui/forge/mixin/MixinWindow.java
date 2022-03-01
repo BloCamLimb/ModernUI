@@ -63,6 +63,6 @@ public abstract class MixinWindow {
         }
         // See standards
         ViewConfiguration.get().setViewScale(newScale * 0.5f);
-        ModernUIForge.dispatchOnDisplayResize(getWidth(), getHeight(), newScale, oldScale);
+        ModernUIForge.dispatchOnWindowResize(getWidth(), getHeight(), newScale, oldScale);
     }
 }

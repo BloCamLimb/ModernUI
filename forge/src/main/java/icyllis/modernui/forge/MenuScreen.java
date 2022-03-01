@@ -19,6 +19,7 @@
 package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import icyllis.modernui.fragment.Fragment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.TextComponent;
@@ -28,6 +29,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * ContainerScreen holds a container menu for item stack interaction and
@@ -43,8 +45,15 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContainerScreen<T> implements MuiScreen {
 
-    MenuScreen(@Nonnull T menu, Inventory inventory) {
+    private final UIManager mHost;
+    private final Fragment mFragment;
+    private final UICallback mCallback;
+
+    MenuScreen(@Nonnull T menu, Inventory inventory, UIManager host, Fragment fragment, UICallback callback) {
         super(menu, inventory, TextComponent.EMPTY);
+        mHost = host;
+        mFragment = fragment;
+        mCallback = callback;
     }
 
     /*@Override
@@ -59,13 +68,12 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     protected void init() {
         super.init();
-        UIManager.sInstance.initScreen(this);
+        mHost.initScreen(this);
     }
 
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         super.resize(minecraft, width, height);
-        UIManager.sInstance.resize();
         //MinecraftForge.EVENT_BUS.post(new GuiScreenEvent.InitGuiEvent.Post(this, buttons, this::widget,
         // this::widget));
 
@@ -77,10 +85,10 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Override
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
-        if (UIManager.sInstance.mCallback == null || UIManager.sInstance.mCallback.hasDefaultBackground()) {
+        if (mCallback == null || mCallback.hasDefaultBackground()) {
             renderBackground(poseStack);
         }
-        UIManager.sInstance.render();
+        mHost.render();
     }
 
     @Override
@@ -90,14 +98,26 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     @Override
     public void removed() {
         super.removed();
-        UIManager.sInstance.removed();
+        mHost.removed();
+    }
+
+    @Nonnull
+    @Override
+    public Fragment getFragment() {
+        return mFragment;
+    }
+
+    @Nullable
+    @Override
+    public UICallback getCallback() {
+        return mCallback;
     }
 
     // IMPL - GuiEventListener
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        UIManager.sInstance.onHoverMove(true);
+        mHost.onHoverMove(true);
     }
 
     @Override
@@ -132,6 +152,6 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Override
     public boolean charTyped(char ch, int modifiers) {
-        return UIManager.sInstance.charTyped(ch);
+        return mHost.onCharTyped(ch);
     }
 }

@@ -51,7 +51,7 @@ import java.util.function.Consumer;
  */
 public final class MuiForgeApi {
 
-    static final CopyOnWriteArrayList<OnDisplayResizeListener> sOnDisplayResizeListeners =
+    static final CopyOnWriteArrayList<OnWindowResizeListener> sOnWindowResizeListeners =
             new CopyOnWriteArrayList<>();
     static final CopyOnWriteArrayList<OnDebugDumpListener> sOnDebugDumpListeners =
             new CopyOnWriteArrayList<>();
@@ -289,24 +289,21 @@ public final class MuiForgeApi {
      * Registers a callback to be invoked at the beginning of {@link Minecraft#resizeDisplay()}.
      *
      * @param listener the listener to register
-     * @see OnDisplayResizeListener
+     * @see OnWindowResizeListener
      */
     @OnlyIn(Dist.CLIENT)
-    public static void addOnDisplayResizeListener(@Nonnull OnDisplayResizeListener listener) {
-        // may be duplicated
-        if (!sOnDisplayResizeListeners.contains(listener)) {
-            sOnDisplayResizeListeners.add(listener);
-        }
+    public static void addOnWindowResizeListener(@Nonnull OnWindowResizeListener listener) {
+        sOnWindowResizeListeners.addIfAbsent(listener);
     }
 
     /**
-     * Remove a registered OnDisplayResizeListener.
+     * Remove a registered listener.
      *
      * @param listener the listener to unregister
      */
     @OnlyIn(Dist.CLIENT)
-    public static void removeOnDisplayResizeListener(@Nonnull OnDisplayResizeListener listener) {
-        sOnDisplayResizeListeners.remove(listener);
+    public static void removeOnWindowResizeListener(@Nonnull OnWindowResizeListener listener) {
+        sOnWindowResizeListeners.remove(listener);
     }
 
     /**
@@ -317,10 +314,7 @@ public final class MuiForgeApi {
      */
     @OnlyIn(Dist.CLIENT)
     public static void addOnDebugDumpListener(@Nonnull OnDebugDumpListener listener) {
-        // may be duplicated
-        if (!sOnDebugDumpListeners.contains(listener)) {
-            sOnDebugDumpListeners.add(listener);
-        }
+        sOnDebugDumpListeners.addIfAbsent(listener);
     }
 
     /**
@@ -334,7 +328,7 @@ public final class MuiForgeApi {
     }
 
     @FunctionalInterface
-    public interface OnDisplayResizeListener {
+    public interface OnWindowResizeListener {
 
         /**
          * Invoked at the beginning of {@link Minecraft#resizeDisplay()}.
@@ -345,7 +339,7 @@ public final class MuiForgeApi {
          * @param guiScale    the new gui scale will be applied to (not apply yet)
          * @param oldGuiScale the old gui scale, may be equal to the new gui scale
          */
-        void onDisplayResize(int width, int height, int guiScale, int oldGuiScale);
+        void onWindowResize(int width, int height, int guiScale, int oldGuiScale);
     }
 
     @FunctionalInterface

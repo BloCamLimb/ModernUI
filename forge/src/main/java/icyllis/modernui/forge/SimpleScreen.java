@@ -19,6 +19,7 @@
 package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import icyllis.modernui.fragment.Fragment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TextComponent;
@@ -26,6 +27,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Represents the GUI screen that receives events from Minecraft.
@@ -36,8 +38,16 @@ import javax.annotation.Nonnull;
 @OnlyIn(Dist.CLIENT)
 final class SimpleScreen extends Screen implements MuiScreen {
 
-    SimpleScreen() {
+    private final UIManager mHost;
+    private final Fragment mFragment;
+    @Nullable
+    private final UICallback mCallback;
+
+    SimpleScreen(UIManager host, Fragment fragment, @Nullable UICallback callback) {
         super(TextComponent.EMPTY);
+        mHost = host;
+        mFragment = fragment;
+        mCallback = callback;
     }
 
     /*@Override
@@ -50,8 +60,8 @@ final class SimpleScreen extends Screen implements MuiScreen {
     @Override
     protected void init() {
         super.init();
-        UIManager.sInstance.initScreen(this);
-        if (UIManager.sInstance.mCallback == null || UIManager.sInstance.mCallback.shouldBlurBackground()) {
+        mHost.initScreen(this);
+        if (mCallback == null || mCallback.shouldBlurBackground()) {
             BlurHandler.INSTANCE.forceBlur();
         }
     }
@@ -59,33 +69,44 @@ final class SimpleScreen extends Screen implements MuiScreen {
     @Override
     public void resize(@Nonnull Minecraft minecraft, int width, int height) {
         super.resize(minecraft, width, height);
-        UIManager.sInstance.resize();
     }
 
     @Override
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
-        if (UIManager.sInstance.mCallback == null || UIManager.sInstance.mCallback.hasDefaultBackground()) {
+        if (mCallback == null || mCallback.hasDefaultBackground()) {
             renderBackground(poseStack);
         }
-        UIManager.sInstance.render();
+        mHost.render();
     }
 
     @Override
     public void removed() {
         super.removed();
-        UIManager.sInstance.removed();
+        mHost.removed();
     }
 
     @Override
     public boolean isPauseScreen() {
-        return UIManager.sInstance.mCallback == null || UIManager.sInstance.mCallback.isPauseScreen();
+        return mCallback == null || mCallback.isPauseScreen();
+    }
+
+    @Nonnull
+    @Override
+    public Fragment getFragment() {
+        return mFragment;
+    }
+
+    @Nullable
+    @Override
+    public UICallback getCallback() {
+        return mCallback;
     }
 
     // IMPL - GuiEventListener
 
     @Override
     public void mouseMoved(double mouseX, double mouseY) {
-        UIManager.sInstance.onHoverMove(true);
+        mHost.onHoverMove(true);
     }
 
     @Override
@@ -120,6 +141,6 @@ final class SimpleScreen extends Screen implements MuiScreen {
 
     @Override
     public boolean charTyped(char ch, int modifiers) {
-        return UIManager.sInstance.charTyped(ch);
+        return mHost.onCharTyped(ch);
     }
 }
