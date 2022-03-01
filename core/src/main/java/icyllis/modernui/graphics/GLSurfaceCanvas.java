@@ -396,26 +396,34 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
-    public void draw(@Nullable GLFramebuffer framebuffer) {
+    public boolean draw(@Nullable GLFramebuffer framebuffer) {
         ArchCore.checkRenderThread();
         ArchCore.flushRenderCalls();
-        if (mDrawOps.isEmpty()) {
-            return;
-        }
-        if (getSaveCount() != 1) {
-            ModernUI.LOGGER.warn("Unbalanced save-restore pair {}", getSaveCount(), new Exception());
-        }
         if (framebuffer != null) {
-            framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).make(mWidth, mHeight, true);
-            framebuffer.getAttachment(GL_STENCIL_ATTACHMENT).make(mWidth, mHeight, true);
+            framebuffer.getAttachment(GL_STENCIL_ATTACHMENT)
+                    .make(mWidth, mHeight, true);
+
+            framebuffer.getAttachment(GL_COLOR_ATTACHMENT0)
+                    .make(mWidth, mHeight, true);
 
             // there's a bug on NVIDIA driver with DSA, allocate them always
-            framebuffer.getAttachment(GL_COLOR_ATTACHMENT1).make(mWidth, mHeight, true);
-            framebuffer.getAttachment(GL_COLOR_ATTACHMENT2).make(mWidth, mHeight, true);
-            framebuffer.getAttachment(GL_COLOR_ATTACHMENT3).make(mWidth, mHeight, true);
+            framebuffer.getAttachment(GL_COLOR_ATTACHMENT1)
+                    .make(mWidth, mHeight, true);
+            framebuffer.getAttachment(GL_COLOR_ATTACHMENT2)
+                    .make(mWidth, mHeight, true);
+            framebuffer.getAttachment(GL_COLOR_ATTACHMENT3)
+                    .make(mWidth, mHeight, true);
 
             framebuffer.clearColorBuffer();
             framebuffer.clearDepthStencilBuffer();
+        }
+        if (mDrawOps.isEmpty()) {
+            return false;
+        }
+        if (getSaveCount() != 1) {
+            throw new IllegalStateException("Unbalanced save-restore pair: " + getSaveCount());
+        }
+        if (framebuffer != null) {
             framebuffer.bindDraw();
         }
 
@@ -652,6 +660,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mLayerAlphas.clear();
         mDrawTexts.clear();
         mUniformMemory.clear();
+        return true;
     }
 
     @RenderThread

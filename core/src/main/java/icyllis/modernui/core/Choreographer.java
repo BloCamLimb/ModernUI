@@ -23,10 +23,14 @@ import icyllis.modernui.animation.ValueAnimator;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.view.View;
+import org.apache.logging.log4j.Marker;
+import org.apache.logging.log4j.MarkerManager;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import static icyllis.modernui.ModernUI.LOGGER;
 
 /**
  * Coordinates the timing of animations, input and drawing.
@@ -72,6 +76,11 @@ import javax.annotation.Nullable;
 //TODO not stable, consider swap-chain? when to schedule?
 @ApiStatus.Internal
 public final class Choreographer {
+
+    private static final Marker MARKER = MarkerManager.getMarker("Choreographer");
+
+    // Prints debug messages about every frame and callback registered (high volume).
+    private static final boolean DEBUG_FRAMES = false;
 
     // Thread local storage for the choreographer.
     private static final ThreadLocal<Choreographer> sThreadInstance = ThreadLocal.withInitial(() -> {
@@ -195,6 +204,12 @@ public final class Choreographer {
 
     private void postCallbackDelayedInternal(int callbackType, @Nonnull Object action, @Nullable Object token,
                                              long delayMillis) {
+        if (DEBUG_FRAMES) {
+            LOGGER.info(MARKER, "PostCallback: type=" + callbackType
+                    + ", action=" + action + ", token=" + token
+                    + ", delayMillis=" + delayMillis);
+        }
+
         synchronized (mLock) {
             final long now = ArchCore.timeMillis();
             final long dueTime = now + delayMillis;
@@ -227,6 +242,11 @@ public final class Choreographer {
     }
 
     private void removeCallbacksInternal(int callbackType, @Nullable Object action, @Nullable Object token) {
+        if (DEBUG_FRAMES) {
+            LOGGER.info(MARKER, "RemoveCallbacks: type=" + callbackType
+                    + ", action=" + action + ", token=" + token);
+        }
+
         synchronized (mLock) {
             mCallbackQueues[callbackType].removeCallbacksLocked(action, token);
             if (action != null && token == null) {
@@ -347,9 +367,14 @@ public final class Choreographer {
                 timestampNanos = now;
             }
             mTimestampNanos = timestampNanos;
+
+            final long nextFrameTime = timestampNanos / 1000000;
+            if (DEBUG_FRAMES) {
+                LOGGER.info(MARKER, "Scheduling next frame in " + (nextFrameTime - now) + " ms.");
+            }
             Message msg = mHandler.obtainMessage(MSG_DO_FRAME);
             msg.setAsynchronous(true);
-            mHandler.sendMessageAtTime(msg, timestampNanos / 1000000);
+            mHandler.sendMessageAtTime(msg, nextFrameTime);
         }
     }
 
@@ -361,12 +386,15 @@ public final class Choreographer {
 
     void doFrame() {
         final long frameTimeNanos = mTimestampNanos;
+        final long startNanos;
         try {
             synchronized (mLock) {
                 if (!mFrameScheduled) {
                     // nothing to do
                     return;
                 }
+
+                startNanos = ArchCore.timeNanos();
 
                 if (frameTimeNanos < mLastFrameTimeNanos) {
                     // should not happen
@@ -389,6 +417,13 @@ public final class Choreographer {
         } finally {
             AnimationUtils.unlockAnimationClock();
         }
+
+        if (DEBUG_FRAMES) {
+            final long endNanos = System.nanoTime();
+            LOGGER.info(MARKER, "Frame : Finished, took "
+                    + (endNanos - startNanos) * 0.000001f + " ms, latency "
+                    + (startNanos - frameTimeNanos) * 0.000001f + " ms.");
+        }
     }
 
     void doCallbacks(int callbackType, long frameTimeNanos) {
@@ -406,6 +441,11 @@ public final class Choreographer {
         }
         try {
             for (CallbackRecord c = callbacks; c != null; c = c.next) {
+                if (DEBUG_FRAMES) {
+                    LOGGER.info(MARKER, "RunCallback: type=" + callbackType
+                            + ", action=" + c.action + ", token=" + c.token
+                            + ", latencyMillis=" + (ArchCore.timeMillis() - c.dueTime));
+                }
                 c.run(frameTimeNanos);
             }
         } finally {
