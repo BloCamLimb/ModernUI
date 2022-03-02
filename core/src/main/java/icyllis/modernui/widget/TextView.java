@@ -65,10 +65,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     /**
      * @see #onTextContextMenuItem(int)
      */
-    public static final int ID_CUT = 1;
-    public static final int ID_COPY = 2;
-    public static final int ID_PASTE = 3;
-    public static final int ID_SELECT_ALL = 4;
+    static final int ID_SELECT_ALL = R.id.selectAll;
+    static final int ID_UNDO = R.id.undo;
+    static final int ID_REDO = R.id.redo;
+    static final int ID_CUT = R.id.cut;
+    static final int ID_COPY = R.id.copy;
+    static final int ID_PASTE = R.id.paste;
 
     @VisibleForTesting
     public static final BoringLayout.Metrics UNKNOWN_BORING = new BoringLayout.Metrics();
@@ -3501,7 +3503,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         final int selectionStart = getSelectionStart();
         final int selectionEnd = getSelectionEnd();
 
-        return selectionStart >= 0 && selectionEnd > 0 && selectionStart != selectionEnd;
+        // Fixed by Modern UI
+        return selectionStart >= 0 && selectionEnd >= 0 && selectionStart != selectionEnd;
     }
 
     /**
@@ -3857,6 +3860,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     @Override
     protected void onFocusChanged(boolean focused, int direction) {
+        if (isTemporarilyDetached()) {
+            // If we are temporarily in the detach state, then do nothing.
+            super.onFocusChanged(focused, direction);
+            return;
+        }
+
         if (mEditor != null) {
             mEditor.onFocusChanged(focused, direction);
         }
@@ -3932,6 +3941,21 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             }
         }
         return super.onGenericMotionEvent(event);
+    }
+
+    @Override
+    protected void onCreateContextMenu(@Nonnull ContextMenu menu) {
+        if (mEditor != null) {
+            mEditor.onCreateContextMenu(menu);
+        }
+    }
+
+    @Override
+    public boolean showContextMenu(float x, float y) {
+        if (mEditor != null) {
+            mEditor.setContextMenuAnchor(x, y);
+        }
+        return super.showContextMenu(x, y);
     }
 
     /**
@@ -4170,8 +4194,8 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
 
     /**
      * Called when a context menu option for the text view is selected.  Currently,
-     * this will be one of {@link #ID_CUT}, {@link #ID_COPY}, {@link #ID_PASTE} or
-     * {@link #ID_SELECT_ALL}.
+     * this will be one of {@link R.id#selectAll}, {@link R.id#cut},
+     * {@link R.id#copy}, {@link R.id#paste}.
      *
      * @return true if the context menu item action was performed.
      */
@@ -4179,7 +4203,12 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         int min = 0;
         int max = mText.length();
 
-        if (isFocused()) {
+        //FIXME a view tree has only one focus, but we don't want to unfocus this,
+        // popup window may have a focus
+        if (!isFocused()) {
+            requestFocus();
+        }
+        {
             final int selStart = getSelectionStart();
             final int selEnd = getSelectionEnd();
 

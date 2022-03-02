@@ -1718,13 +1718,13 @@ public class PopupWindow {
                 dismiss();
                 return true;
             }
-            return !mTouchable && !mNotTouchModal;
+            return false;
         }
 
         @Override
         public boolean onTouchEvent(@Nonnull CoordinatorLayout parent, @Nonnull DecorView child,
                                     @Nonnull MotionEvent ev) {
-            return child.dispatchTouchEvent(ev);
+            return false;
         }
     }
 

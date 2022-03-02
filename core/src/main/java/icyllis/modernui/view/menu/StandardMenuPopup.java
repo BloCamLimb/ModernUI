@@ -120,7 +120,7 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
             @Override
             public void draw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.take();
-                paint.setColor(0xff303030);
+                paint.setColor(0xec303030);
                 Rect b = getBounds();
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, mRadius, paint);
             }
@@ -134,6 +134,7 @@ public class StandardMenuPopup extends MenuPopup implements PopupWindow.OnDismis
         });
         mPopup.setEnterTransition(new AutoTransition());
         mPopup.setExitTransition(new AutoTransition());
+        mPopup.setOverlapAnchor(true);
 
         // Present the menu using our context, not the menu builder's context.
         menu.addMenuPresenter(this);

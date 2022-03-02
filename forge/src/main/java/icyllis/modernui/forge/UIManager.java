@@ -582,7 +582,7 @@ public final class UIManager implements LifecycleOwner {
             return;
         }
         switch (event.getKey()) {
-            case GLFW_KEY_C:
+            case GLFW_KEY_Y:
                 // take a screenshot from MSAA framebuffer
                 GLTexture sampled = GLFramebuffer.swap(mFramebuffer, GL_COLOR_ATTACHMENT0);
                 NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);

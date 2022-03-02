@@ -76,9 +76,47 @@ public final class R {
 
     public static final class id {
 
+        public static final int background = 0x01020000;
+        public static final int checkbox = 0x01020001;
         public static final int content = 0x01020002;
+        public static final int edit = 0x01020003;
+        public static final int empty = 0x01020004;
+        public static final int hint = 0x01020005;
+
+        public static final int input = 0x01020009;
 
         public static final int title = 0x01020016;
+        public static final int toggle = 0x01020017;
+
+        public static final int button1 = 0x01020019;
+        public static final int button2 = 0x0102001a;
+        public static final int button3 = 0x0102001b;
+
+        /**
+         * Context menu ID for the "Select All" menu item to select all text in a text view.
+         */
+        public static final int selectAll = 0x0102001f;
+
+        /**
+         * Context menu ID for the "Cut" menu item to copy and delete the currently selected
+         * (or all) text in a text view to the clipboard.
+         */
+        public static final int cut = 0x01020020;
+
+        /**
+         * Context menu ID for the "Copy" menu item to copy the currently selected (or all)
+         * text in a text view to the clipboard.
+         */
+        public static final int copy = 0x01020021;
+
+        /**
+         * Context menu ID for the "Paste" menu item to copy the current contents of the
+         * clipboard into the text view.
+         */
+        public static final int paste = 0x01020022;
+
+        public static final int undo = 0x01020032;
+        public static final int redo = 0x01020033;
 
         /// INTERNAL BELOW \\\
 
