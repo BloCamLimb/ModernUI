@@ -314,7 +314,7 @@ public final class GLFramebuffer extends GLObject {
         @Override
         public boolean make(int width, int height, boolean exactly) {
             if (width <= 0 || height <= 0) {
-                throw new IllegalArgumentException("Negative size");
+                return false;
             }
             if (exactly ? mWidth != width || mHeight != height :
                     mWidth < width || mHeight < height) {
@@ -355,7 +355,7 @@ public final class GLFramebuffer extends GLObject {
         @Override
         public boolean make(int width, int height, boolean exactly) {
             if (width <= 0 || height <= 0) {
-                throw new IllegalArgumentException("Negative size");
+                return false;
             }
             if (exactly ? mWidth != width || mHeight != height :
                     mWidth < width || mHeight < height) {

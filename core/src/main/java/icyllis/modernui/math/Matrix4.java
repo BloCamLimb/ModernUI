@@ -876,20 +876,20 @@ public class Matrix4 implements Cloneable {
         // calc algebraic cofactor and transpose cofactor matrix
         final float s = 1.0f / det;
         out.m11 = (m22 * l - m23 * k + m24 * j) * s;
-        out.m12 = (-m21 * l + m23 * i - m24 * h) * s;
-        out.m13 = (m21 * k - m22 * i + m24 * g) * s;
-        out.m14 = (-m21 * j + m22 * h - m23 * g) * s;
-        out.m21 = (-m12 * l + m13 * k - m14 * j) * s;
+        out.m21 = (-m21 * l + m23 * i - m24 * h) * s;
+        out.m31 = (m21 * k - m22 * i + m24 * g) * s;
+        out.m41 = (-m21 * j + m22 * h - m23 * g) * s;
+        out.m12 = (-m12 * l + m13 * k - m14 * j) * s;
         out.m22 = (m11 * l - m13 * i + m14 * h) * s;
-        out.m23 = (-m11 * k + m12 * i - m14 * g) * s;
-        out.m24 = (m11 * j - m12 * h + m13 * g) * s;
-        out.m31 = (m42 * f - m43 * e + m44 * d) * s;
-        out.m32 = (-m41 * f + m43 * c - m44 * b) * s;
+        out.m32 = (-m11 * k + m12 * i - m14 * g) * s;
+        out.m42 = (m11 * j - m12 * h + m13 * g) * s;
+        out.m13 = (m42 * f - m43 * e + m44 * d) * s;
+        out.m23 = (-m41 * f + m43 * c - m44 * b) * s;
         out.m33 = (m41 * e - m42 * c + m44 * a) * s;
-        out.m34 = (-m41 * d + m42 * b - m43 * a) * s;
-        out.m41 = (-m32 * f + m33 * e - m34 * d) * s;
-        out.m42 = (m31 * f - m33 * c + m34 * b) * s;
-        out.m43 = (-m31 * e + m32 * c - m34 * a) * s;
+        out.m43 = (-m41 * d + m42 * b - m43 * a) * s;
+        out.m14 = (-m32 * f + m33 * e - m34 * d) * s;
+        out.m24 = (m31 * f - m33 * c + m34 * b) * s;
+        out.m34 = (-m31 * e + m32 * c - m34 * a) * s;
         out.m44 = (m31 * d - m32 * b + m33 * a) * s;
         return true;
     }

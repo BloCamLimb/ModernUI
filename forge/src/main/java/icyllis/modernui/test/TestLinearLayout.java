@@ -35,17 +35,10 @@ import icyllis.modernui.text.style.StyleSpan;
 import icyllis.modernui.text.style.UnderlineSpan;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.*;
-import icyllis.modernui.view.Menu;
-import icyllis.modernui.view.MenuItem;
 import icyllis.modernui.widget.*;
 
 import javax.annotation.Nonnull;
-
-import java.awt.*;
 import java.util.ArrayList;
-import java.util.List;
-
-import static icyllis.modernui.ModernUI.LOGGER;
 
 public class TestLinearLayout extends LinearLayout {
 
