@@ -171,6 +171,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         POS_COLOR = new VertexFormat(POS, COLOR);
         POS_COLOR_TEX = new VertexFormat(POS, COLOR, UV);
         POS_TEX = new VertexFormat(POS, UV);
+
+        ShaderManager.getInstance().addListener(GLSurfaceCanvas::onLoadShaders);
     }
 
     // recorded operations
@@ -233,7 +235,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final FloatBuffer mProjectionUpload = memAllocFloat(16);
 
     @RenderThread
-    private GLSurfaceCanvas() {
+    public GLSurfaceCanvas() {
         /*mProjectionUBO = glCreateBuffers();
         glNamedBufferStorage(mProjectionUBO, PROJECTION_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);
 
@@ -280,7 +282,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         mSaves.push(new Save());
 
-        ShaderManager.getInstance().addListener(this::onLoadShaders);
+        ModernUI.LOGGER.info(MARKER, "A new OpenGL surface canvas created");
     }
 
     @RenderThread
@@ -290,7 +292,6 @@ public final class GLSurfaceCanvas extends GLCanvas {
             sInstance = new GLSurfaceCanvas();
             /*POS_COLOR.setBindingDivisor(INSTANCED_BINDING, 1);
             POS_COLOR_TEX.setBindingDivisor(INSTANCED_BINDING, 1);*/
-            ModernUI.LOGGER.info(MARKER, "OpenGL surface canvas initialized");
         }
         return sInstance;
     }
@@ -304,7 +305,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         return sInstance;
     }
 
-    private void onLoadShaders(@Nonnull ShaderManager manager) {
+    private static void onLoadShaders(@Nonnull ShaderManager manager) {
         int posColor = manager.getShard(ModernUI.ID, "pos_color.vert");
         int posColorTex = manager.getShard(ModernUI.ID, "pos_color_tex.vert");
         int posTex = manager.getShard(ModernUI.ID, "pos_tex.vert");
@@ -400,19 +401,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         ArchCore.checkRenderThread();
         ArchCore.flushRenderCalls();
         if (framebuffer != null) {
-            framebuffer.getAttachment(GL_STENCIL_ATTACHMENT)
-                    .make(mWidth, mHeight, true);
-
-            framebuffer.getAttachment(GL_COLOR_ATTACHMENT0)
-                    .make(mWidth, mHeight, true);
-
             // there's a bug on NVIDIA driver with DSA, allocate them always
-            framebuffer.getAttachment(GL_COLOR_ATTACHMENT1)
-                    .make(mWidth, mHeight, true);
-            framebuffer.getAttachment(GL_COLOR_ATTACHMENT2)
-                    .make(mWidth, mHeight, true);
-            framebuffer.getAttachment(GL_COLOR_ATTACHMENT3)
-                    .make(mWidth, mHeight, true);
+            framebuffer.makeBuffers(mWidth, mHeight, true);
 
             framebuffer.clearColorBuffer();
             framebuffer.clearDepthStencilBuffer();

@@ -62,7 +62,7 @@ public final class GLFramebuffer extends GLObject {
     private final int mSamples;
 
     @Nullable
-    private Int2ObjectMap<Attachment> mAttachments;
+    private Int2ObjectArrayMap<Attachment> mAttachments;
 
     /**
      * Creates a framebuffer.
@@ -242,6 +242,15 @@ public final class GLFramebuffer extends GLObject {
             }
         }
         throw new IllegalStateException("No attachment " + attachmentPoint);
+    }
+
+    public void makeBuffers(int width, int height, boolean exactly) {
+        if (mAttachments == null) {
+            return;
+        }
+        for (Attachment attachment : mAttachments.values()) {
+            attachment.make(width, height, exactly);
+        }
     }
 
     @Override

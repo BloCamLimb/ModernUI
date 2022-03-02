@@ -40,6 +40,7 @@ import java.util.concurrent.locks.LockSupport;
 public final class MessageQueue {
 
     private static final Marker MARKER = MarkerManager.getMarker("MessageQueue");
+    private static final boolean DEBUG = false;
 
     private final MainWindow mWindow;
     private final Thread mThread;
@@ -194,6 +195,7 @@ public final class MessageQueue {
                             mMessages = msg.next;
                         }
                         msg.next = null;
+                        if (DEBUG) ModernUI.LOGGER.info(MARKER, "Returning message: " + msg);
                         msg.markInUse();
                         return msg;
                     }

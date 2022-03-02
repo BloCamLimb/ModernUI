@@ -325,6 +325,8 @@ public final class UIManager implements LifecycleOwner {
             mRoot.mHandler.post(this::restoreLayoutTransition);
         }
         mScreen = screen;
+        // ensure it's resized
+        resize();
     }
 
     @UiThread
@@ -606,11 +608,7 @@ public final class UIManager implements LifecycleOwner {
                 break;
 
             case GLFW_KEY_N:
-                mRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_RTL));
-                break;
-
-            case GLFW_KEY_M:
-                mRoot.mHandler.post(() -> mDecor.setLayoutDirection(View.LAYOUT_DIRECTION_INHERIT));
+                mDecor.postInvalidate();
                 break;
 
             case GLFW_KEY_P:
@@ -801,7 +799,7 @@ public final class UIManager implements LifecycleOwner {
         }
         mDecor.setLayoutDirection(
                 Config.CLIENT.forceRtl.get() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
-        mDecor.forceLayout();
+        mDecor.requestLayout();
     }
 
     @MainThread

@@ -23,7 +23,6 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.text.FontAtlas;
 import icyllis.modernui.text.GlyphManager;
-import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.Util;
 import net.minecraft.client.gui.screens.ChatScreen;

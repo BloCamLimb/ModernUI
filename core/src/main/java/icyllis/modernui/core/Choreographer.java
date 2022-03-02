@@ -368,13 +368,12 @@ public final class Choreographer {
             }
             mTimestampNanos = timestampNanos;
 
-            final long nextFrameTime = timestampNanos / 1000000;
             if (DEBUG_FRAMES) {
-                LOGGER.info(MARKER, "Scheduling next frame in " + (nextFrameTime - now) + " ms.");
+                LOGGER.info(MARKER, "Scheduling next frame in " + (timestampNanos - now) / 1000000 + " ms.");
             }
             Message msg = mHandler.obtainMessage(MSG_DO_FRAME);
             msg.setAsynchronous(true);
-            mHandler.sendMessageAtTime(msg, nextFrameTime);
+            mHandler.sendMessageAtTime(msg, timestampNanos / 1000000);
         }
     }
 
@@ -419,7 +418,7 @@ public final class Choreographer {
         }
 
         if (DEBUG_FRAMES) {
-            final long endNanos = System.nanoTime();
+            final long endNanos = ArchCore.timeNanos();
             LOGGER.info(MARKER, "Frame : Finished, took "
                     + (endNanos - startNanos) * 0.000001f + " ms, latency "
                     + (startNanos - frameTimeNanos) * 0.000001f + " ms.");

@@ -19,6 +19,7 @@
 package icyllis.modernui.core;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * Defines a message containing a description and arbitrary data object that can be
@@ -397,7 +398,7 @@ public final class Message {
             }
 
             b.append(" target=");
-            b.append(target.getClass().getName());
+            b.append(Objects.requireNonNullElse(target.mCallback, target).getClass().getName());
         } else {
             b.append(" barrier=");
             b.append(arg1);

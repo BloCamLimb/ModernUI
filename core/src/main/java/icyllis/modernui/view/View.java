@@ -2653,8 +2653,50 @@ public class View implements Drawable.Callback {
             }
         }
 
+        final boolean wasLayoutValid = isLayoutValid();
+
         mPrivateFlags &= ~PFLAG_FORCE_LAYOUT;
         mPrivateFlags3 |= PFLAG3_IS_LAID_OUT;
+
+        if (!wasLayoutValid && isFocused()) {
+            mPrivateFlags &= ~PFLAG_WANTS_FOCUS;
+            if (canTakeFocus()) {
+                // We have a robust focus, so parents should no longer be wanting focus.
+                clearParentsWantFocus();
+            } else if (getViewRoot() == null || !getViewRoot().isInLayout()) {
+                // This is a weird case. Most-likely the user, rather than ViewRootImpl, called
+                // layout. In this case, there's no guarantee that parent layouts will be evaluated
+                // and thus the safest action is to clear focus here.
+                clearFocusInternal(true);
+                clearParentsWantFocus();
+            } else if (hasNoParentWantsFocus()) {
+                // original requestFocus was likely on this view directly, so just clear focus
+                clearFocusInternal(true);
+            }
+            // otherwise, we let parents handle re-assigning focus during their layout passes.
+        } else if ((mPrivateFlags & PFLAG_WANTS_FOCUS) != 0) {
+            mPrivateFlags &= ~PFLAG_WANTS_FOCUS;
+            View focused = findFocus();
+            if (focused != null) {
+                // Try to restore focus as close as possible to our starting focus.
+                if (!restoreDefaultFocus() && hasNoParentWantsFocus()) {
+                    // Give up and clear focus once we've reached the top-most parent which wants
+                    // focus.
+                    focused.clearFocusInternal(true);
+                }
+            }
+        }
+    }
+
+    private boolean hasNoParentWantsFocus() {
+        ViewParent parent = mParent;
+        while (parent instanceof ViewGroup pv) {
+            if ((pv.mPrivateFlags & PFLAG_WANTS_FOCUS) != 0) {
+                return false;
+            }
+            parent = pv.mParent;
+        }
+        return true;
     }
 
     /**
@@ -2724,6 +2766,7 @@ public class View implements Drawable.Callback {
             if (mForegroundInfo != null) {
                 mForegroundInfo.mBoundsChanged = true;
             }
+
             return true;
         }
         return false;
@@ -2922,6 +2965,10 @@ public class View implements Drawable.Callback {
      */
     public void setLayoutParams(@Nonnull ViewGroup.LayoutParams params) {
         mLayoutParams = params;
+        resolveLayoutParams();
+        if (mParent instanceof ViewGroup) {
+            ((View) mParent).requestLayout();
+        }
         requestLayout();
     }
 
@@ -6252,9 +6299,9 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Utility method to retrieve the inverse of the current mMatrix property.
-     * We cache the matrix to avoid recalculating it when transform properties
-     * have not changed.
+     * Utility method to retrieve the inverse of the current matrix property.
+     * Note that the matrix should be only used as read-only (like transforming
+     * coordinates).
      *
      * @return The inverse of the current matrix of this view, may be null if identity
      * @see #hasIdentityMatrix()

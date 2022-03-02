@@ -674,9 +674,11 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
      */
     @Override
     public void requestLayout() {
-        ArchCore.checkUiThread();
-        mLayoutRequested = true;
-        scheduleTraversals();
+        if (!mHandlingLayoutInLayoutRequest) {
+            ArchCore.checkUiThread();
+            mLayoutRequested = true;
+            scheduleTraversals();
+        }
     }
 
     @Override
