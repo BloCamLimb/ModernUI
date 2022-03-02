@@ -25,6 +25,8 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.util.ColorStateList;
+import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
@@ -41,6 +43,15 @@ import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
  * The item view for each item in the ListView-based MenuViews.
  */
 public class ListMenuItemView extends LinearLayout implements MenuView.ItemView, AbsListView.SelectionBoundsAdjuster {
+
+    private static final ColorStateList TEXT_COLOR = new ColorStateList(
+            new int[][]{
+                    StateSet.get(StateSet.VIEW_STATE_ENABLED),
+                    StateSet.WILD_CARD
+            }, new int[]{
+            0xFFFFFFFF,
+            0xFF808080
+    });
 
     private MenuItemImpl mItemData;
 
@@ -86,6 +97,7 @@ public class ListMenuItemView extends LinearLayout implements MenuView.ItemView,
                 mTitleView = new TextView();
                 mTitleView.setId(R.id.title);
                 mTitleView.setTextSize(16);
+                mTitleView.setTextColor(TEXT_COLOR);
                 mTitleView.setSingleLine();
                 mTitleView.setDuplicateParentStateEnabled(true);
                 mTitleView.setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
