@@ -367,11 +367,5 @@ public class FrameLayout extends ViewGroup {
 
             gravity = source.gravity;
         }
-
-        @Nonnull
-        @Override
-        public LayoutParams copy() {
-            return new LayoutParams(this);
-        }
     }
 }

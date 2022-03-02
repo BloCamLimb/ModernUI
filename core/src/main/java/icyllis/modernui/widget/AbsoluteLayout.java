@@ -163,11 +163,5 @@ public class AbsoluteLayout extends ViewGroup {
             this.x = source.x;
             this.y = source.y;
         }
-
-        @Nonnull
-        @Override
-        public LayoutParams copy() {
-            return new LayoutParams(this);
-        }
     }
 }

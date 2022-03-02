@@ -19,7 +19,7 @@ license="Multi-licensing, see https://github.com/BloCamLimb/ModernUI for details
 [[dependencies.modernui]]
     modId="forge"
     mandatory=true
-    versionRange="[39.0.5,)"
+    versionRange="[39.1.2,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.modernui]]

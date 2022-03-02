@@ -1767,11 +1767,5 @@ public class LinearLayout extends ViewGroup {
             this.weight = source.weight;
             this.gravity = source.gravity;
         }
-
-        @Nonnull
-        @Override
-        public LayoutParams copy() {
-            return new LayoutParams(this);
-        }
     }
 }

@@ -934,6 +934,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     /**
      * Changes whether or not this ViewGroup should be treated as a single entity during
      * Activity Transitions.
+     *
      * @param isTransitionGroup Whether or not the ViewGroup should be treated as a unit
      *                          in Activity transitions. If false, the ViewGroup won't transition,
      *                          only its children. If true, the entire ViewGroup will transition
@@ -1726,11 +1727,11 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             view.dispatchDetachedFromWindow();
         }
 
-        /*if (view.hasTransientState()) {
+        if (view.hasTransientState()) {
             childHasTransientStateChanged(view, false);
         }
 
-        needGlobalAttributesUpdate(false);*/
+        //needGlobalAttributesUpdate(false);
 
         removeFromArray(index);
 
@@ -3969,16 +3970,6 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
          */
         public void resolveLayoutDirection(int layoutDirection) {
         }
-
-        /**
-         * Create a new object copied from this params
-         *
-         * @return copied layout params
-         */
-        @Nonnull
-        public LayoutParams copy() {
-            return new LayoutParams(this);
-        }
     }
 
     /**
@@ -4308,12 +4299,6 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
          */
         public boolean isLayoutRtl() {
             return ((mMarginFlags & LAYOUT_DIRECTION_MASK) == View.LAYOUT_DIRECTION_RTL);
-        }
-
-        @Nonnull
-        @Override
-        public MarginLayoutParams copy() {
-            return new MarginLayoutParams(this);
         }
     }
 

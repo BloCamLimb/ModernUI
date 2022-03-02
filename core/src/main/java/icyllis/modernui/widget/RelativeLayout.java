@@ -18,8 +18,8 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.util.ArrayMap;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.util.SparseArray;
@@ -191,6 +191,11 @@ public class RelativeLayout extends ViewGroup {
     private static final int DEFAULT_WIDTH = 0x00010000;
 
     public RelativeLayout() {
+    }
+
+    @Override
+    public boolean shouldDelayChildPressedState() {
+        return false;
     }
 
     /**
@@ -565,10 +570,10 @@ public class RelativeLayout extends ViewGroup {
      *
      * @param child    Child to measure
      * @param params   LayoutParams associated with child
-     * @param myWidth  Width of the the RelativeLayout
+     * @param myWidth  Width of the RelativeLayout
      * @param myHeight Height of the RelativeLayout
      */
-    private void measureChild(View child, LayoutParams params, int myWidth, int myHeight) {
+    private void measureChild(@Nonnull View child, @Nonnull LayoutParams params, int myWidth, int myHeight) {
         int childWidthMeasureSpec = getChildMeasureSpec(params.mLeft,
                 params.mRight, params.width,
                 params.leftMargin, params.rightMargin,
@@ -603,6 +608,7 @@ public class RelativeLayout extends ViewGroup {
         } else {
             final int maxHeight = Math.max(0, myHeight - mPaddingTop - mPaddingBottom
                     - params.topMargin - params.bottomMargin);
+
             final int heightMode;
             if (params.height == LayoutParams.MATCH_PARENT) {
                 heightMode = MeasureSpec.EXACTLY;
@@ -634,8 +640,8 @@ public class RelativeLayout extends ViewGroup {
     private int getChildMeasureSpec(int childStart, int childEnd,
                                     int childSize, int startMargin, int endMargin, int startPadding,
                                     int endPadding, int mySize) {
-        int childSpecMode = MeasureSpec.UNSPECIFIED;
-        int childSpecSize = 0;
+        int childSpecMode;
+        int childSpecSize;
 
         // Negative values in a mySize value in RelativeLayout
         // measurement is code for, "we got an unspecified mode in the
@@ -650,8 +656,11 @@ public class RelativeLayout extends ViewGroup {
                 // The child specified an exact size.
                 childSpecSize = childSize;
                 childSpecMode = MeasureSpec.EXACTLY;
-            } // else
-            // Allow the child to be whatever size it wants.
+            } else {
+                // Allow the child to be whatever size it wants.
+                childSpecSize = 0;
+                childSpecMode = MeasureSpec.UNSPECIFIED;
+            }
 
             return MeasureSpec.makeMeasureSpec(childSpecSize, childSpecMode);
         }
@@ -700,9 +709,16 @@ public class RelativeLayout extends ViewGroup {
                     // We have a maximum size in this dimension.
                     childSpecMode = MeasureSpec.AT_MOST;
                     childSpecSize = maxAvailable;
-                } // else
-                // We can grow in this dimension. Child can be as big as it
-                // wants.
+                } else {
+                    // We can grow in this dimension. Child can be as big as it
+                    // wants.
+                    childSpecMode = MeasureSpec.UNSPECIFIED;
+                    childSpecSize = 0;
+                }
+            } else {
+                // Should not happen
+                childSpecMode = MeasureSpec.UNSPECIFIED;
+                childSpecSize = 0;
             }
         }
 
@@ -778,7 +794,7 @@ public class RelativeLayout extends ViewGroup {
         return rules[ALIGN_PARENT_BOTTOM] != 0;
     }
 
-    private void applyHorizontalSizeRules(@Nonnull LayoutParams childParams, int myWidth, int[] rules) {
+    private void applyHorizontalSizeRules(LayoutParams childParams, int myWidth, int[] rules) {
         RelativeLayout.LayoutParams anchorParams;
 
         // VALUE_NOT_SET indicates a "soft requirement" in that direction. For example:
@@ -835,7 +851,7 @@ public class RelativeLayout extends ViewGroup {
         }
     }
 
-    private void applyVerticalSizeRules(@Nonnull LayoutParams childParams, int myHeight, int myBaseline) {
+    private void applyVerticalSizeRules(LayoutParams childParams, int myHeight, int myBaseline) {
         final int[] rules = childParams.getRules();
 
         // Baseline alignment overrides any explicitly specified top or bottom.
@@ -900,7 +916,7 @@ public class RelativeLayout extends ViewGroup {
     }
 
     @Nullable
-    private View getRelatedView(@Nonnull int[] rules, int relation) {
+    private View getRelatedView(int[] rules, int relation) {
         int id = rules[relation];
         if (id != 0) {
             DependencyGraph.Node node = mGraph.mKeyNodes.get(id);
@@ -949,7 +965,7 @@ public class RelativeLayout extends ViewGroup {
         return -1;
     }
 
-    private static void centerHorizontal(@Nonnull View child, @Nonnull LayoutParams params, int myWidth) {
+    private static void centerHorizontal(View child, LayoutParams params, int myWidth) {
         int childWidth = child.getMeasuredWidth();
         int left = (myWidth - childWidth) / 2;
 
@@ -957,7 +973,7 @@ public class RelativeLayout extends ViewGroup {
         params.mRight = left + childWidth;
     }
 
-    private static void centerVertical(@Nonnull View child, @Nonnull LayoutParams params, int myHeight) {
+    private static void centerVertical(View child, LayoutParams params, int myHeight) {
         int childHeight = child.getMeasuredHeight();
         int top = (myHeight - childHeight) / 2;
 
@@ -1019,7 +1035,7 @@ public class RelativeLayout extends ViewGroup {
         private final int[] mRules = new int[VERB_COUNT];
         private final int[] mInitialRules = new int[VERB_COUNT];
 
-        // cached layout information
+        // cached layout positions
         private transient int mLeft;
         private transient int mTop;
         private transient int mRight;
@@ -1031,7 +1047,7 @@ public class RelativeLayout extends ViewGroup {
          */
         private boolean mNeedsLayoutResolution;
 
-        private boolean mRulesChanged;
+        private boolean mRulesChanged = false;
 
         /**
          * When true, uses the parent as the anchor if the anchor doesn't exist or if
@@ -1171,16 +1187,10 @@ public class RelativeLayout extends ViewGroup {
                     || rule == ALIGN_PARENT_START || rule == ALIGN_PARENT_END;
         }
 
-        // The way we are resolving rules depends on the layout direction and if we are pre JB MR1
-        // or not.
+        // The way we are resolving rules depends on the layout direction.
         //
-        // If we are pre JB MR1 (said as "RTL compatibility mode"), "left"/"right" rules are having
-        // predominance over any "start/end" rules that could have been defined. A special case:
-        // if no "left"/"right" rule has been defined and "start"/"end" rules are defined then we
-        // resolve those "start"/"end" rules to "left"/"right" respectively.
-        //
-        // If we are JB MR1+, then "start"/"end" rules are having predominance over "left"/"right"
-        // rules. If no "start"/"end" rule is defined then we use "left"/"right" rules.
+        // "start"/"end" rules are having predominance over "left"/"right" rules.
+        // If no "start"/"end" rule is defined then we use "left"/"right" rules.
         //
         // In all cases, the result of the resolution should clear the "start"/"end" rules to leave
         // only the "left"/"right" rules at the end.
@@ -1190,113 +1200,56 @@ public class RelativeLayout extends ViewGroup {
             // Reset to initial state
             System.arraycopy(mInitialRules, LEFT_OF, mRules, LEFT_OF, VERB_COUNT);
 
-            // Apply rules depending on direction and if we are in RTL compatibility mode
-            if (!ModernUI.getInstance().hasRtlSupport()) {
-                if (mRules[ALIGN_START] != 0) {
-                    if (mRules[ALIGN_LEFT] == 0) {
-                        // "left" rule is not defined but "start" rule is: use the "start" rule as
-                        // the "left" rule
-                        mRules[ALIGN_LEFT] = mRules[ALIGN_START];
-                    }
-                    mRules[ALIGN_START] = 0;
-                }
+            // Apply rules depending on direction
+            if ((mRules[ALIGN_START] != 0 || mRules[ALIGN_END] != 0) &&
+                    (mRules[ALIGN_LEFT] != 0 || mRules[ALIGN_RIGHT] != 0)) {
+                // "start"/"end" rules take precedence over "left"/"right" rules
+                mRules[ALIGN_LEFT] = 0;
+                mRules[ALIGN_RIGHT] = 0;
+            }
+            if (mRules[ALIGN_START] != 0) {
+                // "start" rule resolved to "left" or "right" depending on the direction
+                mRules[isLayoutRtl ? ALIGN_RIGHT : ALIGN_LEFT] = mRules[ALIGN_START];
+                mRules[ALIGN_START] = 0;
+            }
+            if (mRules[ALIGN_END] != 0) {
+                // "end" rule resolved to "left" or "right" depending on the direction
+                mRules[isLayoutRtl ? ALIGN_LEFT : ALIGN_RIGHT] = mRules[ALIGN_END];
+                mRules[ALIGN_END] = 0;
+            }
 
-                if (mRules[ALIGN_END] != 0) {
-                    if (mRules[ALIGN_RIGHT] == 0) {
-                        // "right" rule is not defined but "end" rule is: use the "end" rule as the
-                        // "right" rule
-                        mRules[ALIGN_RIGHT] = mRules[ALIGN_END];
-                    }
-                    mRules[ALIGN_END] = 0;
-                }
+            if ((mRules[START_OF] != 0 || mRules[END_OF] != 0) &&
+                    (mRules[LEFT_OF] != 0 || mRules[RIGHT_OF] != 0)) {
+                // "start"/"end" rules take precedence over "left"/"right" rules
+                mRules[LEFT_OF] = 0;
+                mRules[RIGHT_OF] = 0;
+            }
+            if (mRules[START_OF] != 0) {
+                // "start" rule resolved to "left" or "right" depending on the direction
+                mRules[isLayoutRtl ? RIGHT_OF : LEFT_OF] = mRules[START_OF];
+                mRules[START_OF] = 0;
+            }
+            if (mRules[END_OF] != 0) {
+                // "end" rule resolved to "left" or "right" depending on the direction
+                mRules[isLayoutRtl ? LEFT_OF : RIGHT_OF] = mRules[END_OF];
+                mRules[END_OF] = 0;
+            }
 
-                if (mRules[START_OF] != 0) {
-                    if (mRules[LEFT_OF] == 0) {
-                        // "left" rule is not defined but "start" rule is: use the "start" rule as
-                        // the "left" rule
-                        mRules[LEFT_OF] = mRules[START_OF];
-                    }
-                    mRules[START_OF] = 0;
-                }
-
-                if (mRules[END_OF] != 0) {
-                    if (mRules[RIGHT_OF] == 0) {
-                        // "right" rule is not defined but "end" rule is: use the "end" rule as the
-                        // "right" rule
-                        mRules[RIGHT_OF] = mRules[END_OF];
-                    }
-                    mRules[END_OF] = 0;
-                }
-
-                if (mRules[ALIGN_PARENT_START] != 0) {
-                    if (mRules[ALIGN_PARENT_LEFT] == 0) {
-                        // "left" rule is not defined but "start" rule is: use the "start" rule as
-                        // the "left" rule
-                        mRules[ALIGN_PARENT_LEFT] = mRules[ALIGN_PARENT_START];
-                    }
-                    mRules[ALIGN_PARENT_START] = 0;
-                }
-
-                if (mRules[ALIGN_PARENT_END] != 0) {
-                    if (mRules[ALIGN_PARENT_RIGHT] == 0) {
-                        // "right" rule is not defined but "end" rule is: use the "end" rule as the
-                        // "right" rule
-                        mRules[ALIGN_PARENT_RIGHT] = mRules[ALIGN_PARENT_END];
-                    }
-                    mRules[ALIGN_PARENT_END] = 0;
-                }
-            } else {
-                // JB MR1+ case
-                if ((mRules[ALIGN_START] != 0 || mRules[ALIGN_END] != 0) &&
-                        (mRules[ALIGN_LEFT] != 0 || mRules[ALIGN_RIGHT] != 0)) {
-                    // "start"/"end" rules take precedence over "left"/"right" rules
-                    mRules[ALIGN_LEFT] = 0;
-                    mRules[ALIGN_RIGHT] = 0;
-                }
-                if (mRules[ALIGN_START] != 0) {
-                    // "start" rule resolved to "left" or "right" depending on the direction
-                    mRules[isLayoutRtl ? ALIGN_RIGHT : ALIGN_LEFT] = mRules[ALIGN_START];
-                    mRules[ALIGN_START] = 0;
-                }
-                if (mRules[ALIGN_END] != 0) {
-                    // "end" rule resolved to "left" or "right" depending on the direction
-                    mRules[isLayoutRtl ? ALIGN_LEFT : ALIGN_RIGHT] = mRules[ALIGN_END];
-                    mRules[ALIGN_END] = 0;
-                }
-
-                if ((mRules[START_OF] != 0 || mRules[END_OF] != 0) &&
-                        (mRules[LEFT_OF] != 0 || mRules[RIGHT_OF] != 0)) {
-                    // "start"/"end" rules take precedence over "left"/"right" rules
-                    mRules[LEFT_OF] = 0;
-                    mRules[RIGHT_OF] = 0;
-                }
-                if (mRules[START_OF] != 0) {
-                    // "start" rule resolved to "left" or "right" depending on the direction
-                    mRules[isLayoutRtl ? RIGHT_OF : LEFT_OF] = mRules[START_OF];
-                    mRules[START_OF] = 0;
-                }
-                if (mRules[END_OF] != 0) {
-                    // "end" rule resolved to "left" or "right" depending on the direction
-                    mRules[isLayoutRtl ? LEFT_OF : RIGHT_OF] = mRules[END_OF];
-                    mRules[END_OF] = 0;
-                }
-
-                if ((mRules[ALIGN_PARENT_START] != 0 || mRules[ALIGN_PARENT_END] != 0) &&
-                        (mRules[ALIGN_PARENT_LEFT] != 0 || mRules[ALIGN_PARENT_RIGHT] != 0)) {
-                    // "start"/"end" rules take precedence over "left"/"right" rules
-                    mRules[ALIGN_PARENT_LEFT] = 0;
-                    mRules[ALIGN_PARENT_RIGHT] = 0;
-                }
-                if (mRules[ALIGN_PARENT_START] != 0) {
-                    // "start" rule resolved to "left" or "right" depending on the direction
-                    mRules[isLayoutRtl ? ALIGN_PARENT_RIGHT : ALIGN_PARENT_LEFT] = mRules[ALIGN_PARENT_START];
-                    mRules[ALIGN_PARENT_START] = 0;
-                }
-                if (mRules[ALIGN_PARENT_END] != 0) {
-                    // "end" rule resolved to "left" or "right" depending on the direction
-                    mRules[isLayoutRtl ? ALIGN_PARENT_LEFT : ALIGN_PARENT_RIGHT] = mRules[ALIGN_PARENT_END];
-                    mRules[ALIGN_PARENT_END] = 0;
-                }
+            if ((mRules[ALIGN_PARENT_START] != 0 || mRules[ALIGN_PARENT_END] != 0) &&
+                    (mRules[ALIGN_PARENT_LEFT] != 0 || mRules[ALIGN_PARENT_RIGHT] != 0)) {
+                // "start"/"end" rules take precedence over "left"/"right" rules
+                mRules[ALIGN_PARENT_LEFT] = 0;
+                mRules[ALIGN_PARENT_RIGHT] = 0;
+            }
+            if (mRules[ALIGN_PARENT_START] != 0) {
+                // "start" rule resolved to "left" or "right" depending on the direction
+                mRules[isLayoutRtl ? ALIGN_PARENT_RIGHT : ALIGN_PARENT_LEFT] = mRules[ALIGN_PARENT_START];
+                mRules[ALIGN_PARENT_START] = 0;
+            }
+            if (mRules[ALIGN_PARENT_END] != 0) {
+                // "end" rule resolved to "left" or "right" depending on the direction
+                mRules[isLayoutRtl ? ALIGN_PARENT_LEFT : ALIGN_PARENT_RIGHT] = mRules[ALIGN_PARENT_END];
+                mRules[ALIGN_PARENT_END] = 0;
             }
 
             mRulesChanged = false;
@@ -1351,12 +1304,6 @@ public class RelativeLayout extends ViewGroup {
 
             // This will set the layout direction.
             super.resolveLayoutDirection(layoutDirection);
-        }
-
-        @Nonnull
-        @Override
-        public LayoutParams copy() {
-            return new LayoutParams(this);
         }
     }
 
@@ -1429,12 +1376,14 @@ public class RelativeLayout extends ViewGroup {
 
                 sorted[index++] = view;
 
-                final ArrayList<Node> dependents = node.dependents;
-                for (final Node dependent : dependents) {
+                final ArrayMap<Node, DependencyGraph> dependents = node.dependents;
+                final int count = dependents.size();
+                for (int i = 0; i < count; i++) {
+                    final Node dependent = dependents.keyAt(i);
                     final SparseArray<Node> dependencies = dependent.dependencies;
 
                     dependencies.remove(key);
-                    if (dependencies.isEmpty()) {
+                    if (dependencies.size() == 0) {
                         roots.add(dependent);
                     }
                 }
@@ -1474,7 +1423,7 @@ public class RelativeLayout extends ViewGroup {
                 // dependencies for a specific set of rules
                 for (int i : rulesFilter) {
                     final int rule = rules[i];
-                    if (rule > 0 || (rule != -1 && (rule & 0xFFFF0000) != 0)) {
+                    if (rule != NO_ID) {
                         // The node this node depends on
                         final Node dependency = mKeyNodes.get(rule);
                         // Skip unknowns and self dependencies
@@ -1482,7 +1431,7 @@ public class RelativeLayout extends ViewGroup {
                             continue;
                         }
                         // Add the current node as a dependent
-                        dependency.dependents.add(node);
+                        dependency.dependents.put(node, this);
                         // Add a dependency to the current node
                         node.dependencies.put(rule, dependency);
                     }
@@ -1520,7 +1469,7 @@ public class RelativeLayout extends ViewGroup {
              * The list of dependents for this node; a dependent is a node
              * that needs this node to be processed first.
              */
-            final ArrayList<Node> dependents = new ArrayList<>();
+            final ArrayMap<Node, DependencyGraph> dependents = new ArrayMap<>();
 
             /**
              * The list of dependencies for this node.
