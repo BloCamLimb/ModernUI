@@ -34,23 +34,36 @@ public final class PointerIcon {
 
     public static final int TYPE_DEFAULT = 0;
 
+    /**
+     * Type constant: Arrow icon.  (Default mouse pointer)
+     */
+    public static final int TYPE_ARROW = 1000;
+
     public static final int TYPE_HAND = 1002;
 
     public static final int TYPE_TEXT = 1008;
 
-    private static final PointerIcon DEFAULT_CURSOR = new PointerIcon(MemoryUtil.NULL);
+    private static final PointerIcon DEFAULT_CURSOR = new PointerIcon(TYPE_DEFAULT, MemoryUtil.NULL);
+    private static final PointerIcon ARROW_CURSOR;
     private static final PointerIcon TEXT_CURSOR;
     private static final PointerIcon HAND_CURSOR;
 
     static {
-        TEXT_CURSOR = new PointerIcon(GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR));
-        HAND_CURSOR = new PointerIcon(GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR));
+        ARROW_CURSOR = new PointerIcon(TYPE_ARROW, GLFW.glfwCreateStandardCursor(GLFW.GLFW_ARROW_CURSOR));
+        TEXT_CURSOR = new PointerIcon(TYPE_TEXT, GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR));
+        HAND_CURSOR = new PointerIcon(TYPE_HAND, GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR));
     }
 
+    private final int mType;
     private final long mHandle;
 
-    private PointerIcon(long handle) {
+    private PointerIcon(int type, long handle) {
+        mType = type;
         mHandle = handle;
+    }
+
+    public int getType() {
+        return mType;
     }
 
     public long getHandle() {
@@ -60,6 +73,7 @@ public final class PointerIcon {
     @Nonnull
     public static PointerIcon getSystemIcon(int type) {
         return switch (type) {
+            case TYPE_ARROW -> ARROW_CURSOR;
             case TYPE_HAND -> HAND_CURSOR;
             case TYPE_TEXT -> TEXT_CURSOR;
             default -> DEFAULT_CURSOR;

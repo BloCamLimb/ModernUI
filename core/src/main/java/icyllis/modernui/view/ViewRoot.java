@@ -69,6 +69,8 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     protected final Object mRenderLock = new Object();
     protected boolean mRedrawn;
 
+    private int mPointerIconType = PointerIcon.TYPE_DEFAULT;
+
     protected View mView;
     private int mWidth;
     private int mHeight;
@@ -502,9 +504,20 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                         if (dispatchTouchEvent(ev)) {
                             return;
                         }
-                        if (mView.dispatchPointerEvent(ev)) {
-                            continue;
+                        boolean handled = mView.dispatchPointerEvent(ev);
+                        if (ev.getAction() == MotionEvent.ACTION_HOVER_ENTER
+                                || ev.getAction() == MotionEvent.ACTION_HOVER_EXIT) {
+                            // Other apps or the window manager may change the icon type outside of
+                            // this app, therefore the icon type has to be reset on enter/exit event.
+                            mPointerIconType = PointerIcon.TYPE_DEFAULT;
                         }
+
+                        if (ev.getAction() != MotionEvent.ACTION_HOVER_EXIT) {
+                            if (!updatePointerIcon(ev) && ev.getAction() == MotionEvent.ACTION_HOVER_MOVE) {
+                                mPointerIconType = PointerIcon.TYPE_DEFAULT;
+                            }
+                        }
+                        if (handled) continue;
                         onTouchEvent(ev);
                     }
                 } finally {
@@ -637,7 +650,21 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         mInvalidateOnAnimationRunnable.removeView(view);
     }
 
-    protected void updatePointerIcon(@Nullable PointerIcon pointerIcon) {
+    private boolean updatePointerIcon(@Nonnull MotionEvent e) {
+        if (mView == null) {
+            return false;
+        }
+        final PointerIcon pointerIcon = mView.onResolvePointerIcon(e);
+        final int pointerType = (pointerIcon != null) ?
+                pointerIcon.getType() : PointerIcon.TYPE_DEFAULT;
+        if (mPointerIconType != pointerType) {
+            mPointerIconType = pointerType;
+            applyPointerIcon(pointerType);
+        }
+        return true;
+    }
+
+    protected void applyPointerIcon(int pointerType) {
     }
 
     /**

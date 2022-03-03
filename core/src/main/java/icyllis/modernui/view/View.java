@@ -11191,13 +11191,20 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Set the pointer icon for the current view.
-     * Passing {@code null} will restore the pointer icon to its default value.
+     * Returns the pointer icon for the motion event, or null if it doesn't specify the icon.
+     * The default implementation does not care the location or event types, but some subclasses
+     * may use it (such as WebViews).
      *
-     * @param pointerIcon A PointerIcon instance which will be shown when the mouse hovers.
+     * @param event The MotionEvent from a mouse
+     * @see PointerIcon
      */
-    public void setPointerIcon(@Nullable PointerIcon pointerIcon) {
-        mAttachInfo.mViewRoot.updatePointerIcon(pointerIcon);
+    public PointerIcon onResolvePointerIcon(@Nonnull MotionEvent event) {
+        final float x = event.getX();
+        final float y = event.getY();
+        if (isDraggingScrollBar() || isOnScrollbarThumb(x, y)) {
+            return PointerIcon.getSystemIcon(PointerIcon.TYPE_ARROW);
+        }
+        return null;
     }
 
     /*

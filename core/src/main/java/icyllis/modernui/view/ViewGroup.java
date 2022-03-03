@@ -1124,6 +1124,59 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return false;
     }
 
+    @Override
+    public PointerIcon onResolvePointerIcon(@Nonnull MotionEvent event) {
+        final float x = event.getX();
+        final float y = event.getY();
+        if (isOnScrollbarThumb(x, y) || isDraggingScrollBar()) {
+            return PointerIcon.getSystemIcon(PointerIcon.TYPE_ARROW);
+        }
+        // Check what the child under the pointer says about the pointer.
+        final int childrenCount = mChildrenCount;
+        if (childrenCount != 0) {
+            final ArrayList<View> preorderedList = buildOrderedChildList();
+            final boolean customOrder = preorderedList == null
+                    && isChildrenDrawingOrderEnabled();
+            final View[] children = mChildren;
+            for (int i = childrenCount - 1; i >= 0; i--) {
+                final int childIndex = getAndVerifyPreorderedIndex(childrenCount, i, customOrder);
+                final View child = getAndVerifyPreorderedView(preorderedList, children, childIndex);
+
+                if (!child.canReceivePointerEvents()
+                        || !isTransformedTouchPointInView(x, y, child, null)) {
+                    continue;
+                }
+                final PointerIcon pointerIcon = dispatchResolvePointerIcon(event, child);
+                if (pointerIcon != null) {
+                    if (preorderedList != null) preorderedList.clear();
+                    return pointerIcon;
+                }
+            }
+            if (preorderedList != null) preorderedList.clear();
+        }
+
+        // The pointer is not a child or the child has no preferences, returning the default
+        // implementation.
+        return super.onResolvePointerIcon(event);
+    }
+
+    @Nullable
+    private PointerIcon dispatchResolvePointerIcon(MotionEvent event, @Nonnull View child) {
+        final PointerIcon pointerIcon;
+        if (!child.hasIdentityMatrix()) {
+            MotionEvent transformedEvent = getTransformedMotionEvent(event, child);
+            pointerIcon = child.onResolvePointerIcon(transformedEvent);
+            transformedEvent.recycle();
+        } else {
+            final float offsetX = mScrollX - child.mLeft;
+            final float offsetY = mScrollY - child.mTop;
+            event.offsetLocation(offsetX, offsetY);
+            pointerIcon = child.onResolvePointerIcon(event);
+            event.offsetLocation(-offsetX, -offsetY);
+        }
+        return pointerIcon;
+    }
+
     /**
      * This method adds a view to this container at the specified index purely for the
      * purposes of allowing that view to draw even though it is not a normal child of
