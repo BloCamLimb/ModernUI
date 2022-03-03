@@ -469,6 +469,11 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             return false;
         }
 
+        @Override
+        protected void applyPointerIcon(int pointerType) {
+            ArchCore.executeOnMainThread(() -> glfwSetCursor(mWindow.getHandle(), PointerIcon.getSystemIcon(pointerType).getHandle()));
+        }
+
         ContextMenuBuilder mContextMenu;
         MenuHelper mContextMenuHelper;
 

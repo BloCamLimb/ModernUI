@@ -22,6 +22,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.transition.AutoTransition;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ShowableListMenu;
@@ -508,6 +509,14 @@ public class Spinner extends AbsSpinner {
         return width;
     }
 
+    @Override
+    public PointerIcon onResolvePointerIcon(@Nonnull MotionEvent event) {
+        if (isClickable() && isEnabled()) {
+            return PointerIcon.getSystemIcon(PointerIcon.TYPE_HAND);
+        }
+        return super.onResolvePointerIcon(event);
+    }
+
     /**
      * <p>Wrapper class for an Adapter. Transforms the embedded Adapter instance
      * into a ListAdapter.</p>
@@ -637,6 +646,8 @@ public class Spinner extends AbsSpinner {
                 }
                 dismiss();
             });
+            mPopup.setEnterTransition(new AutoTransition());
+            mPopup.setExitTransition(new AutoTransition());
         }
 
         @Override

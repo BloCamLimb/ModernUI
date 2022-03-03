@@ -30,16 +30,22 @@ import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.net.URL;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.channels.SeekableByteChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static icyllis.modernui.ModernUI.LOGGER;
@@ -51,7 +57,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  */
 public final class ArchCore {
 
-    public static final Marker MARKER = MarkerManager.getMarker("ArchCore");
+    public static final Marker MARKER = MarkerManager.getMarker("Arch");
 
     private static volatile Thread sMainThread;
     private static Thread sRenderThread;
@@ -361,7 +367,7 @@ public final class ArchCore {
                 }
                 p = memAlloc((int) (rem + 1)); // +1 EOF
                 //noinspection StatementWithEmptyBody
-                while (ch.read(p) != -1) ;
+                while (ch.read(p) != -1);
             } else {
                 p = memAlloc(4096);
                 while (channel.read(p) != -1) {
@@ -416,5 +422,61 @@ public final class ArchCore {
     @Nullable
     public static String readStringUTF8(InputStream stream) {
         return readStringUTF8(Channels.newChannel(stream));
+    }
+
+    public static void openURL(@Nonnull URL url) {
+        try {
+            Process process = Runtime.getRuntime().exec(switch (Platform.get()) {
+                case WINDOWS -> new String[]{"rundll32", "url.dll,FileProtocolHandler", url.toString()};
+                case MACOSX -> new String[]{"open", url.toString()};
+                default -> {
+                    String s = url.toString();
+                    if ("file".equals(url.getProtocol())) {
+                        s = s.replace("file:", "file://");
+                    }
+                    yield new String[]{"xdg-open", s};
+                }
+            });
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    process.getErrorStream(), StandardCharsets.UTF_8))) {
+                reader.lines().forEach(s -> LOGGER.error(MARKER, s));
+            }
+            /*try {
+                if (process.getInputStream() != null) {
+                    process.getInputStream().close();
+                }
+            } catch (IOException ex) {
+                try {
+                    if (process.getErrorStream() != null) {
+                        process.getErrorStream().close();
+                    }
+                } catch (IOException e) {
+                    try {
+                        if (process.getOutputStream() != null) {
+                            process.getOutputStream().close();
+                        }
+                    } catch (IOException ignored) {
+                    }
+                }
+            }*/
+        } catch (IOException e) {
+            LOGGER.error(MARKER, "Failed to open URL: {}", url, e);
+        }
+    }
+
+    public static void openURI(@Nonnull URI uri) {
+        try {
+            openURL(uri.toURL());
+        } catch (Exception e) {
+            LOGGER.error("Failed to open URI: {}", uri, e);
+        }
+    }
+
+    public static void openURI(@Nonnull String uri) {
+        try {
+            openURI(URI.create(uri));
+        } catch (IllegalArgumentException e) {
+            LOGGER.error("Failed to open URI: {}", uri, e);
+        }
     }
 }

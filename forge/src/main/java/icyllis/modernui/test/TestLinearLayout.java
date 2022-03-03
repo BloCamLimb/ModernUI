@@ -28,11 +28,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.text.*;
-import icyllis.modernui.text.method.ScrollingMovementMethod;
-import icyllis.modernui.text.style.AbsoluteSizeSpan;
-import icyllis.modernui.text.style.ForegroundColorSpan;
-import icyllis.modernui.text.style.StyleSpan;
-import icyllis.modernui.text.style.UnderlineSpan;
+import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
@@ -112,6 +108,9 @@ public class TestLinearLayout extends LinearLayout {
                 "\u062a\u0645\u0631\u0020\u0627\u0644\u062f\u0648\u0644\u064a\u0020\u0627\u0644\u0639\u0627\u0634" +
                 "\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063" +
                 "\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029\n";
+        int firstPara = text.length();
+        text += "红 日（迫真) \n";
+        int secondsPara = text.length();
         text += "\t\tMy name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
                 "I'm hired for people to fulfill their fantasies, their deep dark fantasies.\n" +
                 "\t\t\u4f60\u770b\u8fd9\u4e2a\u5f6c\u5f6c\u0020\u624d\u559d\u51e0\u7f50\u0020\u5c31\u9189" +
@@ -134,8 +133,14 @@ public class TestLinearLayout extends LinearLayout {
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new StyleSpan(FontPaint.BOLD), text.length() - 50, text.length() - 40,
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-        spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(), Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
-        tv.setMovementMethod(ScrollingMovementMethod.getInstance());
+        spannable.setSpan(new URLSpan("https://www.bilibili.com/video/BV1HA41147a4"), firstPara, secondsPara - 2,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spannable.setSpan(new ForegroundColorSpan(0xff4f81bd), firstPara, secondsPara - 2,
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(),
+                Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+        tv.setLinksClickable(true);
+        tv.setTextIsSelectable(true);
 
         mTextView = tv;
 
@@ -146,12 +151,12 @@ public class TestLinearLayout extends LinearLayout {
                 SwitchButton switchButton = new SwitchButton();
                 v = switchButton;
                 switchButton.setOnCheckedChangeListener((button, checked) -> {
-                    /*if (checked) {
+                    if (checked) {
                         button.post(() -> addView(mTextView, 2));
                     } else {
                         button.post(() -> removeView(mTextView));
-                    }*/
-                    if (checked) {
+                    }
+                    /*if (checked) {
                         mPopupWindow.setContentView(mTextView);
                         mPopupWindow.setWidth(400);
                         mPopupWindow.setHeight(200);
@@ -159,7 +164,7 @@ public class TestLinearLayout extends LinearLayout {
                         mPopupWindow.showAsDropDown(button, 0, 0);
                     } else {
                         mPopupWindow.dismiss();
-                    }
+                    }*/
                 });
                 p = new LinearLayout.LayoutParams(dp(100), dp(36));
             } else if (i == 2) {

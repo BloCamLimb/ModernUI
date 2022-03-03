@@ -29,6 +29,7 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
 import icyllis.modernui.text.style.CharacterStyle;
+import icyllis.modernui.text.style.ClickableSpan;
 import icyllis.modernui.text.style.ParagraphStyle;
 import icyllis.modernui.text.style.UpdateAppearance;
 import icyllis.modernui.util.ColorStateList;
@@ -199,7 +200,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     private Editor mEditor;
 
     public TextView() {
+        setTextSize(16);
         setTextColor(0xFFFFFFFF);
+        setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
     }
 
     /**
@@ -1019,8 +1022,9 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
      * @param size The scaled pixel size.
      */
     public void setTextSize(float size) {
-        if (size != mTextPaint.getFontSize()) {
-            mTextPaint.setFontSize(sp(size));
+        int s = sp(size);
+        if (s != mTextPaint.getFontSize()) {
+            mTextPaint.setFontSize(s);
 
             if (mLayout != null) {
                 nullLayouts();
@@ -3910,12 +3914,21 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
             boolean handled = false;
 
             if (mMovement != null) {
-                handled |= mMovement.onTouchEvent(this, mSpannable, event);
+                handled = mMovement.onTouchEvent(this, mSpannable, event);
             }
 
             final boolean textIsSelectable = isTextSelectable();
-            if (touchIsFinished && mLinksClickable && mAutoLinkMask != 0 && textIsSelectable) {
-                //TODO links clicking
+            if (touchIsFinished && mLinksClickable /*&& mAutoLinkMask != 0*/ && textIsSelectable) {
+                // The LinkMovementMethod which should handle taps on links has not been installed
+                // on non-editable text that support text selection.
+                // We reproduce its behavior here to open links for these.
+                ClickableSpan[] links = mSpannable.getSpans(getSelectionStart(), getSelectionEnd(),
+                        ClickableSpan.class);
+
+                if (links != null) {
+                    links[0].onClick(this);
+                    handled = true;
+                }
             }
 
             if (touchIsFinished && (isTextEditable() || textIsSelectable)) {
@@ -4352,12 +4365,21 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    public void onHoverChanged(boolean hovered) {
-        if (hovered && (isTextSelectable() || isTextEditable())) {
-            setPointerIcon(PointerIcon.getSystemIcon(PointerIcon.TYPE_TEXT));
-        } else {
-            setPointerIcon(null);
+    public PointerIcon onResolvePointerIcon(@Nonnull MotionEvent event) {
+        if (mSpannable != null && mLinksClickable) {
+            final float x = event.getX();
+            final float y = event.getY();
+            final int offset = getOffsetForPosition(x, y);
+            final ClickableSpan[] clickables = mSpannable.getSpans(offset, offset,
+                    ClickableSpan.class);
+            if (clickables != null) {
+                return PointerIcon.getSystemIcon(PointerIcon.TYPE_HAND);
+            }
         }
+        if (isTextSelectable() || isTextEditable()) {
+            return PointerIcon.getSystemIcon(PointerIcon.TYPE_TEXT);
+        }
+        return super.onResolvePointerIcon(event);
     }
 
     @Override

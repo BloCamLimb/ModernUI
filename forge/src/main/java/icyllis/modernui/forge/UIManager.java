@@ -177,9 +177,6 @@ public final class UIManager implements LifecycleOwner {
 
     private int mButtonState;
 
-    private volatile PointerIcon mOldCursor = PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT);
-    private volatile PointerIcon mNewCursor = mOldCursor;
-
     private UIManager() {
         mCanvas = GLSurfaceCanvas.initialize();
         glEnable(GL_MULTISAMPLE);
@@ -372,14 +369,6 @@ public final class UIManager implements LifecycleOwner {
         if (mScreen == null) {
             //mTicks = 0;
             mElapsedTimeMillis = 0;
-        }
-    }
-
-    @MainThread
-    private void applyPointerIcon() {
-        if (mNewCursor != mOldCursor) {
-            glfwSetCursor(mWindow.getWindow(), mNewCursor.getHandle());
-            mOldCursor = mNewCursor;
         }
     }
 
@@ -712,8 +701,6 @@ public final class UIManager implements LifecycleOwner {
         // and our framebuffer is always a transparent layer
         RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-        applyPointerIcon();
-
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
@@ -814,8 +801,6 @@ public final class UIManager implements LifecycleOwner {
                 .runOnCommit(mFragmentContainerView::removeAllViews)
                 .commit();
         mScreen = null;
-        mRoot.updatePointerIcon(null);
-        applyPointerIcon();
     }
 
     @SubscribeEvent
@@ -921,11 +906,6 @@ public final class UIManager implements LifecycleOwner {
             }
         }
 
-        @Override
-        protected void updatePointerIcon(@Nullable PointerIcon pointerIcon) {
-            mNewCursor = pointerIcon == null ? PointerIcon.getSystemIcon(PointerIcon.TYPE_DEFAULT) : pointerIcon;
-        }
-
         @RenderThread
         private void flushDrawCommands(GLSurfaceCanvas canvas, GLFramebuffer framebuffer, int width, int height) {
             // wait UI thread, if slow
@@ -983,6 +963,12 @@ public final class UIManager implements LifecycleOwner {
         @Override
         public boolean performHapticFeedback(int effectId, boolean always) {
             return false;
+        }
+
+        @MainThread
+        protected void applyPointerIcon(int pointerType) {
+            minecraft.tell(() -> glfwSetCursor(mWindow.getWindow(),
+                    PointerIcon.getSystemIcon(pointerType).getHandle()));
         }
 
         @Override
