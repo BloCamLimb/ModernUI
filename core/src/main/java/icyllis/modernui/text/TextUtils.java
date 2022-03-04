@@ -432,14 +432,14 @@ public final class TextUtils {
         }
     }
 
-    private static final String[] sBinaryCompacts = new String[]{" bytes", " KB", " MB", " GB"};
+    private static final String[] sBinaryCompacts = {" bytes", " KB", " MB", " GB", " TB", " PB", " EB"};
 
     @Nonnull
-    public static String binaryCompact(int num) {
-        if (num == 0)
+    public static String binaryCompact(long num) {
+        if (num <= 0)
             return "0 bytes";
-        int i = (Integer.SIZE - 1 - Integer.numberOfLeadingZeros(num)) / 10;
-        return num / (1 << (i * 10)) + sBinaryCompacts[i];
+        int i = (63 - Long.numberOfLeadingZeros(num)) / 10;
+        return num / (1L << (i * 10)) + sBinaryCompacts[i];
     }
 
     /**

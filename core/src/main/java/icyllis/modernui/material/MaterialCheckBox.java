@@ -71,15 +71,15 @@ public class MaterialCheckBox extends CheckBox {
             if (alpha != 0) {
                 float inner = mRadius * 0.5f;
                 paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(mRadius);
+                paint.setStrokeWidth(mRadius * 0.75f);
                 canvas.drawRoundRect(r.left + inner, r.top + inner, r.right - inner,
                         r.bottom - inner, mRadius, paint);
                 if (alpha != 0xFF) {
                     paint.setAlpha(0xFF);
                     canvas.saveLayer(r.left, r.top, r.right, r.bottom, alpha);
                 }
-                canvas.drawRoundLine(mRadius * 1.5f, mRadius * 3.5f, mRadius * 2.75f, mRadius * 4.75f, paint);
-                canvas.drawRoundLine(mRadius * 3f, mRadius * 5f, mRadius * 5f, mRadius * 2f, paint);
+                canvas.drawRoundLine(mRadius * 1.5f, mRadius * 3.5f, mRadius * 2.5f, mRadius * 4.5f, paint);
+                canvas.drawRoundLine(mRadius * 2.5f, mRadius * 4.5f, mRadius * 4.5f, mRadius * 2f, paint);
                 if (alpha != 0xFF) {
                     canvas.restore();
                 }
@@ -88,14 +88,14 @@ public class MaterialCheckBox extends CheckBox {
 
         @Override
         public int getIntrinsicWidth() {
-            // 28dp
-            return (int) (mRadius * 6) + 4;
+            // 24dp
+            return (int) (mRadius * 6);
         }
 
         @Override
         public int getIntrinsicHeight() {
-            // 28dp
-            return (int) (mRadius * 6) + 4;
+            // 24dp
+            return (int) (mRadius * 6);
         }
     }
 
@@ -116,7 +116,7 @@ public class MaterialCheckBox extends CheckBox {
             if (paint.getAlpha() != 0) {
                 float inner = mRadius * 0.5f;
                 paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(mRadius);
+                paint.setStrokeWidth(mRadius * 0.75f);
                 canvas.drawRoundRect(r.left + inner, r.top + inner, r.right - inner,
                         r.bottom - inner, mRadius, paint);
             }
@@ -124,14 +124,14 @@ public class MaterialCheckBox extends CheckBox {
 
         @Override
         public int getIntrinsicWidth() {
-            // 28dp
-            return (int) (mRadius * 6) + 4;
+            // 24dp
+            return (int) (mRadius * 6);
         }
 
         @Override
         public int getIntrinsicHeight() {
-            // 28dp
-            return (int) (mRadius * 6) + 4;
+            // 24dp
+            return (int) (mRadius * 6);
         }
     }
 }

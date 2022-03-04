@@ -44,12 +44,10 @@ public final class PointerIcon {
     public static final int TYPE_TEXT = 1008;
 
     private static final PointerIcon DEFAULT_CURSOR = new PointerIcon(TYPE_DEFAULT, MemoryUtil.NULL);
-    private static final PointerIcon ARROW_CURSOR;
     private static final PointerIcon TEXT_CURSOR;
     private static final PointerIcon HAND_CURSOR;
 
     static {
-        ARROW_CURSOR = new PointerIcon(TYPE_ARROW, GLFW.glfwCreateStandardCursor(GLFW.GLFW_ARROW_CURSOR));
         TEXT_CURSOR = new PointerIcon(TYPE_TEXT, GLFW.glfwCreateStandardCursor(GLFW.GLFW_IBEAM_CURSOR));
         HAND_CURSOR = new PointerIcon(TYPE_HAND, GLFW.glfwCreateStandardCursor(GLFW.GLFW_HAND_CURSOR));
     }
@@ -73,7 +71,6 @@ public final class PointerIcon {
     @Nonnull
     public static PointerIcon getSystemIcon(int type) {
         return switch (type) {
-            case TYPE_ARROW -> ARROW_CURSOR;
             case TYPE_HAND -> HAND_CURSOR;
             case TYPE_TEXT -> TEXT_CURSOR;
             default -> DEFAULT_CURSOR;
