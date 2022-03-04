@@ -27,6 +27,8 @@ class FragmentViewLifecycleOwner implements LifecycleOwner, ViewModelStoreOwner 
     private final Fragment mFragment;
     private final ViewModelStore mViewModelStore;
 
+    private ViewModelProvider.Factory mDefaultFactory;
+
     private LifecycleRegistry mLifecycleRegistry;
 
     FragmentViewLifecycleOwner(@Nonnull Fragment fragment, @Nonnull ViewModelStore viewModelStore) {
@@ -70,5 +72,21 @@ class FragmentViewLifecycleOwner implements LifecycleOwner, ViewModelStoreOwner 
 
     void handleLifecycleEvent(@Nonnull Lifecycle.Event event) {
         mLifecycleRegistry.handleLifecycleEvent(event);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public ViewModelProvider.Factory getDefaultViewModelProviderFactory() {
+        ViewModelProvider.Factory currentFactory =
+                mFragment.getDefaultViewModelProviderFactory();
+
+        if (!currentFactory.equals(mFragment.mDefaultFactory)) {
+            mDefaultFactory = currentFactory;
+            return currentFactory;
+        }
+
+        return mDefaultFactory;
     }
 }
