@@ -3,19 +3,19 @@ import org.gradle.internal.os.OperatingSystem
 version = "${core_version}"
 
 sourceSets {
-    main {
-        java {
-            srcDir 'src'
+    //main {
+        //java {
+            //srcDir 'src'
             //exclude '**/modernui/view/menu/ListMenuItemView.java'
-        }
-    }
+        //}
+    //}
 }
 
 dependencies {
-    runtimeOnly "org.apache.logging.log4j:log4j-core:${log4j_version}"
-    compileOnly "org.apache.logging.log4j:log4j-api:${log4j_version}"
-    implementation "it.unimi.dsi:fastutil:${fastutil_version}"
+    implementation "org.apache.logging.log4j:log4j-core:${log4j_version}"
+    implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
     implementation "com.ibm.icu:icu4j:${icu4j_version}"
+    implementation "it.unimi.dsi:fastutil:${fastutil_version}"
     implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
     implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
 

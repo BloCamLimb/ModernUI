@@ -18,6 +18,7 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.animation.ObjectAnimator;
@@ -28,6 +29,7 @@ import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.text.*;
+import icyllis.modernui.text.method.ScrollingMovementMethod;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.*;
@@ -206,6 +208,7 @@ public class TestLinearLayout extends LinearLayout {
                 spinner.setAdapter(new ArrayAdapter<>(new ArrayList<>(Typeface.getFontFamilyNames())));
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
+                spinner.setMinimumWidth(dp(240));
             } else {
                 v = new CView(i);
                 p = new LinearLayout.LayoutParams(dp(200), dp(50));

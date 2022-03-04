@@ -22,6 +22,8 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.DataSet;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 import net.minecraft.nbt.CompoundTag;
@@ -45,20 +47,32 @@ import java.util.*;
 @Measurement(iterations = 5, time = 1)
 public class TestBenchmark {
 
+    // "--add-opens"
+    // "java.base/java.util=ALL-UNNAMED"
+    // "--add-opens"
+    // "java.base/java.lang=ALL-UNNAMED"
     public static void main(String[] args) throws RunnerException {
         MemoryMeter meter = MemoryMeter.builder().build();
 
-        new Runner(new OptionsBuilder()
+       /* new Runner(new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
                 .shouldFailOnError(true).shouldDoGC(true)
-                .jvmArgs("-XX:+UseFMA").build()).run();
+                .jvmArgs("-XX:+UseFMA").build()).run();*/
 
-        ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact((int) meter.measureDeep(sDataSet)));
-        ModernUI.LOGGER.info("CompoundTag: {}", TextUtils.binaryCompact((int) meter.measureDeep(sCompoundTag)));
+        ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact(meter.measureDeep(sDataSet)));
+        ModernUI.LOGGER.info("CompoundTag: {}", TextUtils.binaryCompact(meter.measureDeep(sCompoundTag)));
+
+        ModernUI.LOGGER.info("HashMap: {}", TextUtils.binaryCompact(meter.measureDeep(sHashMap)));
+        ModernUI.LOGGER.info("OpenHashMap: {}", TextUtils.binaryCompact(meter.measureDeep(sInt2ObjectOpenHashMap)));
+        ModernUI.LOGGER.info("RBTreeMap: {}", TextUtils.binaryCompact(meter.measureDeep(sStringInt2ObjectRBTreeMap)));
     }
 
     public static DataSet sDataSet = new DataSet();
     public static CompoundTag sCompoundTag = new CompoundTag();
+
+    public static Map<Integer, String> sHashMap = new HashMap<>();
+    public static Int2ObjectOpenHashMap<String> sInt2ObjectOpenHashMap = new Int2ObjectOpenHashMap<>();
+    public static Int2ObjectRBTreeMap<String> sStringInt2ObjectRBTreeMap = new Int2ObjectRBTreeMap<>();
 
     static {
         sDataSet.putInt(1, 1007);
@@ -86,6 +100,12 @@ public class TestBenchmark {
             listTag.add(tag);
         }
         sCompoundTag.put("networks", listTag);
+
+        for (int i = 0; i < 1007; i++) {
+            sHashMap.put(i * 7, "1");
+            sInt2ObjectOpenHashMap.put(i * 7, "1");
+            sStringInt2ObjectRBTreeMap.put(i * 7, "1");
+        }
     }
 
     @Benchmark
