@@ -76,8 +76,12 @@ dependencies {
     implementation(forgeDependencies("com.github.ben-manes.caffeine:caffeine:${caffeine_version}"))
     implementation(forgeDependencies("com.vladsch.flexmark:flexmark:${flexmark_version}"))
 
+    implementation(forgeDependencies("io.reactivex.rxjava3:rxjava:${rxjava_version}"))
+
     shadow "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
     shadow "com.vladsch.flexmark:flexmark:${flexmark_version}"
+
+    shadow "io.reactivex.rxjava3:rxjava:${rxjava_version}"
 
     shadow ':ModernUI-Fonts-1.0'
 

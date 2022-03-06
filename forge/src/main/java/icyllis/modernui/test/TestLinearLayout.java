@@ -111,7 +111,7 @@ public class TestLinearLayout extends LinearLayout {
                 "\u0631\u0020\u0644\u064a\u0648\u0646\u064a\u0643\u0648\u062f\u0020\u0028\u0055\u006e\u0069\u0063" +
                 "\u006f\u0064\u0065\u0020\u0043\u006f\u006e\u0066\u0065\u0072\u0065\u006e\u0063\u0065\u0029\n";
         int firstPara = text.length();
-        text += "红 日（迫真) \n";
+        text += "\t\t红 日（迫真) \n";
         int secondsPara = text.length();
         text += "\t\tMy name is Van, I'm 30 years old, and I'm from Japan. I'm an artist, I'm a performance artist. " +
                 "I'm hired for people to fulfill their fantasies, their deep dark fantasies.\n" +
@@ -125,7 +125,7 @@ public class TestLinearLayout extends LinearLayout {
                 "\udd99";
 
         TextView tv = new TextView();
-        tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(100)));
+        tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(200)));
 
         tv.setText(text, TextView.BufferType.SPANNABLE);
         Spannable spannable = (Spannable) tv.getText();
@@ -143,6 +143,7 @@ public class TestLinearLayout extends LinearLayout {
                 Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
         tv.setLinksClickable(true);
         tv.setTextIsSelectable(true);
+        tv.setTextAlignment(TEXT_ALIGNMENT_GRAVITY);
 
         mTextView = tv;
 

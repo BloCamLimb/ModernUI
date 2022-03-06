@@ -38,24 +38,24 @@ import java.util.function.Supplier;
  * the {@code MediatorLiveData liveDataMerger} and every time {@code onChanged} callback
  * is called for either of them, we set a new value in {@code liveDataMerger}.
  *
- * <pre>
+ * <pre>{@code
  * LiveData<Integer> liveData1 = ...;
  * LiveData<Integer> liveData2 = ...;
  *
  * MediatorLiveData<Integer> liveDataMerger = new MediatorLiveData<>();
- * liveDataMerger.addSource(liveData1, value -> liveDataMerger.setValue(value));
- * liveDataMerger.addSource(liveData2, value -> liveDataMerger.setValue(value));
- * </pre>
+ * liveDataMerger.addSource(liveData1, liveDataMerger::setValue);
+ * liveDataMerger.addSource(liveData2, liveDataMerger::setValue);
+ * }</pre>
  * <p>
  * Let's consider that we only want 10 values emitted by {@code liveData1}, to be
  * merged in the {@code liveDataMerger}. Then, after 10 values, we can stop listening to {@code
  * liveData1} and remove it as a source.
- * <pre>
- * liveDataMerger.addSource(liveData1, new Observer<Integer>() {
+ * <pre>{@code
+ * liveDataMerger.addSource(liveData1, new Observer<>() {
  *      private int count = 1;
  *
- *      &#64;Override
- *      public void onChanged(&#64;Nullable Integer s) {
+ *      @Override
+ *      public void onChanged(@Nullable Integer s) {
  *          count++;
  *          liveDataMerger.setValue(s);
  *          if (count > 10) {
@@ -63,7 +63,7 @@ import java.util.function.Supplier;
  *          }
  *      }
  * });
- * </pre>
+ * }</pre>
  *
  * @param <T> The type of data hold by this instance
  */
