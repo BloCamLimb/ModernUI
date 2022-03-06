@@ -131,8 +131,8 @@ import static icyllis.modernui.ModernUI.LOGGER;
  * @see ViewGroup
  * @since 2.0
  */
-@SuppressWarnings({"unused", "MagicConstant"})
 @UiThread
+@SuppressWarnings({"unused", "MagicConstant"})
 public class View implements Drawable.Callback {
 
     /**

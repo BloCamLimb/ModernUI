@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.res;
+package icyllis.modernui.resources;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
