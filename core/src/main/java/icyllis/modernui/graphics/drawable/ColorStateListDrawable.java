@@ -18,12 +18,14 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.util.ColorStateList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * A Drawable that manages a {@link ColorDrawable} to make it stateful and backed by a
@@ -72,7 +74,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
         return mState.hasFocusStateSpecified();
     }
 
-    @Nullable
+    @Nonnull
     @Override
     public Drawable getCurrent() {
         return mColorDrawable;
@@ -101,6 +103,13 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
     }
 
     @Override
+    public void setTintBlendMode(@Nonnull BlendMode blendMode) {
+        mState.mBlendMode = blendMode;
+        mColorDrawable.setTintBlendMode(blendMode);
+        onStateChange(getState());
+    }
+
+    @Override
     protected void onBoundsChange(@Nonnull Rect bounds) {
         super.onBoundsChange(bounds);
         mColorDrawable.setBounds(bounds);
@@ -112,7 +121,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
             int color = mState.mColor.getColorForState(state, mState.mColor.getDefaultColor());
 
             if (mState.mAlpha != -1) {
-                color = (color & 0xFFFFFF) | (mState.mAlpha << 24);
+                color = (color & 0xFFFFFF) | mState.mAlpha << 24;
             }
 
             if (color != mColorDrawable.getColor()) {
@@ -162,16 +171,12 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
      */
     @Nonnull
     public ColorStateList getColorStateList() {
-        if (mState.mColor == null) {
-            return ColorStateList.valueOf(mColorDrawable.getColor());
-        } else {
-            return mState.mColor;
-        }
+        return Objects.requireNonNullElseGet(mState.mColor, () -> ColorStateList.valueOf(mColorDrawable.getColor()));
     }
 
+    @Nonnull
     @Override
-    public @Nonnull
-    Drawable mutate() {
+    public Drawable mutate() {
         if (!mMutated && super.mutate() == this) {
             mState = new ColorStateListDrawableState(mState);
             mMutated = true;
@@ -179,9 +184,6 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
         return this;
     }
 
-    /**
-     * @hide
-     */
     @Override
     public void clearMutated() {
         super.clearMutated();
@@ -204,6 +206,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
         ColorStateList mColor = null;
         ColorStateList mTint = null;
         int mAlpha = -1;
+        BlendMode mBlendMode = DEFAULT_BLEND_MODE;
 
         ColorStateListDrawableState() {
         }
@@ -212,6 +215,7 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
             mColor = state.mColor;
             mTint = state.mTint;
             mAlpha = state.mAlpha;
+            mBlendMode = state.mBlendMode;
         }
 
         @Nonnull
@@ -237,6 +241,10 @@ public class ColorStateListDrawable extends Drawable implements Drawable.Callbac
 
         if (mState.mTint != null) {
             mColorDrawable.setTintList(mState.mTint);
+        }
+
+        if (mState.mBlendMode != DEFAULT_BLEND_MODE) {
+            mColorDrawable.setTintBlendMode(mState.mBlendMode);
         }
     }
 }

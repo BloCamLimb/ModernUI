@@ -19,12 +19,12 @@
 package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.SparseArray;
-import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,7 +32,7 @@ import javax.annotation.Nullable;
 /**
  * A helper class that contains several {@link Drawable}s and selects which one to use.
  * <p>
- * You can subclass it to create your own DrawableContainers or directly use one its child classes.
+ * You can extend it to create your own DrawableContainers or directly use one its child classes.
  */
 public class DrawableContainer extends Drawable implements Drawable.Callback {
 
@@ -48,7 +48,6 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     private boolean mHasAlpha;
 
     private int mCurIndex = -1;
-    private int mLastIndex = -1;
     private boolean mMutated;
 
     // Animations.
@@ -61,7 +60,8 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
      */
     private BlockInvalidateCallback mBlockInvalidateCallback;
 
-    // overrides from Drawable
+    public DrawableContainer() {
+    }
 
     @Override
     public void draw(@Nonnull Canvas canvas) {
@@ -128,6 +128,19 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
 
             if (mCurrDrawable != null) {
                 mCurrDrawable.setTintList(tint);
+            }
+        }
+    }
+
+    @Override
+    public void setTintBlendMode(@Nonnull BlendMode blendMode) {
+        mDrawableContainerState.mHasTintMode = true;
+
+        if (mDrawableContainerState.mBlendMode != blendMode) {
+            mDrawableContainerState.mBlendMode = blendMode;
+
+            if (mCurrDrawable != null) {
+                mCurrDrawable.setTintBlendMode(blendMode);
             }
         }
     }
@@ -199,7 +212,6 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         if (mLastDrawable != null) {
             mLastDrawable.jumpToCurrentState();
             mLastDrawable = null;
-            mLastIndex = -1;
             changed = true;
         }
         if (mCurrDrawable != null) {
@@ -273,7 +285,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     }
 
     @Override
-    public boolean onLayoutDirectionChanged(int layoutDirection) {
+    protected boolean onLayoutDirectionChanged(int layoutDirection) {
         // Let the container handle setting its own layout direction. Otherwise,
         // we're accessing potentially unused states.
         return mDrawableContainerState.setLayoutDirection(layoutDirection, getCurrentIndex());
@@ -314,8 +326,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     @Override
     public void invalidateDrawable(@Nonnull Drawable who) {
         // This may have been called as the result of a tint changing, in
-        // which case we may need to refresh the cached statefulness or
-        // opacity.
+        // which case we may need to refresh the cached statefulness
         if (mDrawableContainerState != null) {
             mDrawableContainerState.invalidateCache();
         }
@@ -351,7 +362,6 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         return changed;
     }
 
-    @ApiStatus.Internal
     public int getCurrentIndex() {
         return mCurIndex;
     }
@@ -378,11 +388,9 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
             }
             if (mCurrDrawable != null) {
                 mLastDrawable = mCurrDrawable;
-                mLastIndex = mCurIndex;
                 mExitAnimationEnd = now + mDrawableContainerState.mExitFadeDuration;
             } else {
                 mLastDrawable = null;
-                mLastIndex = -1;
                 mExitAnimationEnd = 0;
             }
         } else if (mCurrDrawable != null) {
@@ -427,7 +435,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
      *
      * @param d The drawable to initialize.
      */
-    private void initializeDrawableForDisplay(Drawable d) {
+    private void initializeDrawableForDisplay(@Nonnull Drawable d) {
         if (mBlockInvalidateCallback == null) {
             mBlockInvalidateCallback = new BlockInvalidateCallback();
         }
@@ -444,6 +452,9 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
 
             if (mDrawableContainerState.mHasTintList) {
                 d.setTintList(mDrawableContainerState.mTintList);
+            }
+            if (mDrawableContainerState.mHasTintMode) {
+                d.setTintBlendMode(mDrawableContainerState.mBlendMode);
             }
 
             d.setVisible(isVisible(), true);
@@ -488,7 +499,6 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
                 if (mExitAnimationEnd <= now) {
                     mLastDrawable.setVisible(false, false);
                     mLastDrawable = null;
-                    mLastIndex = -1;
                     mExitAnimationEnd = 0;
                 } else {
                     int animAlpha = (int) ((mExitAnimationEnd - now) * 255)
@@ -562,17 +572,13 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
 
         // Clear out the last drawable. We don't have enough information to
         // propagate local state from the past.
-        mLastIndex = -1;
         mLastDrawable = null;
     }
 
     /**
      * A ConstantState that can contain several {@link Drawable}s.
-     * <p>
-     * This class was made public to enable testing, and its visibility may change in a future
-     * release.
      */
-    public static abstract class DrawableContainerState extends ConstantState {
+    protected static abstract class DrawableContainerState extends ConstantState {
 
         final DrawableContainer mOwner;
 
@@ -591,9 +597,6 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         int mConstantMinimumWidth;
         int mConstantMinimumHeight;
 
-        boolean mCheckedOpacity;
-        int mOpacity;
-
         boolean mCheckedStateful;
         boolean mStateful;
 
@@ -609,10 +612,13 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         boolean mAutoMirrored;
 
         ColorStateList mTintList;
+        BlendMode mBlendMode;
         boolean mHasTintList;
+        boolean mHasTintMode;
 
         protected DrawableContainerState(@Nullable DrawableContainerState orig, DrawableContainer owner) {
             mOwner = owner;
+
             if (orig != null) {
                 mCheckedConstantState = true;
                 mCanConstantState = true;
@@ -625,25 +631,9 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
                 mExitFadeDuration = orig.mExitFadeDuration;
                 mAutoMirrored = orig.mAutoMirrored;
                 mTintList = orig.mTintList;
+                mBlendMode = orig.mBlendMode;
                 mHasTintList = orig.mHasTintList;
-
-                if (orig.mCheckedPadding) {
-                    mConstantPadding = orig.mConstantPadding.copy();
-                    mCheckedPadding = true;
-                }
-
-                if (orig.mCheckedConstantSize) {
-                    mConstantWidth = orig.mConstantWidth;
-                    mConstantHeight = orig.mConstantHeight;
-                    mConstantMinimumWidth = orig.mConstantMinimumWidth;
-                    mConstantMinimumHeight = orig.mConstantMinimumHeight;
-                    mCheckedConstantSize = true;
-                }
-
-                if (orig.mCheckedOpacity) {
-                    mOpacity = orig.mOpacity;
-                    mCheckedOpacity = true;
-                }
+                mHasTintMode = orig.mHasTintMode;
 
                 if (orig.mCheckedStateful) {
                     mStateful = orig.mStateful;
@@ -713,10 +703,9 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
         }
 
         /**
-         * Invalidates the cached opacity and statefulness.
+         * Invalidates the cached statefulness.
          */
         void invalidateCache() {
-            mCheckedOpacity = false;
             mCheckedStateful = false;
         }
 
@@ -858,7 +847,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
             final Drawable[] drawables = mDrawables;
             for (int i = 0; i < N; i++) {
                 if (drawables[i].getPadding(t)) {
-                    if (r == null) r = new Rect();
+                    if (r == null) r = new Rect(0, 0, 0, 0);
                     if (t.left > r.left) r.left = t.left;
                     if (t.top > r.top) r.top = t.top;
                     if (t.right > r.right) r.right = t.right;

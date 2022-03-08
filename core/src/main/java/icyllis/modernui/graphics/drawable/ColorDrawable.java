@@ -18,7 +18,10 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.util.ColorStateList;
 
@@ -27,13 +30,11 @@ import javax.annotation.Nullable;
 
 /**
  * A specialized Drawable that fills the Canvas with a specified color.
- * Note that a ColorDrawable ignores the ColorFilter.
  */
 public class ColorDrawable extends Drawable {
 
-    private final Paint mPaint = new Paint();
-
     private ColorState mColorState;
+    private BlendMode mBlendMode;
     private int mBlendColor;
 
     private boolean mMutated;
@@ -50,17 +51,26 @@ public class ColorDrawable extends Drawable {
      *
      * @param color The color to draw.
      */
-    public ColorDrawable(int color) {
+    public ColorDrawable(@ColorInt int color) {
         mColorState = new ColorState();
-
         setColor(color);
     }
 
     private ColorDrawable(@Nonnull ColorState state) {
         mColorState = state;
-        if (state.mTint != null) {
-            mBlendColor = state.mTint.getColorForState(getState(), 0);
+        updateLocalState();
+    }
+
+    /**
+     * Initializes local dynamic properties from state.
+     */
+    private void updateLocalState() {
+        if (mColorState.mTint == null || mColorState.mBlendMode == null) {
+            mBlendMode = null;
+            return;
         }
+        mBlendMode = mColorState.mBlendMode;
+        mBlendColor = mColorState.mTint.getColorForState(getState(), Color.TRANSPARENT);
     }
 
     /**
@@ -87,25 +97,16 @@ public class ColorDrawable extends Drawable {
 
     @Override
     public void draw(@Nonnull Canvas canvas) {
-        if (mColorState.mUseColor >>> 24 != 0) {
-            if (mBlendColor >>> 24 == 0) {
-                mPaint.setColor(mColorState.mUseColor);
-            } else {
-                //TODO change the blendFunc when pre-multiplied alpha pipeline available
-                final int src = mBlendColor;
-                final int srcA = src >>> 24;
-                int srcR = ((src >> 16) & 0xFF) * srcA >> 8;
-                int srcG = ((src >> 8) & 0xFF) * srcA >> 8;
-                int srcB = (src & 0xFF) * srcA >> 8;
-
-                final int dst = mColorState.mUseColor;
-                int dstR = ((dst >> 16) & 0xFF) * (1 - srcA) >> 8;
-                int dstG = ((dst >> 8) & 0xFF) * (1 - srcA) >> 8;
-                int dstB = (dst & 0xFF) * (1 - srcA) >> 8;
-                int dstA = (dst >>> 24) * (1 - srcA) >> 8;
-                mPaint.setRGBA(srcR + dstR, srcG + dstG, srcB + dstB, srcA + dstA);
+        if ((mColorState.mUseColor >>> 24) != 0 || mBlendMode != null) {
+            int color = mColorState.mUseColor;
+            if (mBlendMode != null) {
+                color = Color.blend(mBlendMode, mBlendColor, color);
             }
-            canvas.drawRect(getBounds(), mPaint);
+            if ((color >>> 24) != 0) {
+                Paint paint = Paint.take();
+                paint.setColor(color);
+                canvas.drawRect(getBounds(), paint);
+            }
         }
     }
 
@@ -114,6 +115,7 @@ public class ColorDrawable extends Drawable {
      *
      * @return int The color to draw.
      */
+    @ColorInt
     public int getColor() {
         return mColorState.mUseColor;
     }
@@ -125,7 +127,7 @@ public class ColorDrawable extends Drawable {
      *
      * @param color The color to draw.
      */
-    public void setColor(int color) {
+    public void setColor(@ColorInt int color) {
         if (mColorState.mBaseColor != color || mColorState.mUseColor != color) {
             mColorState.mBaseColor = mColorState.mUseColor = color;
             invalidateSelf();
@@ -154,7 +156,7 @@ public class ColorDrawable extends Drawable {
      */
     @Override
     public void setAlpha(int alpha) {
-        alpha &= 0xFF;
+        alpha += alpha >> 7;   // make it 0..256
         final int baseAlpha = mColorState.mBaseColor >>> 24;
         final int useAlpha = baseAlpha * alpha >> 8;
         final int useColor = (mColorState.mBaseColor << 8 >>> 8) | (useAlpha << 24);
@@ -167,19 +169,23 @@ public class ColorDrawable extends Drawable {
     @Override
     public void setTintList(@Nullable ColorStateList tint) {
         mColorState.mTint = tint;
-        if (tint == null) {
-            mBlendColor = 0;
-        } else {
-            mBlendColor = tint.getColorForState(getState(), 0);
-        }
+        updateLocalState();
+        invalidateSelf();
+    }
+
+    @Override
+    public void setTintBlendMode(@Nonnull BlendMode blendMode) {
+        mColorState.mBlendMode = blendMode;
+        updateLocalState();
         invalidateSelf();
     }
 
     @Override
     protected boolean onStateChange(@Nonnull int[] stateSet) {
         final ColorState state = mColorState;
-        if (state.mTint != null) {
-            mBlendColor = state.mTint.getColorForState(stateSet, 0);
+        if (state.mTint != null && state.mBlendMode != null) {
+            mBlendMode = mColorState.mBlendMode;
+            mBlendColor = mColorState.mTint.getColorForState(getState(), Color.TRANSPARENT);
             return true;
         }
         return false;
@@ -203,8 +209,9 @@ public class ColorDrawable extends Drawable {
     static final class ColorState extends ConstantState {
 
         int mBaseColor; // base color, independent of setAlpha()
-        int mUseColor;  // base color modulated by setAlpha()
+        int mUseColor;  // base color, modulated by setAlpha()
         ColorStateList mTint = null;
+        BlendMode mBlendMode = DEFAULT_BLEND_MODE;
 
         ColorState() {
             // Empty constructor.
@@ -214,6 +221,7 @@ public class ColorDrawable extends Drawable {
             mBaseColor = state.mBaseColor;
             mUseColor = state.mUseColor;
             mTint = state.mTint;
+            mBlendMode = state.mBlendMode;
         }
 
         @Nonnull

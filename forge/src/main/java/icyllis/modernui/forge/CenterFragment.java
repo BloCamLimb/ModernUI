@@ -30,8 +30,8 @@ import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.text.FontPaint;
 import icyllis.modernui.text.InputFilter;
+import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.DigitsInputFilter;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
@@ -68,7 +68,7 @@ public class CenterFragment extends Fragment {
             title.setId(R.id.title);
             title.setText("Modern UI Center");
             title.setTextSize(22);
-            title.setTextStyle(FontPaint.BOLD);
+            title.setTextStyle(TextPaint.BOLD);
 
             var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
             params.gravity = Gravity.CENTER;

@@ -25,6 +25,7 @@ import icyllis.modernui.core.Clipboard;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
@@ -202,7 +203,6 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     public TextView() {
         setTextSize(16);
         setTextColor(0xFFFFFFFF);
-        setTextAlignment(TEXT_ALIGNMENT_VIEW_START);
     }
 
     /**

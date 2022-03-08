@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text;
+package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.math.MathUtil;
@@ -27,7 +27,7 @@ import java.awt.*;
 import java.util.Locale;
 
 /**
- * The base paint used with text layout engine at lower levels.
+ * The base paint used with glyph layout engine at lower levels.
  */
 public class FontPaint {
 
@@ -54,44 +54,32 @@ public class FontPaint {
     public static final int FONT_STYLE_MASK = REGULAR | BOLD | ITALIC;
 
     // shared pointer
-    Typeface mTypeface;
+    protected FontCollection mFontCollection;
     Locale mLocale;
-    int mFlags;
+    protected int mFlags;
     int mFontSize;
 
     public FontPaint() {
-        mTypeface = ModernUI.getInstance().getSelectedTypeface();
         mLocale = ModernUI.getInstance().getSelectedLocale();
         mFlags = REGULAR;
         mFontSize = 24;
     }
 
     public FontPaint(@Nonnull FontPaint paint) {
-        set(paint);
-    }
-
-    /**
-     * Copy the data from paint into this TextPaint
-     */
-    public void set(@Nonnull FontPaint paint) {
-        mTypeface = paint.mTypeface;
+        mFontCollection = paint.mFontCollection;
         mLocale = paint.mLocale;
         mFlags = paint.mFlags;
         mFontSize = paint.mFontSize;
     }
 
     /**
-     * Set the font collection object to draw the text.
-     *
-     * @param typeface the font collection
+     * Copy the data from paint into this TextPaint
      */
-    public void setTypeface(@Nonnull Typeface typeface) {
-        mTypeface = typeface;
-    }
-
-    @Nonnull
-    public Typeface getTypeface() {
-        return mTypeface;
+    public void set(@Nonnull FontPaint paint) {
+        mFontCollection = paint.mFontCollection;
+        mLocale = paint.mLocale;
+        mFlags = paint.mFlags;
+        mFontSize = paint.mFontSize;
     }
 
     /**
@@ -170,7 +158,7 @@ public class FontPaint {
             return true;
         if ((mFlags & FONT_STYLE_MASK) != (paint.mFlags & FONT_STYLE_MASK))
             return true;
-        if (!mTypeface.equals(paint.mTypeface))
+        if (!mFontCollection.equals(paint.mFontCollection))
             return true;
         return !mLocale.equals(paint.mLocale);
     }
@@ -219,13 +207,13 @@ public class FontPaint {
 
         if (mFontSize != that.mFontSize) return false;
         if ((mFlags & FONT_STYLE_MASK) != (that.mFlags & FONT_STYLE_MASK)) return false;
-        if (!mTypeface.equals(that.mTypeface)) return false;
+        if (!mFontCollection.equals(that.mFontCollection)) return false;
         return mLocale.equals(that.mLocale);
     }
 
     @Override
     public int hashCode() {
-        int h = mTypeface.hashCode();
+        int h = mFontCollection.hashCode();
         h = 31 * h + mLocale.hashCode();
         h = 31 * h + (mFlags & FONT_STYLE_MASK);
         h = 31 * h + mFontSize;
@@ -235,7 +223,7 @@ public class FontPaint {
     @Override
     public String toString() {
         return "FontPaint{" +
-                "typeface=" + mTypeface +
+                "typeface=" + mFontCollection +
                 ", locale=" + mLocale +
                 ", flags=0x" + Integer.toHexString(mFlags) +
                 ", fontSize=" + mFontSize +

@@ -19,6 +19,9 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.font.LayoutCache;
+import icyllis.modernui.graphics.font.LineBreaker;
 import icyllis.modernui.util.GrowingArrayUtils;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,11 +16,12 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text;
+package icyllis.modernui.graphics.font;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 
@@ -154,7 +155,7 @@ public class LayoutCache {
 
         // for Lookup case, this is only a pointer to the requester
         char[] mChars;
-        Typeface mTypeface;
+        FontCollection mFontCollection;
         int mFontStyle;
         int mFontSize;
         Locale mLocale;
@@ -171,7 +172,7 @@ public class LayoutCache {
             mChars = new char[key.mEnd - key.mStart];
             System.arraycopy(key.mChars, key.mStart, mChars, 0, mChars.length);
             // shared pointers
-            mTypeface = key.mTypeface;
+            mFontCollection = key.mFontCollection;
             mFontStyle = key.mFontStyle;
             mFontSize = key.mFontSize;
             mLocale = key.mLocale;
@@ -192,7 +193,7 @@ public class LayoutCache {
             if (mIsRtl != key.mIsRtl) return false;
             if (!Arrays.equals(mChars, key.mChars))
                 return false;
-            if (!mTypeface.equals(key.mTypeface)) return false;
+            if (!mFontCollection.equals(key.mFontCollection)) return false;
             return mLocale.equals(key.mLocale);
         }
 
@@ -202,7 +203,7 @@ public class LayoutCache {
             for (char c : mChars) {
                 result = 31 * result + c;
             }
-            result = 31 * result + mTypeface.hashCode();
+            result = 31 * result + mFontCollection.hashCode();
             result = 31 * result + mFontStyle;
             result = 31 * result + mFontSize;
             result = 31 * result + mLocale.hashCode();
@@ -231,7 +232,7 @@ public class LayoutCache {
             mChars = text;
             mStart = start;
             mEnd = end;
-            mTypeface = paint.mTypeface;
+            mFontCollection = paint.mFontCollection;
             mFontStyle = paint.getFontStyle();
             mFontSize = paint.mFontSize;
             mLocale = paint.mLocale;
@@ -255,7 +256,7 @@ public class LayoutCache {
                     key.mChars, 0, key.mChars.length)) {
                 return false;
             }
-            if (!mTypeface.equals(key.mTypeface)) return false;
+            if (!mFontCollection.equals(key.mFontCollection)) return false;
             return mLocale.equals(key.mLocale);
         }
 
@@ -265,7 +266,7 @@ public class LayoutCache {
             for (int i = mStart; i < mEnd; i++) {
                 result = 31 * result + mChars[i];
             }
-            result = 31 * result + mTypeface.hashCode();
+            result = 31 * result + mFontCollection.hashCode();
             result = 31 * result + mFontStyle;
             result = 31 * result + mFontSize;
             result = 31 * result + mLocale.hashCode();

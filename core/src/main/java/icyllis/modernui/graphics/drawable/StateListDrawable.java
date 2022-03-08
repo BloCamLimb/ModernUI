@@ -37,7 +37,7 @@ public class StateListDrawable extends DrawableContainer {
         this(null, null);
     }
 
-    private StateListDrawable(@Nullable StateListState state, @SuppressWarnings("unused") Object o) {
+    private StateListDrawable(@Nullable StateListState state, @Nullable Object res) {
         // Every state list drawable has its own constant state.
         final StateListState newState = new StateListState(state, this);
         setConstantState(newState);

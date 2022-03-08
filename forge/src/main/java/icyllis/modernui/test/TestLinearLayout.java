@@ -18,7 +18,6 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.animation.ObjectAnimator;
@@ -26,10 +25,11 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.font.FontCollection;
+import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.text.*;
-import icyllis.modernui.text.method.ScrollingMovementMethod;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.*;
@@ -206,7 +206,7 @@ public class TestLinearLayout extends LinearLayout {
             } else if (i == 7) {
                 Spinner spinner = new Spinner();
                 v = spinner;
-                spinner.setAdapter(new ArrayAdapter<>(new ArrayList<>(Typeface.getFontFamilyNames())));
+                spinner.setAdapter(new ArrayAdapter<>(new ArrayList<>(FontCollection.getFontFamilyNames())));
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
                 spinner.setMinimumWidth(dp(240));

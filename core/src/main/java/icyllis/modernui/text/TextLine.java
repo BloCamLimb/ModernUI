@@ -20,6 +20,10 @@ package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.font.GraphemeBreak;
+import icyllis.modernui.graphics.font.LayoutCache;
+import icyllis.modernui.graphics.font.LayoutPiece;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
@@ -699,10 +703,10 @@ public class TextLine {
 
         int cursorOpt = after ? GraphemeBreak.AFTER : GraphemeBreak.BEFORE;
         if (mCharsValid) {
-            return GraphemeBreak.getTextRunCursor(mChars, wp.mLocale, spanStart,
+            return TextPaint.getTextRunCursor(mChars, wp.getTextLocale(), spanStart,
                     spanLimit - spanStart, offset, cursorOpt);
         } else {
-            return GraphemeBreak.getTextRunCursor(mText, wp.mLocale,
+            return TextPaint.getTextRunCursor(mText, wp.getTextLocale(),
                     mStart + spanStart, mStart + spanLimit, mStart + offset, cursorOpt) - mStart;
         }
     }
@@ -868,8 +872,8 @@ public class TextLine {
                     span.updateDrawState(activePaint);
                 }
 
-                final int flags = activePaint.mFlags & (TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
-                activePaint.mFlags &= ~(TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
+                final int flags = activePaint.getFlags() & (TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG);
+                activePaint.setFlags(activePaint.getFlags() & ~(TextPaint.UNDERLINE_FLAG | TextPaint.STRIKETHROUGH_FLAG));
 
                 if (jnext - j <= LayoutCache.MAX_PIECE_LENGTH) {
                     x += handleText(activePaint, j, jnext, runIsRtl, canvas, x,

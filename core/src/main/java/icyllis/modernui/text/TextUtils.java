@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.util.ULocale;
+import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;

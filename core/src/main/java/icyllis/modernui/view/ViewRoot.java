@@ -91,18 +91,18 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
         try {
             Class.forName("icyllis.modernui.text.BoringLayout");
-            Class.forName("icyllis.modernui.text.CharArrayIterator");
+            Class.forName("icyllis.modernui.graphics.font.CharArrayIterator");
             Class.forName("icyllis.modernui.text.CharSequenceIterator");
             Class.forName("icyllis.modernui.text.Directions");
             Class.forName("icyllis.modernui.text.DynamicLayout");
-            Class.forName("icyllis.modernui.text.GlyphManager");
-            Class.forName("icyllis.modernui.text.GraphemeBreak");
+            Class.forName("icyllis.modernui.graphics.font.GlyphManager");
+            Class.forName("icyllis.modernui.graphics.font.GraphemeBreak");
             Class.forName("icyllis.modernui.text.Layout");
-            Class.forName("icyllis.modernui.text.LayoutCache");
-            Class.forName("icyllis.modernui.text.LayoutPiece");
-            Class.forName("icyllis.modernui.text.LineBreaker");
+            Class.forName("icyllis.modernui.graphics.font.LayoutCache");
+            Class.forName("icyllis.modernui.graphics.font.LayoutPiece");
+            Class.forName("icyllis.modernui.graphics.font.LineBreaker");
             Class.forName("icyllis.modernui.text.MeasuredParagraph");
-            Class.forName("icyllis.modernui.text.MeasuredText");
+            Class.forName("icyllis.modernui.graphics.font.MeasuredText");
             Class.forName("icyllis.modernui.text.PrecomputedText");
             Class.forName("icyllis.modernui.text.Selection");
             Class.forName("icyllis.modernui.text.SpannableString");

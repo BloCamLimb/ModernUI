@@ -19,10 +19,11 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.font.FontCollection;
 import icyllis.modernui.graphics.opengl.ShaderManager;
 import icyllis.modernui.graphics.opengl.TextureManager;
-import icyllis.modernui.text.FontPaint;
-import icyllis.modernui.text.LayoutCache;
+import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.graphics.font.LayoutCache;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.ModernUITextMC;
 import icyllis.modernui.view.ViewManager;
@@ -222,7 +223,7 @@ public final class ModernUIForge extends ModernUI {
                 }
                 LOGGER.warn(MARKER, "Font {} failed to load or invalid", cfg);
             } else {
-                Optional<Font> font = Typeface.sAllFontFamilies.stream()
+                Optional<Font> font = FontCollection.sAllFontFamilies.stream()
                         .filter(f -> f.getFamily(Locale.ROOT).equalsIgnoreCase(cfg))
                         .findFirst();
                 if (font.isPresent()) {

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text;
+package icyllis.modernui.graphics.font;
 
 import com.ibm.icu.lang.UCharacter;
 import com.ibm.icu.lang.UCharacterCategory;
@@ -80,82 +80,6 @@ public final class GraphemeBreak {
     public static boolean sUseICU = true;
 
     private GraphemeBreak() {
-    }
-
-    /**
-     * Returns the next cursor position in the run.
-     * <p>
-     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
-     * between base characters and combining marks, or within a reordering cluster.
-     *
-     * <p>
-     * ContextStart and offset are relative to the start of text.
-     * The context is the shaping context for cursor movement, generally the bounds of the metric
-     * span enclosing the cursor in the direction of movement.
-     *
-     * <p>
-     * If op is {@link #AT} and the offset is not a valid cursor position, this
-     * returns -1.  Otherwise this will never return a value before contextStart or after
-     * contextStart + contextLength.
-     *
-     * @param text          the text
-     * @param locale        the text's locale
-     * @param contextStart  the start of the context
-     * @param contextLength the length of the context
-     * @param offset        the cursor position to move from
-     * @param op            how to move the cursor
-     * @return the offset of the next position or -1
-     */
-    public static int getTextRunCursor(@Nonnull char[] text, @Nonnull Locale locale, int contextStart,
-                                       int contextLength, int offset, int op) {
-        int contextEnd = contextStart + contextLength;
-        if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
-                | (offset - contextStart) | (contextEnd - offset)
-                | (text.length - contextEnd) | op) < 0)
-                || op > AT) {
-            throw new IndexOutOfBoundsException();
-        }
-        return sUseICU ? getTextRunCursorICU(new CharArrayIterator(text, contextStart, contextEnd), locale, offset, op)
-                : getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
-    }
-
-    /**
-     * Returns the next cursor position in the run.
-     * <p>
-     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
-     * between base characters and combining marks, or within a reordering cluster.
-     *
-     * <p>
-     * ContextStart, contextEnd, and offset are relative to the start of
-     * text.  The context is the shaping context for cursor movement, generally
-     * the bounds of the metric span enclosing the cursor in the direction of
-     * movement.
-     *
-     * <p>
-     * If op is {@link #AT} and the offset is not a valid cursor position, this
-     * returns -1.  Otherwise this will never return a value before contextStart or after
-     * contextEnd.
-     *
-     * @param text         the text
-     * @param locale       the text's locale
-     * @param contextStart the start of the context
-     * @param contextEnd   the end of the context
-     * @param offset       the cursor position to move from
-     * @param op           how to move the cursor
-     * @return the offset of the next position, or -1
-     */
-    public static int getTextRunCursor(@Nonnull CharSequence text, @Nonnull Locale locale, int contextStart,
-                                       int contextEnd, int offset, int op) {
-        if (text instanceof String || text instanceof SpannedString ||
-                text instanceof SpannableString) {
-            return getTextRunCursor(text.toString(), locale, contextStart, contextEnd,
-                    offset, op);
-        }
-        final int contextLen = contextEnd - contextStart;
-        final char[] buf = new char[contextLen];
-        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
-        offset = getTextRunCursor(buf, locale, 0, contextLen, offset - contextStart, op);
-        return offset == -1 ? -1 : offset + contextStart;
     }
 
     public static int getTextRunCursor(@Nonnull String text, @Nonnull Locale locale, int contextStart, int contextEnd,

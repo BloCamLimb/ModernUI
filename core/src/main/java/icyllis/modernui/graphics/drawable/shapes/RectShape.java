@@ -58,32 +58,26 @@ public class RectShape extends Shape {
 
     @Override
     public RectShape clone() {
-        try {
-            final RectShape shape = (RectShape) super.clone();
-            shape.mRect = mRect.copy();
-            return shape;
-        } catch (CloneNotSupportedException e) {
-            throw new InternalError(e);
-        }
+        final RectShape shape = (RectShape) super.clone();
+        shape.mRect = new RectF(mRect);
+        return shape;
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-        if (!super.equals(o)) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        if (!super.equals(o)) return false;
+
         RectShape rectShape = (RectShape) o;
+
         return Objects.equals(mRect, rectShape.mRect);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(super.hashCode(), mRect);
+        int result = super.hashCode();
+        result = 31 * result + mRect.hashCode();
+        return result;
     }
 }
