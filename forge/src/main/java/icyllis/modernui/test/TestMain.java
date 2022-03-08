@@ -32,6 +32,8 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.*;
+import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.graphics.font.GraphemeBreak;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.graphics.opengl.ShaderManager;
 import icyllis.modernui.graphics.opengl.TextureManager;

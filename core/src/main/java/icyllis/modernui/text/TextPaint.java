@@ -18,10 +18,16 @@
 
 package icyllis.modernui.text;
 
+import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.font.CharArrayIterator;
+import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.graphics.font.GraphemeBreak;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 
 import javax.annotation.Nonnull;
+import java.util.Locale;
 
 /**
  * This class holds data used during text measuring and drawing at higher levels.
@@ -42,6 +48,7 @@ public class TextPaint extends FontPaint {
 
     private static final Pool<TextPaint> sPool = Pools.concurrent(4);
 
+    private Typeface mTypeface;
     private int mColor;
 
     // 0 means no background
@@ -51,6 +58,8 @@ public class TextPaint extends FontPaint {
      * Creates the new TextPaint.
      */
     public TextPaint() {
+        super();
+        setTypeface(ModernUI.getInstance().getSelectedTypeface());
         mColor = ~0;
     }
 
@@ -70,10 +79,88 @@ public class TextPaint extends FontPaint {
     }
 
     /**
+     * Returns the next cursor position in the run.
+     * <p>
+     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
+     * between base characters and combining marks, or within a reordering cluster.
+     *
+     * <p>
+     * ContextStart and offset are relative to the start of text.
+     * The context is the shaping context for cursor movement, generally the bounds of the metric
+     * span enclosing the cursor in the direction of movement.
+     *
+     * <p>
+     * If op is {@link GraphemeBreak#AT} and the offset is not a valid cursor position, this
+     * returns -1.  Otherwise, this will never return a value before contextStart or after
+     * contextStart + contextLength.
+     *
+     * @param text          the text
+     * @param locale        the text's locale
+     * @param contextStart  the start of the context
+     * @param contextLength the length of the context
+     * @param offset        the cursor position to move from
+     * @param op            how to move the cursor
+     * @return the offset of the next position or -1
+     */
+    public static int getTextRunCursor(@Nonnull char[] text, @Nonnull Locale locale, int contextStart,
+                                       int contextLength, int offset, int op) {
+        int contextEnd = contextStart + contextLength;
+        if (((contextStart | contextEnd | offset | (contextEnd - contextStart)
+                | (offset - contextStart) | (contextEnd - offset)
+                | (text.length - contextEnd) | op) < 0)
+                || op > GraphemeBreak.AT) {
+            throw new IndexOutOfBoundsException();
+        }
+        return GraphemeBreak.sUseICU ? GraphemeBreak.getTextRunCursorICU(new CharArrayIterator(text, contextStart,
+                contextEnd), locale, offset, op)
+                : GraphemeBreak.getTextRunCursorImpl(null, text, contextStart, contextLength, offset, op);
+    }
+
+    /**
+     * Returns the next cursor position in the run.
+     * <p>
+     * This avoids placing the cursor between surrogates, between characters that form conjuncts,
+     * between base characters and combining marks, or within a reordering cluster.
+     *
+     * <p>
+     * ContextStart, contextEnd, and offset are relative to the start of
+     * text.  The context is the shaping context for cursor movement, generally
+     * the bounds of the metric span enclosing the cursor in the direction of
+     * movement.
+     *
+     * <p>
+     * If op is {@link GraphemeBreak#AT} and the offset is not a valid cursor position, this
+     * returns -1.  Otherwise, this will never return a value before contextStart or after
+     * contextEnd.
+     *
+     * @param text         the text
+     * @param locale       the text's locale
+     * @param contextStart the start of the context
+     * @param contextEnd   the end of the context
+     * @param offset       the cursor position to move from
+     * @param op           how to move the cursor
+     * @return the offset of the next position, or -1
+     */
+    public static int getTextRunCursor(@Nonnull CharSequence text, @Nonnull Locale locale, int contextStart,
+                                       int contextEnd, int offset, int op) {
+        if (text instanceof String || text instanceof SpannedString ||
+                text instanceof SpannableString) {
+            return GraphemeBreak.getTextRunCursor(text.toString(), locale, contextStart, contextEnd,
+                    offset, op);
+        }
+        final int contextLen = contextEnd - contextStart;
+        final char[] buf = new char[contextLen];
+        TextUtils.getChars(text, contextStart, contextEnd, buf, 0);
+        offset = getTextRunCursor(buf, locale, 0, contextLen, offset - contextStart, op);
+        return offset == -1 ? -1 : offset + contextStart;
+    }
+
+    /**
      * Copy the data from paint into this TextPaint
      */
     public void set(@Nonnull TextPaint paint) {
         super.set(paint);
+        mTypeface = paint.mTypeface;
         mColor = paint.mColor;
         bgColor = paint.bgColor;
     }
@@ -100,6 +187,21 @@ public class TextPaint extends FontPaint {
      */
     public void setColor(int color) {
         mColor = color;
+    }
+
+    /**
+     * Set the font collection object to draw the text.
+     *
+     * @param typeface the font collection
+     */
+    public void setTypeface(@Nonnull Typeface typeface) {
+        mTypeface = typeface;
+        mFontCollection = typeface.mFontCollection;
+    }
+
+    @Nonnull
+    public Typeface getTypeface() {
+        return mTypeface;
     }
 
     /**
@@ -204,11 +306,19 @@ public class TextPaint extends FontPaint {
         return fm.ascent / 12f;
     }
 
+    int getFlags() {
+        return mFlags;
+    }
+
+    void setFlags(int flags) {
+        mFlags = flags;
+    }
+
     /**
      * Create a copy of this paint as the base class paint for internal
      * layout engine. Subclasses must ensure that be immutable.
      *
-     * @return a internal paint
+     * @return an internal paint
      */
     @Nonnull
     @Override

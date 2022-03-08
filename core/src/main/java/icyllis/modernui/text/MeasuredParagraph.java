@@ -19,6 +19,9 @@
 package icyllis.modernui.text;
 
 import com.ibm.icu.text.Bidi;
+import icyllis.modernui.graphics.font.FontMetricsInt;
+import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.graphics.font.MeasuredText;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.MetricAffectingSpan;
@@ -42,7 +45,6 @@ import java.util.Arrays;
  * a rich text under Unicode specification and internationalization standards.
  *
  * @see MeasuredText
- * @see LayoutCache
  */
 @NotThreadSafe
 public class MeasuredParagraph {

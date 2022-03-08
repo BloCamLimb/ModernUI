@@ -19,6 +19,8 @@
 package icyllis.modernui.text.method;
 
 import com.ibm.icu.lang.UCharacter;
+import icyllis.modernui.graphics.font.FontCollection;
+import icyllis.modernui.graphics.font.GraphemeBreak;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.ReplacementSpan;
 import icyllis.modernui.view.KeyEvent;
@@ -346,7 +348,7 @@ public final class TextKeyListener {
             return len;
         }
 
-        offset = GraphemeBreak.getTextRunCursor(text, locale, offset, len, offset, GraphemeBreak.AFTER);
+        offset = TextPaint.getTextRunCursor(text, locale, offset, len, offset, GraphemeBreak.AFTER);
 
         return adjustReplacementSpan(text, offset, false /* move to the end */);
     }
@@ -372,7 +374,7 @@ public final class TextKeyListener {
                     deleteCharCount = Character.charCount(codePoint);
                     if (codePoint == 0x0A) { // LF
                         state = STATE_LF;
-                    } else if (Typeface.isVariationSelector(codePoint)) {
+                    } else if (FontCollection.isVariationSelector(codePoint)) {
                         state = STATE_BEFORE_VS;
                     } else if (Emoji.isRegionalIndicatorSymbol(codePoint)) {
                         state = STATE_ODD_NUMBERED_RIS;
@@ -411,7 +413,7 @@ public final class TextKeyListener {
                     }
                     break;
                 case STATE_BEFORE_KEYCAP:
-                    if (Typeface.isVariationSelector(codePoint)) {
+                    if (FontCollection.isVariationSelector(codePoint)) {
                         lastSeenVSCharCount = Character.charCount(codePoint);
                         state = STATE_BEFORE_VS_AND_KEYCAP;
                         break;
@@ -429,7 +431,7 @@ public final class TextKeyListener {
                     state = STATE_FINISHED;
                     break;
                 case STATE_BEFORE_EMOJI_MODIFIER:
-                    if (Typeface.isVariationSelector(codePoint)) {
+                    if (FontCollection.isVariationSelector(codePoint)) {
                         lastSeenVSCharCount = Character.charCount(codePoint);
                         state = STATE_BEFORE_VS_AND_EMOJI_MODIFIER;
                         break;
@@ -451,7 +453,7 @@ public final class TextKeyListener {
                         break;
                     }
 
-                    if (!Typeface.isVariationSelector(codePoint) &&
+                    if (!FontCollection.isVariationSelector(codePoint) &&
                             UCharacter.getCombiningClass(codePoint) == 0) {
                         deleteCharCount += Character.charCount(codePoint);
                     }
@@ -469,7 +471,7 @@ public final class TextKeyListener {
                         deleteCharCount += Character.charCount(codePoint) + 1;  // +1 for ZWJ.
                         state = Emoji.isEmojiModifier(codePoint) ?
                                 STATE_BEFORE_EMOJI_MODIFIER : STATE_BEFORE_EMOJI;
-                    } else if (Typeface.isVariationSelector(codePoint)) {
+                    } else if (FontCollection.isVariationSelector(codePoint)) {
                         lastSeenVSCharCount = Character.charCount(codePoint);
                         state = STATE_BEFORE_VS_AND_ZWJ;
                     } else {

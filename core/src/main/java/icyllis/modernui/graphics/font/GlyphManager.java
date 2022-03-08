@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text;
+package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
@@ -40,7 +40,7 @@ import java.util.function.Function;
  * different sizes and styles, and upload them to generated OpenGL textures.
  *
  * @see FontAtlas
- * @see Typeface
+ * @see FontCollection
  */
 public class GlyphManager {
 
@@ -253,7 +253,7 @@ public class GlyphManager {
     @SuppressWarnings("MagicConstant")
     public int getFontMetrics(@Nonnull FontPaint paint, @Nullable FontMetricsInt fm) {
         int ascent = 0, descent = 0, height = 0;
-        for (Font f : paint.mTypeface.getFonts()) {
+        for (Font f : paint.mFontCollection.getFonts()) {
             FontMetrics metrics = mGraphics.getFontMetrics(f.deriveFont(paint.getFontStyle(), paint.mFontSize));
             ascent = Math.max(ascent, metrics.getAscent()); // positive
             descent = Math.max(descent, metrics.getDescent()); // positive

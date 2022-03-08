@@ -18,15 +18,17 @@
 
 package icyllis.modernui.graphics.drawable;
 
+import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.core.Handler;
+import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.View;
-import org.jetbrains.annotations.ApiStatus;
+import icyllis.modernui.widget.ImageView;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -103,6 +105,8 @@ public abstract class Drawable {
 
     private static final Rect ZERO_BOUNDS_RECT = new Rect();
 
+    static final BlendMode DEFAULT_BLEND_MODE = BlendMode.SRC_IN;
+
     private int[] mStateSet = StateSet.WILD_CARD;
     private int mLevel = 0;
     private Rect mBounds = ZERO_BOUNDS_RECT;  // lazily becomes a new Rect()
@@ -114,7 +118,7 @@ public abstract class Drawable {
 
     /**
      * Draw in its bounds (set via setBounds) respecting optional effects such
-     * as alpha (set via setAlpha) and color filter (set via setColorFilter).
+     * as alpha (set via setAlpha).
      *
      * @param canvas The canvas to draw into
      */
@@ -172,7 +176,7 @@ public abstract class Drawable {
      */
     @Nonnull
     public final Rect copyBounds() {
-        return mBounds.copy();
+        return new Rect(mBounds);
     }
 
     /**
@@ -194,7 +198,6 @@ public abstract class Drawable {
         if (mBounds == ZERO_BOUNDS_RECT) {
             mBounds = new Rect();
         }
-
         return mBounds;
     }
 
@@ -321,6 +324,7 @@ public abstract class Drawable {
      * {@link View#LAYOUT_DIRECTION_RTL}
      * @see #setLayoutDirection(int)
      */
+    @View.ResolvedLayoutDir
     public int getLayoutDirection() {
         return mLayoutDirection;
     }
@@ -338,7 +342,7 @@ public abstract class Drawable {
      * re-drawn, {@code false} otherwise
      * @see #getLayoutDirection()
      */
-    public final boolean setLayoutDirection(int layoutDirection) {
+    public final boolean setLayoutDirection(@View.ResolvedLayoutDir int layoutDirection) {
         if (mLayoutDirection != layoutDirection) {
             mLayoutDirection = layoutDirection;
             return onLayoutDirectionChanged(layoutDirection);
@@ -355,15 +359,13 @@ public abstract class Drawable {
      * re-drawn, {@code false} otherwise
      * @see #setLayoutDirection(int)
      */
-    public boolean onLayoutDirectionChanged(int layoutDirection) {
+    protected boolean onLayoutDirectionChanged(@View.ResolvedLayoutDir int layoutDirection) {
         return false;
     }
 
     /**
      * Specify an alpha value for the drawable. 0 means fully transparent, and
-     * 255 means fully opaque. Unlike Android, this method is not abstract.
-     * Subclasses may use alpha to implement specific effects under specific
-     * circumstances.
+     * 255 means fully opaque.
      */
     public void setAlpha(int alpha) {
     }
@@ -387,8 +389,9 @@ public abstract class Drawable {
      *
      * @param tintColor Color to use for tinting this drawable
      * @see #setTintList(ColorStateList)
+     * @see #setTintBlendMode(BlendMode)
      */
-    public void setTint(int tintColor) {
+    public void setTint(@ColorInt int tintColor) {
         setTintList(ColorStateList.valueOf(tintColor));
     }
 
@@ -398,8 +401,22 @@ public abstract class Drawable {
      * @param tint Color state list to use for tinting this drawable, or
      *             {@code null} to clear the tint
      * @see #setTint(int)
+     * @see #setTintBlendMode(BlendMode)
      */
     public void setTintList(@Nullable ColorStateList tint) {
+    }
+
+    /**
+     * Specifies a tint blending mode for this drawable.
+     * <p>
+     * Defines how this drawable's tint color should be blended into the drawable
+     * before it is drawn to screen. Default tint mode is {@link BlendMode#SRC_IN}.
+     *
+     * @param blendMode BlendMode to apply to the drawable
+     * @see #setTint(int)
+     * @see #setTintList(ColorStateList)
+     */
+    public void setTintBlendMode(@Nonnull BlendMode blendMode) {
     }
 
     /**
@@ -493,7 +510,8 @@ public abstract class Drawable {
 
     /**
      * Describes the current state, as a union of primitive states, such as
-     * state_focused, state_selected, etc.
+     * {@link icyllis.modernui.R.attr#state_focused},
+     * {@link icyllis.modernui.R.attr#state_selected}, etc.
      * Some drawables may modify their imagery based on the selected state.
      *
      * @return An array of resource Ids describing the current state.
@@ -719,14 +737,21 @@ public abstract class Drawable {
     /**
      * Clears the mutated state, allowing this drawable to be cached and
      * mutated again.
-     * <p>
-     * This is hidden because only framework drawables can be cached, so
-     * custom drawables don't need to support constant state, mutate(), or
-     * clearMutated().
      */
-    @ApiStatus.Internal
     public void clearMutated() {
         // Default implementation is no-op.
+    }
+
+    /**
+     * Return a {@link ConstantState} instance that holds the shared state of this Drawable.
+     *
+     * @return The ConstantState associated to that Drawable.
+     * @see ConstantState
+     * @see Drawable#mutate()
+     */
+    @Nullable
+    public ConstantState getConstantState() {
+        return null;
     }
 
     /**
@@ -746,17 +771,5 @@ public abstract class Drawable {
          */
         @Nonnull
         public abstract Drawable newDrawable();
-    }
-
-    /**
-     * Return a {@link ConstantState} instance that holds the shared state of this Drawable.
-     *
-     * @return The ConstantState associated to that Drawable.
-     * @see ConstantState
-     * @see Drawable#mutate()
-     */
-    @Nullable
-    public ConstantState getConstantState() {
-        return null;
     }
 }

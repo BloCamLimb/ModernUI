@@ -18,7 +18,7 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.graphics.font.FontPaint;
 
 import javax.annotation.Nonnull;
 

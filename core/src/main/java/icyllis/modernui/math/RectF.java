@@ -55,6 +55,22 @@ public class RectF {
         this.bottom = bottom;
     }
 
+    /**
+     * Create a new rectangle, initialized with the values in the specified
+     * rectangle (which is left unmodified).
+     *
+     * @param r The rectangle whose coordinates are copied into the new
+     *          rectangle.
+     */
+    public RectF(@Nullable RectF r) {
+        if (r != null) {
+            left = r.left;
+            top = r.top;
+            right = r.right;
+            bottom = r.bottom;
+        }
+    }
+
     public RectF(@Nullable Rect r) {
         if (r != null) {
             left = r.left;

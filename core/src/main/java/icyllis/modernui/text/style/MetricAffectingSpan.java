@@ -34,7 +34,7 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.text.FontPaint;
+import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.text.TextPaint;
 
 import javax.annotation.Nonnull;

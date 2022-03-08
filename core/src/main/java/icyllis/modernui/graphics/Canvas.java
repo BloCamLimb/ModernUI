@@ -19,8 +19,8 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.math.*;
-import icyllis.modernui.text.LayoutPiece;
-import icyllis.modernui.text.MeasuredText;
+import icyllis.modernui.graphics.font.LayoutPiece;
+import icyllis.modernui.graphics.font.MeasuredText;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;

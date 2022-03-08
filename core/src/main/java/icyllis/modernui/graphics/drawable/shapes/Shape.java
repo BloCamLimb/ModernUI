@@ -22,7 +22,6 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 
 import javax.annotation.Nonnull;
-import java.util.Objects;
 
 /**
  * Defines a generic graphical "shape."
@@ -86,18 +85,6 @@ public abstract class Shape implements Cloneable {
     }
 
     /**
-     * Checks whether the Shape is opaque.
-     * <p>
-     * Default impl returns {@code true}. Override if your subclass can be
-     * opaque.
-     *
-     * @return true if any part of the drawable is <em>not</em> opaque.
-     */
-    public boolean hasAlpha() {
-        return true;
-    }
-
-    /**
      * Callback method called when {@link #resize(float, float)} is executed.
      *
      * @param width  the new width of the Shape
@@ -107,25 +94,29 @@ public abstract class Shape implements Cloneable {
     }
 
     @Override
-    public Shape clone() throws CloneNotSupportedException {
-        return (Shape) super.clone();
+    public Shape clone() {
+        try {
+            return (Shape) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new AssertionError(e);
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
         Shape shape = (Shape) o;
+
         return Float.compare(shape.mWidth, mWidth) == 0
                 && Float.compare(shape.mHeight, mHeight) == 0;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(mWidth, mHeight);
+        int result = Float.hashCode(mWidth);
+        result = 31 * result + Float.hashCode(mHeight);
+        return result;
     }
 }

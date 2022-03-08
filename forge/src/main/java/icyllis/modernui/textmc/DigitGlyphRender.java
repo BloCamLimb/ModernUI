@@ -21,7 +21,7 @@ package icyllis.modernui.textmc;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.text.TexturedGlyph;
+import icyllis.modernui.graphics.font.TexturedGlyph;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.apache.commons.lang3.tuple.Pair;
 

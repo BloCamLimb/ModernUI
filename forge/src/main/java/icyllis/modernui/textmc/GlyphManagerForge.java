@@ -21,6 +21,7 @@ package icyllis.modernui.textmc;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.graphics.font.FontCollection;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.text.Typeface;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
@@ -328,7 +329,7 @@ public class GlyphManagerForge {
                 }
             } else {
                 Optional<Font> font =
-                        Typeface.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)).findFirst();
+                        FontCollection.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)).findFirst();
                 if (font.isPresent()) {
                     mSelectedFonts.add(font.get());
                     ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", cfgFont);
@@ -363,7 +364,7 @@ public class GlyphManagerForge {
 
         /* If still not found, try searching through all fonts installed on the system for the first that can layout
         this string */
-        for (Font font : Typeface.sAllFontFamilies) {
+        for (Font font : FontCollection.sAllFontFamilies) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 /* If found, add this font to the selectedFonts list so it can be looked up faster next time */
@@ -454,7 +455,7 @@ public class GlyphManagerForge {
 
         /* If still not found, try searching through all fonts installed on the system for the first that can layout
         this string */
-        for (Font font : Typeface.sAllFontFamilies) {
+        for (Font font : FontCollection.sAllFontFamilies) {
             /* Only use the font if it can layout at least the first character of the requested string range */
             if (font.canDisplay(codePoint)) {
                 /* If found, add this font to the selectedFonts list so it can be looked up faster next time */

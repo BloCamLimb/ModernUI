@@ -18,13 +18,14 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.annotation.ColorInt;
 import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
 
 /**
  * The Paint class holds the style and color information about how to draw
- * geometries and images. Use with Canvas.
+ * geometries and images.
  */
 public class Paint {
 
@@ -43,7 +44,7 @@ public class Paint {
     public static final int STROKE = 0x1;
 
     private static final int STYLE_MASK = FILL | STROKE;
-    private static final int GRADIENT_MASK = 0x2;
+    private static final int GRADIENT_MASK = 0x4;
 
     private int mColor;
     private int mFlags;
@@ -82,36 +83,39 @@ public class Paint {
      * Set the paint to defaults.
      */
     public void reset() {
-        mColor = 0xFFFFFFFF;
+        mColor = ~0;
         mFlags = FILL;
         mStrokeWidth = 2;
         mSmoothRadius = 2;
     }
 
     /**
-     * Returns the thread-local paint, the paint will be reset before return.
-     * This method is designed for temporary operations, for a drawing operation
-     * that is not after this method or {@link #reset()}, the state of the paint
-     * may be modified.
+     * <b>WARNING: This method may be abused.</b>
+     * <p>
+     * Returns a thread-local paint, the paint will be reset before return.
+     * This method is designed for temporary operations that avoid creating
+     * new objects, for a drawing operation that is not after this method or
+     * {@link #reset()}, the state of the paint may be modified by system.
      * <p>
      * For example:
-     * <pre>
-     * &#64;Override
+     * <pre>{@code
+     * @Override
      * protected void onDraw(Canvas canvas) {
      *     var paint = Paint.take();
      *     paint.setColor(mColorA);
      *     canvas.drawRect(mRectA, paint);
-     *     mDrawable.draw(canvas);
-     *     // the drawable may use the paint, so reset it
-     *     paint.reset();
+     *
+     *     doSomeActions(); // call any other methods except with Canvas
+     *
+     *     paint.reset(); // not sure if they will use the paint, so reset it
      *     paint.setColor(mColorB);
      *     canvas.drawRect(mRectB, paint);
      * }
-     * </pre>
+     * }</pre>
      * The API implementation requires that any method in {@link Canvas} must NOT
-     * modify the state of Paint.
+     * modify the state of the Paint instance obtained by this method.
      *
-     * @return the thread-local paint
+     * @return a thread-local paint
      */
     @Nonnull
     public static Paint take() {
@@ -121,70 +125,41 @@ public class Paint {
     }
 
     /**
-     * Set current paint color with alpha.
-     * Disable gradient colors if enabled.
+     * Set the paint's color. Note that the color is an int containing alpha
+     * as well as r,g,b. This 32bit value is not premultiplied, meaning that
+     * its alpha can be any value, regardless of the values of r,g,b.
+     * See the Color class for more details.
      *
-     * @param r red component [0, 255]
-     * @param g green component [0, 255]
-     * @param b blue component [0, 255]
-     * @param a alpha component [0, 255]
+     * @param color The new color (including alpha) to set in the paint.
      */
-    public void setRGBA(int r, int g, int b, int a) {
-        mColor = (a << 24) | (r << 16) | (g << 8) | b;
-        mFlags &= ~GRADIENT_MASK;
-    }
-
-    /**
-     * Set current paint color, with unchanged alpha.
-     * Disable gradient colors if enabled.
-     *
-     * @param r red component [0, 255]
-     * @param g green component [0, 255]
-     * @param b blue component [0, 255]
-     */
-    public void setRGB(int r, int g, int b) {
-        mColor = (mColor & 0xFF000000) | (r << 16) | (g << 8) | b;
-        mFlags &= ~GRADIENT_MASK;
-    }
-
-    /**
-     * Set current paint color in 0xAARRGGBB format. The default color is white.
-     * Disable gradient colors if enabled.
-     *
-     * @param color the color to set
-     */
-    public void setColor(int color) {
+    public void setColor(@ColorInt int color) {
         mColor = color;
         mFlags &= ~GRADIENT_MASK;
     }
 
     /**
-     * Set current paint alpha value in integer form.
-     * If gradient colors are used, set alpha for all colors.
-     *
-     * @param a the new alpha value ranged from 0 to 255
-     */
-    public void setAlpha(int a) {
-        if (isGradient()) {
-            a <<= 24;
-            for (int i = 0; i < 4; i++) {
-                mColors[i] = (mColors[i] & 0xFFFFFF) | a;
-            }
-        } else {
-            mColor = (mColor & 0xFFFFFF) | (a << 24);
-        }
-    }
-
-    /**
-     * Return the paint's color in ARGB. Note that the color is a 32bit value
+     * Return the paint's color in sRGB. Note that the color is a 32bit value
      * containing alpha as well as r,g,b. This 32bit value is not premultiplied,
      * meaning that its alpha can be any value, regardless of the values of
-     * r,g,b.
+     * r,g,b. See the Color class for more details.
      *
      * @return the paint's color (and alpha).
      */
+    @ColorInt
     public int getColor() {
         return mColor;
+    }
+
+    /**
+     * Helper to setColor(), that only assigns the color's alpha value,
+     * leaving its r,g,b values unchanged. Results are undefined if the alpha
+     * value is outside the range [0..255]
+     *
+     * @param a set the alpha component [0..255] of the paint's color.
+     */
+    public void setAlpha(int a) {
+        mColor = (mColor << 8 >>> 8) | (a << 24);
+        mFlags &= ~GRADIENT_MASK;
     }
 
     /**
@@ -199,36 +174,86 @@ public class Paint {
     }
 
     /**
-     * Set the colors in ARGB and enable gradient mode. When enabled, a primitive
-     * should use the colors sequentially, and {@link #setColor(int)} is ignored. You can
-     * use this to make gradient effect or edge fading in one pass, without shaders.
+     * Helper to setColor(), that only assigns the color's r,g,b values,
+     * leaving its alpha value unchanged.
+     *
+     * @param r The new red component (0..255) of the paint's color.
+     * @param g The new green component (0..255) of the paint's color.
+     * @param b The new blue component (0..255) of the paint's color.
+     */
+    public void setRGB(int r, int g, int b) {
+        mColor = (mColor >>> 24 << 24) | (r << 16) | (g << 8) | b;
+        mFlags &= ~GRADIENT_MASK;
+    }
+
+    /**
+     * Helper to setColor(), that takes a,r,g,b and constructs the color int
+     *
+     * @param r The new red component (0..255) of the paint's color.
+     * @param g The new green component (0..255) of the paint's color.
+     * @param b The new blue component (0..255) of the paint's color.
+     * @param a The new alpha component (0..255) of the paint's color.
+     */
+    public void setRGBA(int r, int g, int b, int a) {
+        setColor((a << 24) | (r << 16) | (g << 8) | b);
+    }
+
+    /**
+     * Helper to setColor(), that takes a,r,g,b and constructs the color int
+     *
+     * @param a The new alpha component (0..255) of the paint's color.
+     * @param r The new red component (0..255) of the paint's color.
+     * @param g The new green component (0..255) of the paint's color.
+     * @param b The new blue component (0..255) of the paint's color.
+     */
+    public void setARGB(int a, int r, int g, int b) {
+        setColor((a << 24) | (r << 16) | (g << 8) | b);
+    }
+
+    /**
+     * Set the colors in ARGB and enable gradient mode. When enabled, a primitive should
+     * use the colors sequentially (in Z shape), and {@link #setColor(int)} is ignored.
+     * You can use this to make gradient effect or edge fading effect in one pass,
+     * without post-processing shaders.
      * <p>
-     * A Paint object has a unique private array storing these values, a copy of given array
-     * will be used. The colors are used in the order of top left, top right, bottom left
-     * and bottom right, like "Z".
+     * A Paint object has a backing array storing these values, then a copy of the parameter
+     * array will be used. The colors are used in the order of top left, top right, bottom left
+     * and bottom right, like letter "Z".
      * <p>
-     * If the length of given array is less than 4, then rest color values are undefined.
-     * If greater than 4, then rest values are ignored.
+     * If the length of the given array is less than 4, then rest color values will use the
+     * last color in the given array. If greater than 4, then rest values are ignored.
      * <p>
      * By default, this mode is disabled. Calling other methods like {@link #setColor(int)}
-     * except {@link #setAlpha(int)} disables the mode as well.
+     * or {@link #setAlpha(int)} will disable the mode.
      *
-     * @param colors a list of sequential colors, maximum count is 4
+     * @param colors an array of sequential colors
      * @see #setColors(int, int, int, int)
      * @see #isGradient()
      */
     public void setColors(@Nonnull int[] colors) {
+        int len = colors.length;
+        if (len == 0) {
+            return;
+        }
         if (mColors == null) {
             mColors = new int[4];
         }
-        System.arraycopy(colors, 0, mColors, 0, Math.min(colors.length, 4));
+        if (len < 4) {
+            System.arraycopy(colors, 0, mColors, 0, len);
+            for (int i = len; i < 4; i++) {
+                mColors[i] = colors[len - 1];
+            }
+        } else {
+            System.arraycopy(colors, 0, mColors, 0, 4);
+        }
         mFlags |= GRADIENT_MASK;
     }
 
     /**
-     * Set the colors in ARGB and enable gradient mode. When enabled, a primitive
-     * should use the colors sequentially, and {@link #setColor(int)} is ignored. You can
-     * use this to make gradient effect or edge fading in one pass, without shaders.
+     * Set the colors in ARGB and enable gradient mode. When enabled, a primitive should
+     * use the colors sequentially (in Z shape), and {@link #setColor(int)} is ignored.
+     * You can use this to make gradient effect or edge fading effect in one pass,
+     * without post-processing shaders.
      *
      * @param tl the top-left color
      * @param tr the top-right color
@@ -291,6 +316,9 @@ public class Paint {
 
     /**
      * Return the width for stroking. The default value is 2.0 px.
+     * <p>
+     * When a round cap is installed, the half of the stroke width will be used as
+     * the stroke radius by analytic geometry.
      *
      * @return the paint's stroke width, used whenever the paint's style is {@link Paint#STROKE}
      */
@@ -300,6 +328,9 @@ public class Paint {
 
     /**
      * Set the width for stroking. The default value is 2.0 px.
+     * <p>
+     * When a round cap is installed, the half of the stroke width will be used as
+     * the stroke radius by analytic geometry.
      *
      * @param width set the paint's stroke width, used whenever the paint's
      *              style is {@link Paint#STROKE}
@@ -309,12 +340,12 @@ public class Paint {
     }
 
     /**
-     * Return the current smooth radius.
+     * Return the current smooth radius. The default value is 2.0 px.
      * <p>
-     * Smooth radius is used to smooth and blur the edges of geometry by analytic geometry.
-     * The default value is 2.0 px.
+     * Smooth radius is used to smooth or blur the edge of primitives by analytic geometry.
+     * It looks like anti-aliasing, but it's not limited to one pixel.
      *
-     * @return feather radius
+     * @return the paint's smooth radius
      * @see #setSmoothRadius(float)
      */
     public float getSmoothRadius() {
@@ -322,13 +353,12 @@ public class Paint {
     }
 
     /**
-     * Set the smooth radius in pixels for this paint. This method is not a substitute for
-     * anti-aliasing and is rarely used.
+     * Set the smooth radius in pixels for this paint. The default value is 2.0 px.
      * <p>
-     * Smooth radius is used to smooth and blur the edges of geometry by analytic geometry.
-     * The default value is 2.0 px. This value may be ignored by some primitives.
+     * Smooth radius is used to smooth or blur the edge of primitives by analytic geometry.
+     * It looks like anti-aliasing, but it's not limited to one pixel.
      *
-     * @param radius the new feather radius to set
+     * @param radius the paint's smooth radius
      */
     public void setSmoothRadius(float radius) {
         mSmoothRadius = Math.max(0, radius);

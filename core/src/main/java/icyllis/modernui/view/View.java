@@ -1152,7 +1152,9 @@ public class View implements Drawable.Callback {
 
     @MagicConstant(intValues = {
             LAYOUT_DIRECTION_LTR,
-            LAYOUT_DIRECTION_RTL
+            LAYOUT_DIRECTION_RTL,
+            LayoutDirection.LTR,
+            LayoutDirection.RTL
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface ResolvedLayoutDir {

@@ -19,6 +19,7 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.font.LineBreaker;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.method.TextKeyListener;
 import icyllis.modernui.text.style.ParagraphStyle;

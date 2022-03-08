@@ -21,9 +21,9 @@ package icyllis.modernui.textmc;
 import com.ibm.icu.text.Bidi;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.text.FontRun;
-import icyllis.modernui.text.GlyphManager;
-import icyllis.modernui.text.TexturedGlyph;
+import icyllis.modernui.graphics.font.FontCollection.Run;
+import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.text.Typeface;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import net.minecraft.ChatFormatting;
@@ -488,8 +488,9 @@ class TextLayoutProcessor {
             }
         }
 
-        List<FontRun> items = ModernUI.getInstance().getSelectedTypeface().itemize(text, start, limit);
-        for (FontRun run : items) {
+        List<Run> items = ModernUI.getInstance().getSelectedTypeface()
+                .getFontCollection().itemize(text, start, limit);
+        for (Run run : items) {
             performTextLayout(text, run.getStart(), run.getEnd(), isRtl, fastDigit, carrier, run.getFont());
         }
     }

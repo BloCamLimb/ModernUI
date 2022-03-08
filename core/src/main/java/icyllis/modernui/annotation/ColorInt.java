@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,35 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text;
+package icyllis.modernui.annotation;
 
-import java.awt.*;
+import java.lang.annotation.*;
 
-// font run, subrange of style run
-public class FontRun {
-
-    final Font mFont;
-    final int mStart;
-    int mEnd;
-
-    public FontRun(Font font, int start, int end) {
-        mFont = font;
-        mStart = start;
-        mEnd = end;
-    }
-
-    // base font without style and size
-    public Font getFont() {
-        return mFont;
-    }
-
-    // start index (inclusive)
-    public int getStart() {
-        return mStart;
-    }
-
-    // end index (exclusive)
-    public int getEnd() {
-        return mEnd;
-    }
+/**
+ * Denotes that the annotated element represents a packed color
+ * int, {@code AARRGGBB}. If applied to an int array, every element
+ * in the array represents a color integer.
+ * <p>
+ * Example:
+ * <pre>{@code
+ *  public abstract void setTextColor(@ColorInt int color);
+ * }</pre>
+ */
+@Documented
+@Target({ElementType.PARAMETER, ElementType.METHOD, ElementType.LOCAL_VARIABLE, ElementType.FIELD})
+@Retention(RetentionPolicy.CLASS)
+public @interface ColorInt {
 }

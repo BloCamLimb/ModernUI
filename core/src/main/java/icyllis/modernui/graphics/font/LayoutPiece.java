@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,10 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.text;
+package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.graphics.font.FontCollection.Run;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
 
@@ -121,10 +122,10 @@ public class LayoutPiece {
         final FloatList positions = new FloatArrayList();
         //final IntList charIndices = new IntArrayList();
 
-        final List<FontRun> items = paint.mTypeface.itemize(buf, start, end);
+        final List<Run> items = paint.mFontCollection.itemize(buf, start, end);
         for (int runIndex = isRtl ? items.size() - 1 : 0;
              isRtl ? runIndex >= 0 : runIndex < items.size(); ) {
-            FontRun run = items.get(runIndex);
+            Run run = items.get(runIndex);
 
             Font derived = engine.getFontMetrics(run.mFont, paint, extent);
             GlyphVector vector = engine.layoutGlyphVector(derived, buf, run.mStart, run.mEnd, isRtl);
