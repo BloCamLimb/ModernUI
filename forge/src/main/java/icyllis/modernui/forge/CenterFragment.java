@@ -40,6 +40,7 @@ import icyllis.modernui.view.View;
 import icyllis.modernui.view.View.OnLayoutChangeListener;
 import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.*;
+import net.minecraft.locale.Language;
 import net.minecraftforge.common.ForgeConfigSpec.IntValue;
 
 import javax.annotation.Nonnull;
@@ -66,7 +67,7 @@ public class CenterFragment extends Fragment {
         {
             var title = new TextView();
             title.setId(R.id.title);
-            title.setText("Modern UI Center");
+            title.setText(Language.getInstance().getOrDefault("gui.modernui.center.title"));
             title.setTextSize(22);
             title.setTextStyle(TextPaint.BOLD);
 
@@ -160,7 +161,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(12);
-                view.setText("Animation duration");
+                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.animationDuration"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -202,7 +203,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(16);
-                view.setText("Blur effect");
+                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.blurEffect"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -229,7 +230,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(18);
-                view.setText("Blur radius");
+                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.blurRadius"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -465,7 +466,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(16);
-                view.setText("Force RTL layout");
+                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.forceRtlLayout"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -492,7 +493,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(18);
-                view.setText("Global font scale");
+                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.globalFontScale"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -535,7 +536,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(20);
-                view.setText("Global animation scale");
+                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.globalAnimationScale"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,

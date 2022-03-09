@@ -42,6 +42,14 @@
   "gui.modernui.settings.category.sounds": "Sounds",
   "gui.modernui.settings.category.mouse": "Mouse",
 
+  "gui.modernui.center.title": "Modern UI Center",
+  "gui.modernui.center.animationDuration": "Animation duration",
+  "gui.modernui.center.blurEffect": "Blur effect",
+  "gui.modernui.center.blurRadius": "Blur radius",
+  "gui.modernui.center.forceRtlLayout": "Force RTL layout",
+  "gui.modernui.center.globalFontScale": "Global font scale",
+  "gui.modernui.center.globalAnimationScale": "Global animation scale",
+
   "gui.modernui.popup.exit": "Are you sure you want to exit to main menu?",
   "gui.modernui.popup.lockDifficulty": "Are you sure you want to lock world difficulty?",
 

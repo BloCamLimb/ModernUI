@@ -25,6 +25,7 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.math.MathUtil;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
 import org.lwjgl.stb.STBIWriteCallbackI;
@@ -149,6 +150,17 @@ public final class NativeImage implements AutoCloseable {
             return TinyFileDialogs.tinyfd_saveFileDialog(null,
                     format.getFileName(), filters, format.getDescription());
         }
+    }
+
+    /**
+     * Opens a file select dialog, then decodes the selected file and creates a native image,
+     * using format in file.
+     *
+     * @return a native image or {@code null} if selects nothing
+     */
+    @Nullable
+    public static NativeImage openDialog() throws IOException {
+        return openDialog(null);
     }
 
     /**
@@ -356,6 +368,16 @@ public final class NativeImage implements AutoCloseable {
 
     /**
      * Save this native image to specified path as specified format. This will
+     * open a save dialog to select the path, with a quality of 100 for JPEG format.
+     *
+     * @param format the format of the saved image
+     */
+    public void saveDialog(@Nonnull SaveFormat format) throws IOException {
+        saveDialog(format, 100);
+    }
+
+    /**
+     * Save this native image to specified path as specified format. This will
      * open a save dialog to select the path.
      *
      * @param format  the format of the saved image
@@ -416,6 +438,17 @@ public final class NativeImage implements AutoCloseable {
             mRef.mCleanup.clean();
             mRef = null;
         }
+    }
+
+    @Nonnull
+    @Override
+    public String toString() {
+        return "NativeImage{" +
+                "mFormat=" + mFormat +
+                ", mWidth=" + mWidth +
+                ", mHeight=" + mHeight +
+                ", mRef=" + mRef +
+                '}';
     }
 
     /**
@@ -501,10 +534,7 @@ public final class NativeImage implements AutoCloseable {
             @Override
             public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
                                  long data, int quality) {
-                if (quality < 1)
-                    quality = 1;
-                else if (quality > 120)
-                    quality = 120;
+                quality = MathUtil.clamp(quality, 1, 120);
                 return STBImageWrite.nstbi_write_jpg_to_func(func.address(),
                         NULL, width, height, format.channels, data, quality) != 0;
             }
@@ -594,6 +624,15 @@ public final class NativeImage implements AutoCloseable {
             } else {
                 MemoryUtil.nmemFree(mPixels);
             }
+        }
+
+        @Nonnull
+        @Override
+        public String toString() {
+            return "Ref{" +
+                    "mPixels=0x" + Long.toHexString(mPixels) +
+                    ", mFromSTB=" + mFromSTB +
+                    '}';
         }
     }
 }

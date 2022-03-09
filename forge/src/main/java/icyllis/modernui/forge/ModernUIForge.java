@@ -19,11 +19,13 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.font.FontCollection;
-import icyllis.modernui.graphics.opengl.ShaderManager;
-import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.font.LayoutCache;
+import icyllis.modernui.graphics.opengl.ShaderManager;
+import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.ModernUITextMC;
 import icyllis.modernui.view.ViewManager;
@@ -124,8 +126,11 @@ public final class ModernUIForge extends ModernUI {
                                 (ResourceManagerReloadListener) (manager) -> {
                                     ShaderManager.getInstance().reload();
                                     TextureManager.getInstance().reload();
-                                    if (UIManager.sInstance != null) {
-                                        UIManager.sInstance.updateLayoutDir();
+                                    Handler handler = ArchCore.getUiHandlerAsync();
+                                    // FML may throw ex, so it can be null
+                                    if (handler != null) {
+                                        // Do NOT use UIManager.sInstance::updateLayoutDir
+                                        handler.post(() -> UIManager.sInstance.updateLayoutDir());
                                     }
                                 }
                         );

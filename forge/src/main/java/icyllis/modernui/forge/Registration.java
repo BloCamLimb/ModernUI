@@ -52,19 +52,14 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -103,7 +98,7 @@ final class Registration {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        byte[] bytes = null;
+        /*byte[] bytes = null;
         try (InputStream stream = ModernUIForge.class.getClassLoader().getResourceAsStream(
                 "icyllis/modernui/forge/NetworkMessages.class")) {
             Objects.requireNonNull(stream, "Mod file is broken");
@@ -117,18 +112,18 @@ final class Registration {
             bytes = ArrayUtils.addAll(bytes, IOUtils.toByteArray(stream));
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
         if (ModList.get().getModContainerById(new String(new byte[]{0x1f ^ 0x74, (0x4 << 0x1) | 0x41,
                 ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent()) {
             event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("OK"));
         }
-        bytes = ArrayUtils.addAll(bytes, ModList.get().getModFileById(ModernUI.ID).getLicense()
+        /*bytes = ArrayUtils.addAll(bytes, ModList.get().getModFileById(ModernUI.ID).getLicense()
                 .getBytes(StandardCharsets.UTF_8));
         if (bytes == null) {
             throw new IllegalStateException();
-        }
+        }*/
         NetworkMessages.sNetwork = new NetworkHandler("", () -> NetworkMessages::msg,
-                null, digest(bytes), true);
+                null, "340", true);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 
@@ -239,11 +234,13 @@ final class Registration {
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void onMenuOpen(@Nonnull OpenMenuEvent event) {
-        if (event.getMenu() instanceof TestContainerMenu c) {
-            if (c.isDiamond()) {
-                event.set(new TestFragment());
-            } else {
-                event.set(new TestPauseFragment());
+        if (ModernUIForge.sDevelopment) {
+            if (event.getMenu() instanceof TestContainerMenu c) {
+                if (c.isDiamond()) {
+                    event.set(new TestFragment());
+                } else {
+                    event.set(new TestPauseFragment());
+                }
             }
         }
     }
