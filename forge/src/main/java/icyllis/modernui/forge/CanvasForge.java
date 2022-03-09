@@ -109,7 +109,7 @@ public final class CanvasForge {
         if (sInstance.mCanvas == null) {
             synchronized (CanvasForge.class) {
                 if (sInstance.mCanvas == null) {
-                    sInstance.mCanvas = UIManager.sInstance.mCanvas;
+                    sInstance.mCanvas = UIManager.getInstance().mCanvas;
                 }
             }
         }

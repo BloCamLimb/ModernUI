@@ -129,8 +129,8 @@ public final class ModernUIForge extends ModernUI {
                                     Handler handler = ArchCore.getUiHandlerAsync();
                                     // FML may throw ex, so it can be null
                                     if (handler != null) {
-                                        // Do NOT use UIManager.sInstance::updateLayoutDir
-                                        handler.post(() -> UIManager.sInstance.updateLayoutDir());
+                                        // Call in lambda, not in creating the lambda
+                                        handler.post(() -> UIManager.getInstance().updateLayoutDir());
                                     }
                                 }
                         );
@@ -253,7 +253,7 @@ public final class ModernUIForge extends ModernUI {
 
     @Override
     public ViewManager getViewManager() {
-        return UIManager.sInstance.getDecorView();
+        return UIManager.getInstance().getDecorView();
     }
 
     public static boolean isDeveloperMode() {

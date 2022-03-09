@@ -105,11 +105,9 @@ public final class NetworkMessages {
             Minecraft.getInstance().execute(() -> {
                 final LocalPlayer p = player.get();
                 if (p != null) {
-                    UIManager.sInstance.start(p, type.create(containerId, p.getInventory(), payload), key);
+                    UIManager.getInstance().start(p, type.create(containerId, p.getInventory(), payload), key);
                 }
-                if (!payload.release()) {
-                    throw new IllegalStateException();
-                }
+                payload.release();
             });
         }
     }
