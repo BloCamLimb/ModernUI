@@ -107,8 +107,8 @@ public final class UIManager implements LifecycleOwner {
     // configs
     static volatile boolean sPlaySoundOnLoaded;
 
-    // the global instance
-    static volatile UIManager sInstance;
+    // the global instance, lazily init
+    private static volatile UIManager sInstance;
 
     private static final int fragment_container = 0x01020007;
 
@@ -208,6 +208,15 @@ public final class UIManager implements LifecycleOwner {
         LOGGER.info(MARKER, "UI system initialized");
     }
 
+    @Nonnull
+    static UIManager getInstance() {
+        // Do not push into stack, since it's lazily init
+        if (sInstance == null)
+            throw new IllegalStateException("UI manager was never initialized. " +
+                    "Please check whether the loader threw an exception before.");
+        return sInstance;
+    }
+
     @UiThread
     private void run() {
         init();
@@ -284,8 +293,11 @@ public final class UIManager implements LifecycleOwner {
      *
      * @return drawing time in milliseconds
      */
-    long getElapsedTime() {
-        return mElapsedTimeMillis;
+    static long getElapsedTime() {
+        if (sInstance == null) {
+            return ArchCore.timeMillis();
+        }
+        return sInstance.mElapsedTimeMillis;
     }
 
     /**
@@ -293,8 +305,11 @@ public final class UIManager implements LifecycleOwner {
      *
      * @return frame time in nanoseconds
      */
-    long getFrameTimeNanos() {
-        return mFrameTimeNanos;
+    static long getFrameTimeNanos() {
+        if (sInstance == null) {
+            return ArchCore.timeNanos();
+        }
+        return sInstance.mFrameTimeNanos;
     }
 
     CoordinatorLayout getDecorView() {

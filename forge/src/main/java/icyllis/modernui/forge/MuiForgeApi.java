@@ -159,7 +159,7 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @MainThread
     public static void openGui(@Nonnull Fragment fragment) {
-        UIManager.sInstance.start(fragment, null);
+        UIManager.getInstance().start(fragment, null);
     }
 
     /**
@@ -177,7 +177,7 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @MainThread
     public static void openGui(@Nonnull Fragment fragment, @Nullable UICallback callback) {
-        UIManager.sInstance.start(fragment, callback);
+        UIManager.getInstance().start(fragment, callback);
     }
 
     /**
@@ -189,11 +189,7 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @RenderThread
     public static long getElapsedTime() {
-        if (UIManager.sInstance == null) {
-            // the game is failed to launch
-            return ArchCore.timeMillis();
-        }
-        return UIManager.sInstance.getElapsedTime();
+        return UIManager.getElapsedTime();
     }
 
     /**
@@ -215,7 +211,7 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     @RenderThread
     public static long getFrameTimeNanos() {
-        return UIManager.sInstance.getFrameTimeNanos();
+        return UIManager.getFrameTimeNanos();
     }
 
     /**

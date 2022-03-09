@@ -21,6 +21,7 @@ package icyllis.modernui.forge;
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.font.FontAtlas;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.view.ViewConfiguration;
@@ -410,19 +411,22 @@ final class Config {
 
             UIManager.sPlaySoundOnLoaded = ding.get();
             //TestHUD.sBars = hudBars.get();
-            ArchCore.getUiHandlerAsync().post(() -> {
-                UIManager.sInstance.updateLayoutDir();
-                ViewConfiguration.get().setFontScale(fontScale.get().floatValue());
-                ViewConfiguration.get().setScrollbarSize(scrollbarSize.get());
-                ViewConfiguration.get().setTouchSlop(touchSlop.get());
-                ViewConfiguration.get().setMinScrollbarTouchTarget(minScrollbarTouchTarget.get());
-                ViewConfiguration.get().setMinimumFlingVelocity(minimumFlingVelocity.get());
-                ViewConfiguration.get().setMaximumFlingVelocity(maximumFlingVelocity.get());
-                ViewConfiguration.get().setOverscrollDistance(overscrollDistance.get());
-                ViewConfiguration.get().setOverflingDistance(overflingDistance.get());
-                ViewConfiguration.get().setVerticalScrollFactor(verticalScrollFactor.get().floatValue());
-                ViewConfiguration.get().setHorizontalScrollFactor(horizontalScrollFactor.get().floatValue());
-            });
+            Handler handler = ArchCore.getUiHandlerAsync();
+            if (handler != null) {
+                handler.post(() -> {
+                    UIManager.getInstance().updateLayoutDir();
+                    ViewConfiguration.get().setFontScale(fontScale.get().floatValue());
+                    ViewConfiguration.get().setScrollbarSize(scrollbarSize.get());
+                    ViewConfiguration.get().setTouchSlop(touchSlop.get());
+                    ViewConfiguration.get().setMinScrollbarTouchTarget(minScrollbarTouchTarget.get());
+                    ViewConfiguration.get().setMinimumFlingVelocity(minimumFlingVelocity.get());
+                    ViewConfiguration.get().setMaximumFlingVelocity(maximumFlingVelocity.get());
+                    ViewConfiguration.get().setOverscrollDistance(overscrollDistance.get());
+                    ViewConfiguration.get().setOverflingDistance(overflingDistance.get());
+                    ViewConfiguration.get().setVerticalScrollFactor(verticalScrollFactor.get().floatValue());
+                    ViewConfiguration.get().setHorizontalScrollFactor(horizontalScrollFactor.get().floatValue());
+                });
+            }
 
             GlyphManager.sBitmapLike = bitmapLike.get();
             FontAtlas.sLinearSampling = linearSampling.get();
