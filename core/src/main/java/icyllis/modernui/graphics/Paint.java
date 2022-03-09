@@ -22,6 +22,7 @@ import icyllis.modernui.annotation.ColorInt;
 import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 
 /**
  * The Paint class holds the style and color information about how to draw
@@ -187,7 +188,7 @@ public class Paint {
     }
 
     /**
-     * Helper to setColor(), that takes a,r,g,b and constructs the color int
+     * Helper to setColor(), that takes r,g,b,a and constructs the color int
      *
      * @param r The new red component (0..255) of the paint's color.
      * @param g The new green component (0..255) of the paint's color.
@@ -195,7 +196,7 @@ public class Paint {
      * @param a The new alpha component (0..255) of the paint's color.
      */
     public void setRGBA(int r, int g, int b, int a) {
-        setColor((a << 24) | (r << 16) | (g << 8) | b);
+        setColor(Color.argb(a, r, g, b));
     }
 
     /**
@@ -207,7 +208,7 @@ public class Paint {
      * @param b The new blue component (0..255) of the paint's color.
      */
     public void setARGB(int a, int r, int g, int b) {
-        setColor((a << 24) | (r << 16) | (g << 8) | b);
+        setColor(Color.argb(a, r, g, b));
     }
 
     /**
@@ -230,7 +231,10 @@ public class Paint {
      * @see #setColors(int, int, int, int)
      * @see #isGradient()
      */
-    public void setColors(@Nonnull int[] colors) {
+    public void setColors(@ColorInt int[] colors) {
+        if (colors == null) {
+            return;
+        }
         int len = colors.length;
         if (len == 0) {
             return;
@@ -262,7 +266,7 @@ public class Paint {
      * @see #setColors(int[])
      * @see #isGradient()
      */
-    public void setColors(int tl, int tr, int bl, int br) {
+    public void setColors(@ColorInt int tl, @ColorInt int tr, @ColorInt int bl, @ColorInt int br) {
         if (mColors == null) {
             mColors = new int[4];
         }
@@ -362,5 +366,16 @@ public class Paint {
      */
     public void setSmoothRadius(float radius) {
         mSmoothRadius = Math.max(0, radius);
+    }
+
+    @Override
+    public String toString() {
+        return "Paint{" +
+                "mColor=#" + Integer.toHexString(mColor) +
+                ", mFlags=0x" + Integer.toHexString(mFlags) +
+                ", mStrokeWidth=" + mStrokeWidth +
+                ", mSmoothRadius=" + mSmoothRadius +
+                ", mColors=" + Arrays.toString(mColors) +
+                '}';
     }
 }

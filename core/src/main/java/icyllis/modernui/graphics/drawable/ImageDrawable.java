@@ -35,6 +35,7 @@ import java.io.InputStream;
  * A Drawable that wraps an image and can be tiled, stretched, or aligned. You can create a
  * ImageDrawable from a file path, an input stream, or from a {@link Image} object.
  */
+//TODO texture tint blending, current it's MODULATE
 public class ImageDrawable extends Drawable {
 
     // lazily init
@@ -49,7 +50,7 @@ public class ImageDrawable extends Drawable {
     private boolean mMutated;
 
     /**
-     * Create drawable from a image, setting initial target density based on
+     * Create drawable from an image, setting initial target density based on
      * the display metrics of the resources.
      */
     public ImageDrawable(@Nullable Image image) {
@@ -223,7 +224,7 @@ public class ImageDrawable extends Drawable {
         final Paint paint = state.mPaint;
 
         final int restoreAlpha;
-        if (mBlendColor >>> 24 != 0) {
+        if ((mBlendColor >>> 24) != 0) {
             restoreAlpha = paint.getAlpha();
             paint.setColor(mBlendColor);
             paint.setAlpha(restoreAlpha * (mBlendColor >>> 24) >>> 8);

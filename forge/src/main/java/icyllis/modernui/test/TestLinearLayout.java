@@ -18,18 +18,22 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.FontCollection;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
-import icyllis.modernui.text.*;
+import icyllis.modernui.text.Spannable;
+import icyllis.modernui.text.Spanned;
+import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.*;
@@ -486,7 +490,7 @@ public class TestLinearLayout extends LinearLayout {
         protected void onDraw(@Nonnull Canvas canvas) {
             if (isHovered()) {
                 Paint paint = Paint.take();
-                paint.setRGBA(140, 200, 240, 128);
+                paint.setARGB(128, 140, 200, 240);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
                 canvas.drawText(mIndex, 0, mIndex.length(), 20, getHeight() >> 1, mTextPaint);
             }

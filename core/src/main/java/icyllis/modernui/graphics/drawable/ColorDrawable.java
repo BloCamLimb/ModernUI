@@ -97,16 +97,17 @@ public class ColorDrawable extends Drawable {
 
     @Override
     public void draw(@Nonnull Canvas canvas) {
-        if ((mColorState.mUseColor >>> 24) != 0 || mBlendMode != null) {
-            int color = mColorState.mUseColor;
+        int color = mColorState.mUseColor;
+        if (Color.alpha(color) != 0 || mBlendMode != null) {
             if (mBlendMode != null) {
                 color = Color.blend(mBlendMode, mBlendColor, color);
+                if (Color.alpha(color) == 0) {
+                    return;
+                }
             }
-            if ((color >>> 24) != 0) {
-                Paint paint = Paint.take();
-                paint.setColor(color);
-                canvas.drawRect(getBounds(), paint);
-            }
+            Paint paint = Paint.take();
+            paint.setColor(color);
+            canvas.drawRect(getBounds(), paint);
         }
     }
 
