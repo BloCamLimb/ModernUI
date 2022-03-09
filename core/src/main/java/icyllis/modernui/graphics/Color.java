@@ -155,7 +155,7 @@ public class Color {
     /**
      * Blends the two colors using premultiplied alpha on CPU side. This is to simulate
      * the color blending on GPU side, but this is only used for color filtering (tinting).
-     * Do NOT premultiply the parameter colors with alpha on CPU side. The returned
+     * Do NOT premultiply the src and dst colors with alpha on CPU side. The returned
      * color is un-premultiplied by alpha. This method will not lose precision,
      * color components are still 8-bit.
      *
@@ -171,15 +171,18 @@ public class Color {
             case SRC -> src;
             case DST -> dst;
             case SRC_OVER -> {
-                // fast path for a transparent layer
-                if (dst == TRANSPARENT)
+                int srcAlpha = alpha(src);
+                if (srcAlpha == 0xFF)
+                    yield src;
+                int dstAlpha = alpha(dst);
+                if (dstAlpha == 0)
                     yield src;
                 // premultiply the src and dst colors
-                float srcA = alpha(src) / 255.0f;
+                float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
-                float dstA = alpha(dst) / 255.0f;
+                float dstA = dstAlpha / 255.0f;
                 float dstR = red(dst) / 255.0f * dstA;
                 float dstG = green(dst) / 255.0f * dstA;
                 float dstB = blue(dst) / 255.0f * dstA;
@@ -196,14 +199,18 @@ public class Color {
                 yield argb(outA, outR * invA, outG * invA, outB * invA);
             }
             case DST_OVER -> {
-                if (src == TRANSPARENT)
+                int srcAlpha = alpha(src);
+                if (srcAlpha == 0)
+                    yield dst;
+                int dstAlpha = alpha(dst);
+                if (dstAlpha == 0xFF)
                     yield dst;
                 // premultiply the src and dst colors
-                float srcA = alpha(src) / 255.0f;
+                float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
-                float dstA = alpha(dst) / 255.0f;
+                float dstA = dstAlpha / 255.0f;
                 float dstR = red(dst) / 255.0f * dstA;
                 float dstG = green(dst) / 255.0f * dstA;
                 float dstB = blue(dst) / 255.0f * dstA;
@@ -220,11 +227,16 @@ public class Color {
                 yield argb(outA, outR * invA, outG * invA, outB * invA);
             }
             case SRC_IN -> {
+                int srcAlpha = alpha(src);
+                if (srcAlpha == 0)
+                    yield TRANSPARENT;
                 int dstAlpha = alpha(dst);
                 if (dstAlpha == 0xFF)
                     yield src;
+                if (dstAlpha == 0)
+                    yield TRANSPARENT;
                 // premultiply the src and dst colors
-                float srcA = alpha(src) / 255.0f;
+                float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
@@ -244,14 +256,19 @@ public class Color {
                 int srcAlpha = alpha(src);
                 if (srcAlpha == 0xFF)
                     yield dst;
+                if (srcAlpha == 0)
+                    yield TRANSPARENT;
+                int dstAlpha = alpha(dst);
+                if (dstAlpha == 0)
+                    yield TRANSPARENT;
                 // premultiply the src and dst colors
                 float srcA = srcAlpha / 255.0f;
-                float dstA = alpha(dst) / 255.0f;
+                float dstA = dstAlpha / 255.0f;
                 float dstR = red(dst) / 255.0f * dstA;
                 float dstG = green(dst) / 255.0f * dstA;
                 float dstB = blue(dst) / 255.0f * dstA;
                 // blend
-                float outA = srcA * dstA;
+                float outA = dstA * srcA;
                 if (outA == 0.0f)
                     yield TRANSPARENT;
                 float outR = dstR * srcA;
@@ -262,11 +279,14 @@ public class Color {
                 yield argb(outA, outR * invA, outG * invA, outB * invA);
             }
             case SRC_OUT -> {
+                int srcAlpha = alpha(src);
+                if (srcAlpha == 0)
+                    yield TRANSPARENT;
                 int dstAlpha = alpha(dst);
                 if (dstAlpha == 0)
                     yield src;
                 // premultiply the src and dst colors
-                float srcA = alpha(src) / 255.0f;
+                float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
@@ -287,9 +307,12 @@ public class Color {
                 int srcAlpha = alpha(src);
                 if (srcAlpha == 0)
                     yield dst;
+                int dstAlpha = alpha(dst);
+                if (dstAlpha == 0)
+                    yield TRANSPARENT;
                 // premultiply the src and dst colors
                 float srcA = srcAlpha / 255.0f;
-                float dstA = alpha(dst) / 255.0f;
+                float dstA = dstAlpha / 255.0f;
                 float dstR = red(dst) / 255.0f * dstA;
                 float dstG = green(dst) / 255.0f * dstA;
                 float dstB = blue(dst) / 255.0f * dstA;
@@ -306,11 +329,14 @@ public class Color {
                 yield argb(outA, outR * invA, outG * invA, outB * invA);
             }
             case SRC_ATOP -> {
+                int srcAlpha = alpha(src);
+                if (srcAlpha == 0)
+                    yield dst;
                 int dstAlpha = alpha(dst);
                 if (dstAlpha == 0)
                     yield TRANSPARENT;
                 // premultiply the src and dst colors
-                float srcA = alpha(src) / 255.0f;
+                float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
@@ -331,12 +357,15 @@ public class Color {
                 int srcAlpha = alpha(src);
                 if (srcAlpha == 0)
                     yield TRANSPARENT;
+                int dstAlpha = alpha(dst);
+                if (dstAlpha == 0)
+                    yield src;
                 // premultiply the src and dst colors
                 float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
-                float dstA = alpha(dst) / 255.0f;
+                float dstA = dstAlpha / 255.0f;
                 float dstR = red(dst) / 255.0f * dstA;
                 float dstG = green(dst) / 255.0f * dstA;
                 float dstB = blue(dst) / 255.0f * dstA;
@@ -350,12 +379,18 @@ public class Color {
                 yield argb(srcA, outR * invA, outG * invA, outB * invA);
             }
             case XOR -> {
+                int srcAlpha = alpha(src);
+                if (srcAlpha == 0)
+                    yield dst;
+                int dstAlpha = alpha(dst);
+                if (dstAlpha == 0)
+                    yield src;
                 // premultiply the src and dst colors
-                float srcA = alpha(src) / 255.0f;
+                float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
-                float dstA = alpha(dst) / 255.0f;
+                float dstA = dstAlpha / 255.0f;
                 float dstR = red(dst) / 255.0f * dstA;
                 float dstG = green(dst) / 255.0f * dstA;
                 float dstB = blue(dst) / 255.0f * dstA;
@@ -373,12 +408,18 @@ public class Color {
                 yield argb(outA, outR * invA, outG * invA, outB * invA);
             }
             case PLUS -> {
+                int srcAlpha = alpha(src);
+                if (srcAlpha == 0)
+                    yield dst;
+                int dstAlpha = alpha(dst);
+                if (dstAlpha == 0)
+                    yield src;
                 // premultiply the src and dst colors
-                float srcA = alpha(src) / 255.0f;
+                float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
-                float dstA = alpha(dst) / 255.0f;
+                float dstA = dstAlpha / 255.0f;
                 float dstR = red(dst) / 255.0f * dstA;
                 float dstG = green(dst) / 255.0f * dstA;
                 float dstB = blue(dst) / 255.0f * dstA;
@@ -394,12 +435,18 @@ public class Color {
                 yield argb(outA, outR * invA, outG * invA, outB * invA);
             }
             case MODULATE -> {
+                int srcAlpha = alpha(src);
+                if (srcAlpha == 0)
+                    yield TRANSPARENT;
+                int dstAlpha = alpha(dst);
+                if (dstAlpha == 0)
+                    yield TRANSPARENT;
                 // premultiply the src and dst colors
-                float srcA = alpha(src) / 255.0f;
+                float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
-                float dstA = alpha(dst) / 255.0f;
+                float dstA = dstAlpha / 255.0f;
                 float dstR = red(dst) / 255.0f * dstA;
                 float dstG = green(dst) / 255.0f * dstA;
                 float dstB = blue(dst) / 255.0f * dstA;
@@ -415,12 +462,18 @@ public class Color {
                 yield argb(outA, outR * invA, outG * invA, outB * invA);
             }
             case SCREEN -> {
+                int srcAlpha = alpha(src);
+                if (srcAlpha == 0)
+                    yield dst;
+                int dstAlpha = alpha(dst);
+                if (dstAlpha == 0)
+                    yield src;
                 // premultiply the src and dst colors
-                float srcA = alpha(src) / 255.0f;
+                float srcA = srcAlpha / 255.0f;
                 float srcR = red(src) / 255.0f * srcA;
                 float srcG = green(src) / 255.0f * srcA;
                 float srcB = blue(src) / 255.0f * srcA;
-                float dstA = alpha(dst) / 255.0f;
+                float dstA = dstAlpha / 255.0f;
                 float dstR = red(dst) / 255.0f * dstA;
                 float dstG = green(dst) / 255.0f * dstA;
                 float dstB = blue(dst) / 255.0f * dstA;

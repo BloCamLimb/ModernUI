@@ -147,6 +147,8 @@ public final class GLWrapper extends GL45C {
                                 Integer.toHexString(id), getCategoryAMD(category), getSeverityAMD(severity),
                                 GLDebugMessageAMDCallback.getMessage(length, message)));
                 glDebugMessageCallbackAMD(proc, NULL);
+            } else {
+                LOGGER.debug(MARKER, "No debug callback function was used...");
             }
         }
 
@@ -155,89 +157,114 @@ public final class GLWrapper extends GL45C {
 
         String glVersion = glGetString(GL_VERSION);
 
-        LOGGER.info(ArchCore.MARKER, "Graphics API: OpenGL {}", glVersion);
-        LOGGER.info(ArchCore.MARKER, "OpenGL Renderer: {} {}", glGetString(GL_VENDOR), glGetString(GL_RENDERER));
+        LOGGER.info(MARKER, "OpenGL vendor: {}", glGetString(GL_VENDOR));
+        LOGGER.info(MARKER, "OpenGL renderer: {}", glGetString(GL_RENDERER));
+        LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
 
         if (!caps.OpenGL45) {
-            LOGGER.debug(ArchCore.MARKER, "OpenGL 4.5 not requested, testing ARBs");
-            if (glVersion == null)
-                glVersion = "UNKNOWN";
-            else {
-                try {
-                    Matcher matcher = Pattern.compile("([0-9]+)\\\\.([0-9]+)(\\\\.([0-9]+))?(.+)?")
-                            .matcher(glVersion);
-                    glVersion = String.format("%s.%s", matcher.group(1), matcher.group(2));
-                } catch (Exception ignored) {
-                }
-            }
+            LOGGER.debug(MARKER, "OpenGL 4.5 was not requested, testing ARBs...");
+
             int count = 0;
-            // list all features used by Modern UI
-            if (!caps.GL_ARB_vertex_buffer_object) {
-                LOGGER.fatal(MARKER, "ARB vertex buffer object is not supported");
+            if (caps.GL_ARB_vertex_buffer_object) {
+                LOGGER.debug(MARKER, "ARB vertex buffer object enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB vertex buffer object disabled");
                 count++;
             }
-            if (!caps.GL_ARB_explicit_attrib_location) {
-                LOGGER.fatal(MARKER, "ARB explicit attrib location is not supported");
+            if (caps.GL_ARB_explicit_attrib_location) {
+                LOGGER.debug(MARKER, "ARB explicit attrib location enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB explicit attrib location disabled");
                 count++;
             }
-            if (!caps.GL_ARB_vertex_array_object) {
-                LOGGER.fatal(MARKER, "ARB vertex array object is not supported");
+            if (caps.GL_ARB_vertex_array_object) {
+                LOGGER.debug(MARKER, "ARB vertex array object enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB vertex array object disabled");
                 count++;
             }
-            if (!caps.GL_ARB_framebuffer_object) {
-                LOGGER.fatal(MARKER, "ARB framebuffer object is not supported");
+            if (caps.GL_ARB_framebuffer_object) {
+                LOGGER.debug(MARKER, "ARB framebuffer object enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB framebuffer object disabled");
                 count++;
             }
-            if (!caps.GL_ARB_uniform_buffer_object) {
-                LOGGER.fatal(MARKER, "ARB uniform buffer object is not supported");
+            if (caps.GL_ARB_uniform_buffer_object) {
+                LOGGER.debug(MARKER, "ARB uniform buffer object enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB uniform buffer object disabled");
                 count++;
             }
-            if (!caps.GL_ARB_instanced_arrays) {
-                LOGGER.fatal(MARKER, "ARB instanced arrays is not supported");
+            if (caps.GL_ARB_instanced_arrays) {
+                LOGGER.debug(MARKER, "ARB instanced arrays enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB instanced arrays disabled");
                 count++;
             }
-            if (!caps.GL_ARB_separate_shader_objects) {
-                LOGGER.fatal(MARKER, "ARB separate shader objects is not supported");
+            if (caps.GL_ARB_separate_shader_objects) {
+                LOGGER.debug(MARKER, "ARB separate shader objects enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB separate shader objects disabled");
                 count++;
             }
-            if (!caps.GL_ARB_explicit_uniform_location) {
-                LOGGER.fatal(MARKER, "ARB explicit uniform location is not supported");
+            if (caps.GL_ARB_explicit_uniform_location) {
+                LOGGER.debug(MARKER, "ARB explicit uniform location enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB explicit uniform location disabled");
                 count++;
             }
-            if (!caps.GL_ARB_texture_swizzle) {
-                LOGGER.fatal(MARKER, "ARB texture swizzle is not supported");
+            if (caps.GL_ARB_texture_swizzle) {
+                LOGGER.debug(MARKER, "ARB texture swizzle enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB texture swizzle disabled");
                 count++;
             }
-            if (!caps.GL_ARB_base_instance) {
-                LOGGER.fatal(MARKER, "ARB base instance is not supported");
+            if (caps.GL_ARB_base_instance) {
+                LOGGER.debug(MARKER, "ARB base instance enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB base instance disabled");
                 count++;
             }
             // we use the new API introduced in OpenGL 4.3, rather than glVertexAttrib*
-            if (!caps.GL_ARB_vertex_attrib_binding) {
-                LOGGER.fatal(MARKER, "ARB vertex attrib binding is not supported");
+            if (caps.GL_ARB_vertex_attrib_binding) {
+                LOGGER.debug(MARKER, "ARB vertex attrib binding enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB vertex attrib binding disabled");
                 count++;
             }
             // DSA, OpenGL 4.5
-            if (!caps.GL_ARB_direct_state_access) {
-                LOGGER.fatal(MARKER, "ARB DSA (direct state access) is not supported");
+            if (caps.GL_ARB_direct_state_access) {
+                LOGGER.debug(MARKER, "ARB direct state access enabled");
+            } else {
+                LOGGER.fatal(MARKER, "ARB direct state access disabled");
                 count++;
             }
 
             if (count > 0) {
-                LOGGER.fatal(MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.5", glVersion);
-                LOGGER.fatal(MARKER, "{} GL capabilities that are not supported by your graphics environment", count);
-                String solution;
-                if (Platform.get() == Platform.MACOSX) {
-                    solution = "For macOS users, see both MoltenVK and Zink.";
+                LOGGER.fatal(MARKER, "Oops, your GPU has {} ARB capabilities unavailable", count);
+                if (glVersion == null) {
+                    glVersion = "UNKNOWN";
                 } else {
-                    solution = "Use dedicated GPU (high performance processor) for Java applications or upgrade your " +
-                            "graphics driver.";
+                    try {
+                        Matcher matcher = Pattern.compile("([0-9]+)\\\\.([0-9]+)(\\\\.([0-9]+))?(.+)?")
+                                .matcher(glVersion);
+                        glVersion = String.format("%s.%s", matcher.group(1), matcher.group(2));
+                    } catch (Exception ignored) {
+                    }
                 }
+                LOGGER.fatal(MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.5", glVersion);
+                String solution = Platform.get() == Platform.MACOSX ?
+                        "However, macOS doesn't support OpenGL 4.5, you may see both MoltenVK and Zink." :
+                        "Try to use dedicated GPU for Java applications and update your GPU drivers.";
                 TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
-                        "OpenGL version is too old. OpenGL 4.5 or higher is required (your version is OpenGL " + glVersion +
-                                "). " + solution,
+                        "OpenGL 4.5 is not requested and ARB test failed (see logs for details). " +
+                                "Your GPU is " + glGetString(GL_RENDERER) +
+                                "and your version is OpenGL " + glVersion + ". " +
+                                solution,
                         "ok", "error", true);
-                throw new RuntimeException("Unsupported OpenGL implementation");
+                throw new RuntimeException("Oops, Modern UI cannot run with an outdated GPU");
+            } else {
+                LOGGER.debug(MARKER, "ARB test passed");
             }
         }
 

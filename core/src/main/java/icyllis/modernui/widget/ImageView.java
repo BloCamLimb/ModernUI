@@ -22,6 +22,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.graphics.drawable.LevelListDrawable;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.view.MeasureSpec;
@@ -916,7 +917,7 @@ public class ImageView extends View {
      * @see #getImageAlpha()
      */
     public void setImageAlpha(int alpha) {
-        alpha &= 0xFF;          // keep it legal
+        alpha += alpha >> 7; // keep it legal
         if (mImageAlpha != alpha) {
             mImageAlpha = alpha;
             mHasImageAlpha = true;
