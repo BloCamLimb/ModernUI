@@ -46,7 +46,7 @@ final class EventHandler {
 
     @SubscribeEvent
     static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
-        if (ModernUIForge.isDeveloperMode()) {
+        if (ModernUIForge.sDevelopment) {
             final boolean diamond;
             if (event.getSide().isServer() && ((diamond = event.getItemStack().is(Items.DIAMOND))
                     || event.getItemStack().is(Items.EMERALD))) {

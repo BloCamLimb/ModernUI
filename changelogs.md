@@ -1,5 +1,84 @@
 Changelogs
 ===
+### Modern UI 3.4.0.99 (2022-03-09)
+#### Forge Extension 1.18.1-39.1.2
+* Stop crashing if some mods failed to load
+* Fix screen lifecycle and threading bugs
+* Add DataSet utils
+* Add more configs to Center UI
+* Make all registries only in dev mode
+* Quit UI thread safely
+#### Modern Text Engine 1.18.1
+* No updates
+#### Core Framework 3.4
+* Improve documentation
+* Add ReactiveX
+* Add BlendMode and color blending
+* Add TextView context menu
+* Add clickable text styles
+* Add Slide and Explode transition
+* Add transition SFX to fragments
+* Add FULL support for Transition framework
+* Add int keys for DataSet
+* Add standalone application bootstrap
+* Add multithreaded event synchronizer
+* Add ContextMenu popup
+* Add Menus and Radio Buttons
+* Add DropDownList and relevant components
+* Add ListView and relevant components
+* Add FULL support for ScrollView
+* Add FULL support for Nested Scrolling
+* Add triangle drawing operation
+* Add new scrollbar features
+* Add foreground layer to View
+* Fix PointerIcon resolving
+* Fix some RTL layout bugs
+* Fix padding not working sometimes
+* Fix inverse matrix
+* Fix orthographic matrix
+* Auto lose EditText focus
+* New touch event handling
+* Multithreading AnimationHandler
+* Remove generic of animated values
+* Add new features:
+  - Add RelativeRadioGroup
+  - Add FragmentResultListener
+  - Add ArrayAdapter
+  - Add PopupMenu
+  - Add Spinner
+  - Add MenuItemView
+  - Add ImageView
+  - Add EdgeEffect
+  - Add AnimatorSet
+  - Add PopupWindow
+  - Add CoordinatorLayout
+  - Add Filter
+  - Add HandlerThread
+  - Add ActionProvider
+  - Add ActionMode
+  - Add ContextMenu
+  - Add MenuItem
+  - Add SubMenu
+  - Add Menu
+  - Add Menus
+  - Add CharacterMap
+  - Add SparseBooleanMap
+  - Add EditText
+  - Add SoundEffects
+  - Add AdapterView
+  - Add VelocityTracker
+  - Add ValueAnimator
+  - Add Shapes
+  - Add StateListDrawable
+  - Add DrawableContainer
+  - Add ColorStateListDrawable
+  - Add ImageDrawable
+  - Add ColorDrawable
+  - Add Drawables
+  - Add StateListAnimator
+  - Add StateListColor
+  - Add StateSet
+
 ### Modern UI 3.3.0.98 (2022-01-23)
 #### Forge Extension 1.18.1-39.0.5
 * Stabilize Forge API and components

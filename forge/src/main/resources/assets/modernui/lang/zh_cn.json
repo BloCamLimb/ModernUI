@@ -42,6 +42,14 @@
   "gui.modernui.settings.category.sounds": "声音",
   "gui.modernui.settings.category.mouse": "鼠标",
 
+  "gui.modernui.center.title": "Modern UI 操作中心",
+  "gui.modernui.center.animationDuration": "淡入动画时长",
+  "gui.modernui.center.blurEffect": "背景虚化",
+  "gui.modernui.center.blurRadius": "虚化半径",
+  "gui.modernui.center.forceRtlLayout": "强制RTL布局",
+  "gui.modernui.center.globalFontScale": "全局字体比例",
+  "gui.modernui.center.globalAnimationScale": "全局动画比例",
+
   "gui.modernui.popup.exit": "你确定要退出到主菜单吗？",
   "gui.modernui.popup.lockDifficulty": "你确定要锁定世界难度吗？",
 
