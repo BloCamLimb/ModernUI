@@ -18,9 +18,9 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.*;
 import icyllis.modernui.graphics.font.LayoutPiece;
 import icyllis.modernui.graphics.font.MeasuredText;
+import icyllis.modernui.math.*;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
@@ -376,8 +376,11 @@ public abstract class Canvas {
      * Draw a quadratic Bézier curve using the specified paint. The three points represent
      * the starting point, the first control point and the end control point respectively.
      * <p>
-     * The Style is ignored in the paint, Bézier curves are always "framed".
-     * Stroke width in the paint represents the width of the curve.
+     * The style is ignored in the paint, Bézier curves are always stroked. The stroke width
+     * in the paint represents the width of the curve.
+     * <p>
+     * Note that the distance from a point to the quadratic curve requires the GPU to solve
+     * cubic equations. Therefore, this method has higher overhead to the GPU.
      *
      * @param p0    the starting point of the Bézier curve
      * @param p1    the first control point of the Bézier curve
@@ -393,8 +396,11 @@ public abstract class Canvas {
      * Draw a quadratic Bézier curve using the specified paint. The three points represent
      * the starting point, the first control point and the end control point respectively.
      * <p>
-     * The Style is ignored in the paint, Bézier curves are always "framed".
-     * Stroke width in the paint represents the width of the curve.
+     * The style is ignored in the paint, Bézier curves are always stroked. The stroke width
+     * in the paint represents the width of the curve.
+     * <p>
+     * Note that the distance from a point to the quadratic curve requires the GPU to solve
+     * cubic equations. Therefore, this method has higher overhead to the GPU.
      *
      * @param x0    the x-coordinate of the starting point of the Bézier curve
      * @param y0    the y-coordinate of the starting point of the Bézier curve

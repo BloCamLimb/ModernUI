@@ -6,7 +6,7 @@ plugins {
     id 'com.github.johnrengelman.shadow'
 }
 
-version = "${minecraft_version}-${core_version}"
+version = "${minecraft_version}-${core_version}" as String
 
 configurations {
     shadow
@@ -29,7 +29,7 @@ loom {
         }
     }
     //runConfigs.each { it.setIdeConfigGenerated(true) }
-    addTaskBeforeRun(":${project.name}:classes")
+    addTaskBeforeRun(":${name}:classes")
 }
 
 repositories {
@@ -56,12 +56,12 @@ dependencies {
     //mappings minecraft.officialMojangMappings()
     mappings loom.layered() {
         officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${minecraft_version}:2021.12.19@zip" as String)
+        parchment("org.parchmentmc.data:parchment-1.18.1:2022.03.06@zip" as String)
     }
     forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     modCompileOnly "mezz.jei:jei-${minecraft_version}:${jei_version}:api"
-    modRuntime "mezz.jei:jei-${minecraft_version}:${jei_version}"
+    modRuntimeOnly "mezz.jei:jei-${minecraft_version}:${jei_version}"
 
     implementation(forgeDependencies(project(':ModernUI-Core')))
     shadow(project(':ModernUI-Core')) {
@@ -125,16 +125,16 @@ shadowJar {
 
 remapJar {
     dependsOn(shadowJar)
-    input.set(shadowJar.archiveFile)
+    inputFile.set(shadowJar.archiveFile)
     archiveClassifier.set("universal")
 }
 
 task remapMavenJar(type: RemapJarTask) {
     dependsOn(jar)
-    input.set(jar.archiveFile)
-    toM.set("srg") // to srg names
+    inputFile.set(jar.archiveFile)
+    /*toM.set("srg") // to srg names
     addNestedDependencies.set(true)
-    remapAccessWidener.set(true)
+    remapAccessWidener.set(true)*/
     archiveClassifier.set("maven")
 }
 
@@ -161,7 +161,7 @@ processResources {
 
 jar {
     manifest {
-        attributes([
+        attributes(
                 "Specification-Title"     : "ModernUI-Forge",
                 "Specification-Vendor"    : "BloCamLimb",
                 "Specification-Version"   : "2",
@@ -169,7 +169,7 @@ jar {
                 "Implementation-Version"  : project.version,
                 "Implementation-Vendor"   : "BloCamLimb",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-        ])
+        )
     }
 }
 

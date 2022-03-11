@@ -833,7 +833,7 @@ public final class UIManager implements LifecycleOwner {
                 // update extension animations
                 BlurHandler.INSTANCE.update(mElapsedTimeMillis);
                 if (TooltipRenderer.sTooltip) {
-                    TooltipRenderer.update(deltaMillis);
+                    TooltipRenderer.update(deltaMillis, mFrameTimeNanos / 1000000);
                 }
             }
         } else {

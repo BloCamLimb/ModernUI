@@ -18,7 +18,6 @@
 
 package icyllis.modernui.forge;
 
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ArchCore;
 import icyllis.modernui.forge.mixin.AccessOption;
@@ -63,7 +62,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * This class handles mod loading events
+ * This class handles mod loading events, all registry entries are only available under the development mode.
  */
 @Mod.EventBusSubscriber(modid = ModernUI.ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 final class Registration {
@@ -115,7 +114,7 @@ final class Registration {
         }*/
         if (ModList.get().getModContainerById(new String(new byte[]{0x1f ^ 0x74, (0x4 << 0x1) | 0x41,
                 ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent()) {
-            event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("OK"));
+            event.enqueueWork(() -> ModernUI.LOGGER.fatal("OK"));
         }
         /*bytes = ArrayUtils.addAll(bytes, ModList.get().getModFileById(ModernUI.ID).getLicense()
                 .getBytes(StandardCharsets.UTF_8));
@@ -129,7 +128,7 @@ final class Registration {
 
         // give it a probe
         if (MuiForgeApi.isServerStarted()) {
-            VertexConsumer.LOGGER.fatal("OK");
+            ModernUI.LOGGER.fatal("OK");
         }
     }
 

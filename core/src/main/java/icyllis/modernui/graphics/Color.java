@@ -434,7 +434,7 @@ public class Color {
                 float invA = 1.0f / outA;
                 yield argb(outA, outR * invA, outG * invA, outB * invA);
             }
-            case MODULATE -> {
+            case MULTIPLY -> {
                 int srcAlpha = alpha(src);
                 if (srcAlpha == 0)
                     yield TRANSPARENT;
@@ -488,6 +488,7 @@ public class Color {
                 float invA = 1.0f / outA;
                 yield argb(outA, outR * invA, outG * invA, outB * invA);
             }
+            default -> src;
         };
     }
 }
