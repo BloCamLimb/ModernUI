@@ -64,12 +64,13 @@ public final class TooltipRenderer {
     private static final FloatBuffer sMatBuf = BufferUtils.createFloatBuffer(16);
     private static final Matrix4 sMyMat = new Matrix4();
 
-    private static final int[] sColor = new int[4];
+    private static final int[] sUseFillColor = new int[4];
+    private static final int[] sUseStrokeColor = new int[4];
 
     private static boolean sDraw;
     public static float sAlpha;
 
-    static void update(long deltaMillis) {
+    static void update(long deltaMillis, long timeMillis) {
         if (sDraw) {
             if (sAlpha < 1) {
                 sAlpha = Math.min(sAlpha + deltaMillis * 0.005f, 1);
@@ -78,6 +79,35 @@ public final class TooltipRenderer {
         } else if (sAlpha > 0) {
             sAlpha = Math.max(sAlpha - deltaMillis * 0.005f, 0);
         }
+        /*if (sAlpha > 0) {
+            float p = (timeMillis % 1000) / 1000f;
+            switch ((int) ((timeMillis / 1000) & 3)) {
+                case 0: {
+                    sUseStrokeColor[0] = ColorEvaluator.evaluate(p, sStrokeColor[2], sStrokeColor[0]);
+                    sUseStrokeColor[1] = ColorEvaluator.evaluate(p, sStrokeColor[0], sStrokeColor[1]);
+                    sUseStrokeColor[3] = ColorEvaluator.evaluate(p, sStrokeColor[1], sStrokeColor[3]);
+                    sUseStrokeColor[2] = ColorEvaluator.evaluate(p, sStrokeColor[3], sStrokeColor[2]);
+                }
+                case 1: {
+                    sUseStrokeColor[0] = ColorEvaluator.evaluate(p, sStrokeColor[3], sStrokeColor[2]);
+                    sUseStrokeColor[1] = ColorEvaluator.evaluate(p, sStrokeColor[2], sStrokeColor[0]);
+                    sUseStrokeColor[3] = ColorEvaluator.evaluate(p, sStrokeColor[0], sStrokeColor[1]);
+                    sUseStrokeColor[2] = ColorEvaluator.evaluate(p, sStrokeColor[1], sStrokeColor[3]);
+                }
+                case 2: {
+                    sUseStrokeColor[0] = ColorEvaluator.evaluate(p, sStrokeColor[1], sStrokeColor[3]);
+                    sUseStrokeColor[1] = ColorEvaluator.evaluate(p, sStrokeColor[3], sStrokeColor[2]);
+                    sUseStrokeColor[3] = ColorEvaluator.evaluate(p, sStrokeColor[2], sStrokeColor[0]);
+                    sUseStrokeColor[2] = ColorEvaluator.evaluate(p, sStrokeColor[0], sStrokeColor[1]);
+                }
+                case 3: {
+                    sUseStrokeColor[0] = ColorEvaluator.evaluate(p, sStrokeColor[0], sStrokeColor[1]);
+                    sUseStrokeColor[1] = ColorEvaluator.evaluate(p, sStrokeColor[1], sStrokeColor[3]);
+                    sUseStrokeColor[3] = ColorEvaluator.evaluate(p, sStrokeColor[3], sStrokeColor[2]);
+                    sUseStrokeColor[2] = ColorEvaluator.evaluate(p, sStrokeColor[2], sStrokeColor[0]);
+                }
+            }
+        }*/
     }
 
     private TooltipRenderer() {
@@ -328,9 +358,9 @@ public final class TooltipRenderer {
         for (int i = 0; i < 4; i++) {
             int color = sFillColor[i];
             int alpha = (int) ((color >>> 24) * sAlpha);
-            sColor[i] = (color & 0xFFFFFF) | (alpha << 24);
+            sUseFillColor[i] = (color & 0xFFFFFF) | (alpha << 24);
         }
-        paint.setColors(sColor);
+        paint.setColors(sUseFillColor);
         paint.setStyle(Paint.FILL);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER,
@@ -339,9 +369,9 @@ public final class TooltipRenderer {
         for (int i = 0; i < 4; i++) {
             int color = sStrokeColor[i];
             int alpha = (int) ((color >>> 24) * sAlpha);
-            sColor[i] = (color & 0xFFFFFF) | (alpha << 24);
+            sUseStrokeColor[i] = (color & 0xFFFFFF) | (alpha << 24);
         }
-        paint.setColors(sColor);
+        paint.setColors(sUseStrokeColor);
         paint.setStyle(Paint.STROKE);
         paint.setStrokeWidth(1.5f);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,

@@ -161,10 +161,10 @@ public final class GLWrapper extends GL45C {
         LOGGER.info(MARKER, "OpenGL renderer: {}", glGetString(GL_RENDERER));
         LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
 
+        int count = 0;
         if (!caps.OpenGL45) {
             LOGGER.debug(MARKER, "OpenGL 4.5 was not requested, testing ARBs...");
 
-            int count = 0;
             if (caps.GL_ARB_vertex_buffer_object) {
                 LOGGER.debug(MARKER, "ARB vertex buffer object enabled");
             } else {
@@ -239,33 +239,39 @@ public final class GLWrapper extends GL45C {
                 LOGGER.fatal(MARKER, "ARB direct state access disabled");
                 count++;
             }
+        } else {
+            LOGGER.debug(MARKER, "Using OpenGL 4.5");
+        }
 
-            if (count > 0) {
-                LOGGER.fatal(MARKER, "Oops, your GPU has {} ARB capabilities unavailable", count);
-                if (glVersion == null) {
-                    glVersion = "UNKNOWN";
-                } else {
-                    try {
-                        Matcher matcher = Pattern.compile("([0-9]+)\\\\.([0-9]+)(\\\\.([0-9]+))?(.+)?")
-                                .matcher(glVersion);
-                        glVersion = String.format("%s.%s", matcher.group(1), matcher.group(2));
-                    } catch (Exception ignored) {
-                    }
-                }
-                LOGGER.fatal(MARKER, "OpenGL is too old, your version is {} but requires OpenGL 4.5", glVersion);
-                String solution = Platform.get() == Platform.MACOSX ?
-                        "However, macOS doesn't support OpenGL 4.5, you may see both MoltenVK and Zink." :
-                        "Try to use dedicated GPU for Java applications and update your GPU drivers.";
-                TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
-                        "OpenGL 4.5 is not requested and ARB test failed (see logs for details). " +
-                                "Your GPU is " + glGetString(GL_RENDERER) +
-                                "and your version is OpenGL " + glVersion + ". " +
-                                solution,
-                        "ok", "error", true);
-                throw new RuntimeException("Oops, Modern UI cannot run with an outdated GPU");
+        // test extensions
+        if (caps.GL_KHR_blend_equation_advanced) {
+            LOGGER.debug(MARKER, "KHR blend equation advanced enabled");
+        } else {
+            LOGGER.fatal(MARKER, "KHR blend equation advanced disabled");
+            count++;
+        }
+
+        if (count > 0) {
+            LOGGER.fatal(MARKER, "Oops, your GPU has {} capabilities unavailable", count);
+            if (glVersion == null) {
+                glVersion = "UNKNOWN";
             } else {
-                LOGGER.debug(MARKER, "ARB test passed");
+                try {
+                    Matcher matcher = Pattern.compile("([0-9]+)\\\\.([0-9]+)(\\\\.([0-9]+))?(.+)?")
+                            .matcher(glVersion);
+                    glVersion = String.format("%s.%s", matcher.group(1), matcher.group(2));
+                } catch (Exception ignored) {
+                }
             }
+            String solution = Platform.get() == Platform.MACOSX ?
+                    "However, macOS doesn't support OpenGL 4.5, you may see both MoltenVK and Zink." :
+                    "Try to use dedicated GPU for Java applications and update your GPU drivers.";
+            TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
+                    "Not OpenGL 4.5 and ARB test failed, or extension test failed (see log for details). " +
+                            "Your GPU is " + glGetString(GL_RENDERER) + "and your version is OpenGL " + glVersion +
+                            ". " + solution,
+                    "ok", "error", true);
+            throw new RuntimeException("Oops, your GPU has " + count + " capabilities unavailable");
         }
 
         /*if (sRedirector == null) {
@@ -276,31 +282,25 @@ public final class GLWrapper extends GL45C {
         }*/
 
         sInitialized = true;
+
+        LOGGER.info(MARKER, "OpenGL initialized");
     }
 
     private static void onDebugMessage(int source, int type, int id, int severity, int length, long message,
                                        long userParam) {
         switch (severity) {
-            case GL_DEBUG_SEVERITY_HIGH:
-                LOGGER.error(MARKER, "({}|{}|0x{}) {}",
-                        getDebugSource(source), getDebugType(type), Integer.toHexString(id),
-                        GLDebugMessageCallback.getMessage(length, message));
-                return;
-            case GL_DEBUG_SEVERITY_MEDIUM:
-                LOGGER.warn(MARKER, "({}|{}|0x{}) {}",
-                        getDebugSource(source), getDebugType(type), Integer.toHexString(id),
-                        GLDebugMessageCallback.getMessage(length, message));
-                return;
-            case GL_DEBUG_SEVERITY_NOTIFICATION:
-                LOGGER.debug(MARKER, "({}|{}|0x{}) {}",
-                        getDebugSource(source), getDebugType(type), Integer.toHexString(id),
-                        GLDebugMessageCallback.getMessage(length, message));
-                return;
-            case GL_DEBUG_SEVERITY_LOW:
-            default:
-                LOGGER.info(MARKER, "({}|{}|0x{}) {}",
-                        getDebugSource(source), getDebugType(type), Integer.toHexString(id),
-                        GLDebugMessageCallback.getMessage(length, message));
+            case GL_DEBUG_SEVERITY_HIGH -> LOGGER.error(MARKER, "({}|{}|0x{}) {}",
+                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                    GLDebugMessageCallback.getMessage(length, message));
+            case GL_DEBUG_SEVERITY_MEDIUM -> LOGGER.warn(MARKER, "({}|{}|0x{}) {}",
+                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                    GLDebugMessageCallback.getMessage(length, message));
+            case GL_DEBUG_SEVERITY_LOW -> LOGGER.info(MARKER, "({}|{}|0x{}) {}",
+                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                    GLDebugMessageCallback.getMessage(length, message));
+            case GL_DEBUG_SEVERITY_NOTIFICATION -> LOGGER.debug(MARKER, "({}|{}|0x{}) {}",
+                    getDebugSource(source), getDebugType(type), Integer.toHexString(id),
+                    GLDebugMessageCallback.getMessage(length, message));
         }
     }
 
@@ -511,152 +511,101 @@ public final class GLWrapper extends GL45C {
 
     @Nonnull
     private static String getDebugSource(int source) {
-        switch (source) {
-            case GL_DEBUG_SOURCE_API:
-                return "API";
-            case GL_DEBUG_SOURCE_WINDOW_SYSTEM:
-                return "Window System";
-            case GL_DEBUG_SOURCE_SHADER_COMPILER:
-                return "Shader Compiler";
-            case GL_DEBUG_SOURCE_THIRD_PARTY:
-                return "Third Party";
-            case GL_DEBUG_SOURCE_APPLICATION:
-                return "Application";
-            case GL_DEBUG_SOURCE_OTHER:
-                return "Other";
-            default:
-                return apiUnknownToken(source);
-        }
+        return switch (source) {
+            case GL_DEBUG_SOURCE_API -> "API";
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM -> "Window System";
+            case GL_DEBUG_SOURCE_SHADER_COMPILER -> "Shader Compiler";
+            case GL_DEBUG_SOURCE_THIRD_PARTY -> "Third Party";
+            case GL_DEBUG_SOURCE_APPLICATION -> "Application";
+            case GL_DEBUG_SOURCE_OTHER -> "Other";
+            default -> apiUnknownToken(source);
+        };
     }
 
     @Nonnull
     private static String getDebugType(int type) {
-        switch (type) {
-            case GL_DEBUG_TYPE_ERROR:
-                return "Error";
-            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR:
-                return "Deprecated Behavior";
-            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR:
-                return "Undefined Behavior";
-            case GL_DEBUG_TYPE_PORTABILITY:
-                return "Portability";
-            case GL_DEBUG_TYPE_PERFORMANCE:
-                return "Performance";
-            case GL_DEBUG_TYPE_OTHER:
-                return "Other";
-            case GL_DEBUG_TYPE_MARKER:
-                return "Marker";
-            default:
-                return apiUnknownToken(type);
-        }
+        return switch (type) {
+            case GL_DEBUG_TYPE_ERROR -> "Error";
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR -> "Deprecated Behavior";
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR -> "Undefined Behavior";
+            case GL_DEBUG_TYPE_PORTABILITY -> "Portability";
+            case GL_DEBUG_TYPE_PERFORMANCE -> "Performance";
+            case GL_DEBUG_TYPE_OTHER -> "Other";
+            case GL_DEBUG_TYPE_MARKER -> "Marker";
+            default -> apiUnknownToken(type);
+        };
     }
 
     @Nonnull
     private static String getDebugSeverity(int severity) {
-        switch (severity) {
-            case GL_DEBUG_SEVERITY_HIGH:
-                return "High";
-            case GL_DEBUG_SEVERITY_MEDIUM:
-                return "Medium";
-            case GL_DEBUG_SEVERITY_LOW:
-                return "Low";
-            case GL_DEBUG_SEVERITY_NOTIFICATION:
-                return "Notification";
-            default:
-                return apiUnknownToken(severity);
-        }
+        return switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH -> "High";
+            case GL_DEBUG_SEVERITY_MEDIUM -> "Medium";
+            case GL_DEBUG_SEVERITY_LOW -> "Low";
+            case GL_DEBUG_SEVERITY_NOTIFICATION -> "Notification";
+            default -> apiUnknownToken(severity);
+        };
     }
 
     @Nonnull
     private static String getSourceARB(int source) {
-        switch (source) {
-            case GL_DEBUG_SOURCE_API_ARB:
-                return "API";
-            case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB:
-                return "Window System";
-            case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB:
-                return "Shader Compiler";
-            case GL_DEBUG_SOURCE_THIRD_PARTY_ARB:
-                return "Third Party";
-            case GL_DEBUG_SOURCE_APPLICATION_ARB:
-                return "Application";
-            case GL_DEBUG_SOURCE_OTHER_ARB:
-                return "Other";
-            default:
-                return apiUnknownToken(source);
-        }
+        return switch (source) {
+            case GL_DEBUG_SOURCE_API_ARB -> "API";
+            case GL_DEBUG_SOURCE_WINDOW_SYSTEM_ARB -> "Window System";
+            case GL_DEBUG_SOURCE_SHADER_COMPILER_ARB -> "Shader Compiler";
+            case GL_DEBUG_SOURCE_THIRD_PARTY_ARB -> "Third Party";
+            case GL_DEBUG_SOURCE_APPLICATION_ARB -> "Application";
+            case GL_DEBUG_SOURCE_OTHER_ARB -> "Other";
+            default -> apiUnknownToken(source);
+        };
     }
 
     @Nonnull
     private static String getTypeARB(int type) {
-        switch (type) {
-            case GL_DEBUG_TYPE_ERROR_ARB:
-                return "Error";
-            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB:
-                return "Deprecated Behavior";
-            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB:
-                return "Undefined Behavior";
-            case GL_DEBUG_TYPE_PORTABILITY_ARB:
-                return "Portability";
-            case GL_DEBUG_TYPE_PERFORMANCE_ARB:
-                return "Performance";
-            case GL_DEBUG_TYPE_OTHER_ARB:
-                return "Other";
-            default:
-                return apiUnknownToken(type);
-        }
+        return switch (type) {
+            case GL_DEBUG_TYPE_ERROR_ARB -> "Error";
+            case GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR_ARB -> "Deprecated Behavior";
+            case GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR_ARB -> "Undefined Behavior";
+            case GL_DEBUG_TYPE_PORTABILITY_ARB -> "Portability";
+            case GL_DEBUG_TYPE_PERFORMANCE_ARB -> "Performance";
+            case GL_DEBUG_TYPE_OTHER_ARB -> "Other";
+            default -> apiUnknownToken(type);
+        };
     }
 
     @Nonnull
     private static String getSeverityARB(int severity) {
-        switch (severity) {
-            case GL_DEBUG_SEVERITY_HIGH_ARB:
-                return "High";
-            case GL_DEBUG_SEVERITY_MEDIUM_ARB:
-                return "Medium";
-            case GL_DEBUG_SEVERITY_LOW_ARB:
-                return "Low";
-            default:
-                return apiUnknownToken(severity);
-        }
+        return switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH_ARB -> "High";
+            case GL_DEBUG_SEVERITY_MEDIUM_ARB -> "Medium";
+            case GL_DEBUG_SEVERITY_LOW_ARB -> "Low";
+            default -> apiUnknownToken(severity);
+        };
     }
 
     @Nonnull
     private static String getCategoryAMD(int category) {
-        switch (category) {
-            case GL_DEBUG_CATEGORY_API_ERROR_AMD:
-                return "API Error";
-            case GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD:
-                return "Window System";
-            case GL_DEBUG_CATEGORY_DEPRECATION_AMD:
-                return "Deprecation";
-            case GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD:
-                return "Undefined Behavior";
-            case GL_DEBUG_CATEGORY_PERFORMANCE_AMD:
-                return "Performance";
-            case GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD:
-                return "Shader Compiler";
-            case GL_DEBUG_CATEGORY_APPLICATION_AMD:
-                return "Application";
-            case GL_DEBUG_CATEGORY_OTHER_AMD:
-                return "Other";
-            default:
-                return apiUnknownToken(category);
-        }
+        return switch (category) {
+            case GL_DEBUG_CATEGORY_API_ERROR_AMD -> "API Error";
+            case GL_DEBUG_CATEGORY_WINDOW_SYSTEM_AMD -> "Window System";
+            case GL_DEBUG_CATEGORY_DEPRECATION_AMD -> "Deprecation";
+            case GL_DEBUG_CATEGORY_UNDEFINED_BEHAVIOR_AMD -> "Undefined Behavior";
+            case GL_DEBUG_CATEGORY_PERFORMANCE_AMD -> "Performance";
+            case GL_DEBUG_CATEGORY_SHADER_COMPILER_AMD -> "Shader Compiler";
+            case GL_DEBUG_CATEGORY_APPLICATION_AMD -> "Application";
+            case GL_DEBUG_CATEGORY_OTHER_AMD -> "Other";
+            default -> apiUnknownToken(category);
+        };
     }
 
     @Nonnull
     private static String getSeverityAMD(int severity) {
-        switch (severity) {
-            case GL_DEBUG_SEVERITY_HIGH_AMD:
-                return "High";
-            case GL_DEBUG_SEVERITY_MEDIUM_AMD:
-                return "Medium";
-            case GL_DEBUG_SEVERITY_LOW_AMD:
-                return "Low";
-            default:
-                return apiUnknownToken(severity);
-        }
+        return switch (severity) {
+            case GL_DEBUG_SEVERITY_HIGH_AMD -> "High";
+            case GL_DEBUG_SEVERITY_MEDIUM_AMD -> "Medium";
+            case GL_DEBUG_SEVERITY_LOW_AMD -> "Low";
+            default -> apiUnknownToken(severity);
+        };
     }
 
     // redirect default methods, return true instead

@@ -27,7 +27,7 @@ public enum BlendMode {
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_CLEAR.png" />
      * <figcaption>Destination pixels covered by the source are cleared to 0.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = 0</p>
+     * <p>a<sub>out</sub> = 0</p>
      * <p>C<sub>out</sub> = 0</p>
      */
     CLEAR,
@@ -37,7 +37,7 @@ public enum BlendMode {
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SRC.png" />
      * <figcaption>The source pixels replace the destination pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>src</sub></p>
+     * <p>a<sub>out</sub> = a<sub>src</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub></p>
      */
     SRC,
@@ -47,7 +47,7 @@ public enum BlendMode {
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DST.png" />
      * <figcaption>The source pixels are discarded, leaving the destination intact.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>dst</sub></p>
      */
     DST,
@@ -57,8 +57,8 @@ public enum BlendMode {
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SRC_OVER.png" />
      * <figcaption>The source pixels are drawn over the destination pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>src</sub> + (1 - α<sub>src</sub>) * α<sub>dst</sub></p>
-     * <p>C<sub>out</sub> = C<sub>src</sub> + (1 - α<sub>src</sub>) * C<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + (1 - a<sub>src</sub>) * a<sub>dst</sub></p>
+     * <p>C<sub>out</sub> = C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub></p>
      */
     SRC_OVER,
 
@@ -67,8 +67,8 @@ public enum BlendMode {
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DST_OVER.png" />
      * <figcaption>The source pixels are drawn behind the destination pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>dst</sub> + (1 - α<sub>dst</sub>) * α<sub>src</sub></p>
-     * <p>C<sub>out</sub> = C<sub>dst</sub> + (1 - α<sub>dst</sub>) * C<sub>src</sub></p>
+     * <p>a<sub>out</sub> = a<sub>dst</sub> + (1 - a<sub>dst</sub>) * a<sub>src</sub></p>
+     * <p>C<sub>out</sub> = C<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub></p>
      */
     DST_OVER,
 
@@ -78,8 +78,8 @@ public enum BlendMode {
      * <figcaption>Keeps the source pixels that cover the destination pixels,
      * discards the remaining source and destination pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>src</sub> * α<sub>dst</sub></p>
-     * <p>C<sub>out</sub> = C<sub>src</sub> * α<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub></p>
+     * <p>C<sub>out</sub> = C<sub>src</sub> * a<sub>dst</sub></p>
      */
     SRC_IN,
 
@@ -89,8 +89,8 @@ public enum BlendMode {
      * <figcaption>Keeps the destination pixels that cover source pixels,
      * discards the remaining source and destination pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>src</sub> * α<sub>dst</sub></p>
-     * <p>C<sub>out</sub> = C<sub>dst</sub> * α<sub>src</sub></p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub></p>
+     * <p>C<sub>out</sub> = C<sub>dst</sub> * a<sub>src</sub></p>
      */
     DST_IN,
 
@@ -101,8 +101,8 @@ public enum BlendMode {
      * Discards source pixels that cover destination pixels. Discards all
      * destination pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = (1 - α<sub>dst</sub>) * α<sub>src</sub></p>
-     * <p>C<sub>out</sub> = (1 - α<sub>dst</sub>) * C<sub>src</sub></p>
+     * <p>a<sub>out</sub> = (1 - a<sub>dst</sub>) * a<sub>src</sub></p>
+     * <p>C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub></p>
      */
     SRC_OUT,
 
@@ -113,8 +113,8 @@ public enum BlendMode {
      * Discards destination pixels that are covered by source pixels. Discards all
      * source pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = (1 - α<sub>src</sub>) * α<sub>dst</sub></p>
-     * <p>C<sub>out</sub> = (1 - α<sub>src</sub>) * C<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = (1 - a<sub>src</sub>) * a<sub>dst</sub></p>
+     * <p>C<sub>out</sub> = (1 - a<sub>src</sub>) * C<sub>dst</sub></p>
      */
     DST_OUT,
 
@@ -124,8 +124,8 @@ public enum BlendMode {
      * <figcaption>Discards the source pixels that do not cover destination pixels.
      * Draws remaining source pixels over destination pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>dst</sub></p>
-     * <p>C<sub>out</sub> = α<sub>dst</sub> * C<sub>src</sub> + (1 - α<sub>src</sub>) * C<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = a<sub>dst</sub></p>
+     * <p>C<sub>out</sub> = a<sub>dst</sub> * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub></p>
      */
     SRC_ATOP,
 
@@ -135,8 +135,8 @@ public enum BlendMode {
      * <figcaption>Discards the destination pixels that are not covered by source pixels.
      * Draws remaining destination pixels over source pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>src</sub></p>
-     * <p>C<sub>out</sub> = α<sub>src</sub> * C<sub>dst</sub> + (1 - α<sub>dst</sub>) * C<sub>src</sub></p>
+     * <p>a<sub>out</sub> = a<sub>src</sub></p>
+     * <p>C<sub>out</sub> = a<sub>src</sub> * C<sub>dst</sub> + (1 - a<sub>dst</sub>) * C<sub>src</sub></p>
      */
     DST_ATOP,
 
@@ -147,9 +147,9 @@ public enum BlendMode {
      * cover destination pixels. Draws remaining source pixels.</figcaption>
      * </p>
      * <p>
-     * α<sub>out</sub> = (1 - α<sub>dst</sub>) * α<sub>src</sub> + (1 - α<sub>src</sub>) * α<sub>dst</sub>
+     * a<sub>out</sub> = (1 - a<sub>dst</sub>) * a<sub>src</sub> + (1 - a<sub>src</sub>) * a<sub>dst</sub>
      * </p>
-     * <p>C<sub>out</sub> = (1 - α<sub>dst</sub>) * C<sub>src</sub> + (1 - α<sub>src</sub>) * C<sub>dst</sub></p>
+     * <p>C<sub>out</sub> = (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub></p>
      */
     XOR,
 
@@ -159,7 +159,7 @@ public enum BlendMode {
      * <figcaption>Adds the source pixels to the destination pixels and saturates
      * the result.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = max(0, min(α<sub>src</sub> + α<sub>dst</sub>, 1))</p>
+     * <p>a<sub>out</sub> = max(0, min(a<sub>src</sub> + a<sub>dst</sub>, 1))</p>
      * <p>C<sub>out</sub> = max(0, min(C<sub>src</sub> + C<sub>dst</sub>, 1))</p>
      */
     PLUS,
@@ -169,10 +169,10 @@ public enum BlendMode {
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_MODULATE.png" />
      * <figcaption>Multiplies the source and destination pixels.</figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>src</sub> * α<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub> * C<sub>dst</sub></p>
      */
-    MODULATE,
+    MULTIPLY,
 
     /**
      * <p>
@@ -182,10 +182,34 @@ public enum BlendMode {
      * source pixels multiplied by the destination.
      * </figcaption>
      * </p>
-     * <p>α<sub>out</sub> = α<sub>src</sub> + α<sub>dst</sub> - α<sub>src</sub> * α<sub>dst</sub></p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
      * <p>C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - C<sub>src</sub> * C<sub>dst</sub></p>
      */
-    SCREEN
+    SCREEN,
 
-    // may be more
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_OVERLAY.png" />
+     * <figcaption>
+     * Multiplies or screens the source and destination depending on the
+     * destination color.
+     * </figcaption>
+     * </p>
+     */
+    OVERLAY,
+
+    DARKEN,
+    LIGHTEN,
+    COLOR_DODGE,
+    COLOR_BURN,
+    HARD_LIGHT,
+    SOFT_LIGHT,
+    DIFFERENCE,
+    EXCLUSION,
+    HUE,
+    SATURATION,
+    COLOR,
+    LUMINOSITY
+
+    // GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA
 }
