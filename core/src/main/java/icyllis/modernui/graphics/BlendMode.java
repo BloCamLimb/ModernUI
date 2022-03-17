@@ -18,6 +18,8 @@
 
 package icyllis.modernui.graphics;
 
+import javax.annotation.Nonnull;
+
 /**
  * Blend modes.
  */
@@ -209,7 +211,18 @@ public enum BlendMode {
     HUE,
     SATURATION,
     COLOR,
-    LUMINOSITY
+    LUMINOSITY;
 
     // GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA
+
+    private static final BlendMode[] VALUES = values();
+
+    @Nonnull
+    public static BlendMode fromValue(int value) {
+        return VALUES[value];
+    }
+
+    public static int toValue(@Nonnull BlendMode mode) {
+        return mode.ordinal();
+    }
 }

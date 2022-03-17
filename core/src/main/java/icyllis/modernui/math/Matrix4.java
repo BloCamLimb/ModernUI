@@ -1374,8 +1374,8 @@ public class Matrix4 implements Cloneable {
      * @see #rotateZ(float)
      * @see #rotateX(float)
      */
-    public void rotateByAxis(@Nonnull Vector3 axis, float angle) {
-        rotateByAxis(axis.x, axis.y, axis.z, angle);
+    public void rotateAxis(@Nonnull Vector3 axis, float angle) {
+        rotateAxis(axis.x, axis.y, axis.z, angle);
     }
 
     /**
@@ -1391,7 +1391,7 @@ public class Matrix4 implements Cloneable {
      * @see #rotateZ(float)
      * @see #rotateX(float)
      */
-    public void rotateByAxis(float x, float y, float z, float angle) {
+    public void rotateAxis(float x, float y, float z, float angle) {
         if (angle == 0.0f) {
             return;
         }
@@ -1496,7 +1496,7 @@ public class Matrix4 implements Cloneable {
      * @see #rotateZ(float)
      * @see #rotateX(float)
      */
-    public void rotateByEuler(float rotationX, float rotationY, float rotationZ) {
+    public void rotate(float rotationX, float rotationY, float rotationZ) {
         // same as using Quaternion, 48 multiplications
         rotateX(rotationX);
         rotateY(rotationY);

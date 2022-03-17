@@ -77,7 +77,7 @@ public class TestMain {
     private static BufferedImage IMAGE;
     private static Graphics2D GRAPHICS;
 
-    public static final boolean CREATE_WINDOW = false;
+    public static boolean CREATE_WINDOW = false;
 
     private static MainWindow sWindow;
 

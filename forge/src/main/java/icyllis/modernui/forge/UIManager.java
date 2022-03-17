@@ -588,6 +588,7 @@ public final class UIManager implements LifecycleOwner {
         }
         switch (event.getKey()) {
             case GLFW_KEY_Y:
+                LOGGER.info(MARKER, "Take screenshot");
                 // take a screenshot from MSAA framebuffer
                 GLTexture sampled = GLFramebuffer.swap(mFramebuffer, GL_COLOR_ATTACHMENT0);
                 NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);
@@ -601,23 +602,37 @@ public final class UIManager implements LifecycleOwner {
                 break;
 
             case GLFW_KEY_H:
+                LOGGER.info(MARKER, "Open TestFragment");
                 start(new TestFragment(), new UICallback());
                 break;
 
             case GLFW_KEY_J:
+                LOGGER.info(MARKER, "Open TestPauseFragment");
                 start(new TestPauseFragment(), new UICallback());
                 break;
 
             case GLFW_KEY_U:
+                LOGGER.info(MARKER, "Open TestListFragment");
                 start(new TestListFragment(), new UICallback());
                 break;
 
             case GLFW_KEY_N:
+                LOGGER.info(MARKER, "Post invalidate");
                 mDecor.postInvalidate();
                 break;
 
             case GLFW_KEY_P:
                 dump();
+                break;
+
+            case GLFW_KEY_M:
+                if (minecraft.gameRenderer.currentEffect() == null) {
+                    LOGGER.info(MARKER, "Load radial blur effect");
+                    minecraft.gameRenderer.loadEffect(new ResourceLocation("shaders/post/radial_blur.json"));
+                } else {
+                    LOGGER.info(MARKER, "Stop post-processing effect");
+                    minecraft.gameRenderer.shutdownEffect();
+                }
                 break;
 
             case GLFW_KEY_G:

@@ -268,7 +268,7 @@ public final class GLWrapper extends GL45C {
                     "Try to use dedicated GPU for Java applications and update your GPU drivers.";
             TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
                     "Not OpenGL 4.5 and ARB test failed, or extension test failed (see log for details). " +
-                            "Your GPU is " + glGetString(GL_RENDERER) + "and your version is OpenGL " + glVersion +
+                            "Your GPU is " + glGetString(GL_RENDERER) + " and your version is OpenGL " + glVersion +
                             ". " + solution,
                     "ok", "error", true);
             throw new RuntimeException("Oops, your GPU has " + count + " capabilities unavailable");
