@@ -52,11 +52,12 @@ import org.lwjgl.glfw.GLFWMonitorCallback;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
-import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
+import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Path;
@@ -69,7 +70,6 @@ import static org.lwjgl.glfw.GLFW.*;
 /**
  * The core class of Modern UI.
  */
-@ApiStatus.Internal
 public class ModernUI implements AutoCloseable, LifecycleOwner {
 
     public static final String ID = "modernui"; // as well as the namespace
@@ -77,8 +77,6 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
 
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
-
-    public static final Path ASSETS_DIR = Path.of(String.valueOf(System.getProperty("icyllis.modernui.AssetsDir")));
 
     protected static volatile ModernUI sInstance;
 
@@ -349,18 +347,25 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      *
      * @return whether RTL is supported
      */
+    @ApiStatus.Experimental
     public boolean hasRtlSupport() {
         return true;
     }
 
+    @ApiStatus.Experimental
     @Nonnull
     public InputStream getResourceStream(@Nonnull String res, @Nonnull String path) throws IOException {
-        return new FileInputStream(ASSETS_DIR.resolve(res).resolve(path).toFile());
+        InputStream stream = ModernUI.class.getResourceAsStream("/assets/" + res + "/" + path);
+        if (stream == null) {
+            throw new FileNotFoundException();
+        }
+        return stream;
     }
 
+    @ApiStatus.Experimental
     @Nonnull
     public ReadableByteChannel getResourceChannel(@Nonnull String res, @Nonnull String path) throws IOException {
-        return FileChannel.open(ASSETS_DIR.resolve(res).resolve(path), StandardOpenOption.READ);
+        return Channels.newChannel(getResourceStream(res, path));
     }
 
     /**
@@ -368,6 +373,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      *
      * @return window view manager
      */
+    @ApiStatus.Internal
     public ViewManager getViewManager() {
         return mDecor;
     }
@@ -471,7 +477,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
 
         @Override
         protected void applyPointerIcon(int pointerType) {
-            ArchCore.executeOnMainThread(() -> glfwSetCursor(mWindow.getHandle(), PointerIcon.getSystemIcon(pointerType).getHandle()));
+            ArchCore.executeOnMainThread(() -> glfwSetCursor(mWindow.getHandle(),
+                    PointerIcon.getSystemIcon(pointerType).getHandle()));
         }
 
         ContextMenuBuilder mContextMenu;

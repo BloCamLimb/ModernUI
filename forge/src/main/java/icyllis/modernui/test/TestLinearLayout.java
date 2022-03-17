@@ -19,10 +19,7 @@
 package icyllis.modernui.test;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.animation.Animator;
-import icyllis.modernui.animation.LayoutTransition;
-import icyllis.modernui.animation.ObjectAnimator;
-import icyllis.modernui.animation.TimeInterpolator;
+import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.Paint;
@@ -70,6 +67,7 @@ public class TestLinearLayout extends LinearLayout {
 
     private float mRoundRectLen = 0;
     private float roundRectAlpha = 0;
+    private float mSmoothRadius = 0;
 
     private boolean b;
 
@@ -241,7 +239,7 @@ public class TestLinearLayout extends LinearLayout {
             p.gravity = Gravity.CENTER;
             addView(v, p);
         }
-        addView(new DView(TimeInterpolator.DECELERATE, 0), new LinearLayout.LayoutParams(dp(120),
+        addView(new DView(TimeInterpolator.DECELERATE), new LinearLayout.LayoutParams(dp(120),
                 dp(40)));
 
         //addView(new DView(ITimeInterpolator.VISCOUS_FLUID, 30), new LinearLayout.LayoutParams(60, 20));
@@ -291,6 +289,13 @@ public class TestLinearLayout extends LinearLayout {
         anim.addUpdateListener(a -> invalidate());
         mRoundRectLenAnim = anim;
 
+        /*ObjectAnimator anim1 = ObjectAnimator.ofFloat(this, sSmoothRadiusProp, 2, 60);
+        anim1.setDuration(1000);
+        anim1.setRepeatCount(ValueAnimator.INFINITE);
+        anim1.setRepeatMode(ValueAnimator.REVERSE);
+        anim1.addUpdateListener(a -> invalidate());
+        anim1.start();*/
+
         /*roundRectAlphaAni = new Animation(250)
                 .applyTo(new Applier(0, 1, () -> roundRectAlpha, v -> roundRectAlpha = v));*/
 
@@ -306,6 +311,18 @@ public class TestLinearLayout extends LinearLayout {
         @Override
         public Float get(@Nonnull TestLinearLayout object) {
             return object.mRoundRectLen;
+        }
+    };
+
+    private static final FloatProperty<TestLinearLayout> sSmoothRadiusProp = new FloatProperty<>() {
+        @Override
+        public void setValue(@Nonnull TestLinearLayout object, float value) {
+            object.mSmoothRadius = value;
+        }
+
+        @Override
+        public Float get(@Nonnull TestLinearLayout object) {
+            return object.mSmoothRadius;
         }
     };
 
@@ -342,9 +359,16 @@ public class TestLinearLayout extends LinearLayout {
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
         paint.setStyle(Paint.STROKE);
+        paint.setSmoothRadius(20.0f);
+        paint.setStrokeWidth(40.0f);
+        //canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
+        canvas.drawArc(80, 400, 50, 60, 240, paint);
+        canvas.drawBezier(80, 400, 180, 420, 80, 600, paint);
+
+        paint.setStyle(Paint.FILL);
+        canvas.drawCircle(80, 700, 60, paint);
+
         paint.setSmoothRadius(2.0f);
-        paint.setStrokeWidth(10.0f);
-        canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
 
         paint.setStyle(Paint.FILL);
         paint.setAlpha((int) (roundRectAlpha * 192));
@@ -509,23 +533,26 @@ public class TestLinearLayout extends LinearLayout {
 
         private float offsetY;
 
-        private final int offset;
         private final TextPaint mTextPaint = new TextPaint();
         private int mTicks;
 
-        public DView(TimeInterpolator interpolator, int offset) {
-            this.offset = offset;
+        public DView(TimeInterpolator interpolator) {
             /*animation = new Animation(200)
                     .applyTo(new Applier(0, 60, () -> offsetY, v -> {
                         offsetY = v;
                         invalidate();
                     }).setInterpolator(interpolator));
             animation.invertFull();*/
+            setRotation(90);
+            setTranslationX(60);
         }
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            canvas.drawText("DView", 0, 5, offset, offsetY + 24, mTextPaint);
+            Paint paint = Paint.take();
+            paint.setARGB(128, 140, 200, 240);
+            canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
+            canvas.drawText("DView", 0, 5, getWidth() / 2f, offsetY + 24, Gravity.CENTER, mTextPaint);
         }
 
         /*public void tick() {
