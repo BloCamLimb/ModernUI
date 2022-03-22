@@ -227,19 +227,19 @@ public class BejeweledTwist {
         Matrix4 projection = new Matrix4();
         Rect screenRect = new Rect();
 
-        GLWrapper.glEnable(GL_CULL_FACE);
-        GLWrapper.glEnable(GL_BLEND);
-        GLWrapper.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        GLWrapper.glEnable(GL_STENCIL_TEST);
-        GLWrapper.glEnable(GL_MULTISAMPLE);
-        GLWrapper.glDisable(GL_DEPTH_TEST);
+        GLCore.glEnable(GL_CULL_FACE);
+        GLCore.glEnable(GL_BLEND);
+        GLCore.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        GLCore.glEnable(GL_STENCIL_TEST);
+        GLCore.glEnable(GL_MULTISAMPLE);
+        GLCore.glDisable(GL_DEPTH_TEST);
 
         long lastTime = ArchCore.timeMillis();
         while (!mWindow.shouldClose()) {
             long time = ArchCore.timeMillis();
             long delta = time - lastTime;
             lastTime = time;
-            GLWrapper.resetFrame(mWindow);
+            GLCore.resetFrame(mWindow);
 
             //animationHandler.accept(time);
             if (mWindow.getWidth() > 0) {

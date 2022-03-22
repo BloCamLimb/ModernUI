@@ -21,7 +21,7 @@ package icyllis.modernui.forge.mixin;
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.graphics.GLSurfaceCanvas;
-import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.GLCore;
 import icyllis.modernui.forge.CanvasForge;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -63,12 +63,12 @@ public class MixinShaderInstance implements CanvasForge.FastShader {
             int unit = units.getInt(samplerNames.get(i));
             if (unit != -1) {
                 int location = samplerLocations.get(i);
-                GLWrapper.glUniform1i(location, unit);
+                GLCore.glUniform1i(location, unit);
                 int texture = RenderSystem.getShaderTexture(unit);
                 if (unit == 0) {
                     canvas.bindTexture(texture);
                 } else {
-                    GLWrapper.glBindTextureUnit(unit, texture);
+                    GLCore.glBindTextureUnit(unit, texture);
                 }
             }
         }

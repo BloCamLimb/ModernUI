@@ -31,7 +31,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.function.IntFunction;
 
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 
 /**
  * Maintains a font texture atlas, which is specified with a font family, size and style.

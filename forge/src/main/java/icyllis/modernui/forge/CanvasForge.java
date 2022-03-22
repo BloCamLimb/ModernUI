@@ -60,7 +60,7 @@ import java.util.ArrayDeque;
 import java.util.Objects;
 import java.util.Queue;
 
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 
 /**
  * CanvasForge is an extension to {@link Canvas}, which provides more drawing

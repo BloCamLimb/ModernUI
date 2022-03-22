@@ -47,7 +47,7 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.*;
 
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**

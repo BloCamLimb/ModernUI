@@ -20,7 +20,7 @@ package icyllis.modernui.graphics.opengl;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 
 /**
  * Defines an immutable vertex attribute.

@@ -44,7 +44,7 @@ import static org.lwjgl.system.MemoryUtil.NULL;
  * OpenGL 4.5 core profile, all methods are at low-level.
  */
 @SuppressWarnings("unused")
-public final class GLWrapper extends GL45C {
+public final class GLCore extends GL45C {
 
     public static final Marker MARKER = MarkerManager.getMarker("OpenGL");
 
@@ -101,7 +101,7 @@ public final class GLWrapper extends GL45C {
         sBindTextures = bindTextures;*/
     }
 
-    private GLWrapper() {
+    private GLCore() {
         throw new UnsupportedOperationException();
     }
 
@@ -113,21 +113,21 @@ public final class GLWrapper extends GL45C {
     }*/
 
     @RenderThread
-    public static void initialize(@Nonnull GLCapabilities caps) {
+    public static int initialize(@Nonnull GLCapabilities caps) {
         ArchCore.checkRenderThread();
         if (sInitialized) {
-            return;
+            return 0;
         }
 
         if (glGetPointer(GL_DEBUG_CALLBACK_FUNCTION) == NULL) {
             if (caps.OpenGL43) {
                 LOGGER.debug(MARKER, "Using OpenGL 4.3 for error logging");
-                GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
+                GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLCore::onDebugMessage);
                 glDebugMessageCallback(proc, NULL);
                 glEnable(GL_DEBUG_OUTPUT);
             } else if (caps.GL_KHR_debug) {
                 LOGGER.debug(MARKER, "Using KHR_debug for error logging");
-                GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLWrapper::onDebugMessage);
+                GLDebugMessageCallback proc = GLDebugMessageCallback.create(GLCore::onDebugMessage);
                 KHRDebug.glDebugMessageCallback(proc, NULL);
                 glEnable(GL_DEBUG_OUTPUT);
             } else if (caps.GL_ARB_debug_output) {
@@ -157,9 +157,9 @@ public final class GLWrapper extends GL45C {
 
         String glVersion = glGetString(GL_VERSION);
 
+        LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
         LOGGER.info(MARKER, "OpenGL vendor: {}", glGetString(GL_VENDOR));
         LOGGER.info(MARKER, "OpenGL renderer: {}", glGetString(GL_RENDERER));
-        LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
 
         int count = 0;
         if (!caps.OpenGL45) {
@@ -244,11 +244,23 @@ public final class GLWrapper extends GL45C {
         }
 
         // test extensions
-        if (caps.GL_KHR_blend_equation_advanced) {
+        if (caps.GL_NV_blend_equation_advanced) {
+            LOGGER.debug(MARKER, "NV blend equation advanced enabled");
+            if (caps.GL_NV_blend_equation_advanced_coherent) {
+                LOGGER.debug(MARKER, "NV blend equation advanced coherent enabled");
+            } else {
+                LOGGER.debug(MARKER, "NV blend equation advanced coherent disabled");
+            }
+        } else if (caps.GL_KHR_blend_equation_advanced) {
             LOGGER.debug(MARKER, "KHR blend equation advanced enabled");
+            if (caps.GL_KHR_blend_equation_advanced_coherent) {
+                LOGGER.debug(MARKER, "KHR blend equation advanced coherent enabled");
+            } else {
+                LOGGER.debug(MARKER, "KHR blend equation advanced coherent disabled");
+            }
         } else {
-            LOGGER.fatal(MARKER, "KHR blend equation advanced disabled");
-            count++;
+            LOGGER.debug(MARKER, "NV and KHR blend equation advanced disabled");
+            //count++;
         }
 
         if (count > 0) {
@@ -264,14 +276,12 @@ public final class GLWrapper extends GL45C {
                 }
             }
             String solution = Platform.get() == Platform.MACOSX ?
-                    "However, macOS doesn't support OpenGL 4.5, you may see both MoltenVK and Zink." :
+                    "However, macOS doesn't support OpenGL 4.5, you may see both MoltenVK and Mesa Zink." :
                     "Try to use dedicated GPU for Java applications and update your GPU drivers.";
             TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
-                    "Not OpenGL 4.5 and ARB test failed, or extension test failed (see log for details). " +
+                    "Lower than OpenGL 4.5 and ARB test failed, or extension test failed (see log for details). " +
                             "Your GPU is " + glGetString(GL_RENDERER) + " and your version is OpenGL " + glVersion +
-                            ". " + solution,
-                    "ok", "error", true);
-            throw new RuntimeException("Oops, your GPU has " + count + " capabilities unavailable");
+                            ". " + solution, "ok", "error", true);
         }
 
         /*if (sRedirector == null) {
@@ -282,8 +292,8 @@ public final class GLWrapper extends GL45C {
         }*/
 
         sInitialized = true;
-
-        LOGGER.info(MARKER, "OpenGL initialized");
+        LOGGER.info(MARKER, "Initialized GLCore");
+        return count;
     }
 
     private static void onDebugMessage(int source, int type, int id, int severity, int length, long message,

@@ -24,7 +24,7 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.NativeImage;
-import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.GLCore;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
@@ -41,7 +41,7 @@ import static org.lwjgl.opengl.GL11C.GL_RED;
 @RenderThread
 class EffectRenderType extends RenderType {
 
-    private static final GLTexture WHITE = new GLTexture(GLWrapper.GL_TEXTURE_2D);
+    private static final GLTexture WHITE = new GLTexture(GLCore.GL_TEXTURE_2D);
 
     private static final EffectRenderType INSTANCE = new EffectRenderType();
     private static final EffectRenderType SEE_THROUGH = new EffectRenderType("modern_text_effect_see_through");
@@ -57,7 +57,7 @@ class EffectRenderType extends RenderType {
                 pixels.put((byte) 0xff);
             }
             WHITE.upload(0, 0, 0, 2, 2, 0, 0, 0, 1,
-                    NativeImage.Format.RED.glFormat, GLWrapper.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels.flip()));
+                    NativeImage.Format.RED.glFormat, GLCore.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels.flip()));
         }
         WHITE.swizzleRGBA(GL_ONE, GL_ONE, GL_ONE, GL_RED);
         STATES = ImmutableList.of(

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.opengl;
 
-import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.GLCore;
 
 /**
  * Represents OpenGL program objects.
@@ -34,7 +34,7 @@ public class GLProgram {
      * Use this shader program
      */
     public void use() {
-        GLWrapper.glUseProgram(mProgram);
+        GLCore.glUseProgram(mProgram);
     }
 
     public final int get() {
