@@ -63,6 +63,11 @@ public class ViewConfiguration {
     private static final int TAP_TIMEOUT = 100;
 
     /**
+     * Inset in dips to look for touchable content when the user touches the edge of the screen
+     */
+    private static final int EDGE_SLOP = 12;
+
+    /**
      * Distance a touch can wander before we think the user is scrolling in dips.
      * Note that this value defined here is only used as a fallback by legacy/misbehaving
      * applications that do not provide a Context for determining density/configuration-dependent
@@ -114,7 +119,8 @@ public class ViewConfiguration {
     private volatile float mFontScale = 1.0f;
     private volatile float mScaledFontScale = 1.0f;
 
-    private volatile int mEdgeSlop;
+    private volatile int mEdgeSlop = EDGE_SLOP;
+    private volatile int mScaledEdgeSlop = EDGE_SLOP;
     private volatile int mFadingEdgeLength;
     private volatile int mMinimumFlingVelocity = MINIMUM_FLING_VELOCITY;
     private volatile int mScaledMinimumFlingVelocity = MINIMUM_FLING_VELOCITY;
@@ -162,6 +168,7 @@ public class ViewConfiguration {
         mScaledFontScale = scale * mFontScale;
 
         mScaledScrollbarSize = dp(mScrollbarSize);
+        mScaledEdgeSlop = dp(mEdgeSlop);
         mScaledTouchSlop = dp(mTouchSlop);
         mScaledMinScrollbarTouchTarget = dp(mMinScrollbarTouchTarget);
         mScaledMinimumFlingVelocity = dp(mMinimumFlingVelocity);
@@ -258,6 +265,12 @@ public class ViewConfiguration {
     public void setScrollbarSize(int scrollbarSize) {
         mScrollbarSize = scrollbarSize;
         mScaledScrollbarSize = dp(scrollbarSize);
+    }
+
+    @ApiStatus.Internal
+    public void setEdgeSlop(int edgeSlop) {
+        mEdgeSlop = edgeSlop;
+        mScaledEdgeSlop = dp(edgeSlop);
     }
 
     @ApiStatus.Internal
@@ -359,6 +372,14 @@ public class ViewConfiguration {
      */
     public int getScaledScrollbarSize() {
         return mScaledScrollbarSize;
+    }
+
+    /**
+     * @return Inset in pixels to look for touchable content when the user touches the edge of the
+     * screen
+     */
+    public int getScaledEdgeSlop() {
+        return mEdgeSlop;
     }
 
     /**

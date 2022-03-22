@@ -18,9 +18,11 @@
 
 package icyllis.modernui.text.method;
 
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * TextView uses TransformationMethods to do things like replacing the
@@ -44,5 +46,5 @@ public interface TransformationMethod {
      * TransformationMethod gains or loses focus.
      */
     void onFocusChanged(@Nonnull View view, @Nonnull CharSequence sourceText,
-                        boolean focused, int direction);
+                        boolean focused, int direction, @Nullable Rect previouslyFocusedRect);
 }

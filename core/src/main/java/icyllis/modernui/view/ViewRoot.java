@@ -80,6 +80,8 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     private ArrayList<LayoutTransition> mPendingTransitions;
 
+    final Rect mTempRect = new Rect(); // used in the transaction to not thrash the heap.
+
     /*private final int[] inBounds  = new int[]{0, 0, 0, 0};
     private final int[] outBounds = new int[4];*/
 
@@ -427,7 +429,6 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
      * next frame (if it is a request during the second layout pass).</p>
      *
      * @param view the view that requested the layout.
-     *
      * @return true if request should proceed, false otherwise.
      */
     boolean requestLayoutDuringLayout(@Nonnull final View view) {
@@ -486,7 +487,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                         }
 
                         // Handle automatic focus changes.
-                        /*if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                        if (event.getAction() == KeyEvent.ACTION_DOWN) {
                             if (groupNavigationDirection != 0) {
                                 if (performKeyboardGroupNavigation(groupNavigationDirection)) {
                                     continue;
@@ -496,8 +497,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                                     continue;
                                 }
                             }
-                        }*/
-                        //TODO focus
+                        }
                         onKeyEvent(event);
                     } else {
                         MotionEvent ev = (MotionEvent) e;
@@ -528,6 +528,107 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
             // drop all
             mInputEvents.clear();
         }
+    }
+
+    private boolean performFocusNavigation(@Nonnull KeyEvent event) {
+        int direction = 0;
+        switch (event.getKeyCode()) {
+            case KeyEvent.KEY_LEFT:
+                if (event.hasNoModifiers()) {
+                    direction = View.FOCUS_LEFT;
+                }
+                break;
+            case KeyEvent.KEY_RIGHT:
+                if (event.hasNoModifiers()) {
+                    direction = View.FOCUS_RIGHT;
+                }
+                break;
+            case KeyEvent.KEY_UP:
+                if (event.hasNoModifiers()) {
+                    direction = View.FOCUS_UP;
+                }
+                break;
+            case KeyEvent.KEY_DOWN:
+                if (event.hasNoModifiers()) {
+                    direction = View.FOCUS_DOWN;
+                }
+                break;
+            case KeyEvent.KEY_TAB:
+                if (event.hasNoModifiers()) {
+                    direction = View.FOCUS_FORWARD;
+                } else if (event.hasModifiers(KeyEvent.META_SHIFT_ON)) {
+                    direction = View.FOCUS_BACKWARD;
+                }
+                break;
+        }
+        if (direction != 0) {
+            View focused = mView.findFocus();
+            if (focused != null) {
+                View v = focused.focusSearch(direction);
+                if (v != null && v != focused) {
+                    // do the math the get the interesting rect
+                    // of previous focused into the coord system of
+                    // newly focused view
+                    focused.getFocusedRect(mTempRect);
+                    if (mView instanceof ViewGroup) {
+                        ((ViewGroup) mView).offsetDescendantRectToMyCoords(
+                                focused, mTempRect);
+                        ((ViewGroup) mView).offsetRectIntoDescendantCoords(
+                                v, mTempRect);
+                    }
+                    if (v.requestFocus(direction, mTempRect)) {
+                        boolean isFastScrolling = event.getRepeatCount() > 0;
+                        /*playSoundEffect(
+                                SoundEffectConstants.getConstantForFocusDirection(direction,
+                                        isFastScrolling));*/
+                        return true;
+                    }
+                }
+
+                // Give the focused view a last chance to handle the dpad key.
+                /*if (mView.dispatchUnhandledMove(focused, direction)) {
+                    return true;
+                }*/
+            } else {
+                if (mView.restoreDefaultFocus()) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private boolean performKeyboardGroupNavigation(int direction) {
+        final View focused = mView.findFocus();
+        if (focused == null && mView.restoreDefaultFocus()) {
+            return true;
+        }
+        View cluster = focused == null ? keyboardNavigationClusterSearch(null, direction)
+                : focused.keyboardNavigationClusterSearch(null, direction);
+
+        // Since requestFocus only takes "real" focus directions (and therefore also
+        // restoreFocusInCluster), convert forward/backward focus into FOCUS_DOWN.
+        int realDirection = direction;
+        if (direction == View.FOCUS_FORWARD || direction == View.FOCUS_BACKWARD) {
+            realDirection = View.FOCUS_DOWN;
+        }
+
+        if (cluster != null && cluster.isRootNamespace()) {
+            // the default cluster. Try to find a non-clustered view to focus.
+            if (cluster.restoreFocusNotInCluster()) {
+                //playSoundEffect(SoundEffectConstants.getContantForFocusDirection(direction));
+                return true;
+            }
+            // otherwise skip to next actual cluster
+            cluster = keyboardNavigationClusterSearch(null, direction);
+        }
+
+        if (cluster != null && cluster.restoreFocusInCluster(realDirection)) {
+            //playSoundEffect(SoundEffectConstants.getContantForFocusDirection(direction));
+            return true;
+        }
+
+        return false;
     }
 
     protected boolean dispatchTouchEvent(MotionEvent event) {
@@ -734,17 +835,15 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         if (!(mView instanceof ViewGroup)) {
             return null;
         }
-        //return FocusFinder.getInstance().findNextFocus((ViewGroup) view, focused, direction);
-        return null;
+        return FocusFinder.getInstance().findNextFocus((ViewGroup) mView, focused, direction);
     }
 
     @Override
     public View keyboardNavigationClusterSearch(View currentCluster,
                                                 @FocusDirection int direction) {
         ArchCore.checkUiThread();
-        /*return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
-                view, currentCluster, direction);*/
-        return null;
+        return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
+                mView, currentCluster, direction);
     }
 
     @Override

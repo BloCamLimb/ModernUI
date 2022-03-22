@@ -3863,10 +3863,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
     }
 
     @Override
-    protected void onFocusChanged(boolean focused, int direction) {
+    protected void onFocusChanged(boolean focused, int direction, @Nullable Rect previouslyFocusedRect) {
         if (isTemporarilyDetached()) {
             // If we are temporarily in the detach state, then do nothing.
-            super.onFocusChanged(focused, direction);
+            super.onFocusChanged(focused, direction, previouslyFocusedRect);
             return;
         }
 
@@ -3881,10 +3881,10 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         }
 
         if (mTransformation != null) {
-            mTransformation.onFocusChanged(this, mText, focused, direction);
+            mTransformation.onFocusChanged(this, mText, focused, direction, previouslyFocusedRect);
         }
 
-        super.onFocusChanged(focused, direction);
+        super.onFocusChanged(focused, direction, previouslyFocusedRect);
     }
 
     @Override

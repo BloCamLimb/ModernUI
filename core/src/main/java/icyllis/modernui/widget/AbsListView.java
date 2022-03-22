@@ -1114,11 +1114,11 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
     }
 
     @Override
-    protected void onFocusChanged(boolean gainFocus, int direction) {
-        super.onFocusChanged(gainFocus, direction);
+    protected void onFocusChanged(boolean gainFocus, int direction, @Nullable Rect previouslyFocusedRect) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
         if (gainFocus && mSelectedPosition < 0 && !isInTouchMode()) {
             if (!isAttachedToWindow() && mAdapter != null) {
-                // Data may have changed while we were detached, and it's valid
+                // Data may have changed while we were detached and it's valid
                 // to change focus while detached. Refresh so we don't die.
                 mDataChanged = true;
                 mOldItemCount = mItemCount;

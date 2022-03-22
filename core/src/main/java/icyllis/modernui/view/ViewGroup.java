@@ -33,6 +33,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Predicate;
 
@@ -155,7 +156,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
     // The view contained within this ViewGroup that has or contains focus.
     private View mFocused;
-
+    // The view contained within this ViewGroup (excluding nested keyboard navigation clusters)
+    // that is or contains a default-focus view.
+    private View mDefaultFocus;
     // The last child of this ViewGroup which held focus within the current cluster
     View mFocusedInCluster;
 
@@ -1011,6 +1014,231 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 && isOnScrollbarThumb(ev.getX(), ev.getY());
     }
 
+
+    /**
+     * {@inheritDoc}
+     * <p>
+     * Looks for a view to give focus to respecting the setting specified by
+     * {@link #getDescendantFocusability()}.
+     * <p>
+     * Uses {@link #onRequestFocusInDescendants(int, Rect)} to
+     * find focus within the children of this group when appropriate.
+     *
+     * @see #FOCUS_BEFORE_DESCENDANTS
+     * @see #FOCUS_AFTER_DESCENDANTS
+     * @see #FOCUS_BLOCK_DESCENDANTS
+     * @see #onRequestFocusInDescendants(int, Rect)
+     */
+    @Override
+    public boolean requestFocus(int direction, @Nullable Rect previouslyFocusedRect) {
+        int descendantFocusability = getDescendantFocusability();
+
+        boolean result;
+        switch (descendantFocusability) {
+            case FOCUS_BLOCK_DESCENDANTS -> result = super.requestFocus(direction, previouslyFocusedRect);
+            case FOCUS_BEFORE_DESCENDANTS -> {
+                final boolean took = super.requestFocus(direction, previouslyFocusedRect);
+                result = took || onRequestFocusInDescendants(direction, previouslyFocusedRect);
+            }
+            case FOCUS_AFTER_DESCENDANTS -> {
+                final boolean took = onRequestFocusInDescendants(direction, previouslyFocusedRect);
+                result = took || super.requestFocus(direction, previouslyFocusedRect);
+            }
+            default -> throw new IllegalStateException("descendant focusability must be "
+                    + "one of FOCUS_BEFORE_DESCENDANTS, FOCUS_AFTER_DESCENDANTS, FOCUS_BLOCK_DESCENDANTS "
+                    + "but is " + descendantFocusability);
+        }
+        if (result && !isLayoutValid() && ((mPrivateFlags & PFLAG_WANTS_FOCUS) == 0)) {
+            mPrivateFlags |= PFLAG_WANTS_FOCUS;
+        }
+        return result;
+    }
+
+    /**
+     * Look for a descendant to call {@link View#requestFocus} on.
+     * Called by {@link ViewGroup#requestFocus(int, Rect)}
+     * when it wants to request focus within its children.  Override this to
+     * customize how your {@link ViewGroup} requests focus within its children.
+     *
+     * @param direction             One of FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, and FOCUS_RIGHT
+     * @param previouslyFocusedRect The rectangle (in this View's coordinate system)
+     *                              to give a finer grained hint about where focus is coming from.  May be null
+     *                              if there is no hint.
+     * @return Whether focus was taken.
+     */
+    protected boolean onRequestFocusInDescendants(int direction, Rect previouslyFocusedRect) {
+        int index;
+        int increment;
+        int end;
+        int count = mChildrenCount;
+        if ((direction & FOCUS_FORWARD) != 0) {
+            index = 0;
+            increment = 1;
+            end = count;
+        } else {
+            index = count - 1;
+            increment = -1;
+            end = -1;
+        }
+        final View[] children = mChildren;
+        for (int i = index; i != end; i += increment) {
+            View child = children[i];
+            if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                if (child.requestFocus(direction, previouslyFocusedRect)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public boolean restoreDefaultFocus() {
+        if (mDefaultFocus != null
+                && getDescendantFocusability() != FOCUS_BLOCK_DESCENDANTS
+                && (mDefaultFocus.mViewFlags & VISIBILITY_MASK) == VISIBLE
+                && mDefaultFocus.restoreDefaultFocus()) {
+            return true;
+        }
+        return super.restoreDefaultFocus();
+    }
+
+    @Override
+    boolean restoreFocusInCluster(@FocusRealDirection int direction) {
+        // Allow cluster-navigation to enter touchscreenBlocksFocus ViewGroups.
+        if (isKeyboardNavigationCluster()) {
+            final boolean blockedFocus = getTouchscreenBlocksFocus();
+            try {
+                setTouchscreenBlocksFocusNoRefocus(false);
+                return restoreFocusInClusterInternal(direction);
+            } finally {
+                setTouchscreenBlocksFocusNoRefocus(blockedFocus);
+            }
+        } else {
+            return restoreFocusInClusterInternal(direction);
+        }
+    }
+
+    private boolean restoreFocusInClusterInternal(@FocusRealDirection int direction) {
+        if (mFocusedInCluster != null && getDescendantFocusability() != FOCUS_BLOCK_DESCENDANTS
+                && (mFocusedInCluster.mViewFlags & VISIBILITY_MASK) == VISIBLE
+                && mFocusedInCluster.restoreFocusInCluster(direction)) {
+            return true;
+        }
+        return super.restoreFocusInCluster(direction);
+    }
+
+    @Override
+    boolean restoreFocusNotInCluster() {
+        if (mFocusedInCluster != null) {
+            // since clusters don't nest; we can assume that a non-null mFocusedInCluster
+            // will refer to a view not-in a cluster.
+            return restoreFocusInCluster(View.FOCUS_DOWN);
+        }
+        if (isKeyboardNavigationCluster() || (mViewFlags & VISIBILITY_MASK) != VISIBLE) {
+            return false;
+        }
+        int descendentFocusability = getDescendantFocusability();
+        if (descendentFocusability == FOCUS_BLOCK_DESCENDANTS) {
+            return super.requestFocus(FOCUS_DOWN, null);
+        }
+        if (descendentFocusability == FOCUS_BEFORE_DESCENDANTS
+                && super.requestFocus(FOCUS_DOWN, null)) {
+            return true;
+        }
+        for (int i = 0; i < mChildrenCount; ++i) {
+            View child = mChildren[i];
+            if (!child.isKeyboardNavigationCluster()
+                    && child.restoreFocusNotInCluster()) {
+                return true;
+            }
+        }
+        if (descendentFocusability == FOCUS_AFTER_DESCENDANTS && !hasFocusableChild(false)) {
+            return super.requestFocus(FOCUS_DOWN, null);
+        }
+        return false;
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @hide
+     */
+    @Override
+    public void dispatchStartTemporaryDetach() {
+        super.dispatchStartTemporaryDetach();
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchStartTemporaryDetach();
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @hide
+     */
+    @Override
+    public void dispatchFinishTemporaryDetach() {
+        super.dispatchFinishTemporaryDetach();
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchFinishTemporaryDetach();
+        }
+    }
+
+    @Override
+    final void dispatchAttachedToWindow(AttachInfo info, int visibility) {
+        mGroupFlags |= FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
+        super.dispatchAttachedToWindow(info, visibility);
+        mGroupFlags &= ~FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
+
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            final View child = children[i];
+            child.dispatchAttachedToWindow(info,
+                    combineVisibility(visibility, child.getVisibility()));
+        }
+        final int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
+        for (int i = 0; i < transientCount; ++i) {
+            View view = mTransientViews.get(i);
+            view.dispatchAttachedToWindow(info,
+                    combineVisibility(visibility, view.getVisibility()));
+        }
+    }
+
+    @Override
+    final void dispatchDetachedFromWindow() {
+        // If we still have a touch target, we are still in the process of
+        // dispatching motion events to a child; we need to get rid of that
+        // child to avoid dispatching events to it after the window is torn
+        // down. To make sure we keep the child in a consistent state, we
+        // first send it an ACTION_CANCEL motion event.
+        cancelAndClearTouchTargets(null);
+
+        // Similarly, set ACTION_EXIT to all hover targets and clear them.
+        exitHoverTargets();
+
+        // In case view is detached while transition is running
+        mLayoutCalledWhileSuppressed = false;
+
+        final int count = mChildrenCount;
+        final View[] children = mChildren;
+        for (int i = 0; i < count; i++) {
+            children[i].dispatchDetachedFromWindow();
+        }
+        clearDisappearingChildren();
+        final int transientCount = mTransientViews == null ? 0 : mTransientIndices.size();
+        for (int i = 0; i < transientCount; ++i) {
+            View view = mTransientViews.get(i);
+            view.dispatchDetachedFromWindow();
+        }
+        super.dispatchDetachedFromWindow();
+    }
+
     private float[] getTempLocationF() {
         if (mTempPosition == null) {
             mTempPosition = new float[2];
@@ -1767,9 +1995,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             view.unFocus(null);
             clearChildFocus = true;
         }
-        /*if (view == mFocusedInCluster) {
+        if (view == mFocusedInCluster) {
             clearFocusedInCluster(view);
-        }*/
+        }
 
         cancelTouchTarget(view);
         cancelHoverTarget(view);
@@ -1788,9 +2016,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
         removeFromArray(index);
 
-        /*if (view == mDefaultFocus) {
+        if (view == mDefaultFocus) {
             clearDefaultFocus(view);
-        }*/
+        }
         if (clearChildFocus) {
             clearChildFocus(view);
             if (!rootViewRequestFocus()) {
@@ -1872,12 +2100,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 view.unFocus(null);
                 clearChildFocus = true;
             }
-            /*if (view == mDefaultFocus) {
+            if (view == mDefaultFocus) {
                 clearDefaultFocus = view;
             }
             if (view == mFocusedInCluster) {
                 clearFocusedInCluster(view);
-            }*/
+            }
 
             cancelTouchTarget(view);
             cancelHoverTarget(view);
@@ -1899,9 +2127,9 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
         removeFromArray(start, count);
 
-        /*if (clearDefaultFocus != null) {
+        if (clearDefaultFocus != null) {
             clearDefaultFocus(clearDefaultFocus);
-        }*/
+        }
         if (clearChildFocus) {
             clearChildFocus(focused);
             if (!rootViewRequestFocus()) {
@@ -1983,12 +2211,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             children[i] = null;
         }
 
-        /*if (mDefaultFocus != null) {
+        if (mDefaultFocus != null) {
             clearDefaultFocus(mDefaultFocus);
         }
         if (mFocusedInCluster != null) {
             clearFocusedInCluster(mFocusedInCluster);
-        }*/
+        }
         if (clearChildFocus) {
             clearChildFocus(focused);
             if (!rootViewRequestFocus()) {
@@ -2024,12 +2252,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         if (child == mFocused) {
             child.clearFocus();
         }
-        /*if (child == mDefaultFocus) {
+        if (child == mDefaultFocus) {
             clearDefaultFocus(child);
         }
         if (child == mFocusedInCluster) {
             clearFocusedInCluster(child);
-        }*/
+        }
 
         cancelTouchTarget(child);
         cancelHoverTarget(child);
@@ -2218,6 +2446,114 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
+    void handleFocusGainInternal(int direction, @Nullable Rect previouslyFocusedRect) {
+        if (mFocused != null) {
+            mFocused.unFocus(this);
+            mFocused = null;
+            mFocusedInCluster = null;
+        }
+        super.handleFocusGainInternal(direction, previouslyFocusedRect);
+    }
+
+    @Override
+    public void requestChildFocus(View child, View focused) {
+        if (getDescendantFocusability() == FOCUS_BLOCK_DESCENDANTS) {
+            return;
+        }
+
+        // Unfocus us, if necessary
+        super.unFocus(focused);
+
+        // We had a previous notion of who had focus. Clear it.
+        if (mFocused != child) {
+            if (mFocused != null) {
+                mFocused.unFocus(focused);
+            }
+
+            mFocused = child;
+        }
+        if (mParent != null) {
+            mParent.requestChildFocus(this, focused);
+        }
+    }
+
+    void setDefaultFocus(View child) {
+        // Stop at any higher view which is explicitly focused-by-default
+        if (mDefaultFocus != null && mDefaultFocus.isFocusedByDefault()) {
+            return;
+        }
+
+        mDefaultFocus = child;
+
+        if (mParent instanceof ViewGroup) {
+            ((ViewGroup) mParent).setDefaultFocus(this);
+        }
+    }
+
+    /**
+     * Clears the default-focus chain from {@param child} up to the first parent which has another
+     * default-focusable branch below it or until there is no default-focus chain.
+     */
+    void clearDefaultFocus(View child) {
+        // Stop at any higher view which is explicitly focused-by-default
+        if (mDefaultFocus != child && mDefaultFocus != null
+                && mDefaultFocus.isFocusedByDefault()) {
+            return;
+        }
+
+        mDefaultFocus = null;
+
+        // Search child siblings for default focusables.
+        for (int i = 0; i < mChildrenCount; ++i) {
+            View sibling = mChildren[i];
+            if (sibling.isFocusedByDefault()) {
+                mDefaultFocus = sibling;
+                return;
+            } else if (mDefaultFocus == null && sibling.hasDefaultFocus()) {
+                mDefaultFocus = sibling;
+            }
+        }
+
+        if (mParent instanceof ViewGroup) {
+            ((ViewGroup) mParent).clearDefaultFocus(this);
+        }
+    }
+
+    @Override
+    boolean hasDefaultFocus() {
+        return mDefaultFocus != null || super.hasDefaultFocus();
+    }
+
+    /**
+     * Removes {@code child} (and associated focusedInCluster chain) from the cluster containing
+     * it.
+     * <br>
+     * This is intended to be run on {@code child}'s immediate parent. This is necessary because
+     * the chain is sometimes cleared after {@code child} has been detached.
+     */
+    void clearFocusedInCluster(View child) {
+        if (mFocusedInCluster != child) {
+            return;
+        }
+        clearFocusedInCluster();
+    }
+
+    /**
+     * Removes the focusedInCluster chain from this up to the cluster containing it.
+     */
+    void clearFocusedInCluster() {
+        View top = findKeyboardNavigationCluster();
+        ViewParent parent = this;
+        do {
+            ((ViewGroup) parent).mFocusedInCluster = null;
+            if (parent == top) {
+                break;
+            }
+            parent = parent.getParent();
+        } while (parent instanceof ViewGroup);
+    }
+
+    @Override
     public void dispatchWindowFocusChanged(boolean hasFocus) {
         super.dispatchWindowFocusChanged(hasFocus);
         final int count = mChildrenCount;
@@ -2250,8 +2586,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                 children[count++] = child;
             }
         }
-        //FIXME
-        //FocusFinder.sort(children, 0, count, this, isLayoutRtl());
+        FocusFinder.sort(children, 0, count, this, isLayoutRtl());
         for (int i = 0; i < count; ++i) {
             children[i].addFocusables(views, direction, focusableMode);
         }
@@ -2277,6 +2612,47 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
             if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
                 child.addTouchables(views);
             }
+        }
+    }
+
+    @Override
+    public void addKeyboardNavigationClusters(@Nonnull Collection<View> views, int direction) {
+        final int focusableCount = views.size();
+
+        if (isKeyboardNavigationCluster()) {
+            // Cluster-navigation can enter a touchscreenBlocksFocus cluster, so temporarily
+            // disable touchscreenBlocksFocus to evaluate whether it contains focusables.
+            final boolean blockedFocus = getTouchscreenBlocksFocus();
+            try {
+                setTouchscreenBlocksFocusNoRefocus(false);
+                super.addKeyboardNavigationClusters(views, direction);
+            } finally {
+                setTouchscreenBlocksFocusNoRefocus(blockedFocus);
+            }
+        } else {
+            super.addKeyboardNavigationClusters(views, direction);
+        }
+
+        if (focusableCount != views.size()) {
+            // No need to look for groups inside a group.
+            return;
+        }
+
+        if (getDescendantFocusability() == FOCUS_BLOCK_DESCENDANTS) {
+            return;
+        }
+
+        int count = 0;
+        final View[] visibleChildren = new View[mChildrenCount];
+        for (int i = 0; i < mChildrenCount; ++i) {
+            final View child = mChildren[i];
+            if ((child.mViewFlags & VISIBILITY_MASK) == VISIBLE) {
+                visibleChildren[count++] = child;
+            }
+        }
+        FocusFinder.sort(visibleChildren, 0, count, this, isLayoutRtl());
+        for (int i = 0; i < count; ++i) {
+            visibleChildren[i].addKeyboardNavigationClusters(views, direction);
         }
     }
 
@@ -2326,38 +2702,6 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         return getTouchscreenBlocksFocus()
                 && !(isKeyboardNavigationCluster()
                 && (hasFocus() || (findKeyboardNavigationCluster() != this)));
-    }
-
-    @Override
-    void handleFocusGainInternal(int direction) {
-        if (mFocused != null) {
-            mFocused.unFocus(this);
-            mFocused = null;
-            mFocusedInCluster = null;
-        }
-        super.handleFocusGainInternal(direction);
-    }
-
-    @Override
-    public void requestChildFocus(View child, View focused) {
-        if (getDescendantFocusability() == FOCUS_BLOCK_DESCENDANTS) {
-            return;
-        }
-
-        // Unfocus us, if necessary
-        super.unFocus(focused);
-
-        // We had a previous notion of who had focus. Clear it.
-        if (mFocused != child) {
-            if (mFocused != null) {
-                mFocused.unFocus(focused);
-            }
-
-            mFocused = child;
-        }
-        if (mParent != null) {
-            mParent.requestChildFocus(this, focused);
-        }
     }
 
     /**
@@ -2413,7 +2757,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
     }
 
     @Override
-    public boolean hasFocusable() {
+    boolean hasFocusable(boolean allowAutoFocus, boolean dispatchExplicit) {
         // This should probably be super.hasFocusable, but that would change
         // behavior. Historically, we have not checked the ancestor views for
         // shouldBlockFocusForTouchscreen() in ViewGroup.hasFocusable.
@@ -2424,20 +2768,20 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         }
 
         // Only use effective focusable value when allowed.
-        if (isFocusable()) {
+        if ((allowAutoFocus || getFocusable() != FOCUSABLE_AUTO) && isFocusable()) {
             return true;
         }
 
         // Determine whether we have a focused descendant.
         final int descendantFocusability = getDescendantFocusability();
         if (descendantFocusability != FOCUS_BLOCK_DESCENDANTS) {
-            return hasFocusableChild();
+            return hasFocusableChild(dispatchExplicit);
         }
 
         return false;
     }
 
-    boolean hasFocusableChild() {
+    boolean hasFocusableChild(boolean dispatchExplicit) {
         // Determine whether we have a focusable descendant.
         final int count = mChildrenCount;
         final View[] children = mChildren;
@@ -2447,7 +2791,8 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
 
             // In case the subclass has overridden has[Explicit]Focusable, dispatch
             // to the expected one for each child even though we share logic here.
-            if (child.hasFocusable()) {
+            if ((dispatchExplicit && child.hasExplicitFocusable())
+                    || (!dispatchExplicit && child.hasFocusable())) {
                 return true;
             }
         }
@@ -2675,7 +3020,12 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     @Override
     public View focusSearch(View focused, int direction) {
-        if (mParent != null) {
+        if (isRootNamespace()) {
+            // root namespace means we should consider ourselves the top of the
+            // tree for focus searching; otherwise we could be focus searching
+            // into other tabs.  see LocalActivityManager and TabHost for more info.
+            return FocusFinder.getInstance().findNextFocus(this, focused, direction);
+        } else if (mParent != null) {
             return mParent.focusSearch(focused, direction);
         }
         return null;
@@ -3672,86 +4022,6 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
      */
     public boolean isLayoutSuppressed() {
         return mSuppressLayout;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
-    @Override
-    public void dispatchStartTemporaryDetach() {
-        super.dispatchStartTemporaryDetach();
-        final int count = mChildrenCount;
-        final View[] children = mChildren;
-        for (int i = 0; i < count; i++) {
-            children[i].dispatchStartTemporaryDetach();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @hide
-     */
-    @Override
-    public void dispatchFinishTemporaryDetach() {
-        super.dispatchFinishTemporaryDetach();
-        final int count = mChildrenCount;
-        final View[] children = mChildren;
-        for (int i = 0; i < count; i++) {
-            children[i].dispatchFinishTemporaryDetach();
-        }
-    }
-
-    @Override
-    final void dispatchAttachedToWindow(AttachInfo info, int visibility) {
-        mGroupFlags |= FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
-        super.dispatchAttachedToWindow(info, visibility);
-        mGroupFlags &= ~FLAG_PREVENT_DISPATCH_ATTACHED_TO_WINDOW;
-
-        final int count = mChildrenCount;
-        final View[] children = mChildren;
-        for (int i = 0; i < count; i++) {
-            final View child = children[i];
-            child.dispatchAttachedToWindow(info,
-                    combineVisibility(visibility, child.getVisibility()));
-        }
-        final int transientCount = mTransientIndices == null ? 0 : mTransientIndices.size();
-        for (int i = 0; i < transientCount; ++i) {
-            View view = mTransientViews.get(i);
-            view.dispatchAttachedToWindow(info,
-                    combineVisibility(visibility, view.getVisibility()));
-        }
-    }
-
-    @Override
-    final void dispatchDetachedFromWindow() {
-        // If we still have a touch target, we are still in the process of
-        // dispatching motion events to a child; we need to get rid of that
-        // child to avoid dispatching events to it after the window is torn
-        // down. To make sure we keep the child in a consistent state, we
-        // first send it an ACTION_CANCEL motion event.
-        cancelAndClearTouchTargets(null);
-
-        // Similarly, set ACTION_EXIT to all hover targets and clear them.
-        exitHoverTargets();
-
-        // In case view is detached while transition is running
-        mLayoutCalledWhileSuppressed = false;
-
-        final int count = mChildrenCount;
-        final View[] children = mChildren;
-        for (int i = 0; i < count; i++) {
-            children[i].dispatchDetachedFromWindow();
-        }
-        clearDisappearingChildren();
-        final int transientCount = mTransientViews == null ? 0 : mTransientIndices.size();
-        for (int i = 0; i < transientCount; ++i) {
-            View view = mTransientViews.get(i);
-            view.dispatchDetachedFromWindow();
-        }
-        super.dispatchDetachedFromWindow();
     }
 
     /**

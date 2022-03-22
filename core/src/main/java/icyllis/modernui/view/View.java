@@ -49,6 +49,7 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Predicate;
@@ -2098,6 +2099,11 @@ public class View implements Drawable.Callback {
     protected int mPaddingBottom;
 
     /**
+     * Predicate for matching a view by its id.
+     */
+    private MatchIdPredicate mMatchIdPredicate;
+
+    /**
      * The right padding after RTL resolution, but before taking account of scroll bars.
      *
      * @hide
@@ -2669,11 +2675,11 @@ public class View implements Drawable.Callback {
                 // This is a weird case. Most-likely the user, rather than ViewRootImpl, called
                 // layout. In this case, there's no guarantee that parent layouts will be evaluated
                 // and thus the safest action is to clear focus here.
-                clearFocusInternal(true);
+                clearFocusInternal(null, /* propagate */ true, /* refocus */ false);
                 clearParentsWantFocus();
             } else if (hasNoParentWantsFocus()) {
                 // original requestFocus was likely on this view directly, so just clear focus
-                clearFocusInternal(true);
+                clearFocusInternal(null, /* propagate */ true, /* refocus */ false);
             }
             // otherwise, we let parents handle re-assigning focus during their layout passes.
         } else if ((mPrivateFlags & PFLAG_WANTS_FOCUS) != 0) {
@@ -2684,7 +2690,7 @@ public class View implements Drawable.Callback {
                 if (!restoreDefaultFocus() && hasNoParentWantsFocus()) {
                     // Give up and clear focus once we've reached the top-most parent which wants
                     // focus.
-                    focused.clearFocusInternal(true);
+                    focused.clearFocusInternal(null, /* propagate */ true, /* refocus */ false);
                 }
             }
         }
@@ -3916,6 +3922,83 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * If a user manually specified the next view id for a particular direction,
+     * use the root to look up the view.
+     *
+     * @param root      The root view of the hierarchy containing this view.
+     * @param direction One of FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, FOCUS_RIGHT, FOCUS_FORWARD,
+     *                  or FOCUS_BACKWARD.
+     * @return The user specified next view, or null if there is none.
+     */
+    View findUserSetNextFocus(View root, @FocusDirection int direction) {
+        switch (direction) {
+            case FOCUS_LEFT:
+                if (mNextFocusLeftId == View.NO_ID) return null;
+                return findViewInsideOutShouldExist(root, mNextFocusLeftId);
+            case FOCUS_RIGHT:
+                if (mNextFocusRightId == View.NO_ID) return null;
+                return findViewInsideOutShouldExist(root, mNextFocusRightId);
+            case FOCUS_UP:
+                if (mNextFocusUpId == View.NO_ID) return null;
+                return findViewInsideOutShouldExist(root, mNextFocusUpId);
+            case FOCUS_DOWN:
+                if (mNextFocusDownId == View.NO_ID) return null;
+                return findViewInsideOutShouldExist(root, mNextFocusDownId);
+            case FOCUS_FORWARD:
+                if (mNextFocusForwardId == View.NO_ID) return null;
+                return findViewInsideOutShouldExist(root, mNextFocusForwardId);
+            case FOCUS_BACKWARD: {
+                if (mID == View.NO_ID) return null;
+                final View rootView = root;
+                final View startView = this;
+                // Since we have forward links but no backward links, we need to find the view that
+                // forward links to this view. We can't just find the view with the specified ID
+                // because view IDs need not be unique throughout the tree.
+                return root.findViewByPredicateInsideOut(startView,
+                        t -> findViewInsideOutShouldExist(rootView, t, t.mNextFocusForwardId)
+                                == startView);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * If a user manually specified the next keyboard-navigation cluster for a particular direction,
+     * use the root to look up the view.
+     *
+     * @param root      the root view of the hierarchy containing this view
+     * @param direction {@link #FOCUS_FORWARD} or {@link #FOCUS_BACKWARD}
+     * @return the user-specified next cluster, or {@code null} if there is none
+     */
+    View findUserSetNextKeyboardNavigationCluster(View root, @FocusDirection int direction) {
+        switch (direction) {
+            case FOCUS_FORWARD -> {
+                if (mNextClusterForwardId == View.NO_ID) return null;
+                return findViewInsideOutShouldExist(root, mNextClusterForwardId);
+            }
+            case FOCUS_BACKWARD -> {
+                if (mID == View.NO_ID) return null;
+                final int id = mID;
+                return root.findViewByPredicateInsideOut(this,
+                        t -> t.mNextClusterForwardId == id);
+            }
+        }
+        return null;
+    }
+
+    private View findViewInsideOutShouldExist(View root, int id) {
+        return findViewInsideOutShouldExist(root, this, id);
+    }
+
+    private View findViewInsideOutShouldExist(View root, View start, int id) {
+        if (mMatchIdPredicate == null) {
+            mMatchIdPredicate = new MatchIdPredicate();
+        }
+        mMatchIdPredicate.mId = id;
+        return root.findViewByPredicateInsideOut(start, mMatchIdPredicate);
+    }
+
+    /**
      * Find and return all focusable views that are descendants of this view,
      * possibly including this view if it is focusable itself.
      *
@@ -3966,6 +4049,23 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Adds any keyboard navigation cluster roots that are descendants of this view (possibly
+     * including this view if it is a cluster root itself) to views.
+     *
+     * @param views Keyboard navigation cluster roots found so far
+     * @param direction Direction to look
+     */
+    public void addKeyboardNavigationClusters(@Nonnull Collection<View> views, int direction) {
+        if (!isKeyboardNavigationCluster()) {
+            return;
+        }
+        if (!hasFocusable()) {
+            return;
+        }
+        views.add(this);
+    }
+
+    /**
      * Find and return all touchable views that are descendants of this view,
      * possibly including this view if it is touchable itself.
      *
@@ -3999,19 +4099,41 @@ public class View implements Drawable.Callback {
      * descendants.
      * <p>
      * A view will not actually take focus if it is not focusable ({@link #isFocusable} returns
-     * false), or if it can't be focused due to other conditions (not visible, not
+     * false), or if it can't be focused due to other conditions (not focusable in touch mode
+     * ({@link #isFocusableInTouchMode}) while the device is in touch mode, not visible, not
      * enabled, or has no size).
      * <p>
      * See also {@link #focusSearch(int)}, which is what you call to say that you
      * have focus, and you want your parent to look for the next one.
      * <p>
-     * This is equivalent to calling {@link #requestFocus(int)} with arguments
-     * {@link #FOCUS_DOWN}.
+     * This is equivalent to calling {@link #requestFocus(int, Rect)} with arguments
+     * {@link #FOCUS_DOWN} and <code>null</code>.
      *
      * @return Whether this view or one of its descendants actually took focus.
      */
     public final boolean requestFocus() {
-        return requestFocus(FOCUS_DOWN);
+        return requestFocus(View.FOCUS_DOWN);
+    }
+
+    /**
+     * This will request focus for whichever View was last focused within this
+     * cluster before a focus-jump out of it.
+     */
+    boolean restoreFocusInCluster(@FocusRealDirection int direction) {
+        // Prioritize focusableByDefault over algorithmic focus selection.
+        if (restoreDefaultFocus()) {
+            return true;
+        }
+        return requestFocus(direction);
+    }
+
+    /**
+     * This will request focus for whichever View not in a cluster was last focused before a
+     * focus-jump to a cluster. If no non-cluster View has previously had focus, this will focus
+     * the "first" focusable view it finds.
+     */
+    boolean restoreFocusNotInCluster() {
+        return requestFocus(View.FOCUS_DOWN);
     }
 
     /**
@@ -4028,40 +4150,76 @@ public class View implements Drawable.Callback {
      * Call this to try to give focus to a specific view or to one of its
      * descendants and give it a hint about what direction focus is heading.
      * <p>
-     * A view will not actually take focus if it is not focusable
-     * ({@link #isFocusable} returns false).
+     * A view will not actually take focus if it is not focusable ({@link #isFocusable} returns
+     * false), or if it is focusable, and it is not focusable in touch mode
+     * ({@link #isFocusableInTouchMode}) while the device is in touch mode.
      * <p>
      * See also {@link #focusSearch(int)}, which is what you call to say that you
      * have focus, and you want your parent to look for the next one.
      * <p>
-     * This is equivalent to calling this with
+     * This is equivalent to calling {@link #requestFocus(int, Rect)} with
      * <code>null</code> set for the previously focused rectangle.
      *
      * @param direction One of FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, and FOCUS_RIGHT
      * @return Whether this view or one of its descendants actually took focus.
      */
-    public boolean requestFocus(@FocusRealDirection int direction) {
-        return requestFocusNoSearch(direction);
+    public final boolean requestFocus(int direction) {
+        return requestFocus(direction, null);
     }
 
-    private boolean requestFocusNoSearch(@FocusRealDirection int direction) {
+    /**
+     * Call this to try to give focus to a specific view or to one of its descendants
+     * and give it hints about the direction and a specific rectangle that the focus
+     * is coming from.  The rectangle can help give larger views a finer grained hint
+     * about where focus is coming from, and therefore, where to show selection, or
+     * forward focus change internally.
+     * <p>
+     * A view will not actually take focus if it is not focusable ({@link #isFocusable} returns
+     * false), or if it is focusable and it is not focusable in touch mode
+     * ({@link #isFocusableInTouchMode}) while the device is in touch mode.
+     * <p>
+     * A View will not take focus if it is not visible.
+     * <p>
+     * A View will not take focus if one of its parents has
+     * {@link ViewGroup#getDescendantFocusability()} equal to
+     * {@link ViewGroup#FOCUS_BLOCK_DESCENDANTS}.
+     * <p>
+     * See also {@link #focusSearch(int)}, which is what you call to say that you
+     * have focus, and you want your parent to look for the next one.
+     * <p>
+     * You may wish to override this method if your custom {@link View} has an internal
+     * {@link View} that it wishes to forward the request to.
+     *
+     * @param direction             One of FOCUS_UP, FOCUS_DOWN, FOCUS_LEFT, and FOCUS_RIGHT
+     * @param previouslyFocusedRect The rectangle (in this View's coordinate system)
+     *                              to give a finer grained hint about where focus is coming from.  May be null
+     *                              if there is no hint.
+     * @return Whether this view or one of its descendants actually took focus.
+     */
+    public boolean requestFocus(int direction, @Nullable Rect previouslyFocusedRect) {
+        return requestFocusNoSearch(direction, previouslyFocusedRect);
+    }
+
+    private boolean requestFocusNoSearch(int direction, @Nullable Rect previouslyFocusedRect) {
         // need to be focusable
         if (!canTakeFocus()) {
             return false;
         }
 
+        final boolean focusableInTouchMode = isFocusableInTouchMode();
+
         // need to be focusable in touch mode if in touch mode
-        if (!isFocusableInTouchMode()) {
+        if (isInTouchMode() && !focusableInTouchMode) {
             return false;
         }
 
-        // need to not have any parents blocking us
-        ViewParent p = mParent;
-        while (p instanceof ViewGroup vg) {
-            if (vg.getDescendantFocusability() == ViewGroup.FOCUS_BLOCK_DESCENDANTS) {
+        ViewParent ancestor = mParent;
+        while (ancestor instanceof final ViewGroup vgAncestor) {
+            if (vgAncestor.getDescendantFocusability() == ViewGroup.FOCUS_BLOCK_DESCENDANTS
+                    || (!focusableInTouchMode && vgAncestor.shouldBlockFocusForTouchscreen())) {
                 return false;
             } else {
-                p = vg.getParent();
+                ancestor = vgAncestor.getParent();
             }
         }
 
@@ -4071,24 +4229,33 @@ public class View implements Drawable.Callback {
             clearParentsWantFocus();
         }
 
-        handleFocusGainInternal(direction);
+        handleFocusGainInternal(direction, previouslyFocusedRect);
         return true;
+    }
+
+    void clearParentsWantFocus() {
+        if (mParent instanceof View v) {
+            v.mPrivateFlags &= ~PFLAG_WANTS_FOCUS;
+            v.clearParentsWantFocus();
+        }
     }
 
     /**
      * Give this view focus. This will cause
-     * {@link #onFocusChanged(boolean, int)} to be called.
+     * {@link #onFocusChanged(boolean, int, Rect)} to be called.
      * <p>
      * Note: this does not check whether this {@link View} should get focus, it just
      * gives it focus no matter what.  It should only be called internally by framework
-     * code that knows what it is doing, namely {@link #requestFocus(int)}.
+     * code that knows what it is doing, namely {@link #requestFocus(int, Rect)}.
      *
-     * @param direction values are {@link View#FOCUS_UP}, {@link View#FOCUS_DOWN},
-     *                  {@link View#FOCUS_LEFT} or {@link View#FOCUS_RIGHT}. This is the direction which
-     *                  focus moved when requestFocus() is called. It may not always
-     *                  apply, in which case use the default View.FOCUS_DOWN.
+     * @param direction             values are {@link View#FOCUS_UP}, {@link View#FOCUS_DOWN},
+     *                              {@link View#FOCUS_LEFT} or {@link View#FOCUS_RIGHT}. This is the direction which
+     *                              focus moved when requestFocus() is called. It may not always
+     *                              apply, in which case use the default View.FOCUS_DOWN.
+     * @param previouslyFocusedRect The rectangle of the view that had focus
+     *                              prior in this View's coordinate system.
      */
-    void handleFocusGainInternal(@FocusRealDirection int direction) {
+    void handleFocusGainInternal(@FocusRealDirection int direction, @Nullable Rect previouslyFocusedRect) {
         if ((mPrivateFlags & PFLAG_FOCUSED) == 0) {
             mPrivateFlags |= PFLAG_FOCUSED;
 
@@ -4099,11 +4266,11 @@ public class View implements Drawable.Callback {
                 //updateFocusedInCluster(oldFocus, direction);
             }
 
-            /*if (mAttachInfo != null) {
+            if (mAttachInfo != null) {
                 mAttachInfo.mTreeObserver.dispatchOnGlobalFocusChange(oldFocus, this);
-            }*/
+            }
 
-            onFocusChanged(true, direction);
+            onFocusChanged(true, direction, previouslyFocusedRect);
             refreshDrawableState();
         }
     }
@@ -4215,6 +4382,60 @@ public class View implements Drawable.Callback {
     }
 
     /**
+     * Returns whether this View should receive focus when the focus is restored for the view
+     * hierarchy containing this view.
+     * <p>
+     * Focus gets restored for a view hierarchy when the root of the hierarchy gets added to a
+     * window or serves as a target of cluster navigation.
+     *
+     * @return {@code true} if this view is the default-focus view, {@code false} otherwise
+     * @see #restoreDefaultFocus()
+     */
+    public final boolean isFocusedByDefault() {
+        return (mPrivateFlags3 & PFLAG3_FOCUSED_BY_DEFAULT) != 0;
+    }
+
+    /**
+     * Sets whether this View should receive focus when the focus is restored for the view
+     * hierarchy containing this view.
+     * <p>
+     * Focus gets restored for a view hierarchy when the root of the hierarchy gets added to a
+     * window or serves as a target of cluster navigation.
+     *
+     * @param isFocusedByDefault {@code true} to set this view as the default-focus view,
+     *                           {@code false} otherwise.
+     * @see #restoreDefaultFocus()
+     */
+    public void setFocusedByDefault(boolean isFocusedByDefault) {
+        if (isFocusedByDefault == ((mPrivateFlags3 & PFLAG3_FOCUSED_BY_DEFAULT) != 0)) {
+            return;
+        }
+
+        if (isFocusedByDefault) {
+            mPrivateFlags3 |= PFLAG3_FOCUSED_BY_DEFAULT;
+        } else {
+            mPrivateFlags3 &= ~PFLAG3_FOCUSED_BY_DEFAULT;
+        }
+
+        if (mParent instanceof ViewGroup) {
+            if (isFocusedByDefault) {
+                ((ViewGroup) mParent).setDefaultFocus(this);
+            } else {
+                ((ViewGroup) mParent).clearDefaultFocus(this);
+            }
+        }
+    }
+
+    /**
+     * Returns whether the view hierarchy with this view as a root contain a default-focus view.
+     *
+     * @return {@code true} if this view has default focus, {@code false} otherwise
+     */
+    boolean hasDefaultFocus() {
+        return isFocusedByDefault();
+    }
+
+    /**
      * Find the nearest keyboard navigation cluster in the specified direction.
      * This does not actually give focus to that cluster.
      *
@@ -4242,7 +4463,7 @@ public class View implements Drawable.Callback {
 
     /**
      * Called when this view wants to give up focus. If focus is cleared
-     * {@link #onFocusChanged(boolean, int)} is called.
+     * {@link #onFocusChanged(boolean, int, Rect)} is called.
      * <p>
      * <strong>Note:</strong> When not in touch-mode, the framework will try to give focus
      * to the first focusable View from the top after focus is cleared. Hence, if this
@@ -4252,50 +4473,45 @@ public class View implements Drawable.Callback {
      * </p>
      */
     public void clearFocus() {
-        clearFocusInternal(true);
+        clearFocusInternal(null, true, !isInTouchMode());
     }
 
     /**
-     * Clears focus from the view, optionally broadcasting the change up through
+     * Clears focus from the view, optionally propagating the change up through
      * the parent hierarchy and requesting that the root view place new focus.
      *
-     * @param broadcast whether to broadcast the change up through the parent
+     * @param propagate whether to propagate the change up through the parent
      *                  hierarchy
+     * @param refocus   when propagate is true, specifies whether to request the
+     *                  root view place new focus
      */
-    void clearFocusInternal(boolean broadcast) {
+    void clearFocusInternal(View focused, boolean propagate, boolean refocus) {
         if ((mPrivateFlags & PFLAG_FOCUSED) != 0) {
             mPrivateFlags &= ~PFLAG_FOCUSED;
             clearParentsWantFocus();
 
-            if (broadcast && mParent != null) {
+            if (propagate && mParent != null) {
                 mParent.clearChildFocus(this);
             }
 
-            onFocusChanged(false, 0);
+            onFocusChanged(false, 0, null);
             refreshDrawableState();
 
-            if (broadcast) {
+            if (propagate && (!refocus || !rootViewRequestFocus())) {
                 notifyGlobalFocusCleared(this);
             }
         }
     }
 
     void notifyGlobalFocusCleared(View oldFocus) {
-        /*if (oldFocus != null && mAttachInfo != null) {
+        if (oldFocus != null && mAttachInfo != null) {
             mAttachInfo.mTreeObserver.dispatchOnGlobalFocusChange(oldFocus, null);
-        }*/
+        }
     }
 
     boolean rootViewRequestFocus() {
         final View root = getRootView();
         return root != null && root.requestFocus();
-    }
-
-    void clearParentsWantFocus() {
-        if (mParent instanceof View v) {
-            v.mPrivateFlags &= ~PFLAG_WANTS_FOCUS;
-            v.clearParentsWantFocus();
-        }
     }
 
     /**
@@ -4307,7 +4523,7 @@ public class View implements Drawable.Callback {
      * an inconstant state.
      */
     void unFocus(View focused) {
-        clearFocusInternal(false);
+        clearFocusInternal(focused, false, false);
     }
 
     /**
@@ -4332,13 +4548,13 @@ public class View implements Drawable.Callback {
      * @see ViewGroup#getTouchscreenBlocksFocus()
      * @see #hasExplicitFocusable()
      */
-    public boolean hasFocusable() {
+    public final boolean hasFocusable() {
         return hasFocusable(true, false);
     }
 
     /**
      * Returns true if this view is focusable or if it contains a reachable View
-     * for which {@link #hasExplicitFocusable()} returns {@code true}.
+     * for which this method returns {@code true}.
      * A "reachable hasExplicitFocusable()" is a view whose parents do not block descendants focus.
      * Only {@link #VISIBLE} views for which {@link #getFocusable()} would return
      * {@link #FOCUSABLE} are considered focusable.
@@ -4347,14 +4563,13 @@ public class View implements Drawable.Callback {
      * view, {@code false} otherwise
      * @see #hasFocusable()
      */
-    public boolean hasExplicitFocusable() {
+    public final boolean hasExplicitFocusable() {
         return hasFocusable(false, true);
     }
 
     boolean hasFocusable(boolean allowAutoFocus, boolean dispatchExplicit) {
         if (!isFocusableInTouchMode()) {
-            for (ViewParent p = mParent; p instanceof ViewGroup; p = p.getParent()) {
-                final ViewGroup g = (ViewGroup) p;
+            for (ViewParent p = mParent; p instanceof final ViewGroup g; p = p.getParent()) {
                 if (g.shouldBlockFocusForTouchscreen()) {
                     return false;
                 }
@@ -4378,15 +4593,20 @@ public class View implements Drawable.Callback {
      * When overriding, be sure to call up through to the super class so that
      * the standard focus handling will occur.
      *
-     * @param gainFocus True if the View has focus; false otherwise.
-     * @param direction The direction focus has moved when requestFocus()
-     *                  is called to give this view focus. Values are
-     *                  {@link #FOCUS_UP}, {@link #FOCUS_DOWN}, {@link #FOCUS_LEFT},
-     *                  {@link #FOCUS_RIGHT}, {@link #FOCUS_FORWARD}, or {@link #FOCUS_BACKWARD}.
-     *                  It may not always apply, in which case use the default.
+     * @param gainFocus             True if the View has focus; false otherwise.
+     * @param direction             The direction focus has moved when requestFocus()
+     *                              is called to give this view focus. Values are
+     *                              {@link #FOCUS_UP}, {@link #FOCUS_DOWN}, {@link #FOCUS_LEFT},
+     *                              {@link #FOCUS_RIGHT}, {@link #FOCUS_FORWARD}, or {@link #FOCUS_BACKWARD}.
+     *                              It may not always apply, in which case use the default.
+     * @param previouslyFocusedRect The rectangle, in this view's coordinate
+     *                              system, of the previously focused view.  If applicable, this will be
+     *                              passed in as finer grained information about where the focus is coming
+     *                              from (in addition to direction).  Will be <code>null</code> otherwise.
      */
     @CallSuper
-    protected void onFocusChanged(boolean gainFocus, int direction) {
+    protected void onFocusChanged(boolean gainFocus, @FocusDirection int direction,
+                                  @Nullable Rect previouslyFocusedRect) {
         if (!gainFocus) {
             if (isPressed()) {
                 setPressed(false);
@@ -4398,6 +4618,10 @@ public class View implements Drawable.Callback {
         ListenerInfo li = mListenerInfo;
         if (li != null && li.mOnFocusChangeListener != null) {
             li.mOnFocusChangeListener.onFocusChange(this, gainFocus);
+        }
+
+        if (mAttachInfo != null) {
+            mAttachInfo.mKeyDispatchState.reset(this);
         }
     }
 
@@ -6708,14 +6932,6 @@ public class View implements Drawable.Callback {
         }
     }
 
-    //TODO WIP
-    public void setAlpha(float alpha) {
-        if (mAlpha != alpha) {
-            mAlpha = alpha;
-            invalidate();
-        }
-    }
-
     /**
      * The opacity of the view. This is a value from 0 to 1, where 0 means the view is
      * completely transparent and 1 means the view is completely opaque.
@@ -6726,6 +6942,69 @@ public class View implements Drawable.Callback {
      */
     public float getAlpha() {
         return mAlpha;
+    }
+
+    /**
+     * Sets the behavior for overlapping rendering for this view (see {@link
+     * #hasOverlappingRendering()} for more details on this behavior). Calling this method
+     * is an alternative to overriding {@link #hasOverlappingRendering()} in a subclass,
+     * providing the value which is then used internally. That is, when {@link
+     * #forceHasOverlappingRendering(boolean)} is called, the value of {@link
+     * #hasOverlappingRendering()} is ignored and the value passed into this method is used
+     * instead.
+     *
+     * @param hasOverlappingRendering The value for overlapping rendering to be used internally
+     *                                instead of that returned by {@link #hasOverlappingRendering()}.
+     */
+    public void forceHasOverlappingRendering(boolean hasOverlappingRendering) {
+        mPrivateFlags3 |= PFLAG3_HAS_OVERLAPPING_RENDERING_FORCED;
+        if (hasOverlappingRendering) {
+            mPrivateFlags3 |= PFLAG3_OVERLAPPING_RENDERING_FORCED_VALUE;
+        } else {
+            mPrivateFlags3 &= ~PFLAG3_OVERLAPPING_RENDERING_FORCED_VALUE;
+        }
+    }
+
+    /**
+     * Returns the value for overlapping rendering that is used internally. This is either
+     * the value passed into {@link #forceHasOverlappingRendering(boolean)}, if called, or
+     * the return value of {@link #hasOverlappingRendering()}, otherwise.
+     *
+     * @return The value for overlapping rendering being used internally.
+     */
+    public final boolean getHasOverlappingRendering() {
+        return (mPrivateFlags3 & PFLAG3_HAS_OVERLAPPING_RENDERING_FORCED) != 0 ?
+                (mPrivateFlags3 & PFLAG3_OVERLAPPING_RENDERING_FORCED_VALUE) != 0 :
+                hasOverlappingRendering();
+    }
+
+    /**
+     * Returns whether this View has content which overlaps.
+     *
+     * <p>This function, intended to be overridden by specific View types, is an optimization when
+     * alpha is set on a view. If rendering overlaps in a view with alpha < 1, that view is drawn to
+     * an offscreen buffer and then composited into place, which can be expensive. If the view has
+     * no overlapping rendering, the view can draw each primitive with the appropriate alpha value
+     * directly. An example of overlapping rendering is a TextView with a background image, such as
+     * a Button. An example of non-overlapping rendering is a TextView with no background, or an
+     * ImageView with only the foreground image. The default implementation returns true; subclasses
+     * should override if they have cases which can be optimized.</p>
+     *
+     * <p><strong>Note:</strong> The return value of this method is ignored if {@link
+     * #forceHasOverlappingRendering(boolean)} has been called on this view.</p>
+     *
+     * @return true if the content in this view might overlap, false otherwise.
+     */
+    public boolean hasOverlappingRendering() {
+        return true;
+    }
+
+    //TODO WIP
+    public void setAlpha(float alpha) {
+        if (mAlpha != alpha) {
+            mAlpha = alpha;
+            invalidate();
+        }
     }
 
     /**
@@ -9072,34 +9351,6 @@ public class View implements Drawable.Callback {
     }
 
     /**
-     * Look for a child view that matches the specified predicate.
-     * If this view matches the predicate, return this view.
-     *
-     * @param predicate The predicate to evaluate.
-     * @return The first view that matches the predicate or null.
-     * @hide
-     */
-    public final <T extends View> T findViewByPredicate(@Nonnull Predicate<View> predicate) {
-        return findViewByPredicateTraversal(predicate, null);
-    }
-
-    /**
-     * @param predicate   The predicate to evaluate.
-     * @param childToSkip If not null, ignores this child during the recursive traversal.
-     * @return The first view that matches the predicate or null.
-     * @hide
-     */
-    @Nullable
-    @SuppressWarnings("unchecked")
-    protected <T extends View> T findViewByPredicateTraversal(@Nonnull Predicate<View> predicate,
-                                                              @Nullable View childToSkip) {
-        if (predicate.test(this)) {
-            return (T) this;
-        }
-        return null;
-    }
-
-    /**
      * Finds the first descendant view with the given ID, the view itself if
      * the ID matches {@link #getId()}, or {@code null} if the ID is invalid
      * (< 0) or there is no matching view in the hierarchy.
@@ -9146,6 +9397,69 @@ public class View implements Drawable.Callback {
             return (T) this;
         }
         return null;
+    }
+
+    /**
+     * Look for a child view that matches the specified predicate.
+     * If this view matches the predicate, return this view.
+     *
+     * @param predicate The predicate to evaluate.
+     * @return The first view that matches the predicate or null.
+     * @hide
+     */
+    public final <T extends View> T findViewByPredicate(@Nonnull Predicate<View> predicate) {
+        return findViewByPredicateTraversal(predicate, null);
+    }
+
+    /**
+     * @param predicate   The predicate to evaluate.
+     * @param childToSkip If not null, ignores this child during the recursive traversal.
+     * @return The first view that matches the predicate or null.
+     * @hide
+     */
+    @Nullable
+    @SuppressWarnings("unchecked")
+    protected <T extends View> T findViewByPredicateTraversal(@Nonnull Predicate<View> predicate,
+                                                              @Nullable View childToSkip) {
+        if (predicate.test(this)) {
+            return (T) this;
+        }
+        return null;
+    }
+
+    /**
+     * Look for a child view that matches the specified predicate,
+     * starting with the specified view and its descendents and then
+     * recusively searching the ancestors and siblings of that view
+     * until this view is reached.
+     * <p>
+     * This method is useful in cases where the predicate does not match
+     * a single unique view (perhaps multiple views use the same id)
+     * and we are trying to find the view that is "closest" in scope to the
+     * starting view.
+     *
+     * @param start     The view to start from.
+     * @param predicate The predicate to evaluate.
+     * @return The first view that matches the predicate or null.
+     * @hide
+     */
+    public final <T extends View> T findViewByPredicateInsideOut(
+            View start, Predicate<View> predicate) {
+        View childToSkip = null;
+        for (; ; ) {
+            T view = start.findViewByPredicateTraversal(predicate, childToSkip);
+            if (view != null || start == this) {
+                return view;
+            }
+
+            ViewParent parent = start.getParent();
+            if (parent == null || !(parent instanceof View)) {
+                return null;
+            }
+
+            childToSkip = start;
+            start = (View) parent;
+        }
     }
 
     /**
@@ -9321,8 +9635,8 @@ public class View implements Drawable.Callback {
      * <p>This method can be invoked from outside of the UI thread
      * only when this View is attached to a window.</p>
      *
-     * @param delayMillis the duration in milliseconds to delay the
-     *                    invalidation by
+     * @param delayMilliseconds the duration in milliseconds to delay the
+     *                          invalidation by
      * @see #invalidate()
      * @see #postInvalidate()
      */
@@ -11952,6 +12266,15 @@ public class View implements Drawable.Callback {
         @Override
         public void run() {
             setPressed(false);
+        }
+    }
+
+    private static class MatchIdPredicate implements Predicate<View> {
+        public int mId;
+
+        @Override
+        public boolean test(View view) {
+            return (view.mID == mId);
         }
     }
 

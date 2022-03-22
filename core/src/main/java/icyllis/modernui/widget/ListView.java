@@ -3439,13 +3439,13 @@ public class ListView extends AbsListView {
     }
 
     @Override
-    protected void onFocusChanged(boolean gainFocus, int direction) {
-        super.onFocusChanged(gainFocus, direction);
+    protected void onFocusChanged(boolean gainFocus, int direction, @Nullable Rect previouslyFocusedRect) {
+        super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
 
         final ListAdapter adapter = mAdapter;
         int closetChildIndex = -1;
         int closestChildTop = 0;
-        /*if (adapter != null && gainFocus && previouslyFocusedRect != null) {
+        if (adapter != null && gainFocus && previouslyFocusedRect != null) {
             previouslyFocusedRect.offset(mScrollX, mScrollY);
 
             // Don't cache the result of getChildCount or mFirstPosition here,
@@ -3479,9 +3479,13 @@ public class ListView extends AbsListView {
                     closestChildTop = other.getTop();
                 }
             }
-        }*/
+        }
 
-        requestLayout();
+        if (closetChildIndex >= 0) {
+            setSelectionFromTop(closetChildIndex + mFirstPosition, closestChildTop);
+        } else {
+            requestLayout();
+        }
     }
 
     /**
