@@ -58,13 +58,14 @@ import java.io.IOException;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 @SuppressWarnings({"unused"})
@@ -125,7 +126,9 @@ public class TestMain {
 
     public static void main(String[] args) {
         if (!CREATE_WINDOW) {
-            try (ModernUI modernUI = new ModernUI()) {
+            try (ModernUI modernUI = new ModernUI();
+                 VulkanManager vulkanManager = VulkanManager.getInstance()) {
+                vulkanManager.initialize();
                 modernUI.run(new TestFragment());
             }
             return;
@@ -433,12 +436,12 @@ public class TestMain {
 
         //sTrack.play();
 
-        GLWrapper.glEnable(GL_CULL_FACE);
-        GLWrapper.glEnable(GL_BLEND);
-        GLWrapper.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-        GLWrapper.glEnable(GL_STENCIL_TEST);
-        GLWrapper.glEnable(GL_MULTISAMPLE);
-        GLWrapper.glDisable(GL_DEPTH_TEST);
+        GLCore.glEnable(GL_CULL_FACE);
+        GLCore.glEnable(GL_BLEND);
+        GLCore.glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        GLCore.glEnable(GL_STENCIL_TEST);
+        GLCore.glEnable(GL_MULTISAMPLE);
+        GLCore.glDisable(GL_DEPTH_TEST);
 
         TextPaint tps = new TextPaint();
         tps.setColor(0xff40ddee);
@@ -460,7 +463,7 @@ public class TestMain {
             long time = ArchCore.timeMillis();
             long delta = time - lastTime;
             lastTime = time;
-            GLWrapper.resetFrame(window);
+            GLCore.resetFrame(window);
 
             if (window.getWidth() > 0) {
                 canvas.reset(window.getWidth(), window.getHeight());
