@@ -114,7 +114,7 @@ public class ImageView extends View {
         }
     }
 
-    //TODO override
+    @Override
     public boolean hasOverlappingRendering() {
         return (getBackground() != null && getBackground().getCurrent() != null);
     }

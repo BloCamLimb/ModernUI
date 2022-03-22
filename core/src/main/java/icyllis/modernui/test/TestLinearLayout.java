@@ -18,14 +18,16 @@
 
 package icyllis.modernui.test;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Color;
+import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.ImageDrawable;
 import icyllis.modernui.graphics.font.FontCollection;
 import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.text.Spannable;
@@ -34,9 +36,14 @@ import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.*;
+import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.*;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 
 public class TestLinearLayout extends LinearLayout {
@@ -123,11 +130,14 @@ public class TestLinearLayout extends LinearLayout {
                 "\u90a3\u4e48\u8bf4\u0020\u4f60\u5f88\u52c7" +
                 "\u54e6\uff1b\u5f00\u73a9\u7b11\uff0c\u6211" +
                 "\u8d85\u52c7\u7684\u597d\u4e0d\u597d\u0020\u6211\u8d85\u4f1a\u559d\u7684\u5566\n";
+        text += "Oops, your ";
+        int emojiSt = text.length();
+        text += "\uD83D\uDC34 died\n";
         text += "\t\t\u09b9\u09cd\u09af\u09be\u09b2\u09cb\u0020\u0645\u0631\u062d\u0628\u0627\u0020\ud808\udd99\ud808" +
                 "\udd99";
 
         TextView tv = new TextView();
-        tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, dp(200)));
+        tv.setLayoutParams(new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         tv.setText(text, TextView.BufferType.SPANNABLE);
         Spannable spannable = (Spannable) tv.getText();
@@ -143,6 +153,15 @@ public class TestLinearLayout extends LinearLayout {
                 Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
         spannable.setSpan(new UnderlineSpan(), text.length() / 2, text.length(),
                 Spanned.SPAN_EXCLUSIVE_INCLUSIVE);
+        try {
+            GLTexture texture = TextureManager.getInstance().create(
+                    FileChannel.open(Path.of("F:/Photoshop/AppleEmoji/horse-face_1f434.png"), StandardOpenOption.READ), true);
+            Image image = new Image(texture);
+            ImageSpan span = new ImageSpan(image);
+            span.getDrawable().setBounds(0, 0, sp(24), sp(24));
+            spannable.setSpan(span, emojiSt, emojiSt + 2, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        } catch (IOException ignored) {
+        }
         tv.setLinksClickable(true);
         tv.setTextIsSelectable(true);
         tv.setTextAlignment(TEXT_ALIGNMENT_GRAVITY);
@@ -536,6 +555,8 @@ public class TestLinearLayout extends LinearLayout {
         private final TextPaint mTextPaint = new TextPaint();
         private int mTicks;
 
+        private final ObjectAnimator mAnimator;
+
         public DView(TimeInterpolator interpolator) {
             /*animation = new Animation(200)
                     .applyTo(new Applier(0, 60, () -> offsetY, v -> {
@@ -543,8 +564,16 @@ public class TestLinearLayout extends LinearLayout {
                         invalidate();
                     }).setInterpolator(interpolator));
             animation.invertFull();*/
-            setRotation(90);
-            setTranslationX(60);
+            PropertyValuesHolder pvh1 = PropertyValuesHolder.ofFloat(ROTATION, 0, 720);
+            PropertyValuesHolder pvh2 = PropertyValuesHolder.ofFloat(SCALE_X, 1, 0.2f);
+            PropertyValuesHolder pvh3 = PropertyValuesHolder.ofFloat(SCALE_Y, 1, 0.2f);
+            PropertyValuesHolder pvh4 = PropertyValuesHolder.ofFloat(TRANSLATION_X, 0, 60);
+            PropertyValuesHolder pvh5 = PropertyValuesHolder.ofFloat(TRANSLATION_Y, 0, -180);
+            PropertyValuesHolder pvh6 = PropertyValuesHolder.ofFloat(ALPHA, 1, 0);
+            mAnimator = ObjectAnimator.ofPropertyValuesHolder(this, pvh1, pvh2, pvh3, pvh4, pvh5, pvh6);
+            mAnimator.setRepeatCount(1);
+            mAnimator.setRepeatMode(ObjectAnimator.REVERSE);
+            setClickable(true);
         }
 
         @Override
@@ -553,6 +582,12 @@ public class TestLinearLayout extends LinearLayout {
             paint.setARGB(128, 140, 200, 240);
             canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
             canvas.drawText("DView", 0, 5, getWidth() / 2f, offsetY + 24, Gravity.CENTER, mTextPaint);
+        }
+
+        @Override
+        public boolean performClick() {
+            mAnimator.start();
+            return super.performClick();
         }
 
         /*public void tick() {

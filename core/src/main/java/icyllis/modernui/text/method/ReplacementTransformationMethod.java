@@ -18,6 +18,7 @@
 
 package icyllis.modernui.text.method;
 
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.*;
 import icyllis.modernui.view.View;
 
@@ -100,7 +101,7 @@ public abstract class ReplacementTransformationMethod implements TransformationM
 
     @Override
     public void onFocusChanged(@Nonnull View view, @Nonnull CharSequence sourceText,
-                               boolean focused, int direction) {
+                               boolean focused, int direction, @Nullable Rect previouslyFocusedRect) {
     }
 
     private static class ReplacementCharSequence implements CharSequence, GetChars {

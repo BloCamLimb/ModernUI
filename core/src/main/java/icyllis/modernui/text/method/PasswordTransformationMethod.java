@@ -18,11 +18,13 @@
 
 package icyllis.modernui.text.method;
 
+import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.UpdateLayout;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 
 public class PasswordTransformationMethod implements TransformationMethod, TextWatcher {
@@ -66,7 +68,8 @@ public class PasswordTransformationMethod implements TransformationMethod, TextW
     }
 
     @Override
-    public void onFocusChanged(@Nonnull View view, @Nonnull CharSequence sourceText, boolean focused, int direction) {
+    public void onFocusChanged(@Nonnull View view, @Nonnull CharSequence sourceText,
+                               boolean focused, int direction, @Nullable Rect previouslyFocusedRect) {
         if (!focused) {
             if (sourceText instanceof Spannable) {
                 removeVisibleSpans((Spannable) sourceText);

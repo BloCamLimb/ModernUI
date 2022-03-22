@@ -35,7 +35,7 @@ public class Image {
 
     @ApiStatus.Experimental
     public Image() {
-        mTexture = new GLTexture(GLWrapper.GL_TEXTURE_2D);
+        mTexture = new GLTexture(GLCore.GL_TEXTURE_2D);
     }
 
     @ApiStatus.Experimental

@@ -19,7 +19,9 @@
 package icyllis.modernui.view;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * A view tree observer is used to register listeners that can be notified of global
@@ -32,11 +34,32 @@ import java.util.ArrayList;
  */
 public final class ViewTreeObserver {
 
+    private CopyOnWriteArrayList<OnGlobalFocusChangeListener> mOnGlobalFocusListeners;
     private CopyOnWriteArray<OnGlobalLayoutListener> mOnGlobalLayoutListeners;
     private CopyOnWriteArray<OnPreDrawListener> mOnPreDrawListeners;
     private CopyOnWriteArray<OnScrollChangedListener> mOnScrollChangedListeners;
 
     private boolean mAlive = true;
+
+    /**
+     * Interface definition for a callback to be invoked when the focus state within
+     * the view tree changes.
+     */
+    @FunctionalInterface
+    public interface OnGlobalFocusChangeListener {
+
+        /**
+         * Callback method to be invoked when the focus changes in the view tree. When
+         * the view tree transitions from touch mode to non-touch mode, oldFocus is null.
+         * When the view tree transitions from non-touch mode to touch mode, newFocus is
+         * null. When focus changes in non-touch mode (without transition from or to
+         * touch mode) either oldFocus or newFocus can be null.
+         *
+         * @param oldFocus The previously focused view, if any.
+         * @param newFocus The newly focused View, if any.
+         */
+        void onGlobalFocusChanged(@Nullable View oldFocus, @Nullable View newFocus);
+    }
 
     /**
      * Interface definition for a callback to be invoked when the global layout state
@@ -96,6 +119,14 @@ public final class ViewTreeObserver {
      * @param observer The ViewTreeObserver whose listeners must be added to this observer
      */
     void merge(@Nonnull ViewTreeObserver observer) {
+        if (observer.mOnGlobalFocusListeners != null) {
+            if (mOnGlobalFocusListeners != null) {
+                mOnGlobalFocusListeners.addAll(observer.mOnGlobalFocusListeners);
+            } else {
+                mOnGlobalFocusListeners = observer.mOnGlobalFocusListeners;
+            }
+        }
+
         if (observer.mOnGlobalLayoutListeners != null) {
             if (mOnGlobalLayoutListeners != null) {
                 mOnGlobalLayoutListeners.addAll(observer.mOnGlobalLayoutListeners);
@@ -121,6 +152,35 @@ public final class ViewTreeObserver {
         }
 
         observer.kill();
+    }
+
+    /**
+     * Register a callback to be invoked when the focus state within the view tree changes.
+     *
+     * @param listener The callback to add
+     * @throws IllegalStateException If {@link #isAlive()} returns false
+     */
+    public void addOnGlobalFocusChangeListener(@Nonnull OnGlobalFocusChangeListener listener) {
+        checkIsAlive();
+        if (mOnGlobalFocusListeners == null) {
+            mOnGlobalFocusListeners = new CopyOnWriteArrayList<>();
+        }
+        mOnGlobalFocusListeners.add(listener);
+    }
+
+    /**
+     * Remove a previously installed focus change callback.
+     *
+     * @param victim The callback to remove
+     * @throws IllegalStateException If {@link #isAlive()} returns false
+     * @see #addOnGlobalFocusChangeListener(OnGlobalFocusChangeListener)
+     */
+    public void removeOnGlobalFocusChangeListener(@Nonnull OnGlobalFocusChangeListener victim) {
+        checkIsAlive();
+        if (mOnGlobalFocusListeners == null) {
+            return;
+        }
+        mOnGlobalFocusListeners.remove(victim);
     }
 
     /**
@@ -237,6 +297,22 @@ public final class ViewTreeObserver {
      */
     private void kill() {
         mAlive = false;
+    }
+
+    /**
+     * Notifies registered listeners that focus has changed.
+     */
+    void dispatchOnGlobalFocusChange(@Nullable View oldFocus, @Nullable View newFocus) {
+        // NOTE: because of the use of CopyOnWriteArrayList, we *must* use an iterator to
+        // perform the dispatching. The iterator is a safeguard against listeners that
+        // could mutate the list by calling the various add/remove methods. This prevents
+        // the array from being modified while we iterate it.
+        final CopyOnWriteArrayList<OnGlobalFocusChangeListener> listeners = mOnGlobalFocusListeners;
+        if (listeners != null && listeners.size() > 0) {
+            for (OnGlobalFocusChangeListener listener : listeners) {
+                listener.onGlobalFocusChanged(oldFocus, newFocus);
+            }
+        }
     }
 
     /**
