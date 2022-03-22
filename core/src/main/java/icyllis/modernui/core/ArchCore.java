@@ -21,7 +21,7 @@ package icyllis.modernui.core;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.graphics.GLWrapper;
+import icyllis.modernui.graphics.GLCore;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.Version;
@@ -239,7 +239,7 @@ public final class ArchCore {
         if (caps == null) {
             throw new IllegalStateException("Failed to acquire OpenGL capabilities");
         }
-        GLWrapper.initialize(caps);
+        GLCore.initialize(caps);
     }
 
     /**

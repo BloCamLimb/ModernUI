@@ -89,7 +89,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**

@@ -30,7 +30,7 @@ import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.nio.FloatBuffer;
 
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 
 /**
  * This class represents a framebuffer object. It is used for creation of

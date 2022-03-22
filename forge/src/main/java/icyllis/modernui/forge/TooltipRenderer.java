@@ -37,7 +37,7 @@ import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 import java.util.List;
 
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 
 /**
  * An extension that replaces vanilla tooltip style.

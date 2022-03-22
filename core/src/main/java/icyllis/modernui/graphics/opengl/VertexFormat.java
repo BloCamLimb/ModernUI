@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 
 /**
  * Represents a set of vertex attribute specifications used with a vertex shader.

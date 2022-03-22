@@ -64,7 +64,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
 
-import static icyllis.modernui.graphics.GLWrapper.*;
+import static icyllis.modernui.graphics.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**
@@ -220,7 +220,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         while (!window.shouldClose()) {
             int width = window.getWidth(), height = window.getHeight();
             glBindFramebuffer(GL_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
-            resetFrame(mWindow);
+            resetFrame(window);
             if (mRoot != null) {
                 canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW + 1));
                 mRoot.flushDrawCommands(canvas, framebuffer);
@@ -233,7 +233,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             if (mRoot != null) {
                 mRoot.mChoreographer.scheduleFrameAsync(ArchCore.timeNanos());
             }
-            mWindow.swapBuffers();
+            window.swapBuffers();
         }
         LOGGER.info(MARKER, "Quited render thread");
     }
