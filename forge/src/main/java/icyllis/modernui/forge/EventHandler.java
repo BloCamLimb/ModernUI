@@ -20,7 +20,7 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.test.TestContainerMenu;
+import icyllis.modernui.testforge.TestContainerMenu;
 import net.minecraft.client.ProgressOption;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
