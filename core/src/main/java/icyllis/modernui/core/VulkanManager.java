@@ -309,6 +309,9 @@ public final class VulkanManager implements AutoCloseable {
         LOGGER.info(MARKER, "De-initialized VulkanManager");
     }
 
+    /**
+     * @return the vendor-specified version of the driver
+     */
     public int getDriverVersion() {
         return mDriverVersion;
     }

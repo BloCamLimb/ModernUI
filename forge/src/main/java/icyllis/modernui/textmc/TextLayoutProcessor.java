@@ -24,7 +24,6 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.font.FontCollection.Run;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.TexturedGlyph;
-import icyllis.modernui.text.Typeface;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -471,7 +470,7 @@ class TextLayoutProcessor {
      * @param limit   end index (exclusive) of the text
      * @param isRtl   layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      * @param carrier the style to layout the text
-     * @see Typeface#itemize(char[], int, int)
+     * @see icyllis.modernui.graphics.font.FontCollection#itemize(char[], int, int)
      */
     private void performFontAnalysis(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
                                      @Nonnull CharacterStyleCarrier carrier) {
@@ -548,6 +547,13 @@ class TextLayoutProcessor {
                     }
                 }
                 mHasEffect |= decoration != 0;
+            }
+
+            // get offset in this run
+            if (isRtl) {
+                offset -= mLayoutRight;
+            } else {
+                offset -= mAdvance;
             }
 
             mAdvance += offset;
