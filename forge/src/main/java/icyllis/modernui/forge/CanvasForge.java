@@ -29,7 +29,7 @@ import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.GLSurfaceCanvas;
+import icyllis.modernui.opengl.GLSurfaceCanvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.util.Pool;
@@ -60,7 +60,7 @@ import java.util.ArrayDeque;
 import java.util.Objects;
 import java.util.Queue;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * CanvasForge is an extension to {@link Canvas}, which provides more drawing

@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
@@ -72,18 +72,18 @@ public abstract class GLObject implements AutoCloseable {
      */
     protected static abstract class Ref implements Runnable {
 
-        public final int object;
+        public final int id;
         public final Cleaner.Cleanable cleanup;
 
         /**
          * Registers the cleaner and also creates the OpenGL object for the given owner.
          *
-         * @param t   owner object
-         * @param obj created OpenGL object
+         * @param target the owner object
+         * @param i      the id/name representing the OpenGL object created by the owner
          */
-        protected Ref(@Nonnull GLObject t, int obj) {
-            cleanup = ModernUI.registerCleanup(t, this);
-            object = obj;
+        protected Ref(@Nonnull GLObject target, int i) {
+            cleanup = ModernUI.registerCleanup(target, this);
+            id = i;
         }
 
         /**

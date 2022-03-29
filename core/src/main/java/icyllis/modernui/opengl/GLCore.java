@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,10 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.opengl;
 
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Window;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -28,8 +28,6 @@ import org.lwjgl.system.Platform;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -114,7 +112,7 @@ public final class GLCore extends GL45C {
 
     @RenderThread
     public static int initialize(@Nonnull GLCapabilities caps) {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         if (sInitialized) {
             return 0;
         }
@@ -243,7 +241,7 @@ public final class GLCore extends GL45C {
             LOGGER.debug(MARKER, "Using OpenGL 4.5");
         }
 
-        // test extensions
+        // test optional extensions
         if (caps.GL_NV_blend_equation_advanced) {
             LOGGER.debug(MARKER, "NV blend equation advanced enabled");
             if (caps.GL_NV_blend_equation_advanced_coherent) {
@@ -259,8 +257,7 @@ public final class GLCore extends GL45C {
                 LOGGER.debug(MARKER, "KHR blend equation advanced coherent disabled");
             }
         } else {
-            LOGGER.debug(MARKER, "NV and KHR blend equation advanced disabled");
-            //count++;
+            LOGGER.debug(MARKER, "NV or KHR blend equation advanced disabled");
         }
 
         if (count > 0) {
@@ -279,7 +276,7 @@ public final class GLCore extends GL45C {
                     "However, macOS doesn't support OpenGL 4.5, you may see both MoltenVK and Mesa Zink." :
                     "Try to use dedicated GPU for Java applications and update your GPU drivers.";
             TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
-                    "Lower than OpenGL 4.5 and ARB test failed, or extension test failed (see log for details). " +
+                    "Lower than OpenGL 4.5 and ARB test failed (see log for details). " +
                             "Your GPU is " + glGetString(GL_RENDERER) + " and your version is OpenGL " + glVersion +
                             ". " + solution, "ok", "error", true);
         }
@@ -329,7 +326,7 @@ public final class GLCore extends GL45C {
      */
     @RenderThread
     public static void resetFrame(@Nonnull Window window) {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         /*sViewportStack.clear();
 
         final Rect viewport = new Rect(0, 0, window.getWidth(), window.getHeight());
@@ -391,14 +388,14 @@ public final class GLCore extends GL45C {
     }*/
 
     // r - the runnable that calls this method
-    public static void deleteTextureAsync(int texture, @Nullable Runnable r) {
-        if (ArchCore.isOnRenderThread()) {
+    /*public static void deleteTextureAsync(int texture, @Nullable Runnable r) {
+        if (Core.isOnRenderThread()) {
             glDeleteTextures(texture);
         } else {
-            ArchCore.postOnRenderThread(Objects.requireNonNullElseGet(r,
+            Core.postOnRenderThread(Objects.requireNonNullElseGet(r,
                     () -> () -> glDeleteTextures(texture)));
         }
-    }
+    }*/
 
     // select active texture unit, min 0-7, max 31, def 0
     // the unit is passed to sampler
@@ -417,32 +414,32 @@ public final class GLCore extends GL45C {
         return sActiveTexture;
     }*/
 
-    public static void deleteBufferAsync(int buffer, @Nullable Runnable r) {
-        if (ArchCore.isOnRenderThread()) {
+    /*public static void deleteBufferAsync(int buffer, @Nullable Runnable r) {
+        if (Core.isOnRenderThread()) {
             glDeleteBuffers(buffer);
         } else {
-            ArchCore.postOnRenderThread(Objects.requireNonNullElseGet(r,
+            Core.postOnRenderThread(Objects.requireNonNullElseGet(r,
                     () -> () -> glDeleteBuffers(buffer)));
         }
     }
 
     public static void deleteFramebufferAsync(int framebuffer, @Nullable Runnable r) {
-        if (ArchCore.isOnRenderThread()) {
+        if (Core.isOnRenderThread()) {
             glDeleteFramebuffers(framebuffer);
         } else {
-            ArchCore.postOnRenderThread(Objects.requireNonNullElseGet(r,
+            Core.postOnRenderThread(Objects.requireNonNullElseGet(r,
                     () -> () -> glDeleteFramebuffers(framebuffer)));
         }
     }
 
     public static void deleteRenderbufferAsync(int renderbuffer, @Nullable Runnable r) {
-        if (ArchCore.isOnRenderThread()) {
+        if (Core.isOnRenderThread()) {
             glDeleteRenderbuffers(renderbuffer);
         } else {
-            ArchCore.postOnRenderThread(Objects.requireNonNullElseGet(r,
+            Core.postOnRenderThread(Objects.requireNonNullElseGet(r,
                     () -> () -> glDeleteRenderbuffers(renderbuffer)));
         }
-    }
+    }*/
 
     /*@RenderThread
     public static void bindVertexArray(int array) {

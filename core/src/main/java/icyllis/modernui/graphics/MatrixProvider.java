@@ -16,10 +16,37 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.testforge;
+package icyllis.modernui.graphics;
 
-import icyllis.modernui.forge.UICallback;
+import icyllis.modernui.math.Matrix4;
 
-public class TestUI extends UICallback {
+import javax.annotation.Nonnull;
 
+public class MatrixProvider {
+
+    final Matrix4 mLocalToDevice;
+
+    /**
+     * Create a matrix provider using an identity matrix.
+     */
+    public MatrixProvider() {
+        this(Matrix4.identity());
+    }
+
+    /**
+     * Create a matrix provider using the given matrix.
+     *
+     * @param localToDevice the backing matrix
+     */
+    public MatrixProvider(@Nonnull Matrix4 localToDevice) {
+        mLocalToDevice = localToDevice;
+    }
+
+    /**
+     * @return the backing matrix
+     */
+    @Nonnull
+    public final Matrix4 localToDevice() {
+        return mLocalToDevice;
+    }
 }

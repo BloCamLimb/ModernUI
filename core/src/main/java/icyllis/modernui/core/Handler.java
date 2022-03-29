@@ -254,13 +254,13 @@ public class Handler {
     /**
      * Causes the Runnable r to be added to the message queue, to be run
      * at a specific time given by <var>timeMillis</var>.
-     * <b>The time-base is {@link ArchCore#timeMillis}.</b>
+     * <b>The time-base is {@link Core#timeMillis}.</b>
      * Time spent in deep sleep will add a delay to execution.
      * The runnable will be run on the thread to which this handler is attached.
      *
      * @param r          The Runnable that will be executed.
      * @param timeMillis The absolute time at which the callback should run,
-     *                   using the {@link ArchCore#timeMillis} time-base.
+     *                   using the {@link Core#timeMillis} time-base.
      * @return Returns true if the Runnable was successfully placed in to the
      * message queue.  Returns false on failure, usually because the
      * looper processing the message queue is exiting.  Note that a
@@ -275,7 +275,7 @@ public class Handler {
     /**
      * Causes the Runnable r to be added to the message queue, to be run
      * at a specific time given by <var>timeMillis</var>.
-     * <b>The time-base is {@link ArchCore#timeMillis}.</b>
+     * <b>The time-base is {@link Core#timeMillis}.</b>
      * Time spent in deep sleep will add a delay to execution.
      * The runnable will be run on the thread to which this handler is attached.
      *
@@ -283,14 +283,14 @@ public class Handler {
      * @param token      An instance which can be used to cancel {@code r} via
      *                   {@link #removeCallbacksAndMessages}.
      * @param timeMillis The absolute time at which the callback should run,
-     *                   using the {@link ArchCore#timeMillis} time-base.
+     *                   using the {@link Core#timeMillis} time-base.
      * @return Returns true if the Runnable was successfully placed in to the
      * message queue.  Returns false on failure, usually because the
      * looper processing the message queue is exiting.  Note that a
      * result of true does not mean the Runnable will be processed -- if
      * the looper is quit before the delivery time of the message
      * occurs then the message will be dropped.
-     * @see ArchCore#timeMillis
+     * @see Core#timeMillis
      */
     public final boolean postAtTime(@Nonnull Runnable r, @Nullable Object token, long timeMillis) {
         return sendMessageAtTime(getPostMessage(r, token), timeMillis);
@@ -301,7 +301,7 @@ public class Handler {
      * after the specified amount of time elapses.
      * The runnable will be run on the thread to which this handler
      * is attached.
-     * <b>The time-base is {@link ArchCore#timeMillis}.</b>
+     * <b>The time-base is {@link Core#timeMillis}.</b>
      * Time spent in deep sleep will add a delay to execution.
      *
      * @param r           The Runnable that will be executed.
@@ -323,7 +323,7 @@ public class Handler {
      * after the specified amount of time elapses.
      * The runnable will be run on the thread to which this handler
      * is attached.
-     * <b>The time-base is {@link ArchCore#timeMillis}.</b>
+     * <b>The time-base is {@link Core#timeMillis}.</b>
      * Time spent in deep sleep will add a delay to execution.
      *
      * @param r           The Runnable that will be executed.
@@ -446,20 +446,20 @@ public class Handler {
         if (delayMillis < 0) {
             delayMillis = 0;
         }
-        return sendMessageAtTime(msg, ArchCore.timeMillis() + delayMillis);
+        return sendMessageAtTime(msg, Core.timeMillis() + delayMillis);
     }
 
     /**
      * Enqueue a message into the message queue after all pending messages
      * before the absolute time (in milliseconds) <var>timeMillis</var>.
-     * <b>The time-base is {@link ArchCore#timeMillis}.</b>
+     * <b>The time-base is {@link Core#timeMillis}.</b>
      * Time spent in deep sleep will add a delay to execution.
      * You will receive it in {@link #handleMessage}, in the thread attached
      * to this handler.
      *
      * @param timeMillis The absolute time at which the message should be
      *                   delivered, using the
-     *                   {@link ArchCore#timeMillis} time-base.
+     *                   {@link Core#timeMillis} time-base.
      * @return Returns true if the message was successfully placed in to the
      * message queue.  Returns false on failure, usually because the
      * looper processing the message queue is exiting.  Note that a

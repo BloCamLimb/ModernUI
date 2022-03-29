@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,11 +16,9 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.opengl;
 
-import icyllis.modernui.graphics.opengl.GLObject;
-import icyllis.modernui.graphics.opengl.GLRenderbuffer;
-import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.core.Core;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.lwjgl.BufferUtils;
@@ -30,7 +28,7 @@ import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.nio.FloatBuffer;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * This class represents a framebuffer object. It is used for creation of
@@ -95,9 +93,9 @@ public final class GLFramebuffer extends GLObject {
     @Override
     public int get() {
         if (ref == null) {
-            ref = new FramebufferRef(this);
+            ref = new Ref(this);
         }
-        return ref.object;
+        return ref.id;
     }
 
     /**
@@ -263,15 +261,15 @@ public final class GLFramebuffer extends GLObject {
         }
     }
 
-    private static final class FramebufferRef extends Ref {
+    private static final class Ref extends GLObject.Ref {
 
-        private FramebufferRef(@Nonnull GLFramebuffer owner) {
+        private Ref(@Nonnull GLFramebuffer owner) {
             super(owner, glCreateFramebuffers());
         }
 
         @Override
         public void run() {
-            deleteFramebufferAsync(object, this);
+            Core.executeOnRenderThread(() -> glDeleteFramebuffers(id));
         }
     }
 

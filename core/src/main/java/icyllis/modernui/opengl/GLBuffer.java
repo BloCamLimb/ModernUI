@@ -16,12 +16,14 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.opengl;
+
+import icyllis.modernui.core.Core;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * Represents a OpenGL buffer object.
@@ -41,9 +43,9 @@ public class GLBuffer extends GLObject {
     @Override
     public final int get() {
         if (ref == null) {
-            ref = new BufferRef(this);
+            ref = new Ref(this);
         }
-        return ref.object;
+        return ref.id;
     }
 
     /**
@@ -116,15 +118,15 @@ public class GLBuffer extends GLObject {
         glNamedBufferSubData(get(), offset, data);
     }
 
-    private static final class BufferRef extends Ref {
+    private static final class Ref extends GLObject.Ref {
 
-        private BufferRef(@Nonnull GLBuffer owner) {
+        private Ref(@Nonnull GLBuffer owner) {
             super(owner, glCreateBuffers());
         }
 
         @Override
         public void run() {
-            deleteBufferAsync(object, this);
+            Core.executeOnRenderThread(() -> glDeleteBuffers(id));
         }
     }
 }

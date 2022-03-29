@@ -16,10 +16,37 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.testforge;
+package icyllis.modernui.graphics;
 
-import icyllis.modernui.forge.UICallback;
+public class Region {
 
-public class TestUI extends UICallback {
-
+    /**
+     * The logical operations that can be performed when combining two Region.
+     */
+    public enum Op {
+        /**
+         * target minus operand
+         */
+        DIFFERENCE,
+        /**
+         * target intersected with operand
+         */
+        INTERSECT,
+        /**
+         * target unioned with operand
+         */
+        UNION,
+        /**
+         * target exclusive or with operand
+         */
+        XOR,
+        /**
+         * operand minus target
+         */
+        REVERSE_DIFFERENCE,
+        /**
+         * replace target with operand
+         */
+        REPLACE
+    }
 }

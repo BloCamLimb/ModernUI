@@ -16,12 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.opengl;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.core.NativeImage;
-import icyllis.modernui.graphics.GLCore;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -144,7 +143,7 @@ public class TextureManager {
         int width = image.getWidth();
         int height = image.getHeight();
         texture.setDimension(width, height, 1);
-        if (ArchCore.isOnRenderThread()) {
+        if (Core.isOnRenderThread()) {
             texture.allocate2D(image.getInternalGlFormat(), width, height, mipmap ? 4 : 0);
             texture.upload(0, 0, 0, width, height, 0,
                     0, 0, 1, image.getGlFormat(), GLCore.GL_UNSIGNED_BYTE, image.getPixels());
@@ -155,7 +154,7 @@ public class TextureManager {
             image.close();
         } else {
             if (mipmap) {
-                ArchCore.postOnRenderThread(() -> {
+                Core.postOnRenderThread(() -> {
                     int w = image.getWidth();
                     int h = image.getHeight();
                     texture.allocate2D(image.getInternalGlFormat(), w, h, 4);
@@ -166,7 +165,7 @@ public class TextureManager {
                     image.close();
                 });
             } else {
-                ArchCore.postOnRenderThread(() -> {
+                Core.postOnRenderThread(() -> {
                     int w = image.getWidth();
                     int h = image.getHeight();
                     texture.allocate2D(image.getInternalGlFormat(), w, h, 0);

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import org.jetbrains.annotations.ApiStatus;
 
 /**
@@ -66,7 +66,7 @@ public final class AnimationUtils {
     /**
      * Returns the current animation time in milliseconds used to update animations.
      * This value is updated and synced when a new frame started, it's different from
-     * {@link ArchCore#timeMillis()} which gives you a real current time.
+     * {@link Core#timeMillis()} which gives you a real current time.
      *
      * @return the current animation time in milliseconds
      */
@@ -77,7 +77,7 @@ public final class AnimationUtils {
             return Math.max(state.currentVsyncTimeMillis,
                     state.lastReportedTimeMillis);
         }
-        state.lastReportedTimeMillis = ArchCore.timeMillis();
+        state.lastReportedTimeMillis = Core.timeMillis();
         return state.lastReportedTimeMillis;
     }
 

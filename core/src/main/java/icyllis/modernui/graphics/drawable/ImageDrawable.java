@@ -21,8 +21,8 @@ package icyllis.modernui.graphics.drawable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.opengl.TextureManager;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.view.Gravity;
@@ -35,7 +35,7 @@ import java.io.InputStream;
  * A Drawable that wraps an image and can be tiled, stretched, or aligned. You can create a
  * ImageDrawable from a file path, an input stream, or from a {@link Image} object.
  */
-//TODO texture tint blending, current it's MODULATE
+//TODO texture tint blending, current it's MULTIPLY
 public class ImageDrawable extends Drawable {
 
     // lazily init
@@ -60,8 +60,8 @@ public class ImageDrawable extends Drawable {
     /**
      * Create a drawable by opening a given file path and decoding the image.
      */
-    public ImageDrawable(@Nonnull String res, @Nonnull String path) {
-        Image image = Image.create(res, path);
+    public ImageDrawable(@Nonnull String ns, @Nonnull String path) {
+        Image image = Image.create(ns, path);
         init(new ImageState(image));
     }
 
@@ -326,12 +326,24 @@ public class ImageDrawable extends Drawable {
 
     @Override
     public int getIntrinsicWidth() {
-        return mImageState.mImage == null ? super.getIntrinsicWidth() : mImageState.mImage.getWidth();
+        if (mImageState.mImage == null) {
+            return super.getIntrinsicWidth();
+        }
+        if (mFullImage) {
+            return mImageState.mImage.getWidth();
+        }
+        return Math.min(mSrcRect.width(), mImageState.mImage.getWidth());
     }
 
     @Override
     public int getIntrinsicHeight() {
-        return mImageState.mImage == null ? super.getIntrinsicHeight() : mImageState.mImage.getHeight();
+        if (mImageState.mImage == null) {
+            return super.getIntrinsicHeight();
+        }
+        if (mFullImage) {
+            return mImageState.mImage.getHeight();
+        }
+        return Math.min(mSrcRect.height(), mImageState.mImage.getHeight());
     }
 
     @Override

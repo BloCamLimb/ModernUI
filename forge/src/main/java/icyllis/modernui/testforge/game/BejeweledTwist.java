@@ -25,13 +25,13 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.audio.AudioManager;
 import icyllis.modernui.audio.OggDecoder;
 import icyllis.modernui.audio.Track;
-import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.core.MainWindow;
-import icyllis.modernui.core.NativeImage;
-import icyllis.modernui.core.Window;
+import icyllis.modernui.core.*;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.*;
-import icyllis.modernui.graphics.opengl.ShaderManager;
-import icyllis.modernui.graphics.opengl.TextureManager;
+import icyllis.modernui.opengl.GLCore;
+import icyllis.modernui.opengl.GLSurfaceCanvas;
+import icyllis.modernui.opengl.ShaderManager;
+import icyllis.modernui.opengl.TextureManager;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
@@ -86,7 +86,7 @@ public class BejeweledTwist {
     public BejeweledTwist() {
         Thread.currentThread().setName("Main-Thread");
         new ModernUI();
-        ArchCore.initialize();
+        Core.initialize();
         mWindow = MainWindow.initialize("Bejeweled Twist", 1600, 900);
         try (var c1 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo16x.png");
              var bitmap1 = NativeImage.decode(null, c1);
@@ -219,7 +219,7 @@ public class BejeweledTwist {
 
     private void runRenderThread() {
         mWindow.makeCurrent();
-        ArchCore.initOpenGL();
+        Core.initOpenGL();
         GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         ShaderManager.getInstance().reload();
         GLFW.glfwSwapInterval(1);
@@ -234,9 +234,9 @@ public class BejeweledTwist {
         GLCore.glEnable(GL_MULTISAMPLE);
         GLCore.glDisable(GL_DEPTH_TEST);
 
-        long lastTime = ArchCore.timeMillis();
+        long lastTime = Core.timeMillis();
         while (!mWindow.shouldClose()) {
-            long time = ArchCore.timeMillis();
+            long time = Core.timeMillis();
             long delta = time - lastTime;
             lastTime = time;
             GLCore.resetFrame(mWindow);

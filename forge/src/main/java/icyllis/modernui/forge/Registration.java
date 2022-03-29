@@ -19,7 +19,7 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.forge.mixin.AccessOption;
 import icyllis.modernui.forge.mixin.AccessVideoSettings;
 import icyllis.modernui.testforge.TestContainerMenu;
@@ -91,7 +91,7 @@ final class Registration {
     @SubscribeEvent
     static void loadingClient(ParticleFactoryRegisterEvent event) {
         // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread (render thread)
-        ArchCore.initOpenGL();
+        Core.initOpenGL();
         UIManager.initialize();
     }
 
@@ -170,7 +170,7 @@ final class Registration {
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
         Minecraft.getInstance().execute(() -> {
-            ArchCore.initMainThread();
+            Core.initMainThread();
             ModernUI.getInstance().getSelectedTypeface();
         });
 

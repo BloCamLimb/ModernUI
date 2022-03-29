@@ -19,7 +19,7 @@
 package icyllis.modernui.widget;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
@@ -95,7 +95,7 @@ public final class ToastManager {
 
         int delay = r.getDuration() == Toast.LENGTH_LONG ? LONG_DELAY : SHORT_DELAY;
         delay += 300; // animation
-        ArchCore.getUiHandlerAsync().postDelayed(mDurationReached, delay);
+        Core.getUiHandlerAsync().postDelayed(mDurationReached, delay);
         mCurrentToastShown = r.mToken;
     }
 

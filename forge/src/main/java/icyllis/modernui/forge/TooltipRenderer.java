@@ -23,7 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.graphics.GLSurfaceCanvas;
+import icyllis.modernui.opengl.GLSurfaceCanvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.Matrix4;
 import net.minecraft.client.gui.Font;
@@ -37,7 +37,7 @@ import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 import java.util.List;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * An extension that replaces vanilla tooltip style.

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.text.style;
 
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
@@ -28,7 +28,7 @@ import java.util.Objects;
 /**
  * Implementation of the {@link ClickableSpan} that allows setting a url string. When
  * selecting and clicking on the text to which the span is attached, the <code>URLSpan</code>
- * will try to open the url, by calling {@link ArchCore#openURL(URL)}.
+ * will try to open the url, by calling {@link Core#openURL(URL)}.
  * <p>
  * For example, a <code>URLSpan</code> can be used like this:
  * <pre>
@@ -63,6 +63,6 @@ public class URLSpan extends ClickableSpan {
 
     @Override
     public void onClick(@Nonnull View widget) {
-        ArchCore.openURI(mURL);
+        Core.openURI(mURL);
     }
 }

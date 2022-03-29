@@ -16,13 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.opengl;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Comparator;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * Represents a set of vertex attribute specifications used with a vertex shader.

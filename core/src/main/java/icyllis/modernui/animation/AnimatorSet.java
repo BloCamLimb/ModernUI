@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Looper;
 import icyllis.modernui.util.ArrayMap;
 
@@ -932,7 +932,7 @@ public final class AnimatorSet extends Animator implements AnimationHandler.Fram
     }
 
     /**
-     * @param frameTime The frame start time, in the {@link ArchCore#timeMillis()} time base
+     * @param frameTime The frame start time, in the {@link Core#timeMillis()} time base
      * @hide
      */
     @Override

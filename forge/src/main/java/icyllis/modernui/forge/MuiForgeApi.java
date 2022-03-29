@@ -22,7 +22,7 @@ import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.math.MathUtil;
 import net.minecraft.client.Minecraft;
@@ -216,14 +216,14 @@ public final class MuiForgeApi {
 
     /**
      * Post a runnable to be executed asynchronously on UI thread.
-     * This method is equivalent to calling {@link ArchCore#getUiHandlerAsync()},
-     * but {@link ArchCore} is not a stable API.
+     * This method is equivalent to calling {@link Core#getUiHandlerAsync()},
+     * but {@link Core} is not a stable API.
      *
      * @param r the Runnable that will be executed
      */
     @OnlyIn(Dist.CLIENT)
     public static void postToUiThread(@Nonnull Runnable r) {
-        ArchCore.getUiHandlerAsync().post(r);
+        Core.getUiHandlerAsync().post(r);
     }
 
     @OnlyIn(Dist.CLIENT)

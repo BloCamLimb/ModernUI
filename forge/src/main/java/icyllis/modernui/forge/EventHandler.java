@@ -19,7 +19,7 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.testforge.TestContainerMenu;
 import net.minecraft.client.ProgressOption;
 import net.minecraft.client.gui.screens.Screen;
@@ -125,8 +125,8 @@ final class EventHandler {
         @SubscribeEvent
         static void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
             if (event.phase == TickEvent.Phase.END) {
-                ArchCore.flushMainCalls();
-                ArchCore.flushRenderCalls();
+                Core.flushMainCalls();
+                Core.flushRenderCalls();
             }
         }
 

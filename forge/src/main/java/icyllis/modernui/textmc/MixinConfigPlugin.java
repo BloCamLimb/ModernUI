@@ -18,43 +18,21 @@
 
 package icyllis.modernui.textmc;
 
-import icyllis.modernui.ModernUI;
-import net.minecraftforge.fml.loading.FMLPaths;
+import icyllis.modernui.forge.ModernUIForge;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
 
 public class MixinConfigPlugin implements IMixinConfigPlugin {
 
-    // 0  enable
-    // 1  disable
     private int mLevel;
 
     @Override
     public void onLoad(String mixinPackage) {
-        Path path = FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.NAME_CPT),
-                ModernUI.NAME_CPT).resolve("bootstrap");
-        if (Files.exists(path)) {
-            try {
-                try (BufferedReader reader = Files.newBufferedReader(path, StandardCharsets.UTF_8)) {
-                    mLevel = Integer.parseInt(reader.readLine()) & 0x1;
-                }
-            } catch (Exception ignored) {
-            }
-        } else {
-            try {
-                Files.createFile(path);
-            } catch (IOException ignored) {
-            }
-        }
+        mLevel = ModernUIForge.getOrLoadBootstrapLevel();
     }
 
     @Override
@@ -64,7 +42,7 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return mLevel == 0;
+        return (mLevel & ModernUIForge.BOOTSTRAP_TEXT_ENGINE) == 0;
     }
 
     @Override
