@@ -16,11 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.opengl;
+
+import icyllis.modernui.core.Core;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * Represents OpenGL renderbuffer objects. Losing the reference to this object will
@@ -34,9 +36,9 @@ public final class GLRenderbuffer extends GLObject {
     @Override
     public int get() {
         if (ref == null) {
-            ref = new RenderbufferRef(this);
+            ref = new Ref(this);
         }
-        return ref.object;
+        return ref.id;
     }
 
     public void allocate(int internalFormat, int width, int height, int samples) {
@@ -61,15 +63,15 @@ public final class GLRenderbuffer extends GLObject {
         return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
     }
 
-    private static final class RenderbufferRef extends Ref {
+    private static final class Ref extends GLObject.Ref {
 
-        private RenderbufferRef(@Nonnull GLRenderbuffer owner) {
+        private Ref(@Nonnull GLRenderbuffer owner) {
             super(owner, glCreateRenderbuffers());
         }
 
         @Override
         public void run() {
-            deleteRenderbufferAsync(object, this);
+            Core.executeOnRenderThread(() -> glDeleteRenderbuffers(id));
         }
     }
 }

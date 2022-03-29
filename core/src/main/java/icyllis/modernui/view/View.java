@@ -23,9 +23,8 @@ import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.core.Choreographer;
-import icyllis.modernui.core.Handler;
+import icyllis.modernui.core.*;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.RenderNode;
@@ -3870,14 +3869,14 @@ public class View implements Drawable.Callback {
      * @param who  the recipient of the action
      * @param what the action to run on the drawable
      * @param when the time at which the action must occur. Uses the
-     *             {@link ArchCore#timeMillis()} timebase.
+     *             {@link Core#timeMillis()} timebase.
      */
     @Override
     public final void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when) {
         if (verifyDrawable(who)) {
             // Postpone the runnable until we know
             // on which thread it needs to run.
-            final long delay = when - ArchCore.timeMillis();
+            final long delay = when - Core.timeMillis();
             if (mAttachInfo != null) {
                 mAttachInfo.mViewRoot.mChoreographer.postCallbackDelayed(
                         Choreographer.CALLBACK_ANIMATION, what, who, delay);

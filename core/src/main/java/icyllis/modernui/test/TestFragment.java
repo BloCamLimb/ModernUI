@@ -30,7 +30,6 @@ import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
 import icyllis.modernui.widget.FrameLayout;
 import icyllis.modernui.widget.LinearLayout;
-import icyllis.modernui.widget.NestedScrollView;
 import icyllis.modernui.widget.ScrollView;
 
 import javax.annotation.Nonnull;
@@ -43,7 +42,7 @@ public class TestFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
-        NestedScrollView base = new NestedScrollView();
+        ScrollView base = new ScrollView();
 
         {
             LinearLayout content = new TestLinearLayout();

@@ -16,9 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.opengl;
 
 import icyllis.modernui.core.Window;
+import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;

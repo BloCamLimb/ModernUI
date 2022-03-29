@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.graphics.VkCore.*;
+import static icyllis.modernui.vulkan.VkCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTBlendOperationAdvanced.VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
 
@@ -302,11 +302,13 @@ public final class VulkanManager implements AutoCloseable {
         mInstanceExtensions.trim();
         mDeviceExtensions.clear();
         mDeviceExtensions.trim();
-        freeFeaturesExtensionsStructs(mPhysicalDeviceFeatures2);
-        mPhysicalDeviceFeatures2.free();
+        if (mPhysicalDeviceFeatures2 != null) {
+            freeFeaturesExtensionsStructs(mPhysicalDeviceFeatures2);
+            mPhysicalDeviceFeatures2.free();
+        }
         mPhysicalDeviceFeatures2 = null;
 
-        LOGGER.info(MARKER, "De-initialized VulkanManager");
+        LOGGER.info(MARKER, "Terminated VulkanManager");
     }
 
     /**

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.util.DataSetObserver;
@@ -420,7 +420,7 @@ public class ListPopupWindow implements ShowableListMenu {
      * Post a {@link #show()} call to the UI thread.
      */
     public void postShow() {
-        ArchCore.getUiHandler().post(mShowDropDownRunnable);
+        Core.getUiHandler().post(mShowDropDownRunnable);
     }
 
     /**
@@ -509,7 +509,7 @@ public class ListPopupWindow implements ShowableListMenu {
                 clearListSelection();
             }
             if (!mModal) {
-                ArchCore.getUiHandler().post(mHideSelector);
+                Core.getUiHandler().post(mHideSelector);
             }
         }
     }
@@ -523,7 +523,7 @@ public class ListPopupWindow implements ShowableListMenu {
         removePromptView();
         mPopup.setContentView(null);
         mDropDownList = null;
-        ArchCore.getUiHandler().removeCallbacks(mResizePopupRunnable);
+        Core.getUiHandler().removeCallbacks(mResizePopupRunnable);
     }
 
     /**
@@ -889,9 +889,9 @@ public class ListPopupWindow implements ShowableListMenu {
             if (action == MotionEvent.ACTION_DOWN &&
                     mPopup != null && mPopup.isShowing() &&
                     (x >= 0 && x < mPopup.getWidth() && y >= 0 && y < mPopup.getHeight())) {
-                ArchCore.getUiHandler().postDelayed(mResizePopupRunnable, EXPAND_LIST_TIMEOUT);
+                Core.getUiHandler().postDelayed(mResizePopupRunnable, EXPAND_LIST_TIMEOUT);
             } else if (action == MotionEvent.ACTION_UP) {
-                ArchCore.getUiHandler().removeCallbacks(mResizePopupRunnable);
+                Core.getUiHandler().removeCallbacks(mResizePopupRunnable);
             }
             return false;
         }

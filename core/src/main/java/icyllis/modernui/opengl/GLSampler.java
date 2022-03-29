@@ -16,10 +16,15 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.testforge;
+package icyllis.modernui.opengl;
 
-import icyllis.modernui.forge.UICallback;
+public final class GLSampler extends GLObject {
 
-public class TestUI extends UICallback {
+    public GLSampler() {
+    }
 
+    @Override
+    public int get() {
+        return 0;
+    }
 }

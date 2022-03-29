@@ -22,10 +22,10 @@ import com.ibm.icu.text.DateFormat;
 import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.Image;
-import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.opengl.GLFramebuffer;
+import icyllis.modernui.opengl.GLTexture;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
 import org.lwjgl.stb.STBIWriteCallbackI;
@@ -50,7 +50,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.stream.Collectors;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -141,14 +141,15 @@ public final class NativeImage implements AutoCloseable {
      * Display a file save dialog to select the path to save this native image.
      *
      * @param format the format used as a file filter
+     * @param name   the file name without extension name
      * @return the path or {@code null} if selects nothing
      */
     @Nullable
-    public static String saveDialogGet(@Nonnull SaveFormat format) {
+    public static String saveDialogGet(@Nonnull SaveFormat format, @Nullable String name) {
         try (MemoryStack stack = MemoryStack.stackPush()) {
             PointerBuffer filters = format.getFilters(stack);
             return TinyFileDialogs.tinyfd_saveFileDialog(null,
-                    format.getFileName(), filters, format.getDescription());
+                    format.getFileName(name), filters, format.getDescription());
         }
     }
 
@@ -192,7 +193,7 @@ public final class NativeImage implements AutoCloseable {
     @Nonnull
     @RenderThread
     public static NativeImage download(@Nonnull Format format, @Nonnull GLTexture texture, boolean flipY) {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         final int width = texture.getWidth();
         final int height = texture.getHeight();
         final NativeImage nativeImage = new NativeImage(format, width, height, false);
@@ -232,7 +233,7 @@ public final class NativeImage implements AutoCloseable {
     @RenderThread
     public static NativeImage download(@Nonnull Format format, @Nonnull GLFramebuffer framebuffer,
                                        int colorBuffer, boolean flipY) {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         if (framebuffer.isMsaaEnabled()) {
             throw new IllegalArgumentException("Cannot get pixels from a multisampling target");
         }
@@ -273,7 +274,7 @@ public final class NativeImage implements AutoCloseable {
     public static NativeImage decode(@Nullable Format format, @Nonnull ReadableByteChannel channel) throws IOException {
         ByteBuffer p = null;
         try (channel) {
-            p = ArchCore.readInMemory(channel);
+            p = Core.readBuffer(channel);
             return decode(format, p.rewind());
         } finally {
             MemoryUtil.memFree(p);
@@ -290,7 +291,7 @@ public final class NativeImage implements AutoCloseable {
     public static NativeImage decode(@Nullable Format format, @Nonnull InputStream stream) throws IOException {
         ByteBuffer p = null;
         try (stream) {
-            p = ArchCore.readInMemory(stream);
+            p = Core.readBuffer(stream);
             return decode(format, p.rewind());
         } finally {
             MemoryUtil.memFree(p);
@@ -357,7 +358,7 @@ public final class NativeImage implements AutoCloseable {
     /**
      * The head address of {@code unsigned char *pixels} in native.
      *
-     * @return the pointer of pixels data
+     * @return the pointer of pixels data, or NULL if released
      */
     public long getPixels() {
         if (mRef != null) {
@@ -371,9 +372,22 @@ public final class NativeImage implements AutoCloseable {
      * open a save dialog to select the path, with a quality of 100 for JPEG format.
      *
      * @param format the format of the saved image
+     * @return true if selected a path, otherwise canceled
      */
-    public void saveDialog(@Nonnull SaveFormat format) throws IOException {
-        saveDialog(format, 100);
+    public boolean saveDialog(@Nonnull SaveFormat format) throws IOException {
+        return saveDialog(format, null, 100);
+    }
+
+    /**
+     * Save this native image to specified path as specified format. This will
+     * open a save dialog to select the path, with a quality of 100 for JPEG format.
+     *
+     * @param format the format of the saved image
+     * @param name   the file name without extension name
+     * @return true if selected a path, otherwise canceled
+     */
+    public boolean saveDialog(@Nonnull SaveFormat format, @Nullable String name) throws IOException {
+        return saveDialog(format, name, 100);
     }
 
     /**
@@ -381,13 +395,17 @@ public final class NativeImage implements AutoCloseable {
      * open a save dialog to select the path.
      *
      * @param format  the format of the saved image
+     * @param name    the file name without extension name
      * @param quality the compress quality, 1-100, only work for JPEG format.
+     * @return true if selected a path, otherwise canceled
      */
-    public void saveDialog(@Nonnull SaveFormat format, int quality) throws IOException {
-        String path = saveDialogGet(format);
+    public boolean saveDialog(@Nonnull SaveFormat format, @Nullable String name, int quality) throws IOException {
+        String path = saveDialogGet(format, name);
         if (path != null) {
             saveToPath(Path.of(path), format, quality);
+            return true;
         }
+        return false;
     }
 
     /**
@@ -585,8 +603,8 @@ public final class NativeImage implements AutoCloseable {
         }
 
         @Nonnull
-        private String getFileName() {
-            return DATE_FORMAT.format(new Date()) + filters[0].substring(1);
+        private String getFileName(@Nullable String name) {
+            return name == null ? DATE_FORMAT.format(new Date()) : name + filters[0].substring(1);
         }
 
         @Nonnull

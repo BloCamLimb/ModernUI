@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,21 +16,22 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics;
+package icyllis.modernui.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
+import icyllis.modernui.graphics.Image;
+import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.font.FontAtlas;
 import icyllis.modernui.graphics.font.LayoutCache;
 import icyllis.modernui.graphics.font.LayoutPiece;
 import icyllis.modernui.graphics.font.TexturedGlyph;
-import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
-import icyllis.modernui.text.*;
+import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
@@ -47,7 +48,7 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.*;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -291,7 +292,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     @RenderThread
     public static GLSurfaceCanvas initialize() {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         if (sInstance == null) {
             sInstance = new GLSurfaceCanvas();
             /*POS_COLOR.setBindingDivisor(INSTANCED_BINDING, 1);
@@ -402,8 +403,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     @RenderThread
     public boolean draw(@Nullable GLFramebuffer framebuffer) {
-        ArchCore.checkRenderThread();
-        ArchCore.flushRenderCalls();
+        Core.checkRenderThread();
+        Core.flushRenderCalls();
         if (framebuffer != null) {
             // there's a bug on NVIDIA driver with DSA, allocate them always
             framebuffer.makeBuffers(mWidth, mHeight, true);
@@ -763,7 +764,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
      * @param matrix specified matrix
      */
     private void drawMatrix(@Nonnull Matrix4 matrix) {
-        if (!matrix.equivalent(mLastMatrix)) {
+        if (!matrix.approxEqual(mLastMatrix)) {
             mLastMatrix.set(matrix);
             matrix.put(checkUniformMemory());
             mDrawOps.add(DRAW_MATRIX);

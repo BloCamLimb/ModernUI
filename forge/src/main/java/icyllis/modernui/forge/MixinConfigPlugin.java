@@ -28,9 +28,11 @@ import java.util.Set;
 
 public class MixinConfigPlugin implements IMixinConfigPlugin {
 
+    private int mLevel;
+
     @Override
     public void onLoad(String mixinPackage) {
-
+        mLevel = ModernUIForge.getOrLoadBootstrapLevel();
     }
 
     @Override
@@ -40,8 +42,15 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return !ModernUIForge.isOptiFineLoaded() ||
-                !mixinClassName.equals("icyllis.modernui.forge.mixin.AccessVideoSettings");
+        if (ModernUIForge.isOptiFineLoaded() &&
+                mixinClassName.equals("icyllis.modernui.forge.mixin.AccessVideoSettings")) {
+            return false;
+        }
+        if ((mLevel & ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING) != 0) {
+            return !mixinClassName.equals("icyllis.modernui.forge.mixin.MixinScrollPanel") &&
+                    !mixinClassName.equals("icyllis.modernui.forge.mixin.MixinSelectionList");
+        }
+        return true;
     }
 
     @Override

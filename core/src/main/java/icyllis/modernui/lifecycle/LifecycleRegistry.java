@@ -19,7 +19,7 @@
 package icyllis.modernui.lifecycle;
 
 import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -97,7 +97,7 @@ public class LifecycleRegistry extends Lifecycle {
      */
     @UiThread
     public void setCurrentState(@Nonnull State state) {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         moveToState(state);
     }
 
@@ -110,7 +110,7 @@ public class LifecycleRegistry extends Lifecycle {
      * @param event The event that was received
      */
     public void handleLifecycleEvent(@Nonnull Event event) {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         moveToState(event.getTargetState());
     }
 
@@ -149,7 +149,7 @@ public class LifecycleRegistry extends Lifecycle {
 
     @Override
     public void addObserver(@Nonnull LifecycleObserver observer) {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         State initialState = mState == DESTROYED ? DESTROYED : INITIALIZED;
         ObserverWithState statefulObserver = new ObserverWithState(observer, initialState);
         ObserverWithState previous = mObserverMap.putIfAbsent(statefulObserver);
@@ -196,7 +196,7 @@ public class LifecycleRegistry extends Lifecycle {
 
     @Override
     public void removeObserver(@Nonnull LifecycleObserver observer) {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         // we consciously decided not to send destruction events here in opposition to addObserver.
         // Our reasons for that:
         // 1. These events haven't yet happened at all. In contrast to events in addObservers, that
@@ -218,7 +218,7 @@ public class LifecycleRegistry extends Lifecycle {
      * @return The number of observers.
      */
     public int getObserverCount() {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         return mObserverMap.size();
     }
 

@@ -18,7 +18,7 @@
 
 package icyllis.modernui.graphics.drawable;
 
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.math.Rect;
@@ -380,7 +380,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
             return false;
         }
 
-        final long now = ArchCore.timeMillis();
+        final long now = Core.timeMillis();
 
         if (mDrawableContainerState.mExitFadeDuration > 0) {
             if (mLastDrawable != null) {
@@ -477,7 +477,7 @@ public class DrawableContainer extends Drawable implements Drawable.Callback {
     void animate(boolean schedule) {
         mHasAlpha = true;
 
-        final long now = ArchCore.timeMillis();
+        final long now = Core.timeMillis();
         boolean animating = false;
         if (mCurrDrawable != null) {
             if (mEnterAnimationEnd != 0) {

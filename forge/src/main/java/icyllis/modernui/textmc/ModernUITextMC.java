@@ -20,7 +20,7 @@ package icyllis.modernui.textmc;
 
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.forge.MuiForgeApi;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -82,7 +82,7 @@ public final class ModernUITextMC {
             TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
         });
         MuiForgeApi.addOnWindowResizeListener((width, height, newScale, oldScale) -> {
-            if (ArchCore.hasRenderThread() && newScale != oldScale) {
+            if (Core.hasRenderThread() && newScale != oldScale) {
                 TextLayoutEngine.getInstance().reload();
             }
         });

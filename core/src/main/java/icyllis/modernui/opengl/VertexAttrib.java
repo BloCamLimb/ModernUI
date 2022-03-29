@@ -16,11 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.opengl;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * Defines an immutable vertex attribute.

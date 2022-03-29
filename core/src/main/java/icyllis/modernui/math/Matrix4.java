@@ -1685,6 +1685,47 @@ public class Matrix4 implements Cloneable {
         return MathUtil.approxZero(m14, m24, m34) && MathUtil.approxEqual(m44, 1.0f);
     }
 
+    /**
+     * Returns whether this matrix at most scales and translates.
+     *
+     * @return {@code true} if this matrix is scale, translate, or both.
+     */
+    public boolean isScaleTranslate() {
+        return MathUtil.approxZero(m12, m13, m21) &&
+                MathUtil.approxZero(m23, m31, m32) &&
+                MathUtil.approxZero(m14, m24, m34) &&
+                MathUtil.approxEqual(m44, 1.0f);
+    }
+
+    /**
+     * Returns whether this matrix transforms rect to another rect. If true, this matrix is identity,
+     * or/and scales, or/and rotates round Z axis a multiple of 90 degrees, or mirrors on axes.
+     * In all cases, this matrix is affine and may also have translation.
+     * <p>
+     * For example:
+     * <pre>{@code
+     *      Matrix4 matrix = Matrix4.identity();
+     *      matrix.translate(3, 5, 7);
+     *      matrix.scale(2, 3, 4);
+     *      matrix.rotateX(MathUtil.PI_DIV_4);
+     *      matrix.rotateZ(MathUtil.PI_DIV_2);
+     * }
+     * </pre>
+     *
+     * @return true if this matrix transform one rect into another
+     */
+    public boolean isAxisAligned() {
+        return isAffine() &&
+                ((MathUtil.approxZero(m11) &&
+                        MathUtil.approxZero(m22) &&
+                        !MathUtil.approxZero(m12) &&
+                        !MathUtil.approxZero(m21)) ||
+                        (MathUtil.approxZero(m12) &&
+                                MathUtil.approxZero(m21) &&
+                                !MathUtil.approxZero(m11) &&
+                                !MathUtil.approxZero(m22)));
+    }
+
     public boolean hasPerspective() {
         return !isAffine();
     }
@@ -1706,13 +1747,32 @@ public class Matrix4 implements Cloneable {
                 MathUtil.approxEqual(m11, m22, m33, m44, 1.0f);
     }
 
+    public boolean isEqual(@Nonnull Matrix4 mat) {
+        return m11 == mat.m11 &&
+                m12 == mat.m12 &&
+                m13 == mat.m13 &&
+                m14 == mat.m14 &&
+                m21 == mat.m21 &&
+                m22 == mat.m22 &&
+                m23 == mat.m23 &&
+                m24 == mat.m24 &&
+                m31 == mat.m31 &&
+                m32 == mat.m32 &&
+                m33 == mat.m33 &&
+                m34 == mat.m34 &&
+                m41 == mat.m41 &&
+                m42 == mat.m42 &&
+                m43 == mat.m43 &&
+                m44 == mat.m44;
+    }
+
     /**
      * Returns whether this matrix is equivalent to given matrix.
      *
      * @param mat the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean equivalent(@Nullable Matrix4 mat) {
+    public boolean approxEqual(@Nullable Matrix4 mat) {
         if (mat == this)
             return true;
         if (mat == null)

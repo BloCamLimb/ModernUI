@@ -31,12 +31,9 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.font.GraphemeBreak;
-import icyllis.modernui.graphics.opengl.GLTexture;
-import icyllis.modernui.graphics.opengl.ShaderManager;
-import icyllis.modernui.graphics.opengl.TextureManager;
+import icyllis.modernui.opengl.*;
 import icyllis.modernui.math.MathUtil;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
@@ -66,7 +63,7 @@ import java.util.Objects;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 @SuppressWarnings({"unused"})
@@ -126,10 +123,14 @@ public class TestMain {
     }
 
     public static void main(String[] args) {
+        System.setProperty("java.awt.headless", Boolean.TRUE.toString());
+        Matrix4 mat3 = Matrix4.identity();
+        for (int i = 0; i < 20; i++) {
+            mat3.rotateZ((float) (Math.PI / 2));
+        }
+        LOGGER.info(mat3.isAxisAligned());
         if (!CREATE_WINDOW) {
-            try (ModernUI modernUI = new ModernUI();
-                 VulkanManager vulkanManager = VulkanManager.getInstance()) {
-                vulkanManager.initialize();
+            try (ModernUI modernUI = new ModernUI()) {
                 modernUI.run(new TestFragment());
             }
             return;
@@ -277,7 +278,7 @@ public class TestMain {
         ShaderManager.getInstance().addListener(mgr -> mgr.getShard(ModernUI.ID, "a.vert"));
         try {
             Thread.currentThread().setName("Main-Thread");
-            ArchCore.initialize();
+            Core.initialize();
             sWindow = MainWindow.initialize("Modern UI Layout Editor", 1600, 900);
             try (var c1 = ModernUI.getInstance().getResourceChannel(ModernUI.ID, "AppLogo16x.png");
                  var bitmap1 = NativeImage.decode(null, c1);
@@ -338,7 +339,7 @@ public class TestMain {
     private static void runRenderThread() {
         final Window window = sWindow;
         window.makeCurrent();
-        ArchCore.initOpenGL();
+        Core.initOpenGL();
         GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         ShaderManager.getInstance().reload();
         Matrix4 projection = new Matrix4();
@@ -431,7 +432,7 @@ public class TestMain {
 
         //GLFW.glfwSwapInterval(1);
 
-        long lastTime = ArchCore.timeMillis();
+        long lastTime = Core.timeMillis();
 
         Rect screenRect = new Rect(0, 0, window.getWidth(), window.getHeight());
 
@@ -461,7 +462,7 @@ public class TestMain {
         boolean note = false;
 
         while (!window.shouldClose()) {
-            long time = ArchCore.timeMillis();
+            long time = Core.timeMillis();
             long delta = time - lastTime;
             lastTime = time;
             GLCore.resetFrame(window);

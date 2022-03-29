@@ -16,28 +16,38 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.graphics;
 
-import icyllis.modernui.graphics.GLCore;
+import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.math.Rect;
 
 /**
- * Represents OpenGL program objects.
+ * GPU hierarchical clipping using stencil test.
  */
-public class GLProgram {
-
-    int mProgram;
-
-    public GLProgram() {
-    }
+public class ClipStack {
 
     /**
-     * Use this shader program
+     * Clip ops.
      */
-    public void use() {
-        GLCore.glUseProgram(mProgram);
-    }
+    public static final byte
+            OP_DIFFERENCE = 0,
+            OP_INTERSECT = 1;
 
-    public final int get() {
-        return mProgram;
+    /**
+     * Clip states.
+     */
+    public static final byte
+            STATE_EMPTY = 0,
+            STATE_WIDE_OPEN = 1,
+            STATE_DEVICE_RECT = 2,
+            STATE_DEVICE_ROUND_RECT = 3,
+            STATE_COMPLEX = 4;
+
+    public static final class Clip {
+
+        final Rect mShape = new Rect();
+
+        // model view matrix
+        final Matrix4 mMatrix = Matrix4.identity();
     }
 }

@@ -191,7 +191,7 @@ public class Window implements AutoCloseable {
     protected final long mHandle;
 
     protected Window(long handle) {
-        ArchCore.checkMainThread();
+        Core.checkMainThread();
         mHandle = handle;
         if (sWindows.put(handle, this) != null) {
             throw new IllegalStateException("Duplicated window: 0x" + Long.toHexString(handle));

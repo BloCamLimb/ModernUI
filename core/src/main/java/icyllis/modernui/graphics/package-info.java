@@ -16,10 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.testforge;
+@ParametersAreNonnullByDefault
+package icyllis.modernui.graphics;
 
-import icyllis.modernui.forge.UICallback;
-
-public class TestUI extends UICallback {
-
-}
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -19,21 +19,17 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
-import icyllis.modernui.graphics.font.FontCollection;
-import icyllis.modernui.graphics.font.FontPaint;
-import icyllis.modernui.graphics.font.LayoutCache;
-import icyllis.modernui.graphics.opengl.ShaderManager;
-import icyllis.modernui.graphics.opengl.TextureManager;
+import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.opengl.ShaderManager;
+import icyllis.modernui.opengl.TextureManager;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.ModernUITextMC;
 import icyllis.modernui.view.ViewManager;
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ReloadableResourceManager;
-import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.minecraft.server.packs.resources.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.data.loading.DatagenModLoader;
@@ -51,12 +47,11 @@ import org.apache.commons.lang3.StringUtils;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
@@ -67,12 +62,18 @@ import java.util.*;
 @Mod(ModernUI.ID)
 public final class ModernUIForge extends ModernUI {
 
+    // false to disable extensions
+    public static final int BOOTSTRAP_TEXT_ENGINE = 0x1;
+    public static final int BOOTSTRAP_SMOOTH_SCROLLING = 0x2;
+
     private static boolean sOptiFineLoaded;
 
     static volatile boolean sInterceptTipTheScales;
 
     static volatile boolean sDevelopment;
     static volatile boolean sDeveloperMode;
+
+    static volatile Integer sBootstrapLevel;
 
     static {
         try {
@@ -126,7 +127,7 @@ public final class ModernUIForge extends ModernUI {
                                 (ResourceManagerReloadListener) (manager) -> {
                                     ShaderManager.getInstance().reload();
                                     TextureManager.getInstance().reload();
-                                    Handler handler = ArchCore.getUiHandlerAsync();
+                                    Handler handler = Core.getUiHandlerAsync();
                                     // FML may throw ex, so it can be null
                                     if (handler != null) {
                                         // Call in lambda, not in creating the lambda
@@ -165,6 +166,52 @@ public final class ModernUIForge extends ModernUI {
     static void dispatchOnDebugDump(@Nonnull PrintWriter writer) {
         for (var l : MuiForgeApi.sOnDebugDumpListeners) {
             l.onDebugDump(writer);
+        }
+    }
+
+    // INTERNAL
+    public static int getOrLoadBootstrapLevel() {
+        if (sBootstrapLevel == null) {
+            synchronized (ModernUIForge.class) {
+                if (sBootstrapLevel == null) {
+                    Path path = FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(NAME_CPT),
+                            NAME_CPT).resolve("bootstrap");
+                    if (Files.exists(path)) {
+                        try {
+                            sBootstrapLevel = Integer.parseUnsignedInt(Files.readString(path, StandardCharsets.UTF_8));
+                        } catch (Exception ignored) {
+                        }
+                    } else {
+                        try {
+                            Files.createFile(path);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+                if (sBootstrapLevel == null) {
+                    setBootstrapLevel(0);
+                }
+            }
+        }
+        return sBootstrapLevel;
+    }
+
+    public static void setBootstrapLevel(int level) {
+        sBootstrapLevel = level;
+        Path path = FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(NAME_CPT),
+                NAME_CPT).resolve("bootstrap");
+        if (!Files.exists(path)) {
+            try {
+                Files.createFile(path);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+        try {
+            Files.writeString(path, Integer.toString(level), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

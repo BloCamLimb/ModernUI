@@ -18,53 +18,40 @@
 
 package icyllis.modernui;
 
-import icyllis.modernui.annotation.MainThread;
-import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.GLFramebuffer;
-import icyllis.modernui.graphics.GLSurfaceCanvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
-import icyllis.modernui.graphics.opengl.GLTexture;
-import icyllis.modernui.graphics.opengl.ShaderManager;
-import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.opengl.*;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
 import icyllis.modernui.view.menu.MenuHelper;
 import icyllis.modernui.widget.CoordinatorLayout;
 import icyllis.modernui.widget.EditText;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import org.apache.logging.log4j.*;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFWMonitorCallback;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.ref.Cleaner;
 import java.lang.ref.Cleaner.Cleanable;
-import java.nio.channels.Channels;
-import java.nio.channels.FileChannel;
-import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**
@@ -90,6 +77,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         }
     }
 
+    private final VulkanManager mVulkanManager = VulkanManager.getInstance();
+
     private volatile MainWindow mWindow;
 
     private ViewRootImpl mRoot;
@@ -103,6 +92,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     private FragmentController mFragmentController;
 
     private volatile Looper mUiLooper;
+    private volatile Thread mUiThread;
+    private volatile Thread mRenderThread;
 
     public ModernUI() {
         synchronized (ModernUI.class) {
@@ -145,9 +136,11 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     public void run(@Nonnull Fragment fragment) {
         Thread.currentThread().setName("Main-Thread");
         // should be true
-        LOGGER.info("AWT headless: {}", GraphicsEnvironment.isHeadless());
+        LOGGER.info(MARKER, "AWT headless: {}", GraphicsEnvironment.isHeadless());
 
-        ArchCore.initialize();
+        Core.initialize();
+
+        mVulkanManager.initialize();
 
         LOGGER.info(MARKER, "Initializing window system");
         Monitor monitor = Monitor.getPrimary();
@@ -172,8 +165,10 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         LOGGER.info(MARKER, "Preparing threads");
         Looper.prepare(mWindow);
 
-        new Thread(this::runRender, "Render-Thread").start();
-        new Thread(() -> runUI(fragment), "UI-Thread").start();
+        mRenderThread = new Thread(this::runRender, "Render-Thread");
+        mRenderThread.start();
+        mUiThread = new Thread(() -> runUI(fragment), "UI-Thread");
+        mUiThread.start();
 
         try (NativeImage i16 = NativeImage.decode(null, getResourceChannel(ID, "AppLogo16x.png"));
              NativeImage i32 = NativeImage.decode(null, getResourceChannel(ID, "AppLogo32x.png"));
@@ -192,7 +187,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         LOGGER.info(MARKER, "Initializing render thread");
         final Window window = mWindow;
         window.makeCurrent();
-        ArchCore.initOpenGL();
+        Core.initOpenGL();
 
         final GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         ShaderManager.getInstance().reload();
@@ -231,7 +226,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
                         width, height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
             }
             if (mRoot != null) {
-                mRoot.mChoreographer.scheduleFrameAsync(ArchCore.timeNanos());
+                mRoot.mChoreographer.scheduleFrameAsync(Core.timeNanos());
             }
             window.swapBuffers();
         }
@@ -241,7 +236,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     @UiThread
     private void runUI(@Nonnull Fragment fragment) {
         LOGGER.info(MARKER, "Initializing UI thread");
-        mUiLooper = Looper.prepare();
+        mUiLooper = Core.initUiThread();
 
         ViewConfiguration.get().setViewScale(2);
 
@@ -301,7 +296,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
                 .addToBackStack("main")
                 .commit();
 
-        ArchCore.executeOnMainThread(mWindow::show);
+        Core.executeOnMainThread(mWindow::show);
 
         LOGGER.info(MARKER, "Looping UI thread");
 
@@ -381,23 +376,23 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     @Override
     public void close() {
         try {
-            if (mUiLooper != null) {
-                LOGGER.info(MARKER, "Quiting UI thread");
-                try {
-                    ArchCore.getUiHandlerAsync().post(() -> mUiLooper.quitSafely());
-                } finally {
+            synchronized (Core.class) {
+                if (mUiThread != null) {
+                    LOGGER.info(MARKER, "Quiting UI thread");
                     try {
-                        ArchCore.getUiThread().join(1000);
+                        Core.getUiHandlerAsync().post(() -> mUiLooper.quitSafely());
+                        mUiThread.join(1000);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
                 }
-            }
-            if (ArchCore.hasRenderThread()) {
-                try {
-                    ArchCore.getRenderThread().join(1000);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
+                if (mRenderThread != null && mRenderThread.isAlive()) {
+                    LOGGER.info(MARKER, "Quiting render thread");
+                    try {
+                        mRenderThread.join(1000);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
                 }
             }
 
@@ -409,8 +404,9 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             if (cb != null) {
                 cb.free();
             }
+            mVulkanManager.close();
         } finally {
-            ArchCore.terminate();
+            Core.terminate();
         }
         LOGGER.info(MARKER, "Stopped");
     }
@@ -477,7 +473,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
 
         @Override
         protected void applyPointerIcon(int pointerType) {
-            ArchCore.executeOnMainThread(() -> glfwSetCursor(mWindow.getHandle(),
+            Core.executeOnMainThread(() -> glfwSetCursor(mWindow.getHandle(),
                     PointerIcon.getSystemIcon(pointerType).getHandle()));
         }
 
@@ -521,7 +517,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             OnBackPressedDispatcherOwner {
         HostCallbacks() {
             super(new Handler(Looper.myLooper()));
-            assert ArchCore.isOnUiThread();
+            assert Core.isOnUiThread();
         }
 
         @Nullable

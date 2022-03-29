@@ -16,10 +16,26 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.testforge;
+package icyllis.modernui.opengl;
 
-import icyllis.modernui.forge.UICallback;
+/**
+ * Represents OpenGL program objects.
+ */
+public class GLProgram {
 
-public class TestUI extends UICallback {
+    int mProgram;
 
+    public GLProgram() {
+    }
+
+    /**
+     * Use this shader program
+     */
+    public void use() {
+        GLCore.glUseProgram(mProgram);
+    }
+
+    public final int get() {
+        return mProgram;
+    }
 }

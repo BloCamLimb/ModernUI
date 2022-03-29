@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.font.FontCollection.Run;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.floats.FloatList;
@@ -93,12 +93,12 @@ public class LayoutPiece {
                 assert mAdvances != null;
             }
             if ((hint.mDescent & 0x80000000) != 0) {
-                if (ArchCore.isOnRenderThread()) {
+                if (Core.isOnRenderThread()) {
                     mGlyphs = hint.mGlyphs;
                     mPositions = hint.mPositions;
                     assert mGlyphs != null;
                 } else {
-                    ArchCore.postOnRenderThread(() -> {
+                    Core.postOnRenderThread(() -> {
                         mGlyphs = hint.mGlyphs;
                         mPositions = hint.mPositions;
                         assert mGlyphs != null;
@@ -137,11 +137,7 @@ public class LayoutPiece {
 
             if (layout) {
                 TextureWork textureWork = new TextureWork(vector, glyphs, positions, mAdvance);
-                if (ArchCore.isOnRenderThread()) {
-                    textureWork.run();
-                } else {
-                    ArchCore.postOnRenderThread(textureWork);
-                }
+                Core.executeOnRenderThread(textureWork);
             }
 
             mAdvance += vector.getGlyphPosition(vector.getNumGlyphs()).getX();
@@ -153,11 +149,11 @@ public class LayoutPiece {
             }
         }
         if (layout) {
-            if (ArchCore.isOnRenderThread()) {
+            if (Core.isOnRenderThread()) {
                 mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
                 mPositions = positions.toFloatArray();
             } else {
-                ArchCore.postOnRenderThread(() -> {
+                Core.postOnRenderThread(() -> {
                     mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
                     mPositions = positions.toFloatArray();
                 });

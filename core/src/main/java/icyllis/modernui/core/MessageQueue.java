@@ -78,7 +78,7 @@ public final class MessageQueue {
      */
     public boolean isIdle() {
         synchronized (this) {
-            final long now = ArchCore.timeMillis();
+            final long now = Core.timeMillis();
             return mMessages == null || now < mMessages.when;
         }
     }
@@ -172,7 +172,7 @@ public final class MessageQueue {
 
             synchronized (this) {
                 // Try to retrieve the next message.  Return if found.
-                final long now = ArchCore.timeMillis();
+                final long now = Core.timeMillis();
                 Message prevMsg = null;
                 Message msg = mMessages;
                 if (msg != null && msg.target == null) {
@@ -299,7 +299,7 @@ public final class MessageQueue {
      * passed to {@link #removeSyncBarrier} to release the barrier.
      */
     public int postSyncBarrier() {
-        final long when = ArchCore.timeMillis();
+        final long when = Core.timeMillis();
         // Enqueue a new sync barrier token.
         // We don't need to wake the queue because the purpose of a barrier is to stall it.
         synchronized (this) {
@@ -576,7 +576,7 @@ public final class MessageQueue {
     }
 
     private void removeAllFutureMessagesLocked() {
-        final long now = ArchCore.timeMillis();
+        final long now = Core.timeMillis();
         Message p = mMessages;
         if (p != null) {
             if (p.when > now) {

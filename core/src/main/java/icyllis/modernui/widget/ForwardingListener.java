@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.view.MotionEvent;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
@@ -102,7 +102,7 @@ public abstract class ForwardingListener implements View.OnTouchListener, View.O
 
             if (forwarding) {
                 // Make sure we cancel any ongoing source event stream.
-                final long now = ArchCore.timeNanos();
+                final long now = Core.timeNanos();
                 final MotionEvent e = MotionEvent.obtain(now, MotionEvent.ACTION_CANCEL,
                         0.0f, 0.0f, 0);
                 mView.onTouchEvent(e);
@@ -237,7 +237,7 @@ public abstract class ForwardingListener implements View.OnTouchListener, View.O
         }
 
         // Make sure we cancel any ongoing source event stream.
-        final long now = ArchCore.timeNanos();
+        final long now = Core.timeNanos();
         final MotionEvent e = MotionEvent.obtain(now, MotionEvent.ACTION_CANCEL, 0, 0, 0);
         view.onTouchEvent(e);
         e.recycle();

@@ -20,9 +20,9 @@ package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.core.NativeImage;
-import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.opengl.GLTexture;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 
@@ -31,7 +31,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.function.IntFunction;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * Maintains a font texture atlas, which is specified with a font family, size and style.
@@ -102,10 +102,10 @@ public class FontAtlas {
         for (var glyph : mGlyphs.int2ObjectEntrySet()) {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "GlyphCode {}: {}", glyph.getIntKey(), glyph.getValue());
         }
-        if (ArchCore.isOnRenderThread()) {
+        if (Core.isOnRenderThread()) {
             try {
                 NativeImage.download(NativeImage.Format.RGBA, mTexture, false)
-                        .saveDialog(NativeImage.SaveFormat.PNG, 0);
+                        .saveDialog(NativeImage.SaveFormat.PNG);
             } catch (IOException e) {
                 e.printStackTrace();
             }

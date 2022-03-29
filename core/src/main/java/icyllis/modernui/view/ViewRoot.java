@@ -86,7 +86,6 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     private final int[] outBounds = new int[4];*/
 
     protected ViewRoot() {
-        ArchCore.initUiThread();
         mHandler = new Handler(Looper.myLooper(), this::handleMessage);
         mChoreographer = Choreographer.getInstance();
         mAttachInfo = new AttachInfo(this, mHandler, this);
@@ -672,7 +671,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     }
 
     void invalidate() {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         mInvalidated = true;
         if (!mWillDrawSoon) {
             if (mIsDrawing) {
@@ -803,7 +802,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     @Override
     public void requestLayout() {
         if (!mHandlingLayoutInLayoutRequest) {
-            ArchCore.checkUiThread();
+            Core.checkUiThread();
             mLayoutRequested = true;
             scheduleTraversals();
         }
@@ -816,13 +815,13 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     @Override
     public void requestChildFocus(View child, View focused) {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         scheduleTraversals();
     }
 
     @Override
     public void clearChildFocus(View child) {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         scheduleTraversals();
     }
 
@@ -831,7 +830,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
      */
     @Override
     public View focusSearch(View focused, int direction) {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         if (!(mView instanceof ViewGroup)) {
             return null;
         }
@@ -841,7 +840,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
     @Override
     public View keyboardNavigationClusterSearch(View currentCluster,
                                                 @FocusDirection int direction) {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         return FocusFinder.getInstance().findNextKeyboardNavigationCluster(
                 mView, currentCluster, direction);
     }
@@ -857,7 +856,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
 
     @Override
     public void focusableViewAvailable(View v) {
-        ArchCore.checkUiThread();
+        Core.checkUiThread();
         if (mView != null) {
             if (!mView.hasFocus()) {
                 // the one case where will transfer focus away from the current one

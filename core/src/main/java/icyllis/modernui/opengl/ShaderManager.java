@@ -16,11 +16,11 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -33,7 +33,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * This class helps you create shaders and programs.
@@ -71,7 +71,7 @@ public class ShaderManager {
 
     // internal use
     public void reload() {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         for (var map : mShaders.values()) {
             for (int shard : map.values()) {
                 glDeleteShader(shard);
@@ -140,7 +140,7 @@ public class ShaderManager {
      * @return the shader shard or 0 on failure
      */
     public int getShard(@Nonnull String namespace, @Nonnull String path, int type) {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         int shader = mShaders.computeIfAbsent(namespace, n -> {
             Object2IntMap<String> r = new Object2IntOpenHashMap<>();
             r.defaultReturnValue(-1);
@@ -168,7 +168,7 @@ public class ShaderManager {
             }
         }
         try (ReadableByteChannel channel = ModernUI.getInstance().getResourceChannel(namespace, path)) {
-            String source = ArchCore.readStringUTF8(channel);
+            String source = Core.readUTF8(channel);
             if (source == null) {
                 ModernUI.LOGGER.error(MARKER, "Failed to read shader source {}:{}", namespace, path);
                 mShaders.get(namespace).putIfAbsent(path, 0);
@@ -206,7 +206,7 @@ public class ShaderManager {
     @SuppressWarnings("unchecked")
     @Nonnull
     public <T extends GLProgram> T create(@Nullable T t, int... shards) {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         int program;
         if (t != null && t.mProgram != 0) {
             program = t.mProgram;

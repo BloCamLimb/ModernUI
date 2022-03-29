@@ -19,7 +19,7 @@
 package icyllis.modernui.testforge;
 
 import icyllis.modernui.animation.AnimationHandler;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -101,7 +101,7 @@ public class Animation implements AnimationHandler.FrameCallback {
     }
 
     private void start0(boolean isFull) {
-        startTime = ArchCore.timeMillis() + delayTime;
+        startTime = Core.timeMillis() + delayTime;
         reversed = false;
         started = false;
         if (appliers != null) {
@@ -126,7 +126,7 @@ public class Animation implements AnimationHandler.FrameCallback {
     }
 
     private void invert0(boolean isFull) {
-        startTime = ArchCore.timeMillis() + delayTime;
+        startTime = Core.timeMillis() + delayTime;
         reversed = true;
         started = false;
         if (appliers != null) {

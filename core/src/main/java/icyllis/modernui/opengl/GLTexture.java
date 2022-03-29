@@ -16,16 +16,17 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.opengl;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.core.Core;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.Cleaner;
 
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * Represents OpenGL texture objects at low-level.
@@ -53,9 +54,9 @@ public class GLTexture extends GLObject {
     @Override
     public final int get() {
         if (ref == null) {
-            ref = new TextureRef(this);
+            ref = new Ref(this);
         }
-        return ref.object;
+        return ref.id;
     }
 
     /**
@@ -423,21 +424,21 @@ public class GLTexture extends GLObject {
      */
     @Nullable
     public final Cleaner.Cleanable recreate() {
-        final Ref r = ref;
-        ref = new TextureRef(this);
+        final var r = ref;
+        ref = new Ref(this);
         dimension = 0;
         return r != null ? r.cleanup : null;
     }
 
-    private static final class TextureRef extends Ref {
+    private static final class Ref extends GLObject.Ref {
 
-        private TextureRef(@Nonnull GLTexture owner) {
+        private Ref(@Nonnull GLTexture owner) {
             super(owner, glCreateTextures(owner.target));
         }
 
         @Override
         public void run() {
-            deleteTextureAsync(object, this);
+            Core.postOnRenderThread(() -> glDeleteTextures(id));
         }
     }
 }

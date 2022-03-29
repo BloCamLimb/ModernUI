@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.ContextMenu;
 import icyllis.modernui.view.SoundEffectConstants;
@@ -977,7 +977,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
         seed = Math.max(0, seed);
         seed = Math.min(count - 1, seed);
 
-        long endTime = ArchCore.timeMillis() + SYNC_MAX_DURATION_MILLIS;
+        long endTime = Core.timeMillis() + SYNC_MAX_DURATION_MILLIS;
 
         long rowId;
 
@@ -1003,7 +1003,7 @@ public abstract class AdapterView<T extends Adapter> extends ViewGroup {
             return INVALID_POSITION;
         }
 
-        while (ArchCore.timeMillis() <= endTime) {
+        while (Core.timeMillis() <= endTime) {
             rowId = adapter.getItemId(seed);
             if (rowId == idToMatch) {
                 // Found it!

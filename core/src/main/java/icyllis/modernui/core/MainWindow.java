@@ -100,7 +100,7 @@ public final class MainWindow extends Window {
      */
     @Nonnull
     public static MainWindow initialize(@Nonnull String title, int width, int height) {
-        ArchCore.checkMainThread();
+        Core.checkMainThread();
         if (sMainWindow != null) {
             throw new IllegalStateException("Multiple main windows");
         }
@@ -187,7 +187,7 @@ public final class MainWindow extends Window {
 
     private void onKeyCallback(long w, int key, int scancode, int action, int mods) {
         if (mRoot != null) {
-            KeyEvent keyEvent = KeyEvent.obtain(ArchCore.timeNanos(),
+            KeyEvent keyEvent = KeyEvent.obtain(Core.timeNanos(),
                     action == GLFW_RELEASE ? KeyEvent.ACTION_UP : KeyEvent.ACTION_DOWN,
                     key, 0, mods, scancode, 0);
             mRoot.enqueueInputEvent(keyEvent);
@@ -227,7 +227,7 @@ public final class MainWindow extends Window {
             cursorX = x.get(0);
             cursorY = y.get(0);
         }
-        final long now = ArchCore.timeNanos();
+        final long now = Core.timeNanos();
         float x = (float) (cursorX * mWidth / mScreenWidth);
         float y = (float) (cursorY * mHeight / mScreenHeight);
         int buttonState = 0;
@@ -252,7 +252,7 @@ public final class MainWindow extends Window {
         if (mRoot == null) {
             return;
         }
-        final long now = ArchCore.timeNanos();
+        final long now = Core.timeNanos();
         float x = (float) (cursorX * mWidth / mScreenWidth);
         float y = (float) (cursorY * mHeight / mScreenHeight);
         MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_HOVER_MOVE,
@@ -277,7 +277,7 @@ public final class MainWindow extends Window {
             cursorX = x.get(0);
             cursorY = y.get(0);
         }
-        final long now = ArchCore.timeNanos();
+        final long now = Core.timeNanos();
         float x = (float) (cursorX * mWidth / mScreenWidth);
         float y = (float) (cursorY * mHeight / mScreenHeight);
         MotionEvent event = MotionEvent.obtain(now, MotionEvent.ACTION_SCROLL,

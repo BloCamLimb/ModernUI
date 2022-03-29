@@ -64,7 +64,7 @@ public final class Message {
 
     /**
      * The targeted delivery time of this message. The time-base is
-     * {@link ArchCore#timeMillis()}.
+     * {@link Core#timeMillis()}.
      */
     long when;
 
@@ -364,7 +364,7 @@ public final class Message {
     @Nonnull
     @Override
     public String toString() {
-        return toString(ArchCore.timeMillis());
+        return toString(Core.timeMillis());
     }
 
     @Nonnull

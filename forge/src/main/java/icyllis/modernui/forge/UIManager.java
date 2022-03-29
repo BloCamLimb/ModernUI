@@ -29,12 +29,12 @@ import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.GLFramebuffer;
-import icyllis.modernui.graphics.GLSurfaceCanvas;
-import icyllis.modernui.graphics.opengl.GLTexture;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
+import icyllis.modernui.opengl.GLFramebuffer;
+import icyllis.modernui.opengl.GLSurfaceCanvas;
+import icyllis.modernui.opengl.GLTexture;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.testforge.TestListFragment;
 import icyllis.modernui.testforge.TestPauseFragment;
@@ -89,7 +89,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.graphics.GLCore.*;
+import static icyllis.modernui.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**
@@ -202,7 +202,7 @@ public final class UIManager implements LifecycleOwner {
 
     @RenderThread
     static void initialize() {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         assert sInstance == null;
         sInstance = new UIManager();
         LOGGER.info(MARKER, "UI system initialized");
@@ -295,7 +295,7 @@ public final class UIManager implements LifecycleOwner {
      */
     static long getElapsedTime() {
         if (sInstance == null) {
-            return ArchCore.timeMillis();
+            return Core.timeMillis();
         }
         return sInstance.mElapsedTimeMillis;
     }
@@ -307,7 +307,7 @@ public final class UIManager implements LifecycleOwner {
      */
     static long getFrameTimeNanos() {
         if (sInstance == null) {
-            return ArchCore.timeNanos();
+            return Core.timeNanos();
         }
         return sInstance.mFrameTimeNanos;
     }
@@ -391,7 +391,7 @@ public final class UIManager implements LifecycleOwner {
     @UiThread
     private void init() {
         long startTime = System.nanoTime();
-        mLooper = Looper.prepare();
+        mLooper = Core.initUiThread();;
 
         mRoot = this.new ViewRootImpl();
 
@@ -498,7 +498,7 @@ public final class UIManager implements LifecycleOwner {
      */
     @MainThread
     void onHoverMove(boolean natural) {
-        final long now = ArchCore.timeNanos();
+        final long now = Core.timeNanos();
         float x = (float) (minecraft.mouseHandler.xpos() *
                 mWindow.getWidth() / mWindow.getScreenWidth());
         float y = (float) (minecraft.mouseHandler.ypos() *
@@ -524,7 +524,7 @@ public final class UIManager implements LifecycleOwner {
         // and the screen must be a mui screen
         if (minecraft.getOverlay() == null && mScreen != null) {
             //ModernUI.LOGGER.info(MARKER, "Button: {} {} {}", event.getButton(), event.getAction(), event.getMods());
-            final long now = ArchCore.timeNanos();
+            final long now = Core.timeNanos();
             float x = (float) (minecraft.mouseHandler.xpos() *
                     mWindow.getWidth() / mWindow.getScreenWidth());
             float y = (float) (minecraft.mouseHandler.ypos() *
@@ -552,7 +552,7 @@ public final class UIManager implements LifecycleOwner {
     // Hook method, DO NOT CALL
     public static void onScroll(double scrollX, double scrollY) {
         if (sInstance.mScreen != null) {
-            final long now = ArchCore.timeNanos();
+            final long now = Core.timeNanos();
             final Window window = sInstance.mWindow;
             final MouseHandler mouseHandler = sInstance.minecraft.mouseHandler;
             float x = (float) (mouseHandler.xpos() *
@@ -571,7 +571,7 @@ public final class UIManager implements LifecycleOwner {
     void onPostKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
         if (mScreen != null) {
             int action = event.getAction() == GLFW_RELEASE ? KeyEvent.ACTION_UP : KeyEvent.ACTION_DOWN;
-            KeyEvent keyEvent = KeyEvent.obtain(ArchCore.timeNanos(), action, event.getKey(), 0,
+            KeyEvent keyEvent = KeyEvent.obtain(Core.timeNanos(), action, event.getKey(), 0,
                     event.getModifiers(), event.getScanCode(), 0);
             mRoot.enqueueInputEvent(keyEvent);
         }
@@ -594,7 +594,7 @@ public final class UIManager implements LifecycleOwner {
                 NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);
                 Util.ioPool().execute(() -> {
                     try (image) {
-                        image.saveDialog(NativeImage.SaveFormat.PNG, 0);
+                        image.saveDialog(NativeImage.SaveFormat.PNG);
                     } catch (IOException e) {
                         e.printStackTrace();
                     }
@@ -829,7 +829,7 @@ public final class UIManager implements LifecycleOwner {
         mRoot.mHandler.post(this::suppressLayoutTransition);
         mFragmentController.getFragmentManager().beginTransaction()
                 .remove(screen.getFragment())
-                .runOnCommit(mFragmentContainerView::removeAllViews)
+                .runOnCommit(() -> mFragmentContainerView.removeAllViews())
                 .commit();
         mScreen = null;
         glfwSetCursor(mWindow.getWindow(), MemoryUtil.NULL);
@@ -839,7 +839,7 @@ public final class UIManager implements LifecycleOwner {
     void onRenderTick(@Nonnull TickEvent.RenderTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
             final long lastFrameTime = mFrameTimeNanos;
-            mFrameTimeNanos = ArchCore.timeNanos();
+            mFrameTimeNanos = Core.timeNanos();
             final long deltaMillis = (mFrameTimeNanos - lastFrameTime) / 1000000;
             mElapsedTimeMillis += deltaMillis;
             // coordinates UI thread
@@ -1040,7 +1040,7 @@ public final class UIManager implements LifecycleOwner {
             OnBackPressedDispatcherOwner {
         HostCallbacks() {
             super(new Handler(Looper.myLooper()));
-            assert ArchCore.isOnUiThread();
+            assert Core.isOnUiThread();
         }
 
         @Nullable

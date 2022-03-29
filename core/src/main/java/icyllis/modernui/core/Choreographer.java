@@ -84,7 +84,7 @@ public final class Choreographer {
 
     // Thread local storage for the choreographer.
     private static final ThreadLocal<Choreographer> sThreadInstance = ThreadLocal.withInitial(() -> {
-        if (ArchCore.isOnRenderThread()) {
+        if (Core.isOnRenderThread()) {
             throw new IllegalStateException("The render thread cannot have a choreographer!");
         }
         final Looper looper = Looper.myLooper();
@@ -211,7 +211,7 @@ public final class Choreographer {
         }
 
         synchronized (mLock) {
-            final long now = ArchCore.timeMillis();
+            final long now = Core.timeMillis();
             final long dueTime = now + delayMillis;
             mCallbackQueues[callbackType].addCallbackLocked(dueTime, action, token);
 
@@ -300,8 +300,8 @@ public final class Choreographer {
      * <p>
      * This method provides the time in milliseconds when the frame started being rendered.
      * The frame time provides a stable time base for synchronizing animations
-     * and drawing.  It should be used instead of {@link ArchCore#timeMillis()}
-     * or {@link ArchCore#timeNanos()} for animations and drawing in the UI.  Using the frame
+     * and drawing.  It should be used instead of {@link Core#timeMillis()}
+     * or {@link Core#timeNanos()} for animations and drawing in the UI.  Using the frame
      * time helps to reduce inter-frame jitter because the frame time is fixed at the time
      * the frame was scheduled to start, regardless of when the animations or drawing
      * callback actually runs.  All callbacks that run as part of rendering a frame will
@@ -315,7 +315,7 @@ public final class Choreographer {
      * This method should only be called from within a callback.
      * </p>
      *
-     * @return The frame start time, in the {@link ArchCore#timeMillis()} time base.
+     * @return The frame start time, in the {@link Core#timeMillis()} time base.
      * @throws IllegalStateException if no frame is in progress.
      */
     public long getFrameTime() {
@@ -325,7 +325,7 @@ public final class Choreographer {
     /**
      * Same as {@link #getFrameTime()} but with nanosecond precision.
      *
-     * @return The frame start time, in the {@link ArchCore#timeNanos()} time base.
+     * @return The frame start time, in the {@link Core#timeNanos()} time base.
      * @throws IllegalStateException if no frame is in progress.
      */
     public long getFrameTimeNanos() {
@@ -342,7 +342,7 @@ public final class Choreographer {
      * Like {@link #getFrameTimeNanos}, but always returns the last frame time, not matter
      * whether callbacks are currently running.
      *
-     * @return The frame start time of the last frame, in the {@link ArchCore#timeNanos()} time base.
+     * @return The frame start time of the last frame, in the {@link Core#timeNanos()} time base.
      */
     public long getLastFrameTimeNanos() {
         synchronized (mLock) {
@@ -357,12 +357,12 @@ public final class Choreographer {
      */
     @RenderThread
     public void scheduleFrameAsync(long timestampNanos) {
-        ArchCore.checkRenderThread();
+        Core.checkRenderThread();
         synchronized (mLock) {
             if (!mFrameScheduled) {
                 return;
             }
-            final long now = ArchCore.timeNanos();
+            final long now = Core.timeNanos();
             if (timestampNanos > now) {
                 timestampNanos = now;
             }
@@ -393,7 +393,7 @@ public final class Choreographer {
                     return;
                 }
 
-                startNanos = ArchCore.timeNanos();
+                startNanos = Core.timeNanos();
 
                 if (frameTimeNanos < mLastFrameTimeNanos) {
                     // should not happen
@@ -418,7 +418,7 @@ public final class Choreographer {
         }
 
         if (DEBUG_FRAMES) {
-            final long endNanos = ArchCore.timeNanos();
+            final long endNanos = Core.timeNanos();
             LOGGER.info(MARKER, "Frame : Finished, took "
                     + (endNanos - startNanos) * 0.000001f + " ms, latency "
                     + (startNanos - frameTimeNanos) * 0.000001f + " ms.");
@@ -431,7 +431,7 @@ public final class Choreographer {
             // We use "now" to determine when callbacks become due because it's possible
             // for earlier processing phases in a frame to post callbacks that should run
             // in a following phase, such as an input event that causes an animation to start.
-            final long now = ArchCore.timeMillis();
+            final long now = Core.timeMillis();
             callbacks = mCallbackQueues[callbackType].extractDueCallbacksLocked(now);
             if (callbacks == null) {
                 return;
@@ -443,7 +443,7 @@ public final class Choreographer {
                 if (DEBUG_FRAMES) {
                     LOGGER.info(MARKER, "RunCallback: type=" + callbackType
                             + ", action=" + c.action + ", token=" + c.token
-                            + ", latencyMillis=" + (ArchCore.timeMillis() - c.dueTime));
+                            + ", latencyMillis=" + (Core.timeMillis() - c.dueTime));
                 }
                 c.run(frameTimeNanos);
             }
@@ -462,7 +462,7 @@ public final class Choreographer {
     void doScheduleCallback(int callbackType) {
         synchronized (mLock) {
             if (!mFrameScheduled) {
-                final long now = ArchCore.timeMillis();
+                final long now = Core.timeMillis();
                 if (mCallbackQueues[callbackType].hasDueCallbacksLocked(now)) {
                     scheduleFrameLocked();
                 }
@@ -513,8 +513,8 @@ public final class Choreographer {
          * <p>
          * This method provides the time in nanoseconds when the frame started being rendered.
          * The frame time provides a stable time base for synchronizing animations
-         * and drawing.  It should be used instead of {@link ArchCore#timeMillis()}
-         * or {@link ArchCore#timeNanos()} for animations and drawing in the UI.  Using the frame
+         * and drawing.  It should be used instead of {@link Core#timeMillis()}
+         * or {@link Core#timeNanos()} for animations and drawing in the UI.  Using the frame
          * time helps to reduce inter-frame jitter because the frame time is fixed at the time
          * the frame was scheduled to start, regardless of when the animations or drawing
          * callback actually runs.  All callbacks that run as part of rendering a frame will
@@ -528,8 +528,8 @@ public final class Choreographer {
          *
          * @param choreographer  the choreographer called this method
          * @param frameTimeNanos The time in nanoseconds when the frame started being rendered,
-         *                       in the {@link ArchCore#timeNanos()} timebase.  Divide this value by {@code 1000000}
-         *                       to convert it to the {@link ArchCore#timeMillis()} time base.
+         *                       in the {@link Core#timeNanos()} timebase.  Divide this value by {@code 1000000}
+         *                       to convert it to the {@link Core#timeMillis()} time base.
          */
         void doFrame(@Nonnull Choreographer choreographer, long frameTimeNanos);
     }

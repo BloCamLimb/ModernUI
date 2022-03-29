@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.drawable;
 
 import icyllis.modernui.annotation.ColorInt;
-import icyllis.modernui.core.ArchCore;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
@@ -230,7 +230,7 @@ public abstract class Drawable {
          * @param who  The drawable being scheduled.
          * @param what The action to execute.
          * @param when The time (in milliseconds) to run.  The timebase is
-         *             {@link ArchCore#timeMillis()}
+         *             {@link Core#timeMillis()}
          */
         void scheduleDrawable(@Nonnull Drawable who, @Nonnull Runnable what, long when);
 

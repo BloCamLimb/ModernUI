@@ -35,10 +35,8 @@ import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.DigitsInputFilter;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.View;
+import icyllis.modernui.view.*;
 import icyllis.modernui.view.View.OnLayoutChangeListener;
-import icyllis.modernui.view.ViewGroup;
 import icyllis.modernui.widget.*;
 import net.minecraft.locale.Language;
 import net.minecraftforge.common.ForgeConfigSpec.IntValue;
@@ -47,13 +45,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import static icyllis.modernui.view.View.dp;
-import static icyllis.modernui.view.ViewGroup.LayoutParams.MATCH_PARENT;
-import static icyllis.modernui.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 public class CenterFragment extends Fragment {
 
     public static final int BACKGROUND_COLOR = 0xc0292a2c;
     public static final int THEME_COLOR = 0xffcda398;
+    public static final int THEME_COLOR_2 = 0xffcd98a3;
 
     @Nullable
     @Override
@@ -281,7 +279,7 @@ public class CenterFragment extends Fragment {
             {
                 var title = new TextView();
                 title.setId(R.id.title);
-                title.setText("General");
+                title.setText("Extension");
                 title.setTextSize(16);
                 title.setTextColor(THEME_COLOR);
 
@@ -323,7 +321,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(34);
-                view.setText("New tooltip");
+                view.setText("Modern tooltip");
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -342,6 +340,74 @@ public class CenterFragment extends Fragment {
 
                 params = new RelativeLayout.LayoutParams(dp(36), dp(16));
                 params.addRule(RelativeLayout.ALIGN_TOP, 34);
+                params.addRule(RelativeLayout.ALIGN_PARENT_END);
+                params.setMargins(dp6, dp(3), dp6, dp(3));
+                general.addView(button, params);
+            }
+
+            {
+                var view = new TextView();
+                view.setId(36);
+                view.setText("★ Modern text engine (heavyweight)");
+                view.setTextSize(14);
+
+                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
+                        WRAP_CONTENT);
+                params.addRule(RelativeLayout.BELOW, 34);
+                params.addRule(RelativeLayout.ALIGN_START, 34);
+                general.addView(view, params);
+
+                var button = new SwitchButton();
+                button.setCheckedColor(THEME_COLOR);
+                button.setChecked((ModernUIForge.getOrLoadBootstrapLevel() & ModernUIForge.BOOTSTRAP_TEXT_ENGINE) == 0);
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    int level = ModernUIForge.getOrLoadBootstrapLevel();
+                    if (checked) {
+                        level &= ~ModernUIForge.BOOTSTRAP_TEXT_ENGINE;
+                    } else {
+                        level |= ModernUIForge.BOOTSTRAP_TEXT_ENGINE;
+                    }
+                    ModernUIForge.setBootstrapLevel(level);
+                    Toast.makeText("Restart the game to take effect", Toast.LENGTH_SHORT)
+                            .show();
+                });
+
+                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
+                params.addRule(RelativeLayout.ALIGN_TOP, 36);
+                params.addRule(RelativeLayout.ALIGN_PARENT_END);
+                params.setMargins(dp6, dp(3), dp6, dp(3));
+                general.addView(button, params);
+            }
+
+            {
+                var view = new TextView();
+                view.setId(38);
+                view.setText("☆ Modern smooth scrolling");
+                view.setTextSize(14);
+
+                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
+                        WRAP_CONTENT);
+                params.addRule(RelativeLayout.BELOW, 36);
+                params.addRule(RelativeLayout.ALIGN_START, 36);
+                general.addView(view, params);
+
+                var button = new SwitchButton();
+                button.setCheckedColor(THEME_COLOR);
+                button.setChecked((ModernUIForge.getOrLoadBootstrapLevel() & ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING) == 0);
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    int level = ModernUIForge.getOrLoadBootstrapLevel();
+                    if (checked) {
+                        level &= ~ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING;
+                    } else {
+                        level |= ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING;
+                    }
+                    ModernUIForge.setBootstrapLevel(level);
+                    Toast.makeText("Restart the game to take effect", Toast.LENGTH_SHORT)
+                            .show();
+                });
+
+                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
+                params.addRule(RelativeLayout.ALIGN_TOP, 38);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
                 params.setMargins(dp6, dp(3), dp6, dp(3));
                 general.addView(button, params);
@@ -374,7 +440,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(42);
-                view.setText("Bitmap-like");
+                view.setText("☆ Bitmap-like");
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -389,6 +455,8 @@ public class CenterFragment extends Fragment {
                 button.setOnCheckedChangeListener((__, checked) -> {
                     Config.CLIENT.bitmapLike.set(checked);
                     Config.CLIENT.saveAndReload();
+                    Toast.makeText("Restart the game to work properly", Toast.LENGTH_SHORT)
+                            .show();
                 });
 
                 params = new RelativeLayout.LayoutParams(dp(36), dp(16));
@@ -401,7 +469,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(44);
-                view.setText("Linear sampling");
+                view.setText("☆ Linear sampling");
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -416,6 +484,8 @@ public class CenterFragment extends Fragment {
                 button.setOnCheckedChangeListener((__, checked) -> {
                     Config.CLIENT.linearSampling.set(checked);
                     Config.CLIENT.saveAndReload();
+                    Toast.makeText("Restart the game to work properly", Toast.LENGTH_SHORT)
+                            .show();
                 });
 
                 params = new RelativeLayout.LayoutParams(dp(36), dp(16));
@@ -791,7 +861,7 @@ public class CenterFragment extends Fragment {
             canvas.drawRoundRect(bounds.left + inner, bounds.top + inner, bounds.right - inner,
                     bounds.bottom - inner, mRadius, paint);
             paint.setStyle(Paint.STROKE);
-            paint.setColor(THEME_COLOR);
+            paint.setColors(THEME_COLOR, THEME_COLOR_2, THEME_COLOR_2, THEME_COLOR);
             paint.setStrokeWidth(mStrokeWidth);
             canvas.drawRoundRect(bounds.left + inner, bounds.top + inner, bounds.right - inner,
                     bounds.bottom - inner, mRadius, paint);

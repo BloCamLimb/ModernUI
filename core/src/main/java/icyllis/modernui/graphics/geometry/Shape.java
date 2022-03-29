@@ -16,10 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.testforge;
+package icyllis.modernui.graphics.geometry;
 
-import icyllis.modernui.forge.UICallback;
-
-public class TestUI extends UICallback {
-
+public class Shape {
 }

@@ -16,15 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.graphics.opengl;
+package icyllis.modernui.graphics;
 
-public final class GLSampler extends GLObject {
-
-    public GLSampler() {
-    }
-
-    @Override
-    public int get() {
-        return 0;
-    }
+/**
+ * The drawing device.
+ */
+public final class Device extends MatrixProvider {
 }

@@ -18,12 +18,8 @@
 
 package icyllis.modernui.core;
 
-import icyllis.modernui.annotation.MainThread;
-import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.annotation.UiThread;
-import icyllis.modernui.graphics.GLCore;
-import org.apache.logging.log4j.Marker;
-import org.apache.logging.log4j.MarkerManager;
+import icyllis.modernui.annotation.*;
+import icyllis.modernui.opengl.GLCore;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -34,30 +30,23 @@ import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URI;
 import java.net.URL;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
-import java.nio.channels.SeekableByteChannel;
+import java.nio.channels.*;
 import java.nio.charset.StandardCharsets;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-import static icyllis.modernui.ModernUI.LOGGER;
+import static icyllis.modernui.ModernUI.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * The core class for the window system and graphics backend,
- * also provides utility methods of native operations and thread scheduling.
+ * The core class for thread management and sub-system initializing, also provides utility methods of
+ * memory operations and thread scheduling.
  */
-public final class ArchCore {
-
-    public static final Marker MARKER = MarkerManager.getMarker("Arch");
+public final class Core {
 
     private static volatile Thread sMainThread;
     private static Thread sRenderThread;
@@ -70,16 +59,25 @@ public final class ArchCore {
     private static final ConcurrentLinkedQueue<Runnable> sMainCalls = new ConcurrentLinkedQueue<>();
     private static final ConcurrentLinkedQueue<Runnable> sRenderCalls = new ConcurrentLinkedQueue<>();
 
+    private Core() {
+    }
+
     /**
-     * Initialize GLFW, call on JVM main thread. This method also specify the main thread.
+     * Initializes the GLFW, call on main thread. This method also specifies the main thread.
      */
     @MainThread
     public static void initialize() {
-        LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
-        if (GLFW.glfwSetErrorCallback(ArchCore::onError) != null || !GLFW.glfwInit()) {
-            throw new IllegalStateException("Failed to initialize GLFW");
+        synchronized (Core.class) {
+            if (sMainThread == null) {
+                LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
+                if (GLFW.glfwSetErrorCallback(Core::onError) != null || !GLFW.glfwInit()) {
+                    throw new IllegalStateException("Failed to initialize GLFW");
+                }
+                sMainThread = Thread.currentThread();
+            } else {
+                throw new IllegalStateException("Initialize twice");
+            }
         }
-        sMainThread = Thread.currentThread();
     }
 
     private static void onError(int error, long description) {
@@ -104,7 +102,7 @@ public final class ArchCore {
      */
     @MainThread
     public static void initMainThread() {
-        synchronized (ArchCore.class) {
+        synchronized (Core.class) {
             if (sMainThread == null) {
                 sMainThread = Thread.currentThread();
             } else {
@@ -113,14 +111,16 @@ public final class ArchCore {
         }
     }
 
+    // not locked, but visible
     public static void checkMainThread() {
         if (Thread.currentThread() != sMainThread)
             throw new IllegalStateException("Not called from main thread. Current " + Thread.currentThread());
     }
 
+    // not locked, but visible on checking, and locked on failure
     public static void checkRenderThread() {
         if (Thread.currentThread() != sRenderThread)
-            synchronized (ArchCore.class) {
+            synchronized (Core.class) {
                 if (sRenderThread == null)
                     throw new IllegalStateException("Render thread was never initialized. " +
                             "Please check whether the loader threw an exception before.");
@@ -130,18 +130,22 @@ public final class ArchCore {
             }
     }
 
+    // not locked, but visible
     public static Thread getMainThread() {
         return sMainThread;
     }
 
+    // not locked, but visible
     public static Thread getRenderThread() {
         return sRenderThread;
     }
 
+    // not locked, but visible
     public static boolean isOnMainThread() {
         return Thread.currentThread() == sMainThread;
     }
 
+    // not locked, but visible
     public static boolean isOnRenderThread() {
         return Thread.currentThread() == sRenderThread;
     }
@@ -154,13 +158,29 @@ public final class ArchCore {
      */
     public static Handler getMainHandlerAsync() {
         if (sMainHandlerAsync == null) {
-            synchronized (ArchCore.class) {
+            synchronized (Core.class) {
                 if (sMainHandlerAsync == null) {
+                    if (Looper.getMainLooper() == null) {
+                        throw new RuntimeException("The main event loop does not exist. Modern UI may be embedded.");
+                    }
                     sMainHandlerAsync = Handler.createAsync(Looper.getMainLooper());
                 }
             }
         }
         return sMainHandlerAsync;
+    }
+
+    /**
+     * Post a delayed operation that will be executed on main thread.
+     *
+     * @param r the runnable
+     */
+    public static void postOnMainThread(@Nonnull Runnable r) {
+        if (Looper.getMainLooper() == null) {
+            sMainCalls.offer(r);
+        } else {
+            getMainHandlerAsync().post(r);
+        }
     }
 
     /**
@@ -173,21 +193,31 @@ public final class ArchCore {
         if (isOnMainThread()) {
             r.run();
         } else {
-            if (Looper.getMainLooper() == null) {
-                sMainCalls.offer(r);
-            } else {
-                getMainHandlerAsync().post(r);
-            }
+            postOnMainThread(r);
         }
     }
 
     /**
      * Post a delayed operation that will be executed on render thread.
+     * Render thread is not a looper thread.
      *
      * @param r the runnable
      */
     public static void postOnRenderThread(@Nonnull Runnable r) {
         sRenderCalls.offer(r);
+    }
+
+    /**
+     * Post a runnable to the render thread queue or execute the runnable immediately.
+     *
+     * @param r the runnable
+     */
+    public static void executeOnRenderThread(@Nonnull Runnable r) {
+        if (isOnRenderThread()) {
+            r.run();
+        } else {
+            postOnRenderThread(r);
+        }
     }
 
     /**
@@ -215,14 +245,13 @@ public final class ArchCore {
      */
     @RenderThread
     public static void initOpenGL() {
-        synchronized (ArchCore.class) {
+        synchronized (Core.class) {
             if (sRenderThread == null) {
                 sRenderThread = Thread.currentThread();
             } else {
                 throw new IllegalStateException("Initialize twice");
             }
         }
-
         // get or create
         GLCapabilities caps;
         try {
@@ -243,7 +272,7 @@ public final class ArchCore {
     }
 
     /**
-     * Return whether render thread is initialized.
+     * Return whether render thread is initialized. Not locked, but visible.
      *
      * @return whether render thread is initialized
      */
@@ -251,13 +280,21 @@ public final class ArchCore {
         return sRenderThread != null;
     }
 
+    /**
+     * Initialize UI thread and its event loop.
+     *
+     * @return the event loop
+     */
+    @Nonnull
     @UiThread
-    public static void initUiThread() {
-        synchronized (ArchCore.class) {
+    public static Looper initUiThread() {
+        synchronized (Core.class) {
             if (sUiThread == null) {
                 sUiThread = Thread.currentThread();
-                sUiHandler = new Handler(Looper.myLooper());
-                sUiHandlerAsync = Handler.createAsync(Looper.myLooper());
+                final Looper looper = Looper.prepare();
+                sUiHandler = new Handler(looper);
+                sUiHandlerAsync = Handler.createAsync(looper);
+                return looper;
             } else {
                 throw new IllegalStateException("Initialize twice");
             }
@@ -266,7 +303,7 @@ public final class ArchCore {
 
     public static void checkUiThread() {
         if (Thread.currentThread() != sUiThread)
-            synchronized (ArchCore.class) {
+            synchronized (Core.class) {
                 if (sUiThread == null)
                     throw new IllegalStateException("UI thread was never initialized. " +
                             "Please check whether the loader threw an exception before.");
@@ -276,16 +313,18 @@ public final class ArchCore {
             }
     }
 
+    // not locked, but visible
     public static Thread getUiThread() {
         return sUiThread;
     }
 
+    // not locked, but visible
     public static boolean isOnUiThread() {
         return Thread.currentThread() == sUiThread;
     }
 
     /**
-     * Return whether UI thread is initialized.
+     * Return whether UI thread is initialized. Not locked, but visible.
      *
      * @return whether UI thread is initialized
      */
@@ -313,6 +352,7 @@ public final class ArchCore {
      * but not necessarily with respect to messages from other Handlers.
      *
      * @return the shared UI handler
+     * @see #getUiHandler()
      */
     public static Handler getUiHandlerAsync() {
         return sUiHandlerAsync;
@@ -349,20 +389,21 @@ public final class ArchCore {
     }
 
     /**
-     * Allocates memory in native and read buffered resource.
-     * The memory MUST be manually freed by {@link MemoryUtil#memFree(Buffer)}.
+     * Allocates native memory and read buffered resource. The memory <b>MUST</b> be
+     * manually freed by {@link MemoryUtil#memFree(Buffer)}. The stream can NOT be
+     * larger than 2 GB. This method does NOT close the channel.
      *
      * @param channel where to read input from
      * @return the native pointer to {@code unsigned char *data}
      * @throws IOException some errors occurred while reading
      */
     @Nonnull
-    public static ByteBuffer readInMemory(ReadableByteChannel channel) throws IOException {
+    public static ByteBuffer readBuffer(ReadableByteChannel channel) throws IOException {
         ByteBuffer p = null;
         try {
             if (channel instanceof final SeekableByteChannel ch) {
                 long rem = ch.size() - ch.position();
-                if (rem > 0x7FFFFFFE) {
+                if (rem > Integer.MAX_VALUE - 1) {
                     throw new IOException("File is too big, found " + rem + " bytes");
                 }
                 p = memAlloc((int) (rem + 1)); // +1 EOF
@@ -371,14 +412,14 @@ public final class ArchCore {
             } else {
                 p = memAlloc(4096);
                 while (channel.read(p) != -1) {
-                    if (p.remaining() <= 0) {
+                    if (p.remaining() == 0) {
                         int cap = p.capacity();
                         p = memRealloc(p, cap + (cap >> 1));
                     }
                 }
             }
         } catch (Throwable t) {
-            // IMPORTANT: in case of memory leakage
+            // IMPORTANT: we cannot return the pointer, so it must be freed here
             memFree(p);
             throw t;
         }
@@ -386,16 +427,17 @@ public final class ArchCore {
     }
 
     /**
-     * Allocates memory in native and read resource to buffer.
-     * The memory must be manually freed by {@link MemoryUtil#memFree(Buffer)}.
+     * Allocates native memory and read buffered resource. The memory <b>MUST</b> be
+     * manually freed by {@link MemoryUtil#memFree(Buffer)}. The stream can NOT be
+     * larger than 2 GB. This method does NOT close the channel.
      *
      * @param stream where to read input from
      * @return the native pointer to {@code unsigned char *data}
      * @throws IOException some errors occurred while reading
      */
     @Nonnull
-    public static ByteBuffer readInMemory(InputStream stream) throws IOException {
-        return readInMemory(Channels.newChannel(stream));
+    public static ByteBuffer readBuffer(InputStream stream) throws IOException {
+        return readBuffer(Channels.newChannel(stream));
     }
 
     /**
@@ -405,10 +447,10 @@ public final class ArchCore {
      * @return string or null if an IOException occurred
      */
     @Nullable
-    public static String readStringUTF8(ReadableByteChannel channel) {
+    public static String readUTF8(ReadableByteChannel channel) {
         ByteBuffer p = null;
         try {
-            p = readInMemory(channel);
+            p = readBuffer(channel);
             final int l = p.position();
             return memUTF8(p.rewind(), l);
         } catch (IOException e) {
@@ -418,15 +460,20 @@ public final class ArchCore {
         }
     }
 
-    // this method doesn't close stream
+    /**
+     * This method doesn't close channel.
+     *
+     * @param stream read from
+     * @return string or null if an IOException occurred
+     */
     @Nullable
-    public static String readStringUTF8(InputStream stream) {
-        return readStringUTF8(Channels.newChannel(stream));
+    public static String readUTF8(InputStream stream) {
+        return readUTF8(Channels.newChannel(stream));
     }
 
     public static void openURL(@Nonnull URL url) {
         try {
-            Process process = Runtime.getRuntime().exec(switch (Platform.get()) {
+            String[] args = switch (Platform.get()) {
                 case WINDOWS -> new String[]{"rundll32", "url.dll,FileProtocolHandler", url.toString()};
                 case MACOSX -> new String[]{"open", url.toString()};
                 default -> {
@@ -436,11 +483,13 @@ public final class ArchCore {
                     }
                     yield new String[]{"xdg-open", s};
                 }
-            });
+            };
+            Process process = Runtime.getRuntime().exec(args);
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(
                     process.getErrorStream(), StandardCharsets.UTF_8))) {
                 reader.lines().forEach(s -> LOGGER.error(MARKER, s));
             }
+            // XXX: should not close them ourselves
             /*try {
                 if (process.getInputStream() != null) {
                     process.getInputStream().close();
@@ -475,7 +524,7 @@ public final class ArchCore {
     public static void openURI(@Nonnull String uri) {
         try {
             openURI(URI.create(uri));
-        } catch (IllegalArgumentException e) {
+        } catch (Exception e) {
             LOGGER.error("Failed to open URI: {}", uri, e);
         }
     }

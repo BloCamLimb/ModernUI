@@ -18,10 +18,9 @@
 
 package icyllis.modernui.testforge.shader;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.ArchCore;
-import icyllis.modernui.graphics.opengl.GLProgram;
+import icyllis.modernui.core.Core;
+import icyllis.modernui.opengl.GLProgram;
 import it.unimi.dsi.fastutil.objects.Object2ObjectAVLTreeMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import net.minecraft.resources.ResourceLocation;
@@ -32,6 +31,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Locale;
 
+import static icyllis.modernui.ModernUI.*;
 import static org.lwjgl.opengl.GL43C.*;
 
 /**
@@ -59,7 +59,7 @@ public final class ShaderShard {
         ++mAttachCount;
         glAttachShader(program.get(), mId);
         if (mDeleted) {
-            ModernUI.LOGGER.warn(ArchCore.MARKER,
+            LOGGER.warn(MARKER,
                     "{} is marked as deleted, but the shader is still trying to attach to program {}",
                     this, program);
         }
@@ -74,7 +74,7 @@ public final class ShaderShard {
                 mAttachCount = Integer.MIN_VALUE;
             }
         } else {
-            ModernUI.LOGGER.warn(ArchCore.MARKER,
+            LOGGER.warn(MARKER,
                     "Try to detach {} from {}, but the shader is not attached to any program",
                     this, program);
         }
@@ -111,7 +111,7 @@ public final class ShaderShard {
             return shader;
         }
         try (InputStream stream = manager.getResource(location).getInputStream()) {
-            String src = ArchCore.readStringUTF8(stream);
+            String src = Core.readUTF8(stream);
             if (src != null) {
                 int id = glCreateShader(type.type);
                 glShaderSource(id, src);
@@ -132,7 +132,8 @@ public final class ShaderShard {
     public static void deleteAll() {
         SHADERS.values().forEach(ShaderShard::delete);
         if (!SHADERS.isEmpty()) {
-            throw new IllegalStateException("There are still " + SHADERS.size() + " shaders attaching to some programs.");
+            throw new IllegalStateException("There are still " + SHADERS.size() + " shaders attaching to some " +
+                    "programs.");
         }
     }
 

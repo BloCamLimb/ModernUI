@@ -27,6 +27,7 @@ public final class MathUtil {
 
     public static final float PI = (float) Math.PI;
 
+    // PI over 2
     public static final float PI_DIV_2 = (float) (Math.PI / 2);
     public static final float PI_DIV_3 = (float) (Math.PI / 3);
     public static final float PI_DIV_4 = (float) (Math.PI / 4);
@@ -107,6 +108,11 @@ public final class MathUtil {
     // approximately equal
     public static boolean approxZero(float a, float b, float c) {
         return approxZero(a) && approxZero(b) && approxZero(c);
+    }
+
+    // approximately equal
+    public static boolean approxZero(float a, float b, float c, float d) {
+        return approxZero(a) && approxZero(b) && approxZero(c) && approxZero(d);
     }
 
     // approximately equal
