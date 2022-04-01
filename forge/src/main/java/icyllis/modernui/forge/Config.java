@@ -429,7 +429,7 @@ final class Config {
             GlyphManager.sBitmapLike = bitmapLike.get();
             FontAtlas.sLinearSampling = linearSampling.get();
 
-            ModernUI.getInstance().getSelectedTypeface();
+            ModernUI.getSelectedTypeface();
         }
     }
 

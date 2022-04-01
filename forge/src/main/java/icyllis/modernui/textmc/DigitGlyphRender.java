@@ -23,10 +23,10 @@ import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.font.TexturedGlyph;
 import net.minecraft.client.renderer.MultiBufferSource;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Map;
 
 /**
  * The key to fast render digit. When given text is String, this is enabled to draw numbers.
@@ -39,10 +39,10 @@ class DigitGlyphRender extends BaseGlyphRender {
      * A reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
      */
     @Nonnull
-    private final Pair<TexturedGlyph[], float[]> mDigits;
+    private final Map.Entry<TexturedGlyph[], float[]> mDigits;
 
     public DigitGlyphRender(int stripIndex, float offsetX, float advance, int decoration,
-                            @Nonnull Pair<TexturedGlyph[], float[]> digits) {
+                            @Nonnull Map.Entry<TexturedGlyph[], float[]> digits) {
         super(stripIndex, offsetX, advance, decoration);
         mDigits = digits;
     }
@@ -53,12 +53,12 @@ class DigitGlyphRender extends BaseGlyphRender {
         int idx = input.charAt(mStringIndex) - '0';
         if (idx < 0 || idx >= 10)
             return;
-        TexturedGlyph glyph = mDigits.getLeft()[idx];
+        TexturedGlyph glyph = mDigits.getKey()[idx];
         builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
         RenderSystem.bindTexture(glyph.texture);
         x += mOffsetX;
         if (idx != 0) {
-            x += mDigits.getRight()[idx];
+            x += mDigits.getValue()[idx];
         }
         x += glyph.offsetX / res;
         y += glyph.offsetY / res;
@@ -78,11 +78,11 @@ class DigitGlyphRender extends BaseGlyphRender {
         int idx = input != null ? input.charAt(mStringIndex) - '0' : 0;
         if (idx < 0 || idx >= 10)
             return;
-        TexturedGlyph glyph = mDigits.getLeft()[idx];
+        TexturedGlyph glyph = mDigits.getKey()[idx];
         VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
         x += mOffsetX;
         if (idx != 0) {
-            x += mDigits.getRight()[idx];
+            x += mDigits.getValue()[idx];
         }
         x += glyph.offsetX / res;
         y += glyph.offsetY / res;

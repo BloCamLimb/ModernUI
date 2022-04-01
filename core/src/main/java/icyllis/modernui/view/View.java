@@ -7719,7 +7719,7 @@ public class View implements Drawable.Callback {
                     mPrivateFlags2 |= PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL;
                     break;
                 case LAYOUT_DIRECTION_LOCALE:
-                    if (TextUtils.getLayoutDirectionFromLocale(ModernUI.getInstance().getSelectedLocale()) ==
+                    if (TextUtils.getLayoutDirectionFromLocale(ModernUI.getSelectedLocale()) ==
                             LAYOUT_DIRECTION_RTL) {
                         mPrivateFlags2 |= PFLAG2_LAYOUT_DIRECTION_RESOLVED_RTL;
                     }

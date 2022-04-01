@@ -22,31 +22,38 @@ import icyllis.modernui.math.Matrix4;
 
 import javax.annotation.Nonnull;
 
-public class MatrixProvider {
+public abstract class MatrixProvider {
 
     final Matrix4 mLocalToDevice;
 
     /**
-     * Create a matrix provider using an identity matrix.
+     * Create a matrix provider from an identity matrix.
      */
     public MatrixProvider() {
         this(Matrix4.identity());
     }
 
     /**
-     * Create a matrix provider using the given matrix.
+     * Create a matrix provider from the given matrix.
      *
      * @param localToDevice the backing matrix
      */
-    public MatrixProvider(@Nonnull Matrix4 localToDevice) {
+    public MatrixProvider(final Matrix4 localToDevice) {
         mLocalToDevice = localToDevice;
     }
 
     /**
-     * @return the backing matrix
+     * {@code const Matrix4& localToDevice() const;}
+     *
+     * @return the backing local-to-device matrix
      */
     @Nonnull
     public final Matrix4 localToDevice() {
         return mLocalToDevice;
     }
+
+    /**
+     * {@code virtual bool getLocalToMarker(uint32_t id, Matrix4* localToMarker) const = 0;}
+     */
+    public abstract boolean getLocalToMarker(int id, Matrix4 localToMarker);
 }

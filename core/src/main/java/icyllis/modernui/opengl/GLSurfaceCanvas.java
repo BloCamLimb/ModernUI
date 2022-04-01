@@ -23,22 +23,14 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.font.FontAtlas;
-import icyllis.modernui.graphics.font.LayoutCache;
-import icyllis.modernui.graphics.font.LayoutPiece;
-import icyllis.modernui.graphics.font.TexturedGlyph;
-import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Rect;
-import icyllis.modernui.math.RectF;
+import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.math.*;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
-import it.unimi.dsi.fastutil.ints.IntStack;
+import it.unimi.dsi.fastutil.ints.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -287,7 +279,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         mSaves.push(new Save());
 
-        ModernUI.LOGGER.info(MARKER, "A new OpenGL surface canvas created");
+        ModernUI.LOGGER.info(MARKER, "Created OpenGL surface canvas");
     }
 
     @RenderThread
@@ -341,7 +333,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         manager.create(ALPHA_TEX, posTex, alphaTex);
         manager.create(COLOR_TEX_MS, posColorTex, colorTexMs);
 
-        ModernUI.LOGGER.info(MARKER, "Loaded shader programs");
+        ModernUI.LOGGER.info(MARKER, "Loaded OpenGL canvas shaders");
     }
 
     @Override

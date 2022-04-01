@@ -25,17 +25,26 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import icyllis.modernui.ModernUI;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import net.minecraft.client.renderer.RenderStateShard;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.VanillaPackResources;
+import net.minecraft.server.packs.resources.ResourceProvider;
+import net.minecraft.server.packs.resources.SimpleResource;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Objects;
 
-class TextRenderType extends RenderType {
+import static icyllis.modernui.ModernUI.*;
 
-    public static final ResourceLocation
+/**
+ * Fast and modern text render type.
+ */
+public class TextRenderType extends RenderType {
+
+    private static final ResourceLocation
             SHADER_RL = new ResourceLocation(ModernUI.ID, "rendertype_modern_text"),
             SHADER_SEE_THROUGH_RL = new ResourceLocation(ModernUI.ID, "rendertype_modern_text_see_through");
 
@@ -43,8 +52,8 @@ class TextRenderType extends RenderType {
             RENDERTYPE_MODERN_TEXT = new ShaderStateShard(TextRenderType::getShader),
             RENDERTYPE_MODERN_TEXT_SEE_THROUGH = new ShaderStateShard(TextRenderType::getShaderSeeThrough);
 
-    private static ShaderInstance sShader;
-    private static ShaderInstance sShaderSeeThrough;
+    private static volatile ShaderInstance sShader;
+    private static volatile ShaderInstance sShaderSeeThrough;
 
     /**
      * Texture id to render type map
@@ -116,7 +125,7 @@ class TextRenderType extends RenderType {
     }
 
     @Nonnull
-    public static TextRenderType getOrCreate(int texture, boolean seeThrough) {
+    static TextRenderType getOrCreate(int texture, boolean seeThrough) {
         TextRenderType type;
         if (seeThrough) {
             // do not use lambdas for deferred construction
@@ -135,7 +144,7 @@ class TextRenderType extends RenderType {
         return type;
     }
 
-    public static void clear() {
+    static void clear() {
         TYPES.clear();
         SEE_THROUGH_TYPES.clear();
     }
@@ -157,15 +166,36 @@ class TextRenderType extends RenderType {
         return sShader;
     }
 
-    public static void setShader(@Nonnull ShaderInstance shader) {
-        sShader = shader;
-    }
-
     public static ShaderInstance getShaderSeeThrough() {
         return sShaderSeeThrough;
     }
 
-    public static void setShaderSeeThrough(@Nonnull ShaderInstance shaderSeeThrough) {
-        sShaderSeeThrough = shaderSeeThrough;
+    /**
+     * Load Modern UI text shaders for early text rendering. These shaders are loaded only once,
+     * and cannot be overridden by other resource packs or reloaded. They will not be closed
+     * unless Minecraft is quited.
+     */
+    public static synchronized void preloadShaders() {
+        if (sShader != null) {
+            return;
+        }
+        final VanillaPackResources resources = Minecraft.getInstance().getClientPackSource().getVanillaPack();
+        final ResourceProvider provider = location -> {
+            // don't worry
+            InputStream stream = ModernUITextMC.class
+                    .getResourceAsStream("/assets/" + location.getNamespace() + "/" + location.getPath());
+            if (stream == null) {
+                return resources.getResource(location);
+            }
+            return new SimpleResource(ModernUI.ID, location, stream, null);
+        };
+        try {
+            sShader = new ShaderInstance(provider, SHADER_RL, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
+            sShaderSeeThrough = new ShaderInstance(provider, TextRenderType.SHADER_SEE_THROUGH_RL,
+                    DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
+        } catch (IOException e) {
+            throw new IllegalStateException("Bad text shaders", e);
+        }
+        LOGGER.info(MARKER, "Preloaded modern text shaders");
     }
 }

@@ -309,7 +309,7 @@ public final class TextDirectionHeuristics {
 
         @Override
         protected boolean isDefaultRtl() {
-            Locale locale = ModernUI.getInstance().getSelectedLocale();
+            Locale locale = ModernUI.getSelectedLocale();
             return TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL;
         }
     }

@@ -31,15 +31,12 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.FormattedCharSink;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * This is where the text layout is actually performed.
@@ -487,8 +484,7 @@ class TextLayoutProcessor {
             }
         }
 
-        List<Run> items = ModernUI.getInstance().getSelectedTypeface()
-                .getFontCollection().itemize(text, start, limit);
+        List<Run> items = ModernUI.getSelectedTypeface().getFontCollection().itemize(text, start, limit);
         for (Run run : items) {
             performTextLayout(text, run.getStart(), run.getEnd(), isRtl, fastDigit, carrier, run.getFont());
         }
@@ -522,8 +518,8 @@ class TextLayoutProcessor {
         }
         font = font.deriveFont(style, 8 * res);
         if (carrier.isObfuscated()) {
-            final Pair<TexturedGlyph[], float[]> digits = layoutEngine.lookupDigits(font);
-            final float advance = digits.getRight()[0];
+            final var digits = layoutEngine.lookupDigits(font);
+            final float advance = digits.getValue()[0];
 
             float offset;
             if (isRtl) {

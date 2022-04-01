@@ -59,7 +59,7 @@ public class TextPaint extends FontPaint {
      */
     public TextPaint() {
         super();
-        mTypeface = ModernUI.getInstance().getSelectedTypeface();
+        mTypeface = ModernUI.getSelectedTypeface();
         mColor = ~0;
     }
 

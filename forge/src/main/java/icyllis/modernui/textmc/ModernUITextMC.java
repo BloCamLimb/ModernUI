@@ -18,20 +18,15 @@
 
 package icyllis.modernui.textmc;
 
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.forge.MuiForgeApi;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import net.minecraft.server.packs.resources.ResourceProvider;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RegisterShadersEvent;
+import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.data.loading.DatagenModLoader;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -39,18 +34,27 @@ import net.minecraftforge.fml.config.IConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.ParallelDispatchEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 
+import static icyllis.modernui.ModernUI.*;
+
+/**
+ * Modern UI Text MC can bootstrap independently.
+ */
 @OnlyIn(Dist.CLIENT)
 public final class ModernUITextMC {
 
     static Config CONFIG;
     private static ForgeConfigSpec CONFIG_SPEC;
 
+    private ModernUITextMC() {
+    }
+
+    @OnlyIn(Dist.CLIENT)
     public static void init() {
         FMLJavaModLoadingContext.get().getModEventBus().register(ModernUITextMC.class);
 
@@ -63,13 +67,14 @@ public final class ModernUITextMC {
         mod.addConfig(new ModConfig(ModConfig.Type.CLIENT, CONFIG_SPEC, mod, ModernUI.NAME_CPT + "/text.toml"));
 
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CONFIG::reload);
+    }
 
-        if (!DatagenModLoader.isRunningDataGen()) {
-            ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager())
-                    .registerReloadListener(
-                            (ResourceManagerReloadListener) (manager) -> TextLayoutEngine.getInstance().reload()
-                    );
-        }
+    @OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
+    static void registerResourceListener(@Nonnull RegisterClientReloadListenersEvent event) {
+        // language may reload, cause TranslatableComponent changed, so clear layout cache
+        event.registerReloadListener((ResourceManagerReloadListener) manager -> TextLayoutEngine.getInstance().reload());
+        LOGGER.debug(MARKER, "Registered language reload listener");
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -78,7 +83,7 @@ public final class ModernUITextMC {
         // preload text engine, note that this event is fired after client config first load
         // so that the typeface is loaded
         Minecraft.getInstance().execute(() -> {
-            ModernUI.getInstance().getSelectedTypeface();
+            ModernUI.getSelectedTypeface();
             TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
         });
         MuiForgeApi.addOnWindowResizeListener((width, height, newScale, oldScale) -> {
@@ -88,13 +93,21 @@ public final class ModernUITextMC {
         });
         MuiForgeApi.addOnDebugDumpListener(builder -> {
             builder.print("Text Layout Entries: ");
-            builder.println(TextLayoutEngine.getInstance().countEntries());
+            builder.println(TextLayoutEngine.getInstance().getLayoutEntryCount());
         });
+        LOGGER.info(MARKER, "Loaded modern text engine");
     }
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
-    static void onShaderReload(@Nonnull RegisterShadersEvent event) {
+    static void onParallelDispatch(@Nonnull ParallelDispatchEvent event) {
+        // since Forge EVENT_BUS is not started yet, we should manually maintain that
+        event.enqueueWork(() -> TextLayoutEngine.getInstance().cleanup());
+    }
+
+    /*@OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
+    static void registerShaders(@Nonnull RegisterShadersEvent event) {
         ResourceProvider provider = event.getResourceManager();
         try {
             event.registerShader(new ShaderInstance(provider, TextRenderType.SHADER_RL,
@@ -104,7 +117,7 @@ public final class ModernUITextMC {
         } catch (IOException e) {
             throw new RuntimeException("Bad shaders", e);
         }
-    }
+    }*/
 
     @OnlyIn(Dist.CLIENT)
     public static class Config {
@@ -170,7 +183,7 @@ public final class ModernUITextMC {
             boolean fixedResolution = mFixedResolution.get();
             if (fixedResolution != TextLayoutEngine.sFixedResolution) {
                 TextLayoutEngine.sFixedResolution = fixedResolution;
-                Minecraft.getInstance().submit(TextLayoutEngine.getInstance()::reload);
+                Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reload());
             }
             /*GlyphManagerForge.sPreferredFont = preferredFont.get();
             GlyphManagerForge.sAntiAliasing = antiAliasing.get();
@@ -180,7 +193,7 @@ public final class ModernUITextMC {
             //GlyphManager.sResolutionLevel = resolutionLevel.get();
             //TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
 
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Text config reloaded with {}", event.getClass().getSimpleName());
+            LOGGER.debug(MARKER, "Text config reloaded with {}", event.getClass().getSimpleName());
         }
     }
 }

@@ -1,11 +1,14 @@
 Changelogs
 ===
-### Modern UI 3.4.2.101 (2022-03-27)
+### Modern UI 3.4.3.102 (2022-04-01)
 #### Forge Extension 1.18.2-40.0.12
-* Add config buttons to disable extensions
+* Refactor the loader and improved compatibility
+* Add buttons to disable text engine and extensions
 * Add radial blur effect (beta)
-* Port to 1.18.2
+* Port to 1.18.2 (1.18.1 works as well)
 #### Modern Text Engine 1.18.2
+* Preload the engine and parallel cleaner
+* Fix font blur when GUI scale is 1 or 2
 * Fix obfuscated chars layout
 #### Core Framework 3.4
 * Internal changes

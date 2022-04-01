@@ -20,24 +20,20 @@ package icyllis.modernui.textmc;
 
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.TexturedGlyph;
 import icyllis.modernui.textmc.mixin.MixinClientLanguage;
 import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.BaseComponent;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.*;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,6 +42,8 @@ import java.awt.font.GlyphVector;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.*;
+
+import static icyllis.modernui.ModernUI.*;
 
 /**
  * Modern Text Engine for Minecraft. Layout text component and extract style info and generate
@@ -56,8 +54,7 @@ import java.util.*;
  * @since 2.0
  */
 @OnlyIn(Dist.CLIENT)
-@Mod.EventBusSubscriber(value = Dist.CLIENT, modid = ModernUI.ID)
-class TextLayoutEngine {
+public class TextLayoutEngine {
 
     /**
      * Instance on render thread
@@ -109,17 +106,17 @@ class TextLayoutEngine {
      */
     private final VanillaTextKey mVanillaLookupKey = new VanillaTextKey();
 
-    private Map<VanillaTextKey, TextRenderNode> mStringCache;
+    private Map<VanillaTextKey, TextRenderNode> mStringCache = new HashMap<>();
 
-    private Map<BaseComponent, TextRenderNode> mComponentCache;
+    private Map<BaseComponent, TextRenderNode> mComponentCache = new HashMap<>();
 
     private final MultilayerTextKey.Lookup mMultilayerLookupKey = new MultilayerTextKey.Lookup();
 
-    private Map<MultilayerTextKey, TextRenderNode> mMultilayerCache;
+    private Map<MultilayerTextKey, TextRenderNode> mMultilayerCache = new HashMap<>();
 
     private final TextLayoutProcessor mProcessor = new TextLayoutProcessor();
 
-    private Map<Font, Pair<TexturedGlyph[], float[]>> mDigitMap;
+    private Map<Font, Map.Entry<TexturedGlyph[], float[]>> mDigitMap = new HashMap<>();
 
     private float mResolutionLevel;
 
@@ -144,6 +141,8 @@ class TextLayoutEngine {
         GlyphManager.getInstance();
         // init
         reload();
+        // events
+        MinecraftForge.EVENT_BUS.register(this);
     }
 
     /**
@@ -164,28 +163,57 @@ class TextLayoutEngine {
     }
 
     /**
+     * Cleanup layout cache.
+     */
+    public void cleanup() {
+        int count = getLayoutEntryCount();
+        mStringCache.clear();
+        mComponentCache.clear();
+        mMultilayerCache.clear();
+        mDigitMap.clear();
+        boolean rehash = count > 500;
+        if (rehash) {
+            // Create new HashMap so that the internal hashtable of old maps are released as well
+            mStringCache = new HashMap<>();
+            mComponentCache = new HashMap<>();
+            mMultilayerCache = new HashMap<>();
+            //mDigitMap = new HashMap<>();
+        }
+        // Clear TextRenderType instances, but font textures are NOT released (intentionally)
+        TextRenderType.clear();
+        if (count > 0) {
+            LOGGER.info(MARKER, "Cleanup {} text layout entries, rehash: {}", count, rehash);
+        }
+    }
+
+    /**
      * Called when resolution level or language changed.
      */
     public void reload() {
-        mStringCache = new HashMap<>();
-        mComponentCache = new HashMap<>();
-        mMultilayerCache = new HashMap<>();
-        mDigitMap = new HashMap<>();
-        TextRenderType.clear();
+        cleanup();
+
+        final float oldLevel = mResolutionLevel;
         if (sFixedResolution) {
-            // make font size to 16
+            // make font size to 16 (8 * 2)
             mResolutionLevel = 2;
         } else {
             int guiScale = Math.round(ViewConfiguration.get().getViewScale() * 2);
             // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
             if (GlyphManager.sBitmapLike) {
                 mResolutionLevel = Math.min(guiScale, 9f);
-            } else {
+            } else if (guiScale > 2) {
+                // HD rendering, give it a bit larger, so looks smoother
                 mResolutionLevel = Math.min(Math.round(guiScale * 4 / 3f), 12f);
+            } else {
+                // 1 or 2
+                mResolutionLevel = guiScale;
             }
         }
-        ModernUI.LOGGER.info(
-                ModernUI.MARKER, "Reloaded text layout engine, new resolution level: {}", mResolutionLevel);
+        if (oldLevel == 0) {
+            LOGGER.info(MARKER, "Loaded text layout engine, res level: {}", mResolutionLevel);
+        } else {
+            LOGGER.info(MARKER, "Reloaded text layout engine, res level: {}->{}", oldLevel, mResolutionLevel);
+        }
     }
 
     /**
@@ -271,8 +299,7 @@ class TextLayoutEngine {
                     .join();
         }
         TextRenderNode node;
-        if (text instanceof BaseComponent) {
-            BaseComponent component = (BaseComponent) text;
+        if (text instanceof BaseComponent component) {
             node = mComponentCache.get(component);
             if (node == null) {
                 node = mProcessor.doLayout(text, style);
@@ -335,28 +362,24 @@ class TextLayoutEngine {
         throw new UnsupportedOperationException();
     }
 
-    @SubscribeEvent
-    static void onClientTick(@Nonnull TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) {
-            getInstance().tick();
-        }
-    }
-
     /**
      * Ticks the caches and clear unused entries.
      */
-    public void tick() {
-        mStringCache.values().removeIf(TextRenderNode::tick);
-        mComponentCache.values().removeIf(TextRenderNode::tick);
-        mMultilayerCache.values().removeIf(TextRenderNode::tick);
+    @SubscribeEvent
+    void tick(@Nonnull TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            mStringCache.values().removeIf(TextRenderNode::tick);
+            mComponentCache.values().removeIf(TextRenderNode::tick);
+            mMultilayerCache.values().removeIf(TextRenderNode::tick);
+        }
     }
 
-    public int countEntries() {
+    public int getLayoutEntryCount() {
         return mStringCache.size() + mComponentCache.size() + mMultilayerCache.size();
     }
 
     /**
-     * Get text formatting from formatting code
+     * Get text formatting from formatting code, faster than Mojang.
      *
      * @param code c
      * @return text formatting, {@code null} if code invalid
@@ -371,26 +394,28 @@ class TextLayoutEngine {
     /**
      * Returns current resolution level for texts.
      *
-     * @return res, an integer in float form
+     * @return res, an integer that converted to float
      */
     public float getResolutionLevel() {
         return mResolutionLevel;
     }
 
     /**
-     * Lookup digit glyph with given font.
+     * Lookup fast digit glyph with given font.
+     * The pair right is the offsetX to standard '0' advance alignment (already scaled by Minecraft).
+     * Because we assume FAST digit glyphs are monospaced, no matter whether it's a monospaced font.
      *
      * @param font derived font including style and font size
-     * @return array of all digit glyphs 0-9 (in that order)
+     * @return array of all fast digit glyphs 0-9 (in that order)
      * @see #cacheDigits(Font)
      */
     @Nonnull
-    public Pair<TexturedGlyph[], float[]> lookupDigits(@Nonnull Font font) {
+    public Map.Entry<TexturedGlyph[], float[]> lookupDigits(@Nonnull Font font) {
         return mDigitMap.computeIfAbsent(font, this::cacheDigits);
     }
 
     @Nonnull
-    private Pair<TexturedGlyph[], float[]> cacheDigits(@Nonnull Font font) {
+    private Map.Entry<TexturedGlyph[], float[]> cacheDigits(@Nonnull Font font) {
         GlyphManager engine = GlyphManager.getInstance();
         TexturedGlyph[] glyphs = new TexturedGlyph[10];
         float[] offsets = new float[10];
@@ -404,14 +429,14 @@ class TextLayoutEngine {
                 offsets[0] = (float) vector.getGlyphPosition(1).getX();
             } else {
                 // additional offset to center it
-                offsets[i] = (float) ((offsets[0] - vector.getGlyphPosition(1).getX()) / 2);
+                offsets[i] = (float) ((offsets[0] - vector.getGlyphPosition(1).getX()) / 2f);
             }
         }
         float res = getResolutionLevel();
         for (int i = 0; i < 10; i++) {
             offsets[i] /= res;
         }
-        return Pair.of(glyphs, offsets);
+        return Map.entry(glyphs, offsets);
     }
 
     /**
