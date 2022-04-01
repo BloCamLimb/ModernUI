@@ -20,28 +20,28 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
+import icyllis.modernui.core.Handler;
 import icyllis.modernui.forge.mixin.AccessOption;
 import icyllis.modernui.forge.mixin.AccessVideoSettings;
-import icyllis.modernui.testforge.TestContainerMenu;
+import icyllis.modernui.opengl.ShaderManager;
+import icyllis.modernui.opengl.TextureManager;
 import icyllis.modernui.test.TestFragment;
+import icyllis.modernui.testforge.TestContainerMenu;
 import icyllis.modernui.testforge.TestPauseFragment;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.Option;
-import net.minecraft.client.ProgressOption;
+import net.minecraft.client.*;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.ClientRegistry;
-import net.minecraftforge.client.event.ModelBakeEvent;
-import net.minecraftforge.client.event.ModelRegistryEvent;
-import net.minecraftforge.client.event.ParticleFactoryRegisterEvent;
+import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.model.ForgeModelBakery;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
@@ -60,6 +60,8 @@ import java.security.NoSuchAlgorithmException;
 import java.util.Locale;
 import java.util.Map;
 import java.util.function.Function;
+
+import static icyllis.modernui.ModernUI.*;
 
 /**
  * This class handles mod loading events, all registry entries are only available under the development mode.
@@ -91,8 +93,27 @@ final class Registration {
     @SubscribeEvent
     static void loadingClient(ParticleFactoryRegisterEvent event) {
         // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread (render thread)
-        Core.initOpenGL();
+        // this event fired before RegisterClientReloadListenersEvent
         UIManager.initialize();
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
+    static void registerResourceListener(@Nonnull RegisterClientReloadListenersEvent event) {
+        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread (render thread)
+        // this event fired after ParticleFactoryRegisterEvent
+        event.registerReloadListener((ResourceManagerReloadListener) manager -> {
+            ShaderManager.getInstance().reload();
+            TextureManager.getInstance().reload();
+            Handler handler = Core.getUiHandlerAsync();
+            // FML may throw ex, so it can be null
+            if (handler != null) {
+                // Call in lambda, not in creating the lambda
+                handler.post(() -> UIManager.getInstance().updateLayoutDir());
+            }
+        });
+
+        LOGGER.debug(MARKER, "Registered resource reload listener");
     }
 
     @SubscribeEvent
@@ -114,7 +135,7 @@ final class Registration {
         }*/
         if (ModList.get().getModContainerById(new String(new byte[]{0x1f ^ 0x74, (0x4 << 0x1) | 0x41,
                 ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent()) {
-            event.enqueueWork(() -> ModernUI.LOGGER.fatal("OK"));
+            event.enqueueWork(() -> LOGGER.fatal("OK"));
         }
         /*bytes = ArrayUtils.addAll(bytes, ModList.get().getModFileById(ModernUI.ID).getLicense()
                 .getBytes(StandardCharsets.UTF_8));
@@ -128,7 +149,7 @@ final class Registration {
 
         // give it a probe
         if (MuiForgeApi.isServerStarted()) {
-            ModernUI.LOGGER.fatal("OK");
+            LOGGER.info(MARKER, "");
         }
     }
 
@@ -169,10 +190,7 @@ final class Registration {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
-        Minecraft.getInstance().execute(() -> {
-            Core.initMainThread();
-            ModernUI.getInstance().getSelectedTypeface();
-        });
+        Minecraft.getInstance().execute(ModernUI::getSelectedTypeface);
 
         // Always replace static variable as an insurance policy
         /*AccessOption.setGuiScale(new CycleOption("options.guiScale",
@@ -195,7 +213,7 @@ final class Registration {
                 field.setAccessible(true);
                 settings = (Option[]) field.get(null);
             } catch (Exception e) {
-                ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to be compatible with OptiFine video settings", e);
+                LOGGER.error(ModernUI.MARKER, "Failed to be compatible with OptiFine video settings", e);
             }
         } else {
             settings = AccessVideoSettings.getOptions();
@@ -226,7 +244,7 @@ final class Registration {
             }
         }
         if (!captured) {
-            ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to capture video settings");
+            LOGGER.error(MARKER, "Failed to capture video settings");
         }
     }
 

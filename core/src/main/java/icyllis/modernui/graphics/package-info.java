@@ -16,6 +16,10 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
+/**
+ * The graphics package defines application-level interfaces that are independent of
+ * the underlying 3D API. These are only driven by the GPU (hardware).
+ */
 @ParametersAreNonnullByDefault
 package icyllis.modernui.graphics;
 

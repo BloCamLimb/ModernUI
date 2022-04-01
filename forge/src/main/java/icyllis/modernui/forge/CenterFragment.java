@@ -359,9 +359,9 @@ public class CenterFragment extends Fragment {
 
                 var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
-                button.setChecked((ModernUIForge.getOrLoadBootstrapLevel() & ModernUIForge.BOOTSTRAP_TEXT_ENGINE) == 0);
+                button.setChecked((ModernUIForge.getBootstrapLevel() & ModernUIForge.BOOTSTRAP_TEXT_ENGINE) == 0);
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    int level = ModernUIForge.getOrLoadBootstrapLevel();
+                    int level = ModernUIForge.getBootstrapLevel();
                     if (checked) {
                         level &= ~ModernUIForge.BOOTSTRAP_TEXT_ENGINE;
                     } else {
@@ -393,9 +393,9 @@ public class CenterFragment extends Fragment {
 
                 var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
-                button.setChecked((ModernUIForge.getOrLoadBootstrapLevel() & ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING) == 0);
+                button.setChecked((ModernUIForge.getBootstrapLevel() & ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING) == 0);
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    int level = ModernUIForge.getOrLoadBootstrapLevel();
+                    int level = ModernUIForge.getBootstrapLevel();
                     if (checked) {
                         level &= ~ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING;
                     } else {

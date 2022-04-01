@@ -65,7 +65,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     public static final Logger LOGGER = LogManager.getLogger(NAME_CPT);
     public static final Marker MARKER = MarkerManager.getMarker("Core");
 
-    protected static volatile ModernUI sInstance;
+    private static volatile ModernUI sInstance;
 
     private static final Cleaner sCleaner = Cleaner.create();
 
@@ -100,7 +100,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             if (sInstance == null) {
                 sInstance = this;
             } else {
-                throw new IllegalStateException("Multiple instances");
+                throw new RuntimeException("Multiple instances");
             }
         }
     }
@@ -318,23 +318,44 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
     }
 
     /**
-     * Get the preferred locale set by user.
+     * Get the default or preferred locale set by user.
      *
-     * @return selected locale
+     * @return the selected locale
      */
-    @Nonnull
-    public Locale getSelectedLocale() {
+    protected Locale onGetSelectedLocale() {
         return Locale.getDefault();
     }
 
     /**
-     * Get the preferred typeface set by user.
+     * Get the default or preferred locale set by user.
      *
-     * @return selected typeface
+     * @return the selected locale
      */
     @Nonnull
-    public Typeface getSelectedTypeface() {
+    public static Locale getSelectedLocale() {
+        return sInstance == null ? Locale.getDefault() : sInstance.onGetSelectedLocale();
+    }
+
+    /**
+     * Get the default or preferred typeface set by user.
+     *
+     * @return the selected typeface
+     */
+    @Nonnull
+    protected Typeface onGetSelectedTypeface() {
         return Typeface.DEFAULT;
+    }
+
+    /**
+     * Get the default or preferred typeface set by user.
+     *
+     * @return the selected typeface
+     */
+    @Nonnull
+    public static Typeface getSelectedTypeface() {
+        // Typeface.DEFAULT is designed for Modern UI default instance
+        // for case instance is not available, use sans serif
+        return sInstance == null ? Typeface.SANS_SERIF : sInstance.onGetSelectedTypeface();
     }
 
     /**

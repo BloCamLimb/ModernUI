@@ -1,5 +1,5 @@
 modLoader="javafml"
-loaderVersion="[40,)"
+loaderVersion="[39,)"
 issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
 logoFile= "modernui_logo.png"
 license="Multi-licensing, see https://github.com/BloCamLimb/ModernUI for details"
@@ -10,21 +10,21 @@ license="Multi-licensing, see https://github.com/BloCamLimb/ModernUI for details
     displayName="Modern UI"
     displayURL="https://curseforge.com/minecraft/mc-mods/modern-ui"
     authors="BloCamLimb"
-    credits="Khronos Group, LWJGL, The Android Open Source Project, et al."
     description='''
-    Modern UI is a desktop application framework designed for standalone 2D and 3D rendering software development. It makes use of modern 3D graphical APIs and technologies to provide high real-time rendering performance. For good measure, Modern UI improves and optimizes a set of features used by Android Open Source Project and its own set of internationalization supporting text layout engine meeting Unicode specification.
+    Modern desktop framework from low-level 3D graphics API to high-level MVVM architecture, for development of 2D/3D rendering software or game engine, with internationalization support and many new technologies.
+    Modern UI is a desktop application framework designed for standalone 2D and 3D rendering software development. It makes use of modern 3D graphical APIs and technologies to provide high real-time rendering performance. For good measure, Modern UI improves and optimizes a set of features used by Android and its own set of internationalization supporting text layout engine meeting Unicode specification.
     This version is an official version that extends to Minecraft and Forge, which combines Modern UI with Minecraft and provides a large number of additional features and modding APIs.
     '''
 
 [[dependencies.modernui]]
     modId="forge"
     mandatory=true
-    versionRange="[40.0.12,)"
+    versionRange="[39.1.2,)"
     ordering="NONE"
     side="BOTH"
 [[dependencies.modernui]]
     modId="minecraft"
     mandatory=true
-    versionRange="[1.18.2, 1.19)"
+    versionRange="[1.18.1, 1.19)"
     ordering="NONE"
     side="BOTH"

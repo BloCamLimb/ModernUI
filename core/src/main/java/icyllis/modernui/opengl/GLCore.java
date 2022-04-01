@@ -111,10 +111,10 @@ public final class GLCore extends GL45C {
     }*/
 
     @RenderThread
-    public static int initialize(@Nonnull GLCapabilities caps) {
+    public static void initialize(@Nonnull GLCapabilities caps) {
         Core.checkRenderThread();
         if (sInitialized) {
-            return 0;
+            return;
         }
 
         if (glGetPointer(GL_DEBUG_CALLBACK_FUNCTION) == NULL) {
@@ -159,9 +159,10 @@ public final class GLCore extends GL45C {
         LOGGER.info(MARKER, "OpenGL vendor: {}", glGetString(GL_VENDOR));
         LOGGER.info(MARKER, "OpenGL renderer: {}", glGetString(GL_RENDERER));
 
-        int count = 0;
+        int count = -1;
         if (!caps.OpenGL45) {
             LOGGER.debug(MARKER, "OpenGL 4.5 was not requested, testing ARBs...");
+            count++;
 
             if (caps.GL_ARB_vertex_buffer_object) {
                 LOGGER.debug(MARKER, "ARB vertex buffer object enabled");
@@ -279,6 +280,8 @@ public final class GLCore extends GL45C {
                     "Lower than OpenGL 4.5 and ARB test failed (see log for details). " +
                             "Your GPU is " + glGetString(GL_RENDERER) + " and your version is OpenGL " + glVersion +
                             ". " + solution, "ok", "error", true);
+        } else if (count == 0) {
+            LOGGER.debug(MARKER, "Passed OpenGL 4.5 equivalent ARB extension test");
         }
 
         /*if (sRedirector == null) {
@@ -289,8 +292,6 @@ public final class GLCore extends GL45C {
         }*/
 
         sInitialized = true;
-        LOGGER.info(MARKER, "Initialized GLCore");
-        return count;
     }
 
     private static void onDebugMessage(int source, int type, int id, int severity, int length, long message,

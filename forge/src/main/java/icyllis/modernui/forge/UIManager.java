@@ -205,7 +205,7 @@ public final class UIManager implements LifecycleOwner {
         Core.checkRenderThread();
         assert sInstance == null;
         sInstance = new UIManager();
-        LOGGER.info(MARKER, "UI system initialized");
+        LOGGER.info(MARKER, "UI manager initialized");
     }
 
     @Nonnull
@@ -391,7 +391,7 @@ public final class UIManager implements LifecycleOwner {
     @UiThread
     private void init() {
         long startTime = System.nanoTime();
-        mLooper = Core.initUiThread();;
+        mLooper = Core.initUiThread();
 
         mRoot = this.new ViewRootImpl();
 
@@ -433,7 +433,7 @@ public final class UIManager implements LifecycleOwner {
         mFragmentLifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START);
         mFragmentController.dispatchStart();
 
-        LOGGER.info(MARKER, "View system initialized in {}ms", (System.nanoTime() - startTime) / 1000000);
+        LOGGER.info(MARKER, "UI thread initialized in {}ms", (System.nanoTime() - startTime) / 1000000);
 
         // test stuff
         /*Paint paint = Paint.take();
