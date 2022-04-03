@@ -107,7 +107,7 @@ public class ConservativeClip {
         }
         final RectF fr = sRectF.get();
         fr.set(localRect);
-        ctm.transform(fr);
+        ctm.mapRect(fr);
         final Rect r = sRect.get();
         if (doAA) {
             fr.roundOut(r);

@@ -868,7 +868,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_X
      */
     public float getX() {
-        return mTransform.transformPointX(mRawXCursorPosition, mRawYCursorPosition);
+        return mTransform.mapPointX(mRawXCursorPosition, mRawYCursorPosition);
     }
 
     /**
@@ -878,7 +878,7 @@ public final class MotionEvent extends InputEvent {
      * @see #AXIS_Y
      */
     public float getY() {
-        return mTransform.transformPointY(mRawXCursorPosition, mRawYCursorPosition);
+        return mTransform.mapPointY(mRawXCursorPosition, mRawYCursorPosition);
     }
 
     /**
@@ -1032,7 +1032,7 @@ public final class MotionEvent extends InputEvent {
      * @param matrix The transformation matrix to apply.
      */
     public void transform(@Nonnull Matrix4 matrix) {
-        mTransform.multiply(matrix);
+        mTransform.preMul(matrix);
     }
 
     /**

@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,28 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.math;
+package icyllis.modernui.graphics;
 
-import javax.annotation.Nonnull;
-
-/**
- * Represents a four-dimensional vector.
- */
-@SuppressWarnings("unused")
-public class Vector4 {
-
-    // coordinate components
-    public float x;
-    public float y;
-    public float z;
-    public float w;
-
-    /**
-     * Transform this vector by a 4x4 transformation matrix.
-     *
-     * @param mat the matrix used as the transformation
-     */
-    public void transform(@Nonnull Matrix4 mat) {
-        mat.preTransform(this);
-    }
+public class SurfaceCanvas {
 }

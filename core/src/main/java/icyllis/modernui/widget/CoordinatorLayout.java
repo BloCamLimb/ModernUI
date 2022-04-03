@@ -458,7 +458,7 @@ public class CoordinatorLayout extends ViewGroup {
 
         RectF rectF = sRectF.get();
         rectF.set(rect);
-        m.transform(rectF);
+        m.mapRect(rectF);
         rectF.round(rect);
     }
 
@@ -472,7 +472,7 @@ public class CoordinatorLayout extends ViewGroup {
         m.translate(view.getLeft(), view.getTop());
 
         if (!view.getMatrix().isIdentity()) {
-            m.multiply(view.getMatrix());
+            m.preMul(view.getMatrix());
         }
     }
 

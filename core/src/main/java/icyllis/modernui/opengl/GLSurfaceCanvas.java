@@ -935,7 +935,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         RectF temp = mTmpRectF;
         temp.set(left, top, right, bottom);
-        getMatrix().transform(temp);
+        getMatrix().mapRect(temp);
 
         Rect test = mTmpRect;
         temp.roundOut(test);
@@ -975,7 +975,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         RectF temp = mTmpRectF;
         temp.set(left, top, right, bottom);
-        getMatrix().transform(temp);
+        getMatrix().mapRect(temp);
 
         Rect test = mTmpRect;
         temp.roundOut(test);
