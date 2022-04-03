@@ -347,7 +347,7 @@ public class Vector3 {
      * @param mat the matrix to transform from
      */
     public void transform(@Nonnull Matrix4 mat) {
-        mat.transform(this);
+        mat.preTransform(this);
     }
 
     /**
@@ -356,7 +356,7 @@ public class Vector3 {
      * @param mat the matrix to transform from
      */
     public void preTransform(@Nonnull Matrix4 mat) {
-        mat.preTransform(this);
+        mat.postTransform(this);
     }
 
     /**
@@ -435,18 +435,18 @@ public class Vector3 {
 
     @Override
     public int hashCode() {
-        int result = (x != +0.0f ? Float.floatToIntBits(x) : 0);
-        result = 31 * result + (y != +0.0f ? Float.floatToIntBits(y) : 0);
-        result = 31 * result + (z != +0.0f ? Float.floatToIntBits(z) : 0);
+        int result = (x != 0.0f ? Float.floatToIntBits(x) : 0);
+        result = 31 * result + (y != 0.0f ? Float.floatToIntBits(y) : 0);
+        result = 31 * result + (z != 0.0f ? Float.floatToIntBits(z) : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "Vector3[" + x +
+        return "Vector3(" + x +
                 ", " + y +
                 ", " + z +
-                ']';
+                ')';
     }
 
     @Nonnull

@@ -2816,7 +2816,7 @@ public class View implements Drawable.Callback {
                     && MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY;
             final boolean matchesSpecSize = getMeasuredWidth() == MeasureSpec.getSize(widthMeasureSpec)
                     && getMeasuredHeight() == MeasureSpec.getSize(heightMeasureSpec);
-            needsLayout |= specChanged && (!isSpecExactly || !matchesSpecSize);
+            needsLayout = specChanged && (!isSpecExactly || !matchesSpecSize);
         }
 
         if (needsLayout) {
@@ -3929,24 +3929,30 @@ public class View implements Drawable.Callback {
      *                  or FOCUS_BACKWARD.
      * @return The user specified next view, or null if there is none.
      */
+    @Nullable
     View findUserSetNextFocus(View root, @FocusDirection int direction) {
         switch (direction) {
-            case FOCUS_LEFT:
+            case FOCUS_LEFT -> {
                 if (mNextFocusLeftId == View.NO_ID) return null;
                 return findViewInsideOutShouldExist(root, mNextFocusLeftId);
-            case FOCUS_RIGHT:
+            }
+            case FOCUS_RIGHT -> {
                 if (mNextFocusRightId == View.NO_ID) return null;
                 return findViewInsideOutShouldExist(root, mNextFocusRightId);
-            case FOCUS_UP:
+            }
+            case FOCUS_UP -> {
                 if (mNextFocusUpId == View.NO_ID) return null;
                 return findViewInsideOutShouldExist(root, mNextFocusUpId);
-            case FOCUS_DOWN:
+            }
+            case FOCUS_DOWN -> {
                 if (mNextFocusDownId == View.NO_ID) return null;
                 return findViewInsideOutShouldExist(root, mNextFocusDownId);
-            case FOCUS_FORWARD:
+            }
+            case FOCUS_FORWARD -> {
                 if (mNextFocusForwardId == View.NO_ID) return null;
                 return findViewInsideOutShouldExist(root, mNextFocusForwardId);
-            case FOCUS_BACKWARD: {
+            }
+            case FOCUS_BACKWARD -> {
                 if (mID == View.NO_ID) return null;
                 final View rootView = root;
                 final View startView = this;
@@ -6947,10 +6953,9 @@ public class View implements Drawable.Callback {
      * Sets the behavior for overlapping rendering for this view (see {@link
      * #hasOverlappingRendering()} for more details on this behavior). Calling this method
      * is an alternative to overriding {@link #hasOverlappingRendering()} in a subclass,
-     * providing the value which is then used internally. That is, when {@link
-     * #forceHasOverlappingRendering(boolean)} is called, the value of {@link
-     * #hasOverlappingRendering()} is ignored and the value passed into this method is used
-     * instead.
+     * providing the value which is then used internally. That is, when this method
+     * is called, the value of {@link #hasOverlappingRendering()} is ignored and the
+     * value passed into this method is used instead.
      *
      * @param hasOverlappingRendering The value for overlapping rendering to be used internally
      *                                instead of that returned by {@link #hasOverlappingRendering()}.
@@ -9190,7 +9195,7 @@ public class View implements Drawable.Callback {
         matrix.translate(mLeft, mTop);
 
         if (!hasIdentityMatrix()) {
-            matrix.multiply(getMatrix());
+            matrix.preMul(getMatrix());
         }
     }
 
@@ -9210,7 +9215,7 @@ public class View implements Drawable.Callback {
         matrix.postTranslate(-mLeft, -mTop);
 
         if (!hasIdentityMatrix()) {
-            matrix.postMultiply(getInverseMatrix());
+            matrix.postMul(getInverseMatrix());
         }
     }
 
@@ -9248,7 +9253,7 @@ public class View implements Drawable.Callback {
      */
     public void mapRectFromViewToScreenCoords(@Nonnull RectF rect, boolean clipToParent) {
         if (!hasIdentityMatrix()) {
-            getMatrix().transform(rect);
+            getMatrix().mapRect(rect);
         }
 
         rect.offset(mLeft, mTop);
@@ -9266,7 +9271,7 @@ public class View implements Drawable.Callback {
             }
 
             if (!parentView.hasIdentityMatrix()) {
-                parentView.getMatrix().transform(rect);
+                parentView.getMatrix().mapRect(rect);
             }
 
             rect.offset(parentView.mLeft, parentView.mTop);
@@ -9323,7 +9328,7 @@ public class View implements Drawable.Callback {
         position[1] = inOutLocation[1];
 
         if (!hasIdentityMatrix()) {
-            getMatrix().transformPoint(position);
+            getMatrix().mapPoint(position);
         }
 
         position[0] += mLeft;
@@ -9336,7 +9341,7 @@ public class View implements Drawable.Callback {
             position[1] -= view.mScrollY;
 
             if (!view.hasIdentityMatrix()) {
-                view.getMatrix().transformPoint(position);
+                view.getMatrix().mapPoint(position);
             }
 
             position[0] += view.mLeft;
@@ -9442,8 +9447,9 @@ public class View implements Drawable.Callback {
      * @return The first view that matches the predicate or null.
      * @hide
      */
+    @Nullable
     public final <T extends View> T findViewByPredicateInsideOut(
-            View start, Predicate<View> predicate) {
+            @Nonnull View start, Predicate<View> predicate) {
         View childToSkip = null;
         for (; ; ) {
             T view = start.findViewByPredicateTraversal(predicate, childToSkip);
@@ -9452,7 +9458,7 @@ public class View implements Drawable.Callback {
             }
 
             ViewParent parent = start.getParent();
-            if (parent == null || !(parent instanceof View)) {
+            if (!(parent instanceof View)) {
                 return null;
             }
 
@@ -11382,7 +11388,7 @@ public class View implements Drawable.Callback {
         } else {
             final RectF tmpRect = mAttachInfo.mTmpTransformRect;
             tmpRect.set(0, 0, getWidth(), getHeight());
-            getMatrix().transform(tmpRect);
+            getMatrix().mapRect(tmpRect);
             outRect.set((int) tmpRect.left + mLeft, (int) tmpRect.top + mTop,
                     (int) tmpRect.right + mLeft, (int) tmpRect.bottom + mTop);
         }

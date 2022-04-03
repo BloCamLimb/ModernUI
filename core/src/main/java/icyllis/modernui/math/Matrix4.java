@@ -23,16 +23,20 @@ import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-import static org.lwjgl.system.MemoryUtil.memPutFloat;
+import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * Represents a 4x4 row-major matrix. Note that GLSL is column-major.
+ * Represents a 4x4 row-major matrix.
  */
 @SuppressWarnings("unused")
-public class Matrix4 implements Cloneable {
+public final class Matrix4 implements Cloneable {
 
     // matrix elements, m(ij) (row, column)
-    // directly use primitive type will be faster than array in Java
+    // directly using primitives will be faster than array in Java
+    // [m11 m12 m13 m14]
+    // [m21 m22 m23 m24]
+    // [m31 m32 m33 m34]
+    // [m41 m42 m43 m44]
     float m11;
     float m12;
     float m13;
@@ -59,8 +63,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Create a matrix from an array of elements, the ordering is
-     * in row-major form.
+     * Create a matrix from an array of elements in row-major.
      *
      * @param a the array to create from
      * @see #set(float[])
@@ -70,16 +73,18 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Create a matrix from an existing matrix.
+     * Create a matrix copied from an existing matrix.
      *
      * @param mat the matrix to create from
+     * @see #set(Matrix4)
      */
     public Matrix4(@Nonnull Matrix4 mat) {
         set(mat);
     }
 
     /**
-     * Create a copy of {@code mat} if it's not null, or a new identity matrix otherwise.
+     * Create a copy of {@code mat} if not null, otherwise a new identity matrix.
+     * Note: we assume null is identity.
      *
      * @param mat the matrix to copy from
      * @return a copy of the matrix
@@ -96,7 +101,7 @@ public class Matrix4 implements Cloneable {
      */
     @Nonnull
     public static Matrix4 identity() {
-        Matrix4 mat = new Matrix4();
+        final Matrix4 mat = new Matrix4();
         mat.m11 = mat.m22 = mat.m33 = mat.m44 = 1.0f;
         return mat;
     }
@@ -114,7 +119,7 @@ public class Matrix4 implements Cloneable {
      */
     @Nonnull
     public static Matrix4 makeOrthographic(float left, float right, float bottom, float top, float near, float far) {
-        Matrix4 mat = new Matrix4();
+        final Matrix4 mat = new Matrix4();
         float invRL = 1.0f / (right - left);
         float invTB = 1.0f / (top - bottom);
         float invNF = 1.0f / (near - far);
@@ -140,7 +145,7 @@ public class Matrix4 implements Cloneable {
      */
     @Nonnull
     public static Matrix4 makeOrthographic(float width, float height, float near, float far) {
-        Matrix4 mat = new Matrix4();
+        final Matrix4 mat = new Matrix4();
         float invNF = 1.0f / (near - far);
         mat.m11 = 2.0f / width;
         mat.m22 = -2.0f / height;
@@ -165,7 +170,7 @@ public class Matrix4 implements Cloneable {
      */
     @Nonnull
     public static Matrix4 makePerspective(float left, float right, float bottom, float top, float near, float far) {
-        Matrix4 mat = new Matrix4();
+        final Matrix4 mat = new Matrix4();
         float invRL = 1.0f / (right - left);
         float invTB = 1.0f / (top - bottom);
         float invNF = 1.0f / (near - far);
@@ -191,7 +196,7 @@ public class Matrix4 implements Cloneable {
      */
     @Nonnull
     public static Matrix4 makePerspective(float fov, float aspect, float near, float far) {
-        Matrix4 mat = new Matrix4();
+        final Matrix4 mat = new Matrix4();
         float y = (float) (1.0 / Math.tan(fov * 0.5));
         float invNF = 1.0f / (near - far);
         mat.m11 = y / aspect;
@@ -211,8 +216,8 @@ public class Matrix4 implements Cloneable {
      * @return the resulting matrix
      */
     @Nonnull
-    public static Matrix4 makeTranslation(float x, float y, float z) {
-        Matrix4 mat = new Matrix4();
+    public static Matrix4 makeTranslate(float x, float y, float z) {
+        final Matrix4 mat = new Matrix4();
         mat.m11 = 1.0f;
         mat.m22 = 1.0f;
         mat.m33 = 1.0f;
@@ -226,49 +231,49 @@ public class Matrix4 implements Cloneable {
     /**
      * Add each element of the given matrix to the corresponding element of this matrix.
      *
-     * @param o the addend
+     * @param mat the addend
      */
-    public void add(@Nonnull Matrix4 o) {
-        m11 += o.m11;
-        m12 += o.m12;
-        m13 += o.m13;
-        m14 += o.m14;
-        m21 += o.m21;
-        m22 += o.m22;
-        m23 += o.m23;
-        m24 += o.m24;
-        m31 += o.m31;
-        m32 += o.m32;
-        m33 += o.m33;
-        m34 += o.m34;
-        m41 += o.m41;
-        m42 += o.m42;
-        m43 += o.m43;
-        m44 += o.m44;
+    public void add(@Nonnull Matrix4 mat) {
+        m11 += mat.m11;
+        m12 += mat.m12;
+        m13 += mat.m13;
+        m14 += mat.m14;
+        m21 += mat.m21;
+        m22 += mat.m22;
+        m23 += mat.m23;
+        m24 += mat.m24;
+        m31 += mat.m31;
+        m32 += mat.m32;
+        m33 += mat.m33;
+        m34 += mat.m34;
+        m41 += mat.m41;
+        m42 += mat.m42;
+        m43 += mat.m43;
+        m44 += mat.m44;
     }
 
     /**
      * Subtract each element of the given matrix from the corresponding element of this matrix.
      *
-     * @param o the subtrahend
+     * @param mat the subtrahend
      */
-    public void sub(@Nonnull Matrix4 o) {
-        m11 -= o.m11;
-        m12 -= o.m12;
-        m13 -= o.m13;
-        m14 -= o.m14;
-        m21 -= o.m21;
-        m22 -= o.m22;
-        m23 -= o.m23;
-        m24 -= o.m24;
-        m31 -= o.m31;
-        m32 -= o.m32;
-        m33 -= o.m33;
-        m34 -= o.m34;
-        m41 -= o.m41;
-        m42 -= o.m42;
-        m43 -= o.m43;
-        m44 -= o.m44;
+    public void sub(@Nonnull Matrix4 mat) {
+        m11 -= mat.m11;
+        m12 -= mat.m12;
+        m13 -= mat.m13;
+        m14 -= mat.m14;
+        m21 -= mat.m21;
+        m22 -= mat.m22;
+        m23 -= mat.m23;
+        m24 -= mat.m24;
+        m31 -= mat.m31;
+        m32 -= mat.m32;
+        m33 -= mat.m33;
+        m34 -= mat.m34;
+        m41 -= mat.m41;
+        m42 -= mat.m42;
+        m43 -= mat.m43;
+        m44 -= mat.m44;
     }
 
     /**
@@ -277,7 +282,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param mat the matrix to multiply
      */
-    public void multiply(@Nonnull Matrix3 mat) {
+    public void preMul(@Nonnull Matrix3 mat) {
         final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m13 * m31;
         final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m13 * m32;
         final float f13 = mat.m11 * m13 + mat.m12 * m23 + mat.m13 * m33;
@@ -306,11 +311,11 @@ public class Matrix4 implements Cloneable {
 
     /**
      * Post-multiply this matrix by a 4x4 matrix, whose top left 3x3 is the given
-     * 3x3 matrix, and forth row and column are identity. (this * mat3)
+     * 3x3 matrix, and forth row and column are identity. (this * Matrix4(mat3))
      *
      * @param mat the matrix to multiply with
      */
-    public void postMultiply(@Nonnull Matrix3 mat) {
+    public void postMul(@Nonnull Matrix3 mat) {
         float f1 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31;
         float f2 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32;
         float f3 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33;
@@ -343,7 +348,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param mat the matrix to multiply
      */
-    public void multiply(@Nonnull Matrix4 mat) {
+    public void preMul(@Nonnull Matrix4 mat) {
         final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m13 * m31 + mat.m14 * m41;
         final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m13 * m32 + mat.m14 * m42;
         final float f13 = mat.m11 * m13 + mat.m12 * m23 + mat.m13 * m33 + mat.m14 * m43;
@@ -384,48 +389,43 @@ public class Matrix4 implements Cloneable {
      *
      * @param mat the matrix to multiply
      */
-    public void postMultiply(@Nonnull Matrix4 mat) {
-        if (this == mat) {
-            // need more stack size
-            multiply(this);
-            return;
-        }
-        float f1 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31 + m14 * mat.m41;
-        float f2 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32 + m14 * mat.m42;
-        float f3 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33 + m14 * mat.m43;
-        float f4 = m11 * mat.m14 + m12 * mat.m24 + m13 * mat.m34 + m14 * mat.m44;
-        m11 = f1;
-        m12 = f2;
-        m13 = f3;
-        m14 = f4;
-        f1 = m21 * mat.m11 + m22 * mat.m21 + m23 * mat.m31 + m24 * mat.m41;
-        f2 = m21 * mat.m12 + m22 * mat.m22 + m23 * mat.m32 + m24 * mat.m42;
-        f3 = m21 * mat.m13 + m22 * mat.m23 + m23 * mat.m33 + m24 * mat.m43;
-        f4 = m21 * mat.m14 + m22 * mat.m24 + m23 * mat.m34 + m24 * mat.m44;
-        m21 = f1;
-        m22 = f2;
-        m23 = f3;
-        m24 = f4;
-        f1 = m31 * mat.m11 + m32 * mat.m21 + m33 * mat.m31 + m34 * mat.m41;
-        f2 = m31 * mat.m12 + m32 * mat.m22 + m33 * mat.m32 + m34 * mat.m42;
-        f3 = m31 * mat.m13 + m32 * mat.m23 + m33 * mat.m33 + m34 * mat.m43;
-        f4 = m31 * mat.m14 + m32 * mat.m24 + m33 * mat.m34 + m34 * mat.m44;
-        m31 = f1;
-        m32 = f2;
-        m33 = f3;
-        m34 = f4;
-        f1 = m41 * mat.m11 + m42 * mat.m21 + m43 * mat.m31 + m44 * mat.m41;
-        f2 = m41 * mat.m12 + m42 * mat.m22 + m43 * mat.m32 + m44 * mat.m42;
-        f3 = m41 * mat.m13 + m42 * mat.m23 + m43 * mat.m33 + m44 * mat.m43;
-        f4 = m41 * mat.m14 + m42 * mat.m24 + m43 * mat.m34 + m44 * mat.m44;
-        m41 = f1;
-        m42 = f2;
-        m43 = f3;
-        m44 = f4;
+    public void postMul(@Nonnull Matrix4 mat) {
+        final float f11 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31 + m14 * mat.m41;
+        final float f12 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32 + m14 * mat.m42;
+        final float f13 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33 + m14 * mat.m43;
+        final float f14 = m11 * mat.m14 + m12 * mat.m24 + m13 * mat.m34 + m14 * mat.m44;
+        final float f21 = m21 * mat.m11 + m22 * mat.m21 + m23 * mat.m31 + m24 * mat.m41;
+        final float f22 = m21 * mat.m12 + m22 * mat.m22 + m23 * mat.m32 + m24 * mat.m42;
+        final float f23 = m21 * mat.m13 + m22 * mat.m23 + m23 * mat.m33 + m24 * mat.m43;
+        final float f24 = m21 * mat.m14 + m22 * mat.m24 + m23 * mat.m34 + m24 * mat.m44;
+        final float f31 = m31 * mat.m11 + m32 * mat.m21 + m33 * mat.m31 + m34 * mat.m41;
+        final float f32 = m31 * mat.m12 + m32 * mat.m22 + m33 * mat.m32 + m34 * mat.m42;
+        final float f33 = m31 * mat.m13 + m32 * mat.m23 + m33 * mat.m33 + m34 * mat.m43;
+        final float f34 = m31 * mat.m14 + m32 * mat.m24 + m33 * mat.m34 + m34 * mat.m44;
+        final float f41 = m41 * mat.m11 + m42 * mat.m21 + m43 * mat.m31 + m44 * mat.m41;
+        final float f42 = m41 * mat.m12 + m42 * mat.m22 + m43 * mat.m32 + m44 * mat.m42;
+        final float f43 = m41 * mat.m13 + m42 * mat.m23 + m43 * mat.m33 + m44 * mat.m43;
+        final float f44 = m41 * mat.m14 + m42 * mat.m24 + m43 * mat.m34 + m44 * mat.m44;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m34 = f34;
+        m41 = f41;
+        m42 = f42;
+        m43 = f43;
+        m44 = f44;
     }
 
     /**
-     * Set this matrix to the zero matrix.
+     * Clear this matrix to zero.
      */
     public void setZero() {
         m11 = 0.0f;
@@ -447,7 +447,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Set this matrix to the identity matrix.
+     * Clear this matrix to identity.
      */
     public void setIdentity() {
         m11 = 1.0f;
@@ -466,6 +466,30 @@ public class Matrix4 implements Cloneable {
         m42 = 0.0f;
         m43 = 0.0f;
         m44 = 1.0f;
+    }
+
+    /**
+     * Set this matrix elements to be given matrix.
+     *
+     * @param mat the matrix to copy from
+     */
+    public void set(@Nonnull Matrix4 mat) {
+        m11 = mat.m11;
+        m12 = mat.m12;
+        m13 = mat.m13;
+        m14 = mat.m14;
+        m21 = mat.m21;
+        m22 = mat.m22;
+        m23 = mat.m23;
+        m24 = mat.m24;
+        m31 = mat.m31;
+        m32 = mat.m32;
+        m33 = mat.m33;
+        m34 = mat.m34;
+        m41 = mat.m41;
+        m42 = mat.m42;
+        m43 = mat.m43;
+        m44 = mat.m44;
     }
 
     /**
@@ -500,8 +524,6 @@ public class Matrix4 implements Cloneable {
      * @param a the array to copy from
      */
     public void set(@Nonnull float[] a) {
-        if (a.length < 16)
-            throw new IllegalArgumentException("The array length must be at least 16");
         m11 = a[0];
         m12 = a[1];
         m13 = a[2];
@@ -521,27 +543,28 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Set this matrix elements to be given matrix.
+     * Set this matrix elements from an array.
      *
-     * @param mat the matrix to copy from
+     * @param a the array to copy from
+     * @see #Matrix4(float...)
      */
-    public void set(@Nonnull Matrix4 mat) {
-        m11 = mat.m11;
-        m12 = mat.m12;
-        m13 = mat.m13;
-        m14 = mat.m14;
-        m21 = mat.m21;
-        m22 = mat.m22;
-        m23 = mat.m23;
-        m24 = mat.m24;
-        m31 = mat.m31;
-        m32 = mat.m32;
-        m33 = mat.m33;
-        m34 = mat.m34;
-        m41 = mat.m41;
-        m42 = mat.m42;
-        m43 = mat.m43;
-        m44 = mat.m44;
+    public void set(@Nonnull ByteBuffer a) {
+        m11 = a.getFloat();
+        m12 = a.getFloat();
+        m13 = a.getFloat();
+        m14 = a.getFloat();
+        m21 = a.getFloat();
+        m22 = a.getFloat();
+        m23 = a.getFloat();
+        m24 = a.getFloat();
+        m31 = a.getFloat();
+        m32 = a.getFloat();
+        m33 = a.getFloat();
+        m34 = a.getFloat();
+        m41 = a.getFloat();
+        m42 = a.getFloat();
+        m43 = a.getFloat();
+        m44 = a.getFloat();
     }
 
     /**
@@ -551,8 +574,6 @@ public class Matrix4 implements Cloneable {
      * @see #Matrix4(float...)
      */
     public void set(@Nonnull FloatBuffer a) {
-        if (a.remaining() < 16)
-            throw new IllegalArgumentException("The array length must be at least 16");
         m11 = a.get();
         m12 = a.get();
         m13 = a.get();
@@ -572,13 +593,45 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Set this matrix elements from an address. (UNSAFE).
+     * NOTE: This method does not perform memory security checks.
+     *
+     * @param p the pointer of the array to copy from
+     */
+    public void set(long p) {
+        m11 = memGetFloat(p);
+        m12 = memGetFloat(p + 4);
+        m13 = memGetFloat(p + 8);
+        m14 = memGetFloat(p + 12);
+        m21 = memGetFloat(p + 16);
+        m22 = memGetFloat(p + 20);
+        m23 = memGetFloat(p + 24);
+        m24 = memGetFloat(p + 28);
+        m31 = memGetFloat(p + 32);
+        m32 = memGetFloat(p + 36);
+        m33 = memGetFloat(p + 40);
+        m34 = memGetFloat(p + 44);
+        m41 = memGetFloat(p + 48);
+        m42 = memGetFloat(p + 52);
+        m43 = memGetFloat(p + 56);
+        m44 = memGetFloat(p + 60);
+    }
+
+    /**
+     * Set this matrix elements to be given matrix.
+     *
+     * @param mat the matrix to store
+     */
+    public void put(@Nonnull Matrix4 mat) {
+        mat.set(this);
+    }
+
+    /**
      * Get this matrix data, store them into an array.
      *
      * @param a the array to store
      */
     public void put(@Nonnull float[] a) {
-        if (a.length < 16)
-            throw new IllegalArgumentException("The array length must be at least 16");
         a[0] = m11;
         a[1] = m12;
         a[2] = m13;
@@ -602,35 +655,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param a the pointer of the array to store
      */
-    public void put(@Nonnull FloatBuffer a) {
-        if (a.remaining() < 16)
-            throw new IllegalArgumentException("The array length must be at least 16");
-        a.put(m11);
-        a.put(m12);
-        a.put(m13);
-        a.put(m14);
-        a.put(m21);
-        a.put(m22);
-        a.put(m23);
-        a.put(m24);
-        a.put(m31);
-        a.put(m32);
-        a.put(m33);
-        a.put(m34);
-        a.put(m41);
-        a.put(m42);
-        a.put(m43);
-        a.put(m44);
-    }
-
-    /**
-     * Get this matrix data, store them into an array.
-     *
-     * @param a the pointer of the array to store
-     */
     public void put(@Nonnull ByteBuffer a) {
-        if (a.remaining() < 64)
-            throw new IllegalArgumentException("The array length must be at least 16");
         a.putFloat(m11);
         a.putFloat(m12);
         a.putFloat(m13);
@@ -647,6 +672,30 @@ public class Matrix4 implements Cloneable {
         a.putFloat(m42);
         a.putFloat(m43);
         a.putFloat(m44);
+    }
+
+    /**
+     * Get this matrix data, store them into an array.
+     *
+     * @param a the pointer of the array to store
+     */
+    public void put(@Nonnull FloatBuffer a) {
+        a.put(m11);
+        a.put(m12);
+        a.put(m13);
+        a.put(m14);
+        a.put(m21);
+        a.put(m22);
+        a.put(m23);
+        a.put(m24);
+        a.put(m31);
+        a.put(m32);
+        a.put(m33);
+        a.put(m34);
+        a.put(m41);
+        a.put(m42);
+        a.put(m43);
+        a.put(m44);
     }
 
     /**
@@ -675,8 +724,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Returns the determinant of this matrix. A matrix is invertible
-     * if its determinant is not equal to zero.
+     * Compute the determinant of this matrix.
      *
      * @return the determinant of this matrix
      */
@@ -690,7 +738,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Returns the trace of this matrix.
+     * Compute the trace of this matrix.
      *
      * @return the trace of this matrix
      */
@@ -699,7 +747,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Calculate the transpose of this matrix.
+     * Compute the transpose of this matrix.
      */
     public void transpose() {
         float t = m21;
@@ -723,184 +771,87 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Calculate the adjugate matrix of this matrix.
-     */
-    public void adjugate() {
-        // det of [row1,row2,column1,column2]
-        float det12 = m11 * m22 - m12 * m21;
-        float det13 = m11 * m23 - m13 * m21;
-        float det14 = m11 * m24 - m14 * m21;
-        float det23 = m12 * m23 - m13 * m22;
-        float det24 = m12 * m24 - m14 * m22;
-        float det34 = m13 * m24 - m14 * m23;
-
-        // calc algebraic cofactor
-        final float f31 = m42 * det34 - m43 * det24 + m44 * det23;
-        final float f32 = -m41 * det34 + m43 * det14 - m44 * det13;
-        final float f33 = m41 * det24 - m42 * det14 + m44 * det12;
-        final float f34 = -m41 * det23 + m42 * det13 - m43 * det12;
-        final float f41 = -m32 * det34 + m33 * det24 - m34 * det23;
-        final float f42 = m31 * det34 - m33 * det14 + m34 * det13;
-        final float f43 = -m31 * det24 + m32 * det14 - m34 * det12;
-        final float f44 = m31 * det23 - m32 * det13 + m33 * det12;
-
-        // det of [row3,row4,column1,column2]
-        det12 = m31 * m42 - m32 * m41;
-        det13 = m31 * m43 - m33 * m41;
-        det14 = m31 * m44 - m34 * m41;
-        det23 = m32 * m43 - m33 * m42;
-        det24 = m32 * m44 - m34 * m42;
-        det34 = m33 * m44 - m34 * m43;
-
-        // calc algebraic cofactor
-        final float f11 = m22 * det34 - m23 * det24 + m24 * det23;
-        final float f12 = -m21 * det34 + m23 * det14 - m24 * det13;
-        final float f13 = m21 * det24 - m22 * det14 + m24 * det12;
-        final float f14 = -m21 * det23 + m22 * det13 - m23 * det12;
-        final float f21 = -m12 * det34 + m13 * det24 - m14 * det23;
-        final float f22 = m11 * det34 - m13 * det14 + m14 * det13;
-        final float f23 = -m11 * det24 + m12 * det14 - m14 * det12;
-        final float f24 = m11 * det23 - m12 * det13 + m13 * det12;
-
-        // transpose cofactor matrix
-        m11 = f11;
-        m21 = f12;
-        m31 = f13;
-        m41 = f14;
-        m12 = f21;
-        m22 = f22;
-        m32 = f23;
-        m42 = f24;
-        m13 = f31;
-        m23 = f32;
-        m33 = f33;
-        m43 = f34;
-        m14 = f41;
-        m24 = f42;
-        m34 = f43;
-        m44 = f44;
-    }
-
-    /**
-     * Calculate the inverse of this matrix. This matrix will be inverted
+     * Compute the inverse of this matrix. This matrix will be inverted
      * if it is invertible, otherwise it keeps the same as before.
      *
      * @return {@code true} if this matrix is invertible.
      */
     public boolean invert() {
-        // det of [row1,row2,column1,column2]
-        final float det1_12 = m11 * m22 - m12 * m21;
-        final float det1_13 = m11 * m23 - m13 * m21;
-        final float det1_14 = m11 * m24 - m14 * m21;
-        final float det1_23 = m12 * m23 - m13 * m22;
-        final float det1_24 = m12 * m24 - m14 * m22;
-        final float det1_34 = m13 * m24 - m14 * m23;
-
-        // det of [row3,row4,column1,column2]
-        final float det3_12 = m31 * m42 - m32 * m41;
-        final float det3_13 = m31 * m43 - m33 * m41;
-        final float det3_14 = m31 * m44 - m34 * m41;
-        final float det3_23 = m32 * m43 - m33 * m42;
-        final float det3_24 = m32 * m44 - m34 * m42;
-        final float det3_34 = m33 * m44 - m34 * m43;
-
-        final float det = det1_12 * det3_34 - det1_13 * det3_24 + det1_14 * det3_23 +
-                det1_23 * det3_14 - det1_24 * det3_13 + det1_34 * det3_12;
-        if (MathUtil.approxZero(det)) {
-            return false;
-        }
-
-        // calc algebraic cofactor and transpose cofactor matrix
-        final float s = 1.0f / det;
-        final float f31 = m42 * det1_34 - m43 * det1_24 + m44 * det1_23;
-        final float f32 = -m41 * det1_34 + m43 * det1_14 - m44 * det1_13;
-        final float f33 = m41 * det1_24 - m42 * det1_14 + m44 * det1_12;
-        final float f34 = -m41 * det1_23 + m42 * det1_13 - m43 * det1_12;
-        final float f41 = -m32 * det1_34 + m33 * det1_24 - m34 * det1_23;
-        final float f42 = m31 * det1_34 - m33 * det1_14 + m34 * det1_13;
-        final float f43 = -m31 * det1_24 + m32 * det1_14 - m34 * det1_12;
-        final float f44 = m31 * det1_23 - m32 * det1_13 + m33 * det1_12;
-        final float f11 = m22 * det3_34 - m23 * det3_24 + m24 * det3_23;
-        final float f12 = -m21 * det3_34 + m23 * det3_14 - m24 * det3_13;
-        final float f13 = m21 * det3_24 - m22 * det3_14 + m24 * det3_12;
-        final float f14 = -m21 * det3_23 + m22 * det3_13 - m23 * det3_12;
-        final float f21 = -m12 * det3_34 + m13 * det3_24 - m14 * det3_23;
-        final float f22 = m11 * det3_34 - m13 * det3_14 + m14 * det3_13;
-        final float f23 = -m11 * det3_24 + m12 * det3_14 - m14 * det3_12;
-        final float f24 = m11 * det3_23 - m12 * det3_13 + m13 * det3_12;
-
-        m11 = f11 * s;
-        m21 = f12 * s;
-        m31 = f13 * s;
-        m41 = f14 * s;
-        m12 = f21 * s;
-        m22 = f22 * s;
-        m32 = f23 * s;
-        m42 = f24 * s;
-        m13 = f31 * s;
-        m23 = f32 * s;
-        m33 = f33 * s;
-        m43 = f34 * s;
-        m14 = f41 * s;
-        m24 = f42 * s;
-        m34 = f43 * s;
-        m44 = f44 * s;
-        return true;
+        return invert(this);
     }
 
     /**
-     * Calculate the inverse of this matrix.
+     * Compute the inverse of this matrix. The matrix will be inverted
+     * if this matrix is invertible, otherwise it keeps the same as before.
      *
-     * @param out the out matrix
+     * @param mat the destination matrix
      * @return {@code true} if this matrix is invertible.
      */
-    public boolean invert(@Nonnull Matrix4 out) {
-        final float a = m11 * m22 - m12 * m21;
-        final float b = m11 * m23 - m13 * m21;
-        final float c = m11 * m24 - m14 * m21;
-        final float d = m12 * m23 - m13 * m22;
-        final float e = m12 * m24 - m14 * m22;
-        final float f = m13 * m24 - m14 * m23;
-        final float g = m31 * m42 - m32 * m41;
-        final float h = m31 * m43 - m33 * m41;
-        final float i = m31 * m44 - m34 * m41;
-        final float j = m32 * m43 - m33 * m42;
-        final float k = m32 * m44 - m34 * m42;
-        final float l = m33 * m44 - m34 * m43;
-
-        final float det = a * l - b * k + c * j +
-                d * i - e * h + f * g;
+    public boolean invert(@Nonnull Matrix4 mat) {
+        float b00 = m11 * m22 - m12 * m21;
+        float b01 = m11 * m23 - m13 * m21;
+        float b02 = m11 * m24 - m14 * m21;
+        float b03 = m12 * m23 - m13 * m22;
+        float b04 = m12 * m24 - m14 * m22;
+        float b05 = m13 * m24 - m14 * m23;
+        float b06 = m31 * m42 - m32 * m41;
+        float b07 = m31 * m43 - m33 * m41;
+        float b08 = m31 * m44 - m34 * m41;
+        float b09 = m32 * m43 - m33 * m42;
+        float b10 = m32 * m44 - m34 * m42;
+        float b11 = m33 * m44 - m34 * m43;
+        // calc the determinant
+        float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
         if (MathUtil.approxZero(det)) {
             return false;
         }
-        // calc algebraic cofactor and transpose cofactor matrix
-        final float s = 1.0f / det;
-        out.m11 = (m22 * l - m23 * k + m24 * j) * s;
-        out.m21 = (-m21 * l + m23 * i - m24 * h) * s;
-        out.m31 = (m21 * k - m22 * i + m24 * g) * s;
-        out.m41 = (-m21 * j + m22 * h - m23 * g) * s;
-        out.m12 = (-m12 * l + m13 * k - m14 * j) * s;
-        out.m22 = (m11 * l - m13 * i + m14 * h) * s;
-        out.m32 = (-m11 * k + m12 * i - m14 * g) * s;
-        out.m42 = (m11 * j - m12 * h + m13 * g) * s;
-        out.m13 = (m42 * f - m43 * e + m44 * d) * s;
-        out.m23 = (-m41 * f + m43 * c - m44 * b) * s;
-        out.m33 = (m41 * e - m42 * c + m44 * a) * s;
-        out.m43 = (-m41 * d + m42 * b - m43 * a) * s;
-        out.m14 = (-m32 * f + m33 * e - m34 * d) * s;
-        out.m24 = (m31 * f - m33 * c + m34 * b) * s;
-        out.m34 = (-m31 * e + m32 * c - m34 * a) * s;
-        out.m44 = (m31 * d - m32 * b + m33 * a) * s;
+        // calc algebraic cofactor and transpose
+        det = 1.0f / det;
+        b00 *= det;
+        b01 *= det;
+        b02 *= det;
+        b03 *= det;
+        b04 *= det;
+        b05 *= det;
+        b06 *= det;
+        b07 *= det;
+        b08 *= det;
+        b09 *= det;
+        b10 *= det;
+        b11 *= det;
+        final float f11 = m22 * b11 - m23 * b10 + m24 * b09;
+        final float f12 = m23 * b08 - m21 * b11 - m24 * b07;
+        final float f13 = m21 * b10 - m22 * b08 + m24 * b06;
+        final float f14 = m22 * b07 - m21 * b09 - m23 * b06;
+        final float f21 = m13 * b10 - m12 * b11 - m14 * b09;
+        final float f22 = m11 * b11 - m13 * b08 + m14 * b07;
+        final float f23 = m12 * b08 - m11 * b10 - m14 * b06;
+        final float f24 = m11 * b09 - m12 * b07 + m13 * b06;
+        final float f31 = m42 * b05 - m43 * b04 + m44 * b03;
+        final float f32 = m43 * b02 - m41 * b05 - m44 * b01;
+        final float f33 = m41 * b04 - m42 * b02 + m44 * b00;
+        final float f34 = m42 * b01 - m41 * b03 - m43 * b00;
+        final float f41 = m33 * b04 - m32 * b05 - m34 * b03;
+        final float f42 = m31 * b05 - m33 * b02 + m34 * b01;
+        final float f43 = m32 * b02 - m31 * b04 - m34 * b00;
+        final float f44 = m31 * b03 - m32 * b01 + m33 * b00;
+        mat.m11 = f11;
+        mat.m21 = f12;
+        mat.m31 = f13;
+        mat.m41 = f14;
+        mat.m12 = f21;
+        mat.m22 = f22;
+        mat.m32 = f23;
+        mat.m42 = f24;
+        mat.m13 = f31;
+        mat.m23 = f32;
+        mat.m33 = f33;
+        mat.m43 = f34;
+        mat.m14 = f41;
+        mat.m24 = f42;
+        mat.m34 = f43;
+        mat.m44 = f44;
         return true;
-    }
-
-    /**
-     * Returns whether this matrix is invertible.
-     *
-     * @return {@code true} if this matrix is invertible
-     */
-    public boolean invertible() {
-        return !MathUtil.approxZero(determinant());
     }
 
     /**
@@ -1040,7 +991,7 @@ public class Matrix4 implements Cloneable {
 
     /**
      * Translates this matrix by given changes. This is equivalent to
-     * pre-multiplying by a translation matrix. (Tr * this)
+     * pre-multiplying by a translation matrix. (translation * this)
      *
      * @param t the translation vector
      */
@@ -1079,7 +1030,7 @@ public class Matrix4 implements Cloneable {
 
     /**
      * Post-translates this matrix by given changes. This is equivalent to
-     * post-multiplying by a translation matrix. (this * tr)
+     * post-multiplying by a translation matrix. (this * translation)
      *
      * @param t the translation vector
      */
@@ -1295,18 +1246,18 @@ public class Matrix4 implements Cloneable {
      * @param angle the clockwise rotation angle in radians.
      */
     public void rotateX(float angle) {
-        if (angle == 0.0f)
+        if (angle == 0)
             return;
-        final float s = MathUtil.sin(angle);
-        final float c = MathUtil.cos(angle);
+        final float s = (float) Math.sin(angle);
+        final float c = (float) Math.cos(angle);
         final float f21 = c * m21 + s * m31;
         final float f22 = c * m22 + s * m32;
         final float f23 = c * m23 + s * m33;
         final float f24 = c * m24 + s * m34;
-        m31 = -s * m21 + c * m31;
-        m32 = -s * m22 + c * m32;
-        m33 = -s * m23 + c * m33;
-        m34 = -s * m24 + c * m34;
+        m31 = c * m31 - s * m21;
+        m32 = c * m32 - s * m22;
+        m33 = c * m33 - s * m23;
+        m34 = c * m34 - s * m24;
         m21 = f21;
         m22 = f22;
         m23 = f23;
@@ -1320,18 +1271,18 @@ public class Matrix4 implements Cloneable {
      * @param angle the clockwise rotation angle in radians.
      */
     public void rotateY(float angle) {
-        if (angle == 0.0f)
+        if (angle == 0)
             return;
-        final float s = MathUtil.sin(angle);
-        final float c = MathUtil.cos(angle);
+        final float s = (float) Math.sin(angle);
+        final float c = (float) Math.cos(angle);
         final float f11 = c * m11 - s * m31;
         final float f12 = c * m12 - s * m32;
         final float f13 = c * m13 - s * m33;
         final float f14 = c * m14 - s * m34;
-        m31 = s * m11 + c * m31;
-        m32 = s * m12 + c * m32;
-        m33 = s * m13 + c * m33;
-        m34 = s * m14 + c * m34;
+        m31 = c * m31 + s * m11;
+        m32 = c * m32 + s * m12;
+        m33 = c * m33 + s * m13;
+        m34 = c * m34 + s * m14;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -1345,18 +1296,18 @@ public class Matrix4 implements Cloneable {
      * @param angle the clockwise rotation angle in radians.
      */
     public void rotateZ(float angle) {
-        if (angle == 0.0f)
+        if (angle == 0)
             return;
-        final float s = MathUtil.sin(angle);
-        final float c = MathUtil.cos(angle);
+        final float s = (float) Math.sin(angle);
+        final float c = (float) Math.cos(angle);
         final float f11 = c * m11 + s * m21;
         final float f12 = c * m12 + s * m22;
         final float f13 = c * m13 + s * m23;
         final float f14 = c * m14 + s * m24;
-        m21 = -s * m11 + c * m21;
-        m22 = -s * m12 + c * m22;
-        m23 = -s * m13 + c * m23;
-        m24 = -s * m14 + c * m24;
+        m21 = c * m21 - s * m11;
+        m22 = c * m22 - s * m12;
+        m23 = c * m23 - s * m13;
+        m24 = c * m24 - s * m14;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -1374,8 +1325,8 @@ public class Matrix4 implements Cloneable {
      * @see #rotateZ(float)
      * @see #rotateX(float)
      */
-    public void rotateAxis(@Nonnull Vector3 axis, float angle) {
-        rotateAxis(axis.x, axis.y, axis.z, angle);
+    public void rotate(@Nonnull Vector3 axis, float angle) {
+        rotate(axis.x, axis.y, axis.z, angle);
     }
 
     /**
@@ -1391,69 +1342,66 @@ public class Matrix4 implements Cloneable {
      * @see #rotateZ(float)
      * @see #rotateX(float)
      */
-    public void rotateAxis(float x, float y, float z, float angle) {
-        if (angle == 0.0f) {
+    public void rotate(float x, float y, float z, float angle) {
+        if (angle == 0)
             return;
-        }
+        // 52 multiplications
         angle *= 0.5f;
-        final float s = MathUtil.sin(angle);
+        final float s = (float) Math.sin(angle);
+        final float c = (float) Math.cos(angle);
         x *= s;
         y *= s;
         z *= s;
-        float f1 = 2.0f * x;
-        float f2 = 2.0f * y;
-        float f3 = 2.0f * z;
+        final float xs = 2.0f * x;
+        final float ys = 2.0f * y;
+        final float zs = 2.0f * z;
 
-        float f4 = x * f1;
-        float f5 = y * f2;
-        float f6 = z * f3;
+        final float xx = x * xs;
+        final float xy = x * ys;
+        final float xz = x * zs;
+        final float xw = xs * c;
+        final float yy = y * ys;
+        final float yz = y * zs;
+        final float yw = ys * c;
+        final float zz = z * zs;
+        final float zw = zs * c;
 
-        final float c = MathUtil.cos(angle);
-        float f7 = f3 * c;
-        float f8 = f2 * c;
-        float f9 = f1 * c;
+        x = 1.0f - (yy + zz);
+        y = xy + zw;
+        z = xz - yw;
+        final float f11 = x * m11 + y * m21 + z * m31;
+        final float f12 = x * m12 + y * m22 + z * m32;
+        final float f13 = x * m13 + y * m23 + z * m33;
+        final float f14 = x * m14 + y * m24 + z * m34;
 
-        float f11 = 1.0f - (f5 + f6);
-        float f22 = 1.0f - (f4 + f6);
-        float f33 = 1.0f - (f4 + f5);
-        f2 *= x;
-        x *= f3;
-        f3 *= y;
+        x = xy - zw;
+        y = 1.0f - (xx + zz);
+        z = yz + xw;
+        final float f21 = x * m11 + y * m21 + z * m31;
+        final float f22 = x * m12 + y * m22 + z * m32;
+        final float f23 = x * m13 + y * m23 + z * m33;
+        final float f24 = x * m14 + y * m24 + z * m34;
 
-        f4 = f2 - f7;
-        f5 = x + f8;
-        f6 = f2 + f7;
-        f7 = f3 - f9;
-        f8 = x - f8;
-        f9 = f3 + f9;
+        x = xz + yw;
+        y = yz - xw;
+        z = 1.0f - (xx + yy);
+        final float f31 = x * m11 + y * m21 + z * m31;
+        final float f32 = x * m12 + y * m22 + z * m32;
+        final float f33 = x * m13 + y * m23 + z * m33;
+        final float f34 = x * m14 + y * m24 + z * m34;
 
-        f1 = f11 * m11 + f6 * m21 + f8 * m31;
-        f2 = f11 * m12 + f6 * m22 + f8 * m32;
-        f3 = f11 * m13 + f6 * m23 + f8 * m33;
-        x = f11 * m14 + f6 * m24 + f8 * m34;
-
-        f11 = f4 * m11 + f22 * m21 + f9 * m31;
-        f6 = f4 * m12 + f22 * m22 + f9 * m32;
-        f8 = f4 * m13 + f22 * m23 + f9 * m33;
-        y = f4 * m14 + f22 * m24 + f9 * m34;
-
-        f4 = f5 * m11 + f7 * m21 + f33 * m31;
-        f22 = f5 * m12 + f7 * m22 + f33 * m32;
-        f9 = f5 * m13 + f7 * m23 + f33 * m33;
-        z = f5 * m14 + f7 * m24 + f33 * m34;
-
-        m11 = f1;
-        m12 = f2;
-        m13 = f3;
-        m14 = x;
-        m21 = f11;
-        m22 = f6;
-        m23 = f8;
-        m24 = y;
-        m31 = f4;
-        m32 = f22;
-        m33 = f9;
-        m34 = z;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m34 = f34;
     }
 
     /**
@@ -1465,7 +1413,7 @@ public class Matrix4 implements Cloneable {
     public void rotate(@Nonnull Quaternion q) {
         if (q.lengthSquared() >= 1.0e-6f) {
             // not mul an identity matrix
-            multiply(q.toMatrix3());
+            preMul(q.toMatrix3());
         }
     }
 
@@ -1489,18 +1437,18 @@ public class Matrix4 implements Cloneable {
      * </ul>
      * </p>
      *
-     * @param rotationX the Euler pitch angle in radians. (rotation about the X axis)
-     * @param rotationY the Euler yaw angle in radians. (rotation about the Y axis)
-     * @param rotationZ the Euler roll angle in radians. (rotation about the Z axis)
+     * @param x the Euler pitch angle in radians. (rotation about the X axis)
+     * @param y the Euler yaw angle in radians. (rotation about the Y axis)
+     * @param z the Euler roll angle in radians. (rotation about the Z axis)
      * @see #rotateY(float)
      * @see #rotateZ(float)
      * @see #rotateX(float)
      */
-    public void rotate(float rotationX, float rotationY, float rotationZ) {
+    public void rotate(float x, float y, float z) {
         // same as using Quaternion, 48 multiplications
-        rotateX(rotationX);
-        rotateY(rotationY);
-        rotateZ(rotationZ);
+        rotateX(x);
+        rotateY(y);
+        rotateZ(z);
     }
 
     /**
@@ -1509,7 +1457,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param vec the vector to transform
      */
-    public void transform(@Nonnull Vector4 vec) {
+    public void preTransform(@Nonnull Vector4 vec) {
         final float x = m11 * vec.x + m21 * vec.y + m31 * vec.z + m41 * vec.w;
         final float y = m12 * vec.x + m22 * vec.y + m32 * vec.z + m42 * vec.w;
         final float z = m13 * vec.x + m23 * vec.y + m33 * vec.z + m43 * vec.w;
@@ -1526,7 +1474,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param vec the vector to transform
      */
-    public void preTransform(@Nonnull Vector4 vec) {
+    public void postTransform(@Nonnull Vector4 vec) {
         final float x = m11 * vec.x + m12 * vec.y + m13 * vec.z + m14 * vec.w;
         final float y = m21 * vec.x + m22 * vec.y + m23 * vec.z + m24 * vec.w;
         final float z = m31 * vec.x + m32 * vec.y + m33 * vec.z + m34 * vec.w;
@@ -1544,7 +1492,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param vec the vector to transform
      */
-    public void transform(@Nonnull Vector3 vec) {
+    public void preTransform(@Nonnull Vector3 vec) {
         final float x = m11 * vec.x + m21 * vec.y + m31 * vec.z + m41;
         final float y = m12 * vec.x + m22 * vec.y + m32 * vec.z + m42;
         final float z = m13 * vec.x + m23 * vec.y + m33 * vec.z + m43;
@@ -1567,7 +1515,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param vec the vector to transform
      */
-    public void preTransform(@Nonnull Vector3 vec) {
+    public void postTransform(@Nonnull Vector3 vec) {
         final float x = m11 * vec.x + m12 * vec.y + m13 * vec.z + m14;
         final float y = m21 * vec.x + m22 * vec.y + m23 * vec.z + m24;
         final float z = m31 * vec.x + m32 * vec.y + m33 * vec.z + m34;
@@ -1588,7 +1536,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param r the rectangle to transform
      */
-    public void transform(@Nonnull RectF r) {
+    public void mapRect(@Nonnull RectF r) {
         float x1 = m11 * r.left + m21 * r.top + m41;
         float y1 = m12 * r.left + m22 * r.top + m42;
         float x2 = m11 * r.right + m21 * r.top + m41;
@@ -1622,7 +1570,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param p the point to transform
      */
-    public void transform(@Nonnull PointF p) {
+    public void mapPoint(@Nonnull PointF p) {
         if (isAffine()) {
             p.set(m11 * p.x + m21 * p.y + m41,
                     m12 * p.x + m22 * p.y + m42);
@@ -1640,7 +1588,7 @@ public class Matrix4 implements Cloneable {
      *
      * @param p the point to transform
      */
-    public void transformPoint(@Nonnull float[] p) {
+    public void mapPoint(@Nonnull float[] p) {
         if (isAffine()) {
             final float x = m11 * p[0] + m21 * p[1] + m41;
             final float y = m12 * p[0] + m22 * p[1] + m42;
@@ -1655,7 +1603,7 @@ public class Matrix4 implements Cloneable {
         }
     }
 
-    public float transformPointX(float x, float y) {
+    public float mapPointX(float x, float y) {
         if (isAffine()) {
             return m11 * x + m21 * y + m41;
         } else {
@@ -1665,7 +1613,7 @@ public class Matrix4 implements Cloneable {
         }
     }
 
-    public float transformPointY(float x, float y) {
+    public float mapPointY(float x, float y) {
         if (isAffine()) {
             return m12 * x + m22 * y + m42;
         } else {
@@ -1724,6 +1672,31 @@ public class Matrix4 implements Cloneable {
                                 MathUtil.approxZero(m21) &&
                                 !MathUtil.approxZero(m11) &&
                                 !MathUtil.approxZero(m22)));
+    }
+
+    /**
+     * If the bottom column of the matrix is [0, 0, 0, not_one], we will treat the matrix as if it
+     * is in perspective, even though it stills behaves like its affine. If we divide everything
+     * by the not_one value, then it will behave the same, but will be treated as affine,
+     * and therefore faster (e.g. clients can forward-difference calculations).
+     */
+    public void normalizePerspective() {
+        if (m44 != 1 && m44 != 0 && m14 == 0 && m24 == 0 && m34 == 0) {
+            float inv = 1.0f / m44;
+            m11 *= inv;
+            m12 *= inv;
+            m13 *= inv;
+            m21 *= inv;
+            m22 *= inv;
+            m23 *= inv;
+            m31 *= inv;
+            m32 *= inv;
+            m33 *= inv;
+            m41 *= inv;
+            m42 *= inv;
+            m43 *= inv;
+            m44 = 1.0f;
+        }
     }
 
     public boolean hasPerspective() {
@@ -1863,7 +1836,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * @return a copy of this matrix
+     * @return a deep copy of this matrix
      */
     @Nonnull
     public Matrix4 copy() {

@@ -241,7 +241,7 @@ public abstract class Canvas {
      */
     public final void concat(@Nonnull Matrix4 matrix) {
         if (!matrix.isIdentity()) {
-            getMatrix().multiply(matrix);
+            getMatrix().preMul(matrix);
         }
     }
 

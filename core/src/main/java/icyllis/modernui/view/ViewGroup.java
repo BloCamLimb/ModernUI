@@ -1324,7 +1324,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         point[1] += mScrollY - child.mTop;
 
         if (!child.hasIdentityMatrix()) {
-            child.getInverseMatrix().transformPoint(point);
+            child.getInverseMatrix().mapPoint(point);
         }
     }
 
@@ -2957,7 +2957,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
         rect.set(r);
 
         if (!child.hasIdentityMatrix()) {
-            child.getMatrix().transform(rect);
+            child.getMatrix().mapRect(rect);
         }
 
         final int dx = child.mLeft - mScrollX;
@@ -2971,7 +2971,7 @@ public abstract class ViewGroup extends View implements ViewParent, ViewManager 
                         : new float[2];
                 position[0] = offset.x;
                 position[1] = offset.y;
-                child.getMatrix().transformPoint(position);
+                child.getMatrix().mapPoint(position);
                 offset.x = Math.round(position[0]);
                 offset.y = Math.round(position[1]);
             }

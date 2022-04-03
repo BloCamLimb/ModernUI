@@ -18,39 +18,41 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.math.Matrix3;
 import icyllis.modernui.math.Matrix4;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * The drawing device.
  */
 public final class Device extends MatrixProvider {
 
-    // image info
-    final int mWidth;
-    final int mHeight;
-    final int mColorInfo;
+    final ImageInfo mInfo;
 
-    // fDeviceToGlobal and fGlobalToDevice are inverses of each other; there are never that many
-    // SkDevices, so pay the memory cost to avoid recalculating the inverse.
-    Matrix4 fDeviceToGlobal;
-    Matrix4 fGlobalToDevice;
+    final Matrix3 mDeviceToGlobal = Matrix3.identity();
+    final Matrix3 mGlobalToDevice = Matrix3.identity();
 
-    public Device(int width, int height, int colorInfo) {
-        mWidth = width;
-        mHeight = height;
-        mColorInfo = colorInfo;
+    public Device(ImageInfo info) {
+        mInfo = info;
+    }
+
+    /**
+     * Return ImageInfo for this device. If the canvas is not backed by GPU,
+     * then the info's ColorType will be {@link ImageInfo#COLOR_UNKNOWN}.
+     */
+    @Nonnull
+    public ImageInfo imageInfo() {
+        return mInfo;
     }
 
     public int width() {
-        return mWidth;
+        return mInfo.width();
     }
 
     public int height() {
-        return mHeight;
-    }
-
-    public int colorInfo() {
-        return mColorInfo;
+        return mInfo.height();
     }
 
     /**
@@ -63,9 +65,73 @@ public final class Device extends MatrixProvider {
      * will include a pre-translation by T(deviceOriginX, deviceOriginY), and the final
      * local-to-device matrix will have a post-translation of T(-deviceOriginX, -deviceOriginY).
      */
-    void setDeviceCoordinateSystem(final Matrix4 deviceToGlobal, final Matrix4 localToDevice,
-                                   int bufferOriginX, int bufferOriginY) {
+    void setCoordinateSpace(@Nullable Matrix3 deviceToGlobal, @Nullable Matrix4 localToDevice,
+                            int bufferOriginX, int bufferOriginY) {
+        if (deviceToGlobal == null) {
+            mDeviceToGlobal.setIdentity();
+            mGlobalToDevice.setIdentity();
+        } else {
+            mDeviceToGlobal.set(deviceToGlobal);
+            mDeviceToGlobal.normalizePerspective();
+            if (!mDeviceToGlobal.invert(mGlobalToDevice)) {
+                throw new IllegalArgumentException();
+            }
+        }
+        if (localToDevice == null) {
+            mLocalToDevice.setIdentity();
+        } else {
+            mLocalToDevice.set(localToDevice);
+            mLocalToDevice.normalizePerspective();
+        }
+        if ((bufferOriginX | bufferOriginY) != 0) {
+            mDeviceToGlobal.preTranslate(bufferOriginX, bufferOriginY);
+            mGlobalToDevice.postTranslate(-bufferOriginX, -bufferOriginY);
+            mLocalToDevice.postTranslate(-bufferOriginX, -bufferOriginY);
+        }
+    }
 
+    /**
+     * Convenience to configure the device to be axis-aligned with the root canvas, but with a
+     * unique origin.
+     */
+    void setOrigin(@Nullable Matrix4 globalTransform, int x, int y) {
+        setCoordinateSpace(null, globalTransform, x, y);
+    }
+
+    public void setGlobalTransform(@Nullable Matrix4 globalTransform) {
+        if (globalTransform == null) {
+            mLocalToDevice.setIdentity();
+        } else {
+            mLocalToDevice.set(globalTransform);
+            mLocalToDevice.normalizePerspective();
+        }
+        if (!mGlobalToDevice.isIdentity()) {
+            // Map from the global CTM state to this device's coordinate system.
+            mLocalToDevice.postMul(mGlobalToDevice);
+        }
+    }
+
+    /**
+     * Returns true when this device's pixel grid is axis aligned with the global coordinate space,
+     * and any relative translation between the two spaces is in integer pixel units.
+     */
+    public boolean isPixelAlignedToGlobal() {
+        float x = mDeviceToGlobal.getTranslateX();
+        float y = mDeviceToGlobal.getTranslateY();
+        return x == Math.round(x) && y == Math.round(y) && mDeviceToGlobal.isTranslate();
+    }
+
+    /**
+     * Get the transformation from this device's coordinate system to the provided device space.
+     * This transform can be used to draw this device into the provided device, such that once
+     * that device is drawn to the root device, the net effect will be that this device's contents
+     * have been transformed by the global transform.
+     */
+    public void getRelativeTransform(final Device dstDevice, Matrix3 mat) {
+        // To get the transform from this space to the other device's, transform from our space to
+        // global and then from global to the other device.
+        mat.set(mDeviceToGlobal);
+        mat.postMul(dstDevice.mGlobalToDevice);
     }
 
     @Override

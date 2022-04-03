@@ -35,7 +35,7 @@ public abstract class GLCanvas extends Canvas {
     static final Pool<Save> sSavePool = Pools.concurrent(60);
 
     // see window
-    static final Matrix4 RESET_MATRIX = Matrix4.makeTranslation(0, 0, -Window.LAST_SYSTEM_WINDOW - 1);
+    static final Matrix4 RESET_MATRIX = Matrix4.makeTranslate(0, 0, -Window.LAST_SYSTEM_WINDOW - 1);
 
     // local MCRec stack
     final ArrayDeque<Save> mSaves = new ArrayDeque<>();
