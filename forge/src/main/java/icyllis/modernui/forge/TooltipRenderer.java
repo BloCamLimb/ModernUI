@@ -348,7 +348,7 @@ public final class TooltipRenderer {
         sMyMat.set(sMatBuf.rewind());
         // RenderSystem.getModelViewMatrix() has Z translation normalized to -1
         // We have to offset against our canvas Z translation, see restore matrix in GLCanvas
-        sMyMat.translate(0, 0, 3000);
+        sMyMat.preTranslate(0, 0, 3000);
         canvas.concat(sMyMat);
 
         Paint paint = Paint.take();

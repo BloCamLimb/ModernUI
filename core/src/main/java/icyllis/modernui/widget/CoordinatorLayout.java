@@ -466,10 +466,10 @@ public class CoordinatorLayout extends ViewGroup {
         final ViewParent parent = view.getParent();
         if (parent instanceof final View vp && parent != this) {
             offsetDescendantMatrix(vp, m);
-            m.translate(-vp.getScrollX(), -vp.getScrollY());
+            m.preTranslate(-vp.getScrollX(), -vp.getScrollY());
         }
 
-        m.translate(view.getLeft(), view.getTop());
+        m.preTranslate(view.getLeft(), view.getTop());
 
         if (!view.getMatrix().isIdentity()) {
             m.preMul(view.getMatrix());

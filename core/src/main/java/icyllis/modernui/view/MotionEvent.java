@@ -1010,7 +1010,7 @@ public final class MotionEvent extends InputEvent {
      * @param deltaY Amount to add to the current Y coordinate of the event.
      */
     public void offsetLocation(float deltaX, float deltaY) {
-        mTransform.translate(deltaX, deltaY);
+        mTransform.preTranslate(deltaX, deltaY);
     }
 
     /**

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.graphics;
 
+import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.graphics.font.LayoutPiece;
 import icyllis.modernui.graphics.font.MeasuredText;
 import icyllis.modernui.math.*;
@@ -30,48 +31,50 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A Canvas is used to draw 2D geometries via 3D shaders, such as rectangles,
- * round rectangles, circular arcs, lines, curves, images, textured glyphs etc.
+ * A Canvas provides an interface for drawing 2D geometries, images, and how the
+ * drawing is clipped and transformed. 2D geometries may include points, lines,
+ * triangles, rectangles, rounded rectangles, circular arcs, quadratic curves, etc.
  * <p>
- * A Canvas contains a private save stack, builds 3D graphics buffers and records
- * view system drawing operations for deferred rendering. The root rendering
- * target (a custom framebuffer) is controlled by low-level.
+ * A Canvas and a Paint together provide the state to draw into Surface or Device.
+ * Each Canvas draw call transforms the geometry of the object by the pre-multiplication
+ * of all transform matrices in the stack. The transformed geometry is clipped by
+ * the intersection of all clip values in the stack. The Canvas draw calls use Paint
+ * to supply drawing state such as color, text size, stroke width, filter and so on.
  * <p>
- * Modern UI Canvas is designed for high-performance real-time rendering of vector
- * graphics with infinite precision. Thus, you can't draw other things except
- * those defined in Canvas easily. All geometries will be re-drawn and re-rendered
- * every frame.
+ * A surface canvas will quickly compute, optimize and generate the data required by
+ * the underlying 3D graphics API on the CPU side (client rendering pipeline). The
+ * render tasks will be handed over to GPU on render thread (deferred rendering).
  * <p>
- * Modern UI doesn't make use of tessellation for non-primitives (3D graphics API).
- * Instead, we use analytic geometry algorithm in Fragment Shaders to get ideal
- * solution with infinite precision. However, for stoking shaders, there will be
- * a lot of discarded fragments that can not be avoided on the CPU side. And
- * they're recomputed each frame. Especially the quadratic Bézier curve, the
- * algorithm is very complex. In additional, some geometry in other 2D graphics
- * libraries cannot be drawn, like cubic Bézier curves.
+ * A recording canvas records draw calls to a surface canvas. Although deferred
+ * rendering has been done in surface canvas, sometimes we don't need to update
+ * animations or transformations on the CPU side, so we can save draw calls, and
+ * don't need to update the buffer in GPU. This is not recommended for frequently
+ * updated scenes.
  * <p>
- * Modern UI supports multiple color buffers in one off-screen rendering target.
- * Depth buffer has no use in the pipeline, so depth test appears to be disabled.
- * All layers are considered translucent and drawn from far to near, z-ordering
- * must be handled on application layer.
+ * The Canvas uses analytic geometry to draw geometry, instead of meshing or
+ * tessellation. This will produce very high quality rendering results (analytical
+ * solution rather than approximate solution), but requires GPU to solve cubic
+ * equations for quadratic curves.
  * <p>
- * For tree rendering structures, each node uses child transition layers as needed
- * for rendering. These transition layers are used for short-time alpha animation
- * or transition animation. Using transition layers avoids creating a large number
- * of useless framebuffers. Because these transition layers are color buffers in
- * the same framebuffer. Correspondingly, you can also create dedicated layers
- * according to actual needs, but Modern UI does not provide default implementation.
+ * The Canvas supports multiple color buffers in one off-screen rendering target,
+ * which can be used for many complex color blending and temporary operations.
+ * Note that depth buffer and depth test is not enabled, Z ordering or transparency
+ * sorting is required on the client pipeline before drawing onto the Canvas. All
+ * layers are considered translucent and drawn from far to near.
+ * <p>
+ * For tree structures, each child canvas may use its transition layers for rendering.
+ * These transition layers are designed for short-time alpha animation, and it avoids
+ * creating a large number framebuffers. The root Canvas or Device is backed by a
+ * main render target (a custom framebuffer).
  * <p>
  * The projection matrix is globally shared, and the one of surface canvas must be
  * an orthographic projection matrix. Canvas's matrix stack is the local model view
- * matrix on client side, it must be an affine transformation. The pipeline will
+ * matrix on client side, it should be an affine transformation. The pipeline will
  * calculate the world coordinates in advance.
  * <p>
- * The stroke direction is the center, that is, inside and outside with stroke radius
- * (half of stroke width).
- * <p>
- * This API is stable, but there will be more drawing methods.
+ * This API is stable, method names are similar to Skia, but implementations are not.
  *
+ * @author BloCamLimb
  * @since 1.6
  */
 public abstract class Canvas {
@@ -84,12 +87,16 @@ public abstract class Canvas {
     /**
      * Saves the current matrix and clip onto a private stack.
      * <p>
-     * Subsequent calls to translate,scale,rotate,skew,concat or clipRect,
+     * Subsequent calls to translate, scale, rotate, skew, concat or clipRect,
      * clipPath will all operate as usual, but when the balancing call to
      * restore() is made, those calls will be forgotten, and the settings that
      * existed before the save() will be reinstated.
+     * <p>
+     * Saved Canvas state is put on a stack; multiple calls to save() should be balance
+     * by an equal number of calls to restore(). Call restoreToCount() with the return
+     * value of this method to restore this and subsequent saves.
      *
-     * @return The value to pass to restoreToCount() to balance this save()
+     * @return depth of saved stack
      */
     public abstract int save();
 
@@ -130,21 +137,19 @@ public abstract class Canvas {
 
     /**
      * This call balances a previous call to save(), and is used to remove all
-     * modifications to the matrix/clip state since the last save call. It is
-     * an error to call restore() more or less times than save() was called in
-     * the final state.
-     * <p>
-     * If current clip doesn't change, it won't generate overhead for modifying
-     * the stencil buffer.
+     * modifications to the matrix/clip state since the last save call. The
+     * state is removed from the stack. It is an error to call restore() more
+     * or less times than save() was called in the final state.
      */
     public abstract void restore();
 
     /**
-     * Returns the depth of matrix/clip states on the Canvas' private stack.
-     * This will equal # save() calls - # restore() calls. The initial and
-     * minimum value are 1.
+     * Returns the depth of saved matrix/clip states on the Canvas' private stack.
+     * This will equal save() calls minus restore() calls, and the number of save()
+     * calls less the number of restore() calls plus one. The save count of a new
+     * canvas is one.
      *
-     * @return the save count
+     * @return depth of save state stack
      */
     public abstract int getSaveCount();
 
@@ -173,7 +178,7 @@ public abstract class Canvas {
      */
     public final void translate(float dx, float dy) {
         if (dx != 0.0f || dy != 0.0f) {
-            getMatrix().translate(dx, dy);
+            getMatrix().preTranslate(dx, dy);
         }
     }
 
@@ -185,7 +190,7 @@ public abstract class Canvas {
      */
     public final void scale(float sx, float sy) {
         if (sx != 1.0f || sy != 1.0f) {
-            getMatrix().scale(sx, sy);
+            getMatrix().preScale(sx, sy);
         }
     }
 
@@ -200,9 +205,9 @@ public abstract class Canvas {
     public final void scale(float sx, float sy, float px, float py) {
         if (sx != 1.0f || sy != 1.0f) {
             Matrix4 matrix = getMatrix();
-            matrix.translate(px, py);
-            matrix.scale(sx, sy);
-            matrix.translate(-px, -py);
+            matrix.preTranslate(px, py);
+            matrix.preScale(sx, sy);
+            matrix.preTranslate(-px, -py);
         }
     }
 
@@ -213,7 +218,7 @@ public abstract class Canvas {
      */
     public final void rotate(float degrees) {
         if (degrees != 0.0f) {
-            getMatrix().rotateZ(MathUtil.toRadians(degrees));
+            getMatrix().preRotateZ(MathUtil.toRadians(degrees));
         }
     }
 
@@ -228,9 +233,9 @@ public abstract class Canvas {
     public final void rotate(float degrees, float px, float py) {
         if (degrees != 0.0f) {
             Matrix4 matrix = getMatrix();
-            matrix.translate(px, py, 0);
-            matrix.rotateZ(MathUtil.toRadians(degrees));
-            matrix.translate(-px, -py, 0);
+            matrix.preTranslate(px, py, 0);
+            matrix.preRotateZ(MathUtil.toRadians(degrees));
+            matrix.preTranslate(-px, -py, 0);
         }
     }
 
@@ -239,7 +244,7 @@ public abstract class Canvas {
      *
      * @param matrix the matrix to multiply
      */
-    public final void concat(@Nonnull Matrix4 matrix) {
+    public final void concat(Matrix4 matrix) {
         if (!matrix.isIdentity()) {
             getMatrix().preMul(matrix);
         }
@@ -262,7 +267,7 @@ public abstract class Canvas {
      * @return true if the resulting clip is non-empty, otherwise further
      * drawing will be always quick rejected until restore() is called
      */
-    public final boolean clipRect(@Nonnull Rect rect) {
+    public final boolean clipRect(Rect rect) {
         return clipRect(rect.left, rect.top, rect.right, rect.bottom);
     }
 
@@ -275,7 +280,7 @@ public abstract class Canvas {
      * @return true if the resulting clip is non-empty, otherwise further
      * drawing will be always quick rejected until restore() is called
      */
-    public final boolean clipRect(@Nonnull RectF rect) {
+    public final boolean clipRect(RectF rect) {
         return clipRect(rect.left, rect.top, rect.right, rect.bottom);
     }
 
@@ -307,7 +312,7 @@ public abstract class Canvas {
      * @return true if the given rect (transformed by the canvas' matrix)
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
-    public final boolean quickReject(@Nonnull RectF rect) {
+    public final boolean quickReject(RectF rect) {
         return quickReject(rect.left, rect.top, rect.right, rect.bottom);
     }
 
@@ -332,6 +337,35 @@ public abstract class Canvas {
     public abstract boolean quickReject(float left, float top, float right, float bottom);
 
     /**
+     * Fills the current clip with the specified color, using SRC blend mode.
+     * This has the effect of replacing all pixels contained by clip with color.
+     *
+     * @param color the straight color to draw onto the canvas
+     */
+    public final void clear(@ColorInt int color) {
+        drawColor(color, BlendMode.SRC);
+    }
+
+    /**
+     * Fill the current clip with the specified color, using SRC_OVER blend mode.
+     *
+     * @param color the straight color to draw onto the canvas
+     */
+    public final void drawColor(@ColorInt int color) {
+        drawColor(color, BlendMode.SRC_OVER);
+    }
+
+    /**
+     * Fill the current clip with the specified color, the blend mode determines
+     * how color is combined with destination.
+     *
+     * @param color the straight color to draw onto the canvas
+     * @param mode  the blend mode used to combine source color and destination
+     */
+    public void drawColor(@ColorInt int color, BlendMode mode) {
+    }
+
+    /**
      * Draw a circular arc.
      * <p>
      * If the start angle is negative or >= 360, the start angle is treated as start angle modulo
@@ -347,8 +381,8 @@ public abstract class Canvas {
      * @param sweepAngle Sweep angle (in degrees) measured clockwise
      * @param paint      The paint used to draw the arc
      */
-    public final void drawArc(@Nonnull PointF center, float radius, float startAngle, float sweepAngle,
-                              @Nonnull Paint paint) {
+    public final void drawArc(PointF center, float radius, float startAngle, float sweepAngle,
+                              Paint paint) {
         drawArc(center.x, center.y, radius, startAngle, sweepAngle, paint);
     }
 
@@ -370,7 +404,7 @@ public abstract class Canvas {
      * @param paint      The paint used to draw the arc
      */
     public abstract void drawArc(float cx, float cy, float radius, float startAngle,
-                                 float sweepAngle, @Nonnull Paint paint);
+                                 float sweepAngle, Paint paint);
 
     /**
      * Draw a quadratic Bézier curve using the specified paint. The three points represent
@@ -387,8 +421,8 @@ public abstract class Canvas {
      * @param p2    the end control point of the Bézier curve
      * @param paint the paint used to draw the Bézier curve
      */
-    public final void drawBezier(@Nonnull PointF p0, @Nonnull PointF p1, @Nonnull PointF p2,
-                                 @Nonnull Paint paint) {
+    public final void drawBezier(PointF p0, PointF p1, PointF p2,
+                                 Paint paint) {
         drawBezier(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, paint);
     }
 
@@ -411,7 +445,7 @@ public abstract class Canvas {
      * @param paint the paint used to draw the Bézier curve
      */
     public abstract void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
-                                    @Nonnull Paint paint);
+                                    Paint paint);
 
     /**
      * Draw the specified circle using the specified paint. If radius is <= 0, then nothing will be
@@ -421,7 +455,7 @@ public abstract class Canvas {
      * @param radius The radius of the circle to be drawn
      * @param paint  The paint used to draw the circle
      */
-    public final void drawCircle(@Nonnull PointF center, float radius, @Nonnull Paint paint) {
+    public final void drawCircle(PointF center, float radius, Paint paint) {
         drawCircle(center.x, center.y, radius, paint);
     }
 
@@ -434,7 +468,7 @@ public abstract class Canvas {
      * @param radius The radius of the circle to be drawn
      * @param paint  The paint used to draw the circle
      */
-    public abstract void drawCircle(float cx, float cy, float radius, @Nonnull Paint paint);
+    public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
 
     /**
      * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
@@ -447,7 +481,7 @@ public abstract class Canvas {
      * @param p2    the last vertex
      * @param paint the paint used to draw the triangle
      */
-    public final void drawTriangle(@Nonnull PointF p0, @Nonnull PointF p1, @Nonnull PointF p2, @Nonnull Paint paint) {
+    public final void drawTriangle(PointF p0, PointF p1, PointF p2, Paint paint) {
         drawTriangle(p0.x, p0.y, p1.x, p1.y, p2.x, p2.y, paint);
     }
 
@@ -466,7 +500,7 @@ public abstract class Canvas {
      * @param paint the paint used to draw the triangle
      */
     public abstract void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2,
-                                      @Nonnull Paint paint);
+                                      Paint paint);
 
     /**
      * Draw the specified Rect using the specified Paint. The rectangle will be filled or framed
@@ -475,7 +509,7 @@ public abstract class Canvas {
      * @param r     The rectangle to be drawn.
      * @param paint The paint used to draw the rectangle
      */
-    public final void drawRect(@Nonnull Rect r, @Nonnull Paint paint) {
+    public final void drawRect(Rect r, Paint paint) {
         drawRect(r.left, r.top, r.right, r.bottom, paint);
     }
 
@@ -486,7 +520,7 @@ public abstract class Canvas {
      * @param r     The rectangle to be drawn.
      * @param paint The paint used to draw the rectangle
      */
-    public final void drawRect(@Nonnull RectF r, @Nonnull Paint paint) {
+    public final void drawRect(RectF r, Paint paint) {
         drawRect(r.left, r.top, r.right, r.bottom, paint);
     }
 
@@ -500,7 +534,7 @@ public abstract class Canvas {
      * @param bottom The bottom side of the rectangle to be drawn
      * @param paint  The paint used to draw the rect
      */
-    public abstract void drawRect(float left, float top, float right, float bottom, @Nonnull Paint paint);
+    public abstract void drawRect(float left, float top, float right, float bottom, Paint paint);
 
     /**
      * Draw the specified image with its top/left corner at (x,y), using the
@@ -512,7 +546,7 @@ public abstract class Canvas {
      * @param top   the position of the top side of the image being drawn
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public abstract void drawImage(@Nonnull Image image, float left, float top, @Nullable Paint paint);
+    public abstract void drawImage(Image image, float left, float top, @Nullable Paint paint);
 
     /**
      * Draw the specified image, scaling/translating automatically to fill the destination
@@ -524,7 +558,7 @@ public abstract class Canvas {
      * @param dst   the rectangle that the image will be scaled/translated to fit into
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull RectF dst, @Nullable Paint paint) {
+    public final void drawImage(Image image, @Nullable Rect src, RectF dst, @Nullable Paint paint) {
         if (src == null) {
             drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
                     dst.left, dst.top, dst.right, dst.bottom, paint);
@@ -544,7 +578,7 @@ public abstract class Canvas {
      * @param dst   the rectangle that the image will be scaled/translated to fit into
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public final void drawImage(@Nonnull Image image, @Nullable Rect src, @Nonnull Rect dst, @Nullable Paint paint) {
+    public final void drawImage(Image image, @Nullable Rect src, Rect dst, @Nullable Paint paint) {
         if (src == null) {
             drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
                     dst.left, dst.top, dst.right, dst.bottom, paint);
@@ -562,7 +596,7 @@ public abstract class Canvas {
      * @param image the image to be drawn
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public abstract void drawImage(@Nonnull Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
+    public abstract void drawImage(Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
                                    float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint);
 
     /**
@@ -580,7 +614,7 @@ public abstract class Canvas {
      * @param paint  The paint used to draw the line
      */
     public abstract void drawRoundLine(float startX, float startY, float stopX, float stopY,
-                                       @Nonnull Paint paint);
+                                       Paint paint);
 
     /**
      * Draw a series of round lines.
@@ -604,8 +638,8 @@ public abstract class Canvas {
      * @param strip  Whether line points are continuous
      * @param paint  The paint used to draw the lines
      */
-    public void drawRoundLines(@Nonnull float[] pts, int offset, int count, boolean strip,
-                               @Nonnull Paint paint) {
+    public void drawRoundLines(float[] pts, int offset, int count, boolean strip,
+                               Paint paint) {
         if ((offset | count | pts.length - offset - count) < 0) {
             throw new IndexOutOfBoundsException();
         }
@@ -636,7 +670,7 @@ public abstract class Canvas {
      * @param paint The paint used to draw the lines
      * @see #drawRoundLines(float[], int, int, boolean, Paint)
      */
-    public final void drawRoundLines(@Nonnull float[] pts, boolean strip, @Nonnull Paint paint) {
+    public final void drawRoundLines(float[] pts, boolean strip, Paint paint) {
         drawRoundLines(pts, 0, pts.length, strip, paint);
     }
 
@@ -648,7 +682,7 @@ public abstract class Canvas {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(@Nonnull RectF rect, float radius, @Nonnull Paint paint) {
+    public final void drawRoundRect(RectF rect, float radius, Paint paint) {
         drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, Gravity.NO_GRAVITY, paint);
     }
 
@@ -664,7 +698,7 @@ public abstract class Canvas {
      * @param paint  the paint used to draw the round rectangle
      */
     public final void drawRoundRect(float left, float top, float right, float bottom,
-                                    float radius, @Nonnull Paint paint) {
+                                    float radius, Paint paint) {
         drawRoundRect(left, top, right, bottom, radius, Gravity.NO_GRAVITY, paint);
     }
 
@@ -680,7 +714,7 @@ public abstract class Canvas {
      *               combination of two adjacent sides
      * @param paint  the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(@Nonnull RectF rect, float radius, int sides, @Nonnull Paint paint) {
+    public final void drawRoundRect(RectF rect, float radius, int sides, Paint paint) {
         drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, sides, paint);
     }
 
@@ -700,7 +734,7 @@ public abstract class Canvas {
      * @param paint  the paint used to draw the round rectangle
      */
     public abstract void drawRoundRect(float left, float top, float right, float bottom,
-                                       float radius, int sides, @Nonnull Paint paint);
+                                       float radius, int sides, Paint paint);
 
     /**
      * Draw the specified image with rounded corners, whose top/left corner at (x,y)
@@ -713,8 +747,8 @@ public abstract class Canvas {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round image
      */
-    public abstract void drawRoundImage(@Nonnull Image image, float left, float top,
-                                        float radius, @Nonnull Paint paint);
+    public abstract void drawRoundImage(Image image, float left, float top,
+                                        float radius, Paint paint);
 
     /**
      * Draw a text, which does not contain any characters that affect high-level layout.
@@ -731,8 +765,8 @@ public abstract class Canvas {
      * @param y     the vertical baseline of the line of text
      * @param paint the paint used to measure and draw the text
      */
-    public final void drawText(@Nonnull CharSequence text, int start, int end,
-                               float x, float y, @Nonnull TextPaint paint) {
+    public final void drawText(CharSequence text, int start, int end,
+                               float x, float y, TextPaint paint) {
         drawText(text, start, end, x, y, Gravity.LEFT, paint);
     }
 
@@ -753,8 +787,8 @@ public abstract class Canvas {
      *              or {@link Gravity#RIGHT}
      * @param paint the paint used to measure and draw the text
      */
-    public abstract void drawText(@Nonnull CharSequence text, int start, int end,
-                                  float x, float y, int align, @Nonnull TextPaint paint);
+    public abstract void drawText(CharSequence text, int start, int end,
+                                  float x, float y, int align, TextPaint paint);
 
     /**
      * Draw a run of text. The given range cannot excess a style run or break grapheme cluster,
@@ -769,8 +803,8 @@ public abstract class Canvas {
      * @param y     the vertical baseline of the line of text
      * @param paint the paint used to draw the text, only color will be taken
      */
-    public final void drawTextRun(@Nonnull MeasuredText text, int start, int end,
-                                  float x, float y, @Nonnull TextPaint paint) {
+    public final void drawTextRun(MeasuredText text, int start, int end,
+                                  float x, float y, TextPaint paint) {
         if ((start | end | end - start) < 0) {
             throw new IndexOutOfBoundsException();
         }
@@ -790,5 +824,5 @@ public abstract class Canvas {
      * @param y     the vertical baseline of the line of text
      * @param paint the paint used to draw the text, only color will be taken
      */
-    public abstract void drawTextRun(@Nonnull LayoutPiece piece, float x, float y, @Nonnull TextPaint paint);
+    public abstract void drawTextRun(LayoutPiece piece, float x, float y, TextPaint paint);
 }

@@ -31,12 +31,12 @@ import static org.lwjgl.system.MemoryUtil.*;
 @SuppressWarnings("unused")
 public final class Matrix4 implements Cloneable {
 
-    // matrix elements, m(ij) (row, column)
+    // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
     // [m11 m12 m13 m14]
     // [m21 m22 m23 m24]
     // [m31 m32 m33 m34]
-    // [m41 m42 m43 m44]
+    // [m41 m42 m43 m44] <- [m41 m42 m43] represents the origin
     float m11;
     float m12;
     float m13;
@@ -995,8 +995,8 @@ public final class Matrix4 implements Cloneable {
      *
      * @param t the translation vector
      */
-    public void translate(@Nonnull Vector3 t) {
-        translate(t.x, t.y, t.z);
+    public void preTranslate(@Nonnull Vector3 t) {
+        preTranslate(t.x, t.y, t.z);
     }
 
     /**
@@ -1007,7 +1007,7 @@ public final class Matrix4 implements Cloneable {
      * @param dy the y-component of the translation
      * @param dz the z-component of the translation
      */
-    public void translate(float dx, float dy, float dz) {
+    public void preTranslate(float dx, float dy, float dz) {
         m41 += dx * m11 + dy * m21 + dz * m31;
         m42 += dx * m12 + dy * m22 + dz * m32;
         m43 += dx * m13 + dy * m23 + dz * m33;
@@ -1021,7 +1021,7 @@ public final class Matrix4 implements Cloneable {
      * @param dx the x-component of the translation
      * @param dy the y-component of the translation
      */
-    public void translate(float dx, float dy) {
+    public void preTranslate(float dx, float dy) {
         m41 += dx * m11 + dy * m21;
         m42 += dx * m12 + dy * m22;
         m43 += dx * m13 + dy * m23;
@@ -1120,11 +1120,24 @@ public final class Matrix4 implements Cloneable {
      *
      * @param s the x-component of the scale
      */
-    public void scaleX(float s) {
+    public void preScaleX(float s) {
         m11 *= s;
         m12 *= s;
         m13 *= s;
         m14 *= s;
+    }
+
+    /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param s the x-component of the scale
+     */
+    public void postScaleX(float s) {
+        m11 *= s;
+        m21 *= s;
+        m31 *= s;
+        m41 *= s;
     }
 
     /**
@@ -1133,11 +1146,24 @@ public final class Matrix4 implements Cloneable {
      *
      * @param s the y-component of the scale
      */
-    public void scaleY(float s) {
+    public void preScaleY(float s) {
         m21 *= s;
         m22 *= s;
         m23 *= s;
         m24 *= s;
+    }
+
+    /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param s the y-component of the scale
+     */
+    public void postScaleY(float s) {
+        m12 *= s;
+        m22 *= s;
+        m32 *= s;
+        m42 *= s;
     }
 
     /**
@@ -1146,11 +1172,24 @@ public final class Matrix4 implements Cloneable {
      *
      * @param s the x-component of the scale
      */
-    public void scaleZ(float s) {
+    public void preScaleZ(float s) {
         m31 *= s;
         m32 *= s;
         m33 *= s;
         m34 *= s;
+    }
+
+    /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param s the x-component of the scale
+     */
+    public void postScaleZ(float s) {
+        m13 *= s;
+        m23 *= s;
+        m33 *= s;
+        m43 *= s;
     }
 
     /**
@@ -1159,8 +1198,8 @@ public final class Matrix4 implements Cloneable {
      *
      * @param s the scale vector
      */
-    public void scale(@Nonnull Vector3 s) {
-        scale(s.x, s.y, s.z);
+    public void preScale(@Nonnull Vector3 s) {
+        preScale(s.x, s.y, s.z);
     }
 
     /**
@@ -1171,7 +1210,7 @@ public final class Matrix4 implements Cloneable {
      * @param sy the y-component of the scale
      * @param sz the z-component of the scale
      */
-    public void scale(float sx, float sy, float sz) {
+    public void preScale(float sx, float sy, float sz) {
         m11 *= sx;
         m12 *= sx;
         m13 *= sx;
@@ -1193,7 +1232,7 @@ public final class Matrix4 implements Cloneable {
      * @param sx the x-component of the scale
      * @param sy the y-component of the scale
      */
-    public void scale(float sx, float sy) {
+    public void preScale(float sx, float sy) {
         m11 *= sx;
         m12 *= sx;
         m13 *= sx;
@@ -1202,6 +1241,57 @@ public final class Matrix4 implements Cloneable {
         m22 *= sy;
         m23 *= sy;
         m24 *= sy;
+    }
+
+    /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param s the scale vector
+     */
+    public void postScale(@Nonnull Vector3 s) {
+        postScale(s.x, s.y, s.z);
+    }
+
+    /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param sx the x-component of the scale
+     * @param sy the y-component of the scale
+     * @param sz the z-component of the scale
+     */
+    public void postScale(float sx, float sy, float sz) {
+        m11 *= sx;
+        m21 *= sx;
+        m31 *= sx;
+        m41 *= sx;
+        m12 *= sy;
+        m22 *= sy;
+        m32 *= sy;
+        m42 *= sy;
+        m13 *= sz;
+        m23 *= sz;
+        m33 *= sz;
+        m43 *= sz;
+    }
+
+    /**
+     * Post-scales this matrix by given vector. This is equivalent to
+     * post-multiplying by a scale matrix.
+     *
+     * @param sx the x-component of the scale
+     * @param sy the y-component of the scale
+     */
+    public void postScale(float sx, float sy) {
+        m11 *= sx;
+        m21 *= sx;
+        m31 *= sx;
+        m41 *= sx;
+        m12 *= sy;
+        m22 *= sy;
+        m32 *= sy;
+        m42 *= sy;
     }
 
     /**
@@ -1245,9 +1335,7 @@ public final class Matrix4 implements Cloneable {
      *
      * @param angle the clockwise rotation angle in radians.
      */
-    public void rotateX(float angle) {
-        if (angle == 0)
-            return;
+    public void preRotateX(float angle) {
         final float s = (float) Math.sin(angle);
         final float c = (float) Math.cos(angle);
         final float f21 = c * m21 + s * m31;
@@ -1265,14 +1353,35 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
+     * Post-rotates this matrix clockwise about the X-axis.
+     * This is equivalent to post-multiplying by a rotation matrix.
+     *
+     * @param angle the clockwise rotation angle in radians.
+     */
+    public void postRotateX(float angle) {
+        final float s = (float) Math.sin(angle);
+        final float c = (float) Math.cos(angle);
+        final float f13 = c * m13 + s * m12;
+        final float f23 = c * m23 + s * m22;
+        final float f33 = c * m33 + s * m32;
+        final float f43 = c * m43 + s * m42;
+        m12 = c * m12 - s * m13;
+        m22 = c * m22 - s * m23;
+        m32 = c * m32 - s * m33;
+        m42 = c * m42 - s * m43;
+        m13 = f13;
+        m23 = f23;
+        m33 = f33;
+        m43 = f43;
+    }
+
+    /**
      * Rotates this matrix clockwise about the Y-axis.
      * This is equivalent to pre-multiplying by a rotation matrix.
      *
      * @param angle the clockwise rotation angle in radians.
      */
-    public void rotateY(float angle) {
-        if (angle == 0)
-            return;
+    public void preRotateY(float angle) {
         final float s = (float) Math.sin(angle);
         final float c = (float) Math.cos(angle);
         final float f11 = c * m11 - s * m31;
@@ -1290,14 +1399,35 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
+     * Post-rotates this matrix clockwise about the Y-axis.
+     * This is equivalent to post-multiplying by a rotation matrix.
+     *
+     * @param angle the clockwise rotation angle in radians.
+     */
+    public void postRotateY(float angle) {
+        final float s = (float) Math.sin(angle);
+        final float c = (float) Math.cos(angle);
+        final float f13 = c * m13 - s * m11;
+        final float f23 = c * m23 - s * m21;
+        final float f33 = c * m33 - s * m31;
+        final float f43 = c * m43 - s * m41;
+        m11 = c * m11 + s * m13;
+        m21 = c * m21 + s * m23;
+        m31 = c * m31 + s * m33;
+        m41 = c * m41 + s * m43;
+        m13 = f13;
+        m23 = f23;
+        m33 = f33;
+        m43 = f43;
+    }
+
+    /**
      * Rotates this matrix clockwise about the Z-axis.
      * This is equivalent to pre-multiplying by a rotation matrix.
      *
      * @param angle the clockwise rotation angle in radians.
      */
-    public void rotateZ(float angle) {
-        if (angle == 0)
-            return;
+    public void preRotateZ(float angle) {
         final float s = (float) Math.sin(angle);
         final float c = (float) Math.cos(angle);
         final float f11 = c * m11 + s * m21;
@@ -1315,18 +1445,91 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
+     * Post-rotates this matrix clockwise about the Z-axis.
+     * This is equivalent to post-multiplying by a rotation matrix.
+     *
+     * @param angle the clockwise rotation angle in radians.
+     */
+    public void postRotateZ(float angle) {
+        final float s = (float) Math.sin(angle);
+        final float c = (float) Math.cos(angle);
+        final float f12 = c * m12 + s * m11;
+        final float f22 = c * m22 + s * m21;
+        final float f32 = c * m32 + s * m31;
+        final float f42 = c * m42 + s * m41;
+        m11 = c * m11 - s * m21;
+        m21 = c * m21 - s * m22;
+        m31 = c * m31 - s * m32;
+        m41 = c * m41 - s * m42;
+        m12 = f12;
+        m22 = f22;
+        m32 = f32;
+        m42 = f42;
+    }
+
+    /**
+     * Rotates this matrix from the given Euler rotation angles in radians.
+     * <p>
+     * The rotations are applied in the given order and using chained rotation per axis:
+     * <ul>
+     *  <li>x - pitch - {@link #preRotateX(float)}</li>
+     *  <li>y - yaw   - {@link #preRotateY(float)}</li>
+     *  <li>z - roll  - {@link #preRotateZ(float)}</li>
+     * </ul>
+     * </p>
+     *
+     * @param x the Euler pitch angle in radians. (rotation about the X axis)
+     * @param y the Euler yaw angle in radians. (rotation about the Y axis)
+     * @param z the Euler roll angle in radians. (rotation about the Z axis)
+     * @see #preRotateY(float)
+     * @see #preRotateZ(float)
+     * @see #preRotateX(float)
+     */
+    public void preRotate(float x, float y, float z) {
+        // same as using Quaternion, 48 multiplications
+        preRotateX(x);
+        preRotateY(y);
+        preRotateZ(z);
+    }
+
+    /**
+     * Post-rotates this matrix from the given Euler rotation angles in radians.
+     * <p>
+     * The rotations are applied in the given order and using chained rotation per axis:
+     * <ul>
+     *  <li>x - pitch - {@link #postRotateX(float)}</li>
+     *  <li>y - yaw   - {@link #postRotateY(float)}</li>
+     *  <li>z - roll  - {@link #postRotateZ(float)}</li>
+     * </ul>
+     * </p>
+     *
+     * @param x the Euler pitch angle in radians. (rotation about the X axis)
+     * @param y the Euler yaw angle in radians. (rotation about the Y axis)
+     * @param z the Euler roll angle in radians. (rotation about the Z axis)
+     * @see #postRotateY(float)
+     * @see #postRotateZ(float)
+     * @see #postRotateX(float)
+     */
+    public void postRotate(float x, float y, float z) {
+        // same as using Quaternion, 48 multiplications
+        postRotateX(x);
+        postRotateY(y);
+        postRotateZ(z);
+    }
+
+    /**
      * Rotates this matrix clockwise about an arbitrary axis. The axis must be a
      * normalized (unit) vector. If the axis is X, Y or Z, use axis-specified
      * methods to rotate this matrix which are faster.
      *
      * @param axis  the rotation axis
      * @param angle rotation angle in radians
-     * @see #rotateY(float)
-     * @see #rotateZ(float)
-     * @see #rotateX(float)
+     * @see #preRotateY(float)
+     * @see #preRotateZ(float)
+     * @see #preRotateX(float)
      */
-    public void rotate(@Nonnull Vector3 axis, float angle) {
-        rotate(axis.x, axis.y, axis.z, angle);
+    public void preRotate(@Nonnull Vector3 axis, float angle) {
+        preRotate(axis.x, axis.y, axis.z, angle);
     }
 
     /**
@@ -1338,11 +1541,11 @@ public final class Matrix4 implements Cloneable {
      * @param y     y-coordinate of rotation axis
      * @param z     z-coordinate of rotation axis
      * @param angle rotation angle in radians
-     * @see #rotateY(float)
-     * @see #rotateZ(float)
-     * @see #rotateX(float)
+     * @see #preRotateY(float)
+     * @see #preRotateZ(float)
+     * @see #preRotateX(float)
      */
-    public void rotate(float x, float y, float z, float angle) {
+    public void preRotate(float x, float y, float z, float angle) {
         if (angle == 0)
             return;
         // 52 multiplications
@@ -1410,11 +1613,68 @@ public final class Matrix4 implements Cloneable {
      *
      * @param q the quaternion to rotate by.
      */
-    public void rotate(@Nonnull Quaternion q) {
-        if (q.lengthSquared() >= 1.0e-6f) {
-            // not mul an identity matrix
-            preMul(q.toMatrix3());
+    public void preRotate(@Nonnull Quaternion q) {
+        final float sq = q.lengthSquared();
+        if (sq < 1.0e-6f) {
+            return;
         }
+        // normalize first
+        final float is;
+        if (MathUtil.approxEqual(sq, 1.0f)) {
+            is = 2.0f;
+        } else {
+            is = 2.0f / sq;
+        }
+        float xs = is * q.x;
+        float ys = is * q.y;
+        float zs = is * q.z;
+
+        final float xx = q.x * xs;
+        final float xy = q.x * ys;
+        final float xz = q.x * zs;
+        final float xw = xs * q.w;
+        final float yy = q.y * ys;
+        final float yz = q.y * zs;
+        final float yw = ys * q.w;
+        final float zz = q.z * zs;
+        final float zw = zs * q.w;
+
+        xs = 1.0f - (yy + zz);
+        ys = xy + zw;
+        zs = xz - yw;
+        final float f11 = xs * m11 + ys * m21 + zs * m31;
+        final float f12 = xs * m12 + ys * m22 + zs * m32;
+        final float f13 = xs * m13 + ys * m23 + zs * m33;
+        final float f14 = xs * m14 + ys * m24 + zs * m34;
+
+        xs = xy - zw;
+        ys = 1.0f - (xx + zz);
+        zs = yz + xw;
+        final float f21 = xs * m11 + ys * m21 + zs * m31;
+        final float f22 = xs * m12 + ys * m22 + zs * m32;
+        final float f23 = xs * m13 + ys * m23 + zs * m33;
+        final float f24 = xs * m14 + ys * m24 + zs * m34;
+
+        xs = xz + yw;
+        ys = yz - xw;
+        zs = 1.0f - (xx + yy);
+        final float f31 = xs * m11 + ys * m21 + zs * m31;
+        final float f32 = xs * m12 + ys * m22 + zs * m32;
+        final float f33 = xs * m13 + ys * m23 + zs * m33;
+        final float f34 = xs * m14 + ys * m24 + zs * m34;
+
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m34 = f34;
     }
 
     /**
@@ -1424,31 +1684,6 @@ public final class Matrix4 implements Cloneable {
      */
     public void setRotation(@Nonnull Quaternion q) {
         q.toMatrix4(this);
-    }
-
-    /**
-     * Rotates this matrix from the given Euler rotation angles in radians.
-     * <p>
-     * The rotations are applied in the given order and using chained rotation per axis:
-     * <ul>
-     *  <li>x - pitch - {@link #rotateX(float)}</li>
-     *  <li>y - yaw   - {@link #rotateY(float)}</li>
-     *  <li>z - roll  - {@link #rotateZ(float)}</li>
-     * </ul>
-     * </p>
-     *
-     * @param x the Euler pitch angle in radians. (rotation about the X axis)
-     * @param y the Euler yaw angle in radians. (rotation about the Y axis)
-     * @param z the Euler roll angle in radians. (rotation about the Z axis)
-     * @see #rotateY(float)
-     * @see #rotateZ(float)
-     * @see #rotateX(float)
-     */
-    public void rotate(float x, float y, float z) {
-        // same as using Quaternion, 48 multiplications
-        rotateX(x);
-        rotateY(y);
-        rotateZ(z);
     }
 
     /**
@@ -1675,7 +1910,7 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * If the bottom column of the matrix is [0, 0, 0, not_one], we will treat the matrix as if it
+     * If the last column of the matrix is [0, 0, 0, not_one]^T, we will treat the matrix as if it
      * is in perspective, even though it stills behaves like its affine. If we divide everything
      * by the not_one value, then it will behave the same, but will be treated as affine,
      * and therefore faster (e.g. clients can forward-difference calculations).

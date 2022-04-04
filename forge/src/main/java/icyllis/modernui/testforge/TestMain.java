@@ -124,11 +124,14 @@ public class TestMain {
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", Boolean.TRUE.toString());
-        Matrix4 mat3 = Matrix4.identity();
-        for (int i = 0; i < 20; i++) {
-            mat3.rotateZ((float) (Math.PI / 2));
-        }
-        LOGGER.info(mat3.isAxisAligned());
+        Matrix4 baseMat = Matrix4.identity();
+        baseMat.preScale(2, 4, 5);
+        Matrix4 baseMat2 = baseMat.copy();
+        Matrix4 rot = Matrix4.identity();
+        rot.preRotateX(MathUtil.PI_DIV_6);
+        baseMat.postMul(rot);
+        baseMat2.postRotateX(MathUtil.PI_DIV_6);
+        LOGGER.info(baseMat.approxEqual(baseMat2));
         if (!CREATE_WINDOW) {
             try (ModernUI modernUI = new ModernUI()) {
                 modernUI.run(new TestFragment());

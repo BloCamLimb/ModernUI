@@ -397,6 +397,27 @@ public class Paint {
         return BlendMode.fromValue((mFlags & BLEND_MODE_MASK) >> BLEND_MODE_SHIFT);
     }
 
+    /**
+     * Returns true if the paint prevents all drawing; otherwise, the paint may or
+     * may not allow drawing.
+     * <p>
+     * Returns true if, for example, blend mode combined with alpha computes a
+     * new alpha of zero.
+     *
+     * @return true if the paint prevents all drawing
+     */
+    public boolean nothingToDraw() {
+        switch (getBlendMode()) {
+            case SRC_OVER, SRC_ATOP, DST_OUT, DST_OVER, PLUS -> {
+                return getAlpha() == 0;
+            }
+            case DST -> {
+                return true;
+            }
+        }
+        return false;
+    }
+
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder("Paint{");

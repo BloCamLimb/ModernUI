@@ -27,11 +27,11 @@ import javax.annotation.Nullable;
 @SuppressWarnings("unused")
 public class Matrix3 implements Cloneable {
 
-    // matrix elements, m(ij) (row, column)
+    // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
     // [m11 m12 m13]
     // [m21 m22 m23]
-    // [m31 m32 m33]
+    // [m31 m32 m33] <- [m31 m32] represents the origin
     float m11;
     float m12;
     float m13;
@@ -323,7 +323,7 @@ public class Matrix3 implements Cloneable {
     }
 
     /**
-     * If the bottom column of the matrix is [0, 0, not_one], we will treat the matrix as if it
+     * If the last column of the matrix is [0, 0, not_one]^T, we will treat the matrix as if it
      * is in perspective, even though it stills behaves like its affine. If we divide everything
      * by the not_one value, then it will behave the same, but will be treated as affine,
      * and therefore faster (e.g. clients can forward-difference calculations).
