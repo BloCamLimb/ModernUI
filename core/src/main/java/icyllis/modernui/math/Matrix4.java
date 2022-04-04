@@ -990,6 +990,84 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
+     * Translates this matrix by given vector. This is equivalent to
+     * pre-multiplying by a translation matrix.
+     *
+     * @param dx the x-component of the translation
+     */
+    public void preTranslateX(float dx) {
+        m41 += dx * m11;
+        m42 += dx * m12;
+        m43 += dx * m13;
+        m44 += dx * m14;
+    }
+
+    /**
+     * Post-translates this matrix by given vector. This is equivalent to
+     * post-multiplying by a translation matrix.
+     *
+     * @param dx the x-component of the translation
+     */
+    public void postTranslateX(float dx) {
+        m11 += dx * m14;
+        m21 += dx * m24;
+        m31 += dx * m34;
+        m41 += dx * m44;
+    }
+
+    /**
+     * Translates this matrix by given vector. This is equivalent to
+     * pre-multiplying by a translation matrix.
+     *
+     * @param dy the y-component of the translation
+     */
+    public void preTranslateY(float dy) {
+        m41 += dy * m21;
+        m42 += dy * m22;
+        m43 += dy * m23;
+        m44 += dy * m24;
+    }
+
+    /**
+     * Post-translates this matrix by given vector. This is equivalent to
+     * post-multiplying by a translation matrix.
+     *
+     * @param dy the y-component of the translation
+     */
+    public void postTranslateY(float dy) {
+        m12 += dy * m14;
+        m22 += dy * m24;
+        m32 += dy * m34;
+        m42 += dy * m44;
+    }
+
+    /**
+     * Translates this matrix by given vector. This is equivalent to
+     * pre-multiplying by a translation matrix.
+     *
+     * @param dz the z-component of the translation
+     */
+    public void preTranslateZ(float dz) {
+        m41 += dz * m31;
+        m42 += dz * m32;
+        m43 += dz * m33;
+        m44 += dz * m34;
+    }
+
+    /**
+     * Post-translates this matrix by given vector. This is equivalent to
+     * post-multiplying by a translation matrix.
+     *
+     * @param dz the z-component of the translation
+     */
+    public void postTranslateZ(float dz) {
+        m13 += dz * m14;
+        m23 += dz * m24;
+        m33 += dz * m34;
+        m43 += dz * m44;
+    }
+
+    /**
      * Translates this matrix by given changes. This is equivalent to
      * pre-multiplying by a translation matrix. (translation * this)
      *
@@ -1457,7 +1535,7 @@ public final class Matrix4 implements Cloneable {
         final float f22 = c * m22 + s * m21;
         final float f32 = c * m32 + s * m31;
         final float f42 = c * m42 + s * m41;
-        m11 = c * m11 - s * m21;
+        m11 = c * m11 - s * m12;
         m21 = c * m21 - s * m22;
         m31 = c * m31 - s * m32;
         m41 = c * m41 - s * m42;
