@@ -584,7 +584,7 @@ public class NestedScrollView extends FrameLayout {
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent ev) {
+    public boolean onTouchEvent(@Nonnull MotionEvent ev) {
         initVelocityTrackerIfNotExists();
 
         final int action = ev.getAction();

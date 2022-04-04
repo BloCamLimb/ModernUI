@@ -27,14 +27,14 @@ import javax.annotation.Nullable;
 /**
  * The drawing device.
  */
-public final class Device extends MatrixProvider {
+public class BaseDevice extends MatrixProvider {
 
     final ImageInfo mInfo;
 
     final Matrix3 mDeviceToGlobal = Matrix3.identity();
     final Matrix3 mGlobalToDevice = Matrix3.identity();
 
-    public Device(ImageInfo info) {
+    public BaseDevice(ImageInfo info) {
         mInfo = info;
     }
 
@@ -127,7 +127,7 @@ public final class Device extends MatrixProvider {
      * that device is drawn to the root device, the net effect will be that this device's contents
      * have been transformed by the global transform.
      */
-    public void getRelativeTransform(final Device dstDevice, Matrix3 mat) {
+    public void getRelativeTransform(final BaseDevice dstDevice, Matrix3 mat) {
         // To get the transform from this space to the other device's, transform from our space to
         // global and then from global to the other device.
         mat.set(mDeviceToGlobal);

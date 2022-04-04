@@ -18,5 +18,120 @@
 
 package icyllis.modernui.graphics;
 
-public class SurfaceCanvas {
+import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
+
+import javax.annotation.Nonnull;
+import java.util.ArrayDeque;
+import java.util.Deque;
+
+/**
+ * Direct implementation to Canvas.
+ */
+public abstract class SurfaceCanvas extends Canvas {
+
+    private final Pool<MCRec> mMCRecPool = Pools.simple(32);
+
+    // local MCRec stack
+    private final Deque<MCRec> mMCStack = new ArrayDeque<>();
+
+    private final BaseDevice mBaseDevice;
+
+    private int mSaveCount;
+
+    public SurfaceCanvas(BaseDevice device) {
+        mSaveCount = 1;
+        mMCStack.push(new MCRec(device));
+
+        mBaseDevice = device;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public int save() {
+        mSaveCount++;
+        getMCRec().mDeferredSaveCount++;
+        return mSaveCount - 1;
+    }
+
+    private void doSave() {
+        willSave();
+        getMCRec().mDeferredSaveCount--;
+        internalSave();
+    }
+
+    private void checkForDeferredSave() {
+        if (getMCRec().mDeferredSaveCount > 0) {
+            doSave();
+        }
+    }
+
+    protected void willSave() {
+    }
+
+    /**
+     * @inheritDoc
+     */
+    @Override
+    public int getSaveCount() {
+        return mSaveCount;
+    }
+
+    // points to top of stack
+    @Nonnull
+    private MCRec getMCRec() {
+        return mMCStack.getFirst();
+    }
+
+    // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
+    // operations should route to this device.
+    @Nonnull
+    private BaseDevice topDevice() {
+        return getMCRec().mDevice;
+    }
+
+    private void internalSave() {
+        MCRec next = mMCRecPool.acquire();
+        if (next == null) {
+            next = new MCRec();
+        }
+        next.set(getMCRec());
+        mMCStack.addFirst(next);
+    }
+
+    /**
+     * This is the record we keep for each save/restore level in the stack.
+     * Since a level optionally copies the matrix and/or stack, we have pointers
+     * for these fields. If the value is copied for this level, the copy is
+     * stored in the ...Storage field, and the pointer points to that. If the
+     * value is not copied for this level, we ignore ...Storage, and just point
+     * at the corresponding value in the previous level in the stack.
+     */
+    private static final class MCRec {
+
+        // This points to the device of the top-most layer (which may be lower in the stack), or
+        // to the canvas's fBaseDevice. The MCRec does not own the device.
+        BaseDevice mDevice;
+
+        final Matrix4 mMatrix = new Matrix4();
+        int mDeferredSaveCount;
+
+        MCRec() {
+        }
+
+        MCRec(BaseDevice device) {
+            mDevice = device;
+            mMatrix.setIdentity();
+            mDeferredSaveCount = 0;
+        }
+
+        void set(MCRec prev) {
+            mDevice = prev.mDevice;
+            mMatrix.set(prev.mMatrix);
+            mDeferredSaveCount = 0;
+        }
+    }
 }

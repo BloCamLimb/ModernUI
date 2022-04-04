@@ -9189,10 +9189,10 @@ public class View implements Drawable.Callback {
         final ViewParent parent = mParent;
         if (parent instanceof final View vp) {
             vp.transformMatrixToGlobal(matrix);
-            matrix.translate(-vp.mScrollX, -vp.mScrollY);
+            matrix.preTranslate(-vp.mScrollX, -vp.mScrollY);
         }
 
-        matrix.translate(mLeft, mTop);
+        matrix.preTranslate(mLeft, mTop);
 
         if (!hasIdentityMatrix()) {
             matrix.preMul(getMatrix());

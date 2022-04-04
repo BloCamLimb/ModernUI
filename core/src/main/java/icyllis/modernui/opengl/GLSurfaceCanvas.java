@@ -1438,9 +1438,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
             save();
             Matrix4 mat = getMatrix();
             // rotate the round rect
-            mat.translate(cx, cy, 0);
-            mat.rotateZ(ang);
-            mat.translate(-cx, -cy, 0);
+            mat.preTranslate(cx, cy, 0);
+            mat.preRotateZ(ang);
+            mat.preTranslate(-cx, -cy, 0);
             // rotate positions to horizontal
             float sin = MathUtil.sin(-ang);
             float cos = MathUtil.cos(-ang);
