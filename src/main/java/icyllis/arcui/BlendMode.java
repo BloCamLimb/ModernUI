@@ -156,6 +156,7 @@ public enum BlendMode {
     XOR,
 
     /**
+     * Alias: ADD, PLUS_CLAMPED
      * <p>
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_PLUS.png" />
      * <figcaption>Adds the source pixels to the destination pixels and saturates
@@ -167,6 +168,17 @@ public enum BlendMode {
     PLUS,
 
     /**
+     * Alias: SUBTRACT, MINUS_CLAMPED
+     * <p>
+     * Subtracts the destination pixels from the source pixels.
+     * </p>
+     * <p>a<sub>out</sub> = max(0, min(a<sub>src</sub> - a<sub>dst</sub>, 1))</p>
+     * <p>C<sub>out</sub> = max(0, min(C<sub>src</sub> - C<sub>dst</sub>, 1))</p>
+     */
+    MINUS,
+
+    /**
+     * Alias: MODULATE
      * <p>
      * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_MODULATE.png" />
      * <figcaption>Multiplies the source and destination pixels.</figcaption>
@@ -200,26 +212,178 @@ public enum BlendMode {
      */
     OVERLAY,
 
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DARKEN.png" />
+     * <figcaption>
+     * Retains the smallest component of the source and
+     * destination pixels.
+     * </figcaption>
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     * <p>
+     * C<sub>out</sub> =
+     * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub> + min(C<sub>src</sub>,
+     * C<sub>dst</sub>)
+     * </p>
+     */
     DARKEN,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_LIGHTEN.png" />
+     * <figcaption>Retains the largest component of the source and
+     * destination pixel.</figcaption>
+     * </p>
+     * <p>a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub></p>
+     * <p>
+     * C<sub>out</sub> =
+     * (1 - a<sub>dst</sub>) * C<sub>src</sub> + (1 - a<sub>src</sub>) * C<sub>dst</sub> + max(C<sub>src</sub>,
+     * C<sub>dst</sub>)
+     * </p>
+     */
     LIGHTEN,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_COLOR_DODGE.png" />
+     * <figcaption>Makes destination brighter to reflect source.</figcaption>
+     * </p>
+     */
     COLOR_DODGE,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_COLOR_BURN.png" />
+     * <figcaption>Makes destination darker to reflect source.</figcaption>
+     * </p>
+     */
     COLOR_BURN,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_HARD_LIGHT.png" />
+     * <figcaption>Makes destination lighter or darker, depending on source.</figcaption>
+     * </p>
+     */
     HARD_LIGHT,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SOFT_LIGHT.png" />
+     * <figcaption>Makes destination lighter or darker, depending on source.</figcaption>
+     * </p>
+     */
     SOFT_LIGHT,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DIFFERENCE.png" />
+     * <figcaption>Subtracts darker from lighter with higher contrast.</figcaption>
+     * </p>
+     * <p>
+     * a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub>
+     * </p>
+     * <p>
+     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - 2 * min(C<sub>src</sub>
+     * * a<sub>dst</sub>, C<sub>dst</sub> * a<sub>src</sub>)
+     * </p>
+     */
     DIFFERENCE,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_DIFFERENCE.png" />
+     * <figcaption>Subtracts darker from lighter with lower contrast.</figcaption>
+     * </p>
+     * <p>
+     * a<sub>out</sub> = a<sub>src</sub> + a<sub>dst</sub> - a<sub>src</sub> * a<sub>dst</sub>
+     * </p>
+     * <p>
+     * C<sub>out</sub> = C<sub>src</sub> + C<sub>dst</sub> - 2 * C<sub>src</sub> * C<sub>dst</sub>
+     * </p>
+     */
     EXCLUSION,
+
+    /**
+     * Lightens the destination pixels to reflect the source pixels while also increasing contrast.
+     */
+    LINEAR_DODGE,
+
+    /**
+     * Darkens the destination pixels to reflect the source pixels while also increasing contrast.
+     */
+    LINEAR_BURN,
+
+    /**
+     * Burns or dodges colors by changing contrast, depending on the blend color.
+     */
+    VIVID_LIGHT,
+
+    /**
+     * burns or dodges colors by changing brightness, depending on the blend color.
+     */
+    LINEAR_LIGHT,
+
+    /**
+     * Conditionally replaces destination pixels with source pixels depending on the brightness of the source pixels.
+     */
+    PIN_LIGHT,
+
+    /**
+     * Adds two images together, setting each color channel value to either 0 or 1.
+     */
+    HARD_MIX,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_HUE.png" />
+     * <figcaption>
+     * Replaces hue of destination with hue of source, leaving saturation
+     * and luminosity unchanged.
+     * </figcaption>
+     * </p>
+     */
     HUE,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_SATURATION.png" />
+     * <figcaption>
+     * Replaces saturation of destination saturation hue of source, leaving hue and
+     * luminosity unchanged.
+     * </figcaption>
+     * </p>
+     */
     SATURATION,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_COLOR.png" />
+     * <figcaption>
+     * Replaces hue and saturation of destination with hue and saturation of source,
+     * leaving luminosity unchanged.
+     * </figcaption>
+     * </p>
+     */
     COLOR,
+
+    /**
+     * <p>
+     * <img src="https://developer.android.com/reference/android/images/graphics/blendmode_LUMINOSITY.png" />
+     * <figcaption>
+     * Replaces luminosity of destination with luminosity of source, leaving hue and
+     * saturation unchanged.
+     * </figcaption>
+     * </p>
+     */
     LUMINOSITY;
 
-    // GL_ONE_MINUS_DST_ALPHA, GL_DST_ALPHA
-
-    private static final BlendMode[] VALUES = values();
+    private static final BlendMode[] BLEND_MODES = values();
 
     @Nonnull
     public static BlendMode fromValue(int value) {
-        return VALUES[value];
+        return BLEND_MODES[value];
     }
 
     public static int toValue(@Nonnull BlendMode mode) {

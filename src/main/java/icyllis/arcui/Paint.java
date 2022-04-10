@@ -25,8 +25,6 @@ import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
-import static icyllis.arcui.Color.ColorInt;
-
 /**
  * A Paint collects all options outside the Canvas clip and Canvas matrix,
  * such as style and color information, applied when drawing geometries and images.
