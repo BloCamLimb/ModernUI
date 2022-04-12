@@ -19,7 +19,6 @@
 package icyllis.arcui;
 
 import javax.annotation.Nonnull;
-import java.util.Arrays;
 
 /**
  * A virtual device draws nothing, but tracks device's clip.
@@ -37,21 +36,28 @@ public final class VirtualDevice extends BaseDevice {
     public VirtualDevice(int left, int top, int right, int bottom) {
         super(new ImageInfo(right - left, bottom - top));
         setOrigin(null, left, top);
-        resetClipStack();
+        push().mClip.setRect(mBounds);
     }
 
     public void resetForNextPicture(int left, int top, int right, int bottom) {
         mInfo.resize(right - left, bottom - top);
         setOrigin(null, left, top);
-        resetClipStack();
+        for (int i = mClipIndex; i > 0; i--) {
+            pop();
+        }
+        ClipState state = mClipStack[0];
+        state.mClip.setRect(mBounds);
+        state.mDeferredSaveCount = 0;
     }
 
     @Nonnull
     private ClipState push() {
         final int i = ++mClipIndex;
         ClipState[] stack = mClipStack;
-        if (i >= stack.length) {
-            mClipStack = stack = Arrays.copyOf(stack, stack.length + (stack.length >> 1));
+        if (i == stack.length) {
+            mClipStack = new ClipState[i + (i >> 1)];
+            System.arraycopy(stack, 0, mClipStack, 0, i);
+            stack = mClipStack;
         }
         ClipState state = stack[i];
         if (state == null) {
@@ -81,19 +87,6 @@ public final class VirtualDevice extends BaseDevice {
         } else {
             return state.mClip;
         }
-    }
-
-    private void resetClipStack() {
-        if (mClipIndex == -1) {
-            push();
-        } else {
-            for (int i = mClipIndex; i > 0; i--) {
-                pop();
-            }
-        }
-        ClipState state = mClipStack[mClipIndex];
-        state.mClip.setRect(mBounds);
-        state.mDeferredSaveCount = 0;
     }
 
     @Override

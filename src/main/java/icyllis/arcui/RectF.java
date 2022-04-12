@@ -18,8 +18,6 @@
 
 package icyllis.arcui;
 
-import javax.annotation.Nonnull;
-
 /**
  * RectF holds four float coordinates describing the upper and lower bounds
  * of a rectangle. (left, top, right, bottom). These fields can be accessed
@@ -32,7 +30,7 @@ import javax.annotation.Nonnull;
  * it is considered empty.
  */
 @SuppressWarnings("unused")
-public final class RectF {
+public class RectF {
 
     public float left;
     public float top;
@@ -97,7 +95,7 @@ public final class RectF {
      *
      * @return true if width() or height() are zero or negative
      */
-    public boolean isEmpty() {
+    public final boolean isEmpty() {
         return right <= left || bottom <= top;
     }
 
@@ -108,7 +106,7 @@ public final class RectF {
      *
      * @return true if width() or height() are zero or positive
      */
-    public boolean isSorted() {
+    public final boolean isSorted() {
         return left <= right && top <= bottom;
     }
 
@@ -117,7 +115,7 @@ public final class RectF {
      *
      * @return true if no member is infinite or NaN
      */
-    public boolean isFinite() {
+    public final boolean isFinite() {
         return Float.isFinite(left) && Float.isFinite(top) && Float.isFinite(right) && Float.isFinite(bottom);
     }
 
@@ -125,7 +123,7 @@ public final class RectF {
      * @return the rectangle's width. This does not check for a valid rectangle
      * (i.e. left <= right) so the result may be negative.
      */
-    public float width() {
+    public final float width() {
         return right - left;
     }
 
@@ -133,7 +131,7 @@ public final class RectF {
      * @return the rectangle's height. This does not check for a valid rectangle
      * (i.e. top <= bottom) so the result may be negative.
      */
-    public float height() {
+    public final float height() {
         return bottom - top;
     }
 
@@ -141,7 +139,7 @@ public final class RectF {
      * @return the horizontal center of the rectangle. This does not check for
      * a valid rectangle (i.e. left <= right)
      */
-    public float centerX() {
+    public final float centerX() {
         return (left + right) * 0.5f;
     }
 
@@ -149,7 +147,7 @@ public final class RectF {
      * @return the vertical center of the rectangle. This does not check for
      * a valid rectangle (i.e. top <= bottom)
      */
-    public float centerY() {
+    public final float centerY() {
         return (top + bottom) * 0.5f;
     }
 
@@ -785,7 +783,6 @@ public final class RectF {
         return result;
     }
 
-    @Nonnull
     @Override
     public String toString() {
         return "RectF(" + left + ", " + top + ", "

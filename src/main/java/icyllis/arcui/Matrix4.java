@@ -30,7 +30,7 @@ import static org.lwjgl.system.MemoryUtil.*;
  * Represents a 4x4 row-major matrix.
  */
 @SuppressWarnings("unused")
-public final class Matrix4 implements Cloneable {
+public class Matrix4 implements Cloneable {
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -38,22 +38,22 @@ public final class Matrix4 implements Cloneable {
     // [m21 m22 m23 m24]
     // [m31 m32 m33 m34]
     // [m41 m42 m43 m44] <- [m41 m42 m43] represents the origin
-    float m11;
-    float m12;
-    float m13;
-    float m14;
-    float m21;
-    float m22;
-    float m23;
-    float m24;
-    float m31;
-    float m32;
-    float m33;
-    float m34;
-    float m41;
-    float m42;
-    float m43;
-    float m44;
+    protected float m11;
+    protected float m12;
+    protected float m13;
+    protected float m14;
+    protected float m21;
+    protected float m22;
+    protected float m23;
+    protected float m24;
+    protected float m31;
+    protected float m32;
+    protected float m33;
+    protected float m34;
+    protected float m41;
+    protected float m42;
+    protected float m43;
+    protected float m44;
 
     /**
      * Create a zero matrix.

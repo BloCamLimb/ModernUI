@@ -25,14 +25,14 @@ public abstract class MatrixProvider {
     final Matrix4 mLocalToDevice;
 
     /**
-     * Create a matrix provider from an identity matrix.
+     * Create a matrix provider with an identity matrix.
      */
     public MatrixProvider() {
         this(Matrix4.identity());
     }
 
     /**
-     * Create a matrix provider from the given matrix.
+     * Create a matrix provider with the given matrix.
      *
      * @param localToDevice the backing matrix
      */

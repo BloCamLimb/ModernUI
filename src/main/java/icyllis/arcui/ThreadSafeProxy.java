@@ -30,7 +30,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public final class ThreadSafeProxy {
 
     /**
-     * Possible 3D graphics APIs that may be used by Modern UI.
+     * Possible 3D graphics APIs that may be used by Arc UI.
      */
     public static final int
             OPENGL = 0, // OpenGL 4.5 core profile

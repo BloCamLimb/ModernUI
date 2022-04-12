@@ -27,22 +27,22 @@ import static icyllis.arcui.MathUtil.*;
  * Represents a 3x3 row-major matrix.
  */
 @SuppressWarnings("unused")
-public final class Matrix3 implements Cloneable {
+public class Matrix3 implements Cloneable {
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
     // [m11 m12 m13]
     // [m21 m22 m23]
     // [m31 m32 m33] <- [m31 m32] represents the origin
-    float m11;
-    float m12;
-    float m13;
-    float m21;
-    float m22;
-    float m23;
-    float m31;
-    float m32;
-    float m33;
+    protected float m11;
+    protected float m12;
+    protected float m13;
+    protected float m21;
+    protected float m22;
+    protected float m23;
+    protected float m31;
+    protected float m32;
+    protected float m33;
 
     /**
      * Create a zero matrix.

@@ -20,7 +20,6 @@ package icyllis.arcui;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
 
 /**
  * A Canvas provides an interface for drawing 2D geometries, images, and how the
@@ -77,19 +76,20 @@ public abstract class Canvas {
     // cache some objects for performance
     private static final int MAX_MC_POOL_SIZE = 32;
 
+    private final BaseDevice mBaseDevice;
+
     // local MCRec stack
     private MCRec[] mMCStack = new MCRec[MAX_MC_POOL_SIZE];
     private int mMCIndex;
 
-    private final BaseDevice mBaseDevice;
-
     private int mSaveCount;
 
     public Canvas(BaseDevice device) {
-        mSaveCount = 1;
-        mMCStack[0] = new MCRec(device);
-
         mBaseDevice = device;
+
+        mMCStack[0] = new MCRec(device);
+        mMCIndex = 0;
+        mSaveCount = 1;
     }
 
     // the bottom-most device in the stack, only changed by init(). Image properties and the final
@@ -112,11 +112,14 @@ public abstract class Canvas {
         return mMCStack[mMCIndex];
     }
 
+    @Nonnull
     private MCRec push() {
         final int i = ++mMCIndex;
         MCRec[] stack = mMCStack;
         if (i >= stack.length) {
-            mMCStack = stack = Arrays.copyOf(stack, stack.length + (stack.length >> 1));
+            mMCStack = new MCRec[i + (i >> 1)];
+            System.arraycopy(stack, 0, mMCStack, 0, i);
+            stack = mMCStack;
         }
         MCRec rec = stack[i];
         if (rec == null) {

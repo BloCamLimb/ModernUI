@@ -83,7 +83,7 @@ import javax.annotation.Nonnull;
  * </ul>
  *
  * <h3>Color4f</h3>
- * <p>Color4f (float[]) is a representation of RGBA color values in the sRGB color space,
+ * <p>Color4f is a representation of RGBA color values in the sRGB color space,
  * holding four floating-point components, to store colors with more precision than color
  * ints. Color components are always in a known order. RGB components may be premultiplied
  * by alpha or not, but public API always uses un-premultiplied colors.</p>
@@ -104,7 +104,7 @@ import javax.annotation.Nonnull;
  * and <code>(1.0, 0.0, 0.0, 0.5)</code>.</p>
  */
 @SuppressWarnings("unused")
-public final class Color {
+public class Color {
 
     /**
      * Represents fully transparent Color. May be used to initialize a destination
@@ -328,7 +328,252 @@ public final class Color {
             RGB_FLAGS = RG_FLAGS | BLUE_FLAG,
             RGBA_FLAGS = RGB_FLAGS | ALPHA_FLAG;
 
-    private Color() {
+    public float mR;
+    public float mG;
+    public float mB;
+    public float mA;
+
+    /**
+     * Creates a new transparent <code>Color</code> instance in the sRGB color space.
+     */
+    public Color() {
+    }
+
+    /**
+     * Creates a new <code>Color</code> instance from an ARGB color int.
+     * The resulting color is in the sRGB color space.
+     *
+     * @param color the ARGB color int to create a <code>Color</code> from
+     */
+    public Color(@ColorInt int color) {
+        mR = ((color >> 16) & 0xff) / 255.0f;
+        mG = ((color >> 8) & 0xff) / 255.0f;
+        mB = (color & 0xff) / 255.0f;
+        mA = (color >>> 24) / 255.0f;
+    }
+
+    /**
+     * Creates a new <code>Color</code> instance in the sRGB color space.
+     *
+     * @param r the value of the red channel, must be in [0..1] range
+     * @param g the value of the green channel, must be in [0..1] range
+     * @param b the value of the blue channel, must be in [0..1] range
+     * @param a the value of the alpha channel, must be in [0..1] range
+     */
+    public Color(float r, float g, float b, float a) {
+        mR = r;
+        mG = g;
+        mB = b;
+        mA = a;
+    }
+
+    /**
+     * Creates a new <code>Color</code> instance from an existing color instance.
+     *
+     * @param color an existing color instance to create a new color from
+     */
+    public Color(Color color) {
+        mR = color.mR;
+        mG = color.mG;
+        mB = color.mB;
+        mA = color.mA;
+    }
+
+    /**
+     * Set this color values from an ARGB color int in the sRGB color space.
+     *
+     * @param color the ARGB color int to set this from
+     */
+    public void set(@ColorInt int color) {
+        mR = ((color >> 16) & 0xff) / 255.0f;
+        mG = ((color >> 8) & 0xff) / 255.0f;
+        mB = (color & 0xff) / 255.0f;
+        mA = (color >>> 24) / 255.0f;
+    }
+
+    /**
+     * Set this color values in the sRGB color space.
+     *
+     * @param r the value of the red channel, must be in [0..1] range
+     * @param g the value of the green channel, must be in [0..1] range
+     * @param b the value of the blue channel, must be in [0..1] range
+     * @param a the value of the alpha channel, must be in [0..1] range
+     */
+    public void set(float r, float g, float b, float a) {
+        mR = r;
+        mG = g;
+        mB = b;
+        mA = a;
+    }
+
+    /**
+     * Set this color values from an existing color instance.
+     *
+     * @param color an existing color instance
+     */
+    public void set(Color color) {
+        mR = color.mR;
+        mG = color.mG;
+        mB = color.mB;
+        mA = color.mA;
+    }
+
+    /**
+     * Converts this color to an ARGB color int. A color int is always in
+     * the sRGB color space. This implies a color space conversion is applied if needed.
+     *
+     * @return an ARGB color in the sRGB color space
+     */
+    @ColorInt
+    public int toArgb() {
+        return ((int) (mA * 255.0f + 0.5f) << 24) |
+                ((int) (mR * 255.0f + 0.5f) << 16) |
+                ((int) (mG * 255.0f + 0.5f) << 8) |
+                (int) (mB * 255.0f + 0.5f);
+    }
+
+    /**
+     * Returns the value of the red component in the range \([0..1]\).
+     *
+     * @see #alpha()
+     * @see #green()
+     * @see #blue()
+     */
+    public float red() {
+        return mR;
+    }
+
+    /**
+     * Returns the value of the green component in the range \([0..1]\).
+     *
+     * @see #alpha()
+     * @see #red()
+     * @see #blue()
+     */
+    public float green() {
+        return mG;
+    }
+
+    /**
+     * Returns the value of the blue component in the range \([0..1]\).
+     *
+     * @see #alpha()
+     * @see #red()
+     * @see #green()
+     */
+    public float blue() {
+        return mB;
+    }
+
+    /**
+     * Returns the value of the alpha component in the range \([0..1]\).
+     *
+     * @see #red()
+     * @see #green()
+     * @see #blue()
+     */
+    public float alpha() {
+        return mA;
+    }
+
+    /**
+     * Sets the value of the red component in the range \([0..1]\).
+     *
+     * @see #alpha(float)
+     * @see #green(float)
+     * @see #blue(float)
+     */
+    public void red(float red) {
+        mR = red;
+    }
+
+    /**
+     * Sets the value of the green component in the range \([0..1]\).
+     *
+     * @see #alpha(float)
+     * @see #red(float)
+     * @see #blue(float)
+     */
+    public void green(float green) {
+        mG = green;
+    }
+
+    /**
+     * Sets the value of the blue component in the range \([0..1]\).
+     *
+     * @see #alpha(float)
+     * @see #red(float)
+     * @see #green(float)
+     */
+    public void blue(float blue) {
+        mB = blue;
+    }
+
+    /**
+     * Returns the value of the alpha component in the range \([0..1]\).
+     *
+     * @see #red(float)
+     * @see #green(float)
+     * @see #blue(float)
+     */
+    public void alpha(float alpha) {
+        mA = alpha;
+    }
+
+    /**
+     * Returns true if the color is an opaque color (i.e. alpha() == 1.0f).
+     *
+     * @return true if the color is opaque
+     */
+    public boolean isOpaque() {
+        return mA == 1.0f;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Color color = (Color) o;
+        return Float.floatToIntBits(color.mR) == Float.floatToIntBits(mR) &&
+                Float.floatToIntBits(color.mG) == Float.floatToIntBits(mG) &&
+                Float.floatToIntBits(color.mB) == Float.floatToIntBits(mB) &&
+                Float.floatToIntBits(color.mA) == Float.floatToIntBits(mA);
+    }
+
+    @Override
+    public int hashCode() {
+        int result = Float.floatToIntBits(mR);
+        result = 31 * result + Float.floatToIntBits(mG);
+        result = 31 * result + Float.floatToIntBits(mB);
+        result = 31 * result + Float.floatToIntBits(mA);
+        return result;
+    }
+
+    /**
+     * <p>Returns a string representation of the object. This method returns
+     * a string equal to the value of:</p>
+     *
+     * <pre class="prettyprint">
+     * "Color(" + r + ", " + g + ", " + b + ", " + a + ')'
+     * </pre>
+     *
+     * <p>For instance, the string representation of opaque black in the sRGB
+     * color space is equal to the following value:</p>
+     *
+     * <pre>
+     * Color(0.0, 0.0, 0.0, 1.0)
+     * </pre>
+     *
+     * @return A non-null string representation of the object
+     */
+    @Nonnull
+    @Override
+    public String toString() {
+        return "Color(" + mR +
+                ", " + mG +
+                ", " + mB +
+                ", " + mA +
+                ')';
     }
 
     /**

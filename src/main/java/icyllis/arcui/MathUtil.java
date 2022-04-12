@@ -36,6 +36,8 @@ public final class MathUtil {
     public static final float DEG_TO_RAD = 0.017453292519943295f;
     public static final float RAD_TO_DEG = 1.0f / DEG_TO_RAD;
 
+    public static final float SQRT_OF_TWO = (float) Math.sqrt(2.0);
+
     /**
      * @return true if <code>a</code> is approximately equal to zero
      */

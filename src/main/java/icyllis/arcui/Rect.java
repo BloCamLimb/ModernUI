@@ -18,8 +18,6 @@
 
 package icyllis.arcui;
 
-import javax.annotation.Nonnull;
-
 /**
  * Rect holds four integer coordinates describing the upper and lower bounds
  * of a rectangle (left, top, right bottom). These fields can be accessed
@@ -37,7 +35,7 @@ import javax.annotation.Nonnull;
  * those of its bottom and right.
  */
 @SuppressWarnings("unused")
-public final class Rect {
+public class Rect {
 
     public int left;
     public int top;
@@ -88,7 +86,7 @@ public final class Rect {
      *
      * @return true if width() or height() are zero or negative
      */
-    public boolean isEmpty() {
+    public final boolean isEmpty() {
         return right <= left || bottom <= top;
     }
 
@@ -99,7 +97,7 @@ public final class Rect {
      *
      * @return true if width() or height() are zero or positive
      */
-    public boolean isSorted() {
+    public final boolean isSorted() {
         return left <= right && top <= bottom;
     }
 
@@ -107,7 +105,7 @@ public final class Rect {
      * @return the rectangle's width. This does not check for a valid rectangle
      * (i.e. left <= right) so the result may be negative.
      */
-    public int width() {
+    public final int width() {
         return right - left;
     }
 
@@ -115,7 +113,7 @@ public final class Rect {
      * @return the rectangle's height. This does not check for a valid rectangle
      * (i.e. top <= bottom) so the result may be negative.
      */
-    public int height() {
+    public final int height() {
         return bottom - top;
     }
 
@@ -124,7 +122,7 @@ public final class Rect {
      * is fractional, this method returns the largest integer that is
      * less than the computed value.
      */
-    public int centerX() {
+    public final int centerX() {
         return (left + right) >> 1;
     }
 
@@ -133,21 +131,21 @@ public final class Rect {
      * is fractional, this method returns the largest integer that is
      * less than the computed value.
      */
-    public int centerY() {
+    public final int centerY() {
         return (top + bottom) >> 1;
     }
 
     /**
      * @return the exact horizontal center of the rectangle as a float.
      */
-    public float exactCenterX() {
+    public final float exactCenterX() {
         return (left + right) * 0.5f;
     }
 
     /**
      * @return the exact vertical center of the rectangle as a float.
      */
-    public float exactCenterY() {
+    public final float exactCenterY() {
         return (top + bottom) * 0.5f;
     }
 
@@ -665,7 +663,6 @@ public final class Rect {
         return result;
     }
 
-    @Nonnull
     @Override
     public String toString() {
         return "Rect(" + left + ", " +
