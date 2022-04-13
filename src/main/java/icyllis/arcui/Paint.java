@@ -167,7 +167,7 @@ public class Paint {
 
     private static final int ALIGN_MASK = 0xC0;
 
-    private static final int BLEND_MODE_SHIFT = 10;
+    private static final int BLEND_MODE_SHIFT = 8;
     private static final int BLEND_MODE_MASK = 0xFF << BLEND_MODE_SHIFT;
 
     private static final int DEFAULT_FLAGS = FILL | CAP_ROUND | JOIN_ROUND | ALIGN_CENTER |
@@ -191,6 +191,7 @@ public class Paint {
     private ColorFilter mColorFilter;
     private ImageFilter mImageFilter;
 
+    // bitfield
     private int mFlags;
 
     /**
@@ -254,7 +255,7 @@ public class Paint {
      *
      * @see #take()
      */
-    public void drop() {
+    public final void drop() {
         synchronized (sBag) {
             if (sBagSize == sBag.length)
                 return;
@@ -265,7 +266,7 @@ public class Paint {
     /**
      * Set all attributes of this paint to their initial values.
      */
-    public void reset() {
+    public final void reset() {
         mR = 0;
         mG = 0;
         mB = 0;
@@ -285,7 +286,7 @@ public class Paint {
      *
      * @param paint the paint to set this paint from
      */
-    public void set(Paint paint) {
+    public final void set(Paint paint) {
         mR = paint.mR;
         mG = paint.mG;
         mB = paint.mB;
@@ -308,7 +309,7 @@ public class Paint {
      *
      * @param color the new straight color (including alpha) to set in the paint.
      */
-    public void setColor(@ColorInt int color) {
+    public final void setColor(@ColorInt int color) {
         mR = ((color >> 16) & 0xff) / 255.0f;
         mG = ((color >> 8) & 0xff) / 255.0f;
         mB = (color & 0xff) / 255.0f;
@@ -321,7 +322,7 @@ public class Paint {
      *
      * @param color un-premultiplied RGBA
      */
-    public void setColor(Color color) {
+    public final void setColor(Color color) {
         mR = color.mR;
         mG = color.mG;
         mB = color.mB;
@@ -337,7 +338,7 @@ public class Paint {
      * @return the paint's color (and alpha).
      */
     @ColorInt
-    public int getColor() {
+    public final int getColor() {
         return ((int) (mA * 255.0f + 0.5f) << 24) |
                 ((int) (mR * 255.0f + 0.5f) << 16) |
                 ((int) (mG * 255.0f + 0.5f) << 8) |
@@ -350,18 +351,18 @@ public class Paint {
      *
      * @param color un-premultiplied RGBA
      */
-    public void getColor(Color color) {
+    public final void getColor(Color color) {
         color.set(mR, mG, mB, mA);
     }
 
     /**
      * Helper to setColor(), that only assigns the color's alpha value,
      * leaving its r,g,b values unchanged. Results are undefined if the alpha
-     * value is outside the range [0..255]
+     * value is outside the range [0..255].
      *
      * @param a set the alpha component [0..255] of the paint's color.
      */
-    public void setAlpha(int a) {
+    public final void setAlpha(int a) {
         mA = a / 255.0f;
     }
 
@@ -371,9 +372,9 @@ public class Paint {
      * <code>a</code> set to zero makes color fully transparent;
      * <code>a</code> set to 1.0 makes color fully opaque.
      *
-     * @param a alpha component of color
+     * @param a alpha component [0..1] of color
      */
-    public void setAlpha(float a) {
+    public final void setAlpha(float a) {
         mA = a;
     }
 
@@ -384,7 +385,7 @@ public class Paint {
      *
      * @return the alpha component of the paint's color.
      */
-    public int getAlpha() {
+    public final int getAlpha() {
         return (int) (mA * 255.0f + 0.5f);
     }
 
@@ -393,7 +394,7 @@ public class Paint {
      *
      * @return alpha ranging from zero, fully transparent, to one, fully opaque
      */
-    public float alpha() {
+    public final float alpha() {
         return mA;
     }
 
@@ -404,7 +405,7 @@ public class Paint {
      * @see #green()
      * @see #blue()
      */
-    public float red() {
+    public final float red() {
         return mR;
     }
 
@@ -415,7 +416,7 @@ public class Paint {
      * @see #red()
      * @see #blue()
      */
-    public float green() {
+    public final float green() {
         return mG;
     }
 
@@ -426,19 +427,20 @@ public class Paint {
      * @see #red()
      * @see #green()
      */
-    public float blue() {
+    public final float blue() {
         return mB;
     }
 
     /**
      * Helper to setColor(), that only assigns the color's <code>r,g,b</code> values,
-     * leaving its alpha value unchanged.
+     * leaving its alpha value unchanged. Results are undefined if the any component
+     * value is outside the range [0..255].
      *
      * @param r the new red component (0..255) of the paint's color.
      * @param g the new green component (0..255) of the paint's color.
      * @param b the new blue component (0..255) of the paint's color.
      */
-    public void setRGB(int r, int g, int b) {
+    public final void setRGB(int r, int g, int b) {
         mR = r / 255.0f;
         mG = g / 255.0f;
         mB = b / 255.0f;
@@ -446,13 +448,14 @@ public class Paint {
 
     /**
      * Helper to setColor(), that only assigns the color's <code>r,g,b</code> values,
-     * leaving its alpha value unchanged.
+     * leaving its alpha value unchanged. Results are undefined if the any component
+     * value is outside the range [0..1].
      *
      * @param r the new red component (0..1) of the paint's color.
      * @param g the new green component (0..1) of the paint's color.
      * @param b the new blue component (0..1) of the paint's color.
      */
-    public void setRGB(float r, float g, float b) {
+    public final void setRGB(float r, float g, float b) {
         mR = r;
         mG = g;
         mB = b;
@@ -460,13 +463,14 @@ public class Paint {
 
     /**
      * Helper to setColor(), that takes <code>r,g,b,a</code> and constructs the color int.
+     * Results are undefined if the any component value is outside the range [0..255].
      *
      * @param r the new red component (0..255) of the paint's color.
      * @param g the new green component (0..255) of the paint's color.
      * @param b the new blue component (0..255) of the paint's color.
      * @param a the new alpha component (0..255) of the paint's color.
      */
-    public void setRGBA(int r, int g, int b, int a) {
+    public final void setRGBA(int r, int g, int b, int a) {
         mR = r / 255.0f;
         mG = g / 255.0f;
         mB = b / 255.0f;
@@ -475,13 +479,14 @@ public class Paint {
 
     /**
      * Helper to setColor(), that takes floating point <code>r,g,b,a</code> values.
+     * Results are undefined if the any component value is outside the range [0..1].
      *
      * @param r the new red component (0..1) of the paint's color.
      * @param g the new green component (0..1) of the paint's color.
      * @param b the new blue component (0..1) of the paint's color.
      * @param a the new alpha component (0..1) of the paint's color.
      */
-    public void setRGBA(float r, float g, float b, float a) {
+    public final void setRGBA(float r, float g, float b, float a) {
         mR = r;
         mG = g;
         mB = b;
@@ -496,7 +501,7 @@ public class Paint {
      * @param g the new green component (0..255) of the paint's color.
      * @param b the new blue component (0..255) of the paint's color.
      */
-    public void setARGB(int a, int r, int g, int b) {
+    public final void setARGB(int a, int r, int g, int b) {
         mR = r / 255.0f;
         mG = g / 255.0f;
         mB = b / 255.0f;
@@ -511,7 +516,7 @@ public class Paint {
      * @param b the new blue component (0..1) of the paint's color.
      * @param a the new alpha component (0..1) of the paint's color.
      */
-    public void setARGB(float a, float r, float g, float b) {
+    public final void setARGB(float a, float r, float g, float b) {
         mR = r;
         mG = g;
         mB = b;
@@ -524,7 +529,7 @@ public class Paint {
      *
      * @return the paint's style setting (fill, stroke or both)
      */
-    public int getStyle() {
+    public final int getStyle() {
         return mFlags & STYLE_MASK;
     }
 
@@ -534,7 +539,7 @@ public class Paint {
      *
      * @param style the new style to set in the paint
      */
-    public void setStyle(@Style int style) {
+    public final void setStyle(@Style int style) {
         mFlags = (mFlags & ~STYLE_MASK) | (style & STYLE_MASK);
     }
 
@@ -543,7 +548,7 @@ public class Paint {
      *
      * @param stroke true to stroke shapes, false to fill shapes
      */
-    public void setStroke(boolean stroke) {
+    public final void setStroke(boolean stroke) {
         mFlags = (mFlags & ~STYLE_MASK) | (stroke ? STROKE : FILL);
     }
 
@@ -553,7 +558,7 @@ public class Paint {
      *
      * @return the line cap style for the paint
      */
-    public int getStrokeCap() {
+    public final int getStrokeCap() {
         return mFlags & CAP_MASK;
     }
 
@@ -563,7 +568,7 @@ public class Paint {
      *
      * @param cap set the paint's line cap style
      */
-    public void setStrokeCap(@Cap int cap) {
+    public final void setStrokeCap(@Cap int cap) {
         mFlags = (mFlags & ~CAP_MASK) | (cap & CAP_MASK);
     }
 
@@ -572,7 +577,7 @@ public class Paint {
      *
      * @return the paint's Join
      */
-    public int getStrokeJoin() {
+    public final int getStrokeJoin() {
         return mFlags & JOIN_MASK;
     }
 
@@ -581,7 +586,7 @@ public class Paint {
      *
      * @param join set the paint's Join
      */
-    public void setStrokeJoin(@Join int join) {
+    public final void setStrokeJoin(@Join int join) {
         mFlags = (mFlags & ~JOIN_MASK) | (join & JOIN_MASK);
     }
 
@@ -590,7 +595,7 @@ public class Paint {
      *
      * @return the paint's Align
      */
-    public int getStrokeAlign() {
+    public final int getStrokeAlign() {
         return mFlags & ALIGN_MASK;
     }
 
@@ -599,7 +604,7 @@ public class Paint {
      *
      * @param align set the paint's Align
      */
-    public void setStrokeAlign(@Align int align) {
+    public final void setStrokeAlign(@Align int align) {
         mFlags = (mFlags & ~ALIGN_MASK) | (align & ALIGN_MASK);
     }
 
@@ -611,7 +616,7 @@ public class Paint {
      *
      * @return the paint's stroke width
      */
-    public float getStrokeWidth() {
+    public final float getStrokeWidth() {
         return mWidth;
     }
 
@@ -623,7 +628,7 @@ public class Paint {
      *
      * @param width set the paint's stroke width
      */
-    public void setStrokeWidth(float width) {
+    public final void setStrokeWidth(float width) {
         mWidth = Math.max(width, 0);
     }
 
@@ -633,7 +638,7 @@ public class Paint {
      *
      * @return zero and greater miter limit
      */
-    public float getStrokeMiter() {
+    public final float getStrokeMiter() {
         return mMiter;
     }
 
@@ -645,7 +650,7 @@ public class Paint {
      *
      * @param miter zero and greater miter limit
      */
-    public void setStrokeMiter(float miter) {
+    public final void setStrokeMiter(float miter) {
         mMiter = Math.max(miter, 0);
     }
 
@@ -662,7 +667,7 @@ public class Paint {
      * @return the paint's feather radius, zero or greater
      * @see #setFeather(float)
      */
-    public float getFeather() {
+    public final float getFeather() {
         return mFeather;
     }
 
@@ -680,7 +685,7 @@ public class Paint {
      *
      * @param feather the paint's feather radius, zero or greater
      */
-    public void setFeather(float feather) {
+    public final void setFeather(float feather) {
         mFeather = Math.max(feather, 0);
     }
 
@@ -690,7 +695,7 @@ public class Paint {
      * @return Shader if previously set, null otherwise
      */
     @Nullable
-    public Shader getShader() {
+    public final Shader getShader() {
         return mShader;
     }
 
@@ -699,7 +704,7 @@ public class Paint {
      *
      * @param shader how geometry is filled with color; if null, solid color is used instead
      */
-    public void setShader(@Nullable Shader shader) {
+    public final void setShader(@Nullable Shader shader) {
         mShader = shader;
     }
 
@@ -709,7 +714,7 @@ public class Paint {
      * @return ColorFilter if previously set, null otherwise
      */
     @Nullable
-    public ColorFilter getColorFilter() {
+    public final ColorFilter getColorFilter() {
         return mColorFilter;
     }
 
@@ -718,7 +723,7 @@ public class Paint {
      *
      * @param colorFilter ColorFilter to apply to subsequent draw
      */
-    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+    public final void setColorFilter(@Nullable ColorFilter colorFilter) {
         mColorFilter = colorFilter;
     }
 
@@ -732,7 +737,7 @@ public class Paint {
      * @param blendMode the blend mode to be installed in the paint, may be null
      * @see BlendMode
      */
-    public void setBlendMode(@Nullable BlendMode blendMode) {
+    public final void setBlendMode(@Nullable BlendMode blendMode) {
         if (blendMode != null) {
             int value = BlendMode.toValue(blendMode) << BLEND_MODE_SHIFT;
             mFlags = (mFlags & ~BLEND_MODE_MASK) | value;
@@ -747,7 +752,7 @@ public class Paint {
      * @return the paint's blend mode used to combine source color with destination color
      */
     @Nonnull
-    public BlendMode getBlendMode() {
+    public final BlendMode getBlendMode() {
         return BlendMode.fromValue((mFlags & BLEND_MODE_MASK) >> BLEND_MODE_SHIFT);
     }
 
@@ -756,7 +761,7 @@ public class Paint {
      *
      * @return true if BlendMode is SRC_OVER
      */
-    public boolean isSrcOver() {
+    public final boolean isSrcOver() {
         return (mFlags & BLEND_MODE_MASK) == DEFAULT_FLAGS;
     }
 
@@ -766,7 +771,7 @@ public class Paint {
      * @return MaskFilter if previously set, null otherwise
      */
     @Nullable
-    public MaskFilter getMaskFilter() {
+    public final MaskFilter getMaskFilter() {
         return mMaskFilter;
     }
 
@@ -776,7 +781,7 @@ public class Paint {
      *
      * @param maskFilter modifies clipping mask generated from drawn geometry
      */
-    public void setMaskFilter(@Nullable MaskFilter maskFilter) {
+    public final void setMaskFilter(@Nullable MaskFilter maskFilter) {
         mMaskFilter = maskFilter;
     }
 
@@ -786,7 +791,7 @@ public class Paint {
      * @return ImageFilter if previously set, null otherwise
      */
     @Nullable
-    public ImageFilter getImageFilter() {
+    public final ImageFilter getImageFilter() {
         return mImageFilter;
     }
 
@@ -796,7 +801,7 @@ public class Paint {
      *
      * @param imageFilter how Image is sampled when transformed
      */
-    public void setImageFilter(@Nullable ImageFilter imageFilter) {
+    public final void setImageFilter(@Nullable ImageFilter imageFilter) {
         mImageFilter = imageFilter;
     }
 
@@ -809,7 +814,7 @@ public class Paint {
      *
      * @return true if the paint prevents all drawing
      */
-    public boolean nothingToDraw() {
+    public final boolean nothingToDraw() {
         switch (getBlendMode()) {
             case SRC_OVER, SRC_ATOP, DST_OUT, DST_OVER, PLUS, MINUS -> {
                 if (mShader == null && getAlpha() == 0) {
@@ -830,7 +835,7 @@ public class Paint {
      * @return true if Paint allows for fast computation of bounds
      */
     @ApiStatus.Internal
-    public boolean canComputeFastBounds() {
+    public final boolean canComputeFastBounds() {
         return mImageFilter == null || mImageFilter.canComputeFastBounds();
     }
 
@@ -848,7 +853,7 @@ public class Paint {
      * @param storage fast computed bounds of geometry
      */
     @ApiStatus.Internal
-    public void computeFastBounds(RectF orig, RectF storage) {
+    public final void computeFastBounds(RectF orig, RectF storage) {
         int style = getStyle();
         // ultra fast-case: filling with no effects that affect geometry
         if (style == FILL) {

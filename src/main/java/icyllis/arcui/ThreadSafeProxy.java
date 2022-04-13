@@ -19,7 +19,10 @@
 package icyllis.arcui;
 
 import icyllis.arcui.text.TextBlobCache;
+import org.intellij.lang.annotations.MagicConstant;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,15 +32,19 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class ThreadSafeProxy {
 
-    /**
-     * Possible 3D graphics APIs that may be used by Arc UI.
-     */
-    public static final int
-            OPENGL = 0, // OpenGL 4.5 core profile
-            VULKAN = 1; // Vulkan 1.1
+    @MagicConstant(intValues = {OPENGL, VULKAN})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface BackendApi {
+    }
+
+    // OpenGL 4.5 core profile
+    public static final int OPENGL = 0;
+    // Vulkan 1.1
+    public static final int VULKAN = 1;
 
     private static final AtomicInteger sNextGeneratedId = new AtomicInteger(0);
 
+    @BackendApi
     private final int mBackend;
     private final ContextOptions mOptions;
     private final int mContextID;
@@ -48,7 +55,7 @@ public final class ThreadSafeProxy {
 
     private final AtomicBoolean mClosed = new AtomicBoolean(false);
 
-    public ThreadSafeProxy(int backend, ContextOptions options) {
+    public ThreadSafeProxy(@BackendApi int backend, ContextOptions options) {
         mBackend = backend;
         mOptions = options;
         mContextID = sNextGeneratedId.getAndIncrement();

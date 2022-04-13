@@ -18,6 +18,8 @@
 
 package icyllis.arcui;
 
+import org.jetbrains.annotations.Nullable;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -31,16 +33,18 @@ public final class VirtualDevice extends BaseDevice {
     private static final int MAX_CLIP_POOL_SIZE = 16;
 
     private ClipState[] mClipStack = new ClipState[MAX_CLIP_POOL_SIZE];
-    private int mClipIndex = -1;
+    private int mClipIndex = 0;
 
     public VirtualDevice(int left, int top, int right, int bottom) {
         super(new ImageInfo(right - left, bottom - top));
         setOrigin(null, left, top);
-        push().mClip.setRect(mBounds);
+        ClipState state = new ClipState();
+        state.mClip.setRect(mBounds);
+        mClipStack[0] = state;
     }
 
     public void resetForNextPicture(int left, int top, int right, int bottom) {
-        mInfo.resize(right - left, bottom - top);
+        resize(right - left, bottom - top);
         setOrigin(null, left, top);
         for (int i = mClipIndex; i > 0; i--) {
             pop();
@@ -145,9 +149,18 @@ public final class VirtualDevice extends BaseDevice {
     protected void drawPaint(Paint paint) {
     }
 
+    @Nullable
+    @Override
+    protected Surface makeSurface(ImageInfo info) {
+        return null;
+    }
+
     private static final class ClipState {
 
         final ConservativeClip mClip = new ConservativeClip();
         int mDeferredSaveCount = 0;
+
+        ClipState() {
+        }
     }
 }

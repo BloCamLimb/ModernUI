@@ -18,8 +18,12 @@
 
 package icyllis.arcui;
 
+import org.intellij.lang.annotations.MagicConstant;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
  * A Canvas provides an interface for drawing 2D geometries, images, and how the
@@ -66,72 +70,162 @@ import javax.annotation.Nullable;
  * matrix on client side, it should be an affine transformation. The pipeline will
  * calculate the world coordinates in advance.
  * <p>
+ * You may never access the pixels of the canvas directly on the current thread,
+ * because canvas is backed by GPU and uses deferred rendering. You must wait for
+ * GPU to finish all rendering tasks and then use thread scheduling before you can
+ * download the surface data to CPU side memory.
+ * <p>
  * This API is stable.
  *
  * @author BloCamLimb
  */
-//TODO this class is not abstract, wait for impl
-public abstract class Canvas {
+@SuppressWarnings("unused")
+public class Canvas implements AutoCloseable {
+
+    /**
+     * SaveLayerFlags provides options that may be used in any combination in SaveLayerRec,
+     * defining how layer allocated by saveLayer() operates.
+     */
+    @MagicConstant(flags = {INIT_WITH_PREVIOUS_SAVE_LAYER_FLAG, F16_COLOR_TYPE_SAVE_LAYER_FLAG})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface SaveLayerFlag {
+    }
+
+    /**
+     * Initializes with previous contents.
+     */
+    public static final int INIT_WITH_PREVIOUS_SAVE_LAYER_FLAG = 1 << 2;
+
+    /**
+     * Instead of matching previous layer's color type, use F16.
+     */
+    public static final int F16_COLOR_TYPE_SAVE_LAYER_FLAG = 1 << 4;
+
+    // getSaveLayerStrategy()'s return value may suppress full layer allocation.
+    protected static final int
+            FULL_LAYER_SAVE_LAYER_STRATEGY = 0,
+            NO_LAYER_SAVE_LAYER_STRATEGY = 1;
 
     // cache some objects for performance
     private static final int MAX_MC_POOL_SIZE = 32;
 
+    // a cached identity matrix for resetMatrix() call
+    private static final Matrix4 IDENTITY_MATRIX = Matrix4.identity();
+
+    // the bottom-most device in the stack, only changed by init(). Image properties and the final
+    // canvas pixels are determined by this device
     private final BaseDevice mBaseDevice;
+
+    // keep track of the device clip bounds in the canvas' global space to reject draws before
+    // invoking the top-level device.
+    private final RectF mQuickRejectBounds = new RectF();
+
+    // the surface we are associated with, may be null
+    Surface mSurface;
 
     // local MCRec stack
     private MCRec[] mMCStack = new MCRec[MAX_MC_POOL_SIZE];
-    private int mMCIndex;
+    // points to top of stack
+    private int mMCIndex = 0;
 
+    // value returned by getSaveCount()
     private int mSaveCount;
 
-    public Canvas(BaseDevice device) {
-        mBaseDevice = device;
+    private final MarkerStack mMarkerStack = new MarkerStack();
 
-        mMCStack[0] = new MCRec(device);
-        mMCIndex = 0;
+    // a temp rect that used with arguments
+    private final RectF mTmpRect = new RectF();
+    private final Matrix4 mTmpMatrix = new Matrix4();
+
+    /**
+     * Creates an empty Canvas with no backing device or pixels, with
+     * a width and height of zero.
+     */
+    public Canvas() {
+        this(0, 0);
+    }
+
+    /**
+     * Creates Canvas of the specified dimensions without a Surface.
+     * Used by subclasses with custom implementations for draw member functions.
+     *
+     * @param width  zero or greater
+     * @param height zero or greater
+     */
+    public Canvas(int width, int height) {
+        this(new VirtualDevice(0, 0, Math.max(width, 0), Math.max(height, 0)));
+    }
+
+    Canvas(BaseDevice device) {
+        device.setMarkerStack(mMarkerStack);
         mSaveCount = 1;
+        mMCStack[0] = new MCRec(device);
+        mBaseDevice = device;
+        computeQuickRejectBounds();
     }
 
-    // the bottom-most device in the stack, only changed by init(). Image properties and the final
-    // canvas pixels are determined by this device.
+    /**
+     * Returns ImageInfo for Canvas. If Canvas is not associated with raster surface or
+     * GPU surface, returned ColorType is set to {@link ImageInfo#COLOR_UNKNOWN}.
+     *
+     * @return dimensions and ColorType of Canvas
+     */
     @Nonnull
-    private BaseDevice baseDevice() {
-        return mBaseDevice;
+    public ImageInfo getImageInfo() {
+        return mBaseDevice.getImageInfo();
     }
 
-    // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
-    // operations should route to this device.
-    @Nonnull
-    private BaseDevice topDevice() {
-        return getMCRec().mDevice;
+    /**
+     * Gets the size of the base or root layer in global canvas coordinates. The
+     * origin of the base layer is always (0,0). The area available for drawing may be
+     * smaller (due to clipping or saveLayer).
+     *
+     * @return integral width of base layer
+     */
+    public final int getBaseLayerWidth() {
+        return mBaseDevice.getWidth();
     }
 
-    // points to top of stack
-    @Nonnull
-    private MCRec getMCRec() {
-        return mMCStack[mMCIndex];
+    /**
+     * Gets the size of the base or root layer in global canvas coordinates. The
+     * origin of the base layer is always (0,0). The area available for drawing may be
+     * smaller (due to clipping or saveLayer).
+     *
+     * @return integral height of base layer
+     */
+    public final int getBaseLayerHeight() {
+        return mBaseDevice.getHeight();
     }
 
-    @Nonnull
-    private MCRec push() {
-        final int i = ++mMCIndex;
-        MCRec[] stack = mMCStack;
-        if (i >= stack.length) {
-            mMCStack = new MCRec[i + (i >> 1)];
-            System.arraycopy(stack, 0, mMCStack, 0, i);
-            stack = mMCStack;
-        }
-        MCRec rec = stack[i];
-        if (rec == null) {
-            stack[i] = rec = new MCRec();
-        }
-        return rec;
+    /**
+     * Creates Surface matching info, and associates it with Canvas.
+     * Returns null if no match found.
+     *
+     * @param info width, height, ColorType and AlphaType
+     * @return Surface matching info, or null if no match is available
+     */
+    @Nullable
+    public Surface makeSurface(ImageInfo info) {
+        return topDevice().makeSurface(info);
     }
 
-    private void pop() {
-        if (mMCIndex-- >= MAX_MC_POOL_SIZE) {
-            mMCStack[mMCIndex + 1] = null;
-        }
+    /**
+     * Returns GPU context of the GPU surface associated with Canvas.
+     *
+     * @return GPU context, if available; null otherwise
+     */
+    @Nullable
+    public RecordingContext getRecordingContext() {
+        return topDevice().getRecordingContext();
+    }
+
+    /**
+     * Sometimes a canvas is owned by a surface. If it is, getSurface() will return a bare
+     * pointer to that surface, else this will return null.
+     */
+    @Nullable
+    public final Surface getSurface() {
+        return mSurface;
     }
 
     /**
@@ -146,56 +240,180 @@ public abstract class Canvas {
      * by an equal number of calls to restore(). Call restoreToCount() with the return
      * value of this method to restore this and subsequent saves.
      *
-     * @return depth of saved stack
+     * @return depth of saved stack to pass to restoreToCount() to balance this call
      */
     public final int save() {
-        mSaveCount++;
-        getMCRec().mDeferredSaveCount++;
-        return mSaveCount - 1;
+        final int i = mSaveCount++;
+        top().mDeferredSaveCount++;
+        return i;
     }
 
     /**
      * This behaves the same as {@link #save()}, but in addition it allocates and
-     * redirects drawing to an offscreen rendering target.
+     * redirects drawing to an offscreen rendering target (a drawing layer).
      * <p class="note"><strong>Note:</strong> this method is very expensive,
      * incurring more than double rendering cost for contained content. Avoid
      * using this method when possible.
      * <p>
      * All drawing calls are directed to a newly allocated offscreen rendering target.
      * Only when the balancing call to restore() is made, is that offscreen
-     * buffer drawn back to the current target of the Canvas (which can potentially be a previous
-     * layer if these calls are nested).
+     * buffer drawn back to the current target of the Canvas (which can potentially
+     * be a previous layer if these calls are nested).
+     * <p>
+     * Optional paint applies alpha, ColorFilter, ImageFilter, and BlendMode
+     * when restore() is called.
+     * <p>
+     * Call restoreToCount() with returned value to restore this and subsequent saves.
      *
-     * @param bounds May be null. The maximum size the offscreen render target
-     *               needs to be (in local coordinates)
-     * @param alpha  The alpha to apply to the offscreen when it is
-     *               drawn during restore()
-     * @return value to pass to restoreToCount() to balance this call
+     * @param bounds the maximum size the offscreen render target needs to be
+     *               (in local coordinates), may be null
+     * @param paint  the paint is applied to the offscreen when restore() is
+     *               called, may be null
+     * @return depth of saved stack to pass to restoreToCount() to balance this call
      */
-    public final int saveLayer(@Nullable RectF bounds, int alpha) {
-        if (bounds == null) {
-            // ok, it's big enough
-            return saveLayer(0, 0, 0x8000, 0x8000, alpha);
+    public final int saveLayer(@Nullable RectF bounds, @Nullable Paint paint) {
+        return saveLayer(bounds, paint, null, 0);
+    }
+
+    /**
+     * Convenience for {@link #saveLayer(RectF, Paint)} that takes the four float coordinates
+     * of the bounds' rectangle.
+     *
+     * @see #saveLayer(RectF, Paint)
+     */
+    public final int saveLayer(float left, float top, float right, float bottom, @Nullable Paint paint) {
+        mTmpRect.set(left, top, right, bottom);
+        return saveLayer(mTmpRect, paint, null, 0);
+    }
+
+    /**
+     * This behaves the same as {@link #save()}, but in addition it allocates and
+     * redirects drawing to an offscreen rendering target (a drawing layer).
+     * <p class="note"><strong>Note:</strong> this method is very expensive,
+     * incurring more than double rendering cost for contained content. Avoid
+     * using this method when possible.
+     * <p>
+     * All drawing calls are directed to a newly allocated offscreen rendering target.
+     * Only when the balancing call to restore() is made, is that offscreen
+     * buffer drawn back to the current target of the Canvas (which can potentially
+     * be a previous layer if these calls are nested).
+     * <p>
+     * Alpha of zero is fully transparent, 255 is fully opaque.
+     * <p>
+     * Call restoreToCount() with returned value to restore this and subsequent saves.
+     *
+     * @param bounds the maximum size the offscreen render target needs to be
+     *               (in local coordinates), may be null
+     * @param alpha  the alpha to apply to the offscreen when restore() is called
+     * @return depth of saved stack to pass to restoreToCount() to balance this call
+     */
+    public final int saveLayerAlpha(@Nullable RectF bounds, int alpha) {
+        alpha = MathUtil.clamp(alpha, 0, 0xFF);
+        if (alpha == 0xFF) {
+            return saveLayer(bounds, null, null, 0);
         } else {
-            return saveLayer(bounds.left, bounds.top, bounds.right, bounds.bottom, alpha);
+            Paint paint = Paint.take();
+            paint.setAlpha(alpha);
+            final int i = saveLayer(bounds, paint, null, 0);
+            paint.drop();
+            return i;
         }
     }
 
     /**
-     * Convenience for {@link #saveLayer(RectF, int)} that takes the four float coordinates of the
-     * bounds' rectangle.
+     * Convenience for {@link #saveLayerAlpha(RectF, int)} that takes the four float
+     * coordinates of the bounds' rectangle.
      *
-     * @see #saveLayer(RectF, int)
+     * @see #saveLayerAlpha(RectF, int)
      */
-    public abstract int saveLayer(float left, float top, float right, float bottom, int alpha);
+    public final int saveLayerAlpha(float left, float top, float right, float bottom, int alpha) {
+        mTmpRect.set(left, top, right, bottom);
+        return saveLayerAlpha(mTmpRect, alpha);
+    }
+
+    /**
+     * This behaves the same as {@link #save()}, but in addition it allocates and
+     * redirects drawing to an offscreen rendering target (a drawing layer).
+     * <p class="note"><strong>Note:</strong> this method is very expensive,
+     * incurring more than double rendering cost for contained content. Avoid
+     * using this method when possible.
+     * <p>
+     * All drawing calls are directed to a newly allocated offscreen rendering target.
+     * Only when the balancing call to restore() is made, is that offscreen
+     * buffer drawn back to the current target of the Canvas (which can potentially
+     * be a previous layer if these calls are nested).
+     * <p>
+     * Optional paint applies alpha, ColorFilter, ImageFilter, and BlendMode
+     * when restore() is called.
+     * <p>
+     * If backdrop is not null, it triggers the same initialization behavior as setting
+     * {@link #INIT_WITH_PREVIOUS_SAVE_LAYER_FLAG} on saveLayerFlags: the current layer
+     * is copied into the new layer, rather than initializing the new layer with
+     * transparent-black. This is then filtered by backdrop (respecting the current clip).
+     * <p>
+     * Call restoreToCount() with returned value to restore this and subsequent saves.
+     *
+     * @param bounds         the maximum size the offscreen render target needs to be
+     *                       (in local coordinates), may be null
+     * @param paint          the paint is applied to the offscreen when restore() is
+     *                       called, may be null
+     * @param backdrop       if not null, this causes the current layer to be filtered by
+     *                       backdrop, and then drawn into the new layer (respecting the
+     *                       current clip)
+     * @param saveLayerFlags options to modify layer, may be zero
+     * @return depth of saved stack to pass to restoreToCount() to balance this call
+     */
+    public final int saveLayer(@Nullable RectF bounds, @Nullable Paint paint,
+                               @Nullable ImageFilter backdrop, @SaveLayerFlag int saveLayerFlags) {
+        if (paint != null && paint.nothingToDraw()) {
+            // no need for the layer (or any of the draws until the matching restore()
+            final int i = save();
+            clipRect(0, 0, 0, 0);
+            return i;
+        } else {
+            int strategy = getSaveLayerStrategy(bounds, paint, backdrop, saveLayerFlags);
+            final int i = mSaveCount++;
+            internalSaveLayer(bounds, paint, backdrop, saveLayerFlags, strategy);
+            return i;
+        }
+    }
+
+    /**
+     * Convenience for {@link #saveLayer(RectF, Paint, ImageFilter, int)} that takes the
+     * four float coordinates of the bounds' rectangle.
+     *
+     * @see #saveLayer(RectF, Paint, ImageFilter, int)
+     */
+    public final int saveLayer(float left, float top, float right, float bottom, @Nullable Paint paint,
+                               @Nullable ImageFilter backdrop, @SaveLayerFlag int saveLayerFlags) {
+        mTmpRect.set(left, top, right, bottom);
+        return saveLayer(mTmpRect, paint, backdrop, saveLayerFlags);
+    }
 
     /**
      * This call balances a previous call to save(), and is used to remove all
      * modifications to the matrix/clip state since the last save call. The
      * state is removed from the stack. It is an error to call restore() more
      * or less times than save() was called in the final state.
+     *
+     * @throws IllegalStateException stack underflow
      */
-    public abstract void restore();
+    public final void restore() {
+        if (top().mDeferredSaveCount > 0) {
+            mSaveCount--;
+            top().mDeferredSaveCount--;
+        } else {
+            // check for underflow
+            if (mMCIndex > 0) {
+                willRestore();
+                mSaveCount--;
+                internalRestore();
+                didRestore();
+            } else {
+                throw new IllegalStateException("Stack underflow");
+            }
+        }
+    }
 
     /**
      * Returns the depth of saved matrix/clip states on the Canvas' private stack.
@@ -222,140 +440,289 @@ public abstract class Canvas {
      * // was before the initial call to save().
      * </pre>
      *
-     * @param saveCount The save level to restore to.
+     * @param saveCount the depth of state stack to restore
+     * @throws IllegalStateException stack underflow (i.e. saveCount is less than 1)
      */
-    public abstract void restoreToCount(int saveCount);
+    public final void restoreToCount(int saveCount) {
+        if (saveCount < 1) {
+            throw new IllegalStateException("Stack underflow");
+        }
+        int n = getSaveCount() - saveCount;
+        for (int i = 0; i < n; ++i) {
+            restore();
+        }
+    }
 
     /**
-     * Pre-multiply the current matrix by the specified translation.
+     * Translates the current matrix by dx along the x-axis and dy along the y-axis.
+     * Mathematically, pre-multiply the current matrix with a translation matrix.
+     * <p>
+     * This has the effect of moving the drawing by (dx, dy) before transforming
+     * the result with the current matrix.
      *
-     * @param dx The distance to translate in X
-     * @param dy The distance to translate in Y
+     * @param dx the distance to translate on x-axis
+     * @param dy the distance to translate on y-axis
      */
     public final void translate(float dx, float dy) {
         if (dx != 0.0f || dy != 0.0f) {
-            getMatrix().preTranslate(dx, dy);
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preTranslate(dx, dy);
+            topDevice().setGlobalTransform(transform);
+            didTranslate(dx, dy);
         }
     }
 
     /**
-     * Pre-multiply the current matrix by the specified scaling.
+     * Scales the current matrix by sx on the x-axis and sy on the y-axis.
+     * Mathematically, pre-multiply the current matrix with a scale matrix.
+     * <p>
+     * This has the effect of scaling the drawing by (sx, sy) before transforming
+     * the result with the current matrix.
      *
-     * @param sx The amount to scale in X
-     * @param sy The amount to scale in Y
+     * @param sx the amount to scale on x-axis
+     * @param sy the amount to scale on y-axis
      */
     public final void scale(float sx, float sy) {
         if (sx != 1.0f || sy != 1.0f) {
-            getMatrix().preScale(sx, sy);
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preScale(sx, sy);
+            topDevice().setGlobalTransform(transform);
+            didScale(sx, sy);
         }
     }
 
     /**
-     * Pre-multiply the current matrix by the specified scale.
+     * Scales the current matrix by sx on the x-axis and sy on the y-axis at (px, py).
+     * Mathematically, pre-multiply the current matrix with a translation matrix;
+     * pre-multiply the current matrix with a scale matrix; then pre-multiply the
+     * current matrix with a negative translation matrix;
+     * <p>
+     * This has the effect of scaling the drawing by (sx, sy) before transforming
+     * the result with the current matrix.
      *
-     * @param sx The amount to scale in X
-     * @param sy The amount to scale in Y
-     * @param px The x-coord for the pivot point (unchanged by the scale)
-     * @param py The y-coord for the pivot point (unchanged by the scale)
+     * @param sx the amount to scale on x-axis
+     * @param sy the amount to scale on y-axis
+     * @param px the x-coord for the pivot point (unchanged by the scale)
+     * @param py the y-coord for the pivot point (unchanged by the scale)
      */
     public final void scale(float sx, float sy, float px, float py) {
         if (sx != 1.0f || sy != 1.0f) {
-            Matrix4 matrix = getMatrix();
-            matrix.preTranslate(px, py);
-            matrix.preScale(sx, sy);
-            matrix.preTranslate(-px, -py);
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preTranslate(px, py);
+            transform.preScale(sx, sy);
+            transform.preTranslate(-px, -py);
+            topDevice().setGlobalTransform(transform);
+            didScale(sx, sy, px, py);
         }
     }
 
     /**
-     * Pre-multiply the current matrix by the specified rotation.
+     * Rotates the current matrix by degrees clockwise about the Z axis.
+     * Mathematically, pre-multiply the current matrix with a rotation matrix;
+     * <p>
+     * This has the effect of rotating the drawing by degrees before transforming
+     * the result with the current matrix.
      *
-     * @param degrees The angle to rotate, in degrees
+     * @param degrees the amount to rotate, in degrees
      */
     public final void rotate(float degrees) {
         if (degrees != 0.0f) {
-            getMatrix().preRotateZ(degrees * MathUtil.DEG_TO_RAD);
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
+            topDevice().setGlobalTransform(transform);
+            didRotate(degrees);
         }
     }
 
     /**
-     * Rotate canvas clockwise around the pivot point with specified angle, this is
-     * equivalent to pre-multiplying the current matrix by the specified rotation.
+     * Rotates the current matrix by degrees clockwise about the Z axis at (px, py).
+     * Mathematically, pre-multiply the current matrix with a translation matrix;
+     * pre-multiply the current matrix with a rotation matrix; then pre-multiply the
+     * current matrix with a negative translation matrix;
+     * <p>
+     * This has the effect of rotating the drawing by degrees before transforming
+     * the result with the current matrix.
      *
-     * @param degrees The amount to rotate, in degrees
-     * @param px      The x-coord for the pivot point (unchanged by the rotation)
-     * @param py      The y-coord for the pivot point (unchanged by the rotation)
+     * @param degrees the amount to rotate, in degrees
+     * @param px      the x-coord for the pivot point (unchanged by the rotation)
+     * @param py      the y-coord for the pivot point (unchanged by the rotation)
      */
     public final void rotate(float degrees, float px, float py) {
         if (degrees != 0.0f) {
-            Matrix4 matrix = getMatrix();
-            matrix.preTranslate(px, py);
-            matrix.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
-            matrix.preTranslate(-px, -py);
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preTranslate(px, py);
+            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
+            transform.preTranslate(-px, -py);
+            topDevice().setGlobalTransform(transform);
+            didRotate(degrees, px, py);
         }
     }
 
     /**
      * Pre-multiply the current matrix by the specified matrix.
+     * <p>
+     * This has the effect of transforming the drawn geometry by matrix, before
+     * transforming the result with the current matrix.
      *
-     * @param matrix the matrix to multiply
+     * @param matrix the matrix to premultiply with the current matrix
      */
     public final void concat(Matrix4 matrix) {
         if (!matrix.isIdentity()) {
-            getMatrix().preMul(matrix);
+            checkForDeferredSave();
+            Matrix4 transform = top().mMatrix;
+            transform.preMul(matrix);
+            topDevice().setGlobalTransform(matrix);
+            didConcat(matrix);
         }
     }
 
     /**
-     * Gets the backing matrix for local <strong>modification purposes</strong>.
-     *
-     * @return current model view matrix
+     * Record a marker (provided by caller) for the current transform. This does not change anything
+     * about the transform or clip, but does "name" this matrix value, so it can be referenced by
+     * custom effects (who access it by specifying the same name).
+     * <p>
+     * Within a save frame, marking with the same name more than once just replaces the previous
+     * value. However, between save frames, marking with the same name does not lose the marker
+     * in the previous save frame. It is "visible" when the current save() is balanced with
+     * a restore().
      */
-    @Nonnull
-    public abstract Matrix4 getMatrix();
+    public final void setMarker(String name) {
+        if (validateMarker(name)) {
+            mMarkerStack.setMarker(name.hashCode(), top().mMatrix, mMCIndex);
+        }
+    }
 
     /**
-     * Intersect the current clip with the specified rectangle and updates
-     * the stencil buffer if changed, which is expressed in local coordinates.
-     * The clip bounds cannot be expanded unless restore() is called.
-     *
-     * @param rect The rectangle to intersect with the current clip.
-     * @return true if the resulting clip is non-empty, otherwise further
-     * drawing will be always quick rejected until restore() is called
+     * @see #setMarker(String)
      */
-    public final boolean clipRect(Rect rect) {
-        return clipRect(rect.left, rect.top, rect.right, rect.bottom);
+    public final boolean findMarker(String name, Matrix4 out) {
+        return validateMarker(name) && mMarkerStack.findMarker(name.hashCode(), out);
+    }
+
+    /**
+     * Replaces the current matrix with the specified matrix.
+     * Unlike concat(), any prior matrix state is overwritten.
+     *
+     * @param matrix matrix to copy, replacing the current matrix
+     */
+    public final void setMatrix(Matrix4 matrix) {
+        checkForDeferredSave();
+        internalSetMatrix(matrix);
+        didSetMatrix(matrix);
+    }
+
+    /**
+     * Sets the current matrix to the identity matrix.
+     * Any prior matrix state is overwritten.
+     */
+    public final void resetMatrix() {
+        setMatrix(IDENTITY_MATRIX);
     }
 
     /**
      * Intersect the current clip with the specified rectangle and updates
      * the stencil buffer if changed, which is expressed in local coordinates.
-     * The clip bounds cannot be expanded unless restore() is called.
+     * Resulting clip is aliased. The clip bounds cannot be expanded unless
+     * restore() is called.
      *
-     * @param rect The rectangle to intersect with the current clip.
-     * @return true if the resulting clip is non-empty, otherwise further
-     * drawing will be always quick rejected until restore() is called
+     * @param rect the rectangle to intersect with the current clip
      */
-    public final boolean clipRect(RectF rect) {
-        return clipRect(rect.left, rect.top, rect.right, rect.bottom);
+    public final void clipRect(Rect rect) {
+        mTmpRect.set(rect);
+        clipRect(mTmpRect, false);
     }
 
     /**
      * Intersect the current clip with the specified rectangle and updates
      * the stencil buffer if changed, which is expressed in local coordinates.
-     * The clip bounds cannot be expanded unless restore() is called.
+     * Resulting clip is aliased. The clip bounds cannot be expanded unless
+     * restore() is called.
      *
-     * @param left   The left side of the rectangle to intersect with the
+     * @param left   the left side of the rectangle to intersect with the
      *               current clip
-     * @param top    The top of the rectangle to intersect with the current clip
-     * @param right  The right side of the rectangle to intersect with the
+     * @param top    the top of the rectangle to intersect with the current clip
+     * @param right  the right side of the rectangle to intersect with the
      *               current clip
-     * @param bottom The bottom of the rectangle to intersect with the current
+     * @param bottom the bottom of the rectangle to intersect with the current
      *               clip
-     * @return true if the resulting clip is non-empty, otherwise further
-     * drawing will be always quick rejected until restore() is called
      */
-    public abstract boolean clipRect(float left, float top, float right, float bottom);
+    public final void clipRect(int left, int top, int right, int bottom) {
+        mTmpRect.set(left, top, right, bottom);
+        clipRect(mTmpRect, false);
+    }
+
+    /**
+     * Intersect the current clip with the specified rectangle and updates
+     * the stencil buffer if changed, which is expressed in local coordinates.
+     * Resulting clip is aliased. The clip bounds cannot be expanded unless
+     * restore() is called.
+     *
+     * @param rect the rectangle to intersect with the current clip
+     */
+    public final void clipRect(RectF rect) {
+        clipRect(rect, false);
+    }
+
+    /**
+     * Intersect the current clip with the specified rectangle and updates
+     * the stencil buffer if changed, which is expressed in local coordinates.
+     * Resulting clip is aliased. The clip bounds cannot be expanded unless
+     * restore() is called.
+     *
+     * @param left   the left side of the rectangle to intersect with the
+     *               current clip
+     * @param top    the top of the rectangle to intersect with the current clip
+     * @param right  the right side of the rectangle to intersect with the
+     *               current clip
+     * @param bottom the bottom of the rectangle to intersect with the current
+     *               clip
+     */
+    public final void clipRect(float left, float top, float right, float bottom) {
+        mTmpRect.set(left, top, right, bottom);
+        clipRect(mTmpRect, false);
+    }
+
+    /**
+     * Intersect the current clip with the specified rectangle and updates
+     * the stencil buffer if changed, which is expressed in local coordinates,
+     * with an aliased or anti-aliased clip edge. The clip bounds cannot be
+     * expanded unless restore() is called.
+     *
+     * @param rect the rectangle to intersect with the current clip
+     * @param doAA true if clip is to be anti-aliased
+     */
+    public final void clipRect(RectF rect, boolean doAA) {
+        if (rect.isFinite()) {
+            checkForDeferredSave();
+            rect.sort();
+            onClipRect(rect, doAA);
+        }
+    }
+
+    /**
+     * Intersect the current clip with the specified rectangle and updates
+     * the stencil buffer if changed, which is expressed in local coordinates,
+     * with an aliased or anti-aliased clip edge. The clip bounds cannot be
+     * expanded unless restore() is called.
+     *
+     * @param left   the left side of the rectangle to intersect with the
+     *               current clip
+     * @param top    the top of the rectangle to intersect with the current clip
+     * @param right  the right side of the rectangle to intersect with the
+     *               current clip
+     * @param bottom the bottom of the rectangle to intersect with the current
+     *               clip
+     * @param doAA   true if clip is to be anti-aliased
+     */
+    public final void clipRect(float left, float top, float right, float bottom, boolean doAA) {
+        mTmpRect.set(left, top, right, bottom);
+        clipRect(mTmpRect, doAA);
+    }
 
     /**
      * Return true if the specified rectangle, after being transformed by the
@@ -396,16 +763,97 @@ public abstract class Canvas {
      * @return true if the given rect (transformed by the canvas' matrix)
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
-    public abstract boolean quickReject(float left, float top, float right, float bottom);
+    public final boolean quickReject(float left, float top, float right, float bottom) {
+        mTmpRect.set(left, top, right, bottom);
+        top().mMatrix.mapRect(mTmpRect);
+        return !mTmpRect.isFinite() || !mTmpRect.intersects(mQuickRejectBounds);
+    }
+
+    /**
+     * Returns the bounds of clip, transformed by inverse of the transform
+     * matrix. If clip is empty, return false, and set bounds to empty, where
+     * all rect sides equal zero.
+     * <p>
+     * The <code>bounds</code> is outset by one to account for partial pixel
+     * coverage if clip is anti-aliased.
+     *
+     * @param bounds the bounds of clip in local coordinates
+     * @return true if clip bounds is not empty
+     */
+    public final boolean getLocalClipBounds(RectF bounds) {
+        BaseDevice device = topDevice();
+        if (device.getClipType() == BaseDevice.CLIP_TYPE_EMPTY) {
+            bounds.setEmpty();
+            return false;
+        } else {
+            // if we can't invert the matrix, we can't return local clip bounds
+            if (!top().mMatrix.invert(mTmpMatrix)) {
+                bounds.setEmpty();
+                return false;
+            }
+            bounds.set(device.getClipBounds());
+            device.deviceToGlobal().mapRect(bounds);
+            bounds.roundOut(bounds);
+            // adjust it outwards in case we are antialiasing
+            bounds.inset(-1.0f, -1.0f);
+            mTmpMatrix.mapRect(bounds);
+            return !bounds.isEmpty();
+        }
+    }
+
+    /**
+     * Returns the bounds of clip, unaffected by the transform matrix. If clip
+     * is empty, return false, and set bounds to empty, where all rect sides
+     * equal zero.
+     * <p>
+     * Unlike getLocalClipBounds(), bounds is not outset.
+     *
+     * @param bounds the bounds of clip in device coordinates
+     * @return true if clip bounds is not empty
+     */
+    public final boolean getDeviceClipBounds(Rect bounds) {
+        BaseDevice device = topDevice();
+        if (device.getClipType() == BaseDevice.CLIP_TYPE_EMPTY) {
+            bounds.setEmpty();
+            return false;
+        } else {
+            bounds.set(device.getClipBounds());
+            device.deviceToGlobal().mapRectOut(bounds, bounds);
+            return !bounds.isEmpty();
+        }
+    }
 
     /**
      * Fills the current clip with the specified color, using SRC blend mode.
      * This has the effect of replacing all pixels contained by clip with color.
      *
-     * @param color the straight color to draw onto the canvas
+     * @param color the un-premultiplied (straight) color to draw onto the canvas
      */
     public final void clear(@ColorInt int color) {
         drawColor(color, BlendMode.SRC);
+    }
+
+    /**
+     * Fills the current clip with the specified color, using SRC blend mode.
+     * This has the effect of replacing all pixels contained by clip with color.
+     *
+     * @param color the un-premultiplied (straight) color to draw onto the canvas
+     */
+    public final void clear(Color color) {
+        drawColor(color, BlendMode.SRC);
+    }
+
+    /**
+     * Fills the current clip with the specified color, using SRC blend mode.
+     * This has the effect of replacing all pixels contained by clip with color.
+     *
+     * @param r the red component of the straight color to draw onto the canvas
+     * @param g the red component of the straight color to draw onto the canvas
+     * @param b the red component of the straight color to draw onto the canvas
+     * @param a the red component of the straight color to draw onto the canvas
+     */
+    public final void clear(float r, float g, float b, float a) {
+        drawColor(r, g, b, a, BlendMode.SRC);
     }
 
     /**
@@ -418,6 +866,27 @@ public abstract class Canvas {
     }
 
     /**
+     * Fill the current clip with the specified color, using SRC_OVER blend mode.
+     *
+     * @param color the straight color to draw onto the canvas
+     */
+    public final void drawColor(Color color) {
+        drawColor(color, BlendMode.SRC_OVER);
+    }
+
+    /**
+     * Fill the current clip with the specified color, using SRC_OVER blend mode.
+     *
+     * @param r the red component of the straight color to draw onto the canvas
+     * @param g the red component of the straight color to draw onto the canvas
+     * @param b the red component of the straight color to draw onto the canvas
+     * @param a the red component of the straight color to draw onto the canvas
+     */
+    public final void drawColor(float r, float g, float b, float a) {
+        drawColor(r, g, b, a, BlendMode.SRC_OVER);
+    }
+
+    /**
      * Fill the current clip with the specified color, the blend mode determines
      * how color is combined with destination.
      *
@@ -425,9 +894,41 @@ public abstract class Canvas {
      * @param mode  the blend mode used to combine source color and destination
      */
     public final void drawColor(@ColorInt int color, BlendMode mode) {
-        // paint may be modified for recording canvas, so not impl in super class
         Paint paint = Paint.take();
         paint.setColor(color);
+        paint.setBlendMode(mode);
+        drawPaint(paint);
+        paint.drop();
+    }
+
+    /**
+     * Fill the current clip with the specified color, the blend mode determines
+     * how color is combined with destination.
+     *
+     * @param color the straight color to draw onto the canvas
+     * @param mode  the blend mode used to combine source color and destination
+     */
+    public final void drawColor(Color color, BlendMode mode) {
+        Paint paint = Paint.take();
+        paint.setColor(color);
+        paint.setBlendMode(mode);
+        drawPaint(paint);
+        paint.drop();
+    }
+
+    /**
+     * Fill the current clip with the specified color, the blend mode determines
+     * how color is combined with destination.
+     *
+     * @param r    the red component of the straight color to draw onto the canvas
+     * @param g    the red component of the straight color to draw onto the canvas
+     * @param b    the red component of the straight color to draw onto the canvas
+     * @param a    the red component of the straight color to draw onto the canvas
+     * @param mode the blend mode used to combine source color and destination
+     */
+    public final void drawColor(float r, float g, float b, float a, BlendMode mode) {
+        Paint paint = Paint.take();
+        paint.setRGBA(r, g, b, a);
         paint.setBlendMode(mode);
         drawPaint(paint);
         paint.drop();
@@ -442,89 +943,29 @@ public abstract class Canvas {
      *
      * @param paint the paint used to draw onto the canvas
      */
-    public final void drawPaint(Paint paint) {
-        // drawPaint does not call internalQuickReject() because computing its geometry is not free
-        // (see getLocalClipBounds()), and the two conditions below are sufficient.
-        if (paint.nothingToDraw() || isClipEmpty()) {
-            return;
-        }
-        topDevice().drawPaint(paint);
+    public void drawPaint(Paint paint) {
+        internalDrawPaint(paint);
     }
 
     /**
-     * Draws a point centered at (x, y) using the specified paint.
+     * Draw a line segment from (x0, y0) to (x1, y1) using the current matrix,
+     * clip and specified paint.
      * <p>
-     * The shape of point drawn depends on paint's cap. If paint is set to
-     * {@link Paint#CAP_ROUND}, draw a circle of diameter paint stroke width
-     * (as transformed by the canvas' matrix), with special treatment for
-     * a stroke width of 0, which always draws exactly 1 pixel (or at most 4
-     * if anti-aliasing is enabled). Otherwise, draw a square of width and
-     * height paint stroke width. Paint's style is ignored, as if were set to
-     * {@link Paint#STROKE}.
+     * The <code>size</code> describes the line shape thickness. In paint:
+     * Style determines if line shape is stroked or filled; Cap draws the
+     * shape end rounded or square; If stroked, stroke width describes the
+     * shape outline thickness, Join draws the corners rounded or square,
+     * if Cap is other than {@link Paint#CAP_ROUND}, and Align determines
+     * the position or direction to stroke.
      *
-     * @param x     the center x of circle or square
-     * @param y     the center y of circle or square
-     * @param paint the paint used to draw the point
-     */
-    public void drawPoint(float x, float y, Paint paint) {
-    }
-
-    /**
-     * Draw a series of points. Each point is centered at the coordinate
-     * specified by pts[], and its diameter is specified by the paint's
-     * stroke width (as transformed by the canvas' CTM), with special
-     * treatment for a stroke width of 0, which always draws exactly 1 pixel
-     * (or at most 4 if anti-aliasing is enabled). The shape of the point
-     * is controlled by the paint's Cap type. The shape is a square, unless
-     * the cap type is Round, in which case the shape is a circle.
-     * If count is odd, the last value is ignored.
-     *
-     * @param pts    the array of points to draw [x0 y0 x1 y1 x2 y2 ...]
-     * @param offset the number of values to skip before starting to draw.
-     * @param count  the number of values to process, after skipping offset of them. Since one point
-     *               uses two values, the number of "points" that are drawn is really (count >> 1).
-     * @param paint  the paint used to draw the points
-     */
-    public void drawPoints(float[] pts, int offset, int count, Paint paint) {
-        if (count < 2) {
-            return;
-        }
-        count >>= 1;
-        for (int i = 0; i < count; i++) {
-            drawPoint(pts[offset++], pts[offset++], paint);
-        }
-    }
-
-    /**
-     * Draw a series of points. Each point is centered at the coordinate
-     * specified by pts[], and its diameter is specified by the paint's
-     * stroke width (as transformed by the canvas' CTM), with special
-     * treatment for a stroke width of 0, which always draws exactly 1 pixel
-     * (or at most 4 if anti-aliasing is enabled). The shape of the point
-     * is controlled by the paint's Cap type. The shape is a square, unless
-     * the cap type is Round, in which case the shape is a circle.
-     * If count is odd, the last value is ignored.
-     *
-     * @param pts   the array of points to draw [x0 y0 x1 y1 x2 y2 ...]
-     * @param paint the paint used to draw the points
-     */
-    public final void drawPoints(float[] pts, Paint paint) {
-        drawPoints(pts, 0, pts.length, paint);
-    }
-
-    /**
-     * Draw a line segment from (x0, y0) to (x1, y1) using the specified paint.
-     * In paint: Paint's stroke width describes the line thickness;
-     * Paint's cap draws the end rounded or square;
-     * Paint's style is ignored, as if were set to {@link Paint#STROKE}.
-     *
-     * @param x0    start of line segment on x-axis
-     * @param y0    start of line segment on y-axis
-     * @param x1    end of line segment on x-axis
-     * @param y1    end of line segment on y-axis
+     * @param x0    the start of line segment on x-axis
+     * @param y0    the start of line segment on y-axis
+     * @param x1    the end of line segment on x-axis
+     * @param y1    the end of line segment on y-axis
+     * @param size  the thickness of line segment
      * @param paint the paint used to draw the line
      */
-    public void drawLine(float x0, float y0, float x1, float y1, Paint paint) {
+    public void drawLine(float x0, float y0, float x1, float y1, float size, Paint paint) {
     }
 
     /**
@@ -565,7 +1006,9 @@ public abstract class Canvas {
      * @param bottom the bottom side of the rectangle to be drawn
      * @param paint  the paint used to draw the rect
      */
-    public abstract void drawRect(float left, float top, float right, float bottom, Paint paint);
+    public void drawRect(float left, float top, float right, float bottom, Paint paint) {
+
+    }
 
     /**
      * Draw a rectangle with rounded corners within a rectangular bounds. The round
@@ -624,8 +1067,9 @@ public abstract class Canvas {
      * @param rLL    the radius used to round the lower left corner
      * @param paint  the paint used to draw the round rectangle
      */
-    public abstract void drawRoundRect(float left, float top, float right, float bottom,
-                                       float rUL, float rUR, float rLR, float rLL, Paint paint);
+    public void drawRoundRect(float left, float top, float right, float bottom,
+                              float rUL, float rUR, float rLR, float rLL, Paint paint) {
+    }
 
     /**
      * Draw the specified circle at (cx, cy) with radius using the specified paint.
@@ -638,7 +1082,9 @@ public abstract class Canvas {
      * @param radius the radius of the circle to be drawn
      * @param paint  the paint used to draw the circle
      */
-    public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
+    public void drawCircle(float cx, float cy, float radius, Paint paint) {
+
+    }
 
     /**
      * Draw a circular arc at (cx, cy) with radius using the specified paint.
@@ -659,8 +1105,10 @@ public abstract class Canvas {
      * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
      * @param paint      the paint used to draw the arc
      */
-    public abstract void drawArc(float cx, float cy, float radius, float startAngle,
-                                 float sweepAngle, Paint paint);
+    public void drawArc(float cx, float cy, float radius, float startAngle,
+                        float sweepAngle, Paint paint) {
+
+    }
 
     /**
      * Draw a quadratic Bézier curve using the specified paint. The three points represent
@@ -680,8 +1128,10 @@ public abstract class Canvas {
      * @param y2    the y-coordinate of the end control point of the Bézier curve
      * @param paint the paint used to draw the Bézier curve
      */
-    public abstract void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
-                                    Paint paint);
+    public void drawBezier(float x0, float y0, float x1, float y1, float x2, float y2,
+                           Paint paint) {
+
+    }
 
     /**
      * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
@@ -697,8 +1147,9 @@ public abstract class Canvas {
      * @param y2    the y-coordinate of the last vertex
      * @param paint the paint used to draw the triangle
      */
-    public abstract void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2,
-                                      Paint paint);
+    public void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2,
+                             Paint paint) {
+    }
 
     /**
      * Draw the specified image with its top/left corner at (x,y), using the
@@ -710,7 +1161,9 @@ public abstract class Canvas {
      * @param top   the position of the top side of the image being drawn
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public abstract void drawImage(Image image, float left, float top, @Nullable Paint paint);
+    public void drawImage(Image image, float left, float top, @Nullable Paint paint) {
+
+    }
 
     /**
      * Draw the specified image, scaling/translating automatically to fill the destination
@@ -760,82 +1213,9 @@ public abstract class Canvas {
      * @param image the image to be drawn
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public abstract void drawImage(Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
-                                   float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint);
+    public void drawImage(Image image, float srcLeft, float srcTop, float srcRight, float srcBottom,
+                          float dstLeft, float dstTop, float dstRight, float dstBottom, @Nullable Paint paint) {
 
-    /**
-     * Draw a line segment with the specified start and stop x,y coordinates, using
-     * the specified paint. The Style is ignored in the paint, lines are always "framed".
-     * Stroke width in the paint represents the width of the line.
-     * <p>
-     * Actually, a round line with round corners is drawn as a filled round rectangle,
-     * rotated around the midpoint of the line. So it's a bit heavy to draw.
-     *
-     * @param startX The x-coordinate of the start point of the line
-     * @param startY The y-coordinate of the start point of the line
-     * @param stopX  The x-coordinate of the stop point of the line
-     * @param stopY  The y-coordinate of the stop point of the line
-     * @param paint  The paint used to draw the line
-     */
-    public abstract void drawRoundLine(float startX, float startY, float stopX, float stopY,
-                                       Paint paint);
-
-    /**
-     * Draw a series of round lines.
-     * <p>
-     * When discontinuous, each line is taken from 4 consecutive values in the pts array. Thus,
-     * to draw 1 line, the array must contain at least 4 values. This is logically the same as
-     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
-     * drawLine(pts[4], pts[5], pts[6], pts[7]) and so on.
-     * <p>
-     * When continuous, the first line is taken from 4 consecutive values in the pts
-     * array, and each remaining line is taken from last 2 values and next 2 values in the array.
-     * Thus, to draw 1 line, the array must contain at least 4 values. This is logically the same as
-     * drawing the array as follows: drawLine(pts[0], pts[1], pts[2], pts[3]) followed by
-     * drawLine(pts[2], pts[3], pts[4], pts[5]) and so on.
-     *
-     * @param pts    The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
-     * @param offset Number of values in the array to skip before drawing.
-     * @param count  The number of values in the array to process, after skipping "offset" of them.
-     *               Since each line uses 4 values, the number of "lines" that are drawn is really
-     *               (count >> 2) if continuous, or ((count - 2) >> 1) if discontinuous.
-     * @param strip  Whether line points are continuous
-     * @param paint  The paint used to draw the lines
-     */
-    public void drawRoundLines(float[] pts, int offset, int count, boolean strip,
-                               Paint paint) {
-        if ((offset | count | pts.length - offset - count) < 0) {
-            throw new IndexOutOfBoundsException();
-        }
-        if (count < 4) {
-            return;
-        }
-        if (strip) {
-            float x, y;
-            drawRoundLine(pts[offset++], pts[offset++], x = pts[offset++], y = pts[offset++], paint);
-            count = (count - 4) >> 1;
-            for (int i = 0; i < count; i++) {
-                drawRoundLine(x, y, x = pts[offset++], y = pts[offset++], paint);
-            }
-        } else {
-            count >>= 2;
-            for (int i = 0; i < count; i++) {
-                drawRoundLine(pts[offset++], pts[offset++], pts[offset++], pts[offset++], paint);
-            }
-        }
-    }
-
-    /**
-     * A helper version of {@link #drawRoundLines(float[], int, int, boolean, Paint)},
-     * with its offset is 0 and count is the length of the pts array.
-     *
-     * @param pts   The array of points of the lines to draw [x0 y0 x1 y1 x2 y2 ...]
-     * @param strip Whether line points are continuous
-     * @param paint The paint used to draw the lines
-     * @see #drawRoundLines(float[], int, int, boolean, Paint)
-     */
-    public final void drawRoundLines(float[] pts, boolean strip, Paint paint) {
-        drawRoundLines(pts, 0, pts.length, strip, paint);
     }
 
     /**
@@ -849,8 +1229,10 @@ public abstract class Canvas {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round image
      */
-    public abstract void drawRoundImage(Image image, float left, float top,
-                                        float radius, Paint paint);
+    public void drawRoundImage(Image image, float left, float top,
+                               float radius, Paint paint) {
+
+    }
 
     /**
      * Returns true if clip is empty; that is, nothing will draw.
@@ -874,24 +1256,197 @@ public abstract class Canvas {
         return topDevice().getClipType() == BaseDevice.CLIP_TYPE_RECT;
     }
 
-    private void doSave() {
-        willSave();
-        getMCRec().mDeferredSaveCount--;
-        internalSave();
+    /**
+     * Returns the current transform from local coordinates to the 'device', which for most
+     * purposes means pixels.
+     *
+     * @param storage transformation from local coordinates to device / pixels.
+     */
+    public final void getLocalToDevice(Matrix4 storage) {
+        storage.set(top().mMatrix);
     }
 
-    private void checkForDeferredSave() {
-        if (getMCRec().mDeferredSaveCount > 0) {
-            doSave();
-        }
+    /**
+     * Draws saved layers, if any.
+     * Frees up resources used by Canvas.
+     */
+    @Override
+    public void close() {
     }
 
     protected void willSave() {
     }
 
+    protected int getSaveLayerStrategy(@Nullable RectF bounds, @Nullable Paint paint,
+                                       @Nullable ImageFilter backdrop,
+                                       @SaveLayerFlag int saveLayerFlags) {
+        return FULL_LAYER_SAVE_LAYER_STRATEGY;
+    }
+
+    protected void willRestore() {
+    }
+
+    protected void didRestore() {
+    }
+
+    protected void didTranslate(float dx, float dy) {
+    }
+
+    protected void didScale(float sx, float sy) {
+    }
+
+    protected void didScale(float sx, float sy, float px, float py) {
+    }
+
+    protected void didRotate(float degrees) {
+    }
+
+    protected void didRotate(float degrees, float px, float py) {
+    }
+
+    protected void didConcat(Matrix4 matrix) {
+    }
+
+    protected void didSetMarker(String name) {
+    }
+
+    protected void didSetMatrix(Matrix4 matrix) {
+    }
+
+    protected void onClipRect(RectF rect, boolean doAA) {
+        topDevice().clipRect(rect, ClipStack.OP_INTERSECT, doAA);
+        computeQuickRejectBounds();
+    }
+
+    @Nonnull
+    private MCRec push() {
+        final int i = ++mMCIndex;
+        MCRec[] stack = mMCStack;
+        if (i == stack.length) {
+            mMCStack = new MCRec[i + (i >> 1)];
+            System.arraycopy(stack, 0, mMCStack, 0, i);
+            stack = mMCStack;
+        }
+        MCRec rec = stack[i];
+        if (rec == null) {
+            stack[i] = rec = new MCRec();
+        }
+        return rec;
+    }
+
+    private void pop() {
+        if (mMCIndex-- >= MAX_MC_POOL_SIZE) {
+            mMCStack[mMCIndex + 1] = null;
+        }
+    }
+
+    @Nonnull
+    private MCRec top() {
+        return mMCStack[mMCIndex];
+    }
+
+    // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
+    // operations should route to this device.
+    @Nonnull
+    private BaseDevice topDevice() {
+        return top().mDevice;
+    }
+
+    @Nullable
+    private SurfaceDrawContext topDeviceSurfaceDrawContext() {
+        return topDevice().getSurfaceDrawContext();
+    }
+
+    private void checkForDeferredSave() {
+        if (top().mDeferredSaveCount > 0) {
+            doSave();
+        }
+    }
+
+    private void doSave() {
+        willSave();
+        top().mDeferredSaveCount--;
+        internalSave();
+    }
+
     private void internalSave() {
-        MCRec rec = getMCRec();
+        // get before push stack
+        MCRec rec = top();
         push().set(rec);
+
+        topDevice().save();
+    }
+
+    private void internalRestore() {
+        mMarkerStack.restore(mMCIndex);
+
+        // now do the normal restore()
+        pop();
+
+        if (mMCIndex == -1) {
+            // this was the last record, restored during the destruction of the Canvas
+            return;
+        }
+
+        topDevice().restore(top().mMatrix);
+
+        // Update the quick-reject bounds in case the restore changed the top device or the
+        // removed save record had included modifications to the clip stack.
+        computeQuickRejectBounds();
+    }
+
+    private void internalSaveLayer(@Nullable RectF bounds, @Nullable Paint paint,
+                                   @Nullable ImageFilter backdrop,
+                                   @SaveLayerFlag int saveLayerFlags,
+                                   int saveLayerStrategy) {
+        // if we have a backdrop filter, then we must apply it to the entire layer (clip-bounds)
+        // regardless of any hint-rect from the caller.
+        if (backdrop != null) {
+            bounds = null;
+        }
+
+        ImageFilter imageFilter = paint != null ? paint.getImageFilter() : null;
+        Matrix4 stashedMatrix = top().mMatrix;
+
+        if (imageFilter != null) {
+            //TODO
+        }
+
+        // do this before we create the layer. We don't call the public save() since
+        // that would invoke a possibly overridden virtual
+        internalSave();
+    }
+
+    private void internalSetMatrix(Matrix4 matrix) {
+        Matrix4 transform = top().mMatrix;
+        transform.set(matrix);
+        topDevice().setGlobalTransform(transform);
+    }
+
+    private void internalDrawPaint(Paint paint) {
+        // drawPaint does not call internalQuickReject() because computing its geometry is not free
+        // (see getLocalClipBounds()), and the two conditions below are sufficient.
+        if (paint.nothingToDraw() || isClipEmpty()) {
+            return;
+        }
+        topDevice().drawPaint(paint);
+    }
+
+    /**
+     * Compute the clip's bounds based on all clipped Device's reported device bounds transformed
+     * into the canvas' global space.
+     */
+    private void computeQuickRejectBounds() {
+        BaseDevice device = topDevice();
+        if (device.getClipType() == BaseDevice.CLIP_TYPE_EMPTY) {
+            mQuickRejectBounds.setEmpty();
+        } else {
+            mQuickRejectBounds.set(device.getClipBounds());
+            device.deviceToGlobal().mapRect(mQuickRejectBounds);
+            // Expand bounds out by 1 in case we are anti-aliasing.  We store the
+            // bounds as floats to enable a faster quick reject implementation.
+            mQuickRejectBounds.inset(-1.0f, -1.0f);
+        }
     }
 
     /**
@@ -925,5 +1480,18 @@ public abstract class Canvas {
             mMatrix.set(prev.mMatrix);
             mDeferredSaveCount = 0;
         }
+    }
+
+    private static boolean validateMarker(String name) {
+        if (name.isEmpty()) {
+            return false;
+        }
+        for (int i = 0; i < name.length(); i++) {
+            char c = name.charAt(i);
+            if (c != '_' && !Character.isLetterOrDigit(c)) {
+                return false;
+            }
+        }
+        return true;
     }
 }

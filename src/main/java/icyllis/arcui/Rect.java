@@ -152,7 +152,7 @@ public class Rect {
     /**
      * Set the rectangle to (0,0,0,0)
      */
-    public void setEmpty() {
+    public final void setEmpty() {
         left = right = top = bottom = 0;
     }
 
@@ -166,7 +166,7 @@ public class Rect {
      * @param right  the X coordinate of the right side of the rectangle
      * @param bottom the Y coordinate of the bottom of the rectangle
      */
-    public void set(int left, int top, int right, int bottom) {
+    public final void set(int left, int top, int right, int bottom) {
         this.left = left;
         this.top = top;
         this.right = right;
@@ -179,7 +179,7 @@ public class Rect {
      * @param src the rectangle whose coordinates are copied into this
      *            rectangle.
      */
-    public void set(Rect src) {
+    public final void set(Rect src) {
         this.left = src.left;
         this.top = src.top;
         this.right = src.right;
@@ -193,7 +193,7 @@ public class Rect {
      * @param dx the amount to add to the rectangle's left and right coordinates
      * @param dy the amount to add to the rectangle's top and bottom coordinates
      */
-    public void offset(int dx, int dy) {
+    public final void offset(int dx, int dy) {
         left += dx;
         top += dy;
         right += dx;
@@ -207,7 +207,7 @@ public class Rect {
      * @param newLeft the new "left" coordinate for the rectangle
      * @param newTop  the new "top" coordinate for the rectangle
      */
-    public void offsetTo(int newLeft, int newTop) {
+    public final void offsetTo(int newLeft, int newTop) {
         right += newLeft - left;
         bottom += newTop - top;
         left = newLeft;
@@ -223,7 +223,7 @@ public class Rect {
      * @param dx the amount to add(subtract) from the rectangle's left(right)
      * @param dy the amount to add(subtract) from the rectangle's top(bottom)
      */
-    public void inset(int dx, int dy) {
+    public final void inset(int dx, int dy) {
         left += dx;
         top += dy;
         right -= dx;
@@ -238,7 +238,7 @@ public class Rect {
      * @param right  the amount to subtract from the rectangle's right
      * @param bottom the amount to subtract from the rectangle's bottom
      */
-    public void inset(int left, int top, int right, int bottom) {
+    public final void inset(int left, int top, int right, int bottom) {
         this.left += left;
         this.top += top;
         this.right -= right;
@@ -251,7 +251,7 @@ public class Rect {
      *
      * @param insets the rectangle specifying the insets on all side.
      */
-    public void inset(Rect insets) {
+    public final void inset(Rect insets) {
         left += insets.left;
         top += insets.top;
         right -= insets.right;
@@ -266,7 +266,7 @@ public class Rect {
      * @param right  the amount to add from the rectangle's right
      * @param bottom the amount to add from the rectangle's bottom
      */
-    public void adjust(int left, int top, int right, int bottom) {
+    public final void adjust(int left, int top, int right, int bottom) {
         this.left += left;
         this.top += top;
         this.right += right;
@@ -278,7 +278,7 @@ public class Rect {
      *
      * @param adjusts the rectangle specifying the adjusts on all side.
      */
-    public void adjust(Rect adjusts) {
+    public final void adjust(Rect adjusts) {
         left += adjusts.left;
         top += adjusts.top;
         right += adjusts.right;
@@ -296,7 +296,7 @@ public class Rect {
      * @return true if (x,y) are contained by the rectangle, where containment
      * means left <= x < right and top <= y < bottom
      */
-    public boolean contains(int x, int y) {
+    public final boolean contains(int x, int y) {
         return x >= left && x < right && y >= top && y < bottom;
     }
 
@@ -311,7 +311,7 @@ public class Rect {
      * @return true if (x,y) are contained by the rectangle, where containment
      * means left <= x < right and top <= y < bottom
      */
-    public boolean contains(float x, float y) {
+    public final boolean contains(float x, float y) {
         return x >= left && x < right && y >= top && y < bottom;
     }
 
@@ -327,7 +327,7 @@ public class Rect {
      * @return true if the 4 specified sides of a rectangle are inside or
      * equal to this rectangle
      */
-    public boolean contains(int left, int top, int right, int bottom) {
+    public final boolean contains(int left, int top, int right, int bottom) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -343,7 +343,7 @@ public class Rect {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public boolean contains(Rect r) {
+    public final boolean contains(Rect r) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -362,7 +362,7 @@ public class Rect {
      * @return true if the 4 specified sides of a rectangle are inside or
      * equal to this rectangle
      */
-    public boolean contains(float left, float top, float right, float bottom) {
+    public final boolean contains(float left, float top, float right, float bottom) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -378,7 +378,7 @@ public class Rect {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public boolean contains(RectF r) {
+    public final boolean contains(RectF r) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -402,7 +402,7 @@ public class Rect {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public boolean intersect(int left, int top, int right, int bottom) {
+    public final boolean intersect(int left, int top, int right, int bottom) {
         int tmpL = Math.max(this.left, left);
         int tmpT = Math.max(this.top, top);
         int tmpR = Math.min(this.right, right);
@@ -427,7 +427,7 @@ public class Rect {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public boolean intersect(Rect r) {
+    public final boolean intersect(Rect r) {
         return intersect(r.left, r.top, r.right, r.bottom);
     }
 
@@ -437,7 +437,7 @@ public class Rect {
      *
      * @see #inset(int, int, int, int) but without checking if the rects overlap.
      */
-    public void intersectNoCheck(int left, int top, int right, int bottom) {
+    public final void intersectNoCheck(int left, int top, int right, int bottom) {
         this.left = Math.max(this.left, left);
         this.top = Math.max(this.top, top);
         this.right = Math.min(this.right, right);
@@ -450,7 +450,7 @@ public class Rect {
      *
      * @see #inset(int, int, int, int) but without checking if the rects overlap.
      */
-    public void intersectNoCheck(Rect r) {
+    public final void intersectNoCheck(Rect r) {
         intersectNoCheck(r.left, r.top, r.right, r.bottom);
     }
 
@@ -465,7 +465,7 @@ public class Rect {
      * this rectangle to that intersection. If they do not, return
      * false and do not change this rectangle.
      */
-    public boolean intersect(Rect a, Rect b) {
+    public final boolean intersect(Rect a, Rect b) {
         int tmpL = Math.max(a.left, b.left);
         int tmpT = Math.max(a.top, b.top);
         int tmpR = Math.min(a.right, b.right);
@@ -493,7 +493,7 @@ public class Rect {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public boolean intersects(int left, int top, int right, int bottom) {
+    public final boolean intersects(int left, int top, int right, int bottom) {
         int tmpL = Math.max(this.left, left);
         int tmpT = Math.max(this.top, top);
         int tmpR = Math.min(this.right, right);
@@ -510,7 +510,7 @@ public class Rect {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public boolean intersects(Rect r) {
+    public final boolean intersects(Rect r) {
         return intersects(r.left, r.top, r.right, r.bottom);
     }
 
@@ -542,7 +542,7 @@ public class Rect {
      * @param right  the right edge being unioned with this rectangle
      * @param bottom the bottom edge being unioned with this rectangle
      */
-    public void join(int left, int top, int right, int bottom) {
+    public final void join(int left, int top, int right, int bottom) {
         // do nothing if the params are empty
         if (left >= right || top >= bottom) {
             return;
@@ -568,7 +568,7 @@ public class Rect {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public void join(Rect r) {
+    public final void join(Rect r) {
         join(r.left, r.top, r.right, r.bottom);
     }
 
@@ -583,7 +583,7 @@ public class Rect {
      * @param right  the right edge being unioned with this rectangle
      * @param bottom the bottom edge being unioned with this rectangle
      */
-    public void joinNoCheck(int left, int top, int right, int bottom) {
+    public final void joinNoCheck(int left, int top, int right, int bottom) {
         this.left = Math.min(this.left, left);
         this.top = Math.min(this.top, top);
         this.right = Math.max(this.right, right);
@@ -598,7 +598,7 @@ public class Rect {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public void joinNoCheck(Rect r) {
+    public final void joinNoCheck(Rect r) {
         joinNoCheck(r.left, r.top, r.right, r.bottom);
     }
 
@@ -608,7 +608,7 @@ public class Rect {
      * @param x The x coordinate of the point to add to the rectangle
      * @param y The y coordinate of the point to add to the rectangle
      */
-    public void join(int x, int y) {
+    public final void join(int x, int y) {
         if (left < right && top < bottom) {
             if (x < left) {
                 left = x;
@@ -633,7 +633,7 @@ public class Rect {
      * separately, and may have crossed over each other. If the edges are
      * already correct (i.e. left <= right and top <= bottom) then nothing is done.
      */
-    public void sort() {
+    public final void sort() {
         if (left > right) {
             int temp = left;
             left = right;

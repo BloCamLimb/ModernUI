@@ -31,15 +31,16 @@ public abstract class BaseDevice extends MatrixProvider {
             CLIP_TYPE_RECT = 1,
             CLIP_TYPE_COMPLEX = 2;
 
+    // read only
     protected final Rect mBounds = new Rect();
 
-    final ImageInfo mInfo;
+    private final ImageInfo mInfo;
     // mDeviceToGlobal and mGlobalToDevice are inverses of each other; there are never that many
     // Devices, so pay the memory cost to avoid recalculating the inverse.
-    final Matrix3 mDeviceToGlobal = Matrix3.identity();
-    final Matrix3 mGlobalToDevice = Matrix3.identity();
+    private final Matrix3 mDeviceToGlobal = Matrix3.identity();
+    private final Matrix3 mGlobalToDevice = Matrix3.identity();
 
-    MarkerStack mMarkerStack;
+    private MarkerStack mMarkerStack;
 
     public BaseDevice(ImageInfo info) {
         mInfo = info;
@@ -47,19 +48,27 @@ public abstract class BaseDevice extends MatrixProvider {
     }
 
     /**
+     * Internal resize for optimization purposes.
+     */
+    void resize(int width, int height) {
+        mInfo.resize(width, height);
+        mBounds.set(0, 0, width, height);
+    }
+
+    /**
      * Return ImageInfo for this device. If the canvas is not backed by GPU,
      * then the info's ColorType will be {@link ImageInfo#COLOR_UNKNOWN}.
      */
     @Nonnull
-    public final ImageInfo imageInfo() {
+    public final ImageInfo getImageInfo() {
         return mInfo;
     }
 
-    public final int width() {
+    public final int getWidth() {
         return mInfo.width();
     }
 
-    public final int height() {
+    public final int getHeight() {
         return mInfo.height();
     }
 
@@ -150,12 +159,13 @@ public abstract class BaseDevice extends MatrixProvider {
         return false;
     }
 
-    public final MarkerStack markerStack() {
+    @Nullable
+    public final MarkerStack getMarkerStack() {
         return mMarkerStack;
     }
 
-    public final void setMarkerStack(MarkerStack ms) {
-        mMarkerStack = ms;
+    public final void setMarkerStack(@Nullable MarkerStack markerStack) {
+        mMarkerStack = markerStack;
     }
 
     public final void save() {
@@ -201,6 +211,16 @@ public abstract class BaseDevice extends MatrixProvider {
         } else {
             mLocalToDevice.set(localToDevice);
         }
+    }
+
+    @Nullable
+    public RecordingContext getRecordingContext() {
+        return null;
+    }
+
+    @Nullable
+    public SurfaceDrawContext getSurfaceDrawContext() {
+        return null;
     }
 
     /**
@@ -263,6 +283,9 @@ public abstract class BaseDevice extends MatrixProvider {
      */
     protected abstract void drawPaint(Paint paint);
 
+    @Nullable
+    protected abstract Surface makeSurface(ImageInfo info);
+
     /**
      * Create a new device based on CreateInfo. If the paint is not null, then it represents a
      * preview of how the new device will be composed with its creator device (this).
@@ -273,7 +296,7 @@ public abstract class BaseDevice extends MatrixProvider {
      * that contract it should return null.
      */
     @Nullable
-    protected BaseDevice onCreateDevice(ImageInfo info, @Nullable Paint paint) {
+    protected BaseDevice createDevice(ImageInfo info, @Nullable Paint paint) {
         return null;
     }
 }

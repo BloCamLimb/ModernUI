@@ -154,7 +154,7 @@ public class RectF {
     /**
      * Set the rectangle to (0,0,0,0)
      */
-    public void setEmpty() {
+    public final void setEmpty() {
         left = right = top = bottom = 0;
     }
 
@@ -168,7 +168,7 @@ public class RectF {
      * @param right  the X coordinate of the right side of the rectangle
      * @param bottom the Y coordinate of the bottom of the rectangle
      */
-    public void set(float left, float top, float right, float bottom) {
+    public final void set(float left, float top, float right, float bottom) {
         this.left = left;
         this.top = top;
         this.right = right;
@@ -181,7 +181,7 @@ public class RectF {
      * @param src the rectangle whose coordinates are copied into this
      *            rectangle.
      */
-    public void set(RectF src) {
+    public final void set(RectF src) {
         this.left = src.left;
         this.top = src.top;
         this.right = src.right;
@@ -194,7 +194,7 @@ public class RectF {
      * @param src the rectangle whose coordinates are copied into this
      *            rectangle.
      */
-    public void set(Rect src) {
+    public final void set(Rect src) {
         this.left = src.left;
         this.top = src.top;
         this.right = src.right;
@@ -208,7 +208,7 @@ public class RectF {
      * @param dx the amount to add to the rectangle's left and right coordinates
      * @param dy the amount to add to the rectangle's top and bottom coordinates
      */
-    public void offset(float dx, float dy) {
+    public final void offset(float dx, float dy) {
         left += dx;
         top += dy;
         right += dx;
@@ -222,7 +222,7 @@ public class RectF {
      * @param newLeft the new "left" coordinate for the rectangle
      * @param newTop  the new "top" coordinate for the rectangle
      */
-    public void offsetTo(float newLeft, float newTop) {
+    public final void offsetTo(float newLeft, float newTop) {
         right += newLeft - left;
         bottom += newTop - top;
         left = newLeft;
@@ -238,7 +238,7 @@ public class RectF {
      * @param dx the amount to add(subtract) from the rectangle's left(right)
      * @param dy the amount to add(subtract) from the rectangle's top(bottom)
      */
-    public void inset(float dx, float dy) {
+    public final void inset(float dx, float dy) {
         left += dx;
         top += dy;
         right -= dx;
@@ -253,7 +253,7 @@ public class RectF {
      * @param right  the amount to subtract from the rectangle's right
      * @param bottom the amount to subtract from the rectangle's bottom
      */
-    public void inset(float left, float top, float right, float bottom) {
+    public final void inset(float left, float top, float right, float bottom) {
         this.left += left;
         this.top += top;
         this.right -= right;
@@ -266,7 +266,7 @@ public class RectF {
      *
      * @param insets the rectangle specifying the insets on all side.
      */
-    public void inset(RectF insets) {
+    public final void inset(RectF insets) {
         left += insets.left;
         top += insets.top;
         right -= insets.right;
@@ -279,7 +279,7 @@ public class RectF {
      *
      * @param insets the rectangle specifying the insets on all side.
      */
-    public void inset(Rect insets) {
+    public final void inset(Rect insets) {
         left += insets.left;
         top += insets.top;
         right -= insets.right;
@@ -294,7 +294,7 @@ public class RectF {
      * @param right  the amount to add from the rectangle's right
      * @param bottom the amount to add from the rectangle's bottom
      */
-    public void adjust(float left, float top, float right, float bottom) {
+    public final void adjust(float left, float top, float right, float bottom) {
         this.left += left;
         this.top += top;
         this.right += right;
@@ -306,7 +306,7 @@ public class RectF {
      *
      * @param adjusts the rectangle specifying the adjusts on all side.
      */
-    public void adjust(RectF adjusts) {
+    public final void adjust(RectF adjusts) {
         left += adjusts.left;
         top += adjusts.top;
         right += adjusts.right;
@@ -318,7 +318,7 @@ public class RectF {
      *
      * @param adjusts the rectangle specifying the adjusts on all side.
      */
-    public void adjust(Rect adjusts) {
+    public final void adjust(Rect adjusts) {
         left += adjusts.left;
         top += adjusts.top;
         right += adjusts.right;
@@ -336,7 +336,7 @@ public class RectF {
      * @return true if (x,y) are contained by the rectangle, where containment
      * means left <= x < right and top <= y < bottom
      */
-    public boolean contains(float x, float y) {
+    public final boolean contains(float x, float y) {
         return x >= left && x < right && y >= top && y < bottom;
     }
 
@@ -352,7 +352,7 @@ public class RectF {
      * @return true if the 4 specified sides of a rectangle are inside or
      * equal to this rectangle
      */
-    public boolean contains(float left, float top, float right, float bottom) {
+    public final boolean contains(float left, float top, float right, float bottom) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -368,7 +368,7 @@ public class RectF {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public boolean contains(RectF r) {
+    public final boolean contains(RectF r) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -383,7 +383,7 @@ public class RectF {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public boolean contains(Rect r) {
+    public final boolean contains(Rect r) {
         // check for empty first
         return this.left < this.right && this.top < this.bottom
                 // now check for containment
@@ -407,7 +407,7 @@ public class RectF {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public boolean intersect(float left, float top, float right, float bottom) {
+    public final boolean intersect(float left, float top, float right, float bottom) {
         float tmpL = Math.max(this.left, left);
         float tmpT = Math.max(this.top, top);
         float tmpR = Math.min(this.right, right);
@@ -432,7 +432,7 @@ public class RectF {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public boolean intersect(RectF r) {
+    public final boolean intersect(RectF r) {
         return intersect(r.left, r.top, r.right, r.bottom);
     }
 
@@ -446,7 +446,7 @@ public class RectF {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public boolean intersect(Rect r) {
+    public final boolean intersect(Rect r) {
         return intersect(r.left, r.top, r.right, r.bottom);
     }
 
@@ -456,7 +456,7 @@ public class RectF {
      *
      * @see #inset(float, float, float, float) but without checking if the rects overlap.
      */
-    public void intersectNoCheck(float left, float top, float right, float bottom) {
+    public final void intersectNoCheck(float left, float top, float right, float bottom) {
         this.left = Math.max(this.left, left);
         this.top = Math.max(this.top, top);
         this.right = Math.min(this.right, right);
@@ -469,7 +469,7 @@ public class RectF {
      *
      * @see #inset(float, float, float, float) but without checking if the rects overlap.
      */
-    public void intersectNoCheck(RectF r) {
+    public final void intersectNoCheck(RectF r) {
         intersectNoCheck(r.left, r.top, r.right, r.bottom);
     }
 
@@ -479,7 +479,7 @@ public class RectF {
      *
      * @see #inset(float, float, float, float) but without checking if the rects overlap.
      */
-    public void intersectNoCheck(Rect r) {
+    public final void intersectNoCheck(Rect r) {
         intersectNoCheck(r.left, r.top, r.right, r.bottom);
     }
 
@@ -494,7 +494,7 @@ public class RectF {
      * this rectangle to that intersection. If they do not, return
      * false and do not change this rectangle.
      */
-    public boolean intersect(RectF a, RectF b) {
+    public final boolean intersect(RectF a, RectF b) {
         float tmpL = Math.max(a.left, b.left);
         float tmpT = Math.max(a.top, b.top);
         float tmpR = Math.min(a.right, b.right);
@@ -522,7 +522,7 @@ public class RectF {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public boolean intersects(float left, float top, float right, float bottom) {
+    public final boolean intersects(float left, float top, float right, float bottom) {
         float tmpL = Math.max(this.left, left);
         float tmpT = Math.max(this.top, top);
         float tmpR = Math.min(this.right, right);
@@ -539,7 +539,7 @@ public class RectF {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public boolean intersects(RectF r) {
+    public final boolean intersects(RectF r) {
         return intersects(r.left, r.top, r.right, r.bottom);
     }
 
@@ -552,7 +552,7 @@ public class RectF {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public boolean intersects(Rect r) {
+    public final boolean intersects(Rect r) {
         return intersects(r.left, r.top, r.right, r.bottom);
     }
 
@@ -578,7 +578,7 @@ public class RectF {
      * Set the dst integer Rect by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    public void round(Rect dst) {
+    public final void round(Rect dst) {
         dst.set(Math.round(left), Math.round(top),
                 Math.round(right), Math.round(bottom));
     }
@@ -587,7 +587,7 @@ public class RectF {
      * Set the dst integer Rect by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    public void roundIn(Rect dst) {
+    public final void roundIn(Rect dst) {
         dst.set((int) Math.ceil(left), (int) Math.ceil(top),
                 (int) Math.floor(right), (int) Math.floor(bottom));
     }
@@ -596,7 +596,7 @@ public class RectF {
      * Set the dst integer Rect by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    public void roundOut(Rect dst) {
+    public final void roundOut(Rect dst) {
         dst.set((int) Math.floor(left), (int) Math.floor(top),
                 (int) Math.ceil(right), (int) Math.ceil(bottom));
     }
@@ -605,7 +605,7 @@ public class RectF {
      * Set the dst rectangle by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    public void round(RectF dst) {
+    public final void round(RectF dst) {
         dst.set(Math.round(left), Math.round(top),
                 Math.round(right), Math.round(bottom));
     }
@@ -614,7 +614,7 @@ public class RectF {
      * Set the dst rectangle by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    public void roundIn(RectF dst) {
+    public final void roundIn(RectF dst) {
         dst.set((float) Math.ceil(left), (float) Math.ceil(top),
                 (float) Math.floor(right), (float) Math.floor(bottom));
     }
@@ -623,7 +623,7 @@ public class RectF {
      * Set the dst rectangle by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    public void roundOut(RectF dst) {
+    public final void roundOut(RectF dst) {
         dst.set((float) Math.floor(left), (float) Math.floor(top),
                 (float) Math.ceil(right), (float) Math.ceil(bottom));
     }
@@ -638,7 +638,7 @@ public class RectF {
      * @param right  the right edge being unioned with this rectangle
      * @param bottom the bottom edge being unioned with this rectangle
      */
-    public void join(float left, float top, float right, float bottom) {
+    public final void join(float left, float top, float right, float bottom) {
         // do nothing if the params are empty
         if (left >= right || top >= bottom) {
             return;
@@ -664,7 +664,7 @@ public class RectF {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public void join(RectF r) {
+    public final void join(RectF r) {
         join(r.left, r.top, r.right, r.bottom);
     }
 
@@ -675,7 +675,7 @@ public class RectF {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public void join(Rect r) {
+    public final void join(Rect r) {
         join(r.left, r.top, r.right, r.bottom);
     }
 
@@ -690,7 +690,7 @@ public class RectF {
      * @param right  the right edge being unioned with this rectangle
      * @param bottom the bottom edge being unioned with this rectangle
      */
-    public void joinNoCheck(float left, float top, float right, float bottom) {
+    public final void joinNoCheck(float left, float top, float right, float bottom) {
         this.left = Math.min(this.left, left);
         this.top = Math.min(this.top, top);
         this.right = Math.max(this.right, right);
@@ -705,7 +705,7 @@ public class RectF {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public void joinNoCheck(RectF r) {
+    public final void joinNoCheck(RectF r) {
         joinNoCheck(r.left, r.top, r.right, r.bottom);
     }
 
@@ -717,7 +717,7 @@ public class RectF {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public void joinNoCheck(Rect r) {
+    public final void joinNoCheck(Rect r) {
         joinNoCheck(r.left, r.top, r.right, r.bottom);
     }
 
@@ -727,7 +727,7 @@ public class RectF {
      * @param x The x coordinate of the point to add to the rectangle
      * @param y The y coordinate of the point to add to the rectangle
      */
-    public void join(float x, float y) {
+    public final void join(float x, float y) {
         if (left < right && top < bottom) {
             if (x < left) {
                 left = x;
@@ -753,7 +753,7 @@ public class RectF {
      * If the edges are already correct (i.e. left <= right and top <= bottom)
      * then nothing is done.
      */
-    public void sort() {
+    public final void sort() {
         if (left > right) {
             float temp = left;
             left = right;
