@@ -18,13 +18,5 @@
 
 package icyllis.arcui.graphics;
 
-/**
- * A direct context directly interacts with the underlying 3D graphics API (OpenGL or Vulkan).
- * A direct context may derive multiple deferred contexts.
- */
-public final class DirectContext extends RecordingContext {
-
-    public DirectContext(ThreadSafeProxy proxy) {
-        super(proxy);
-    }
+public class CircularBuffer {
 }

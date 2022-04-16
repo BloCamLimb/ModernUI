@@ -19,6 +19,8 @@ dependencies {
     compileOnly 'com.google.code.findbugs:jsr305:3.0.2'
     compileOnly 'org.jetbrains:annotations:23.0.0'
 
+    implementation "it.unimi.dsi:fastutil:8.5.8"
+
     def lwjglNatives
     switch (org.gradle.internal.os.OperatingSystem.current()) {
         case org.gradle.internal.os.OperatingSystem.WINDOWS:

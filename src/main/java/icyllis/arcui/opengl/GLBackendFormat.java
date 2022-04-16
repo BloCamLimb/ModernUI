@@ -34,9 +34,10 @@ public final class GLBackendFormat extends BackendFormat {
     public GLBackendFormat(@NativeType("GLenum") int format, @NativeType("GLenum") int target) {
         mFormat = format;
         mTextureType = switch (target) {
+            case GL_NONE -> Types.TEXTURE_TYPE_NONE;
             case GL_TEXTURE_2D -> Types.TEXTURE_TYPE_2D;
             case GL_TEXTURE_RECTANGLE -> Types.TEXTURE_TYPE_RECTANGLE;
-            default -> Types.TEXTURE_TYPE_NONE;
+            default -> throw new IllegalArgumentException();
         };
     }
 
@@ -60,11 +61,15 @@ public final class GLBackendFormat extends BackendFormat {
         return GLUtil.getGLFormatFromGLEnum(mFormat);
     }
 
+    @Override
+    public int getGLFormatEnum() {
+        return mFormat;
+    }
+
     @Nonnull
     @Override
     public BackendFormat makeTexture2D() {
         if (mTextureType == Types.TEXTURE_TYPE_2D) {
-            // no need to copy, share this object
             return this;
         }
         return new GLBackendFormat(mFormat, GL_TEXTURE_2D);
@@ -74,15 +79,11 @@ public final class GLBackendFormat extends BackendFormat {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        GLBackendFormat that = (GLBackendFormat) o;
-        if (mFormat != that.mFormat) return false;
-        return mTextureType == that.mTextureType;
+        return mFormat == ((GLBackendFormat) o).mFormat;
     }
 
     @Override
     public int hashCode() {
-        int result = mFormat;
-        result = 31 * result + mTextureType;
-        return result;
+        return mFormat;
     }
 }

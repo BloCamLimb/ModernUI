@@ -33,7 +33,6 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
     private final VkImageInfo mInfo;
     final VkSharedImageInfo mState;
 
-    // lazy
     private VkBackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
@@ -48,6 +47,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
         }
         mInfo = info;
         mState = state;
+        assert info.mSampleCount >= 1;
     }
 
     @Override
@@ -88,7 +88,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new VkBackendFormat(mInfo.mFormat);
+            mBackendFormat = new VkBackendFormat(mInfo.mFormat, false);
         }
         return mBackendFormat;
     }

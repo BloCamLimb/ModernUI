@@ -19,6 +19,7 @@
 package icyllis.arcui.graphics;
 
 import icyllis.arcui.opengl.GLTypes;
+import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.NativeType;
 import org.lwjgl.vulkan.VK11;
 
@@ -54,6 +55,15 @@ public abstract class BackendFormat {
      */
     public int getGLFormat() {
         return GLTypes.FORMAT_UNKNOWN;
+    }
+
+    /**
+     * If the backend API is Open GL this gets the format as a GLEnum. Otherwise, returns
+     * {@link GL45C#GL_NONE}.
+     */
+    @NativeType("GLenum")
+    public int getGLFormatEnum() {
+        return GL45C.GL_NONE;
     }
 
     /**

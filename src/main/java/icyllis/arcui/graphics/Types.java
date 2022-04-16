@@ -18,6 +18,9 @@
 
 package icyllis.arcui.graphics;
 
+import icyllis.arcui.core.Color;
+import icyllis.arcui.core.ImageInfo;
+
 /**
  * Constants independent of graphics API.
  */
@@ -38,7 +41,8 @@ public final class Types {
     public static final int
             TEXTURE_TYPE_NONE = 0,
             TEXTURE_TYPE_2D = 1,
-            TEXTURE_TYPE_RECTANGLE = 2; // Rectangle uses un-normalized texture coordinates.
+            TEXTURE_TYPE_RECTANGLE = 2, // Rectangle uses un-normalized texture coordinates.
+            TEXTURE_TYPE_EXTERNAL = 3;
 
     public static final int
             SHADER_TYPE_VERTEX = 0,
@@ -51,4 +55,53 @@ public final class Types {
             SHADER_FLAG_TESS_EVALUATION = 1 << 2,
             SHADER_FLAG_GEOMETRY = 1 << 3,
             SHADER_FLAG_FRAGMENT = 1 << 4;
+
+    /**
+     * Describes the encoding of channel data in a ColorType.
+     */
+    public static final int
+            COLOR_ENCODING_UNORM = 0,
+            COLOR_ENCODING_SRGB_UNORM = 1,
+            COLOR_ENCODING_SNORM = 2,
+            COLOR_ENCODING_FLOAT = 3;
+
+    public static int getColorTypeChannelFlags(int ct) {
+        return switch (ct) {
+            case ImageInfo.COLOR_UNKNOWN -> 0;
+            case ImageInfo.COLOR_ALPHA_8,
+                    ImageInfo.COLOR_ALPHA_16,
+                    ImageInfo.COLOR_ALPHA_F32xxx,
+                    ImageInfo.COLOR_ALPHA_8xxx,
+                    ImageInfo.COLOR_ALPHA_F16 -> Color.ALPHA_CHANNEL_FLAG;
+            case ImageInfo.COLOR_BGR_565,
+                    ImageInfo.COLOR_RGB_888,
+                    ImageInfo.COLOR_RGB_888x -> Color.RGB_CHANNEL_FLAGS;
+            case ImageInfo.COLOR_ABGR_4444,
+                    ImageInfo.COLOR_BGRA_4444,
+                    ImageInfo.COLOR_ARGB_4444,
+                    ImageInfo.COLOR_RGBA_16161616,
+                    ImageInfo.COLOR_RGBA_F32,
+                    ImageInfo.COLOR_RGBA_F16_CLAMPED,
+                    ImageInfo.COLOR_RGBA_F16,
+                    ImageInfo.COLOR_BGRA_1010102,
+                    ImageInfo.COLOR_RGBA_1010102,
+                    ImageInfo.COLOR_BGRA_8888,
+                    ImageInfo.COLOR_RGBA_8888_SRGB,
+                    ImageInfo.COLOR_RGBA_8888 -> Color.RGBA_CHANNEL_FLAGS;
+            case ImageInfo.COLOR_RG_88,
+                    ImageInfo.COLOR_RG_F16,
+                    ImageInfo.COLOR_RG_1616 -> Color.RG_CHANNEL_FLAGS;
+            case ImageInfo.COLOR_GRAY_8,
+                    ImageInfo.COLOR_GRAY_F16,
+                    ImageInfo.COLOR_GRAY_8xxx -> Color.GRAY_CHANNEL_FLAG;
+            case ImageInfo.COLOR_GRAY_ALPHA_88 -> Color.GRAY_ALPHA_CHANNEL_FLAGS;
+            case ImageInfo.COLOR_R_8,
+                    ImageInfo.COLOR_R_F16,
+                    ImageInfo.COLOR_R_16 -> Color.RED_CHANNEL_FLAG;
+            default -> throw new IllegalArgumentException();
+        };
+    }
+
+    private Types() {
+    }
 }

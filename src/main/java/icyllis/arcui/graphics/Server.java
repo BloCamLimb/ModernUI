@@ -18,39 +18,19 @@
 
 package icyllis.arcui.graphics;
 
-import icyllis.arcui.core.*;
-
 /**
- * The drawing device is backed by GPU.
+ * Represents the graphics pipeline of a 3D backend API, holding a reference
+ * to DirectContext.
  */
-public class GraphicsDevice extends BaseDevice {
+public abstract class Server {
 
-    public GraphicsDevice(ImageInfo info) {
-        super(info);
+    private final DirectContext mContext;
+
+    public Server(DirectContext context) {
+        mContext = context;
     }
 
-    @Override
-    public boolean clipIsAA() {
-        return false;
-    }
-
-    @Override
-    public boolean clipIsWideOpen() {
-        return false;
-    }
-
-    @Override
-    protected int getClipType() {
-        return 0;
-    }
-
-    @Override
-    protected Rect getClipBounds() {
-        return null;
-    }
-
-    @Override
-    protected void drawPaint(Paint paint) {
-
+    public DirectContext getContext() {
+        return mContext;
     }
 }

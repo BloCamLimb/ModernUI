@@ -22,6 +22,8 @@ import icyllis.arcui.graphics.*;
 
 import javax.annotation.Nonnull;
 
+import static org.lwjgl.opengl.GL45C.*;
+
 public final class GLBackendTexture extends BackendTexture {
 
     private final boolean mMipmapped;
@@ -29,7 +31,6 @@ public final class GLBackendTexture extends BackendTexture {
     private final GLTextureInfo mInfo;
     final GLTextureParameters mParams;
 
-    // lazy
     private GLBackendFormat mBackendFormat;
 
     // The GLTextureInfo must have a valid mFormat, can NOT be modified anymore.
@@ -44,11 +45,22 @@ public final class GLBackendTexture extends BackendTexture {
         mMipmapped = mipmapped;
         mInfo = info;
         mParams = params;
+        assert getTextureType() >= 0;
     }
 
     @Override
     public int getBackend() {
         return Types.OPENGL;
+    }
+
+    @Override
+    public int getTextureType() {
+        return switch (mInfo.mTarget) {
+            case GL_NONE -> Types.TEXTURE_TYPE_NONE;
+            case GL_TEXTURE_2D -> Types.TEXTURE_TYPE_2D;
+            case GL_TEXTURE_RECTANGLE -> Types.TEXTURE_TYPE_RECTANGLE;
+            default -> throw new IllegalStateException();
+        };
     }
 
     @Override

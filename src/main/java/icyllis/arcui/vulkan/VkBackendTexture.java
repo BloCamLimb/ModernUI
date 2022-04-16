@@ -22,6 +22,7 @@ import icyllis.arcui.graphics.*;
 
 import javax.annotation.Nonnull;
 
+import static org.lwjgl.vulkan.EXTImageDrmFormatModifier.VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
 import static org.lwjgl.vulkan.VK11.*;
 
 public final class VkBackendTexture extends BackendTexture {
@@ -36,7 +37,6 @@ public final class VkBackendTexture extends BackendTexture {
     private final VkImageInfo mInfo;
     final VkSharedImageInfo mState;
 
-    // lazy
     private VkBackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
@@ -56,6 +56,14 @@ public final class VkBackendTexture extends BackendTexture {
     @Override
     public int getBackend() {
         return Types.VULKAN;
+    }
+
+    @Override
+    public int getTextureType() {
+        if (mInfo.mImageTiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
+            return Types.TEXTURE_TYPE_EXTERNAL;
+        }
+        return Types.TEXTURE_TYPE_2D;
     }
 
     @Override
@@ -85,7 +93,8 @@ public final class VkBackendTexture extends BackendTexture {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new VkBackendFormat(mInfo.mFormat);
+            boolean useDRMModifier = mInfo.mImageTiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
+            mBackendFormat = new VkBackendFormat(mInfo.mFormat, useDRMModifier);
         }
         return mBackendFormat;
     }

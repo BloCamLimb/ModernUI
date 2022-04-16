@@ -42,6 +42,11 @@ public abstract class BackendTexture {
     public abstract int getBackend();
 
     /**
+     * @return see Types
+     */
+    public abstract int getTextureType();
+
+    /**
      * @return width in pixels
      */
     public final int getWidth() {

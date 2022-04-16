@@ -27,9 +27,11 @@ import javax.annotation.Nonnull;
 public final class VkBackendFormat extends BackendFormat {
 
     private final int mFormat;
+    private final int mTextureType;
 
-    public VkBackendFormat(@NativeType("VkFormat") int format) {
+    public VkBackendFormat(@NativeType("VkFormat") int format, boolean useDRMModifier) {
         mFormat = format;
+        mTextureType = useDRMModifier ? Types.TEXTURE_TYPE_EXTERNAL : Types.TEXTURE_TYPE_2D;
     }
 
     @Override
@@ -39,7 +41,7 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Override
     public int getTextureType() {
-        return Types.TEXTURE_TYPE_2D;
+        return mTextureType;
     }
 
     @Override
@@ -55,7 +57,10 @@ public final class VkBackendFormat extends BackendFormat {
     @Nonnull
     @Override
     public BackendFormat makeTexture2D() {
-        return this;
+        if (mTextureType == Types.TEXTURE_TYPE_2D) {
+            return this;
+        }
+        return new VkBackendFormat(mFormat, false);
     }
 
     @Override

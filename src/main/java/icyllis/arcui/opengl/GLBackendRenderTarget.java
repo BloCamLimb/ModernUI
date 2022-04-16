@@ -23,6 +23,8 @@ import icyllis.arcui.graphics.Types;
 
 import javax.annotation.Nonnull;
 
+import static org.lwjgl.opengl.GL45C.GL_NONE;
+
 public final class GLBackendRenderTarget extends BackendRenderTarget {
 
     private final int mSampleCount;
@@ -30,7 +32,6 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
 
     private final GLFramebufferInfo mInfo;
 
-    // lazy
     private GLBackendFormat mBackendFormat;
 
     // The GLTextureInfo can NOT be modified anymore.
@@ -40,6 +41,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
         mSampleCount = sampleCount;
         mStencilBits = stencilBits;
         mInfo = info;
+        assert sampleCount >= 1;
     }
 
     @Override
@@ -67,7 +69,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
     @Override
     public GLBackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(mInfo.mFormat, Types.TEXTURE_TYPE_NONE);
+            mBackendFormat = new GLBackendFormat(mInfo.mFormat, GL_NONE);
         }
         return mBackendFormat;
     }

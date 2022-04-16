@@ -18,13 +18,39 @@
 
 package icyllis.arcui.graphics;
 
-/**
- * A direct context directly interacts with the underlying 3D graphics API (OpenGL or Vulkan).
- * A direct context may derive multiple deferred contexts.
- */
-public final class DirectContext extends RecordingContext {
+import icyllis.arcui.core.*;
 
-    public DirectContext(ThreadSafeProxy proxy) {
-        super(proxy);
+/**
+ * The drawing device is backed by GPU.
+ */
+public final class SurfaceDevice extends BaseDevice {
+
+    public SurfaceDevice(ImageInfo info) {
+        super(info);
+    }
+
+    @Override
+    public boolean clipIsAA() {
+        return false;
+    }
+
+    @Override
+    public boolean clipIsWideOpen() {
+        return false;
+    }
+
+    @Override
+    protected int getClipType() {
+        return 0;
+    }
+
+    @Override
+    protected Rect getClipBounds() {
+        return null;
+    }
+
+    @Override
+    protected void drawPaint(Paint paint) {
+
     }
 }
