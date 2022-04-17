@@ -102,6 +102,22 @@ public final class Types {
         };
     }
 
+    /**
+     * Budget types.
+     * <p>
+     * NONE: The resource is not budgeted and is cleaned up as soon as it has no refs regardless of whether
+     * it has a unique or scratch key.
+     * <p>
+     * PARTIAL: The resource is not budgeted and is allowed to remain in the cache with no refs if it
+     * has a unique key. Scratch keys are ignored.
+     * <p>
+     * COMPLETE: The resource is budgeted and is subject to cleaning up under budget pressure.
+     */
+    public static final byte
+            BUDGET_TYPE_NONE = 0,
+            BUDGET_TYPE_PARTIAL = 1,
+            BUDGET_TYPE_COMPLETE = 2;
+
     private Types() {
     }
 }

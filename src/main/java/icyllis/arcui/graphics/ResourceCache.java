@@ -121,6 +121,16 @@ public final class ResourceCache implements AutoCloseable {
         return false;
     }
 
+    void notifyRefCntReachedZero(Resource resource, boolean commandBufferUsage) {
+
+    }
+
+    void changeUniqueKey(Resource resource, UniqueKey uniqueKey) {
+    }
+
+    void removeUniqueKey(Resource resource) {
+    }
+
     @Override
     public void close() {
     }

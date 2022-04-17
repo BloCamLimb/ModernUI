@@ -21,76 +21,201 @@ package icyllis.arcui.graphics;
 import it.unimi.dsi.fastutil.longs.LongHash;
 import org.lwjgl.system.MemoryStack;
 
-import java.util.concurrent.atomic.AtomicInteger;
-
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
  * Base class for all gpu Resource cache keys. There are two types of cache keys. Refer to the
- * comments for each key type below. <b>WARNING: UNSAFE OPERATIONS</b>
- * <h3>Scratch Key</h3>
- * A key used for scratch resources. There are three important rules about scratch keys:
- * <ul>
- * <li> Multiple resources can share the same scratch key. Therefore resources assigned the same
- * scratch key should be interchangeable with respect to the code that uses them.</li>
- * <li> A resource can have at most one scratch key and it is set at resource creation by the
- * resource itself.</li>
- * <li> When a scratch resource is ref'ed it will not be returned from the
- * cache for a subsequent cache request until all refs are released. This facilitates using
- * a scratch key for multiple render-to-texture scenarios. An example is a separable blur:</li>
- * </ul>
- * <pre>{@code
- * GrTexture* texture[2];
- * texture[0] = get_scratch_texture(scratchKey);
- * texture[1] = get_scratch_texture(scratchKey); // texture[0] is already owned so we will get a
- * // different one for texture[1]
- * draw_mask(texture[0], path);        // draws path mask to texture[0]
- * blur_x(texture[0], texture[1]);     // blurs texture[0] in y and stores result in texture[1]
- * blur_y(texture[1], texture[0]);     // blurs texture[1] in y and stores result in texture[0]
- * texture[1]->unref();  // texture 1 can now be recycled for the next request with scratchKey
- * consume_blur(texture[0]);
- * texture[0]->unref();  // texture 0 can now be recycled for the next request with scratchKey
- * }</pre>
- * <h3>Unique Key</h3>
- * A key that allows for exclusive use of a resource for a use case (AKA "domain"). There are three
- * rules governing the use of unique keys:
- * <ul>
- * <li> Only one resource can have a given unique key at a time. Hence, "unique".</li>
- * <li> A resource can have at most one unique key at a time.</li>
- * <li> Unlike scratch keys, multiple requests for a unique key will return the same
- * resource even if the resource already has refs.</li>
- * </ul>
- * This key type allows a code path to create cached resources for which it is the exclusive user.
- * The code path creates a domain which it sets on its keys. This guarantees that there are no
- * cross-domain collisions.
- * <p>
- * Unique keys preempt scratch keys. While a resource has a unique key it is inaccessible via its
- * scratch key. It can become scratch again if the unique key is removed.
+ * comments for each key type below.
  */
-public final class ResourceKey {
+public abstract sealed class ResourceKey permits ScratchKey, UniqueKey {
 
-    private static final AtomicInteger sNextScratchDomain = new AtomicInteger(1);
-    private static final AtomicInteger sNextUniqueDomain = new AtomicInteger(1);
+    /*
+        Metadata
+        Slot 0: precomputed hash code
+        Slot 1: low 16 bits (0x0000FFFF) - domain
+                high 16 bits (0xFFFF0000) - size (1...5)
+     */
+
+    private int mHash;
+    private int mDomainSize;
+
+    /*
+        Data, varying length from 1 to 5
+     */
+    private int mData0;
+    private int mData1;
+    private int mData2;
+    private int mData3;
+    private int mData4;
+
+    public ResourceKey() {
+    }
+
+    public ResourceKey(ResourceKey key) {
+        mHash = key.mHash;
+        mDomainSize = key.mDomainSize;
+        mData0 = key.mData0;
+        mData1 = key.mData1;
+        mData2 = key.mData2;
+        mData3 = key.mData3;
+        mData4 = key.mData4;
+    }
 
     /**
-     * Memory layout: uint32[2...7]
-     * <p>
-     * Fixed metadata, HASH and DOMAIN_AND_SIZE, with remaining data.
-     * <p>
-     * The allocation only increases but not decreases, default is NULL.
-     * <p>
-     * Scratch key and Unique key share the same layout, but domain
-     * are different, the two cannot be mixed.
+     * The precomputed hash code.
+     *
+     * @return the hash code, an invalid key is always 0
      */
-    private ResourceKey() {
+    public final int hash() {
+        return mHash;
     }
 
-    public static int createScratchDomain() {
-        return sNextScratchDomain.getAndIncrement();
+    /**
+     * The domain generation rules of the two keys are different and cannot be mixed.
+     *
+     * @return the domain, an invalid key is always 0
+     */
+    public final int domain() {
+        return mDomainSize & 0xFFFF;
     }
 
-    public static int createUniqueDomain() {
-        return sNextUniqueDomain.getAndIncrement();
+    /**
+     * The length of key data.
+     *
+     * @return the length of data array, ranged from 1 to 5, an invalid key is always 0
+     */
+    public final int size() {
+        return mDomainSize >>> 16;
+    }
+
+    /**
+     * Resets to an invalid key.
+     */
+    public final void reset() {
+        mHash = 0;
+        mDomainSize = 0;
+        mData0 = 0;
+        mData1 = 0;
+        mData2 = 0;
+        mData3 = 0;
+        mData4 = 0;
+    }
+
+    /**
+     * @return true if valid, that is, initialized
+     */
+    public final boolean isValid() {
+        // both domain and size are zero
+        return mDomainSize == 0;
+    }
+
+    protected final void set(ResourceKey key) {
+        mHash = key.mHash;
+        mDomainSize = key.mDomainSize;
+        mData0 = key.mData0;
+        mData1 = key.mData1;
+        mData2 = key.mData2;
+        mData3 = key.mData3;
+        mData4 = key.mData4;
+    }
+
+    public final void init(int domain, int data0) {
+        assert domain > 0 && domain <= 0xFFFF;
+        int domainSize = domain | (1 << 16);
+        int hash = domainSize;
+        hash = 31 * hash + data0;
+        mHash = hash;
+        mDomainSize = domainSize;
+        mData0 = data0;
+        mData1 = 0;
+        mData2 = 0;
+        mData3 = 0;
+        mData4 = 0;
+    }
+
+    public final void init(int domain, int data0, int data1) {
+        assert domain > 0 && domain <= 0xFFFF;
+        int domainSize = domain | (2 << 16);
+        int hash = domainSize;
+        hash = 31 * hash + data0;
+        hash = 31 * hash + data1;
+        mHash = hash;
+        mDomainSize = domainSize;
+        mData0 = data0;
+        mData1 = data1;
+        mData2 = 0;
+        mData3 = 0;
+        mData4 = 0;
+    }
+
+    public final void init(int domain, int data0, int data1, int data2) {
+        assert domain > 0 && domain <= 0xFFFF;
+        int domainSize = domain | (3 << 16);
+        int hash = domainSize;
+        hash = 31 * hash + data0;
+        hash = 31 * hash + data1;
+        hash = 31 * hash + data2;
+        mHash = hash;
+        mDomainSize = domainSize;
+        mData0 = data0;
+        mData1 = data1;
+        mData2 = data2;
+        mData3 = 0;
+        mData4 = 0;
+    }
+
+    public final void init(int domain, int data0, int data1, int data2, int data3) {
+        assert domain > 0 && domain <= 0xFFFF;
+        int domainSize = domain | (4 << 16);
+        int hash = domainSize;
+        hash = 31 * hash + data0;
+        hash = 31 * hash + data1;
+        hash = 31 * hash + data2;
+        hash = 31 * hash + data3;
+        mHash = hash;
+        mDomainSize = domainSize;
+        mData0 = data0;
+        mData1 = data1;
+        mData2 = data2;
+        mData3 = data3;
+        mData4 = 0;
+    }
+
+    public final void init(int domain, int data0, int data1, int data2, int data3, int data4) {
+        assert domain > 0 && domain <= 0xFFFF;
+        int domainSize = domain | (5 << 16);
+        int hash = domainSize;
+        hash = 31 * hash + data0;
+        hash = 31 * hash + data1;
+        hash = 31 * hash + data2;
+        hash = 31 * hash + data3;
+        hash = 31 * hash + data4;
+        mHash = hash;
+        mDomainSize = domainSize;
+        mData0 = data0;
+        mData1 = data1;
+        mData2 = data2;
+        mData3 = data3;
+        mData4 = data4;
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ResourceKey that = (ResourceKey) o;
+        if (mHash != that.mHash) return false;
+        if (mDomainSize != that.mDomainSize) return false;
+        if (mData0 != that.mData0) return false;
+        if (mData1 != that.mData1) return false;
+        if (mData2 != that.mData2) return false;
+        if (mData3 != that.mData3) return false;
+        return mData4 == that.mData4;
+    }
+
+    @Override
+    public final int hashCode() {
+        return mHash;
     }
 
     public static long make(long key, int domain, int data0) {
