@@ -24,7 +24,7 @@ import org.lwjgl.system.MemoryStack;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * Base class for all gpu Resource cache keys. There are two types of cache keys. Refer to the
+ * Base class for all Resource cache keys. There are two types of cache keys. Refer to the
  * comments for each key type below.
  */
 public abstract sealed class ResourceKey permits ScratchKey, UniqueKey {
@@ -217,6 +217,8 @@ public abstract sealed class ResourceKey permits ScratchKey, UniqueKey {
     public final int hashCode() {
         return mHash;
     }
+
+    // DEPRECATED BELOW
 
     public static long make(long key, int domain, int data0) {
         assert domain > 0 && domain <= 0xFFFF;

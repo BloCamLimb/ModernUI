@@ -118,6 +118,30 @@ public final class Types {
             BUDGET_TYPE_PARTIAL = 1,
             BUDGET_TYPE_COMPLETE = 2;
 
+    /**
+     * Flags shared between the Surface & SurfaceProxy class hierarchies
+     * <p>
+     * READ_ONLY: Means the pixels in the texture are read-only. Cannot also be a RenderTarget[Proxy].
+     * <p>
+     * GL_WRAPS_DEFAULT_FRAMEBUFFER: This is a OpenGL only flag. It tells us that the internal
+     * render target wraps the default framebuffer (fbo_id == 0).
+     * <p>
+     * REQUIRES_MANUAL_MSAA_RESOLVE: This means the render target is multi-sampled, and internally
+     * holds a non-msaa texture for resolving into. The render target resolves itself by blit-ting
+     * into this internal texture. (asTexture() might or might not return the internal texture,
+     * but if it does, we always resolve the render target before accessing this texture's data.)
+     * <p>
+     * VK_SUPPORTS_INPUT_ATTACHMENT: This is a Vulkan only flag. If set the surface can be used as
+     * an input attachment in a shader. This is used for doing in shader blending where we want to
+     * sample from the same image we are drawing to.
+     */
+    public static final int
+            INTERNAL_SURFACE_FLAG_READ_ONLY = 1,
+            INTERNAL_SURFACE_FLAG_PROTECTED = 1 << 1, // Vulkan
+            INTERNAL_SURFACE_FLAG_GL_WRAPS_DEFAULT_FRAMEBUFFER = 1 << 2,
+            INTERNAL_SURFACE_FLAG_REQUIRES_MANUAL_MSAA_RESOLVE = 1 << 3,
+            INTERNAL_SURFACE_FLAG_VK_SUPPORTS_INPUT_ATTACHMENT = 1 << 4;
+
     private Types() {
     }
 }

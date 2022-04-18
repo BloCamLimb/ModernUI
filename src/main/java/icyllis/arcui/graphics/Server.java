@@ -20,7 +20,9 @@ package icyllis.arcui.graphics;
 
 /**
  * Represents the graphics pipeline of a 3D backend API, holding a reference
- * to DirectContext.
+ * to DirectContext. It is responsible for creating / deleting 3D API objects,
+ * controlling binding status, uploading and downloading data, transferring
+ * 3D API draw commands, etc
  */
 public abstract class Server {
 

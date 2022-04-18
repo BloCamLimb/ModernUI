@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
  *
  * @author BloCamLimb
  */
-public class VirtualDevice extends BaseDevice {
+public class VirtualDevice extends Device {
 
     // cache some objects for performance
     private static final int MAX_CLIP_POOL_SIZE = 16;

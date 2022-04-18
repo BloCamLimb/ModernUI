@@ -47,7 +47,6 @@ public abstract class Resource {
         }
     }
 
-    // ensure atomic
     @SuppressWarnings("FieldMayBeFinal")
     private volatile int mRefCnt = 1;
     @SuppressWarnings("FieldMayBeFinal")
@@ -69,21 +68,20 @@ public abstract class Resource {
 
     // the index into a heap when this resource is cleanable or an array when not,
     // this is maintained by the cache
-    int mCacheIndex;
+    int mCacheIndex = -1;
     // the value reflects how recently this resource was accessed in the cache,
     // this is maintained by the cache
     int mTimestamp;
-    private long mExpiredTime;
+    private long mCleanUpTime;
 
     // null meaning invalid, lazy initialized
-    // unique key uses argument object, but scratch key uses new object created ourselves
     ScratchKey mScratchKey;
     UniqueKey mUniqueKey;
 
     // set once in constructor, clear to null after being destroyed
     private Server mServer;
 
-    byte mBudgetType = Types.BUDGET_TYPE_NONE;
+    private byte mBudgetType = Types.BUDGET_TYPE_NONE;
     private boolean mWrapped = false;
     private final int mUniqueID;
 
@@ -96,7 +94,7 @@ public abstract class Resource {
      * @return true if this resource is uniquely referenced by the client pipeline
      */
     public final boolean unique() {
-        // std::memory_order_acquire
+        // std::memory_order_acquire, maybe volatile?
         return (int) REF_CNT.getAcquire(this) == 1;
     }
 
@@ -119,7 +117,7 @@ public abstract class Resource {
         assert hasRef();
         // stronger than std::memory_order_acq_rel
         if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
-            notifyRefCntReachedZero(false);
+            notifyACntReachedZero(false);
         }
     }
 
@@ -158,17 +156,19 @@ public abstract class Resource {
         assert hasCommandBufferUsage();
         // stronger than std::memory_order_acq_rel
         if ((int) COMMAND_BUFFER_USAGE_CNT.getAndAdd(this, -1) == 1) {
-            notifyRefCntReachedZero(true);
+            notifyACntReachedZero(true);
         }
     }
 
     protected final boolean hasRef() {
-        // std::memory_order_relaxed
+        // std::memory_order_relaxed, maybe acquire?
         return (int) REF_CNT.getOpaque(this) > 0;
     }
 
     protected final boolean hasCommandBufferUsage() {
-        // std::memory_order_acquire
+        // std::memory_order_acquire barrier is only really needed if we return false
+        // it prevents code conditioned on the result of hasCommandBufferUsage() from running
+        // until previous owners are all totally done calling removeCommandBufferUsage()
         return (int) COMMAND_BUFFER_USAGE_CNT.getAcquire(this) > 0;
     }
 
@@ -179,7 +179,8 @@ public abstract class Resource {
         REF_CNT.getAndAddRelease(this, 1);
     }
 
-    private void notifyRefCntReachedZero(boolean commandBufferUsage) {
+    // Either ref cnt or command buffer usage cnt reached zero
+    private void notifyACntReachedZero(boolean commandBufferUsage) {
         if (mServer == null) {
             // If we have NO ref and NO command buffer usage, then we've already been removed from the cache,
             // and then this Java object should be phantom reachable soon after (GC-ed).
@@ -189,7 +190,7 @@ public abstract class Resource {
             return;
         }
 
-        mServer.getContext().getResourceCache().notifyRefCntReachedZero(this, commandBufferUsage);
+        mServer.getContext().getResourceCache().notifyACntReachedZero(this, commandBufferUsage);
     }
 
     /**
@@ -228,10 +229,12 @@ public abstract class Resource {
      * Retrieves the amount of server memory used by this resource in bytes. It is
      * approximate since we aren't aware of additional padding or copies made
      * by the driver.
+     * <p>
+     * <b>IMPORTANT: The return value is NOT expected to change.</b>
      *
      * @return the amount of server memory used in bytes
      */
-    public abstract int getMemorySize();
+    public abstract long getMemorySize();
 
     /**
      * Returns the current unique key for the resource. It will be invalid if the resource has no
@@ -243,114 +246,12 @@ public abstract class Resource {
     }
 
     /**
-     * This must be called by every non-wrapped subclass. It should be called once the object is
-     * fully initialized (i.e. only from the constructors of the final class).
-     *
-     * @param budgeted budgeted or not
-     */
-    protected final void registerWithCache(boolean budgeted) {
-    }
-
-    /**
-     * This must be called by every subclass that references any wrapped backend objects. It
-     * should be called once the object is fully initialized (i.e. only from the constructors of the
-     * final class).
-     *
-     * @param cacheable cacheable or not, cannot be budgeted (partial budgeted)
-     */
-    protected final void registerWithCacheWrapped(boolean cacheable) {
-        mWrapped = true;
-    }
-
-    /**
-     * @return the server or null if destroyed
-     */
-    protected final Server getServer() {
-        return mServer;
-    }
-
-    /**
-     * Subclass should override this method to free GPU resources in the backend API.
-     */
-    protected void onRelease() {
-    }
-
-    /**
-     * Subclass should override this method to invalidate any internal handles, etc.
-     * to backend API resources. This may be called when the underlying 3D context
-     * is no longer valid and so no backend API calls should be made.
-     */
-    protected void onDiscard() {
-    }
-
-    /**
-     * Called by the registerWithCache if the resource is available to be used as scratch.
-     * Resource subclasses should override this if the instances should be recycled as scratch
-     * resources and populate the scratchKey with the key.
-     * By default, resources are not recycled as scratch.
-     */
-    protected void computeScratchKey(long scratchKey) {
-    }
-
-    /**
-     * Is the resource currently cached as scratch? This means it is cached, has a valid scratch
-     * key, and does not have a unique key.
-     */
-    final boolean isScratch() {
-        return mBudgetType == Types.BUDGET_TYPE_COMPLETE &&
-                (mScratchKey != null && mScratchKey.isValid()) &&
-                (mUniqueKey == null || !mUniqueKey.isValid());
-    }
-
-    final boolean isUsableAsScratch() {
-        return isScratch() && !hasRef();
-    }
-
-    /**
-     * Called by the cache to delete the resource under normal circumstances.
-     */
-    final void release() {
-        assert mServer != null;
-        onRelease();
-        mServer = null;
-    }
-
-    /**
-     * Called by the cache to delete the resource when the backend 3D context is no longer valid.
-     */
-    final void discard() {
-        if (mServer == null) {
-            return;
-        }
-        onDiscard();
-        mServer = null;
-    }
-
-    public final boolean hasRefOrCommandBufferUsage() {
-        return hasRef() || hasCommandBufferUsage();
-    }
-
-    final void setExpiredTime() {
-        assert isCleanable();
-        mExpiredTime = System.currentTimeMillis();
-    }
-
-    /**
-     * Called by the cache to determine whether this resource should be cleaned up based on the length
-     * of time it has been available for cleaning.
-     */
-    final long getExpiredTime() {
-        assert isCleanable();
-        return mExpiredTime;
-    }
-
-    /**
      * Sets a unique key for the resource. If the resource was previously cached as scratch it will
      * be converted to a uniquely-keyed resource. If the key is invalid then this is equivalent to
      * removeUniqueKey(). If another resource is using the key then its unique key is removed and
      * this resource takes over the key.
      */
-    public final void setUniqueKey(UniqueKey uniqueKey) {
+    public final void setUniqueKey(UniqueKey key) {
         assert hasRef();
 
         // Uncached resources can never have a unique key, unless they're wrapped resources. Wrapped
@@ -365,7 +266,7 @@ public abstract class Resource {
             return;
         }
 
-        mServer.getContext().getResourceCache().changeUniqueKey(this, uniqueKey);
+        mServer.getContext().getResourceCache().changeUniqueKey(this, key);
     }
 
     /**
@@ -381,14 +282,31 @@ public abstract class Resource {
     }
 
     /**
-     * If the resource is uncached make it cached. Has no effect on resources that are wrapped or
-     * already cached.
+     * Budgeted: If the resource is uncached make it cached. Has no effect on resources that
+     * are wrapped or already cached.
      * <p>
-     * If the resource is cached make it uncached. Has no effect on resources that are wrapped or
-     * already uncached. Furthermore, resources with unique keys cannot be made un-budgeted.
+     * Not Budgeted: If the resource is cached make it uncached. Has no effect on resources that
+     * are wrapped or already uncached. Furthermore, resources with unique keys cannot be made
+     * not budgeted.
      */
     public final void makeBudgeted(boolean budgeted) {
-
+        if (budgeted) {
+            // We should never make a wrapped resource budgeted.
+            assert !mWrapped;
+            // Only wrapped resources can be in the partial budgeted state.
+            assert mBudgetType != Types.BUDGET_TYPE_PARTIAL;
+            if (mServer != null && mBudgetType == Types.BUDGET_TYPE_NONE) {
+                // Currently, resources referencing wrapped objects are not budgeted.
+                mBudgetType = Types.BUDGET_TYPE_COMPLETE;
+                mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
+            }
+        } else {
+            if (mServer != null && mBudgetType == Types.BUDGET_TYPE_COMPLETE &&
+                    (mUniqueKey == null || !mUniqueKey.isValid())) {
+                mBudgetType = Types.BUDGET_TYPE_NONE;
+                mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
+            }
+        }
     }
 
     /**
@@ -396,9 +314,8 @@ public abstract class Resource {
      * budget and if not whether it is allowed to be cached.
      */
     public final int getBudgetType() {
-        assert mBudgetType == Types.BUDGET_TYPE_COMPLETE ||
-                (mUniqueKey == null || !mUniqueKey.isValid()) ||
-                mWrapped;
+        assert mBudgetType == Types.BUDGET_TYPE_COMPLETE || mWrapped ||
+                (mUniqueKey == null || !mUniqueKey.isValid());
         return mBudgetType;
     }
 
@@ -424,6 +341,10 @@ public abstract class Resource {
      * at resource creation time, this means the resource will never again be used as scratch.
      */
     public final void removeScratchKey() {
+        if (mServer != null && (mScratchKey != null && mScratchKey.isValid())) {
+            mServer.getContext().getResourceCache().willRemoveScratchKey(this);
+            mScratchKey.reset();
+        }
     }
 
     public final boolean isCleanable() {
@@ -431,5 +352,118 @@ public abstract class Resource {
         // key. The key must be removed/invalidated to make them cleanable.
         return !hasRef() && !hasCommandBufferUsage() &&
                 !(mBudgetType == Types.BUDGET_TYPE_PARTIAL && mUniqueKey != null && mUniqueKey.isValid());
+    }
+
+    public final boolean hasRefOrCommandBufferUsage() {
+        return hasRef() || hasCommandBufferUsage();
+    }
+
+    /**
+     * This must be called by every non-wrapped subclass. It should be called once the object is
+     * fully initialized (i.e. only from the constructors of the final class).
+     *
+     * @param budgeted budgeted or not
+     */
+    protected final void registerWithCache(boolean budgeted) {
+        assert mBudgetType == Types.BUDGET_TYPE_NONE;
+        mBudgetType = budgeted ? Types.BUDGET_TYPE_COMPLETE : Types.BUDGET_TYPE_NONE;
+        if (mScratchKey == null) {
+            mScratchKey = new ScratchKey();
+        }
+        computeScratchKey(mScratchKey);
+        mServer.getContext().getResourceCache().insertResource(this);
+    }
+
+    /**
+     * This must be called by every subclass that references any wrapped backend objects. It
+     * should be called once the object is fully initialized (i.e. only from the constructors of the
+     * final class).
+     *
+     * @param cacheable cacheable or not, cannot be budgeted (partial budgeted)
+     */
+    protected final void registerWithCacheWrapped(boolean cacheable) {
+        assert mBudgetType == Types.BUDGET_TYPE_NONE;
+        // Resources referencing wrapped objects are never budgeted. They may be cached or uncached.
+        mBudgetType = cacheable ? Types.BUDGET_TYPE_PARTIAL : Types.BUDGET_TYPE_NONE;
+        mWrapped = true;
+        mServer.getContext().getResourceCache().insertResource(this);
+    }
+
+    /**
+     * @return the server or null if destroyed
+     */
+    protected final Server getServer() {
+        return mServer;
+    }
+
+    /**
+     * Subclass should override this method to free GPU resources in the backend API.
+     */
+    protected abstract void onRelease();
+
+    /**
+     * Subclass should override this method to invalidate any internal handles, etc.
+     * to backend API resources. This may be called when the underlying 3D context
+     * is no longer valid and so no backend API calls should be made.
+     */
+    protected abstract void onDiscard();
+
+    /**
+     * Called by the registerWithCache if the resource is available to be used as scratch.
+     * Resource subclasses should override this if the instances should be recycled as scratch
+     * resources and populate the scratchKey with the key.
+     * By default, resources are not recycled as scratch.
+     */
+    protected void computeScratchKey(ScratchKey scratchKey) {
+    }
+
+    /**
+     * Is the resource currently cached as scratch? This means it is cached, has a valid scratch
+     * key, and does not have a unique key.
+     */
+    final boolean isScratch() {
+        return mBudgetType == Types.BUDGET_TYPE_COMPLETE &&
+                (mScratchKey != null && mScratchKey.isValid()) &&
+                (mUniqueKey == null || !mUniqueKey.isValid());
+    }
+
+    final boolean isUsableAsScratch() {
+        return isScratch() && !hasRef();
+    }
+
+    /**
+     * Called by the cache to delete the resource under normal circumstances.
+     */
+    final void release() {
+        assert mServer != null;
+        onRelease();
+        mServer.getContext().getResourceCache().removeResource(this);
+        mServer = null;
+    }
+
+    /**
+     * Called by the cache to delete the resource when the backend 3D context is no longer valid.
+     */
+    final void discard() {
+        if (mServer == null) {
+            return;
+        }
+        onDiscard();
+        mServer.getContext().getResourceCache().removeResource(this);
+        mServer = null;
+    }
+
+    final void setCleanUpTime() {
+        assert isCleanable();
+        mCleanUpTime = System.currentTimeMillis();
+    }
+
+    /**
+     * Called by the cache to determine whether this resource should be cleaned up based on the length
+     * of time it has been available for cleaning.
+     */
+    final long getCleanUpTime() {
+        assert isCleanable();
+        return mCleanUpTime;
     }
 }

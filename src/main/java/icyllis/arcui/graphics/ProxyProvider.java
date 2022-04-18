@@ -18,39 +18,11 @@
 
 package icyllis.arcui.graphics;
 
-import icyllis.arcui.core.*;
-
 /**
- * The drawing device is backed by GPU.
+ * A factory for creating SurfaceProxy-derived objects.
  */
-public final class SurfaceDevice extends Device {
+public final class ProxyProvider {
 
-    public SurfaceDevice(SurfaceDrawContext context, boolean initContents) {
-        super(null);
-    }
-
-    @Override
-    public boolean clipIsAA() {
-        return false;
-    }
-
-    @Override
-    public boolean clipIsWideOpen() {
-        return false;
-    }
-
-    @Override
-    protected int getClipType() {
-        return 0;
-    }
-
-    @Override
-    protected Rect getClipBounds() {
-        return null;
-    }
-
-    @Override
-    protected void drawPaint(Paint paint) {
-
+    public ProxyProvider(RecordingContext context) {
     }
 }

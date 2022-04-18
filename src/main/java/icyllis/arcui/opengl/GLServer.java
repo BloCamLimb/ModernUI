@@ -16,41 +16,14 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.graphics;
+package icyllis.arcui.opengl;
 
-import icyllis.arcui.core.*;
+import icyllis.arcui.graphics.DirectContext;
+import icyllis.arcui.graphics.Server;
 
-/**
- * The drawing device is backed by GPU.
- */
-public final class SurfaceDevice extends Device {
+public final class GLServer extends Server {
 
-    public SurfaceDevice(SurfaceDrawContext context, boolean initContents) {
-        super(null);
-    }
-
-    @Override
-    public boolean clipIsAA() {
-        return false;
-    }
-
-    @Override
-    public boolean clipIsWideOpen() {
-        return false;
-    }
-
-    @Override
-    protected int getClipType() {
-        return 0;
-    }
-
-    @Override
-    protected Rect getClipBounds() {
-        return null;
-    }
-
-    @Override
-    protected void drawPaint(Paint paint) {
-
+    public GLServer(DirectContext context) {
+        super(context);
     }
 }

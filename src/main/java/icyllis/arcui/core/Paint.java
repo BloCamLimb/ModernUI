@@ -719,7 +719,7 @@ public class Paint {
     }
 
     /**
-     * Sets ColorFilter to filter, pass null to clear SkColorFilter.
+     * Sets ColorFilter to filter, pass null to clear ColorFilter.
      *
      * @param colorFilter ColorFilter to apply to subsequent draw
      */

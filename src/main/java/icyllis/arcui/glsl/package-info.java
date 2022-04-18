@@ -16,41 +16,11 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.graphics;
-
-import icyllis.arcui.core.*;
-
 /**
- * The drawing device is backed by GPU.
+ * GLSL shader preprocessor for OpenGL or SPIR-V for Vulkan.
+ * Allows shaders to be generated and compiled in real time.
  */
-public final class SurfaceDevice extends Device {
+@ParametersAreNonnullByDefault
+package icyllis.arcui.glsl;
 
-    public SurfaceDevice(SurfaceDrawContext context, boolean initContents) {
-        super(null);
-    }
-
-    @Override
-    public boolean clipIsAA() {
-        return false;
-    }
-
-    @Override
-    public boolean clipIsWideOpen() {
-        return false;
-    }
-
-    @Override
-    protected int getClipType() {
-        return 0;
-    }
-
-    @Override
-    protected Rect getClipBounds() {
-        return null;
-    }
-
-    @Override
-    protected void drawPaint(Paint paint) {
-
-    }
-}
+import javax.annotation.ParametersAreNonnullByDefault;

@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 /**
  * Base class for drawing devices.
  */
-public abstract class BaseDevice extends MatrixProvider {
+public abstract class Device extends MatrixProvider {
 
     protected static final int
             CLIP_TYPE_EMPTY = 0,
@@ -45,7 +45,7 @@ public abstract class BaseDevice extends MatrixProvider {
 
     private MarkerStack mMarkerStack;
 
-    public BaseDevice(ImageInfo info) {
+    public Device(ImageInfo info) {
         mInfo = info;
         mBounds.set(0, 0, info.width(), info.height());
     }
@@ -135,7 +135,7 @@ public abstract class BaseDevice extends MatrixProvider {
      * that device is drawn to the root device, the net effect will be that this device's contents
      * have been transformed by the global transform.
      */
-    public final void getRelativeTransform(final BaseDevice device, Matrix3 out) {
+    public final void getRelativeTransform(final Device device, Matrix3 out) {
         // To get the transform from this space to the other device's, transform from our space to
         // global and then from global to the other device.
         out.set(mDeviceToGlobal);
@@ -232,7 +232,7 @@ public abstract class BaseDevice extends MatrixProvider {
      * 'localToDevice', i.e. what geometry drawn into this device will be transformed with).
      * <p>
      * (bufferOriginX, bufferOriginY) defines where the (0,0) pixel the device's backing buffer
-     * is anchored in the device space. The final device-to-global matrix stored by the SkDevice
+     * is anchored in the device space. The final device-to-global matrix stored by the Device
      * will include a pre-translation by T(deviceOriginX, deviceOriginY), and the final
      * local-to-device matrix will have a post-translation of T(-deviceOriginX, -deviceOriginY).
      */
@@ -301,7 +301,7 @@ public abstract class BaseDevice extends MatrixProvider {
      * that contract it should return null.
      */
     @Nullable
-    protected BaseDevice createDevice(ImageInfo info, @Nullable Paint paint) {
+    protected Device createDevice(ImageInfo info, @Nullable Paint paint) {
         return null;
     }
 }

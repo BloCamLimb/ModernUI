@@ -18,6 +18,7 @@
 
 package icyllis.arcui.core;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
@@ -49,13 +50,10 @@ import java.util.*;
  *
  * @param <E> the type of elements held in this queue
  */
-@SuppressWarnings({"unchecked", "unused"})
+@SuppressWarnings({"unchecked", "unused", "SuspiciousSystemArraycopy"})
 public class PriorityQueue<E> extends AbstractQueue<E> {
 
-    /**
-     * A static, final, empty array.
-     */
-    private static final Object[] EMPTY_ARRAY = {};
+    private static final int DEFAULT_INITIAL_CAPACITY = 11;
 
     /**
      * Priority queue represented as a balanced binary heap: the two
@@ -65,87 +63,53 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      * heap and each descendant d of n, n <= d.  The element with the
      * lowest value is in queue[0], assuming the queue is nonempty.
      */
-    protected transient E[] heap = (E[]) EMPTY_ARRAY;
+    transient E[] heap;
 
     /**
      * The number of elements in this queue.
      */
-    protected int size;
+    int size;
 
     /**
      * The type-specific comparator used in this queue.
      */
-    protected final Comparator<? super E> c;
+    @Nullable
+    private final Comparator<? super E> c;
 
     /**
      * The type-specific index access used in this queue.
      */
-    protected final IndexAccess<? super E> ia;
-
-    /**
-     * Creates a {@code PriorityQueue} with the default initial capacity and using the natural order.
-     */
-    public PriorityQueue() {
-        this(11, null, null);
-    }
-
-    /**
-     * Creates a {@code PriorityQueue} with a given capacity and using the natural order.
-     *
-     * @param capacity the initial capacity of this queue.
-     */
-    public PriorityQueue(int capacity) {
-        this(capacity, null, null);
-    }
-
-    /**
-     * Creates a {@code PriorityQueue} with the default initial capacity and a given comparator.
-     *
-     * @param c the comparator used in this queue, or {@code null} for the natural order.
-     */
-    public PriorityQueue(@Nullable Comparator<? super E> c) {
-        this(11, c, null);
-    }
+    private final IndexAccess<? super E> index;
 
     /**
      * Creates a {@code PriorityQueue} with the default initial capacity, a given index access
      * and using the natural order.
      *
-     * @param ia the index access used in this queue, or {@code null}.
+     * @param index the index access used in this queue.
      */
-    public PriorityQueue(@Nullable IndexAccess<? super E> ia) {
-        this(11, null, ia);
-    }
-
-    /**
-     * Creates a {@code PriorityQueue} with a given capacity and comparator.
-     *
-     * @param capacity the initial capacity of this queue.
-     * @param c        the comparator used in this queue, or {@code null} for the natural order.
-     */
-    public PriorityQueue(int capacity, @Nullable Comparator<? super E> c) {
-        this(capacity, c, null);
+    public PriorityQueue(IndexAccess<? super E> index) {
+        this(DEFAULT_INITIAL_CAPACITY, null, index);
     }
 
     /**
      * Creates a {@code PriorityQueue} with a given capacity and index access.
      *
      * @param capacity the initial capacity of this queue.
-     * @param ia       the index access used in this queue, or {@code null}.
+     * @param index    the index access used in this queue.
      */
-    public PriorityQueue(int capacity, @Nullable IndexAccess<? super E> ia) {
-        this(capacity, null, ia);
+    public PriorityQueue(int capacity, IndexAccess<? super E> index) {
+        this(capacity, null, index);
     }
 
     /**
      * Creates a {@code PriorityQueue} with the default initial capacity, a given comparator
      * and index access.
      *
-     * @param c  the comparator used in this queue, or {@code null} for the natural order.
-     * @param ia the index access used in this queue, or {@code null}.
+     * @param c     the comparator used in this queue, or {@code null} for the natural order.
+     * @param index the index access used in this queue.
      */
-    public PriorityQueue(@Nullable Comparator<? super E> c, @Nullable IndexAccess<? super E> ia) {
-        this(11, c, ia);
+    public PriorityQueue(@Nullable Comparator<? super E> c, IndexAccess<? super E> index) {
+        this(DEFAULT_INITIAL_CAPACITY, c, index);
     }
 
     /**
@@ -153,13 +117,12 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      *
      * @param capacity the initial capacity of this queue.
      * @param c        the comparator used in this queue, or {@code null} for the natural order.
-     * @param ia       the index access used in this queue, or {@code null}.
+     * @param index    the index access used in this queue.
      */
-    public PriorityQueue(int capacity, @Nullable Comparator<? super E> c, @Nullable IndexAccess<? super E> ia) {
-        if (capacity > 0)
-            heap = (E[]) new Object[capacity];
+    public PriorityQueue(int capacity, @Nullable Comparator<? super E> c, IndexAccess<? super E> index) {
+        this.heap = (E[]) new Object[Math.max(capacity, 1)];
         this.c = c;
-        this.ia = ia;
+        this.index = index;
     }
 
     /**
@@ -189,6 +152,15 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         return offer(e);
     }
 
+    /**
+     * Inserts the specified element into this priority queue.
+     *
+     * @return {@code true} (as specified by {@link Queue#offer})
+     * @throws ClassCastException   if the specified element cannot be
+     *                              compared with elements currently in this priority queue
+     *                              according to the priority queue's ordering
+     * @throws NullPointerException if the specified element is null
+     */
     @Override
     public boolean offer(E e) {
         int i = size;
@@ -204,30 +176,26 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         return heap[0];
     }
 
-    private int indexOf(Object o) {
-        final E[] es = heap;
-        for (int i = 0, n = size; i < n; i++)
-            if (o.equals(es[i]))
-                return i;
-        return -1;
-    }
-
+    /**
+     * Removes a single instance of the specified element from this queue,
+     * if it is present.  More formally, removes an element {@code e} such
+     * that {@code o.equals(e)}, if this queue contains one or more such
+     * elements.  Returns {@code true} if and only if this queue contained
+     * the specified element (or equivalently, if this queue changed as a
+     * result of the call).
+     *
+     * @param o element to be removed from this queue, if present
+     * @return {@code true} if this queue changed as a result of the call
+     */
     @Override
     public boolean remove(Object o) {
-        int i = ia != null ? ia.getIndex((E) o) : indexOf(o);
+        int i = index.getIndex((E) o);
         if (i == -1)
             return false;
         else {
             removeAt(i);
             return true;
         }
-    }
-
-    /**
-     * Just like remove(), but do not check if it's in the queue.
-     */
-    public void delete(E e) {
-        removeAt(ia != null ? ia.getIndex(e) : indexOf(e));
     }
 
     /**
@@ -240,7 +208,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      */
     @Override
     public boolean contains(Object o) {
-        return indexOf(o) >= 0;
+        return index.getIndex((E) o) >= 0;
     }
 
     /**
@@ -253,15 +221,91 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      *
      * @return an array containing all the elements in this queue
      */
+    @Nonnull
     @Override
     public Object[] toArray() {
         return Arrays.copyOf(heap, size);
     }
 
+    /**
+     * Returns an array containing all the elements in this queue; the
+     * runtime type of the returned array is that of the specified array.
+     * The returned array elements are in no particular order.
+     * If the queue fits in the specified array, it is returned therein.
+     * Otherwise, a new array is allocated with the runtime type of the
+     * specified array and the size of this queue.
+     *
+     * <p>If the queue fits in the specified array with room to spare
+     * (i.e., the array has more elements than the queue), the element in
+     * the array immediately following the end of the collection is set to
+     * {@code null}.
+     *
+     * <p>Like the {@link #toArray()} method, this method acts as bridge between
+     * array-based and collection-based APIs.  Further, this method allows
+     * precise control over the runtime type of the output array, and may,
+     * under certain circumstances, be used to save allocation costs.
+     *
+     * <p>Suppose {@code x} is a queue known to contain only strings.
+     * The following code can be used to dump the queue into a newly
+     * allocated array of {@code String}:
+     *
+     * <pre> {@code String[] y = x.toArray(new String[0]);}</pre>
+     * <p>
+     * Note that {@code toArray(new Object[0])} is identical in function to
+     * {@code toArray()}.
+     *
+     * @param a the array into which the elements of the queue are to
+     *          be stored, if it is big enough; otherwise, a new array of the
+     *          same runtime type is allocated for this purpose.
+     * @return an array containing all the elements in this queue
+     * @throws ArrayStoreException  if the runtime type of the specified array
+     *                              is not a supertype of the runtime type of every element in
+     *                              this queue
+     * @throws NullPointerException if the specified array is null
+     */
+    @Nonnull
+    @Override
+    public <T> T[] toArray(@Nonnull T[] a) {
+        final int n = size;
+        if (a.length < n)
+            // Make a new array of a's runtime type, but my contents:
+            return (T[]) Arrays.copyOf(heap, n, a.getClass());
+        System.arraycopy(heap, 0, a, 0, n);
+        if (a.length > n)
+            a[n] = null;
+        return a;
+    }
+
+    /**
+     * Returns an iterator over the elements in this queue. The iterator
+     * does not return the elements in any particular order.
+     *
+     * @return an iterator over the elements in this queue
+     */
     @Override
     public Iterator<E> iterator() {
-        // we don't use it :p
-        throw new UnsupportedOperationException();
+        return new Itr();
+    }
+
+    private final class Itr implements Iterator<E> {
+
+        /**
+         * Index (into queue array) of element to be returned by
+         * subsequent call to next.
+         */
+        private int cursor;
+
+        @Override
+        public boolean hasNext() {
+            return cursor < size;
+        }
+
+        @Override
+        public E next() {
+            if (cursor < size)
+                return heap[cursor++];
+            throw new NoSuchElementException();
+        }
     }
 
     @Override
@@ -271,9 +315,11 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
 
     @Override
     public void clear() {
-        final Object[] es = heap;
-        for (int i = 0, n = size; i < n; i++)
+        final E[] es = heap;
+        for (int i = 0, n = size; i < n; i++) {
+            index.setIndex(es[i], -1);
             es[i] = null;
+        }
         size = 0;
     }
 
@@ -289,9 +335,9 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
             if (n > 0) {
                 final Comparator<? super E> cmp;
                 if ((cmp = c) == null)
-                    siftDownComparable(0, x, es, n);
+                    siftDownComparable(0, x, es, n, index);
                 else
-                    siftDownUsingComparator(0, x, es, n, cmp);
+                    siftDownUsingComparator(0, x, es, n, cmp, index);
             }
         }
         return result;
@@ -300,14 +346,15 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
     /**
      * Removes the ith element from queue.
      */
-    void removeAt(int i) {
+    public void removeAt(int i) {
         // assert i >= 0 && i < size;
-        final Object[] es = heap;
+        final E[] es = heap;
+        index.setIndex(es[i], -1);
         int s = --size;
         if (s == i) // removed last element
             es[i] = null;
         else {
-            E moved = (E) es[s];
+            E moved = es[s];
             es[s] = null;
             siftDown(i, moved);
             if (es[i] == moved)
@@ -319,22 +366,50 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      * Gets the item at index i in the priority queue (for i < size()). at(0) is equivalent
      * to peek(). Otherwise, there is no guarantee about ordering of elements in the queue.
      */
-    public E elementAt(int i) {
+    public E get(int i) {
         return heap[i];
     }
 
     /**
-     * Sorts the queue into priority order.  The queue is only guaranteed to remain in sorted order
+     * Sorts the queue into priority order. The queue is only guaranteed to remain in sorted order
      * until any other operation, other than at(), is performed.
      */
     public void sort() {
         final E[] es = heap;
         final int n = size;
         Arrays.sort(es, 0, n, c);
-        IndexAccess<? super E> idx = ia;
-        if (idx != null)
-            for (int i = 0; i < n; i++)
-                idx.setIndex(es[i], i);
+        for (int i = 0; i < n; i++)
+            index.setIndex(es[i], i);
+    }
+
+    /**
+     * Establishes the heap invariant (described above) in the entire tree,
+     * assuming nothing about the order of the elements prior to the call.
+     * This classic algorithm due to Floyd (1964) is known to be O(size).
+     */
+    public void heap() {
+        final E[] es = heap;
+        int n = size, i = (n >>> 1) - 1;
+        final Comparator<? super E> cmp;
+        if ((cmp = c) == null)
+            for (; i >= 0; i--)
+                siftDownComparable(i, es[i], es, n);
+        else
+            for (; i >= 0; i--)
+                siftDownUsingComparator(i, es[i], es, n, cmp);
+        for (int j = 0; j < n; j++)
+            index.setIndex(es[j], j);
+    }
+
+    /**
+     * Trims the underlying heap array so that it has exactly {@link #size()} elements.
+     */
+    public void trim() {
+        final E[] es = heap;
+        final int n = size;
+        if (n >= es.length || n == 0)
+            return;
+        heap = Arrays.copyOf(heap, n);
     }
 
     /**
@@ -351,14 +426,9 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      */
     private void siftUp(int k, E x) {
         if (c != null)
-            if (ia != null)
-                siftUpUsingComparator(k, x, heap, c, ia);
-            else
-                siftUpUsingComparator(k, x, heap, c);
-        else if (ia != null)
-            siftUpComparable(k, x, heap, ia);
+            siftUpUsingComparator(k, x, heap, c, index);
         else
-            siftUpComparable(k, x, heap);
+            siftUpComparable(k, x, heap, index);
     }
 
     private static <T> void siftUpComparable(int k, T x, T[] es) {
@@ -374,7 +444,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         es[k] = x;
     }
 
-    private static <T> void siftUpComparable(int k, T x, T[] es, IndexAccess<? super T> ia) {
+    private static <T> void siftUpComparable(int k, T x, T[] es, IndexAccess<? super T> index) {
         Comparable<? super T> key = (Comparable<? super T>) x;
         while (k > 0) {
             int parent = (k - 1) >>> 1;
@@ -382,11 +452,11 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
             if (key.compareTo(e) >= 0)
                 break;
             es[k] = e;
-            ia.setIndex(e, k);
+            index.setIndex(e, k);
             k = parent;
         }
         es[k] = x;
-        ia.setIndex(x, k);
+        index.setIndex(x, k);
     }
 
     private static <T> void siftUpUsingComparator(int k, T x, T[] es, Comparator<? super T> c) {
@@ -402,18 +472,18 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
     }
 
     private static <T> void siftUpUsingComparator(int k, T x, T[] es, Comparator<? super T> c,
-                                                  IndexAccess<? super T> ia) {
+                                                  IndexAccess<? super T> index) {
         while (k > 0) {
             int parent = (k - 1) >>> 1;
             T e = es[parent];
             if (c.compare(x, e) >= 0)
                 break;
             es[k] = e;
-            ia.setIndex(e, k);
+            index.setIndex(e, k);
             k = parent;
         }
         es[k] = x;
-        ia.setIndex(x, k);
+        index.setIndex(x, k);
     }
 
     /**
@@ -426,14 +496,9 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      */
     private void siftDown(int k, E x) {
         if (c != null)
-            if (ia != null)
-                siftDownUsingComparator(k, x, heap, size, c, ia);
-            else
-                siftDownUsingComparator(k, x, heap, size, c);
-        else if (ia != null)
-            siftDownComparable(k, x, heap, size, ia);
+            siftDownUsingComparator(k, x, heap, size, c, index);
         else
-            siftDownComparable(k, x, heap, size);
+            siftDownComparable(k, x, heap, size, index);
     }
 
     private static <T> void siftDownComparable(int k, T x, T[] es, int n) {
@@ -455,7 +520,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
         es[k] = x;
     }
 
-    private static <T> void siftDownComparable(int k, T x, T[] es, int n, IndexAccess<? super T> ia) {
+    private static <T> void siftDownComparable(int k, T x, T[] es, int n, IndexAccess<? super T> index) {
         // assert n > 0;
         Comparable<? super T> key = (Comparable<? super T>) x;
         int half = n >>> 1;           // loop while a non-leaf
@@ -469,11 +534,11 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
             if (key.compareTo(c) <= 0)
                 break;
             es[k] = c;
-            ia.setIndex(c, k);
+            index.setIndex(c, k);
             k = child;
         }
         es[k] = x;
-        ia.setIndex(x, k);
+        index.setIndex(x, k);
     }
 
     private static <T> void siftDownUsingComparator(int k, T x, T[] es, int n, Comparator<? super T> cmp) {
@@ -494,7 +559,7 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
     }
 
     private static <T> void siftDownUsingComparator(int k, T x, T[] es, int n, Comparator<? super T> cmp,
-                                                    IndexAccess<? super T> ia) {
+                                                    IndexAccess<? super T> index) {
         // assert n > 0;
         int half = n >>> 1;
         while (k < half) {
@@ -506,11 +571,11 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
             if (cmp.compare(x, c) <= 0)
                 break;
             es[k] = c;
-            ia.setIndex(c, k);
+            index.setIndex(c, k);
             k = child;
         }
         es[k] = x;
-        ia.setIndex(x, k);
+        index.setIndex(x, k);
     }
 
     /**
@@ -522,12 +587,14 @@ public class PriorityQueue<E> extends AbstractQueue<E> {
      * {@code null} if this queue is sorted according to the
      * natural ordering of its elements
      */
+    @Nullable
     public Comparator<? super E> comparator() {
         return c;
     }
 
+    @Nonnull
     public IndexAccess<? super E> indexAccess() {
-        return ia;
+        return index;
     }
 
     /**
