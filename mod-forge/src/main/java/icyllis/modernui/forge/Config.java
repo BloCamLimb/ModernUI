@@ -175,7 +175,7 @@ public final class Config {
         private final ForgeConfigSpec.BooleanValue bitmapLike;
         private final ForgeConfigSpec.BooleanValue fixedResolution;
         private final ForgeConfigSpec.BooleanValue linearSampling;
-        private final ForgeConfigSpec.BooleanValue smallFont;
+        private final ForgeConfigSpec.EnumValue<FontSize> fontSize;
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
         //private final ForgeConfigSpec.BooleanValue enableMipmap;
@@ -297,11 +297,11 @@ public final class Config {
                             "If your fonts are not really bitmap fonts, then you should keep this setting true.",
                             "A game restart is required to reload the setting properly.")
                     .define("linearSampling", true);
-            smallFont = builder.comment(
-                            "Use smaller font size for vanilla text layout. To be exact, use (7 * GuiScale) rather " +
-                                    "than (8 * GuiScale).",
+            fontSize = builder.comment(
+                            "Use smaller or larger font size for vanilla text layout. To be exact, " +
+                                    "small (7 * GuiScale), normal (8 * GuiScale), large (9 * GuiScale).",
                             "A game restart is required to reload the setting properly.")
-                    .define("smallFont", false);
+                    .defineEnum("fontSize", FontSize.NORMAL);
             fontFamily = builder.comment(
                             "A set of font families with precedence relationships to determine the typeface to use.",
                             "TrueType and OpenTrue are supported. Each list element can be one of the following three" +
@@ -411,7 +411,7 @@ public final class Config {
                 Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reload());
             }
             FontAtlas.sLinearSampling = linearSampling.get();
-            TextLayoutProcessor.sSmallFont = smallFont.get();
+            TextLayoutProcessor.sBaseFontSize = fontSize.get().mBaseSize;
             /*GlyphManagerForge.sPreferredFont = preferredFont.get();
             GlyphManagerForge.sAntiAliasing = antiAliasing.get();
             GlyphManagerForge.sHighPrecision = highPrecision.get();
@@ -443,6 +443,18 @@ public final class Config {
                 return color;
             }
             throw new IllegalArgumentException("Unknown color prefix: " + colorString);
+        }
+
+        private enum FontSize {
+            SMALL(7),
+            NORMAL(8),
+            LARGE(9);
+
+            private final int mBaseSize;
+
+            FontSize(int baseSize) {
+                mBaseSize = baseSize;
+            }
         }
     }
 

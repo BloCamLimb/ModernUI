@@ -10,7 +10,7 @@ Changelogs
 * Enhance tooltip rendering and add gradient effect
 * Fix hex colors cannot be parsed
 #### Modern Text 1.16 (Embedded)
-* Add small font config
+* Add font size config
 * Fix obfuscated chars layout
 * Fix font blur when GUI scale is 1 or 2
 * Fix external fonts cannot be loaded on Linux
