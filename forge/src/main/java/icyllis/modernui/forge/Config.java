@@ -46,6 +46,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import static icyllis.modernui.ModernUI.*;
+
 @ApiStatus.Internal
 final class Config {
 
@@ -101,13 +103,13 @@ final class Config {
             }
             CLIENT_SPEC.save();*/
             CLIENT.reload();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config reloaded with {}", event.getClass().getSimpleName());
+            LOGGER.debug(MARKER, "Client config reloaded with {}", event.getClass().getSimpleName());
         } else if (spec == COMMON_SPEC) {
             COMMON.reload();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config reloaded with {}", event.getClass().getSimpleName());
+            LOGGER.debug(MARKER, "Common config reloaded with {}", event.getClass().getSimpleName());
         } else if (spec == SERVER_SPEC) {
             SERVER.reload();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Server config reloaded with {}", event.getClass().getSimpleName());
+            LOGGER.debug(MARKER, "Server config reloaded with {}", event.getClass().getSimpleName());
         }
     }
 
@@ -368,8 +370,7 @@ final class Config {
                     try {
                         color = Color.parseColor(s);
                     } catch (Exception e) {
-                        ModernUI.LOGGER.error(ModernUI.MARKER,
-                                "Wrong color format for setting background color: {}", s);
+                        LOGGER.error(MARKER, "Wrong color format for screen background, index: {}", i, e);
                     }
                 }
                 BlurHandler.sBackgroundColor[i] = color;
@@ -387,8 +388,7 @@ final class Config {
                     try {
                         color = Color.parseColor(s);
                     } catch (Exception e) {
-                        ModernUI.LOGGER.error(ModernUI.MARKER,
-                                "Wrong color format for setting tooltip fill color: {}", s);
+                        LOGGER.error(MARKER, "Wrong color format for tooltip fill, index: {}", i, e);
                     }
                 }
                 TooltipRenderer.sFillColor[i] = color;
@@ -401,8 +401,7 @@ final class Config {
                     try {
                         color = Color.parseColor(s);
                     } catch (Exception e) {
-                        ModernUI.LOGGER.error(ModernUI.MARKER,
-                                "Wrong color format for setting tooltip stroke color: {}", s);
+                        LOGGER.error(MARKER, "Wrong color format for tooltil stroke, index: {}", i, e);
                     }
                 }
                 TooltipRenderer.sStrokeColor[i] = color;
