@@ -20,43 +20,20 @@ package icyllis.modernui.test;
 
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.math.Matrix4f;
-import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.math.MathUtil;
-import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.screen.Animation;
 import icyllis.modernui.screen.CanvasForge;
-import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiComponent;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.food.FoodData;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.common.MinecraftForge;
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
-import java.nio.FloatBuffer;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 
-import static org.lwjgl.opengl.GL11C.glGetInteger;
-import static org.lwjgl.opengl.GL20C.GL_CURRENT_PROGRAM;
-import static org.lwjgl.opengl.GL20C.glUseProgram;
-import static org.lwjgl.opengl.GL30C.GL_VERTEX_ARRAY_BINDING;
-import static org.lwjgl.opengl.GL30C.glBindVertexArray;
-
+@Deprecated
 public class TestHUD {
 
     public static boolean sBars;
@@ -92,9 +69,9 @@ public class TestHUD {
         Minecraft minecraft = Minecraft.getInstance();
         Window windowB3D = minecraft.getWindow();
         float aspectRatio = (float) windowB3D.getWidth() / windowB3D.getHeight();
-        Matrix4.makePerspective(MathUtil.PI_DIV_2, aspectRatio, 1.0f, 100.0f)
+        /*Matrix4.makePerspective(MathUtil.PI_DIV_2, aspectRatio, 1.0f, 100.0f)
                 .get(mMatBuf.rewind());
-        GL11.glMultMatrixf(mMatBuf.rewind());
+        GL11.glMultMatrixf(mMatBuf.rewind());*/
 
         GL11.glMatrixMode(GL11.GL_MODELVIEW);
         GL11.glPushMatrix();
@@ -186,164 +163,5 @@ public class TestHUD {
         RenderSystem.disableBlend();
 
         minecraft.getTextureManager().bind(GuiComponent.GUI_ICONS_LOCATION);
-    }
-
-    private final List<FormattedText> mTempTexts = new ArrayList<>();
-
-    // config value
-    public static boolean sTooltip = true;
-    public static int sTooltipR = 170;
-    public static int sTooltipG = 220;
-    public static int sTooltipB = 240;
-
-    // space between mouse and tooltip
-    private static final int TOOLTIP_SPACE = 12;
-    private static final int H_BORDER = 4;
-    private static final int V_BORDER = 4;
-    private static final int LINE_HEIGHT = 10;
-    private static final int TITLE_GAP = 2;
-
-    private final FloatBuffer mMatBuf = BufferUtils.createFloatBuffer(16);
-    private final Matrix4 mMyMat = new Matrix4();
-
-    // test only, this can't handle complex paragraph layout
-    public void drawTooltip(GLCanvas canvas, @Nonnull List<? extends FormattedText> texts, Font font, ItemStack stack,
-                            PoseStack matrix, int mouseX, int mouseY, float pMouseX, float pMouseY,
-                            float width, float height, int fbWidth, int fbHeight) {
-        // matrix transformation for x and y params, compatibility to MineColonies
-        float tooltipX = mouseX + TOOLTIP_SPACE + (pMouseX - (int) pMouseX);
-        float tooltipY = mouseY - TOOLTIP_SPACE + (pMouseY - (int) pMouseY);
-        /*if (mouseX != (int) mouseX || mouseY != (int) mouseY) {
-            // ignore partial pixels
-            tooltipX += mouseX - (int) mouseX;
-            tooltipY += mouseY - (int) mouseY;
-        }*/
-        int tooltipWidth = 0;
-        int tooltipHeight = V_BORDER * 2;
-
-        for (FormattedText text : texts) {
-            tooltipWidth = Math.max(tooltipWidth, font.width(text));
-        }
-
-        boolean needWrap = false;
-        if (tooltipX + tooltipWidth + H_BORDER > width) {
-            tooltipX = mouseX - TOOLTIP_SPACE - H_BORDER - tooltipWidth;
-            if (tooltipX < H_BORDER) {
-                tooltipWidth = (int) ((mouseX > width / 2) ? mouseX - TOOLTIP_SPACE - H_BORDER * 2 :
-                        width - TOOLTIP_SPACE - H_BORDER - mouseX);
-                needWrap = true;
-            }
-        }
-
-        int titleLinesCount = 1;
-        if (needWrap) {
-            int w = 0;
-            final List<FormattedText> temp = mTempTexts;
-            for (int i = 0; i < texts.size(); i++) {
-                List<FormattedText> wrapped = font.getSplitter().splitLines(texts.get(i), tooltipWidth, Style.EMPTY);
-                if (i == 0)
-                    titleLinesCount = wrapped.size();
-                for (FormattedText text : wrapped) {
-                    w = Math.max(w, font.width(text));
-                    temp.add(text);
-                }
-            }
-            tooltipWidth = w;
-            texts = temp;
-            tooltipX = (mouseX > width / 2) ? mouseX - TOOLTIP_SPACE - H_BORDER - tooltipWidth :
-                    mouseX + TOOLTIP_SPACE;
-        }
-
-        if (texts.size() > 1) {
-            tooltipHeight += (texts.size() - 1) * LINE_HEIGHT;
-            if (texts.size() > titleLinesCount)
-                tooltipHeight += TITLE_GAP;
-        }
-
-        if (tooltipY < V_BORDER)
-            tooltipY = V_BORDER;
-        else if (tooltipY + tooltipHeight + V_BORDER > height)
-            tooltipY = height - tooltipHeight - V_BORDER;
-
-        RenderSystem.disableDepthTest();
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
-        matrix.pushPose();
-        matrix.translate(0, 0, 400); // because of the order of draw calls, we actually don't need z-shifting
-        final Matrix4f mat = matrix.last().pose();
-
-        // smoothing scaled pixels, keep the same partial value as mouse position since tooltipWidth and height are int
-        final int tooltipLeft = (int) tooltipX;
-        final int tooltipTop = (int) tooltipY;
-        final float partialX = tooltipX - tooltipLeft;
-        final float partialY = tooltipY - tooltipTop;
-
-        final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
-        final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
-
-        canvas.reset(fbWidth, fbHeight);
-
-        GL11.glGetFloatv(GL11.GL_PROJECTION_MATRIX, mMatBuf.rewind());
-        mMyMat.set(mMatBuf);
-        canvas.setProjection(mMyMat);
-
-        canvas.save();
-        GL11.glGetFloatv(GL11.GL_MODELVIEW_MATRIX, mMatBuf.rewind());
-        mMyMat.set(mMatBuf);
-        canvas.multiply(mMyMat);
-
-        mat.store(mMatBuf.rewind()); // Sodium check the remaining
-        mMyMat.set(mMatBuf.rewind());
-        //myMat.translate(0, 0, -2000);
-        canvas.multiply(mMyMat);
-
-        Paint paint = Paint.take();
-
-        paint.setSmoothRadius(0.5f);
-
-        paint.setRGBA(0, 0, 0, 208);
-        paint.setStyle(Paint.Style.FILL);
-        canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
-                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);
-
-        paint.setRGBA(sTooltipR, sTooltipG, sTooltipB, 240);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setStrokeWidth(1.5f);
-        canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
-                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3, paint);
-        /*canvas.drawRoundedFrameT1(tooltipX - H_BORDER, tooltipY - V_BORDER,
-                tooltipX + tooltipWidth + H_BORDER, tooltipY + tooltipHeight + V_BORDER, 3);*/
-
-        canvas.restore();
-        canvas.draw();
-
-        glBindVertexArray(oldVertexArray);
-        glUseProgram(oldProgram);
-
-        final MultiBufferSource.BufferSource source =
-                MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
-        for (int i = 0; i < texts.size(); i++) {
-            FormattedText text = texts.get(i);
-            if (text != null)
-                ModernFontRenderer.drawText(text, tooltipX, tooltipY, 0xffffffff, true, mat, source,
-                        false, 0, 0xf000f0);
-            if (i + 1 == titleLinesCount)
-                tooltipY += TITLE_GAP;
-            tooltipY += LINE_HEIGHT;
-        }
-        source.endBatch();
-        matrix.popPose();
-
-        GL11.glPushMatrix();
-        // because of the order of draw calls, we actually don't need z-shifting
-        GL11.glTranslatef(partialX, partialY, 0);
-        // compatibility with Forge mods, like Quark
-        MinecraftForge.EVENT_BUS.post(new RenderTooltipEvent.PostText(stack, texts, matrix, tooltipLeft, tooltipTop,
-                font, tooltipWidth, tooltipHeight));
-        GL11.glPopMatrix();
-
-        RenderSystem.enableDepthTest();
-        mTempTexts.clear();
     }
 }

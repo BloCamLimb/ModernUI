@@ -22,11 +22,9 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.screen.BlurHandler;
 import icyllis.modernui.screen.UIManager;
-import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.text.FontAtlas;
 import icyllis.modernui.text.GlyphManager;
-import icyllis.modernui.textmc.ModernFontRenderer;
-import icyllis.modernui.textmc.TextLayoutEngine;
+import icyllis.modernui.textmc.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
@@ -46,6 +44,8 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
+
+import static icyllis.modernui.ModernUI.*;
 
 @ApiStatus.Internal
 public final class Config {
@@ -105,13 +105,13 @@ public final class Config {
             }
             CLIENT_SPEC.save();*/
             CLIENT.reload();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Client config reloaded with {}", event.getClass().getName());
+            LOGGER.debug(MARKER, "Client config reloaded with {}", event.getClass().getName());
         } else if (spec == COMMON_SPEC) {
             COMMON.reload();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Common config reloaded with {}", event.getClass().getName());
+            LOGGER.debug(MARKER, "Common config reloaded with {}", event.getClass().getName());
         } else if (spec == SERVER_SPEC) {
             SERVER.reload();
-            ModernUI.LOGGER.debug(ModernUI.MARKER, "Server config reloaded with {}", event.getClass().getName());
+            LOGGER.debug(MARKER, "Server config reloaded with {}", event.getClass().getName());
         }
     }
 
@@ -163,7 +163,8 @@ public final class Config {
         private final ForgeConfigSpec.IntValue blurRadius;
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> backgroundColor;
         private final ForgeConfigSpec.BooleanValue tooltip;
-        private final ForgeConfigSpec.ConfigValue<String> tooltipColor;
+        private final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipFill;
+        private final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipStroke;
         private final ForgeConfigSpec.BooleanValue ding;
         //private final ForgeConfigSpec.BooleanValue hudBars;
 
@@ -174,6 +175,7 @@ public final class Config {
         private final ForgeConfigSpec.BooleanValue bitmapLike;
         private final ForgeConfigSpec.BooleanValue fixedResolution;
         private final ForgeConfigSpec.BooleanValue linearSampling;
+        private final ForgeConfigSpec.BooleanValue smallFont;
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
         //private final ForgeConfigSpec.BooleanValue enableMipmap;
@@ -187,33 +189,35 @@ public final class Config {
                     .push("screen");
 
             animationDuration = builder.comment(
-                    "The duration of GUI background color and blur radius animation in milliseconds. (0 = OFF)")
+                            "The duration of GUI background color and blur radius animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 200, 0, 800);
             backgroundColor = builder.comment(
-                    "The GUI background color in world in 0xAARRGGBB format.",
-                    "Can be one to four values representing top left, top right, bottom right, bottom left color.",
-                    "Multiple values produce a gradient effect, whereas one value has only one color.",
-                    "When values is less than 4, the rest of the corner color will be replaced by the last value.")
+                            "The GUI background color in #RRGGBB or #AARRGGBB format. Default value: #66000000",
+                            "Can be one to four values representing top left, top right, bottom right and bottom left" +
+                                    " color.",
+                            "Multiple values produce a gradient effect, whereas one value produce a solid color.",
+                            "When values is less than 4, the rest of the corner color will be replaced by the last " +
+                                    "value.")
                     .defineList("backgroundColor", () -> {
                         List<String> list = new ArrayList<>();
-                        list.add("0x66000000");
+                        list.add("#66000000");
                         return list;
-                    }, s -> true);
+                    }, o -> true);
 
             blurEffect = builder.comment(
-                    "Add blur effect to world renderer when opened, it is incompatible with OptiFine's FXAA shader or" +
-                            " some mods.")
+                            "Add blur effect to GUI background when opened, it is incompatible with OptiFine's FXAA " +
+                                    "shader and some mods.")
                     .define("blurEffect", true);
             blurRadius = builder.comment(
-                    "The blur effect radius, higher values result in a small loss of performance.")
-                    .defineInRange("blurRadius", 10, 2, 18);
+                            "The 4-pass blur effect radius, higher values result in a small loss of performance.")
+                    .defineInRange("blurRadius", 9, 2, 18);
             blurBlacklist = builder.comment(
-                    "A list of GUI screen superclasses that won't activate blur effect when opened.")
+                            "A list of GUI screen superclasses that won't activate blur effect when opened.")
                     .defineList("blurBlacklist", () -> {
                         List<String> list = new ArrayList<>();
                         list.add(ChatScreen.class.getName());
                         return list;
-                    }, s -> true);
+                    }, o -> true);
 
             builder.pop();
 
@@ -221,12 +225,36 @@ public final class Config {
                     .push("tooltip");
 
             tooltip = builder.comment(
-                    "Enable Modern UI's tooltip style.")
+                            "Whether to enable Modern UI tooltip style, or back to vanilla style.")
                     .define("enable", true);
-
-            tooltipColor = builder.comment(
-                    "The tooltip frame color. Format: 0xRRGGBB. Default value: 0xAADCF0")
-                    .define("frameColor", "0xAADCF0");
+            tooltipFill = builder.comment(
+                            "The tooltip FILL color in #RRGGBB or #AARRGGBB format. Default: #D4000000",
+                            "Can be one to four values representing top left, top right, bottom right and bottom left" +
+                                    " color.",
+                            "Multiple values produce a gradient effect, whereas one value produce a solid color.",
+                            "When values is less than 4, the rest of the corner color will be replaced by the last " +
+                                    "value.")
+                    .defineList("colorFill", () -> {
+                        List<String> list = new ArrayList<>();
+                        list.add("#D4000000");
+                        return list;
+                    }, $ -> true);
+            tooltipStroke = builder.comment(
+                            "The tooltip STROKE color in #RRGGBB or #AARRGGBB format. Default: #F0AADCF0, #F0DAD0F4, " +
+                                    "#F0FFC3F7 and #F0DAD0F4",
+                            "Can be one to four values representing top left, top right, bottom right and bottom left" +
+                                    " color.",
+                            "Multiple values produce a gradient effect, whereas one value produce a solid color.",
+                            "When values is less than 4, the rest of the corner color will be replaced by the last " +
+                                    "value.")
+                    .defineList("colorStroke", () -> {
+                        List<String> list = new ArrayList<>();
+                        list.add("#F0AADCF0");
+                        list.add("#F0DAD0F4");
+                        list.add("#F0FFC3F7");
+                        list.add("#F0DAD0F4");
+                        return list;
+                    }, $ -> true);
 
             builder.pop();
 
@@ -234,7 +262,7 @@ public final class Config {
                     .push("general");
 
             ding = builder.comment(
-                    "Play a sound effect when the game is loaded.")
+                            "Play a sound effect when the game is loaded.")
                     .define("ding", true);
 
             /*hudBars = builder.comment(
@@ -250,35 +278,52 @@ public final class Config {
                     "Apply Modern UI font renderer (including text layouts) to the entire game rather than only " +
                             "Modern UI itself.")
                     .define("globalRenderer", true);*/
-            allowShadow = builder.comment(
-                    "Allow font renderer to draw text with shadow, setting to false can improve performance a bit.")
+            allowShadow = builder.comment("Allow text renderer to draw text with shadow, setting to false can " +
+                            "improve performance a bit.")
                     .define("allowShadow", true);
             bitmapLike = builder.comment(
-                    "Bitmap-like mode, anti-aliasing and high precision for glyph layouts are OFF.",
-                    "A game restart is required to reload the setting properly.")
+                            "Bitmap-like mode, anti-aliasing and high precision for glyph layouts are OFF.",
+                            "A game restart is required to reload the setting properly.")
                     .define("bitmapLike", false);
-            fixedResolution = builder.comment(
-                    "Fixed resolution level. When the GUI scale increases, the resolution level will not increase.",
-                    "In this case, gui scale should be even numbers (2, 4, 6...), based on Minecraft GUI system.",
-                    "If your fonts are not really bitmap fonts, then you should keep this setting false.")
+            fixedResolution = builder.comment("Fixed resolution level. When the GUI scale increases, the resolution " +
+                                    "level will not increase.",
+                            "In this case, gui scale should be even numbers (2, 4, 6...), based on Minecraft GUI " +
+                                    "system.",
+                            "If your fonts are not really bitmap fonts, then you should keep this setting false.")
                     .define("fixedResolution", false);
             linearSampling = builder.comment(
-                    "Bilinear sampling font textures with mipmaps, magnification sampling will be always NEAREST.",
-                    "If your fonts are not really bitmap fonts, then you should keep this setting true.",
-                    "A game restart is required to reload the setting properly.")
+                            "Bilinear sampling font textures with mipmaps, magnification sampling will be always " +
+                                    "NEAREST.",
+                            "If your fonts are not really bitmap fonts, then you should keep this setting true.",
+                            "A game restart is required to reload the setting properly.")
                     .define("linearSampling", true);
+            smallFont = builder.comment(
+                            "Use smaller font size for vanilla text layout. To be exact, use (7 * GuiScale) rather " +
+                                    "than (8 * GuiScale).",
+                            "A game restart is required to reload the setting properly.")
+                    .define("smallFont", false);
             fontFamily = builder.comment(
-                    "A set of font families with precedence relationships to determine the typeface to use.",
-                    "TrueType and OpenTrue are supported. Each list element can be one of the following three cases.",
-                    "1) Font family name for those installed on your PC, for instance: Segoe UI",
-                    "2) File path for external fonts on your PC, for instance: /usr/shared/fonts/x.otf",
-                    "3) Resource location for those loaded with resource packs, for instance: modernui:font/biliw.otf",
-                    "Using pixelated (bitmap) fonts should consider other settings, and glyph size should be 16x.",
-                    "This list is only read once when the game is loaded. A game restart is required to reload")
+                            "A set of font families with precedence relationships to determine the typeface to use.",
+                            "TrueType and OpenTrue are supported. Each list element can be one of the following three" +
+                                    " cases.",
+                            "1) Font family name for those installed on your PC, for instance: Segoe UI",
+                            "2) File path for external fonts on your PC, for instance: /usr/shared/fonts/x.otf",
+                            "3) Resource location for those loaded with resource packs, for instance: " +
+                                    "modernui:font/biliw.otf",
+                            "Using pixelated (bitmap) fonts should consider other settings, and glyph size should be " +
+                                    "16x.",
+                            "This list is only read once when the game is loaded. A game restart is required to reload")
                     .defineList("fontFamily", () -> {
                         List<String> list = new ArrayList<>();
-                        list.add("modernui:font/biliw.otf");
                         list.add("Segoe UI");
+                        list.add("modernui:font/biliw.otf");
+                        list.add("Noto Sans");
+                        list.add("Open Sans");
+                        list.add("San Francisco");
+                        list.add("Calibri");
+                        list.add("Microsoft YaHei UI");
+                        list.add("STHeiti");
+                        list.add("SimHei");
                         list.add("SansSerif");
                         return list;
                     }, s -> true);
@@ -315,11 +360,11 @@ public final class Config {
             int color = 0x66000000;
             for (int i = 0; i < 4; i++) {
                 if (colors != null && i < colors.size()) {
+                    String s = colors.get(i);
                     try {
-                        color = Integer.valueOf(colors.get(i).substring(2), 16);
+                        color = parseColor(s);
                     } catch (Exception e) {
-                        ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting background color: {}",
-                                tooltipColor, e);
+                        LOGGER.error(MARKER, "Wrong color format for screen background, index: {}", i, e);
                     }
                 }
                 BlurHandler.sBackgroundColor[i] = color;
@@ -327,28 +372,46 @@ public final class Config {
 
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
-            TestHUD.sTooltip = tooltip.get();
-            String tooltipColor = this.tooltipColor.get();
-            try {
-                int i = Integer.valueOf(tooltipColor.substring(2), 16);
-                TestHUD.sTooltipR = i >> 16 & 0xff;
-                TestHUD.sTooltipG = i >> 8 & 0xff;
-                TestHUD.sTooltipB = i & 0xff;
-            } catch (Exception e) {
-                ModernUI.LOGGER.error(ModernUI.MARKER, "Wrong color format for setting tooltip color: {}",
-                        tooltipColor, e);
+            TooltipRenderer.sTooltip = tooltip.get();
+
+            colors = tooltipFill.get();
+            color = 0xD4000000;
+            for (int i = 0; i < 4; i++) {
+                if (colors != null && i < colors.size()) {
+                    String s = colors.get(i);
+                    try {
+                        color = parseColor(s);
+                    } catch (Exception e) {
+                        LOGGER.error(MARKER, "Wrong color format for tooltip fill, index: {}", i, e);
+                    }
+                }
+                TooltipRenderer.sFillColor[i] = color;
             }
+            colors = tooltipStroke.get();
+            color = 0xF0AADCF0;
+            for (int i = 0; i < 4; i++) {
+                if (colors != null && i < colors.size()) {
+                    String s = colors.get(i);
+                    try {
+                        color = parseColor(s);
+                    } catch (Exception e) {
+                        LOGGER.error(MARKER, "Wrong color format for tooltil stroke, index: {}", i, e);
+                    }
+                }
+                TooltipRenderer.sStrokeColor[i] = color;
+            }
+
             UIManager.sPlaySoundOnLoaded = ding.get();
             //TestHUD.sBars = hudBars.get();
-
             ModernFontRenderer.sAllowShadow = allowShadow.get();
             GlyphManager.sBitmapLike = bitmapLike.get();
             boolean fixed = fixedResolution.get();
             if (fixed != TextLayoutEngine.sFixedResolution) {
                 TextLayoutEngine.sFixedResolution = fixed;
-                Minecraft.getInstance().submit(TextLayoutEngine.getInstance()::reload);
+                Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reload());
             }
             FontAtlas.sLinearSampling = linearSampling.get();
+            TextLayoutProcessor.sSmallFont = smallFont.get();
             /*GlyphManagerForge.sPreferredFont = preferredFont.get();
             GlyphManagerForge.sAntiAliasing = antiAliasing.get();
             GlyphManagerForge.sHighPrecision = highPrecision.get();
@@ -357,6 +420,29 @@ public final class Config {
             //GlyphManager.sResolutionLevel = resolutionLevel.get();
             //TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
             ModernUI.get().getPreferredTypeface();
+        }
+
+        private static int parseColor(@Nonnull String colorString) {
+            if (colorString.charAt(0) == '#') {
+                int color = Integer.parseUnsignedInt(colorString.substring(1), 16);
+                if (colorString.length() == 7) {
+                    // Set the alpha value
+                    color |= 0xFF000000;
+                } else if (colorString.length() != 9) {
+                    throw new IllegalArgumentException("Unknown color: " + colorString);
+                }
+                return color;
+            } else if (colorString.startsWith("0x")) { // do not support upper case
+                int color = Integer.parseUnsignedInt(colorString.substring(2), 16);
+                if (colorString.length() == 8) {
+                    // Set the alpha value
+                    color |= 0xFF000000;
+                } else if (colorString.length() != 10) {
+                    throw new IllegalArgumentException("Unknown color: " + colorString);
+                }
+                return color;
+            }
+            throw new IllegalArgumentException("Unknown color prefix: " + colorString);
         }
     }
 
@@ -386,10 +472,10 @@ public final class Config {
                     .push("autoShutdown");
 
             autoShutdown = builder.comment(
-                    "Enable auto-shutdown for server.")
+                            "Enable auto-shutdown for server.")
                     .define("enable", false);
             shutdownTimes = builder.comment(
-                    "The time points of when server will auto-shutdown. Format: HH:mm.")
+                            "The time points of when server will auto-shutdown. Format: HH:mm.")
                     .defineList("times", () -> {
                         List<String> list = new ArrayList<>();
                         list.add("04:00");

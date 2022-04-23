@@ -18,6 +18,7 @@
 
 package icyllis.modernui.forge;
 
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -27,19 +28,37 @@ import java.util.Set;
 
 public class MixinConfigPlugin implements IMixinConfigPlugin {
 
+    private int mLevel;
+
     @Override
     public void onLoad(String mixinPackage) {
-
+        mLevel = ModernUIForge.getBootstrapLevel();
     }
 
     @Override
     public String getRefMapperConfig() {
-        return null;
+        return FMLLoader.getNameFunction("srg").isPresent() ? null : "ModernUI-ModernUI-Forge-refmap.json";
     }
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return !ModernUIForge.isOptiFineLoaded() || !mixinClassName.equals("icyllis.modernui.mixin.AccessVideoSettings");
+        if (ModernUIForge.isOptiFineLoaded() &&
+                mixinClassName.equals("icyllis.modernui.mixin.AccessVideoSettings")) {
+            return false;
+        }
+        if ((mLevel & ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING) != 0) {
+            return !mixinClassName.equals("icyllis.modernui.mixin.MixinScrollPanel") &&
+                    !mixinClassName.equals("icyllis.modernui.mixin.MixinSelectionList");
+        }
+        if ((mLevel & ModernUIForge.BOOTSTRAP_TEXT_ENGINE) != 0) {
+            return !mixinClassName.equals("icyllis.modernui.mixin.MixinBidiReorder") &&
+                    !mixinClassName.equals("icyllis.modernui.mixin.MixinClientLanguage") &&
+                    !mixinClassName.equals("icyllis.modernui.mixin.MixinFontRenderer") &&
+                    !mixinClassName.equals("icyllis.modernui.mixin.MixinIngameGui") &&
+                    !mixinClassName.equals("icyllis.modernui.mixin.MixinLanguage") &&
+                    !mixinClassName.equals("icyllis.modernui.mixin.MixinStringSplitter");
+        }
+        return true;
     }
 
     @Override

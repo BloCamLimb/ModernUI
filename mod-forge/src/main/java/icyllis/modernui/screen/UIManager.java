@@ -26,22 +26,20 @@ import icyllis.modernui.animation.AnimationHandler;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.forge.ModernUIForge;
+import icyllis.modernui.forge.TooltipRenderer;
 import icyllis.modernui.graphics.GLCanvas;
 import icyllis.modernui.graphics.GLFramebuffer;
 import icyllis.modernui.graphics.texture.GLTexture;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.platform.RenderCore;
-import icyllis.modernui.test.TestHUD;
 import icyllis.modernui.test.TestMain;
 import icyllis.modernui.test.TestPauseUI;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.TimedTask;
-import icyllis.modernui.view.MotionEvent;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
-import icyllis.modernui.view.ViewRootImpl;
+import icyllis.modernui.view.*;
 import icyllis.modernui.widget.DecorView;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.MouseHandler;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -50,10 +48,8 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderTooltipEvent;
+import net.minecraftforge.client.event.*;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -188,7 +184,7 @@ public final class UIManager implements ViewRootImpl.Handler {
     // Internal method
     public boolean openMenu(@Nonnull LocalPlayer player, @Nonnull AbstractContainerMenu menu, String namespace) {
         OpenMenuEvent event = new OpenMenuEvent(menu);
-        ModernUIForge.fire(namespace, event);
+        ModernUIForge.post(namespace, event);
         ScreenCallback callback = event.getCallback();
         if (callback == null) {
             return false;
@@ -625,20 +621,24 @@ public final class UIManager implements ViewRootImpl.Handler {
 
     @SubscribeEvent(priority = EventPriority.LOW)
     void onRenderTooltip(@Nonnull RenderTooltipEvent.Pre event) {
-        if (TestHUD.sTooltip) {
+        if (TooltipRenderer.sTooltip) {
             /*if (!(minecraft.font instanceof ModernFontRenderer)) {
                 ModernUI.LOGGER.fatal(MARKER, "Failed to hook FontRenderer, tooltip disabled");
                 TestHUD.sTooltip = false;
                 return;
             }*/
-            final Window window = minecraft.getWindow();
-            double cursorX =
-                    minecraft.mouseHandler.xpos() * (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
-            double cursorY =
-                    minecraft.mouseHandler.ypos() * (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
-            TestHUD.sInstance.drawTooltip(mCanvas, event.getLines(), minecraft.font, event.getStack(),
+            final Window window = mWindow;
+            // screen coordinates to pixels for rendering
+            final MouseHandler mouseHandler = minecraft.mouseHandler;
+            // screen coordinates to pixels for rendering
+            double cursorX = mouseHandler.xpos() *
+                    (double) window.getGuiScaledWidth() / (double) window.getScreenWidth();
+            double cursorY = mouseHandler.ypos() *
+                    (double) window.getGuiScaledHeight() / (double) window.getScreenHeight();
+            TooltipRenderer.drawTooltip(mCanvas, event.getLines(), event.getFontRenderer(), event.getStack(),
                     event.getMatrixStack(), event.getX(), event.getY(), (float) cursorX, (float) cursorY,
-                    event.getScreenWidth(), event.getScreenHeight(), window.getWidth(), window.getHeight());
+                    event.getMaxWidth(), event.getScreenWidth(), event.getScreenHeight(),
+                    window.getWidth(), window.getHeight());
             event.setCanceled(true);
         }
     }
