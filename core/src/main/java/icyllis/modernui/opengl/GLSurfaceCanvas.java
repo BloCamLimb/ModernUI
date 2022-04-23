@@ -827,7 +827,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (mSaves.size() < 1) {
             throw new IllegalStateException("Underflow in restore");
         }
-        Save save = mSaves.pop();
+        Save save = mSaves.poll();
         if (save.mClipRef != getSave().mClipRef) {
             restoreClipBatch(save.mClip);
         }
@@ -988,7 +988,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             final int[] colors = paint.getColors();
 
             // CCW
-            int color = colors[2];
+            int color = colors[3];
             byte r = (byte) ((color >> 16) & 0xff);
             byte g = (byte) ((color >> 8) & 0xff);
             byte b = (byte) (color & 0xff);
@@ -997,7 +997,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     .putFloat(bottom)
                     .put(r).put(g).put(b).put(a);
 
-            color = colors[3];
+            color = colors[2];
             r = (byte) ((color >> 16) & 0xff);
             g = (byte) ((color >> 8) & 0xff);
             b = (byte) (color & 0xff);
@@ -1058,7 +1058,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             final int[] colors = paint.getColors();
 
             // CCW
-            int color = colors[2];
+            int color = colors[3];
             byte r = (byte) ((color >> 16) & 0xff);
             byte g = (byte) ((color >> 8) & 0xff);
             byte b = (byte) (color & 0xff);
@@ -1068,7 +1068,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     .put(r).put(g).put(b).put(a)
                     .putFloat(u1).putFloat(v2);
 
-            color = colors[3];
+            color = colors[2];
             r = (byte) ((color >> 16) & 0xff);
             g = (byte) ((color >> 8) & 0xff);
             b = (byte) (color & 0xff);
@@ -1170,7 +1170,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @Override
     public void drawArc(float cx, float cy, float radius, float startAngle,
                         float sweepAngle, @Nonnull Paint paint) {
-        if (MathUtil.approxZero(sweepAngle) || radius < 0.0001f) {
+        if (FMath.zero(sweepAngle) || radius < 0.0001f) {
             return;
         }
         if (sweepAngle >= 360) {
@@ -1192,7 +1192,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getFeatherRadius()));
         putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1214,7 +1214,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getFeatherRadius()));
         putRectColor(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1240,7 +1240,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getFeatherRadius()));
         putRectColor(left, top, right, bottom, paint);
         checkUniformMemory()
                 .putFloat(x0)
@@ -1270,7 +1270,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getFeatherRadius()));
         putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1289,7 +1289,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getFeatherRadius()));
         putRectColor(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1417,8 +1417,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (t < 0.0001f) {
             return;
         }
-        if (MathUtil.approxEqual(startX, stopX)) {
-            if (MathUtil.approxEqual(startY, stopY)) {
+        if (FMath.eq(startX, stopX)) {
+            if (FMath.eq(startY, stopY)) {
                 drawCircleFill(startX, startY, t, paint);
             } else {
                 // vertical
@@ -1426,7 +1426,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 float bottom = Math.max(startY, stopY);
                 drawRoundRectFill(startX - t, top - t, startX + t, bottom + t, t, 0, paint);
             }
-        } else if (MathUtil.approxEqual(startY, stopY)) {
+        } else if (FMath.eq(startY, stopY)) {
             // horizontal
             float left = Math.min(startX, stopX);
             float right = Math.max(startX, stopX);
@@ -1434,7 +1434,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         } else {
             float cx = (stopX + startX) * 0.5f;
             float cy = (stopY + startY) * 0.5f;
-            float ang = MathUtil.atan2(stopY - startY, stopX - startX);
+            float ang = FMath.atan2(stopY - startY, stopX - startX);
             save();
             Matrix4 mat = getMatrix();
             // rotate the round rect
@@ -1442,8 +1442,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
             mat.preRotateZ(ang);
             mat.preTranslate(-cx, -cy, 0);
             // rotate positions to horizontal
-            float sin = MathUtil.sin(-ang);
-            float cos = MathUtil.cos(-ang);
+            float sin = FMath.sin(-ang);
+            float cos = FMath.cos(-ang);
             float left = (startX - cx) * cos - (startY - cy) * sin + cx;
             float right = (stopX - cx) * cos - (stopY - cy) * sin + cx;
             drawRoundRectFill(left - t, cy - t, right + t, cy + t, t, 0, paint);
@@ -1471,7 +1471,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getFeatherRadius()));
         putRectColor(left, top, right, bottom, paint);
         ByteBuffer buffer = checkUniformMemory();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
@@ -1508,7 +1508,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getFeatherRadius()));
         putRectColor(left - strokeRadius, top - strokeRadius, right + strokeRadius, bottom + strokeRadius, paint);
         ByteBuffer buffer = checkUniformMemory();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
@@ -1548,7 +1548,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
+        drawSmooth(Math.min(radius, paint.getFeatherRadius()));
         putRectColorUV(left, top, right, bottom, paint,
                 0, 0, 1, 1);
         checkUniformMemory()

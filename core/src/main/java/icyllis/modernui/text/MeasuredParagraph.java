@@ -22,7 +22,7 @@ import com.ibm.icu.text.Bidi;
 import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.font.MeasuredText;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;
@@ -625,7 +625,7 @@ public class MeasuredParagraph {
      * @return memory usage in bytes
      */
     public int getMemoryUsage() {
-        return MathUtil.roundUp(12 + 8 + 4 + 8 + (mCopiedBuffer == null ?
+        return FMath.roundUp(12 + 8 + 4 + 8 + (mCopiedBuffer == null ?
                 0 : 16 + (mCopiedBuffer.length << 1)) + 4 + (mLevels == null ?
                 0 : 16 + mLevels.length) + 16 + (mSpanEndCache.size() << 2) +
                 16 + (mFontMetrics.size() << 2) + 8, 8) +

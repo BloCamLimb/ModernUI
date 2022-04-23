@@ -47,7 +47,7 @@ public class TestListFragment extends Fragment {
         listView.setDivider(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 paint.setRGBA(192, 192, 192, 128);
                 canvas.drawRect(getBounds(), paint);
             }

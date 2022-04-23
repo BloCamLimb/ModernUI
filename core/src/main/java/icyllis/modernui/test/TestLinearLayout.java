@@ -88,7 +88,7 @@ public class TestLinearLayout extends LinearLayout {
         setDividerDrawable(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 paint.setRGBA(192, 192, 192, 128);
                 canvas.drawRect(getBounds(), paint);
             }
@@ -358,7 +358,7 @@ public class TestLinearLayout extends LinearLayout {
                 "\u0073\u0068\u0065\u0020\u0069\u0073\u0020\u6d77\u87ba", 10, 20);
         canvas.restore();*/
 
-        Paint paint = Paint.take();
+        Paint paint = Paint.get();
         paint.setAlpha(192);
         paint.setStyle(Paint.FILL);
         canvas.drawRoundRect(6, 90, 46, 104, 7, paint);
@@ -376,7 +376,7 @@ public class TestLinearLayout extends LinearLayout {
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
         paint.setStyle(Paint.STROKE);
-        paint.setSmoothRadius(20.0f);
+        paint.setFeatherRadius(20.0f);
         paint.setStrokeWidth(40.0f);
         //canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
         canvas.drawArc(80, 400, 50, 60, 240, paint);
@@ -385,7 +385,7 @@ public class TestLinearLayout extends LinearLayout {
         paint.setStyle(Paint.FILL);
         canvas.drawCircle(80, 700, 60, paint);
 
-        paint.setSmoothRadius(2.0f);
+        paint.setFeatherRadius(2.0f);
 
         paint.setStyle(Paint.FILL);
         paint.setAlpha((int) (roundRectAlpha * 192));
@@ -530,7 +530,7 @@ public class TestLinearLayout extends LinearLayout {
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
             if (isHovered()) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 paint.setARGB(128, 140, 200, 240);
                 canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
                 canvas.drawText(mIndex, 0, mIndex.length(), 20, getHeight() >> 1, mTextPaint);
@@ -576,7 +576,7 @@ public class TestLinearLayout extends LinearLayout {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setARGB(128, 140, 200, 240);
             canvas.drawRoundRect(0, 1, getWidth(), getHeight() - 2, 4, paint);
             canvas.drawText("DView", 0, 5, getWidth() / 2f, offsetY + 24, Gravity.CENTER, mTextPaint);

@@ -802,7 +802,7 @@ public final class Matrix4 implements Cloneable {
         float b11 = m33 * m44 - m34 * m43;
         // calc the determinant
         float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-        if (MathUtil.approxZero(det)) {
+        if (FMath.zero(det)) {
             return false;
         }
         // calc algebraic cofactor and transpose
@@ -968,7 +968,7 @@ public final class Matrix4 implements Cloneable {
      */
     @Nonnull
     public Matrix4 setPerspective(float fov, float aspect, float near, float far) {
-        float y = 1.0f / MathUtil.tan(fov * 0.5f);
+        float y = 1.0f / FMath.tan(fov * 0.5f);
         float invNF = 1.0f / (near - far);
         m11 = y / aspect;
         m12 = 0.0f;
@@ -1408,10 +1408,16 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * Rotates this matrix clockwise about the X-axis.
+     * Rotates this matrix about the X-axis with the given angle in radians.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     * <p>
      * This is equivalent to pre-multiplying by a rotation matrix.
      *
-     * @param angle the clockwise rotation angle in radians.
+     * @param angle the rotation angle in radians.
      */
     public void preRotateX(float angle) {
         final float s = (float) Math.sin(angle);
@@ -1431,10 +1437,16 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-rotates this matrix clockwise about the X-axis.
+     * Post-rotates this matrix about the X-axis with the given angle in radians.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     * <p>
      * This is equivalent to post-multiplying by a rotation matrix.
      *
-     * @param angle the clockwise rotation angle in radians.
+     * @param angle the rotation angle in radians.
      */
     public void postRotateX(float angle) {
         final float s = (float) Math.sin(angle);
@@ -1454,10 +1466,16 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * Rotates this matrix clockwise about the Y-axis.
+     * Rotates this matrix about the Y-axis with the given angle in radians.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     * <p>
      * This is equivalent to pre-multiplying by a rotation matrix.
      *
-     * @param angle the clockwise rotation angle in radians.
+     * @param angle the rotation angle in radians.
      */
     public void preRotateY(float angle) {
         final float s = (float) Math.sin(angle);
@@ -1477,10 +1495,16 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-rotates this matrix clockwise about the Y-axis.
+     * Post-rotates this matrix about the Y-axis with the given angle in radians.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     * <p>
      * This is equivalent to post-multiplying by a rotation matrix.
      *
-     * @param angle the clockwise rotation angle in radians.
+     * @param angle the rotation angle in radians.
      */
     public void postRotateY(float angle) {
         final float s = (float) Math.sin(angle);
@@ -1500,10 +1524,16 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * Rotates this matrix clockwise about the Z-axis.
+     * Rotates this matrix about the Z-axis with the given angle in radians.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     * <p>
      * This is equivalent to pre-multiplying by a rotation matrix.
      *
-     * @param angle the clockwise rotation angle in radians.
+     * @param angle the rotation angle in radians.
      */
     public void preRotateZ(float angle) {
         final float s = (float) Math.sin(angle);
@@ -1523,10 +1553,16 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-rotates this matrix clockwise about the Z-axis.
+     * Post-rotates this matrix about the Z-axis with the given angle in radians.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     * <p>
      * This is equivalent to post-multiplying by a rotation matrix.
      *
-     * @param angle the clockwise rotation angle in radians.
+     * @param angle the rotation angle in radians.
      */
     public void postRotateZ(float angle) {
         final float s = (float) Math.sin(angle);
@@ -1555,6 +1591,10 @@ public final class Matrix4 implements Cloneable {
      *  <li>z - roll  - {@link #preRotateZ(float)}</li>
      * </ul>
      * </p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      *
      * @param x the Euler pitch angle in radians. (rotation about the X axis)
      * @param y the Euler yaw angle in radians. (rotation about the Y axis)
@@ -1580,6 +1620,10 @@ public final class Matrix4 implements Cloneable {
      *  <li>z - roll  - {@link #postRotateZ(float)}</li>
      * </ul>
      * </p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      *
      * @param x the Euler pitch angle in radians. (rotation about the X axis)
      * @param y the Euler yaw angle in radians. (rotation about the Y axis)
@@ -1596,9 +1640,14 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * Rotates this matrix clockwise about an arbitrary axis. The axis must be a
+     * Rotates this matrix about an arbitrary axis. The axis must be a
      * normalized (unit) vector. If the axis is X, Y or Z, use axis-specified
      * methods to rotate this matrix which are faster.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      *
      * @param axis  the rotation axis
      * @param angle rotation angle in radians
@@ -1611,9 +1660,14 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * Rotates this matrix clockwise about an arbitrary axis. The axis must be a
+     * Rotates this matrix about an arbitrary axis. The axis must be a
      * normalized (unit) vector. If the axis is X, Y or Z, use axis-specified
      * methods to rotate this matrix which are faster.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      *
      * @param x     x-coordinate of rotation axis
      * @param y     y-coordinate of rotation axis
@@ -1698,7 +1752,7 @@ public final class Matrix4 implements Cloneable {
         }
         // normalize first
         final float is;
-        if (MathUtil.approxEqual(sq, 1.0f)) {
+        if (FMath.eq(sq, 1.0f)) {
             is = 2.0f;
         } else {
             is = 2.0f / sq;
@@ -1859,6 +1913,7 @@ public final class Matrix4 implements Cloneable {
         float x4 = m11 * r.right + m21 * r.bottom + m41;
         float y4 = m12 * r.right + m22 * r.bottom + m42;
         if (!isAffine()) {
+            // project
             float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
             x1 *= w;
             y1 *= w;
@@ -1872,10 +1927,82 @@ public final class Matrix4 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        r.left = Math.min(x1, Math.min(x2, Math.min(x3, x4)));
-        r.top = Math.min(y1, Math.min(y2, Math.min(y3, y4)));
-        r.right = Math.max(x1, Math.max(x2, Math.max(x3, x4)));
-        r.bottom = Math.max(y1, Math.max(y2, Math.max(y3, y4)));
+        r.left = FMath.min(x1, x2, x3, x4);
+        r.top = FMath.min(y1, y2, y3, y4);
+        r.right = FMath.max(x1, x2, x3, x4);
+        r.bottom = FMath.max(y1, y2, y3, y4);
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param r   the rectangle to transform
+     * @param out the round values
+     */
+    public void mapRect(@Nonnull RectF r, @Nonnull Rect out) {
+        float x1 = m11 * r.left + m21 * r.top + m41;
+        float y1 = m12 * r.left + m22 * r.top + m42;
+        float x2 = m11 * r.right + m21 * r.top + m41;
+        float y2 = m12 * r.right + m22 * r.top + m42;
+        float x3 = m11 * r.left + m21 * r.bottom + m41;
+        float y3 = m12 * r.left + m22 * r.bottom + m42;
+        float x4 = m11 * r.right + m21 * r.bottom + m41;
+        float y4 = m12 * r.right + m22 * r.bottom + m42;
+        if (!isAffine()) {
+            // project
+            float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
+            x1 *= w;
+            y1 *= w;
+            w = 1.0f / (m14 * r.right + m24 * r.top + m44);
+            x2 *= w;
+            y2 *= w;
+            w = 1.0f / (m14 * r.left + m24 * r.bottom + m44);
+            x3 *= w;
+            y3 *= w;
+            w = 1.0f / (m14 * r.right + m24 * r.bottom + m44);
+            x4 *= w;
+            y4 *= w;
+        }
+        out.left = Math.round(FMath.min(x1, x2, x3, x4));
+        out.top = Math.round(FMath.min(y1, y2, y3, y4));
+        out.right = Math.round(FMath.max(x1, x2, x3, x4));
+        out.bottom = Math.round(FMath.max(y1, y2, y3, y4));
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param r   the rectangle to transform
+     * @param out the round out values
+     */
+    public void mapRectOut(@Nonnull RectF r, @Nonnull Rect out) {
+        float x1 = m11 * r.left + m21 * r.top + m41;
+        float y1 = m12 * r.left + m22 * r.top + m42;
+        float x2 = m11 * r.right + m21 * r.top + m41;
+        float y2 = m12 * r.right + m22 * r.top + m42;
+        float x3 = m11 * r.left + m21 * r.bottom + m41;
+        float y3 = m12 * r.left + m22 * r.bottom + m42;
+        float x4 = m11 * r.right + m21 * r.bottom + m41;
+        float y4 = m12 * r.right + m22 * r.bottom + m42;
+        if (!isAffine()) {
+            // project
+            float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
+            x1 *= w;
+            y1 *= w;
+            w = 1.0f / (m14 * r.right + m24 * r.top + m44);
+            x2 *= w;
+            y2 *= w;
+            w = 1.0f / (m14 * r.left + m24 * r.bottom + m44);
+            x3 *= w;
+            y3 *= w;
+            w = 1.0f / (m14 * r.right + m24 * r.bottom + m44);
+            x4 *= w;
+            y4 *= w;
+        }
+        out.left = (int) Math.floor(FMath.min(x1, x2, x3, x4));
+        out.top = (int) Math.floor(FMath.min(y1, y2, y3, y4));
+        out.right = (int) Math.ceil(FMath.max(x1, x2, x3, x4));
+        out.bottom = (int) Math.ceil(FMath.max(y1, y2, y3, y4));
     }
 
     /**
@@ -1888,6 +2015,7 @@ public final class Matrix4 implements Cloneable {
             p.set(m11 * p.x + m21 * p.y + m41,
                     m12 * p.x + m22 * p.y + m42);
         } else {
+            // project
             final float x = m11 * p.x + m21 * p.y + m41;
             final float y = m12 * p.x + m22 * p.y + m42;
             float w = 1.0f / (m14 * p.x + m24 * p.y + m44);
@@ -1943,7 +2071,7 @@ public final class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is affine.
      */
     public boolean isAffine() {
-        return MathUtil.approxZero(m14, m24, m34) && MathUtil.approxEqual(m44, 1.0f);
+        return FMath.zero(m14, m24, m34) && FMath.eq(m44, 1.0f);
     }
 
     /**
@@ -1952,10 +2080,9 @@ public final class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is scale, translate, or both.
      */
     public boolean isScaleTranslate() {
-        return MathUtil.approxZero(m12, m13, m21) &&
-                MathUtil.approxZero(m23, m31, m32) &&
-                MathUtil.approxZero(m14, m24, m34) &&
-                MathUtil.approxEqual(m44, 1.0f);
+        return isAffine() &&
+                FMath.zero(m12, m13, m21) &&
+                FMath.zero(m23, m31, m32);
     }
 
     /**
@@ -1976,15 +2103,10 @@ public final class Matrix4 implements Cloneable {
      * @return true if this matrix transform one rect into another
      */
     public boolean isAxisAligned() {
-        return isAffine() &&
-                ((MathUtil.approxZero(m11) &&
-                        MathUtil.approxZero(m22) &&
-                        !MathUtil.approxZero(m12) &&
-                        !MathUtil.approxZero(m21)) ||
-                        (MathUtil.approxZero(m12) &&
-                                MathUtil.approxZero(m21) &&
-                                !MathUtil.approxZero(m11) &&
-                                !MathUtil.approxZero(m22)));
+        return isAffine() && (
+                (FMath.zero(m11) && FMath.zero(m22) && !FMath.zero(m12) && !FMath.zero(m21)) ||
+                        (FMath.zero(m12) && FMath.zero(m21) && !FMath.zero(m11) && !FMath.zero(m22))
+        );
     }
 
     /**
@@ -2017,7 +2139,7 @@ public final class Matrix4 implements Cloneable {
     }
 
     public boolean hasTranslation() {
-        return !(MathUtil.approxZero(m41, m42, m43) && MathUtil.approxEqual(m44, 1.0f));
+        return !(FMath.zero(m41, m42, m43) && FMath.eq(m44, 1.0f));
     }
 
     /**
@@ -2026,11 +2148,11 @@ public final class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return MathUtil.approxZero(m12, m13, m14) &&
-                MathUtil.approxZero(m21, m23, m24) &&
-                MathUtil.approxZero(m31, m32, m34) &&
-                MathUtil.approxZero(m41, m42, m43) &&
-                MathUtil.approxEqual(m11, m22, m33, m44, 1.0f);
+        return FMath.zero(m12, m13, m14) &&
+                FMath.zero(m21, m23, m24) &&
+                FMath.zero(m31, m32, m34) &&
+                FMath.zero(m41, m42, m43) &&
+                FMath.eq(m11, m22, m33, m44, 1.0f);
     }
 
     public boolean isEqual(@Nonnull Matrix4 mat) {
@@ -2063,22 +2185,22 @@ public final class Matrix4 implements Cloneable {
             return true;
         if (mat == null)
             return false;
-        return MathUtil.approxEqual(m11, mat.m11) &&
-                MathUtil.approxEqual(m12, mat.m12) &&
-                MathUtil.approxEqual(m13, mat.m13) &&
-                MathUtil.approxEqual(m14, mat.m14) &&
-                MathUtil.approxEqual(m21, mat.m21) &&
-                MathUtil.approxEqual(m22, mat.m22) &&
-                MathUtil.approxEqual(m23, mat.m23) &&
-                MathUtil.approxEqual(m24, mat.m24) &&
-                MathUtil.approxEqual(m31, mat.m31) &&
-                MathUtil.approxEqual(m32, mat.m32) &&
-                MathUtil.approxEqual(m33, mat.m33) &&
-                MathUtil.approxEqual(m34, mat.m34) &&
-                MathUtil.approxEqual(m41, mat.m41) &&
-                MathUtil.approxEqual(m42, mat.m42) &&
-                MathUtil.approxEqual(m43, mat.m43) &&
-                MathUtil.approxEqual(m44, mat.m44);
+        return FMath.eq(m11, mat.m11) &&
+                FMath.eq(m12, mat.m12) &&
+                FMath.eq(m13, mat.m13) &&
+                FMath.eq(m14, mat.m14) &&
+                FMath.eq(m21, mat.m21) &&
+                FMath.eq(m22, mat.m22) &&
+                FMath.eq(m23, mat.m23) &&
+                FMath.eq(m24, mat.m24) &&
+                FMath.eq(m31, mat.m31) &&
+                FMath.eq(m32, mat.m32) &&
+                FMath.eq(m33, mat.m33) &&
+                FMath.eq(m34, mat.m34) &&
+                FMath.eq(m41, mat.m41) &&
+                FMath.eq(m42, mat.m42) &&
+                FMath.eq(m43, mat.m43) &&
+                FMath.eq(m44, mat.m44);
     }
 
     /**
@@ -2094,22 +2216,22 @@ public final class Matrix4 implements Cloneable {
 
         Matrix4 mat = (Matrix4) o;
 
-        if (!MathUtil.exactlyEqual(mat.m11, m11)) return false;
-        if (!MathUtil.exactlyEqual(mat.m12, m12)) return false;
-        if (!MathUtil.exactlyEqual(mat.m13, m13)) return false;
-        if (!MathUtil.exactlyEqual(mat.m14, m14)) return false;
-        if (!MathUtil.exactlyEqual(mat.m21, m21)) return false;
-        if (!MathUtil.exactlyEqual(mat.m22, m22)) return false;
-        if (!MathUtil.exactlyEqual(mat.m23, m23)) return false;
-        if (!MathUtil.exactlyEqual(mat.m24, m24)) return false;
-        if (!MathUtil.exactlyEqual(mat.m31, m31)) return false;
-        if (!MathUtil.exactlyEqual(mat.m32, m32)) return false;
-        if (!MathUtil.exactlyEqual(mat.m33, m33)) return false;
-        if (!MathUtil.exactlyEqual(mat.m34, m34)) return false;
-        if (!MathUtil.exactlyEqual(mat.m41, m41)) return false;
-        if (!MathUtil.exactlyEqual(mat.m42, m42)) return false;
-        if (!MathUtil.exactlyEqual(mat.m43, m43)) return false;
-        return MathUtil.exactlyEqual(mat.m44, m44);
+        if (Float.floatToIntBits(mat.m11) != Float.floatToIntBits(m11)) return false;
+        if (Float.floatToIntBits(mat.m12) != Float.floatToIntBits(m12)) return false;
+        if (Float.floatToIntBits(mat.m13) != Float.floatToIntBits(m13)) return false;
+        if (Float.floatToIntBits(mat.m14) != Float.floatToIntBits(m14)) return false;
+        if (Float.floatToIntBits(mat.m21) != Float.floatToIntBits(m21)) return false;
+        if (Float.floatToIntBits(mat.m22) != Float.floatToIntBits(m22)) return false;
+        if (Float.floatToIntBits(mat.m23) != Float.floatToIntBits(m23)) return false;
+        if (Float.floatToIntBits(mat.m24) != Float.floatToIntBits(m24)) return false;
+        if (Float.floatToIntBits(mat.m31) != Float.floatToIntBits(m31)) return false;
+        if (Float.floatToIntBits(mat.m32) != Float.floatToIntBits(m32)) return false;
+        if (Float.floatToIntBits(mat.m33) != Float.floatToIntBits(m33)) return false;
+        if (Float.floatToIntBits(mat.m34) != Float.floatToIntBits(m34)) return false;
+        if (Float.floatToIntBits(mat.m41) != Float.floatToIntBits(m41)) return false;
+        if (Float.floatToIntBits(mat.m42) != Float.floatToIntBits(m42)) return false;
+        if (Float.floatToIntBits(mat.m43) != Float.floatToIntBits(m43)) return false;
+        return Float.floatToIntBits(mat.m44) == Float.floatToIntBits(m44);
     }
 
     @Override

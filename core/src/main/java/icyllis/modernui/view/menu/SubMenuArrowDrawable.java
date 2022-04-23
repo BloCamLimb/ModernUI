@@ -40,7 +40,7 @@ public class SubMenuArrowDrawable extends MaterialDrawable {
         final Rect r = getBounds();
         final float w = r.width();
         final float h = r.height();
-        Paint paint = Paint.take();
+        Paint paint = Paint.get();
         paint.setColor(mColor);
         paint.setAlpha(modulateAlpha(paint.getAlpha(), mAlpha));
         if (paint.getAlpha() != 0) {

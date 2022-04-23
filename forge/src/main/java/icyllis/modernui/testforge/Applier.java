@@ -19,7 +19,7 @@
 package icyllis.modernui.testforge;
 
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -73,7 +73,7 @@ public class Applier {
 
     void update(float progress) {
         progress = interpolator.getInterpolation(progress);
-        float value = MathUtil.lerp(progress, logicStart, logicEnd);
+        float value = FMath.lerp(progress, logicStart, logicEnd);
         setter.accept(value);
     }
 

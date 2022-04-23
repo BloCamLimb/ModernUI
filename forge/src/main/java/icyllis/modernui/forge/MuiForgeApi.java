@@ -24,7 +24,7 @@ import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
@@ -252,11 +252,11 @@ public final class MuiForgeApi {
         double high = Math.max(w, h);
 
         int min;
-        int max = MathUtil.clamp((int) (base / 26), 1, 9);
+        int max = FMath.clamp((int) (base / 26), 1, 9);
         if (max > 1) {
             int i = (int) (base / 64);
             int j = (int) (high / 64);
-            min = MathUtil.clamp(j != i ? Math.min(i, j) + 1 : i, 2, 9);
+            min = FMath.clamp(j != i ? Math.min(i, j) + 1 : i, 2, 9);
         } else {
             min = 1;
         }

@@ -102,7 +102,7 @@ public class TestHUD {
         }
         float right = Math.min(health * 140 / player.getMaxHealth(), 140.0f);
 
-        Paint paint = Paint.take();
+        Paint paint = Paint.get();
         paint.reset();
         paint.setStrokeWidth(1.5f);
         paint.setAlpha((int) (mBarAlpha * 0xff));

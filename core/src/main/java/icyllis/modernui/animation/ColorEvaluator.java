@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 
 import javax.annotation.Nonnull;
 
@@ -82,10 +82,10 @@ public class ColorEvaluator implements TypeEvaluator<Integer> {
         endB = (float) Math.pow(endB, 2.2);
 
         // compute the interpolated color in linear space
-        float a = MathUtil.lerp(fraction, startA, endA);
-        float r = MathUtil.lerp(fraction, startR, endR);
-        float g = MathUtil.lerp(fraction, startG, endG);
-        float b = MathUtil.lerp(fraction, startB, endB);
+        float a = FMath.lerp(fraction, startA, endA);
+        float r = FMath.lerp(fraction, startR, endR);
+        float g = FMath.lerp(fraction, startG, endG);
+        float b = FMath.lerp(fraction, startB, endB);
 
         // convert back to sRGB in the [0..255] range
         a = a * 255.0f;

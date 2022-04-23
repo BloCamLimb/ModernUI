@@ -22,6 +22,7 @@ import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
+import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.font.FontAtlas;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.view.ViewConfiguration;
@@ -196,15 +197,15 @@ final class Config {
                             "The duration of GUI background color and blur radius animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 200, ANIM_DURATION_MIN, ANIM_DURATION_MAX);
             backgroundColor = builder.comment(
-                            "The GUI background color in 0xAARRGGBB format. Default value: 0x66000000",
-                            "Can be one to four values representing top left, top right, bottom left and bottom right" +
+                            "The GUI background color in #RRGGBB or #AARRGGBB format. Default value: #66000000",
+                            "Can be one to four values representing top left, top right, bottom right and bottom left" +
                                     " color.",
                             "Multiple values produce a gradient effect, whereas one value produce a solid color.",
                             "When values is less than 4, the rest of the corner color will be replaced by the last " +
                                     "value.")
                     .defineList("backgroundColor", () -> {
                         List<String> list = new ArrayList<>();
-                        list.add("0x66000000");
+                        list.add("#66000000");
                         return list;
                     }, o -> true);
 
@@ -232,31 +233,31 @@ final class Config {
                             "Whether to enable Modern UI tooltip style, or back to vanilla style.")
                     .define("enable", true);
             tooltipFill = builder.comment(
-                            "The tooltip FILL color in 0xAARRGGBB format. Default: 0xD4000000",
-                            "Can be one to four values representing top left, top right, bottom left and bottom right" +
+                            "The tooltip FILL color in #RRGGBB or #AARRGGBB format. Default: #D4000000",
+                            "Can be one to four values representing top left, top right, bottom right and bottom left" +
                                     " color.",
                             "Multiple values produce a gradient effect, whereas one value produce a solid color.",
                             "When values is less than 4, the rest of the corner color will be replaced by the last " +
                                     "value.")
                     .defineList("colorFill", () -> {
                         List<String> list = new ArrayList<>();
-                        list.add("0xD4000000");
+                        list.add("#D4000000");
                         return list;
                     }, $ -> true);
             tooltipStroke = builder.comment(
-                            "The tooltip STROKE color in 0xAARRGGBB format. Default: 0xF0AADCF0, 0xF0DAD0F4, ~ and " +
-                                    "0xF0FFC3F7",
-                            "Can be one to four values representing top left, top right, bottom left and bottom right" +
+                            "The tooltip STROKE color in #RRGGBB or #AARRGGBB format. Default: #F0AADCF0, #F0DAD0F4, " +
+                                    "#F0FFC3F7 and #F0DAD0F4",
+                            "Can be one to four values representing top left, top right, bottom right and bottom left" +
                                     " color.",
                             "Multiple values produce a gradient effect, whereas one value produce a solid color.",
                             "When values is less than 4, the rest of the corner color will be replaced by the last " +
                                     "value.")
                     .defineList("colorStroke", () -> {
                         List<String> list = new ArrayList<>();
-                        list.add("0xF0AADCF0");
-                        list.add("0xF0DAD0F4");
-                        list.add("0xF0DAD0F4");
-                        list.add("0xF0FFC3F7");
+                        list.add("#F0AADCF0");
+                        list.add("#F0DAD0F4");
+                        list.add("#F0FFC3F7");
+                        list.add("#F0DAD0F4");
                         return list;
                     }, $ -> true);
 
@@ -361,11 +362,11 @@ final class Config {
 
             List<? extends String> colors = backgroundColor.get();
             int color = 0x66000000;
-            for (int i = 0; i < BlurHandler.sBackgroundColor.length; i++) {
+            for (int i = 0; i < 4; i++) {
                 if (colors != null && i < colors.size()) {
                     String s = colors.get(i);
                     try {
-                        color = Integer.parseUnsignedInt(s.substring(2), 16);
+                        color = Color.parseColor(s);
                     } catch (Exception e) {
                         ModernUI.LOGGER.error(ModernUI.MARKER,
                                 "Wrong color format for setting background color: {}", s);
@@ -380,11 +381,11 @@ final class Config {
 
             colors = tooltipFill.get();
             color = 0xD4000000;
-            for (int i = 0; i < TooltipRenderer.sFillColor.length; i++) {
+            for (int i = 0; i < 4; i++) {
                 if (colors != null && i < colors.size()) {
                     String s = colors.get(i);
                     try {
-                        color = Integer.parseUnsignedInt(s.substring(2), 16);
+                        color = Color.parseColor(s);
                     } catch (Exception e) {
                         ModernUI.LOGGER.error(ModernUI.MARKER,
                                 "Wrong color format for setting tooltip fill color: {}", s);
@@ -394,11 +395,11 @@ final class Config {
             }
             colors = tooltipStroke.get();
             color = 0xF0AADCF0;
-            for (int i = 0; i < TooltipRenderer.sStrokeColor.length; i++) {
+            for (int i = 0; i < 4; i++) {
                 if (colors != null && i < colors.size()) {
                     String s = colors.get(i);
                     try {
-                        color = Integer.parseUnsignedInt(s.substring(2), 16);
+                        color = Color.parseColor(s);
                     } catch (Exception e) {
                         ModernUI.LOGGER.error(ModernUI.MARKER,
                                 "Wrong color format for setting tooltip stroke color: {}", s);

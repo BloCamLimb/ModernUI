@@ -30,8 +30,8 @@ public class ClipStack {
      * Clip ops.
      */
     public static final byte
-            OP_DIFFERENCE = 0,
-            OP_INTERSECT = 1;
+            OP_DIFFERENCE = 0,  // target minus operand
+            OP_INTERSECT = 1;   // target intersected with operand
 
     /**
      * Clip states.

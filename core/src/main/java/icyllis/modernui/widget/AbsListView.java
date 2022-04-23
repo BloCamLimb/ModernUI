@@ -638,7 +638,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 paint.setRGBA(84, 190, 196, (int) (mAlpha * 0.5));
                 Rect bounds = getBounds();
                 canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
@@ -655,7 +655,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 paint.setRGBA(128, 128, 128, (int) (mAlpha * 0.75));
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeWidth(3);
@@ -1074,7 +1074,7 @@ public abstract class AbsListView extends AdapterView<ListAdapter> implements Fi
         setSelector(new Drawable() {
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 paint.setAlpha(25);
                 canvas.drawRect(getBounds(), paint);
             }

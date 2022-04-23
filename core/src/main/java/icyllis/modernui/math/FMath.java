@@ -18,7 +18,7 @@
 
 package icyllis.modernui.math;
 
-public final class MathUtil {
+public final class FMath {
 
     private static final boolean USE_SIN_TABLE = false;
 
@@ -36,6 +36,8 @@ public final class MathUtil {
     public static final float THREE_PI = (float) (Math.PI * 3);
     public static final float FOUR_PI = (float) (Math.PI * 4);
     public static final float THREE_PI_DIV_2 = (float) (Math.PI * 3 / 2);
+
+    public static final float EPS = 1.0e-6f;
 
     private static final float DEG_TO_RAD = 0.017453292519943295f;
 
@@ -75,49 +77,44 @@ public final class MathUtil {
         return (float) Math.tan(a);
     }
 
-    // exactly equal
-    public static boolean exactlyEqual(float a, float b) {
-        return Float.floatToIntBits(a) == Float.floatToIntBits(b);
+    // approximately equal
+    public static boolean eq(float a, float b) {
+        return Math.abs(b - a) < EPS;
     }
 
     // approximately equal
-    public static boolean approxEqual(float a, float b) {
-        return a == b || Math.abs(b - a) < 1.0e-6f;
+    public static boolean eq(float a, float b, float z) {
+        return eq(a, z) && eq(b, z);
     }
 
     // approximately equal
-    public static boolean approxEqual(float a, float b, float c, float z) {
-        return approxEqual(a, z) && approxEqual(b, z) && approxEqual(c, z);
+    public static boolean eq(float a, float b, float c, float z) {
+        return eq(a, z) && eq(b, z) && eq(c, z);
     }
 
     // approximately equal
-    public static boolean approxEqual(float a, float b, float c, float d, float z) {
-        return approxEqual(a, z) && approxEqual(b, z) && approxEqual(c, z) && approxEqual(d, z);
+    public static boolean eq(float a, float b, float c, float d, float z) {
+        return eq(a, z) && eq(b, z) && eq(c, z) && eq(d, z);
     }
 
     // approximately equal
-    public static boolean isEqual(float a, float b, float eps) {
-        return Math.abs(b - a) < eps;
+    public static boolean zero(float a) {
+        return Math.abs(a) < 1.0e-6f;
     }
 
     // approximately equal
-    public static boolean approxZero(float a) {
-        return a == 0.0f || Math.abs(a) < 1.0e-6f;
+    public static boolean zero(float a, float b) {
+        return zero(a) && zero(b);
     }
 
     // approximately equal
-    public static boolean approxZero(float a, float b, float c) {
-        return approxZero(a) && approxZero(b) && approxZero(c);
+    public static boolean zero(float a, float b, float c) {
+        return zero(a) && zero(b) && zero(c);
     }
 
     // approximately equal
-    public static boolean approxZero(float a, float b, float c, float d) {
-        return approxZero(a) && approxZero(b) && approxZero(c) && approxZero(d);
-    }
-
-    // approximately equal
-    public static boolean isZero(float a, float eps) {
-        return Math.abs(a) < eps;
+    public static boolean zero(float a, float b, float c, float d) {
+        return zero(a) && zero(b) && zero(c) && zero(d);
     }
 
     // square root
@@ -172,8 +169,19 @@ public final class MathUtil {
         return Math.max(Math.min(a, max), min);
     }
 
+    // clamp 'a' in range [min,max]
     public static float clamp(float a, float min, float max) {
         return Math.max(Math.min(a, max), min);
+    }
+
+    // min component of vec4
+    public static float min(float a, float b, float c, float d) {
+        return Math.min(Math.min(a, b), Math.min(c, d));
+    }
+
+    // max component of vec4
+    public static float max(float a, float b, float c, float d) {
+        return Math.max(Math.max(a, b), Math.max(c, d));
     }
 
     public static float toRadians(float degrees) {

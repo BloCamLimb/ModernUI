@@ -76,7 +76,7 @@ public class PointF {
      * Return the euclidean distance from (0,0) to the point
      */
     public float length() {
-        return MathUtil.hypot(x, y);
+        return FMath.hypot(x, y);
     }
 
     public void round(@Nonnull Point dst) {

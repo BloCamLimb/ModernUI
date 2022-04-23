@@ -138,7 +138,7 @@ public class Vector3 {
      * @return the magnitude of this quaternion
      */
     public float length() {
-        return MathUtil.sqrt(x * x + y * y + z * z);
+        return FMath.sqrt(x * x + y * y + z * z);
     }
 
     public float lengthSquared() {
@@ -217,7 +217,7 @@ public class Vector3 {
      * @return {@code true} if is normalized, {@code false} otherwise
      */
     public boolean isNormalized() {
-        return MathUtil.approxEqual(lengthSquared(), 1.0f);
+        return FMath.eq(lengthSquared(), 1.0f);
     }
 
     /**
@@ -230,7 +230,7 @@ public class Vector3 {
             y = 0.0f;
             z = 0.0f;
         } else {
-            final float invNorm = 1.0f / MathUtil.sqrt(sq);
+            final float invNorm = 1.0f / FMath.sqrt(sq);
             x *= invNorm;
             y *= invNorm;
             z *= invNorm;
@@ -248,7 +248,7 @@ public class Vector3 {
             y = 0.0f;
             z = 0.0f;
         } else {
-            final float invNorm = MathUtil.fastInvSqrt(sq);
+            final float invNorm = FMath.fastInvSqrt(sq);
             x *= invNorm;
             y *= invNorm;
             z *= invNorm;
@@ -298,13 +298,13 @@ public class Vector3 {
     public void perpendicular() {
         final float l;
         if (Math.abs(x) >= Math.abs(y)) {
-            l = 1.0f / MathUtil.sqrt(x * x + z * z);
+            l = 1.0f / FMath.sqrt(x * x + z * z);
             float t = x;
             x = -z * l;
             y = 0.0f;
             z = t * l;
         } else {
-            l = 1.0f / MathUtil.sqrt(y * y + z * z);
+            l = 1.0f / FMath.sqrt(y * y + z * z);
             float t = y;
             x = 0.0f;
             y = z * l;
@@ -322,7 +322,7 @@ public class Vector3 {
         if (sq < 1.0e-6f) {
             setZero();
         } else {
-            final float c = dot(v) / MathUtil.sqrt(sq);
+            final float c = dot(v) / FMath.sqrt(sq);
             x = v.x * c;
             y = v.y * c;
             z = v.z * c;
@@ -416,9 +416,9 @@ public class Vector3 {
      */
     public boolean equivalent(@Nonnull Vector3 v) {
         if (this == v) return true;
-        return MathUtil.approxEqual(x, v.x) &&
-                MathUtil.approxEqual(y, v.y) &&
-                MathUtil.approxEqual(z, v.z);
+        return FMath.eq(x, v.x) &&
+                FMath.eq(y, v.y) &&
+                FMath.eq(z, v.z);
     }
 
     @Override
@@ -426,11 +426,11 @@ public class Vector3 {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Vector3 vector3 = (Vector3) o;
+        Vector3 vec = (Vector3) o;
 
-        if (!MathUtil.exactlyEqual(vector3.x, x)) return false;
-        if (!MathUtil.exactlyEqual(vector3.y, y)) return false;
-        return MathUtil.exactlyEqual(vector3.z, z);
+        if (Float.floatToIntBits(vec.x) != Float.floatToIntBits(x)) return false;
+        if (Float.floatToIntBits(vec.y) != Float.floatToIntBits(y)) return false;
+        return Float.floatToIntBits(vec.z) == Float.floatToIntBits(z);
     }
 
     @Override

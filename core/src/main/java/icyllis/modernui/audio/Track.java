@@ -18,7 +18,6 @@
 
 package icyllis.modernui.audio;
 
-import icyllis.modernui.math.FourierTransform;
 import org.lwjgl.openal.EXTFloat32;
 import org.lwjgl.system.MemoryUtil;
 
@@ -38,8 +37,8 @@ public class Track implements AutoCloseable {
     private final SoundSample mSample;
     private int mBaseOffset;
 
-    private FourierTransform mFFT;
-    private Consumer<FourierTransform> mFFTCallback;
+    private FFT mFFT;
+    private Consumer<FFT> mFFTCallback;
 
     private float[] mMixedSamples;
     private int mMixedSampleCount;
@@ -94,7 +93,7 @@ public class Track implements AutoCloseable {
         }
     }
 
-    public void setAnalyzer(@Nullable FourierTransform fft, @Nullable Consumer<FourierTransform> callback) {
+    public void setAnalyzer(@Nullable FFT fft, @Nullable Consumer<FFT> callback) {
         if (fft != null && fft.getSampleRate() != mSample.getSampleRate()) {
             throw new IllegalArgumentException("Mismatched sample rate");
         }

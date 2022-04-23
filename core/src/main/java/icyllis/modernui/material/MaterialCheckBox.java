@@ -64,7 +64,7 @@ public class MaterialCheckBox extends CheckBox {
         @Override
         public void draw(@Nonnull Canvas canvas) {
             final Rect r = getBounds();
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setColor(mColor);
             paint.setAlpha(modulateAlpha(paint.getAlpha(), mAlpha));
             int alpha = paint.getAlpha();
@@ -110,7 +110,7 @@ public class MaterialCheckBox extends CheckBox {
         @Override
         public void draw(@Nonnull Canvas canvas) {
             final Rect r = getBounds();
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setColor(mColor);
             paint.setAlpha(modulateAlpha(paint.getAlpha(), mAlpha));
             if (paint.getAlpha() != 0) {

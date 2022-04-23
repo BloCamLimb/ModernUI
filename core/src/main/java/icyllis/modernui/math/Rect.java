@@ -249,12 +249,12 @@ public class Rect {
     /**
      * Returns true if (x,y) is inside the rectangle. The left and top are
      * considered to be inside, while the right and bottom are not. This means
-     * that for a x,y to be contained: left <= x < right and top <= y < bottom.
+     * that for a (x,y) to be contained: left <= x < right and top <= y < bottom.
      * An empty rectangle never contains any point.
      *
      * @param x The X coordinate of the point being tested for containment
      * @param y The Y coordinate of the point being tested for containment
-     * @return true iff (x,y) are contained by the rectangle, where containment
+     * @return true if (x,y) are contained by the rectangle, where containment
      * means left <= x < right and top <= y < bottom
      */
     public boolean contains(int x, int y) {
@@ -263,7 +263,7 @@ public class Rect {
     }
 
     /**
-     * Returns true iff the 4 specified sides of a rectangle are inside or equal
+     * Returns true if the 4 specified sides of a rectangle are inside or equal
      * to this rectangle. i.e. is this rectangle a superset of the specified
      * rectangle. An empty rectangle never contains another rectangle.
      *
@@ -271,7 +271,7 @@ public class Rect {
      * @param top    The top of the rectangle being tested for containment
      * @param right  The right side of the rectangle being tested for containment
      * @param bottom The bottom of the rectangle being tested for containment
-     * @return true iff the the 4 specified sides of a rectangle are inside or
+     * @return true if the 4 specified sides of a rectangle are inside or
      * equal to this rectangle
      */
     public boolean contains(int left, int top, int right, int bottom) {
@@ -283,7 +283,7 @@ public class Rect {
     }
 
     /**
-     * Returns true iff the specified rectangle r is inside or equal to this
+     * Returns true if the specified rectangle r is inside or equal to this
      * rectangle. An empty rectangle never contains another rectangle.
      *
      * @param r The rectangle being tested for containment.
@@ -362,7 +362,7 @@ public class Rect {
      *
      * @param a The first rectangle being intersected with
      * @param b The second rectangle being intersected with
-     * @return true iff the two specified rectangles intersect. If they do, set
+     * @return true if the two specified rectangles intersect. If they do, set
      * this rectangle to that intersection. If they do not, return
      * false and do not change this rectangle.
      */
@@ -388,7 +388,7 @@ public class Rect {
      * @param right  The right side of the rectangle being tested for
      *               intersection
      * @param bottom The bottom of the rectangle being tested for intersection
-     * @return true iff the specified rectangle intersects this rectangle. In
+     * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
     public boolean intersects(int left, int top, int right, int bottom) {
@@ -402,7 +402,7 @@ public class Rect {
      *
      * @param a The first rectangle being tested for intersection
      * @param b The second rectangle being tested for intersection
-     * @return true iff the two specified rectangles intersect. In no event are
+     * @return true if the two specified rectangles intersect. In no event are
      * either of the rectangles modified.
      */
     public static boolean intersects(@Nonnull Rect a, @Nonnull Rect b) {

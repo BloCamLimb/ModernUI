@@ -105,7 +105,7 @@ public class ColorDrawable extends Drawable {
                     return;
                 }
             }
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setColor(color);
             canvas.drawRect(getBounds(), paint);
         }

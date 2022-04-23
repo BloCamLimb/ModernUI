@@ -22,7 +22,7 @@ import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.forge.MuiForgeApi;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 import icyllis.modernui.view.ViewConfiguration;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -50,7 +50,7 @@ public abstract class MixinWindow {
     @Overwrite
     public int calculateScale(int guiScaleIn, boolean forceUnicode) {
         int r = MuiForgeApi.calcGuiScales((Window) (Object) this);
-        return guiScaleIn > 0 ? MathUtil.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
+        return guiScaleIn > 0 ? FMath.clamp(guiScaleIn, r >> 8 & 0xf, r & 0xf) : r >> 4 & 0xf;
     }
 
     @Inject(method = "setGuiScale", at = @At("HEAD"))

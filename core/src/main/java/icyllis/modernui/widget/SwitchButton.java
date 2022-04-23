@@ -21,7 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 
 import javax.annotation.Nonnull;
 
@@ -99,7 +99,7 @@ public class SwitchButton extends CompoundButton {
     @Override
     protected void onDraw(@Nonnull Canvas canvas) {
         super.onDraw(canvas);
-        Paint paint = Paint.take();
+        Paint paint = Paint.get();
 
         float buttonRadius = (mButtonBottom - mButtonTop) * 0.5f;
         float thumbX = mButtonLeft + buttonRadius + getThumbOffset();
@@ -107,7 +107,7 @@ public class SwitchButton extends CompoundButton {
 
         // draw inside background
         paint.setColor(mInsideColor);
-        if (MathUtil.approxEqual(mInsideRadius, buttonRadius)) {
+        if (FMath.eq(mInsideRadius, buttonRadius)) {
             // check a final state and simplify the drawing
             paint.setStyle(Paint.FILL);
             canvas.drawRoundRect(mButtonLeft, mButtonTop, mButtonRight, mButtonBottom, buttonRadius, paint);

@@ -55,7 +55,7 @@ public class TestFragment extends Fragment {
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 Rect b = getBounds();
                 paint.setRGBA(8, 8, 8, 80);
                 canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, 8, paint);

@@ -29,9 +29,9 @@ public class ScrollThumbDrawable extends Drawable {
 
     @Override
     public void draw(@Nonnull Canvas canvas) {
-        Paint paint = Paint.take();
+        Paint paint = Paint.get();
         paint.reset();
-        paint.setSmoothRadius(0);
+        paint.setFeatherRadius(0);
         paint.setStyle(Paint.FILL);
         paint.setRGBA(128, 128, 128, 128);
         //canvas.drawRect(0, 0, getWidth(), getHeight(), paint);

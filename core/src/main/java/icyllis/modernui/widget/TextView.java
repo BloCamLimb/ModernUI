@@ -2250,7 +2250,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         final int selStart = getSelectionStart();
         if (mMovement != null && (isFocused() || isPressed()) && selStart >= 0) {
             final int selEnd = getSelectionEnd();
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setStrokeWidth(dp(2));
             if (selStart == selEnd) {
                 if (mEditor != null && mEditor.shouldRenderCursor()) {

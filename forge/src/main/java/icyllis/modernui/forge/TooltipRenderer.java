@@ -351,9 +351,9 @@ public final class TooltipRenderer {
         sMyMat.preTranslate(0, 0, 3000);
         canvas.concat(sMyMat);
 
-        Paint paint = Paint.take();
+        Paint paint = Paint.get();
 
-        paint.setSmoothRadius(0.5f);
+        paint.setFeatherRadius(0.5f);
 
         for (int i = 0; i < 4; i++) {
             int color = sFillColor[i];

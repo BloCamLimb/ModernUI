@@ -22,7 +22,7 @@ import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.*;
 
@@ -156,7 +156,7 @@ public class NestedScrollView extends FrameLayout {
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 paint.setRGBA(84, 190, 196, (int) (mAlpha * 0.5));
                 Rect bounds = getBounds();
                 canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
@@ -173,7 +173,7 @@ public class NestedScrollView extends FrameLayout {
 
             @Override
             public void draw(@Nonnull Canvas canvas) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 paint.setRGBA(128, 128, 128, (int) (mAlpha * 0.75));
                 paint.setStyle(Paint.STROKE);
                 paint.setStrokeWidth(3);
@@ -774,7 +774,7 @@ public class NestedScrollView extends FrameLayout {
             final float axisValue = event.getAxisValue(MotionEvent.AXIS_VSCROLL);
             final int delta = Math.round(axisValue * ViewConfiguration.get().getVerticalScrollFactor());
             if (Math.abs(axisValue) > 0.9 && Math.abs(delta) * 6 > mMinimumVelocity) {
-                int deltaY = MathUtil.clamp(delta * 6, -mMaximumVelocity, mMaximumVelocity);
+                int deltaY = FMath.clamp(delta * 6, -mMaximumVelocity, mMaximumVelocity);
                 if (!edgeEffectFling(deltaY)
                         && !dispatchNestedPreFling(0, -deltaY)) {
                     dispatchNestedFling(0, -deltaY, true);

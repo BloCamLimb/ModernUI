@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
  * Represents a 3x3 row-major matrix.
  */
 @SuppressWarnings("unused")
-public class Matrix3 implements Cloneable {
+public final class Matrix3 implements Cloneable {
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -222,7 +222,7 @@ public class Matrix3 implements Cloneable {
         float c = m12 * m23 - m13 * m22;
         // calc the determinant
         float det = a * m33 + b * m32 + c * m31;
-        if (MathUtil.approxZero(det)) {
+        if (FMath.zero(det)) {
             return false;
         }
         // calc algebraic cofactor and transpose
@@ -275,15 +275,154 @@ public class Matrix3 implements Cloneable {
     }
 
     /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param r the rectangle to transform
+     */
+    public void mapRect(@Nonnull RectF r) {
+        float x1 = m11 * r.left + m21 * r.top + m31;
+        float y1 = m12 * r.left + m22 * r.top + m32;
+        float x2 = m11 * r.right + m21 * r.top + m31;
+        float y2 = m12 * r.right + m22 * r.top + m32;
+        float x3 = m11 * r.left + m21 * r.bottom + m31;
+        float y3 = m12 * r.left + m22 * r.bottom + m32;
+        float x4 = m11 * r.right + m21 * r.bottom + m31;
+        float y4 = m12 * r.right + m22 * r.bottom + m32;
+        if (!isAffine()) {
+            // project
+            float w = 1.0f / (m13 * r.left + m23 * r.top + m33);
+            x1 *= w;
+            y1 *= w;
+            w = 1.0f / (m13 * r.right + m23 * r.top + m33);
+            x2 *= w;
+            y2 *= w;
+            w = 1.0f / (m13 * r.left + m23 * r.bottom + m33);
+            x3 *= w;
+            y3 *= w;
+            w = 1.0f / (m13 * r.right + m23 * r.bottom + m33);
+            x4 *= w;
+            y4 *= w;
+        }
+        r.left = FMath.min(x1, x2, x3, x4);
+        r.top = FMath.min(y1, y2, y3, y4);
+        r.right = FMath.max(x1, x2, x3, x4);
+        r.bottom = FMath.max(y1, y2, y3, y4);
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param out the round values
+     */
+    public void mapRect(@Nonnull RectF r, @Nonnull Rect out) {
+        mapRect(r.left, r.top, r.right, r.bottom, out);
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param out the round values
+     */
+    public void mapRect(@Nonnull Rect r, @Nonnull Rect out) {
+        mapRect(r.left, r.top, r.right, r.bottom, out);
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param out the round values
+     */
+    public void mapRect(float l, float t, float r, float b, @Nonnull Rect out) {
+        float x1 = m11 * l + m21 * t + m31;
+        float y1 = m12 * l + m22 * t + m32;
+        float x2 = m11 * r + m21 * t + m31;
+        float y2 = m12 * r + m22 * t + m32;
+        float x3 = m11 * l + m21 * b + m31;
+        float y3 = m12 * l + m22 * b + m32;
+        float x4 = m11 * r + m21 * b + m31;
+        float y4 = m12 * r + m22 * b + m32;
+        if (!isAffine()) {
+            // project
+            float w = 1.0f / (m13 * l + m23 * t + m33);
+            x1 *= w;
+            y1 *= w;
+            w = 1.0f / (m13 * r + m23 * t + m33);
+            x2 *= w;
+            y2 *= w;
+            w = 1.0f / (m13 * l + m23 * b + m33);
+            x3 *= w;
+            y3 *= w;
+            w = 1.0f / (m13 * r + m23 * b + m33);
+            x4 *= w;
+            y4 *= w;
+        }
+        out.left = Math.round(FMath.min(x1, x2, x3, x4));
+        out.top = Math.round(FMath.min(y1, y2, y3, y4));
+        out.right = Math.round(FMath.max(x1, x2, x3, x4));
+        out.bottom = Math.round(FMath.max(y1, y2, y3, y4));
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param out the round out values
+     */
+    public void mapRectOut(@Nonnull RectF r, @Nonnull Rect out) {
+        mapRectOut(r.left, r.top, r.right, r.bottom, out);
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param out the round out values
+     */
+    public void mapRectOut(@Nonnull Rect r, @Nonnull Rect out) {
+        mapRectOut(r.left, r.top, r.right, r.bottom, out);
+    }
+
+    /**
+     * Map a rectangle points in the X-Y plane to get the maximum bounds.
+     *
+     * @param out the round out values
+     */
+    public void mapRectOut(float l, float t, float r, float b, @Nonnull Rect out) {
+        float x1 = m11 * l + m21 * t + m31;
+        float y1 = m12 * l + m22 * t + m32;
+        float x2 = m11 * r + m21 * t + m31;
+        float y2 = m12 * r + m22 * t + m32;
+        float x3 = m11 * l + m21 * b + m31;
+        float y3 = m12 * l + m22 * b + m32;
+        float x4 = m11 * r + m21 * b + m31;
+        float y4 = m12 * r + m22 * b + m32;
+        if (!isAffine()) {
+            // project
+            float w = 1.0f / (m13 * l + m23 * t + m33);
+            x1 *= w;
+            y1 *= w;
+            w = 1.0f / (m13 * r + m23 * t + m33);
+            x2 *= w;
+            y2 *= w;
+            w = 1.0f / (m13 * l + m23 * b + m33);
+            x3 *= w;
+            y3 *= w;
+            w = 1.0f / (m13 * r + m23 * b + m33);
+            x4 *= w;
+            y4 *= w;
+        }
+        out.left = (int) Math.floor(FMath.min(x1, x2, x3, x4));
+        out.top = (int) Math.floor(FMath.min(y1, y2, y3, y4));
+        out.right = (int) Math.ceil(FMath.max(x1, x2, x3, x4));
+        out.bottom = (int) Math.ceil(FMath.max(y1, y2, y3, y4));
+    }
+
+    /**
      * Returns whether this matrix is seen as an affine transformation.
      * Otherwise, there's a perspective projection.
      *
      * @return {@code true} if this matrix is affine.
      */
     public boolean isAffine() {
-        return MathUtil.approxZero(m13) &&
-                MathUtil.approxZero(m23) &&
-                MathUtil.approxEqual(m33, 1.0f);
+        return FMath.zero(m13, m23) && FMath.eq(m33, 1.0f);
     }
 
     /**
@@ -292,7 +431,7 @@ public class Matrix3 implements Cloneable {
      * @return {@code true} if this matrix is scales, translates, or both.
      */
     public boolean isScaleTranslate() {
-        return MathUtil.approxZero(m12, m21, m13, m23) && MathUtil.approxEqual(m33, 1.0f);
+        return FMath.zero(m12, m21, m13, m23) && FMath.eq(m33, 1.0f);
     }
 
     /**
@@ -301,7 +440,7 @@ public class Matrix3 implements Cloneable {
      * @return {@code true} if this matrix is identity, or translates
      */
     public boolean isTranslate() {
-        return MathUtil.approxZero(m12, m21, m13, m23) && MathUtil.approxEqual(m11, m22, m33, 1.0f);
+        return FMath.zero(m12, m21, m13, m23) && FMath.eq(m11, m22, m33, 1.0f);
     }
 
     /**
@@ -311,15 +450,10 @@ public class Matrix3 implements Cloneable {
      * @return true if this matrix transform one rect into another
      */
     public boolean isAxisAligned() {
-        return isAffine() &&
-                ((MathUtil.approxZero(m11) &&
-                        MathUtil.approxZero(m22) &&
-                        !MathUtil.approxZero(m12) &&
-                        !MathUtil.approxZero(m21)) ||
-                        (MathUtil.approxZero(m12) &&
-                                MathUtil.approxZero(m21) &&
-                                !MathUtil.approxZero(m11) &&
-                                !MathUtil.approxZero(m22)));
+        return isAffine() && (
+                (FMath.zero(m11) && FMath.zero(m22) && !FMath.zero(m12) && !FMath.zero(m21)) ||
+                        (FMath.zero(m12) && FMath.zero(m21) && !FMath.zero(m11) && !FMath.zero(m22))
+        );
     }
 
     /**
@@ -347,9 +481,9 @@ public class Matrix3 implements Cloneable {
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return MathUtil.approxZero(m12, m13, m21) &&
-                MathUtil.approxZero(m23, m31, m32) &&
-                MathUtil.approxEqual(m11, m22, m33, 1.0f);
+        return FMath.zero(m12, m13, m21) &&
+                FMath.zero(m23, m31, m32) &&
+                FMath.eq(m11, m22, m33, 1.0f);
     }
 
     public boolean isEqual(@Nonnull Matrix4 mat) {
@@ -375,15 +509,15 @@ public class Matrix3 implements Cloneable {
             return true;
         if (mat == null)
             return false;
-        return MathUtil.approxEqual(m11, mat.m11) &&
-                MathUtil.approxEqual(m12, mat.m12) &&
-                MathUtil.approxEqual(m13, mat.m13) &&
-                MathUtil.approxEqual(m21, mat.m21) &&
-                MathUtil.approxEqual(m22, mat.m22) &&
-                MathUtil.approxEqual(m23, mat.m23) &&
-                MathUtil.approxEqual(m31, mat.m31) &&
-                MathUtil.approxEqual(m32, mat.m32) &&
-                MathUtil.approxEqual(m33, mat.m33);
+        return FMath.eq(m11, mat.m11) &&
+                FMath.eq(m12, mat.m12) &&
+                FMath.eq(m13, mat.m13) &&
+                FMath.eq(m21, mat.m21) &&
+                FMath.eq(m22, mat.m22) &&
+                FMath.eq(m23, mat.m23) &&
+                FMath.eq(m31, mat.m31) &&
+                FMath.eq(m32, mat.m32) &&
+                FMath.eq(m33, mat.m33);
     }
 
     /**
@@ -399,15 +533,15 @@ public class Matrix3 implements Cloneable {
 
         Matrix3 mat = (Matrix3) o;
 
-        if (!MathUtil.exactlyEqual(mat.m11, m11)) return false;
-        if (!MathUtil.exactlyEqual(mat.m12, m12)) return false;
-        if (!MathUtil.exactlyEqual(mat.m13, m13)) return false;
-        if (!MathUtil.exactlyEqual(mat.m21, m21)) return false;
-        if (!MathUtil.exactlyEqual(mat.m22, m22)) return false;
-        if (!MathUtil.exactlyEqual(mat.m23, m23)) return false;
-        if (!MathUtil.exactlyEqual(mat.m31, m31)) return false;
-        if (!MathUtil.exactlyEqual(mat.m32, m32)) return false;
-        return MathUtil.exactlyEqual(mat.m33, m33);
+        if (Float.floatToIntBits(mat.m11) != Float.floatToIntBits(m11)) return false;
+        if (Float.floatToIntBits(mat.m12) != Float.floatToIntBits(m12)) return false;
+        if (Float.floatToIntBits(mat.m13) != Float.floatToIntBits(m13)) return false;
+        if (Float.floatToIntBits(mat.m21) != Float.floatToIntBits(m21)) return false;
+        if (Float.floatToIntBits(mat.m22) != Float.floatToIntBits(m22)) return false;
+        if (Float.floatToIntBits(mat.m23) != Float.floatToIntBits(m23)) return false;
+        if (Float.floatToIntBits(mat.m31) != Float.floatToIntBits(m31)) return false;
+        if (Float.floatToIntBits(mat.m32) != Float.floatToIntBits(m32)) return false;
+        return Float.floatToIntBits(mat.m33) == Float.floatToIntBits(m33);
     }
 
     @Override

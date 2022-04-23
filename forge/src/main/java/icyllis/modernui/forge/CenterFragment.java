@@ -28,7 +28,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.material.MaterialDrawable;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.InputFilter;
 import icyllis.modernui.text.TextPaint;
@@ -177,7 +177,7 @@ public class CenterFragment extends Fragment {
                 input.setOnFocusChangeListener((__, hasFocus) -> {
                     if (!hasFocus) {
                         int radius = Integer.parseInt(input.getText().toString());
-                        radius = MathUtil.clamp(radius, Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
+                        radius = FMath.clamp(radius, Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
                         input.setText(Integer.toString(radius));
                         if (radius != Config.CLIENT.animationDuration.get()) {
                             Config.CLIENT.animationDuration.set(radius);
@@ -246,7 +246,7 @@ public class CenterFragment extends Fragment {
                 input.setOnFocusChangeListener((__, hasFocus) -> {
                     if (!hasFocus) {
                         int radius = Integer.parseInt(input.getText().toString());
-                        radius = MathUtil.clamp(radius, Client.BLUR_RADIUS_MIN, Client.BLUR_RADIUS_MAX);
+                        radius = FMath.clamp(radius, Client.BLUR_RADIUS_MIN, Client.BLUR_RADIUS_MAX);
                         input.setText(Integer.toString(radius));
                         if (radius != Config.CLIENT.blurRadius.get()) {
                             Config.CLIENT.blurRadius.set(radius);
@@ -798,7 +798,7 @@ public class CenterFragment extends Fragment {
         input.setOnFocusChangeListener((__, hasFocus) -> {
             if (!hasFocus) {
                 int val = Integer.parseInt(input.getText().toString());
-                val = MathUtil.clamp(val, 0, max);
+                val = FMath.clamp(val, 0, max);
                 input.setText(Integer.toString(val));
                 if (val != config.get()) {
                     config.set(val);
@@ -861,10 +861,11 @@ public class CenterFragment extends Fragment {
             canvas.drawRoundRect(bounds.left + inner, bounds.top + inner, bounds.right - inner,
                     bounds.bottom - inner, mRadius, paint);
             paint.setStyle(Paint.STROKE);
-            paint.setColors(THEME_COLOR, THEME_COLOR_2, THEME_COLOR_2, THEME_COLOR);
+            paint.setColors(THEME_COLOR, THEME_COLOR_2, THEME_COLOR, THEME_COLOR_2);
             paint.setStrokeWidth(mStrokeWidth);
             canvas.drawRoundRect(bounds.left + inner, bounds.top + inner, bounds.right - inner,
                     bounds.bottom - inner, mRadius, paint);
+            paint.drop();
         }
 
         @Override
@@ -885,7 +886,7 @@ public class CenterFragment extends Fragment {
 
         @Override
         public void draw(@Nonnull Canvas canvas) {
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setColor(0xc0606060);
             canvas.drawRect(getBounds(), paint);
         }
@@ -902,7 +903,7 @@ public class CenterFragment extends Fragment {
 
         @Override
         public void draw(@Nonnull Canvas canvas) {
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setColor(0x80a0a0a0);
             paint.setAlpha(MaterialDrawable.modulateAlpha(paint.getAlpha(), mAlpha));
             if (paint.getAlpha() != 0) {
