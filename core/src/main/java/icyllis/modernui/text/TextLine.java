@@ -947,7 +947,7 @@ public class TextLine {
             }
 
             if (wp.bgColor != 0) {
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
 
                 paint.setColor(wp.bgColor);
                 paint.setStyle(Paint.FILL);
@@ -960,14 +960,14 @@ public class TextLine {
                 if ((flags & TextPaint.UNDERLINE_FLAG) != 0) {
                     float thickness = piece.getAscent() / 12f;
                     float strokeTop = y + piece.getDescent() / 3f;
-                    Paint paint = Paint.take();
+                    Paint paint = Paint.get();
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }
                 if ((flags & TextPaint.STRIKETHROUGH_FLAG) != 0) {
                     float thickness = piece.getAscent() / 12f;
                     float strokeTop = y + piece.getAscent() / -2f;
-                    Paint paint = Paint.take();
+                    Paint paint = Paint.get();
                     paint.setColor(wp.getColor());
                     c.drawRect(leftX, strokeTop, rightX, strokeTop + thickness, paint);
                 }

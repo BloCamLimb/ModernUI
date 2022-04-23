@@ -69,7 +69,7 @@ public class MaterialRadioButton extends RadioButton {
             final Rect r = getBounds();
             float cx = r.exactCenterX();
             float cy = r.exactCenterY();
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setColor(mColor);
             paint.setAlpha(modulateAlpha(paint.getAlpha(), mAlpha));
             if (paint.getAlpha() != 0) {
@@ -106,7 +106,7 @@ public class MaterialRadioButton extends RadioButton {
             final Rect r = getBounds();
             float cx = r.exactCenterX();
             float cy = r.exactCenterY();
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setColor(mColor);
             paint.setAlpha(modulateAlpha(paint.getAlpha(), mAlpha));
             if (paint.getAlpha() != 0) {

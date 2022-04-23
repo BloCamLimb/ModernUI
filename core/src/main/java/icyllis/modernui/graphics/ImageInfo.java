@@ -22,7 +22,6 @@ import org.intellij.lang.annotations.MagicConstant;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
-import javax.annotation.concurrent.Immutable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
@@ -40,7 +39,6 @@ import java.lang.annotation.RetentionPolicy;
  * into the int.
  */
 @SuppressWarnings({"MagicConstant", "unused"})
-@Immutable
 public final class ImageInfo {
 
     /**
@@ -260,8 +258,8 @@ public final class ImageInfo {
         };
     }
 
-    private final int mWidth;
-    private final int mHeight;
+    private int mWidth;
+    private int mHeight;
     private final int mColorInfo;
 
     /**
@@ -314,6 +312,14 @@ public final class ImageInfo {
         mWidth = width;
         mHeight = height;
         mColorInfo = colorInfo;
+    }
+
+    /**
+     * Internal resize for optimization purposes.
+     */
+    void resize(int width, int height) {
+        mWidth = width;
+        mHeight = height;
     }
 
     /**

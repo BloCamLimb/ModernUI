@@ -20,7 +20,7 @@ package icyllis.modernui.graphics.font;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
@@ -212,7 +212,7 @@ public class LayoutCache {
         }
 
         private int getMemoryUsage() {
-            return MathUtil.roundUp(12 + 16 + 8 + 8 + 4 + 4 + 8 + 1 + (mChars.length << 1), 8);
+            return FMath.roundUp(12 + 16 + 8 + 8 + 4 + 4 + 8 + 1 + (mChars.length << 1), 8);
         }
     }
 

@@ -177,7 +177,7 @@ public class TestPauseFragment extends Fragment {
             float stroke = mRadius * 0.25f;
             float start = stroke * 0.5f;
 
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setRGBA(0, 0, 0, 180);
             canvas.drawRoundRect(b.left + start, b.top + start, b.right - start, b.bottom - start, mRadius, paint);
             paint.setStyle(Paint.STROKE);
@@ -240,7 +240,7 @@ public class TestPauseFragment extends Fragment {
             Rect b = getBounds();
             float start = mRadius * 0.5f;
 
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setStyle(Paint.STROKE);
             paint.setStrokeWidth(mRadius);
             paint.setColor(NETWORK_COLOR);
@@ -268,7 +268,7 @@ public class TestPauseFragment extends Fragment {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             if (!isHovered())
                 paint.setRGBA(192, 192, 192, 255);
             canvas.drawImage(mImage, mSrcLeft, 352, mSrcLeft + 32, 384, 0, 0, getWidth(), getHeight(), paint);
@@ -341,7 +341,7 @@ public class TestPauseFragment extends Fragment {
 
         @Override
         protected void onDraw(@Nonnull Canvas canvas) {
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setColor(NETWORK_COLOR);
             paint.setAlpha(192);
             paint.setStrokeWidth(mSize / 8f);

@@ -92,10 +92,34 @@ public class RectF {
     }
 
     /**
-     * Returns true if the rectangle is empty (left >= right or top >= bottom)
+     * Returns true if left is equal to or greater than right, or if top is equal
+     * to or greater than bottom. Call sort() to reverse rectangles with negative
+     * width() or height().
+     *
+     * @return true if width() or height() are zero or negative
      */
     public final boolean isEmpty() {
-        return left >= right || top >= bottom;
+        return !(left < right && top < bottom);
+    }
+
+    /**
+     * Returns true if left is equal to or less than right, or if top is equal
+     * to or less than bottom. Call sort() to reverse rectangles with negative
+     * width() or height().
+     *
+     * @return true if width() or height() are zero or positive
+     */
+    public final boolean isSorted() {
+        return left <= right && top <= bottom;
+    }
+
+    /**
+     * Returns true if all values in the rectangle are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    public final boolean isFinite() {
+        return Float.isFinite(left) && Float.isFinite(top) && Float.isFinite(right) && Float.isFinite(bottom);
     }
 
     /**
@@ -227,12 +251,12 @@ public class RectF {
     /**
      * Returns true if (x,y) is inside the rectangle. The left and top are
      * considered to be inside, while the right and bottom are not. This means
-     * that for a x,y to be contained: left <= x < right and top <= y < bottom.
+     * that for a (x,y) to be contained: left <= x < right and top <= y < bottom.
      * An empty rectangle never contains any point.
      *
      * @param x The X coordinate of the point being tested for containment
      * @param y The Y coordinate of the point being tested for containment
-     * @return true iff (x,y) are contained by the rectangle, where containment
+     * @return true if (x,y) are contained by the rectangle, where containment
      * means left <= x < right and top <= y < bottom
      */
     public boolean contains(float x, float y) {
@@ -241,7 +265,7 @@ public class RectF {
     }
 
     /**
-     * Returns true iff the 4 specified sides of a rectangle are inside or equal
+     * Returns true if the 4 specified sides of a rectangle are inside or equal
      * to this rectangle. i.e. is this rectangle a superset of the specified
      * rectangle. An empty rectangle never contains another rectangle.
      *
@@ -249,7 +273,7 @@ public class RectF {
      * @param top    The top of the rectangle being tested for containment
      * @param right  The right side of the rectangle being tested for containment
      * @param bottom The bottom of the rectangle being tested for containment
-     * @return true iff the the 4 specified sides of a rectangle are inside or
+     * @return true if the 4 specified sides of a rectangle are inside or
      * equal to this rectangle
      */
     public boolean contains(float left, float top, float right, float bottom) {
@@ -261,11 +285,11 @@ public class RectF {
     }
 
     /**
-     * Returns true iff the specified rectangle r is inside or equal to this
+     * Returns true if the specified rectangle r is inside or equal to this
      * rectangle. An empty rectangle never contains another rectangle.
      *
      * @param r The rectangle being tested for containment.
-     * @return true iff the specified rectangle r is inside or equal to this
+     * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
     public boolean contains(@Nonnull RectF r) {
@@ -337,7 +361,7 @@ public class RectF {
      *
      * @param a The first rectangle being intersected with
      * @param b The second rectangle being intersected with
-     * @return true iff the two specified rectangles intersect. If they do, set
+     * @return true if the two specified rectangles intersect. If they do, set
      * this rectangle to that intersection. If they do not, return
      * false and do not change this rectangle.
      */
@@ -364,7 +388,7 @@ public class RectF {
      * @param right  The right side of the rectangle being tested for
      *               intersection
      * @param bottom The bottom of the rectangle being tested for intersection
-     * @return true iff the specified rectangle intersects this rectangle. In
+     * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
     public boolean intersects(float left, float top, float right,
@@ -374,13 +398,13 @@ public class RectF {
     }
 
     /**
-     * Returns true iff the two specified rectangles intersect. In no event are
+     * Returns true if the two specified rectangles intersect. In no event are
      * either of the rectangles modified. To record the intersection,
      * use intersect() or setIntersect().
      *
      * @param a The first rectangle being tested for intersection
      * @param b The second rectangle being tested for intersection
-     * @return true iff the two specified rectangles intersect. In no event are
+     * @return true if the two specified rectangles intersect. In no event are
      * either of the rectangles modified.
      */
     public static boolean intersects(@Nonnull RectF a, @Nonnull RectF b) {
@@ -498,10 +522,10 @@ public class RectF {
 
     @Override
     public int hashCode() {
-        int result = (left != +0.0f ? Float.floatToIntBits(left) : 0);
-        result = 31 * result + (top != +0.0f ? Float.floatToIntBits(top) : 0);
-        result = 31 * result + (right != +0.0f ? Float.floatToIntBits(right) : 0);
-        result = 31 * result + (bottom != +0.0f ? Float.floatToIntBits(bottom) : 0);
+        int result = (left != 0.0f ? Float.floatToIntBits(left) : 0);
+        result = 31 * result + (top != 0.0f ? Float.floatToIntBits(top) : 0);
+        result = 31 * result + (right != 0.0f ? Float.floatToIntBits(right) : 0);
+        result = 31 * result + (bottom != 0.0f ? Float.floatToIntBits(bottom) : 0);
         return result;
     }
 

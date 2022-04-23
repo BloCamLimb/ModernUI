@@ -208,7 +208,7 @@ public class Quaternion {
      * @return the magnitude of this quaternion
      */
     public float length() {
-        return MathUtil.sqrt(w * w + x * x + y * y + z * z);
+        return FMath.sqrt(w * w + x * x + y * y + z * z);
     }
 
     public float lengthSquared() {
@@ -237,7 +237,7 @@ public class Quaternion {
      */
     public void inverse() {
         final float sq = lengthSquared();
-        if (MathUtil.approxEqual(sq, 1.0f)) {
+        if (FMath.eq(sq, 1.0f)) {
             // equal to invert w component
             conjugate();
         } else {
@@ -256,7 +256,7 @@ public class Quaternion {
      * @return {@code true} if is normalized, {@code false} otherwise
      */
     public boolean isNormalized() {
-        return MathUtil.approxEqual(lengthSquared(), 1.0f);
+        return FMath.eq(lengthSquared(), 1.0f);
     }
 
     /**
@@ -267,7 +267,7 @@ public class Quaternion {
         if (sq < 1.0e-6f) {
             setIdentity();
         } else {
-            final float invNorm = 1.0f / MathUtil.sqrt(sq);
+            final float invNorm = 1.0f / FMath.sqrt(sq);
             x *= invNorm;
             y *= invNorm;
             z *= invNorm;
@@ -283,7 +283,7 @@ public class Quaternion {
         if (sq < 1.0e-6f) {
             setIdentity();
         } else {
-            final float invNorm = MathUtil.fastInvSqrt(sq);
+            final float invNorm = FMath.fastInvSqrt(sq);
             x *= invNorm;
             y *= invNorm;
             z *= invNorm;
@@ -307,7 +307,7 @@ public class Quaternion {
      * @return {@code true} if this quaternion is identity.
      */
     public boolean isIdentity() {
-        return MathUtil.approxZero(x, y, z) && MathUtil.approxEqual(w, 1.0f);
+        return FMath.zero(x, y, z) && FMath.eq(w, 1.0f);
     }
 
     /**
@@ -365,13 +365,13 @@ public class Quaternion {
             set(a);
         } else if (t >= 1.0f) {
             set(b);
-        } else if (MathUtil.approxZero(a.lengthSquared())) {
-            if (MathUtil.approxZero(b.lengthSquared())) {
+        } else if (FMath.zero(a.lengthSquared())) {
+            if (FMath.zero(b.lengthSquared())) {
                 setIdentity();
             } else {
                 set(b);
             }
-        } else if (MathUtil.approxZero(b.lengthSquared())) {
+        } else if (FMath.zero(b.lengthSquared())) {
             set(a);
         } else {
             float cosHalfAngle = a.dot(b);
@@ -389,15 +389,15 @@ public class Quaternion {
                     negative = true;
                 }
 
-                final float halfAngle = MathUtil.acos(cosHalfAngle);
-                float sinHalfAngle = MathUtil.sin(halfAngle);
+                final float halfAngle = FMath.acos(cosHalfAngle);
+                float sinHalfAngle = FMath.sin(halfAngle);
                 if (Math.abs(sinHalfAngle) < 0.001f) {
                     // possible?
                     s = t = 0.5f;
                 } else {
                     sinHalfAngle = 1.0f / sinHalfAngle;
-                    s = MathUtil.sin((1.0f - t) * halfAngle) * sinHalfAngle;
-                    t = MathUtil.sin(t * halfAngle) * sinHalfAngle;
+                    s = FMath.sin((1.0f - t) * halfAngle) * sinHalfAngle;
+                    t = FMath.sin(t * halfAngle) * sinHalfAngle;
                     if (negative)
                         t = -t;
                 }
@@ -434,11 +434,11 @@ public class Quaternion {
         if (angle == 0.0f)
             return;
         angle *= 0.5f;
-        final float sin = MathUtil.sin(angle);
+        final float sin = FMath.sin(angle);
         final float qx = axisX * sin;
         final float qy = axisY * sin;
         final float qz = axisZ * sin;
-        final float qw = MathUtil.cos(angle);
+        final float qw = FMath.cos(angle);
         set(x * qw + y * qz - z * qy + w * qx,
                 -x * qz + y * qw + z * qx + w * qy,
                 x * qy - y * qx + z * qw + w * qz,
@@ -454,8 +454,8 @@ public class Quaternion {
         if (angle == 0.0f)
             return;
         angle *= 0.5f;
-        final float sin = MathUtil.sin(angle);
-        final float cos = MathUtil.cos(angle);
+        final float sin = FMath.sin(angle);
+        final float cos = FMath.cos(angle);
         set(x * cos + w * sin,
                 y * cos + z * sin,
                 -y * sin + z * cos,
@@ -471,8 +471,8 @@ public class Quaternion {
         if (angle == 0.0f)
             return;
         angle *= 0.5f;
-        final float sin = MathUtil.sin(angle);
-        final float cos = MathUtil.cos(angle);
+        final float sin = FMath.sin(angle);
+        final float cos = FMath.cos(angle);
         set(x * cos - z * sin,
                 y * cos + w * sin,
                 x * sin + z * cos,
@@ -488,8 +488,8 @@ public class Quaternion {
         if (angle == 0.0f)
             return;
         angle *= 0.5f;
-        final float sin = MathUtil.sin(angle);
-        final float cos = MathUtil.cos(angle);
+        final float sin = FMath.sin(angle);
+        final float cos = FMath.cos(angle);
         set(x * cos + y * sin,
                 -x * sin + y * cos,
                 z * cos + w * sin,
@@ -541,15 +541,15 @@ public class Quaternion {
      * @param angle rotation angle in radians
      */
     public void setFromAxisAngle(float axisX, float axisY, float axisZ, float angle) {
-        if (MathUtil.approxZero(axisX, axisY, axisZ))
+        if (FMath.zero(axisX, axisY, axisZ))
             setIdentity();
         else {
             angle *= 0.5f;
-            final float sin = MathUtil.sin(angle);
+            final float sin = FMath.sin(angle);
             x = axisX * sin;
             y = axisY * sin;
             z = axisZ * sin;
-            w = MathUtil.cos(angle);
+            w = FMath.cos(angle);
         }
     }
 
@@ -561,19 +561,19 @@ public class Quaternion {
      * @param rotationZ the Euler roll angle in radians. (rotation about the Z axis)
      */
     public void setFromEulerAngles(float rotationX, float rotationY, float rotationZ) {
-        if (MathUtil.approxZero(rotationX, rotationY, rotationZ))
+        if (FMath.zero(rotationX, rotationY, rotationZ))
             setIdentity();
         else {
             rotationX *= 0.5f;
             rotationY *= 0.5f;
             rotationZ *= 0.5f;
 
-            final float sx = MathUtil.sin(rotationX);
-            final float cx = MathUtil.cos(rotationX);
-            final float sy = MathUtil.sin(rotationY);
-            final float cy = MathUtil.cos(rotationY);
-            final float sz = MathUtil.sin(rotationZ);
-            final float cz = MathUtil.cos(rotationZ);
+            final float sx = FMath.sin(rotationX);
+            final float cx = FMath.cos(rotationX);
+            final float sy = FMath.sin(rotationY);
+            final float cy = FMath.cos(rotationY);
+            final float sz = FMath.sin(rotationZ);
+            final float cz = FMath.cos(rotationZ);
 
             final float cc = cy * cz;
             final float ss = sy * sz;
@@ -595,17 +595,17 @@ public class Quaternion {
      */
     public float toAxisAngle(@Nonnull Vector3 axis) {
         float l = x * x + y * y + z * z;
-        if (MathUtil.approxZero(l)) {
+        if (FMath.zero(l)) {
             axis.x = 1.0f;
             axis.y = 0.0f;
             axis.z = 0.0f;
             return 0.0f;
         }
-        l = 1.0f / MathUtil.sqrt(l);
+        l = 1.0f / FMath.sqrt(l);
         axis.x = x * l;
         axis.y = y * l;
         axis.z = z * l;
-        return MathUtil.acos(w) * 2.0f;
+        return FMath.acos(w) * 2.0f;
     }
 
     /**
@@ -618,17 +618,17 @@ public class Quaternion {
         if (axis.length < 3)
             throw new IllegalArgumentException("The array length must be at least 3");
         float l = x * x + y * y + z * z;
-        if (MathUtil.approxZero(l)) {
+        if (FMath.zero(l)) {
             axis[0] = 1.0f;
             axis[1] = 0.0f;
             axis[2] = 0.0f;
             return 0.0f;
         }
-        l = 1.0f / MathUtil.sqrt(l);
+        l = 1.0f / FMath.sqrt(l);
         axis[0] = x * l;
         axis[1] = y * l;
         axis[2] = z * l;
-        return MathUtil.acos(w) * 2.0f;
+        return FMath.acos(w) * 2.0f;
     }
 
     /**
@@ -647,16 +647,16 @@ public class Quaternion {
 
         if (f > 0.499f * sq) {
             result.x = 0.0f;
-            result.y = 2.0f * MathUtil.atan2(x, w);
-            result.z = MathUtil.PI_DIV_2;
+            result.y = 2.0f * FMath.atan2(x, w);
+            result.z = FMath.PI_DIV_2;
         } else if (f < -0.499f * sq) {
             result.x = 0.0f;
-            result.y = -2.0f * MathUtil.atan2(x, w);
-            result.z = -MathUtil.PI_DIV_2;
+            result.y = -2.0f * FMath.atan2(x, w);
+            result.z = -FMath.PI_DIV_2;
         } else {
-            result.x = MathUtil.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
-            result.y = MathUtil.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
-            result.z = MathUtil.asin(2.0f * f / sq);
+            result.x = FMath.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
+            result.y = FMath.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
+            result.z = FMath.asin(2.0f * f / sq);
         }
     }
 
@@ -677,16 +677,16 @@ public class Quaternion {
 
         if (f > 0.499f * sq) {
             angles[0] = 0.0f;
-            angles[1] = 2.0f * MathUtil.atan2(x, w);
-            angles[2] = MathUtil.PI_DIV_2;
+            angles[1] = 2.0f * FMath.atan2(x, w);
+            angles[2] = FMath.PI_DIV_2;
         } else if (f < -0.499f * sq) {
             angles[0] = 0.0f;
-            angles[1] = -2.0f * MathUtil.atan2(x, w);
-            angles[2] = -MathUtil.PI_DIV_2;
+            angles[1] = -2.0f * FMath.atan2(x, w);
+            angles[2] = -FMath.PI_DIV_2;
         } else {
-            angles[0] = MathUtil.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
-            angles[1] = MathUtil.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
-            angles[2] = MathUtil.asin(2.0f * f / sq);
+            angles[0] = FMath.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
+            angles[1] = FMath.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
+            angles[2] = FMath.asin(2.0f * f / sq);
         }
     }
 
@@ -703,7 +703,7 @@ public class Quaternion {
             return Matrix3.identity();
         }
         final float is;
-        if (MathUtil.approxEqual(sq, 1.0f)) {
+        if (FMath.eq(sq, 1.0f)) {
             is = 2.0f;
         } else {
             is = 2.0f / sq;
@@ -749,7 +749,7 @@ public class Quaternion {
             return Matrix4.identity();
         }
         final float is;
-        if (MathUtil.approxEqual(sq, 1.0f)) {
+        if (FMath.eq(sq, 1.0f)) {
             is = 2.0f;
         } else {
             is = 2.0f / sq;
@@ -801,7 +801,7 @@ public class Quaternion {
             return out;
         }
         final float inv;
-        if (MathUtil.approxEqual(sq, 1.0f)) {
+        if (FMath.eq(sq, 1.0f)) {
             inv = 2.0f;
         } else {
             inv = 2.0f / sq;
@@ -851,7 +851,7 @@ public class Quaternion {
             return out;
         }
         final float inv;
-        if (MathUtil.approxEqual(sq, 1.0f)) {
+        if (FMath.eq(sq, 1.0f)) {
             inv = 2.0f;
         } else {
             inv = 2.0f / sq;
@@ -900,10 +900,10 @@ public class Quaternion {
      */
     public boolean equivalent(@Nonnull Quaternion q) {
         if (this == q) return true;
-        return MathUtil.approxEqual(x, q.x) &&
-                MathUtil.approxEqual(y, q.y) &&
-                MathUtil.approxEqual(z, q.z) &&
-                MathUtil.approxEqual(w, q.w);
+        return FMath.eq(x, q.x) &&
+                FMath.eq(y, q.y) &&
+                FMath.eq(z, q.z) &&
+                FMath.eq(w, q.w);
     }
 
     @Override
@@ -911,12 +911,12 @@ public class Quaternion {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Quaternion that = (Quaternion) o;
+        Quaternion quat = (Quaternion) o;
 
-        if (!MathUtil.exactlyEqual(that.x, x)) return false;
-        if (!MathUtil.exactlyEqual(that.y, y)) return false;
-        if (!MathUtil.exactlyEqual(that.z, z)) return false;
-        return MathUtil.exactlyEqual(that.w, w);
+        if (Float.floatToIntBits(quat.x) != Float.floatToIntBits(x)) return false;
+        if (Float.floatToIntBits(quat.y) != Float.floatToIntBits(y)) return false;
+        if (Float.floatToIntBits(quat.z) != Float.floatToIntBits(z)) return false;
+        return Float.floatToIntBits(quat.w) == Float.floatToIntBits(w);
     }
 
     @Override
@@ -930,7 +930,7 @@ public class Quaternion {
 
     @Override
     public String toString() {
-        return "Quaternion[" + "w: " + w +
+        return "Quat[" + "w: " + w +
                 ", x: " + x +
                 ", y: " + y +
                 ", z: " + z +

@@ -18,5 +18,5 @@
 
 package icyllis.modernui.graphics;
 
-public class DirectContext {
+public final class ContextOptions {
 }

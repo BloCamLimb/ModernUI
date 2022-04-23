@@ -19,43 +19,143 @@
 package icyllis.modernui.graphics;
 
 import icyllis.modernui.annotation.ColorInt;
+import icyllis.modernui.util.Pool;
+import icyllis.modernui.util.Pools;
 import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
 /**
- * The Paint class holds the style and color information about how to draw
- * geometries and images.
+ * A Paint collects all options outside the Canvas clip and Canvas matrix,
+ * such as style and color information, applied when drawing geometries and images.
+ * <p>
+ * A Paint also collects effects and filters that describe single-pass and multiple-pass
+ * algorithms that alter the drawing geometry, color, and transparency. For instance,
+ * Paint does not directly implement dashing or blur, but contains the objects that do so.
+ * <p>
+ * Multisampling anti-aliasing (MSAA) is always enabled.
  */
 public class Paint {
 
     private static final ThreadLocal<Paint> TLS = ThreadLocal.withInitial(Paint::new);
+    private static final Pool<Paint> BAG = Pools.concurrent(4);
+
+    /**
+     * The Style specifies if the primitive being drawn is filled, stroked, or
+     * both (in the same color). The default is FILL.
+     */
+    @MagicConstant(intValues = {FILL, STROKE, STROKE_AND_FILL, FILL_AND_STROKE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Style {
+    }
 
     /**
      * Geometry drawn with this style will be filled, ignoring all
      * stroke-related settings in the paint.
      */
-    public static final int FILL = 0x0;
+    public static final int FILL = 0x00;
 
     /**
      * Geometry drawn with this style will be stroked, respecting
      * the stroke-related fields on the paint.
      */
-    public static final int STROKE = 0x1;
+    public static final int STROKE = 0x01;
 
-    private static final int STYLE_MASK = 0x3;
-    private static final int GRADIENT_MASK = 0x4;
-    private static final int BLEND_MODE_SHIFT = 4;
+    /**
+     * Geometry (path) drawn with this style will be both filled and stroked
+     * at the same time, respecting the stroke-related fields on the paint.
+     * This share all paint attributes; for instance, they are drawn
+     * with the same color. Use this to avoid hitting the same pixels twice
+     * with a stroke draw and a fill draw.
+     */
+    public static final int STROKE_AND_FILL = 0x02;
+    public static final int FILL_AND_STROKE = 0x02; // alias
+
+    private static final int STYLE_MASK = 0x03;
+
+    /**
+     * The Cap specifies the treatment for the beginning and ending of
+     * stroked lines and paths. The default is ROUND.
+     */
+    @MagicConstant(intValues = {CAP_BUTT, CAP_ROUND, CAP_SQUARE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Cap {
+    }
+
+    /**
+     * The stroke ends with the path, and does not project beyond it.
+     */
+    public static final int CAP_BUTT = 0x00;
+
+    /**
+     * The stroke projects out as a semicircle, with the center at the
+     * end of the path.
+     */
+    public static final int CAP_ROUND = 0x04;
+
+    /**
+     * The stroke projects out as a square, with the center at the end
+     * of the path.
+     */
+    public static final int CAP_SQUARE = 0x08;
+
+    private static final int CAP_MASK = 0x0C;
+
+    /**
+     * The Join specifies the treatment where lines and curve segments
+     * join on a stroked path. The default is ROUND.
+     * <p>
+     * Join affects the four corners of a stroked rectangle, and the connected segments in a
+     * stroked path.
+     * <p>
+     * Choose miter join to draw sharp corners. Choose round join to draw a circle with a
+     * radius equal to the stroke width on top of the corner. Choose bevel join to minimally
+     * connect the thick strokes.
+     * <p>
+     * The fill path constructed to describe the stroked path respects the join setting but may
+     * not contain the actual join. For instance, a fill path constructed with round joins does
+     * not necessarily include circles at each connected segment.
+     */
+    @MagicConstant(intValues = {JOIN_MITER, JOIN_ROUND, JOIN_BEVEL})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface Join {
+    }
+
+    /**
+     * The outer edges of a join meet at a sharp angle
+     */
+    public static final int JOIN_MITER = 0x00;
+
+    /**
+     * The outer edges of a join meet in a circular arc.
+     */
+    public static final int JOIN_ROUND = 0x10;
+
+    /**
+     * The outer edges of a join meet with a straight line
+     */
+    public static final int JOIN_BEVEL = 0x20;
+
+    private static final int JOIN_MASK = 0x30;
+
+    private static final int GRADIENT_MASK = 0x40;
+
+    private static final int BLEND_MODE_SHIFT = 8;
     private static final int BLEND_MODE_MASK = 0xFF << BLEND_MODE_SHIFT;
 
-    private static final int DEFAULT_FLAGS = FILL | (BlendMode.toValue(BlendMode.SRC_OVER) << BLEND_MODE_SHIFT);
+    private static final int DEFAULT_FLAGS = FILL | CAP_ROUND | JOIN_ROUND |
+            BlendMode.toValue(BlendMode.SRC_OVER) << BLEND_MODE_SHIFT;
 
+    // may be replaced by float values
     private int mColor;
     private int mFlags;
     private float mStrokeWidth;
-    private float mSmoothRadius;
+    private float mFeatherRadius;
 
+    // may be removed in the future
     private int[] mColors;
 
     /**
@@ -78,35 +178,25 @@ public class Paint {
         mColor = paint.mColor;
         mFlags = paint.mFlags;
         mStrokeWidth = paint.mStrokeWidth;
-        mSmoothRadius = paint.mSmoothRadius;
+        mFeatherRadius = paint.mFeatherRadius;
         if (paint.mColors != null) {
             setColors(paint.mColors);
         }
     }
 
     /**
-     * Set the paint to defaults.
-     */
-    public void reset() {
-        mColor = ~0;
-        mFlags = DEFAULT_FLAGS;
-        mStrokeWidth = 2;
-        mSmoothRadius = 2;
-    }
-
-    /**
-     * <b>WARNING: This method may be abused.</b>
+     * <b>WARNING: This method may be abused.</b> Use {@link #take()} instead.
      * <p>
      * Returns a thread-local paint, the paint will be reset before return.
      * This method is designed for temporary operations that avoid creating
-     * new objects, for a drawing operation that is not after this method or
-     * {@link #reset()}, the state of the paint may be modified by system.
+     * new objects. For a {@link Canvas} draw call that is not after this method
+     * or {@link #reset()}, the state of the paint is undefined.
      * <p>
      * For example:
      * <pre>{@code
      * @Override
      * protected void onDraw(Canvas canvas) {
-     *     var paint = Paint.take();
+     *     var paint = Paint.get();
      *     paint.setColor(mColorA);
      *     canvas.drawRect(mRectA, paint);
      *
@@ -121,12 +211,56 @@ public class Paint {
      * modify the state of the Paint instance obtained by this method.
      *
      * @return a thread-local paint
+     * @see #take()
      */
     @Nonnull
-    public static Paint take() {
+    public static Paint get() {
         Paint paint = TLS.get();
         paint.reset();
         return paint;
+    }
+
+    /**
+     * Returns a paint from a shared pool, the paint will be reset before return.
+     * This method is designed for temporary operations that avoid creating
+     * new objects. A {@link #drop()} is expected (not strictly necessary) after use.
+     * <p>
+     * For example:
+     * <pre>{@code
+     * @Override
+     * protected void onDraw(Canvas canvas) {
+     *     var paint = Paint.take();
+     *     paint.setColor(mColorA);
+     *     canvas.drawRect(mRectA, paint);
+     *
+     *     doSomeActions(); // calling any other methods will not affect this
+     *
+     *     paint.setColor(mColorB);
+     *     canvas.drawRect(mRectB, paint);
+     *     paint.drop(); // recycle it before method return
+     * }
+     * }</pre>
+     *
+     * @return a pooled paint object
+     * @see #drop()
+     */
+    @Nonnull
+    public static Paint take() {
+        Paint paint = BAG.acquire();
+        if (paint == null)
+            return new Paint();
+        paint.reset();
+        return paint;
+    }
+
+    /**
+     * Set the paint to defaults.
+     */
+    public void reset() {
+        mColor = ~0;
+        mFlags = DEFAULT_FLAGS;
+        mStrokeWidth = 2;
+        mFeatherRadius = 2;
     }
 
     /**
@@ -217,13 +351,13 @@ public class Paint {
 
     /**
      * Set the colors in ARGB and enable gradient mode. When enabled, a primitive should
-     * use the colors sequentially (in Z shape), and {@link #setColor(int)} is ignored.
+     * use the colors sequentially, and {@link #setColor(int)} is ignored.
      * You can use this to make gradient effect or edge fading effect in one pass,
      * without post-processing shaders.
      * <p>
      * A Paint object has a backing array storing these values, then a copy of the parameter
-     * array will be used. The colors are used in the order of top left, top right, bottom left
-     * and bottom right, like letter "Z".
+     * array will be used. The colors are used in the order of top left, top right, bottom right
+     * and bottom left.
      * <p>
      * If the length of the given array is less than 4, then rest color values will use the
      * last color in the given array. If greater than 4, then rest values are ignored.
@@ -236,9 +370,6 @@ public class Paint {
      * @see #isGradient()
      */
     public void setColors(@ColorInt int[] colors) {
-        if (colors == null) {
-            return;
-        }
         int len = colors.length;
         if (len == 0) {
             return;
@@ -259,25 +390,27 @@ public class Paint {
 
     /**
      * Set the colors in ARGB and enable gradient mode. When enabled, a primitive should
-     * use the colors sequentially (in Z shape), and {@link #setColor(int)} is ignored.
+     * use the colors sequentially, and {@link #setColor(int)} is ignored.
      * You can use this to make gradient effect or edge fading effect in one pass,
      * without post-processing shaders.
+     * <p>
+     * The colors are used in the order of top left, top right, bottom right and bottom left.
      *
      * @param tl the top-left color
      * @param tr the top-right color
-     * @param bl the bottom-left color
      * @param br the bottom-right color
+     * @param bl the bottom-left color
      * @see #setColors(int[])
      * @see #isGradient()
      */
-    public void setColors(@ColorInt int tl, @ColorInt int tr, @ColorInt int bl, @ColorInt int br) {
+    public void setColors(@ColorInt int tl, @ColorInt int tr, @ColorInt int br, @ColorInt int bl) {
         if (mColors == null) {
             mColors = new int[4];
         }
         mColors[0] = tl;
         mColors[1] = tr;
-        mColors[2] = bl;
-        mColors[3] = br;
+        mColors[2] = br;
+        mColors[3] = bl;
         mFlags |= GRADIENT_MASK;
     }
 
@@ -318,8 +451,49 @@ public class Paint {
      *
      * @param style the new style to set in the paint
      */
-    public void setStyle(@MagicConstant(intValues = {FILL, STROKE}) int style) {
-        mFlags = (mFlags & ~STYLE_MASK) | style;
+    public void setStyle(@Style int style) {
+        mFlags = (mFlags & ~STYLE_MASK) | (style & STYLE_MASK);
+    }
+
+    /**
+     * Return the paint's Cap, controlling how the start and end of stroked
+     * lines and paths are treated, except where noted.
+     *
+     * @return the line cap style for the paint, used whenever the paint's
+     * style is Stroke or StrokeAndFill.
+     */
+    public int getStrokeCap() {
+        return mFlags & CAP_MASK;
+    }
+
+    /**
+     * Set the paint's Cap, controlling how the start and end of stroked
+     * lines and paths are treated, except where noted.
+     *
+     * @param cap set the paint's line cap style, used whenever the paint's
+     *            style is Stroke or StrokeAndFill.
+     */
+    public void setStrokeCap(@Cap int cap) {
+        mFlags = (mFlags & ~CAP_MASK) | (cap & CAP_MASK);
+    }
+
+    /**
+     * Return the paint's stroke join type.
+     *
+     * @return the paint's Join.
+     */
+    public int getStrokeJoin() {
+        return mFlags & JOIN_MASK;
+    }
+
+    /**
+     * Set the paint's Join.
+     *
+     * @param join set the paint's Join, used whenever the paint's style is
+     *             Stroke or StrokeAndFill.
+     */
+    public void setStrokeJoin(@Join int join) {
+        mFlags = (mFlags & ~JOIN_MASK) | (join & JOIN_MASK);
     }
 
     /**
@@ -327,8 +501,10 @@ public class Paint {
      * <p>
      * When a round cap is installed, the half of the stroke width will be used as
      * the stroke radius by analytic geometry.
+     * <p>
+     * A value of 0 will treat as hairlines (primitive).
      *
-     * @return the paint's stroke width, used whenever the paint's style is {@link Paint#STROKE}
+     * @return the paint's stroke width, used whenever the paint's style is Stroke or StrokeAndFill.
      */
     public float getStrokeWidth() {
         return mStrokeWidth;
@@ -339,37 +515,48 @@ public class Paint {
      * <p>
      * When a round cap is installed, the half of the stroke width will be used as
      * the stroke radius by analytic geometry.
+     * <p>
+     * Negative values are silently ignored. A value of 0 will treat as hairlines (primitive).
      *
-     * @param width set the paint's stroke width, used whenever the paint's
-     *              style is {@link Paint#STROKE}
+     * @param width set the paint's stroke width, used whenever the paint's style is Stroke or StrokeAndFill.
      */
     public void setStrokeWidth(float width) {
-        mStrokeWidth = Math.max(0, width);
+        if (width < 0) {
+            return;
+        }
+        mStrokeWidth = width;
     }
 
     /**
-     * Return the current smooth radius. The default value is 2.0 px.
+     * Return the current feather radius. The default value is 2.0 px.
      * <p>
-     * Smooth radius is used to smooth or blur the edge of primitives by analytic geometry.
-     * It looks like anti-aliasing, but it's not limited to one pixel.
+     * Feather effect is used to smooth or blur the edge of primitives by analytic geometry.
+     * You can also think of it as the softness (inverse of hardness) of the brush.
+     * It looks like anti-aliasing, but it does not affect the anti-aliasing.
      *
-     * @return the paint's smooth radius
-     * @see #setSmoothRadius(float)
+     * @return the paint's feather radius, always non-negative
+     * @see #setFeatherRadius(float)
      */
-    public float getSmoothRadius() {
-        return mSmoothRadius;
+    public float getFeatherRadius() {
+        return mFeatherRadius;
     }
 
     /**
-     * Set the smooth radius in pixels for this paint. The default value is 2.0 px.
+     * Set the feather radius in pixels for this paint. The default value is 2.0 px.
      * <p>
-     * Smooth radius is used to smooth or blur the edge of primitives by analytic geometry.
-     * It looks like anti-aliasing, but it's not limited to one pixel.
+     * Feather effect is used to smooth or blur the edge of primitives by analytic geometry.
+     * You can also think of it as the softness (inverse of hardness) of the brush.
+     * It looks like anti-aliasing, but it does not affect the anti-aliasing.
+     * <p>
+     * Negative values are treated as 0.
      *
-     * @param radius the paint's smooth radius
+     * @param radius the paint's feather radius, always non-negative
      */
-    public void setSmoothRadius(float radius) {
-        mSmoothRadius = Math.max(0, radius);
+    public void setFeatherRadius(float radius) {
+        if (radius < 0) {
+            radius = 0;
+        }
+        mFeatherRadius = radius;
     }
 
     /**
@@ -398,6 +585,15 @@ public class Paint {
     }
 
     /**
+     * Release this paint object to a shared pool. You can't touch this paint anymore after recycling.
+     *
+     * @see #take()
+     */
+    public void drop() {
+        BAG.release(this);
+    }
+
+    /**
      * Returns true if the paint prevents all drawing; otherwise, the paint may or
      * may not allow drawing.
      * <p>
@@ -422,7 +618,7 @@ public class Paint {
     public String toString() {
         StringBuilder s = new StringBuilder("Paint{");
         if (isGradient()) {
-            s.append("colors=[#");
+            s.append("mColors=[#");
             s.append(Integer.toHexString(mColors[0]));
             s.append(", #");
             s.append(Integer.toHexString(mColors[1]));
@@ -432,11 +628,11 @@ public class Paint {
             s.append(Integer.toHexString(mColors[3]));
             s.append(']');
         } else {
-            s.append("color=#");
+            s.append("mColor=#");
             s.append(Integer.toHexString(mColor));
         }
         int style = getStyle();
-        s.append(", style=");
+        s.append(", mStyle=");
         if (style == FILL) {
             s.append("FILL");
         } else if (style == STROKE) {
@@ -444,12 +640,12 @@ public class Paint {
         } else {
             s.append("FILL|STROKE");
         }
-        s.append(", blendMode=");
+        s.append(", mBlendMode=");
         s.append(getBlendMode());
-        s.append(", strokeWidth=");
+        s.append(", mStrokeWidth=");
         s.append(mStrokeWidth);
-        s.append(", smoothRadius=");
-        s.append(mSmoothRadius);
+        s.append(", mFeatherRadius=");
+        s.append(mFeatherRadius);
         s.append('}');
         return s.toString();
     }

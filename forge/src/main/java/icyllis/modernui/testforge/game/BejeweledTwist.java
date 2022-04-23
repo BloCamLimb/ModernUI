@@ -32,7 +32,7 @@ import icyllis.modernui.opengl.GLCore;
 import icyllis.modernui.opengl.GLSurfaceCanvas;
 import icyllis.modernui.opengl.ShaderManager;
 import icyllis.modernui.opengl.TextureManager;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.math.RectF;
@@ -245,7 +245,7 @@ public class BejeweledTwist {
             if (mWindow.getWidth() > 0) {
                 canvas.reset(mWindow.getWidth(), mWindow.getHeight());
                 screenRect.set(0, 0, mWindow.getWidth(), mWindow.getHeight());
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
                 paint.setRGB(160, 160, 160);
                 canvas.drawImage(mBG, mBGSrc, screenRect, paint);
                 tickDraw(canvas, delta);
@@ -261,9 +261,9 @@ public class BejeweledTwist {
     private void tickDraw(Canvas canvas, long deltaMillis) {
         float cx = mWindow.getWidth() / 2f, cy = mWindow.getHeight() / 2f;
 
-        Paint paint = Paint.take();
-        float frac = MathUtil.clamp((float) ((mCursorY - mWindow.getHeight() + 250) / 250), 0, 1);
-        int alpha = (int) MathUtil.lerp(frac, 0x66, 0xFF);
+        Paint paint = Paint.get();
+        float frac = FMath.clamp((float) ((mCursorY - mWindow.getHeight() + 250) / 250), 0, 1);
+        int alpha = (int) FMath.lerp(frac, 0x66, 0xFF);
         paint.setColors(0x20000000, 0x20000000, alpha << 24, alpha << 24);
         canvas.drawRect(0, mWindow.getHeight() - 250, mWindow.getWidth(), mWindow.getHeight(), paint);
         paint.setColor(0x66000000);
@@ -406,7 +406,7 @@ public class BejeweledTwist {
                 canvas.drawImage(image, 0, 0, image.getWidth(), image.getHeight(), realX, realY, realX + 80,
                         realY + 80, null);
                 if (instance.mDragged || (mx >= x && mx < x + 80 && my >= y && my < y + 80)) {
-                    Paint paint = Paint.take();
+                    Paint paint = Paint.get();
                     paint.setAlpha(128);
                     canvas.drawRoundRect(realX, realY, realX + 80, realY + 80, 20, paint);
                     if (!instance.mDragged) {

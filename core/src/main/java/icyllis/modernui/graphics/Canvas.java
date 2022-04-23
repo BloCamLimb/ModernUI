@@ -42,12 +42,13 @@ import javax.annotation.Nullable;
  * to supply drawing state such as color, text size, stroke width, filter and so on.
  * <p>
  * A surface canvas will quickly compute, optimize and generate the data required by
- * the underlying 3D graphics API on the CPU side (client rendering pipeline). The
- * render tasks will be handed over to GPU on render thread (deferred rendering).
+ * the underlying 3D graphics API on the application side (client rendering pipeline).
+ * The render tasks will be transmitted to GPU on render thread (deferred rendering),
+ * determined by the drawing device.
  * <p>
  * A recording canvas records draw calls to a surface canvas. Although deferred
  * rendering has been done in surface canvas, sometimes we don't need to update
- * animations or transformations on the CPU side, so we can save draw calls, and
+ * animations or transformations on the client side, so we can save draw calls, and
  * don't need to update the buffer in GPU. This is not recommended for frequently
  * updated scenes.
  * <p>
@@ -64,15 +65,17 @@ import javax.annotation.Nullable;
  * <p>
  * For tree structures, each child canvas may use its transition layers for rendering.
  * These transition layers are designed for short-time alpha animation, and it avoids
- * creating a large number framebuffers. The root Canvas or Device is backed by a
- * main render target (a custom framebuffer).
+ * creating a large number framebuffers.
+ * <p>
+ * The root canvas and device is backed by the main render target (a custom framebuffer).
+ * Multisampling anti-aliasing (MSAA) should be always enabled.
  * <p>
  * The projection matrix is globally shared, and the one of surface canvas must be
  * an orthographic projection matrix. Canvas's matrix stack is the local model view
  * matrix on client side, it should be an affine transformation. The pipeline will
  * calculate the world coordinates in advance.
  * <p>
- * This API is stable, method names are similar to Skia, but implementations are not.
+ * This API is stable.
  *
  * @author BloCamLimb
  * @since 1.6
@@ -81,7 +84,7 @@ public abstract class Canvas {
 
     public static final Marker MARKER = MarkerManager.getMarker("Canvas");
 
-    protected Canvas() {
+    public Canvas() {
     }
 
     /**
@@ -218,7 +221,7 @@ public abstract class Canvas {
      */
     public final void rotate(float degrees) {
         if (degrees != 0.0f) {
-            getMatrix().preRotateZ(MathUtil.toRadians(degrees));
+            getMatrix().preRotateZ(FMath.toRadians(degrees));
         }
     }
 
@@ -234,7 +237,7 @@ public abstract class Canvas {
         if (degrees != 0.0f) {
             Matrix4 matrix = getMatrix();
             matrix.preTranslate(px, py, 0);
-            matrix.preRotateZ(MathUtil.toRadians(degrees));
+            matrix.preRotateZ(FMath.toRadians(degrees));
             matrix.preTranslate(-px, -py, 0);
         }
     }
@@ -305,8 +308,11 @@ public abstract class Canvas {
      * Return true if the specified rectangle, after being transformed by the
      * current matrix, would lie completely outside the current clip. Call
      * this to check if an area you intend to draw into is clipped out (and
-     * therefore you can skip making the draw calls). Note that all drawing
-     * methods call this method by default.
+     * therefore you can skip making the draw calls). May return false even
+     * though rect is outside of clip (conservative).
+     * <p>
+     * Note that each draw all will check this internally. This is used to
+     * skip subsequent draw calls.
      *
      * @param rect the rect to compare with the current clip
      * @return true if the given rect (transformed by the canvas' matrix)
@@ -320,16 +326,19 @@ public abstract class Canvas {
      * Return true if the specified rectangle, after being transformed by the
      * current matrix, would lie completely outside the current clip. Call
      * this to check if an area you intend to draw into is clipped out (and
-     * therefore you can skip making the draw calls). Note that all drawing
-     * methods call this method by default.
+     * therefore you can skip making the draw calls). May return false even
+     * though rect is outside of clip (conservative).
+     * <p>
+     * Note that each draw all will check this internally. This is used to
+     * skip subsequent draw calls.
      *
-     * @param left   The left side of the rectangle to compare with the
+     * @param left   the left side of the rectangle to compare with the
      *               current clip
-     * @param top    The top of the rectangle to compare with the current
+     * @param top    the top of the rectangle to compare with the current
      *               clip
-     * @param right  The right side of the rectangle to compare with the
+     * @param right  the right side of the rectangle to compare with the
      *               current clip
-     * @param bottom The bottom of the rectangle to compare with the
+     * @param bottom the bottom of the rectangle to compare with the
      *               current clip
      * @return true if the given rect (transformed by the canvas' matrix)
      * intersecting with the maximum rect representing the canvas' clip is empty
@@ -366,20 +375,271 @@ public abstract class Canvas {
     }
 
     /**
-     * Draw a circular arc.
+     * Fills the current clip with the specified paint. Paint components, Shader,
+     * ColorFilter, ImageFilter, and BlendMode affect drawing.
      * <p>
-     * If the start angle is negative or >= 360, the start angle is treated as start angle modulo
-     * 360. If the sweep angle is >= 360, then the circle is drawn completely. If the sweep angle is
-     * negative, the sweep angle is treated as sweep angle modulo 360
-     * <p>
-     * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
-     * degrees (3 o'clock on a watch.)
+     * This is equivalent (but faster) to drawing an infinitely large rectangle
+     * with the specified paint.
      *
-     * @param center     The center point of the arc to be drawn
-     * @param radius     The radius of the circular arc to be drawn
-     * @param startAngle Starting angle (in degrees) where the arc begins
-     * @param sweepAngle Sweep angle (in degrees) measured clockwise
-     * @param paint      The paint used to draw the arc
+     * @param paint the paint used to draw onto the canvas
+     */
+    public void drawPaint(Paint paint) {
+    }
+
+    /**
+     * Draws a point centered at (x, y) using the specified paint.
+     * <p>
+     * The shape of point drawn depends on paint's cap. If paint is set to
+     * {@link Paint#CAP_ROUND}, draw a circle of diameter paint stroke width
+     * (as transformed by the canvas' matrix), with special treatment for
+     * a stroke width of 0, which always draws exactly 1 pixel (or at most 4
+     * if anti-aliasing is enabled). Otherwise, draw a square of width and
+     * height paint stroke width. Paint's style is ignored, as if were set to
+     * {@link Paint#FILL}.
+     *
+     * @param p     the center point of circle or square
+     * @param paint the paint used to draw the point
+     */
+    public final void drawPoint(PointF p, Paint paint) {
+        drawPoint(p.x, p.y, paint);
+    }
+
+    /**
+     * Draws a point centered at (x, y) using the specified paint.
+     * <p>
+     * The shape of point drawn depends on paint's cap. If paint is set to
+     * {@link Paint#CAP_ROUND}, draw a circle of diameter paint stroke width
+     * (as transformed by the canvas' matrix), with special treatment for
+     * a stroke width of 0, which always draws exactly 1 pixel (or at most 4
+     * if anti-aliasing is enabled). Otherwise, draw a square of width and
+     * height paint stroke width. Paint's style is ignored, as if were set to
+     * {@link Paint#STROKE}.
+     *
+     * @param x     the center x of circle or square
+     * @param y     the center y of circle or square
+     * @param paint the paint used to draw the point
+     */
+    public void drawPoint(float x, float y, Paint paint) {
+    }
+
+    /**
+     * Draw a series of points. Each point is centered at the coordinate
+     * specified by pts[], and its diameter is specified by the paint's
+     * stroke width (as transformed by the canvas' CTM), with special
+     * treatment for a stroke width of 0, which always draws exactly 1 pixel
+     * (or at most 4 if anti-aliasing is enabled). The shape of the point
+     * is controlled by the paint's Cap type. The shape is a square, unless
+     * the cap type is Round, in which case the shape is a circle.
+     * If count is odd, the last value is ignored.
+     *
+     * @param pts    the array of points to draw [x0 y0 x1 y1 x2 y2 ...]
+     * @param offset the number of values to skip before starting to draw.
+     * @param count  the number of values to process, after skipping offset of them. Since one point
+     *               uses two values, the number of "points" that are drawn is really (count >> 1).
+     * @param paint  the paint used to draw the points
+     */
+    public void drawPoints(float[] pts, int offset, int count, Paint paint) {
+        if (count < 2) {
+            return;
+        }
+        count >>= 1;
+        for (int i = 0; i < count; i++) {
+            drawPoint(pts[offset++], pts[offset++], paint);
+        }
+    }
+
+    /**
+     * Draw a series of points. Each point is centered at the coordinate
+     * specified by pts[], and its diameter is specified by the paint's
+     * stroke width (as transformed by the canvas' CTM), with special
+     * treatment for a stroke width of 0, which always draws exactly 1 pixel
+     * (or at most 4 if anti-aliasing is enabled). The shape of the point
+     * is controlled by the paint's Cap type. The shape is a square, unless
+     * the cap type is Round, in which case the shape is a circle.
+     * If count is odd, the last value is ignored.
+     *
+     * @param pts   the array of points to draw [x0 y0 x1 y1 x2 y2 ...]
+     * @param paint the paint used to draw the points
+     */
+    public final void drawPoints(float[] pts, Paint paint) {
+        drawPoints(pts, 0, pts.length, paint);
+    }
+
+    /**
+     * Draw a line segment from p0 to p1 using the specified paint.
+     * In paint: Paint's stroke width describes the line thickness;
+     * Paint's cap draws the end rounded or square;
+     * Paint's style is ignored, as if were set to {@link Paint#STROKE}.
+     *
+     * @param p0    start of line segment
+     * @param p1    end of line segment
+     * @param paint the paint used to draw the line
+     */
+    public final void drawLine(PointF p0, PointF p1, Paint paint) {
+        drawLine(p0.x, p0.y, p1.x, p1.y, paint);
+    }
+
+    /**
+     * Draw a line segment from (x0, y0) to (x1, y1) using the specified paint.
+     * In paint: Paint's stroke width describes the line thickness;
+     * Paint's cap draws the end rounded or square;
+     * Paint's style is ignored, as if were set to {@link Paint#STROKE}.
+     *
+     * @param x0    start of line segment on x-axis
+     * @param y0    start of line segment on y-axis
+     * @param x1    end of line segment on x-axis
+     * @param y1    end of line segment on y-axis
+     * @param paint the paint used to draw the line
+     */
+    public void drawLine(float x0, float y0, float x1, float y1, Paint paint) {
+    }
+
+    /**
+     * Draw the specified Rect using the specified paint.
+     * In paint: Paint's style determines if rectangle is stroked or filled;
+     * if stroked, Paint's stroke width describes the line thickness, and
+     * Paint's join draws the corners rounded or square.
+     *
+     * @param r     the rectangle to be drawn.
+     * @param paint the paint used to draw the rectangle
+     */
+    public final void drawRect(RectF r, Paint paint) {
+        drawRect(r.left, r.top, r.right, r.bottom, paint);
+    }
+
+    /**
+     * Draw the specified Rect using the specified paint.
+     * In paint: Paint's style determines if rectangle is stroked or filled;
+     * if stroked, Paint's stroke width describes the line thickness, and
+     * Paint's join draws the corners rounded or square.
+     *
+     * @param r     the rectangle to be drawn.
+     * @param paint the paint used to draw the rectangle
+     */
+    public final void drawRect(Rect r, Paint paint) {
+        drawRect(r.left, r.top, r.right, r.bottom, paint);
+    }
+
+    /**
+     * Draw the specified Rect using the specified paint.
+     * In paint: Paint's style determines if rectangle is stroked or filled;
+     * if stroked, Paint's stroke width describes the line thickness, and
+     * Paint's join draws the corners rounded or square.
+     *
+     * @param left   the left side of the rectangle to be drawn
+     * @param top    the top side of the rectangle to be drawn
+     * @param right  the right side of the rectangle to be drawn
+     * @param bottom the bottom side of the rectangle to be drawn
+     * @param paint  the paint used to draw the rect
+     */
+    public abstract void drawRect(float left, float top, float right, float bottom, Paint paint);
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     *
+     * @param rect   The rectangular bounds of the round rect to be drawn
+     * @param radius the radius used to round the corners
+     * @param paint  the paint used to draw the round rectangle
+     */
+    public final void drawRoundRect(RectF rect, float radius, Paint paint) {
+        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, Gravity.NO_GRAVITY, paint);
+    }
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     *
+     * @param left   the left of the rectangular bounds
+     * @param top    the top of the rectangular bounds
+     * @param right  the right of the rectangular bounds
+     * @param bottom the bottom of the rectangular bounds
+     * @param radius the radius used to round the corners
+     * @param paint  the paint used to draw the round rectangle
+     */
+    public final void drawRoundRect(float left, float top, float right, float bottom,
+                                    float radius, Paint paint) {
+        drawRoundRect(left, top, right, bottom, radius, Gravity.NO_GRAVITY, paint);
+    }
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     *
+     * @param rect   The rectangular bounds of the round rect to be drawn
+     * @param radius the radius used to round the corners
+     * @param sides  the side to round, accepted values are 0 (all sides), or one of
+     *               {@link Gravity#TOP}, {@link Gravity#BOTTOM},
+     *               {@link Gravity#LEFT}, {@link Gravity#RIGHT}, or any
+     *               combination of two adjacent sides
+     * @param paint  the paint used to draw the round rectangle
+     */
+    public final void drawRoundRect(RectF rect, float radius, int sides, Paint paint) {
+        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, sides, paint);
+    }
+
+    /**
+     * Draw a rectangle with rounded corners within a rectangular bounds. The round
+     * rectangle will be filled or framed based on the Style in the paint.
+     *
+     * @param left   the left of the rectangular bounds
+     * @param top    the top of the rectangular bounds
+     * @param right  the right of the rectangular bounds
+     * @param bottom the bottom of the rectangular bounds
+     * @param radius the radius used to round the corners
+     * @param sides  the side to round, accepted values are 0 (all sides), or one of
+     *               {@link Gravity#TOP}, {@link Gravity#BOTTOM},
+     *               {@link Gravity#LEFT}, {@link Gravity#RIGHT}, or any
+     *               combination of two adjacent sides
+     * @param paint  the paint used to draw the round rectangle
+     */
+    public abstract void drawRoundRect(float left, float top, float right, float bottom,
+                                       float radius, int sides, Paint paint);
+
+    /**
+     * Draw the specified circle at (cx, cy) with radius using the specified paint.
+     * If radius is zero or less, nothing is drawn.
+     * In paint: Paint's style determines if circle is stroked or filled;
+     * if stroked, paint's stroke width describes the line thickness.
+     *
+     * @param center the center point of the circle to be drawn
+     * @param radius the radius of the circle to be drawn
+     * @param paint  the paint used to draw the circle
+     */
+    public final void drawCircle(PointF center, float radius, Paint paint) {
+        drawCircle(center.x, center.y, radius, paint);
+    }
+
+    /**
+     * Draw the specified circle at (cx, cy) with radius using the specified paint.
+     * If radius is zero or less, nothing is drawn.
+     * In paint: Paint's style determines if circle is stroked or filled;
+     * if stroked, paint's stroke width describes the line thickness.
+     *
+     * @param cx     the x-coordinate of the center of the circle to be drawn
+     * @param cy     the y-coordinate of the center of the circle to be drawn
+     * @param radius the radius of the circle to be drawn
+     * @param paint  the paint used to draw the circle
+     */
+    public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
+
+    /**
+     * Draw a circular arc at (cx, cy) with radius using the specified paint.
+     * <p>
+     * If the start angle is negative or >= 360, the start angle is treated as
+     * start angle modulo 360. If the sweep angle is >= 360, then the circle is
+     * drawn completely. If the sweep angle is negative, the sweep angle is
+     * treated as sweep angle modulo 360.
+     * <p>
+     * The arc is drawn clockwise. An angle of 0 degrees correspond to the
+     * geometric angle of 0 degrees (3 o'clock on a watch). If radius is
+     * non-positive or sweep angle is zero, nothing is drawn.
+     *
+     * @param center     the center point of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
      */
     public final void drawArc(PointF center, float radius, float startAngle, float sweepAngle,
                               Paint paint) {
@@ -387,21 +647,23 @@ public abstract class Canvas {
     }
 
     /**
-     * Draw a circular arc.
+     * Draw a circular arc at (cx, cy) with radius using the specified paint.
      * <p>
-     * If the start angle is negative or >= 360, the start angle is treated as start angle modulo
-     * 360. If the sweep angle is >= 360, then the circle is drawn completely. If the sweep angle is
-     * negative, the sweep angle is treated as sweep angle modulo 360
+     * If the start angle is negative or >= 360, the start angle is treated as
+     * start angle modulo 360. If the sweep angle is >= 360, then the circle is
+     * drawn completely. If the sweep angle is negative, the sweep angle is
+     * treated as sweep angle modulo 360.
      * <p>
-     * The arc is drawn clockwise. An angle of 0 degrees correspond to the geometric angle of 0
-     * degrees (3 o'clock on a watch.)
+     * The arc is drawn clockwise. An angle of 0 degrees correspond to the
+     * geometric angle of 0 degrees (3 o'clock on a watch). If radius is
+     * non-positive or sweep angle is zero, nothing is drawn.
      *
-     * @param cx         The x-coordinate of the center of the arc to be drawn
-     * @param cy         The y-coordinate of the center of the arc to be drawn
-     * @param radius     The radius of the circular arc to be drawn
-     * @param startAngle Starting angle (in degrees) where the arc begins
-     * @param sweepAngle Sweep angle (in degrees) measured clockwise
-     * @param paint      The paint used to draw the arc
+     * @param cx         the x-coordinate of the center of the arc to be drawn
+     * @param cy         the y-coordinate of the center of the arc to be drawn
+     * @param radius     the radius of the circular arc to be drawn
+     * @param startAngle starting angle (in degrees) where the arc begins
+     * @param sweepAngle sweep angle or angular extent (in degrees); positive is clockwise
+     * @param paint      the paint used to draw the arc
      */
     public abstract void drawArc(float cx, float cy, float radius, float startAngle,
                                  float sweepAngle, Paint paint);
@@ -448,29 +710,6 @@ public abstract class Canvas {
                                     Paint paint);
 
     /**
-     * Draw the specified circle using the specified paint. If radius is <= 0, then nothing will be
-     * drawn. The circle will be filled or framed based on the Style in the paint.
-     *
-     * @param center The center point of the circle to be drawn
-     * @param radius The radius of the circle to be drawn
-     * @param paint  The paint used to draw the circle
-     */
-    public final void drawCircle(PointF center, float radius, Paint paint) {
-        drawCircle(center.x, center.y, radius, paint);
-    }
-
-    /**
-     * Draw the specified circle using the specified paint. If radius is <= 0, then nothing will be
-     * drawn. The circle will be filled or framed based on the Style in the paint.
-     *
-     * @param cx     The x-coordinate of the center of the circle to be drawn
-     * @param cy     The y-coordinate of the center of the circle to be drawn
-     * @param radius The radius of the circle to be drawn
-     * @param paint  The paint used to draw the circle
-     */
-    public abstract void drawCircle(float cx, float cy, float radius, Paint paint);
-
-    /**
      * Draw a triangle using the specified paint. The three vertices are in counter-clockwise order.
      * <p>
      * The Style is ignored in the paint, triangles are always "filled".
@@ -501,40 +740,6 @@ public abstract class Canvas {
      */
     public abstract void drawTriangle(float x0, float y0, float x1, float y1, float x2, float y2,
                                       Paint paint);
-
-    /**
-     * Draw the specified Rect using the specified Paint. The rectangle will be filled or framed
-     * based on the Style in the paint. The smooth radius is ignored in the paint.
-     *
-     * @param r     The rectangle to be drawn.
-     * @param paint The paint used to draw the rectangle
-     */
-    public final void drawRect(Rect r, Paint paint) {
-        drawRect(r.left, r.top, r.right, r.bottom, paint);
-    }
-
-    /**
-     * Draw the specified Rect using the specified Paint. The rectangle will be filled or framed
-     * based on the Style in the paint. The smooth radius is ignored in the paint.
-     *
-     * @param r     The rectangle to be drawn.
-     * @param paint The paint used to draw the rectangle
-     */
-    public final void drawRect(RectF r, Paint paint) {
-        drawRect(r.left, r.top, r.right, r.bottom, paint);
-    }
-
-    /**
-     * Draw the specified Rect using the specified paint. The rectangle will be filled or framed
-     * based on the Style in the paint. The smooth radius is ignored in the paint.
-     *
-     * @param left   The left side of the rectangle to be drawn
-     * @param top    The top side of the rectangle to be drawn
-     * @param right  The right side of the rectangle to be drawn
-     * @param bottom The bottom side of the rectangle to be drawn
-     * @param paint  The paint used to draw the rect
-     */
-    public abstract void drawRect(float left, float top, float right, float bottom, Paint paint);
 
     /**
      * Draw the specified image with its top/left corner at (x,y), using the
@@ -675,68 +880,6 @@ public abstract class Canvas {
     }
 
     /**
-     * Draw a rectangle with rounded corners within a rectangular bounds. The round
-     * rectangle will be filled or framed based on the Style in the paint.
-     *
-     * @param rect   The rectangular bounds of the round rect to be drawn
-     * @param radius the radius used to round the corners
-     * @param paint  the paint used to draw the round rectangle
-     */
-    public final void drawRoundRect(RectF rect, float radius, Paint paint) {
-        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, Gravity.NO_GRAVITY, paint);
-    }
-
-    /**
-     * Draw a rectangle with rounded corners within a rectangular bounds. The round
-     * rectangle will be filled or framed based on the Style in the paint.
-     *
-     * @param left   the left of the rectangular bounds
-     * @param top    the top of the rectangular bounds
-     * @param right  the right of the rectangular bounds
-     * @param bottom the bottom of the rectangular bounds
-     * @param radius the radius used to round the corners
-     * @param paint  the paint used to draw the round rectangle
-     */
-    public final void drawRoundRect(float left, float top, float right, float bottom,
-                                    float radius, Paint paint) {
-        drawRoundRect(left, top, right, bottom, radius, Gravity.NO_GRAVITY, paint);
-    }
-
-    /**
-     * Draw a rectangle with rounded corners within a rectangular bounds. The round
-     * rectangle will be filled or framed based on the Style in the paint.
-     *
-     * @param rect   The rectangular bounds of the round rect to be drawn
-     * @param radius the radius used to round the corners
-     * @param sides  the side to round, accepted values are 0 (all sides), or one of
-     *               {@link Gravity#TOP}, {@link Gravity#BOTTOM},
-     *               {@link Gravity#LEFT}, {@link Gravity#RIGHT}, or any
-     *               combination of two adjacent sides
-     * @param paint  the paint used to draw the round rectangle
-     */
-    public final void drawRoundRect(RectF rect, float radius, int sides, Paint paint) {
-        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, sides, paint);
-    }
-
-    /**
-     * Draw a rectangle with rounded corners within a rectangular bounds. The round
-     * rectangle will be filled or framed based on the Style in the paint.
-     *
-     * @param left   the left of the rectangular bounds
-     * @param top    the top of the rectangular bounds
-     * @param right  the right of the rectangular bounds
-     * @param bottom the bottom of the rectangular bounds
-     * @param radius the radius used to round the corners
-     * @param sides  the side to round, accepted values are 0 (all sides), or one of
-     *               {@link Gravity#TOP}, {@link Gravity#BOTTOM},
-     *               {@link Gravity#LEFT}, {@link Gravity#RIGHT}, or any
-     *               combination of two adjacent sides
-     * @param paint  the paint used to draw the round rectangle
-     */
-    public abstract void drawRoundRect(float left, float top, float right, float bottom,
-                                       float radius, int sides, Paint paint);
-
-    /**
      * Draw the specified image with rounded corners, whose top/left corner at (x,y)
      * using the specified paint, transformed by the current matrix. The Style is
      * ignored in the paint, images are always filled.
@@ -825,4 +968,26 @@ public abstract class Canvas {
      * @param paint the paint used to draw the text, only color will be taken
      */
     public abstract void drawTextRun(LayoutPiece piece, float x, float y, TextPaint paint);
+
+    /**
+     * Returns true if clip is empty; that is, nothing will draw.
+     * <p>
+     * May do work when called; it should not be called more often than needed.
+     * However, once called, subsequent calls perform no work until clip changes.
+     *
+     * @return true if clip is empty
+     */
+    public boolean isClipEmpty() {
+        return false;
+    }
+
+    /**
+     * Returns true if clip is a Rect and not empty.
+     * Returns false if the clip is empty, or if it is complex.
+     *
+     * @return true if clip is a Rect and not empty
+     */
+    public boolean isClipRect() {
+        return false;
+    }
 }

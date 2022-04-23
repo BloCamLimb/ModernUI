@@ -157,7 +157,7 @@ public final class ToastManager {
 
         @Override
         public void draw(@Nonnull Canvas canvas) {
-            Paint paint = Paint.take();
+            Paint paint = Paint.get();
             paint.setColor(0xC0000000);
             Rect b = getBounds();
             canvas.drawRoundRect(b.left, b.top, b.right, b.bottom, mRadius, paint);

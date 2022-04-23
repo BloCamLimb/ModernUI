@@ -4918,7 +4918,7 @@ public class View implements Drawable.Callback {
             mScrollIndicatorDrawable = new Drawable() {
                 @Override
                 public void draw(@Nonnull Canvas canvas) {
-                    Paint paint = Paint.take();
+                    Paint paint = Paint.get();
                     paint.setRGBA(0, 0, 0, 0x1f);
                     canvas.drawRect(getBounds(), paint);
                 }

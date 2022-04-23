@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.math;
+package icyllis.modernui.audio;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
  * Provides Fast Fourier Transform. It is an efficient way to calculate the Complex Discrete Fourier
  * Transform, which is commonly used to analyze the spectrum of an audio buffer.
  */
-public class FourierTransform {
+public class FFT {
 
     /**
      * Constants indicating which window should be used on sample buffers.
@@ -61,7 +61,7 @@ public class FourierTransform {
     private int mOctaves;
     private int mAvgPerOctave;
 
-    private FourierTransform(int timeSize, int sampleRate) {
+    private FFT(int timeSize, int sampleRate) {
         mTimeSize = timeSize;
         mSampleRate = sampleRate;
         mBandWidth = (float) sampleRate / timeSize;
@@ -88,13 +88,12 @@ public class FourierTransform {
      * @param sampleRate the sample rate of the audio you will be analyzing
      */
     @Nonnull
-    public static FourierTransform create(int timeSize, int sampleRate) {
+    public static FFT create(int timeSize, int sampleRate) {
         if (timeSize > 0 & (timeSize & (timeSize - 1)) != 0) {
             throw new IllegalArgumentException("timeSize must be a power of two");
         }
-        return new FourierTransform(timeSize, sampleRate);
+        return new FFT(timeSize, sampleRate);
     }
-
 
     /**
      * Performs a forward transform on values in <code>samples</code>.
@@ -161,9 +160,9 @@ public class FourierTransform {
     // bit reversing is not necessary as the data will already be bit reversed
     private void fft() {
         for (int halfSize = 1; halfSize < mTimeSize; halfSize <<= 1) {
-            float k = -MathUtil.PI / halfSize;
-            float phaseShiftStepR = MathUtil.cos(k);
-            float phaseShiftStepI = MathUtil.sin(k);
+            double k = -Math.PI / halfSize;
+            float phaseShiftStepR = (float) Math.cos(k);
+            float phaseShiftStepI = (float) Math.sin(k);
             // current phase shift
             float currentPhaseShiftR = 1.0f;
             float currentPhaseShiftI = 0.0f;
@@ -193,7 +192,7 @@ public class FourierTransform {
     // and also do spectrum shaping if necessary
     private void fillSpectrum() {
         for (int i = 0; i < mSpectrum.length; i++) {
-            mSpectrum[i] = MathUtil.sqrt(mReal[i] * mReal[i] + mImag[i] * mImag[i]);
+            mSpectrum[i] = (float) Math.sqrt(mReal[i] * mReal[i] + mImag[i] * mImag[i]);
         }
 
         if (mAverages == null) {
@@ -304,20 +303,20 @@ public class FourierTransform {
         switch (func) {
             case HAMMING:
                 for (int i = 0; i <= n; i++) {
-                    window[i] = (0.54f - 0.46f * MathUtil.cos(MathUtil.TWO_PI * i / n));
+                    window[i] = (float) (0.54f - 0.46f * Math.cos(2 * Math.PI * i / n));
                 }
                 break;
 
             case BLACKMAN:
                 for (int i = 0; i <= n; i++) {
-                    window[i] = (0.42f - 0.5f * MathUtil.cos(MathUtil.TWO_PI * i / n)
-                            + 0.08f * MathUtil.cos(MathUtil.FOUR_PI * i / n));
+                    window[i] = (float) (0.42f - 0.5f * Math.cos(2 * Math.PI * i / n)
+                            + 0.08f * Math.cos(4 * Math.PI * i / n));
                 }
                 break;
 
             case HANN:
                 for (int i = 0; i <= n; i++) {
-                    final float sin = MathUtil.sin(MathUtil.PI * i / n);
+                    final float sin = (float) Math.sin(Math.PI * i / n);
                     window[i] = sin * sin;
                 }
                 break;

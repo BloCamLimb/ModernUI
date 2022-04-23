@@ -34,7 +34,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.font.GraphemeBreak;
 import icyllis.modernui.opengl.*;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
 import icyllis.modernui.test.SpectrumGraph;
@@ -128,9 +128,9 @@ public class TestMain {
         baseMat.preScale(2, 4, 5);
         Matrix4 baseMat2 = baseMat.copy();
         Matrix4 rot = Matrix4.identity();
-        rot.preRotateX(MathUtil.PI_DIV_6);
+        rot.preRotateX(FMath.PI_DIV_6);
         baseMat.postMul(rot);
-        baseMat2.postRotateX(MathUtil.PI_DIV_6);
+        baseMat2.postRotateX(FMath.PI_DIV_6);
         LOGGER.info(baseMat.approxEqual(baseMat2));
         if (!CREATE_WINDOW) {
             try (ModernUI modernUI = new ModernUI()) {
@@ -474,7 +474,7 @@ public class TestMain {
                 canvas.reset(window.getWidth(), window.getHeight());
 
                 // UI thread
-                Paint paint = Paint.take();
+                Paint paint = Paint.get();
 
                 paint.setRGB(160, 160, 160);
                 canvas.drawImage(image, null, screenRect, paint);
@@ -489,7 +489,7 @@ public class TestMain {
                 }
 
                 paint.setStyle(Paint.STROKE);
-                float sin = MathUtil.sin(time / 300f);
+                float sin = FMath.sin(time / 300f);
                 paint.setRGBA(255, 255, 255, 255);
                 canvas.drawRoundRect(120, 120, 200, 250 - 50 * sin, 25 + 15 * sin, paint);
 
@@ -567,7 +567,7 @@ public class TestMain {
     }
 
     private static void drawOsuScore(Canvas canvas) {
-        Paint paint = Paint.take();
+        Paint paint = Paint.get();
         paint.setRGBA(0, 0, 0, 64);
 
         // bottom

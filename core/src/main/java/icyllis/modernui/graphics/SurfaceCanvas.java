@@ -31,10 +31,9 @@ import java.util.Deque;
  */
 public abstract class SurfaceCanvas extends Canvas {
 
-    private final Pool<MCRec> mMCRecPool = Pools.simple(32);
-
     // local MCRec stack
-    private final Deque<MCRec> mMCStack = new ArrayDeque<>();
+    private final Deque<MCRec> mMCStack = new ArrayDeque<>(16);
+    private final Pool<MCRec> mMCRecPool = Pools.simple(32);
 
     private final BaseDevice mBaseDevice;
 
@@ -45,6 +44,26 @@ public abstract class SurfaceCanvas extends Canvas {
         mMCStack.push(new MCRec(device));
 
         mBaseDevice = device;
+    }
+
+    // the bottom-most device in the stack, only changed by init(). Image properties and the final
+    // canvas pixels are determined by this device.
+    @Nonnull
+    private BaseDevice baseDevice() {
+        return mBaseDevice;
+    }
+
+    // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
+    // operations should route to this device.
+    @Nonnull
+    private BaseDevice topDevice() {
+        return getMCRec().mDevice;
+    }
+
+    // points to top of stack
+    @Nonnull
+    private MCRec getMCRec() {
+        return mMCStack.getFirst();
     }
 
     /**
@@ -80,19 +99,6 @@ public abstract class SurfaceCanvas extends Canvas {
         return mSaveCount;
     }
 
-    // points to top of stack
-    @Nonnull
-    private MCRec getMCRec() {
-        return mMCStack.getFirst();
-    }
-
-    // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
-    // operations should route to this device.
-    @Nonnull
-    private BaseDevice topDevice() {
-        return getMCRec().mDevice;
-    }
-
     private void internalSave() {
         MCRec next = mMCRecPool.acquire();
         if (next == null) {
@@ -100,6 +106,46 @@ public abstract class SurfaceCanvas extends Canvas {
         }
         next.set(getMCRec());
         mMCStack.addFirst(next);
+    }
+
+    @Override
+    public boolean quickReject(float left, float top, float right, float bottom) {
+        return false;
+    }
+
+    @Override
+    public void drawColor(int color, BlendMode mode) {
+        // paint may be modified for recording canvas, so not impl in super class
+        Paint paint = Paint.take();
+        paint.setColor(color);
+        paint.setBlendMode(mode);
+        drawPaint(paint);
+        paint.drop();
+    }
+
+    @Override
+    public void drawPaint(Paint paint) {
+        // drawPaint does not call internalQuickReject() because computing its geometry is not free
+        // (see getLocalClipBounds()), and the two conditions below are sufficient.
+        if (paint.nothingToDraw() || isClipEmpty()) {
+            return;
+        }
+        topDevice().drawPaint(paint);
+    }
+
+    @Override
+    public void drawPoint(float x, float y, Paint paint) {
+
+    }
+
+    @Override
+    public boolean isClipEmpty() {
+        return topDevice().getClipType() == BaseDevice.CLIP_TYPE_EMPTY;
+    }
+
+    @Override
+    public boolean isClipRect() {
+        return topDevice().getClipType() == BaseDevice.CLIP_TYPE_RECT;
     }
 
     /**

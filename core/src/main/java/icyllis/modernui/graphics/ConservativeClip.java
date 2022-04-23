@@ -20,35 +20,30 @@ package icyllis.modernui.graphics;
 
 import icyllis.modernui.math.*;
 
-import javax.annotation.Nullable;
-
 /**
- * Conservative clipping computes the maximum rectangular bounds of the actual clipping region
- * for quick check.
+ * The conservative clip computes the maximum rectangular bounds of the actual clipping region
+ * for quick reject (a preprocessing before transferring drawing commands to GPU).
  */
-public class ConservativeClip {
+public final class ConservativeClip {
 
     private static final ThreadLocal<Rect> sRect = ThreadLocal.withInitial(Rect::new);
-    private static final ThreadLocal<RectF> sRectF = ThreadLocal.withInitial(RectF::new);
 
-    final Rect mBounds = new Rect();
-    boolean mIsRect = true;
-    boolean mIsAA = false;
+    private final Rect mBounds = new Rect();
+    private boolean mIsRect = true;
+    private boolean mIsAA = false;
 
-    Rect mClipRestrictionRect = null;
-
-    final void applyClipRestriction(Region.Op op, Rect bounds) {
-        if (op.compareTo(Region.Op.UNION) >= 0 && mClipRestrictionRect != null
-                && !mClipRestrictionRect.isEmpty()) {
-            if (!bounds.intersect(mClipRestrictionRect)) {
-                bounds.setEmpty();
-            }
-        }
+    public ConservativeClip() {
     }
 
-    final void applyOpParams(Region.Op op, boolean aa, boolean rect) {
+    private void applyOpParams(int op, boolean aa, boolean rect) {
         mIsAA |= aa;
-        mIsRect &= (op == Region.Op.INTERSECT && rect);
+        mIsRect &= (op == ClipStack.OP_INTERSECT && rect);
+    }
+
+    public void set(ConservativeClip clip) {
+        mBounds.set(clip.mBounds);
+        mIsRect = clip.mIsRect;
+        mIsAA = clip.mIsAA;
     }
 
     public boolean isEmpty() {
@@ -63,6 +58,7 @@ public class ConservativeClip {
         return mIsAA;
     }
 
+    // do not modify
     public Rect getBounds() {
         return mBounds;
     }
@@ -73,61 +69,70 @@ public class ConservativeClip {
         mIsAA = false;
     }
 
-    public void setRect(Rect r) {
-        mBounds.set(r);
+    public void setRect(int left, int top, int right, int bottom) {
+        mBounds.set(left, top, right, bottom);
         mIsRect = true;
         mIsAA = false;
     }
 
-    public void setClipRestrictionRect(@Nullable Rect clipRestrictionRect) {
-        mClipRestrictionRect = clipRestrictionRect;
+    public void setRect(Rect r) {
+        setRect(r.left, r.top, r.right, r.bottom);
     }
 
-    public void opRectF(final RectF localRect, final Matrix4 ctm, Region.Op op, boolean doAA) {
-        applyOpParams(op, doAA, ctm.isScaleTranslate());
-        switch (op) {
-            case INTERSECT, UNION, REPLACE:
+    public void replace(final Rect globalRect, final Matrix3 globalToDevice, final Rect deviceBounds) {
+        final Rect deviceRect = sRect.get();
+        globalToDevice.mapRect(globalRect, deviceRect);
+        if (!deviceRect.intersect(deviceBounds)) {
+            setEmpty();
+        } else {
+            setRect(deviceRect);
+        }
+    }
+
+    public void opRect(final RectF localRect, final Matrix4 localToDevice, int clipOp, boolean doAA) {
+        applyOpParams(clipOp, doAA, localToDevice.isScaleTranslate());
+        switch (clipOp) {
+            case ClipStack.OP_INTERSECT:
                 break;
-            case DIFFERENCE:
+            case ClipStack.OP_DIFFERENCE:
                 // Difference can only shrink the current clip.
-                // Leaving clip unchanged conservatively fullfills the contract.
+                // Leaving clip unchanged conservatively fulfills the contract.
                 return;
-            case REVERSE_DIFFERENCE:
-                // To reverse, we swap in the bounds with a replace op.
-                // As with difference, leave it unchanged.
-                op = Region.Op.REPLACE;
-                break;
-            case XOR:
-                // Be conservative, based on (A XOR B) always included in (A union B),
-                // which is always included in (bounds(A) union bounds(B))
-                op = Region.Op.UNION;
-                break;
             default:
                 throw new IllegalArgumentException();
         }
-        final RectF fr = sRectF.get();
-        fr.set(localRect);
-        ctm.mapRect(fr);
-        final Rect r = sRect.get();
+        final Rect deviceRect = sRect.get();
         if (doAA) {
-            fr.roundOut(r);
+            localToDevice.mapRectOut(localRect, deviceRect);
         } else {
-            fr.round(r);
+            localToDevice.mapRect(localRect, deviceRect);
         }
-        opRect(r, op);
+        opRect(deviceRect, clipOp);
     }
 
-    public void opRect(final Rect devRect, Region.Op op) {
-        applyOpParams(op, false, true);
+    public void opRect(final Rect deviceRect, int clipOp) {
+        applyOpParams(clipOp, false, true);
 
-        if (op == Region.Op.INTERSECT) {
-            if (!mBounds.intersect(devRect)) {
+        if (clipOp == ClipStack.OP_INTERSECT) {
+            if (!mBounds.intersect(deviceRect)) {
                 mBounds.setEmpty();
             }
             return;
         }
 
-        //TODO
-        throw new UnsupportedOperationException();
+        if (clipOp == ClipStack.OP_DIFFERENCE) {
+            if (mBounds.isEmpty()) {
+                return;
+            }
+            if (deviceRect.isEmpty() || !Rect.intersects(mBounds, deviceRect)) {
+                return;
+            }
+            if (deviceRect.contains(mBounds)) {
+                mBounds.setEmpty();
+                return;
+            }
+        }
+
+        throw new IllegalArgumentException();
     }
 }

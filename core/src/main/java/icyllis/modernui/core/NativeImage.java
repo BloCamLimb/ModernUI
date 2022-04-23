@@ -23,7 +23,7 @@ import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.Image;
-import icyllis.modernui.math.MathUtil;
+import icyllis.modernui.math.FMath;
 import icyllis.modernui.opengl.GLFramebuffer;
 import icyllis.modernui.opengl.GLTexture;
 import org.lwjgl.PointerBuffer;
@@ -552,7 +552,7 @@ public final class NativeImage implements AutoCloseable {
             @Override
             public boolean write(@Nonnull STBIWriteCallbackI func, int width, int height, @Nonnull Format format,
                                  long data, int quality) {
-                quality = MathUtil.clamp(quality, 1, 120);
+                quality = FMath.clamp(quality, 1, 120);
                 return STBImageWrite.nstbi_write_jpg_to_func(func.address(),
                         NULL, width, height, format.channels, data, quality) != 0;
             }

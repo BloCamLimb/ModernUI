@@ -22,20 +22,17 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.DataSet;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectRBTreeMap;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.*;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtIo;
+import net.minecraft.nbt.*;
 import org.github.jamm.MemoryMeter;
+import org.lwjgl.system.MemoryUtil;
 import org.openjdk.jmh.annotations.*;
+import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
+import org.openjdk.jmh.runner.options.OptionsBuilder;
 
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 @Fork(2)
@@ -51,10 +48,12 @@ public class TestBenchmark {
     public static void main(String[] args) throws RunnerException {
         MemoryMeter meter = MemoryMeter.builder().build();
 
-       /* new Runner(new OptionsBuilder()
+        new Runner(new OptionsBuilder()
                 .include(TestBenchmark.class.getSimpleName())
                 .shouldFailOnError(true).shouldDoGC(true)
-                .jvmArgs("-XX:+UseFMA").build()).run();*/
+                .jvmArgs("-XX:+UseFMA")
+                .build())
+                .run();
 
         ModernUI.LOGGER.info("DataSet: {}", TextUtils.binaryCompact(meter.measureDeep(sDataSet)));
         ModernUI.LOGGER.info("CompoundTag: {}", TextUtils.binaryCompact(meter.measureDeep(sCompoundTag)));
@@ -105,7 +104,27 @@ public class TestBenchmark {
         }
     }
 
+    public static class AS {
+
+        public int mA;
+    }
+
+    public static AS as = new AS();
+
     @Benchmark
+    public static void putIntObj() {
+    }
+
+    public static long sBuffer = MemoryUtil.nmemAlloc(4);
+
+    @Benchmark
+    public static void putIntUnsafe() {
+        long buf = sBuffer;
+        for (int i = 0; i < 10000; i++) {
+            MemoryUtil.memPutInt(buf, i);
+        }
+    }
+
     public static void dataSetDeflation() {
         try {
             DataSet.deflate(sDataSet, new FileOutputStream("F:/testdata_set1.dat"));
@@ -114,7 +133,6 @@ public class TestBenchmark {
         }
     }
 
-    @Benchmark
     public static void compoundTagDeflation() {
         try {
             NbtIo.writeCompressed(sCompoundTag, new FileOutputStream("F:/testdata_tag1.dat"));
@@ -123,7 +141,6 @@ public class TestBenchmark {
         }
     }
 
-    @Benchmark
     public static void dataSetInflation() {
         try {
             DataSet.inflate(new FileInputStream("F:/testdata_set1.dat"));
@@ -132,7 +149,6 @@ public class TestBenchmark {
         }
     }
 
-    @Benchmark
     public static void compoundTagInflation() {
         try {
             NbtIo.readCompressed(new FileInputStream("F:/testdata_tag1.dat"));

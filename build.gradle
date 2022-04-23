@@ -9,9 +9,6 @@ buildscript {
 
 plugins {
     id 'maven-publish'
-    id 'dev.architectury.loom' version '0.11.0-SNAPSHOT' apply false
-    id 'com.matthewprenger.cursegradle' version '1.4.0' apply false
-    id 'com.github.johnrengelman.shadow' version '7.0.0' apply false
 }
 
 allprojects {
@@ -32,12 +29,12 @@ allprojects {
         compileOnly 'org.jetbrains:annotations:23.0.0'
     }
 
-    java {
-        withSourcesJar()
-    }
-
     tasks.withType(JavaCompile).configureEach {
         it.options.encoding = "UTF-8"
         it.options.release.set(17)
+    }
+
+    java {
+        withSourcesJar()
     }
 }
