@@ -20,7 +20,6 @@ package icyllis.modernui.textmc;
 
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.mixin.MixinClientLanguage;
 import icyllis.modernui.screen.Color3i;
 import icyllis.modernui.text.GlyphManager;
@@ -28,10 +27,8 @@ import icyllis.modernui.text.TexturedGlyph;
 import icyllis.modernui.view.ViewConfig;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.BaseComponent;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.*;
 import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
@@ -45,6 +42,8 @@ import java.awt.font.GlyphVector;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.*;
+
+import static icyllis.modernui.ModernUI.*;
 
 /**
  * Modern Text Engine for Minecraft. Layout text component and extract style info and generate
@@ -106,17 +105,17 @@ public class TextLayoutEngine {
      */
     private final VanillaTextKey mVanillaLookupKey = new VanillaTextKey();
 
-    private Map<VanillaTextKey, TextRenderNode> mStringCache;
+    private Map<VanillaTextKey, TextRenderNode> mStringCache = new HashMap<>();
 
-    private Map<BaseComponent, TextRenderNode> mComponentCache;
+    private Map<BaseComponent, TextRenderNode> mComponentCache = new HashMap<>();
 
     private final MultilayerTextKey.Lookup mMultilayerLookupKey = new MultilayerTextKey.Lookup();
 
-    private Map<MultilayerTextKey, TextRenderNode> mMultilayerCache;
+    private Map<MultilayerTextKey, TextRenderNode> mMultilayerCache = new HashMap<>();
 
     private final TextLayoutProcessor mProcessor = new TextLayoutProcessor();
 
-    private Map<Font, Pair<TexturedGlyph[], float[]>> mDigitMap;
+    private Map<Font, Pair<TexturedGlyph[], float[]>> mDigitMap = new HashMap<>();
 
     private float mResolutionLevel;
 
@@ -170,24 +169,47 @@ public class TextLayoutEngine {
      * Called when resolution level or language changed.
      */
     public void reload() {
-        mStringCache = new HashMap<>();
-        mComponentCache = new HashMap<>();
-        mMultilayerCache = new HashMap<>();
-        mDigitMap = new HashMap<>();
+        int count = countEntries();
+        mStringCache.clear();
+        mComponentCache.clear();
+        mMultilayerCache.clear();
+        mDigitMap.clear();
+        boolean rehash = count > 500;
+        if (rehash) {
+            // Create new HashMap so that the internal hashtable of old maps are released as well
+            mStringCache = new HashMap<>();
+            mComponentCache = new HashMap<>();
+            mMultilayerCache = new HashMap<>();
+            //mDigitMap = new HashMap<>();
+        }
+        // Clear TextRenderType instances, but font textures are NOT released (intentionally)
         TextRenderType.clear();
+        if (count > 0) {
+            LOGGER.info(MARKER, "Cleanup {} text layout entries, rehash: {}", count, rehash);
+        }
+
+        final float oldLevel = mResolutionLevel;
         if (sFixedResolution) {
-            // make font size to 16
+            // make font size to 16 (8 * 2)
             mResolutionLevel = 2;
         } else {
             int guiScale = Math.round(ViewConfig.get().getViewScale() * 2);
             // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
             if (GlyphManager.sBitmapLike) {
                 mResolutionLevel = Math.min(guiScale, 9f);
-            } else {
+            } else if (guiScale > 2) {
+                // HD rendering, give it a bit larger, so looks smoother
                 mResolutionLevel = Math.min(Math.round(guiScale * 4 / 3f), 12f);
+            } else {
+                // 1 or 2
+                mResolutionLevel = guiScale;
             }
         }
-        ModernUI.LOGGER.info(ModernUI.MARKER, "Reloaded text layout engine, resolution level: {}", mResolutionLevel);
+        if (oldLevel == 0) {
+            LOGGER.info(MARKER, "Loaded text layout engine, res level: {}", mResolutionLevel);
+        } else {
+            LOGGER.info(MARKER, "Reloaded text layout engine, res level: {}->{}", oldLevel, mResolutionLevel);
+        }
     }
 
     /**

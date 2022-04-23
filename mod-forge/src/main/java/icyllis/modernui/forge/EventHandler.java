@@ -34,10 +34,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.GuiOpenEvent;
-import net.minecraftforge.client.event.GuiScreenEvent;
-import net.minecraftforge.client.event.ModelBakeEvent;
-import net.minecraftforge.client.event.ModelRegistryEvent;
+import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
@@ -59,7 +56,7 @@ final class EventHandler {
 
     @SubscribeEvent
     static void onRightClickItem(@Nonnull PlayerInteractEvent.RightClickItem event) {
-        if (ModernUIForge.isDeveloperMode()) {
+        if (ModernUIForge.sDevelopment) {
             if (event.getSide().isServer() && event.getItemStack().getItem() == Items.DIAMOND) {
                 MForgeCompat.openMenu(event.getPlayer(), TestMenu::new);
             }
@@ -114,7 +111,7 @@ final class EventHandler {
     @Mod.EventBusSubscriber(modid = ModernUI.ID, value = Dist.CLIENT)
     static class Client {
 
-        static ProgressOption NEW_GUI_SCALE;
+        static ProgressOption sNewGuiScale;
 
         @Nullable
         private static Screen sCapturedVideoSettingsScreen;
@@ -143,18 +140,18 @@ final class EventHandler {
 
         @SubscribeEvent(priority = EventPriority.LOW)
         static void onGuiOpenL(@Nonnull GuiOpenEvent event) {
-            BlurHandler.INSTANCE.count(event.getGui());
             // This event should not be cancelled
             if (sCapturedVideoSettingsScreen != null) {
                 event.setGui(sCapturedVideoSettingsScreen);
                 sCapturedVideoSettingsScreen = null;
             }
+            BlurHandler.INSTANCE.blur(event.getGui());
         }
 
         @SubscribeEvent
         static void onGuiInit(@Nonnull GuiScreenEvent.InitGuiEvent event) {
-            if (event.getGui() instanceof VideoSettingsScreen && NEW_GUI_SCALE != null) {
-                NEW_GUI_SCALE.setMaxValue(MForgeCompat.calcGuiScales() & 0xf);
+            if (event.getGui() instanceof VideoSettingsScreen && sNewGuiScale != null) {
+                sNewGuiScale.setMaxValue(MForgeCompat.calcGuiScales() & 0xf);
             }
         }
 

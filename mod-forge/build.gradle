@@ -19,6 +19,7 @@ loom {
     dataGen {
         mod 'modernui'
     }
+    runConfigs.each { it.setIdeConfigGenerated(true) }
     addTaskBeforeRun(":${project.name}:classes")
 }
 
@@ -206,7 +207,7 @@ publishing {
     }
 }
 
-if (project.hasProperty('curseforge_api')) {
+/*if (project.hasProperty('curseforge_api')) {
     curseforge {
         apiKey = project.getProperty('curseforge_api')
         project {
@@ -228,4 +229,4 @@ if (project.hasProperty('curseforge_api')) {
             forgeGradleIntegration = false
         }
     }
-}
+}*/

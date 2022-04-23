@@ -21,10 +21,7 @@ package icyllis.modernui.textmc;
 import com.ibm.icu.text.Bidi;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.text.FontRun;
-import icyllis.modernui.text.GlyphManager;
-import icyllis.modernui.text.TexturedGlyph;
-import icyllis.modernui.text.Typeface;
+import icyllis.modernui.text.*;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -32,21 +29,23 @@ import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.FormattedCharSink;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
-import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 /**
  * This is where the text layout is actually performed.
  */
 @RenderThread
 public class TextLayoutProcessor {
+
+    /**
+     * Config values.
+     */
+    public static volatile boolean sSmallFont = false;
 
     /**
      * Array to build char array.
@@ -518,10 +517,10 @@ public class TextLayoutProcessor {
         if ((fontStyle & CharacterStyleCarrier.ITALIC) != 0) {
             style |= Font.ITALIC;
         }
-        font = font.deriveFont(style, 8 * res);
+        font = font.deriveFont(style, (sSmallFont ? 7 : 8) * res);
         if (carrier.isObfuscated()) {
-            final Pair<TexturedGlyph[], float[]> digits = layoutEngine.lookupDigits(font);
-            final float advance = digits.getRight()[0];
+            final var digits = layoutEngine.lookupDigits(font);
+            final float advance = digits.getValue()[0];
 
             float offset;
             if (isRtl) {
@@ -545,6 +544,13 @@ public class TextLayoutProcessor {
                     }
                 }
                 mHasEffect |= decoration != 0;
+            }
+
+            // get offset in this run
+            if (isRtl) {
+                offset -= mLayoutRight;
+            } else {
+                offset -= mAdvance;
             }
 
             mAdvance += offset;

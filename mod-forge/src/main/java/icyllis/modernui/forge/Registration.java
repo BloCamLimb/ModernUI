@@ -18,7 +18,6 @@
 
 package icyllis.modernui.forge;
 
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.mixin.AccessOption;
 import icyllis.modernui.mixin.AccessVideoSettings;
@@ -26,10 +25,7 @@ import icyllis.modernui.platform.RenderCore;
 import icyllis.modernui.screen.UIManager;
 import icyllis.modernui.test.TestMenu;
 import icyllis.modernui.textmc.TextLayoutEngine;
-import net.minecraft.client.CycleOption;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.Option;
-import net.minecraft.client.ProgressOption;
+import net.minecraft.client.*;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.TranslatableComponent;
@@ -52,17 +48,13 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.network.IContainerFactory;
 import net.minecraftforge.registries.IForgeRegistry;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang3.ArrayUtils;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.Locale;
-import java.util.Objects;
+
+import static icyllis.modernui.ModernUI.LOGGER;
 
 /**
  * This class handles mod loading events
@@ -73,27 +65,20 @@ final class Registration {
     private Registration() {
     }
 
-    @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
-    static void registerSounds(@Nonnull RegistryEvent.Register<SoundEvent> event) {
-        final IForgeRegistry<SoundEvent> registry = event.getRegistry();
-
-        MuiRegistries.BUTTON_CLICK_1 = registerSound(registry, "button1");
-        MuiRegistries.BUTTON_CLICK_2 = registerSound(registry, "button2");
-    }
-
     @SubscribeEvent
     static void registerMenus(@Nonnull RegistryEvent.Register<MenuType<?>> event) {
-        final IForgeRegistry<MenuType<?>> registry = event.getRegistry();
-        MuiRegistries.TEST_MENU = registerMenu(registry, TestMenu::new, "test");
+        if (ModernUIForge.sDevelopment) {
+            event.getRegistry().register(IForgeContainerType.create(TestMenu::new)
+                    .setRegistryName("test"));
+        }
     }
 
     @SubscribeEvent
     static void registerItems(@Nonnull RegistryEvent.Register<Item> event) {
         if (ModernUIForge.sDevelopment) {
-            Item.Properties properties = new Item.Properties().stacksTo(1).setISTER(() -> ProjectBuilderRenderer::new);
-            event.getRegistry().register(MuiRegistries.PROJECT_BUILDER_ITEM = new Item(properties).setRegistryName(
-                    "project_builder"));
+            Item.Properties properties = new Item.Properties().stacksTo(1);
+            event.getRegistry().register(new Item(properties)
+                    .setRegistryName("project_builder"));
         }
     }
 
@@ -108,7 +93,7 @@ final class Registration {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        byte[] protocol = null;
+        /*byte[] protocol = null;
         try (InputStream stream = ModernUI.class.getClassLoader().getResourceAsStream(
                 NetworkMessages.class.getName().replace('.', '/') + ".class")) {
             Objects.requireNonNull(stream, "Mod file is broken");
@@ -122,16 +107,16 @@ final class Registration {
             protocol = ArrayUtils.addAll(protocol, IOUtils.toByteArray(stream));
         } catch (IOException e) {
             e.printStackTrace();
-        }
+        }*/
         if (ModList.get().getModContainerById(new String(new byte[]{0x1f ^ 0x74, (0x4 << 0x1) | 0x41,
                 ~-0x78, 0xd2 >> 0x1}, StandardCharsets.UTF_8).toLowerCase(Locale.ROOT)).isPresent()) {
-            event.enqueueWork(() -> VertexConsumer.LOGGER.fatal("Van Darkholme"));
+            event.enqueueWork(() -> LOGGER.fatal("OK"));
         }
-        protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getTrustData()
-                .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null));
+        /*protocol = ArrayUtils.addAll(protocol, ModList.get().getModFileById(ModernUI.ID).getTrustData()
+                .map(s -> s.getBytes(StandardCharsets.UTF_8)).orElse(null));*/
 
         NetworkMessages.sNetwork = new NetworkHandler(ModernUI.ID, "main_network", () -> NetworkMessages::handle,
-                NetworkMessages::handle, protocol == null ? null : DigestUtils.md5Hex(protocol), true);
+                NetworkMessages::handle, "270", true);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
     }
@@ -160,7 +145,7 @@ final class Registration {
                 field.setAccessible(true);
                 settings = (Option[]) field.get(null);
             } catch (Exception e) {
-                ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to be compatible with OptiFine video settings", e);
+                LOGGER.error(ModernUI.MARKER, "Failed to be compatible with OptiFine video settings", e);
             }
         } else {
             settings = AccessVideoSettings.getOptions();
@@ -183,12 +168,12 @@ final class Registration {
                                     ((AccessOption) progressOption)
                                             .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
                     );
-                    settings[i] = EventHandler.Client.NEW_GUI_SCALE = option;
+                    settings[i] = EventHandler.Client.sNewGuiScale = option;
                     break;
                 }
             }
         } else {
-            ModernUI.LOGGER.error(ModernUI.MARKER, "Failed to capture video settings");
+            LOGGER.error(ModernUI.MARKER, "Failed to capture video settings");
         }
     }
 

@@ -1,5 +1,22 @@
 Changelogs
 ===
+### 1.16.5-2.7.0.104 (2022-04-23)
+#### Forge Extension 1.16.5-36.2.0
+* Make all registries only in development
+* Add bootstrap disable flags, 1 text engine, 2 smooth scrolling
+* Update config defaults
+* Update network protocol
+* Fix registry references
+* Enhance tooltip rendering and add gradient effect
+* Fix hex colors cannot be parsed
+#### Modern Text 1.16 (Embedded)
+* Add small font config
+* Fix obfuscated chars layout
+* Fix font blur when GUI scale is 1 or 2
+* Fix external fonts cannot be loaded on Linux
+#### Core Framework 3.0 (Preview)
+* Same as 2.6.4
+
 ### 1.16.5-2.6.4.92 (2021-09-29)
 #### Forge Extension 1.16.5-36.2.0
 * Optimize packet dispatcher
@@ -87,7 +104,7 @@ Changelogs
 * Drop support for Java 10 or below
 * Add round lines and more drawing methods
 * Add image drawing and recycle bitmaps
-* Switch to multi-threaded rendering
+* Switch to multithreaded rendering
 * Add automatic vertex array object generation
 * Add vertex attributes and vertex buffer binding points
 * Introduce GLCanvas and update shaders
