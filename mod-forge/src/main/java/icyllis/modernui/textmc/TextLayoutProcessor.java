@@ -45,7 +45,7 @@ public class TextLayoutProcessor {
     /**
      * Config values.
      */
-    public static volatile boolean sSmallFont = false;
+    public static volatile int sBaseFontSize = 8;
 
     /**
      * Array to build char array.
@@ -517,7 +517,7 @@ public class TextLayoutProcessor {
         if ((fontStyle & CharacterStyleCarrier.ITALIC) != 0) {
             style |= Font.ITALIC;
         }
-        font = font.deriveFont(style, (sSmallFont ? 7 : 8) * res);
+        font = font.deriveFont(style, Math.min(sBaseFontSize * res, 96));
         if (carrier.isObfuscated()) {
             final var digits = layoutEngine.lookupDigits(font);
             final float advance = digits.getValue()[0];
