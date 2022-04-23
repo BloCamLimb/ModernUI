@@ -16,13 +16,41 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * GLSL shader preprocessor for OpenGL or SPIR-V for Vulkan.
- * Allows shaders to be generated and compiled in real time.
- * Only preprocessed shaders meet GLSL specs. Otherwise, it
- * contains Arc UI custom syntax.
- */
-@ParametersAreNonnullByDefault
-package icyllis.arcui.glsl;
+package icyllis.arcui.hgi;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import icyllis.arcui.core.*;
+
+/**
+ * The drawing device is backed by GPU.
+ */
+public final class SurfaceDevice extends Device {
+
+    public SurfaceDevice(SurfaceDrawContext context, boolean initContents) {
+        super(null);
+    }
+
+    @Override
+    public boolean clipIsAA() {
+        return false;
+    }
+
+    @Override
+    public boolean clipIsWideOpen() {
+        return false;
+    }
+
+    @Override
+    protected int getClipType() {
+        return 0;
+    }
+
+    @Override
+    protected Rect getClipBounds() {
+        return null;
+    }
+
+    @Override
+    protected void drawPaint(Paint paint) {
+
+    }
+}

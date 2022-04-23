@@ -588,6 +588,8 @@ public final class Color {
      * <ul>
      *   <li><code>#RRGGBB</code></li>
      *   <li><code>#AARRGGBB</code></li>
+     *   <li><code>0xRRGGBB</code></li>
+     *   <li><code>0xAARRGGBB</code></li>
      * </ul>
      */
     @ColorInt
@@ -598,11 +600,20 @@ public final class Color {
                 // Set the alpha value
                 color |= 0xFF000000;
             } else if (colorString.length() != 9) {
-                throw new IllegalArgumentException("Unknown color");
+                throw new IllegalArgumentException("Unknown color: " + colorString);
+            }
+            return color;
+        } else if (colorString.startsWith("0x")) { // do not support upper case
+            int color = Integer.parseUnsignedInt(colorString.substring(2), 16);
+            if (colorString.length() == 8) {
+                // Set the alpha value
+                color |= 0xFF000000;
+            } else if (colorString.length() != 10) {
+                throw new IllegalArgumentException("Unknown color: " + colorString);
             }
             return color;
         }
-        throw new IllegalArgumentException("Unknown color");
+        throw new IllegalArgumentException("Unknown color prefix: " + colorString);
     }
 
     /**

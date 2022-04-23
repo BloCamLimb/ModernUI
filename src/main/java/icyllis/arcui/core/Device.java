@@ -18,8 +18,8 @@
 
 package icyllis.arcui.core;
 
-import icyllis.arcui.graphics.RecordingContext;
-import icyllis.arcui.graphics.SurfaceDrawContext;
+import icyllis.arcui.hgi.RecordingContext;
+import icyllis.arcui.hgi.SurfaceDrawContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -60,7 +60,7 @@ public abstract class Device extends MatrixProvider {
 
     /**
      * Return ImageInfo for this device. If the canvas is not backed by GPU,
-     * then the info's ColorType will be {@link ImageInfo#COLOR_UNKNOWN}.
+     * then the info's ColorType will be {@link ColorType#UNKNOWN}.
      */
     @Nonnull
     public final ImageInfo getImageInfo() {

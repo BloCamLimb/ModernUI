@@ -16,13 +16,29 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * GLSL shader preprocessor for OpenGL or SPIR-V for Vulkan.
- * Allows shaders to be generated and compiled in real time.
- * Only preprocessed shaders meet GLSL specs. Otherwise, it
- * contains Arc UI custom syntax.
- */
-@ParametersAreNonnullByDefault
-package icyllis.arcui.glsl;
+package icyllis.arcui.hgi;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+/**
+ * The subclass that supports recycling.
+ */
+public abstract class RecycledResource extends ManagedResource {
+
+    public RecycledResource(Server server) {
+        super(server);
+    }
+
+    /**
+     * When recycle is called and there is only one ref left on the resource, we will signal that
+     * the resource can be recycled for reuse. If the subclass (or whoever is managing this resource)
+     * decides not to recycle the objects, it is their responsibility to call unref on the object.
+     */
+    public final void recycle() {
+        if (unique()) {
+            onRecycle();
+        } else {
+            unref();
+        }
+    }
+
+    public abstract void onRecycle();
+}

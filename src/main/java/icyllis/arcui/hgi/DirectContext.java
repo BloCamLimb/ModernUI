@@ -16,13 +16,21 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * GLSL shader preprocessor for OpenGL or SPIR-V for Vulkan.
- * Allows shaders to be generated and compiled in real time.
- * Only preprocessed shaders meet GLSL specs. Otherwise, it
- * contains Arc UI custom syntax.
- */
-@ParametersAreNonnullByDefault
-package icyllis.arcui.glsl;
+package icyllis.arcui.hgi;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+/**
+ * The direct context interacts with the underlying 3D graphics API (OpenGL or Vulkan)
+ * on the render thread. A direct context may derive multiple deferred contexts.
+ */
+public final class DirectContext extends RecordingContext {
+
+    private ResourceCache mResourceCache;
+
+    public DirectContext(ThreadSafeProxy proxy) {
+        super(proxy);
+    }
+
+    public ResourceCache getResourceCache() {
+        return mResourceCache;
+    }
+}

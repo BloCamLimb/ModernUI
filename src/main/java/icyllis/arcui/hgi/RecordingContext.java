@@ -16,13 +16,27 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * GLSL shader preprocessor for OpenGL or SPIR-V for Vulkan.
- * Allows shaders to be generated and compiled in real time.
- * Only preprocessed shaders meet GLSL specs. Otherwise, it
- * contains Arc UI custom syntax.
- */
-@ParametersAreNonnullByDefault
-package icyllis.arcui.glsl;
+package icyllis.arcui.hgi;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import org.jetbrains.annotations.ApiStatus;
+
+public class RecordingContext {
+
+    protected final ThreadSafeProxy mProxy;
+
+    public RecordingContext(ThreadSafeProxy proxy) {
+        mProxy = proxy;
+    }
+
+    /**
+     * The 3D API backing this context
+     */
+    @ApiStatus.Internal
+    public final int backend() {
+        return mProxy.backend();
+    }
+
+    public ThreadSafeProxy threadSafeProxy() {
+        return mProxy;
+    }
+}

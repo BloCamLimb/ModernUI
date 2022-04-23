@@ -16,13 +16,45 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * GLSL shader preprocessor for OpenGL or SPIR-V for Vulkan.
- * Allows shaders to be generated and compiled in real time.
- * Only preprocessed shaders meet GLSL specs. Otherwise, it
- * contains Arc UI custom syntax.
- */
-@ParametersAreNonnullByDefault
-package icyllis.arcui.glsl;
+package icyllis.arcui.vk;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+import icyllis.arcui.hgi.BackendFormat;
+import icyllis.arcui.hgi.Texture;
+
+import javax.annotation.Nonnull;
+
+/**
+ * Represents Vulkan 2D images, can be used as textures and attachments.
+ */
+public final class VkImage extends Texture {
+
+    public VkImage(VkServer server, int width, int height) {
+        super(server, width, height, false);
+    }
+
+    @Override
+    public long getMemorySize() {
+        return 0;
+    }
+
+    @Override
+    protected void onRelease() {
+
+    }
+
+    @Override
+    protected void onDiscard() {
+
+    }
+
+    @Nonnull
+    @Override
+    public BackendFormat getBackendFormat() {
+        return null;
+    }
+
+    @Override
+    public int getSampleCount() {
+        return 0;
+    }
+}

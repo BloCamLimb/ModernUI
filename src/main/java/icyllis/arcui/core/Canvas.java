@@ -18,8 +18,8 @@
 
 package icyllis.arcui.core;
 
-import icyllis.arcui.graphics.RecordingContext;
-import icyllis.arcui.graphics.SurfaceDrawContext;
+import icyllis.arcui.hgi.RecordingContext;
+import icyllis.arcui.hgi.SurfaceDrawContext;
 import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
@@ -169,7 +169,7 @@ public class Canvas implements AutoCloseable {
 
     /**
      * Returns ImageInfo for Canvas. If Canvas is not associated with raster surface or
-     * GPU surface, returned ColorType is set to {@link ImageInfo#COLOR_UNKNOWN}.
+     * GPU surface, returned ColorType is set to {@link ColorType#UNKNOWN}.
      *
      * @return dimensions and ColorType of Canvas
      */

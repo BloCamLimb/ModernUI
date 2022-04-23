@@ -17,12 +17,9 @@
  */
 
 /**
- * GLSL shader preprocessor for OpenGL or SPIR-V for Vulkan.
- * Allows shaders to be generated and compiled in real time.
- * Only preprocessed shaders meet GLSL specs. Otherwise, it
- * contains Arc UI custom syntax.
+ * Arc UI hardware graphics interface package. It is the abstraction layer of different 3D graphics APIs.
  */
 @ParametersAreNonnullByDefault
-package icyllis.arcui.glsl;
+package icyllis.arcui.hgi;
 
 import javax.annotation.ParametersAreNonnullByDefault;
