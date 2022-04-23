@@ -45,6 +45,11 @@ import java.util.*;
 class TextLayoutProcessor {
 
     /**
+     * Config values.
+     */
+    static volatile int sBaseFontSize = 8;
+
+    /**
      * Array to build char array.
      */
     private final CharArrayList mChars = new CharArrayList();
@@ -516,7 +521,7 @@ class TextLayoutProcessor {
         if ((fontStyle & CharacterStyleCarrier.ITALIC) != 0) {
             style |= Font.ITALIC;
         }
-        font = font.deriveFont(style, 8 * res);
+        font = font.deriveFont(style, Math.min(sBaseFontSize * res, 96));
         if (carrier.isObfuscated()) {
             final var digits = layoutEngine.lookupDigits(font);
             final float advance = digits.getValue()[0];
