@@ -1,5 +1,12 @@
 Changelogs
 ===
+### Modern UI 3.4.4.103 (2022-04-23)
+#### Forge Extension 1.18.2-40.0.12
+#### Modern Text Engine 1.18.2
+* Add font size config
+#### Core Framework 3.4
+* Internal changes
+
 ### Modern UI 3.4.3.102 (2022-04-01)
 #### Forge Extension 1.18.2-40.0.12
 * Refactor the loader and improved compatibility

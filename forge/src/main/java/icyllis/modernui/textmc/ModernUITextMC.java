@@ -125,6 +125,7 @@ public final class ModernUITextMC {
         //final ForgeConfigSpec.BooleanValue globalRenderer;
         private final ForgeConfigSpec.BooleanValue mAllowShadow;
         private final ForgeConfigSpec.BooleanValue mFixedResolution;
+        private final ForgeConfigSpec.EnumValue<FontSize> fontSize;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -150,6 +151,11 @@ public final class ModernUITextMC {
                                     "system.",
                             "If your fonts are not really bitmap fonts, then you should keep this setting false.")
                     .define("fixedResolution", false);
+            fontSize = builder.comment(
+                            "Use smaller or larger font size for vanilla text layout. To be exact, " +
+                                    "small (7 * GuiScale), normal (8 * GuiScale), large (9 * GuiScale).",
+                            "A game restart is required to reload the setting properly.")
+                    .defineEnum("fontSize", FontSize.NORMAL);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
@@ -185,6 +191,7 @@ public final class ModernUITextMC {
                 TextLayoutEngine.sFixedResolution = fixedResolution;
                 Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reload());
             }
+            TextLayoutProcessor.sBaseFontSize = fontSize.get().mBaseSize;
             /*GlyphManagerForge.sPreferredFont = preferredFont.get();
             GlyphManagerForge.sAntiAliasing = antiAliasing.get();
             GlyphManagerForge.sHighPrecision = highPrecision.get();
@@ -194,6 +201,18 @@ public final class ModernUITextMC {
             //TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
 
             LOGGER.debug(MARKER, "Text config reloaded with {}", event.getClass().getSimpleName());
+        }
+
+        private enum FontSize {
+            SMALL(7),
+            NORMAL(8),
+            LARGE(9);
+
+            private final int mBaseSize;
+
+            FontSize(int baseSize) {
+                mBaseSize = baseSize;
+            }
         }
     }
 }
