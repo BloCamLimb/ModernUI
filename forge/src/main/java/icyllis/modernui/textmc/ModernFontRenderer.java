@@ -35,7 +35,7 @@ import javax.annotation.Nonnull;
  * @author BloCamLimb
  */
 @OnlyIn(Dist.CLIENT)
-public class ModernFontRenderer {
+public final class ModernFontRenderer {
 
     public static final Vector3f SHADOW_OFFSET = new Vector3f(0.0F, 0.0F, 0.03F);
 

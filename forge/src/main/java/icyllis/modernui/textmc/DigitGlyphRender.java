@@ -57,6 +57,7 @@ class DigitGlyphRender extends BaseGlyphRender {
         builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
         RenderSystem.bindTexture(glyph.texture);
         x += mOffsetX;
+        // 0 is standard, no need to offset
         if (idx != 0) {
             x += mDigits.getValue()[idx];
         }
@@ -81,6 +82,7 @@ class DigitGlyphRender extends BaseGlyphRender {
         TexturedGlyph glyph = mDigits.getKey()[idx];
         VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
         x += mOffsetX;
+        // 0 is standard, no need to offset
         if (idx != 0) {
             x += mDigits.getValue()[idx];
         }

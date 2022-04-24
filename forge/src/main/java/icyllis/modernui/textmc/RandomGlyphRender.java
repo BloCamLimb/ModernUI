@@ -48,11 +48,12 @@ class RandomGlyphRender extends BaseGlyphRender {
     @Override
     public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String input, float x, float y, int r, int g,
                           int b, int a, float res) {
-        int idx = RANDOM.nextInt(10);
+        int idx = RANDOM.nextInt(mGlyphs.getKey().length);
         TexturedGlyph glyph = mGlyphs.getKey()[idx];
         builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
         RenderSystem.bindTexture(glyph.texture);
         x += mOffsetX;
+        // 0 is standard, no need to offset
         if (idx != 0) {
             x += mGlyphs.getValue()[idx];
         }
@@ -71,11 +72,13 @@ class RandomGlyphRender extends BaseGlyphRender {
     @Override
     public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence input,
                           float x, float y, int r, int g, int b, int a, boolean seeThrough, int light, float res) {
-        int idx = RANDOM.nextInt(10);
+        int idx = RANDOM.nextInt(mGlyphs.getKey().length);
         TexturedGlyph glyph = mGlyphs.getKey()[idx];
         VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
         x += mOffsetX;
+        // 0 is standard, no need to offset
         if (idx != 0) {
+            // already normalized to resolution
             x += mGlyphs.getValue()[idx];
         }
         x += glyph.offsetX / res;
