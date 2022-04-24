@@ -36,7 +36,7 @@ public final class GLUtil {
      * @param format see GLTypes
      * @return see Color
      */
-    public static int getGLFormatChannels(int format) {
+    public static int GLFormatChannels(int format) {
         return switch (format) {
             case GLTypes.FORMAT_UNKNOWN,
                     GLTypes.FORMAT_DEPTH24_STENCIL8,
@@ -72,7 +72,7 @@ public final class GLUtil {
      * @param glFormat see GL45C, EXTTextureStorage, EXTTextureCompressionS3TC
      * @return see GLTypes
      */
-    public static int getGLFormatFromGLEnum(@NativeType("GLenum") int glFormat) {
+    public static int GLFormatFromGLEnum(@NativeType("GLenum") int glFormat) {
         return switch (glFormat) {
             case GL_RGBA8 -> GLTypes.FORMAT_RGBA8;
             case GL_R8 -> GLTypes.FORMAT_R8;
@@ -106,7 +106,7 @@ public final class GLUtil {
     /**
      * Returns either the sized internal format or compressed internal format of the GrGLFormat.
      */
-    public static int getGLEnumFromGLFormat(int format) {
+    public static int GLFormatToGLEnum(int format) {
         return switch (format) {
             case GLTypes.FORMAT_RGBA8 -> GL_RGBA8;
             case GLTypes.FORMAT_R8 -> GL_R8;
@@ -138,7 +138,7 @@ public final class GLUtil {
         };
     }
 
-    public static int getGLFormatCompressionType(int format) {
+    public static int GLFormatCompressionType(int format) {
         return switch (format) {
             case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2 -> Image.COMPRESSION_ETC2_RGB8_UNORM;
             case GLTypes.FORMAT_COMPRESSED_RGB8_BC1 -> Image.COMPRESSION_BC1_RGB8_UNORM;
@@ -147,7 +147,7 @@ public final class GLUtil {
         };
     }
 
-    public static int getGLFormatBytesPerBlock(int format) {
+    public static int GLFormatBytesPerBlock(int format) {
         return switch (format) {
             case GLTypes.FORMAT_RGBA8,
                     GLTypes.FORMAT_DEPTH24_STENCIL8,
@@ -180,7 +180,7 @@ public final class GLUtil {
         };
     }
 
-    public static int getGLFormatStencilBits(int format) {
+    public static int GLFormatStencilBits(int format) {
         return switch (format) {
             case GLTypes.FORMAT_STENCIL_INDEX8,
                     GLTypes.FORMAT_DEPTH24_STENCIL8 -> 8;
@@ -212,7 +212,7 @@ public final class GLUtil {
         };
     }
 
-    public static boolean getGLFormatIsPackedDepthStencil(int format) {
+    public static boolean GLFormatIsPackedDepthStencil(int format) {
         return switch (format) {
             case GLTypes.FORMAT_DEPTH24_STENCIL8 -> true;
             case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2,
@@ -244,7 +244,7 @@ public final class GLUtil {
         };
     }
 
-    public static boolean getGLFormatIsSRGB(int format) {
+    public static boolean GLFormatIsSRGB(int format) {
         return switch (format) {
             case GLTypes.FORMAT_SRGB8_ALPHA8 -> true;
             case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2,
@@ -276,7 +276,7 @@ public final class GLUtil {
         };
     }
 
-    public static String getGLFormatName(@NativeType("GLenum") int glFormat) {
+    public static String GLFormatName(@NativeType("GLenum") int glFormat) {
         return switch (glFormat) {
             case GL_RGBA8 -> "RGBA8";
             case GL_R8 -> "R8";

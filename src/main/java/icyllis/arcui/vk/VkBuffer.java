@@ -16,7 +16,28 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * OpenGL.
- */
-package icyllis.arcui.gl;
+package icyllis.arcui.vk;
+
+import icyllis.arcui.hgi.Buffer;
+
+public class VkBuffer extends Buffer {
+
+    public VkBuffer(VkServer server) {
+        super(server);
+    }
+
+    @Override
+    public long getMemorySize() {
+        return 0;
+    }
+
+    @Override
+    protected void onRelease() {
+
+    }
+
+    @Override
+    protected void onDiscard() {
+
+    }
+}

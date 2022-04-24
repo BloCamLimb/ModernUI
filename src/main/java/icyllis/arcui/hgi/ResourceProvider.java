@@ -16,7 +16,7 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * OpenGL.
- */
-package icyllis.arcui.gl;
+package icyllis.arcui.hgi;
+
+public class ResourceProvider {
+}

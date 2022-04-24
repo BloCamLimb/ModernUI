@@ -19,7 +19,4 @@
 /**
  * Vulkan.
  */
-@ParametersAreNonnullByDefault
 package icyllis.arcui.vk;
-
-import javax.annotation.ParametersAreNonnullByDefault;

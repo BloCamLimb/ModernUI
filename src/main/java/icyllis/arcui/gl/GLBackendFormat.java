@@ -53,12 +53,12 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelMask() {
-        return GLUtil.getGLFormatChannels(getGLFormat());
+        return GLUtil.GLFormatChannels(getGLFormat());
     }
 
     @Override
     public int getGLFormat() {
-        return GLUtil.getGLFormatFromGLEnum(mFormat);
+        return GLUtil.GLFormatFromGLEnum(mFormat);
     }
 
     @Override
@@ -77,17 +77,17 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int getCompressionType() {
-        return GLUtil.getGLFormatCompressionType(getGLFormat());
+        return GLUtil.GLFormatCompressionType(getGLFormat());
     }
 
     @Override
     public int getBytesPerBlock() {
-        return GLUtil.getGLFormatBytesPerBlock(getGLFormat());
+        return GLUtil.GLFormatBytesPerBlock(getGLFormat());
     }
 
     @Override
     public int getStencilBits() {
-        return GLUtil.getGLFormatStencilBits(getGLFormat());
+        return GLUtil.GLFormatStencilBits(getGLFormat());
     }
 
     @Override

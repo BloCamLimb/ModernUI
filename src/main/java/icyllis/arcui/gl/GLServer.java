@@ -21,9 +21,34 @@ package icyllis.arcui.gl;
 import icyllis.arcui.hgi.DirectContext;
 import icyllis.arcui.hgi.Server;
 
+import static org.lwjgl.opengl.GL45C.*;
+
 public final class GLServer extends Server {
+
+    private int mDrawFramebuffer = 0;
 
     public GLServer(DirectContext context) {
         super(context);
+    }
+
+    public void bindFramebuffer(int target, int framebuffer) {
+        glBindFramebuffer(target, framebuffer);
+        if (target == GL_FRAMEBUFFER || target == GL_DRAW_FRAMEBUFFER) {
+            mDrawFramebuffer = framebuffer;
+        }
+        onFramebufferChanged();
+    }
+
+    public void deleteFramebuffer(int framebuffer) {
+        glDeleteFramebuffers(framebuffer);
+        // Deleting the currently bound framebuffer rebinds to 0.
+        if (mDrawFramebuffer == framebuffer) {
+            onFramebufferChanged();
+            mDrawFramebuffer = 0;
+        }
+    }
+
+    private void onFramebufferChanged() {
+
     }
 }

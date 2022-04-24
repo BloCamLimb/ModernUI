@@ -28,8 +28,8 @@ import javax.annotation.Nonnull;
  */
 public final class GLRenderbuffer extends Attachment {
 
-    private final int mSampleCount;
     private final int mFormat;
+    private final int mSampleCount;
 
     // may be zero for external stencil buffers associated with external render targets
     // (we don't require the client to give us the id, just tell us how many bits of stencil there are)
@@ -40,7 +40,7 @@ public final class GLRenderbuffer extends Attachment {
     private final long mMemorySize;
 
     public GLRenderbuffer(GLServer server, int width, int height,
-                          int sampleCount, int format, int renderbuffer) {
+                          int format, int sampleCount, int renderbuffer) {
         super(server, width, height);
         assert sampleCount > 0;
         mSampleCount = sampleCount;
@@ -48,9 +48,9 @@ public final class GLRenderbuffer extends Attachment {
         mRenderbuffer = renderbuffer;
 
         // color buffers may be compressed
-        int compression = GLUtil.getGLFormatCompressionType(format);
+        int compression = GLUtil.GLFormatCompressionType(format);
         long size = DataUtils.numBlocks(compression, width, height);
-        size *= GLUtil.getGLFormatBytesPerBlock(format);
+        size *= GLUtil.GLFormatBytesPerBlock(format);
         size *= sampleCount;
         mMemorySize = size;
 
@@ -58,21 +58,27 @@ public final class GLRenderbuffer extends Attachment {
     }
 
     @Nonnull
+    public static GLRenderbuffer makeWrapped(GLServer server, int width, int height,
+                                             int format, int sampleCount, int renderbuffer) {
+        return new GLRenderbuffer(server, width, height, format, sampleCount, renderbuffer);
+    }
+
+    @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(GLUtil.getGLEnumFromGLFormat(mFormat), Types.TEXTURE_TYPE_NONE);
+            mBackendFormat = new GLBackendFormat(GLUtil.GLFormatToGLEnum(mFormat), Types.TEXTURE_TYPE_NONE);
         }
         return mBackendFormat;
+    }
+
+    public int getFormat() {
+        return mFormat;
     }
 
     @Override
     public int getSampleCount() {
         return mSampleCount;
-    }
-
-    public int getFormat() {
-        return mFormat;
     }
 
     public int getRenderbuffer() {

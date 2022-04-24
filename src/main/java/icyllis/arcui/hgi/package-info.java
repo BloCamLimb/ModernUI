@@ -17,9 +17,6 @@
  */
 
 /**
- * Arc UI hardware graphics interface package. It is the abstraction layer of different 3D graphics APIs.
+ * Hardware graphics interface. It is the abstraction layer of different 3D graphics APIs.
  */
-@ParametersAreNonnullByDefault
 package icyllis.arcui.hgi;
-
-import javax.annotation.ParametersAreNonnullByDefault;
