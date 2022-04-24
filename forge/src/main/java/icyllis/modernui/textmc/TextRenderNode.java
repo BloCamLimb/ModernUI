@@ -29,7 +29,7 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
- * The complete node that including layout results and rendering information.
+ * The render node includes the most optimized layout results and rendering information.
  */
 class TextRenderNode {
 
@@ -61,7 +61,7 @@ class TextRenderNode {
     /**
      * Vertical adjustment to string position.
      */
-    public static final int VANILLA_BASELINE_OFFSET = 6;
+    public static volatile float sVanillaBaselineOffset = 7;
 
     private static final int MAX_LIFESPAN_TICKS = 256; // 12.8 s
 
@@ -167,7 +167,7 @@ class TextRenderNode {
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
 
-        y += VANILLA_BASELINE_OFFSET;
+        y += sVanillaBaselineOffset;
 
         for (BaseGlyphRender glyph : mGlyphs) {
             if ((glyph.mFlags & BaseGlyphRender.COLOR_NO_CHANGE) == 0) {
@@ -220,7 +220,7 @@ class TextRenderNode {
         }
 
         if ((colorBackground & 0xFF000000) != 0) {
-            y -= VANILLA_BASELINE_OFFSET;
+            y -= sVanillaBaselineOffset;
             a = colorBackground >>> 24;
             r = colorBackground >> 16 & 0xff;
             g = colorBackground >> 8 & 0xff;

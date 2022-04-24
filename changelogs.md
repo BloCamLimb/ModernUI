@@ -1,8 +1,11 @@
 Changelogs
 ===
-### Modern UI 3.4.4.103 (2022-04-23)
+### Modern UI 3.4.4.103 (2022-04-24)
 #### Forge Extension 1.18.2-40.0.12
 #### Modern Text Engine 1.18.2
+* Add baseline config
+* Add more obfuscated chars
+* Enhance breaking multilayer text at a point
 * Add font size config
 #### Core Framework 3.4
 * Internal changes

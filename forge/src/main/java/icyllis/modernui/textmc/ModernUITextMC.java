@@ -125,7 +125,8 @@ public final class ModernUITextMC {
         //final ForgeConfigSpec.BooleanValue globalRenderer;
         private final ForgeConfigSpec.BooleanValue mAllowShadow;
         private final ForgeConfigSpec.BooleanValue mFixedResolution;
-        private final ForgeConfigSpec.EnumValue<FontSize> fontSize;
+        private final ForgeConfigSpec.EnumValue<FontSize> mFontSize;
+        private final ForgeConfigSpec.IntValue mBaseline;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -151,11 +152,15 @@ public final class ModernUITextMC {
                                     "system.",
                             "If your fonts are not really bitmap fonts, then you should keep this setting false.")
                     .define("fixedResolution", false);
-            fontSize = builder.comment(
-                            "Use smaller or larger font size for vanilla text layout. To be exact, " +
+            mFontSize = builder.comment(
+                            "Use smaller or larger font for vanilla text layout. To be exact, " +
                                     "small (7 * GuiScale), normal (8 * GuiScale), large (9 * GuiScale).",
                             "A game restart is required to reload the setting properly.")
                     .defineEnum("fontSize", FontSize.NORMAL);
+            mBaseline = builder.comment(
+                            "Control vertical baseline for vanilla text layout, in normalized pixels.",
+                            "For smaller font, 6 is recommended. The default value is 7.")
+                    .defineInRange("baseline", 7, 5, 9);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
@@ -191,7 +196,8 @@ public final class ModernUITextMC {
                 TextLayoutEngine.sFixedResolution = fixedResolution;
                 Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reload());
             }
-            TextLayoutProcessor.sBaseFontSize = fontSize.get().mBaseSize;
+            TextLayoutProcessor.sBaseFontSize = mFontSize.get().mBaseSize;
+            TextRenderNode.sVanillaBaselineOffset = mBaseline.get().floatValue();
             /*GlyphManagerForge.sPreferredFont = preferredFont.get();
             GlyphManagerForge.sAntiAliasing = antiAliasing.get();
             GlyphManagerForge.sHighPrecision = highPrecision.get();

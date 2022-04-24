@@ -36,7 +36,7 @@ import java.util.Optional;
  * Handle line breaks, get text width, etc. For Vanilla Only.
  */
 @OnlyIn(Dist.CLIENT)
-public class ModernStringSplitter {
+public final class ModernStringSplitter {
 
     //private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
 
@@ -238,10 +238,14 @@ public class ModernStringSplitter {
             return null;
         }
         return text.visit(new FormattedText.StyledContentConsumer<Style>() {
+            // continuous index
             private int mNext;
 
+            @Nonnull
             @Override
-            public Optional<Style> accept(Style s, String t) {
+            public Optional<Style> accept(@Nonnull Style s, @Nonnull String t) {
+                // Accept a layer, a layer may contain control codes,
+                // but there is no control codes between different layers
                 if (r >= mNext && r < mNext + t.length()) {
                     return Optional.of(s);
                 } else {
@@ -280,23 +284,35 @@ public class ModernStringSplitter {
         if (width < 0) {
             return null;
         }
+        // Hooks from Modern UI
+        if (text instanceof FormattedTextWrapper) {
+            // This is more accurate that do not shift control codes
+            return styleAtWidth(((FormattedTextWrapper) text).mText, width);
+        }
+        // Failed if someone uses lambdas
         TextRenderNode node = TextLayoutEngine.getInstance().lookupMultilayerNode(text);
         if (width >= node.mAdvance) {
             return null;
         }
+        // this is stringIndex WITH control codes, but deep processor contain NO control codes
         final int r = getTrimSize(node.mGlyphs, width);
         if (r == -1) {
             return null;
         }
         final MutableObject<Style> value = new MutableObject<>();
         text.accept(new FormattedCharSink() {
-            // note that index will be reset to 0 for composited char sequence
+            // Note that index will be reset to 0 for composited char sequence
             // we should get the continuous string index
             private int mNext;
+            private int mLastLayerIndex;
 
             @Override
-            public boolean accept(int index, Style s, int ch) {
-                if ((mNext += Character.charCount(ch)) >= r) {
+            public boolean accept(int index, @Nonnull Style s, int ch) {
+                if (index < mLastLayerIndex) {
+                    mNext += mLastLayerIndex;
+                    mLastLayerIndex = index;
+                }
+                if ((mNext + index) >= r) {
                     value.setValue(s);
                     return false;
                 } else {
@@ -332,8 +348,9 @@ public class ModernStringSplitter {
             private final ComponentCollector mCollector = new ComponentCollector();
             private int mNext;
 
+            @Nonnull
             @Override
-            public Optional<FormattedText> accept(Style s, String t) {
+            public Optional<FormattedText> accept(@Nonnull Style s, @Nonnull String t) {
                 if (mNext + t.length() >= r) {
                     String sub = t.substring(0, r - mNext);
                     if (!sub.isEmpty()) {

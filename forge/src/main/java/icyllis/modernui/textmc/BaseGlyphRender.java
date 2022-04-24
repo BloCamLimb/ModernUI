@@ -53,7 +53,7 @@ abstract class BaseGlyphRender {
     public float mOffsetX;
 
     /**
-     * Horizontal advance. Normalized to Minecraft GUI system.
+     * Laid-out horizontal advance in context. Normalized to Minecraft GUI system.
      */
     private final float mAdvance;
 
@@ -61,6 +61,24 @@ abstract class BaseGlyphRender {
      * Rendering flags, will be inserted later.
      *
      * @see CharacterStyleCarrier
+     */
+    /*
+     * lower 24 bits - color
+     * higher 8 bits
+     * |--------|
+     *         1  BOLD
+     *        1   ITALIC
+     *        11  FONT_STYLE
+     *       1    UNDERLINE
+     *      1     STRIKETHROUGH
+     *      11    EFFECT
+     *     1      OBFUSCATED
+     *     11111  LAYOUT
+     *    1       FORMATTING_CODE
+     *   1        COLOR_NO_CHANGE (GlyphRender)
+     *  1         USE_PARAM_COLOR
+     *  1 111111  CHARACTER_STYLE
+     * |--------|
      */
     public int mFlags = COLOR_NO_CHANGE;
 
@@ -99,7 +117,7 @@ abstract class BaseGlyphRender {
      * @param g          final green
      * @param b          final blue
      * @param a          final alpha
-     * @param seeThrough is see through type
+     * @param seeThrough if see-through type
      * @param light      packed light
      * @param res        resolution level
      */
