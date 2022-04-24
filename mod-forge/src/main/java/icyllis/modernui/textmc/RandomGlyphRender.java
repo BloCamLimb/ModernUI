@@ -19,18 +19,15 @@
 package icyllis.modernui.textmc;
 
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.BufferUploader;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.text.TexturedGlyph;
 import net.minecraft.client.renderer.MultiBufferSource;
-import org.apache.commons.lang3.tuple.Pair;
 import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Map;
 import java.util.Random;
 
 public class RandomGlyphRender extends BaseGlyphRender {
@@ -41,10 +38,10 @@ public class RandomGlyphRender extends BaseGlyphRender {
      * Array of glyphs with same advance
      */
     @Nonnull
-    private final Pair<TexturedGlyph[], float[]> mGlyphs;
+    private final Map.Entry<TexturedGlyph[], float[]> mGlyphs;
 
     public RandomGlyphRender(int stripIndex, float offsetX, float advance, int decoration,
-                             @Nonnull Pair<TexturedGlyph[], float[]> glyphs) {
+                             @Nonnull Map.Entry<TexturedGlyph[], float[]> glyphs) {
         super(stripIndex, advance, offsetX, decoration);
         mGlyphs = glyphs;
     }
@@ -52,13 +49,14 @@ public class RandomGlyphRender extends BaseGlyphRender {
     @Override
     public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String input, float x, float y, int r, int g,
                           int b, int a, float res) {
-        int idx = RANDOM.nextInt(10);
-        TexturedGlyph glyph = mGlyphs.getLeft()[idx];
+        int idx = RANDOM.nextInt(mGlyphs.getKey().length);
+        TexturedGlyph glyph = mGlyphs.getKey()[idx];
         builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
         RenderSystem.bindTexture(glyph.texture);
         x += mOffsetX;
+        // 0 is standard, no need to offset
         if (idx != 0) {
-            x += mGlyphs.getRight()[idx];
+            x += mGlyphs.getValue()[idx];
         }
         x += glyph.offsetX / res;
         y += glyph.offsetY / res;
@@ -75,12 +73,14 @@ public class RandomGlyphRender extends BaseGlyphRender {
     @Override
     public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence input,
                           float x, float y, int r, int g, int b, int a, boolean seeThrough, int light, float res) {
-        int idx = RANDOM.nextInt(10);
-        TexturedGlyph glyph = mGlyphs.getLeft()[idx];
+        int idx = RANDOM.nextInt(mGlyphs.getKey().length);
+        TexturedGlyph glyph = mGlyphs.getKey()[idx];
         VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
         x += mOffsetX;
+        // 0 is standard, no need to offset
         if (idx != 0) {
-            x += mGlyphs.getRight()[idx];
+            // already normalized to resolution
+            x += mGlyphs.getValue()[idx];
         }
         x += glyph.offsetX / res;
         y += glyph.offsetY / res;

@@ -33,7 +33,6 @@ import net.minecraft.server.packs.resources.ReloadableResourceManager;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.resource.ISelectiveResourceReloadListener;
 import net.minecraftforge.resource.VanillaResourceType;
-import org.apache.commons.lang3.tuple.Pair;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -42,6 +41,7 @@ import java.awt.font.GlyphVector;
 import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.*;
+import java.util.function.Function;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -98,6 +98,9 @@ public class TextLayoutEngine {
             .expireAfterAccess(20, TimeUnit.SECONDS)
             .build();*/
 
+    // init first
+    private final GlyphManager mGlyphManager = GlyphManager.getInstance();
+
     /**
      * Temporary Key object re-used for lookups with stringCache.get(). Using a temporary object like this avoids the
      * overhead of allocating new objects in the critical rendering path. Of course, new Key objects are always created
@@ -115,7 +118,66 @@ public class TextLayoutEngine {
 
     private final TextLayoutProcessor mProcessor = new TextLayoutProcessor();
 
-    private Map<Font, Pair<TexturedGlyph[], float[]>> mDigitMap = new HashMap<>();
+    // derived font to ASCII 33(!) to 126(~)
+    private final Map<Font, Map.Entry<TexturedGlyph[], float[]>> mFastCharMap = new HashMap<>();
+    private final Function<Font, Map.Entry<TexturedGlyph[], float[]>> mCacheFastChar = font -> {
+        TexturedGlyph[] glyphs = new TexturedGlyph[94];
+        // normalized offsets
+        float[] offsets = new float[glyphs.length];
+        char[] chars = new char[1];
+        int n = 0;
+        // 48 to 57, always cache all digits
+        for (int i = 0; i < 10; i++) {
+            chars[0] = (char) ('0' + i);
+            GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
+            glyphs[i] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+            // '0' is standard, because it's wider than other digits in general
+            if (i == 0) {
+                // 0 is standard advance
+                offsets[0] = (float) vector.getGlyphPosition(1).getX();
+            } else {
+                // relative offset to standard advance, to center the glyph
+                offsets[n] = (float) ((offsets[0] - vector.getGlyphPosition(1).getX()) / 2f);
+            }
+            n++;
+        }
+        // 33 to 47
+        for (int i = 0; i < 15; i++) {
+            chars[0] = (char) ('!' + i);
+            GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
+            float advance = (float) vector.getGlyphPosition(1).getX();
+            // too wide
+            if (advance + 1 > offsets[0]) {
+                continue;
+            }
+            glyphs[n] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+            offsets[n] = (offsets[0] - advance) / 2f;
+            n++;
+        }
+        // 58 to 126
+        for (int i = 0; i < 69; i++) {
+            chars[0] = (char) (':' + i);
+            GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
+            float advance = (float) vector.getGlyphPosition(1).getX();
+            // too wide
+            if (advance + 1 > offsets[0]) {
+                continue;
+            }
+            glyphs[n] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+            offsets[n] = (offsets[0] - advance) / 2f;
+            n++;
+        }
+        if (n < glyphs.length) {
+            glyphs = Arrays.copyOf(glyphs, n);
+            offsets = Arrays.copyOf(offsets, n);
+        }
+        float res = getResolutionLevel();
+        // the cache will be reset, if resolution level changed
+        for (int i = 0; i < n; i++) {
+            offsets[i] /= res;
+        }
+        return Map.entry(glyphs, offsets);
+    };
 
     private float mResolutionLevel;
 
@@ -136,8 +198,6 @@ public class TextLayoutEngine {
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
         //cacheDigitGlyphs();
 
-        // init class
-        GlyphManager.getInstance();
         ((ReloadableResourceManager) Minecraft.getInstance().getResourceManager()).registerReloadListener(
                 (ISelectiveResourceReloadListener) (manager, predicate) -> {
                     if (predicate.test(VanillaResourceType.LANGUAGES)) {
@@ -173,7 +233,7 @@ public class TextLayoutEngine {
         mStringCache.clear();
         mComponentCache.clear();
         mMultilayerCache.clear();
-        mDigitMap.clear();
+        mFastCharMap.clear();
         boolean rehash = count > 500;
         if (rehash) {
             // Create new HashMap so that the internal hashtable of old maps are released as well
@@ -379,40 +439,14 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Lookup digit glyph with given font.
+     * Lookup fast char glyph with given font.
      *
      * @param font derived font including style and font size
-     * @return array of all digit glyphs 0-9 (in that order)
-     * @see #cacheDigits(Font)
+     * @return array of all fast char glyphs 0-9 (in that order), and others
      */
     @Nonnull
-    public Pair<TexturedGlyph[], float[]> lookupDigits(@Nonnull Font font) {
-        return mDigitMap.computeIfAbsent(font, this::cacheDigits);
-    }
-
-    @Nonnull
-    private Pair<TexturedGlyph[], float[]> cacheDigits(@Nonnull Font font) {
-        GlyphManager engine = GlyphManager.getInstance();
-        TexturedGlyph[] glyphs = new TexturedGlyph[10];
-        float[] offsets = new float[10];
-        char[] chars = new char[1];
-        for (int i = 0; i < 10; i++) {
-            chars[0] = (char) ('0' + i);
-            GlyphVector vector = engine.createGlyphVector(font, chars);
-            glyphs[i] = engine.lookupGlyph(font, vector.getGlyphCode(0));
-            if (i == 0) {
-                // standard advance
-                offsets[0] = (float) vector.getGlyphPosition(1).getX();
-            } else {
-                // additional offset to center it
-                offsets[i] = (float) ((offsets[0] - vector.getGlyphPosition(1).getX()) / 2);
-            }
-        }
-        float res = getResolutionLevel();
-        for (int i = 0; i < 10; i++) {
-            offsets[i] /= res;
-        }
-        return Pair.of(glyphs, offsets);
+    public Map.Entry<TexturedGlyph[], float[]> lookupFastChars(@Nonnull Font font) {
+        return mFastCharMap.computeIfAbsent(font, mCacheFastChar);
     }
 
     /**
