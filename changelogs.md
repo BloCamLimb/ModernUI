@@ -1,6 +1,6 @@
 Changelogs
 ===
-### Modern UI 3.4.4.103 (2022-04-24)
+### Modern UI 3.4.5.106 (2022-04-24)
 #### Forge Extension 1.18.2-40.0.12
 #### Modern Text Engine 1.18.2
 * Add baseline config
