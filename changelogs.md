@@ -1,6 +1,6 @@
 Changelogs
 ===
-### 1.16.5-2.7.0.104 (2022-04-23)
+### 1.16.5-2.7.1.105 (2022-04-24)
 #### Forge Extension 1.16.5-36.2.0
 * Make all registries only in development
 * Add bootstrap disable flags, 1 text engine, 2 smooth scrolling
@@ -10,6 +10,9 @@ Changelogs
 * Enhance tooltip rendering and add gradient effect
 * Fix hex colors cannot be parsed
 #### Modern Text 1.16 (Embedded)
+* Add baseline config
+* Add more obfuscated chars
+* Enhance breaking multilayer text at a point
 * Add font size config
 * Fix obfuscated chars layout
 * Fix font blur when GUI scale is 1 or 2

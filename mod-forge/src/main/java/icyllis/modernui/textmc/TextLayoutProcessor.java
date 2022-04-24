@@ -519,8 +519,8 @@ public class TextLayoutProcessor {
         }
         font = font.deriveFont(style, Math.min(sBaseFontSize * res, 96));
         if (carrier.isObfuscated()) {
-            final var digits = layoutEngine.lookupDigits(font);
-            final float advance = digits.getValue()[0];
+            final var randomChars = layoutEngine.lookupFastChars(font);
+            final float advance = randomChars.getValue()[0];
 
             float offset;
             if (isRtl) {
@@ -532,7 +532,7 @@ public class TextLayoutProcessor {
             /* Process code point */
             for (int i = start; i < limit; i++) {
                 float renderOffset = GlyphManager.sBitmapLike ? Math.round(offset * scale) / scale : offset;
-                mTextList.add(new RandomGlyphRender(start + i, advance, renderOffset, decoration, digits));
+                mTextList.add(new RandomGlyphRender(start + i, advance, renderOffset, decoration, randomChars));
 
                 offset += advance;
 
@@ -569,7 +569,7 @@ public class TextLayoutProcessor {
             GlyphVector vector = glyphManager.layoutGlyphVector(font, text, start, limit, isRtl);
             final int num = vector.getNumGlyphs();
 
-            final var digits = layoutEngine.lookupDigits(font);
+            final var digits = layoutEngine.lookupFastChars(font);
 
             float offset = (float) vector.getGlyphPosition(0).getX();
             float nextOffset = 0;
@@ -597,7 +597,7 @@ public class TextLayoutProcessor {
                 // Align with a full pixel
                 float renderOffset = GlyphManager.sBitmapLike ? Math.round(offset * scale) / scale : offset;
 
-                // Digits are not on SMP
+                // ASCII digits are not on SMP
                 if (fastDigit && text[stripIndex] == '0') {
                     mTextList.add(new DigitGlyphRender(stripIndex, renderOffset, advance, decoration, digits));
                     mHasEffect |= decoration != 0;

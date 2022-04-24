@@ -31,6 +31,7 @@ import org.lwjgl.opengl.GL11;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Map;
 
 /**
  * The key to fast render digit. When given text is String, this is enabled to draw numbers.
@@ -43,10 +44,10 @@ public class DigitGlyphRender extends BaseGlyphRender {
      * A reference of cached array in GlyphManager, 0-9 textured glyphs (in that order)
      */
     @Nonnull
-    private final Pair<TexturedGlyph[], float[]> mDigits;
+    private final Map.Entry<TexturedGlyph[], float[]> mDigits;
 
     public DigitGlyphRender(int stripIndex, float offsetX, float advance, int decoration,
-                            @Nonnull Pair<TexturedGlyph[], float[]> digits) {
+                            @Nonnull Map.Entry<TexturedGlyph[], float[]> digits) {
         super(stripIndex, offsetX, advance, decoration);
         mDigits = digits;
     }
@@ -57,12 +58,13 @@ public class DigitGlyphRender extends BaseGlyphRender {
         int idx = input.charAt(mStringIndex) - '0';
         if (idx < 0 || idx >= 10)
             return;
-        TexturedGlyph glyph = mDigits.getLeft()[idx];
+        TexturedGlyph glyph = mDigits.getKey()[idx];
         builder.begin(GL11.GL_QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
         RenderSystem.bindTexture(glyph.texture);
         x += mOffsetX;
+        // 0 is standard, no need to offset
         if (idx != 0) {
-            x += mDigits.getRight()[idx];
+            x += mDigits.getValue()[idx];
         }
         x += glyph.offsetX / res;
         y += glyph.offsetY / res;
@@ -82,11 +84,12 @@ public class DigitGlyphRender extends BaseGlyphRender {
         int idx = input != null ? input.charAt(mStringIndex) - '0' : 0;
         if (idx < 0 || idx >= 10)
             return;
-        TexturedGlyph glyph = mDigits.getLeft()[idx];
+        TexturedGlyph glyph = mDigits.getKey()[idx];
         VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
         x += mOffsetX;
+        // 0 is standard, no need to offset
         if (idx != 0) {
-            x += mDigits.getRight()[idx];
+            x += mDigits.getValue()[idx];
         }
         x += glyph.offsetX / res;
         y += glyph.offsetY / res;

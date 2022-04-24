@@ -176,6 +176,7 @@ public final class Config {
         private final ForgeConfigSpec.BooleanValue fixedResolution;
         private final ForgeConfigSpec.BooleanValue linearSampling;
         private final ForgeConfigSpec.EnumValue<FontSize> fontSize;
+        private final ForgeConfigSpec.IntValue baseline;
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
         //private final ForgeConfigSpec.BooleanValue enableMipmap;
@@ -298,10 +299,14 @@ public final class Config {
                             "A game restart is required to reload the setting properly.")
                     .define("linearSampling", true);
             fontSize = builder.comment(
-                            "Use smaller or larger font size for vanilla text layout. To be exact, " +
+                            "Use smaller or larger font for vanilla text layout. To be exact, " +
                                     "small (7 * GuiScale), normal (8 * GuiScale), large (9 * GuiScale).",
                             "A game restart is required to reload the setting properly.")
                     .defineEnum("fontSize", FontSize.NORMAL);
+            baseline = builder.comment(
+                            "Control vertical baseline for vanilla text layout, in normalized pixels.",
+                            "For smaller font, 6 is recommended. The default value is 7.")
+                    .defineInRange("baseline", 7, 5, 9);
             fontFamily = builder.comment(
                             "A set of font families with precedence relationships to determine the typeface to use.",
                             "TrueType and OpenTrue are supported. Each list element can be one of the following three" +
@@ -412,6 +417,7 @@ public final class Config {
             }
             FontAtlas.sLinearSampling = linearSampling.get();
             TextLayoutProcessor.sBaseFontSize = fontSize.get().mBaseSize;
+            TextRenderNode.sVanillaBaselineOffset = baseline.get().floatValue();
             /*GlyphManagerForge.sPreferredFont = preferredFont.get();
             GlyphManagerForge.sAntiAliasing = antiAliasing.get();
             GlyphManagerForge.sHighPrecision = highPrecision.get();
