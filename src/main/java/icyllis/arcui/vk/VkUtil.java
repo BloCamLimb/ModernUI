@@ -141,10 +141,10 @@ public final class VkUtil {
 
     public static int getVkFormatCompressionType(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
-            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> Image.COMPRESSION_ETC2_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> Image.COMPRESSION_BC1_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> Image.COMPRESSION_BC1_RGBA8_UNORM;
-            default -> Image.COMPRESSION_NONE;
+            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> Image.COMPRESSION_TYPE_ETC2_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> Image.COMPRESSION_TYPE_BC1_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> Image.COMPRESSION_TYPE_BC1_RGBA8_UNORM;
+            default -> Image.COMPRESSION_TYPE_NONE;
         };
     }
 

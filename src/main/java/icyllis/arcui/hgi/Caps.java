@@ -21,7 +21,7 @@ package icyllis.arcui.hgi;
 /**
  * Represents the capabilities of a Context.
  */
-public class Caps {
+public abstract class Caps {
 
     /**
      * Indicates the capabilities of the fixed function blend unit.
@@ -37,77 +37,113 @@ public class Caps {
             BLEND_EQUATION_ADVANCED = 1,
             BLEND_EQUATION_ADVANCED_COHERENT = 2;
 
-    private boolean mNPOTTextureTileSupport;
-    private boolean mMipmapSupport;
-    private boolean mReuseScratchTextures;
-    private boolean mReuseScratchBuffers;
-    private boolean mGpuTracingSupport;
-    private boolean mOversizedStencilSupport;
-    private boolean mTextureBarrierSupport;
-    private boolean mSampleLocationsSupport;
-    private boolean mMultisampleDisableSupport;
-    private boolean mDrawInstancedSupport;
-    private boolean mNativeDrawIndirectSupport;
-    private boolean mUseClientSideIndirectBuffers;
-    private boolean mConservativeRasterSupport;
-    private boolean mWireframeSupport;
-    private boolean mMSAAResolvesAutomatically;
-    private boolean mUsePrimitiveRestart;
-    private boolean mPreferClientSideDynamicBuffers;
-    private boolean mPreferFullscreenClears;
-    private boolean mTwoSidedStencilRefsAndMasksMustMatch;
-    private boolean mMustClearUploadedBufferData;
-    private boolean mShouldInitializeTextures;
-    private boolean mSupportsAHardwareBufferImages;
-    private boolean mHalfFloatVertexAttributeSupport;
-    private boolean mClampToBorderSupport;
-    private boolean mPerformPartialClearsAsDraws;
-    private boolean mPerformColorClearsAsDraws;
-    private boolean mAvoidLargeIndexBufferDraws;
-    private boolean mPerformStencilClearsAsDraws;
-    private boolean mTransferFromBufferToTextureSupport;
-    private boolean mTransferFromSurfaceToBufferSupport;
-    private boolean mWritePixelsRowBytesSupport;
-    private boolean mReadPixelsRowBytesSupport;
-    private boolean mShouldCollapseSrcOverToSrcWhenAble;
-    private boolean mMustSyncGpuDuringAbandon;
+    protected final ShaderCaps mShaderCaps = new ShaderCaps();
+
+    // Stupid stuff
+    protected final boolean mNPOTTextureTileSupport = true;
+    protected final boolean mMipmapSupport = true;
+    protected final boolean mReuseScratchTextures = true;
+    protected final boolean mReuseScratchBuffers = true;
+    protected final boolean mOversizeStencilSupport = true;
+    protected final boolean mTextureBarrierSupport = true;
+    protected final boolean mSampleLocationsSupport = true;
+    protected final boolean mDrawInstancedSupport = true;
+    protected final boolean mWireframeSupport = true;
+    protected final boolean mMSAAResolvesAutomatically = false;
+    protected final boolean mPreferDiscardableMSAAAttachment = false;
+    protected final boolean mUsePrimitiveRestart = false;
+    protected final boolean mPreferClientSideDynamicBuffers = false;
+    protected final boolean mPreferFullscreenClears = false;
+    protected final boolean mTwoSidedStencilRefsAndMasksMustMatch = false;
+    protected final boolean mMustClearUploadedBufferData = false;
+    protected final boolean mShouldInitializeTextures = false;
+    protected final boolean mSupportsAHardwareBufferImages = false;
+    protected final boolean mHalfFloatVertexAttributeSupport = true;
+    protected final boolean mClampToBorderSupport = true;
+    protected final boolean mPerformPartialClearsAsDraws = false;
+    protected final boolean mPerformColorClearsAsDraws = false;
+    protected final boolean mPerformStencilClearsAsDraws = false;
+    protected final boolean mAvoidLargeIndexBufferDraws = false;
+    protected final boolean mWritePixelsRowBytesSupport = true;
+    protected final boolean mReadPixelsRowBytesSupport = true;
+    protected final boolean mTransferFromBufferToTextureSupport = true;
+    protected final boolean mTransferFromSurfaceToBufferSupport = true;
+    protected final boolean mShouldCollapseSrcOverToSrcWhenAble = false;
 
     // Driver workaround
-    private boolean mDriverDisableMSAAClipAtlas;
-    private boolean mDisableTessellationPathRenderer;
-    private boolean mAvoidStencilBuffers;
-    private boolean mAvoidWritePixelsFastPath;
-    private boolean mRequiresManualFBBarrierAfterTessellatedStencilDraw;
-    private boolean mNativeDrawIndexedIndirectIsBroken;
-    private boolean mAvoidReorderingRenderTasks;
+    protected final boolean mDriverDisableMSAAClipAtlas = false;
+    protected final boolean mDisableTessellationPathRenderer = false;
+    protected final boolean mAvoidStencilBuffers = false;
+    protected final boolean mAvoidWritePixelsFastPath = false;
+    protected final boolean mRequiresManualFBBarrierAfterTessellatedStencilDraw = false;
+    protected final boolean mNativeDrawIndexedIndirectIsBroken = false;
+    protected final boolean mAvoidReorderingRenderTasks = false;
+    protected final boolean mAvoidDithering = false;
 
     // ANGLE performance workaround
-    private boolean mPreferVRAMUseOverFlushes;
+    protected final boolean mPreferVRAMUseOverFlushes = true;
 
-    private boolean mFenceSyncSupport;
-    private boolean mSemaphoreSupport;
+    protected final boolean mFenceSyncSupport = true;
+    protected final boolean mSemaphoreSupport = true;
 
     // Requires fence sync support in GL.
-    private boolean mCrossContextTextureSupport;
+    protected final boolean mCrossContextTextureSupport = true;
+
+    protected boolean mAnisoSupport = false;
+    protected boolean mGpuTracingSupport = false;
+    protected boolean mNativeDrawIndirectSupport = false;
+    protected boolean mUseClientSideIndirectBuffers = false;
+    protected boolean mConservativeRasterSupport = false;
+    protected boolean mTransferPixelsToRowBytesSupport = false;
+    protected boolean mMustSyncGpuDuringDiscard = true;
 
     // Not (yet) implemented in VK backend.
-    private boolean mDynamicStateArrayGeometryProcessorTextureSupport;
+    protected boolean mDynamicStateArrayGeometryProcessorTextureSupport = false;
 
-    private int mBlendEquationSupport;
-    private int mAdvBlendEqDisableFlags;
+    protected int mBlendEquationSupport = BLEND_EQUATION_BASIC;
 
-    private int mMapBufferFlags;
-    private int mBufferMapThreshold;
+    protected int mMapBufferFlags;
 
-    private int mMaxRenderTargetSize;
-    private int mMaxPreferredRenderTargetSize;
-    private int mMaxVertexAttributes;
-    private int mMaxTextureSize;
-    private int mMaxWindowRectangles;
-    private int mInternalMultisampleCount;
-    private int mMaxPushConstantsSize;
-
+    protected int mMaxRenderTargetSize = 1;
+    protected int mMaxPreferredRenderTargetSize = 1;
+    protected int mMaxVertexAttributes = 0;
+    protected int mMaxTextureSize = 1;
+    protected int mMaxWindowRectangles = 0;
+    protected int mInternalMultisampleCount = 0;
+    protected int mMinPathVerbsForHwTessellation = 25;
+    protected int mMinStrokeVerbsForHwTessellation = 50;
+    protected int mMaxPushConstantsSize = 0;
 
     public Caps(ContextOptions options) {
+    }
+
+    /**
+     * Can a texture be made with the BackendFormat, and then be bound and sampled in a shader.
+     */
+    public abstract boolean isTextureFormat(BackendFormat format);
+
+    public boolean validateTextureParams(int width, int height, BackendFormat format, boolean mipmapped) {
+        return true;
+    }
+
+    protected final void finishInitialization(ContextOptions options) {
+        if (!mNativeDrawIndirectSupport) {
+            // We will implement indirect draws with a polyfill, so the commands need to reside in CPU
+            // memory.
+            mUseClientSideIndirectBuffers = true;
+        }
+
+        mShaderCaps.applyOptionsOverrides(options);
+        onApplyOptionsOverrides(options);
+
+        mMaxWindowRectangles = Math.min(8, mMaxWindowRectangles);
+        mInternalMultisampleCount = options.mInternalMultisampleCount;
+
+        // Our render targets are always created with textures as the color attachment, hence this min:
+        mMaxRenderTargetSize = Math.min(mMaxRenderTargetSize, mMaxTextureSize);
+        mMaxPreferredRenderTargetSize = Math.min(mMaxPreferredRenderTargetSize, mMaxRenderTargetSize);
+    }
+
+    protected void onApplyOptionsOverrides(ContextOptions options) {
     }
 }

@@ -20,7 +20,7 @@ package icyllis.arcui.vk;
 
 import icyllis.arcui.hgi.Buffer;
 
-public class VkBuffer extends Buffer {
+public final class VkBuffer extends Buffer {
 
     public VkBuffer(VkServer server) {
         super(server);

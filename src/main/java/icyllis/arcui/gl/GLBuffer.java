@@ -20,7 +20,7 @@ package icyllis.arcui.gl;
 
 import icyllis.arcui.hgi.Buffer;
 
-public class GLBuffer extends Buffer {
+public final class GLBuffer extends Buffer {
 
     public GLBuffer(GLServer server) {
         super(server);

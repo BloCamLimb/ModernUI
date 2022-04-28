@@ -18,12 +18,13 @@
 
 package icyllis.arcui.gl;
 
-import icyllis.arcui.hgi.DirectContext;
-import icyllis.arcui.hgi.Server;
+import icyllis.arcui.hgi.*;
 
 import static org.lwjgl.opengl.GL45C.*;
 
 public final class GLServer extends Server {
+
+    private GLCaps mCaps;
 
     private int mDrawFramebuffer = 0;
 
@@ -50,5 +51,10 @@ public final class GLServer extends Server {
 
     private void onFramebufferChanged() {
 
+    }
+
+    @Override
+    public GLCaps getCaps() {
+        return mCaps;
     }
 }

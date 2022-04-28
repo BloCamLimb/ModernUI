@@ -21,11 +21,13 @@ package icyllis.arcui.hgi;
 import javax.annotation.Nonnull;
 
 /**
- * Base class that represents something that can be color/depth/stencil attachment
+ * Base class that represents something that can be color/stencil attachments
  * of render targets. To be exact, GLTexture, GLRenderbuffer and VkImage.
+ * Depth attachments are not used, because we are in 2D, depth ordering is
+ * performed by software, depth test is always disabled.
  * <p>
- * The reason why we abstract this class from Texture is that GLRenderbuffer can
- * be used as attachments, but they are not really textures.
+ * We abstract this class from {@link Texture} because GLRenderbuffer can
+ * be used as attachments, but they are not textures.
  */
 public abstract class Attachment extends Resource {
 

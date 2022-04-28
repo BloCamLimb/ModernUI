@@ -25,6 +25,7 @@ import javax.annotation.Nonnull;
 
 /**
  * Renderbuffer can be only used as attachments of framebuffers as an optimization.
+ * Just something like Vulkan <code>VK_IMAGE_LAYOUT_*_READ_ONLY_OPTIMAL</code>.
  */
 public final class GLRenderbuffer extends Attachment {
 

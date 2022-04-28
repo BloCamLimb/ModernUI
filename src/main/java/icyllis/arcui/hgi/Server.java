@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
 import java.lang.ref.Cleaner;
 
 /**
- * Represents the graphics pipeline of a 3D backend API, holding a reference
+ * Represents the application-controlled 3D API server, holding a reference
  * to DirectContext. It is responsible for creating / deleting 3D API objects,
  * controlling binding status, uploading and downloading data, transferring
  * 3D API draw commands, etc.
@@ -54,4 +54,9 @@ public abstract class Server {
     public DirectContext getContext() {
         return mContext;
     }
+
+    /**
+     * Gets the capabilities of the draw target.
+     */
+    public abstract Caps getCaps();
 }

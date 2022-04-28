@@ -19,7 +19,7 @@
 package icyllis.arcui.hgi;
 
 import icyllis.arcui.core.Color;
-import icyllis.arcui.core.ColorType;
+import icyllis.arcui.core.ImageInfo;
 
 /**
  * Constants independent of graphics API.
@@ -34,15 +34,20 @@ public final class Types {
             VULKAN = 1; // Vulkan 1.1
 
     /**
-     * The type of texture. Backends other than GL currently only use the 2D value but the type must
-     * still be known at the API-neutral layer as it used to determine whether MIP maps, render-ability,
-     * and sampling parameters are legal for proxies that will be instantiated with wrapped textures.
+     * The type of texture. All are 2D.
+     * <p>
+     * NONE: Represents a general purpose that is not considered a texture, e.g. OpenGL renderbuffer.
+     * <p>
+     * 2D: OpenGL 2D texture or Vulkan 2D image.
+     * <p>
+     * EXTERNAL: Memory object, imports POSIX FD or Win32 NT (Windows 8+, KMT is not used).
+     * Currently, OpenGL texture wraps Vulkan image, or Vulkan image wraps Linux DRM (using FD).
+     * We assume external textures are read-only and have no memory size.
      */
     public static final int
             TEXTURE_TYPE_NONE = 0,
             TEXTURE_TYPE_2D = 1,
-            TEXTURE_TYPE_RECTANGLE = 2, // Rectangle uses un-normalized texture coordinates.
-            TEXTURE_TYPE_EXTERNAL = 3;
+            TEXTURE_TYPE_EXTERNAL = 2;
 
     public static final int
             SHADER_TYPE_VERTEX = 0,
@@ -67,40 +72,63 @@ public final class Types {
 
     public static int getColorTypeChannelFlags(int ct) {
         return switch (ct) {
-            case ColorType.UNKNOWN -> 0;
-            case ColorType.ALPHA_8,
-                    ColorType.ALPHA_16,
-                    ColorType.ALPHA_F32xxx,
-                    ColorType.ALPHA_8xxx,
-                    ColorType.ALPHA_F16 -> Color.ALPHA_CHANNEL_FLAG;
-            case ColorType.BGR_565,
-                    ColorType.RGB_888,
-                    ColorType.RGB_888x -> Color.RGB_CHANNEL_FLAGS;
-            case ColorType.ABGR_4444,
-                    ColorType.BGRA_4444,
-                    ColorType.ARGB_4444,
-                    ColorType.RGBA_16161616,
-                    ColorType.RGBA_F32,
-                    ColorType.RGBA_F16_CLAMPED,
-                    ColorType.RGBA_F16,
-                    ColorType.BGRA_1010102,
-                    ColorType.RGBA_1010102,
-                    ColorType.BGRA_8888,
-                    ColorType.RGBA_8888_SRGB,
-                    ColorType.RGBA_8888 -> Color.RGBA_CHANNEL_FLAGS;
-            case ColorType.RG_88,
-                    ColorType.RG_F16,
-                    ColorType.RG_1616 -> Color.RG_CHANNEL_FLAGS;
-            case ColorType.GRAY_8,
-                    ColorType.GRAY_F16,
-                    ColorType.GRAY_8xxx -> Color.GRAY_CHANNEL_FLAG;
-            case ColorType.GRAY_ALPHA_88 -> Color.GRAY_ALPHA_CHANNEL_FLAGS;
-            case ColorType.R_8,
-                    ColorType.R_F16,
-                    ColorType.R_16 -> Color.RED_CHANNEL_FLAG;
+            case ImageInfo.COLOR_UNKNOWN -> 0;
+            case ImageInfo.COLOR_ALPHA_8,
+                    ImageInfo.COLOR_ALPHA_16,
+                    ImageInfo.COLOR_ALPHA_F32xxx,
+                    ImageInfo.COLOR_ALPHA_8xxx,
+                    ImageInfo.COLOR_ALPHA_F16 -> Color.ALPHA_CHANNEL_FLAG;
+            case ImageInfo.COLOR_BGR_565,
+                    ImageInfo.COLOR_RGB_888,
+                    ImageInfo.COLOR_RGB_888x -> Color.RGB_CHANNEL_FLAGS;
+            case ImageInfo.COLOR_ABGR_4444,
+                    ImageInfo.COLOR_BGRA_4444,
+                    ImageInfo.COLOR_ARGB_4444,
+                    ImageInfo.COLOR_RGBA_16161616,
+                    ImageInfo.COLOR_RGBA_F32,
+                    ImageInfo.COLOR_RGBA_F16_CLAMPED,
+                    ImageInfo.COLOR_RGBA_F16,
+                    ImageInfo.COLOR_BGRA_1010102,
+                    ImageInfo.COLOR_RGBA_1010102,
+                    ImageInfo.COLOR_BGRA_8888,
+                    ImageInfo.COLOR_RGBA_8888_SRGB,
+                    ImageInfo.COLOR_RGBA_8888 -> Color.RGBA_CHANNEL_FLAGS;
+            case ImageInfo.COLOR_RG_88,
+                    ImageInfo.COLOR_RG_F16,
+                    ImageInfo.COLOR_RG_1616 -> Color.RG_CHANNEL_FLAGS;
+            case ImageInfo.COLOR_GRAY_8,
+                    ImageInfo.COLOR_GRAY_F16,
+                    ImageInfo.COLOR_GRAY_8xxx -> Color.GRAY_CHANNEL_FLAG;
+            case ImageInfo.COLOR_GRAY_ALPHA_88 -> Color.GRAY_ALPHA_CHANNEL_FLAGS;
+            case ImageInfo.COLOR_R_8,
+                    ImageInfo.COLOR_R_F16,
+                    ImageInfo.COLOR_R_16 -> Color.RED_CHANNEL_FLAG;
             default -> throw new IllegalArgumentException();
         };
     }
+
+    /**
+     * Geometric primitives used for drawing.
+     * <p>
+     * We can't use POINTS or LINES, because both OpenGL and Vulkan can only guarantee
+     * the rasterization of one pixel in screen coordinates, may or may not anti-aliased.
+     */
+    public static final byte
+            PRIMITIVE_TYPE_TRIANGLES = 0,       // separate triangle
+            PRIMITIVE_TYPE_TRIANGLE_LIST = 0,   // separate triangle
+            PRIMITIVE_TYPE_TRIANGLE_STRIP = 1,  // connected triangle
+            PRIMITIVE_TYPE_PATCHES = 2,         // separate patch, tessellation
+            PRIMITIVE_TYPE_PATCH_LIST = 2;      // separate patch, tessellation
+
+    /**
+     * Mask formats. Used by the font cache. Important that these are 0-based.
+     * <p>
+     * Using L-shift to get the number of bytes-per-pixel for the specified mask format.
+     */
+    public static final int
+            MASK_FORMAT_A8 = 0,     // 1-byte per pixel
+            MASK_FORMAT_A565 = 1,   // 2-bytes per pixel, RGB represent 3-channel LCD coverage
+            MASK_FORMAT_ARGB = 2;   // 4-bytes per pixel, color format
 
     /**
      * Budget types. Used with resources with a large memory allocation, such as Buffers and Textures.
@@ -117,6 +145,23 @@ public final class Types {
             BUDGET_TYPE_NONE = 0,
             BUDGET_TYPE_PARTIAL = 1,
             BUDGET_TYPE_COMPLETE = 2;
+
+    /**
+     * Load ops. Used to specify the load operation to be used when an OpsTask/OpsRenderPass
+     * begins execution.
+     */
+    public static final int
+            LOAD_OP_LOAD = 0,
+            LOAD_OP_CLEAR = 1,
+            LOAD_OP_DISCARD = 2;
+
+    /**
+     * Store ops. Used to specify the store operation to be used when an OpsTask/OpsRenderPass
+     * ends execution.
+     */
+    public static final int
+            STORE_OP_STORE = 0,
+            STORE_OP_DISCARD = 1;
 
     /**
      * Flags shared between the Surface & SurfaceProxy class hierarchies.

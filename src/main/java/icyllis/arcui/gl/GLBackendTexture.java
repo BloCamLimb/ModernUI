@@ -58,7 +58,6 @@ public final class GLBackendTexture extends BackendTexture {
         return switch (mInfo.mTarget) {
             case GL_NONE -> Types.TEXTURE_TYPE_NONE;
             case GL_TEXTURE_2D -> Types.TEXTURE_TYPE_2D;
-            case GL_TEXTURE_RECTANGLE -> Types.TEXTURE_TYPE_RECTANGLE;
             default -> throw new IllegalStateException();
         };
     }

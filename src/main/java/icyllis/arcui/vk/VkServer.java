@@ -18,12 +18,16 @@
 
 package icyllis.arcui.vk;
 
-import icyllis.arcui.hgi.DirectContext;
-import icyllis.arcui.hgi.Server;
+import icyllis.arcui.hgi.*;
 
 public final class VkServer extends Server {
 
     public VkServer(DirectContext context) {
         super(context);
+    }
+
+    @Override
+    public Caps getCaps() {
+        return null;
     }
 }

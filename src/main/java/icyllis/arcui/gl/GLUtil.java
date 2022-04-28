@@ -140,10 +140,10 @@ public final class GLUtil {
 
     public static int GLFormatCompressionType(int format) {
         return switch (format) {
-            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2 -> Image.COMPRESSION_ETC2_RGB8_UNORM;
-            case GLTypes.FORMAT_COMPRESSED_RGB8_BC1 -> Image.COMPRESSION_BC1_RGB8_UNORM;
-            case GLTypes.FORMAT_COMPRESSED_RGBA8_BC1 -> Image.COMPRESSION_BC1_RGBA8_UNORM;
-            default -> Image.COMPRESSION_NONE;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2 -> Image.COMPRESSION_TYPE_ETC2_RGB8_UNORM;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_BC1 -> Image.COMPRESSION_TYPE_BC1_RGB8_UNORM;
+            case GLTypes.FORMAT_COMPRESSED_RGBA8_BC1 -> Image.COMPRESSION_TYPE_BC1_RGBA8_UNORM;
+            default -> Image.COMPRESSION_TYPE_NONE;
         };
     }
 

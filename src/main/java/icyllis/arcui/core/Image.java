@@ -47,10 +47,10 @@ public class Image {
      * </table>
      */
     public static final int
-            COMPRESSION_NONE = 0,
-            COMPRESSION_ETC2_RGB8_UNORM = 1,
-            COMPRESSION_BC1_RGB8_UNORM = 2,
-            COMPRESSION_BC1_RGBA8_UNORM = 3;
+            COMPRESSION_TYPE_NONE = 0,
+            COMPRESSION_TYPE_ETC2_RGB8_UNORM = 1,
+            COMPRESSION_TYPE_BC1_RGB8_UNORM = 2,
+            COMPRESSION_TYPE_BC1_RGBA8_UNORM = 3;
 
     /**
      * Returns the full width of this image (as its texture).

@@ -92,7 +92,7 @@ public abstract class BackendFormat {
     public abstract int getBytesPerBlock();
 
     public final int getBytesPerPixel() {
-        if (getCompressionType() != Image.COMPRESSION_NONE) {
+        if (getCompressionType() != Image.COMPRESSION_TYPE_NONE) {
             return 0;
         }
         return getBytesPerBlock();

@@ -28,10 +28,10 @@ public final class DataUtils {
 
     public static long numBlocks(int compression, int width, int height) {
         return switch (compression) {
-            case Image.COMPRESSION_NONE -> (long) width * height;
-            case Image.COMPRESSION_ETC2_RGB8_UNORM,
-                    Image.COMPRESSION_BC1_RGB8_UNORM,
-                    Image.COMPRESSION_BC1_RGBA8_UNORM -> {
+            case Image.COMPRESSION_TYPE_NONE -> (long) width * height;
+            case Image.COMPRESSION_TYPE_ETC2_RGB8_UNORM,
+                    Image.COMPRESSION_TYPE_BC1_RGB8_UNORM,
+                    Image.COMPRESSION_TYPE_BC1_RGBA8_UNORM -> {
                 long numBlocksWidth = num4x4Blocks(width);
                 long numBlocksHeight = num4x4Blocks(height);
                 yield numBlocksWidth * numBlocksHeight;

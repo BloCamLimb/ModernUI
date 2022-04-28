@@ -27,8 +27,9 @@ import java.lang.invoke.VarHandle;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Base class for operating server objects that can be kept in the {@link ResourceCache}.
- * Such resources will have a large memory allocation. To be exact:
+ * Base class for operating server memory objects that can be kept in the
+ * {@link ResourceCache}. Such resources will have a large memory allocation.
+ * To be exact:
  * <ol>
  *   <li>OpenGL:
  *     <ul>
@@ -44,8 +45,9 @@ import java.util.concurrent.atomic.AtomicInteger;
  *     </ul>
  *   </li>
  * </ol>
- * Since all instances will always be strong referenced, an explicit ref/unref is
- * required to decide whether to recycle/release them or not.
+ * Register resources into the cache to track their GPU memory usage. Since all
+ * instances will always be strong referenced, an explicit ref/unref is required
+ * to determine whether to recycle/release them or not.
  */
 @NotThreadSafe
 public abstract class Resource {
@@ -138,14 +140,14 @@ public abstract class Resource {
     }
 
     /**
-     * Just a naming convention, equivalent to {@link #ref()}.
+     * Equivalent to {@link #ref()}.
      */
     public final void addRef() {
         ref(); // inline
     }
 
     /**
-     * Just a naming convention, equivalent to {@link #unref()}.
+     * Equivalent to {@link #unref()}.
      */
     public final void removeRef() {
         unref(); // inline
