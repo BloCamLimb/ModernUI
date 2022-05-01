@@ -52,12 +52,12 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelMask() {
-        return GLUtil.GLFormatChannels(getGLFormat());
+        return GLUtil.glFormatChannels(getGLFormat());
     }
 
     @Override
-    public int getGLFormat() {
-        return GLUtil.GLFormatFromGLEnum(mFormat);
+    public GLFormat getGLFormat() {
+        return GLUtil.glFormatFromEnum(mFormat);
     }
 
     @Override
@@ -75,18 +75,29 @@ public final class GLBackendFormat extends BackendFormat {
     }
 
     @Override
+    public boolean isSRGB() {
+        return mFormat == GL_SRGB8_ALPHA8;
+    }
+
+    @Override
     public int getCompressionType() {
-        return GLUtil.GLFormatCompressionType(getGLFormat());
+        return GLUtil.glFormatCompressionType(getGLFormat());
     }
 
     @Override
     public int getBytesPerBlock() {
-        return GLUtil.GLFormatBytesPerBlock(getGLFormat());
+        return GLUtil.glFormatBytesPerBlock(getGLFormat());
     }
 
     @Override
     public int getStencilBits() {
-        return GLUtil.GLFormatStencilBits(getGLFormat());
+        return GLUtil.glFormatStencilBits(getGLFormat());
+    }
+
+    @Override
+    public int getFormatKey() {
+        // it's okay to use GLenum (not sequential indexing)
+        return mFormat;
     }
 
     @Override

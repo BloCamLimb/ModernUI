@@ -56,12 +56,8 @@ public final class Swizzle {
     /**
      * Compact representation of the swizzle suitable for a key.
      */
-    public static short pack(String rgba) {
-        if (rgba.length() != 4) {
-            throw new IllegalArgumentException();
-        }
-        return (short) (CToI(rgba.charAt(0)) | (CToI(rgba.charAt(1)) << 4) |
-                (CToI(rgba.charAt(2)) << 8) | (CToI(rgba.charAt(3)) << 12));
+    public static short pack(String c) {
+        return pack(c.charAt(0), c.charAt(1), c.charAt(2), c.charAt(3));
     }
 
     /**
@@ -69,5 +65,12 @@ public final class Swizzle {
      */
     public static short pack(char r, char g, char b, char a) {
         return (short) (CToI(r) | (CToI(g) << 4) | (CToI(b) << 8) | (CToI(a) << 12));
+    }
+
+    public static String toString(short key) {
+        return String.valueOf(IToC(key & 0xf)) +
+                IToC((key >> 4) & 0xf) +
+                IToC((key >> 8) & 0xf) +
+                IToC(key >>> 12);
     }
 }

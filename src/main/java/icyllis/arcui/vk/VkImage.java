@@ -18,8 +18,7 @@
 
 package icyllis.arcui.vk;
 
-import icyllis.arcui.hgi.BackendFormat;
-import icyllis.arcui.hgi.Texture;
+import icyllis.arcui.hgi.*;
 
 import javax.annotation.Nonnull;
 
@@ -56,5 +55,21 @@ public final class VkImage extends Texture {
     @Override
     public int getSampleCount() {
         return 0;
+    }
+
+    @Override
+    public boolean isProtected() {
+        return false;
+    }
+
+    @Nonnull
+    @Override
+    public BackendTexture getBackendTexture() {
+        return null;
+    }
+
+    @Override
+    public boolean isMipmapped() {
+        return false;
     }
 }

@@ -49,6 +49,18 @@ public final class Types {
             TEXTURE_TYPE_2D = 1,
             TEXTURE_TYPE_EXTERNAL = 2;
 
+    /**
+     * Rectangle and external textures only support the clamp wrap mode and do not support
+     * MIP maps.
+     */
+    public static boolean textureTypeHasRestrictedSampling(int type) {
+        return switch (type) {
+            case TEXTURE_TYPE_2D -> false;
+            case TEXTURE_TYPE_EXTERNAL -> true;
+            default -> throw new IllegalArgumentException();
+        };
+    }
+
     public static final int
             SHADER_TYPE_VERTEX = 0,
             SHADER_TYPE_GEOMETRY = 1,
@@ -70,7 +82,7 @@ public final class Types {
             COLOR_ENCODING_SNORM = 2,
             COLOR_ENCODING_FLOAT = 3;
 
-    public static int getColorTypeChannelFlags(int ct) {
+    public static int colorTypeChannelFlags(int ct) {
         return switch (ct) {
             case ImageInfo.COLOR_UNKNOWN -> 0;
             case ImageInfo.COLOR_ALPHA_8,
@@ -188,6 +200,14 @@ public final class Types {
             INTERNAL_SURFACE_FLAG_REQUIRE_MANUAL_MSAA_RESOLVE = 1 << 2,
             INTERNAL_SURFACE_FLAG_GL_WRAP_DEFAULT_FRAMEBUFFER = 1 << 3,
             INTERNAL_SURFACE_FLAG_VK_SUPPORT_INPUT_ATTACHMENT = 1 << 4;
+
+    /**
+     * Used to describe the current state of Mips on a Texture
+     */
+    public static final int
+            MIPMAP_STATUS_NONE = 0,     // Mips have not been allocated
+            MIPMAP_STATUS_DIRTY = 1,    // Mips are allocated but the full mip tree does not have valid data
+            MIPMAP_STATUS_VALID = 2;    // All levels fully allocated and have valid data in them
 
     private Types() {
     }

@@ -18,9 +18,36 @@
 
 package icyllis.arcui.test;
 
+import icyllis.arcui.gl.GLBackendFormat;
+import icyllis.arcui.gl.GLCaps;
+import icyllis.arcui.hgi.ContextOptions;
+import icyllis.arcui.hgi.Swizzle;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.*;
+
 public class TestManagedResource {
 
     public static void main(String[] args) {
+        GLFW.glfwInit();
+        GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
+        long window = GLFW.glfwCreateWindow(1600, 900, "Test Window", 0, 0);
+        GLFW.glfwMakeContextCurrent(window);
+        GLCapabilities capabilities = GL.createCapabilities();
+        GLCaps caps = new GLCaps(new ContextOptions(), capabilities);
 
+        if (caps.isColorFormat(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL45C.GL_TEXTURE_2D))) {
+            System.out.println("OK");
+        }
+        short swizzle = Swizzle.pack("rgb1");
+        System.out.println(Swizzle.toString(swizzle));
+
+        GLFW.glfwDestroyWindow(window);
+        GLFW.glfwTerminate();
+
+        try {
+            assert false;
+        } catch (AssertionError e) {
+            System.out.println("Assertion works");
+        }
     }
 }

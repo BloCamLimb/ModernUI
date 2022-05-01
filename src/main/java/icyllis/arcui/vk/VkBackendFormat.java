@@ -21,6 +21,7 @@ package icyllis.arcui.vk;
 import icyllis.arcui.hgi.BackendFormat;
 import icyllis.arcui.hgi.Types;
 import org.lwjgl.system.NativeType;
+import org.lwjgl.vulkan.VK11;
 
 import javax.annotation.Nonnull;
 
@@ -64,6 +65,11 @@ public final class VkBackendFormat extends BackendFormat {
     }
 
     @Override
+    public boolean isSRGB() {
+        return mFormat == VK11.VK_FORMAT_R8G8B8A8_SRGB;
+    }
+
+    @Override
     public int getCompressionType() {
         return VkUtil.getVkFormatCompressionType(mFormat);
     }
@@ -76,6 +82,11 @@ public final class VkBackendFormat extends BackendFormat {
     @Override
     public int getStencilBits() {
         return VkUtil.getVkFormatStencilBits(mFormat);
+    }
+
+    @Override
+    public int getFormatKey() {
+        return mFormat;
     }
 
     @Override

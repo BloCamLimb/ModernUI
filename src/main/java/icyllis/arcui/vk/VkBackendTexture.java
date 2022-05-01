@@ -67,7 +67,7 @@ public final class VkBackendTexture extends BackendTexture {
     }
 
     @Override
-    public boolean hasMipmaps() {
+    public boolean isMipmapped() {
         return mInfo.mLevelCount > 1;
     }
 

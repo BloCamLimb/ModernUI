@@ -35,8 +35,8 @@ public abstract class RenderTarget extends ManagedResource {
 
     private final int mSampleCount;
 
-    private Attachment mStencilBuffer;
-    private Attachment mMSAAStencilBuffer;
+    private Surface mStencilBuffer;
+    private Surface mMSAAStencilBuffer;
 
     // determined by subclass constructor
     protected int mFlags;
@@ -107,14 +107,14 @@ public abstract class RenderTarget extends ManagedResource {
     /**
      * May get a dynamic stencil buffer, or null.
      */
-    public final Attachment getStencilBuffer(boolean useMSAA) {
+    public final Surface getStencilBuffer(boolean useMSAA) {
         return useMSAA ? mMSAAStencilBuffer : mStencilBuffer;
     }
 
     /**
      * May get an intrinsic stencil buffer, or null.
      */
-    public final Attachment getStencilBuffer() {
+    public final Surface getStencilBuffer() {
         return mSampleCount > 1 ? mMSAAStencilBuffer : mStencilBuffer;
     }
 
@@ -122,7 +122,7 @@ public abstract class RenderTarget extends ManagedResource {
      * Get dynamic stencil bits, return 0 if stencil buffer is not set.
      */
     public final int getStencilBits(boolean useMSAA) {
-        final Attachment stencilBuffer;
+        final Surface stencilBuffer;
         if ((stencilBuffer = useMSAA ? mMSAAStencilBuffer : mStencilBuffer) != null) {
             return stencilBuffer.getBackendFormat().getStencilBits();
         } else {
@@ -134,7 +134,7 @@ public abstract class RenderTarget extends ManagedResource {
      * Get intrinsic stencil bits, return 0 if stencil buffer is not set.
      */
     public final int getStencilBits() {
-        final Attachment stencilBuffer;
+        final Surface stencilBuffer;
         if ((stencilBuffer = mSampleCount > 1 ? mMSAAStencilBuffer : mStencilBuffer) != null) {
             return stencilBuffer.getBackendFormat().getStencilBits();
         } else {
@@ -167,9 +167,9 @@ public abstract class RenderTarget extends ManagedResource {
      *
      * @return if false, the stencil attachment will not be set to this render target
      */
-    protected abstract boolean onSetStencilBuffer(Attachment stencilBuffer, boolean useMSAA);
+    protected abstract boolean onSetStencilBuffer(Surface stencilBuffer, boolean useMSAA);
 
-    final void setStencilBuffer(Attachment stencilBuffer, boolean useMSAA) {
+    final void setStencilBuffer(Surface stencilBuffer, boolean useMSAA) {
         if (stencilBuffer == null && (useMSAA ? mMSAAStencilBuffer : mStencilBuffer) == null) {
             // No need to do any work since we currently don't have a stencil attachment,
             // and we're not actually adding one.

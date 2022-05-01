@@ -18,8 +18,9 @@
 
 package icyllis.arcui.hgi;
 
-import javax.annotation.Nonnull;
-import java.lang.ref.Cleaner;
+import icyllis.arcui.sl.ShaderCompiler;
+
+import javax.annotation.Nullable;
 
 /**
  * Represents the application-controlled 3D API server, holding a reference
@@ -29,34 +30,72 @@ import java.lang.ref.Cleaner;
  */
 public abstract class Server {
 
-    private static final Cleaner sCleaner = Cleaner.create();
+    final DirectContext mContext;
+    final Caps mCaps;
+    final ShaderCompiler mCompiler;
 
-    private final DirectContext mContext;
-
-    public Server(DirectContext context) {
+    public Server(DirectContext context, Caps caps) {
         mContext = context;
+        mCaps = caps;
+        mCompiler = new ShaderCompiler(caps.mShaderCaps);
     }
 
-    /**
-     * Registers a target and a cleaning action to run when the target becomes phantom
-     * reachable. It will be registered with the global cleaner shared across Arc UI.
-     * The action object should never hold any reference to the target object.
-     *
-     * @param target the target to monitor
-     * @param action a {@code Runnable} to invoke when the target becomes phantom reachable
-     * @return a {@code Cleanable} instance for explicit cleaning
-     */
-    @Nonnull
-    public static Cleaner.Cleanable registerCleanup(@Nonnull Object target, @Nonnull Runnable action) {
-        return sCleaner.register(target, action);
-    }
-
-    public DirectContext getContext() {
+    public final DirectContext getContext() {
         return mContext;
     }
 
     /**
      * Gets the capabilities of the draw target.
      */
-    public abstract Caps getCaps();
+    public final Caps getCaps() {
+        return mCaps;
+    }
+
+    public final ShaderCompiler getShaderCompiler() {
+        return mCompiler;
+    }
+
+    /**
+     * Creates a texture object and allocates its server memory. In other words, the
+     * image data is dirty and needs to be uploaded later. If mipmapped, also allocates
+     * <code>(31 - CLZ(max(width,height)))</code> mipmaps in addition to the base level.
+     * NPoT (non-power-of-two) dimensions are always supported. Compressed format are
+     * supported.
+     *
+     * @param width       the width of the texture to be created
+     * @param height      the height of the texture to be created
+     * @param format      the backend format for the texture
+     * @param mipmapped   should the texture be allocated with mipmaps
+     * @param budgeted    should the texture count against the resource cache budget
+     * @param isProtected should the texture be created as protected
+     * @return the referenced texture object if successful, otherwise nullptr
+     */
+    @Nullable
+    public final Texture createTexture(int width, int height,
+                                       BackendFormat format,
+                                       boolean mipmapped,
+                                       boolean budgeted,
+                                       boolean isProtected) {
+        if (format.isCompressed()) {
+            return null;
+        }
+        if (!mCaps.validateTextureParams(width, height, format)) {
+            return null;
+        }
+        return onCreateTexture(width, height, format, budgeted, isProtected, mipmapped ?
+                Integer.SIZE - Integer.numberOfLeadingZeros(Math.max(width, height)) : 1);
+    }
+
+    /**
+     * Overridden by backend-specific derived class to create objects.
+     * <p>
+     * Texture size and format support will have already been validated in base class
+     * before onCreateTexture is called.
+     */
+    @Nullable
+    protected abstract Texture onCreateTexture(int width, int height,
+                                               BackendFormat format,
+                                               boolean budgeted,
+                                               boolean isProtected,
+                                               int mipLevels);
 }

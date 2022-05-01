@@ -26,7 +26,7 @@ import static org.lwjgl.opengl.GL45C.*;
 
 public final class GLBackendTexture extends BackendTexture {
 
-    private final boolean mHasMipmaps;
+    private final boolean mMipmapped;
 
     private final GLTextureInfo mInfo;
     final GLTextureParameters mParams;
@@ -34,15 +34,15 @@ public final class GLBackendTexture extends BackendTexture {
     private GLBackendFormat mBackendFormat;
 
     // The GLTextureInfo must have a valid mFormat, can NOT be modified anymore.
-    public GLBackendTexture(int width, int height, boolean hasMipmaps, GLTextureInfo info) {
-        this(width, height, hasMipmaps, info, new GLTextureParameters());
+    public GLBackendTexture(int width, int height, boolean mipmapped, GLTextureInfo info) {
+        this(width, height, mipmapped, info, new GLTextureParameters());
         // Make no assumptions about client's texture's parameters.
         glTextureParametersModified();
     }
 
-    GLBackendTexture(int width, int height, boolean hasMipmaps, GLTextureInfo info, GLTextureParameters params) {
+    GLBackendTexture(int width, int height, boolean mipmapped, GLTextureInfo info, GLTextureParameters params) {
         super(width, height);
-        mHasMipmaps = hasMipmaps;
+        mMipmapped = mipmapped;
         mInfo = info;
         mParams = params;
         assert getTextureType() >= 0;
@@ -63,8 +63,8 @@ public final class GLBackendTexture extends BackendTexture {
     }
 
     @Override
-    public boolean hasMipmaps() {
-        return mHasMipmaps;
+    public boolean isMipmapped() {
+        return mMipmapped;
     }
 
     @Override

@@ -18,6 +18,7 @@
 
 package icyllis.arcui.hgi;
 
+import icyllis.arcui.gl.GLServer;
 import icyllis.arcui.gl.GLTextureInfo;
 import icyllis.arcui.vk.VkImageInfo;
 
@@ -60,7 +61,10 @@ public abstract class BackendTexture {
         return mHeight;
     }
 
-    public abstract boolean hasMipmaps();
+    /**
+     * @return whether the texture has mip levels allocated or not
+     */
+    public abstract boolean isMipmapped();
 
     /**
      * If the backend API is OpenGL, copies a snapshot of the GLTextureInfo struct into the passed
@@ -73,6 +77,10 @@ public abstract class BackendTexture {
     /**
      * Call this to indicate that the texture parameters have been modified in the GL context
      * externally to Context.
+     * <p>
+     * Tells Arc UI that these parameters of the texture are changed out of Arc UI control
+     * (for example, you called glTexParameteri without using {@link GLServer}).
+     * The local state machine will be forced to reset to a known state when next use.
      */
     public void glTextureParametersModified() {
     }

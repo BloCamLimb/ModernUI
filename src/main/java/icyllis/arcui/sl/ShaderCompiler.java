@@ -16,31 +16,12 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.hgi;
+package icyllis.arcui.sl;
 
-import org.jetbrains.annotations.ApiStatus;
+import icyllis.arcui.hgi.ShaderCaps;
 
-public class RecordingContext {
+public class ShaderCompiler {
 
-    protected final ThreadSafeProxy mProxy;
-
-    public RecordingContext(ThreadSafeProxy proxy) {
-        mProxy = proxy;
-    }
-
-    /**
-     * The 3D API backing this context
-     */
-    @ApiStatus.Internal
-    public final int backend() {
-        return mProxy.backend();
-    }
-
-    public ThreadSafeProxy threadSafeProxy() {
-        return mProxy;
-    }
-
-    public ProxyProvider getProxyProvider() {
-        return null;
+    public ShaderCompiler(ShaderCaps caps) {
     }
 }

@@ -19,7 +19,7 @@
 package icyllis.arcui.hgi;
 
 import icyllis.arcui.core.Image;
-import icyllis.arcui.gl.GLTypes;
+import icyllis.arcui.gl.GLFormat;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.NativeType;
 import org.lwjgl.vulkan.VK11;
@@ -52,10 +52,10 @@ public abstract class BackendFormat {
 
     /**
      * If the backend API is Open GL this gets the format as a GLFormat. Otherwise, returns
-     * {@link GLTypes#FORMAT_UNKNOWN}.
+     * {@link GLFormat#UNKNOWN}.
      */
-    public int getGLFormat() {
-        return GLTypes.FORMAT_UNKNOWN;
+    public GLFormat getGLFormat() {
+        return GLFormat.UNKNOWN;
     }
 
     /**
@@ -84,19 +84,26 @@ public abstract class BackendFormat {
 
     // Utility methods
 
+    public abstract boolean isSRGB();
+
     /**
      * @see Image
      */
     public abstract int getCompressionType();
 
-    public abstract int getBytesPerBlock();
-
-    public final int getBytesPerPixel() {
-        if (getCompressionType() != Image.COMPRESSION_TYPE_NONE) {
-            return 0;
-        }
-        return getBytesPerBlock();
+    public final boolean isCompressed() {
+        return getCompressionType() != Image.COMPRESSION_TYPE_NONE;
     }
 
+    /**
+     * @return if compressed, bytes per block, otherwise bytes per pixel
+     */
+    public abstract int getBytesPerBlock();
+
     public abstract int getStencilBits();
+
+    /**
+     * @return a key that is unique in the backend
+     */
+    public abstract int getFormatKey();
 }

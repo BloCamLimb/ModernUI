@@ -18,37 +18,123 @@
 
 package icyllis.arcui.hgi;
 
+import javax.annotation.Nonnull;
+
 /**
- * Represents 2D textures can be read/write pixels, can be used as attachments of render targets.
+ * Represents 2D textures can be sampled by shaders, can also be used as attachments
+ * of render targets.
+ * <p>
+ * By default, a Texture is not renderable (not created with a RenderTarget), all
+ * mipmaps (including the base level) are dirty. But it can be promoted to renderable
+ * whenever needed (i.e. lazy initialization), then we call it a RenderTexture or
+ * TextureRenderTarget. The texture will be the main color buffer of the single
+ * sample framebuffer of the render target. So we can cache these framebuffers with
+ * texture. With promotion, the scratch key is changed and the sample count (MSAA)
+ * is locked. Additionally, it may create more surfaces and attach them to it. These
+ * surfaces are budgeted but cannot be reused. In most cases, we reuse textures, so
+ * these surfaces are reused together. When renderable is not required, the cache
+ * will give priority to the texture without promotion. See {@link RenderTargetProxy}.
  */
-public abstract class Texture extends Attachment {
+public abstract class Texture extends Surface {
 
-    private int mFlags;
+    private final boolean mReadOnly;
 
-    public Texture(Server server, int width, int height, boolean isProtected) {
+    public Texture(Server server, int width, int height, boolean isReadOnly) {
         super(server, width, height);
-        if (isProtected) {
-            mFlags |= Types.INTERNAL_SURFACE_FLAG_PROTECTED;
-        }
+        mReadOnly = isReadOnly;
     }
 
-    public final int getFlags() {
-        return mFlags;
+    public int getTextureType() {
+        return 0;
     }
 
     /**
-     * @return true if pixels in the texture are read-only.
+     * Describes the backend texture of this texture.
      */
+    @Nonnull
+    public abstract BackendTexture getBackendTexture();
+
+    public abstract boolean isMipmapped();
+
+    public int getMipmapStatus() {
+        return 0;
+    }
+
     @Override
     public final boolean isReadOnly() {
-        return (mFlags & Types.INTERNAL_SURFACE_FLAG_READ_ONLY) != 0;
+        return mReadOnly;
     }
 
     /**
-     * @return true if we are working with protected content.
+     * @return surface flags
      */
+    public final int getFlags() {
+        int flags = 0;
+        if (mReadOnly) {
+            flags |= Types.INTERNAL_SURFACE_FLAG_READ_ONLY;
+        }
+        if (isProtected()) {
+            flags |= Types.INTERNAL_SURFACE_FLAG_PROTECTED;
+        }
+        return flags;
+    }
+
     @Override
-    public final boolean isProtected() {
-        return (mFlags & Types.INTERNAL_SURFACE_FLAG_PROTECTED) != 0;
+    protected Object computeScratchKey() {
+        BackendFormat format = getBackendFormat();
+        if (format.isCompressed()) {
+            return super.computeScratchKey();
+        }
+        return computeScratchKey(format, mWidth, mHeight, false, 1,
+                isMipmapped(), isProtected(), false);
+    }
+
+    public static final ThreadLocal<Key> sThreadLocalKey = ThreadLocal.withInitial(Key::new);
+
+    @Nonnull
+    public static Object computeScratchKey(BackendFormat format,
+                                           int width, int height,
+                                           boolean renderable,
+                                           int samples,
+                                           boolean mipmapped,
+                                           boolean isProtected,
+                                           boolean lookup) {
+        assert width > 0 && height > 0;
+        assert samples > 0;
+        assert samples == 1 || renderable;
+        Key key = lookup ? sThreadLocalKey.get() : new Key();
+        key.mWidth = width;
+        key.mHeight = height;
+        key.mFormat = format.getFormatKey();
+        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (renderable ? 4 : 0) | (samples << 3);
+        return key;
+    }
+
+    private static class Key {
+
+        private int mWidth;
+        private int mHeight;
+        private int mFormat;
+        private int mFlags;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Key key = (Key) o;
+            if (mWidth != key.mWidth) return false;
+            if (mHeight != key.mHeight) return false;
+            if (mFormat != key.mFormat) return false;
+            return mFlags == key.mFlags;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = mWidth;
+            result = 31 * result + mHeight;
+            result = 31 * result + mFormat;
+            result = 31 * result + mFlags;
+            return result;
+        }
     }
 }

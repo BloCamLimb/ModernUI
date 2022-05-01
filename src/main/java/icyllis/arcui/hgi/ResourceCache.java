@@ -45,6 +45,53 @@ import java.util.*;
  * A unique key always takes precedence over a shared key when a resource has both types of keys.
  * If a resource has neither key type then it will be deleted as soon as the last reference to it
  * is dropped.
+ *
+ * <h3>Scratch Key</h3>
+ * A key used for scratch resources. There are three important rules about scratch keys:
+ * <ul>
+ * <li> Multiple resources can share the same scratch key. Therefore resources assigned the same
+ * scratch key should be interchangeable with respect to the code that uses them.</li>
+ * <li> A resource can have at most one scratch key and it is set at resource creation by the
+ * resource itself.</li>
+ * <li> When a scratch resource is referenced it will not be returned from the
+ * cache for a subsequent cache request until all refs are released. This facilitates using
+ * a scratch key for multiple render-to-texture scenarios. An example is a separable blur:</li>
+ * </ul>
+ * <pre>{@code
+ *  public void makeBlurredImage() {
+ *      var texture0 = get_scratch_texture(scratchKey);
+ *      // texture 0 is already owned so we will get a different one for texture1
+ *      var texture1 = get_scratch_texture(scratchKey);
+ *      // draws path mask to texture 0
+ *      draw_mask(texture0, path);
+ *      // blurs texture 0 in y and stores result in texture 1
+ *      blur_x(texture0, texture1);
+ *      // blurs texture 1 in y and stores result in texture 0
+ *      blur_y(texture1, texture0);
+ *      // texture 1 can now be recycled for the next request with scratchKey
+ *      texture1.unref();
+ *      // consume the blurred texture, such as download to CPU
+ *      consume_blur(texture0);
+ *      // texture 0 can now be recycled for the next request with scratchKey
+ *      texture0.unref();
+ *  }
+ * }</pre>
+ *
+ * <h3>Unique Key</h3>
+ * A key that allows for exclusive use of a resource for a use case (AKA "domain"). There are three
+ * rules governing the use of unique keys:
+ * <ul>
+ * <li> Only one resource can have a given unique key at a time. Hence, "unique".</li>
+ * <li> A resource can have at most one unique key at a time.</li>
+ * <li> Unlike scratch keys, multiple requests for a unique key will return the same
+ * resource even if the resource already has refs.</li>
+ * </ul>
+ * This key type allows a code path to create cached resources for which it is the exclusive user.
+ * The code path creates a domain which it sets on its keys. This guarantees that there are no
+ * cross-domain collisions.
+ * <p>
+ * Unique keys preempt scratch keys. While a resource has a unique key it is inaccessible via its
+ * scratch key. It can become scratch again if the unique key is removed.
  */
 @NotThreadSafe
 public final class ResourceCache implements AutoCloseable {
@@ -64,9 +111,9 @@ public final class ResourceCache implements AutoCloseable {
     private int mNonCleanableSize;
 
     // This map holds all resources that can be used as scratch resources.
-    private final Object2ObjectOpenHashMap<ScratchKey, Resource> mScratchMap;
+    private final Object2ObjectOpenHashMap<Object, Resource> mScratchMap;
     // This map holds all resources that have unique keys.
-    private final Object2ObjectOpenHashMap<UniqueKey, Resource> mUniqueMap;
+    private final Object2ObjectOpenHashMap<Object, Resource> mUniqueMap;
 
     // our budget, used in clean()
     private long mMaxBytes = 1 << 28;
@@ -231,8 +278,8 @@ public final class ResourceCache implements AutoCloseable {
      * Find a resource that matches a scratch key.
      */
     @Nullable
-    public Resource findAndRefScratchResource(ScratchKey key) {
-        assert key.isValid();
+    public Resource findAndRefScratchResource(Object key) {
+        assert key != null;
 
         Resource resource = mScratchMap.get(key);
         if (resource != null) {
@@ -246,7 +293,7 @@ public final class ResourceCache implements AutoCloseable {
      * Find a resource that matches a unique key.
      */
     @Nullable
-    public Resource findAndRefUniqueResource(UniqueKey key) {
+    public Resource findAndRefUniqueResource(Object key) {
         Resource resource = mUniqueMap.get(key);
         if (resource != null) {
             refAndMakeResourceMRU(resource);
@@ -257,7 +304,7 @@ public final class ResourceCache implements AutoCloseable {
     /**
      * Query whether a unique key exists in the cache.
      */
-    public boolean hasUniqueKey(UniqueKey key) {
+    public boolean hasUniqueKey(Object key) {
         return mUniqueMap.containsKey(key);
     }
 
@@ -355,7 +402,7 @@ public final class ResourceCache implements AutoCloseable {
                     break;
                 }
                 assert resource.isCleanable();
-                if (resource.mUniqueKey == null || !resource.mUniqueKey.isValid()) {
+                if (resource.mUniqueKey == null) {
                     scratchResources.add(resource);
                 }
             }
@@ -441,15 +488,14 @@ public final class ResourceCache implements AutoCloseable {
         resource.setCleanUpTime();
         mCleanableBytes += resource.getMemorySize();
 
-        boolean hasUniqueKey = resource.mUniqueKey != null && resource.mUniqueKey.isValid();
+        boolean hasUniqueKey = resource.mUniqueKey != null;
 
         int budgetedType = resource.getBudgetType();
 
         if (budgetedType == Types.BUDGET_TYPE_COMPLETE) {
             // Purge the resource immediately if we're over budget
             // Also purge if the resource has neither a valid scratch key nor a unique key.
-            boolean hasKey = hasUniqueKey ||
-                    (resource.mScratchKey != null && resource.mScratchKey.isValid());
+            boolean hasKey = hasUniqueKey || resource.mScratchKey != null;
             if (!isOverrun() && hasKey) {
                 return;
             }
@@ -460,8 +506,7 @@ public final class ResourceCache implements AutoCloseable {
                 return;
             }
             // Check whether this resource could still be used as a scratch resource.
-            if (!resource.isWrapped() &&
-                    (resource.mScratchKey != null && resource.mScratchKey.isValid())) {
+            if (!resource.isWrapped() && resource.mScratchKey != null) {
                 // We won't purge an existing resource to make room for this one.
                 if (mBudgetedBytes + resource.getMemorySize() <= mMaxBytes) {
                     resource.makeBudgeted(true);
@@ -521,21 +566,20 @@ public final class ResourceCache implements AutoCloseable {
         if (resource.isUsableAsScratch()) {
             mScratchMap.remove(resource.mScratchKey, resource);
         }
-        if (resource.mUniqueKey != null && resource.mUniqueKey.isValid()) {
+        if (resource.mUniqueKey != null) {
             mUniqueMap.remove(resource.mUniqueKey);
         }
     }
 
-    void changeUniqueKey(Resource resource, UniqueKey newKey) {
+    void changeUniqueKey(Resource resource, Object newKey) {
         assert isInCache(resource);
 
         // If another resource has the new key, remove its key then install the key on this resource.
-        if (newKey.isValid()) {
+        if (newKey != null) {
             Resource old;
             if ((old = mUniqueMap.get(newKey)) != null) {
                 // If the old resource using the key is cleanable and is unreachable, then remove it.
-                if ((old.mScratchKey == null || !old.mScratchKey.isValid()) &&
-                        old.isCleanable()) {
+                if (old.mScratchKey == null && old.isCleanable()) {
                     old.release();
                 } else {
                     // removeUniqueKey expects an external owner of the resource.
@@ -547,7 +591,7 @@ public final class ResourceCache implements AutoCloseable {
             assert !mUniqueMap.containsKey(newKey);
 
             // Remove the entry for this resource if it already has a unique key.
-            if (resource.mUniqueKey != null && resource.mUniqueKey.isValid()) {
+            if (resource.mUniqueKey != null) {
                 assert mUniqueMap.get(resource.mUniqueKey) == resource;
                 mUniqueMap.remove(resource.mUniqueKey);
                 assert !mUniqueMap.containsKey(resource.mUniqueKey);
@@ -560,10 +604,7 @@ public final class ResourceCache implements AutoCloseable {
                 }
             }
 
-            if (resource.mUniqueKey == null) {
-                resource.mUniqueKey = new UniqueKey();
-            }
-            resource.mUniqueKey.set(newKey);
+            resource.mUniqueKey = newKey;
             mUniqueMap.put(resource.mUniqueKey, resource);
         } else {
             removeUniqueKey(resource);
@@ -573,12 +614,12 @@ public final class ResourceCache implements AutoCloseable {
     void removeUniqueKey(Resource resource) {
         // Someone has a ref to this resource in order to have removed the key. When the ref count
         // reaches zero we will get a ref cnt notification and figure out what to do with it.
-        if (resource.mUniqueKey != null && resource.mUniqueKey.isValid()) {
+        if (resource.mUniqueKey != null) {
             assert mUniqueMap.get(resource.mUniqueKey) == resource;
             mUniqueMap.remove(resource.mUniqueKey);
         }
         if (resource.mUniqueKey != null) {
-            resource.mUniqueKey.reset();
+            resource.mUniqueKey = null;
         }
         if (resource.isUsableAsScratch()) {
             mScratchMap.put(resource.mScratchKey, resource);
@@ -618,8 +659,8 @@ public final class ResourceCache implements AutoCloseable {
                     !resource.hasRefOrCommandBufferUsage()) {
                 mFlushableCount--;
             }
-            if (!resource.hasRef() && (resource.mUniqueKey == null || !resource.mUniqueKey.isValid()) &&
-                    (resource.mScratchKey != null && resource.mScratchKey.isValid())) {
+            if (!resource.hasRef() && resource.mUniqueKey == null &&
+                    resource.mScratchKey != null) {
                 mScratchMap.remove(resource.mScratchKey, resource);
             }
         }
@@ -627,7 +668,7 @@ public final class ResourceCache implements AutoCloseable {
     }
 
     void willRemoveScratchKey(Resource resource) {
-        assert resource.mScratchKey != null && resource.mScratchKey.isValid();
+        assert resource.mScratchKey != null;
         if (resource.isUsableAsScratch()) {
             mScratchMap.remove(resource.mScratchKey, resource);
         }

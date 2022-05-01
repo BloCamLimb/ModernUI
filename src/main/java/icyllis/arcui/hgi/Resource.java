@@ -20,6 +20,7 @@ package icyllis.arcui.hgi;
 
 import icyllis.arcui.core.PriorityQueue;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.invoke.MethodHandles;
@@ -48,6 +49,8 @@ import java.util.concurrent.atomic.AtomicInteger;
  * Register resources into the cache to track their GPU memory usage. Since all
  * instances will always be strong referenced, an explicit ref/unref is required
  * to determine whether to recycle/release them or not.
+ * <p>
+ * Use {@link ResourceProvider} to get <code>Resource</code> objects.
  */
 @NotThreadSafe
 public abstract class Resource {
@@ -93,11 +96,11 @@ public abstract class Resource {
     private long mCleanUpTime;
 
     // null meaning invalid, lazy initialized
-    ScratchKey mScratchKey;
-    UniqueKey mUniqueKey;
+    Object mScratchKey;
+    Object mUniqueKey;
 
     // set once in constructor, clear to null after being destroyed
-    private Server mServer;
+    Server mServer;
 
     private byte mBudgetType = Types.BUDGET_TYPE_NONE;
     private boolean mWrapped = false;
@@ -236,6 +239,14 @@ public abstract class Resource {
     }
 
     /**
+     * @see #getContext()
+     */
+    @Nonnull
+    public final DirectContext requireContext() {
+        return mServer.getContext();
+    }
+
+    /**
      * Gets an id that is unique for this Resource object. It is static in that it does
      * not change when the content of the Resource object changes. This will never return 0.
      */
@@ -259,7 +270,7 @@ public abstract class Resource {
      * associated unique key.
      */
     @Nullable
-    public final UniqueKey getUniqueKey() {
+    public final Object getUniqueKey() {
         return mUniqueKey;
     }
 
@@ -269,7 +280,7 @@ public abstract class Resource {
      * removeUniqueKey(). If another resource is using the key then its unique key is removed and
      * this resource takes over the key.
      */
-    public final void setUniqueKey(UniqueKey key) {
+    public final void setUniqueKey(Object key) {
         assert hasRef();
 
         // Uncached resources can never have a unique key, unless they're wrapped resources. Wrapped
@@ -319,8 +330,7 @@ public abstract class Resource {
                 mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         } else {
-            if (mServer != null && mBudgetType == Types.BUDGET_TYPE_COMPLETE &&
-                    (mUniqueKey == null || !mUniqueKey.isValid())) {
+            if (mServer != null && mBudgetType == Types.BUDGET_TYPE_COMPLETE && mUniqueKey == null) {
                 mBudgetType = Types.BUDGET_TYPE_NONE;
                 mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
@@ -332,8 +342,7 @@ public abstract class Resource {
      * budget and if not whether it is allowed to be cached.
      */
     public final int getBudgetType() {
-        assert mBudgetType == Types.BUDGET_TYPE_COMPLETE || mWrapped ||
-                (mUniqueKey == null || !mUniqueKey.isValid());
+        assert mBudgetType == Types.BUDGET_TYPE_COMPLETE || mWrapped || mUniqueKey == null;
         return mBudgetType;
     }
 
@@ -350,7 +359,7 @@ public abstract class Resource {
      * used as a uniquely keyed resource rather than scratch. Check isScratch().
      */
     @Nullable
-    public final ScratchKey getScratchKey() {
+    public final Object getScratchKey() {
         return mScratchKey;
     }
 
@@ -359,9 +368,9 @@ public abstract class Resource {
      * at resource creation time, this means the resource will never again be used as scratch.
      */
     public final void removeScratchKey() {
-        if (mServer != null && (mScratchKey != null && mScratchKey.isValid())) {
+        if (mServer != null && mScratchKey != null) {
             mServer.getContext().getResourceCache().willRemoveScratchKey(this);
-            mScratchKey.reset();
+            mScratchKey = null;
         }
     }
 
@@ -369,7 +378,7 @@ public abstract class Resource {
         // Resources in the partial budgeted state are never cleanable when they have a unique
         // key. The key must be removed/invalidated to make them cleanable.
         return !hasRef() && !hasCommandBufferUsage() &&
-                !(mBudgetType == Types.BUDGET_TYPE_PARTIAL && mUniqueKey != null && mUniqueKey.isValid());
+                !(mBudgetType == Types.BUDGET_TYPE_PARTIAL && mUniqueKey != null);
     }
 
     public final boolean hasRefOrCommandBufferUsage() {
@@ -385,10 +394,7 @@ public abstract class Resource {
     protected final void registerWithCache(boolean budgeted) {
         assert mBudgetType == Types.BUDGET_TYPE_NONE;
         mBudgetType = budgeted ? Types.BUDGET_TYPE_COMPLETE : Types.BUDGET_TYPE_NONE;
-        if (mScratchKey == null) {
-            mScratchKey = new ScratchKey();
-        }
-        computeScratchKey(mScratchKey);
+        mScratchKey = computeScratchKey();
         mServer.getContext().getResourceCache().insertResource(this);
     }
 
@@ -432,7 +438,8 @@ public abstract class Resource {
      * resources and populate the scratchKey with the key.
      * By default, resources are not recycled as scratch.
      */
-    protected void computeScratchKey(ScratchKey scratchKey) {
+    protected Object computeScratchKey() {
+        return null;
     }
 
     /**
@@ -440,9 +447,7 @@ public abstract class Resource {
      * key, and does not have a unique key.
      */
     final boolean isScratch() {
-        return mBudgetType == Types.BUDGET_TYPE_COMPLETE &&
-                (mScratchKey != null && mScratchKey.isValid()) &&
-                (mUniqueKey == null || !mUniqueKey.isValid());
+        return mBudgetType == Types.BUDGET_TYPE_COMPLETE && mScratchKey != null && mUniqueKey == null;
     }
 
     final boolean isUsableAsScratch() {

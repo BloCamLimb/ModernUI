@@ -16,7 +16,13 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.hgi;
+/**
+ * GLSL shader preprocessor for OpenGL or SPIR-V for Vulkan.
+ * Allows shaders to be generated and compiled in real time.
+ * Only preprocessed shaders meet GLSL specs. Otherwise, it
+ * contains Arc UI custom syntax.
+ */
+@ParametersAreNonnullByDefault
+package icyllis.arcui.sl;
 
-public class CircularBuffer {
-}
+import javax.annotation.ParametersAreNonnullByDefault;

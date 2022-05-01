@@ -21,49 +21,54 @@ package icyllis.arcui.hgi;
 import javax.annotation.Nonnull;
 
 /**
- * Base class that represents something that can be color/stencil attachments
- * of render targets. To be exact, GLTexture, GLRenderbuffer and VkImage.
- * Depth attachments are not used, because we are in 2D, depth ordering is
- * performed by software, depth test is always disabled.
+ * Base class that represents something that can be color or depth/stencil
+ * attachments of framebuffers, it contains data of 2D images. To be exact,
+ * GLTexture, GLRenderbuffer and VkImage. Depth and stencil are packed
+ * and used together.
  * <p>
  * We abstract this class from {@link Texture} because GLRenderbuffer can
  * be used as attachments, but they are not textures.
+ * <p>
+ * This class is NOT Vulkan window surface, don't be confused.
  */
-public abstract class Attachment extends Resource {
+public abstract class Surface extends Resource {
 
-    private final int mWidth;
-    private final int mHeight;
+    protected final int mWidth;
+    protected final int mHeight;
 
-    public Attachment(Server server, int width, int height) {
+    public Surface(Server server, int width, int height) {
         super(server);
         mWidth = width;
         mHeight = height;
     }
 
     /**
-     * Returns the width of this attachment.
+     * Returns the width of this surface.
      */
     public final int getWidth() {
         return mWidth;
     }
 
     /**
-     * Returns the height of this attachment.
+     * Returns the height of this surface.
      */
     public final int getHeight() {
         return mHeight;
     }
 
     /**
-     * Describes the backend format of this attachment.
+     * Describes the backend format of this surface.
      */
     @Nonnull
     public abstract BackendFormat getBackendFormat();
 
+    /**
+     * @return the number of samples
+     */
     public abstract int getSampleCount();
 
     /**
-     * @return true if pixels in this attachment are read-only.
+     * @return true if pixels in this surface are read-only.
      */
     public abstract boolean isReadOnly();
 

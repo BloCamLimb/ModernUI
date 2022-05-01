@@ -22,13 +22,14 @@ import icyllis.arcui.core.Image;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
-import java.util.ArrayList;
 
 /**
  * A factory for arbitrary resource types.
  */
 @NotThreadSafe
 public final class ResourceProvider {
+
+    public static final int MIN_SCRATCH_TEXTURE_SIZE = 16;
 
     private Server mServer;
     private ResourceCache mCache;
@@ -45,7 +46,7 @@ public final class ResourceProvider {
      */
     @Nullable
     @SuppressWarnings("unchecked")
-    public <T extends Resource> T findByUniqueKey(UniqueKey key) {
+    public <T extends Resource> T findByUniqueKey(Object key) {
         return mCache == null ? null : (T) mCache.findAndRefUniqueResource(key);
     }
 
@@ -68,6 +69,8 @@ public final class ResourceProvider {
         // Currently, we don't recycle compressed textures as scratch. Additionally, all compressed
         // textures should be created through the createCompressedTexture function.
         assert format.getCompressionType() == Image.COMPRESSION_TYPE_NONE;
+
+        return null;
     }
 
     /**
@@ -76,5 +79,28 @@ public final class ResourceProvider {
     public void discard() {
         mServer = null;
         mCache = null;
+    }
+
+    public static int makeApprox(int size) {
+        size = Math.max(MIN_SCRATCH_TEXTURE_SIZE, size);
+
+        // isPowerOfTwo
+        if ((size & (size - 1)) == 0) {
+            return size;
+        }
+
+        // ceilingPowerOfTwo
+        int ceilPow2 = 1 << -Integer.numberOfLeadingZeros(size - 1);
+        if (size <= 1 << 10) {
+            return ceilPow2;
+        }
+
+        int floorPow2 = ceilPow2 >> 1;
+        int mid = floorPow2 + (floorPow2 >> 1);
+
+        if (size <= mid) {
+            return mid;
+        }
+        return ceilPow2;
     }
 }

@@ -18,29 +18,16 @@
 
 package icyllis.arcui.hgi;
 
-import org.jetbrains.annotations.ApiStatus;
+public class SurfaceProxyView {
 
-public class RecordingContext {
+    public static final int FLAG_ORIGIN_TOP_LEFT = 0x0;
+    public static final int FLAG_ORIGIN_BOTTOM_LEFT = 0x1;
+    public static final int FLAG_REQUIRES_TEXTURE_BARRIER = 0x2;
+    public static final int FLAG_AS_INPUT_ATTACHMENT = 0x4;
 
-    protected final ThreadSafeProxy mProxy;
-
-    public RecordingContext(ThreadSafeProxy proxy) {
-        mProxy = proxy;
-    }
-
-    /**
-     * The 3D API backing this context
-     */
-    @ApiStatus.Internal
-    public final int backend() {
-        return mProxy.backend();
-    }
-
-    public ThreadSafeProxy threadSafeProxy() {
-        return mProxy;
-    }
-
-    public ProxyProvider getProxyProvider() {
-        return null;
-    }
+    private SurfaceProxy mProxy;
+    private short mSwizzle;
+    private int mOffsetX;
+    private int mOffsetY;
+    private int mFlags;
 }

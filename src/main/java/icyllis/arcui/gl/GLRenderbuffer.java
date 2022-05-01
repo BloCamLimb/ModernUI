@@ -25,11 +25,13 @@ import javax.annotation.Nonnull;
 
 /**
  * Renderbuffer can be only used as attachments of framebuffers as an optimization.
- * Just something like Vulkan <code>VK_IMAGE_LAYOUT_*_READ_ONLY_OPTIMAL</code>.
+ * It's something like Vulkan <code>VK_IMAGE_LAYOUT_*_READ_ONLY_OPTIMAL</code>.
+ * Renderbuffer can neither be accessed by shaders nor have mipmaps, but can be
+ * multi-sampled.
  */
-public final class GLRenderbuffer extends Attachment {
+public final class GLRenderbuffer extends Surface {
 
-    private final int mFormat;
+    private final GLFormat mFormat;
     private final int mSampleCount;
 
     // may be zero for external stencil buffers associated with external render targets
@@ -41,7 +43,7 @@ public final class GLRenderbuffer extends Attachment {
     private final long mMemorySize;
 
     public GLRenderbuffer(GLServer server, int width, int height,
-                          int format, int sampleCount, int renderbuffer) {
+                          GLFormat format, int sampleCount, int renderbuffer) {
         super(server, width, height);
         assert sampleCount > 0;
         mSampleCount = sampleCount;
@@ -49,9 +51,9 @@ public final class GLRenderbuffer extends Attachment {
         mRenderbuffer = renderbuffer;
 
         // color buffers may be compressed
-        int compression = GLUtil.GLFormatCompressionType(format);
+        int compression = GLUtil.glFormatCompressionType(format);
         long size = DataUtils.numBlocks(compression, width, height);
-        size *= GLUtil.GLFormatBytesPerBlock(format);
+        size *= GLUtil.glFormatBytesPerBlock(format);
         size *= sampleCount;
         mMemorySize = size;
 
@@ -60,7 +62,7 @@ public final class GLRenderbuffer extends Attachment {
 
     @Nonnull
     public static GLRenderbuffer makeWrapped(GLServer server, int width, int height,
-                                             int format, int sampleCount, int renderbuffer) {
+                                             GLFormat format, int sampleCount, int renderbuffer) {
         return new GLRenderbuffer(server, width, height, format, sampleCount, renderbuffer);
     }
 
@@ -68,12 +70,12 @@ public final class GLRenderbuffer extends Attachment {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(GLUtil.GLFormatToGLEnum(mFormat), Types.TEXTURE_TYPE_NONE);
+            mBackendFormat = new GLBackendFormat(GLUtil.glFormatToEnum(mFormat), Types.TEXTURE_TYPE_NONE);
         }
         return mBackendFormat;
     }
 
-    public int getFormat() {
+    public GLFormat getFormat() {
         return mFormat;
     }
 

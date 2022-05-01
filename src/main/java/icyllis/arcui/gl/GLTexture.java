@@ -18,8 +18,7 @@
 
 package icyllis.arcui.gl;
 
-import icyllis.arcui.hgi.BackendFormat;
-import icyllis.arcui.hgi.Texture;
+import icyllis.arcui.hgi.*;
 
 import javax.annotation.Nonnull;
 
@@ -28,8 +27,14 @@ import javax.annotation.Nonnull;
  */
 public final class GLTexture extends Texture {
 
-    public GLTexture(GLServer server, int width, int height, boolean isProtected) {
-        super(server, width, height, isProtected);
+    public GLTexture(GLServer server,
+                     int width, int height,
+                     GLFormat format,
+                     int texture,
+                     boolean mipmapped,
+                     boolean budgeted,
+                     boolean ownership) {
+        super(server, width, height, false);
     }
 
     @Override
@@ -57,5 +62,21 @@ public final class GLTexture extends Texture {
     public int getSampleCount() {
         // We have no multisample textures
         return 1;
+    }
+
+    @Override
+    public boolean isProtected() {
+        return false;
+    }
+
+    @Nonnull
+    @Override
+    public BackendTexture getBackendTexture() {
+        return null;
+    }
+
+    @Override
+    public boolean isMipmapped() {
+        return false;
     }
 }

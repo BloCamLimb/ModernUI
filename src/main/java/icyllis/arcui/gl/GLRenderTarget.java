@@ -28,7 +28,7 @@ import static org.lwjgl.opengl.GL45C.*;
 public final class GLRenderTarget extends RenderTarget {
 
     // the render target format, same as main color buffer
-    private final int mFormat;
+    private final GLFormat mFormat;
 
     // single sample framebuffer
     private int mFramebuffer;
@@ -48,7 +48,7 @@ public final class GLRenderTarget extends RenderTarget {
 
     public GLRenderTarget(GLServer server,
                           int width, int height,
-                          int format,
+                          GLFormat format,
                           int sampleCount,
                           int framebuffer,
                           int msaaFramebuffer,
@@ -72,7 +72,7 @@ public final class GLRenderTarget extends RenderTarget {
     // Constructor for wrapped render targets.
     private GLRenderTarget(GLServer server,
                            int width, int height,
-                           int format,
+                           GLFormat format,
                            int sampleCount,
                            int framebuffer,
                            int msaaFramebuffer,
@@ -96,7 +96,7 @@ public final class GLRenderTarget extends RenderTarget {
     @Nonnull
     public static GLRenderTarget makeWrapped(GLServer server,
                                              int width, int height,
-                                             int format,
+                                             GLFormat format,
                                              int sampleCount,
                                              int framebuffer,
                                              int msaaFramebuffer,
@@ -110,23 +110,23 @@ public final class GLRenderTarget extends RenderTarget {
             // a format with the same number of stencil bits. We don't even directly use the format or
             // any other properties. Thus, it is fine for us to just assign an arbitrary format that
             // matches the stencil bit count.
-            int stencilFormat = switch (stencilBits) {
-                case 8 -> GLTypes.FORMAT_STENCIL_INDEX8;
-                case 16 -> GLTypes.FORMAT_STENCIL_INDEX16;
+            GLFormat stencilFormat = switch (stencilBits) {
+                case 8 -> GLFormat.STENCIL_INDEX8;
+                case 16 -> GLFormat.STENCIL_INDEX16;
                 default -> throw new IllegalArgumentException();
             };
 
             // We don't have the actual renderbufferID, but we need to make an attachment for the stencil,
             // so we just set it to an invalid value of 0 to make sure we don't explicitly use it or try
             // and delete it.
-            stencilBuffer = GLRenderbuffer.makeWrapped(server, width, height, sampleCount,
-                    stencilFormat, /*renderbufferID=*/0);
+            stencilBuffer = GLRenderbuffer.makeWrapped(server, width, height, stencilFormat,
+                    sampleCount, /*renderbufferID=*/0);
         }
         return new GLRenderTarget(server, width, height, format, sampleCount,
                 framebuffer, msaaFramebuffer, msaaColorBuffer, stencilBuffer, ownership);
     }
 
-    public int getFormat() {
+    public GLFormat getFormat() {
         return mFormat;
     }
 
@@ -204,7 +204,7 @@ public final class GLRenderTarget extends RenderTarget {
                     GL_STENCIL_ATTACHMENT,
                     GL_RENDERBUFFER,
                     stencilBuffer.getRenderbuffer());
-            if (GLUtil.GLFormatIsPackedDepthStencil(stencilBuffer.getFormat())) {
+            if (GLUtil.glFormatIsPackedDepthStencil(stencilBuffer.getFormat())) {
                 glNamedFramebufferRenderbuffer(framebuffer,
                         GL_DEPTH_ATTACHMENT,
                         GL_RENDERBUFFER,
@@ -236,7 +236,7 @@ public final class GLRenderTarget extends RenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(GLUtil.GLFormatToGLEnum(mFormat), GL_TEXTURE_2D);
+            mBackendFormat = new GLBackendFormat(GLUtil.glFormatToEnum(mFormat), GL_TEXTURE_2D);
         }
         return mBackendFormat;
     }
@@ -247,7 +247,7 @@ public final class GLRenderTarget extends RenderTarget {
         if (mBackendRenderTarget == null) {
             final GLFramebufferInfo info = new GLFramebufferInfo();
             info.mID = getSampleCount() > 1 ? mMSAAFramebuffer : mFramebuffer;
-            info.mFormat = GLUtil.GLFormatToGLEnum(mFormat);
+            info.mFormat = GLUtil.glFormatToEnum(mFormat);
             mBackendRenderTarget = new GLBackendRenderTarget(
                     getWidth(), getHeight(), getSampleCount(), getStencilBits(), info);
         }
@@ -265,7 +265,7 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     @Override
-    protected boolean onSetStencilBuffer(@Nullable Attachment stencilBuffer, boolean useMSAA) {
+    protected boolean onSetStencilBuffer(@Nullable Surface stencilBuffer, boolean useMSAA) {
         // We defer attaching the new stencil buffer until the next time our framebuffer is bound.
         if (getStencilBuffer(useMSAA) != stencilBuffer) {
             if (useMSAA) {

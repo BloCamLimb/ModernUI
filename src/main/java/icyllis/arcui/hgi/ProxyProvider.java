@@ -25,4 +25,8 @@ public final class ProxyProvider {
 
     public ProxyProvider(RecordingContext context) {
     }
+
+    public void adoptUniqueKeyFromSurface(SurfaceProxy proxy, Texture texture) {
+
+    }
 }

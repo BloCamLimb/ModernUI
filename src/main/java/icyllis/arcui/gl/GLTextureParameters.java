@@ -18,21 +18,7 @@
 
 package icyllis.arcui.gl;
 
-import static org.lwjgl.opengl.GL45C.*;
-
 public final class GLTextureParameters {
-
-    // Texture parameter state that is overridden when a non-zero sampler object is bound.
-    // This is optional because we don't track it when we're using sampler objects.
-    public int mMinFilter;
-    public int mMagFilter;
-    public int mWrapS;
-    public int mWrapT;
-    public float mMinLOD;
-    public float mMaxLOD;
-    // We always want the border color to be transparent black, so no need to store 4 floats.
-    // Just track if it's been invalidated and no longer the default
-    public boolean mBorderColorInvalid;
 
     // Texture parameter state that is not overridden by a bound sampler object.
     public int mBaseMipMapLevel;
@@ -41,28 +27,15 @@ public final class GLTextureParameters {
 
     public GLTextureParameters() {
         // These are the OpenGL defaults.
-        mMinFilter = GL_NEAREST_MIPMAP_LINEAR;
-        mMagFilter = GL_LINEAR;
-        mWrapS = GL_REPEAT;
-        mWrapT = GL_REPEAT;
-        mMinLOD = -1000.f;
-        mMaxLOD = 1000.f;
-        mBorderColorInvalid = false;
-        // These are the OpenGL defaults.
         mBaseMipMapLevel = 0;
         mMaxMipmapLevel = 1000;
         mSwizzleIsRGBA = true;
     }
 
+    /**
+     * Makes parameters invalid, forces GLServer to refresh.
+     */
     public void invalidate() {
-        mMinFilter = ~0;
-        mMagFilter = ~0;
-        mWrapS = ~0;
-        mWrapT = ~0;
-        mMinLOD = Float.NaN;
-        mMaxLOD = Float.NaN;
-        mBorderColorInvalid = true;
-
         mBaseMipMapLevel = ~0;
         mMaxMipmapLevel = ~0;
         mSwizzleIsRGBA = false;
