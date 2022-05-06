@@ -28,7 +28,7 @@ import static org.lwjgl.opengl.GL45C.*;
 public final class GLRenderTarget extends RenderTarget {
 
     // the render target format, same as main color buffer
-    private final GLFormat mFormat;
+    private final int mFormat;
 
     // single sample framebuffer
     private int mFramebuffer;
@@ -48,7 +48,7 @@ public final class GLRenderTarget extends RenderTarget {
 
     public GLRenderTarget(GLServer server,
                           int width, int height,
-                          GLFormat format,
+                          int format,
                           int sampleCount,
                           int framebuffer,
                           int msaaFramebuffer,
@@ -72,7 +72,7 @@ public final class GLRenderTarget extends RenderTarget {
     // Constructor for wrapped render targets.
     private GLRenderTarget(GLServer server,
                            int width, int height,
-                           GLFormat format,
+                           int format,
                            int sampleCount,
                            int framebuffer,
                            int msaaFramebuffer,
@@ -96,7 +96,7 @@ public final class GLRenderTarget extends RenderTarget {
     @Nonnull
     public static GLRenderTarget makeWrapped(GLServer server,
                                              int width, int height,
-                                             GLFormat format,
+                                             int format,
                                              int sampleCount,
                                              int framebuffer,
                                              int msaaFramebuffer,
@@ -110,9 +110,9 @@ public final class GLRenderTarget extends RenderTarget {
             // a format with the same number of stencil bits. We don't even directly use the format or
             // any other properties. Thus, it is fine for us to just assign an arbitrary format that
             // matches the stencil bit count.
-            GLFormat stencilFormat = switch (stencilBits) {
-                case 8 -> GLFormat.STENCIL_INDEX8;
-                case 16 -> GLFormat.STENCIL_INDEX16;
+            int stencilFormat = switch (stencilBits) {
+                case 8 ->  GLTypes.FORMAT_STENCIL_INDEX8;
+                case 16 -> GLTypes.FORMAT_STENCIL_INDEX16;
                 default -> throw new IllegalArgumentException();
             };
 
@@ -126,7 +126,7 @@ public final class GLRenderTarget extends RenderTarget {
                 framebuffer, msaaFramebuffer, msaaColorBuffer, stencilBuffer, ownership);
     }
 
-    public GLFormat getFormat() {
+    public int getFormat() {
         return mFormat;
     }
 

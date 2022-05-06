@@ -19,4 +19,19 @@
 package icyllis.arcui.hgi;
 
 public class SurfaceFillContext extends SurfaceContext {
+
+    public SurfaceFillContext(RecordingContext context,
+                              SurfaceProxyView readView,
+                              SurfaceProxyView writeView,
+                              int colorInfo) {
+        this(context, readView, writeView, colorInfo, false);
+    }
+
+    public SurfaceFillContext(RecordingContext context,
+                              SurfaceProxyView readView,
+                              SurfaceProxyView writeView,
+                              int colorInfo,
+                              boolean flushTimeOpsTask) {
+        super(context, readView, colorInfo);
+    }
 }

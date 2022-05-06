@@ -112,7 +112,7 @@ public final class VkUtil {
      * @param vkFormat see VK11
      * @return see Color
      */
-    public static int getVkFormatChannels(@NativeType("VkFormat") int vkFormat) {
+    public static int vkFormatChannels(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_R8G8B8A8_UNORM,
                     VK_FORMAT_R16G16B16A16_UNORM,
@@ -139,12 +139,12 @@ public final class VkUtil {
         };
     }
 
-    public static int getVkFormatCompressionType(@NativeType("VkFormat") int vkFormat) {
+    public static int vkFormatCompressionType(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
-            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> Image.COMPRESSION_TYPE_ETC2_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> Image.COMPRESSION_TYPE_BC1_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> Image.COMPRESSION_TYPE_BC1_RGBA8_UNORM;
-            default -> Image.COMPRESSION_TYPE_NONE;
+            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> Image.COMPRESSION_ETC2_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> Image.COMPRESSION_BC1_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> Image.COMPRESSION_BC1_RGBA8_UNORM;
+            default -> Image.COMPRESSION_NONE;
         };
     }
 
@@ -162,7 +162,7 @@ public final class VkUtil {
      *
      * @param vkFormat see VK11
      */
-    public static int getVkFormatBytesPerBlock(@NativeType("VkFormat") int vkFormat) {
+    public static int vkFormatBytesPerBlock(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_R8G8B8A8_UNORM,
                     VK_FORMAT_D24_UNORM_S8_UINT,
@@ -193,7 +193,7 @@ public final class VkUtil {
         };
     }
 
-    public static int getVkFormatStencilBits(@NativeType("VkFormat") int format) {
+    public static int vkFormatStencilBits(@NativeType("VkFormat") int format) {
         return switch (format) {
             case VK_FORMAT_S8_UINT,
                     VK_FORMAT_D16_UNORM_S8_UINT,
@@ -203,7 +203,7 @@ public final class VkUtil {
         };
     }
 
-    public static String getVkFormatName(@NativeType("VkFormat") int vkFormat) {
+    public static String vkFormatName(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
             case VK_FORMAT_R8G8B8A8_UNORM -> "R8G8B8A8_UNORM";
             case VK_FORMAT_R8_UNORM -> "R8_UNORM";

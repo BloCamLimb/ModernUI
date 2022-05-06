@@ -18,9 +18,19 @@
 
 package icyllis.arcui.hgi;
 
+import icyllis.arcui.core.*;
+
+import javax.annotation.Nullable;
+
 /**
  * Represents the capabilities of a Context.
+ * <p>
+ * Capabilities are used to test if something is capable or not. In other words,
+ * these are optional and there are alternatives, required features are not listed
+ * here. For historical reasons, there are still some capability methods, but only
+ * return constants (become required).
  */
+@SuppressWarnings("unused")
 public abstract class Caps {
 
     /**
@@ -42,33 +52,6 @@ public abstract class Caps {
     }
 
     protected final ShaderCaps mShaderCaps = new ShaderCaps();
-
-    // Stupid stuff
-    protected final boolean mDrawInstancedSupport = true;
-    protected final boolean mMustClearUploadedBufferData = false;
-    protected final boolean mShouldInitializeTextures = false;
-    protected final boolean mSupportsAHardwareBufferImages = false;
-    protected final boolean mClampToBorderSupport = true;
-    protected final boolean mPerformPartialClearsAsDraws = false;
-    protected final boolean mPerformColorClearsAsDraws = false;
-    protected final boolean mPerformStencilClearsAsDraws = false;
-    protected final boolean mAvoidLargeIndexBufferDraws = false;
-    protected final boolean mWritePixelsRowBytesSupport = true;
-    protected final boolean mReadPixelsRowBytesSupport = true;
-    protected final boolean mTransferFromBufferToTextureSupport = true;
-    protected final boolean mTransferFromSurfaceToBufferSupport = true;
-
-    // Driver workaround
-    protected final boolean mDriverDisableMSAAClipAtlas = false;
-    protected final boolean mDisableTessellationPathRenderer = false;
-    protected final boolean mAvoidReorderingRenderTasks = false;
-    protected final boolean mAvoidDithering = false;
-
-    protected final boolean mFenceSyncSupport = true;
-    protected final boolean mSemaphoreSupport = true;
-
-    // Requires fence sync support in GL.
-    protected final boolean mCrossContextTextureSupport = true;
 
     protected boolean mAnisoSupport = false;
     protected boolean mGpuTracingSupport = false;
@@ -98,14 +81,17 @@ public abstract class Caps {
     public Caps(ContextOptions options) {
     }
 
-    public final ShaderCaps getShaderCaps() {
+    /**
+     * @return the set of capabilities for shaders
+     */
+    public final ShaderCaps shaderCaps() {
         return mShaderCaps;
     }
 
     /**
      * Non-power-of-two texture tile.
      */
-    public final boolean getNPOTTextureTileSupport() {
+    public final boolean npotTextureTileSupport() {
         return true;
     }
 
@@ -113,37 +99,37 @@ public abstract class Caps {
      * To avoid as-yet-unnecessary complexity we don't allow any partial support of MIP Maps (e.g.
      * only for POT textures)
      */
-    public final boolean getMipmapSupport() {
+    public final boolean mipmapSupport() {
         return true;
     }
 
     /**
      * Anisotropic filtering (AF).
      */
-    public final boolean getAnisoSupport() {
+    public final boolean anisoSupport() {
         return mAnisoSupport;
     }
 
-    public final boolean getGpuTracingSupport() {
+    public final boolean gpuTracingSupport() {
         return mGpuTracingSupport;
     }
 
     /**
      * Allows mixed size FBO attachments.
      */
-    public final boolean getOversizeStencilSupport() {
+    public final boolean oversizedStencilSupport() {
         return true;
     }
 
-    public final boolean getTextureBarrierSupport() {
+    public final boolean textureBarrierSupport() {
         return true;
     }
 
-    public final boolean getSampleLocationsSupport() {
+    public final boolean sampleLocationsSupport() {
         return true;
     }
 
-    public final boolean getDrawInstancedSupport() {
+    public final boolean drawInstancedSupport() {
         return true;
     }
 
@@ -152,19 +138,19 @@ public abstract class Caps {
      * as it can polyfill them with instanced calls, but this cap tells us if they are supported
      * natively.)
      */
-    public final boolean getNativeDrawIndirectSupport() {
+    public final boolean nativeDrawIndirectSupport() {
         return mNativeDrawIndirectSupport;
     }
 
-    public final boolean getUseClientSideIndirectBuffers() {
+    public final boolean useClientSideIndirectBuffers() {
         return mUseClientSideIndirectBuffers;
     }
 
-    public final boolean getConservativeRasterSupport() {
+    public final boolean conservativeRasterSupport() {
         return mConservativeRasterSupport;
     }
 
-    public final boolean getWireframeSupport() {
+    public final boolean wireframeSupport() {
         return true;
     }
 
@@ -173,7 +159,7 @@ public abstract class Caps {
      * an MSAA-render-to-texture extension: Any render target we create internally will use the
      * extension, and any wrapped render target is the client's responsibility.
      */
-    public final boolean getMSAAResolvesAutomatically() {
+    public final boolean msaaResolvesAutomatically() {
         return false;
     }
 
@@ -186,11 +172,11 @@ public abstract class Caps {
      * <p>
      * This flag is similar to enabling gl render to texture for msaa rendering.
      */
-    public final boolean getPreferDiscardableMSAAAttachment() {
+    public final boolean preferDiscardableMSAAAttachment() {
         return false;
     }
 
-    public final boolean getHalfFloatVertexAttributeSupport() {
+    public final boolean halfFloatVertexAttributeSupport() {
         return true;
     }
 
@@ -198,11 +184,11 @@ public abstract class Caps {
      * Primitive restart functionality is core in ES 3.0, but using it will cause slowdowns on some
      * systems. This cap is only set if primitive restart will improve performance.
      */
-    public final boolean getUsePrimitiveRestart() {
+    public final boolean usePrimitiveRestart() {
         return false;
     }
 
-    public final boolean getPreferClientSideDynamicBuffers() {
+    public final boolean preferClientSideDynamicBuffers() {
         return false;
     }
 
@@ -210,7 +196,7 @@ public abstract class Caps {
      * On tilers, an initial fullscreen clear is an OPTIMIZATION. It allows the hardware to
      * initialize each tile with a constant value rather than loading each pixel from memory.
      */
-    public final boolean getPreferFullscreenClears() {
+    public final boolean preferFullscreenClears() {
         return false;
     }
 
@@ -218,47 +204,47 @@ public abstract class Caps {
      * Should we discard stencil values after a render pass? (Tilers get better performance if we
      * always load stencil buffers with a "clear" op, and then discard the content when finished.)
      */
-    public final boolean getDiscardStencilValuesAfterRenderPass() {
+    public final boolean discardStencilValuesAfterRenderPass() {
         //TODO review
-        return getPreferFullscreenClears();
+        return preferFullscreenClears();
     }
 
     /**
      * D3D does not allow the refs or masks to differ on a two-sided stencil draw.
      */
-    public final boolean getTwoSidedStencilRefsAndMasksMustMatch() {
+    public final boolean twoSidedStencilRefsAndMasksMustMatch() {
         return false;
     }
 
-    public final boolean getPreferVRAMUseOverFlushes() {
+    public final boolean preferVRAMUseOverFlushes() {
         return true;
     }
 
-    public final boolean getAvoidStencilBuffers() {
+    public final boolean avoidStencilBuffers() {
         return false;
     }
 
-    public final boolean getAvoidWritePixelsFastPath() {
+    public final boolean avoidWritePixelsFastPath() {
         return false;
     }
 
-    public final boolean getRequiresManualFBBarrierAfterTessellatedStencilDraw() {
+    public final boolean requiresManualFBBarrierAfterTessellatedStencilDraw() {
         return false;
     }
 
-    public final boolean getNativeDrawIndexedIndirectIsBroken() {
+    public final boolean nativeDrawIndexedIndirectIsBroken() {
         return false;
     }
 
-    public final BlendEquationSupport getBlendEquationSupport() {
+    public final BlendEquationSupport blendEquationSupport() {
         return mBlendEquationSupport;
     }
 
-    public final boolean getAdvancedBlendEquationSupport() {
+    public final boolean advancedBlendEquationSupport() {
         return mBlendEquationSupport != BlendEquationSupport.BASIC;
     }
 
-    public final boolean getAdvancedCoherentBlendEquationSupport() {
+    public final boolean advancedCoherentBlendEquationSupport() {
         return mBlendEquationSupport == BlendEquationSupport.ADVANCED_COHERENT;
     }
 
@@ -267,7 +253,7 @@ public abstract class Caps {
      * alpha equal to 1. To disable blending we collapse src-over to src and the backends will
      * handle the disabling of blending.
      */
-    public final boolean getShouldCollapseSrcOverToSrcWhenAble() {
+    public final boolean shouldCollapseSrcOverToSrcWhenAble() {
         return false;
     }
 
@@ -275,11 +261,11 @@ public abstract class Caps {
      * When discarding the DirectContext do we need to sync the GPU before we start discarding
      * resources.
      */
-    public final boolean getMustSyncGpuDuringDiscard() {
+    public final boolean mustSyncGpuDuringDiscard() {
         return mMustSyncGpuDuringDiscard;
     }
 
-    public final boolean getReducedShaderMode() {
+    public final boolean reducedShaderMode() {
         return mShaderCaps.mReducedShaderMode;
     }
 
@@ -289,22 +275,22 @@ public abstract class Caps {
      * recycled in the texture cache. This is to prevent ghosting by drivers
      * (in particular for deferred architectures).
      */
-    public final boolean getReuseScratchTextures() {
+    public final boolean reuseScratchTextures() {
         return true;
     }
 
-    public final boolean getReuseScratchBuffers() {
+    public final boolean reuseScratchBuffers() {
         return true;
     }
 
     /**
      * Maximum number of attribute values per vertex
      */
-    public final int getMaxVertexAttributes() {
+    public final int maxVertexAttributes() {
         return mMaxVertexAttributes;
     }
 
-    public final int getMaxRenderTargetSize() {
+    public final int maxRenderTargetSize() {
         return mMaxRenderTargetSize;
     }
 
@@ -312,15 +298,15 @@ public abstract class Caps {
      * This is the largest render target size that can be used without incurring extra performance
      * cost. It is usually the max RT size, unless larger render targets are known to be slower.
      */
-    public final int getMaxPreferredRenderTargetSize() {
+    public final int maxPreferredRenderTargetSize() {
         return mMaxPreferredRenderTargetSize;
     }
 
-    public final int getMaxTextureSize() {
+    public final int maxTextureSize() {
         return mMaxTextureSize;
     }
 
-    public final int getMaxWindowRectangles() {
+    public final int maxWindowRectangles() {
         return mMaxWindowRectangles;
     }
 
@@ -328,19 +314,19 @@ public abstract class Caps {
      * Hardware tessellation seems to have a fixed upfront cost. If there is a somewhat small number
      * of verbs, we seem to be faster emulating tessellation with instanced draws instead.
      */
-    public final int getMinPathVerbsForHwTessellation() {
+    public final int minPathVerbsForHwTessellation() {
         return mMinPathVerbsForHwTessellation;
     }
 
-    public final int getMinStrokeVerbsForHwTessellation() {
+    public final int minStrokeVerbsForHwTessellation() {
         return mMinStrokeVerbsForHwTessellation;
     }
 
-    public final int getMaxPushConstantsSize() {
+    public final int maxPushConstantsSize() {
         return mMaxPushConstantsSize;
     }
 
-    public final int getTransferBufferAlignment() {
+    public final int transferBufferAlignment() {
         return 1;
     }
 
@@ -351,7 +337,7 @@ public abstract class Caps {
      * For OpenGL: Formats that deprecated in core profile are not supported; Compressed formats
      * from extensions are uncertain; Others are always supported.
      */
-    public abstract boolean isColorFormat(BackendFormat format);
+    public abstract boolean isFormatTexturable(BackendFormat format);
 
     /**
      * Returns the maximum supported sample count for a format. 0 means the format is not renderable
@@ -367,17 +353,179 @@ public abstract class Caps {
         return Math.min(mInternalMultisampleCount, getMaxRenderTargetSampleCount(format));
     }
 
-    public abstract boolean isRenderFormat(BackendFormat format, int sampleCount, int colorType);
+    public abstract boolean isFormatRenderable(BackendFormat format, int sampleCount, int colorType);
 
-    public abstract boolean isRenderFormat(BackendFormat format, int sampleCount);
+    public abstract boolean isFormatRenderable(BackendFormat format, int sampleCount);
 
     /**
      * Find a sample count greater than or equal to the requested count which is supported for a
      * render target of the given format or 0 if no such sample count is supported. If the requested
      * sample count is 1 then 1 will be returned if non-MSAA rendering is supported, otherwise 0.
-     * For historical reasons requestedCount==0 is handled identically to requestedCount==1.
+     *
+     * @param sampleCount desired samples
      */
     public abstract int getRenderTargetSampleCount(BackendFormat format, int sampleCount);
+
+    /**
+     * Given a dst pixel config and a src color type what color type must the caller coax
+     * the data into in order to use writePixels().
+     * <p>
+     * Low 32bits - colorType ((int) (value & 0xFFFFFFFFL)).
+     * High 32bits - transferOffsetAlignment (value >>> 32).
+     * If the <code>write</code> is occurring using transferPixelsTo() then this provides
+     * the minimum alignment of the offset into the transfer buffer.
+     */
+    public abstract long getSupportedWriteColorType(int dstColorType,
+                                                    BackendFormat dstFormat,
+                                                    int srcColorType);
+
+    /**
+     * Given a src surface's color type and its backend format as well as a color type the caller
+     * would like read into, this provides a legal color type that the caller may pass to
+     * readPixels(). The returned color type may differ from the passed dstColorType, in
+     * which case the caller must convert the read pixel data (see ConvertPixels). When converting
+     * to dstColorType the swizzle in the returned struct should be applied. The caller must check
+     * the returned color type for UNKNOWN.
+     */
+    public final long getSupportedReadColorType(int srcColorType,
+                                                BackendFormat srcFormat,
+                                                int dstColorType) {
+        long read = onSupportedReadColorType(srcColorType, srcFormat, dstColorType);
+        int colorType = (int) (read & 0xFFFFFFFFL);
+        long transferOffsetAlignment = read >>> 32;
+
+        // There are known problems with 24 vs 32 bit BPP with this color type. Just fail for now if
+        // using a transfer buffer.
+        if (colorType == ImageInfo.COLOR_RGB_888x) {
+            transferOffsetAlignment = 0;
+        }
+        // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
+        // Make those aligned reads out of the buffer even if the underlying API doesn't require it.
+        int channelFlags = Types.colorTypeChannelFlags(colorType);
+        if ((channelFlags == Color.RGBA_CHANNEL_FLAGS || channelFlags == Color.RGB_CHANNEL_FLAGS ||
+                channelFlags == Color.ALPHA_CHANNEL_FLAG || channelFlags == Color.GRAY_CHANNEL_FLAG) &&
+                ImageInfo.bytesPerPixel(colorType) == 4) {
+            switch ((int) (transferOffsetAlignment & 0b11)) {
+                // offset alignment already a multiple of 4
+                case 0:
+                    break;
+                // offset alignment is a multiple of 2 but not 4.
+                case 2:
+                    transferOffsetAlignment *= 2;
+                    break;
+                // offset alignment is not a multiple of 2.
+                default:
+                    transferOffsetAlignment *= 4;
+                    break;
+            }
+        }
+        return colorType | (transferOffsetAlignment << 32);
+    }
+
+    protected abstract long onSupportedReadColorType(int srcColorType,
+                                                     BackendFormat srcFormat,
+                                                     int dstColorType);
+
+    /**
+     * Does writePixels() support a src buffer where the row bytes is not equal to bpp * w?
+     */
+    public final boolean writePixelsRowBytesSupport() {
+        return true;
+    }
+
+    /**
+     * Does transferPixelsTo() support a src buffer where the row bytes is not equal to
+     * bpp * w?
+     */
+    public final boolean transferPixelsToRowBytesSupport() {
+        return mTransferPixelsToRowBytesSupport;
+    }
+
+    /**
+     * Does readPixels() support a dst buffer where the row bytes is not equal to bpp * w?
+     */
+    public final boolean readPixelsRowBytesSupport() {
+        return true;
+    }
+
+    public final boolean transferFromSurfaceToBufferSupport() {
+        return true;
+    }
+
+    public final boolean transferFromBufferToTextureSupport() {
+        return true;
+    }
+
+    /**
+     * True in environments that will issue errors if memory uploaded to buffers
+     * is not initialized (even if not read by draw calls).
+     */
+    public final boolean mustClearUploadedBufferData() {
+        return false;
+    }
+
+    /**
+     * For some environments, there is a performance or safety concern to not
+     * initializing textures. For example, with WebGL and Firefox, there is a large
+     * performance hit to not doing it.
+     */
+    public final boolean shouldInitializeTextures() {
+        return false;
+    }
+
+    /**
+     * Supports using Fence.
+     */
+    public final boolean fenceSyncSupport() {
+        return true;
+    }
+
+    /**
+     * Supports using Semaphore.
+     */
+    public final boolean semaphoreSupport() {
+        return true;
+    }
+
+    public final boolean crossContextTextureSupport() {
+        return true;
+    }
+
+    public final boolean dynamicStateArrayGeometryProcessorTextureSupport() {
+        return mDynamicStateArrayGeometryProcessorTextureSupport;
+    }
+
+    // Not all backends support clearing with a scissor test (e.g. Metal), this will always
+    // return true if performColorClearsAsDraws() returns true.
+    public final boolean performPartialClearsAsDraws() {
+        return false;
+    }
+
+    // Many drivers have issues with color clears.
+    public final boolean performColorClearsAsDraws() {
+        return false;
+    }
+
+    public final boolean avoidLargeIndexBufferDraws() {
+        return false;
+    }
+
+    public final boolean performStencilClearsAsDraws() {
+        return false;
+    }
+
+    // Should we disable TessellationPathRenderer due to a faulty driver?
+    public final boolean disableTessellationPathRenderer() {
+        return false;
+    }
+
+    /**
+     * The CLAMP_TO_BORDER wrap mode for texture coordinates was added to desktop GL in 1.3, and
+     * GLES 3.2, but is also available in extensions. Vulkan and Metal always have support.
+     */
+    public final boolean clampToBorderSupport() {
+        return true;
+    }
 
     /**
      * If a texture can be created with these params.
@@ -386,15 +534,64 @@ public abstract class Caps {
         if (width < 1 || height < 1) {
             return false;
         }
-        final int maxSize = getMaxTextureSize();
+        final int maxSize = maxTextureSize();
         if (width > maxSize || height > maxSize) {
             return false;
         }
         if (format.getTextureType() != Types.TEXTURE_TYPE_NONE) {
-            return isColorFormat(format);
+            return isFormatTexturable(format);
         }
         return true;
     }
+
+    public final boolean isFormatCompatible(BackendFormat format, int colorType) {
+        if (colorType == ImageInfo.COLOR_UNKNOWN) {
+            return false;
+        }
+        int compression = format.getCompressionType();
+        if (compression != Image.COMPRESSION_NONE) {
+            return colorType == (DataUtils.compressionTypeIsOpaque(compression) ?
+                    ImageInfo.COLOR_RGB_888x :
+                    ImageInfo.COLOR_RGBA_8888);
+        }
+        return onFormatCompatible(format, colorType);
+    }
+
+    protected abstract boolean onFormatCompatible(BackendFormat format, int colorType);
+
+    /**
+     * These are used when creating a new texture internally.
+     */
+    @Nullable
+    public final BackendFormat getDefaultBackendFormat(int colorType, boolean renderable) {
+        // Unknown color types are always an invalid format, so early out before calling virtual.
+        if (colorType == ImageInfo.COLOR_UNKNOWN) {
+            return null;
+        }
+        BackendFormat format = onDefaultBackendFormat(colorType);
+        if (format == null || !isFormatTexturable(format)) {
+            return null;
+        }
+        if (!isFormatCompatible(format, colorType)) {
+            return null;
+        }
+        // Currently, we require that it be possible to write pixels into the "default" format. Perhaps,
+        // that could be a separate requirement from the caller. It seems less necessary if
+        // renderability was requested.
+        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.COLOR_UNKNOWN) {
+            return null;
+        }
+        if (renderable && !isFormatRenderable(format, 1, colorType)) {
+            return null;
+        }
+        return format;
+    }
+
+    @Nullable
+    protected abstract BackendFormat onDefaultBackendFormat(int colorType);
+
+    @Nullable
+    public abstract BackendFormat getCompressedBackendFormat(int compressionType);
 
     protected final void finishInitialization(ContextOptions options) {
         if (!mNativeDrawIndirectSupport) {

@@ -22,6 +22,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 
 /**
  * SurfaceProxy targets one {@link Texture} and maybe multiple {@link Surface}s with
@@ -55,7 +57,22 @@ import javax.annotation.Nullable;
  * <p>
  * Use {@link ProxyProvider} to get <code>SurfaceProxy</code> objects.
  */
-public abstract class SurfaceProxy {
+// Yeah, the Surface is nothing but a Texture(RenderTarget)
+public abstract sealed class SurfaceProxy permits RenderTargetProxy, TextureProxy {
+
+    private static final VarHandle REF_CNT;
+
+    static {
+        MethodHandles.Lookup lookup = MethodHandles.lookup();
+        try {
+            REF_CNT = lookup.findVarHandle(SurfaceProxy.class, "mRefCnt", int.class);
+        } catch (NoSuchFieldException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @SuppressWarnings("FieldMayBeFinal")
+    private volatile int mRefCnt = 1;
 
     // for wrapped resources, 'mFormat' and 'mDimensions' will always be filled in from the
     // wrapped resource
@@ -108,8 +125,7 @@ public abstract class SurfaceProxy {
 
     // This tracks the mipmap status at the proxy level and is thus somewhat distinct from the
     // backing GrTexture's mipmap status. In particular, this status is used to determine when
-    // mipmap levels need to be explicitly regenerated during the execution of a DAG
-    // (directed acyclic graph) of opsTasks.
+    // mipmap levels need to be explicitly regenerated during the execution of a DAG of opsTasks.
     int mMipmapStatus;
 
     // Should the target's unique key be synced with ours.
@@ -181,6 +197,66 @@ public abstract class SurfaceProxy {
         }
         if (texture.getTextureType() == Types.TEXTURE_TYPE_EXTERNAL) {
             mSurfaceFlags |= Types.INTERNAL_SURFACE_FLAG_READ_ONLY;
+        }
+    }
+
+    /**
+     * @return true if this proxy is uniquely referenced by the client pipeline
+     */
+    public final boolean unique() {
+        // std::memory_order_acquire, maybe volatile?
+        return (int) REF_CNT.getAcquire(this) == 1;
+    }
+
+    /**
+     * Increases the reference count by 1 on the client pipeline.
+     * It's an error to call this method if the reference count has already reached zero.
+     */
+    public final void ref() {
+        // stronger than std::memory_order_relaxed
+        REF_CNT.getAndAddRelease(this, 1);
+    }
+
+    /**
+     * Decreases the reference count by 1 on the client pipeline.
+     * It's an error to call this method if the reference count has already reached zero.
+     */
+    public final void unref() {
+        // stronger than std::memory_order_acq_rel
+        if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
+            onFree();
+        }
+    }
+
+    /**
+     * This must be used with caution. It is only valid to call this when 'threadIsolatedTestCnt'
+     * refs are known to be isolated to the current thread. That is, it is known that there are at
+     * least 'threadIsolatedTestCnt' refs for which no other thread may make a balancing unref()
+     * call. Assuming the contract is followed, if this returns false then no other thread has
+     * ownership of this. If it returns true then another thread *may* have ownership.
+     */
+    public final boolean isRefCntLT(int threadIsolatedTestCnt) {
+        int cnt = (int) REF_CNT.getAcquire(this);
+        // If this fails then the above contract has been violated.
+        assert (cnt >= threadIsolatedTestCnt);
+        return cnt <= threadIsolatedTestCnt;
+    }
+
+    protected void onFree() {
+        // Due to the order of cleanup the Surface this proxy may have wrapped may have gone away
+        // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
+        if (mTarget != null) {
+            mTarget.unref();
+        }
+        mTarget = null;
+
+        // In deferred-mode, uniquely keyed proxies keep their key even after their originating
+        // proxy provider has gone away. In that case there is no-one to send the invalid key
+        // message to (Note: in this case we don't want to remove its cached resource).
+        if (mUniqueKey != null && mProxyProvider != null) {
+
+        } else {
+            assert mProxyProvider == null;
         }
     }
 
@@ -424,18 +500,24 @@ public abstract class SurfaceProxy {
         return Types.textureTypeHasRestrictedSampling(mFormat.getTextureType());
     }
 
+    /**
+     * For {@link ResourceAllocator}.
+     */
     @Nonnull
     protected abstract Object computeScratchKey(Caps caps);
 
+    /**
+     * For {@link ResourceAllocator}.
+     */
     protected abstract boolean createSurface(ResourceProvider provider, ResourceAllocator.Register register);
 
-    // DO NOT ABUSE
+    // DO NOT ABUSE!!
     @ApiStatus.Internal
     public final boolean isExact() {
         return mBackingFit;
     }
 
-    // DO NOT ABUSE
+    // DO NOT ABUSE!!
     @ApiStatus.Internal
     public final void makeExact(boolean allocatedCaseOnly) {
         assert !isLazyLazy();

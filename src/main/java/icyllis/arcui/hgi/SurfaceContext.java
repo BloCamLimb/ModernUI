@@ -22,4 +22,58 @@ package icyllis.arcui.hgi;
  * A helper object to orchestrate commands for a particular surface.
  */
 public class SurfaceContext {
+
+    protected final RecordingContext mContext;
+    protected final SurfaceProxyView mReadView;
+    protected final int mColorInfo;
+
+    public SurfaceContext(RecordingContext context, SurfaceProxyView readView, int colorInfo) {
+        mContext = context;
+        mReadView = readView;
+        mColorInfo = colorInfo;
+    }
+
+    public final RecordingContext getContext() {
+        return mContext;
+    }
+
+    public final SurfaceProxyView getReadView() {
+        return mReadView;
+    }
+
+    public final int getColorInfo() {
+        return mColorInfo;
+    }
+
+    public final int getWidth() {
+        return mReadView.mProxy.getWidth();
+    }
+
+    public final int getHeight() {
+        return mReadView.mProxy.getHeight();
+    }
+
+    public final boolean isMipmapped() {
+        return mReadView.mProxy.isMipmapped();
+    }
+
+    /**
+     * Boolean flag, true for BottomLeft, false for TopLeft.
+     * Read view and write view should have the same origin.
+     */
+    public final int getOrigin() {
+        return mReadView.mOrigin;
+    }
+
+    public final short getReadSwizzle() {
+        return mReadView.mSwizzle;
+    }
+
+    public final Caps getCaps() {
+        return mContext.getCaps();
+    }
+
+    protected final DrawingManager getDrawingManager() {
+        return mContext.getDrawingManager();
+    }
 }

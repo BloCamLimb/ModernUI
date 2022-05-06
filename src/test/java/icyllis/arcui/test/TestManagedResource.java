@@ -35,10 +35,10 @@ public class TestManagedResource {
         GLCapabilities capabilities = GL.createCapabilities();
         GLCaps caps = new GLCaps(new ContextOptions(), capabilities);
 
-        if (caps.isColorFormat(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL45C.GL_TEXTURE_2D))) {
+        if (caps.isFormatTexturable(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL45C.GL_TEXTURE_2D))) {
             System.out.println("OK");
         }
-        short swizzle = Swizzle.pack("rgb1");
+        short swizzle = Swizzle.make("rgb1");
         System.out.println(Swizzle.toString(swizzle));
 
         GLFW.glfwDestroyWindow(window);

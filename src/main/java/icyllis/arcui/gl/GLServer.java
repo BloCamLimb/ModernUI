@@ -103,7 +103,7 @@ public final class GLServer extends Server {
         if (format.getTextureType() != Types.TEXTURE_TYPE_2D) {
             return null;
         }
-        GLFormat f = format.getGLFormat();
+        int f = format.getGLFormat();
         int tex = createTexture(width, height, f, mipLevels);
         if (tex == 0) {
             return null;
@@ -111,18 +111,19 @@ public final class GLServer extends Server {
         return new GLTexture(this, width, height, f, tex, mipLevels > 1, budgeted, true);
     }
 
-    private int createTexture(int width, int height, GLFormat format, int levels) {
+    private int createTexture(int width, int height, int format, int levels) {
         assert width > 0;
         assert height > 0;
-        assert format != GLFormat.UNKNOWN;
+        assert format != GLTypes.FORMAT_UNKNOWN;
         assert !GLUtil.glFormatIsCompressed(format);
         assert levels > 0;
 
-        int internalFormat = format.mInternalFormatForTexture;
+        FormatInfo info = mCaps.mFormatTable[format];
+        int internalFormat = info.mInternalFormatForTexture;
 
         if (internalFormat != 0) {
-            assert (format.mFlags & GLFormat.TEXTURE_FLAG) != 0;
-            assert (format.mFlags & GLFormat.USE_TEX_STORAGE_FLAG) != 0;
+            assert (info.mFlags & FormatInfo.TEXTURE_FLAG) != 0;
+            assert (info.mFlags & FormatInfo.USE_TEX_STORAGE_FLAG) != 0;
             int texture = glCreateTextures(GL_TEXTURE_2D);
             if (texture == 0) {
                 return 0;

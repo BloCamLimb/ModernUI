@@ -36,34 +36,35 @@ public final class GLUtil {
      * @param format see GLTypes
      * @return see Color
      */
-    public static int glFormatChannels(GLFormat format) {
+    public static int glFormatChannels(int format) {
         return switch (format) {
-            case UNKNOWN,
-                    DEPTH24_STENCIL8,
-                    STENCIL_INDEX16,
-                    STENCIL_INDEX8 -> 0;
-            case RGBA8,
-                    RGBA16,
-                    COMPRESSED_RGBA8_BC1,
-                    SRGB8_ALPHA8,
-                    RGBA4,
-                    RGB10_A2,
-                    RGBA16F,
-                    BGRA8 -> Color.RGBA_CHANNEL_FLAGS;
-            case R8,
-                    R16,
-                    R16F -> Color.RED_CHANNEL_FLAG;
-            case ALPHA8 -> Color.ALPHA_CHANNEL_FLAG;
-            case LUMINANCE8,
-                    LUMINANCE16F -> Color.GRAY_CHANNEL_FLAG;
-            case LUMINANCE8_ALPHA8 -> Color.GRAY_ALPHA_CHANNEL_FLAGS;
-            case RGB565,
-                    COMPRESSED_RGB8_BC1,
-                    COMPRESSED_RGB8_ETC2,
-                    RGB8 -> Color.RGB_CHANNEL_FLAGS;
-            case RG8,
-                    RG16F,
-                    RG16 -> Color.RG_CHANNEL_FLAGS;
+            case GLTypes.FORMAT_UNKNOWN,
+                    GLTypes.FORMAT_DEPTH24_STENCIL8,
+                    GLTypes.FORMAT_STENCIL_INDEX16,
+                    GLTypes.FORMAT_STENCIL_INDEX8 -> 0;
+            case GLTypes.FORMAT_RGBA8,
+                    GLTypes.FORMAT_RGBA16,
+                    GLTypes.FORMAT_COMPRESSED_RGBA8_BC1,
+                    GLTypes.FORMAT_SRGB8_ALPHA8,
+                    GLTypes.FORMAT_RGBA4,
+                    GLTypes.FORMAT_RGB10_A2,
+                    GLTypes.FORMAT_RGBA16F,
+                    GLTypes.FORMAT_BGRA8 -> Color.RGBA_CHANNEL_FLAGS;
+            case GLTypes.FORMAT_R8,
+                    GLTypes.FORMAT_R16,
+                    GLTypes.FORMAT_R16F -> Color.RED_CHANNEL_FLAG;
+            case GLTypes.FORMAT_ALPHA8 -> Color.ALPHA_CHANNEL_FLAG;
+            case GLTypes.FORMAT_LUMINANCE8,
+                    GLTypes.FORMAT_LUMINANCE16F -> Color.GRAY_CHANNEL_FLAG;
+            case GLTypes.FORMAT_LUMINANCE8_ALPHA8 -> Color.GRAY_ALPHA_CHANNEL_FLAGS;
+            case GLTypes.FORMAT_RGB565,
+                    GLTypes.FORMAT_COMPRESSED_RGB8_BC1,
+                    GLTypes.FORMAT_COMPRESSED_RGB8_ETC2,
+                    GLTypes.FORMAT_RGB8 -> Color.RGB_CHANNEL_FLAGS;
+            case GLTypes.FORMAT_RG8,
+                    GLTypes.FORMAT_RG16F,
+                    GLTypes.FORMAT_RG16 -> Color.RG_CHANNEL_FLAGS;
+            default -> throw new IllegalArgumentException();
         };
     }
 
@@ -71,233 +72,239 @@ public final class GLUtil {
      * @param glFormat see GL45C, EXTTextureStorage, EXTTextureCompressionS3TC
      * @return see GLTypes
      */
-    public static GLFormat glFormatFromEnum(@NativeType("GLenum") int glFormat) {
+    public static int glFormatFromEnum(@NativeType("GLenum") int glFormat) {
         return switch (glFormat) {
-            case GL_RGBA8 -> GLFormat.RGBA8;
-            case GL_R8 -> GLFormat.R8;
-            case GL_ALPHA8_EXT -> GLFormat.ALPHA8;
-            case GL_LUMINANCE8_EXT -> GLFormat.LUMINANCE8;
-            case GL_LUMINANCE8_ALPHA8_EXT -> GLFormat.LUMINANCE8_ALPHA8;
-            case GL_BGRA8_EXT -> GLFormat.BGRA8;
-            case GL_RGB565 -> GLFormat.RGB565;
-            case GL_RGBA16F -> GLFormat.RGBA16F;
-            case GL_LUMINANCE16F_EXT -> GLFormat.LUMINANCE16F;
-            case GL_R16F -> GLFormat.R16F;
-            case GL_RGB8 -> GLFormat.RGB8;
-            case GL_RG8 -> GLFormat.RG8;
-            case GL_RGB10_A2 -> GLFormat.RGB10_A2;
-            case GL_RGBA4 -> GLFormat.RGBA4;
-            case GL_SRGB8_ALPHA8 -> GLFormat.SRGB8_ALPHA8;
-            case GL_COMPRESSED_RGB8_ETC2 -> GLFormat.COMPRESSED_RGB8_ETC2;
-            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT -> GLFormat.COMPRESSED_RGB8_BC1;
-            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT -> GLFormat.COMPRESSED_RGBA8_BC1;
-            case GL_R16 -> GLFormat.R16;
-            case GL_RG16 -> GLFormat.RG16;
-            case GL_RGBA16 -> GLFormat.RGBA16;
-            case GL_RG16F -> GLFormat.RG16F;
-            case GL_STENCIL_INDEX8 -> GLFormat.STENCIL_INDEX8;
-            case GL_STENCIL_INDEX16 -> GLFormat.STENCIL_INDEX16;
-            case GL_DEPTH24_STENCIL8 -> GLFormat.DEPTH24_STENCIL8;
-            default -> GLFormat.UNKNOWN;
+            case GL_RGBA8 -> GLTypes.FORMAT_RGBA8;
+            case GL_R8 -> GLTypes.FORMAT_R8;
+            case GL_ALPHA8_EXT -> GLTypes.FORMAT_ALPHA8;
+            case GL_LUMINANCE8_EXT -> GLTypes.FORMAT_LUMINANCE8;
+            case GL_LUMINANCE8_ALPHA8_EXT -> GLTypes.FORMAT_LUMINANCE8_ALPHA8;
+            case GL_BGRA8_EXT -> GLTypes.FORMAT_BGRA8;
+            case GL_RGB565 -> GLTypes.FORMAT_RGB565;
+            case GL_RGBA16F -> GLTypes.FORMAT_RGBA16F;
+            case GL_LUMINANCE16F_EXT -> GLTypes.FORMAT_LUMINANCE16F;
+            case GL_R16F -> GLTypes.FORMAT_R16F;
+            case GL_RGB8 -> GLTypes.FORMAT_RGB8;
+            case GL_RG8 -> GLTypes.FORMAT_RG8;
+            case GL_RGB10_A2 -> GLTypes.FORMAT_RGB10_A2;
+            case GL_RGBA4 -> GLTypes.FORMAT_RGBA4;
+            case GL_SRGB8_ALPHA8 -> GLTypes.FORMAT_SRGB8_ALPHA8;
+            case GL_COMPRESSED_RGB8_ETC2 -> GLTypes.FORMAT_COMPRESSED_RGB8_ETC2;
+            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT -> GLTypes.FORMAT_COMPRESSED_RGB8_BC1;
+            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT -> GLTypes.FORMAT_COMPRESSED_RGBA8_BC1;
+            case GL_R16 -> GLTypes.FORMAT_R16;
+            case GL_RG16 -> GLTypes.FORMAT_RG16;
+            case GL_RGBA16 -> GLTypes.FORMAT_RGBA16;
+            case GL_RG16F -> GLTypes.FORMAT_RG16F;
+            case GL_STENCIL_INDEX8 -> GLTypes.FORMAT_STENCIL_INDEX8;
+            case GL_STENCIL_INDEX16 -> GLTypes.FORMAT_STENCIL_INDEX16;
+            case GL_DEPTH24_STENCIL8 -> GLTypes.FORMAT_DEPTH24_STENCIL8;
+            default -> GLTypes.FORMAT_UNKNOWN;
         };
     }
 
     /**
-     * Returns either the sized internal format or compressed internal format of the GrGLFormat.
+     * Returns either the sized internal format or compressed internal format of the GrGLTypes.FORMAT_
      */
-    public static int glFormatToEnum(GLFormat format) {
+    public static int glFormatToEnum(int format) {
         return switch (format) {
-            case RGBA8 -> GL_RGBA8;
-            case R8 -> GL_R8;
-            case ALPHA8 -> GL_ALPHA8_EXT;
-            case LUMINANCE8 -> GL_LUMINANCE8_EXT;
-            case LUMINANCE8_ALPHA8 -> GL_LUMINANCE8_ALPHA8_EXT;
-            case BGRA8 -> GL_BGRA8_EXT;
-            case RGB565 -> GL_RGB565;
-            case RGBA16F -> GL_RGBA16F;
-            case LUMINANCE16F -> GL_LUMINANCE16F_EXT;
-            case R16F -> GL_R16F;
-            case RGB8 -> GL_RGB8;
-            case RG8 -> GL_RG8;
-            case RGB10_A2 -> GL_RGB10_A2;
-            case RGBA4 -> GL_RGBA4;
-            case SRGB8_ALPHA8 -> GL_SRGB8_ALPHA8;
-            case COMPRESSED_RGB8_ETC2 -> GL_COMPRESSED_RGB8_ETC2;
-            case COMPRESSED_RGB8_BC1 -> GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
-            case COMPRESSED_RGBA8_BC1 -> GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
-            case R16 -> GL_R16;
-            case RG16 -> GL_RG16;
-            case RGBA16 -> GL_RGBA16;
-            case RG16F -> GL_RG16F;
-            case STENCIL_INDEX8 -> GL_STENCIL_INDEX8;
-            case STENCIL_INDEX16 -> GL_STENCIL_INDEX16;
-            case DEPTH24_STENCIL8 -> GL_DEPTH24_STENCIL8;
-            case UNKNOWN -> GL_NONE;
+            case GLTypes.FORMAT_RGBA8 -> GL_RGBA8;
+            case GLTypes.FORMAT_R8 -> GL_R8;
+            case GLTypes.FORMAT_ALPHA8 -> GL_ALPHA8_EXT;
+            case GLTypes.FORMAT_LUMINANCE8 -> GL_LUMINANCE8_EXT;
+            case GLTypes.FORMAT_LUMINANCE8_ALPHA8 -> GL_LUMINANCE8_ALPHA8_EXT;
+            case GLTypes.FORMAT_BGRA8 -> GL_BGRA8_EXT;
+            case GLTypes.FORMAT_RGB565 -> GL_RGB565;
+            case GLTypes.FORMAT_RGBA16F -> GL_RGBA16F;
+            case GLTypes.FORMAT_LUMINANCE16F -> GL_LUMINANCE16F_EXT;
+            case GLTypes.FORMAT_R16F -> GL_R16F;
+            case GLTypes.FORMAT_RGB8 -> GL_RGB8;
+            case GLTypes.FORMAT_RG8 -> GL_RG8;
+            case GLTypes.FORMAT_RGB10_A2 -> GL_RGB10_A2;
+            case GLTypes.FORMAT_RGBA4 -> GL_RGBA4;
+            case GLTypes.FORMAT_SRGB8_ALPHA8 -> GL_SRGB8_ALPHA8;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2 -> GL_COMPRESSED_RGB8_ETC2;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_BC1 -> GL_COMPRESSED_RGB_S3TC_DXT1_EXT;
+            case GLTypes.FORMAT_COMPRESSED_RGBA8_BC1 -> GL_COMPRESSED_RGBA_S3TC_DXT1_EXT;
+            case GLTypes.FORMAT_R16 -> GL_R16;
+            case GLTypes.FORMAT_RG16 -> GL_RG16;
+            case GLTypes.FORMAT_RGBA16 -> GL_RGBA16;
+            case GLTypes.FORMAT_RG16F -> GL_RG16F;
+            case GLTypes.FORMAT_STENCIL_INDEX8 -> GL_STENCIL_INDEX8;
+            case GLTypes.FORMAT_STENCIL_INDEX16 -> GL_STENCIL_INDEX16;
+            case GLTypes.FORMAT_DEPTH24_STENCIL8 -> GL_DEPTH24_STENCIL8;
+            case GLTypes.FORMAT_UNKNOWN -> GL_NONE;
+            default -> throw new IllegalArgumentException();
         };
     }
 
-    public static int glFormatCompressionType(GLFormat format) {
+    public static int glFormatCompressionType(int format) {
         return switch (format) {
-            case COMPRESSED_RGB8_ETC2 -> Image.COMPRESSION_TYPE_ETC2_RGB8_UNORM;
-            case COMPRESSED_RGB8_BC1 -> Image.COMPRESSION_TYPE_BC1_RGB8_UNORM;
-            case COMPRESSED_RGBA8_BC1 -> Image.COMPRESSION_TYPE_BC1_RGBA8_UNORM;
-            default -> Image.COMPRESSION_TYPE_NONE;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2 -> Image.COMPRESSION_ETC2_RGB8_UNORM;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_BC1 -> Image.COMPRESSION_BC1_RGB8_UNORM;
+            case GLTypes.FORMAT_COMPRESSED_RGBA8_BC1 -> Image.COMPRESSION_BC1_RGBA8_UNORM;
+            default -> Image.COMPRESSION_NONE;
         };
     }
 
-    public static int glFormatBytesPerBlock(GLFormat format) {
+    public static int glFormatBytesPerBlock(int format) {
         return switch (format) {
-            case RGBA8,
-                    DEPTH24_STENCIL8,
-                    RG16F,
-                    RG16,
-                    SRGB8_ALPHA8,
-                    RGB10_A2,
+            case GLTypes.FORMAT_RGBA8,
+                    GLTypes.FORMAT_DEPTH24_STENCIL8,
+                    GLTypes.FORMAT_RG16F,
+                    GLTypes.FORMAT_RG16,
+                    GLTypes.FORMAT_SRGB8_ALPHA8,
+                    GLTypes.FORMAT_RGB10_A2,
                     // We assume the GPU stores this format 4 byte aligned
-                    RGB8,
-                    BGRA8 -> 4;
-            case R8,
-                    STENCIL_INDEX8,
-                    LUMINANCE8,
-                    ALPHA8 -> 1;
-            case LUMINANCE8_ALPHA8,
-                    STENCIL_INDEX16,
-                    R16,
-                    RGBA4,
-                    RG8,
-                    R16F,
-                    LUMINANCE16F,
-                    RGB565 -> 2;
-            case RGBA16F,
-                    RGBA16,
-                    COMPRESSED_RGBA8_BC1,
-                    COMPRESSED_RGB8_BC1,
-                    COMPRESSED_RGB8_ETC2 -> 8;
-            case UNKNOWN -> 0;
+                    GLTypes.FORMAT_RGB8,
+                    GLTypes.FORMAT_BGRA8 -> 4;
+            case GLTypes.FORMAT_R8,
+                    GLTypes.FORMAT_STENCIL_INDEX8,
+                    GLTypes.FORMAT_LUMINANCE8,
+                    GLTypes.FORMAT_ALPHA8 -> 1;
+            case GLTypes.FORMAT_LUMINANCE8_ALPHA8,
+                    GLTypes.FORMAT_STENCIL_INDEX16,
+                    GLTypes.FORMAT_R16,
+                    GLTypes.FORMAT_RGBA4,
+                    GLTypes.FORMAT_RG8,
+                    GLTypes.FORMAT_R16F,
+                    GLTypes.FORMAT_LUMINANCE16F,
+                    GLTypes.FORMAT_RGB565 -> 2;
+            case GLTypes.FORMAT_RGBA16F,
+                    GLTypes.FORMAT_RGBA16,
+                    GLTypes.FORMAT_COMPRESSED_RGBA8_BC1,
+                    GLTypes.FORMAT_COMPRESSED_RGB8_BC1,
+                    GLTypes.FORMAT_COMPRESSED_RGB8_ETC2 -> 8;
+            case GLTypes.FORMAT_UNKNOWN -> 0;
+            default -> throw new IllegalArgumentException();
         };
     }
 
-    public static int glFormatStencilBits(GLFormat format) {
+    public static int glFormatStencilBits(int format) {
         return switch (format) {
-            case STENCIL_INDEX8,
-                    DEPTH24_STENCIL8 -> 8;
-            case STENCIL_INDEX16 -> 16;
-            case COMPRESSED_RGB8_ETC2,
-                    COMPRESSED_RGB8_BC1,
-                    COMPRESSED_RGBA8_BC1,
-                    RGBA8,
-                    R8,
-                    ALPHA8,
-                    LUMINANCE8,
-                    LUMINANCE8_ALPHA8,
-                    BGRA8,
-                    RGB565,
-                    RGBA16F,
-                    R16F,
-                    LUMINANCE16F,
-                    RGB8,
-                    RG8,
-                    RGB10_A2,
-                    RGBA4,
-                    SRGB8_ALPHA8,
-                    R16,
-                    RG16,
-                    RGBA16,
-                    RG16F,
-                    UNKNOWN -> 0;
+            case GLTypes.FORMAT_STENCIL_INDEX8,
+                    GLTypes.FORMAT_DEPTH24_STENCIL8 -> 8;
+            case GLTypes.FORMAT_STENCIL_INDEX16 -> 16;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2,
+                    GLTypes.FORMAT_COMPRESSED_RGB8_BC1,
+                    GLTypes.FORMAT_COMPRESSED_RGBA8_BC1,
+                    GLTypes.FORMAT_RGBA8,
+                    GLTypes.FORMAT_R8,
+                    GLTypes.FORMAT_ALPHA8,
+                    GLTypes.FORMAT_LUMINANCE8,
+                    GLTypes.FORMAT_LUMINANCE8_ALPHA8,
+                    GLTypes.FORMAT_BGRA8,
+                    GLTypes.FORMAT_RGB565,
+                    GLTypes.FORMAT_RGBA16F,
+                    GLTypes.FORMAT_R16F,
+                    GLTypes.FORMAT_LUMINANCE16F,
+                    GLTypes.FORMAT_RGB8,
+                    GLTypes.FORMAT_RG8,
+                    GLTypes.FORMAT_RGB10_A2,
+                    GLTypes.FORMAT_RGBA4,
+                    GLTypes.FORMAT_SRGB8_ALPHA8,
+                    GLTypes.FORMAT_R16,
+                    GLTypes.FORMAT_RG16,
+                    GLTypes.FORMAT_RGBA16,
+                    GLTypes.FORMAT_RG16F,
+                    GLTypes.FORMAT_UNKNOWN -> 0;
+            default -> throw new IllegalArgumentException();
         };
     }
 
-    public static boolean glFormatIsPackedDepthStencil(GLFormat format) {
+    public static boolean glFormatIsPackedDepthStencil(int format) {
         return switch (format) {
-            case DEPTH24_STENCIL8 -> true;
-            case COMPRESSED_RGB8_ETC2,
-                    COMPRESSED_RGB8_BC1,
-                    COMPRESSED_RGBA8_BC1,
-                    RGBA8,
-                    R8,
-                    ALPHA8,
-                    LUMINANCE8,
-                    LUMINANCE8_ALPHA8,
-                    BGRA8,
-                    RGB565,
-                    RGBA16F,
-                    R16F,
-                    LUMINANCE16F,
-                    RGB8,
-                    RG8,
-                    RGB10_A2,
-                    RGBA4,
-                    SRGB8_ALPHA8,
-                    R16,
-                    RG16,
-                    RGBA16,
-                    RG16F,
-                    STENCIL_INDEX8,
-                    STENCIL_INDEX16,
-                    UNKNOWN -> false;
+            case GLTypes.FORMAT_DEPTH24_STENCIL8 -> true;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2,
+                    GLTypes.FORMAT_COMPRESSED_RGB8_BC1,
+                    GLTypes.FORMAT_COMPRESSED_RGBA8_BC1,
+                    GLTypes.FORMAT_RGBA8,
+                    GLTypes.FORMAT_R8,
+                    GLTypes.FORMAT_ALPHA8,
+                    GLTypes.FORMAT_LUMINANCE8,
+                    GLTypes.FORMAT_LUMINANCE8_ALPHA8,
+                    GLTypes.FORMAT_BGRA8,
+                    GLTypes.FORMAT_RGB565,
+                    GLTypes.FORMAT_RGBA16F,
+                    GLTypes.FORMAT_R16F,
+                    GLTypes.FORMAT_LUMINANCE16F,
+                    GLTypes.FORMAT_RGB8,
+                    GLTypes.FORMAT_RG8,
+                    GLTypes.FORMAT_RGB10_A2,
+                    GLTypes.FORMAT_RGBA4,
+                    GLTypes.FORMAT_SRGB8_ALPHA8,
+                    GLTypes.FORMAT_R16,
+                    GLTypes.FORMAT_RG16,
+                    GLTypes.FORMAT_RGBA16,
+                    GLTypes.FORMAT_RG16F,
+                    GLTypes.FORMAT_STENCIL_INDEX8,
+                    GLTypes.FORMAT_STENCIL_INDEX16,
+                    GLTypes.FORMAT_UNKNOWN -> false;
+            default -> throw new IllegalArgumentException();
         };
     }
 
-    public static boolean glFormatIsSRGB(GLFormat format) {
+    public static boolean glFormatIsSRGB(int format) {
         return switch (format) {
-            case SRGB8_ALPHA8 -> true;
-            case COMPRESSED_RGB8_ETC2,
-                    COMPRESSED_RGB8_BC1,
-                    COMPRESSED_RGBA8_BC1,
-                    RGBA8,
-                    R8,
-                    ALPHA8,
-                    LUMINANCE8,
-                    LUMINANCE8_ALPHA8,
-                    BGRA8,
-                    RGB565,
-                    RGBA16F,
-                    R16F,
-                    LUMINANCE16F,
-                    RGB8,
-                    RG8,
-                    RGB10_A2,
-                    RGBA4,
-                    R16,
-                    RG16,
-                    RGBA16,
-                    RG16F,
-                    STENCIL_INDEX8,
-                    STENCIL_INDEX16,
-                    DEPTH24_STENCIL8,
-                    UNKNOWN -> false;
+            case GLTypes.FORMAT_SRGB8_ALPHA8 -> true;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2,
+                    GLTypes.FORMAT_COMPRESSED_RGB8_BC1,
+                    GLTypes.FORMAT_COMPRESSED_RGBA8_BC1,
+                    GLTypes.FORMAT_RGBA8,
+                    GLTypes.FORMAT_R8,
+                    GLTypes.FORMAT_ALPHA8,
+                    GLTypes.FORMAT_LUMINANCE8,
+                    GLTypes.FORMAT_LUMINANCE8_ALPHA8,
+                    GLTypes.FORMAT_BGRA8,
+                    GLTypes.FORMAT_RGB565,
+                    GLTypes.FORMAT_RGBA16F,
+                    GLTypes.FORMAT_R16F,
+                    GLTypes.FORMAT_LUMINANCE16F,
+                    GLTypes.FORMAT_RGB8,
+                    GLTypes.FORMAT_RG8,
+                    GLTypes.FORMAT_RGB10_A2,
+                    GLTypes.FORMAT_RGBA4,
+                    GLTypes.FORMAT_R16,
+                    GLTypes.FORMAT_RG16,
+                    GLTypes.FORMAT_RGBA16,
+                    GLTypes.FORMAT_RG16F,
+                    GLTypes.FORMAT_STENCIL_INDEX8,
+                    GLTypes.FORMAT_STENCIL_INDEX16,
+                    GLTypes.FORMAT_DEPTH24_STENCIL8,
+                    GLTypes.FORMAT_UNKNOWN -> false;
+            default -> throw new IllegalArgumentException();
         };
     }
 
-    public static boolean glFormatIsCompressed(GLFormat format) {
+    public static boolean glFormatIsCompressed(int format) {
         return switch (format) {
-            case COMPRESSED_RGB8_ETC2,
-                    COMPRESSED_RGB8_BC1,
-                    COMPRESSED_RGBA8_BC1 -> true;
-            case RGBA8,
-                    R8,
-                    ALPHA8,
-                    LUMINANCE8,
-                    LUMINANCE8_ALPHA8,
-                    BGRA8,
-                    RGB565,
-                    RGBA16F,
-                    R16F,
-                    LUMINANCE16F,
-                    RGB8,
-                    RG8,
-                    RGB10_A2,
-                    RGBA4,
-                    SRGB8_ALPHA8,
-                    R16,
-                    RG16,
-                    RGBA16,
-                    RG16F,
-                    STENCIL_INDEX8,
-                    STENCIL_INDEX16,
-                    DEPTH24_STENCIL8,
-                    UNKNOWN -> false;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2,
+                    GLTypes.FORMAT_COMPRESSED_RGB8_BC1,
+                    GLTypes.FORMAT_COMPRESSED_RGBA8_BC1 -> true;
+            case GLTypes.FORMAT_RGBA8,
+                    GLTypes.FORMAT_R8,
+                    GLTypes.FORMAT_ALPHA8,
+                    GLTypes.FORMAT_LUMINANCE8,
+                    GLTypes.FORMAT_LUMINANCE8_ALPHA8,
+                    GLTypes.FORMAT_BGRA8,
+                    GLTypes.FORMAT_RGB565,
+                    GLTypes.FORMAT_RGBA16F,
+                    GLTypes.FORMAT_R16F,
+                    GLTypes.FORMAT_LUMINANCE16F,
+                    GLTypes.FORMAT_RGB8,
+                    GLTypes.FORMAT_RG8,
+                    GLTypes.FORMAT_RGB10_A2,
+                    GLTypes.FORMAT_RGBA4,
+                    GLTypes.FORMAT_SRGB8_ALPHA8,
+                    GLTypes.FORMAT_R16,
+                    GLTypes.FORMAT_RG16,
+                    GLTypes.FORMAT_RGBA16,
+                    GLTypes.FORMAT_RG16F,
+                    GLTypes.FORMAT_STENCIL_INDEX8,
+                    GLTypes.FORMAT_STENCIL_INDEX16,
+                    GLTypes.FORMAT_DEPTH24_STENCIL8,
+                    GLTypes.FORMAT_UNKNOWN -> false;
+            default -> throw new IllegalArgumentException();
         };
     }
 

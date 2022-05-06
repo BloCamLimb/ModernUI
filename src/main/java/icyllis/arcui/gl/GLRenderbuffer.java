@@ -31,7 +31,7 @@ import javax.annotation.Nonnull;
  */
 public final class GLRenderbuffer extends Surface {
 
-    private final GLFormat mFormat;
+    private final int mFormat;
     private final int mSampleCount;
 
     // may be zero for external stencil buffers associated with external render targets
@@ -43,7 +43,7 @@ public final class GLRenderbuffer extends Surface {
     private final long mMemorySize;
 
     public GLRenderbuffer(GLServer server, int width, int height,
-                          GLFormat format, int sampleCount, int renderbuffer) {
+                          int format, int sampleCount, int renderbuffer) {
         super(server, width, height);
         assert sampleCount > 0;
         mSampleCount = sampleCount;
@@ -62,7 +62,7 @@ public final class GLRenderbuffer extends Surface {
 
     @Nonnull
     public static GLRenderbuffer makeWrapped(GLServer server, int width, int height,
-                                             GLFormat format, int sampleCount, int renderbuffer) {
+                                             int format, int sampleCount, int renderbuffer) {
         return new GLRenderbuffer(server, width, height, format, sampleCount, renderbuffer);
     }
 
@@ -75,7 +75,7 @@ public final class GLRenderbuffer extends Surface {
         return mBackendFormat;
     }
 
-    public GLFormat getFormat() {
+    public int getFormat() {
         return mFormat;
     }
 

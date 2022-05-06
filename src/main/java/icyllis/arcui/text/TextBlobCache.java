@@ -18,7 +18,7 @@
 
 package icyllis.arcui.text;
 
-public class TextBlobCache implements AutoCloseable {
+public class TextBlobCache {
 
     private final int mCacheID;
 
@@ -26,8 +26,7 @@ public class TextBlobCache implements AutoCloseable {
         mCacheID = cacheId;
     }
 
-    @Override
-    public void close() {
+    public void freeAll() {
 
     }
 }

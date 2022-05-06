@@ -29,7 +29,7 @@ public final class GLTexture extends Texture {
 
     public GLTexture(GLServer server,
                      int width, int height,
-                     GLFormat format,
+                     int format,
                      int texture,
                      boolean mipmapped,
                      boolean budgeted,

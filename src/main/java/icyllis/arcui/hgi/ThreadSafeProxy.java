@@ -18,8 +18,11 @@
 
 package icyllis.arcui.hgi;
 
+import icyllis.arcui.core.Image.CompressionType;
+import icyllis.arcui.core.ImageInfo.ColorType;
 import icyllis.arcui.text.TextBlobCache;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -29,22 +32,77 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class ThreadSafeProxy {
 
-    private static final AtomicInteger sNextGeneratedId = new AtomicInteger(0);
+    private static final AtomicInteger sNextId = new AtomicInteger(1);
 
-    private final int mBackend;
-    private final ContextOptions mOptions;
-    private final int mContextID;
+    final int mBackend;
+    final ContextOptions mOptions;
+    final int mContextID;
 
-    private volatile Caps mCaps;
-    private volatile TextBlobCache mTextBlobCache;
-    private volatile ThreadSafeCache mThreadSafeCache;
+    volatile Caps mCaps;
+    volatile TextBlobCache mTextBlobCache;
+    volatile ThreadSafeCache mThreadSafeCache;
 
-    private final AtomicBoolean mClosed = new AtomicBoolean(false);
+    private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
     public ThreadSafeProxy(int backend, ContextOptions options) {
         mBackend = backend;
         mOptions = options;
-        mContextID = sNextGeneratedId.getAndIncrement();
+        mContextID = sNextId.getAndIncrement();
+    }
+
+    /**
+     * Retrieve the default GrBackendFormat for a given ColorType and renderability.
+     * It is guaranteed that this backend format will be the one used by the following
+     * ColorType and SurfaceCharacterization-based createBackendTexture methods.
+     * <p>
+     * The caller should check that the returned format is valid.
+     *
+     * @param colorType  all possible values in {@link icyllis.arcui.core.ImageInfo}
+     * @param renderable true if the format will be used as color attachments
+     */
+    @Nullable
+    public BackendFormat getDefaultBackendFormat(@ColorType int colorType, boolean renderable) {
+        assert mCaps != null;
+
+        BackendFormat format = mCaps.getDefaultBackendFormat(colorType, renderable);
+        if (format == null) {
+            return null;
+        }
+
+        assert !renderable || mCaps.isFormatRenderable(format, 1, colorType);
+
+        return format;
+    }
+
+    /**
+     * Retrieve the BackendFormat for a given CompressionType. This is
+     * guaranteed to match the backend format used by the following
+     * createCompressedBackendTexture methods that take a CompressionType.
+     * <p>
+     * The caller should check that the returned format is valid.
+     *
+     * @param compressionType see {@link icyllis.arcui.core.Image}
+     */
+    @Nullable
+    public BackendFormat getCompressedBackendFormat(@CompressionType int compressionType) {
+        assert mCaps != null;
+
+        BackendFormat format = mCaps.getCompressedBackendFormat(compressionType);
+
+        assert format == null || mCaps.isFormatTexturable(format);
+        return format;
+    }
+
+    /**
+     * Gets the maximum supported sample count for a color type. 1 is returned if only non-MSAA
+     * rendering is supported for the color type. 0 is returned if rendering to this color type
+     * is not supported at all.
+     */
+    public int getMaxSurfaceSampleCount(@ColorType int colorType) {
+        assert mCaps != null;
+
+        BackendFormat format = mCaps.getDefaultBackendFormat(colorType, true);
+        return mCaps.getMaxRenderTargetSampleCount(format);
     }
 
     public boolean isValid() {
@@ -57,41 +115,17 @@ public final class ThreadSafeProxy {
         mThreadSafeCache = new ThreadSafeCache();
     }
 
-    boolean matches(RecordingContext context) {
-        return this == context.threadSafeProxy();
+    boolean matches(Context candidate) {
+        return this == candidate.mThreadSafeProxy;
     }
 
-    int backend() {
-        return mBackend;
-    }
-
-    ContextOptions options() {
-        return mOptions;
-    }
-
-    int contextID() {
-        return mContextID;
-    }
-
-    Caps caps() {
-        return mCaps;
-    }
-
-    TextBlobCache textBlobCache() {
-        return mTextBlobCache;
-    }
-
-    ThreadSafeCache threadSafeCache() {
-        return mThreadSafeCache;
-    }
-
-    void close() {
-        if (!mClosed.compareAndExchange(false, true)) {
-            mTextBlobCache.close();
+    void discard() {
+        if (!mDiscarded.compareAndExchange(false, true)) {
+            mTextBlobCache.freeAll();
         }
     }
 
-    boolean isClosed() {
-        return mClosed.get();
+    boolean discarded() {
+        return mDiscarded.get();
     }
 }

@@ -18,16 +18,100 @@
 
 package icyllis.arcui.hgi;
 
-public class SurfaceProxyView {
+public final class SurfaceProxyView implements AutoCloseable {
 
-    public static final int FLAG_ORIGIN_TOP_LEFT = 0x0;
-    public static final int FLAG_ORIGIN_BOTTOM_LEFT = 0x1;
-    public static final int FLAG_REQUIRES_TEXTURE_BARRIER = 0x2;
-    public static final int FLAG_AS_INPUT_ATTACHMENT = 0x4;
+    @SmartPtr
+    SurfaceProxy mProxy;
+    int mOrigin = Types.SURFACE_ORIGIN_TOP_LEFT;
+    short mSwizzle = Swizzle.RGBA;
 
-    private SurfaceProxy mProxy;
-    private short mSwizzle;
-    private int mOffsetX;
-    private int mOffsetY;
-    private int mFlags;
+    // the caller has referenced the proxy, then transfer ownership
+    public SurfaceProxyView(@SmartPtr SurfaceProxy proxy) {
+        mProxy = proxy; // std::move()
+    }
+
+    // the caller has referenced the proxy, then transfer ownership
+    public SurfaceProxyView(@SmartPtr SurfaceProxy proxy, int origin, short swizzle) {
+        mProxy = proxy; // std::move()
+        mOrigin = origin;
+        mSwizzle = swizzle;
+    }
+
+    public int getWidth() {
+        return mProxy.getWidth();
+    }
+
+    public int getHeight() {
+        return mProxy.getHeight();
+    }
+
+    public boolean isMipmapped() {
+        return mProxy.isMipmapped();
+    }
+
+    /**
+     * Returns smart pointer value.
+     */
+    public SurfaceProxy getProxy() {
+        return mProxy;
+    }
+
+    /**
+     * Returns smart pointer (as if on the stack).
+     */
+    @SmartPtr
+    public SurfaceProxy refProxy() {
+        mProxy.ref();
+        return mProxy;
+    }
+
+    /**
+     * This does not reset the origin or swizzle, so the view can still be used to access those
+     * properties associated with the detached proxy.
+     */
+    @SmartPtr
+    public SurfaceProxy detachProxy() {
+        // just like std::move(), R-value reference
+        SurfaceProxy proxy = mProxy;
+        mProxy = null;
+        return proxy;
+    }
+
+    public int getOrigin() {
+        return mOrigin;
+    }
+
+    public short getSwizzle() {
+        return mSwizzle;
+    }
+
+    /**
+     * Merge swizzle.
+     */
+    public void merge(short swizzle) {
+        mSwizzle = Swizzle.merge(mSwizzle, swizzle);
+    }
+
+    /**
+     * Recycle this view.
+     */
+    public void reset() {
+        if (mProxy != null) {
+            mProxy.unref();
+        }
+        mProxy = null;
+        mOrigin = Types.SURFACE_ORIGIN_TOP_LEFT;
+        mSwizzle = Swizzle.RGBA;
+    }
+
+    /**
+     * Destructs this view.
+     */
+    @Override
+    public void close() {
+        if (mProxy != null) {
+            mProxy.unref();
+        }
+        mProxy = null;
+    }
 }

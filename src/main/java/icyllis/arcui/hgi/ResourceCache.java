@@ -280,7 +280,6 @@ public final class ResourceCache implements AutoCloseable {
     @Nullable
     public Resource findAndRefScratchResource(Object key) {
         assert key != null;
-
         Resource resource = mScratchMap.get(key);
         if (resource != null) {
             mScratchMap.remove(key, resource);
@@ -294,6 +293,7 @@ public final class ResourceCache implements AutoCloseable {
      */
     @Nullable
     public Resource findAndRefUniqueResource(Object key) {
+        assert key != null;
         Resource resource = mUniqueMap.get(key);
         if (resource != null) {
             refAndMakeResourceMRU(resource);

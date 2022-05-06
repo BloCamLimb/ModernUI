@@ -18,19 +18,15 @@
 
 package icyllis.arcui.hgi;
 
+import java.lang.annotation.*;
+
 /**
- * The direct context interacts with the underlying 3D graphics API (OpenGL or Vulkan)
- * on the render thread. A direct context may derive multiple deferred contexts.
+ * Denotes something like C++ std::shared_ptr. Differently, you need to manually call
+ * ref() and unref() in each SP "ctor" and "dtor" to ensure DAG work correctly (because
+ * GC is not immediate, and we don't depend on the lifecycle of Java objects).
  */
-public final class DirectContext extends RecordingContext {
-
-    private ResourceCache mResourceCache;
-
-    public DirectContext(ThreadSafeProxy proxy) {
-        super(proxy, false);
-    }
-
-    public ResourceCache getResourceCache() {
-        return mResourceCache;
-    }
+@Documented
+@Retention(RetentionPolicy.CLASS)
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER, ElementType.LOCAL_VARIABLE})
+public @interface SmartPtr {
 }

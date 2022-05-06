@@ -85,37 +85,71 @@ public abstract class Texture extends Surface {
         if (format.isCompressed()) {
             return super.computeScratchKey();
         }
-        return computeScratchKey(format, mWidth, mHeight, false, 1,
-                isMipmapped(), isProtected(), false);
+        return computeScratchKey(format, mWidth, mHeight, isMipmapped(), isProtected());
     }
 
     public static final ThreadLocal<Key> sThreadLocalKey = ThreadLocal.withInitial(Key::new);
 
+    /**
+     * Compute the ScratchKey as texture resources.
+     *
+     * @return the new key
+     */
     @Nonnull
-    public static Object computeScratchKey(BackendFormat format,
-                                           int width, int height,
-                                           boolean renderable,
-                                           int samples,
-                                           boolean mipmapped,
-                                           boolean isProtected,
-                                           boolean lookup) {
+    static Object computeScratchKey(BackendFormat format,
+                                    int width, int height,
+                                    boolean mipmapped,
+                                    boolean isProtected) {
         assert width > 0 && height > 0;
-        assert samples > 0;
-        assert samples == 1 || renderable;
-        Key key = lookup ? sThreadLocalKey.get() : new Key();
+        Key key = new Key();
         key.mWidth = width;
         key.mHeight = height;
         key.mFormat = format.getFormatKey();
-        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (renderable ? 4 : 0) | (samples << 3);
+        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0);
         return key;
     }
 
-    private static class Key {
+    @Nonnull
+    static Object computeScratchKeyTLS(BackendFormat format,
+                                       int width, int height,
+                                       boolean mipmapped,
+                                       boolean isProtected) {
+        assert width > 0 && height > 0;
+        Key key = sThreadLocalKey.get();
+        key.mWidth = width;
+        key.mHeight = height;
+        key.mFormat = format.getFormatKey();
+        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0);
+        return key;
+    }
 
-        private int mWidth;
-        private int mHeight;
-        private int mFormat;
-        private int mFlags;
+    /**
+     * Compute the ScratchKey as {@link RenderTargetProxy} for {@link ResourceAllocator}.
+     *
+     * @return the new key
+     */
+    @Nonnull
+    static Object computeScratchKey(BackendFormat format,
+                                    int width, int height,
+                                    int samples,
+                                    boolean mipmapped,
+                                    boolean isProtected) {
+        assert width > 0 && height > 0;
+        assert samples > 0;
+        Key key = new Key();
+        key.mWidth = width;
+        key.mHeight = height;
+        key.mFormat = format.getFormatKey();
+        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (samples << 2);
+        return key;
+    }
+
+    private static final class Key {
+
+        public int mWidth;
+        public int mHeight;
+        public int mFormat;
+        public int mFlags;
 
         @Override
         public boolean equals(Object o) {

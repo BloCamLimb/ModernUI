@@ -19,7 +19,7 @@
 package icyllis.arcui.hgi;
 
 import icyllis.arcui.core.Image;
-import icyllis.arcui.gl.GLFormat;
+import icyllis.arcui.gl.GLTypes;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.NativeType;
 import org.lwjgl.vulkan.VK11;
@@ -52,10 +52,10 @@ public abstract class BackendFormat {
 
     /**
      * If the backend API is Open GL this gets the format as a GLFormat. Otherwise, returns
-     * {@link GLFormat#UNKNOWN}.
+     * {@link GLTypes#FORMAT_UNKNOWN}.
      */
-    public GLFormat getGLFormat() {
-        return GLFormat.UNKNOWN;
+    public int getGLFormat() {
+        return GLTypes.FORMAT_UNKNOWN;
     }
 
     /**
@@ -92,7 +92,7 @@ public abstract class BackendFormat {
     public abstract int getCompressionType();
 
     public final boolean isCompressed() {
-        return getCompressionType() != Image.COMPRESSION_TYPE_NONE;
+        return getCompressionType() != Image.COMPRESSION_NONE;
     }
 
     /**

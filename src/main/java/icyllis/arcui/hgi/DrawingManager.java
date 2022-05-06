@@ -18,19 +18,5 @@
 
 package icyllis.arcui.hgi;
 
-/**
- * The direct context interacts with the underlying 3D graphics API (OpenGL or Vulkan)
- * on the render thread. A direct context may derive multiple deferred contexts.
- */
-public final class DirectContext extends RecordingContext {
-
-    private ResourceCache mResourceCache;
-
-    public DirectContext(ThreadSafeProxy proxy) {
-        super(proxy, false);
-    }
-
-    public ResourceCache getResourceCache() {
-        return mResourceCache;
-    }
+public class DrawingManager {
 }

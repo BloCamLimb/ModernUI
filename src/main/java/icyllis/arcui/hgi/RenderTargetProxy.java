@@ -22,11 +22,9 @@ import javax.annotation.Nonnull;
 
 /**
  * This class delays the acquisition of a {@link Texture} and other {@link Surface Surfaces}
- * as a render target until they are actually required. Note that framebuffers and render
- * passes are provided by {@link Server}.
- * <p>
- * I would recommend Google's skia to use this instead of Texture[RenderTarget]Proxy diamond.
- * Ping E. Greg Daniel, Google Software Engineer
+ * as a render target until they are actually required, sometimes known as RenderTexture,
+ * RenderableTexture or TextureRenderTarget. Note that framebuffers and render passes are
+ * provided by {@link Server}, this only provides RenderTargetInfo.
  */
 public final class RenderTargetProxy extends SurfaceProxy {
 
@@ -47,7 +45,8 @@ public final class RenderTargetProxy extends SurfaceProxy {
                              int surfaceFlags,
                              boolean useAllocator,
                              boolean deferredProvider) {
-        super(format, width, height, mipmapped, mipmapStatus, backingFit, budgeted, surfaceFlags, useAllocator, deferredProvider);
+        super(format, width, height, mipmapped, mipmapStatus, backingFit, budgeted, surfaceFlags, useAllocator,
+                deferredProvider);
     }
 
     @Override

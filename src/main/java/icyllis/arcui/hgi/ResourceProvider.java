@@ -18,8 +18,6 @@
 
 package icyllis.arcui.hgi;
 
-import icyllis.arcui.core.Image;
-
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
@@ -52,15 +50,12 @@ public final class ResourceProvider {
 
     /**
      * Finds a texture that approximately matches the descriptor. Will be at least as large in width
-     * and height as desc specifies. If renderable is kYes then the GrTexture will also be a
-     * GrRenderTarget. The texture's format and sample count will always match the request.
+     * and height as desc specifies. The texture's format and sample count will always match the request.
      * The contents of the texture are undefined.
      */
+    @Nullable
     public Texture createApproxTexture(int width, int height,
                                        BackendFormat format,
-                                       int textureType,
-                                       boolean renderable,
-                                       int renderTargetSampleCnt,
                                        boolean isProtected) {
         if (mServer == null) {
             return null;
@@ -68,9 +63,45 @@ public final class ResourceProvider {
 
         // Currently, we don't recycle compressed textures as scratch. Additionally, all compressed
         // textures should be created through the createCompressedTexture function.
-        assert format.getCompressionType() == Image.COMPRESSION_TYPE_NONE;
+        assert !format.isCompressed();
 
+        if (!mServer.mCaps.validateTextureParams(width, height, format)) {
+            return null;
+        }
+
+        width = makeApprox(width);
+        height = makeApprox(height);
+
+        Texture tex = findAndRefScratchTexture(width, height, format, false, isProtected);
+        if (tex != null) {
+            return tex;
+        }
+
+        return mServer.createTexture(width, height, format, false, true, isProtected);
+    }
+
+    @Nullable
+    public Texture findAndRefScratchTexture(Object key) {
+        assert mServer != null;
+        assert key != null;
+        Resource resource = mCache.findAndRefScratchResource(key);
+        if (resource != null) {
+            return (Texture) resource;
+        }
         return null;
+    }
+
+    @Nullable
+    public Texture findAndRefScratchTexture(int width, int height,
+                                            BackendFormat format,
+                                            boolean mipmapped,
+                                            boolean isProtected) {
+        assert mServer != null;
+        assert !format.isCompressed();
+        assert mServer.mCaps.validateTextureParams(width, height, format);
+
+        Object key = Texture.computeScratchKeyTLS(format, width, height, mipmapped, isProtected);
+        return findAndRefScratchTexture(key);
     }
 
     /**

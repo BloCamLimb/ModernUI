@@ -19,19 +19,30 @@
 package icyllis.arcui.hgi;
 
 import icyllis.arcui.core.Image;
+import icyllis.arcui.core.Image.CompressionType;
 
 public final class DataUtils {
+
+    public static boolean compressionTypeIsOpaque(@CompressionType int compression) {
+        return switch (compression) {
+            case Image.COMPRESSION_NONE,
+                    Image.COMPRESSION_BC1_RGB8_UNORM,
+                    Image.COMPRESSION_ETC2_RGB8_UNORM -> true;
+            case Image.COMPRESSION_BC1_RGBA8_UNORM -> false;
+            default -> throw new IllegalArgumentException();
+        };
+    }
 
     public static int num4x4Blocks(int size) {
         return ((size + 3) & ~3) >> 2;
     }
 
-    public static long numBlocks(int compression, int width, int height) {
+    public static long numBlocks(@CompressionType int compression, int width, int height) {
         return switch (compression) {
-            case Image.COMPRESSION_TYPE_NONE -> (long) width * height;
-            case Image.COMPRESSION_TYPE_ETC2_RGB8_UNORM,
-                    Image.COMPRESSION_TYPE_BC1_RGB8_UNORM,
-                    Image.COMPRESSION_TYPE_BC1_RGBA8_UNORM -> {
+            case Image.COMPRESSION_NONE -> (long) width * height;
+            case Image.COMPRESSION_ETC2_RGB8_UNORM,
+                    Image.COMPRESSION_BC1_RGB8_UNORM,
+                    Image.COMPRESSION_BC1_RGBA8_UNORM -> {
                 long numBlocksWidth = num4x4Blocks(width);
                 long numBlocksHeight = num4x4Blocks(height);
                 yield numBlocksWidth * numBlocksHeight;

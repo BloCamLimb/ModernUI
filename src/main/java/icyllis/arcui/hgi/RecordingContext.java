@@ -18,29 +18,68 @@
 
 package icyllis.arcui.hgi;
 
-import org.jetbrains.annotations.ApiStatus;
+import icyllis.arcui.core.ImageInfo;
+import icyllis.arcui.core.ImageInfo.ColorType;
 
-public class RecordingContext {
+public abstract sealed class RecordingContext extends Context permits DeferredContext, DirectContext {
 
-    protected final ThreadSafeProxy mProxy;
-
-    public RecordingContext(ThreadSafeProxy proxy) {
-        mProxy = proxy;
+    protected RecordingContext(ThreadSafeProxy proxy, boolean deferred) {
+        super(proxy);
     }
 
     /**
-     * The 3D API backing this context
+     * Reports whether the DirectContext associated with this RecordingContext is discarded.
+     * When called on a DirectContext it may actively check whether the underlying 3D API
+     * device/context has been disconnected before reporting the status. If so, calling this
+     * method will transition the DirectContext to the discarded state.
      */
-    @ApiStatus.Internal
-    public final int backend() {
-        return mProxy.backend();
+    public boolean discarded() {
+        return mThreadSafeProxy.discarded();
     }
 
-    public ThreadSafeProxy threadSafeProxy() {
-        return mProxy;
+    /**
+     * Can a {@link icyllis.arcui.core.Image} be created with the given color type.
+     */
+    public final boolean isImageSupported(@ColorType int colorType) {
+        return getDefaultBackendFormat(colorType, false) != null;
+    }
+
+    /**
+     * Can a {@link icyllis.arcui.core.Surface} be created with the given color type.
+     * To check whether MSAA is supported use {@link #getMaxSurfaceSampleCount(int)}.
+     */
+    public final boolean isSurfaceSupported(@ColorType int colorType) {
+        if (ImageInfo.COLOR_R16G16_UNORM == colorType ||
+                ImageInfo.COLOR_A16_UNORM == colorType ||
+                ImageInfo.COLOR_A16_FLOAT == colorType ||
+                ImageInfo.COLOR_R16G16_FLOAT == colorType ||
+                ImageInfo.COLOR_R16G16B16A16_UNORM == colorType ||
+                ImageInfo.COLOR_GRAY_8 == colorType) {
+            return false;
+        }
+
+        return getMaxSurfaceSampleCount(colorType) > 0;
+    }
+
+    /**
+     * Gets the maximum supported texture size.
+     */
+    public final int getMaxTextureSize() {
+        return getCaps().mMaxTextureSize;
+    }
+
+    /**
+     * Gets the maximum supported render target size.
+     */
+    public final int maxRenderTargetSize() {
+        return getCaps().mMaxRenderTargetSize;
     }
 
     public ProxyProvider getProxyProvider() {
+        return null;
+    }
+
+    public DrawingManager getDrawingManager() {
         return null;
     }
 }

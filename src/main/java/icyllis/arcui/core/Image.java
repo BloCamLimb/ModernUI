@@ -18,6 +18,12 @@
 
 package icyllis.arcui.core;
 
+import org.intellij.lang.annotations.MagicConstant;
+import org.jetbrains.annotations.ApiStatus;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 //TODO
 public class Image {
 
@@ -46,11 +52,25 @@ public class Image {
      *   </tr>
      * </table>
      */
+    @MagicConstant(intValues = {
+            COMPRESSION_NONE,
+            COMPRESSION_ETC2_RGB8_UNORM,
+            COMPRESSION_BC1_RGB8_UNORM,
+            COMPRESSION_BC1_RGBA8_UNORM})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface CompressionType {
+    }
+
+    /**
+     * Public values.
+     */
     public static final int
-            COMPRESSION_TYPE_NONE = 0,
-            COMPRESSION_TYPE_ETC2_RGB8_UNORM = 1,
-            COMPRESSION_TYPE_BC1_RGB8_UNORM = 2,
-            COMPRESSION_TYPE_BC1_RGBA8_UNORM = 3;
+            COMPRESSION_NONE = 0,
+            COMPRESSION_ETC2_RGB8_UNORM = 1,
+            COMPRESSION_BC1_RGB8_UNORM = 2,
+            COMPRESSION_BC1_RGBA8_UNORM = 3;
+    @ApiStatus.Internal
+    public static final int COMPRESSION_TYPE_LAST = COMPRESSION_BC1_RGBA8_UNORM;
 
     /**
      * Returns the full width of this image (as its texture).

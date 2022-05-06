@@ -34,6 +34,14 @@ public final class Types {
             VULKAN = 1; // Vulkan 1.1
 
     /**
+     * Image and Surfaces can be stored such that (0, 0) in texture space may correspond to
+     * either the top-left or bottom-left content pixel.
+     */
+    public static final int
+            SURFACE_ORIGIN_TOP_LEFT = 0,
+            SURFACE_ORIGIN_BOTTOM_LEFT = 1;
+
+    /**
      * The type of texture. All are 2D.
      * <p>
      * NONE: Represents a general purpose that is not considered a texture, e.g. OpenGL renderbuffer.

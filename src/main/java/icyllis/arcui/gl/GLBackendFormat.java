@@ -56,7 +56,7 @@ public final class GLBackendFormat extends BackendFormat {
     }
 
     @Override
-    public GLFormat getGLFormat() {
+    public int getGLFormat() {
         return GLUtil.glFormatFromEnum(mFormat);
     }
 

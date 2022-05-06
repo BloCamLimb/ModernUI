@@ -47,7 +47,7 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelMask() {
-        return VkUtil.getVkFormatChannels(mFormat);
+        return VkUtil.vkFormatChannels(mFormat);
     }
 
     @Override
@@ -71,17 +71,17 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Override
     public int getCompressionType() {
-        return VkUtil.getVkFormatCompressionType(mFormat);
+        return VkUtil.vkFormatCompressionType(mFormat);
     }
 
     @Override
     public int getBytesPerBlock() {
-        return VkUtil.getVkFormatBytesPerBlock(mFormat);
+        return VkUtil.vkFormatBytesPerBlock(mFormat);
     }
 
     @Override
     public int getStencilBits() {
-        return VkUtil.getVkFormatStencilBits(mFormat);
+        return VkUtil.vkFormatStencilBits(mFormat);
     }
 
     @Override

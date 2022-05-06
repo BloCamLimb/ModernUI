@@ -74,6 +74,12 @@ public final class ContextOptions {
     public float mGlyphsAsPathsFontSize = 384;
 
     /**
+     * If present, use this object to report shader compilation failures. If not, report failures
+     * via err and assert.
+     */
+    public ShaderErrorHandler mShaderErrorHandler = null;
+
+    /**
      * Specifies the number of samples Arc UI should use when performing internal draws with MSAA
      * (hardware capabilities permitting).
      * <p>

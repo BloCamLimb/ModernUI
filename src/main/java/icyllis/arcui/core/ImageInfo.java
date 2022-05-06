@@ -109,7 +109,7 @@ public final class ImageInfo {
             COLOR_RGBA_F16_NORM,
             COLOR_R8G8_UNORM,
             COLOR_A16_UNORM,
-            COLOR_A16G16_UNORM,
+            COLOR_R16G16_UNORM,
             COLOR_A16_FLOAT,
             COLOR_R16G16_FLOAT,
             COLOR_R16G16B16A16_UNORM
@@ -126,15 +126,21 @@ public final class ImageInfo {
             COLOR_ALPHA_8 = 1,          // pixel with alpha in 8-bit byte
             COLOR_BGR_565 = 2,          // pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word
             COLOR_ABGR_4444 = 3,        // pixel with 4 bits for alpha, blue, red, green; in 16-bit word
-            COLOR_RGBA_8888 = 4,        // pixel with 8 bits for red, green, blue, alpha; in 32-bit word
-            COLOR_RGBA_8888_SRGB = 5,
+            COLOR_RGBA_8888 = 4;        // pixel with 8 bits for red, green, blue, alpha; in 32-bit word
+    @ApiStatus.Internal
+    public static final int
+            COLOR_RGBA_8888_SRGB = 5;
+    public static final int
             COLOR_RGB_888x = 6,         // pixel with 8 bits each for red, green, blue; in 32-bit word
             COLOR_RG_88 = 7,            // pixel with 8 bits for red and green; in 16-bit word
             COLOR_BGRA_8888 = 8,        // pixel with 8 bits for blue, green, red, alpha; in 32-bit word
             COLOR_RGBA_1010102 = 9,     // 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
             COLOR_BGRA_1010102 = 10,    // 10 bits for blue, green, red; 2 bits for alpha; in 32-bit word
-            COLOR_GRAY_8 = 11,          // pixel with grayscale level in 8-bit byte
-            COLOR_GRAY_ALPHA_88 = 12,
+            COLOR_GRAY_8 = 11;          // pixel with grayscale level in 8-bit byte
+    @ApiStatus.Internal
+    public static final int
+            COLOR_GRAY_ALPHA_88 = 12;
+    public static final int
             COLOR_ALPHA_F16 = 13,       // pixel with a half float for alpha
             COLOR_RGBA_F16 = 14,        // pixel with half floats for red, green, blue, alpha; in 64-bit word
             COLOR_RGBA_F16_CLAMPED = 15,// pixel with half floats in [0,1] for red, green, blue, alpha; in 64-bit word
@@ -152,7 +158,7 @@ public final class ImageInfo {
             COLOR_RGBA_F16_NORM = COLOR_RGBA_F16_CLAMPED,
             COLOR_R8G8_UNORM = COLOR_RG_88,
             COLOR_A16_UNORM = COLOR_ALPHA_16,
-            COLOR_A16G16_UNORM = COLOR_RG_1616,
+            COLOR_R16G16_UNORM = COLOR_RG_1616,
             COLOR_A16_FLOAT = COLOR_ALPHA_F16,
             COLOR_R16G16_FLOAT = COLOR_RG_F16,
             COLOR_R16G16B16A16_UNORM = COLOR_RGBA_16161616;

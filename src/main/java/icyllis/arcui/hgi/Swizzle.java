@@ -19,16 +19,25 @@
 package icyllis.arcui.hgi;
 
 /**
- * Represents a rgba swizzle. It can be converted into a short.
+ * Represents a rgba swizzle. It's represented as a short.
  */
 public final class Swizzle {
 
-    public static final short RGBA = pack('r', 'g', 'b', 'a');
-    public static final short BGRA = pack('b', 'g', 'r', 'a');
-    public static final short RRRA = pack('r', 'r', 'r', 'a');
-    public static final short RGB1 = pack('r', 'g', 'b', '1');
+    // default value
+    public static final short RGBA = 0x3210;
+    public static final short BGRA = 0x3012;
+    public static final short RGB1 = 0x5210;
+    public static final short AAAA = 0x3333;
 
-    public static int CToI(char c) {
+    static {
+        // make them inline at compile-time
+        assert make('r', 'g', 'b', 'a') == RGBA;
+        assert make('b', 'g', 'r', 'a') == BGRA;
+        assert make('r', 'g', 'b', '1') == RGB1;
+        assert make('a', 'a', 'a', 'a') == AAAA;
+    }
+
+    public static int charToIndex(char c) {
         return switch (c) {
             // r...a must map to 0...3 because other methods use them as indices into mSwiz.
             case 'r' -> 0;
@@ -41,7 +50,7 @@ public final class Swizzle {
         };
     }
 
-    public static char IToC(int idx) {
+    public static char indexToChar(int idx) {
         return switch (idx) {
             case 0 -> 'r';
             case 1 -> 'g';
@@ -56,21 +65,55 @@ public final class Swizzle {
     /**
      * Compact representation of the swizzle suitable for a key.
      */
-    public static short pack(String c) {
-        return pack(c.charAt(0), c.charAt(1), c.charAt(2), c.charAt(3));
+    public static short make(String s) {
+        return make(s.charAt(0), s.charAt(1), s.charAt(2), s.charAt(3));
     }
 
     /**
      * Compact representation of the swizzle suitable for a key.
      */
-    public static short pack(char r, char g, char b, char a) {
-        return (short) (CToI(r) | (CToI(g) << 4) | (CToI(b) << 8) | (CToI(a) << 12));
+    public static short make(char r, char g, char b, char a) {
+        return (short) (charToIndex(r) | (charToIndex(g) << 4) | (charToIndex(b) << 8) | (charToIndex(a) << 12));
     }
 
+    public static short merge(short a, short b) {
+        short key = 0;
+        for (int i = 0; i < 4; ++i) {
+            int idx = (b >> (4 * i)) & 0xf;
+            if (idx != 4 && idx != 5) {
+                assert idx < 4;
+                // Get the index value stored in a at location idx.
+                idx = (a >> (4 * idx)) & 0xf;
+            }
+            key |= (idx << (4 * i));
+        }
+        return key;
+    }
+
+    /**
+     * Applies this swizzle to the input color and returns the swizzled color.
+     */
+    public static void apply(short key, float[] color) {
+        float r = color[0], g = color[1], b = color[2], a = color[3];
+        for (int i = 0; i < 4; ++i) {
+            color[i] = switch (key & 0xf) {
+                case 0 -> r;
+                case 1 -> g;
+                case 2 -> b;
+                case 3 -> a;
+                case 4 -> 0.0f;
+                case 5 -> 1.0f;
+                default -> throw new IllegalStateException();
+            };
+            key >>= 4;
+        }
+    }
+
+    // for debug purpose
     public static String toString(short key) {
-        return String.valueOf(IToC(key & 0xf)) +
-                IToC((key >> 4) & 0xf) +
-                IToC((key >> 8) & 0xf) +
-                IToC(key >>> 12);
+        return String.valueOf(indexToChar(key & 0xf)) +
+                indexToChar((key >> 4) & 0xf) +
+                indexToChar((key >> 8) & 0xf) +
+                indexToChar(key >>> 12);
     }
 }
