@@ -19,35 +19,42 @@
 package icyllis.arcui.test;
 
 import icyllis.arcui.gl.GLBackendFormat;
-import icyllis.arcui.gl.GLCaps;
-import icyllis.arcui.hgi.ContextOptions;
+import icyllis.arcui.gl.GLCore;
+import icyllis.arcui.hgi.DirectContext;
 import icyllis.arcui.hgi.Swizzle;
 import org.lwjgl.glfw.GLFW;
-import org.lwjgl.opengl.*;
+import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 
 public class TestManagedResource {
 
     public static void main(String[] args) {
+        long time = System.nanoTime();
         GLFW.glfwInit();
+        GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         long window = GLFW.glfwCreateWindow(1600, 900, "Test Window", 0, 0);
+        if (window == 0) {
+            throw new RuntimeException();
+        }
         GLFW.glfwMakeContextCurrent(window);
-        GLCapabilities capabilities = GL.createCapabilities();
-        GLCaps caps = new GLCaps(new ContextOptions(), capabilities);
+        DirectContext direct = DirectContext.makeOpenGL();
+        if (direct == null) {
+            throw new RuntimeException();
+        }
 
-        if (caps.isFormatTexturable(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL45C.GL_TEXTURE_2D))) {
+        if (direct.getCaps().isFormatTexturable(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GLCore.GL_TEXTURE_2D))) {
             System.out.println("OK");
         }
-        short swizzle = Swizzle.make("rgb1");
-        System.out.println(Swizzle.toString(swizzle));
+        Swizzle.make("rgb1");
 
+        direct.close();
         GLFW.glfwDestroyWindow(window);
         GLFW.glfwTerminate();
 
         try {
             assert false;
         } catch (AssertionError e) {
-            System.out.println("Assertion works");
+            System.out.println("Assertion works " + (System.nanoTime() - time) / 1000000);
         }
     }
 }

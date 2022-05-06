@@ -23,7 +23,7 @@ import icyllis.arcui.hgi.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static org.lwjgl.opengl.GL45C.*;
+import static icyllis.arcui.gl.GLCore.*;
 
 public final class GLRenderTarget extends RenderTarget {
 
@@ -111,7 +111,7 @@ public final class GLRenderTarget extends RenderTarget {
             // any other properties. Thus, it is fine for us to just assign an arbitrary format that
             // matches the stencil bit count.
             int stencilFormat = switch (stencilBits) {
-                case 8 ->  GLTypes.FORMAT_STENCIL_INDEX8;
+                case 8 -> GLTypes.FORMAT_STENCIL_INDEX8;
                 case 16 -> GLTypes.FORMAT_STENCIL_INDEX16;
                 default -> throw new IllegalArgumentException();
             };
@@ -204,7 +204,7 @@ public final class GLRenderTarget extends RenderTarget {
                     GL_STENCIL_ATTACHMENT,
                     GL_RENDERBUFFER,
                     stencilBuffer.getRenderbuffer());
-            if (GLUtil.glFormatIsPackedDepthStencil(stencilBuffer.getFormat())) {
+            if (glFormatIsPackedDepthStencil(stencilBuffer.getFormat())) {
                 glNamedFramebufferRenderbuffer(framebuffer,
                         GL_DEPTH_ATTACHMENT,
                         GL_RENDERBUFFER,
@@ -236,7 +236,7 @@ public final class GLRenderTarget extends RenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(GLUtil.glFormatToEnum(mFormat), GL_TEXTURE_2D);
+            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), GL_TEXTURE_2D);
         }
         return mBackendFormat;
     }
@@ -247,7 +247,7 @@ public final class GLRenderTarget extends RenderTarget {
         if (mBackendRenderTarget == null) {
             final GLFramebufferInfo info = new GLFramebufferInfo();
             info.mID = getSampleCount() > 1 ? mMSAAFramebuffer : mFramebuffer;
-            info.mFormat = GLUtil.glFormatToEnum(mFormat);
+            info.mFormat = glFormatToEnum(mFormat);
             mBackendRenderTarget = new GLBackendRenderTarget(
                     getWidth(), getHeight(), getSampleCount(), getStencilBits(), info);
         }

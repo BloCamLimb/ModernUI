@@ -20,10 +20,18 @@ package icyllis.arcui.hgi;
 
 import icyllis.arcui.core.ImageInfo;
 import icyllis.arcui.core.ImageInfo.ColorType;
+import icyllis.arcui.text.TextBlobCache;
+import org.jetbrains.annotations.ApiStatus;
 
+/**
+ * Context that can add draw ops.
+ */
 public abstract sealed class RecordingContext extends Context permits DeferredContext, DirectContext {
 
-    protected RecordingContext(ThreadSafeProxy proxy, boolean deferred) {
+    private ProxyProvider mProxyProvider;
+    private DrawingManager mDrawingManager;
+
+    protected RecordingContext(ThreadSafeProxy proxy) {
         super(proxy);
     }
 
@@ -33,14 +41,14 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
      * device/context has been disconnected before reporting the status. If so, calling this
      * method will transition the DirectContext to the discarded state.
      */
-    public boolean discarded() {
-        return mThreadSafeProxy.discarded();
+    public boolean isDiscarded() {
+        return mThreadSafeProxy.isDiscarded();
     }
 
     /**
      * Can a {@link icyllis.arcui.core.Image} be created with the given color type.
      */
-    public final boolean isImageSupported(@ColorType int colorType) {
+    public final boolean isImageCapable(@ColorType int colorType) {
         return getDefaultBackendFormat(colorType, false) != null;
     }
 
@@ -48,7 +56,7 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
      * Can a {@link icyllis.arcui.core.Surface} be created with the given color type.
      * To check whether MSAA is supported use {@link #getMaxSurfaceSampleCount(int)}.
      */
-    public final boolean isSurfaceSupported(@ColorType int colorType) {
+    public final boolean isSurfaceCapable(@ColorType int colorType) {
         if (ImageInfo.COLOR_R16G16_UNORM == colorType ||
                 ImageInfo.COLOR_A16_UNORM == colorType ||
                 ImageInfo.COLOR_A16_FLOAT == colorType ||
@@ -71,15 +79,46 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
     /**
      * Gets the maximum supported render target size.
      */
-    public final int maxRenderTargetSize() {
+    public final int getMaxRenderTargetSize() {
         return getCaps().mMaxRenderTargetSize;
     }
 
-    public ProxyProvider getProxyProvider() {
-        return null;
+    @ApiStatus.Internal
+    public final ProxyProvider getProxyProvider() {
+        return mProxyProvider;
     }
 
-    public DrawingManager getDrawingManager() {
-        return null;
+    @ApiStatus.Internal
+    public final DrawingManager getDrawingManager() {
+        return mDrawingManager;
+    }
+
+    @ApiStatus.Internal
+    public final TextBlobCache getTextBlobCache() {
+        return mThreadSafeProxy.mTextBlobCache;
+    }
+
+    @ApiStatus.Internal
+    public final ThreadSafeCache getThreadSafeCache() {
+        return mThreadSafeProxy.mThreadSafeCache;
+    }
+
+    @Override
+    protected boolean init() {
+        if (!super.init()) {
+            return false;
+        }
+        //TODO init DrawingManager
+        return true;
+    }
+
+    protected void discard() {
+        mThreadSafeProxy.discard();
+        //TODO destroy DrawingManager
+    }
+
+    @Override
+    public void close() {
+
     }
 }

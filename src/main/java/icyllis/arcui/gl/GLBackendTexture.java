@@ -22,7 +22,7 @@ import icyllis.arcui.hgi.*;
 
 import javax.annotation.Nonnull;
 
-import static org.lwjgl.opengl.GL45C.*;
+import static icyllis.arcui.gl.GLCore.*;
 
 public final class GLBackendTexture extends BackendTexture {
 

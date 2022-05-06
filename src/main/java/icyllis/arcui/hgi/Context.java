@@ -25,7 +25,7 @@ import org.jetbrains.annotations.ApiStatus;
 import javax.annotation.Nullable;
 import java.util.Objects;
 
-public abstract class Context {
+public abstract class Context implements AutoCloseable {
 
     protected final ThreadSafeProxy mThreadSafeProxy;
 

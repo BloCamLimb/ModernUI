@@ -59,7 +59,7 @@ package icyllis.arcui.hgi;
  * ************************************************************************************************
  * How does instantiation failure handling work when explicitly allocating?
  * <p>
- * In the gather usage intervals pass all the GrSurfaceProxies used in the flush should be
+ * In the gather usage intervals pass all the SurfaceProxies used in the flush should be
  * gathered (i.e., in OpsTask::gatherProxyIntervals).
  * <p>
  * During addInterval, read-only lazy proxies are instantiated. If that fails, the resource

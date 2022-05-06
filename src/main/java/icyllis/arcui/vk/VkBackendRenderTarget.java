@@ -22,7 +22,7 @@ import icyllis.arcui.hgi.*;
 
 import javax.annotation.Nonnull;
 
-import static org.lwjgl.vulkan.VK11.*;
+import static icyllis.arcui.vk.VkCore.*;
 
 public final class VkBackendRenderTarget extends BackendRenderTarget {
 

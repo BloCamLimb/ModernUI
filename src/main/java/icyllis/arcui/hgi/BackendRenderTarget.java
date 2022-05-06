@@ -60,7 +60,7 @@ public abstract class BackendRenderTarget {
     public abstract int getStencilBits();
 
     /**
-     * If the backend API is OpenGL, copies a snapshot of the GrGLFramebufferInfo struct into the passed
+     * If the backend API is OpenGL, copies a snapshot of the GLFramebufferInfo struct into the passed
      * in pointer and returns true. Otherwise, returns false if the backend API is not OpenGL.
      */
     public boolean getGLFramebufferInfo(GLFramebufferInfo info) {

@@ -19,16 +19,16 @@
 package icyllis.arcui.gl;
 
 /**
- * Constants of OpenGL pipeline.
+ * User-defined constants of OpenGL.
  */
 public final class GLTypes {
 
     /**
      * The supported GL formats represented as an enum.
      * <p>
-     * Single Alpha and Gray channel are deprecated in Modern OpenGL core profile,
-     * they should be replaced by single Red channel. But it may be still supported
-     * by some extensions, using builtin swizzle.
+     * Alpha and gray formats are deprecated in OpenGL core profile,
+     * they should be replaced by R or RG. But they are still available
+     * in external formats (CPU side).
      */
     public static final int
             FORMAT_UNKNOWN = 0,

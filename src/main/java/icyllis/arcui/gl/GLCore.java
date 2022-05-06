@@ -20,19 +20,18 @@ package icyllis.arcui.gl;
 
 import icyllis.arcui.core.Color;
 import icyllis.arcui.core.Image;
+import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.NativeType;
 
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
 import static org.lwjgl.opengl.EXTTextureStorage.*;
-import static org.lwjgl.opengl.GL45C.*;
 
-public final class GLUtil {
+/**
+ * Provides native interfaces of OpenGL 4.5 core and user-defined utilities.
+ */
+public final class GLCore extends GL45C {
 
     /**
-     * Single Alpha and Gray channel are deprecated in Modern OpenGL core profile,
-     * they should be replaced by single Red channel. But it may be still supported
-     * by some extensions, using builtin swizzle.
-     *
      * @param format see GLTypes
      * @return see Color
      */
@@ -104,7 +103,7 @@ public final class GLUtil {
     }
 
     /**
-     * Returns either the sized internal format or compressed internal format of the GrGLTypes.FORMAT_
+     * Returns either the sized internal format or compressed internal format of the GLFormat.
      */
     public static int glFormatToEnum(int format) {
         return switch (format) {
@@ -340,6 +339,6 @@ public final class GLUtil {
         };
     }
 
-    private GLUtil() {
+    private GLCore() {
     }
 }

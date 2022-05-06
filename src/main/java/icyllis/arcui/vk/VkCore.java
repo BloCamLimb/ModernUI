@@ -21,14 +21,17 @@ package icyllis.arcui.vk;
 import icyllis.arcui.core.Color;
 import icyllis.arcui.core.Image;
 import org.lwjgl.system.NativeType;
+import org.lwjgl.vulkan.VK11;
 
 import static org.lwjgl.vulkan.EXTDebugReport.VK_ERROR_VALIDATION_FAILED_EXT;
 import static org.lwjgl.vulkan.KHRDisplaySwapchain.VK_ERROR_INCOMPATIBLE_DISPLAY_KHR;
 import static org.lwjgl.vulkan.KHRSurface.*;
 import static org.lwjgl.vulkan.KHRSwapchain.*;
-import static org.lwjgl.vulkan.VK11.*;
 
-public final class VkUtil {
+/**
+ * Provides native interfaces of Vulkan 1.1 core and user-defined utilities.
+ */
+public final class VkCore extends VK11 {
 
     /**
      * Runtime assertion against a {@code VkResult} value, throws an exception
@@ -109,7 +112,6 @@ public final class VkUtil {
     }
 
     /**
-     * @param vkFormat see VK11
      * @return see Color
      */
     public static int vkFormatChannels(@NativeType("VkFormat") int vkFormat) {
@@ -159,8 +161,6 @@ public final class VkUtil {
      * case VK_FORMAT_D24_UNORM_S8_UINT:         return 4;
      * case VK_FORMAT_D32_SFLOAT_S8_UINT:        return 8;
      * }</pre>
-     *
-     * @param vkFormat see VK11
      */
     public static int vkFormatBytesPerBlock(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
@@ -233,6 +233,6 @@ public final class VkUtil {
         };
     }
 
-    private VkUtil() {
+    private VkCore() {
     }
 }

@@ -21,6 +21,6 @@ package icyllis.arcui.hgi;
 public final class DeferredContext extends RecordingContext {
 
     public DeferredContext(ThreadSafeProxy proxy) {
-        super(proxy, true);
+        super(proxy);
     }
 }

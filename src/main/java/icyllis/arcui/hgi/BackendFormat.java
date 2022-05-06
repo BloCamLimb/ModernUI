@@ -19,10 +19,10 @@
 package icyllis.arcui.hgi;
 
 import icyllis.arcui.core.Image;
+import icyllis.arcui.gl.GLCore;
 import icyllis.arcui.gl.GLTypes;
-import org.lwjgl.opengl.GL45C;
+import icyllis.arcui.vk.VkCore;
 import org.lwjgl.system.NativeType;
-import org.lwjgl.vulkan.VK11;
 
 import javax.annotation.Nonnull;
 
@@ -60,20 +60,20 @@ public abstract class BackendFormat {
 
     /**
      * If the backend API is Open GL this gets the format as a GLEnum. Otherwise, returns
-     * {@link GL45C#GL_NONE}.
+     * {@link GLCore#GL_NONE}.
      */
     @NativeType("GLenum")
     public int getGLFormatEnum() {
-        return GL45C.GL_NONE;
+        return GLCore.GL_NONE;
     }
 
     /**
      * If the backend API is Vulkan this gets the format as a VkFormat. Otherwise, returns
-     * {@link VK11#VK_FORMAT_UNDEFINED}.
+     * {@link VkCore#VK_FORMAT_UNDEFINED}.
      */
     @NativeType("VkFormat")
     public int getVkFormat() {
-        return VK11.VK_FORMAT_UNDEFINED;
+        return VkCore.VK_FORMAT_UNDEFINED;
     }
 
     /**

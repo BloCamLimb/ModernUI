@@ -44,14 +44,14 @@ public final class ThreadSafeProxy {
 
     private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
-    public ThreadSafeProxy(int backend, ContextOptions options) {
+    ThreadSafeProxy(int backend, ContextOptions options) {
         mBackend = backend;
         mOptions = options;
         mContextID = sNextId.getAndIncrement();
     }
 
     /**
-     * Retrieve the default GrBackendFormat for a given ColorType and renderability.
+     * Retrieve the default BackendFormat for a given ColorType and renderability.
      * It is guaranteed that this backend format will be the one used by the following
      * ColorType and SurfaceCharacterization-based createBackendTexture methods.
      * <p>
@@ -125,7 +125,7 @@ public final class ThreadSafeProxy {
         }
     }
 
-    boolean discarded() {
+    boolean isDiscarded() {
         return mDiscarded.get();
     }
 }

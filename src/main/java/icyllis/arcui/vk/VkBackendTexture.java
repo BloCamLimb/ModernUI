@@ -22,8 +22,8 @@ import icyllis.arcui.hgi.*;
 
 import javax.annotation.Nonnull;
 
+import static icyllis.arcui.vk.VkCore.*;
 import static org.lwjgl.vulkan.EXTImageDrmFormatModifier.VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
-import static org.lwjgl.vulkan.VK11.*;
 
 public final class VkBackendTexture extends BackendTexture {
 

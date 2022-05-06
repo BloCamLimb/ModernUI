@@ -23,7 +23,7 @@ import icyllis.arcui.hgi.Types;
 
 import javax.annotation.Nonnull;
 
-import static org.lwjgl.opengl.GL45C.GL_NONE;
+import static icyllis.arcui.gl.GLCore.*;
 
 public final class GLBackendRenderTarget extends BackendRenderTarget {
 

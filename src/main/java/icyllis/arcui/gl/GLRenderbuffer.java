@@ -19,9 +19,10 @@
 package icyllis.arcui.gl;
 
 import icyllis.arcui.hgi.*;
-import org.lwjgl.opengl.GL45C;
 
 import javax.annotation.Nonnull;
+
+import static icyllis.arcui.gl.GLCore.*;
 
 /**
  * Renderbuffer can be only used as attachments of framebuffers as an optimization.
@@ -51,9 +52,9 @@ public final class GLRenderbuffer extends Surface {
         mRenderbuffer = renderbuffer;
 
         // color buffers may be compressed
-        int compression = GLUtil.glFormatCompressionType(format);
+        int compression = glFormatCompressionType(format);
         long size = DataUtils.numBlocks(compression, width, height);
-        size *= GLUtil.glFormatBytesPerBlock(format);
+        size *= glFormatBytesPerBlock(format);
         size *= sampleCount;
         mMemorySize = size;
 
@@ -70,7 +71,7 @@ public final class GLRenderbuffer extends Surface {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(GLUtil.glFormatToEnum(mFormat), Types.TEXTURE_TYPE_NONE);
+            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), Types.TEXTURE_TYPE_NONE);
         }
         return mBackendFormat;
     }
@@ -106,7 +107,7 @@ public final class GLRenderbuffer extends Surface {
     @Override
     protected void onRelease() {
         if (mRenderbuffer != 0) {
-            GL45C.glDeleteRenderbuffers(mRenderbuffer);
+            glDeleteRenderbuffers(mRenderbuffer);
             mRenderbuffer = 0;
         }
     }

@@ -29,8 +29,8 @@ import javax.annotation.Nullable;
 import java.nio.IntBuffer;
 import java.util.Arrays;
 
+import static icyllis.arcui.gl.GLCore.*;
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
-import static org.lwjgl.opengl.GL45C.*;
 import static org.lwjgl.opengl.GL46C.GL_MAX_TEXTURE_MAX_ANISOTROPY;
 
 public final class GLCaps extends Caps {
@@ -42,19 +42,20 @@ public final class GLCaps extends Caps {
     final boolean mSupportsProtected = false;
     boolean mFBFetchRequiresEnablePerSample;
 
+    // see GLTypes
     final FormatInfo[] mFormatTable = new FormatInfo[GLTypes.FORMAT_LAST_COLOR + 1];
-    // see GLTypes, default is FormatInfo.UNKNOWN
     final int[] mColorTypeToFormatTable = new int[ImageInfo.COLOR_LAST + 1];
 
-    final GLBackendFormat[] mColorTypeToBackendFormatTable =
+    // may contain null values which represent invalid/unsupported
+    final GLBackendFormat[] mColorTypeToBackendFormat =
             new GLBackendFormat[ImageInfo.COLOR_LAST + 1];
-    final GLBackendFormat[] mCompressionTypeToBackendFormatTable =
-            new GLBackendFormat[Image.COMPRESSION_TYPE_LAST + 1];
+    final GLBackendFormat[] mCompressionTypeToBackendFormat =
+            new GLBackendFormat[Image.COMPRESSION_LAST + 1];
 
     /**
      * All required ARB extensions from OpenGL 3.3 to OpenGL 4.5
      */
-    public static final String[] REQUIRED_ARB_EXTENSIONS = {
+    public static final String[] REQUIRED_EXTENSION_LIST = {
             "ARB_blend_func_extended",
             "ARB_sampler_objects",
             "ARB_explicit_attrib_location",
@@ -939,11 +940,11 @@ public final class GLCaps extends Caps {
             if (caps.GL_EXT_texture_compression_s3tc) {
                 info.mFlags = FormatInfo.TEXTURE_FLAG;
 
-                mCompressionTypeToBackendFormatTable[Image.COMPRESSION_BC1_RGB8_UNORM] =
+                mCompressionTypeToBackendFormat[Image.COMPRESSION_BC1_RGB8_UNORM] =
                         new GLBackendFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_TEXTURE_2D);
             }
 
-            // There are no support GrColorTypes for this format
+            // There are no support ColorTypes for this format
         }
 
         // Format: COMPRESSED_RGBA8_BC1
@@ -954,11 +955,11 @@ public final class GLCaps extends Caps {
             if (caps.GL_EXT_texture_compression_s3tc) {
                 info.mFlags = FormatInfo.TEXTURE_FLAG;
 
-                mCompressionTypeToBackendFormatTable[Image.COMPRESSION_BC1_RGBA8_UNORM] =
+                mCompressionTypeToBackendFormat[Image.COMPRESSION_BC1_RGBA8_UNORM] =
                         new GLBackendFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_TEXTURE_2D);
             }
 
-            // There are no support GrColorTypes for this format
+            // There are no support ColorTypes for this format
         }
 
         // Format: COMPRESSED_RGB8_ETC2
@@ -968,10 +969,10 @@ public final class GLCaps extends Caps {
             info.mInternalFormatForTexture = GL_COMPRESSED_RGB8_ETC2;
             info.mFlags = FormatInfo.TEXTURE_FLAG;
 
-            mCompressionTypeToBackendFormatTable[Image.COMPRESSION_ETC2_RGB8_UNORM] =
+            mCompressionTypeToBackendFormat[Image.COMPRESSION_ETC2_RGB8_UNORM] =
                     new GLBackendFormat(GL_COMPRESSED_RGB8_ETC2, GL_TEXTURE_2D);
 
-            // There are no support GrColorTypes for this format
+            // There are no support ColorTypes for this format
         }
 
         // Format: R16
@@ -1201,11 +1202,11 @@ public final class GLCaps extends Caps {
             if (format == GLTypes.FORMAT_UNKNOWN) {
                 continue;
             }
-            mColorTypeToBackendFormatTable[ct] = new GLBackendFormat(GLUtil.glFormatToEnum(format), GL_TEXTURE_2D);
+            mColorTypeToBackendFormat[ct] = new GLBackendFormat(glFormatToEnum(format), GL_TEXTURE_2D);
         }
 
-        // Validate
-        for (int format = 1; format < GLTypes.FORMAT_LAST_COLOR; ++format) {
+        // Validate, skip UNKNOWN
+        for (int format = 1; format <= GLTypes.FORMAT_LAST_COLOR; ++format) {
             FormatInfo info = mFormatTable[format];
             // Make sure we didn't set fbo attachable with msaa and not fbo attachable
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG) != 0 &&
@@ -1226,7 +1227,7 @@ public final class GLCaps extends Caps {
             // Only compressed format doesn't support glTexStorage
             if ((info.mFlags & FormatInfo.TEXTURE_FLAG) != 0 &&
                     (info.mFlags & FormatInfo.USE_TEX_STORAGE_FLAG) == 0 &&
-                    !GLUtil.glFormatIsCompressed(format)) {
+                    !glFormatIsCompressed(format)) {
                 throw new AssertionError();
             }
 
@@ -1343,19 +1344,19 @@ public final class GLCaps extends Caps {
     @Nullable
     @Override
     protected BackendFormat onDefaultBackendFormat(int colorType) {
-        return mColorTypeToBackendFormatTable[colorType];
+        return mColorTypeToBackendFormat[colorType];
     }
 
     @Nullable
     @Override
     public BackendFormat getCompressedBackendFormat(int compressionType) {
-        return mCompressionTypeToBackendFormatTable[compressionType];
+        return mCompressionTypeToBackendFormat[compressionType];
     }
 
     @Override
     public long getSupportedWriteColorType(int dstColorType, BackendFormat dstFormat, int srcColorType) {
-        // We first try to find a supported write pixels GrColorType that matches the data's
-        // srcColorType. If that doesn't exists we will use any supported GrColorType.
+        // We first try to find a supported write pixels ColorType that matches the data's
+        // srcColorType. If that doesn't exists we will use any supported ColorType.
         int fallbackCT = ImageInfo.COLOR_UNKNOWN;
         FormatInfo formatInfo = mFormatTable[dstFormat.getGLFormat()];
         boolean foundSurfaceCT = false;
@@ -1384,6 +1385,38 @@ public final class GLCaps extends Caps {
         return srcColorType | (transferOffsetAlignment << 32);
     }
 
+    public static int getExternalTypeAlignment(int type) {
+        // This switch is derived from a table titled "Pixel data type parameter values and the
+        // corresponding GL data types" in the OpenGL spec (Table 8.2 in OpenGL 4.5).
+        return switch (type) {
+            case GL_UNSIGNED_BYTE,
+                    GL_BYTE,
+                    GL_UNSIGNED_BYTE_2_3_3_REV,
+                    GL_UNSIGNED_BYTE_3_3_2 -> 1;
+            case GL_UNSIGNED_SHORT,
+                    GL_SHORT,
+                    GL_UNSIGNED_SHORT_1_5_5_5_REV,
+                    GL_UNSIGNED_SHORT_4_4_4_4_REV,
+                    GL_UNSIGNED_SHORT_5_6_5_REV,
+                    GL_UNSIGNED_SHORT_5_5_5_1,
+                    GL_UNSIGNED_SHORT_4_4_4_4,
+                    GL_UNSIGNED_SHORT_5_6_5,
+                    GL_HALF_FLOAT -> 2;
+            case GL_UNSIGNED_INT,
+                    GL_FLOAT_32_UNSIGNED_INT_24_8_REV,
+                    GL_UNSIGNED_INT_5_9_9_9_REV,
+                    GL_UNSIGNED_INT_10F_11F_11F_REV,
+                    GL_UNSIGNED_INT_24_8,
+                    GL_UNSIGNED_INT_10_10_10_2,
+                    GL_UNSIGNED_INT_8_8_8_8_REV,
+                    GL_UNSIGNED_INT_8_8_8_8,
+                    GL_UNSIGNED_INT_2_10_10_10_REV,
+                    GL_FLOAT,
+                    GL_INT -> 4;
+            default -> 0;
+        };
+    }
+
     @Override
     protected long onSupportedReadColorType(int srcColorType, BackendFormat srcFormat, int dstColorType) {
         int compression = srcFormat.getCompressionType();
@@ -1393,48 +1426,18 @@ public final class GLCaps extends Caps {
                     ImageInfo.COLOR_RGBA_8888); // alignment = 0
         }
 
-        // We first try to find a supported read pixels GrColorType that matches the requested
-        // dstColorType. If that doesn't exist we will use any valid read pixels GrColorType.
+        // We first try to find a supported read pixels ColorType that matches the requested
+        // dstColorType. If that doesn't exist we will use any valid read pixels ColorType.
         int fallbackColorType = ImageInfo.COLOR_UNKNOWN;
         long fallbackTransferOffsetAlignment = 0;
         FormatInfo formatInfo = mFormatTable[srcFormat.getGLFormat()];
-        for (int i = 0; i < formatInfo.mColorTypeInfos.length; ++i) {
-            if (formatInfo.mColorTypeInfos[i].mColorType == srcColorType) {
-                ColorTypeInfo ctInfo = formatInfo.mColorTypeInfos[i];
-                for (int j = 0; j < ctInfo.mExternalIOFormats.length; ++j) {
-                    ExternalIOFormat ioInfo = ctInfo.mExternalIOFormats[j];
+        for (ColorTypeInfo ctInfo : formatInfo.mColorTypeInfos) {
+            if (ctInfo.mColorType == srcColorType) {
+                for (ExternalIOFormat ioInfo : ctInfo.mExternalIOFormats) {
                     if (ioInfo.mExternalReadFormat != 0) {
                         long transferOffsetAlignment = 0;
                         if ((formatInfo.mFlags & FormatInfo.TRANSFERS_FLAG) != 0) {
-                            // This switch is derived from a table titled "Pixel data type parameter values and the
-                            // corresponding GL data types" in the OpenGL spec (Table 8.2 in OpenGL 4.5).
-                            transferOffsetAlignment = switch (ioInfo.mExternalType) {
-                                case GL_UNSIGNED_BYTE,
-                                        GL_BYTE,
-                                        GL_UNSIGNED_BYTE_2_3_3_REV,
-                                        GL_UNSIGNED_BYTE_3_3_2 -> 1;
-                                case GL_UNSIGNED_SHORT,
-                                        GL_SHORT,
-                                        GL_UNSIGNED_SHORT_1_5_5_5_REV,
-                                        GL_UNSIGNED_SHORT_4_4_4_4_REV,
-                                        GL_UNSIGNED_SHORT_5_6_5_REV,
-                                        GL_UNSIGNED_SHORT_5_5_5_1,
-                                        GL_UNSIGNED_SHORT_4_4_4_4,
-                                        GL_UNSIGNED_SHORT_5_6_5,
-                                        GL_HALF_FLOAT -> 2;
-                                case GL_UNSIGNED_INT,
-                                        GL_FLOAT_32_UNSIGNED_INT_24_8_REV,
-                                        GL_UNSIGNED_INT_5_9_9_9_REV,
-                                        GL_UNSIGNED_INT_10F_11F_11F_REV,
-                                        GL_UNSIGNED_INT_24_8,
-                                        GL_UNSIGNED_INT_10_10_10_2,
-                                        GL_UNSIGNED_INT_8_8_8_8_REV,
-                                        GL_UNSIGNED_INT_8_8_8_8,
-                                        GL_UNSIGNED_INT_2_10_10_10_REV,
-                                        GL_FLOAT,
-                                        GL_INT -> 4;
-                                default -> 0;
-                            };
+                            transferOffsetAlignment = getExternalTypeAlignment(ioInfo.mExternalType);
                         }
                         if (ioInfo.mColorType == dstColorType) {
                             return dstColorType | (transferOffsetAlignment << 32);

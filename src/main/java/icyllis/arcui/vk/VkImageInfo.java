@@ -18,7 +18,7 @@
 
 package icyllis.arcui.vk;
 
-import static org.lwjgl.vulkan.VK11.*;
+import static icyllis.arcui.vk.VkCore.*;
 
 /**
  * When wrapping a BackendTexture or BackendRenderTarget, the mCurrentQueueFamily should

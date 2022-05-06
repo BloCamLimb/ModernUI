@@ -22,10 +22,9 @@ import icyllis.arcui.hgi.*;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static org.lwjgl.opengl.GL45C.*;
+import static icyllis.arcui.gl.GLCore.*;
 
 public final class GLServer extends Server {
 
@@ -43,15 +42,15 @@ public final class GLServer extends Server {
      *
      * @param context the owner context
      * @param options the context options
-     * @return a new server
+     * @return the server or null if failed to create
      */
-    @Nonnull
+    @SuppressWarnings("ConstantConditions")
+    @Nullable
     public static GLServer make(DirectContext context, ContextOptions options) {
         // get or create
         GLCapabilities caps;
         try {
             caps = GL.getCapabilities();
-            //noinspection ConstantConditions
             if (caps == null) {
                 // checks may be disabled
                 caps = GL.createCapabilities();
@@ -60,9 +59,8 @@ public final class GLServer extends Server {
             // checks may be enabled
             caps = GL.createCapabilities();
         }
-        //noinspection ConstantConditions
         if (caps == null) {
-            throw new AssertionError("Failed to create OpenGL capabilities");
+            return null;
         }
         return new GLServer(context, new GLCaps(options, caps));
     }
@@ -115,7 +113,7 @@ public final class GLServer extends Server {
         assert width > 0;
         assert height > 0;
         assert format != GLTypes.FORMAT_UNKNOWN;
-        assert !GLUtil.glFormatIsCompressed(format);
+        assert !glFormatIsCompressed(format);
         assert levels > 0;
 
         FormatInfo info = mCaps.mFormatTable[format];

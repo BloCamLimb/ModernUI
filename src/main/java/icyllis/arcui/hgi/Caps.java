@@ -386,6 +386,11 @@ public abstract class Caps {
      * which case the caller must convert the read pixel data (see ConvertPixels). When converting
      * to dstColorType the swizzle in the returned struct should be applied. The caller must check
      * the returned color type for UNKNOWN.
+     * <p>
+     * Low 32bits - colorType ((int) (value & 0xFFFFFFFFL)).
+     * High 32bits - transferOffsetAlignment (value >>> 32).
+     * If the <code>write</code> is occurring using transferPixelsTo() then this provides
+     * the minimum alignment of the offset into the transfer buffer.
      */
     public final long getSupportedReadColorType(int srcColorType,
                                                 BackendFormat srcFormat,

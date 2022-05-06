@@ -24,7 +24,7 @@ import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
 
-import static org.lwjgl.opengl.GL45C.*;
+import static icyllis.arcui.gl.GLCore.*;
 
 public final class GLBackendFormat extends BackendFormat {
 
@@ -52,12 +52,12 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelMask() {
-        return GLUtil.glFormatChannels(getGLFormat());
+        return glFormatChannels(getGLFormat());
     }
 
     @Override
     public int getGLFormat() {
-        return GLUtil.glFormatFromEnum(mFormat);
+        return glFormatFromEnum(mFormat);
     }
 
     @Override
@@ -81,17 +81,17 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int getCompressionType() {
-        return GLUtil.glFormatCompressionType(getGLFormat());
+        return glFormatCompressionType(getGLFormat());
     }
 
     @Override
     public int getBytesPerBlock() {
-        return GLUtil.glFormatBytesPerBlock(getGLFormat());
+        return glFormatBytesPerBlock(getGLFormat());
     }
 
     @Override
     public int getStencilBits() {
-        return GLUtil.glFormatStencilBits(getGLFormat());
+        return glFormatStencilBits(getGLFormat());
     }
 
     @Override

@@ -124,7 +124,7 @@ public abstract sealed class SurfaceProxy permits RenderTargetProxy, TextureProx
     boolean mMipmapped;
 
     // This tracks the mipmap status at the proxy level and is thus somewhat distinct from the
-    // backing GrTexture's mipmap status. In particular, this status is used to determine when
+    // backing Texture's mipmap status. In particular, this status is used to determine when
     // mipmap levels need to be explicitly regenerated during the execution of a DAG of opsTasks.
     int mMipmapStatus;
 
@@ -425,7 +425,7 @@ public abstract sealed class SurfaceProxy permits RenderTargetProxy, TextureProx
     /**
      * The pixel values of this proxy's surface cannot be modified (e.g. doesn't support write
      * pixels or MIP map level regen). Read-only proxies also bypass interval tracking and
-     * assignment in GrResourceAllocator.
+     * assignment in ResourceAllocator.
      */
     public final boolean isReadOnly() {
         return (mSurfaceFlags & Types.INTERNAL_SURFACE_FLAG_READ_ONLY) != 0;
