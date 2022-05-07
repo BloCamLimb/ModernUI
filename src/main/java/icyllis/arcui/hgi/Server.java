@@ -18,7 +18,7 @@
 
 package icyllis.arcui.hgi;
 
-import icyllis.arcui.sl.ShaderCompiler;
+import icyllis.arcui.sksl.ShaderCompiler;
 
 import javax.annotation.Nullable;
 
@@ -35,6 +35,7 @@ public abstract class Server {
     final ShaderCompiler mCompiler;
 
     public Server(DirectContext context, Caps caps) {
+        assert context != null && caps != null;
         mContext = context;
         mCaps = caps;
         mCompiler = new ShaderCompiler(caps.mShaderCaps);
@@ -54,6 +55,8 @@ public abstract class Server {
     public final ShaderCompiler getShaderCompiler() {
         return mCompiler;
     }
+
+    public abstract ThreadSafePipelineBuilder getPipelineBuilder();
 
     /**
      * Creates a texture object and allocates its server memory. In other words, the

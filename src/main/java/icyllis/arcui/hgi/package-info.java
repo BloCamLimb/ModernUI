@@ -17,6 +17,8 @@
  */
 
 /**
- * Hardware graphics interface. It is the abstraction layer of different 3D graphics APIs.
+ * Hardware graphics interface. It is the abstraction layer of the rendering
+ * pipeline for different 3D graphics APIs. Just something like Unreal Engine
+ * RHI (rendering hardware interface).
  */
 package icyllis.arcui.hgi;

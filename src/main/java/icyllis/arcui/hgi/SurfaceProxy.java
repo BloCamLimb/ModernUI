@@ -57,7 +57,7 @@ import java.lang.invoke.VarHandle;
  * <p>
  * Use {@link ProxyProvider} to get <code>SurfaceProxy</code> objects.
  */
-// Yeah, the Surface is nothing but a Texture(RenderTarget)
+// the Surface is nothing but a Texture(RenderTarget)
 public abstract sealed class SurfaceProxy permits RenderTargetProxy, TextureProxy {
 
     private static final VarHandle REF_CNT;

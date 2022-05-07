@@ -16,7 +16,7 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sl;
+package icyllis.arcui.sksl;
 
 import icyllis.arcui.hgi.ShaderCaps;
 

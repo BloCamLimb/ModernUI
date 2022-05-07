@@ -353,7 +353,7 @@ public abstract class Caps {
         return Math.min(mInternalMultisampleCount, getMaxRenderTargetSampleCount(format));
     }
 
-    public abstract boolean isFormatRenderable(BackendFormat format, int sampleCount, int colorType);
+    public abstract boolean isFormatRenderable(int colorType, BackendFormat format, int sampleCount);
 
     public abstract boolean isFormatRenderable(BackendFormat format, int sampleCount);
 
@@ -362,9 +362,9 @@ public abstract class Caps {
      * render target of the given format or 0 if no such sample count is supported. If the requested
      * sample count is 1 then 1 will be returned if non-MSAA rendering is supported, otherwise 0.
      *
-     * @param sampleCount desired samples
+     * @param sampleCount requested samples
      */
-    public abstract int getRenderTargetSampleCount(BackendFormat format, int sampleCount);
+    public abstract int getRenderTargetSampleCount(int sampleCount, BackendFormat format);
 
     /**
      * Given a dst pixel config and a src color type what color type must the caller coax
@@ -549,7 +549,7 @@ public abstract class Caps {
         return true;
     }
 
-    public final boolean isFormatCompatible(BackendFormat format, int colorType) {
+    public final boolean isFormatCompatible(int colorType, BackendFormat format) {
         if (colorType == ImageInfo.COLOR_UNKNOWN) {
             return false;
         }
@@ -559,10 +559,10 @@ public abstract class Caps {
                     ImageInfo.COLOR_RGB_888x :
                     ImageInfo.COLOR_RGBA_8888);
         }
-        return onFormatCompatible(format, colorType);
+        return onFormatCompatible(colorType, format);
     }
 
-    protected abstract boolean onFormatCompatible(BackendFormat format, int colorType);
+    protected abstract boolean onFormatCompatible(int colorType, BackendFormat format);
 
     /**
      * These are used when creating a new texture internally.
@@ -577,7 +577,7 @@ public abstract class Caps {
         if (format == null || !isFormatTexturable(format)) {
             return null;
         }
-        if (!isFormatCompatible(format, colorType)) {
+        if (!isFormatCompatible(colorType, format)) {
             return null;
         }
         // Currently, we require that it be possible to write pixels into the "default" format. Perhaps,
@@ -586,7 +586,7 @@ public abstract class Caps {
         if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.COLOR_UNKNOWN) {
             return null;
         }
-        if (renderable && !isFormatRenderable(format, 1, colorType)) {
+        if (renderable && !isFormatRenderable(colorType, format, 1)) {
             return null;
         }
         return format;

@@ -18,39 +18,8 @@
 
 package icyllis.arcui.hgi;
 
-import icyllis.arcui.core.*;
+public abstract class ThreadSafePipelineBuilder implements AutoCloseable {
 
-/**
- * The drawing device is backed by GPU.
- */
-public final class SurfaceDevice extends BaseDevice {
-
-    public SurfaceDevice(SurfaceDrawContext context, boolean initContents) {
-        super(null);
-    }
-
-    @Override
-    public boolean clipIsAA() {
-        return false;
-    }
-
-    @Override
-    public boolean clipIsWideOpen() {
-        return false;
-    }
-
-    @Override
-    protected int getClipType() {
-        return 0;
-    }
-
-    @Override
-    protected Rect getClipBounds() {
-        return null;
-    }
-
-    @Override
-    protected void drawPaint(Paint paint) {
-
+    public ThreadSafePipelineBuilder() {
     }
 }

@@ -16,13 +16,11 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * GLSL shader preprocessor for OpenGL or SPIR-V for Vulkan.
- * Allows shaders to be generated and compiled in real time.
- * Only preprocessed shaders meet GLSL specs. Otherwise, it
- * contains Arc UI custom syntax.
- */
-@ParametersAreNonnullByDefault
-package icyllis.arcui.sl;
+package icyllis.arcui.core;
 
-import javax.annotation.ParametersAreNonnullByDefault;
+/**
+ * This class contains pre-processed graphics operations that can be replayed into
+ * a Surface via Surface::draw(DeferredDisplayList*).
+ */
+public class DeferredDisplayList {
+}

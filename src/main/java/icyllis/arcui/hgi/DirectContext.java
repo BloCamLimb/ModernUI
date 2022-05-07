@@ -33,7 +33,7 @@ public final class DirectContext extends RecordingContext {
     private ResourceCache mResourceCache;
 
     private DirectContext(int backend, ContextOptions options) {
-        super(new ThreadSafeProxy(backend, options));
+        super(new ContextThreadSafeProxy(backend, options));
     }
 
     /**
@@ -128,7 +128,7 @@ public final class DirectContext extends RecordingContext {
             return false;
         }
 
-        mThreadSafeProxy.init(mServer.mCaps);
+        mThreadSafeProxy.init(mServer.mCaps, mServer.getPipelineBuilder());
         if (!super.init()) {
             return false;
         }

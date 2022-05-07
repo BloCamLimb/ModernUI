@@ -1284,7 +1284,7 @@ public final class GLCaps extends Caps {
     }
 
     @Override
-    public boolean isFormatRenderable(BackendFormat format, int sampleCount, int colorType) {
+    public boolean isFormatRenderable(int colorType, BackendFormat format, int sampleCount) {
         if (format.getTextureType() == Types.TEXTURE_TYPE_EXTERNAL) {
             return false;
         }
@@ -1308,7 +1308,7 @@ public final class GLCaps extends Caps {
     }
 
     @Override
-    public int getRenderTargetSampleCount(BackendFormat format, int sampleCount) {
+    public int getRenderTargetSampleCount(int sampleCount, BackendFormat format) {
         return getRenderTargetSampleCount(format.getGLFormat(), sampleCount);
     }
 
@@ -1331,7 +1331,7 @@ public final class GLCaps extends Caps {
     }
 
     @Override
-    public boolean onFormatCompatible(BackendFormat format, int colorType) {
+    public boolean onFormatCompatible(int colorType, BackendFormat format) {
         FormatInfo formatInfo = mFormatTable[format.getGLFormat()];
         for (var info : formatInfo.mColorTypeInfos) {
             if (info.mColorType == colorType) {

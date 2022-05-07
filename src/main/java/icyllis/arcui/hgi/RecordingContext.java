@@ -31,7 +31,7 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
     private ProxyProvider mProxyProvider;
     private DrawingManager mDrawingManager;
 
-    protected RecordingContext(ThreadSafeProxy proxy) {
+    protected RecordingContext(ContextThreadSafeProxy proxy) {
         super(proxy);
     }
 

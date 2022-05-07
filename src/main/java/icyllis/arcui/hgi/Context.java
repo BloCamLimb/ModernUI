@@ -27,9 +27,9 @@ import java.util.Objects;
 
 public abstract class Context implements AutoCloseable {
 
-    protected final ThreadSafeProxy mThreadSafeProxy;
+    protected final ContextThreadSafeProxy mThreadSafeProxy;
 
-    protected Context(ThreadSafeProxy threadSafeProxy) {
+    protected Context(ContextThreadSafeProxy threadSafeProxy) {
         mThreadSafeProxy = threadSafeProxy;
     }
 
@@ -79,8 +79,8 @@ public abstract class Context implements AutoCloseable {
     }
 
     @ApiStatus.Internal
-    public final boolean matches(Context candidate) {
-        return mThreadSafeProxy.matches(candidate);
+    public final boolean matches(Context c) {
+        return mThreadSafeProxy.matches(c);
     }
 
     @ApiStatus.Internal
@@ -99,7 +99,7 @@ public abstract class Context implements AutoCloseable {
     }
 
     @ApiStatus.Internal
-    public final ThreadSafeProxy getThreadSafeProxy() {
+    public final ContextThreadSafeProxy getThreadSafeProxy() {
         return mThreadSafeProxy;
     }
 

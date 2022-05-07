@@ -22,12 +22,12 @@ import icyllis.arcui.core.Color;
 import icyllis.arcui.core.ImageInfo;
 
 /**
- * Constants independent of graphics API.
+ * Constants and utilities for HGI.
  */
 public final class Types {
 
     /**
-     * Possible 3D APIs that may be used by Arc UI.
+     * Possible 3D APIs that may be used by HGI.
      */
     public static final int
             OPENGL = 0, // OpenGL 4.5 core profile

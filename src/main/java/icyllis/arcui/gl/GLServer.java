@@ -86,6 +86,11 @@ public final class GLServer extends Server {
 
     }
 
+    @Override
+    public ThreadSafePipelineBuilder getPipelineBuilder() {
+        return null;
+    }
+
     @Nullable
     @Override
     protected Texture onCreateTexture(int width, int height,
