@@ -18,9 +18,13 @@
 
 package icyllis.arcui.hgi;
 
+/**
+ * The DeferredContext is the one in effect during DDL Recording. It isn't backed by a GPU and
+ * cannot allocate any GPU resources.
+ */
 public final class DeferredContext extends RecordingContext {
 
-    public DeferredContext(ContextThreadSafeProxy proxy) {
+    DeferredContext(ContextThreadSafeProxy proxy) {
         super(proxy);
     }
 }

@@ -32,12 +32,12 @@ public final class GLBuffer extends Buffer {
     }
 
     @Override
-    protected void onRelease() {
+    protected void onFree() {
 
     }
 
     @Override
-    protected void onDiscard() {
+    protected void onDrop() {
 
     }
 }

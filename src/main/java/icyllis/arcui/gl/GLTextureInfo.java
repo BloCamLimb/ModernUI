@@ -34,4 +34,22 @@ public final class GLTextureInfo {
         mID = info.mID;
         mFormat = info.mFormat;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GLTextureInfo that = (GLTextureInfo) o;
+        if (mTarget != that.mTarget) return false;
+        if (mID != that.mID) return false;
+        return mFormat == that.mFormat;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mTarget;
+        result = 31 * result + mID;
+        result = 31 * result + mFormat;
+        return result;
+    }
 }

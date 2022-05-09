@@ -23,8 +23,10 @@ import icyllis.arcui.core.ImageInfo.ColorType;
 import icyllis.arcui.text.TextBlobCache;
 import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.Nullable;
+
 /**
- * Context that can add draw ops.
+ * Base context class that can add draw ops.
  */
 public abstract sealed class RecordingContext extends Context permits DeferredContext, DirectContext {
 
@@ -35,14 +37,25 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
         super(proxy);
     }
 
+    @ApiStatus.Internal
+    @Nullable
+    public static RecordingContext makeDeferred(ContextThreadSafeProxy proxy) {
+        RecordingContext context = new DeferredContext(proxy);
+        if (context.init()) {
+            return context;
+        }
+        context.close();
+        return null;
+    }
+
     /**
-     * Reports whether the DirectContext associated with this RecordingContext is discarded.
-     * When called on a DirectContext it may actively check whether the underlying 3D API
-     * device/context has been disconnected before reporting the status. If so, calling this
-     * method will transition the DirectContext to the discarded state.
+     * Reports whether the {@link DirectContext} associated with this {@link RecordingContext}
+     * is dropped. When called on a {@link DirectContext} it may actively check whether the
+     * underlying 3D API device/context has been disconnected before reporting the status. If so,
+     * calling this method will transition the {@link DirectContext} to the dropped state.
      */
-    public boolean isDiscarded() {
-        return mThreadSafeProxy.isDiscarded();
+    public boolean isDropped() {
+        return mThreadSafeProxy.isDropped();
     }
 
     /**
@@ -108,12 +121,13 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
         if (!super.init()) {
             return false;
         }
+        mProxyProvider = new ProxyProvider(this);
         //TODO init DrawingManager
         return true;
     }
 
-    protected void discard() {
-        mThreadSafeProxy.discard();
+    protected void drop() {
+        mThreadSafeProxy.drop();
         //TODO destroy DrawingManager
     }
 

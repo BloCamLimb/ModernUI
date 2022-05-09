@@ -29,51 +29,56 @@ import javax.annotation.Nonnull;
  * We abstract this class from {@link Texture} because GLRenderbuffer can
  * be used as attachments, but they are not textures.
  * <p>
- * This class is NOT Vulkan window surface, don't be confused.
+ * The naming of this class is just a convention, don't confuse this with
+ * {@link icyllis.arcui.core.Surface} or {@link org.lwjgl.vulkan.KHRSurface},
  */
 public abstract class Surface extends Resource {
 
     protected final int mWidth;
     protected final int mHeight;
 
-    public Surface(Server server, int width, int height) {
+    protected Surface(Server server, int width, int height) {
         super(server);
+        assert width > 0 && height > 0;
         mWidth = width;
         mHeight = height;
     }
 
     /**
-     * Returns the width of this surface.
+     * @return the width of this surface
      */
     public final int getWidth() {
         return mWidth;
     }
 
     /**
-     * Returns the height of this surface.
+     * @return the height of this surface
      */
     public final int getHeight() {
         return mHeight;
     }
 
     /**
-     * Describes the backend format of this surface.
-     */
-    @Nonnull
-    public abstract BackendFormat getBackendFormat();
-
-    /**
+     * Note non-renderable textures are always single sampled. Multisample textures are
+     * created with render targets, they cannot be used directly (need MSAA resolve).
+     *
      * @return the number of samples
      */
     public abstract int getSampleCount();
 
     /**
-     * @return true if pixels in this surface are read-only.
+     * @return the backend format of this surface
+     */
+    @Nonnull
+    public abstract BackendFormat getBackendFormat();
+
+    /**
+     * @return true if pixels in this surface are read-only
      */
     public abstract boolean isReadOnly();
 
     /**
-     * @return true if we are working with protected content.
+     * @return true if we are working with protected content
      */
     public abstract boolean isProtected();
 }

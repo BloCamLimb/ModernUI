@@ -21,20 +21,26 @@ package icyllis.arcui.hgi;
 import icyllis.arcui.sksl.ShaderCompiler;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents the application-controlled 3D API server, holding a reference
- * to DirectContext. It is responsible for creating / deleting 3D API objects,
+ * to {@link DirectContext}. It is responsible for creating / deleting 3D API objects,
  * controlling binding status, uploading and downloading data, transferring
- * 3D API draw commands, etc.
+ * 3D API commands, etc.
  */
 public abstract class Server {
 
-    final DirectContext mContext;
-    final Caps mCaps;
-    final ShaderCompiler mCompiler;
+    // this server is managed by this context
+    protected final DirectContext mContext;
+    protected final Caps mCaps;
+    protected final ShaderCompiler mCompiler;
 
-    public Server(DirectContext context, Caps caps) {
+    private final List<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
+    private int mDirtyFlags = ~0;
+
+    protected Server(DirectContext context, Caps caps) {
         assert context != null && caps != null;
         mContext = context;
         mCaps = caps;
@@ -46,17 +52,44 @@ public abstract class Server {
     }
 
     /**
-     * Gets the capabilities of the draw target.
+     * Gets the capabilities of the context.
      */
     public final Caps getCaps() {
         return mCaps;
     }
 
+    /**
+     * Gets the compiler used for compiling SkSL into backend shader code.
+     */
     public final ShaderCompiler getShaderCompiler() {
         return mCompiler;
     }
 
     public abstract ThreadSafePipelineBuilder getPipelineBuilder();
+
+    /**
+     * The server object normally assumes that no outsider is setting state
+     * within the underlying 3D API's context/device/whatever. This call informs
+     * the server that the state was modified, and it shouldn't make assumptions
+     * about the state.
+     */
+    public final void markDirty(int dirtyFlags) {
+        mDirtyFlags |= dirtyFlags;
+    }
+
+    private void handleDirty() {
+        if (mDirtyFlags != 0) {
+            onDirty(mDirtyFlags);
+            mDirtyFlags = 0;
+        }
+    }
+
+    /**
+     * Called when the 3D context state is unknown. Subclass should emit any
+     * assumed 3D context state and dirty any state cache.
+     */
+    protected void onDirty(int dirtyFlags) {
+    }
 
     /**
      * Creates a texture object and allocates its server memory. In other words, the
@@ -101,4 +134,46 @@ public abstract class Server {
                                                boolean budgeted,
                                                boolean isProtected,
                                                int mipLevels);
+
+    /**
+     * This makes the backend texture be renderable. If <code>sampleCount</code> is > 1 and
+     * the underlying API uses separate MSAA render buffers then a MSAA render buffer is created
+     * that resolves to the texture.
+     * <p>
+     * Ownership specifies rules for external GPU resources imported into HGI. If false,
+     * HGI will assume the client will keep the resource alive and HGI will not free it.
+     * If true, HGI will assume ownership of the resource and free it.
+     *
+     * @param texture the backend texture must be single sample
+     * @return a non-cacheable render target, or null if failed
+     */
+    @Nullable
+    @SmartPtr
+    public RenderTarget wrapRenderableBackendTexture(BackendTexture texture,
+                                                     int sampleCount,
+                                                     boolean ownership) {
+        handleDirty();
+        if (sampleCount < 1) {
+            return null;
+        }
+
+        final Caps caps = mCaps;
+
+        if (!caps.isFormatTexturable(texture.getBackendFormat()) ||
+                !caps.isFormatRenderable(texture.getBackendFormat(), sampleCount)) {
+            return null;
+        }
+
+        if (texture.getWidth() > caps.maxRenderTargetSize() ||
+                texture.getHeight() > caps.maxRenderTargetSize()) {
+            return null;
+        }
+        return onWrapRenderableBackendTexture(texture, sampleCount, ownership);
+    }
+
+    @Nullable
+    @SmartPtr
+    protected abstract RenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
+                                                                   int sampleCount,
+                                                                   boolean ownership);
 }

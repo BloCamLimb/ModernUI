@@ -16,28 +16,8 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.vk;
+package icyllis.arcui.hgi;
 
-import icyllis.arcui.hgi.Buffer;
-
-public final class VkBuffer extends Buffer {
-
-    public VkBuffer(VkServer server) {
-        super(server);
-    }
-
-    @Override
-    public long getMemorySize() {
-        return 0;
-    }
-
-    @Override
-    protected void onFree() {
-
-    }
-
-    @Override
-    protected void onDrop() {
-
-    }
+//TODO
+public abstract class BackendSemaphore {
 }

@@ -46,7 +46,7 @@ public final class ContextThreadSafeProxy {
     volatile ThreadSafeCache mThreadSafeCache;
     volatile ThreadSafePipelineBuilder mPipelineBuilder;
 
-    private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
+    private final AtomicBoolean mDropped = new AtomicBoolean(false);
 
     ContextThreadSafeProxy(int backend, ContextOptions options) {
         mBackend = backend;
@@ -246,14 +246,14 @@ public final class ContextThreadSafeProxy {
         mPipelineBuilder = pipelineBuilder;
     }
 
-    void discard() {
-        if (!mDiscarded.compareAndExchange(false, true)) {
+    void drop() {
+        if (!mDropped.compareAndExchange(false, true)) {
             mTextBlobCache.freeAll();
         }
     }
 
-    boolean isDiscarded() {
-        return mDiscarded.get();
+    boolean isDropped() {
+        return mDropped.get();
     }
 
     @Override

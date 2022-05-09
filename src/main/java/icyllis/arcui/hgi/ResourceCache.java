@@ -226,13 +226,13 @@ public final class ResourceCache implements AutoCloseable {
         while (mNonCleanableSize > 0) {
             Resource back = mNonCleanableList[mNonCleanableSize - 1];
             assert !back.isDestroyed();
-            back.release();
+            back.free();
         }
 
         while (mCleanableQueue.size() > 0) {
             Resource top = mCleanableQueue.peek();
             assert !top.isDestroyed();
-            top.release();
+            top.free();
         }
 
         assert mScratchMap.isEmpty();
@@ -246,20 +246,20 @@ public final class ResourceCache implements AutoCloseable {
     }
 
     /**
-     * Discards the backend API resources owned by all Resource objects and removes them from
+     * Drops the backend API resources owned by all Resource objects and removes them from
      * the cache.
      */
-    public void discardAll() {
+    public void dropAll() {
         while (mNonCleanableSize > 0) {
             Resource back = mNonCleanableList[mNonCleanableSize - 1];
             assert !back.isDestroyed();
-            back.discard();
+            back.drop();
         }
 
         while (mCleanableQueue.size() > 0) {
             Resource top = mCleanableQueue.peek();
             assert !top.isDestroyed();
-            top.discard();
+            top.drop();
         }
 
         //fThreadSafeCache -> dropAllRefs();
@@ -319,7 +319,7 @@ public final class ResourceCache implements AutoCloseable {
         while (stillOverrun && mCleanableQueue.size() > 0) {
             Resource resource = mCleanableQueue.peek();
             assert resource.isCleanable();
-            resource.release();
+            resource.free();
             stillOverrun = isOverrun();
         }
 
@@ -330,7 +330,7 @@ public final class ResourceCache implements AutoCloseable {
             while (stillOverrun && mCleanableQueue.size() > 0) {
                 Resource resource = mCleanableQueue.peek();
                 assert resource.isCleanable();
-                resource.release();
+                resource.free();
                 stillOverrun = isOverrun();
             }
         }
@@ -381,7 +381,7 @@ public final class ResourceCache implements AutoCloseable {
                 }
 
                 assert resource.isCleanable();
-                resource.release();
+                resource.free();
             }
         } else {
             // Early out if the very first item is too new to purge to avoid sorting the queue when
@@ -410,7 +410,7 @@ public final class ResourceCache implements AutoCloseable {
             // Delete the scratch resources. This must be done as a separate pass
             // to avoid messing up the sorted order of the queue
             for (Resource scratchResource : scratchResources) {
-                scratchResource.release();
+                scratchResource.free();
             }
         }
 
@@ -516,7 +516,7 @@ public final class ResourceCache implements AutoCloseable {
         }
 
         int beforeCount = getResourceCount();
-        resource.release();
+        resource.free();
         // We should at least free this resource, perhaps dependent resources as well.
         assert getResourceCount() < beforeCount;
     }
@@ -580,7 +580,7 @@ public final class ResourceCache implements AutoCloseable {
             if ((old = mUniqueMap.get(newKey)) != null) {
                 // If the old resource using the key is cleanable and is unreachable, then remove it.
                 if (old.mScratchKey == null && old.isCleanable()) {
-                    old.release();
+                    old.free();
                 } else {
                     // removeUniqueKey expects an external owner of the resource.
                     old.ref();

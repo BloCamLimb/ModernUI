@@ -41,6 +41,12 @@ public final class Types {
             SURFACE_ORIGIN_TOP_LEFT = 0,
             SURFACE_ORIGIN_BOTTOM_LEFT = 1;
 
+    public static final int
+            GL_DIRTY_FLAG_RENDER_TARGET = 1,
+            GL_DIRTY_FLAG_TEXTURE = 1<< 1,
+            GL_DIRTY_FLAG_VIEW = 1 << 2,
+            GL_DIRTY_FLAG_BLEND = 1 << 3;
+
     /**
      * The type of texture. All are 2D.
      * <p>

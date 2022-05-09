@@ -96,7 +96,7 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int getFormatKey() {
-        // it's okay to use GLenum (not sequential indexing)
+        // it's okay to use GLenum (not sequential indexing though)
         return mFormat;
     }
 

@@ -18,19 +18,20 @@
 
 package icyllis.arcui.hgi;
 
+/**
+ * Boolean value represents a tristate:
+ * {@link Boolean#FALSE}: Forces an option to be disabled.
+ * {@link Boolean#TRUE}: Forces an option to be enabled.
+ * {@code null}: Uses default behavior, which may use runtime properties (e.g. driver version).
+ */
 public final class ContextOptions {
-
-    public static final int
-            DISABLE = -1, // Forces an option to be disabled
-            DEFAULT = 0,  // Uses default behavior, which may use runtime properties (e.g. driver version).
-            ENABLE = 1;   // Forces an option to be enabled.
 
     /**
      * Controls whether we check for GL errors after functions that allocate resources (e.g.
      * glTexImage2D), for shader compilation success, and program link success. Ignored on
      * backends other than GL.
      */
-    public int mSkipGLErrorChecks = DEFAULT;
+    public Boolean mSkipGLErrorChecks = null;
 
     /**
      * If true, texture fetches from mip-mapped textures will be biased to read larger MIP levels.
@@ -60,7 +61,7 @@ public final class ContextOptions {
      * Can the glyph atlas use multiple textures. If allowed, each texture's size is bound by
      * {@link #mGlyphCacheTextureMaximumBytes}.
      */
-    public int mAllowMultipleGlyphCacheTextures = DEFAULT;
+    public Boolean mAllowMultipleGlyphCacheTextures = null;
 
     /**
      * Below this threshold size in device space distance field fonts won't be used. Distance field

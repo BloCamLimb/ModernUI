@@ -21,9 +21,16 @@ package icyllis.arcui.hgi;
 import java.lang.annotation.*;
 
 /**
- * Denotes something like C++ std::shared_ptr. Differently, you need to manually call
- * ref() and unref() in each SP "ctor" and "dtor" to ensure DAG work correctly (because
- * GC is not immediate, and we don't depend on the lifecycle of Java objects).
+ * Denotes something like C++ std::shared_ptr. Differently, ref() and unref() are
+ * explicitly called in each SP "ctor" and "dtor" to ensure DAG work correctly
+ * (because GC is not immediate, and we don't rely on the lifecycle of Java objects).
+ * <p>
+ * When denote a method or parameter, the caller has referenced the object, then
+ * transfer ownership. When denote a field, the owner object has to unref it along with
+ * object itself. When there is no annotation, it is seen as raw ptr.
+ * <p>
+ * Not all reference counted objects follow this rule. Non-recycled and non-shared objects
+ * directly implement {@link AutoCloseable}, you just need to manage their finalizing.
  */
 @Documented
 @Retention(RetentionPolicy.CLASS)

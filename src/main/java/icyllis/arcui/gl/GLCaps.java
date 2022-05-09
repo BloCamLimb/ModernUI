@@ -41,6 +41,7 @@ public final class GLCaps extends Caps {
     float mMaxTextureMaxAnisotropy = 1.f;
     final boolean mSupportsProtected = false;
     boolean mFBFetchRequiresEnablePerSample;
+    private boolean mSkipErrorChecks = false;
 
     // see GLTypes
     final FormatInfo[] mFormatTable = new FormatInfo[GLTypes.FORMAT_LAST_COLOR + 1];
@@ -1309,10 +1310,10 @@ public final class GLCaps extends Caps {
 
     @Override
     public int getRenderTargetSampleCount(int sampleCount, BackendFormat format) {
-        return getRenderTargetSampleCount(format.getGLFormat(), sampleCount);
+        return getRenderTargetSampleCount(sampleCount, format.getGLFormat());
     }
 
-    public int getRenderTargetSampleCount(int format, int sampleCount) {
+    public int getRenderTargetSampleCount(int sampleCount, int format) {
         FormatInfo formatInfo = mFormatTable[format];
         if (formatInfo.mColorTypeInfos.length == 0) {
             return 0;
@@ -1455,6 +1456,46 @@ public final class GLCaps extends Caps {
         }
         return fallbackColorType | (fallbackTransferOffsetAlignment << 32);
     }
+
+    @Override
+    protected void onApplyOptionsOverrides(ContextOptions options) {
+        super.onApplyOptionsOverrides(options);
+        if (options.mSkipGLErrorChecks == Boolean.FALSE) {
+            mSkipErrorChecks = false;
+        } else if (options.mSkipGLErrorChecks == Boolean.TRUE) {
+            mSkipErrorChecks = true;
+        }
+    }
+
+    /**
+     * Gets the internal format to use with glTexImage...() and glTexStorage...(). May be sized or
+     * base depending upon the GL. Not applicable to compressed textures.
+     */
+    public int getTextureInternalFormat(int format) {
+        return mFormatTable[format].mInternalFormatForTexture;
+    }
+
+    /**
+     * Gets the internal format to use with glRenderbufferStorageMultisample...(). May be sized or
+     * base depending upon the GL. Not applicable to compressed textures.
+     */
+    public int getRenderbufferInternalFormat(int format) {
+        return mFormatTable[format].mInternalFormatForRenderbuffer;
+    }
+
+    /**
+     * Gets the default external type to use with glTex[Sub]Image... when the data pointer is null.
+     */
+    public int getFormatDefaultExternalType(int format) {
+        return mFormatTable[format].mDefaultExternalType;
+    }
+
+    /**
+     * Skip checks for GL errors, shader compilation success, program link success.
+     */
+    public boolean skipErrorChecks() {
+        return mSkipErrorChecks;
+    }
 }
 
 class ExternalIOFormat {
@@ -1512,7 +1553,7 @@ class FormatInfo {
     int mFormatType = FORMAT_TYPE_UNKNOWN;
 
     // Value to use as the "internalformat" argument to glTexImage or glTexStorage. It is
-    // initialized in coordination with the presence/absence of the kUseTexStorage flag. In
+    // initialized in coordination with the presence/absence of the UseTexStorage flag. In
     // other words, it is only guaranteed to be compatible with glTexImage if the flag is not
     // set and or with glTexStorage if the flag is set.
     int mInternalFormatForTexture = 0;
@@ -1520,7 +1561,7 @@ class FormatInfo {
     // Value to use as the "internalformat" argument to glRenderbufferStorageMultisample...
     int mInternalFormatForRenderbuffer = 0;
 
-    // Default values to use along with fInternalFormatForTexImageOrStorage for function
+    // Default values to use along with mInternalFormatForTexture for function
     // glTexImage2D when not input providing data (passing nullptr) or when clearing it by
     // uploading a block of solid color data. Not defined for compressed formats.
     int mDefaultExternalFormat = 0;

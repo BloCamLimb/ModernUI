@@ -18,6 +18,11 @@
 
 package icyllis.arcui.gl;
 
+/**
+ * Types for interacting with GL resources created externally to pipeline. BackendObjects for GL
+ * textures are really const GLTexture*. The mFormat here should be a sized, internal format
+ * for the texture. We use the sized format since the base internal formats are deprecated.
+ */
 public final class GLFramebufferInfo {
 
     public int mID;
@@ -26,5 +31,21 @@ public final class GLFramebufferInfo {
     public void set(GLFramebufferInfo info) {
         mID = info.mID;
         mFormat = info.mFormat;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        GLFramebufferInfo that = (GLFramebufferInfo) o;
+        if (mID != that.mID) return false;
+        return mFormat == that.mFormat;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = mID;
+        result = 31 * result + mFormat;
+        return result;
     }
 }

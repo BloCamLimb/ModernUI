@@ -215,13 +215,13 @@ public abstract class Resource {
     }
 
     /**
-     * Checks whether an object has been discarded or released. All objects will
+     * Checks whether an object has been dropped or freed. All objects will
      * be in this state after their creating Context is destroyed or has
      * contextLost called. It's up to the client to test isDestroyed() before
      * attempting to use an object if it holds refs on objects across
      * Context.close(), freeResources with the force flag, or contextLost.
      *
-     * @return true if the object has been released or discarded, false otherwise.
+     * @return true if the object has been freed or dropped, false otherwise.
      */
     public final boolean isDestroyed() {
         return mServer == null;
@@ -423,14 +423,14 @@ public abstract class Resource {
     /**
      * Subclass should override this method to free GPU resources in the backend API.
      */
-    protected abstract void onRelease();
+    protected abstract void onFree();
 
     /**
      * Subclass should override this method to invalidate any internal handles, etc.
      * to backend API resources. This may be called when the underlying 3D context
      * is no longer valid and so no backend API calls should be made.
      */
-    protected abstract void onDiscard();
+    protected abstract void onDrop();
 
     /**
      * Called by the registerWithCache if the resource is available to be used as scratch.
@@ -457,9 +457,9 @@ public abstract class Resource {
     /**
      * Called by the cache to delete the resource under normal circumstances.
      */
-    final void release() {
+    final void free() {
         assert mServer != null;
-        onRelease();
+        onFree();
         mServer.getContext().getResourceCache().removeResource(this);
         mServer = null;
     }
@@ -467,11 +467,11 @@ public abstract class Resource {
     /**
      * Called by the cache to delete the resource when the backend 3D context is no longer valid.
      */
-    final void discard() {
+    final void drop() {
         if (mServer == null) {
             return;
         }
-        onDiscard();
+        onDrop();
         mServer.getContext().getResourceCache().removeResource(this);
         mServer = null;
     }

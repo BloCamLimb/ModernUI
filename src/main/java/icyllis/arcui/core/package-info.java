@@ -17,11 +17,6 @@
  */
 
 /**
- * Arc UI core package. Some classes are promoted to GPU.
- * <p>
- * Arc UI may be only backed by GPU, see graphics package for details.
+ * Public API package.
  */
-@ParametersAreNonnullByDefault
 package icyllis.arcui.core;
-
-import javax.annotation.ParametersAreNonnullByDefault;

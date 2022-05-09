@@ -20,17 +20,18 @@ package icyllis.arcui.hgi;
 
 import icyllis.arcui.gl.GLServer;
 import icyllis.arcui.vk.VkBackendContext;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
 /**
- * The direct context interacts with the underlying 3D graphics API (OpenGL or Vulkan)
- * on the render thread. A direct context may derive multiple deferred contexts.
+ * Represents a backend context of 3D graphics API (OpenGL or Vulkan) on the render thread.
  */
 public final class DirectContext extends RecordingContext {
 
     private Server mServer;
     private ResourceCache mResourceCache;
+    private ResourceProvider mResourceProvider;
 
     private DirectContext(int backend, ContextOptions options) {
         super(new ContextThreadSafeProxy(backend, options));
@@ -71,7 +72,7 @@ public final class DirectContext extends RecordingContext {
      *      }
      *      ...
      *      // destroy and close operations
-     *      direct.discard();
+     *      direct.drop();
      *      direct.close();
      *      glfwDestroyWindow(window);
      *      glfwTerminate();
@@ -118,8 +119,14 @@ public final class DirectContext extends RecordingContext {
         return null;
     }
 
+    @ApiStatus.Internal
     public ResourceCache getResourceCache() {
         return mResourceCache;
+    }
+
+    @ApiStatus.Internal
+    public ResourceProvider getResourceProvider() {
+        return mResourceProvider;
     }
 
     @Override
@@ -137,6 +144,7 @@ public final class DirectContext extends RecordingContext {
         assert getThreadSafeCache() != null;
 
         mResourceCache = new ResourceCache(getContextID());
+        mResourceProvider = new ResourceProvider(mServer, mResourceCache);
         return true;
     }
 

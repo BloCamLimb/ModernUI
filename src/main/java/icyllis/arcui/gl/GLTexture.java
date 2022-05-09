@@ -43,12 +43,12 @@ public final class GLTexture extends Texture {
     }
 
     @Override
-    protected void onRelease() {
+    protected void onFree() {
 
     }
 
     @Override
-    protected void onDiscard() {
+    protected void onDrop() {
 
     }
 

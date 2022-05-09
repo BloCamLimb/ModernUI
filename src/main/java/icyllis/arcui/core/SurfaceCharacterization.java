@@ -21,13 +21,13 @@ package icyllis.arcui.core;
 import icyllis.arcui.hgi.*;
 import icyllis.arcui.vk.VkCore;
 import icyllis.arcui.vk.VkImageInfo;
+import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
  * A surface characterization contains all the information HGI requires to make its internal
- * rendering decisions. When passed into a DeferredDisplayListRecorder it will copy the
+ * rendering decisions. When passed into a {@link DeferredDisplayListRecorder} it will copy the
  * data and pass it on to the {@link DeferredDisplayList} if/when it is created. Note that both of
  * those objects (the Recorder and the DisplayList) will take a ref on the
  * {@link ContextThreadSafeProxy} object.
@@ -48,6 +48,11 @@ public final class SurfaceCharacterization {
     private final boolean mVkSecondaryCommandBuffer;
     private final boolean mIsProtected;
 
+    /**
+     * Create via {@link Context#createCharacterization(long, ImageInfo, BackendFormat, int, int, boolean, boolean,
+     * boolean, boolean, boolean, boolean)}.
+     */
+    @ApiStatus.Internal
     public SurfaceCharacterization(ContextThreadSafeProxy contextInfo,
                                    long cacheMaxResourceBytes,
                                    ImageInfo imageInfo,
@@ -121,9 +126,12 @@ public final class SurfaceCharacterization {
      * Return a new surface characterization with the backend format replaced. A colorType
      * must also be supplied to indicate the interpretation of the new format.
      */
-    @Nonnull
-    public SurfaceCharacterization createBackendFormat(int colorType,
-                                                       BackendFormat backendFormat) {
+    @Nullable
+    public SurfaceCharacterization createBackendFormat(int colorType, BackendFormat backendFormat) {
+        if (backendFormat == null) {
+            return null;
+        }
+
         return new SurfaceCharacterization(mContextInfo, mCacheMaxResourceBytes,
                 mImageInfo.makeColorType(colorType), backendFormat,
                 mOrigin, mSampleCount, mTexturable, mMipmapped,
@@ -132,7 +140,7 @@ public final class SurfaceCharacterization {
     }
 
     /**
-     * Return a new surface characterization with just a different use of FBO0 (in GL).
+     * Return a new surface characterization with just a different use of FBO 0 (in GL).
      */
     @Nullable
     public SurfaceCharacterization createDefaultFramebuffer(boolean useDefaultFramebuffer) {
@@ -148,6 +156,7 @@ public final class SurfaceCharacterization {
                 false, mIsProtected);
     }
 
+    @ApiStatus.Internal
     public ContextThreadSafeProxy getContextInfo() {
         return mContextInfo;
     }
@@ -211,7 +220,7 @@ public final class SurfaceCharacterization {
     /**
      * Is the provided backend texture compatible with this surface characterization?
      */
-    public boolean isCompatible(BackendTexture backendTex) {
+    public boolean isCompatible(BackendTexture texture) {
         if (mGLWrapDefaultFramebuffer) {
             // It is a backend texture so can't be wrapping default framebuffer
             return false;
@@ -221,36 +230,36 @@ public final class SurfaceCharacterization {
             return false;
         }
 
-        if (mIsProtected != backendTex.isProtected()) {
+        if (mIsProtected != texture.isProtected()) {
             return false;
         }
 
-        if (mMipmapped && !backendTex.isMipmapped()) {
+        if (mMipmapped && !texture.isMipmapped()) {
             // backend texture is allowed to have mipmaps even if the characterization doesn't require
             // them.
             return false;
         }
 
-        if (getWidth() != backendTex.getWidth() || getHeight() != backendTex.getHeight()) {
+        if (getWidth() != texture.getWidth() || getHeight() != texture.getHeight()) {
             return false;
         }
 
-        if (!mBackendFormat.equals(backendTex.getBackendFormat())) {
+        if (!mBackendFormat.equals(texture.getBackendFormat())) {
             return false;
         }
 
         if (mVkSupportInputAttachment) {
-            if (backendTex.getBackend() != Types.VULKAN) {
+            if (texture.getBackend() != Types.VULKAN) {
                 return false;
             }
             VkImageInfo vkInfo = new VkImageInfo();
-            if (!backendTex.getVkImageInfo(vkInfo)) {
+            if (!texture.getVkImageInfo(vkInfo)) {
                 return false;
             }
             return (vkInfo.mImageUsageFlags & VkCore.VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT) != 0;
+        } else {
+            return true;
         }
-
-        return true;
     }
 
     @Override

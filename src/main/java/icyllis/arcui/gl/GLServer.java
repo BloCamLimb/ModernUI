@@ -88,7 +88,12 @@ public final class GLServer extends Server {
 
     @Override
     public ThreadSafePipelineBuilder getPipelineBuilder() {
-        return null;
+        return new ThreadSafePipelineBuilder() {
+            @Override
+            public void close() throws Exception {
+
+            }
+        };
     }
 
     @Nullable
@@ -114,6 +119,66 @@ public final class GLServer extends Server {
         return new GLTexture(this, width, height, f, tex, mipLevels > 1, budgeted, true);
     }
 
+    @Nullable
+    @Override
+    protected RenderTarget onWrapRenderableBackendTexture(BackendTexture texture, int sampleCount, boolean ownership) {
+        if (texture.isProtected()) {
+            // Not supported in GL backend at this time.
+            return null;
+        }
+        final GLTextureInfo info = new GLTextureInfo();
+        if (!texture.getGLTextureInfo(info) || info.mID == 0 || info.mFormat == 0) {
+            return null;
+        }
+        if (info.mTarget != GL_TEXTURE_2D) {
+            return null;
+        }
+        int format = glFormatFromEnum(info.mFormat);
+        if (format == GLTypes.FORMAT_UNKNOWN) {
+            return null;
+        }
+        assert mCaps.isFormatRenderable(format, sampleCount);
+        assert mCaps.isFormatTexturable(format);
+
+        sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
+        assert sampleCount > 0;
+
+        // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
+        // different dimensions will give you GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
+        // The workaround is to use traditional glGen* and glBind* (binding make it valid).
+        final int framebuffer = glGenFramebuffers();
+        if (framebuffer == 0) {
+            return null;
+        }
+
+        final int msaaFramebuffer;
+        final GLRenderbuffer msaaColorBuffer;
+        // If we are using multisampling we will create two FBOs. We render to one and then resolve to
+        // the texture bound to the other. The exception is the IMG multisample extension. With this
+        // extension the texture is multisampled when rendered to and then auto-resolves it when it is
+        // rendered from.
+        if (sampleCount <= 1) {
+            msaaFramebuffer = 0;
+            msaaColorBuffer = null;
+        } else {
+            msaaFramebuffer = glGenFramebuffers();
+            if (msaaFramebuffer == 0) {
+                deleteFramebuffer(framebuffer);
+                return null;
+            }
+            msaaColorBuffer = GLRenderbuffer.makeMSAA(this, texture.getWidth(), texture.getHeight(),
+                    sampleCount, format);
+            if (msaaColorBuffer == null) {
+                deleteFramebuffer(framebuffer);
+                deleteFramebuffer(msaaFramebuffer);
+                return null;
+            }
+        }
+
+
+        return null;
+    }
+
     private int createTexture(int width, int height, int format, int levels) {
         assert width > 0;
         assert height > 0;
@@ -121,12 +186,11 @@ public final class GLServer extends Server {
         assert !glFormatIsCompressed(format);
         assert levels > 0;
 
-        FormatInfo info = mCaps.mFormatTable[format];
-        int internalFormat = info.mInternalFormatForTexture;
+        int internalFormat = mCaps.getTextureInternalFormat(format);
 
         if (internalFormat != 0) {
-            assert (info.mFlags & FormatInfo.TEXTURE_FLAG) != 0;
-            assert (info.mFlags & FormatInfo.USE_TEX_STORAGE_FLAG) != 0;
+            assert (mCaps.mFormatTable[format].mFlags & FormatInfo.TEXTURE_FLAG) != 0;
+            assert (mCaps.mFormatTable[format].mFlags & FormatInfo.USE_TEX_STORAGE_FLAG) != 0;
             int texture = glCreateTextures(GL_TEXTURE_2D);
             if (texture == 0) {
                 return 0;

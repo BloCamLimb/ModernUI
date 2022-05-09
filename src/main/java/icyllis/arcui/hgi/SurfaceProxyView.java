@@ -22,15 +22,15 @@ public final class SurfaceProxyView implements AutoCloseable {
 
     @SmartPtr
     SurfaceProxy mProxy;
-    int mOrigin = Types.SURFACE_ORIGIN_TOP_LEFT;
-    short mSwizzle = Swizzle.RGBA;
+    int mOrigin;
+    short mSwizzle;
 
-    // the caller has referenced the proxy, then transfer ownership
     public SurfaceProxyView(@SmartPtr SurfaceProxy proxy) {
         mProxy = proxy; // std::move()
+        mOrigin = Types.SURFACE_ORIGIN_TOP_LEFT;
+        mSwizzle = Swizzle.RGBA;
     }
 
-    // the caller has referenced the proxy, then transfer ownership
     public SurfaceProxyView(@SmartPtr SurfaceProxy proxy, int origin, short swizzle) {
         mProxy = proxy; // std::move()
         mOrigin = origin;
@@ -50,14 +50,14 @@ public final class SurfaceProxyView implements AutoCloseable {
     }
 
     /**
-     * Returns smart pointer value.
+     * Returns smart pointer value (raw ptr).
      */
     public SurfaceProxy getProxy() {
         return mProxy;
     }
 
     /**
-     * Returns smart pointer (as if on the stack).
+     * Returns a smart pointer (as if on the stack).
      */
     @SmartPtr
     public SurfaceProxy refProxy() {
@@ -77,10 +77,16 @@ public final class SurfaceProxyView implements AutoCloseable {
         return proxy;
     }
 
+    /**
+     * @return see {@link Types}
+     */
     public int getOrigin() {
         return mOrigin;
     }
 
+    /**
+     * @return see {@link Swizzle}
+     */
     public short getSwizzle() {
         return mSwizzle;
     }

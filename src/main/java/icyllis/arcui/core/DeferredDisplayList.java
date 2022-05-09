@@ -20,7 +20,7 @@ package icyllis.arcui.core;
 
 /**
  * This class contains pre-processed graphics operations that can be replayed into
- * a Surface via Surface::draw(DeferredDisplayList*).
+ * a {@link Surface} via Surface::draw(DeferredDisplayList*).
  */
 public class DeferredDisplayList {
 }

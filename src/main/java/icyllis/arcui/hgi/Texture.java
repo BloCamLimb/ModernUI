@@ -88,7 +88,7 @@ public abstract class Texture extends Surface {
         return computeScratchKey(format, mWidth, mHeight, isMipmapped(), isProtected());
     }
 
-    public static final ThreadLocal<Key> sThreadLocalKey = ThreadLocal.withInitial(Key::new);
+    private static final ThreadLocal<Key> sThreadLocalKey = ThreadLocal.withInitial(Key::new);
 
     /**
      * Compute the ScratchKey as texture resources.
@@ -131,25 +131,25 @@ public abstract class Texture extends Surface {
     @Nonnull
     static Object computeScratchKey(BackendFormat format,
                                     int width, int height,
-                                    int samples,
+                                    int sampleCount,
                                     boolean mipmapped,
                                     boolean isProtected) {
         assert width > 0 && height > 0;
-        assert samples > 0;
+        assert sampleCount > 0;
         Key key = new Key();
         key.mWidth = width;
         key.mHeight = height;
         key.mFormat = format.getFormatKey();
-        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (samples << 2);
+        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (sampleCount << 2);
         return key;
     }
 
     private static final class Key {
 
-        public int mWidth;
-        public int mHeight;
-        public int mFormat;
-        public int mFlags;
+        int mWidth;
+        int mHeight;
+        int mFormat;
+        int mFlags;
 
         @Override
         public boolean equals(Object o) {

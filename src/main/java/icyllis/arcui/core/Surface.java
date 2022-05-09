@@ -20,11 +20,15 @@ package icyllis.arcui.core;
 
 /**
  * Surface is responsible for managing the pixels that a canvas draws into.
- * The pixels can be allocated on the GPU (a TextureRenderTarget surface).
+ * The pixels can be allocated on the GPU (a HGI RenderTarget surface).
  * Surface takes care of allocating a Canvas that will draw into the surface.
- * Call surface.getCanvas() to use that canvas (it is managed by the surface).
+ * Call {@link #getCanvas()} to use that canvas (it is managed by the surface).
  * Surface always has non-zero dimensions. If there is a request for a new surface,
  * and either of the requested dimensions are zero, then null will be returned.
  */
-public class Surface {
+public abstract class Surface implements AutoCloseable {
+
+    @Override
+    public void close() {
+    }
 }

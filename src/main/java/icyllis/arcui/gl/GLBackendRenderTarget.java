@@ -23,7 +23,7 @@ import icyllis.arcui.hgi.Types;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arcui.gl.GLCore.*;
+import static icyllis.arcui.gl.GLCore.GL_NONE;
 
 public final class GLBackendRenderTarget extends BackendRenderTarget {
 
@@ -34,14 +34,14 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
 
     private GLBackendFormat mBackendFormat;
 
-    // The GLTextureInfo can NOT be modified anymore.
+    // The GLFramebufferInfo can NOT be modified anymore.
     public GLBackendRenderTarget(int width, int height, int sampleCount, int stencilBits,
                                  GLFramebufferInfo info) {
         super(width, height);
         mSampleCount = sampleCount;
         mStencilBits = stencilBits;
         mInfo = info;
-        assert sampleCount >= 1;
+        assert sampleCount > 0;
     }
 
     @Override

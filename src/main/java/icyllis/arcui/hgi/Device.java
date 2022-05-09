@@ -23,9 +23,9 @@ import icyllis.arcui.core.*;
 /**
  * The drawing device is backed by GPU.
  */
-public final class SurfaceDevice extends BaseDevice {
+public final class Device extends BaseDevice {
 
-    public SurfaceDevice(SurfaceDrawContext context, boolean initContents) {
+    public Device(SurfaceDrawContext context, boolean initContents) {
         super(null);
     }
 

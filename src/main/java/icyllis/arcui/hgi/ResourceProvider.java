@@ -22,7 +22,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**
- * A factory for arbitrary resource types.
+ * A factory for arbitrary resource types, render thread only.
  */
 @NotThreadSafe
 public final class ResourceProvider {
@@ -32,7 +32,7 @@ public final class ResourceProvider {
     private Server mServer;
     private ResourceCache mCache;
 
-    public ResourceProvider(Server server, ResourceCache cache) {
+    ResourceProvider(Server server, ResourceCache cache) {
         mServer = server;
         mCache = cache;
     }
@@ -43,6 +43,7 @@ public final class ResourceProvider {
      * of type T. If the resource is no longer used, then {@link Resource#unref()} must be called.
      */
     @Nullable
+    @SmartPtr
     @SuppressWarnings("unchecked")
     public <T extends Resource> T findByUniqueKey(Object key) {
         return mCache == null ? null : (T) mCache.findAndRefUniqueResource(key);
@@ -54,6 +55,7 @@ public final class ResourceProvider {
      * The contents of the texture are undefined.
      */
     @Nullable
+    @SmartPtr
     public Texture createApproxTexture(int width, int height,
                                        BackendFormat format,
                                        boolean isProtected) {
@@ -81,6 +83,7 @@ public final class ResourceProvider {
     }
 
     @Nullable
+    @SmartPtr
     public Texture findAndRefScratchTexture(Object key) {
         assert mServer != null;
         assert key != null;
@@ -92,6 +95,7 @@ public final class ResourceProvider {
     }
 
     @Nullable
+    @SmartPtr
     public Texture findAndRefScratchTexture(int width, int height,
                                             BackendFormat format,
                                             boolean mipmapped,
@@ -105,9 +109,32 @@ public final class ResourceProvider {
     }
 
     /**
+     * This makes the backend texture be renderable. If <code>sampleCount</code> is > 1 and
+     * the underlying API uses separate MSAA render buffers then a MSAA render buffer is created
+     * that resolves to the texture.
+     * <p>
+     * Ownership specifies rules for external GPU resources imported into HGI. If false,
+     * HGI will assume the client will keep the resource alive and HGI will not free it.
+     * If true, HGI will assume ownership of the resource and free it.
+     *
+     * @param texture the backend texture must be single sample
+     * @return a non-cacheable render target, or null if failed
+     */
+    @Nullable
+    @SmartPtr
+    public RenderTarget wrapRenderableBackendTexture(BackendTexture texture,
+                                                     int sampleCount,
+                                                     boolean ownership) {
+        if (mServer == null) {
+            return null;
+        }
+        return mServer.wrapRenderableBackendTexture(texture, sampleCount, ownership);
+    }
+
+    /**
      * Drops this provider, called by {@link DirectContext}.
      */
-    public void discard() {
+    public void drop() {
         mServer = null;
         mCache = null;
     }
