@@ -111,9 +111,9 @@ public final class ResourceCache implements AutoCloseable {
     private int mNonCleanableSize;
 
     // This map holds all resources that can be used as scratch resources.
-    private final Object2ObjectOpenHashMap<Object, Resource> mScratchMap;
+    private final Object2ObjectOpenHashMap<ResourceKey, Resource> mScratchMap;
     // This map holds all resources that have unique keys.
-    private final Object2ObjectOpenHashMap<Object, Resource> mUniqueMap;
+    private final Object2ObjectOpenHashMap<ResourceKey, Resource> mUniqueMap;
 
     // our budget, used in clean()
     private long mMaxBytes = 1 << 28;
@@ -278,7 +278,7 @@ public final class ResourceCache implements AutoCloseable {
      * Find a resource that matches a scratch key.
      */
     @Nullable
-    public Resource findAndRefScratchResource(Object key) {
+    public Resource findAndRefScratchResource(ResourceKey key) {
         assert key != null;
         Resource resource = mScratchMap.get(key);
         if (resource != null) {
@@ -292,7 +292,7 @@ public final class ResourceCache implements AutoCloseable {
      * Find a resource that matches a unique key.
      */
     @Nullable
-    public Resource findAndRefUniqueResource(Object key) {
+    public Resource findAndRefUniqueResource(ResourceKey key) {
         assert key != null;
         Resource resource = mUniqueMap.get(key);
         if (resource != null) {
@@ -304,7 +304,7 @@ public final class ResourceCache implements AutoCloseable {
     /**
      * Query whether a unique key exists in the cache.
      */
-    public boolean hasUniqueKey(Object key) {
+    public boolean hasUniqueKey(ResourceKey key) {
         return mUniqueMap.containsKey(key);
     }
 
@@ -571,7 +571,7 @@ public final class ResourceCache implements AutoCloseable {
         }
     }
 
-    void changeUniqueKey(Resource resource, Object newKey) {
+    void changeUniqueKey(Resource resource, ResourceKey newKey) {
         assert isInCache(resource);
 
         // If another resource has the new key, remove its key then install the key on this resource.

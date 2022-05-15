@@ -84,6 +84,8 @@ public final class GLRenderTarget extends RenderTarget {
                            int sampleCount,
                            int framebuffer,
                            int msaaFramebuffer,
+                           GLTexture colorBuffer,
+                           @SmartPtr GLRenderbuffer msaaColorBuffer,
                            @SmartPtr GLRenderbuffer stencilBuffer,
                            boolean ownership) {
         super(server, width, height, sampleCount, stencilBuffer);
@@ -93,6 +95,8 @@ public final class GLRenderTarget extends RenderTarget {
         mFormat = format;
         mFramebuffer = framebuffer;
         mMSAAFramebuffer = msaaFramebuffer;
+        mColorBuffer = colorBuffer;
+        mMSAAColorBuffer = msaaColorBuffer;
         mOwnership = ownership;
         if ((framebuffer | msaaFramebuffer) == 0) {
             mFlags |= Types.INTERNAL_SURFACE_FLAG_GL_WRAP_DEFAULT_FRAMEBUFFER;
@@ -106,6 +110,8 @@ public final class GLRenderTarget extends RenderTarget {
                                              int sampleCount,
                                              int framebuffer,
                                              int msaaFramebuffer,
+                                             GLTexture colorBuffer,
+                                             @SmartPtr GLRenderbuffer msaaColorBuffer,
                                              int stencilBits,
                                              boolean ownership) {
         GLRenderbuffer stencilBuffer = null;
@@ -128,7 +134,7 @@ public final class GLRenderTarget extends RenderTarget {
                     /*renderbufferID=*/0);
         }
         return new GLRenderTarget(server, width, height, format, sampleCount,
-                framebuffer, msaaFramebuffer, stencilBuffer, ownership);
+                framebuffer, msaaFramebuffer, colorBuffer, msaaColorBuffer, stencilBuffer, ownership);
     }
 
     public int getFormat() {
@@ -241,7 +247,7 @@ public final class GLRenderTarget extends RenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), GL_TEXTURE_2D);
+            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), Types.TEXTURE_TYPE_2D);
         }
         return mBackendFormat;
     }
@@ -251,7 +257,7 @@ public final class GLRenderTarget extends RenderTarget {
     public BackendRenderTarget getBackendRenderTarget() {
         if (mBackendRenderTarget == null) {
             final GLFramebufferInfo info = new GLFramebufferInfo();
-            info.mID = getSampleCount() > 1 ? mMSAAFramebuffer : mFramebuffer;
+            info.mFramebuffer = getSampleCount() > 1 ? mMSAAFramebuffer : mFramebuffer;
             info.mFormat = glFormatToEnum(mFormat);
             mBackendRenderTarget = new GLBackendRenderTarget(
                     getWidth(), getHeight(), getSampleCount(), getStencilBits(), info);

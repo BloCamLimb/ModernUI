@@ -31,13 +31,12 @@ public final class GLBackendFormat extends BackendFormat {
     private final int mFormat;
     private final int mTextureType;
 
-    public GLBackendFormat(@NativeType("GLenum") int format, @NativeType("GLenum") int target) {
+    public GLBackendFormat(@NativeType("GLenum") int format, int textureType) {
+        assert textureType == Types.TEXTURE_TYPE_NONE ||
+                textureType == Types.TEXTURE_TYPE_2D ||
+                textureType == Types.TEXTURE_TYPE_EXTERNAL;
         mFormat = format;
-        mTextureType = switch (target) {
-            case GL_NONE -> Types.TEXTURE_TYPE_NONE;
-            case GL_TEXTURE_2D -> Types.TEXTURE_TYPE_2D;
-            default -> throw new IllegalArgumentException();
-        };
+        mTextureType = textureType;
     }
 
     @Override
@@ -71,7 +70,7 @@ public final class GLBackendFormat extends BackendFormat {
         if (mTextureType == Types.TEXTURE_TYPE_2D) {
             return this;
         }
-        return new GLBackendFormat(mFormat, GL_TEXTURE_2D);
+        return new GLBackendFormat(mFormat, Types.TEXTURE_TYPE_2D);
     }
 
     @Override

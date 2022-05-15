@@ -19,6 +19,7 @@
 package icyllis.arcui.hgi;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * Base class that represents something that can be color or depth/stencil
@@ -59,12 +60,17 @@ public abstract class Surface extends Resource {
     }
 
     /**
-     * Note non-renderable textures are always single sampled. Multisample textures are
+     * Note textures are always single sampled. Multisample textures (MSAA color attachments) are
      * created with render targets, they cannot be used directly (need MSAA resolve).
      *
      * @return the number of samples
      */
     public abstract int getSampleCount();
+
+    /**
+     * @return true if this surface has mipmaps
+     */
+    public abstract boolean isMipmapped();
 
     /**
      * @return the backend format of this surface
@@ -73,6 +79,10 @@ public abstract class Surface extends Resource {
     public abstract BackendFormat getBackendFormat();
 
     /**
+     * The pixel values of this surface cannot be modified (e.g. doesn't support write pixels or
+     * mipmap regeneration). To be exact, only wrapped textures, external textures, stencil
+     * attachments and MSAA color attachments can be read only.
+     *
      * @return true if pixels in this surface are read-only
      */
     public abstract boolean isReadOnly();
@@ -81,4 +91,104 @@ public abstract class Surface extends Resource {
      * @return true if we are working with protected content
      */
     public abstract boolean isProtected();
+
+    @Nullable
+    @Override
+    protected final ResourceKey computeScratchKey() {
+        BackendFormat format = getBackendFormat();
+        if (format.isCompressed()) {
+            return null;
+        }
+        return computeScratchKey(format, mWidth, mHeight, getSampleCount(), isMipmapped(), isProtected());
+    }
+
+    private static final ThreadLocal<SurfaceKey> sSurfaceTLS = ThreadLocal.withInitial(SurfaceKey::new);
+
+    /**
+     * Compute a {@link Surface} key. The usage is limited to the following cases and cannot be mixed.
+     * Don't confuse this with {@link icyllis.arcui.core.Surface} or
+     * {@link icyllis.arcui.core.SurfaceCharacterization}, core package surfaces are render targets.
+     * <p>
+     * <h3>For OpenGL</h3>
+     * <ul>
+     *     <code>isProtected</code> must be false.
+     *     <li><code>sampleCount</code> is 1, it's {@link icyllis.arcui.gl.GLTexture},
+     *     used as textures and can be promoted to render targets (managed by {@link Server}).</li>
+     *     <li><code>sampleCount</code> is > 1, it's {@link icyllis.arcui.gl.GLRenderbuffer}
+     *     and can be stencil attachments or MSAA color attachments of render targets,
+     *     <code>mipmapped</code> must be false.</li>
+     * </ul>
+     * <p>
+     * <h3>For Vulkan</h3>
+     * <ul>
+     *     <li><code>sampleCount</code> is 1, it's {@link icyllis.arcui.vk.VkImage},
+     *     used as textures and can be promoted to render targets (managed by {@link Server}).</li>
+     *     <li><code>sampleCount</code> is > 1, it's {@link icyllis.arcui.vk.VkImage},
+     *     and can be stencil attachments or MSAA color attachments of render targets,
+     *     <code>mipmapped</code> must be false.</li>
+     * </ul>
+     * <p>
+     * Format can not be compressed. Stencil and MSAA color attachments are distinguished by format.
+     *
+     * @return a new scratch key
+     */
+    @Nonnull
+    public static ResourceKey computeScratchKey(BackendFormat format,
+                                                int width, int height,
+                                                int sampleCount,
+                                                boolean mipmapped,
+                                                boolean isProtected) {
+        assert width > 0 && height > 0;
+        assert sampleCount > 0;
+        SurfaceKey key = new SurfaceKey();
+        key.mWidth = width;
+        key.mHeight = height;
+        key.mFormat = format.getFormatKey();
+        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (sampleCount << 2);
+        return key;
+    }
+
+    @Nonnull
+    static ResourceKey computeScratchKeyTLS(BackendFormat format,
+                                            int width, int height,
+                                            int sampleCount,
+                                            boolean mipmapped,
+                                            boolean isProtected) {
+        assert width > 0 && height > 0;
+        assert sampleCount > 0;
+        SurfaceKey key = sSurfaceTLS.get();
+        key.mWidth = width;
+        key.mHeight = height;
+        key.mFormat = format.getFormatKey();
+        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (sampleCount << 2);
+        return key;
+    }
+
+    private static final class SurfaceKey extends ResourceKey {
+
+        int mWidth;
+        int mHeight;
+        int mFormat;
+        int mFlags;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            SurfaceKey key = (SurfaceKey) o;
+            if (mWidth != key.mWidth) return false;
+            if (mHeight != key.mHeight) return false;
+            if (mFormat != key.mFormat) return false;
+            return mFlags == key.mFlags;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = mWidth;
+            result = 31 * result + mHeight;
+            result = 31 * result + mFormat;
+            result = 31 * result + mFlags;
+            return result;
+        }
+    }
 }

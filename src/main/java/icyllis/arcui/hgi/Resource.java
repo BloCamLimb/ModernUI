@@ -96,8 +96,8 @@ public abstract class Resource {
     private long mCleanUpTime;
 
     // null meaning invalid, lazy initialized
-    Object mScratchKey;
-    Object mUniqueKey;
+    ResourceKey mScratchKey;
+    ResourceKey mUniqueKey;
 
     // set once in constructor, clear to null after being destroyed
     Server mServer;
@@ -270,7 +270,7 @@ public abstract class Resource {
      * associated unique key.
      */
     @Nullable
-    public final Object getUniqueKey() {
+    public final ResourceKey getUniqueKey() {
         return mUniqueKey;
     }
 
@@ -280,7 +280,7 @@ public abstract class Resource {
      * removeUniqueKey(). If another resource is using the key then its unique key is removed and
      * this resource takes over the key.
      */
-    public final void setUniqueKey(Object key) {
+    public final void setUniqueKey(ResourceKey key) {
         assert hasRef();
 
         // Uncached resources can never have a unique key, unless they're wrapped resources. Wrapped
@@ -359,7 +359,7 @@ public abstract class Resource {
      * used as a uniquely keyed resource rather than scratch. Check isScratch().
      */
     @Nullable
-    public final Object getScratchKey() {
+    public final ResourceKey getScratchKey() {
         return mScratchKey;
     }
 
@@ -438,7 +438,8 @@ public abstract class Resource {
      * resources and populate the scratchKey with the key.
      * By default, resources are not recycled as scratch.
      */
-    protected Object computeScratchKey() {
+    @Nullable
+    protected ResourceKey computeScratchKey() {
         return null;
     }
 

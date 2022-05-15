@@ -1,3 +1,5 @@
+import org.gradle.internal.os.OperatingSystem
+
 plugins {
     id 'maven-publish'
 }
@@ -20,16 +22,18 @@ dependencies {
     compileOnly 'org.jetbrains:annotations:23.0.0'
 
     implementation "it.unimi.dsi:fastutil:8.5.8"
+    implementation "net.java.dev.jna:jna:5.11.0"
+    implementation "net.java.dev.jna:jna-platform:5.11.0"
 
     def lwjglNatives
-    switch (org.gradle.internal.os.OperatingSystem.current()) {
-        case org.gradle.internal.os.OperatingSystem.WINDOWS:
+    switch (OperatingSystem.current()) {
+        case OperatingSystem.WINDOWS:
             def osArch = System.getProperty("os.arch")
             lwjglNatives = osArch.contains("64")
                     ? "natives-windows${osArch.startsWith("aarch64") ? "-arm64" : ""}"
                     : "natives-windows-x86"
             break
-        case org.gradle.internal.os.OperatingSystem.MAC_OS:
+        case OperatingSystem.MAC_OS:
             lwjglNatives = System.getProperty("os.arch").startsWith("aarch64") ? "natives-macos-arm64" : "natives-macos"
             break
         default:

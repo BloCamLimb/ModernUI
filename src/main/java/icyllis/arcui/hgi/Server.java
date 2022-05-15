@@ -77,7 +77,7 @@ public abstract class Server {
         mDirtyFlags |= dirtyFlags;
     }
 
-    private void handleDirty() {
+    protected final void handleDirty() {
         if (mDirtyFlags != 0) {
             onDirty(mDirtyFlags);
             mDirtyFlags = 0;

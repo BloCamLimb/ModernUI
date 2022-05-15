@@ -30,8 +30,6 @@ public final class GLServer extends Server {
 
     final GLCaps mCaps;
 
-    private int mDrawFramebuffer = 0;
-
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
@@ -67,23 +65,13 @@ public final class GLServer extends Server {
 
     public void bindFramebuffer(int target, int framebuffer) {
         glBindFramebuffer(target, framebuffer);
-        if (target == GL_FRAMEBUFFER || target == GL_DRAW_FRAMEBUFFER) {
-            mDrawFramebuffer = framebuffer;
-        }
-        onFramebufferChanged();
     }
 
     public void deleteFramebuffer(int framebuffer) {
+        // We're relying on the GL state shadowing being correct in the workaround code below, so we
+        // need to handle a dirty context.
+        handleDirty();
         glDeleteFramebuffers(framebuffer);
-        // Deleting the currently bound framebuffer rebinds to 0.
-        if (mDrawFramebuffer == framebuffer) {
-            onFramebufferChanged();
-            mDrawFramebuffer = 0;
-        }
-    }
-
-    private void onFramebufferChanged() {
-
     }
 
     @Override
@@ -116,7 +104,8 @@ public final class GLServer extends Server {
         if (tex == 0) {
             return null;
         }
-        return new GLTexture(this, width, height, f, tex, mipLevels > 1, budgeted, true);
+        return new GLTexture(this, width, height, tex, format, mipLevels > 1 ? Types.MIPMAP_STATUS_DIRTY :
+                Types.MIPMAP_STATUS_NONE, budgeted, true);
     }
 
     @Nullable
@@ -127,12 +116,12 @@ public final class GLServer extends Server {
             return null;
         }
         final GLTextureInfo info = new GLTextureInfo();
-        if (!texture.getGLTextureInfo(info) || info.mID == 0 || info.mFormat == 0) {
+        if (!texture.getGLTextureInfo(info) || info.mTexture == 0 || info.mFormat == 0) {
             return null;
         }
-        if (info.mTarget != GL_TEXTURE_2D) {
+        /*if (info.mTarget != GL_TEXTURE_2D) {
             return null;
-        }
+        }*/
         int format = glFormatFromEnum(info.mFormat);
         if (format == GLTypes.FORMAT_UNKNOWN) {
             return null;
@@ -150,6 +139,8 @@ public final class GLServer extends Server {
         if (framebuffer == 0) {
             return null;
         }
+        // Create the state vector of the framebuffer, not bind, because we are not DSA.
+        bindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
 
         final int msaaFramebuffer;
         final GLRenderbuffer msaaColorBuffer;
@@ -166,11 +157,46 @@ public final class GLServer extends Server {
                 deleteFramebuffer(framebuffer);
                 return null;
             }
-            msaaColorBuffer = GLRenderbuffer.makeMSAA(this, texture.getWidth(), texture.getHeight(),
-                    sampleCount, format);
+            // Create the state vector of the framebuffer, not bind, because we are not DSA.
+            bindFramebuffer(GL_DRAW_FRAMEBUFFER, msaaFramebuffer);
+
+            msaaColorBuffer = GLRenderbuffer.makeMSAA(this,
+                    texture.getWidth(), texture.getHeight(),
+                    sampleCount,
+                    format);
             if (msaaColorBuffer == null) {
                 deleteFramebuffer(framebuffer);
                 deleteFramebuffer(msaaFramebuffer);
+                return null;
+            }
+
+            glNamedFramebufferRenderbuffer(msaaFramebuffer,
+                    GL_COLOR_ATTACHMENT0,
+                    GL_RENDERBUFFER,
+                    msaaColorBuffer.getRenderbuffer());
+            if (!mCaps.skipErrorChecks()) {
+                int status = glCheckNamedFramebufferStatus(msaaFramebuffer, GL_DRAW_FRAMEBUFFER);
+                if (status != GL_FRAMEBUFFER_COMPLETE) {
+                    deleteFramebuffer(framebuffer);
+                    deleteFramebuffer(msaaFramebuffer);
+                    msaaColorBuffer.unref();
+                    return null;
+                }
+            }
+        }
+
+        glNamedFramebufferTexture(framebuffer,
+                GL_COLOR_ATTACHMENT0,
+                info.mTexture,
+                0);
+        if (!mCaps.skipErrorChecks()) {
+            int status = glCheckNamedFramebufferStatus(framebuffer, GL_DRAW_FRAMEBUFFER);
+            if (status != GL_FRAMEBUFFER_COMPLETE) {
+                deleteFramebuffer(framebuffer);
+                deleteFramebuffer(msaaFramebuffer);
+                if (msaaColorBuffer != null) {
+                    msaaColorBuffer.unref();
+                }
                 return null;
             }
         }

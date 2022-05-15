@@ -45,7 +45,7 @@ public final class ResourceProvider {
     @Nullable
     @SmartPtr
     @SuppressWarnings("unchecked")
-    public <T extends Resource> T findByUniqueKey(Object key) {
+    public <T extends Resource> T findByUniqueKey(ResourceKey key) {
         return mCache == null ? null : (T) mCache.findAndRefUniqueResource(key);
     }
 
@@ -84,7 +84,7 @@ public final class ResourceProvider {
 
     @Nullable
     @SmartPtr
-    public Texture findAndRefScratchTexture(Object key) {
+    public Texture findAndRefScratchTexture(ResourceKey key) {
         assert mServer != null;
         assert key != null;
         Resource resource = mCache.findAndRefScratchResource(key);
@@ -104,7 +104,7 @@ public final class ResourceProvider {
         assert !format.isCompressed();
         assert mServer.mCaps.validateTextureParams(width, height, format);
 
-        Object key = Texture.computeScratchKeyTLS(format, width, height, mipmapped, isProtected);
+        ResourceKey key = Texture.computeScratchKeyTLS(format, width, height, 1, mipmapped, isProtected);
         return findAndRefScratchTexture(key);
     }
 
@@ -115,10 +115,11 @@ public final class ResourceProvider {
      * <p>
      * Ownership specifies rules for external GPU resources imported into HGI. If false,
      * HGI will assume the client will keep the resource alive and HGI will not free it.
-     * If true, HGI will assume ownership of the resource and free it.
+     * If true, HGI will assume ownership of the resource and free it. If this method failed,
+     * then ownership doesn't work.
      *
      * @param texture the backend texture must be single sample
-     * @return a non-cacheable render target, or null if failed
+     * @return a managed, non-cacheable render target, or null if failed
      */
     @Nullable
     @SmartPtr

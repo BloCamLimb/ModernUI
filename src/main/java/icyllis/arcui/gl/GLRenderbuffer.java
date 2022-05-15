@@ -27,7 +27,6 @@ import static icyllis.arcui.gl.GLCore.*;
 
 /**
  * Renderbuffer can be only used as attachments of framebuffers as an optimization.
- * It's something like Vulkan <code>VK_IMAGE_LAYOUT_*_READ_ONLY_OPTIMAL</code>.
  * Renderbuffer can neither be accessed by shaders nor have mipmaps, but can be
  * multisampled.
  */
@@ -137,21 +136,9 @@ public final class GLRenderbuffer extends Surface {
         return mSampleCount;
     }
 
-    @Nonnull
     @Override
-    public BackendFormat getBackendFormat() {
-        if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), GL_NONE);
-        }
-        return mBackendFormat;
-    }
-
-    public int getFormat() {
-        return mFormat;
-    }
-
-    public int getRenderbuffer() {
-        return mRenderbuffer;
+    public boolean isMipmapped() {
+        return false;
     }
 
     @Override
@@ -162,6 +149,23 @@ public final class GLRenderbuffer extends Surface {
     @Override
     public boolean isProtected() {
         return false;
+    }
+
+    @Nonnull
+    @Override
+    public BackendFormat getBackendFormat() {
+        if (mBackendFormat == null) {
+            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), Types.TEXTURE_TYPE_NONE);
+        }
+        return mBackendFormat;
+    }
+
+    public int getFormat() {
+        return mFormat;
+    }
+
+    public int getRenderbuffer() {
+        return mRenderbuffer;
     }
 
     @Override
@@ -180,56 +184,5 @@ public final class GLRenderbuffer extends Surface {
     @Override
     protected void onDrop() {
         mRenderbuffer = 0;
-    }
-
-    @Override
-    protected Object computeScratchKey() {
-        return computeScratchKey(getBackendFormat(), mWidth, mHeight, mSampleCount);
-    }
-
-    /**
-     * Compute the ScratchKey as GLRenderbuffer resources.
-     *
-     * @return the new key
-     */
-    @Nonnull
-    static Object computeScratchKey(BackendFormat format,
-                                    int width, int height,
-                                    int sampleCount) {
-        assert width > 0 && height > 0;
-        Key key = new Key();
-        key.mWidth = width;
-        key.mHeight = height;
-        key.mFormat = format.getFormatKey();
-        key.mFlags = sampleCount;
-        return key;
-    }
-
-    private static final class Key {
-
-        int mWidth;
-        int mHeight;
-        int mFormat;
-        int mFlags;
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Key key = (Key) o;
-            if (mWidth != key.mWidth) return false;
-            if (mHeight != key.mHeight) return false;
-            if (mFormat != key.mFormat) return false;
-            return mFlags == key.mFlags;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = mWidth;
-            result = 31 * result + mHeight;
-            result = 31 * result + mFormat;
-            result = 31 * result + mFlags;
-            return result;
-        }
     }
 }

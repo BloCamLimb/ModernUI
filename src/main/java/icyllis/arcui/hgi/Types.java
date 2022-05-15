@@ -43,20 +43,20 @@ public final class Types {
 
     public static final int
             GL_DIRTY_FLAG_RENDER_TARGET = 1,
-            GL_DIRTY_FLAG_TEXTURE = 1<< 1,
+            GL_DIRTY_FLAG_TEXTURE = 1 << 1,
             GL_DIRTY_FLAG_VIEW = 1 << 2,
             GL_DIRTY_FLAG_BLEND = 1 << 3;
 
     /**
-     * The type of texture. All are 2D.
+     * The type of texture. There are only 2D.
      * <p>
      * NONE: Represents a general purpose that is not considered a texture, e.g. OpenGL renderbuffer.
      * <p>
      * 2D: OpenGL 2D texture or Vulkan 2D image.
      * <p>
-     * EXTERNAL: Memory object, imports POSIX FD or Win32 NT (Windows 8+, KMT is not used).
-     * Currently, OpenGL texture wraps Vulkan image, or Vulkan image wraps Linux DRM (using FD).
-     * We assume external textures are read-only and have no memory size.
+     * EXTERNAL: May be memory object, imports POSIX FD or Win32 NT handle (Windows 8+, KMT is not used).
+     * Currently, OpenGL texture wraps Vulkan image, Vulkan image wraps Vulkan image or Linux DRM.
+     * We assume external textures are read-only and don't track their memory usage.
      */
     public static final int
             TEXTURE_TYPE_NONE = 0,

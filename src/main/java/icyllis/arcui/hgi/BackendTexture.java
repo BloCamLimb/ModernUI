@@ -29,8 +29,8 @@ import javax.annotation.Nonnull;
  */
 public abstract class BackendTexture {
 
-    private final int mWidth;
-    private final int mHeight;
+    protected final int mWidth;
+    protected final int mHeight;
 
     protected BackendTexture(int width, int height) {
         mWidth = width;
@@ -41,11 +41,6 @@ public abstract class BackendTexture {
      * @return see Types
      */
     public abstract int getBackend();
-
-    /**
-     * @return see Types
-     */
-    public abstract int getTextureType();
 
     /**
      * @return width in pixels
@@ -60,6 +55,11 @@ public abstract class BackendTexture {
     public final int getHeight() {
         return mHeight;
     }
+
+    /**
+     * @return either {@link Types#TEXTURE_TYPE_2D} or {@link Types#TEXTURE_TYPE_EXTERNAL}
+     */
+    public abstract int getTextureType();
 
     /**
      * @return whether the texture has mip levels allocated or not
@@ -78,9 +78,9 @@ public abstract class BackendTexture {
      * Call this to indicate that the texture parameters have been modified in the GL context
      * externally to Context.
      * <p>
-     * Tells Arc UI that these parameters of the texture are changed out of Arc UI control
+     * Tells client that these parameters of the texture are changed out of client control
      * (for example, you called glTexParameteri without using {@link GLServer}).
-     * The local state machine will be forced to reset to a known state when next use.
+     * The local states will be forced to reset to a known state when next use.
      */
     public void glTextureParametersModified() {
     }

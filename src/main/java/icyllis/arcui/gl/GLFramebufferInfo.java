@@ -25,11 +25,11 @@ package icyllis.arcui.gl;
  */
 public final class GLFramebufferInfo {
 
-    public int mID;
+    public int mFramebuffer;
     public int mFormat;
 
     public void set(GLFramebufferInfo info) {
-        mID = info.mID;
+        mFramebuffer = info.mFramebuffer;
         mFormat = info.mFormat;
     }
 
@@ -38,13 +38,13 @@ public final class GLFramebufferInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GLFramebufferInfo that = (GLFramebufferInfo) o;
-        if (mID != that.mID) return false;
+        if (mFramebuffer != that.mFramebuffer) return false;
         return mFormat == that.mFormat;
     }
 
     @Override
     public int hashCode() {
-        int result = mID;
+        int result = mFramebuffer;
         result = 31 * result + mFormat;
         return result;
     }

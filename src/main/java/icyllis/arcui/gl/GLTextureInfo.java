@@ -20,19 +20,31 @@ package icyllis.arcui.gl;
 
 /**
  * Types for interacting with GL resources created externally to pipeline. BackendObjects for GL
- * textures are really const GLTexture*. The mFormat here should be a sized, internal format
+ * textures are really const GLTexture*. The {@link #mFormat} here should be a sized, internal format
  * for the texture. We use the sized format since the base internal formats are deprecated.
+ * <p>
+ * Note the target is always {@link GLCore#GL_TEXTURE_2D}. When importing external memory,
+ * {@link #mMemoryHandle} is POSIX file descriptor or Win32 NT handle (though <code>HANDLE</code>
+ * is defined as <code>void*</code>, we can safely truncate it because Win32 handles are
+ * 32-bit significant). {@link #mMemory} is OpenGL memory object. If it is an NT handle,
+ * it must be released manually by the memory exporter (e.g. Vulkan).
+ * <p>
+ * We only provide single-sample textures, multisample can be only renderbuffers.
  */
 public final class GLTextureInfo {
 
-    public int mTarget;
-    public int mID;
+    public int mTexture;
     public int mFormat;
+    public int mLevelCount = 0;
+    public int mMemory;
+    public int mMemoryHandle = -1;
 
     public void set(GLTextureInfo info) {
-        mTarget = info.mTarget;
-        mID = info.mID;
+        mTexture = info.mTexture;
         mFormat = info.mFormat;
+        mLevelCount = info.mLevelCount;
+        mMemory = info.mMemory;
+        mMemoryHandle = info.mMemoryHandle;
     }
 
     @Override
@@ -40,16 +52,20 @@ public final class GLTextureInfo {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         GLTextureInfo that = (GLTextureInfo) o;
-        if (mTarget != that.mTarget) return false;
-        if (mID != that.mID) return false;
-        return mFormat == that.mFormat;
+        if (mTexture != that.mTexture) return false;
+        if (mFormat != that.mFormat) return false;
+        if (mLevelCount != that.mLevelCount) return false;
+        if (mMemory != that.mMemory) return false;
+        return mMemoryHandle == that.mMemoryHandle;
     }
 
     @Override
     public int hashCode() {
-        int result = mTarget;
-        result = 31 * result + mID;
+        int result = mTexture;
         result = 31 * result + mFormat;
+        result = 31 * result + mLevelCount;
+        result = 31 * result + mMemory;
+        result = 31 * result + mMemoryHandle;
         return result;
     }
 }

@@ -22,45 +22,55 @@ import icyllis.arcui.hgi.*;
 
 import javax.annotation.Nonnull;
 
+import static icyllis.arcui.gl.GLCore.glFormatIsCompressed;
+
 /**
- * Represents OpenGL 2D textures, can be used as textures and attachments.
+ * Represents OpenGL 2D textures, can be used as textures and color attachments.
  */
 public final class GLTexture extends Texture {
 
+    private final GLTextureParameters mParameters;
+
+    private int mTexture;
+    private final int mFormat;
+    private final boolean mOwnership;
+
+    private final GLBackendTexture mBackendTexture;
+
+    private final long mMemorySize;
+
     public GLTexture(GLServer server,
                      int width, int height,
-                     int format,
                      int texture,
-                     boolean mipmapped,
+                     BackendFormat backendFormat,
+                     int mipmapStatus,
                      boolean budgeted,
                      boolean ownership) {
-        super(server, width, height, false);
+        super(server, width, height, Types.TEXTURE_TYPE_2D, mipmapStatus);
+        mTexture = texture;
+        mFormat = backendFormat.getGLFormat();
+        mParameters = new GLTextureParameters();
+        mOwnership = ownership;
+        if (glFormatIsCompressed(mFormat)) {
+            setReadOnly();
+        }
+
+        final GLTextureInfo info = new GLTextureInfo();
+        info.mTexture = texture;
+        info.mFormat = mFormat;
+        info.mLevelCount = getMaxMipmapLevel() + 1;
+        mBackendTexture = new GLBackendTexture(mWidth, mHeight, info, mParameters, backendFormat);
+
+        mMemorySize = computeSize(backendFormat, width, height, getSampleCount(), isMipmapped(), false);
+
+        registerWithCache(budgeted);
     }
 
-    @Override
-    public long getMemorySize() {
-        return 0;
-    }
-
-    @Override
-    protected void onFree() {
-
-    }
-
-    @Override
-    protected void onDrop() {
-
-    }
-
-    @Nonnull
-    @Override
-    public BackendFormat getBackendFormat() {
-        return null;
-    }
-
+    /**
+     * We have no multisample textures, but multisample renderbuffers.
+     */
     @Override
     public int getSampleCount() {
-        // We have no multisample textures
         return 1;
     }
 
@@ -71,12 +81,28 @@ public final class GLTexture extends Texture {
 
     @Nonnull
     @Override
+    public BackendFormat getBackendFormat() {
+        return mBackendTexture.getBackendFormat();
+    }
+
+    @Nonnull
+    @Override
     public BackendTexture getBackendTexture() {
-        return null;
+        return mBackendTexture;
     }
 
     @Override
-    public boolean isMipmapped() {
-        return false;
+    public long getMemorySize() {
+        return mMemorySize;
+    }
+
+    @Override
+    protected void onFree() {
+        super.onFree();
+    }
+
+    @Override
+    protected void onDrop() {
+        super.onDrop();
     }
 }

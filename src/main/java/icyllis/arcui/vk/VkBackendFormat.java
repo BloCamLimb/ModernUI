@@ -31,9 +31,9 @@ public final class VkBackendFormat extends BackendFormat {
     private final int mFormat;
     private final int mTextureType;
 
-    public VkBackendFormat(@NativeType("VkFormat") int format, boolean useDRMModifier) {
+    public VkBackendFormat(@NativeType("VkFormat") int format, boolean isExternal) {
         mFormat = format;
-        mTextureType = useDRMModifier ? Types.TEXTURE_TYPE_EXTERNAL : Types.TEXTURE_TYPE_2D;
+        mTextureType = isExternal ? Types.TEXTURE_TYPE_EXTERNAL : Types.TEXTURE_TYPE_2D;
     }
 
     @Override

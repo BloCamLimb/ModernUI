@@ -37,20 +37,23 @@ public final class VkBackendTexture extends BackendTexture {
     private final VkImageInfo mInfo;
     final VkSharedImageInfo mState;
 
-    private VkBackendFormat mBackendFormat;
+    private final BackendFormat mBackendFormat;
 
     // The VkImageInfo can NOT be modified anymore.
     public VkBackendTexture(int width, int height, VkImageInfo info) {
-        this(width, height, info, new VkSharedImageInfo(info.mImageLayout, info.mCurrentQueueFamily));
+        this(width, height, info, new VkSharedImageInfo(info), new VkBackendFormat(info.mFormat,
+                info.mMemoryHandle != -1 || info.mImageTiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT));
     }
 
-    VkBackendTexture(int width, int height, VkImageInfo info, VkSharedImageInfo state) {
+    VkBackendTexture(int width, int height, VkImageInfo info,
+                     VkSharedImageInfo state, BackendFormat backendFormat) {
         super(width, height);
         if (info.mImageUsageFlags == 0) {
             info.mImageUsageFlags = DEFAULT_USAGE_FLAGS;
         }
         mInfo = info;
         mState = state;
+        mBackendFormat = backendFormat;
     }
 
     @Override
@@ -60,10 +63,7 @@ public final class VkBackendTexture extends BackendTexture {
 
     @Override
     public int getTextureType() {
-        if (mInfo.mImageTiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT) {
-            return Types.TEXTURE_TYPE_EXTERNAL;
-        }
-        return Types.TEXTURE_TYPE_2D;
+        return mBackendFormat.getTextureType();
     }
 
     @Override
@@ -92,10 +92,6 @@ public final class VkBackendTexture extends BackendTexture {
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
-        if (mBackendFormat == null) {
-            boolean useDRMModifier = mInfo.mImageTiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
-            mBackendFormat = new VkBackendFormat(mInfo.mFormat, useDRMModifier);
-        }
         return mBackendFormat;
     }
 

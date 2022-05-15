@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
 public final class VkImage extends Texture {
 
     public VkImage(VkServer server, int width, int height) {
-        super(server, width, height, false);
+        super(server, width, height, Types.TEXTURE_TYPE_2D, Types.MIPMAP_STATUS_NONE);
     }
 
     @Override
@@ -66,10 +66,5 @@ public final class VkImage extends Texture {
     @Override
     public BackendTexture getBackendTexture() {
         return null;
-    }
-
-    @Override
-    public boolean isMipmapped() {
-        return false;
     }
 }

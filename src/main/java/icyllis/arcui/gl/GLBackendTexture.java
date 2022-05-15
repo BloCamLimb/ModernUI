@@ -22,30 +22,29 @@ import icyllis.arcui.hgi.*;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arcui.gl.GLCore.*;
-
 public final class GLBackendTexture extends BackendTexture {
-
-    private final boolean mMipmapped;
 
     private final GLTextureInfo mInfo;
     final GLTextureParameters mParams;
 
-    private GLBackendFormat mBackendFormat;
+    private final BackendFormat mBackendFormat;
 
     // The GLTextureInfo must have a valid mFormat, can NOT be modified anymore.
-    public GLBackendTexture(int width, int height, boolean mipmapped, GLTextureInfo info) {
-        this(width, height, mipmapped, info, new GLTextureParameters());
+    public GLBackendTexture(int width, int height, GLTextureInfo info) {
+        this(width, height, info, new GLTextureParameters(), new GLBackendFormat(info.mFormat,
+                info.mMemoryHandle != -1 ? Types.TEXTURE_TYPE_EXTERNAL : Types.TEXTURE_TYPE_2D));
+        assert info.mFormat != 0;
         // Make no assumptions about client's texture's parameters.
         glTextureParametersModified();
     }
 
-    GLBackendTexture(int width, int height, boolean mipmapped, GLTextureInfo info, GLTextureParameters params) {
+    // Internally used by GLServer and GLTexture
+    GLBackendTexture(int width, int height, GLTextureInfo info,
+                     GLTextureParameters params, BackendFormat backendFormat) {
         super(width, height);
-        mMipmapped = mipmapped;
         mInfo = info;
         mParams = params;
-        assert getTextureType() >= 0;
+        mBackendFormat = backendFormat;
     }
 
     @Override
@@ -55,16 +54,12 @@ public final class GLBackendTexture extends BackendTexture {
 
     @Override
     public int getTextureType() {
-        return switch (mInfo.mTarget) {
-            case GL_NONE -> Types.TEXTURE_TYPE_NONE;
-            case GL_TEXTURE_2D -> Types.TEXTURE_TYPE_2D;
-            default -> throw new IllegalStateException();
-        };
+        return mBackendFormat.getTextureType();
     }
 
     @Override
     public boolean isMipmapped() {
-        return mMipmapped;
+        return mInfo.mLevelCount > 1;
     }
 
     @Override
@@ -81,9 +76,6 @@ public final class GLBackendTexture extends BackendTexture {
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
-        if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(mInfo.mFormat, mInfo.mTarget);
-        }
         return mBackendFormat;
     }
 
@@ -95,7 +87,7 @@ public final class GLBackendTexture extends BackendTexture {
     @Override
     public boolean isSameTexture(BackendTexture texture) {
         if (texture instanceof GLBackendTexture t) {
-            return mInfo.mID == t.mInfo.mID;
+            return mInfo.mTexture == t.mInfo.mTexture;
         }
         return false;
     }

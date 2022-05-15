@@ -69,7 +69,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
     @Override
     public GLBackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(mInfo.mFormat, GL_NONE);
+            mBackendFormat = new GLBackendFormat(mInfo.mFormat, Types.TEXTURE_TYPE_NONE);
         }
         return mBackendFormat;
     }

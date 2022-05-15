@@ -942,7 +942,7 @@ public final class GLCaps extends Caps {
                 info.mFlags = FormatInfo.TEXTURE_FLAG;
 
                 mCompressionTypeToBackendFormat[Image.COMPRESSION_BC1_RGB8_UNORM] =
-                        new GLBackendFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, GL_TEXTURE_2D);
+                        new GLBackendFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, Types.TEXTURE_TYPE_2D);
             }
 
             // There are no support ColorTypes for this format
@@ -957,7 +957,7 @@ public final class GLCaps extends Caps {
                 info.mFlags = FormatInfo.TEXTURE_FLAG;
 
                 mCompressionTypeToBackendFormat[Image.COMPRESSION_BC1_RGBA8_UNORM] =
-                        new GLBackendFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GL_TEXTURE_2D);
+                        new GLBackendFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, Types.TEXTURE_TYPE_2D);
             }
 
             // There are no support ColorTypes for this format
@@ -971,7 +971,7 @@ public final class GLCaps extends Caps {
             info.mFlags = FormatInfo.TEXTURE_FLAG;
 
             mCompressionTypeToBackendFormat[Image.COMPRESSION_ETC2_RGB8_UNORM] =
-                    new GLBackendFormat(GL_COMPRESSED_RGB8_ETC2, GL_TEXTURE_2D);
+                    new GLBackendFormat(GL_COMPRESSED_RGB8_ETC2, Types.TEXTURE_TYPE_2D);
 
             // There are no support ColorTypes for this format
         }
@@ -1203,7 +1203,7 @@ public final class GLCaps extends Caps {
             if (format == GLTypes.FORMAT_UNKNOWN) {
                 continue;
             }
-            mColorTypeToBackendFormat[ct] = new GLBackendFormat(glFormatToEnum(format), GL_TEXTURE_2D);
+            mColorTypeToBackendFormat[ct] = new GLBackendFormat(glFormatToEnum(format), Types.TEXTURE_TYPE_2D);
         }
 
         // Validate, skip UNKNOWN

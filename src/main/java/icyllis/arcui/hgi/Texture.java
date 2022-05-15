@@ -37,40 +37,110 @@ import javax.annotation.Nonnull;
  */
 public abstract class Texture extends Surface {
 
-    private final boolean mReadOnly;
+    private final int mTextureType;
+    private final int mMaxMipmapLevel;
 
-    public Texture(Server server, int width, int height, boolean isReadOnly) {
+    private int mMipmapStatus;
+    private boolean mReadOnly;
+
+    @SmartPtr
+    private ReleaseCallback mReleaseCallback;
+
+    protected Texture(Server server,
+                      int width, int height,
+                      int textureType,
+                      int mipmapStatus) {
         super(server, width, height);
-        mReadOnly = isReadOnly;
-    }
-
-    public int getTextureType() {
-        return 0;
+        mTextureType = textureType;
+        mMipmapStatus = mipmapStatus;
+        if (mipmapStatus == Types.MIPMAP_STATUS_NONE) {
+            mMaxMipmapLevel = 0;
+        } else {
+            mMaxMipmapLevel = 31 - Integer.numberOfLeadingZeros(Math.max(mWidth, mHeight));
+        }
+        if (textureType == Types.TEXTURE_TYPE_EXTERNAL) {
+            setReadOnly();
+        }
     }
 
     /**
-     * Describes the backend texture of this texture.
+     * The pixel values of this texture cannot be modified (e.g. doesn't support write pixels or
+     * mipmap regeneration). To be exact, only wrapped textures, external textures can be read only.
+     *
+     * @return true if pixels in this texture are read-only
      */
-    @Nonnull
-    public abstract BackendTexture getBackendTexture();
-
-    public abstract boolean isMipmapped();
-
-    public int getMipmapStatus() {
-        return 0;
-    }
-
     @Override
     public final boolean isReadOnly() {
         return mReadOnly;
     }
 
     /**
-     * @return surface flags
+     * Determined by subclass constructors.
+     */
+    protected final void setReadOnly() {
+        mReadOnly = true;
+    }
+
+    /**
+     * @return either {@link Types#TEXTURE_TYPE_2D} or {@link Types#TEXTURE_TYPE_EXTERNAL}
+     */
+    public final int getTextureType() {
+        return mTextureType;
+    }
+
+    /**
+     * @return the backend texture of this texture
+     */
+    @Nonnull
+    public abstract BackendTexture getBackendTexture();
+
+    /**
+     * @return true if mipmaps have been allocated, or called has mipmaps
+     */
+    @Override
+    public final boolean isMipmapped() {
+        return mMipmapStatus != Types.MIPMAP_STATUS_NONE;
+    }
+
+    public final boolean areMipmapsDirty() {
+        return mMipmapStatus == Types.MIPMAP_STATUS_DIRTY;
+    }
+
+    public final void markMipmapsDirty() {
+        assert isMipmapped();
+        mMipmapStatus = Types.MIPMAP_STATUS_DIRTY;
+    }
+
+    public final void markMipmapsClean() {
+        assert isMipmapped();
+        mMipmapStatus = Types.MIPMAP_STATUS_VALID;
+    }
+
+    public final int getMipmapStatus() {
+        return mMipmapStatus;
+    }
+
+    public final int getMaxMipmapLevel() {
+        return mMaxMipmapLevel;
+    }
+
+    /**
+     * Unmanaged backends (e.g. Vulkan) may want to specially handle the release proc in order to
+     * ensure it isn't called until GPU work related to the resource is completed.
+     */
+    public void setReleaseCallback(@SmartPtr ReleaseCallback callback) {
+        if (mReleaseCallback != null) {
+            mReleaseCallback.unref();
+        }
+        mReleaseCallback = callback;
+    }
+
+    /**
+     * @return surface flags, texture are color attachments so no framebuffer-related flags
      */
     public final int getFlags() {
         int flags = 0;
-        if (mReadOnly) {
+        if (isReadOnly()) {
             flags |= Types.INTERNAL_SURFACE_FLAG_READ_ONLY;
         }
         if (isProtected()) {
@@ -80,95 +150,46 @@ public abstract class Texture extends Surface {
     }
 
     @Override
-    protected Object computeScratchKey() {
-        BackendFormat format = getBackendFormat();
-        if (format.isCompressed()) {
-            return super.computeScratchKey();
+    protected void onFree() {
+        if (mReleaseCallback != null) {
+            mReleaseCallback.unref();
         }
-        return computeScratchKey(format, mWidth, mHeight, isMipmapped(), isProtected());
+        mReleaseCallback = null;
     }
 
-    private static final ThreadLocal<Key> sThreadLocalKey = ThreadLocal.withInitial(Key::new);
-
-    /**
-     * Compute the ScratchKey as texture resources.
-     *
-     * @return the new key
-     */
-    @Nonnull
-    static Object computeScratchKey(BackendFormat format,
-                                    int width, int height,
-                                    boolean mipmapped,
-                                    boolean isProtected) {
-        assert width > 0 && height > 0;
-        Key key = new Key();
-        key.mWidth = width;
-        key.mHeight = height;
-        key.mFormat = format.getFormatKey();
-        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0);
-        return key;
+    @Override
+    protected void onDrop() {
+        if (mReleaseCallback != null) {
+            mReleaseCallback.unref();
+        }
+        mReleaseCallback = null;
     }
 
-    @Nonnull
-    static Object computeScratchKeyTLS(BackendFormat format,
-                                       int width, int height,
-                                       boolean mipmapped,
-                                       boolean isProtected) {
-        assert width > 0 && height > 0;
-        Key key = sThreadLocalKey.get();
-        key.mWidth = width;
-        key.mHeight = height;
-        key.mFormat = format.getFormatKey();
-        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0);
-        return key;
-    }
-
-    /**
-     * Compute the ScratchKey as {@link RenderTargetProxy} for {@link ResourceAllocator}.
-     *
-     * @return the new key
-     */
-    @Nonnull
-    static Object computeScratchKey(BackendFormat format,
-                                    int width, int height,
-                                    int sampleCount,
-                                    boolean mipmapped,
-                                    boolean isProtected) {
+    public static long computeSize(BackendFormat format,
+                                   int width, int height,
+                                   int sampleCount,
+                                   boolean mipmapped,
+                                   boolean approx) {
         assert width > 0 && height > 0;
         assert sampleCount > 0;
-        Key key = new Key();
-        key.mWidth = width;
-        key.mHeight = height;
-        key.mFormat = format.getFormatKey();
-        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (sampleCount << 2);
-        return key;
-    }
-
-    private static final class Key {
-
-        int mWidth;
-        int mHeight;
-        int mFormat;
-        int mFlags;
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Key key = (Key) o;
-            if (mWidth != key.mWidth) return false;
-            if (mHeight != key.mHeight) return false;
-            if (mFormat != key.mFormat) return false;
-            return mFlags == key.mFlags;
+        assert sampleCount == 1 || !mipmapped;
+        // For external formats we do not actually know the real size of the resource, so we just return
+        // 0 here to indicate this.
+        if (format.getTextureType() == Types.TEXTURE_TYPE_EXTERNAL) {
+            return 0;
         }
-
-        @Override
-        public int hashCode() {
-            int result = mWidth;
-            result = 31 * result + mHeight;
-            result = 31 * result + mFormat;
-            result = 31 * result + mFlags;
-            return result;
+        if (approx) {
+            width = ResourceProvider.makeApprox(width);
+            height = ResourceProvider.makeApprox(height);
         }
+        long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
+                format.getBytesPerBlock();
+        assert size > 0;
+        if (mipmapped) {
+            size *= 4.0 / 3.0;
+        } else {
+            size *= sampleCount;
+        }
+        return size;
     }
 }

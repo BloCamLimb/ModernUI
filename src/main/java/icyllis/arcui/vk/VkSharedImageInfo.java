@@ -26,6 +26,10 @@ public final class VkSharedImageInfo {
     private volatile int mLayout;
     private volatile int mQueueFamilyIndex;
 
+    public VkSharedImageInfo(VkImageInfo info) {
+        this(info.mImageLayout, info.mCurrentQueueFamily);
+    }
+
     public VkSharedImageInfo(int layout, int queueFamilyIndex) {
         mLayout = layout;
         mQueueFamilyIndex = queueFamilyIndex;

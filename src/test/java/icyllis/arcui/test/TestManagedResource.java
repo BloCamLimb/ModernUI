@@ -18,18 +18,23 @@
 
 package icyllis.arcui.test;
 
+import com.sun.jna.Native;
+import com.sun.jna.platform.linux.LibC;
+import com.sun.jna.platform.mac.SystemB;
+import com.sun.jna.platform.unix.LibCAPI;
+import com.sun.jna.platform.unix.LibCUtil;
+import com.sun.jna.platform.win32.*;
 import icyllis.arcui.gl.GLBackendFormat;
 import icyllis.arcui.gl.GLCore;
-import icyllis.arcui.hgi.DirectContext;
-import icyllis.arcui.hgi.Swizzle;
+import icyllis.arcui.hgi.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
+import org.lwjgl.system.linux.LinuxLibrary;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
@@ -55,10 +60,16 @@ public class TestManagedResource {
         }
         PrintWriter pw = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
 
-        if (direct.getCaps().isFormatTexturable(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, GLCore.GL_TEXTURE_2D))) {
+        if (direct.getCaps().isFormatTexturable(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, Types.TEXTURE_TYPE_2D))) {
             pw.println("OK");
         }
         Swizzle.make("rgb1");
+
+        try {
+            pw.println(Kernel32Util.getFileType("F:\\2(Off Vocal).wav"));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
 
         ByteBuffer image = null;
         try (FileChannel channel = FileChannel.open(Path.of("F:/Photoshop/Untitled-1.gif"), StandardOpenOption.READ);

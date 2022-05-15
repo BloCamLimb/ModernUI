@@ -32,7 +32,7 @@ public final class ProxyProvider {
 
     // This holds the texture proxies that have unique keys. The resourceCache does not get a ref
     // on these proxies, but they must send a message to the resourceCache when they are deleted.
-    private final Object2ObjectOpenHashMap<Object, TextureProxy> mUniquelyKeyedProxies;
+    private final Object2ObjectOpenHashMap<ResourceKey, TextureProxy> mUniquelyKeyedProxies;
 
     ProxyProvider(RecordingContext context) {
         mContext = context;
@@ -49,7 +49,7 @@ public final class ProxyProvider {
      * Assigns a unique key to a proxy. The proxy will be findable via this key using
      * {@link #findProxyByUniqueKey()}. It is an error if an existing proxy already has a key.
      */
-    public boolean assignUniqueKeyToProxy(Object key, TextureProxy proxy) {
+    public boolean assignUniqueKeyToProxy(ResourceKey key, TextureProxy proxy) {
         assert key != null;
         if (mContext.isDropped() || proxy == null) {
             return false;
