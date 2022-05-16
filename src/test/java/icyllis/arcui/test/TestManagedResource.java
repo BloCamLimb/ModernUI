@@ -18,23 +18,18 @@
 
 package icyllis.arcui.test;
 
-import com.sun.jna.Native;
-import com.sun.jna.platform.linux.LibC;
-import com.sun.jna.platform.mac.SystemB;
-import com.sun.jna.platform.unix.LibCAPI;
-import com.sun.jna.platform.unix.LibCUtil;
-import com.sun.jna.platform.win32.*;
-import icyllis.arcui.gl.GLBackendFormat;
-import icyllis.arcui.gl.GLCore;
-import icyllis.arcui.hgi.*;
+import icyllis.arcui.core.Kernel32;
+import icyllis.arcui.opengl.GLBackendFormat;
+import icyllis.arcui.engine.*;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.linux.LinuxLibrary;
+import org.lwjgl.system.Platform;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
@@ -65,10 +60,10 @@ public class TestManagedResource {
         }
         Swizzle.make("rgb1");
 
-        try {
-            pw.println(Kernel32Util.getFileType("F:\\2(Off Vocal).wav"));
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
+        if (Platform.get() == Platform.WINDOWS) {
+            if (!Kernel32.CloseHandle(959595595959595959L)) {
+                pw.println("Failed to close handle");
+            }
         }
 
         ByteBuffer image = null;
@@ -85,7 +80,8 @@ public class TestManagedResource {
                 throw new IOException();
             }
             IntBuffer delay = delays.getIntBuffer(z.get(0));
-            pw.printf("width:%d height:%s layers:%s channels:%s size:%s\n", x.get(0), y.get(0), z.get(0), channels.get(0), image.limit());
+            pw.printf("width:%d height:%s layers:%s channels:%s size_in_bytes:%s\n", x.get(0), y.get(0), z.get(0),
+                    channels.get(0), image.limit());
             for (int i = 0; i < z.get(0); i++) {
                 pw.print(delay.get(i) + " ");
             }

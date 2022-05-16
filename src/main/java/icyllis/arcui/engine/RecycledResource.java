@@ -16,12 +16,29 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.ShaderCaps;
+/**
+ * The subclass that supports recycling.
+ */
+public abstract class RecycledResource extends ManagedResource {
 
-public class ShaderCompiler {
-
-    public ShaderCompiler(ShaderCaps caps) {
+    public RecycledResource(Server server) {
+        super(server);
     }
+
+    /**
+     * When recycle is called and there is only one ref left on the resource, we will signal that
+     * the resource can be recycled for reuse. If the subclass (or whoever is managing this resource)
+     * decides not to recycle the objects, it is their responsibility to call unref on the object.
+     */
+    public final void recycle() {
+        if (unique()) {
+            onRecycle();
+        } else {
+            unref();
+        }
+    }
+
+    public abstract void onRecycle();
 }

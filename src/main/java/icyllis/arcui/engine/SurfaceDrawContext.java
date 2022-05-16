@@ -16,12 +16,22 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.ShaderCaps;
+public class SurfaceDrawContext extends SurfaceFillContext {
 
-public class ShaderCompiler {
+    public SurfaceDrawContext(RecordingContext context,
+                              SurfaceProxyView readView,
+                              SurfaceProxyView writeView,
+                              int colorInfo) {
+        this(context, readView, writeView, colorInfo, false);
+    }
 
-    public ShaderCompiler(ShaderCaps caps) {
+    public SurfaceDrawContext(RecordingContext context,
+                              SurfaceProxyView readView,
+                              SurfaceProxyView writeView,
+                              int colorInfo,
+                              boolean flushTimeOpsTask) {
+        super(context, readView, writeView, colorInfo, flushTimeOpsTask);
     }
 }

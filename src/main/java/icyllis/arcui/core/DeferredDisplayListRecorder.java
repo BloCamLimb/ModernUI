@@ -18,7 +18,7 @@
 
 package icyllis.arcui.core;
 
-import icyllis.arcui.hgi.RecordingContext;
+import icyllis.arcui.engine.RecordingContext;
 
 /**
  * This class is intended to be used as:

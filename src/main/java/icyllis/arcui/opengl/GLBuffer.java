@@ -16,12 +16,28 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.opengl;
 
-import icyllis.arcui.engine.ShaderCaps;
+import icyllis.arcui.engine.Buffer;
 
-public class ShaderCompiler {
+public final class GLBuffer extends Buffer {
 
-    public ShaderCompiler(ShaderCaps caps) {
+    public GLBuffer(GLServer server) {
+        super(server);
+    }
+
+    @Override
+    public long getMemorySize() {
+        return 0;
+    }
+
+    @Override
+    protected void onFree() {
+
+    }
+
+    @Override
+    protected void onDrop() {
+
     }
 }

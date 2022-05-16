@@ -16,12 +16,13 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.ShaderCaps;
+@FunctionalInterface
+public interface ShaderErrorHandler {
 
-public class ShaderCompiler {
+    ShaderErrorHandler DEFAULT = (shader, errors) -> {
+    };
 
-    public ShaderCompiler(ShaderCaps caps) {
-    }
+    void onCompileError(String shader, String errors);
 }

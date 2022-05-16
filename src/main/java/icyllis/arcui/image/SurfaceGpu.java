@@ -20,7 +20,7 @@ package icyllis.arcui.image;
 
 import icyllis.arcui.core.ImageInfo;
 import icyllis.arcui.core.Surface;
-import icyllis.arcui.hgi.*;
+import icyllis.arcui.engine.*;
 
 import javax.annotation.Nullable;
 

@@ -16,12 +16,8 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
-
-import icyllis.arcui.engine.ShaderCaps;
-
-public class ShaderCompiler {
-
-    public ShaderCompiler(ShaderCaps caps) {
-    }
-}
+/**
+ * Hardware graphics engine. It is the abstraction layer of the rendering
+ * pipeline for different 3D graphics APIs.
+ */
+package icyllis.arcui.engine;

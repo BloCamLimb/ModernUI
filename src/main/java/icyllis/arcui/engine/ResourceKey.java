@@ -16,12 +16,13 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.ShaderCaps;
+/**
+ * Base class for all Resource cache keys.
+ */
+public abstract class ResourceKey {
 
-public class ShaderCompiler {
-
-    public ShaderCompiler(ShaderCaps caps) {
+    protected ResourceKey() {
     }
 }

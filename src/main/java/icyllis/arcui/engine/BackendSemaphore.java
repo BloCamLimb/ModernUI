@@ -16,12 +16,8 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.ShaderCaps;
-
-public class ShaderCompiler {
-
-    public ShaderCompiler(ShaderCaps caps) {
-    }
+//TODO
+public abstract class BackendSemaphore {
 }

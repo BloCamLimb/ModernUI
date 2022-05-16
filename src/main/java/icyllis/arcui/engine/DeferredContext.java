@@ -16,12 +16,15 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.ShaderCaps;
+/**
+ * The DeferredContext is the one in effect during DDL Recording. It isn't backed by a GPU and
+ * cannot allocate any GPU resources.
+ */
+public final class DeferredContext extends RecordingContext {
 
-public class ShaderCompiler {
-
-    public ShaderCompiler(ShaderCaps caps) {
+    DeferredContext(ContextThreadSafeProxy proxy) {
+        super(proxy);
     }
 }

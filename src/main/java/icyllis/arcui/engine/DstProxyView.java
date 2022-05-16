@@ -16,12 +16,15 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.ShaderCaps;
+public class DstProxyView  {
 
-public class ShaderCompiler {
+    public static final int FLAG_REQUIRES_TEXTURE_BARRIER = 0x2;
+    public static final int FLAG_AS_INPUT_ATTACHMENT = 0x4;
 
-    public ShaderCompiler(ShaderCaps caps) {
-    }
+    SurfaceProxyView mProxyView;
+    int mOffsetX;
+    int mOffsetY;
+    int mFlags;
 }

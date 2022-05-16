@@ -18,15 +18,15 @@
 
 package icyllis.arcui.core;
 
-import icyllis.arcui.hgi.*;
-import icyllis.arcui.vk.VkCore;
-import icyllis.arcui.vk.VkImageInfo;
+import icyllis.arcui.engine.*;
+import icyllis.arcui.vulkan.VkCore;
+import icyllis.arcui.vulkan.VkImageInfo;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
 /**
- * A surface characterization contains all the information HGI requires to make its internal
+ * A surface characterization contains all the information Engine requires to make its internal
  * rendering decisions. When passed into a {@link DeferredDisplayListRecorder} it will copy the
  * data and pass it on to the {@link DeferredDisplayList} if/when it is created. Note that both of
  * those objects (the Recorder and the DisplayList) will take a ref on the

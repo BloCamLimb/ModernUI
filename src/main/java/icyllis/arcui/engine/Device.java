@@ -16,12 +16,41 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.ShaderCaps;
+import icyllis.arcui.core.*;
 
-public class ShaderCompiler {
+/**
+ * The drawing device is backed by GPU.
+ */
+public final class Device extends BaseDevice {
 
-    public ShaderCompiler(ShaderCaps caps) {
+    public Device(SurfaceDrawContext context, boolean initContents) {
+        super(null);
+    }
+
+    @Override
+    public boolean clipIsAA() {
+        return false;
+    }
+
+    @Override
+    public boolean clipIsWideOpen() {
+        return false;
+    }
+
+    @Override
+    protected int getClipType() {
+        return 0;
+    }
+
+    @Override
+    protected Rect getClipBounds() {
+        return null;
+    }
+
+    @Override
+    protected void drawPaint(Paint paint) {
+
     }
 }

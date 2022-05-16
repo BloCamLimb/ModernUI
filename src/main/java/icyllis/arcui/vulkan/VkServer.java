@@ -16,12 +16,14 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.vulkan;
 
-import icyllis.arcui.engine.ShaderCaps;
+import icyllis.arcui.engine.DirectContext;
+import icyllis.arcui.engine.Server;
 
-public class ShaderCompiler {
+public abstract class VkServer extends Server {
 
-    public ShaderCompiler(ShaderCaps caps) {
+    public VkServer(DirectContext context) {
+        super(context, null);
     }
 }

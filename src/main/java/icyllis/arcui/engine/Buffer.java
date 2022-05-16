@@ -16,12 +16,15 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.ShaderCaps;
+/**
+ * Represents a device memory block that prefers to allocate GPU memory.
+ * To be exact, GLBuffer or VkBuffer.
+ */
+public abstract class Buffer extends Resource {
 
-public class ShaderCompiler {
-
-    public ShaderCompiler(ShaderCaps caps) {
+    public Buffer(Server server) {
+        super(server);
     }
 }

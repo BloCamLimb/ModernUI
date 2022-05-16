@@ -16,12 +16,28 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.opengl;
 
-import icyllis.arcui.engine.ShaderCaps;
+public final class GLTextureParameters {
 
-public class ShaderCompiler {
+    // Texture parameter state that is not overridden by a bound sampler object.
+    public int mBaseMipMapLevel;
+    public int mMaxMipmapLevel;
+    public boolean mSwizzleIsRGBA;
 
-    public ShaderCompiler(ShaderCaps caps) {
+    public GLTextureParameters() {
+        // These are the OpenGL defaults.
+        mBaseMipMapLevel = 0;
+        mMaxMipmapLevel = 1000;
+        mSwizzleIsRGBA = true;
+    }
+
+    /**
+     * Makes parameters invalid, forces GLServer to refresh.
+     */
+    public void invalidate() {
+        mBaseMipMapLevel = ~0;
+        mMaxMipmapLevel = ~0;
+        mSwizzleIsRGBA = false;
     }
 }

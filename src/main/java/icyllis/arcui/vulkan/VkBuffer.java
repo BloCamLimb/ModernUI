@@ -16,12 +16,28 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl;
+package icyllis.arcui.vulkan;
 
-import icyllis.arcui.engine.ShaderCaps;
+import icyllis.arcui.engine.Buffer;
 
-public class ShaderCompiler {
+public final class VkBuffer extends Buffer {
 
-    public ShaderCompiler(ShaderCaps caps) {
+    public VkBuffer(VkServer server) {
+        super(server);
+    }
+
+    @Override
+    public long getMemorySize() {
+        return 0;
+    }
+
+    @Override
+    protected void onFree() {
+
+    }
+
+    @Override
+    protected void onDrop() {
+
     }
 }

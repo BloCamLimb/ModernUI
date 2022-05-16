@@ -22,8 +22,6 @@ dependencies {
     compileOnly 'org.jetbrains:annotations:23.0.0'
 
     implementation "it.unimi.dsi:fastutil:8.5.8"
-    implementation "net.java.dev.jna:jna:5.11.0"
-    implementation "net.java.dev.jna:jna-platform:5.11.0"
 
     def lwjglNatives
     switch (OperatingSystem.current()) {
@@ -84,12 +82,12 @@ java {
 jar {
     manifest {
         attributes(
-                "Specification-Title"     : "ArcUI",
-                "Specification-Vendor"    : "BloCamLimb",
-                "Specification-Version"   : "1",
-                "Implementation-Title"    : project.name,
-                "Implementation-Version"  : project.version,
-                "Implementation-Vendor"   : "BloCamLimb",
+                "Specification-Title": "ArcUI",
+                "Specification-Vendor": "BloCamLimb",
+                "Specification-Version": "1",
+                "Implementation-Title": project.name,
+                "Implementation-Version": project.version,
+                "Implementation-Vendor": "BloCamLimb",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
         )
     }

@@ -18,8 +18,8 @@
 
 package icyllis.arcui.core;
 
-import icyllis.arcui.hgi.RecordingContext;
-import icyllis.arcui.hgi.SurfaceDrawContext;
+import icyllis.arcui.engine.RecordingContext;
+import icyllis.arcui.engine.SurfaceDrawContext;
 import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;

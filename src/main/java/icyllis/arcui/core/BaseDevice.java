@@ -18,8 +18,8 @@
 
 package icyllis.arcui.core;
 
-import icyllis.arcui.hgi.RecordingContext;
-import icyllis.arcui.hgi.SurfaceDrawContext;
+import icyllis.arcui.engine.RecordingContext;
+import icyllis.arcui.engine.SurfaceDrawContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
