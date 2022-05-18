@@ -190,8 +190,9 @@ public class TextRenderType extends RenderType {
             return new SimpleResource(ModernUI.ID, location, stream, null);
         };
         try {
-            sShader = new ShaderInstance(provider, SHADER_RL, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
-            sShaderSeeThrough = new ShaderInstance(provider, TextRenderType.SHADER_SEE_THROUGH_RL,
+            sShader = new ShaderInstance(provider, SHADER_RL,
+                    DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
+            sShaderSeeThrough = new ShaderInstance(provider, SHADER_SEE_THROUGH_RL,
                     DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
         } catch (IOException e) {
             throw new IllegalStateException("Bad text shaders", e);

@@ -79,15 +79,15 @@ public class TexturedGlyph {
 
     @Override
     public String toString() {
-        return "TexturedGlyph{" + "texture=" + texture +
-                ", offsetX=" + offsetX +
-                ", offsetY=" + offsetY +
-                ", width=" + width +
-                ", height=" + height +
-                ", u1=" + u1 +
-                ", v1=" + v1 +
-                ", u2=" + u2 +
-                ", v2=" + v2 +
+        return "Glyph{" + "tex=" + texture +
+                ",offX=" + offsetX +
+                ",offY=" + offsetY +
+                ",w=" + width +
+                ",h=" + height +
+                ",u1=" + u1 +
+                ",v1=" + v1 +
+                ",u2=" + u2 +
+                ",v2=" + v2 +
                 '}';
     }
 }

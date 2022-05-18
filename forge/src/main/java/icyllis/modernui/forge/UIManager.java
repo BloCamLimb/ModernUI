@@ -23,18 +23,15 @@ import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.LayoutTransition;
-import icyllis.modernui.annotation.MainThread;
-import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.Canvas;
+import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.opengl.GLFramebuffer;
-import icyllis.modernui.opengl.GLSurfaceCanvas;
-import icyllis.modernui.opengl.GLTexture;
+import icyllis.modernui.opengl.*;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.testforge.TestListFragment;
 import icyllis.modernui.testforge.TestPauseFragment;
@@ -45,12 +42,8 @@ import icyllis.modernui.view.menu.ContextMenuBuilder;
 import icyllis.modernui.view.menu.MenuHelper;
 import icyllis.modernui.widget.CoordinatorLayout;
 import icyllis.modernui.widget.EditText;
-import net.minecraft.ChatFormatting;
-import net.minecraft.CrashReport;
-import net.minecraft.Util;
-import net.minecraft.client.KeyMapping;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.MouseHandler;
+import net.minecraft.*;
+import net.minecraft.client.*;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
@@ -63,9 +56,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.RenderTooltipEvent;
-import net.minecraftforge.client.event.ScreenOpenEvent;
+import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.ForgeIngameGui;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
@@ -575,67 +566,67 @@ public final class UIManager implements LifecycleOwner {
                     event.getModifiers(), event.getScanCode(), 0);
             mRoot.enqueueInputEvent(keyEvent);
         }
-        if (event.getAction() != GLFW_PRESS) {
+        if (event.getAction() == GLFW_PRESS) {
+            InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
+            if (OPEN_CENTER_KEY.isActiveAndMatches(key)) {
+                start(new CenterFragment(), new UICallback());
+                return;
+            }
+        }
+        if (!Screen.hasShiftDown() || !ModernUIForge.isDeveloperMode()) {
             return;
         }
-        InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
-        if (OPEN_CENTER_KEY.isActiveAndMatches(key)) {
-            start(new CenterFragment(), new UICallback());
-            return;
-        }
-        if (!Screen.hasControlDown() || !ModernUIForge.isDeveloperMode()) {
-            return;
-        }
-        switch (event.getKey()) {
-            case GLFW_KEY_Y:
-                LOGGER.info(MARKER, "Take screenshot");
-                // take a screenshot from MSAA framebuffer
-                GLTexture sampled = GLFramebuffer.swap(mFramebuffer, GL_COLOR_ATTACHMENT0);
-                NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);
-                Util.ioPool().execute(() -> {
-                    try (image) {
-                        image.saveDialog(NativeImage.SaveFormat.PNG);
-                    } catch (IOException e) {
-                        e.printStackTrace();
+        if (event.getAction() == GLFW_PRESS) {
+            switch (event.getKey()) {
+                case GLFW_KEY_Y:
+                    LOGGER.info(MARKER, "Take screenshot");
+                    // take a screenshot from MSAA framebuffer
+                    GLTexture sampled = GLFramebuffer.swap(mFramebuffer, GL_COLOR_ATTACHMENT0);
+                    NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);
+                    Util.ioPool().execute(() -> {
+                        try (image) {
+                            image.saveDialog(NativeImage.SaveFormat.PNG);
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                    break;
+
+                case GLFW_KEY_H:
+                    LOGGER.info(MARKER, "Open TestFragment");
+                    start(new TestFragment(), new UICallback());
+                    break;
+
+                case GLFW_KEY_J:
+                    LOGGER.info(MARKER, "Open TestPauseFragment");
+                    start(new TestPauseFragment(), new UICallback());
+                    break;
+
+                case GLFW_KEY_U:
+                    LOGGER.info(MARKER, "Open TestListFragment");
+                    start(new TestListFragment(), new UICallback());
+                    break;
+
+                case GLFW_KEY_N:
+                    LOGGER.info(MARKER, "Post invalidate");
+                    mDecor.postInvalidate();
+                    break;
+
+                case GLFW_KEY_P:
+                    dump();
+                    break;
+
+                case GLFW_KEY_M:
+                    if (minecraft.gameRenderer.currentEffect() == null) {
+                        LOGGER.info(MARKER, "Load radial blur effect");
+                        minecraft.gameRenderer.loadEffect(new ResourceLocation("shaders/post/radial_blur.json"));
+                    } else {
+                        LOGGER.info(MARKER, "Stop post-processing effect");
+                        minecraft.gameRenderer.shutdownEffect();
                     }
-                });
-                break;
+                    break;
 
-            case GLFW_KEY_H:
-                LOGGER.info(MARKER, "Open TestFragment");
-                start(new TestFragment(), new UICallback());
-                break;
-
-            case GLFW_KEY_J:
-                LOGGER.info(MARKER, "Open TestPauseFragment");
-                start(new TestPauseFragment(), new UICallback());
-                break;
-
-            case GLFW_KEY_U:
-                LOGGER.info(MARKER, "Open TestListFragment");
-                start(new TestListFragment(), new UICallback());
-                break;
-
-            case GLFW_KEY_N:
-                LOGGER.info(MARKER, "Post invalidate");
-                mDecor.postInvalidate();
-                break;
-
-            case GLFW_KEY_P:
-                dump();
-                break;
-
-            case GLFW_KEY_M:
-                if (minecraft.gameRenderer.currentEffect() == null) {
-                    LOGGER.info(MARKER, "Load radial blur effect");
-                    minecraft.gameRenderer.loadEffect(new ResourceLocation("shaders/post/radial_blur.json"));
-                } else {
-                    LOGGER.info(MARKER, "Stop post-processing effect");
-                    minecraft.gameRenderer.shutdownEffect();
-                }
-                break;
-
-            case GLFW_KEY_G:
+                case GLFW_KEY_G:
                 /*if (minecraft.screen == null && minecraft.isLocalServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished()) {
                     start(new TestPauseUI());
@@ -643,7 +634,10 @@ public final class UIManager implements LifecycleOwner {
                 /*minecraft.getLanguageManager().getLanguages().forEach(l ->
                         ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l
                         .getJavaLocale()).isRightToLeft()));*/
-                break;
+                    LOGGER.info(MARKER, "Debug GlyphManager");
+                    GlyphManager.getInstance().debug();
+                    break;
+            }
         }
     }
 

@@ -321,6 +321,8 @@ final class Config {
                             "If your fonts are not really bitmap fonts, then you should keep this setting true.",
                             "A game restart is required to reload the setting properly.")
                     .define("linearSampling", true);
+            // Segoe UI, Source Han Sans CN Medium, Noto Sans, Open Sans, San Francisco, Calibri,
+            // Microsoft YaHei UI, STHeiti, SimHei, SansSerif
             fontFamily = builder.comment(
                             "A set of font families with precedence relationships to determine the typeface to use.",
                             "TrueType and OpenTrue are supported. Each list element can be one of the following three" +
