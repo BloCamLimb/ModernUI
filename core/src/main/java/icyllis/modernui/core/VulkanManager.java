@@ -33,6 +33,7 @@ import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.vulkan.VkCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTBlendOperationAdvanced.VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
+import static org.lwjgl.vulkan.VK10.VK_VERSION_MAJOR;
 
 /**
  * This class contains the shared global Vulkan objects, such as VkInstance, VkDevice and VkQueue,
@@ -117,12 +118,13 @@ public final class VulkanManager implements AutoCloseable {
         LOGGER.debug(MARKER, mInstanceExtensions);
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            final ByteBuffer name = stack.UTF8("Modern UI", true);
+            final ByteBuffer appName = stack.UTF8("Modern UI", true);
+            final ByteBuffer engineName = stack.UTF8("Arc UI", true);
             final VkApplicationInfo appInfo = VkApplicationInfo
                     .calloc(stack)
                     .sType$Default()
-                    .pApplicationName(name)
-                    .pEngineName(name)
+                    .pApplicationName(appName)
+                    .pEngineName(engineName)
                     .apiVersion(version);
 
             final VkInstanceCreateInfo pCreateInfo = VkInstanceCreateInfo
@@ -137,7 +139,7 @@ public final class VulkanManager implements AutoCloseable {
             mInstance = new VkInstance(pInstance.get(0), pCreateInfo);
         }
 
-        LOGGER.info(MARKER, "Created Vulkan instance, Engine: {}", "Modern UI");
+        LOGGER.info(MARKER, "Created Vulkan instance, Engine: {}", "Arc UI");
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             final IntBuffer pCount = stack.mallocInt(1);
@@ -276,8 +278,26 @@ public final class VulkanManager implements AutoCloseable {
             // XXX: we assume the graphics queue can present things
 
             mPhysicalDevice = physicalDevice;
-            mDriverVersion = properties.driverVersion();
-            LOGGER.info(MARKER, "Choose device ID {}, Driver version: {}", properties.deviceID(), mDriverVersion);
+            int vendorID = properties.vendorID();
+            int driverVersion = properties.driverVersion();
+            mDriverVersion = driverVersion;
+            LOGGER.info(MARKER, "Choose device ID {}, vendor ID: {}, driver version: {}",
+                    properties.deviceID(), switch (vendorID) {
+                        case 0x1002 -> "AMD";
+                        case 0x1010 -> "ImgTec";
+                        case 0x10DE -> "NVIDIA";
+                        case 0x13B5 -> "ARM";
+                        case 0x5143 -> "Qualcomm";
+                        case 0x8086 -> "INTEL";
+                        default -> "0x" + Integer.toHexString(vendorID);
+                    }, switch (vendorID) {
+                        case 0x10DE -> String.format("%d.%d.%d.%d", // NVIDIA
+                                driverVersion >>> 22,
+                                (driverVersion >>> 14) & 0xFF,
+                                (driverVersion >> 6) & 0xFF,
+                                driverVersion & 0x3F);
+                        default -> "0x" + Integer.toHexString(vendorID);
+                    });
             return true;
         }
     }

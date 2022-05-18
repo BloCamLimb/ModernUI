@@ -30,6 +30,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.IModBusEvent;
@@ -52,13 +53,15 @@ import java.util.List;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static icyllis.modernui.ModernUI.*;
+
 /**
  * Mod class. INTERNAL.
  *
  * @author BloCamLimb
  */
 @Mod(ModernUI.ID)
-public final class ModernUIForge extends ModernUI {
+public final class ModernUIForge {
 
     // false to disable extensions
     public static final int BOOTSTRAP_TEXT_ENGINE = 0x1;
@@ -89,11 +92,8 @@ public final class ModernUIForge extends ModernUI {
 
     private static final Map<String, IEventBus> sModEventBuses = new HashMap<>();
 
-    private volatile Typeface mTypeface;
-
     // mod-loading thread
     public ModernUIForge() {
-        super();
         // get '/run' parent
         Path path = FMLPaths.GAMEDIR.get().getParent();
         // the root directory of your project
@@ -118,15 +118,8 @@ public final class ModernUIForge extends ModernUI {
         Config.init();
         LocalStorage.init();
 
-        if (FMLEnvironment.dist.isClient()) {
-            if ((getBootstrapLevel() & BOOTSTRAP_TEXT_ENGINE) == 0) {
-                ModernUITextMC.init();
-                LOGGER.info(MARKER, "Initialized modern text engine");
-            }
-            if (sDevelopment) {
-                FMLJavaModLoadingContext.get().getModEventBus().register(Registration.ModClientDev.class);
-            }
-        }
+        // the 'new' method is in another class, so it's class-loading-safe
+        DistExecutor.safeCallWhenOn(Dist.CLIENT, () -> Client::new);
 
         ModList.get().forEachModContainer((modid, container) -> {
             if (container instanceof FMLModContainer) {
@@ -149,7 +142,7 @@ public final class ModernUIForge extends ModernUI {
     }
 
     @OnlyIn(Dist.CLIENT)
-    static void dispatchOnDebugDump(@Nonnull PrintWriter writer) {
+    public static void dispatchOnDebugDump(@Nonnull PrintWriter writer) {
         for (var l : MuiForgeApi.sOnDebugDumpListeners) {
             l.onDebugDump(writer);
         }
@@ -207,36 +200,6 @@ public final class ModernUIForge extends ModernUI {
         ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP, key, args));
     }*/
 
-    @Nonnull
-    @Override
-    protected Locale onGetSelectedLocale() {
-        return Minecraft.getInstance().getLanguageManager().getSelected().getJavaLocale();
-    }
-
-    @Nonnull
-    @Override
-    protected Typeface onGetSelectedTypeface() {
-        if (mTypeface != null) {
-            return mTypeface;
-        }
-        synchronized (this) {
-            // should be a worker thread
-            if (mTypeface == null) {
-                Set<Font> set = new LinkedHashSet<>();
-                List<? extends String> configs = Config.CLIENT.fontFamily.get();
-                if (configs != null) {
-                    loadFonts(configs, set);
-                }
-                mTypeface = Typeface.createTypeface(set.toArray(new Font[0]));
-                // do some warm-up
-                Minecraft.getInstance().tell(() -> LayoutCache.getOrCreate(ID, 0, 1, false,
-                        new FontPaint(), false, false));
-                LOGGER.info(MARKER, "Loaded typeface: {}", mTypeface);
-            }
-        }
-        return mTypeface;
-    }
-
     private static void loadFonts(@Nonnull List<? extends String> configs, @Nonnull Set<Font> selected) {
         boolean hasFail = false;
         for (String cfg : configs) {
@@ -281,23 +244,6 @@ public final class ModernUIForge extends ModernUI {
         }
     }
 
-    @Nonnull
-    @Override
-    public InputStream getResourceStream(@Nonnull String res, @Nonnull String path) throws IOException {
-        return Minecraft.getInstance().getResourceManager().getResource(new ResourceLocation(res, path)).getInputStream();
-    }
-
-    @Nonnull
-    @Override
-    public ReadableByteChannel getResourceChannel(@Nonnull String res, @Nonnull String path) throws IOException {
-        return Channels.newChannel(getResourceStream(res, path));
-    }
-
-    @Override
-    public ViewManager getViewManager() {
-        return UIManager.getInstance().getDecorView();
-    }
-
     public static boolean isDeveloperMode() {
         return sDeveloperMode || sDevelopment;
     }
@@ -317,6 +263,75 @@ public final class ModernUIForge extends ModernUI {
         } else {
             IEventBus bus = sModEventBuses.get(s);
             return bus != null && bus.post(e);
+        }
+    }
+
+    // should not make OnlyIn Dist.CLIENT, we require the constructor method
+    public static class Client extends ModernUI {
+
+        static {
+            assert FMLEnvironment.dist.isClient();
+        }
+
+        private volatile Typeface mTypeface;
+
+        private Client() {
+            super();
+            if ((getBootstrapLevel() & BOOTSTRAP_TEXT_ENGINE) == 0) {
+                ModernUITextMC.init();
+                LOGGER.info(MARKER, "Initialized Modern UI text engine");
+            }
+            if (sDevelopment) {
+                FMLJavaModLoadingContext.get().getModEventBus().register(Registration.ModClientDev.class);
+            }
+            LOGGER.info(MARKER, "Initialized Modern UI client");
+        }
+
+        @Nonnull
+        @Override
+        protected Locale onGetSelectedLocale() {
+            return Minecraft.getInstance().getLanguageManager().getSelected().getJavaLocale();
+        }
+
+        @Nonnull
+        @Override
+        protected Typeface onGetSelectedTypeface() {
+            if (mTypeface != null) {
+                return mTypeface;
+            }
+            synchronized (this) {
+                // should be a worker thread
+                if (mTypeface == null) {
+                    Set<Font> set = new LinkedHashSet<>();
+                    List<? extends String> configs = Config.CLIENT.fontFamily.get();
+                    if (configs != null) {
+                        loadFonts(configs, set);
+                    }
+                    mTypeface = Typeface.createTypeface(set.toArray(new Font[0]));
+                    // do some warm-up
+                    Minecraft.getInstance().tell(() -> LayoutCache.getOrCreate(ID, 0, 1, false,
+                            new FontPaint(), false, false));
+                    LOGGER.info(MARKER, "Loaded typeface: {}", mTypeface);
+                }
+            }
+            return mTypeface;
+        }
+
+        @Nonnull
+        @Override
+        public InputStream getResourceStream(@Nonnull String res, @Nonnull String path) throws IOException {
+            return Minecraft.getInstance().getResourceManager().getResource(new ResourceLocation(res, path)).getInputStream();
+        }
+
+        @Nonnull
+        @Override
+        public ReadableByteChannel getResourceChannel(@Nonnull String res, @Nonnull String path) throws IOException {
+            return Channels.newChannel(getResourceStream(res, path));
+        }
+
+        @Override
+        public ViewManager getViewManager() {
+            return UIManager.getInstance().getDecorView();
         }
     }
 }

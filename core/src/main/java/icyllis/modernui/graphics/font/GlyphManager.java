@@ -20,6 +20,7 @@ package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
+import icyllis.modernui.core.NativeImage;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.BufferUtils;
@@ -31,8 +32,7 @@ import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 
 /**
@@ -166,9 +166,26 @@ public class GlyphManager {
 
     @RenderThread
     public void debug() {
+        String basePath = NativeImage.saveDialogGet(NativeImage.SaveFormat.PNG, "FontAtlas");
+        if (basePath != null) {
+            // XXX: remove extension name
+            basePath = basePath.substring(0, basePath.length() - 4);
+        }
         for (var atlas : mAtlases.entrySet()) {
-            ModernUI.LOGGER.info(MARKER, atlas.getKey());
-            atlas.getValue().debug();
+            Font font = atlas.getKey();
+            ModernUI.LOGGER.info(MARKER, font);
+            if (basePath != null) {
+                String style;
+                if (font.isBold()) {
+                    style = font.isItalic() ? "bolditalic" : "bold";
+                } else {
+                    style = font.isItalic() ? "italic" : "plain";
+                }
+                String suffix = "_" + font.getFamily(Locale.ROOT) + "_" + style + "_" + font.getSize() + ".png";
+                atlas.getValue().debug(basePath + suffix.replaceAll(" ", "_"));
+            } else {
+                atlas.getValue().debug(null);
+            }
         }
     }
 

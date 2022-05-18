@@ -29,6 +29,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.function.IntFunction;
 
 import static icyllis.modernui.opengl.GLCore.*;
@@ -98,14 +99,14 @@ public class FontAtlas {
         mGlyphs.put(glyphCode, null);
     }
 
-    public void debug() {
-        for (var glyph : mGlyphs.int2ObjectEntrySet()) {
-            ModernUI.LOGGER.info(GlyphManager.MARKER, "GlyphCode {}: {}", glyph.getIntKey(), glyph.getValue());
-        }
-        if (Core.isOnRenderThread()) {
-            try {
-                NativeImage.download(NativeImage.Format.RGBA, mTexture, false)
-                        .saveDialog(NativeImage.SaveFormat.PNG);
+    public void debug(@Nullable String path) {
+        if (path == null) {
+            for (var glyph : mGlyphs.int2ObjectEntrySet()) {
+                ModernUI.LOGGER.info(GlyphManager.MARKER, "GlyphCode {}: {}", glyph.getIntKey(), glyph.getValue());
+            }
+        } else if (Core.isOnRenderThread()) {
+            try (NativeImage image = NativeImage.download(NativeImage.Format.RED, mTexture, false)) {
+                image.saveToPath(Path.of(path), NativeImage.SaveFormat.PNG, 0);
             } catch (IOException e) {
                 e.printStackTrace();
             }
