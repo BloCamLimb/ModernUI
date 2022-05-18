@@ -25,4 +25,10 @@ public abstract class ResourceKey {
 
     protected ResourceKey() {
     }
+
+    @Override
+    public abstract int hashCode();
+
+    @Override
+    public abstract boolean equals(Object obj);
 }

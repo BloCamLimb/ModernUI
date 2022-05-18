@@ -370,7 +370,7 @@ public abstract class Caps {
      * Given a dst pixel config and a src color type what color type must the caller coax
      * the data into in order to use writePixels().
      * <p>
-     * Low 32bits - colorType ((int) (value & 0xFFFFFFFFL)).
+     * Low 32bits - colorType ((int) value).
      * High 32bits - transferOffsetAlignment (value >>> 32).
      * If the <code>write</code> is occurring using transferPixelsTo() then this provides
      * the minimum alignment of the offset into the transfer buffer.
@@ -387,7 +387,7 @@ public abstract class Caps {
      * to dstColorType the swizzle in the returned struct should be applied. The caller must check
      * the returned color type for UNKNOWN.
      * <p>
-     * Low 32bits - colorType ((int) (value & 0xFFFFFFFFL)).
+     * Low 32bits - colorType ((int) value).
      * High 32bits - transferOffsetAlignment (value >>> 32).
      * If the <code>write</code> is occurring using transferPixelsTo() then this provides
      * the minimum alignment of the offset into the transfer buffer.
@@ -535,7 +535,7 @@ public abstract class Caps {
     /**
      * If a texture can be created with these params.
      */
-    public final boolean validateTextureParams(BackendFormat format, int width, int height) {
+    public final boolean validateTextureParams(int width, int height, BackendFormat format) {
         if (width < 1 || height < 1) {
             return false;
         }
@@ -552,7 +552,7 @@ public abstract class Caps {
     /**
      * If a render target can be created with these params.
      */
-    public final boolean validateRenderTargetParams(BackendFormat format, int width, int height,
+    public final boolean validateRenderTargetParams(int width, int height, BackendFormat format,
                                                     int sampleCount) {
         if (width < 1 || height < 1) {
             return false;

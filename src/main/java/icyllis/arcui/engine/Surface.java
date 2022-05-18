@@ -79,6 +79,15 @@ public abstract class Surface extends Resource {
     public abstract BackendFormat getBackendFormat();
 
     /**
+     * Compressed surfaces are not recycled and read only.
+     *
+     * @return true if the surface is created with a compressed format
+     */
+    public final boolean isFormatCompressed() {
+        return getBackendFormat().isCompressed();
+    }
+
+    /**
      * The pixel values of this surface cannot be modified (e.g. doesn't support write pixels or
      * mipmap regeneration). To be exact, only wrapped textures, external textures, stencil
      * attachments and MSAA color attachments can be read only.

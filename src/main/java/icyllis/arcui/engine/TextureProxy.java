@@ -28,44 +28,43 @@ public final class TextureProxy extends SurfaceProxy {
 
     // For deferred proxies it will be null until the proxy is instantiated.
     // For wrapped proxies it will point to the wrapped resource.
-    // For render target proxies it will be single sampled, or as resolve attachment
+    @SmartPtr
     Texture mTexture;
 
     LazyInstantiateCallback mLazyInstantiateCallback;
 
-    // Deferred version
-    public TextureProxy(BackendFormat format,
-                        int width, int height,
-                        boolean mipmapped,
-                        boolean backingFit,
-                        boolean budgeted,
-                        int surfaceFlags,
-                        boolean useAllocator,
-                        boolean deferredProvider) {
+    // Deferred version - no data
+    TextureProxy(BackendFormat format,
+                 int width, int height,
+                 boolean mipmapped,
+                 boolean backingFit,
+                 boolean budgeted,
+                 int surfaceFlags,
+                 boolean useAllocator,
+                 boolean deferredProvider) {
         super(format, width, height, mipmapped, backingFit, budgeted,
                 surfaceFlags, useAllocator, deferredProvider);
-        // non-lazy
-        assert width > 0 && height > 0;
+        assert width > 0 && height > 0; // non-lazy
     }
 
     // Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
-    public TextureProxy(BackendFormat format,
-                        int width, int height,
-                        boolean mipmapped,
-                        boolean backingFit,
-                        boolean budgeted,
-                        int surfaceFlags,
-                        boolean useAllocator,
-                        boolean deferredProvider,
-                        LazyInstantiateCallback callback) {
+    TextureProxy(BackendFormat format,
+                 int width, int height,
+                 boolean mipmapped,
+                 boolean backingFit,
+                 boolean budgeted,
+                 int surfaceFlags,
+                 boolean useAllocator,
+                 boolean deferredProvider,
+                 LazyInstantiateCallback callback) {
         super(format, width, height, mipmapped, backingFit, budgeted,
                 surfaceFlags, useAllocator, deferredProvider);
         mLazyInstantiateCallback = callback;
-        // An "fully" proxy's width and height are not known until instantiation time.
+        // A "fully" lazy proxy's width and height are not known until instantiation time.
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
         // created with positive widths and heights. The width and height are set to 0 only after a
         // failed instantiation. The former must be "approximate" fit while the latter can be either.
-        assert (width < 0 && height < 0 && !backingFit) ||
+        assert (width < 0 && height < 0 && backingFit == Types.BACKING_FIT_APPROX) ||
                 (width > 0 && height > 0);
     }
 
@@ -73,14 +72,14 @@ public final class TextureProxy extends SurfaceProxy {
     // Takes UseAllocator because even though this is already instantiated it still can participate
     // in allocation by having its backing resource recycled to other uninstantiated proxies or
     // not depending on UseAllocator.
-    public TextureProxy(Texture texture,
-                        boolean useAllocator,
-                        boolean deferredProvider) {
+    TextureProxy(Texture texture,
+                 boolean useAllocator,
+                 boolean deferredProvider) {
         super(texture.getBackendFormat(), texture.getWidth(), texture.getHeight(),
                 texture.isMipmapped(), Types.BACKING_FIT_EXACT,
                 texture.getBudgetType() == Types.BUDGET_TYPE_BUDGETED,
                 texture.getFlags(), useAllocator, deferredProvider);
-        mTexture = texture;
+        mTexture = texture; // std::move
         mMipmapsDirty = texture.areMipmapsDirty();
         mUniqueID = texture.getUniqueID(); // converting from unique resource ID to a proxy ID
         if (texture.mUniqueKey != null) {
@@ -108,7 +107,7 @@ public final class TextureProxy extends SurfaceProxy {
 
     @Override
     public int getBackingWidth() {
-        assert !isLazyLazy();
+        assert !isFullyLazy();
         if (mTexture != null) {
             return mTexture.getWidth();
         }
@@ -120,7 +119,7 @@ public final class TextureProxy extends SurfaceProxy {
 
     @Override
     public int getBackingHeight() {
-        assert !isLazyLazy();
+        assert !isFullyLazy();
         if (mTexture != null) {
             return mTexture.getHeight();
         }
@@ -143,7 +142,35 @@ public final class TextureProxy extends SurfaceProxy {
         if (isLazy()) {
             return false;
         }
-        return false;
+        if (mTexture != null) {
+            assert mUniqueKey == null ||
+                    mTexture.mUniqueKey != null && mTexture.mUniqueKey.equals(mUniqueKey);
+            return true;
+        }
+
+        assert !mMipmapped || mBackingFit == Types.BACKING_FIT_EXACT;
+
+        final Texture texture;
+        if (mBackingFit == Types.BACKING_FIT_APPROX) {
+            texture = provider.createApproxTexture(mWidth, mHeight, mFormat, isProtected());
+        } else {
+            texture = provider.createTexture(mWidth, mHeight, mFormat, mMipmapped, mBudgeted, isProtected());
+        }
+        if (texture == null) {
+            return false;
+        }
+
+        // If there was an invalidation message pending for this key, we might have just processed it,
+        // causing the key (stored on this proxy) to become invalid.
+        if (mUniqueKey != null) {
+            provider.assignUniqueKeyToResource(mUniqueKey, texture);
+        }
+
+        assert mTexture == null;
+        assert texture.getBackendFormat().equals(mFormat);
+        mTexture = texture;
+
+        return true;
     }
 
     @Override
@@ -166,7 +193,9 @@ public final class TextureProxy extends SurfaceProxy {
 
     @Override
     public long getMemorySize() {
-        return 0;
+        // use proxy params
+        return Texture.computeSize(mFormat, mWidth, mHeight,
+                1, mMipmapped, mBackingFit == Types.BACKING_FIT_APPROX);
     }
 
     @Override
@@ -179,12 +208,14 @@ public final class TextureProxy extends SurfaceProxy {
 
     @Nonnull
     @Override
-    protected ResourceKey computeScratchKey(Caps caps) {
-        return null;
+    public ResourceKey computeScratchKey(Caps caps) {
+        // use backing store params
+        return Surface.computeScratchKey(mFormat, getBackingWidth(), getBackingHeight(),
+                1, isMipmapped(), isProtected());
     }
 
     @Override
-    protected boolean createSurface(ResourceProvider provider, ResourceAllocator.Register register) {
+    public boolean instantiateSurface(ResourceProvider provider, ResourceAllocator.Register register) {
         return false;
     }
 
@@ -223,12 +254,12 @@ public final class TextureProxy extends SurfaceProxy {
          * Specifies the expected properties of the Surface returned by a lazy instantiation
          * callback. The dimensions will be negative in the case of a fully lazy proxy.
          */
-        LazyCallbackResult invoke(ResourceProvider provider,
-                                  BackendFormat format,
-                                  int width, int height,
-                                  boolean fit,
-                                  boolean mipmapped,
-                                  boolean budgeted,
-                                  boolean isProtected);
+        LazyCallbackResult onLazyInstantiate(ResourceProvider provider,
+                                             BackendFormat format,
+                                             int width, int height,
+                                             boolean fit,
+                                             boolean mipmapped,
+                                             boolean budgeted,
+                                             boolean isProtected);
     }
 }

@@ -19,6 +19,7 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.PriorityQueue;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -261,7 +262,7 @@ public abstract class Resource {
      * approximate since we aren't aware of additional padding or copies made
      * by the driver.
      * <p>
-     * <b>IMPORTANT: The return value is NOT expected to change.</b>
+     * <b>NOTE: The return value must be constant in this object.</b>
      *
      * @return the amount of server memory used in bytes
      */
@@ -282,6 +283,7 @@ public abstract class Resource {
      * removeUniqueKey(). If another resource is using the key then its unique key is removed and
      * this resource takes over the key.
      */
+    @ApiStatus.Internal
     public final void setUniqueKey(ResourceKey key) {
         assert hasRef();
 
@@ -304,6 +306,7 @@ public abstract class Resource {
      * Removes the unique key from a resource. If the resource has a scratch key, it may be
      * preserved for recycling as scratch.
      */
+    @ApiStatus.Internal
     public final void removeUniqueKey() {
         if (mServer == null) {
             return;
@@ -320,6 +323,7 @@ public abstract class Resource {
      * are wrapped or already uncached. Furthermore, resources with unique keys cannot be made
      * not budgeted.
      */
+    @ApiStatus.Internal
     public final void makeBudgeted(boolean budgeted) {
         if (budgeted) {
             // We should never make a wrapped resource budgeted.
@@ -343,6 +347,7 @@ public abstract class Resource {
      * Get the resource's budget type which indicates whether it counts against the resource cache
      * budget and if not whether it is allowed to be cached.
      */
+    @ApiStatus.Internal
     public final int getBudgetType() {
         assert mBudgetType == Types.BUDGET_TYPE_BUDGETED || mWrapped || mUniqueKey == null;
         return mBudgetType;
@@ -351,6 +356,7 @@ public abstract class Resource {
     /**
      * Is the resource object wrapping an externally allocated GPU resource?
      */
+    @ApiStatus.Internal
     public final boolean isWrapped() {
         return mWrapped;
     }
@@ -360,6 +366,7 @@ public abstract class Resource {
      * Otherwise, it returns a key for which isNullScratch is true. The resource may currently be
      * used as a uniquely keyed resource rather than scratch. Check isScratch().
      */
+    @ApiStatus.Internal
     @Nullable
     public final ResourceKey getScratchKey() {
         return mScratchKey;
@@ -369,6 +376,7 @@ public abstract class Resource {
      * If the resource has a scratch key, the key will be removed. Since scratch keys are installed
      * at resource creation time, this means the resource will never again be used as scratch.
      */
+    @ApiStatus.Internal
     public final void removeScratchKey() {
         if (mServer != null && mScratchKey != null) {
             mServer.getContext().getResourceCache().willRemoveScratchKey(this);
@@ -376,6 +384,7 @@ public abstract class Resource {
         }
     }
 
+    @ApiStatus.Internal
     public final boolean isCleanable() {
         // Resources in the partial budgeted state are never cleanable when they have a unique
         // key. The key must be removed/invalidated to make them cleanable.
@@ -383,6 +392,7 @@ public abstract class Resource {
                 !(mBudgetType == Types.BUDGET_TYPE_CACHEABLE && mUniqueKey != null);
     }
 
+    @ApiStatus.Internal
     public final boolean hasRefOrCommandBufferUsage() {
         return hasRef() || hasCommandBufferUsage();
     }

@@ -30,17 +30,16 @@ import javax.annotation.Nullable;
  */
 public abstract sealed class RecordingContext extends Context permits DeferredContext, DirectContext {
 
-    private final Thread mOwningThread;
+    private final Thread mOwnerThread;
 
     private ProxyProvider mProxyProvider;
     private DrawingManager mDrawingManager;
 
     protected RecordingContext(ContextThreadSafeProxy proxy) {
         super(proxy);
-        mOwningThread = Thread.currentThread();
+        mOwnerThread = Thread.currentThread();
     }
 
-    @ApiStatus.Internal
     @Nullable
     public static RecordingContext makeDeferred(ContextThreadSafeProxy proxy) {
         RecordingContext context = new DeferredContext(proxy);
@@ -140,11 +139,11 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
     }
 
     /**
-     * Debug tool. Usage: <code>assert isOnOwningThread();</code>
+     * Debug tool. Usage: <code>assert isOnOwnerThread();</code>
      *
-     * @return calling from the context-creating thread
+     * @return if calling from the context-creating thread
      */
-    public final boolean isOnOwningThread() {
-        return Thread.currentThread() == mOwningThread;
+    public final boolean isOnOwnerThread() {
+        return Thread.currentThread() == mOwnerThread;
     }
 }

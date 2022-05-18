@@ -64,11 +64,15 @@ public final class ImageInfo {
             ALPHA_UNKNOWN,
             ALPHA_OPAQUE,
             ALPHA_PREMULTIPLIED,
-            ALPHA_STRAIGHT})
+            ALPHA_STRAIGHT
+    })
     @Retention(RetentionPolicy.SOURCE)
     public @interface AlphaType {
     }
 
+    /**
+     * Public API values.
+     */
     public static final int
             ALPHA_UNKNOWN = 0,          // uninitialized
             ALPHA_OPAQUE = 1,           // pixel is opaque
@@ -116,6 +120,8 @@ public final class ImageInfo {
     })
     @Retention(RetentionPolicy.SOURCE)
     public @interface ColorType {
+        // this annotation is for public API values (core package),
+        // there are also engine values extended core values.
     }
 
     /**
@@ -127,9 +133,14 @@ public final class ImageInfo {
             COLOR_BGR_565 = 2,          // pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word
             COLOR_ABGR_4444 = 3,        // pixel with 4 bits for alpha, blue, red, green; in 16-bit word
             COLOR_RGBA_8888 = 4;        // pixel with 8 bits for red, green, blue, alpha; in 32-bit word
-    @ApiStatus.Internal
+    /**
+     * Engine values.
+     */
     public static final int
             COLOR_RGBA_8888_SRGB = 5;
+    /**
+     * Public API values.
+     */
     public static final int
             COLOR_RGB_888x = 6,         // pixel with 8 bits each for red, green, blue; in 32-bit word
             COLOR_RG_88 = 7,            // pixel with 8 bits for red and green; in 16-bit word
@@ -137,14 +148,22 @@ public final class ImageInfo {
             COLOR_RGBA_1010102 = 9,     // 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
             COLOR_BGRA_1010102 = 10,    // 10 bits for blue, green, red; 2 bits for alpha; in 32-bit word
             COLOR_GRAY_8 = 11;          // pixel with grayscale level in 8-bit byte
-    @ApiStatus.Internal
+    /**
+     * Engine values.
+     */
     public static final int
             COLOR_GRAY_ALPHA_88 = 12;
+    /**
+     * Public API values.
+     */
     public static final int
             COLOR_ALPHA_F16 = 13,       // pixel with a half float for alpha
             COLOR_RGBA_F16 = 14,        // pixel with half floats for red, green, blue, alpha; in 64-bit word
             COLOR_RGBA_F16_CLAMPED = 15,// pixel with half floats in [0,1] for red, green, blue, alpha; in 64-bit word
             COLOR_RGBA_F32 = 16;        // pixel using C float for red, green, blue, alpha; in 128-bit word
+    /**
+     * Public API values.
+     */
     public static final int
             COLOR_ALPHA_16 = 17,        // pixel with a little endian uint16_t for alpha
             COLOR_RG_1616 = 18,         // pixel with a little endian uint16_t for red and green
@@ -162,18 +181,24 @@ public final class ImageInfo {
             COLOR_A16_FLOAT = COLOR_ALPHA_F16,
             COLOR_R16G16_FLOAT = COLOR_RG_F16,
             COLOR_R16G16B16A16_UNORM = COLOR_RGBA_16161616;
-    // Unusual types that come up after reading back in cases where we are reassigning the meaning
-    // of a texture format's channels to use for a particular color format but have to read back the
-    // data to a full RGBA quadruple. (e.g. using a R8 texture format as A8 color type but the API
-    // only supports reading to RGBA8.)
-    @ApiStatus.Internal
+    /**
+     * Engine values.
+     * <p>
+     * Unusual types that come up after reading back in cases where we are reassigning the meaning
+     * of a texture format's channels to use for a particular color format but have to read back the
+     * data to a full RGBA quadruple. (e.g. using a R8 texture format as A8 color type but the API
+     * only supports reading to RGBA8.)
+     */
     public static final int
             COLOR_ALPHA_8xxx = 21,
             COLOR_ALPHA_F32xxx = 22,
             COLOR_GRAY_8xxx = 23,
             COLOR_R_8xxx = 24;
-    // Types used to initialize backend textures.
-    @ApiStatus.Internal
+    /**
+     * Engine values.
+     * <p>
+     * Types used to initialize backend textures.
+     */
     public static final int
             COLOR_RGB_888 = 25,
             COLOR_R_8 = 26,
@@ -188,12 +213,12 @@ public final class ImageInfo {
     /**
      * Creates a color info based on the supplied color type and alpha type.
      *
-     * @param ct the color type of the color info
-     * @param at the alpha type of the color info
+     * @param colorType the color type of the color info
+     * @param alphaType the alpha type of the color info
      * @return the color info based on color type and alpha type
      */
-    public static int makeColorInfo(@ColorType int ct, @AlphaType int at) {
-        return ct | (at << 12);
+    public static int makeColorInfo(int colorType, @AlphaType int alphaType) {
+        return colorType | (alphaType << 12);
     }
 
     /**
@@ -202,7 +227,6 @@ public final class ImageInfo {
      * @param colorInfo the color info to extract the color type from
      * @return the color type defined in the supplied color info
      */
-    @ColorType
     public static int colorType(int colorInfo) {
         return colorInfo & 0xFFF;
     }
@@ -219,6 +243,13 @@ public final class ImageInfo {
     }
 
     /**
+     * Creates new ColorInfo with same AlphaType, with ColorType set to newColorType.
+     */
+    public static int makeColorType(int colorInfo, int newColorType) {
+        return makeColorInfo(newColorType, alphaType(colorInfo));
+    }
+
+    /**
      * Creates new ColorInfo with same ColorType, with AlphaType set to newAlphaType.
      */
     public static int makeAlphaType(int colorInfo, @AlphaType int newAlphaType) {
@@ -226,15 +257,10 @@ public final class ImageInfo {
     }
 
     /**
-     * Creates new ColorInfo with same AlphaType, with ColorType set to newColorType.
+     * @return bpp
      */
-    public static int makeColorType(int colorInfo, @ColorType int newColorType) {
-        return makeColorInfo(newColorType, alphaType(colorInfo));
-    }
-
-    @ApiStatus.Internal
-    public static int bytesPerPixel(int ct) {
-        return switch (ct) {
+    public static int bytesPerPixel(int colorType) {
+        return switch (colorType) {
             case COLOR_UNKNOWN -> 0;
             case COLOR_ALPHA_8,
                     COLOR_R_8,
@@ -254,6 +280,7 @@ public final class ImageInfo {
             case COLOR_RGBA_8888,
                     COLOR_RG_F16,
                     COLOR_RG_1616,
+                    COLOR_R_8xxx,
                     COLOR_GRAY_8xxx,
                     COLOR_ALPHA_8xxx,
                     COLOR_BGRA_1010102,
@@ -297,8 +324,8 @@ public final class ImageInfo {
     }
 
     /**
-     * Creates ImageInfo from integral dimensions width and height, ColorType ct,
-     * AlphaType at.
+     * Creates ImageInfo from integral dimensions width and height, colorType and
+     * alphaType.
      * <p>
      * Parameters are not validated to see if their values are legal, or that the
      * combination is supported.
@@ -306,8 +333,8 @@ public final class ImageInfo {
      * @param width  pixel column count; must be zero or greater
      * @param height pixel row count; must be zero or greater
      */
-    public ImageInfo(int width, int height, @ColorType int ct, @AlphaType int at) {
-        this(width, height, makeColorInfo(ct, at));
+    public ImageInfo(int width, int height, int colorType, @AlphaType int alphaType) {
+        this(width, height, makeColorInfo(colorType, alphaType));
     }
 
     /**
@@ -327,8 +354,9 @@ public final class ImageInfo {
     }
 
     /**
-     * Internal resize for optimization purposes.
+     * Internal resize for optimization purposes. ImageInfo should be created immutable.
      */
+    @ApiStatus.Internal
     void resize(int width, int height) {
         mWidth = width;
         mHeight = height;
@@ -357,7 +385,6 @@ public final class ImageInfo {
      *
      * @return color type
      */
-    @ColorType
     public int colorType() {
         return colorType(mColorInfo);
     }
@@ -384,7 +411,7 @@ public final class ImageInfo {
      * Returns number of bytes per pixel required by ColorType.
      * Returns zero if colorType is {@link #COLOR_UNKNOWN}.
      *
-     * @return bytes in pixel
+     * @return bytes in pixel, bpp
      */
     public int bytesPerPixel() {
         return bytesPerPixel(colorType());
@@ -451,7 +478,7 @@ public final class ImageInfo {
      * @return created ImageInfo
      */
     @Nonnull
-    public ImageInfo makeColorType(@ColorType int newColorType) {
+    public ImageInfo makeColorType(int newColorType) {
         return new ImageInfo(mWidth, mHeight, makeColorType(mColorInfo, newColorType));
     }
 

@@ -81,6 +81,9 @@ public final class ProxyProvider {
         //TODO
     }
 
+    public void processInvalidUniqueKey(ResourceKey key, SurfaceProxy proxy, boolean invalidateResource) {
+    }
+
     /**
      * Create a {@link TextureProxy} without any data.
      *
@@ -95,7 +98,7 @@ public final class ProxyProvider {
                                            boolean budgeted,
                                            int surfaceFlags,
                                            boolean useAllocator) {
-        assert mContext.isOnOwningThread();
+        assert mContext.isOnOwnerThread();
         if (mContext.isDropped()) {
             return null;
         }
@@ -105,7 +108,7 @@ public final class ProxyProvider {
             return null;
         }
 
-        if (!mContext.getCaps().validateTextureParams(format, width, height)) {
+        if (!mContext.getCaps().validateTextureParams(width, height, format)) {
             return null;
         }
 

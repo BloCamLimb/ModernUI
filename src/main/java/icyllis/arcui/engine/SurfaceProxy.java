@@ -135,12 +135,6 @@ public abstract sealed class SurfaceProxy permits TextureProxy, RenderTargetProx
     // only set when 'mUniqueKey' is valid
     ProxyProvider mProxyProvider;
 
-    // Only used for proxies whose contents are being prepared on a worker thread. This object
-    // stores the texture data, allowing the proxy to remain uninstantiated until flush. At that
-    // point, the proxy is instantiated, and this data is used to perform an ASAP
-    // (as soon as possible) upload.
-    DeferredProxyUploader mDeferredUploader;
-
     protected SurfaceProxy(BackendFormat format,
                            int width, int height,
                            boolean mipmapped,
@@ -206,11 +200,11 @@ public abstract sealed class SurfaceProxy permits TextureProxy, RenderTargetProx
     }
 
     protected void onFree() {
-        // In deferred-mode, uniquely keyed proxies keep their key even after their originating
+        // In DDL-mode, uniquely keyed proxies keep their key even after their originating
         // proxy provider has gone away. In that case there is no-one to send the invalid key
         // message to (Note: in this case we don't want to remove its cached resource).
         if (mUniqueKey != null && mProxyProvider != null) {
-
+            mProxyProvider.processInvalidUniqueKey(mUniqueKey, this, false);
         } else {
             assert mProxyProvider == null;
         }
@@ -224,7 +218,7 @@ public abstract sealed class SurfaceProxy permits TextureProxy, RenderTargetProx
     /**
      * @return true if it has a lazy callback, not instantiated, backing fit is approx and dimension is not known
      */
-    public final boolean isLazyLazy() {
+    public final boolean isFullyLazy() {
         boolean result = mWidth < 0;
         assert (result == (mHeight < 0)) && (!result || isLazy());
         return result;
@@ -249,7 +243,7 @@ public abstract sealed class SurfaceProxy permits TextureProxy, RenderTargetProx
      * @see #isProxyExact()
      */
     public final boolean isExact() {
-        assert !isLazyLazy();
+        assert !isFullyLazy();
         if (mBackingFit == Types.BACKING_FIT_EXACT) {
             return true;
         }
@@ -438,13 +432,15 @@ public abstract sealed class SurfaceProxy permits TextureProxy, RenderTargetProx
     /**
      * For {@link ResourceAllocator}.
      */
+    @ApiStatus.Internal
     @Nonnull
-    protected abstract ResourceKey computeScratchKey(Caps caps);
+    public abstract ResourceKey computeScratchKey(Caps caps);
 
     /**
      * For {@link ResourceAllocator}.
      */
-    protected abstract boolean createSurface(ResourceProvider provider, ResourceAllocator.Register register);
+    @ApiStatus.Internal
+    public abstract boolean instantiateSurface(ResourceProvider provider, ResourceAllocator.Register register);
 
     // DO NOT ABUSE!!
     @ApiStatus.Internal
@@ -455,7 +451,7 @@ public abstract sealed class SurfaceProxy permits TextureProxy, RenderTargetProx
     // DO NOT ABUSE!!
     @ApiStatus.Internal
     public final void makeProxyExact(boolean allocatedCaseOnly) {
-        assert !isLazyLazy();
+        assert !isFullyLazy();
         if (mBackingFit == Types.BACKING_FIT_EXACT) {
             return;
         }
@@ -496,7 +492,7 @@ public abstract sealed class SurfaceProxy permits TextureProxy, RenderTargetProx
     // the proxy's dimensions will be set to match the underlying GPU surface upon instantiation.
     @ApiStatus.Internal
     public final void setLazyDimension(int width, int height) {
-        assert isLazyLazy();
+        assert isFullyLazy();
         assert width > 0 && height > 0;
         mWidth = width;
         mHeight = height;

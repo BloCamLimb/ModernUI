@@ -34,6 +34,13 @@ public final class Types {
             VULKAN = 1; // Vulkan 1.1
 
     /**
+     * Used to say whether a texture has mip levels allocated or not.
+     */
+    public static final boolean
+            MIPMAPPED_NO = false,
+            MIPMAPPED_YES = true;
+
+    /**
      * Image and Surfaces can be stored such that (0, 0) in texture space may correspond to
      * either the top-left or bottom-left content pixel.
      */

@@ -149,6 +149,35 @@ public abstract class Texture extends Surface {
     public static long computeSize(BackendFormat format,
                                    int width, int height,
                                    int sampleCount,
+                                   boolean mipmapped,
+                                   boolean approx) {
+        assert width > 0 && height > 0;
+        assert sampleCount > 0;
+        assert sampleCount == 1 || !mipmapped;
+        // For external formats we do not actually know the real size of the resource, so we just return
+        // 0 here to indicate this.
+        if (format.getTextureType() == Types.TEXTURE_TYPE_EXTERNAL) {
+            return 0;
+        }
+        if (approx) {
+            width = ResourceProvider.makeApprox(width);
+            height = ResourceProvider.makeApprox(height);
+        }
+        long size = DataUtils.numBlocks(format.getCompressionType(), width, height) *
+                format.getBytesPerBlock();
+        assert size > 0;
+        if (mipmapped) {
+            size = (size << 2) / 3;
+        } else {
+            size *= sampleCount;
+        }
+        assert size > 0;
+        return size;
+    }
+
+    public static long computeSize(BackendFormat format,
+                                   int width, int height,
+                                   int sampleCount,
                                    int levelCount) {
         return computeSize(format, width, height, sampleCount, levelCount, false);
     }
@@ -174,7 +203,7 @@ public abstract class Texture extends Surface {
                 format.getBytesPerBlock();
         assert size > 0;
         if (levelCount > 1) {
-            // geometric sequence, S=a1(1-q^n)/(1-q), q=1/4
+            // geometric sequence, S=a1(1-q^n)/(1-q), q=2^(-2)
             size = ((size - (size >> (levelCount << 1))) << 2) / 3;
         } else {
             size *= sampleCount;

@@ -105,12 +105,12 @@ public final class RenderTargetProxy extends SurfaceProxy {
 
     @Nonnull
     @Override
-    protected ResourceKey computeScratchKey(Caps caps) {
+    public ResourceKey computeScratchKey(Caps caps) {
         return null;
     }
 
     @Override
-    protected boolean createSurface(ResourceProvider provider, ResourceAllocator.Register register) {
+    public boolean instantiateSurface(ResourceProvider provider, ResourceAllocator.Register register) {
         return false;
     }
 

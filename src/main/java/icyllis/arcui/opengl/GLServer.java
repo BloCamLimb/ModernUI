@@ -218,7 +218,7 @@ public final class GLServer extends Server {
             return 0;
         }
 
-        assert (mCaps.mFormatTable[format].mFlags & FormatInfo.TEXTURE_FLAG) != 0;
+        assert (mCaps.mFormatTable[format].mFlags & FormatInfo.TEXTURABLE_FLAG) != 0;
         assert (mCaps.mFormatTable[format].mFlags & FormatInfo.USE_TEX_STORAGE_FLAG) != 0;
         int texture = glCreateTextures(GL_TEXTURE_2D);
         if (texture == 0) {

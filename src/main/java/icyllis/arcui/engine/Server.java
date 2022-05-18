@@ -37,6 +37,8 @@ public abstract class Server {
     protected final Caps mCaps;
     protected final ShaderCompiler mCompiler;
 
+    protected final Stats mStats = new Stats();
+
     private final List<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mDirtyFlags = ~0;
 
@@ -66,6 +68,10 @@ public abstract class Server {
     }
 
     public abstract ThreadSafePipelineBuilder getPipelineBuilder();
+
+    public final Stats getStats() {
+        return mStats;
+    }
 
     /**
      * The server object normally assumes that no outsider is setting state
@@ -115,11 +121,11 @@ public abstract class Server {
         if (format.isCompressed()) {
             return null;
         }
-        if (!mCaps.validateTextureParams(format, width, height)) {
+        if (!mCaps.validateTextureParams(width, height, format)) {
             return null;
         }
         return onCreateTexture(width, height, format,
-                mipmapped ? 32 - Integer.numberOfLeadingZeros(Math.max(width, height)) : 1,
+                mipmapped ? Integer.SIZE - Integer.numberOfLeadingZeros(Math.max(width, height)) : 1,
                 budgeted, isProtected);
     }
 
@@ -177,4 +183,156 @@ public abstract class Server {
     protected abstract RenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
                                                                    int sampleCount,
                                                                    boolean ownership);
+
+    public boolean writePixels(Texture texture,
+                               int x, int y,
+                               int width, int height,
+                               int rowLength,
+                               int alignment,
+                               int dstColorType,
+                               int srcColorType,
+                               long pixels) {
+        //TODO
+        return false;
+    }
+
+    public static final class Stats {
+
+        private int mTextureCreates = 0;
+        private int mTextureUploads = 0;
+        private int mTransfersToTexture = 0;
+        private int mTransfersFromSurface = 0;
+        private int mStencilAttachmentCreates = 0;
+        private int mMSAAAttachmentCreates = 0;
+        private int mNumDraws = 0;
+        private int mNumFailedDraws = 0;
+        private int mNumSubmitToGpus = 0;
+        private int mNumScratchTexturesReused = 0;
+        private int mNumScratchMSAAAttachmentsReused = 0;
+        private int mRenderPasses = 0;
+        private int mNumReorderedDAGsOverBudget = 0;
+
+        public Stats() {
+        }
+
+        public void reset() {
+            mTextureCreates = 0;
+            mTextureUploads = 0;
+            mTransfersToTexture = 0;
+            mTransfersFromSurface = 0;
+            mStencilAttachmentCreates = 0;
+            mMSAAAttachmentCreates = 0;
+            mNumDraws = 0;
+            mNumFailedDraws = 0;
+            mNumSubmitToGpus = 0;
+            mNumScratchTexturesReused = 0;
+            mNumScratchMSAAAttachmentsReused = 0;
+            mRenderPasses = 0;
+            mNumReorderedDAGsOverBudget = 0;
+        }
+
+        public int textureCreates() {
+            return mTextureCreates;
+        }
+
+        public void incTextureCreates() {
+            mTextureCreates++;
+        }
+
+        public int textureUploads() {
+            return mTextureUploads;
+        }
+
+        public void incTextureUploads() {
+            mTextureUploads++;
+        }
+
+        public int transfersToTexture() {
+            return mTransfersToTexture;
+        }
+
+        public void incTransfersToTexture() {
+            mTransfersToTexture++;
+        }
+
+        public int transfersFromSurface() {
+            return mTransfersFromSurface;
+        }
+
+        public void incTransfersFromSurface() {
+            mTransfersFromSurface++;
+        }
+
+        public int stencilAttachmentCreates() {
+            return mStencilAttachmentCreates;
+        }
+
+        public void incStencilAttachmentCreates() {
+            mStencilAttachmentCreates++;
+        }
+
+        public int msaaAttachmentCreates() {
+            return mMSAAAttachmentCreates;
+        }
+
+        public void incMSAAAttachmentCreates() {
+            mMSAAAttachmentCreates++;
+        }
+
+        public int numDraws() {
+            return mNumDraws;
+        }
+
+        public void incNumDraws() {
+            mNumDraws++;
+        }
+
+        public int numFailedDraws() {
+            return mNumFailedDraws;
+        }
+
+        public void incNumFailedDraws() {
+            mNumFailedDraws++;
+        }
+
+        public int numSubmitToGpus() {
+            return mNumSubmitToGpus;
+        }
+
+        public void incNumSubmitToGpus() {
+            mNumSubmitToGpus++;
+        }
+
+        public int numScratchTexturesReused() {
+            return mNumScratchTexturesReused;
+        }
+
+        public void incNumScratchTexturesReused() {
+            mNumScratchTexturesReused++;
+        }
+
+        public int numScratchMSAAAttachmentsReused() {
+            return mNumScratchMSAAAttachmentsReused;
+        }
+
+        public void incNumScratchMSAAAttachmentsReused() {
+            mNumScratchMSAAAttachmentsReused++;
+        }
+
+        public int renderPasses() {
+            return mRenderPasses;
+        }
+
+        public void incRenderPasses() {
+            mRenderPasses++;
+        }
+
+        public int numReorderedDAGsOverBudget() {
+            return mNumReorderedDAGsOverBudget;
+        }
+
+        public void incNumReorderedDAGsOverBudget() {
+            mNumReorderedDAGsOverBudget++;
+        }
+    }
 }
