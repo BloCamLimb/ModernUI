@@ -15,6 +15,7 @@
     "MixinClientBundleTooltip",
     "MixinClientPacketListener",
     "MixinClientTextTooltip",
+    "MixinInventoryScreen",
     "MixinMouseHandler",
     "MixinRenderSystem",
     "MixinScreen",

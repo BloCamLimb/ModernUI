@@ -33,12 +33,13 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.text.InputFilter;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.DigitsInputFilter;
+import icyllis.modernui.textmc.ModernUITextMC;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.View.OnLayoutChangeListener;
 import icyllis.modernui.widget.*;
-import net.minecraft.locale.Language;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.common.ForgeConfigSpec.IntValue;
 
 import javax.annotation.Nonnull;
@@ -65,7 +66,7 @@ public class CenterFragment extends Fragment {
         {
             var title = new TextView();
             title.setId(R.id.title);
-            title.setText(Language.getInstance().getOrDefault("gui.modernui.center.title"));
+            title.setText(I18n.get("gui.modernui.center.title"));
             title.setTextSize(22);
             title.setTextStyle(TextPaint.BOLD);
 
@@ -99,6 +100,7 @@ public class CenterFragment extends Fragment {
                         v.removeOnLayoutChangeListener(this);
                     }
                 });
+                primary.setEdgeEffectColor(THEME_COLOR);
             }
 
             {
@@ -119,6 +121,7 @@ public class CenterFragment extends Fragment {
                         v.removeOnLayoutChangeListener(this);
                     }
                 });
+                secondary.setEdgeEffectColor(THEME_COLOR);
             }
 
             var params = new LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
@@ -144,7 +147,7 @@ public class CenterFragment extends Fragment {
             {
                 var title = new TextView();
                 title.setId(R.id.title);
-                title.setText("Screen");
+                title.setText(I18n.get("gui.modernui.center.category.screen"));
                 title.setTextSize(16);
                 title.setTextColor(THEME_COLOR);
 
@@ -159,7 +162,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(12);
-                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.animationDuration"));
+                view.setText(I18n.get("gui.modernui.center.screen.animationDuration"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -201,7 +204,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(16);
-                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.blurEffect"));
+                view.setText(I18n.get("gui.modernui.center.screen.blurEffect"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -228,7 +231,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(18);
-                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.blurRadius"));
+                view.setText(I18n.get("gui.modernui.center.screen.blurRadius"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -267,6 +270,33 @@ public class CenterFragment extends Fragment {
                 screen.addView(input, params);
             }
 
+            {
+                var view = new TextView();
+                view.setId(20);
+                view.setText(I18n.get("gui.modernui.center.screen.inventoryPause"));
+                view.setTextSize(14);
+
+                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
+                        WRAP_CONTENT);
+                params.addRule(RelativeLayout.BELOW, 18);
+                params.addRule(RelativeLayout.ALIGN_START, 18);
+                screen.addView(view, params);
+
+                var button = new SwitchButton();
+                button.setCheckedColor(THEME_COLOR);
+                button.setChecked(Config.CLIENT.inventoryPause.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    Config.CLIENT.inventoryPause.set(checked);
+                    Config.CLIENT.saveAndReload();
+                });
+
+                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
+                params.addRule(RelativeLayout.ALIGN_TOP, 20);
+                params.addRule(RelativeLayout.ALIGN_PARENT_END);
+                params.setMargins(dp6, dp(3), dp6, dp(3));
+                screen.addView(button, params);
+            }
+
             var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
@@ -279,7 +309,7 @@ public class CenterFragment extends Fragment {
             {
                 var title = new TextView();
                 title.setId(R.id.title);
-                title.setText("Extension");
+                title.setText(I18n.get("gui.modernui.center.category.extension"));
                 title.setTextSize(16);
                 title.setTextColor(THEME_COLOR);
 
@@ -294,7 +324,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(32);
-                view.setText("Ding");
+                view.setText(I18n.get("gui.modernui.center.extension.ding"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -321,7 +351,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(34);
-                view.setText("Modern tooltip");
+                view.setText(I18n.get("gui.modernui.center.extension.enhancedTooltip"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -348,7 +378,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(36);
-                view.setText("★ Modern text engine (heavyweight)");
+                view.setText(I18n.get("gui.modernui.center.extension.textEngine"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -382,7 +412,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(38);
-                view.setText("☆ Modern smooth scrolling");
+                view.setText(I18n.get("gui.modernui.center.extension.smoothScrolling"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -425,7 +455,7 @@ public class CenterFragment extends Fragment {
             {
                 var title = new TextView();
                 title.setId(R.id.title);
-                title.setText("Font");
+                title.setText(I18n.get("gui.modernui.center.category.text"));
                 title.setTextSize(16);
                 title.setTextColor(THEME_COLOR);
 
@@ -439,14 +469,27 @@ public class CenterFragment extends Fragment {
 
             {
                 var view = new TextView();
-                view.setId(42);
-                view.setText("☆ Bitmap-like");
+                view.setId(40);
+                view.setText("Font family");
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
                         WRAP_CONTENT);
                 params.addRule(RelativeLayout.BELOW, R.id.title);
                 params.addRule(RelativeLayout.ALIGN_START, R.id.title);
+                font.addView(view, params);
+            }
+
+            {
+                var view = new TextView();
+                view.setId(42);
+                view.setText("Bitmap-like");
+                view.setTextSize(14);
+
+                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
+                        WRAP_CONTENT);
+                params.addRule(RelativeLayout.BELOW, 40);
+                params.addRule(RelativeLayout.ALIGN_START, 40);
                 font.addView(view, params);
 
                 var button = new SwitchButton();
@@ -469,7 +512,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(44);
-                view.setText("☆ Linear sampling");
+                view.setText("Linear sampling");
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -490,6 +533,60 @@ public class CenterFragment extends Fragment {
 
                 params = new RelativeLayout.LayoutParams(dp(36), dp(16));
                 params.addRule(RelativeLayout.ALIGN_TOP, 44);
+                params.addRule(RelativeLayout.ALIGN_PARENT_END);
+                params.setMargins(dp6, dp(3), dp6, dp(3));
+                font.addView(button, params);
+            }
+
+            {
+                var view = new TextView();
+                view.setId(46);
+                view.setText("Allow shadow");
+                view.setTextSize(14);
+
+                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
+                        WRAP_CONTENT);
+                params.addRule(RelativeLayout.BELOW, 44);
+                params.addRule(RelativeLayout.ALIGN_START, 44);
+                font.addView(view, params);
+
+                var button = new SwitchButton();
+                button.setCheckedColor(THEME_COLOR);
+                button.setChecked(ModernUITextMC.CONFIG.mAllowShadow.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    ModernUITextMC.CONFIG.mAllowShadow.set(checked);
+                    ModernUITextMC.CONFIG.saveAndReload();
+                });
+
+                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
+                params.addRule(RelativeLayout.ALIGN_TOP, 46);
+                params.addRule(RelativeLayout.ALIGN_PARENT_END);
+                params.setMargins(dp6, dp(3), dp6, dp(3));
+                font.addView(button, params);
+            }
+
+            {
+                var view = new TextView();
+                view.setId(48);
+                view.setText("Fixed resolution");
+                view.setTextSize(14);
+
+                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
+                        WRAP_CONTENT);
+                params.addRule(RelativeLayout.BELOW, 46);
+                params.addRule(RelativeLayout.ALIGN_START, 46);
+                font.addView(view, params);
+
+                var button = new SwitchButton();
+                button.setCheckedColor(THEME_COLOR);
+                button.setChecked(ModernUITextMC.CONFIG.mFixedResolution.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    ModernUITextMC.CONFIG.mFixedResolution.set(checked);
+                    ModernUITextMC.CONFIG.saveAndReload();
+                });
+
+                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
+                params.addRule(RelativeLayout.ALIGN_TOP, 48);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
                 params.setMargins(dp6, dp(3), dp6, dp(3));
                 font.addView(button, params);
@@ -521,7 +618,7 @@ public class CenterFragment extends Fragment {
             {
                 var title = new TextView();
                 title.setId(R.id.title);
-                title.setText("System");
+                title.setText(I18n.get("gui.modernui.center.category.system"));
                 title.setTextSize(16);
                 title.setTextColor(THEME_COLOR);
 
@@ -536,7 +633,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(16);
-                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.forceRtlLayout"));
+                view.setText(I18n.get("gui.modernui.center.system.forceRtlLayout"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -563,7 +660,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(18);
-                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.globalFontScale"));
+                view.setText(I18n.get("gui.modernui.center.system.globalFontScale"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -606,7 +703,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(20);
-                view.setText(Language.getInstance().getOrDefault("gui.modernui.center.globalAnimationScale"));
+                view.setText(I18n.get("gui.modernui.center.system.globalAnimationScale"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,

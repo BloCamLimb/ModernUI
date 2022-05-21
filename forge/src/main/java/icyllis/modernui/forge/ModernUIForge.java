@@ -76,6 +76,8 @@ public final class ModernUIForge {
 
     static volatile Integer sBootstrapLevel;
 
+    public static boolean sInventoryScreenPausesGame;
+
     static {
         try {
             Class<?> clazz = Class.forName("optifine.Installer");
