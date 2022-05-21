@@ -190,7 +190,7 @@ public final class GLRenderTarget extends RenderTarget {
      */
     private void bindInternal(int target, boolean useMSAA) {
         final int framebuffer = useMSAA ? mMSAAFramebuffer : mFramebuffer;
-        getGLServer().bindFramebuffer(target, framebuffer);
+        getServer().bindFramebuffer(target, framebuffer);
         // Make sure the stencil attachment is valid. Even though a color buffer op doesn't use stencil,
         // our FBO still needs to be "framebuffer complete".
         if ((useMSAA && mRebindMSAAStencilBuffer) || (!useMSAA && mRebindStencilBuffer)) {
@@ -266,7 +266,7 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     @Override
-    protected boolean canSetStencilBuffer(boolean useMSAA) {
+    protected boolean canAttachStencil(boolean useMSAA) {
         // Only modify the framebuffer attachments if we have created it.
         // Public APIs do not currently allow for wrap-only ownership,
         // so we can safely assume that if an object is owner, we created it.
@@ -276,7 +276,7 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     @Override
-    protected boolean onSetStencilBuffer(@Nullable Surface stencilBuffer, boolean useMSAA) {
+    protected boolean onAttachStencilBuffer(@Nullable Surface stencilBuffer, boolean useMSAA) {
         // We defer attaching the new stencil buffer until the next time our framebuffer is bound.
         if (getStencilBuffer(useMSAA) != stencilBuffer) {
             if (useMSAA) {
@@ -292,7 +292,7 @@ public final class GLRenderTarget extends RenderTarget {
     protected void onFree() {
         super.onFree();
         if (mOwnership) {
-            GLServer server = getGLServer();
+            final GLServer server = getServer();
             if (mFramebuffer != 0) {
                 server.deleteFramebuffer(mFramebuffer);
             }
@@ -308,7 +308,13 @@ public final class GLRenderTarget extends RenderTarget {
         mMSAAColorBuffer = null;
     }
 
-    private GLServer getGLServer() {
-        return (GLServer) getServer();
+    @Override
+    public void onRecycle() {
+
+    }
+
+    @Override
+    protected GLServer getServer() {
+        return (GLServer) super.getServer();
     }
 }

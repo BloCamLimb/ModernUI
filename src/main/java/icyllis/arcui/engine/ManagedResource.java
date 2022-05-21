@@ -103,7 +103,7 @@ public abstract class ManagedResource {
     /**
      * @return the server
      */
-    protected final Server getServer() {
+    protected Server getServer() {
         return mServer;
     }
 

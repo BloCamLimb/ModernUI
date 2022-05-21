@@ -108,10 +108,12 @@ public abstract class Surface extends Resource {
         if (format.isCompressed()) {
             return null;
         }
-        return computeScratchKey(format, mWidth, mHeight, getSampleCount(), isMipmapped(), isProtected());
+        return computeScratchKey(format, mWidth, mHeight,
+                getSampleCount(),
+                isMipmapped(),
+                isProtected(),
+                new Key());
     }
-
-    private static final ThreadLocal<SurfaceKey> sSurfaceKeyTLS = ThreadLocal.withInitial(SurfaceKey::new);
 
     /**
      * Compute a {@link Surface} key. The usage is limited to the following cases and cannot be mixed.
@@ -139,18 +141,18 @@ public abstract class Surface extends Resource {
      * <p>
      * Format can not be compressed. Stencil and MSAA color attachments are distinguished by format.
      *
-     * @return a new scratch key
+     * @return the scratch key
      */
     @Nonnull
-    public static ResourceKey computeScratchKey(BackendFormat format,
-                                                int width, int height,
-                                                int sampleCount,
-                                                boolean mipmapped,
-                                                boolean isProtected) {
+    public static Key computeScratchKey(BackendFormat format,
+                                        int width, int height,
+                                        int sampleCount,
+                                        boolean mipmapped,
+                                        boolean isProtected,
+                                        Key key) {
         assert width > 0 && height > 0;
         assert sampleCount > 0;
-        // we can have both multisample and mipmapped as key for render targets
-        SurfaceKey key = new SurfaceKey();
+        assert sampleCount == 1 || !mipmapped;
         key.mWidth = width;
         key.mHeight = height;
         key.mFormat = format.getFormatKey();
@@ -158,24 +160,7 @@ public abstract class Surface extends Resource {
         return key;
     }
 
-    @Nonnull
-    static ResourceKey computeScratchKeyTLS(BackendFormat format,
-                                            int width, int height,
-                                            int sampleCount,
-                                            boolean mipmapped,
-                                            boolean isProtected) {
-        assert width > 0 && height > 0;
-        assert sampleCount > 0;
-        // we can have both multisample and mipmapped as key for render targets
-        SurfaceKey key = sSurfaceKeyTLS.get();
-        key.mWidth = width;
-        key.mHeight = height;
-        key.mFormat = format.getFormatKey();
-        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (sampleCount << 2);
-        return key;
-    }
-
-    private static final class SurfaceKey extends ResourceKey {
+    public static class Key extends ResourceKey {
 
         int mWidth;
         int mHeight;
@@ -186,7 +171,7 @@ public abstract class Surface extends Resource {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            SurfaceKey key = (SurfaceKey) o;
+            Key key = (Key) o;
             if (mWidth != key.mWidth) return false;
             if (mHeight != key.mHeight) return false;
             if (mFormat != key.mFormat) return false;

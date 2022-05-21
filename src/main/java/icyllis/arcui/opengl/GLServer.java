@@ -19,6 +19,7 @@
 package icyllis.arcui.opengl;
 
 import icyllis.arcui.engine.*;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 
@@ -30,9 +31,17 @@ public final class GLServer extends Server {
 
     final GLCaps mCaps;
 
+    // This map holds all render targets. The texture and render target are mutually exclusive.
+    // The texture is single sampled, the render targets may be multisampled.
+    private final Object2ObjectOpenHashMap<Texture, RenderTarget[]> mRenderTargetMap;
+
+    private final RenderTargetObjects mTmpRenderTargetObjects = new RenderTargetObjects();
+
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
+
+        mRenderTargetMap = new Object2ObjectOpenHashMap<>();
     }
 
     /**
@@ -70,7 +79,7 @@ public final class GLServer extends Server {
     public void deleteFramebuffer(int framebuffer) {
         // We're relying on the GL state shadowing being correct in the workaround code below, so we
         // need to handle a dirty context.
-        handleDirty();
+        handleDirtyContext();
         glDeleteFramebuffers(framebuffer);
     }
 
@@ -88,32 +97,61 @@ public final class GLServer extends Server {
     @Override
     protected Texture onCreateTexture(int width, int height,
                                       BackendFormat format,
-                                      int mipLevels,
+                                      int levelCount,
                                       boolean budgeted,
                                       boolean isProtected) {
-        // We don't support protected textures in core profile.
+        assert levelCount > 0;
+        // We don't support protected textures in OpenGL core profile.
         if (isProtected) {
             return null;
         }
-        assert mipLevels > 0;
         // We only support TEXTURE_2D.
         if (format.getTextureType() != Types.TEXTURE_TYPE_2D) {
             return null;
         }
-        int texture = createTexture(width, height, format.getGLFormat(), mipLevels);
+        int texture = createTexture(width, height, format.getGLFormat(), levelCount);
         if (texture == 0) {
             return null;
         }
         final GLTextureInfo info = new GLTextureInfo();
         info.mTexture = texture;
         info.mFormat = format.getGLFormatEnum();
-        info.mLevelCount = mipLevels;
+        info.mLevelCount = levelCount;
         return new GLTexture(this, width, height, info, format, budgeted, true);
     }
 
     @Nullable
     @Override
-    protected RenderTarget onWrapRenderableBackendTexture(BackendTexture texture, int sampleCount, boolean ownership) {
+    protected RenderTarget onFindOrCreateRenderTarget(@SmartPtr Texture texture,
+                                                      int sampleCount) {
+        if (texture instanceof GLTexture colorBuffer) {
+            assert mCaps.isFormatRenderable(colorBuffer.getFormat(), sampleCount);
+            assert mCaps.isFormatTexturable(colorBuffer.getFormat());
+
+            RenderTargetObjects objects = createRenderTargetObjects(
+                    colorBuffer.getTexture(),
+                    colorBuffer.getWidth(), colorBuffer.getHeight(),
+                    colorBuffer.getFormat(),
+                    sampleCount);
+            if (objects != null) {
+                return new GLRenderTarget(this,
+                        colorBuffer.getWidth(), colorBuffer.getHeight(),
+                        colorBuffer.getFormat(), sampleCount,
+                        objects.mFramebuffer,
+                        objects.mMSAAFramebuffer,
+                        colorBuffer,
+                        objects.mMSAAColorBuffer,
+                        true);
+            }
+        }
+        return null;
+    }
+
+    @Nullable
+    @Override
+    protected RenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
+                                                          int sampleCount,
+                                                          boolean ownership) {
         if (texture.isProtected()) {
             // Not supported in GL backend at this time.
             return null;
@@ -135,75 +173,17 @@ public final class GLServer extends Server {
         sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         assert sampleCount > 0;
 
-        // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
-        // different dimensions will give you GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
-        // The workaround is to use traditional glGen* and glBind* (binding make it valid).
-        final int framebuffer = glGenFramebuffers();
-        if (framebuffer == 0) {
-            return null;
+        RenderTargetObjects objects = createRenderTargetObjects(info.mTexture,
+                texture.getWidth(), texture.getHeight(),
+                format,
+                sampleCount);
+        if (objects != null) {
+
+            //TODO create wrapped texture
+            /*return new GLRenderTarget(this, texture.getWidth(), texture.getHeight(),
+                format, sampleCount, framebuffer, msaaFramebuffer,
+                texture, msaaColorBuffer, ownership);*/
         }
-        // Create the state vector of the framebuffer, not bind, because we are not DSA.
-        bindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
-
-        final int msaaFramebuffer;
-        final GLRenderbuffer msaaColorBuffer;
-        // If we are using multisampling we will create two FBOs. We render to one and then resolve to
-        // the texture bound to the other. The exception is the IMG multisample extension. With this
-        // extension the texture is multisampled when rendered to and then auto-resolves it when it is
-        // rendered from.
-        if (sampleCount <= 1) {
-            msaaFramebuffer = 0;
-            msaaColorBuffer = null;
-        } else {
-            msaaFramebuffer = glGenFramebuffers();
-            if (msaaFramebuffer == 0) {
-                deleteFramebuffer(framebuffer);
-                return null;
-            }
-            // Create the state vector of the framebuffer, not bind, because we are not DSA.
-            bindFramebuffer(GL_DRAW_FRAMEBUFFER, msaaFramebuffer);
-
-            msaaColorBuffer = GLRenderbuffer.makeMSAA(this,
-                    texture.getWidth(), texture.getHeight(),
-                    sampleCount,
-                    format);
-            if (msaaColorBuffer == null) {
-                deleteFramebuffer(framebuffer);
-                deleteFramebuffer(msaaFramebuffer);
-                return null;
-            }
-
-            glNamedFramebufferRenderbuffer(msaaFramebuffer,
-                    GL_COLOR_ATTACHMENT0,
-                    GL_RENDERBUFFER,
-                    msaaColorBuffer.getRenderbuffer());
-            if (!mCaps.skipErrorChecks()) {
-                int status = glCheckNamedFramebufferStatus(msaaFramebuffer, GL_DRAW_FRAMEBUFFER);
-                if (status != GL_FRAMEBUFFER_COMPLETE) {
-                    deleteFramebuffer(framebuffer);
-                    deleteFramebuffer(msaaFramebuffer);
-                    msaaColorBuffer.unref();
-                    return null;
-                }
-            }
-        }
-
-        glNamedFramebufferTexture(framebuffer,
-                GL_COLOR_ATTACHMENT0,
-                info.mTexture,
-                0);
-        if (!mCaps.skipErrorChecks()) {
-            int status = glCheckNamedFramebufferStatus(framebuffer, GL_DRAW_FRAMEBUFFER);
-            if (status != GL_FRAMEBUFFER_COMPLETE) {
-                deleteFramebuffer(framebuffer);
-                deleteFramebuffer(msaaFramebuffer);
-                if (msaaColorBuffer != null) {
-                    msaaColorBuffer.unref();
-                }
-                return null;
-            }
-        }
-
 
         return null;
     }
@@ -237,5 +217,96 @@ public final class GLServer extends Server {
         }
 
         return texture;
+    }
+
+    @Nullable
+    private RenderTargetObjects createRenderTargetObjects(int texture,
+                                                          int width, int height,
+                                                          int format,
+                                                          int samples) {
+        // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
+        // different dimensions will give you GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
+        // The workaround is to use traditional glGen* and glBind* (binding make it valid).
+        final int framebuffer = glGenFramebuffers();
+        if (framebuffer == 0) {
+            return null;
+        }
+        // Create the state vector of the framebuffer, not bind, because we are not DSA.
+        bindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+
+        final int msaaFramebuffer;
+        final GLRenderbuffer msaaColorBuffer;
+        // If we are using multisampling we will create two FBOs. We render to one and then resolve to
+        // the texture bound to the other. The exception is the IMG multisample extension. With this
+        // extension the texture is multisampled when rendered to and then auto-resolves it when it is
+        // rendered from.
+        if (samples <= 1) {
+            msaaFramebuffer = 0;
+            msaaColorBuffer = null;
+        } else {
+            msaaFramebuffer = glGenFramebuffers();
+            if (msaaFramebuffer == 0) {
+                deleteFramebuffer(framebuffer);
+                return null;
+            }
+            // Create the state vector of the framebuffer, not bind, because we are not DSA.
+            bindFramebuffer(GL_DRAW_FRAMEBUFFER, msaaFramebuffer);
+
+            msaaColorBuffer = GLRenderbuffer.makeMSAA(this,
+                    width, height,
+                    samples,
+                    format);
+            if (msaaColorBuffer == null) {
+                deleteFramebuffer(framebuffer);
+                deleteFramebuffer(msaaFramebuffer);
+                return null;
+            }
+
+            glNamedFramebufferRenderbuffer(msaaFramebuffer,
+                    GL_COLOR_ATTACHMENT0,
+                    GL_RENDERBUFFER,
+                    msaaColorBuffer.getRenderbuffer());
+            if (!mCaps.skipErrorChecks()) {
+                int status = glCheckNamedFramebufferStatus(msaaFramebuffer, GL_DRAW_FRAMEBUFFER);
+                if (status != GL_FRAMEBUFFER_COMPLETE) {
+                    deleteFramebuffer(framebuffer);
+                    deleteFramebuffer(msaaFramebuffer);
+                    msaaColorBuffer.unref();
+                    return null;
+                }
+            }
+        }
+
+        glNamedFramebufferTexture(framebuffer,
+                GL_COLOR_ATTACHMENT0,
+                texture,
+                0);
+        if (!mCaps.skipErrorChecks()) {
+            int status = glCheckNamedFramebufferStatus(framebuffer, GL_DRAW_FRAMEBUFFER);
+            if (status != GL_FRAMEBUFFER_COMPLETE) {
+                deleteFramebuffer(framebuffer);
+                deleteFramebuffer(msaaFramebuffer);
+                if (msaaColorBuffer != null) {
+                    msaaColorBuffer.unref();
+                }
+                return null;
+            }
+        }
+
+        return mTmpRenderTargetObjects.set(framebuffer, msaaFramebuffer, msaaColorBuffer);
+    }
+
+    private static class RenderTargetObjects {
+
+        int mFramebuffer;
+        int mMSAAFramebuffer;
+        GLRenderbuffer mMSAAColorBuffer;
+
+        RenderTargetObjects set(int framebuffer, int MSAAFramebuffer, GLRenderbuffer MSAAColorBuffer) {
+            mFramebuffer = framebuffer;
+            mMSAAFramebuffer = MSAAFramebuffer;
+            mMSAAColorBuffer = MSAAColorBuffer;
+            return this;
+        }
     }
 }

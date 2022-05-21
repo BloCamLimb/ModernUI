@@ -211,7 +211,7 @@ public final class TextureProxy extends SurfaceProxy {
     public ResourceKey computeScratchKey(Caps caps) {
         // use backing store params
         return Surface.computeScratchKey(mFormat, getBackingWidth(), getBackingHeight(),
-                1, isMipmapped(), isProtected());
+                1, isMipmapped(), isProtected(), new Surface.Key());
     }
 
     @Override

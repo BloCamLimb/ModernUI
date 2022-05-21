@@ -27,8 +27,15 @@ import javax.annotation.Nonnull;
  * RenderTarget is mostly GLFramebuffer or VkFramebuffer and VkRenderPass, which
  * contains a set of attachments. This is the place where the rendering pipeline will
  * eventually draw to, and associated with a Surface and a Layer.
+ * <p>
+ * This type of resource can be recycled by Server. When recycled, the texture can
+ * be used alone, or retrieve this RenderTarget from Server. However, static MSAA
+ * color buffer and stencil buffer cannot be recycled.
+ * <p>
+ * Using {@link ResourceProvider} to obtain RenderTarget directly, or
+ * {@link RenderTargetProxy} for deferred operations.
  */
-public abstract class RenderTarget extends ManagedResource {
+public abstract class RenderTarget extends RecycledResource {
 
     private final int mWidth;
     private final int mHeight;
@@ -38,7 +45,7 @@ public abstract class RenderTarget extends ManagedResource {
     private Surface mStencilBuffer;
     private Surface mMSAAStencilBuffer;
 
-    // determined by subclass constructor
+    // determined by subclass constructors
     protected int mFlags;
 
     public RenderTarget(Server server, int width, int height, int sampleCount) {
@@ -158,7 +165,7 @@ public abstract class RenderTarget extends ManagedResource {
      * Returns whether a stencil buffer <b>can</b> be attached to this render target.
      * There may already be a stencil attachment.
      */
-    protected abstract boolean canSetStencilBuffer(boolean useMSAA);
+    protected abstract boolean canAttachStencil(boolean useMSAA);
 
     /**
      * Allows the backends to perform any additional work that is required for attaching an
@@ -167,16 +174,16 @@ public abstract class RenderTarget extends ManagedResource {
      *
      * @return if false, the stencil attachment will not be set to this render target
      */
-    protected abstract boolean onSetStencilBuffer(Surface stencilBuffer, boolean useMSAA);
+    protected abstract boolean onAttachStencilBuffer(Surface stencilBuffer, boolean useMSAA);
 
-    final void setStencilBuffer(Surface stencilBuffer, boolean useMSAA) {
+    final void attachStencilBuffer(Surface stencilBuffer, boolean useMSAA) {
         if (stencilBuffer == null && (useMSAA ? mMSAAStencilBuffer : mStencilBuffer) == null) {
             // No need to do any work since we currently don't have a stencil attachment,
             // and we're not actually adding one.
             return;
         }
 
-        if (!onSetStencilBuffer(stencilBuffer, useMSAA)) {
+        if (!onAttachStencilBuffer(stencilBuffer, useMSAA)) {
             return;
         }
 
@@ -184,6 +191,58 @@ public abstract class RenderTarget extends ManagedResource {
             mMSAAStencilBuffer = stencilBuffer;
         } else {
             mStencilBuffer = stencilBuffer;
+        }
+    }
+
+    /**
+     * Compute a {@link RenderTarget} key. Parameters are the same as Surface key, just
+     * class types are different. RenderTarget key may be used in resource allocator.
+     *
+     * @return a new scratch key
+     * @see Surface#computeScratchKey()
+     */
+    @Nonnull
+    public static ResourceKey computeScratchKey(BackendFormat format,
+                                                int width, int height,
+                                                int sampleCount,
+                                                boolean mipmapped,
+                                                boolean isProtected,
+                                                Key key) {
+        assert width > 0 && height > 0;
+        assert sampleCount > 0;
+        // we can have both multisample and mipmapped as key for render targets
+        key.mWidth = width;
+        key.mHeight = height;
+        key.mFormat = format.getFormatKey();
+        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (sampleCount << 2);
+        return key;
+    }
+
+    public static class Key extends ResourceKey {
+
+        int mWidth;
+        int mHeight;
+        int mFormat;
+        int mFlags;
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            Key key = (Key) o;
+            if (mWidth != key.mWidth) return false;
+            if (mHeight != key.mHeight) return false;
+            if (mFormat != key.mFormat) return false;
+            return mFlags == key.mFlags;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = mWidth;
+            result = 31 * result + mHeight;
+            result = 31 * result + mFormat;
+            result = 31 * result + mFlags;
+            return result;
         }
     }
 }

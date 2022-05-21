@@ -19,7 +19,8 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.PriorityQueue;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.Function;
+import it.unimi.dsi.fastutil.objects.*;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -93,11 +94,14 @@ import java.util.*;
  * Unique keys preempt scratch keys. While a resource has a unique key it is inaccessible via its
  * scratch key. It can become scratch again if the unique key is removed.
  */
+//TODO still WIP and under review (ref/unref functionality)
 @NotThreadSafe
 public final class ResourceCache implements AutoCloseable {
 
     private static final Comparator<Resource> TIMESTAMP_COMPARATOR =
             Comparator.comparingInt(resource -> resource.mTimestamp);
+    private static final Function<ResourceKey, Deque<Resource>> QUEUE_FACTORY =
+            k -> new ArrayDeque<>();
 
     private ProxyProvider mProxyProvider = null;
     private ThreadSafeCache mThreadSafeCache = null;
@@ -111,7 +115,7 @@ public final class ResourceCache implements AutoCloseable {
     private int mNonCleanableSize;
 
     // This map holds all resources that can be used as scratch resources.
-    private final Object2ObjectOpenHashMap<ResourceKey, Resource> mScratchMap;
+    private final Object2ObjectOpenHashMap<ResourceKey, Deque<Resource>> mScratchMap;
     // This map holds all resources that have unique keys.
     private final Object2ObjectOpenHashMap<ResourceKey, Resource> mUniqueMap;
 
@@ -280,12 +284,14 @@ public final class ResourceCache implements AutoCloseable {
     @Nullable
     public Resource findAndRefScratchResource(ResourceKey key) {
         assert key != null;
-        Resource resource = mScratchMap.get(key);
-        if (resource != null) {
-            mScratchMap.remove(key, resource);
+        Deque<Resource> queue = mScratchMap.get(key);
+        Resource resource;
+        if (queue != null && (resource = queue.pollFirst()) != null) {
             refAndMakeResourceMRU(resource);
+            return resource;
+        } else {
+            return null;
         }
-        return resource;
     }
 
     /**
@@ -415,6 +421,13 @@ public final class ResourceCache implements AutoCloseable {
         }
 
         mCleanableQueue.trim();
+        for (ObjectIterator<Object2ObjectMap.Entry<ResourceKey, Deque<Resource>>> it =
+             mScratchMap.object2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
+            Object2ObjectMap.Entry<ResourceKey, Deque<Resource>> entry = it.next();
+            if (entry.getValue().isEmpty()) {
+                it.remove();
+            }
+        }
         mScratchMap.trim();
         mUniqueMap.trim();
     }
@@ -464,7 +477,8 @@ public final class ResourceCache implements AutoCloseable {
 
         if (!commandBufferUsage) {
             if (resource.isUsableAsScratch()) {
-                mScratchMap.put(resource.mScratchKey, resource);
+                mScratchMap.computeIfAbsent(resource.mScratchKey, QUEUE_FACTORY)
+                        .addLast(resource);
             }
         }
 
@@ -564,7 +578,10 @@ public final class ResourceCache implements AutoCloseable {
         }
 
         if (resource.isUsableAsScratch()) {
-            mScratchMap.remove(resource.mScratchKey, resource);
+            Deque<Resource> queue = mScratchMap.get(resource.mScratchKey);
+            if (queue != null) {
+                queue.remove(resource);
+            }
         }
         if (resource.mUniqueKey != null) {
             mUniqueMap.remove(resource.mUniqueKey);
@@ -600,7 +617,10 @@ public final class ResourceCache implements AutoCloseable {
                 // from the ScratchMap. The isUsableAsScratch call depends on us not adding the new
                 // unique key until after this check.
                 if (resource.isUsableAsScratch()) {
-                    mScratchMap.remove(resource.mScratchKey, resource);
+                    Deque<Resource> queue = mScratchMap.get(resource.mScratchKey);
+                    if (queue != null) {
+                        queue.remove(resource);
+                    }
                 }
             }
 
@@ -622,7 +642,8 @@ public final class ResourceCache implements AutoCloseable {
             resource.mUniqueKey = null;
         }
         if (resource.isUsableAsScratch()) {
-            mScratchMap.put(resource.mScratchKey, resource);
+            mScratchMap.computeIfAbsent(resource.mScratchKey, QUEUE_FACTORY)
+                    .addLast(resource);
         }
 
         // Removing a unique key from a partial budgeted resource would make the resource
@@ -648,7 +669,8 @@ public final class ResourceCache implements AutoCloseable {
                 mFlushableCount++;
             }
             if (resource.isUsableAsScratch()) {
-                mScratchMap.put(resource.mScratchKey, resource);
+                mScratchMap.computeIfAbsent(resource.mScratchKey, QUEUE_FACTORY)
+                        .addLast(resource);
             }
             clean();
         } else {
@@ -661,7 +683,10 @@ public final class ResourceCache implements AutoCloseable {
             }
             if (!resource.hasRef() && resource.mUniqueKey == null &&
                     resource.mScratchKey != null) {
-                mScratchMap.remove(resource.mScratchKey, resource);
+                Deque<Resource> queue = mScratchMap.get(resource.mScratchKey);
+                if (queue != null) {
+                    queue.remove(resource);
+                }
             }
         }
         assert wasCleanable == resource.isCleanable();
@@ -670,7 +695,10 @@ public final class ResourceCache implements AutoCloseable {
     void willRemoveScratchKey(Resource resource) {
         assert resource.mScratchKey != null;
         if (resource.isUsableAsScratch()) {
-            mScratchMap.remove(resource.mScratchKey, resource);
+            Deque<Resource> queue = mScratchMap.get(resource.mScratchKey);
+            if (queue != null) {
+                queue.remove(resource);
+            }
         }
     }
 

@@ -19,6 +19,7 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.sksl.ShaderCompiler;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -28,7 +29,7 @@ import java.util.List;
  * Represents the application-controlled 3D API server, holding a reference
  * to {@link DirectContext}. It is responsible for creating / deleting 3D API objects,
  * controlling binding status, uploading and downloading data, transferring
- * 3D API commands, etc.
+ * 3D API commands, etc. Most methods are expected on render thread.
  */
 public abstract class Server {
 
@@ -83,9 +84,9 @@ public abstract class Server {
         mDirtyFlags |= dirtyFlags;
     }
 
-    protected final void handleDirty() {
+    protected final void handleDirtyContext() {
         if (mDirtyFlags != 0) {
-            onDirty(mDirtyFlags);
+            onDirtyContext(mDirtyFlags);
             mDirtyFlags = 0;
         }
     }
@@ -94,7 +95,7 @@ public abstract class Server {
      * Called when the 3D context state is unknown. Subclass should emit any
      * assumed 3D context state and dirty any state cache.
      */
-    protected void onDirty(int dirtyFlags) {
+    protected void onDirtyContext(int dirtyFlags) {
     }
 
     /**
@@ -110,9 +111,11 @@ public abstract class Server {
      * @param mipmapped   should the texture be allocated with mipmaps
      * @param budgeted    should the texture count against the resource cache budget
      * @param isProtected should the texture be created as protected
-     * @return the referenced texture object if successful, otherwise nullptr
+     * @return the texture object if successful, otherwise nullptr
      */
     @Nullable
+    @SmartPtr
+    @VisibleForTesting
     public final Texture createTexture(int width, int height,
                                        BackendFormat format,
                                        boolean mipmapped,
@@ -124,9 +127,16 @@ public abstract class Server {
         if (!mCaps.validateTextureParams(width, height, format)) {
             return null;
         }
-        return onCreateTexture(width, height, format,
-                mipmapped ? Integer.SIZE - Integer.numberOfLeadingZeros(Math.max(width, height)) : 1,
-                budgeted, isProtected);
+        int levelCount = mipmapped ? 32 - Integer.numberOfLeadingZeros(Math.max(width, height)) : 1;
+        handleDirtyContext();
+        final Texture texture = onCreateTexture(width, height, format,
+                levelCount, budgeted, isProtected);
+        if (texture != null) {
+            // we don't copy the backend format object, use identity rather than equals()
+            assert texture.getBackendFormat() == format;
+            mStats.incTextureCreates();
+        }
+        return texture;
     }
 
     /**
@@ -136,11 +146,58 @@ public abstract class Server {
      * before onCreateTexture is called.
      */
     @Nullable
+    @SmartPtr
     protected abstract Texture onCreateTexture(int width, int height,
                                                BackendFormat format,
-                                               int mipLevels,
+                                               int levelCount,
                                                boolean budgeted,
                                                boolean isProtected);
+
+    /**
+     * Finds or creates a render target that promotes the texture to be renderable with the
+     * sample count. If <code>sampleCount</code> is > 1 and the underlying API uses separate
+     * MSAA render buffers then a MSAA render buffer is created that resolves to the texture.
+     * If failed, the texture smart pointer will be destroyed, otherwise transfers to the
+     * render target. If succeeded, the texture cannot be obtained from the resource cache
+     * until render target is recycled.
+     *
+     * @param texture     the single sample color buffer
+     * @param sampleCount the desired sample count of the render target
+     * @return a managed, recyclable render target, or null if failed
+     */
+    @Nullable
+    @SmartPtr
+    @VisibleForTesting
+    public final RenderTarget findOrCreateRenderTarget(@SmartPtr Texture texture,
+                                                       int sampleCount) {
+        assert sampleCount > 0;
+        assert mCaps.validateRenderTargetParams(
+                texture.mWidth, texture.mHeight,
+                texture.getBackendFormat(),
+                sampleCount);
+        sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, texture.getBackendFormat());
+        assert sampleCount > 0;
+        handleDirtyContext();
+        final RenderTarget renderTarget = onFindOrCreateRenderTarget(texture, sampleCount);
+        if (renderTarget != null) {
+            // we don't copy the backend format object, use identity rather than equals()
+            assert renderTarget.getBackendFormat() == texture.getBackendFormat();
+            return renderTarget;
+        }
+        texture.unref();
+        return null;
+    }
+
+    /**
+     * Overridden by backend-specific derived class to create objects.
+     * <p>
+     * Render target size and format support will have already been validated in base class
+     * before onFindOrCreateRenderTarget is called.
+     */
+    @Nullable
+    @SmartPtr
+    protected abstract RenderTarget onFindOrCreateRenderTarget(@SmartPtr Texture texture,
+                                                               int sampleCount);
 
     /**
      * This makes the backend texture be renderable. If <code>sampleCount</code> is > 1 and
@@ -159,7 +216,7 @@ public abstract class Server {
     public RenderTarget wrapRenderableBackendTexture(BackendTexture texture,
                                                      int sampleCount,
                                                      boolean ownership) {
-        handleDirty();
+        handleDirtyContext();
         if (sampleCount < 1) {
             return null;
         }

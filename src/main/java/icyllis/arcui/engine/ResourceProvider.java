@@ -25,7 +25,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
 /**
- * A factory for arbitrary resource types, render thread only.
+ * Provides common resources with cache, render thread only.
  */
 @NotThreadSafe
 public final class ResourceProvider {
@@ -36,14 +36,18 @@ public final class ResourceProvider {
     private final Server mServer;
     private final ResourceCache mCache;
 
+    private final Surface.Key mTmpSurfaceKey = new Surface.Key();
+
     ResourceProvider(Server server, ResourceCache cache) {
         mServer = server;
         mCache = cache;
     }
 
     /**
-     * Map 'size' to a larger multiple of 2. Values <= 'MAGIC_TOLERANCE' will pop up to
-     * the next power of 2. Those above 'MAGIC_TOLERANCE' will only go up half the floor power of 2.
+     * Map <code>size</code> to a larger multiple of 2. Values <= {@link #MAGIC_TOLERANCE} will pop up to
+     * the next power of 2. Those above {@link #MAGIC_TOLERANCE} will only go up half the floor power of 2.
+     * <p>
+     * Possible values: 16,32,64,128,256,512,1024,1536,2048,3072,4096,6144,8192
      */
     public static int makeApprox(int size) {
         size = Math.max(MIN_SCRATCH_TEXTURE_SIZE, size);
@@ -290,7 +294,7 @@ public final class ResourceProvider {
      */
     @Nullable
     @SmartPtr
-    private Texture writePixels(Texture texture,
+    private Texture writePixels(@SmartPtr Texture texture,
                                 int baseWidth,
                                 int baseHeight,
                                 int rowLength,
@@ -358,8 +362,61 @@ public final class ResourceProvider {
         assert !format.isCompressed();
         assert mServer.getCaps().validateTextureParams(width, height, format);
 
-        ResourceKey key = Surface.computeScratchKeyTLS(format, width, height, 1, mipmapped, isProtected);
-        return findAndRefScratchTexture(key);
+        return findAndRefScratchTexture(Surface.computeScratchKey(
+                format,
+                width, height,
+                1,
+                mipmapped,
+                isProtected,
+                mTmpSurfaceKey));
+    }
+
+    ///////////////////////////////////////////////////////////////////////////
+    // Render Targets
+
+    /**
+     * Finds or creates a render target that promotes the texture to be renderable with the
+     * sample count. If <code>sampleCount</code> is > 1 and the underlying API uses separate
+     * MSAA render buffers then a MSAA render buffer is created that resolves to the texture.
+     * If failed, the texture smart pointer will be destroyed, otherwise transfers to the
+     * render target.
+     *
+     * @param width       the width of the  render target to be created
+     * @param height      the height of the render target to be created
+     * @param format      the backend format for the render target
+     * @param sampleCount the desired sample count of the render target
+     * @param mipmapped   should the render target be allocated with mipmaps
+     * @param budgeted    should the render target count against the resource cache budget
+     * @param isProtected should the render target be created as protected
+     * @return a managed, recyclable render target, or null if failed
+     */
+    @Nullable
+    @SmartPtr
+    public RenderTarget createRenderTarget(int width, int height,
+                                           BackendFormat format,
+                                           int sampleCount,
+                                           boolean mipmapped,
+                                           boolean budgeted,
+                                           boolean isProtected) {
+        assert mServer.getContext().isOnOwnerThread();
+        if (mServer.getContext().isDropped()) {
+            return null;
+        }
+
+        if (sampleCount < 1) {
+            return null;
+        }
+        // Compressed formats will not pass this validation.
+        if (!mServer.getCaps().validateRenderTargetParams(width, height, format, sampleCount)) {
+            return null;
+        }
+
+        final Texture texture = createTexture(width, height, format, mipmapped, budgeted, isProtected);
+        if (texture == null) {
+            return null;
+        }
+
+        return mServer.findOrCreateRenderTarget(texture, sampleCount);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -375,8 +432,9 @@ public final class ResourceProvider {
      * If true, Engine will assume ownership of the resource and free it. If this method failed,
      * then ownership doesn't work.
      *
-     * @param texture the backend texture must be single sample
-     * @return a managed, non-cacheable render target, or null if failed
+     * @param texture     the backend texture must be single sample
+     * @param sampleCount the desired sample count
+     * @return a managed, non-recycled render target, or null if failed
      */
     @Nullable
     @SmartPtr

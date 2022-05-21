@@ -545,12 +545,13 @@ public abstract class Caps {
         }
         if (format.getTextureType() != Types.TEXTURE_TYPE_NONE) {
             return isFormatTexturable(format);
+        } else {
+            return true;
         }
-        return true;
     }
 
     /**
-     * If a render target can be created with these params.
+     * If a render target can be created with these params. You should check if sampleCount > 0 first.
      */
     public final boolean validateRenderTargetParams(int width, int height, BackendFormat format,
                                                     int sampleCount) {

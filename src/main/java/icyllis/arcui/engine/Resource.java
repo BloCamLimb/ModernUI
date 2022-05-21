@@ -428,7 +428,7 @@ public abstract class Resource {
     /**
      * @return the server or null if destroyed
      */
-    protected final Server getServer() {
+    protected Server getServer() {
         return mServer;
     }
 
