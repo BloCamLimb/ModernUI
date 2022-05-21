@@ -167,6 +167,7 @@ final class Config {
         final ForgeConfigSpec.IntValue animationDuration;
         final ForgeConfigSpec.IntValue blurRadius;
         final ForgeConfigSpec.ConfigValue<List<? extends String>> backgroundColor;
+        final ForgeConfigSpec.BooleanValue inventoryPause;
         final ForgeConfigSpec.BooleanValue tooltip;
         final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipFill;
         final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipStroke;
@@ -225,6 +226,9 @@ final class Config {
                         list.add(ChatScreen.class.getName());
                         return list;
                     }, o -> true);
+            inventoryPause = builder.comment(
+                            "(Beta) Pause the game when inventory (also includes creative mode) opened.")
+                    .define("inventoryPause", false);
 
             builder.pop();
 
@@ -380,6 +384,7 @@ final class Config {
 
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
+            ModernUIForge.sInventoryScreenPausesGame = inventoryPause.get();
             TooltipRenderer.sTooltip = tooltip.get();
 
             colors = tooltipFill.get();

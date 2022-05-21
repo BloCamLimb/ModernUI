@@ -21,6 +21,7 @@ package icyllis.modernui.textmc;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.forge.MuiForgeApi;
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraftforge.api.distmarker.Dist;
@@ -48,7 +49,7 @@ import static icyllis.modernui.ModernUI.*;
 @OnlyIn(Dist.CLIENT)
 public final class ModernUITextMC {
 
-    static Config CONFIG;
+    public static Config CONFIG;
     private static ForgeConfigSpec CONFIG_SPEC;
 
     private ModernUITextMC() {
@@ -66,7 +67,7 @@ public final class ModernUITextMC {
         CONFIG_SPEC = builder.build();
         mod.addConfig(new ModConfig(ModConfig.Type.CLIENT, CONFIG_SPEC, mod, ModernUI.NAME_CPT + "/text.toml"));
 
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(CONFIG::reload);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(CONFIG::onReload);
     }
 
     @OnlyIn(Dist.CLIENT)
@@ -123,10 +124,10 @@ public final class ModernUITextMC {
     public static class Config {
 
         //final ForgeConfigSpec.BooleanValue globalRenderer;
-        private final ForgeConfigSpec.BooleanValue mAllowShadow;
-        private final ForgeConfigSpec.BooleanValue mFixedResolution;
-        private final ForgeConfigSpec.EnumValue<FontSize> mFontSize;
-        private final ForgeConfigSpec.IntValue mBaseline;
+        public final ForgeConfigSpec.BooleanValue mAllowShadow;
+        public final ForgeConfigSpec.BooleanValue mFixedResolution;
+        public final ForgeConfigSpec.EnumValue<FontSize> mFontSize;
+        public final ForgeConfigSpec.IntValue mBaseline;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -185,11 +186,23 @@ public final class ModernUITextMC {
             builder.pop();
         }
 
-        void reload(@Nonnull ModConfigEvent event) {
+        public void saveAndReload() {
+            Util.ioPool().execute(() -> {
+                CONFIG_SPEC.save();
+                reload();
+            });
+        }
+
+        void onReload(@Nonnull ModConfigEvent event) {
             final IConfigSpec<?> spec = event.getConfig().getSpec();
             if (spec != CONFIG_SPEC) {
                 return;
             }
+            reload();
+            LOGGER.debug(MARKER, "Text config reloaded with {}", event.getClass().getSimpleName());
+        }
+
+        void reload() {
             ModernFontRenderer.sAllowShadow = mAllowShadow.get();
             boolean fixedResolution = mFixedResolution.get();
             if (fixedResolution != TextLayoutEngine.sFixedResolution) {
@@ -205,8 +218,6 @@ public final class ModernUITextMC {
             GlyphManagerForge.sMipmapLevel = mipmapLevel.get();*/
             //GlyphManager.sResolutionLevel = resolutionLevel.get();
             //TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
-
-            LOGGER.debug(MARKER, "Text config reloaded with {}", event.getClass().getSimpleName());
         }
 
         private enum FontSize {
