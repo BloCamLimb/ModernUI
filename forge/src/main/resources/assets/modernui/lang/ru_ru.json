@@ -42,23 +42,23 @@
   "gui.modernui.settings.category.sounds": "Звуки",
   "gui.modernui.settings.category.mouse": "Мышь",
 
-  "gui.modernui.center.title": "Modern UI Center",
-  "gui.modernui.center.animationDuration": "Animation duration",
-  "gui.modernui.center.blurEffect": "Blur effect",
-  "gui.modernui.center.blurRadius": "Blur radius",
-  "gui.modernui.center.forceRtlLayout": "Force RTL layout",
-  "gui.modernui.center.globalFontScale": "Global font scale",
-  "gui.modernui.center.globalAnimationScale": "Global animation scale",
-  "key.modernui.openCenter": "Open Action Center",
+  "gui.modernui.center.title": "Центр Modern UI",
+  "gui.modernui.center.animationDuration": "Длительность анимации",
+  "gui.modernui.center.blurEffect": "Эффект размытия",
+  "gui.modernui.center.blurRadius": "Сила размытия",
+  "gui.modernui.center.forceRtlLayout": "Принудительная компоновка RTL",
+  "gui.modernui.center.globalFontScale": "Глобальный масштаб шрифта",
+  "gui.modernui.center.globalAnimationScale": "Глобальный масштаб анимации",
+  "key.modernui.openCenter": "Открыть центр действий",
 
   "gui.modernui.popup.exit": "Выйти в главное меню?",
   "gui.modernui.popup.lockDifficulty": "Зафиксировать сложность мира?",
 
   "gui.modernui.tooltip.thanksOptifine": "Эта функциональность работает на базе OptiFine",
 
-  "message.modernui.server_shutdown_sec": "Server will shutdown in %s seconds",
-  "message.modernui.server_shutdown_min": "Server will shutdown in %s minutes",
+  "message.modernui.server_shutdown_sec": "Сервер выключится через %s сек.",
+  "message.modernui.server_shutdown_min": "Сервер выключится через %s мин.",
 
-  "warning.modernui.old_java": "Modern UI: Java {2} or above is recommended, your version is Java {3}. Upgrade to newer Java and choose it to launch game, otherwise you cannot use external fonts or will not always get correct text layouts.",
-  "warning.modernui.old_opengl": "Modern UI: OpenGL version is too old. OpenGL {2} or higher is required (your version is OpenGL {3}). Please upgrade the driver of your video card. The newer version of macOS may be not supported."
+  "warning.modernui.old_java": "Modern UI: Рекомендуется Java {2} или выше, у вас Java {3}. Обновите Java до более новой версии и выберите её для запуска игры, иначе вы не сможете использовать внешние шрифты или не всегда получите правильное расположение текста.",
+  "warning.modernui.old_opengl": "Modern UI: Версия OpenGL слишком старая. Требуется OpenGL {2} или выше (у вас OpenGL {3}). Обновите драйвер вашей видеокарты. Более новая версия macOS может не поддерживаться."
 }
