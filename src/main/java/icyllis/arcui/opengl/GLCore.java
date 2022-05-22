@@ -32,7 +32,7 @@ import static org.lwjgl.opengl.EXTTextureStorage.*;
 public final class GLCore extends GL45C {
 
     @SuppressWarnings("StatementWithEmptyBody")
-    public static void clearErrors() {
+    public static void glClearErrors() {
         while (glGetError() != GL_NO_ERROR)
             ;
     }

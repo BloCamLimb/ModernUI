@@ -21,6 +21,7 @@ package icyllis.arcui.opengl;
 import icyllis.arcui.core.Image;
 import icyllis.arcui.core.ImageInfo;
 import icyllis.arcui.engine.*;
+import org.jetbrains.annotations.VisibleForTesting;
 import org.lwjgl.opengl.EXTWindowRectangles;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
@@ -44,19 +45,21 @@ public final class GLCaps extends Caps {
     private boolean mSkipErrorChecks = false;
 
     // see GLTypes
-    final FormatInfo[] mFormatTable = new FormatInfo[GLTypes.FORMAT_LAST_COLOR + 1];
-    final int[] mColorTypeToFormatTable = new int[ImageInfo.COLOR_LAST + 1];
+    private final FormatInfo[] mFormatTable =
+            new FormatInfo[GLTypes.LAST_COLOR_FORMAT + 1];
+    private final int[] mColorTypeToFormatTable =
+            new int[ImageInfo.COLOR_LAST + 1];
 
-    // may contain null values which represent invalid/unsupported
-    final GLBackendFormat[] mColorTypeToBackendFormat =
+    // may contain null values that representing invalid
+    private final GLBackendFormat[] mColorTypeToBackendFormat =
             new GLBackendFormat[ImageInfo.COLOR_LAST + 1];
-    final GLBackendFormat[] mCompressionTypeToBackendFormat =
+    private final GLBackendFormat[] mCompressionTypeToBackendFormat =
             new GLBackendFormat[Image.COMPRESSION_LAST + 1];
 
     /**
      * All required ARB extensions from OpenGL 3.3 to OpenGL 4.5
      */
-    public static final String[] REQUIRED_EXTENSION_LIST = {
+    public static final String[] REQUIRED_EXTENSIONS = {
             "ARB_blend_func_extended",
             "ARB_sampler_objects",
             "ARB_explicit_attrib_location",
@@ -80,6 +83,7 @@ public final class GLCaps extends Caps {
             "ARB_direct_state_access"
     };
 
+    @VisibleForTesting
     public GLCaps(ContextOptions options, GLCapabilities caps) {
         super(options);
         // we must have OpenGL 4.5, if not, test ARBs.
@@ -245,8 +249,15 @@ public final class GLCaps extends Caps {
         mProgramBinaryFormats = new int[count];
         glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, mProgramBinaryFormats);
 
-        //// FORMAT
+        initFormatTable(caps);
 
+        finishInitialization(options);
+
+        // For now these two are equivalent, but we could have dst read in shader via some other method.
+        mShaderCaps.mDstReadInShaderSupport = mShaderCaps.mFBFetchSupport;
+    }
+
+    private void initFormatTable(GLCapabilities caps) {
         final int nonMSAARenderFlags = FormatInfo.COLOR_ATTACHMENT_FLAG;
         final int msaaRenderFlags = nonMSAARenderFlags | FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG;
 
@@ -263,84 +274,81 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.COLOR_RGBA_8888;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RGBA8;
 
             info.mColorTypeInfos = new ColorTypeInfo[3];
-            int ctIdx = 0;
             // Format: RGBA8, Surface: kRGBA_8888
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RGBA_8888;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RGBA_8888] = GLTypes.FORMAT_RGBA8;
+                setColorTypeFormat(ImageInfo.COLOR_RGBA_8888, GLTypes.FORMAT_RGBA8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RGBA8, Surface: kRGBA_8888, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_RGBA;
+                    ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
+
                 // Format: RGBA8, Surface: kRGBA_8888, Data: kBGRA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_BGRA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_BGRA; // TODO: review
+                    ioFormat.mExternalWriteFormat = GL_BGRA;
                     ioFormat.mExternalReadFormat = GL_BGRA;
                 }
             }
 
             // Format: RGBA8, Surface: kBGRA_8888
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_BGRA_8888;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_BGRA_8888] = GLTypes.FORMAT_RGBA8;
+                setColorTypeFormat(ImageInfo.COLOR_BGRA_8888, GLTypes.FORMAT_RGBA8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RGBA8, Surface: kBGRA_8888, Data: kBGRA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_BGRA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_BGRA;
+                    ioFormat.mExternalWriteFormat = GL_BGRA;
                     ioFormat.mExternalReadFormat = GL_BGRA;
                 }
 
                 // Format: RGBA8, Surface: kBGRA_8888, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
 
             // Format: RGBA8, Surface: kRGB_888x
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[2] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RGB_888x;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.RGB1;
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[1];
-                int ioIdx = 0;
                 // Format: RGBA8, Surface: kRGB_888x, Data: kRGBA_888x
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGB_888x;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_RGBA;
+                    ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -354,98 +362,95 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RED;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
             info.mDefaultColorType = ImageInfo.COLOR_R_8;
-            info.mFlags |= FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG | msaaRenderFlags;
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags |= msaaRenderFlags;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_R8;
 
             info.mColorTypeInfos = new ColorTypeInfo[3];
-            int ctIdx = 0;
             // Format: R8, Surface: kR_8
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_R_8;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_R_8] = GLTypes.FORMAT_R8;
+                setColorTypeFormat(ImageInfo.COLOR_R_8, GLTypes.FORMAT_R8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: R8, Surface: kR_8, Data: kR_8
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_R_8;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_RED;
+                    ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
                 // Format: R8, Surface: kR_8, Data: kR_8xxx
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_R_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
 
             // Format: R8, Surface: kAlpha_8
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_ALPHA_8;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.make("000r");
                 ctInfo.mWriteSwizzle = Swizzle.make("a000");
-                mColorTypeToFormatTable[ImageInfo.COLOR_ALPHA_8] = GLTypes.FORMAT_R8;
+                setColorTypeFormat(ImageInfo.COLOR_ALPHA_8, GLTypes.FORMAT_R8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: R8, Surface: kAlpha_8, Data: kAlpha_8
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_ALPHA_8;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_RED;
+                    ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
                 // Format: R8, Surface: kAlpha_8, Data: kAlpha_8xxx
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_ALPHA_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
 
             // Format: R8, Surface: kGray_8
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[2] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_GRAY_8;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.make("rrr1");
-                mColorTypeToFormatTable[ImageInfo.COLOR_GRAY_8] = GLTypes.FORMAT_R8;
+                setColorTypeFormat(ImageInfo.COLOR_GRAY_8, GLTypes.FORMAT_R8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: R8, Surface: kGray_8, Data: kGray_8
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_GRAY_8;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_RED;
+                    ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
                 // Format: R8, Surface: kGray_8, Data: kGray_8xxx
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_GRAY_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -456,7 +461,7 @@ public final class GLCaps extends Caps {
             FormatInfo info = mFormatTable[GLTypes.FORMAT_ALPHA8] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForRenderbuffer = 0;
-            info.mDefaultExternalFormat = 0;
+            info.mDefaultExternalFormat = GL_ALPHA;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
             info.mDefaultColorType = ImageInfo.COLOR_ALPHA_8;
             info.mInternalFormatForTexture = 0;
@@ -489,7 +494,7 @@ public final class GLCaps extends Caps {
             FormatInfo info = mFormatTable[GLTypes.FORMAT_BGRA8] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForRenderbuffer = 0;
-            info.mDefaultExternalFormat = 0;
+            info.mDefaultExternalFormat = GL_BGRA;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
             info.mDefaultColorType = ImageInfo.COLOR_BGRA_8888;
             info.mInternalFormatForTexture = 0;
@@ -503,37 +508,36 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RGB;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT_5_6_5;
             info.mDefaultColorType = ImageInfo.COLOR_BGR_565;
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG | msaaRenderFlags;
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags |= msaaRenderFlags;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RGB565;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             // Format: RGB565, Surface: kBGR_565
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_BGR_565;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_BGR_565] = GLTypes.FORMAT_RGB565;
+                setColorTypeFormat(ImageInfo.COLOR_BGR_565, GLTypes.FORMAT_RGB565);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RGB565, Surface: kBGR_565, Data: kBGR_565
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_BGR_565;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT_5_6_5;
-                    ioFormat.mExternalTexImageFormat = GL_RGB;
+                    ioFormat.mExternalWriteFormat = GL_RGB;
                     ioFormat.mExternalReadFormat = GL_RGB;
                 }
 
                 // Format: RGB565, Surface: kBGR_565, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -547,70 +551,64 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RGBA;
             info.mDefaultExternalType = GL_HALF_FLOAT;
             info.mDefaultColorType = ImageInfo.COLOR_RGBA_F16;
-
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RGBA16F;
 
-            int flags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-
             info.mColorTypeInfos = new ColorTypeInfo[2];
-            int ctIdx = 0;
             // Format: RGBA16F, Surface: kRGBA_F16
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RGBA_F16;
-                ctInfo.mFlags = flags;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RGBA_F16] = GLTypes.FORMAT_RGBA16F;
+                ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
+                setColorTypeFormat(ImageInfo.COLOR_RGBA_F16, GLTypes.FORMAT_RGBA16F);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RGBA16F, Surface: kRGBA_F16, Data: kRGBA_F16
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_F16;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
-                    ioFormat.mExternalTexImageFormat = GL_RGBA;
+                    ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
                 // Format: RGBA16F, Surface: kRGBA_F16, Data: kRGBA_F32
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_F32;
                     ioFormat.mExternalType = GL_FLOAT;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
 
             // Format: RGBA16F, Surface: kRGBA_F16_Clamped
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RGBA_F16_CLAMPED;
-                ctInfo.mFlags = flags;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RGBA_F16_CLAMPED] = GLTypes.FORMAT_RGBA16F;
+                ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
+                setColorTypeFormat(ImageInfo.COLOR_RGBA_F16_CLAMPED, GLTypes.FORMAT_RGBA16F);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RGBA16F, Surface: kRGBA_F16_Clamped, Data: kRGBA_F16_Clamped
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_F16_CLAMPED;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
-                    ioFormat.mExternalTexImageFormat = GL_RGBA;
+                    ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
                 // Format: RGBA16F, Surface: kRGBA_F16_Clamped, Data: kRGBA_F32
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_F32;
                     ioFormat.mExternalType = GL_FLOAT;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -624,55 +622,41 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RED;
             info.mDefaultExternalType = GL_HALF_FLOAT;
             info.mDefaultColorType = ImageInfo.COLOR_R_F16;
-
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_R16F;
 
             // Format: R16F, Surface: kAlpha_F16
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_ALPHA_F16;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.make("000r");
                 ctInfo.mWriteSwizzle = Swizzle.make("a000");
-                mColorTypeToFormatTable[ImageInfo.COLOR_ALPHA_F16] = GLTypes.FORMAT_R16F;
+                setColorTypeFormat(ImageInfo.COLOR_ALPHA_F16, GLTypes.FORMAT_R16F);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: R16F, Surface: kAlpha_F16, Data: kAlpha_F16
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_ALPHA_F16;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
-                    ioFormat.mExternalTexImageFormat = GL_RED;
+                    ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
                 // Format: R16F, Surface: kAlpha_F16, Data: kAlpha_F32xxx
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_ALPHA_F32xxx;
                     ioFormat.mExternalType = GL_FLOAT;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
-        }
-
-        // Format: LUMINANCE16F, DEPRECATED
-        {
-            FormatInfo info = mFormatTable[GLTypes.FORMAT_LUMINANCE16F] = new FormatInfo();
-            info.mFormatType = FormatInfo.FORMAT_TYPE_FLOAT;
-            info.mInternalFormatForRenderbuffer = 0;
-            info.mDefaultExternalFormat = 0;
-            info.mDefaultExternalType = GL_HALF_FLOAT;
-            info.mDefaultColorType = ImageInfo.COLOR_GRAY_F16;
-            info.mInternalFormatForTexture = 0;
         }
 
         // Format: RGB8
@@ -692,36 +676,34 @@ public final class GLCaps extends Caps {
             } else {
                 info.mFlags |= nonMSAARenderFlags;
             }
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RGB8;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             // Format: RGB8, Surface: kRGB_888x
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RGB_888x;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RGB_888x] = GLTypes.FORMAT_RGB8;
+                setColorTypeFormat(ImageInfo.COLOR_RGB_888x, GLTypes.FORMAT_RGB8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RGB8, Surface: kRGB_888x, Data: kRGB_888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGB_888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_RGB;
+                    ioFormat.mExternalWriteFormat = GL_RGB;
                     ioFormat.mExternalReadFormat = 0;
                 }
 
                 // Format: RGB8, Surface: kRGB_888x, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -735,37 +717,36 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RG;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
             info.mDefaultColorType = ImageInfo.COLOR_RG_88;
-            info.mFlags |= FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG | msaaRenderFlags;
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags |= msaaRenderFlags;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RG8;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             // Format: RG8, Surface: kRG_88
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RG_88;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RG_88] = GLTypes.FORMAT_RG8;
+                setColorTypeFormat(ImageInfo.COLOR_RG_88, GLTypes.FORMAT_RG8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RG8, Surface: kRG_88, Data: kRG_88
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RG_88;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_RG;
+                    ioFormat.mExternalWriteFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
                 }
 
                 // Format: RG8, Surface: kRG_88, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -779,66 +760,64 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RGBA;
             info.mDefaultExternalType = GL_UNSIGNED_INT_2_10_10_10_REV;
             info.mDefaultColorType = ImageInfo.COLOR_RGBA_1010102;
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG | msaaRenderFlags;
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags |= msaaRenderFlags;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RGB10_A2;
 
             info.mColorTypeInfos = new ColorTypeInfo[2];
-            int ctIdx = 0;
             // Format: RGB10_A2, Surface: kRGBA_1010102
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RGBA_1010102;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RGBA_1010102] = GLTypes.FORMAT_RGB10_A2;
+                setColorTypeFormat(ImageInfo.COLOR_RGBA_1010102, GLTypes.FORMAT_RGB10_A2);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RGB10_A2, Surface: kRGBA_1010102, Data: kRGBA_1010102
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_1010102;
                     ioFormat.mExternalType = GL_UNSIGNED_INT_2_10_10_10_REV;
-                    ioFormat.mExternalTexImageFormat = GL_RGBA;
+                    ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
                 // Format: RGB10_A2, Surface: kRGBA_1010102, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
             //------------------------------------------------------------------
             // Format: RGB10_A2, Surface: kBGRA_1010102
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[1] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_BGRA_1010102;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_BGRA_1010102] = GLTypes.FORMAT_RGB10_A2;
+                setColorTypeFormat(ImageInfo.COLOR_BGRA_1010102, GLTypes.FORMAT_RGB10_A2);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RGB10_A2, Surface: kBGRA_1010102, Data: kBGRA_1010102
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_BGRA_1010102;
                     ioFormat.mExternalType = GL_UNSIGNED_INT_2_10_10_10_REV;
-                    ioFormat.mExternalTexImageFormat = GL_BGRA;
+                    ioFormat.mExternalWriteFormat = GL_BGRA;
                     ioFormat.mExternalReadFormat = GL_BGRA;
                 }
 
                 // Format: RGB10_A2, Surface: kBGRA_1010102, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -854,36 +833,34 @@ public final class GLCaps extends Caps {
             info.mDefaultColorType = ImageInfo.COLOR_ABGR_4444;
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RGBA4;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             // Format: RGBA4, Surface: kABGR_4444
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_ABGR_4444;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_ABGR_4444] = GLTypes.FORMAT_RGBA4;
+                setColorTypeFormat(ImageInfo.COLOR_ABGR_4444, GLTypes.FORMAT_RGBA4);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: RGBA4, Surface: kABGR_4444, Data: kABGR_4444
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_ABGR_4444;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT_4_4_4_4;
-                    ioFormat.mExternalTexImageFormat = GL_RGBA;
+                    ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
                 // Format: RGBA4, Surface: kABGR_4444, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -894,43 +871,48 @@ public final class GLCaps extends Caps {
             FormatInfo info = mFormatTable[GLTypes.FORMAT_SRGB8_ALPHA8] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
             info.mInternalFormatForRenderbuffer = GL_SRGB8_ALPHA8;
+            info.mDefaultExternalFormat = GL_RGBA;
             info.mDefaultExternalType = GL_UNSIGNED_BYTE;
             info.mDefaultColorType = ImageInfo.COLOR_RGBA_8888_SRGB;
-
-            // We may modify the default external format below.
-            info.mDefaultExternalFormat = GL_RGBA;
-
             info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_SRGB8_ALPHA8;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             // Format: SRGB8_ALPHA8, Surface: kRGBA_8888_SRGB
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RGBA_8888_SRGB;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RGBA_8888_SRGB] = GLTypes.FORMAT_SRGB8_ALPHA8;
+                setColorTypeFormat(ImageInfo.COLOR_RGBA_8888_SRGB, GLTypes.FORMAT_SRGB8_ALPHA8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[1];
-                int ioIdx = 0;
-
                 // Format: SRGB8_ALPHA8, Surface: kRGBA_8888_SRGB, Data: kRGBA_8888_SRGB
                 {
                     // GL does not do srgb<->rgb conversions when transferring between cpu and gpu.
-                    // Thus, the external format is GL_RGBA. See below for note about ES2.0 and
-                    // glTex[Sub]Image.
-
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    // Thus, the external format is GL_RGBA.
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888_SRGB;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = GL_RGBA;
+                    ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
+        }
+
+        // Format: COMPRESSED_RGB8_ETC2
+        {
+            FormatInfo info = mFormatTable[GLTypes.FORMAT_COMPRESSED_RGB8_ETC2] = new FormatInfo();
+            info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
+            info.mInternalFormatForTexture = GL_COMPRESSED_RGB8_ETC2;
+            info.mFlags = FormatInfo.TEXTURABLE_FLAG;
+
+            mCompressionTypeToBackendFormat[Image.COMPRESSION_ETC2_RGB8_UNORM] =
+                    new GLBackendFormat(GL_COMPRESSED_RGB8_ETC2, Types.TEXTURE_TYPE_2D);
+
+            // There are no support ColorTypes for this format
         }
 
         // Format: COMPRESSED_RGB8_BC1
@@ -963,19 +945,6 @@ public final class GLCaps extends Caps {
             // There are no support ColorTypes for this format
         }
 
-        // Format: COMPRESSED_RGB8_ETC2
-        {
-            FormatInfo info = mFormatTable[GLTypes.FORMAT_COMPRESSED_RGB8_ETC2] = new FormatInfo();
-            info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
-            info.mInternalFormatForTexture = GL_COMPRESSED_RGB8_ETC2;
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG;
-
-            mCompressionTypeToBackendFormat[Image.COMPRESSION_ETC2_RGB8_UNORM] =
-                    new GLBackendFormat(GL_COMPRESSED_RGB8_ETC2, Types.TEXTURE_TYPE_2D);
-
-            // There are no support ColorTypes for this format
-        }
-
         // Format: R16
         {
             FormatInfo info = mFormatTable[GLTypes.FORMAT_R16] = new FormatInfo();
@@ -984,42 +953,38 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RED;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT;
             info.mDefaultColorType = ImageInfo.COLOR_R_16;
-
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG | msaaRenderFlags;
-            info.mFlags |= FormatInfo.TRANSFERS_FLAG;
-
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags |= msaaRenderFlags;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_R16;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             // Format: R16, Surface: kAlpha_16
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_ALPHA_16;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.make("000r");
                 ctInfo.mWriteSwizzle = Swizzle.make("a000");
-                mColorTypeToFormatTable[ImageInfo.COLOR_ALPHA_16] = GLTypes.FORMAT_R16;
+                setColorTypeFormat(ImageInfo.COLOR_ALPHA_16, GLTypes.FORMAT_R16);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: R16, Surface: kAlpha_16, Data: kAlpha_16
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_ALPHA_16;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT;
-                    ioFormat.mExternalTexImageFormat = GL_RED;
+                    ioFormat.mExternalWriteFormat = GL_RED;
                     ioFormat.mExternalReadFormat = GL_RED;
                 }
 
                 // Format: R16, Surface: kAlpha_16, Data: kAlpha_8xxx
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_ALPHA_8xxx;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -1033,40 +998,36 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RG;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT;
             info.mDefaultColorType = ImageInfo.COLOR_RG_1616;
-
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG | msaaRenderFlags;
-            info.mFlags |= FormatInfo.TRANSFERS_FLAG;
-
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags |= msaaRenderFlags;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RG16;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             // Format: GL_RG16, Surface: kRG_1616
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RG_1616;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RG_1616] = GLTypes.FORMAT_RG16;
+                setColorTypeFormat(ImageInfo.COLOR_RG_1616, GLTypes.FORMAT_RG16);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: GL_RG16, Surface: kRG_1616, Data: kRG_1616
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RG_1616;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT;
-                    ioFormat.mExternalTexImageFormat = GL_RG;
+                    ioFormat.mExternalWriteFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
                 }
 
                 // Format: GL_RG16, Surface: kRG_1616, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -1076,45 +1037,40 @@ public final class GLCaps extends Caps {
         {
             FormatInfo info = mFormatTable[GLTypes.FORMAT_RGBA16] = new FormatInfo();
             info.mFormatType = FormatInfo.FORMAT_TYPE_NORMALIZED_FIXED_POINT;
-
             info.mInternalFormatForRenderbuffer = GL_RGBA16;
             info.mDefaultExternalFormat = GL_RGBA;
             info.mDefaultExternalType = GL_UNSIGNED_SHORT;
             info.mDefaultColorType = ImageInfo.COLOR_RGBA_16161616;
-
-            info.mFlags = FormatInfo.TEXTURABLE_FLAG | msaaRenderFlags;
-            info.mFlags |= FormatInfo.TRANSFERS_FLAG;
-
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags |= msaaRenderFlags;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RGBA16;
 
             // Format: GL_RGBA16, Surface: kRGBA_16161616
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RGBA_16161616;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RGBA_16161616] = GLTypes.FORMAT_RGBA16;
+                setColorTypeFormat(ImageInfo.COLOR_RGBA_16161616, GLTypes.FORMAT_RGBA16);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: GL_RGBA16, Surface: kRGBA_16161616, Data: kRGBA_16161616
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_16161616;
                     ioFormat.mExternalType = GL_UNSIGNED_SHORT;
-                    ioFormat.mExternalTexImageFormat = GL_RGBA;
+                    ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
 
                 // Format: GL_RGBA16, Surface: kRGBA_16161616, Data: kRGBA_8888
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_8888;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
@@ -1128,43 +1084,50 @@ public final class GLCaps extends Caps {
             info.mDefaultExternalFormat = GL_RG;
             info.mDefaultExternalType = GL_HALF_FLOAT;
             info.mDefaultColorType = ImageInfo.COLOR_RG_F16;
-
-            info.mFlags |= FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
+            info.mFlags = FormatInfo.TEXTURABLE_FLAG | FormatInfo.TRANSFERS_FLAG;
             info.mFlags |= msaaRenderFlags;
-
-            info.mFlags |= FormatInfo.USE_TEX_STORAGE_FLAG;
+            info.mFlags |= FormatInfo.TEXTURE_STORAGE_FLAG;
             info.mInternalFormatForTexture = GL_RG16F;
 
             info.mColorTypeInfos = new ColorTypeInfo[1];
-            int ctIdx = 0;
             // Format: GL_RG16F, Surface: kRG_F16
             {
-                var ctInfo = info.mColorTypeInfos[ctIdx++] = new ColorTypeInfo();
+                ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
                 ctInfo.mColorType = ImageInfo.COLOR_RG_F16;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                mColorTypeToFormatTable[ImageInfo.COLOR_RG_F16] = GLTypes.FORMAT_RG16F;
+                setColorTypeFormat(ImageInfo.COLOR_RG_F16, GLTypes.FORMAT_RG16F);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
-                int ioIdx = 0;
                 // Format: GL_RG16F, Surface: kRG_F16, Data: kRG_F16
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RG_F16;
                     ioFormat.mExternalType = GL_HALF_FLOAT;
-                    ioFormat.mExternalTexImageFormat = GL_RG;
+                    ioFormat.mExternalWriteFormat = GL_RG;
                     ioFormat.mExternalReadFormat = GL_RG;
                 }
 
                 // Format: GL_RG16F, Surface: kRG_F16, Data: kRGBA_F32
                 {
-                    var ioFormat = ctInfo.mExternalIOFormats[ioIdx++] = new ExternalIOFormat();
+                    ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
                     ioFormat.mColorType = ImageInfo.COLOR_RGBA_F32;
                     ioFormat.mExternalType = GL_FLOAT;
-                    ioFormat.mExternalTexImageFormat = 0;
+                    ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
                 }
             }
+        }
+
+        // Format: LUMINANCE16F, DEPRECATED
+        {
+            FormatInfo info = mFormatTable[GLTypes.FORMAT_LUMINANCE16F] = new FormatInfo();
+            info.mFormatType = FormatInfo.FORMAT_TYPE_FLOAT;
+            info.mInternalFormatForRenderbuffer = 0;
+            info.mDefaultExternalFormat = 0;
+            info.mDefaultExternalType = GL_HALF_FLOAT;
+            info.mDefaultColorType = ImageInfo.COLOR_GRAY_F16;
+            info.mInternalFormatForTexture = 0;
         }
 
         // Init samples
@@ -1173,7 +1136,7 @@ public final class GLCaps extends Caps {
                 // We assume that MSAA rendering is supported only if we support non-MSAA rendering.
                 assert (info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0;
                 int glFormat = info.mInternalFormatForRenderbuffer;
-                count = glGetInternalformati(GL_RENDERBUFFER, glFormat, GL_NUM_SAMPLE_COUNTS);
+                int count = glGetInternalformati(GL_RENDERBUFFER, glFormat, GL_NUM_SAMPLE_COUNTS);
                 if (count > 0) {
                     try (MemoryStack stack = MemoryStack.stackPush()) {
                         IntBuffer temp = stack.mallocInt(count);
@@ -1198,17 +1161,9 @@ public final class GLCaps extends Caps {
             }
         }
 
-        for (int ct = 0; ct < mColorTypeToFormatTable.length; ct++) {
-            int format = mColorTypeToFormatTable[ct];
-            if (format == GLTypes.FORMAT_UNKNOWN) {
-                continue;
-            }
-            mColorTypeToBackendFormat[ct] = new GLBackendFormat(glFormatToEnum(format), Types.TEXTURE_TYPE_2D);
-        }
-
         // Validate, skip UNKNOWN
-        for (int format = 1; format <= GLTypes.FORMAT_LAST_COLOR; ++format) {
-            FormatInfo info = mFormatTable[format];
+        for (int format = 1; format <= GLTypes.LAST_COLOR_FORMAT; ++format) {
+            FormatInfo info = getFormatInfo(format);
             // Make sure we didn't set fbo attachable with msaa and not fbo attachable
             if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_WITH_MSAA_FLAG) != 0 &&
                     (info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) == 0) {
@@ -1225,21 +1180,33 @@ public final class GLCaps extends Caps {
                 throw new AssertionError();
             }
 
-            // Only compressed format doesn't support glTexStorage
-            if ((info.mFlags & FormatInfo.TEXTURABLE_FLAG) != 0 &&
-                    (info.mFlags & FormatInfo.USE_TEX_STORAGE_FLAG) == 0 &&
-                    !glFormatIsCompressed(format)) {
-                throw new AssertionError();
-            }
-
-            // All texture format should have their internal formats
+            // All texturable format should have their internal formats
             if ((info.mFlags & FormatInfo.TEXTURABLE_FLAG) != 0 &&
                     info.mInternalFormatForTexture == 0) {
                 throw new AssertionError();
             }
 
+            // All renderable format should have their internal formats
+            if ((info.mFlags & FormatInfo.COLOR_ATTACHMENT_FLAG) != 0 &&
+                    info.mInternalFormatForRenderbuffer == 0) {
+                throw new AssertionError();
+            }
+
+            // Only compressed format doesn't support glTexStorage
+            if ((info.mFlags & FormatInfo.TEXTURABLE_FLAG) != 0 &&
+                    (info.mFlags & FormatInfo.TEXTURE_STORAGE_FLAG) == 0 &&
+                    !glFormatIsCompressed(format)) {
+                throw new AssertionError();
+            }
+
+            // Only compressed format doesn't support renderbuffer
+            if (info.mInternalFormatForTexture != info.mInternalFormatForRenderbuffer &&
+                    !glFormatIsCompressed(format)) {
+                throw new AssertionError();
+            }
+
             // Make sure if we added a ColorTypeInfo we filled it out
-            for (var ctInfo : info.mColorTypeInfos) {
+            for (ColorTypeInfo ctInfo : info.mColorTypeInfos) {
                 if (ctInfo.mColorType == ImageInfo.COLOR_UNKNOWN) {
                     throw new AssertionError();
                 }
@@ -1248,18 +1215,24 @@ public final class GLCaps extends Caps {
                     throw new AssertionError();
                 }
                 // Make sure if we added any ExternalIOFormats we filled it out
-                for (var ioInfo : ctInfo.mExternalIOFormats) {
+                for (ExternalIOFormat ioInfo : ctInfo.mExternalIOFormats) {
                     if (ioInfo.mColorType == ImageInfo.COLOR_UNKNOWN) {
                         throw new AssertionError();
                     }
                 }
             }
         }
+    }
 
-        finishInitialization(options);
+    public FormatInfo getFormatInfo(int format) {
+        return mFormatTable[format];
+    }
 
-        // For now these two are equivalent, but we could have dst read in shader via some other method.
-        mShaderCaps.mDstReadInShaderSupport = mShaderCaps.mFBFetchSupport;
+    private void setColorTypeFormat(int colorType, int format) {
+        assert format != GLTypes.FORMAT_UNKNOWN &&
+                mColorTypeToFormatTable[colorType] == GLTypes.FORMAT_UNKNOWN;
+        mColorTypeToFormatTable[colorType] = format;
+        mColorTypeToBackendFormat[colorType] = new GLBackendFormat(glFormatToEnum(format), Types.TEXTURE_TYPE_2D);
     }
 
     @Override
@@ -1268,7 +1241,7 @@ public final class GLCaps extends Caps {
     }
 
     public boolean isFormatTexturable(int format) {
-        return (mFormatTable[format].mFlags & FormatInfo.TEXTURABLE_FLAG) != 0;
+        return (getFormatInfo(format).mFlags & FormatInfo.TEXTURABLE_FLAG) != 0;
     }
 
     @Override
@@ -1277,7 +1250,7 @@ public final class GLCaps extends Caps {
     }
 
     public int getMaxRenderTargetSampleCount(int format) {
-        int[] table = mFormatTable[format].mColorSampleCounts;
+        int[] table = getFormatInfo(format).mColorSampleCounts;
         if (table.length == 0) {
             return 0;
         }
@@ -1290,7 +1263,7 @@ public final class GLCaps extends Caps {
             return false;
         }
         int f = format.getGLFormat();
-        if ((mFormatTable[f].getColorTypeFlags(colorType) & ColorTypeInfo.RENDERABLE_FLAG) == 0) {
+        if ((getFormatInfo(f).getColorTypeFlags(colorType) & ColorTypeInfo.RENDERABLE_FLAG) == 0) {
             return false;
         }
         return isFormatRenderable(f, sampleCount);
@@ -1314,7 +1287,7 @@ public final class GLCaps extends Caps {
     }
 
     public int getRenderTargetSampleCount(int sampleCount, int format) {
-        FormatInfo formatInfo = mFormatTable[format];
+        FormatInfo formatInfo = getFormatInfo(format);
         if (formatInfo.mColorTypeInfos.length == 0) {
             return 0;
         }
@@ -1333,7 +1306,7 @@ public final class GLCaps extends Caps {
 
     @Override
     public boolean onFormatCompatible(int colorType, BackendFormat format) {
-        FormatInfo formatInfo = mFormatTable[format.getGLFormat()];
+        FormatInfo formatInfo = getFormatInfo(format.getGLFormat());
         for (var info : formatInfo.mColorTypeInfos) {
             if (info.mColorType == colorType) {
                 return true;
@@ -1359,7 +1332,7 @@ public final class GLCaps extends Caps {
         // We first try to find a supported write pixels ColorType that matches the data's
         // srcColorType. If that doesn't exist we will use any supported ColorType.
         int fallbackCT = ImageInfo.COLOR_UNKNOWN;
-        final FormatInfo formatInfo = mFormatTable[dstFormat.getGLFormat()];
+        final FormatInfo formatInfo = getFormatInfo(dstFormat.getGLFormat());
         boolean foundSurfaceCT = false;
         long transferOffsetAlignment = 0;
         if ((formatInfo.mFlags & FormatInfo.TRANSFERS_FLAG) != 0) {
@@ -1370,7 +1343,7 @@ public final class GLCaps extends Caps {
                 final ColorTypeInfo ctInfo = formatInfo.mColorTypeInfos[i];
                 foundSurfaceCT = true;
                 for (final ExternalIOFormat ioInfo : ctInfo.mExternalIOFormats) {
-                    if (ioInfo.mExternalTexImageFormat != 0) {
+                    if (ioInfo.mExternalWriteFormat != 0) {
                         if (ioInfo.mColorType == srcColorType) {
                             return srcColorType | (transferOffsetAlignment << 32);
                         }
@@ -1431,7 +1404,7 @@ public final class GLCaps extends Caps {
         // dstColorType. If that doesn't exist we will use any valid read pixels ColorType.
         int fallbackColorType = ImageInfo.COLOR_UNKNOWN;
         long fallbackTransferOffsetAlignment = 0;
-        FormatInfo formatInfo = mFormatTable[srcFormat.getGLFormat()];
+        FormatInfo formatInfo = getFormatInfo(srcFormat.getGLFormat());
         for (ColorTypeInfo ctInfo : formatInfo.mColorTypeInfos) {
             if (ctInfo.mColorType == srcColorType) {
                 for (ExternalIOFormat ioInfo : ctInfo.mExternalIOFormats) {
@@ -1472,7 +1445,7 @@ public final class GLCaps extends Caps {
      * base depending upon the GL. Not applicable to compressed textures.
      */
     public int getTextureInternalFormat(int format) {
-        return mFormatTable[format].mInternalFormatForTexture;
+        return getFormatInfo(format).mInternalFormatForTexture;
     }
 
     /**
@@ -1480,14 +1453,14 @@ public final class GLCaps extends Caps {
      * base depending upon the GL. Not applicable to compressed textures.
      */
     public int getRenderbufferInternalFormat(int format) {
-        return mFormatTable[format].mInternalFormatForRenderbuffer;
+        return getFormatInfo(format).mInternalFormatForRenderbuffer;
     }
 
     /**
      * Gets the default external type to use with glTex[Sub]Image... when the data pointer is null.
      */
     public int getFormatDefaultExternalType(int format) {
-        return mFormatTable[format].mDefaultExternalType;
+        return getFormatInfo(format).mDefaultExternalType;
     }
 
     /**
@@ -1511,7 +1484,7 @@ class ExternalIOFormat {
      * of format and color types.
      */
     int mExternalType = 0;
-    int mExternalTexImageFormat = 0;
+    int mExternalWriteFormat = 0;
     int mExternalReadFormat = 0;
 }
 
@@ -1542,7 +1515,7 @@ class FormatInfo {
             TEXTURABLE_FLAG = 0x01,
             COLOR_ATTACHMENT_FLAG = 0x02,
             COLOR_ATTACHMENT_WITH_MSAA_FLAG = 0x04,
-            USE_TEX_STORAGE_FLAG = 0x08,
+            TEXTURE_STORAGE_FLAG = 0x08,
             TRANSFERS_FLAG = 0x10;
     int mFlags = 0;
 

@@ -24,32 +24,66 @@ import javax.annotation.Nullable;
 /**
  * This class delays the acquisition of a {@link Texture} and other {@link Surface}s to make
  * a {@link RenderTarget} until they are actually required, sometimes known as RenderTexture,
- * RenderableTexture or TextureRenderTarget. Note that framebuffers and render passes are
- * provided by {@link Server}, this only provides RenderTargetsInfo.
+ * RenderableTexture or TextureRenderTarget. Framebuffers and render passes are provided by
+ * {@link Server} and this only provides RenderTargetInfo.
  */
 //TODO
 public final class RenderTargetProxy extends SurfaceProxy {
 
+    // For deferred proxies it will be null until the proxy is instantiated.
+    // For wrapped proxies it will point to the wrapped resource.
+    @SmartPtr
     RenderTarget mRenderTarget;
-
-    // non-null if MSAA is enabled, null otherwise
-    Surface mMSAAColorBuffer;
-    // non-null if depth/stencil is needed, null otherwise
-    // MSAA or not depends on 'mMSAAColorBuffer' is non-null (MSAA) or null (single sample)
-    Surface mDepthStencilBuffer;
 
     LazyInstantiateCallback mLazyInstantiateCallback;
 
-    public RenderTargetProxy(BackendFormat format,
-                             int width, int height,
-                             boolean mipmapped,
-                             boolean backingFit,
-                             boolean budgeted,
-                             int surfaceFlags,
-                             boolean useAllocator,
-                             boolean deferredProvider) {
-        super(format, width, height, mipmapped, backingFit, budgeted, surfaceFlags, useAllocator,
-                deferredProvider);
+    // Deferred version - no data
+    RenderTargetProxy(BackendFormat format,
+                      int width, int height,
+                      int sampleCount,
+                      boolean mipmapped,
+                      boolean backingFit,
+                      boolean budgeted,
+                      int surfaceFlags,
+                      boolean useAllocator,
+                      boolean deferredProvider) {
+        super(format, width, height, mipmapped, backingFit, budgeted,
+                surfaceFlags, useAllocator, deferredProvider);
+        assert width > 0 && height > 0; // non-lazy
+    }
+
+    // Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
+    RenderTargetProxy(BackendFormat format,
+                      int width, int height,
+                      int sampleCount,
+                      boolean mipmapped,
+                      boolean backingFit,
+                      boolean budgeted,
+                      int surfaceFlags,
+                      boolean useAllocator,
+                      boolean deferredProvider,
+                      LazyInstantiateCallback callback) {
+        super(format, width, height, mipmapped, backingFit, budgeted,
+                surfaceFlags, useAllocator, deferredProvider);
+        mLazyInstantiateCallback = callback;
+        // A "fully" lazy proxy's width and height are not known until instantiation time.
+        // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
+        // created with positive widths and heights. The width and height are set to 0 only after a
+        // failed instantiation. The former must be "approximate" fit while the latter can be either.
+        assert (width < 0 && height < 0 && backingFit == Types.BACKING_FIT_APPROX) ||
+                (width > 0 && height > 0);
+    }
+
+    @Override
+    protected void onFree() {
+        // Due to the order of cleanup the Surface this proxy may have wrapped may have gone away
+        // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
+        if (mRenderTarget != null) {
+            mRenderTarget.recycle();
+        }
+        mRenderTarget = null;
+
+        super.onFree();
     }
 
     @Override
@@ -90,7 +124,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
     @Nullable
     @Override
     public Texture peekTexture() {
-        return null;
+        return mRenderTarget != null ? mRenderTarget.getColorBuffer() : null;
     }
 
     @Override

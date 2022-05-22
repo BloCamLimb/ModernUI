@@ -57,8 +57,8 @@ public final class GLTypes {
             FORMAT_STENCIL_INDEX8 = 23,
             FORMAT_STENCIL_INDEX16 = 24,
             FORMAT_DEPTH24_STENCIL8 = 25;
-    public static final int FORMAT_LAST_COLOR = FORMAT_LUMINANCE16F;
-    public static final int FORMAT_LAST = FORMAT_DEPTH24_STENCIL8;
+    public static final int LAST_COLOR_FORMAT = FORMAT_LUMINANCE16F;
+    public static final int LAST_FORMAT = FORMAT_DEPTH24_STENCIL8;
 
     private GLTypes() {
     }

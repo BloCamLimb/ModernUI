@@ -23,9 +23,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import javax.annotation.Nullable;
 
 /**
- * A factory for creating {@link SurfaceProxy}-derived objects. This class may be used from
- * the creating thread of {@link RecordingContext}. If it's deferred, call from recording thread.
- * Otherwise, it's direct, call from render thread.
+ * A factory for creating {@link SurfaceProxy}-derived objects. This class may be used on
+ * the creating thread of {@link RecordingContext}.
  */
 public final class ProxyProvider {
 
@@ -126,8 +125,22 @@ public final class ProxyProvider {
                                                      boolean budgeted,
                                                      int surfaceFlags,
                                                      boolean useAllocator) {
-        //TODO
-        return null;
+        assert mContext.isOnOwnerThread();
+        if (mContext.isDropped()) {
+            return null;
+        }
+
+        if (format.isCompressed()) {
+            // Deferred proxies for compressed textures are not supported.
+            return null;
+        }
+
+        if (!mContext.getCaps().validateRenderTargetParams(width, height, format, sampleCount)) {
+            return null;
+        }
+
+        return new RenderTargetProxy(format, width, height, sampleCount, mipmapped, backingFit,
+                budgeted, surfaceFlags, useAllocator, isDeferredProvider());
     }
 
     /**

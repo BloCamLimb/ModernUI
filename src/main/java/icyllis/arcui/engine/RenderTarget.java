@@ -112,14 +112,19 @@ public abstract class RenderTarget extends RecycledResource {
     public abstract BackendRenderTarget getBackendRenderTarget();
 
     /**
-     * May get a dynamic stencil buffer, or null.
+     * May get the single sample texture, or null if wrapped.
+     */
+    public abstract Texture getColorBuffer();
+
+    /**
+     * May get a dynamic stencil buffer, or null if no stencil.
      */
     public final Surface getStencilBuffer(boolean useMSAA) {
         return useMSAA ? mMSAAStencilBuffer : mStencilBuffer;
     }
 
     /**
-     * May get an intrinsic stencil buffer, or null.
+     * May get an intrinsic stencil buffer, or null if no stencil.
      */
     public final Surface getStencilBuffer() {
         return mSampleCount > 1 ? mMSAAStencilBuffer : mStencilBuffer;
@@ -130,7 +135,7 @@ public abstract class RenderTarget extends RecycledResource {
      */
     public final int getStencilBits(boolean useMSAA) {
         final Surface stencilBuffer;
-        if ((stencilBuffer = useMSAA ? mMSAAStencilBuffer : mStencilBuffer) != null) {
+        if ((stencilBuffer = getStencilBuffer(useMSAA)) != null) {
             return stencilBuffer.getBackendFormat().getStencilBits();
         } else {
             return 0;
@@ -142,7 +147,7 @@ public abstract class RenderTarget extends RecycledResource {
      */
     public final int getStencilBits() {
         final Surface stencilBuffer;
-        if ((stencilBuffer = mSampleCount > 1 ? mMSAAStencilBuffer : mStencilBuffer) != null) {
+        if ((stencilBuffer = getStencilBuffer()) != null) {
             return stencilBuffer.getBackendFormat().getStencilBits();
         } else {
             return 0;
@@ -154,10 +159,10 @@ public abstract class RenderTarget extends RecycledResource {
         if (mStencilBuffer != null) {
             mStencilBuffer.unref();
         }
-        mStencilBuffer = null;
         if (mMSAAStencilBuffer != null) {
             mMSAAStencilBuffer.unref();
         }
+        mStencilBuffer = null;
         mMSAAStencilBuffer = null;
     }
 
@@ -167,16 +172,7 @@ public abstract class RenderTarget extends RecycledResource {
      */
     protected abstract boolean canAttachStencil(boolean useMSAA);
 
-    /**
-     * Allows the backends to perform any additional work that is required for attaching an
-     * Attachment. When this is called, the Attachment has already been put onto the RenderTarget.
-     * This method must return false if any failures occur when completing the stencil attachment.
-     *
-     * @return if false, the stencil attachment will not be set to this render target
-     */
-    protected abstract boolean onAttachStencilBuffer(Surface stencilBuffer, boolean useMSAA);
-
-    final void attachStencilBuffer(Surface stencilBuffer, boolean useMSAA) {
+    protected final void attachStencilBuffer(Surface stencilBuffer, boolean useMSAA) {
         if (stencilBuffer == null && (useMSAA ? mMSAAStencilBuffer : mStencilBuffer) == null) {
             // No need to do any work since we currently don't have a stencil attachment,
             // and we're not actually adding one.
@@ -193,6 +189,15 @@ public abstract class RenderTarget extends RecycledResource {
             mStencilBuffer = stencilBuffer;
         }
     }
+
+    /**
+     * Allows the backends to perform any additional work that is required for attaching an
+     * Attachment. When this is called, the Attachment has already been put onto the RenderTarget.
+     * This method must return false if any failures occur when completing the stencil attachment.
+     *
+     * @return if false, the stencil attachment will not be set to this render target
+     */
+    protected abstract boolean onAttachStencilBuffer(Surface stencilBuffer, boolean useMSAA);
 
     /**
      * Compute a {@link RenderTarget} key. Parameters are the same as Surface key, just

@@ -266,6 +266,11 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     @Override
+    public Texture getColorBuffer() {
+        return mColorBuffer;
+    }
+
+    @Override
     protected boolean canAttachStencil(boolean useMSAA) {
         // Only modify the framebuffer attachments if we have created it.
         // Public APIs do not currently allow for wrap-only ownership,
@@ -310,7 +315,10 @@ public final class GLRenderTarget extends RenderTarget {
 
     @Override
     public void onRecycle() {
-
+        if (mColorBuffer != null) {
+            mColorBuffer.unref();
+        }
+        mColorBuffer = null;
     }
 
     @Override

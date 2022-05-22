@@ -80,7 +80,7 @@ public final class GLRenderbuffer extends Surface {
                 glNamedRenderbufferStorage(renderbuffer, internalFormat, width, height);
             }
         } else {
-            clearErrors();
+            glClearErrors();
             if (sampleCount > 1) {
                 glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, internalFormat, width, height);
             } else {
@@ -110,7 +110,7 @@ public final class GLRenderbuffer extends Surface {
         if (server.mCaps.skipErrorChecks()) {
             glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, internalFormat, width, height);
         } else {
-            clearErrors();
+            glClearErrors();
             glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, internalFormat, width, height);
             if (glGetError() != GL_NO_ERROR) {
                 glDeleteRenderbuffers(renderbuffer);

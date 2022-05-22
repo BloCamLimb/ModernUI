@@ -19,6 +19,7 @@
 package icyllis.arcui.opengl;
 
 import icyllis.arcui.engine.*;
+import it.unimi.dsi.fastutil.Function;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
@@ -29,13 +30,16 @@ import static icyllis.arcui.opengl.GLCore.*;
 
 public final class GLServer extends Server {
 
+    private static final Function<GLTexture, RenderTarget[]> RENDER_TARGET_FACTORY =
+            t -> new RenderTarget[8];
+
     final GLCaps mCaps;
 
     // This map holds all render targets. The texture and render target are mutually exclusive.
     // The texture is single sampled, the render targets may be multisampled.
-    private final Object2ObjectOpenHashMap<Texture, RenderTarget[]> mRenderTargetMap;
+    private final Object2ObjectOpenHashMap<GLTexture, RenderTarget[]> mRenderTargetMap;
 
-    private final RenderTargetObjects mTmpRenderTargetObjects = new RenderTargetObjects();
+    private final RenderTargetObjects mTmpRTObjects = new RenderTargetObjects();
 
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
@@ -109,7 +113,7 @@ public final class GLServer extends Server {
         if (format.getTextureType() != Types.TEXTURE_TYPE_2D) {
             return null;
         }
-        int texture = createTexture(width, height, format.getGLFormat(), levelCount);
+        int texture = createTextureObject(width, height, format.getGLFormat(), levelCount);
         if (texture == 0) {
             return null;
         }
@@ -128,13 +132,22 @@ public final class GLServer extends Server {
             assert mCaps.isFormatRenderable(colorBuffer.getFormat(), sampleCount);
             assert mCaps.isFormatTexturable(colorBuffer.getFormat());
 
-            RenderTargetObjects objects = createRenderTargetObjects(
+            final RenderTarget[] renderTargets = mRenderTargetMap.computeIfAbsent(
+                    colorBuffer, RENDER_TARGET_FACTORY);
+            for (RenderTarget renderTarget : renderTargets) {
+                if (renderTarget != null && renderTarget.getSampleCount() == sampleCount) {
+                    renderTarget.ref();
+                    return renderTarget;
+                }
+            }
+
+            final RenderTargetObjects objects = createRenderTargetObjects(
                     colorBuffer.getTexture(),
                     colorBuffer.getWidth(), colorBuffer.getHeight(),
                     colorBuffer.getFormat(),
                     sampleCount);
             if (objects != null) {
-                return new GLRenderTarget(this,
+                final RenderTarget renderTarget = new GLRenderTarget(this,
                         colorBuffer.getWidth(), colorBuffer.getHeight(),
                         colorBuffer.getFormat(), sampleCount,
                         objects.mFramebuffer,
@@ -142,6 +155,13 @@ public final class GLServer extends Server {
                         colorBuffer,
                         objects.mMSAAColorBuffer,
                         true);
+                for (int i = 0; i < renderTargets.length; i++) {
+                    if (renderTargets[i] == null) {
+                        renderTargets[i] = renderTarget;
+                        break;
+                    }
+                }
+                return renderTarget;
             }
         }
         return null;
@@ -188,8 +208,7 @@ public final class GLServer extends Server {
         return null;
     }
 
-    // target = TEXTURE_2D, isProtected = false
-    private int createTexture(int width, int height, int format, int levels) {
+    private int createTextureObject(int width, int height, int format, int levels) {
         assert format != GLTypes.FORMAT_UNKNOWN;
         assert !glFormatIsCompressed(format);
 
@@ -198,8 +217,8 @@ public final class GLServer extends Server {
             return 0;
         }
 
-        assert (mCaps.mFormatTable[format].mFlags & FormatInfo.TEXTURABLE_FLAG) != 0;
-        assert (mCaps.mFormatTable[format].mFlags & FormatInfo.USE_TEX_STORAGE_FLAG) != 0;
+        assert (mCaps.getFormatInfo(format).mFlags & FormatInfo.TEXTURABLE_FLAG) != 0;
+        assert (mCaps.getFormatInfo(format).mFlags & FormatInfo.TEXTURE_STORAGE_FLAG) != 0;
         int texture = glCreateTextures(GL_TEXTURE_2D);
         if (texture == 0) {
             return 0;
@@ -208,7 +227,7 @@ public final class GLServer extends Server {
         if (mCaps.skipErrorChecks()) {
             glTextureStorage2D(texture, levels, internalFormat, width, height);
         } else {
-            clearErrors();
+            glClearErrors();
             glTextureStorage2D(texture, levels, internalFormat, width, height);
             if (glGetError() != GL_NO_ERROR) {
                 glDeleteTextures(texture);
@@ -224,14 +243,18 @@ public final class GLServer extends Server {
                                                           int width, int height,
                                                           int format,
                                                           int samples) {
+        assert texture != 0;
+        assert format != GLTypes.FORMAT_UNKNOWN;
+        assert !glFormatIsCompressed(format);
+
         // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
-        // different dimensions will give you GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
-        // The workaround is to use traditional glGen* and glBind* (binding make it valid).
+        // different dimensions will report GL_FRAMEBUFFER_INCOMPLETE_DIMENSIONS_EXT.
+        // The workaround is to use traditional glGen* and glBind* (validate).
         final int framebuffer = glGenFramebuffers();
         if (framebuffer == 0) {
             return null;
         }
-        // Create the state vector of the framebuffer, not bind, because we are not DSA.
+        // Create the state vector of the framebuffer.
         bindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
 
         final int msaaFramebuffer;
@@ -249,7 +272,7 @@ public final class GLServer extends Server {
                 deleteFramebuffer(framebuffer);
                 return null;
             }
-            // Create the state vector of the framebuffer, not bind, because we are not DSA.
+            // Create the state vector of the framebuffer.
             bindFramebuffer(GL_DRAW_FRAMEBUFFER, msaaFramebuffer);
 
             msaaColorBuffer = GLRenderbuffer.makeMSAA(this,
@@ -293,19 +316,19 @@ public final class GLServer extends Server {
             }
         }
 
-        return mTmpRenderTargetObjects.set(framebuffer, msaaFramebuffer, msaaColorBuffer);
+        return mTmpRTObjects.set(framebuffer, msaaFramebuffer, msaaColorBuffer);
     }
 
-    private static class RenderTargetObjects {
+    private static final class RenderTargetObjects {
 
         int mFramebuffer;
         int mMSAAFramebuffer;
         GLRenderbuffer mMSAAColorBuffer;
 
-        RenderTargetObjects set(int framebuffer, int MSAAFramebuffer, GLRenderbuffer MSAAColorBuffer) {
+        RenderTargetObjects set(int framebuffer, int msaaFramebuffer, GLRenderbuffer msaaColorBuffer) {
             mFramebuffer = framebuffer;
-            mMSAAFramebuffer = MSAAFramebuffer;
-            mMSAAColorBuffer = MSAAColorBuffer;
+            mMSAAFramebuffer = msaaFramebuffer;
+            mMSAAColorBuffer = msaaColorBuffer;
             return this;
         }
     }
