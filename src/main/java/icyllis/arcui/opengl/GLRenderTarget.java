@@ -18,6 +18,7 @@
 
 package icyllis.arcui.opengl;
 
+import icyllis.arcui.core.SmartPtr;
 import icyllis.arcui.engine.*;
 
 import javax.annotation.Nonnull;
@@ -25,6 +26,7 @@ import javax.annotation.Nullable;
 
 import static icyllis.arcui.opengl.GLCore.*;
 
+//TODO don't create new backend format
 public final class GLRenderTarget extends RenderTarget {
 
     // the render target format, same as main color buffer

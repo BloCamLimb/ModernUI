@@ -18,57 +18,23 @@
 
 package icyllis.arcui.engine;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import icyllis.arcui.core.RefCnt;
 
 /**
  * Ref-counted object that calls a callback from its destructor.
  */
-public abstract class ReleaseCallback {
+public abstract class ReleaseCallback extends RefCnt {
 
-    private static final VarHandle REF_CNT;
-
-    static {
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
-        try {
-            REF_CNT = lookup.findVarHandle(ReleaseCallback.class, "mRefCnt", int.class);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
+    public ReleaseCallback() {
     }
 
-    @SuppressWarnings("FieldMayBeFinal")
-    private volatile int mRefCnt = 1;
-
-    /**
-     * @return true if this resource is uniquely referenced
-     */
-    public final boolean unique() {
-        // std::memory_order_acquire, maybe volatile?
-        return (int) REF_CNT.getAcquire(this) == 1;
+    @Override
+    protected final void onFree() {
+        onRelease();
     }
 
     /**
-     * Increases the reference count by 1.
-     * It's an error to call this method if the reference count has already reached zero.
+     * This callback is invoked when the resource is released.
      */
-    public final void ref() {
-        assert mRefCnt > 0;
-        // stronger than std::memory_order_relaxed
-        REF_CNT.getAndAddRelease(this, 1);
-    }
-
-    /**
-     * Decreases the reference count by 1 .
-     * It's an error to call this method if the reference count has already reached zero.
-     */
-    public final void unref() {
-        assert mRefCnt > 0;
-        // stronger than std::memory_order_acq_rel
-        if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
-            onRelease();
-        }
-    }
-
     public abstract void onRelease();
 }

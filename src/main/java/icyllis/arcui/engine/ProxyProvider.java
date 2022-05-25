@@ -18,6 +18,7 @@
 
 package icyllis.arcui.engine;
 
+import icyllis.arcui.core.SmartPtr;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nullable;

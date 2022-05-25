@@ -19,8 +19,9 @@
 package icyllis.arcui.test;
 
 import icyllis.arcui.core.Kernel32;
-import icyllis.arcui.opengl.GLBackendFormat;
 import icyllis.arcui.engine.*;
+import icyllis.arcui.opengl.GLBackendFormat;
+import icyllis.arcui.opengl.GLCore;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
@@ -49,16 +50,22 @@ public class TestManagedResource {
             throw new RuntimeException();
         }
         GLFW.glfwMakeContextCurrent(window);
-        DirectContext direct = DirectContext.makeOpenGL();
-        if (direct == null) {
+        DirectContext dc = DirectContext.makeOpenGL();
+        if (dc == null) {
             throw new RuntimeException();
         }
         PrintWriter pw = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
 
-        if (direct.getCaps().isFormatTexturable(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, Types.TEXTURE_TYPE_2D))) {
+        if (dc.getCaps().isFormatTexturable(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, Types.TEXTURE_TYPE_2D))) {
             pw.println("OK");
         }
         Swizzle.make("rgb1");
+        TextureProxy proxy = dc.getProxyProvider().createTextureProxy(
+                new GLBackendFormat(GLCore.GL_RGBA8, Types.TEXTURE_TYPE_2D),
+                1600, 900, false, Types.BACKING_FIT_EXACT, true, 0, false);
+        if (proxy != null) {
+            proxy.unref();
+        }
 
         if (Platform.get() == Platform.WINDOWS) {
             if (!Kernel32.CloseHandle(959595595959595959L)) {
@@ -94,7 +101,7 @@ public class TestManagedResource {
             }
         }
 
-        direct.close();
+        dc.close();
         GLFW.glfwDestroyWindow(window);
         GLFW.glfwTerminate();
 

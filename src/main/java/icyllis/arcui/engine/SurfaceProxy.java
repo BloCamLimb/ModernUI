@@ -18,12 +18,11 @@
 
 package icyllis.arcui.engine;
 
+import icyllis.arcui.core.RefCnt;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 
 /**
  * SurfaceProxy targets a {@link Texture} or {@link RenderTarget} with three
@@ -56,21 +55,7 @@ import java.lang.invoke.VarHandle;
  * <p>
  * Use {@link ProxyProvider} to obtain <code>SurfaceProxy</code> objects.
  */
-public abstract sealed class SurfaceProxy permits TextureProxy, RenderTargetProxy {
-
-    private static final VarHandle REF_CNT;
-
-    static {
-        MethodHandles.Lookup lookup = MethodHandles.lookup();
-        try {
-            REF_CNT = lookup.findVarHandle(SurfaceProxy.class, "mRefCnt", int.class);
-        } catch (NoSuchFieldException | IllegalAccessException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @SuppressWarnings("FieldMayBeFinal")
-    private volatile int mRefCnt = 1;
+public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, RenderTargetProxy {
 
     // for wrapped resources, 'mFormat' and 'mDimensions' will always be filled in from the
     // wrapped resource
@@ -157,48 +142,7 @@ public abstract sealed class SurfaceProxy permits TextureProxy, RenderTargetProx
         }
     }
 
-    /**
-     * @return true if this proxy is uniquely referenced by the client pipeline
-     */
-    public final boolean unique() {
-        // std::memory_order_acquire, maybe volatile?
-        return (int) REF_CNT.getAcquire(this) == 1;
-    }
-
-    /**
-     * Increases the reference count by 1 on the client pipeline.
-     * It's an error to call this method if the reference count has already reached zero.
-     */
-    public final void ref() {
-        // stronger than std::memory_order_relaxed
-        REF_CNT.getAndAddRelease(this, 1);
-    }
-
-    /**
-     * Decreases the reference count by 1 on the client pipeline.
-     * It's an error to call this method if the reference count has already reached zero.
-     */
-    public final void unref() {
-        // stronger than std::memory_order_acq_rel
-        if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
-            onFree();
-        }
-    }
-
-    /**
-     * This must be used with caution. It is only valid to call this when 'threadIsolatedTestCnt'
-     * refs are known to be isolated to the current thread. That is, it is known that there are at
-     * least 'threadIsolatedTestCnt' refs for which no other thread may make a balancing unref()
-     * call. Assuming the contract is followed, if this returns false then no other thread has
-     * ownership of this. If it returns true then another thread *may* have ownership.
-     */
-    public final boolean isRefCntLT(int threadIsolatedTestCnt) {
-        int cnt = (int) REF_CNT.getAcquire(this);
-        // If this fails then the above contract has been violated.
-        assert (cnt >= threadIsolatedTestCnt);
-        return cnt <= threadIsolatedTestCnt;
-    }
-
+    @Override
     protected void onFree() {
         // In DDL-mode, uniquely keyed proxies keep their key even after their originating
         // proxy provider has gone away. In that case there is no-one to send the invalid key

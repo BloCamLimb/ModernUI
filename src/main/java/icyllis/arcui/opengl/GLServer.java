@@ -18,6 +18,7 @@
 
 package icyllis.arcui.opengl;
 
+import icyllis.arcui.core.SmartPtr;
 import icyllis.arcui.engine.*;
 import it.unimi.dsi.fastutil.Function;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -31,13 +32,15 @@ import static icyllis.arcui.opengl.GLCore.*;
 public final class GLServer extends Server {
 
     private static final Function<GLTexture, RenderTarget[]> RENDER_TARGET_FACTORY =
-            t -> new RenderTarget[8];
+            t -> new RenderTarget[MAX_NUM_SAMPLES_COUNT];
 
     final GLCaps mCaps;
 
     // This map holds all render targets. The texture and render target are mutually exclusive.
     // The texture is single sampled, the render targets may be multisampled.
     private final Object2ObjectOpenHashMap<GLTexture, RenderTarget[]> mRenderTargetMap;
+
+    private int mHWBoundRenderTargetUniqueID = 0;
 
     private final RenderTargetObjects mTmpRTObjects = new RenderTargetObjects();
 
@@ -89,6 +92,7 @@ public final class GLServer extends Server {
 
     @Override
     public ThreadSafePipelineBuilder getPipelineBuilder() {
+        //TODO
         return new ThreadSafePipelineBuilder() {
             @Override
             public void close() throws Exception {
@@ -128,12 +132,13 @@ public final class GLServer extends Server {
     @Override
     protected RenderTarget onFindOrCreateRenderTarget(@SmartPtr Texture texture,
                                                       int sampleCount) {
-        if (texture instanceof GLTexture colorBuffer) {
-            assert mCaps.isFormatRenderable(colorBuffer.getFormat(), sampleCount);
-            assert mCaps.isFormatTexturable(colorBuffer.getFormat());
+        assert sampleCount > 0;
+        if (texture instanceof GLTexture glTexture) {
+            assert mCaps.isFormatTexturable(glTexture.getFormat());
+            assert mCaps.isFormatRenderable(glTexture.getFormat(), sampleCount);
 
             final RenderTarget[] renderTargets = mRenderTargetMap.computeIfAbsent(
-                    colorBuffer, RENDER_TARGET_FACTORY);
+                    glTexture, RENDER_TARGET_FACTORY);
             for (RenderTarget renderTarget : renderTargets) {
                 if (renderTarget != null && renderTarget.getSampleCount() == sampleCount) {
                     renderTarget.ref();
@@ -142,29 +147,48 @@ public final class GLServer extends Server {
             }
 
             final RenderTargetObjects objects = createRenderTargetObjects(
-                    colorBuffer.getTexture(),
-                    colorBuffer.getWidth(), colorBuffer.getHeight(),
-                    colorBuffer.getFormat(),
+                    glTexture.getTexture(),
+                    glTexture.getWidth(), glTexture.getHeight(),
+                    glTexture.getFormat(),
                     sampleCount);
             if (objects != null) {
                 final RenderTarget renderTarget = new GLRenderTarget(this,
-                        colorBuffer.getWidth(), colorBuffer.getHeight(),
-                        colorBuffer.getFormat(), sampleCount,
+                        glTexture.getWidth(), glTexture.getHeight(),
+                        glTexture.getFormat(), sampleCount,
                         objects.mFramebuffer,
                         objects.mMSAAFramebuffer,
-                        colorBuffer,
+                        glTexture,
                         objects.mMSAAColorBuffer,
                         true);
+                boolean inserted = false;
                 for (int i = 0; i < renderTargets.length; i++) {
                     if (renderTargets[i] == null) {
                         renderTargets[i] = renderTarget;
+                        inserted = true;
                         break;
                     }
+                }
+                if (!inserted) {
+                    throw new UnsupportedOperationException();
                 }
                 return renderTarget;
             }
         }
         return null;
+    }
+
+    void onTextureDestroyed(GLTexture texture) {
+        final RenderTarget[] renderTargets = mRenderTargetMap.get(texture);
+        if (renderTargets != null) {
+            for (RenderTarget renderTarget : renderTargets) {
+                if (renderTarget != null) {
+                    renderTarget.unref();
+                    // We cannot reference RenderTarget without reference the texture, so it should be freed.
+                    assert renderTarget.getRefCnt() == 0;
+                }
+            }
+            mRenderTargetMap.remove(texture);
+        }
     }
 
     @Nullable
@@ -254,8 +278,10 @@ public final class GLServer extends Server {
         if (framebuffer == 0) {
             return null;
         }
+        // Below here we may bind the FBO.
+        mHWBoundRenderTargetUniqueID = 0;
         // Create the state vector of the framebuffer.
-        bindFramebuffer(GL_DRAW_FRAMEBUFFER, framebuffer);
+        bindFramebuffer(GL_FRAMEBUFFER, framebuffer);
 
         final int msaaFramebuffer;
         final GLRenderbuffer msaaColorBuffer;
@@ -273,7 +299,7 @@ public final class GLServer extends Server {
                 return null;
             }
             // Create the state vector of the framebuffer.
-            bindFramebuffer(GL_DRAW_FRAMEBUFFER, msaaFramebuffer);
+            bindFramebuffer(GL_FRAMEBUFFER, msaaFramebuffer);
 
             msaaColorBuffer = GLRenderbuffer.makeMSAA(this,
                     width, height,
@@ -290,7 +316,7 @@ public final class GLServer extends Server {
                     GL_RENDERBUFFER,
                     msaaColorBuffer.getRenderbuffer());
             if (!mCaps.skipErrorChecks()) {
-                int status = glCheckNamedFramebufferStatus(msaaFramebuffer, GL_DRAW_FRAMEBUFFER);
+                int status = glCheckNamedFramebufferStatus(msaaFramebuffer, GL_FRAMEBUFFER);
                 if (status != GL_FRAMEBUFFER_COMPLETE) {
                     deleteFramebuffer(framebuffer);
                     deleteFramebuffer(msaaFramebuffer);
@@ -305,7 +331,7 @@ public final class GLServer extends Server {
                 texture,
                 0);
         if (!mCaps.skipErrorChecks()) {
-            int status = glCheckNamedFramebufferStatus(framebuffer, GL_DRAW_FRAMEBUFFER);
+            int status = glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER);
             if (status != GL_FRAMEBUFFER_COMPLETE) {
                 deleteFramebuffer(framebuffer);
                 deleteFramebuffer(msaaFramebuffer);

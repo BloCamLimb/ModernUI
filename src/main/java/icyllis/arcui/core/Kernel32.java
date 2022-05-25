@@ -20,8 +20,12 @@ package icyllis.arcui.core;
 
 import org.lwjgl.system.*;
 
+import java.nio.IntBuffer;
+
 import static org.lwjgl.system.APIUtil.apiGetFunctionAddress;
+import static org.lwjgl.system.Checks.*;
 import static org.lwjgl.system.JNI.*;
+import static org.lwjgl.system.MemoryUtil.memAddressSafe;
 
 /**
  * Native bindings to kernel32.dll.
@@ -43,6 +47,7 @@ public class Kernel32 {
          */
         public static final long
                 CloseHandle = apiGetFunctionAddress(KERNEL32, "CloseHandle"),
+                GetHandleInformation = apiGetFunctionAddress(KERNEL32, "GetHandleInformation"),
                 GetLastError = apiGetFunctionAddress(KERNEL32, "GetLastError");
 
     }
@@ -54,6 +59,10 @@ public class Kernel32 {
         return KERNEL32;
     }
 
+    public static final int
+            HANDLE_FLAG_INHERIT = 0x00000001,
+            HANDLE_FLAG_PROTECT_FROM_CLOSE = 0x00000002;
+
     /**
      * Closes an open object handle.
      *
@@ -64,6 +73,24 @@ public class Kernel32 {
     public static boolean CloseHandle(@NativeType("HANDLE") long hObject) {
         long __functionAddress = Functions.CloseHandle;
         return callPI(hObject, __functionAddress) != 0;
+    }
+
+    /**
+     * Retrieves certain properties of an object handle.
+     *
+     * @param hObject   A handle to an object whose information is to be retrieved.
+     * @param lpdwFlags A pointer to a variable that receives a set of bit flags that specify
+     *                  properties of the object handle or 0.
+     * @return If the function succeeds, the return value is nonzero.
+     */
+    @NativeType("BOOL")
+    public static boolean GetHandleInformation(@NativeType("HANDLE") long hObject,
+                                               @NativeType("LPDWORD") IntBuffer lpdwFlags) {
+        long __functionAddress = Functions.GetHandleInformation;
+        if (CHECKS) {
+            checkSafe(lpdwFlags, 1);
+        }
+        return callPPI(hObject, memAddressSafe(lpdwFlags), __functionAddress) != 0;
     }
 
     /**

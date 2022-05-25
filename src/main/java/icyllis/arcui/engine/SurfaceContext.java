@@ -21,22 +21,31 @@ package icyllis.arcui.engine;
 /**
  * A helper object to orchestrate commands for a particular surface.
  */
-public class SurfaceContext {
+public abstract class SurfaceContext implements AutoCloseable {
 
     protected final RecordingContext mContext;
     protected final SurfaceProxyView mReadView;
     protected final int mColorInfo;
 
-    public SurfaceContext(RecordingContext context, SurfaceProxyView readView, int colorInfo) {
+    protected SurfaceContext(RecordingContext context,
+                             SurfaceProxyView readView,
+                             int colorInfo) {
+        assert !context.isDropped();
         mContext = context;
         mReadView = readView;
         mColorInfo = colorInfo;
     }
 
+    /**
+     * @return raw ptr to recording context
+     */
     public final RecordingContext getContext() {
         return mContext;
     }
 
+    /**
+     * @return raw ptr to read surface view
+     */
     public final SurfaceProxyView getReadView() {
         return mReadView;
     }
@@ -75,5 +84,10 @@ public class SurfaceContext {
 
     protected final DrawingManager getDrawingManager() {
         return mContext.getDrawingManager();
+    }
+
+    @Override
+    public void close() throws Exception {
+        mReadView.close();
     }
 }

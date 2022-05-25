@@ -19,6 +19,7 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.ImageInfo;
+import icyllis.arcui.core.SmartPtr;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;

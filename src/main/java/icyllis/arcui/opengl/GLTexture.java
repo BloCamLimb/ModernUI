@@ -162,6 +162,7 @@ public final class GLTexture extends Texture {
         info.mTexture = 0;
         info.mMemoryObject = 0;
         info.mMemoryHandle = -1;
+        getServer().onTextureDestroyed(this);
         super.onFree();
     }
 
@@ -171,6 +172,12 @@ public final class GLTexture extends Texture {
         info.mTexture = 0;
         info.mMemoryObject = 0;
         info.mMemoryHandle = -1;
+        getServer().onTextureDestroyed(this);
         super.onDrop();
+    }
+
+    @Override
+    protected GLServer getServer() {
+        return (GLServer) super.getServer();
     }
 }

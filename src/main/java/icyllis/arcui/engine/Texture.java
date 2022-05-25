@@ -18,6 +18,8 @@
 
 package icyllis.arcui.engine;
 
+import icyllis.arcui.core.SmartPtr;
+
 import javax.annotation.Nonnull;
 
 /**

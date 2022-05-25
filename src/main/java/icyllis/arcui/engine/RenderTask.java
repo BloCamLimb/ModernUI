@@ -18,30 +18,21 @@
 
 package icyllis.arcui.engine;
 
+import icyllis.arcui.core.RefCnt;
+
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
- * The subclass that supports recycling.
+ * This class abstracts a task that targets a single {@link SurfaceProxy}, participates in the
+ * {@link DrawingManager}'s DAG, and implements the onExecute method to modify its target proxy's
+ * contents. (e.g., an opsTask that executes a command buffer, a task to regenerate mipmaps, etc.)
  */
-public abstract class RecycledResource extends ManagedResource {
+public abstract class RenderTask extends RefCnt {
 
-    public RecycledResource(Server server) {
-        super(server);
+    private static final AtomicInteger sNextID = new AtomicInteger(1);
+
+    @Override
+    protected void onFree() {
+        // the default implementation is NO-OP
     }
-
-    /**
-     * When recycle is called and there is only one ref left on the resource, we will signal that
-     * the resource can be recycled for reuse. If the subclass (or whoever is managing this resource)
-     * decides not to recycle the objects, it is their responsibility to call unref on the object.
-     */
-    public final void recycle() {
-        if (unique()) {
-            onRecycle();
-        } else {
-            unref();
-        }
-    }
-
-    /**
-     * Override this method to invoke recycling of the underlying resource.
-     */
-    public abstract void onRecycle();
 }

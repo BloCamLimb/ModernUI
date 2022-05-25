@@ -18,6 +18,7 @@
 
 package icyllis.arcui.engine;
 
+import icyllis.arcui.core.SmartPtr;
 import icyllis.arcui.sksl.ShaderCompiler;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -32,6 +33,8 @@ import java.util.List;
  * 3D API commands, etc. Most methods are expected on render thread.
  */
 public abstract class Server {
+
+    protected static final int MAX_NUM_SAMPLES_COUNT = 8;
 
     // this server is managed by this context
     protected final DirectContext mContext;

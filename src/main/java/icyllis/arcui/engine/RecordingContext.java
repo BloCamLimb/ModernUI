@@ -139,7 +139,7 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
     }
 
     /**
-     * Debug tool. Usage: <code>assert isOnOwnerThread();</code>
+     * Debug only. Usage: <code>assert isOnOwnerThread();</code>
      *
      * @return if calling from the context-creating thread
      */

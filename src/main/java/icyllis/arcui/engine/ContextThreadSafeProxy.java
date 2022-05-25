@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public final class ContextThreadSafeProxy {
 
-    private static final AtomicInteger sNextId = new AtomicInteger(1);
+    private static final AtomicInteger sNextID = new AtomicInteger(1);
 
     final int mBackend;
     final ContextOptions mOptions;
@@ -51,7 +51,7 @@ public final class ContextThreadSafeProxy {
     ContextThreadSafeProxy(int backend, ContextOptions options) {
         mBackend = backend;
         mOptions = options;
-        mContextID = sNextId.getAndIncrement();
+        mContextID = sNextID.getAndIncrement();
     }
 
     /**
