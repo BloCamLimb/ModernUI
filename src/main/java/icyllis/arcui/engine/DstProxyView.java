@@ -20,8 +20,8 @@ package icyllis.arcui.engine;
 
 public class DstProxyView  {
 
-    public static final int FLAG_REQUIRES_TEXTURE_BARRIER = 0x2;
-    public static final int FLAG_AS_INPUT_ATTACHMENT = 0x4;
+    public static final int REQUIRES_TEXTURE_BARRIER_FLAG = 0x2;
+    public static final int AS_INPUT_ATTACHMENT_FLAG = 0x4;
 
     SurfaceProxyView mProxyView;
     int mOffsetX;
