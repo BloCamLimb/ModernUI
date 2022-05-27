@@ -19,7 +19,10 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.RefCnt;
+import icyllis.arcui.core.SmartPtr;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -31,8 +34,93 @@ public abstract class RenderTask extends RefCnt {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
+    protected static final int
+            CLOSED_FLAG = 0x01,     // This task can't accept any more dependencies.
+            DETACHED_FLAG = 0x02,   // This task is detached from its creating DrawingManager.
+            SKIPPABLE_FLAG = 0x04,  // This task can be skipped.
+            ATLAS_FLAG = 0x08,      // This task is texture atlas.
+            IN_RESULT_FLAG = 0x10,  // Flag for topological sorting
+            TEMP_MARK_FLAG = 0x20;  // Flag for topological sorting
+
+    static final TopologicalSort.Accessor<RenderTask> SORT_ACCESSOR = new TopologicalSort.Accessor<>() {
+        @Override
+        public void setIndex(RenderTask node, int index) {
+            node.setIndex(index);
+            node.setBooleanFlag(IN_RESULT_FLAG, true);
+        }
+
+        @Override
+        public int getIndex(RenderTask node) {
+            return node.getIndex();
+        }
+
+        @Override
+        public boolean isInResult(RenderTask node) {
+            return node.hasBooleanFlag(IN_RESULT_FLAG);
+        }
+
+        @Override
+        public void setTempMarked(RenderTask node, boolean marked) {
+            node.setBooleanFlag(TEMP_MARK_FLAG, marked);
+        }
+
+        @Override
+        public boolean isTempMarked(RenderTask node) {
+            return node.hasBooleanFlag(TEMP_MARK_FLAG);
+        }
+
+        @Override
+        public List<RenderTask> getEdges(RenderTask node) {
+            return node.mDependencies;
+        }
+    };
+
+    private final int mUniqueID;
+    private int mFlags;
+
+    // 'this' RenderTask relies on the output of the RenderTasks in 'fDependencies'
+    private final List<RenderTask> mDependencies = new ArrayList<>();
+    // 'this' RenderTask's output is relied on by the RenderTasks in 'fDependents'
+    private final List<RenderTask> mDependents = new ArrayList<>();
+
+    @SmartPtr
+    protected final List<SurfaceProxy> mTargets = new ArrayList<>();
+
+    private DrawingManager mDrawingManager;
+
+    public RenderTask() {
+        mUniqueID = sNextID.getAndIncrement();
+    }
+
+    public int getUniqueID() {
+        return mUniqueID;
+    }
+
+    protected void setBooleanFlag(int flag, boolean value) {
+        if (value) {
+            mFlags |= flag;
+        } else {
+            mFlags &= ~flag;
+        }
+    }
+
+    protected boolean hasBooleanFlag(int flag) {
+        return (mFlags & flag) != 0;
+    }
+
+    protected void setIndex(int index) {
+        assert !hasBooleanFlag(IN_RESULT_FLAG);
+        assert (index < (1 << 26));
+        mFlags |= index << 6;
+    }
+
+    protected int getIndex() {
+        assert hasBooleanFlag(IN_RESULT_FLAG);
+        return mFlags >> 6;
+    }
+
     @Override
     protected void onFree() {
-        // the default implementation is NO-OP
+        assert hasBooleanFlag(DETACHED_FLAG);
     }
 }

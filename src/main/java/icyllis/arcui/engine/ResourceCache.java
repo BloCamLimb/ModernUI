@@ -140,7 +140,7 @@ public final class ResourceCache implements AutoCloseable {
     ResourceCache(int contextID) {
         mContextID = contextID;
 
-        mCleanableQueue = new PriorityQueue<>(TIMESTAMP_COMPARATOR, Resource.INDEX_ACCESS);
+        mCleanableQueue = new PriorityQueue<>(TIMESTAMP_COMPARATOR, Resource.QUEUE_ACCESSOR);
         mNonCleanableList = new Resource[10]; // initial size must > 2
 
         mScratchMap = new Object2ObjectOpenHashMap<>();

@@ -19,7 +19,6 @@
 package icyllis.arcui.engine;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.List;
 
 /**
@@ -38,7 +37,7 @@ public final class TopologicalSort {
      * @param graph    the directed acyclic graph to sort
      * @param accessor the data accessor
      * @param <T>      the node type of the graph
-     * @throws IllegalStateException if the graph contains cycles
+     * @throws IllegalStateException if the graph contains loops
      */
     public static <T> void topologicalSort(@Nonnull List<T> graph, @Nonnull Accessor<T> accessor) {
         assert checkAllUnmarked(graph, accessor);
@@ -75,10 +74,11 @@ public final class TopologicalSort {
             return index;
         }
         if (accessor.isTempMarked(node)) {
-            throw new IllegalStateException("This graph contains cyclic dependencies");
+            // There was a loop
+            throw new IllegalStateException();
         }
         final List<T> edges = accessor.getEdges(node);
-        if (edges != null) {
+        if (edges != null && !edges.isEmpty()) {
             // Temporarily mark the node
             accessor.setTempMarked(node, true);
             // Recursively dfs all the node's edges
@@ -168,7 +168,6 @@ public final class TopologicalSort {
          * @param node the node of the graph
          * @return a list containing any incoming edges, or null if there are none
          */
-        @Nullable
         List<T> getEdges(T node);
     }
 }

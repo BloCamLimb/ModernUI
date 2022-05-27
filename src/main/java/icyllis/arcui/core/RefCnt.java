@@ -18,10 +18,9 @@
 
 package icyllis.arcui.core;
 
-import it.unimi.dsi.fastutil.ints.*;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Base class for objects that may be shared by multiple objects. When an
@@ -36,7 +35,7 @@ import java.lang.invoke.VarHandle;
 public abstract class RefCnt implements AutoCloseable {
 
     private static final VarHandle REF_CNT;
-    private static final Int2BooleanMap TRACKER;
+    private static final ConcurrentHashMap<RefCnt, Boolean> TRACKER;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -45,12 +44,14 @@ public abstract class RefCnt implements AutoCloseable {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        TRACKER = Int2BooleanMaps.synchronize(new Int2BooleanOpenHashMap(0, 0.9f));
+        TRACKER = new ConcurrentHashMap<>(0, 0.9f);
         try {
             assert false;
         } catch (AssertionError e) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                assert TRACKER.isEmpty() : "MEMORY LEAKS, CHECK YOUR REF-CNT OBJECTS!";
+                // Subclasses should override toString() for debug purposes
+                TRACKER.forEach((o, __) -> System.err.printf("Leaked: %s\n", o.toString()));
+                assert TRACKER.isEmpty();
             }, "RefCnt-Tracker"));
         }
     }
@@ -61,8 +62,9 @@ public abstract class RefCnt implements AutoCloseable {
     /**
      * Default constructor, initializing the reference count to 1.
      */
+    @SuppressWarnings("AssertWithSideEffects")
     public RefCnt() {
-        assert !TRACKER.put(System.identityHashCode(this), false);
+        assert TRACKER.put(this, Boolean.TRUE) == null;
     }
 
     /**
@@ -92,13 +94,14 @@ public abstract class RefCnt implements AutoCloseable {
      * the decrement, then {@link #onFree()} is called. It's an error to call this method if
      * the reference count has already reached zero.
      */
+    @SuppressWarnings("AssertWithSideEffects")
     public final void unref() {
         // std::memory_order_seq_cst, maybe relaxed?
         assert mRefCnt > 0;
         // stronger than std::memory_order_acq_rel
         if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
             onFree();
-            assert !TRACKER.remove(System.identityHashCode(this));
+            assert TRACKER.remove(this) == Boolean.TRUE;
         }
     }
 

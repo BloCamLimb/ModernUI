@@ -76,7 +76,7 @@ public abstract class Resource {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
-    static final PriorityQueue.Accessor<Resource> INDEX_ACCESS = new PriorityQueue.Accessor<>() {
+    static final PriorityQueue.Accessor<Resource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
         @Override
         public void setIndex(Resource resource, int index) {
             resource.mCacheIndex = index;

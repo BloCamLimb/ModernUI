@@ -50,21 +50,24 @@ public class TestManagedResource {
             throw new RuntimeException();
         }
         GLFW.glfwMakeContextCurrent(window);
-        DirectContext dc = DirectContext.makeOpenGL();
-        if (dc == null) {
+        DirectContext directContext = DirectContext.makeOpenGL();
+        if (directContext == null) {
             throw new RuntimeException();
         }
         PrintWriter pw = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
 
-        if (dc.getCaps().isFormatTexturable(new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, Types.TEXTURE_TYPE_2D))) {
-            pw.println("OK");
+        if (directContext.getCaps().isFormatTexturable(
+                new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
+                        Types.TEXTURE_TYPE_2D))) {
+            pw.println("Compressed format: OK");
         }
         Swizzle.make("rgb1");
-        TextureProxy proxy = dc.getProxyProvider().createTextureProxy(
+
+        TextureProxy proxy = directContext.getProxyProvider().createTextureProxy(
                 new GLBackendFormat(GLCore.GL_RGBA8, Types.TEXTURE_TYPE_2D),
-                1600, 900, false, Types.BACKING_FIT_EXACT, true, 0, false);
-        if (proxy != null) {
-            proxy.unref();
+                1600, 900, Types.MIPMAPPED_YES, Types.BACKING_FIT_EXACT, true, 0, false);
+        try (proxy) {
+            pw.println(proxy);
         }
 
         if (Platform.get() == Platform.WINDOWS) {
@@ -101,7 +104,7 @@ public class TestManagedResource {
             }
         }
 
-        dc.close();
+        directContext.close();
         GLFW.glfwDestroyWindow(window);
         GLFW.glfwTerminate();
 
