@@ -19,7 +19,7 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.RefCnt;
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -83,7 +83,7 @@ public abstract class RenderTask extends RefCnt {
     // 'this' RenderTask's output is relied on by the RenderTasks in 'fDependents'
     private final List<RenderTask> mDependents = new ArrayList<>();
 
-    @SmartPtr
+    @SharedPtr
     protected final List<SurfaceProxy> mTargets = new ArrayList<>();
 
     private DrawingManager mDrawingManager;

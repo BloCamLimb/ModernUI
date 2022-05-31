@@ -18,7 +18,7 @@
 
 package icyllis.arcui.engine;
 
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 
 import javax.annotation.Nonnull;
 
@@ -42,7 +42,7 @@ public abstract class Texture extends Surface {
     private boolean mReadOnly;
     private boolean mMipmapsDirty = true; // only valid if isMipmapped=true
 
-    @SmartPtr
+    @SharedPtr
     private ReleaseCallback mReleaseCallback;
 
     protected Texture(Server server, int width, int height) {
@@ -111,7 +111,7 @@ public abstract class Texture extends Surface {
      * Unmanaged backends (e.g. Vulkan) may want to specially handle the release proc in order to
      * ensure it isn't called until GPU work related to the resource is completed.
      */
-    public void setReleaseCallback(@SmartPtr ReleaseCallback callback) {
+    public void setReleaseCallback(@SharedPtr ReleaseCallback callback) {
         if (mReleaseCallback != null) {
             mReleaseCallback.unref();
         }

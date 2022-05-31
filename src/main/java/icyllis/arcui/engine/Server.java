@@ -18,7 +18,7 @@
 
 package icyllis.arcui.engine;
 
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 import icyllis.arcui.sksl.ShaderCompiler;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -117,7 +117,7 @@ public abstract class Server {
      * @return the texture object if successful, otherwise nullptr
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     @VisibleForTesting
     public final Texture createTexture(int width, int height,
                                        BackendFormat format,
@@ -149,7 +149,7 @@ public abstract class Server {
      * before onCreateTexture is called.
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     protected abstract Texture onCreateTexture(int width, int height,
                                                BackendFormat format,
                                                int levelCount,
@@ -169,9 +169,9 @@ public abstract class Server {
      * @return a managed, recyclable render target, or null if failed
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     @VisibleForTesting
-    public final RenderTarget findOrCreateRenderTarget(@SmartPtr Texture texture,
+    public final RenderTarget findOrCreateRenderTarget(@SharedPtr Texture texture,
                                                        int sampleCount) {
         assert sampleCount > 0;
         assert mCaps.validateRenderTargetParams(
@@ -198,8 +198,8 @@ public abstract class Server {
      * before onFindOrCreateRenderTarget is called.
      */
     @Nullable
-    @SmartPtr
-    protected abstract RenderTarget onFindOrCreateRenderTarget(@SmartPtr Texture texture,
+    @SharedPtr
+    protected abstract RenderTarget onFindOrCreateRenderTarget(@SharedPtr Texture texture,
                                                                int sampleCount);
 
     /**
@@ -215,7 +215,7 @@ public abstract class Server {
      * @return a non-cacheable render target, or null if failed
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public RenderTarget wrapRenderableBackendTexture(BackendTexture texture,
                                                      int sampleCount,
                                                      boolean ownership) {
@@ -239,7 +239,7 @@ public abstract class Server {
     }
 
     @Nullable
-    @SmartPtr
+    @SharedPtr
     protected abstract RenderTarget onWrapRenderableBackendTexture(BackendTexture texture,
                                                                    int sampleCount,
                                                                    boolean ownership);

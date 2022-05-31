@@ -62,6 +62,7 @@ public class TestManagedResource {
             pw.println("Compressed format: OK");
         }
         Swizzle.make("rgb1");
+        SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
 
         TextureProxy proxy = directContext.getProxyProvider().createTextureProxy(
                 new GLBackendFormat(GLCore.GL_RGBA8, Types.TEXTURE_TYPE_2D),

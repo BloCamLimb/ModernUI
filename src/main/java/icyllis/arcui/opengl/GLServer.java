@@ -18,7 +18,7 @@
 
 package icyllis.arcui.opengl;
 
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 import icyllis.arcui.engine.*;
 import it.unimi.dsi.fastutil.Function;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -130,7 +130,7 @@ public final class GLServer extends Server {
 
     @Nullable
     @Override
-    protected RenderTarget onFindOrCreateRenderTarget(@SmartPtr Texture texture,
+    protected RenderTarget onFindOrCreateRenderTarget(@SharedPtr Texture texture,
                                                       int sampleCount) {
         assert sampleCount > 0;
         if (texture instanceof GLTexture glTexture) {

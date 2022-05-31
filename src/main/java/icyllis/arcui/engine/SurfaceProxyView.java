@@ -18,22 +18,22 @@
 
 package icyllis.arcui.engine;
 
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 
 public final class SurfaceProxyView implements AutoCloseable {
 
-    @SmartPtr
+    @SharedPtr
     SurfaceProxy mProxy;
     int mOrigin;
     short mSwizzle;
 
-    public SurfaceProxyView(@SmartPtr SurfaceProxy proxy) {
+    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy) {
         mProxy = proxy; // std::move()
         mOrigin = Types.SURFACE_ORIGIN_TOP_LEFT;
         mSwizzle = Swizzle.RGBA;
     }
 
-    public SurfaceProxyView(@SmartPtr SurfaceProxy proxy, int origin, short swizzle) {
+    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy, int origin, short swizzle) {
         mProxy = proxy; // std::move()
         mOrigin = origin;
         mSwizzle = swizzle;
@@ -61,7 +61,7 @@ public final class SurfaceProxyView implements AutoCloseable {
     /**
      * Returns a smart pointer (as if on the stack).
      */
-    @SmartPtr
+    @SharedPtr
     public SurfaceProxy refProxy() {
         mProxy.ref();
         return mProxy;
@@ -71,7 +71,7 @@ public final class SurfaceProxyView implements AutoCloseable {
      * This does not reset the origin or swizzle, so the view can still be used to access those
      * properties associated with the detached proxy.
      */
-    @SmartPtr
+    @SharedPtr
     public SurfaceProxy detachProxy() {
         // just like std::move(), R-value reference
         SurfaceProxy proxy = mProxy;

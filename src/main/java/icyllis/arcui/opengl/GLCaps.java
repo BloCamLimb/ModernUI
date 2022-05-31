@@ -72,6 +72,7 @@ public final class GLCaps extends Caps {
             "ARB_base_instance",
             "ARB_texture_storage",
             "ARB_internalformat_query",
+            "ARB_shading_language_420pack",
             "ARB_invalidate_subdata",
             "ARB_multi_draw_indirect",
             "ARB_explicit_uniform_location",
@@ -134,6 +135,9 @@ public final class GLCaps extends Caps {
                 }
                 if (!caps.GL_ARB_internalformat_query) {
                     throw new AssertionError("ARB_internalformat_query is unavailable");
+                }
+                if (!caps.GL_ARB_shading_language_420pack) {
+                    throw new AssertionError("GL_ARB_shading_language_420pack is unavailable");
                 }
             }
             if (!caps.OpenGL43) {
@@ -221,10 +225,10 @@ public final class GLCaps extends Caps {
             mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.ADV_BLEND_EQ_INTERACTION_GENERAL_ENABLE;
         }
 
-        mAnisoSupport = caps.OpenGL46 ||
+        mAnisotropySupport = caps.OpenGL46 ||
                 caps.GL_ARB_texture_filter_anisotropic ||
                 caps.GL_EXT_texture_filter_anisotropic;
-        if (mAnisoSupport) {
+        if (mAnisotropySupport) {
             mMaxTextureMaxAnisotropy = glGetFloat(GL_MAX_TEXTURE_MAX_ANISOTROPY);
         }
 

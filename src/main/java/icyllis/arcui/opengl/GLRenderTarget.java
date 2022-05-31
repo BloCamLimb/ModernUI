@@ -18,7 +18,7 @@
 
 package icyllis.arcui.opengl;
 
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 import icyllis.arcui.engine.*;
 
 import javax.annotation.Nonnull;
@@ -42,7 +42,7 @@ public final class GLRenderTarget extends RenderTarget {
     private GLTexture mColorBuffer;
     // the renderbuffer used as MSAA color buffer
     // always null for wrapped render targets
-    @SmartPtr
+    @SharedPtr
     private GLRenderbuffer mMSAAColorBuffer;
 
     // if we need bind stencil buffers on next framebuffer bind call
@@ -62,7 +62,7 @@ public final class GLRenderTarget extends RenderTarget {
                           int framebuffer,
                           int msaaFramebuffer,
                           GLTexture colorBuffer,
-                          @SmartPtr GLRenderbuffer msaaColorBuffer,
+                          @SharedPtr GLRenderbuffer msaaColorBuffer,
                           boolean ownership) {
         super(server, width, height, sampleCount);
         assert sampleCount > 0;
@@ -87,8 +87,8 @@ public final class GLRenderTarget extends RenderTarget {
                            int framebuffer,
                            int msaaFramebuffer,
                            GLTexture colorBuffer,
-                           @SmartPtr GLRenderbuffer msaaColorBuffer,
-                           @SmartPtr GLRenderbuffer stencilBuffer,
+                           @SharedPtr GLRenderbuffer msaaColorBuffer,
+                           @SharedPtr GLRenderbuffer stencilBuffer,
                            boolean ownership) {
         super(server, width, height, sampleCount, stencilBuffer);
         assert sampleCount > 0;
@@ -113,7 +113,7 @@ public final class GLRenderTarget extends RenderTarget {
                                              int framebuffer,
                                              int msaaFramebuffer,
                                              GLTexture colorBuffer,
-                                             @SmartPtr GLRenderbuffer msaaColorBuffer,
+                                             @SharedPtr GLRenderbuffer msaaColorBuffer,
                                              int stencilBits,
                                              boolean ownership) {
         GLRenderbuffer stencilBuffer = null;

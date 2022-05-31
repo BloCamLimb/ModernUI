@@ -53,7 +53,7 @@ public abstract class Caps {
 
     protected final ShaderCaps mShaderCaps = new ShaderCaps();
 
-    protected boolean mAnisoSupport = false;
+    protected boolean mAnisotropySupport = false;
     protected boolean mGpuTracingSupport = false;
     protected boolean mNativeDrawIndirectSupport = false;
     protected boolean mUseClientSideIndirectBuffers = false;
@@ -106,8 +106,8 @@ public abstract class Caps {
     /**
      * Anisotropic filtering (AF).
      */
-    public final boolean anisoSupport() {
-        return mAnisoSupport;
+    public final boolean anisotropySupport() {
+        return mAnisotropySupport;
     }
 
     public final boolean gpuTracingSupport() {

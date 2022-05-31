@@ -19,7 +19,7 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.ImageInfo;
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
@@ -79,7 +79,7 @@ public final class ResourceProvider {
      * of type T. If the resource is no longer used, then {@link Resource#unref()} must be called.
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     @SuppressWarnings("unchecked")
     public <T extends Resource> T findByUniqueKey(ResourceKey key) {
         return mServer.getContext().isDropped() ? null : (T) mCache.findAndRefUniqueResource(key);
@@ -99,7 +99,7 @@ public final class ResourceProvider {
      * @param isProtected should the texture be created as protected
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public Texture createApproxTexture(int width, int height,
                                        BackendFormat format,
                                        boolean isProtected) {
@@ -152,7 +152,7 @@ public final class ResourceProvider {
      * @param pixels       the native pointer to the off-heap texel data for base level image
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public Texture createApproxTexture(int width, int height,
                                        BackendFormat format,
                                        boolean isProtected,
@@ -196,7 +196,7 @@ public final class ResourceProvider {
      * @param isProtected should the texture be created as protected
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public Texture createTexture(int width, int height,
                                  BackendFormat format,
                                  boolean mipmapped,
@@ -252,7 +252,7 @@ public final class ResourceProvider {
      * @param pixels       the native pointer to the off-heap texel data for base level image
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public Texture createTexture(int width, int height,
                                  BackendFormat format,
                                  boolean mipmapped,
@@ -294,8 +294,8 @@ public final class ResourceProvider {
      * on failure.
      */
     @Nullable
-    @SmartPtr
-    private Texture writePixels(@SmartPtr Texture texture,
+    @SharedPtr
+    private Texture writePixels(@SharedPtr Texture texture,
                                 int baseWidth,
                                 int baseHeight,
                                 int rowLength,
@@ -334,7 +334,7 @@ public final class ResourceProvider {
      * it returns null. If non-null, the resulting texture is always budgeted.
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public Texture findAndRefScratchTexture(ResourceKey key) {
         assert mServer.getContext().isOnOwnerThread();
         assert !mServer.getContext().isDropped();
@@ -353,7 +353,7 @@ public final class ResourceProvider {
      * it returns null. If non-null, the resulting texture is always budgeted.
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public Texture findAndRefScratchTexture(int width, int height,
                                             BackendFormat format,
                                             boolean mipmapped,
@@ -392,7 +392,7 @@ public final class ResourceProvider {
      * @return a managed, recyclable render target, or null if failed
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public RenderTarget createRenderTarget(int width, int height,
                                            BackendFormat format,
                                            int sampleCount,
@@ -438,7 +438,7 @@ public final class ResourceProvider {
      * @return a managed, non-recycled render target, or null if failed
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public RenderTarget wrapRenderableBackendTexture(BackendTexture texture,
                                                      int sampleCount,
                                                      boolean ownership) {

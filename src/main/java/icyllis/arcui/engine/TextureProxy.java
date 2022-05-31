@@ -18,7 +18,7 @@
 
 package icyllis.arcui.engine;
 
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,7 +30,7 @@ public final class TextureProxy extends SurfaceProxy {
 
     // For deferred proxies it will be null until the proxy is instantiated.
     // For wrapped proxies it will point to the wrapped resource.
-    @SmartPtr
+    @SharedPtr
     Texture mTexture;
 
     LazyInstantiateCallback mLazyInstantiateCallback;

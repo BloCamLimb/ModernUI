@@ -18,7 +18,7 @@
 
 package icyllis.arcui.engine;
 
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nullable;
@@ -90,7 +90,7 @@ public final class ProxyProvider {
      * @see TextureProxy
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public TextureProxy createTextureProxy(BackendFormat format,
                                            int width, int height,
                                            boolean mipmapped,
@@ -117,7 +117,7 @@ public final class ProxyProvider {
     }
 
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public RenderTargetProxy createRenderTargetProxy(BackendFormat format,
                                                      int width, int height,
                                                      int sampleCount,
@@ -152,7 +152,7 @@ public final class ProxyProvider {
      * buffers then a MSAA render buffer is created that resolves to the texture.
      */
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public RenderTargetProxy wrapRenderableBackendTexture(BackendTexture texture,
                                                           int sampleCount,
                                                           boolean ownership,

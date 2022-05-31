@@ -18,7 +18,7 @@
 
 package icyllis.arcui.opengl;
 
-import icyllis.arcui.core.SmartPtr;
+import icyllis.arcui.core.SharedPtr;
 import icyllis.arcui.engine.*;
 
 import javax.annotation.Nonnull;
@@ -60,7 +60,7 @@ public final class GLRenderbuffer extends Surface {
     }
 
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public static GLRenderbuffer makeStencil(GLServer server,
                                              int width, int height,
                                              int sampleCount,
@@ -97,7 +97,7 @@ public final class GLRenderbuffer extends Surface {
     }
 
     @Nullable
-    @SmartPtr
+    @SharedPtr
     public static GLRenderbuffer makeMSAA(GLServer server,
                                           int width, int height,
                                           int sampleCount,
@@ -123,7 +123,7 @@ public final class GLRenderbuffer extends Surface {
     }
 
     @Nonnull
-    @SmartPtr
+    @SharedPtr
     public static GLRenderbuffer makeWrapped(GLServer server,
                                              int width, int height,
                                              int sampleCount,
