@@ -23,9 +23,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.opengl.GLSurfaceCanvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.opengl.GLSurfaceCanvas;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -66,18 +66,23 @@ public final class TooltipRenderer {
 
     private static final int[] sUseFillColor = new int[4];
     private static final int[] sUseStrokeColor = new int[4];
+    static volatile float sAnimationDuration; // milliseconds
 
     private static boolean sDraw;
     public static float sAlpha;
 
     static void update(long deltaMillis, long timeMillis) {
         if (sDraw) {
-            if (sAlpha < 1) {
-                sAlpha = Math.min(sAlpha + deltaMillis * 0.005f, 1);
+            if (sAnimationDuration == 0) {
+                sAlpha = 1;
+            } else if (sAlpha < 1) {
+                sAlpha = Math.min(sAlpha + deltaMillis / sAnimationDuration, 1);
             }
             sDraw = false;
+        } else if (sAnimationDuration == 0) {
+            sAlpha = 0;
         } else if (sAlpha > 0) {
-            sAlpha = Math.max(sAlpha - deltaMillis * 0.005f, 0);
+            sAlpha = Math.max(sAlpha - deltaMillis / sAnimationDuration, 0);
         }
         /*if (sAlpha > 0) {
             float p = (timeMillis % 1000) / 1000f;

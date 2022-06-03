@@ -172,7 +172,7 @@ public class CenterFragment extends Fragment {
                 screen.addView(view, params);
 
                 var input = new EditText();
-                input.setText(Config.CLIENT.animationDuration.get().toString());
+                input.setText(Config.CLIENT.backgroundDuration.get().toString());
                 input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(3));
@@ -182,8 +182,8 @@ public class CenterFragment extends Fragment {
                         int radius = Integer.parseInt(input.getText().toString());
                         radius = FMath.clamp(radius, Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
                         input.setText(Integer.toString(radius));
-                        if (radius != Config.CLIENT.animationDuration.get()) {
-                            Config.CLIENT.animationDuration.set(radius);
+                        if (radius != Config.CLIENT.backgroundDuration.get()) {
+                            Config.CLIENT.backgroundDuration.set(radius);
                             Config.CLIENT.saveAndReload();
                         }
                     }
