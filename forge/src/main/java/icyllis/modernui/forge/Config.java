@@ -164,13 +164,14 @@ final class Config {
         public static final float FONT_SCALE_MAX = 2.0f;
 
         final ForgeConfigSpec.BooleanValue blurEffect;
-        final ForgeConfigSpec.IntValue animationDuration;
+        final ForgeConfigSpec.IntValue backgroundDuration;
         final ForgeConfigSpec.IntValue blurRadius;
         final ForgeConfigSpec.ConfigValue<List<? extends String>> backgroundColor;
         final ForgeConfigSpec.BooleanValue inventoryPause;
         final ForgeConfigSpec.BooleanValue tooltip;
         final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipFill;
         final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipStroke;
+        final ForgeConfigSpec.IntValue tooltipDuration;
         final ForgeConfigSpec.BooleanValue ding;
         //private final ForgeConfigSpec.BooleanValue hudBars;
         final ForgeConfigSpec.BooleanValue forceRtl;
@@ -196,7 +197,7 @@ final class Config {
             builder.comment("Screen Config")
                     .push("screen");
 
-            animationDuration = builder.comment(
+            backgroundDuration = builder.comment(
                             "The duration of GUI background color and blur radius animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 200, ANIM_DURATION_MIN, ANIM_DURATION_MAX);
             backgroundColor = builder.comment(
@@ -266,6 +267,9 @@ final class Config {
                         list.add("#F0DAD0F4");
                         return list;
                     }, $ -> true);
+            tooltipDuration = builder.comment(
+                            "The duration of tooltip alpha animation in milliseconds. (0 = OFF)")
+                    .defineInRange("animationDuration", 200, ANIM_DURATION_MIN, ANIM_DURATION_MAX);
 
             builder.pop();
 
@@ -365,7 +369,7 @@ final class Config {
 
         private void reload() {
             BlurHandler.sBlurEffect = blurEffect.get();
-            BlurHandler.sAnimationDuration = animationDuration.get();
+            BlurHandler.sAnimationDuration = backgroundDuration.get();
             BlurHandler.sBlurRadius = blurRadius.get();
 
             List<? extends String> colors = backgroundColor.get();
@@ -413,6 +417,7 @@ final class Config {
                 }
                 TooltipRenderer.sStrokeColor[i] = color;
             }
+            TooltipRenderer.sAnimationDuration = tooltipDuration.get();
 
             UIManager.sPlaySoundOnLoaded = ding.get();
             //TestHUD.sBars = hudBars.get();
