@@ -18,5 +18,8 @@
 
 package icyllis.arcui.sksl;
 
-public class Spirv {
+/**
+ * Contains compiler-wide objects, which currently means the core types.
+ */
+public class Context {
 }

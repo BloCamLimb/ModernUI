@@ -18,5 +18,5 @@
 
 package icyllis.arcui.sksl;
 
-public class Modifiers {
+public class ShaderCaps {
 }

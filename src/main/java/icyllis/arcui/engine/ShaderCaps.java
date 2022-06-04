@@ -18,7 +18,7 @@
 
 package icyllis.arcui.engine;
 
-public class ShaderCaps {
+public class ShaderCaps extends icyllis.arcui.sksl.ShaderCaps {
 
     /**
      * Indicates how GLSL must interact with advanced blend equations. The KHR extension requires

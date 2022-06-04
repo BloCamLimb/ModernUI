@@ -18,7 +18,8 @@
 
 package icyllis.arcui.sksl.ast;
 
-import icyllis.arcui.sksl.Modifiers;
+import icyllis.arcui.sksl.Qualifiers;
+import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
 import java.util.Collections;
@@ -60,20 +61,6 @@ public class Type extends Symbol {
             SCALAR_KIND_UNSIGNED = 2,
             SCALAR_KIND_BOOLEAN = 3,
             SCALAR_KIND_DEFAULT = 4;
-
-    /**
-     * Spir-V SpvDim_.
-     *
-     * @see #getDimensions()
-     */
-    public static final int
-            DIM_1D = 0,
-            DIM_2D = 1,
-            DIM_3D = 2,
-            DIM_CUBE = 3,
-            DIM_RECT = 4,
-            DIM_BUFFER = 5,
-            DIM_SUBPASS_DATA = 6;
 
     /**
      * CoercionCost.
@@ -150,7 +137,13 @@ public class Type extends Symbol {
         }
     }
 
-    public record Field(int start, int end, Modifiers modifiers, String name, Type type) {
+    /**
+     * Struct member.
+     *
+     * @param start the start offset
+     * @param end   the end offset
+     */
+    public record Field(int start, int end, Qualifiers qualifiers, String name, Type type) {
 
         @Nonnull
         public String getDescription() {
@@ -241,6 +234,8 @@ public class Type extends Symbol {
 
     /**
      * Create a texture type.
+     *
+     * @param dimensions SpvDim, for example, {@link Spv#SpvDim1D}
      */
     @Nonnull
     public static Type makeTextureType(String name, int dimensions, boolean isDepth, boolean isLayered,
@@ -538,7 +533,7 @@ public class Type extends Symbol {
 
     public int getDimensions() {
         assert false;
-        return DIM_1D;
+        return Spv.SpvDim1D;
     }
 
     public boolean isDepth() {

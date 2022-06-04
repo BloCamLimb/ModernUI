@@ -80,6 +80,7 @@ public final class GLCaps extends Caps {
             "ARB_ES3_compatibility",
             "ARB_clear_texture",
             "ARB_buffer_storage",
+            "ARB_enhanced_layouts",
             "ARB_texture_barrier",
             "ARB_direct_state_access"
     };
@@ -163,6 +164,9 @@ public final class GLCaps extends Caps {
                 }
                 if (!caps.GL_ARB_buffer_storage) {
                     throw new AssertionError("ARB_buffer_storage is unavailable");
+                }
+                if (!caps.GL_ARB_enhanced_layouts) {
+                    throw new AssertionError("ARB_enhanced_layouts is unavailable");
                 }
             }
             if (!caps.GL_ARB_texture_barrier) {
