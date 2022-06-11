@@ -255,15 +255,15 @@ public final class ModernUIForge {
     }
 
     @SuppressWarnings("UnusedReturnValue")
-    public static <T extends Event & IModBusEvent> boolean post(@Nullable String s, @Nonnull T e) {
-        if (s == null) {
+    public static <E extends Event & IModBusEvent> boolean post(@Nullable String ns, @Nonnull E e) {
+        if (ns == null) {
             boolean handled = false;
             for (IEventBus bus : sModEventBuses.values()) {
                 handled |= bus.post(e);
             }
             return handled;
         } else {
-            IEventBus bus = sModEventBuses.get(s);
+            IEventBus bus = sModEventBuses.get(ns);
             return bus != null && bus.post(e);
         }
     }

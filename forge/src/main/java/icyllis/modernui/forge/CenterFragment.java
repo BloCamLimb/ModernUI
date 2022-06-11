@@ -162,7 +162,7 @@ public class CenterFragment extends Fragment {
             {
                 var view = new TextView();
                 view.setId(12);
-                view.setText(I18n.get("gui.modernui.center.screen.animationDuration"));
+                view.setText(I18n.get("gui.modernui.center.screen.backgroundDuration"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
@@ -304,7 +304,7 @@ public class CenterFragment extends Fragment {
         }
 
         {
-            var general = new RelativeLayout();
+            var extension = new RelativeLayout();
 
             {
                 var title = new TextView();
@@ -318,7 +318,7 @@ public class CenterFragment extends Fragment {
                 params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
                 params.addRule(RelativeLayout.ALIGN_PARENT_START);
                 params.setMargins(dp6, dp6, dp6, dp6);
-                general.addView(title, params);
+                extension.addView(title, params);
             }
 
             {
@@ -331,7 +331,7 @@ public class CenterFragment extends Fragment {
                         WRAP_CONTENT);
                 params.addRule(RelativeLayout.BELOW, R.id.title);
                 params.addRule(RelativeLayout.ALIGN_START, R.id.title);
-                general.addView(view, params);
+                extension.addView(view, params);
 
                 var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
@@ -345,20 +345,20 @@ public class CenterFragment extends Fragment {
                 params.addRule(RelativeLayout.ALIGN_TOP, 32);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
                 params.setMargins(dp6, dp(3), dp6, dp(3));
-                general.addView(button, params);
+                extension.addView(button, params);
             }
 
             {
                 var view = new TextView();
                 view.setId(34);
-                view.setText(I18n.get("gui.modernui.center.extension.enhancedTooltip"));
+                view.setText(I18n.get("gui.modernui.center.extension.tooltip"));
                 view.setTextSize(14);
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
                         WRAP_CONTENT);
                 params.addRule(RelativeLayout.BELOW, 32);
                 params.addRule(RelativeLayout.ALIGN_START, 32);
-                general.addView(view, params);
+                extension.addView(view, params);
 
                 var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
@@ -372,7 +372,49 @@ public class CenterFragment extends Fragment {
                 params.addRule(RelativeLayout.ALIGN_TOP, 34);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
                 params.setMargins(dp6, dp(3), dp6, dp(3));
-                general.addView(button, params);
+                extension.addView(button, params);
+            }
+
+            {
+                var view = new TextView();
+                view.setId(35);
+                view.setText(I18n.get("gui.modernui.center.extension.tooltipDuration"));
+                view.setTextSize(14);
+
+                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
+                        WRAP_CONTENT);
+                params.addRule(RelativeLayout.BELOW, 34);
+                params.addRule(RelativeLayout.ALIGN_START, 34);
+                extension.addView(view, params);
+
+                var input = new EditText();
+                input.setText(Config.CLIENT.tooltipDuration.get().toString());
+                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                input.setTextSize(14);
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(3));
+                input.setPadding(dp(4), 0, dp(4), 0);
+                input.setOnFocusChangeListener((__, hasFocus) -> {
+                    if (!hasFocus) {
+                        int radius = Integer.parseInt(input.getText().toString());
+                        radius = FMath.clamp(radius, Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
+                        input.setText(Integer.toString(radius));
+                        if (radius != Config.CLIENT.tooltipDuration.get()) {
+                            Config.CLIENT.tooltipDuration.set(radius);
+                            Config.CLIENT.saveAndReload();
+                        }
+                    }
+                });
+                StateListDrawable drawable = new StateListDrawable();
+                drawable.addState(StateSet.get(StateSet.VIEW_STATE_HOVERED), new InputBackground());
+                drawable.setEnterFadeDuration(300);
+                drawable.setExitFadeDuration(300);
+                input.setBackground(drawable);
+
+                params = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                params.addRule(RelativeLayout.ALIGN_BASELINE, 35);
+                params.addRule(RelativeLayout.ALIGN_PARENT_END);
+                params.setMargins(dp6, dp6, dp6, dp6);
+                extension.addView(input, params);
             }
 
             {
@@ -383,9 +425,9 @@ public class CenterFragment extends Fragment {
 
                 var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
                         WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 34);
-                params.addRule(RelativeLayout.ALIGN_START, 34);
-                general.addView(view, params);
+                params.addRule(RelativeLayout.BELOW, 35);
+                params.addRule(RelativeLayout.ALIGN_START, 35);
+                extension.addView(view, params);
 
                 var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
@@ -406,7 +448,7 @@ public class CenterFragment extends Fragment {
                 params.addRule(RelativeLayout.ALIGN_TOP, 36);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
                 params.setMargins(dp6, dp(3), dp6, dp(3));
-                general.addView(button, params);
+                extension.addView(button, params);
             }
 
             {
@@ -419,7 +461,7 @@ public class CenterFragment extends Fragment {
                         WRAP_CONTENT);
                 params.addRule(RelativeLayout.BELOW, 36);
                 params.addRule(RelativeLayout.ALIGN_START, 36);
-                general.addView(view, params);
+                extension.addView(view, params);
 
                 var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
@@ -440,13 +482,13 @@ public class CenterFragment extends Fragment {
                 params.addRule(RelativeLayout.ALIGN_TOP, 38);
                 params.addRule(RelativeLayout.ALIGN_PARENT_END);
                 params.setMargins(dp6, dp(3), dp6, dp(3));
-                general.addView(button, params);
+                extension.addView(button, params);
             }
 
             var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
-            base.addView(general, params);
+            base.addView(extension, params);
         }
 
         {
