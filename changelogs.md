@@ -1,5 +1,16 @@
 Changelogs
 ===
+### Modern UI 3.4.6.107 (2022-06-11)
+#### Forge Extension 1.18.2-40.0.12
+* Add server version
+* Add tooltip anim duration config
+* Add inventory pause
+* Fix dedicated server startup
+#### Modern Text Engine 1.18.2
+* Add font atlas dump
+#### Core Framework 3.4
+* Internal changes
+
 ### Modern UI 3.4.5.106 (2022-04-24)
 #### Forge Extension 1.18.2-40.0.12
 #### Modern Text Engine 1.18.2

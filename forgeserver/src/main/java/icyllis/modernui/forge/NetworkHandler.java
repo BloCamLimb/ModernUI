@@ -18,10 +18,7 @@
 
 package icyllis.modernui.forge;
 
-import icyllis.modernui.ModernUI;
 import io.netty.buffer.Unpooled;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
@@ -34,9 +31,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.DistExecutor.SafeCallable;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.IModFileInfo;
@@ -48,6 +42,8 @@ import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+
+import static icyllis.modernui.forge.ModernUIForge.ID;
 
 /**
  * This class is an ideal alternative to {@link NetworkRegistry} for experienced
@@ -69,9 +65,6 @@ public class NetworkHandler {
     protected final boolean mOptional;
 
     @Nullable
-    private final ClientListener mClientListener;
-
-    @Nullable
     private final ServerListener mServerListener;
 
     /**
@@ -79,13 +72,13 @@ public class NetworkHandler {
      * you must be careful with the class loading.
      *
      * @param id       the mod-id
-     * @param cli      listener for S->C messages, the inner supplier must be in separated non-anonymous class
      * @param sli      listener for C->S messages, it is on logical server side
      * @param protocol network protocol, leaving empty will request the same version of mod(s)
      * @param optional when true it will accept if the channel absent on one side, or request same protocol
      * @throws IllegalArgumentException invalid mod-id
      */
-    public NetworkHandler(@Nonnull String id, @Nullable Supplier<SafeCallable<ClientListener>> cli,
+    @SuppressWarnings("unused")
+    public NetworkHandler(@Nonnull String id, @Nullable Supplier<SafeCallable<ClientListener>> __,
                           @Nullable ServerListener sli, @Nonnull String protocol, boolean optional) {
         IModFileInfo file = null;
         // modid only starts with [a-z]
@@ -103,15 +96,10 @@ public class NetworkHandler {
 
         // just register to Forge, we handle messages from a mixin hook
         NetworkRegistry.newEventChannel(
-                mName = new ResourceLocation(ModernUI.ID, id),
+                mName = new ResourceLocation(ID, id),
                 this::getProtocol,
                 this::testServerProtocolOnClient,
                 this::testClientProtocolOnServer);
-        if (cli != null) {
-            mClientListener = DistExecutor.safeCallWhenOn(Dist.CLIENT, cli);
-        } else {
-            mClientListener = null;
-        }
         mServerListener = sli;
 
         // Only lock on WRITE
@@ -151,26 +139,10 @@ public class NetworkHandler {
     }
 
     // INTERNAL
-    @OnlyIn(Dist.CLIENT)
-    public static void onCustomPayload(@Nonnull ClientboundCustomPayloadPacket packet,
-                                       @Nonnull Supplier<LocalPlayer> player) {
-        ResourceLocation id = packet.getIdentifier();
-        if (id.getNamespace().equals(ModernUI.ID)) {
-            FriendlyByteBuf payload = packet.getInternalData();
-            NetworkHandler h = sNetworks.get(id.getPath());
-            if (h != null && h.mClientListener != null) {
-                h.mClientListener.handle(payload.readShort(), payload, player);
-            }
-            payload.release();
-            throw RunningOnDifferentThreadException.RUNNING_ON_DIFFERENT_THREAD;
-        }
-    }
-
-    // INTERNAL
     public static void onCustomPayload(@Nonnull ServerboundCustomPayloadPacket packet,
                                        @Nonnull Supplier<ServerPlayer> player) {
         ResourceLocation id = packet.getIdentifier();
-        if (id.getNamespace().equals(ModernUI.ID)) {
+        if (id.getNamespace().equals(ID)) {
             FriendlyByteBuf payload = packet.getInternalData();
             NetworkHandler h = sNetworks.get(id.getPath());
             if (h != null && h.mServerListener != null) {
@@ -183,13 +155,12 @@ public class NetworkHandler {
 
     /**
      * Allocates a heap buffer to write indexed packet data. Once you're done that,
-     * pass the value returned here to {@link #dispatch(FriendlyByteBuf)} or
-     * {@link #sendToServer(FriendlyByteBuf)}. The message index is used to identify
-     * what type of message is, which is also determined by your network protocol.
+     * pass the value returned here to {@link #dispatch(FriendlyByteBuf)}.
+     * The message index is used to identify what type of message is, which is also
+     * determined by your network protocol.
      *
      * @param index the message index used on the reception side, ranged from 0 to 32767
      * @return a byte buf to write the packet data (message body)
-     * @see #sendToServer(FriendlyByteBuf)
      * @see #dispatch(FriendlyByteBuf)
      */
     @Nonnull
@@ -197,25 +168,6 @@ public class NetworkHandler {
         FriendlyByteBuf buffer = new FriendlyByteBuf(Unpooled.buffer());
         buffer.writeShort(index);
         return buffer;
-    }
-
-    /**
-     * Send a message to server.
-     * <p>
-     * This is the only method to be called on the client. Packet data cannot exceed 32,600 bytes.
-     *
-     * @param data the packet data (message body)
-     * @see #buffer(int)
-     * @see ServerListener
-     */
-    @OnlyIn(Dist.CLIENT)
-    public void sendToServer(@Nonnull FriendlyByteBuf data) {
-        ClientPacketListener connection = Minecraft.getInstance().getConnection();
-        if (connection != null) {
-            connection.send(new ServerboundCustomPayloadPacket(mName, data));
-        } else {
-            data.release();
-        }
     }
 
     /**

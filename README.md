@@ -94,7 +94,7 @@ dependencies {
     implementation fg.deobf("icyllis.modernui:ModernUI-Forge:${minecraft_version}-${modernui_version}")
 }
 ```
-Without [MixinGradle](https://github.com/SpongePowered/MixinGradle):
+Add these if you have NOT [MixinGradle](https://github.com/SpongePowered/MixinGradle):
 ```
 minecraft {
     runs {

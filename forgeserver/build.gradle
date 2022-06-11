@@ -1,0 +1,85 @@
+plugins {
+    id 'dev.architectury.loom' version '0.12.0-SNAPSHOT'
+}
+
+version = "${minecraft_version}-${core_version}" as String
+
+configurations {
+    shadow
+}
+
+loom {
+    silentMojangMappingsLicense()
+    forge {
+        dataGen {
+            mod 'modernui'
+        }
+        mixinConfig "mixins.modernui-forge.json"
+    }
+    launches {
+        data {
+            arg "--existing", file("src/main/resources").absolutePath
+        }
+    }
+    //runConfigs.each { it.setIdeConfigGenerated(true) }
+    addTaskBeforeRun(":${name}:classes")
+}
+
+repositories {
+    maven {
+        url 'https://maven.parchmentmc.org/'
+        content {
+            includeGroup 'org.parchmentmc.data'
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-1.18.1:2022.03.06@zip" as String)
+    }
+    forge "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+}
+
+remapJar {
+    dependsOn(jar)
+    inputFile.set(jar.archiveFile)
+    archiveClassifier.set("server")
+}
+
+if (project.hasProperty("jks")) {
+    remapJar.doLast {
+        ant.signjar(
+                keypass: project.getProperty("jks_keypass"),
+                storepass: project.getProperty("jks_pass"),
+                jar: remapJar.archiveFile.get(),
+                storetype: 'jks',
+                keystore: project.getProperty("jks"),
+                alias: project.getProperty("jks_alias")
+        )
+    }
+}
+
+processResources {
+    inputs.property 'version', core_version
+
+    filesMatching("META-INF/mods.toml") {
+        expand 'version': core_version
+    }
+}
+
+jar {
+    manifest {
+        attributes(
+                "Specification-Title": "ModernUI-ForgeServer",
+                "Specification-Vendor": "BloCamLimb",
+                "Specification-Version": "2",
+                "Implementation-Title": project.name,
+                "Implementation-Version": project.version,
+                "Implementation-Vendor": "BloCamLimb",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        )
+    }
+}

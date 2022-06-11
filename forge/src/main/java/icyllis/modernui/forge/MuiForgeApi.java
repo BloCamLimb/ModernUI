@@ -66,7 +66,7 @@ public final class MuiForgeApi {
      * @return {@code true} if server started
      */
     public static boolean isServerStarted() {
-        return ServerHandler.INSTANCE.started;
+        return ServerHandler.INSTANCE.mStarted;
     }
 
     /**
