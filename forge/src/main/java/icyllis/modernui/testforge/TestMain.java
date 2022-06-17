@@ -23,9 +23,7 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
 import com.vladsch.flexmark.util.ast.Node;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.audio.AudioManager;
-import icyllis.modernui.audio.OggDecoder;
-import icyllis.modernui.audio.Track;
+import icyllis.modernui.audio.*;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.Canvas;
@@ -33,21 +31,17 @@ import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.font.GraphemeBreak;
+import icyllis.modernui.math.*;
 import icyllis.modernui.opengl.*;
-import icyllis.modernui.math.FMath;
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Rect;
 import icyllis.modernui.test.SpectrumGraph;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.text.*;
-import icyllis.modernui.text.style.AbsoluteSizeSpan;
-import icyllis.modernui.text.style.ForegroundColorSpan;
-import icyllis.modernui.text.style.StyleSpan;
-import icyllis.modernui.text.style.UnderlineSpan;
+import icyllis.modernui.text.style.*;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
+import org.lwjgl.system.Configuration;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -55,11 +49,9 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
+import java.nio.file.*;
 import java.util.List;
-import java.util.Locale;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.ModernUI.LOGGER;
@@ -132,6 +124,11 @@ public class TestMain {
         baseMat.postMul(rot);
         baseMat2.postRotateX(FMath.PI_DIV_6);
         LOGGER.info(baseMat.approxEqual(baseMat2));
+
+        String name = Configuration.OPENGL_LIBRARY_NAME.get("null");
+        LOGGER.info("{} {}", name, Paths.get(name).isAbsolute());
+
+
         if (!CREATE_WINDOW) {
             try (ModernUI modernUI = new ModernUI()) {
                 modernUI.run(new TestFragment());

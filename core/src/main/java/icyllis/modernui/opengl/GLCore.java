@@ -163,79 +163,72 @@ public final class GLCore extends GL45C {
         if (!caps.OpenGL45) {
             LOGGER.debug(MARKER, "OpenGL 4.5 was not requested, testing ARBs...");
             count++;
-
-            if (caps.GL_ARB_vertex_buffer_object) {
-                LOGGER.debug(MARKER, "ARB vertex buffer object enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB vertex buffer object disabled");
-                count++;
+            // we don't check CONTEXT_PROFILE_MASK, we assume it's always core profile.
+            if (!caps.OpenGL32) {
+                throw new AssertionError("OpenGL 3.2 core profile is unavailable");
             }
-            if (caps.GL_ARB_explicit_attrib_location) {
-                LOGGER.debug(MARKER, "ARB explicit attrib location enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB explicit attrib location disabled");
-                count++;
+            if (!caps.OpenGL33) {
+                if (caps.GL_ARB_explicit_attrib_location) {
+                    LOGGER.debug(MARKER, "ARB_explicit_attrib_location enabled");
+                } else {
+                    LOGGER.fatal(MARKER, "ARB_explicit_attrib_location disabled");
+                    count++;
+                }
+                if (caps.GL_ARB_instanced_arrays) {
+                    LOGGER.debug(MARKER, "ARB_instanced_arrays enabled");
+                } else {
+                    LOGGER.fatal(MARKER, "ARB_instanced_arrays disabled");
+                    count++;
+                }
+                if (caps.GL_ARB_texture_swizzle) {
+                    LOGGER.debug(MARKER, "ARB_texture_swizzle enabled");
+                } else {
+                    LOGGER.fatal(MARKER, "ARB_texture_swizzle disabled");
+                    count++;
+                }
             }
-            if (caps.GL_ARB_vertex_array_object) {
-                LOGGER.debug(MARKER, "ARB vertex array object enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB vertex array object disabled");
-                count++;
+            if (!caps.OpenGL42) {
+                if (caps.GL_ARB_base_instance) {
+                    LOGGER.debug(MARKER, "ARB_base_instance enabled");
+                } else {
+                    LOGGER.fatal(MARKER, "ARB_base_instance disabled");
+                    count++;
+                }
+                if (caps.GL_ARB_texture_storage) {
+                    LOGGER.debug(MARKER, "ARB_texture_storage enabled");
+                } else {
+                    LOGGER.fatal(MARKER, "ARB_texture_storage disabled");
+                    count++;
+                }
             }
-            if (caps.GL_ARB_framebuffer_object) {
-                LOGGER.debug(MARKER, "ARB framebuffer object enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB framebuffer object disabled");
-                count++;
+            if (!caps.OpenGL43) {
+                if (caps.GL_ARB_explicit_uniform_location) {
+                    LOGGER.debug(MARKER, "ARB_explicit_uniform_location enabled");
+                } else {
+                    LOGGER.fatal(MARKER, "ARB_explicit_uniform_location disabled");
+                    count++;
+                }
+                // we use the new API introduced in OpenGL 4.3, rather than glVertexAttrib*
+                if (caps.GL_ARB_vertex_attrib_binding) {
+                    LOGGER.debug(MARKER, "ARB_vertex_attrib_binding enabled");
+                } else {
+                    LOGGER.fatal(MARKER, "ARB_vertex_attrib_binding disabled");
+                    count++;
+                }
             }
-            if (caps.GL_ARB_uniform_buffer_object) {
-                LOGGER.debug(MARKER, "ARB uniform buffer object enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB uniform buffer object disabled");
-                count++;
-            }
-            if (caps.GL_ARB_instanced_arrays) {
-                LOGGER.debug(MARKER, "ARB instanced arrays enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB instanced arrays disabled");
-                count++;
-            }
-            if (caps.GL_ARB_separate_shader_objects) {
-                LOGGER.debug(MARKER, "ARB separate shader objects enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB separate shader objects disabled");
-                count++;
-            }
-            if (caps.GL_ARB_explicit_uniform_location) {
-                LOGGER.debug(MARKER, "ARB explicit uniform location enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB explicit uniform location disabled");
-                count++;
-            }
-            if (caps.GL_ARB_texture_swizzle) {
-                LOGGER.debug(MARKER, "ARB texture swizzle enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB texture swizzle disabled");
-                count++;
-            }
-            if (caps.GL_ARB_base_instance) {
-                LOGGER.debug(MARKER, "ARB base instance enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB base instance disabled");
-                count++;
-            }
-            // we use the new API introduced in OpenGL 4.3, rather than glVertexAttrib*
-            if (caps.GL_ARB_vertex_attrib_binding) {
-                LOGGER.debug(MARKER, "ARB vertex attrib binding enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB vertex attrib binding disabled");
-                count++;
+            if (!caps.OpenGL44) {
+                if (caps.GL_ARB_clear_texture) {
+                    LOGGER.debug(MARKER, "ARB_clear_texture enabled");
+                } else {
+                    LOGGER.fatal(MARKER, "ARB_clear_texture disabled");
+                    count++;
+                }
             }
             // DSA, OpenGL 4.5
             if (caps.GL_ARB_direct_state_access) {
-                LOGGER.debug(MARKER, "ARB direct state access enabled");
+                LOGGER.debug(MARKER, "ARB_direct_state_access enabled");
             } else {
-                LOGGER.fatal(MARKER, "ARB direct state access disabled");
+                LOGGER.fatal(MARKER, "ARB_direct_state_access disabled");
                 count++;
             }
         } else {
@@ -273,11 +266,19 @@ public final class GLCore extends GL45C {
                 } catch (Exception ignored) {
                 }
             }
-            String solution = Platform.get() == Platform.MACOSX ?
-                    "However, macOS doesn't support OpenGL 4.5, you may see both MoltenVK and Mesa Zink." :
-                    "Try to use dedicated GPU for Java applications and update your GPU drivers.";
+            String solution;
+            if (Platform.get() == Platform.MACOSX) {
+                solution = "For macOS, setup both Vulkan SDK and Mesa 22.1.2+, then use Gallium Zink for LWJGL: ";
+            } else {
+                solution = "For Windows and Linux, update your GPU drivers. " +
+                        "If you have integrated GPU, use dedicated GPU for Java applications. " +
+                        "Or you can install Mesa 22.1.2+, then use Gallium Zink for LWJGL: ";
+            }
+            solution +=
+                    "Add JVM args `-Dorg.lwjgl.opengl.libname=.../mesa/lib/libGL.1.dylib`. " +
+                            "Add environment variables `GALLIUM_DRIVER=zink`, `MESA_LOADER_DRIVER_OVERRIDE=zink`.";
             TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
-                    "Lower than OpenGL 4.5 and ARB test failed (see log for details). " +
+                    "Lower than OpenGL 4.5 and ARB tests failed (see log for details). " +
                             "Your GPU is " + glGetString(GL_RENDERER) + " and your version is OpenGL " + glVersion +
                             ". " + solution, "ok", "error", true);
         } else if (count == 0) {
