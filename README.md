@@ -45,9 +45,10 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
 - Vulkan 1.1 or above (WIP)
 - (Optional) Forge 1.18.2-40.0.0
 
-For macOS users (not tested yet, discuss on Discord):  
-To use OpenGL, install both MoltenVK and Mesa 22.1+, then use Gallium Zink for LWJGL.
-Add JVM arg `-Dorg.lwjgl.opengl.libname=.../zink/lib/libGL.1.dylib`.
+For macOS users:  
+To use OpenGL, setup both Vulkan SDK and Mesa 22.1.2+, then use Gallium Zink for LWJGL.  
+Add JVM args `-Dorg.lwjgl.opengl.libname=.../mesa/lib/libGL.1.dylib`.  
+Add environment variables `GALLIUM_DRIVER=zink`, `MESA_LOADER_DRIVER_OVERRIDE=zink`.  
 Expected: App -> Mesa -> Pipe -> Zink -> MoltenVK -> Metal
 #### Gradle configuration
 ```
