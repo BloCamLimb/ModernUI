@@ -283,6 +283,7 @@ public final class ModernUIForge {
                 ModernUITextMC.init();
                 LOGGER.info(MARKER, "Initialized Modern UI text engine");
             }
+            ModernUITextMC.initConfig();
             if (sDevelopment) {
                 FMLJavaModLoadingContext.get().getModEventBus().register(Registration.ModClientDev.class);
             }

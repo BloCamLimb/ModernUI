@@ -58,7 +58,10 @@ public final class ModernUITextMC {
     @OnlyIn(Dist.CLIENT)
     public static void init() {
         FMLJavaModLoadingContext.get().getModEventBus().register(ModernUITextMC.class);
+    }
 
+    @OnlyIn(Dist.CLIENT)
+    public static void initConfig() {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.NAME_CPT), ModernUI.NAME_CPT);
         ModContainer mod = ModLoadingContext.get().getActiveContainer();
 
