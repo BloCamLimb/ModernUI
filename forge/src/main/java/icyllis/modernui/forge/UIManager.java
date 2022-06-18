@@ -322,6 +322,7 @@ public final class UIManager implements LifecycleOwner {
                 LOGGER.warn(MARKER, "You cannot set multiple screens.");
                 removed();
             }
+            mRoot.mHandler.post(this::suppressLayoutTransition);
             mFragmentController.getFragmentManager().beginTransaction()
                     .add(fragment_container, screen.getFragment(), "main")
                     .setTransition(FragmentTransaction.TRANSIT_FRAGMENT_OPEN)
@@ -373,7 +374,7 @@ public final class UIManager implements LifecycleOwner {
             onHoverMove(false);
         }
         // for non-mui screens
-        if (mScreen == null) {
+        if (mScreen == null && minecraft.screen == null) {
             //mTicks = 0;
             mElapsedTimeMillis = 0;
         }
@@ -402,7 +403,6 @@ public final class UIManager implements LifecycleOwner {
         mDecor.addView(mFragmentContainerView);
 
         mDecor.setLayoutTransition(new LayoutTransition());
-        suppressLayoutTransition();
 
         mRoot.setView(mDecor);
         resize();
@@ -825,6 +825,7 @@ public final class UIManager implements LifecycleOwner {
                 .remove(screen.getFragment())
                 .runOnCommit(() -> mFragmentContainerView.removeAllViews())
                 .commit();
+        mRoot.mHandler.post(this::restoreLayoutTransition);
         mScreen = null;
         glfwSetCursor(mWindow.getWindow(), MemoryUtil.NULL);
     }

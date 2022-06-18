@@ -1,5 +1,14 @@
 Changelogs
 ===
+### Modern UI 3.4.7.108 (2022-06-18)
+#### Forge Extension 1.18.2-40.0.12
+* Enhance layout transition when closed
+* Add support for custom OpenGL driver
+#### Modern Text Engine 1.18.2
+* Fix GUI crash when disabled
+#### Core Framework 3.4
+* Enhance GL capability check
+
 ### Modern UI 3.4.6.107 (2022-06-11)
 #### Forge Extension 1.18.2-40.0.12
 * Add server version
