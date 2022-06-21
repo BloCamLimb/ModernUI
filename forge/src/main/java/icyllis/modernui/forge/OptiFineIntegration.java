@@ -24,11 +24,20 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.*;
 
 @OnlyIn(Dist.CLIENT)
 public final class OptiFineIntegration {
+
+    private static Field of_fast_render;
+
+    static {
+        try {
+            of_fast_render = Options.class.getDeclaredField("ofFastRender");
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
+    }
 
     private OptiFineIntegration() {
     }
@@ -42,6 +51,23 @@ public final class OptiFineIntegration {
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
                 InstantiationException | InvocationTargetException e) {
             e.printStackTrace();
+        }
+    }
+
+    /**
+     * Incompatible with TextMC. Because we break the Vanilla rendering order.
+     * See TextRenderNode#drawText()  endBatch(Sheets.signSheet()).
+     * Modern UI glyph texture is translucent, so ending sign rendering earlier
+     * stops sign texture being discarded by depth test.
+     */
+    public static void setFastRender(boolean fastRender) {
+        Minecraft minecraft = Minecraft.getInstance();
+        if (of_fast_render != null) {
+            try {
+                of_fast_render.setBoolean(minecraft.options, fastRender);
+            } catch (IllegalAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
 }

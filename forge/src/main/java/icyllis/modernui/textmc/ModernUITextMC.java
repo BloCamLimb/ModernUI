@@ -20,7 +20,7 @@ package icyllis.modernui.textmc;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.forge.MuiForgeApi;
+import icyllis.modernui.forge.*;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -85,10 +85,14 @@ public final class ModernUITextMC {
     @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         // preload text engine, note that this event is fired after client config first load
-        // so that the typeface is loaded
+        // so that the typeface config is valid
         Minecraft.getInstance().execute(() -> {
             ModernUI.getSelectedTypeface();
             TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
+            if (ModernUIForge.isOptiFineLoaded()) {
+                OptiFineIntegration.setFastRender(false);
+                LOGGER.info(MARKER, "Disabled OptiFine Fast Render");
+            }
         });
         MuiForgeApi.addOnWindowResizeListener((width, height, newScale, oldScale) -> {
             if (Core.hasRenderThread() && newScale != oldScale) {
@@ -106,6 +110,7 @@ public final class ModernUITextMC {
     @SubscribeEvent
     static void onParallelDispatch(@Nonnull ParallelDispatchEvent event) {
         // since Forge EVENT_BUS is not started yet, we should manually maintain that
+        // in case of some mods render texts before entering main menu
         event.enqueueWork(() -> TextLayoutEngine.getInstance().cleanup());
     }
 
