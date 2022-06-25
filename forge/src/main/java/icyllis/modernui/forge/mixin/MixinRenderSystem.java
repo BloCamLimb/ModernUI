@@ -19,6 +19,7 @@
 package icyllis.modernui.forge.mixin;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Configuration;
@@ -37,8 +38,10 @@ public class MixinRenderSystem {
     @Inject(method = "initBackendSystem", at = @At("HEAD"))
     private static void onInitBackendSystem(CallbackInfoReturnable<LongSupplier> ci) {
         RenderSystem.assertInInitPhase();
-        if (Configuration.OPENGL_LIBRARY_NAME.get() != null) {
+        String name = Configuration.OPENGL_LIBRARY_NAME.get();
+        if (name != null) {
             // non-system library should load before window creation
+            ModernUI.LOGGER.info(ModernUI.MARKER, "OpenGL library: {}", name);
             Objects.requireNonNull(GL.getFunctionProvider(), "Implicit loading is required");
         }
     }

@@ -72,7 +72,7 @@ public interface TimeInterpolator {
      * @see #cycle(float)
      */
     @Nonnull
-    TimeInterpolator SINE = in -> FMath.sin(FMath.PI_DIV_2 * in);
+    TimeInterpolator SINE = in -> FMath.sin(FMath.PI_O_2 * in);
 
     /**
      * The constant anticipate interpolator whose tension is 2.0.
@@ -158,7 +158,7 @@ public interface TimeInterpolator {
     static TimeInterpolator cycle(float cycle) {
         if (cycle == 0.25f)
             return SINE;
-        return t -> FMath.sin(FMath.TWO_PI * cycle * t);
+        return t -> FMath.sin(FMath.PI2 * cycle * t);
     }
 
     /**

@@ -648,11 +648,11 @@ public class Quaternion {
         if (f > 0.499f * sq) {
             result.x = 0.0f;
             result.y = 2.0f * FMath.atan2(x, w);
-            result.z = FMath.PI_DIV_2;
+            result.z = FMath.PI_O_2;
         } else if (f < -0.499f * sq) {
             result.x = 0.0f;
             result.y = -2.0f * FMath.atan2(x, w);
-            result.z = -FMath.PI_DIV_2;
+            result.z = -FMath.PI_O_2;
         } else {
             result.x = FMath.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
             result.y = FMath.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);
@@ -678,11 +678,11 @@ public class Quaternion {
         if (f > 0.499f * sq) {
             angles[0] = 0.0f;
             angles[1] = 2.0f * FMath.atan2(x, w);
-            angles[2] = FMath.PI_DIV_2;
+            angles[2] = FMath.PI_O_2;
         } else if (f < -0.499f * sq) {
             angles[0] = 0.0f;
             angles[1] = -2.0f * FMath.atan2(x, w);
-            angles[2] = -FMath.PI_DIV_2;
+            angles[2] = -FMath.PI_O_2;
         } else {
             angles[0] = FMath.atan2(2.0f * (x * w - y * z), -sqx + sqy - sqz + sqw);
             angles[1] = FMath.atan2(2.0f * (y * w - x * z), sqx - sqy - sqz + sqw);

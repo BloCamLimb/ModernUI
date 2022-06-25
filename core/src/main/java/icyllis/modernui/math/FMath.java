@@ -20,22 +20,21 @@ package icyllis.modernui.math;
 
 public final class FMath {
 
+    // compile-time
     private static final boolean USE_SIN_TABLE = false;
 
     // 256 kB
     private static final float[] SIN_TABLE;
 
     public static final float PI = (float) Math.PI;
-
-    // PI over 2
-    public static final float PI_DIV_2 = (float) (Math.PI / 2);
-    public static final float PI_DIV_3 = (float) (Math.PI / 3);
-    public static final float PI_DIV_4 = (float) (Math.PI / 4);
-    public static final float PI_DIV_6 = (float) (Math.PI / 6);
-    public static final float TWO_PI = (float) (Math.PI * 2);
-    public static final float THREE_PI = (float) (Math.PI * 3);
-    public static final float FOUR_PI = (float) (Math.PI * 4);
-    public static final float THREE_PI_DIV_2 = (float) (Math.PI * 3 / 2);
+    public static final float PI_O_2 = (float) (Math.PI / 2);
+    public static final float PI_O_3 = (float) (Math.PI / 3);
+    public static final float PI_O_4 = (float) (Math.PI / 4);
+    public static final float PI_O_6 = (float) (Math.PI / 6);
+    public static final float PI2 = (float) (Math.PI * 2);
+    public static final float PI3 = (float) (Math.PI * 3);
+    public static final float PI4 = (float) (Math.PI * 4);
+    public static final float PI3_O_2 = (float) (Math.PI * 3 / 2);
 
     public static final float EPS = 1.0e-6f;
 
@@ -83,23 +82,23 @@ public final class FMath {
     }
 
     // approximately equal
-    public static boolean eq(float a, float b, float z) {
-        return eq(a, z) && eq(b, z);
+    public static boolean eq(float a, float b, float c) {
+        return eq(a, c) && eq(b, c);
     }
 
     // approximately equal
-    public static boolean eq(float a, float b, float c, float z) {
-        return eq(a, z) && eq(b, z) && eq(c, z);
+    public static boolean eq(float a, float b, float c, float d) {
+        return eq(a, d) && eq(b, d) && eq(c, d);
     }
 
     // approximately equal
-    public static boolean eq(float a, float b, float c, float d, float z) {
-        return eq(a, z) && eq(b, z) && eq(c, z) && eq(d, z);
+    public static boolean eq(float a, float b, float c, float d, float e) {
+        return eq(a, e) && eq(b, e) && eq(c, e) && eq(d, e);
     }
 
     // approximately equal
     public static boolean zero(float a) {
-        return Math.abs(a) < 1.0e-6f;
+        return Math.abs(a) < EPS;
     }
 
     // approximately equal
@@ -188,13 +187,13 @@ public final class FMath {
         return degrees * DEG_TO_RAD;
     }
 
-    // 't' must be positive
-    // eg, a=74, t=10, return 80
-    public static int roundUp(int a, int t) {
-        if (a == 0) return t;
-        if (a < 0) t = -t;
-        int m = a % t;
-        return m == 0 ? a : a + t - m;
+    // 'to' must be positive
+    // eg, a=74, to=10, return 80
+    public static int roundUp(int a, int to) {
+        if (a == 0) return to;
+        if (a < 0) to = -to;
+        int m = a % to;
+        return m == 0 ? a : a + to - m;
     }
 
     public static int gcd(int a, int b) {

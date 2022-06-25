@@ -148,6 +148,8 @@ public final class GLCore extends GL45C {
             } else {
                 LOGGER.debug(MARKER, "No debug callback function was used...");
             }
+        } else {
+            LOGGER.debug(MARKER, "Found an existing debug callback function");
         }
 
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
@@ -165,7 +167,7 @@ public final class GLCore extends GL45C {
             count++;
             // we don't check CONTEXT_PROFILE_MASK, we assume it's always core profile.
             if (!caps.OpenGL32) {
-                throw new AssertionError("OpenGL 3.2 core profile is unavailable");
+                throw new RuntimeException("OpenGL 3.2 core profile is unavailable");
             }
             if (!caps.OpenGL33) {
                 if (caps.GL_ARB_explicit_attrib_location) {
@@ -232,7 +234,7 @@ public final class GLCore extends GL45C {
                 count++;
             }
         } else {
-            LOGGER.debug(MARKER, "Using OpenGL 4.5");
+            LOGGER.debug(MARKER, "Using OpenGL 4.5 Core");
         }
 
         // test optional extensions
@@ -268,21 +270,21 @@ public final class GLCore extends GL45C {
             }
             String solution;
             if (Platform.get() == Platform.MACOSX) {
-                solution = "For macOS, setup both Vulkan SDK and Mesa 22.1.2+, then use Gallium Zink for LWJGL: ";
+                solution = "For macOS, see https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support";
             } else {
                 solution = "For Windows and Linux, update your GPU drivers. " +
                         "If you have integrated GPU, use dedicated GPU for Java applications. " +
-                        "Or you can install Mesa 22.1.2+, then use Gallium Zink for LWJGL: ";
+                        "Otherwise, see https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support";
             }
-            solution +=
-                    "Add JVM args `-Dorg.lwjgl.opengl.libname=.../mesa/lib/libGL.1.dylib`. " +
-                            "Add environment variables `GALLIUM_DRIVER=zink`, `MESA_LOADER_DRIVER_OVERRIDE=zink`.";
-            TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
+            boolean ok = TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
                     "Lower than OpenGL 4.5 and ARB tests failed (see log for details). " +
                             "Your GPU is " + glGetString(GL_RENDERER) + " and your version is OpenGL " + glVersion +
-                            ". " + solution, "ok", "error", true);
+                            ". " + solution, "okcancel", "error", true);
+            if (ok && Platform.get() == Platform.MACOSX) {
+                Core.openURI("https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support");
+            }
         } else if (count == 0) {
-            LOGGER.debug(MARKER, "Passed OpenGL 4.5 equivalent ARB extension test");
+            LOGGER.debug(MARKER, "Using OpenGL 4.5 ARB");
         }
 
         /*if (sRedirector == null) {
