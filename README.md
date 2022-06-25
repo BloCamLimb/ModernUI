@@ -36,20 +36,16 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
   - [log4j](https://github.com/apache/logging-log4j2) licensed under the Apache-2.0
   - [icu4j](https://github.com/unicode-org/icu) by Unicode, Inc.
 ### Documentation
-(WIP)
+Specifications: (WIP)  
+Minecraft Modding: [Getting Started](https://github.com/BloCamLimb/ModernUI/wiki/Forge-1.18)
 
 #### Environment requirements
 - Windows 8 or above, Linux or macOS
 - JDK 17.0.1 or above
-- OpenGL 4.5 or above (see below for macOS)
+- OpenGL 4.5 or above (see [here](https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support) for macOS)
 - Vulkan 1.1 or above (WIP)
 - (Optional) Forge 1.18.2-40.0.0
 
-For macOS users:  
-To use OpenGL, setup both Vulkan SDK and Mesa 22.1.2+, then use Gallium Zink for LWJGL.  
-Add JVM args `-Dorg.lwjgl.opengl.libname=.../mesa/lib/libGL.1.dylib`.  
-Add environment variables `GALLIUM_DRIVER=zink`, `MESA_LOADER_DRIVER_OVERRIDE=zink`.  
-Expected: App -> Mesa -> Pipe -> Zink -> MoltenVK -> Metal
 #### Gradle configuration
 ```
 repositories {

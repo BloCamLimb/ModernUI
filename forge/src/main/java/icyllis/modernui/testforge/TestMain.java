@@ -120,16 +120,17 @@ public class TestMain {
         baseMat.preScale(2, 4, 5);
         Matrix4 baseMat2 = baseMat.copy();
         Matrix4 rot = Matrix4.identity();
-        rot.preRotateX(FMath.PI_DIV_6);
+        rot.preRotateX(FMath.PI_O_6);
         baseMat.postMul(rot);
-        baseMat2.postRotateX(FMath.PI_DIV_6);
+        baseMat2.postRotateX(FMath.PI_O_6);
         LOGGER.info(baseMat.approxEqual(baseMat2));
 
         String name = Configuration.OPENGL_LIBRARY_NAME.get("null");
         LOGGER.info("{} {}", name, Paths.get(name).isAbsolute());
 
-
         if (!CREATE_WINDOW) {
+            System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())
+                    .log(System.Logger.Level.INFO, "AABBCC");
             try (ModernUI modernUI = new ModernUI()) {
                 modernUI.run(new TestFragment());
             }
