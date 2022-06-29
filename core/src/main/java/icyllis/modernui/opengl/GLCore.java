@@ -28,8 +28,7 @@ import org.lwjgl.system.Platform;
 import org.lwjgl.util.tinyfd.TinyFileDialogs;
 
 import javax.annotation.Nonnull;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import java.util.*;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static org.lwjgl.opengl.AMDDebugOutput.*;
@@ -71,7 +70,9 @@ public final class GLCore extends GL45C {
      * The value is determined when we have a OpenGL context.
      */
     private static int sMaxTextureSize = 1024;
-    private static int sMaxRenderBufferSize = 2048;
+    private static int sMaxRenderbufferSize = 2048;
+
+    private static List<String> sUnsupportedList = Collections.emptyList();
 
     // enabled or disabled
     //private static boolean sCullState = false;
@@ -149,92 +150,69 @@ public final class GLCore extends GL45C {
                 LOGGER.debug(MARKER, "No debug callback function was used...");
             }
         } else {
-            LOGGER.debug(MARKER, "Found an existing debug callback function");
+            LOGGER.debug(MARKER, "The debug callback function is already set.");
         }
 
-        sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
-        sMaxRenderBufferSize = glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
+        final String glVendor = glGetString(GL_VENDOR);
+        final String glRenderer = glGetString(GL_RENDERER);
+        final String glVersion = glGetString(GL_VERSION);
 
-        String glVersion = glGetString(GL_VERSION);
-
+        LOGGER.info(MARKER, "OpenGL vendor: {}", glVendor);
+        LOGGER.info(MARKER, "OpenGL renderer: {}", glRenderer);
         LOGGER.info(MARKER, "OpenGL version: {}", glVersion);
-        LOGGER.info(MARKER, "OpenGL vendor: {}", glGetString(GL_VENDOR));
-        LOGGER.info(MARKER, "OpenGL renderer: {}", glGetString(GL_RENDERER));
 
-        int count = -1;
+        sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
+        sMaxRenderbufferSize = glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
+
+        LOGGER.info(MARKER, "Max texture size: {}", sMaxTextureSize);
+        LOGGER.info(MARKER, "Max render target size: {}", sMaxRenderbufferSize);
+
+        final List<String> unsupported;
         if (!caps.OpenGL45) {
-            LOGGER.debug(MARKER, "OpenGL 4.5 was not requested, testing ARBs...");
-            count++;
+            unsupported = new ArrayList<>();
             // we don't check CONTEXT_PROFILE_MASK, we assume it's always core profile.
             if (!caps.OpenGL32) {
                 throw new RuntimeException("OpenGL 3.2 core profile is unavailable");
             }
             if (!caps.OpenGL33) {
-                if (caps.GL_ARB_explicit_attrib_location) {
-                    LOGGER.debug(MARKER, "ARB_explicit_attrib_location enabled");
-                } else {
-                    LOGGER.fatal(MARKER, "ARB_explicit_attrib_location disabled");
-                    count++;
+                if (!caps.GL_ARB_explicit_attrib_location) {
+                    unsupported.add("ARB_explicit_attrib_location (OpenGL 3.3)");
                 }
-                if (caps.GL_ARB_instanced_arrays) {
-                    LOGGER.debug(MARKER, "ARB_instanced_arrays enabled");
-                } else {
-                    LOGGER.fatal(MARKER, "ARB_instanced_arrays disabled");
-                    count++;
+                if (!caps.GL_ARB_instanced_arrays) {
+                    unsupported.add("ARB_instanced_arrays (OpenGL 3.3)");
                 }
-                if (caps.GL_ARB_texture_swizzle) {
-                    LOGGER.debug(MARKER, "ARB_texture_swizzle enabled");
-                } else {
-                    LOGGER.fatal(MARKER, "ARB_texture_swizzle disabled");
-                    count++;
+                if (!caps.GL_ARB_texture_swizzle) {
+                    unsupported.add("ARB_texture_swizzle (OpenGL 3.3)");
                 }
             }
             if (!caps.OpenGL42) {
-                if (caps.GL_ARB_base_instance) {
-                    LOGGER.debug(MARKER, "ARB_base_instance enabled");
-                } else {
-                    LOGGER.fatal(MARKER, "ARB_base_instance disabled");
-                    count++;
+                if (!caps.GL_ARB_base_instance) {
+                    unsupported.add("ARB_base_instance (OpenGL 4.2)");
                 }
-                if (caps.GL_ARB_texture_storage) {
-                    LOGGER.debug(MARKER, "ARB_texture_storage enabled");
-                } else {
-                    LOGGER.fatal(MARKER, "ARB_texture_storage disabled");
-                    count++;
+                if (!caps.GL_ARB_texture_storage) {
+                    unsupported.add("ARB_texture_storage (OpenGL 4.2)");
                 }
             }
             if (!caps.OpenGL43) {
-                if (caps.GL_ARB_explicit_uniform_location) {
-                    LOGGER.debug(MARKER, "ARB_explicit_uniform_location enabled");
-                } else {
-                    LOGGER.fatal(MARKER, "ARB_explicit_uniform_location disabled");
-                    count++;
+                if (!caps.GL_ARB_explicit_uniform_location) {
+                    unsupported.add("ARB_explicit_uniform_location (OpenGL 4.3)");
                 }
                 // we use the new API introduced in OpenGL 4.3, rather than glVertexAttrib*
-                if (caps.GL_ARB_vertex_attrib_binding) {
-                    LOGGER.debug(MARKER, "ARB_vertex_attrib_binding enabled");
-                } else {
-                    LOGGER.fatal(MARKER, "ARB_vertex_attrib_binding disabled");
-                    count++;
+                if (!caps.GL_ARB_vertex_attrib_binding) {
+                    unsupported.add("ARB_vertex_attrib_binding (OpenGL 4.3)");
                 }
             }
             if (!caps.OpenGL44) {
-                if (caps.GL_ARB_clear_texture) {
-                    LOGGER.debug(MARKER, "ARB_clear_texture enabled");
-                } else {
-                    LOGGER.fatal(MARKER, "ARB_clear_texture disabled");
-                    count++;
+                if (!caps.GL_ARB_clear_texture) {
+                    unsupported.add("ARB_clear_texture (OpenGL 4.4)");
                 }
             }
             // DSA, OpenGL 4.5
-            if (caps.GL_ARB_direct_state_access) {
-                LOGGER.debug(MARKER, "ARB_direct_state_access enabled");
-            } else {
-                LOGGER.fatal(MARKER, "ARB_direct_state_access disabled");
-                count++;
+            if (!caps.GL_ARB_direct_state_access) {
+                unsupported.add("ARB_direct_state_access (OpenGL 4.5)");
             }
         } else {
-            LOGGER.debug(MARKER, "Using OpenGL 4.5 Core");
+            unsupported = null;
         }
 
         // test optional extensions
@@ -256,35 +234,15 @@ public final class GLCore extends GL45C {
             LOGGER.debug(MARKER, "NV or KHR blend equation advanced disabled");
         }
 
-        if (count > 0) {
-            LOGGER.fatal(MARKER, "Oops, your GPU has {} capabilities unavailable", count);
-            if (glVersion == null) {
-                glVersion = "UNKNOWN";
-            } else {
-                try {
-                    Matcher matcher = Pattern.compile("([0-9]+)\\\\.([0-9]+)(\\\\.([0-9]+))?(.+)?")
-                            .matcher(glVersion);
-                    glVersion = String.format("%s.%s", matcher.group(1), matcher.group(2));
-                } catch (Exception ignored) {
-                }
+        if (unsupported != null && !unsupported.isEmpty()) {
+            for (String s : unsupported) {
+                LOGGER.fatal(MARKER, "{} is unavailable", s);
             }
-            String solution;
-            if (Platform.get() == Platform.MACOSX) {
-                solution = "For macOS, see https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support";
-            } else {
-                solution = "For Windows and Linux, update your GPU drivers. " +
-                        "If you have integrated GPU, use dedicated GPU for Java applications. " +
-                        "Otherwise, see https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support";
-            }
-            boolean ok = TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
-                    "Lower than OpenGL 4.5 and ARB tests failed (see log for details). " +
-                            "Your GPU is " + glGetString(GL_RENDERER) + " and your version is OpenGL " + glVersion +
-                            ". " + solution, "okcancel", "error", true);
-            if (ok && Platform.get() == Platform.MACOSX) {
-                Core.openURI("https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support");
-            }
-        } else if (count == 0) {
+            sUnsupportedList = unsupported;
+        } else if (unsupported != null) {
             LOGGER.debug(MARKER, "Using OpenGL 4.5 ARB");
+        } else {
+            LOGGER.debug(MARKER, "Using OpenGL 4.5 Core");
         }
 
         /*if (sRedirector == null) {
@@ -319,8 +277,39 @@ public final class GLCore extends GL45C {
         return sMaxTextureSize;
     }
 
-    public static int getMaxRenderBufferSize() {
-        return sMaxRenderBufferSize;
+    public static int getMaxRenderbufferSize() {
+        return sMaxRenderbufferSize;
+    }
+
+    /**
+     * Show a dialog that lists unsupported extensions after initialized.
+     */
+    @RenderThread
+    public static void showCapsErrorDialog() {
+        Core.checkRenderThread();
+        if (!sInitialized || sUnsupportedList.isEmpty()) {
+            return;
+        }
+        final String glRenderer = glGetString(GL_RENDERER);
+        final String glVersion = glGetString(GL_VERSION);
+        new Thread(() -> {
+            String solution;
+            if (Platform.get() == Platform.MACOSX) {
+                solution = "For macOS, click OK for help, click Cancel to ignore this error.";
+            } else {
+                solution = "For Windows and Linux, first update your GPU drivers. " +
+                        "If you have integrated GPU, run Java applications with dedicated GPU. " +
+                        "Otherwise, click OK for help, click Cancel to ignore this error.";
+            }
+            String extensions = String.join("\n", sUnsupportedList);
+            boolean ok = TinyFileDialogs.tinyfd_messageBox("Failed to launch Modern UI",
+                    "GPU: " + glRenderer + ", OpenGL: " + glVersion + ". " +
+                            "The following ARB extensions are required:\n" + extensions + "\n" + solution,
+                    "okcancel", "error", true);
+            if (ok) {
+                Core.openURI("https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support");
+            }
+        }, "GL-Error-Dialog").start();
     }
 
     /**

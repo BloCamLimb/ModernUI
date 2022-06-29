@@ -23,8 +23,7 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.forge.mixin.AccessOption;
 import icyllis.modernui.forge.mixin.AccessVideoSettings;
-import icyllis.modernui.opengl.ShaderManager;
-import icyllis.modernui.opengl.TextureManager;
+import icyllis.modernui.opengl.*;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.testforge.TestContainerMenu;
 import icyllis.modernui.testforge.TestPauseFragment;
@@ -190,7 +189,12 @@ final class Registration {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
-        Minecraft.getInstance().execute(ModernUI::getSelectedTypeface);
+        Minecraft.getInstance().execute(() -> {
+            ModernUI.getSelectedTypeface();
+            if (!Config.CLIENT.skipGLCapsError.get()) {
+                GLCore.showCapsErrorDialog();
+            }
+        });
 
         // Always replace static variable as an insurance policy
         /*AccessOption.setGuiScale(new CycleOption("options.guiScale",

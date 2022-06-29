@@ -188,6 +188,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         final Window window = mWindow;
         window.makeCurrent();
         Core.initOpenGL();
+        GLCore.showCapsErrorDialog();
 
         final GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         ShaderManager.getInstance().reload();
