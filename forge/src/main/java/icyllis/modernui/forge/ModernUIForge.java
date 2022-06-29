@@ -114,7 +114,7 @@ public final class ModernUIForge {
         // TipTheScales doesn't work with OptiFine
         if (ModList.get().isLoaded("tipthescales") && !sOptiFineLoaded) {
             sInterceptTipTheScales = true;
-            LOGGER.info(MARKER, "Intercepting TipTheScales");
+            LOGGER.info(MARKER, "Disabled TipTheScales");
         }
 
         Config.init();

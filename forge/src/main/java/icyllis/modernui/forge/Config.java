@@ -193,6 +193,8 @@ final class Config {
         final ForgeConfigSpec.BooleanValue linearSampling;
         final ForgeConfigSpec.ConfigValue<List<? extends String>> fontFamily;
 
+        final ForgeConfigSpec.BooleanValue skipGLCapsError;
+
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")
                     .push("screen");
@@ -282,6 +284,10 @@ final class Config {
             /*hudBars = builder.comment(
                     "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
                     .define("hudBars", false);*/
+
+            skipGLCapsError = builder.comment("A dialog popup is displayed when the OpenGL capability test fails.",
+                            "Sometimes the driver reports wrong values, you can enable this to ignore it.")
+                    .define("skipGLCapsError", false);
 
             builder.pop();
 

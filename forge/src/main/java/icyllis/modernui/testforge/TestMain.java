@@ -41,7 +41,6 @@ import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
-import org.lwjgl.system.Configuration;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -115,8 +114,8 @@ public class TestMain {
     }
 
     public static void main(String[] args) {
-        System.setProperty("java.awt.headless", Boolean.TRUE.toString());
-        Matrix4 baseMat = Matrix4.identity();
+        //System.setProperty("java.awt.headless", Boolean.TRUE.toString());
+       /* Matrix4 baseMat = Matrix4.identity();
         baseMat.preScale(2, 4, 5);
         Matrix4 baseMat2 = baseMat.copy();
         Matrix4 rot = Matrix4.identity();
@@ -127,7 +126,7 @@ public class TestMain {
 
         String name = Configuration.OPENGL_LIBRARY_NAME.get("null");
         LOGGER.info("{} {}", name, Paths.get(name).isAbsolute());
-
+*/
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())
                     .log(System.Logger.Level.INFO, "AABBCC");
@@ -341,6 +340,7 @@ public class TestMain {
         final Window window = sWindow;
         window.makeCurrent();
         Core.initOpenGL();
+        GLCore.showCapsErrorDialog();
         GLSurfaceCanvas canvas = GLSurfaceCanvas.initialize();
         ShaderManager.getInstance().reload();
         Matrix4 projection = new Matrix4();
