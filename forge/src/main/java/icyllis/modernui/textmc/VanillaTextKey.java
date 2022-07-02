@@ -18,6 +18,7 @@
 
 package icyllis.modernui.textmc;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Style;
 
 import javax.annotation.Nonnull;
@@ -29,10 +30,10 @@ import javax.annotation.Nonnull;
  * the fly. This special digit handling gives a significant speedup on the F3 debug screen.
  *
  * @see net.minecraft.ChatFormatting
- * @see MultilayerTextKey
+ * @see CompositeTextKey
  * @since 2.0
  */
-class VanillaTextKey {
+public class VanillaTextKey {
 
     /**
      * A reference of the String which this Key is indexing.
@@ -47,7 +48,7 @@ class VanillaTextKey {
     private int mStyle;
 
     /**
-     * Cached hash code, default is 0
+     * Precomputed hash code, default is 0. May hash collision.
      */
     private int mHash;
 
@@ -82,7 +83,7 @@ class VanillaTextKey {
      */
     public VanillaTextKey update(@Nonnull String str, @Nonnull Style style) {
         mStr = str;
-        mStyle = CharacterStyleCarrier.getFlags(style);
+        mStyle = CharacterStyle.getFlags(style);
         mHash = 0;
         return this;
     }
@@ -95,19 +96,21 @@ class VanillaTextKey {
      */
     @Override
     public boolean equals(Object o) {
+        // we never compare ourselves, so no identity check
         if (getClass() != o.getClass()) {
             return false;
         }
 
+        // check lightweight value first
         if (mStyle != ((VanillaTextKey) o).mStyle) {
             return false;
         }
 
+        final String s = mStr;
         /* Calling toString on a String object simply returns itself so no new object allocation is performed */
         final String other = o.toString();
-        final int length = mStr.length();
 
-        if (length != other.length()) {
+        if (s.length() != other.length()) {
             return false;
         }
 
@@ -121,14 +124,14 @@ class VanillaTextKey {
         char c1;
         char c2;
 
-        for (int index = 0; index < length; index++) {
-            c1 = mStr.charAt(index);
-            c2 = other.charAt(index);
-
+        for (int i = 0, e = s.length(); i < e; i++) {
+            c1 = s.charAt(i);
+            c2 = other.charAt(i);
+            // fast digit replacement
             if (c1 != c2 && (formatting || c1 > '9' || c1 < '0' || c2 > '9' || c2 < '0')) {
                 return false;
             }
-            formatting = (c1 == '\u00a7');
+            formatting = (c1 == ChatFormatting.PREFIX_CODE);
         }
 
         return true;
@@ -144,7 +147,7 @@ class VanillaTextKey {
         int h = mHash;
 
         if (h == 0) {
-            final int length = mStr.length();
+            final String s = mStr;
 
             /*
              * true if a section mark character was last seen. In this case, if the next character is a digit, it must
@@ -156,13 +159,14 @@ class VanillaTextKey {
 
             char c;
 
-            for (int index = 0; index < length; index++) {
-                c = mStr.charAt(index);
+            for (int i = 0, e = s.length(); i < e; i++) {
+                c = s.charAt(i);
+                // fast digit replacement
                 if (!formatting && c <= '9' && c >= '0') {
                     c = '0';
                 }
                 h = 31 * h + c;
-                formatting = (c == '\u00a7');
+                formatting = (c == ChatFormatting.PREFIX_CODE);
             }
 
             mHash = h = 31 * h + mStyle;

@@ -24,6 +24,7 @@ import icyllis.modernui.core.Core;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Configuration;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -50,5 +51,13 @@ public class MixinRenderSystem {
     private static void onInitRenderer(int debugLevel, boolean debugSync, CallbackInfo ci) {
         Core.initMainThread();
         Core.initOpenGL();
+    }
+
+    /**
+     * @author BloCamLimb
+     * @reason Disable runtime checks
+     */
+    @Overwrite
+    public static void assertOnRenderThread() {
     }
 }

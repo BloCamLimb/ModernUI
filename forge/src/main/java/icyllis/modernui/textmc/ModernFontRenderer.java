@@ -126,7 +126,7 @@ public final class ModernFontRenderer {
         int b = color & 0xff;
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        TextRenderNode node = layoutEngine.lookupMultilayerNode(text);
+        TextRenderNode node = layoutEngine.lookupFormattedNode(text);
         float level = layoutEngine.getResolutionLevel();
         if (dropShadow && sAllowShadow) {
             node.drawText(matrix, source, null, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
@@ -160,7 +160,7 @@ public final class ModernFontRenderer {
         int b = color & 0xff;
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        TextRenderNode node = layoutEngine.lookupMultilayerNode(text);
+        TextRenderNode node = layoutEngine.lookupSequenceNode(text);
         float level = layoutEngine.getResolutionLevel();
         if (dropShadow && sAllowShadow) {
             node.drawText(matrix, source, null, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,

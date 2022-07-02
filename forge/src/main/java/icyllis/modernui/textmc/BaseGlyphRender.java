@@ -34,7 +34,7 @@ abstract class BaseGlyphRender {
     /**
      * Change to params color.
      */
-    public static final int USE_INPUT_COLOR = CharacterStyleCarrier.NO_COLOR_SPECIFIED;
+    public static final int USE_INPUT_COLOR = CharacterStyle.NO_COLOR_SPECIFIED;
 
     /**
      * Keep the color state not to change.
@@ -60,7 +60,7 @@ abstract class BaseGlyphRender {
     /**
      * Rendering flags, will be inserted later.
      *
-     * @see CharacterStyleCarrier
+     * @see CharacterStyle
      */
     /*
      * lower 24 bits - color
@@ -137,12 +137,12 @@ abstract class BaseGlyphRender {
      * @param a       final alpha
      */
     public final void drawEffect(@Nonnull VertexConsumer builder, float x, float y, int r, int g, int b, int a) {
-        if ((mFlags & CharacterStyleCarrier.EFFECT_MASK) != 0) {
+        if ((mFlags & CharacterStyle.EFFECT_MASK) != 0) {
             x += mOffsetX;
-            if ((mFlags & CharacterStyleCarrier.UNDERLINE_MASK) != 0) {
+            if ((mFlags & CharacterStyle.UNDERLINE_MASK) != 0) {
                 TextRenderEffect.drawUnderline(builder, x, x + mAdvance, y, r, g, b, a);
             }
-            if ((mFlags & CharacterStyleCarrier.STRIKETHROUGH_MASK) != 0) {
+            if ((mFlags & CharacterStyle.STRIKETHROUGH_MASK) != 0) {
                 TextRenderEffect.drawStrikethrough(builder, x, x + mAdvance, y, r, g, b, a);
             }
         }
@@ -163,12 +163,12 @@ abstract class BaseGlyphRender {
      */
     public final void drawEffect(@Nonnull Matrix4f matrix, @Nonnull VertexConsumer builder, float x, float y, int r,
                                  int g, int b, int a, int light) {
-        if ((mFlags & CharacterStyleCarrier.EFFECT_MASK) != 0) {
+        if ((mFlags & CharacterStyle.EFFECT_MASK) != 0) {
             x += mOffsetX;
-            if ((mFlags & CharacterStyleCarrier.UNDERLINE_MASK) != 0) {
+            if ((mFlags & CharacterStyle.UNDERLINE_MASK) != 0) {
                 TextRenderEffect.drawUnderline(matrix, builder, x, x + mAdvance, y, r, g, b, a, light);
             }
-            if ((mFlags & CharacterStyleCarrier.STRIKETHROUGH_MASK) != 0) {
+            if ((mFlags & CharacterStyle.STRIKETHROUGH_MASK) != 0) {
                 TextRenderEffect.drawStrikethrough(matrix, builder, x, x + mAdvance, y, r, g, b, a, light);
             }
         }

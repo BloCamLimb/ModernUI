@@ -35,7 +35,7 @@ import java.util.Optional;
  * @see MixinBidiReorder
  * @see MixinClientLanguage
  * @see MixinLanguage
- * @see MultilayerTextKey.Lookup#update(FormattedCharSequence)
+ * @see CompositeTextKey.Lookup#update(FormattedCharSequence)
  * @see TextLayoutProcessor#doLayout(FormattedCharSequence)
  */
 public class FormattedTextWrapper implements FormattedCharSequence {
