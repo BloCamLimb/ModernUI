@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
  * Identifies the location and value of a formatting style in the original string.
  * Instances exist only during layout and will be destroyed after processing.
  */
-class CharacterStyleCarrier {
+class CharacterStyle {
 
     /*
      * lower 24 bits - color
@@ -110,11 +110,11 @@ class CharacterStyleCarrier {
      */
     private final int mFlags;
 
-    public CharacterStyleCarrier(int stringIndex, int stripIndex, Style style, boolean formattingCode) {
+    public CharacterStyle(int stringIndex, int stripIndex, Style style, boolean isFormattingCode) {
         mStringIndex = stringIndex;
         mStripIndex = stripIndex;
         int flags = getFlags(style);
-        if (formattingCode) {
+        if (isFormattingCode) {
             flags |= FORMATTING_CODE;
         }
         mFlags = flags;
@@ -221,7 +221,7 @@ class CharacterStyleCarrier {
      * @param s obj
      * @return if layout style equals
      */
-    public boolean isLayoutAffecting(@Nonnull CharacterStyleCarrier s) {
+    public boolean isLayoutAffecting(@Nonnull CharacterStyle s) {
         return (mFlags & LAYOUT_MASK) != (s.mFlags & LAYOUT_MASK);
     }
 

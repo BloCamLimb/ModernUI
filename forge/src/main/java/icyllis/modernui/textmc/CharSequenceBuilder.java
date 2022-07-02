@@ -44,7 +44,7 @@ class CharSequenceBuilder implements CharSequence {
 
     public void addString(@Nonnull String str) {
         int offset = mChars.size();
-        mChars.size(mChars.size() + str.length());
+        mChars.size(offset + str.length());
         str.getChars(0, str.length(), mChars.elements(), offset);
     }
 
@@ -91,9 +91,7 @@ class CharSequenceBuilder implements CharSequence {
     @Override
     public boolean equals(Object o) {
         if (o.getClass() != CharArrayList.class) return false;
-
-        CharArrayList that = (CharArrayList) o;
-        return mChars.equals(that);
+        return mChars.equals((CharArrayList) o);
     }
 
     @Override

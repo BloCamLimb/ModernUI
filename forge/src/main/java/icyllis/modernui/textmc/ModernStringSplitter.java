@@ -86,7 +86,7 @@ public final class ModernStringSplitter {
             return Optional.empty();
         }, Style.EMPTY);
         return v.floatValue() >= 0 ? v.floatValue() : super.stringWidth(text);*/
-        return TextLayoutEngine.getInstance().lookupMultilayerNode(text).mAdvance;
+        return TextLayoutEngine.getInstance().lookupFormattedNode(text).mAdvance;
     }
 
     /**
@@ -104,7 +104,7 @@ public final class ModernStringSplitter {
             return false;
         });
         return v.floatValue();*/
-        return TextLayoutEngine.getInstance().lookupMultilayerNode(text).mAdvance;
+        return TextLayoutEngine.getInstance().lookupSequenceNode(text).mAdvance;
     }
 
     /**
@@ -229,7 +229,7 @@ public final class ModernStringSplitter {
         if (width < 0) {
             return null;
         }
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupMultilayerNode(text);
+        TextRenderNode node = TextLayoutEngine.getInstance().lookupFormattedNode(text);
         if (width >= node.mAdvance) {
             return null;
         }
@@ -290,7 +290,7 @@ public final class ModernStringSplitter {
             return styleAtWidth(((FormattedTextWrapper) text).mText, width);
         }
         // Failed if someone uses lambdas
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupMultilayerNode(text);
+        TextRenderNode node = TextLayoutEngine.getInstance().lookupSequenceNode(text);
         if (width >= node.mAdvance) {
             return null;
         }
@@ -336,7 +336,7 @@ public final class ModernStringSplitter {
         if (width < 0) {
             return FormattedText.EMPTY;
         }
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupMultilayerNode(text, style);
+        TextRenderNode node = TextLayoutEngine.getInstance().lookupFormattedNode(text, style);
         if (width >= node.mAdvance) {
             return text;
         }

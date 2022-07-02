@@ -41,13 +41,16 @@ import java.util.*;
 /**
  * This is where the text layout is actually performed.
  */
+//TODO emoji, grapheme break
 @RenderThread
-class TextLayoutProcessor {
+public class TextLayoutProcessor {
 
     /**
      * Config values.
      */
-    static volatile int sBaseFontSize = 8;
+    public static volatile int sBaseFontSize = 8;
+
+    private final TextLayoutEngine mEngine;
 
     /**
      * Array to build char array.
@@ -57,7 +60,7 @@ class TextLayoutProcessor {
     /**
      * Array of temporary style carriers.
      */
-    private final List<CharacterStyleCarrier> mCarriers = new ArrayList<>();
+    private final List<CharacterStyle> mStyles = new ArrayList<>();
 
     /**
      * List of all processing glyphs
@@ -77,9 +80,9 @@ class TextLayoutProcessor {
     //public final List<ColorStateInfo> colors = new ArrayList<>();
 
     /**
-     * Indicates current style index in {@link #mCarriers} for layout processing
+     * Indicates current style index in {@link #mStyles} for layout processing
      */
-    private int mCarrierIndex;
+    private int mStyleIndex;
 
     /**
      * The total advance (horizontal width) of the processing text
@@ -96,12 +99,11 @@ class TextLayoutProcessor {
      */
     private boolean mHasEffect;
 
-    private int mShift;
-    private int mNext;
+    private final ContentBuilder mContentBuilder = new ContentBuilder();
+    private final BuilderSink mBuilderSink = new BuilderSink();
 
-    private Style mStyle;
-
-    TextLayoutProcessor() {
+    public TextLayoutProcessor(TextLayoutEngine engine) {
+        mEngine = engine;
     }
 
     private void finishBidiRun(float adjust) {
@@ -120,28 +122,27 @@ class TextLayoutProcessor {
         mTextList.clear();
     }
 
-    private void release() {
+    private void reset() {
         mChars.clear();
+        mStyles.clear();
         mAllList.clear();
-        mCarriers.clear();
-        mCarrierIndex = 0;
+        mStyleIndex = 0;
         mAdvance = 0;
         mLayoutRight = 0;
         mHasEffect = false;
-        mShift = 0;
-        mNext = 0;
-        mStyle = null;
+        mContentBuilder.reset();
+        mBuilderSink.reset();
     }
 
     @Nonnull
     public TextRenderNode doLayout(@Nonnull String text, @Nonnull Style style) {
-        char[] chars = resolveFormattingCodes(text, style);
+        char[] chars = stripFormattingCodes(text, style);
         /*ModernUI.LOGGER.info("Layout: {}\n{}", new String(chars),
                 mCarriers.stream().map(Object::toString).collect(Collectors.joining("\n")));*/
-        TextRenderNode node = performFullLayout(chars, true);
+        TextRenderNode node = performLayout(chars, true);
         /*ModernUI.LOGGER.info("Glyphs: \n{}",
                 mAllList.stream().map(Object::toString).collect(Collectors.joining("\n")));*/
-        release();
+        reset();
         return node;
     }
 
@@ -153,58 +154,38 @@ class TextLayoutProcessor {
             ModernUI.LOGGER.info("LayoutSequence: {}\n{}", new String(mChars.toCharArray()),
                     mCarriers.stream().map(Objects::toString).collect(Collectors.joining("\n")));
         }*/
-        TextRenderNode node = performFullLayout(mChars.toCharArray(), false);
+        TextRenderNode node = performLayout(mChars.toCharArray(), false);
         /*if (show) {
             ModernUI.LOGGER.info(mAllList.stream().map(Objects::toString).collect(Collectors.joining("\n")));
         }*/
-        release();
+        reset();
         return node;
     }
 
     @Nonnull
     public TextRenderNode doLayout(@Nonnull FormattedCharSequence sequence) {
         sequence.accept(mBuilderSink);
-        TextRenderNode node = performFullLayout(mChars.toCharArray(), false);
-        release();
+        TextRenderNode node = performLayout(mChars.toCharArray(), false);
+        reset();
         return node;
     }
 
-    /**
-     * Always LTR.
-     *
-     * @see FormattedTextWrapper#accept(FormattedCharSink)
-     */
-    private final FormattedCharSink mBuilderSink = new FormattedCharSink() {
+    private class ContentBuilder implements FormattedText.StyledContentConsumer<Object> {
 
-        @Override
-        public boolean accept(int index, @Nonnull Style style, int codePoint) {
-            // note that index will be reset to 0 for composited char sequence
-            // we should get the continuous string index
-            if (style != mStyle) {
-                mCarriers.add(new CharacterStyleCarrier(mChars.size(), mChars.size(), style, false));
-                mStyle = style;
-            }
-            if (Character.isBmpCodePoint(codePoint)) {
-                mChars.add((char) codePoint);
-            } else {
-                mChars.add(Character.highSurrogate(codePoint));
-                mChars.add(Character.lowSurrogate(codePoint));
-            }
-            // continue
-            return true;
-        }
-    };
-
-    private final FormattedText.StyledContentConsumer<?> mContentBuilder = new FormattedText.StyledContentConsumer<>() {
+        private int mShift;
+        private int mNext;
 
         @Nonnull
         @Override
-        public Optional<Object> accept(@Nonnull Style style, @Nonnull String text) {
-            mCarriers.add(new CharacterStyleCarrier(mNext, mNext - mShift, style, false));
+        public Optional<Object> accept(@Nonnull Style base, @Nonnull String text) {
+            Style style = base;
+            mStyles.add(new CharacterStyle(mNext, mNext - mShift, style, false));
+
+            // also fix surrogate pairs
             final int limit = text.length();
             for (int i = 0; i < limit; ++i) {
                 char c1 = text.charAt(i);
-                if (c1 == '\u00a7') {
+                if (c1 == ChatFormatting.PREFIX_CODE) {
                     if (i + 1 >= limit) {
                         mNext++;
                         break;
@@ -214,8 +195,8 @@ class TextLayoutProcessor {
                     if (formatting != null) {
                         /* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a color
                         formatting */
-                        style = formatting == ChatFormatting.RESET ? Style.EMPTY : style.applyLegacyFormat(formatting);
-                        mCarriers.add(new CharacterStyleCarrier(mNext, mNext - mShift, style, true));
+                        style = formatting == ChatFormatting.RESET ? base : style.applyLegacyFormat(formatting);
+                        mStyles.add(new CharacterStyle(mNext, mNext - mShift, style, true));
                     }
 
                     i++;
@@ -249,29 +230,67 @@ class TextLayoutProcessor {
             // continue
             return Optional.empty();
         }
-    };
+
+        private void reset() {
+            mShift = 0;
+            mNext = 0;
+        }
+    }
+
+    /**
+     * Always LTR.
+     *
+     * @see FormattedTextWrapper#accept(FormattedCharSink)
+     */
+    private class BuilderSink implements FormattedCharSink {
+
+        private Style mStyle;
+
+        @Override
+        public boolean accept(int index, @Nonnull Style style, int codePoint) {
+            // note that index will be reset to 0 for composited char sequence
+            // we should get the continuous string index
+            if (!Objects.equals(mStyle, style)) {
+                mStyles.add(new CharacterStyle(mChars.size(), mChars.size(), style, false));
+                mStyle = style;
+            }
+            if (Character.isBmpCodePoint(codePoint)) {
+                mChars.add((char) codePoint);
+            } else {
+                mChars.add(Character.highSurrogate(codePoint));
+                mChars.add(Character.lowSurrogate(codePoint));
+            }
+            // continue
+            return true;
+        }
+
+        private void reset() {
+            mStyle = null;
+        }
+    }
 
     /**
      * Formatting codes are not involved in rendering, so we should first extract formatting codes
-     * from a formatted text into a stripped text. The color codes must be removed for a font's context
-     * sensitive glyph substitution to work (like Arabic letter middle form) or Bidi analysis.
+     * from the raw string into a stripped text. The color codes must be removed for a font's
+     * context-sensitive glyph substitution to work (like Arabic letter middle form) or Bidi analysis.
      *
-     * @param text text with formatting codes to strip
+     * @param text raw string with formatting codes to strip
+     * @param base the base style if no formatting applied (default or reset)
      * @return a new char array with all formatting codes removed from the given string
      * @see net.minecraft.util.StringDecomposer
      */
     @Nonnull
-    private char[] resolveFormattingCodes(@Nonnull String text, @Nonnull Style base) {
+    private char[] stripFormattingCodes(@Nonnull String text, @Nonnull Style base) {
         int shift = 0;
 
         Style style = base;
-        mCarriers.add(new CharacterStyleCarrier(0, 0, style, false));
+        mStyles.add(new CharacterStyle(0, 0, style, false));
 
         // also fix surrogate pairs
         final int limit = text.length();
         for (int next = 0; next < limit; ++next) {
             char c1 = text.charAt(next);
-            if (c1 == '\u00a7') {
+            if (c1 == ChatFormatting.PREFIX_CODE) {
                 if (next + 1 >= limit) {
                     break;
                 }
@@ -281,7 +300,7 @@ class TextLayoutProcessor {
                     /* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a color
                     formatting */
                     style = formatting == ChatFormatting.RESET ? base : style.applyLegacyFormat(formatting);
-                    mCarriers.add(new CharacterStyleCarrier(next, next - shift, style, true));
+                    mStyles.add(new CharacterStyle(next, next - shift, style, true));
                 }
 
                 next++;
@@ -339,9 +358,9 @@ class TextLayoutProcessor {
     }
 
     @Nonnull
-    private TextRenderNode performFullLayout(@Nonnull char[] text, boolean fastDigit) {
+    private TextRenderNode performLayout(@Nonnull char[] text, boolean isFastDigit) {
         if (text.length > 0) {
-            performBidiAnalysis(text, fastDigit);
+            performBidiAnalysis(text, isFastDigit);
             if (!mAllList.isEmpty()) {
                 adjustAndInsertColor();
                 return new TextRenderNode(mAllList.toArray(new BaseGlyphRender[0]), mAdvance, mHasEffect);
@@ -357,7 +376,7 @@ class TextLayoutProcessor {
      * @param text the full plain text (without formatting codes) to analyze
      * @see #performStyleAnalysis(char[], int, int, boolean, boolean)
      */
-    private void performBidiAnalysis(@Nonnull char[] text, boolean fastDigit) {
+    private void performBidiAnalysis(@Nonnull char[] text, boolean isFastDigit) {
         /* Avoid performing full bidirectional analysis if text has no "strong" right-to-left characters */
         if (Bidi.requiresBidi(text, 0, text.length)) {
             /* Note that while requiresBidi() uses start/limit the Bidi constructor uses start/length */
@@ -365,7 +384,7 @@ class TextLayoutProcessor {
 
             /* If text is entirely right-to-left, then insert an EntryText node for the entire string */
             if (bidi.isRightToLeft()) {
-                performStyleAnalysis(text, 0, text.length, true, fastDigit);
+                performStyleAnalysis(text, 0, text.length, true, isFastDigit);
             }
 
             /* Otherwise text has a mixture of LTR and RLT, and it requires full bidirectional analysis */
@@ -390,14 +409,14 @@ class TextLayoutProcessor {
                     int logicalIndex = indexMap[visualIndex];
                     /* An odd numbered level indicates right-to-left ordering */
                     performStyleAnalysis(text, bidi.getRunStart(logicalIndex), bidi.getRunLimit(logicalIndex),
-                            (bidi.getRunLevel(logicalIndex) & 1) != 0, fastDigit);
+                            (bidi.getRunLevel(logicalIndex) & 1) != 0, isFastDigit);
                 }
             }
         }
 
         /* If text is entirely left-to-right, then insert an node for the entire string */
         else {
-            performStyleAnalysis(text, 0, text.length, false, fastDigit);
+            performStyleAnalysis(text, 0, text.length, false, isFastDigit);
         }
     }
 
@@ -411,26 +430,26 @@ class TextLayoutProcessor {
      * @param limit end index (exclusive) of the text
      * @param isRtl layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      */
-    private void performStyleAnalysis(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit) {
+    private void performStyleAnalysis(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean isFastDigit) {
         float lastAdvance = mAdvance;
         if (isRtl) {
             mLayoutRight = lastAdvance;
         }
-        final int carrierLimit = mCarriers.size() - 1;
+        final int carrierLimit = mStyles.size() - 1;
 
         // Break up the string into segments, where each segment has the same font style in use
         while (start < limit) {
             int next = limit;
 
-            CharacterStyleCarrier carrier = mCarriers.get(mCarrierIndex);
+            CharacterStyle carrier = mStyles.get(mStyleIndex);
 
             // remove empty styles in case of multiple consecutive carriers with the same stripIndex,
             // select the last one which will have active font style
-            while (mCarrierIndex < carrierLimit) {
-                CharacterStyleCarrier c = mCarriers.get(mCarrierIndex + 1);
+            while (mStyleIndex < carrierLimit) {
+                CharacterStyle c = mStyles.get(mStyleIndex + 1);
                 if (carrier.mStripIndex == c.mStripIndex) {
                     carrier = c;
-                    mCarrierIndex++;
+                    mStyleIndex++;
                 } else {
                     break;
                 }
@@ -441,9 +460,9 @@ class TextLayoutProcessor {
              * the stripIndex of that
              * new code is the split point where the string must be split into a separately styled segment.
              */
-            while (mCarrierIndex < carrierLimit) {
-                mCarrierIndex++;
-                CharacterStyleCarrier c = mCarriers.get(mCarrierIndex);
+            while (mStyleIndex < carrierLimit) {
+                mStyleIndex++;
+                CharacterStyle c = mStyles.get(mStyleIndex);
                 if (c.isLayoutAffecting(carrier)) {
                     next = c.mStripIndex;
                     break;
@@ -451,7 +470,7 @@ class TextLayoutProcessor {
             }
 
             /* Layout the string segment with the style currently selected by the last color code */
-            performFontAnalysis(text, start, next, isRtl, fastDigit, carrier);
+            performFontAnalysis(text, start, next, isRtl, isFastDigit, carrier);
             start = next;
         }
 
@@ -467,21 +486,21 @@ class TextLayoutProcessor {
      * In some languages, the original Unicode code is mapped to another Unicode code for visual rendering.
      * They will finally be converted into glyph codes according to different Font.
      *
-     * @param text    the plain text (without formatting codes) to analyze
-     * @param start   start index (inclusive) of the text
-     * @param limit   end index (exclusive) of the text
-     * @param isRtl   layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
-     * @param carrier the style to layout the text
+     * @param text  the plain text (without formatting codes) to analyze
+     * @param start start index (inclusive) of the text
+     * @param limit end index (exclusive) of the text
+     * @param isRtl layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
+     * @param style the style to lay out the text
      * @see icyllis.modernui.graphics.font.FontCollection#itemize(char[], int, int)
      */
-    private void performFontAnalysis(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
-                                     @Nonnull CharacterStyleCarrier carrier) {
+    private void performFontAnalysis(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean isFastDigit,
+                                     @Nonnull CharacterStyle style) {
         /*
          * Convert all digits in the string to a '0' before layout to ensure that any glyphs replaced on the fly will
          * all have the same positions. Under Windows, Java's "SansSerif" logical font uses the "Arial" font for
          * digits, in which the "1" digit is slightly narrower than all other digits. Digits are not on SMP.
          */
-        if (fastDigit) {
+        if (isFastDigit) {
             for (int i = start; i < limit; i++) {
                 if (text[i] <= '9' && text[i] >= '0') {
                     text[i] = '0';
@@ -491,39 +510,38 @@ class TextLayoutProcessor {
 
         List<Run> items = ModernUI.getSelectedTypeface().getFontCollection().itemize(text, start, limit);
         for (Run run : items) {
-            performTextLayout(text, run.getStart(), run.getEnd(), isRtl, fastDigit, carrier, run.getFont());
+            performTextLayout(text, run.getStart(), run.getEnd(), isRtl, isFastDigit, style, run.getFont());
         }
     }
 
     /**
      * Finally, we got a piece of text with same layout direction, font style and whether to be obfuscated.
      *
-     * @param text    the plain text (without formatting codes) to analyze
-     * @param start   start index (inclusive) of the text
-     * @param limit   end index (exclusive) of the text
-     * @param isRtl   layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
-     * @param carrier the style to layout the text
-     * @param font    the derived font with fontStyle and fontSize
+     * @param text  the plain text (without formatting codes) to analyze
+     * @param start start index (inclusive) of the text
+     * @param limit end index (exclusive) of the text
+     * @param isRtl layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
+     * @param style the style to lay out the text
+     * @param font  the derived font with fontStyle and fontSize
      */
-    private void performTextLayout(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
-                                   @Nonnull CharacterStyleCarrier carrier, @Nonnull Font font) {
-        final TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        final int decoration = carrier.getEffect();
-        final int fontStyle = carrier.getFontStyle();
+    private void performTextLayout(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean isFastDigit,
+                                   @Nonnull CharacterStyle style, @Nonnull Font font) {
+        final int effect = style.getEffect();
+        final int fontStyle = style.getFontStyle();
         // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
-        final float res = layoutEngine.getResolutionLevel();
+        final float res = mEngine.getResolutionLevel();
         // Convert to float form for calculation, but actually an integer
         final float scale = (int) Minecraft.getInstance().getWindow().getGuiScale();
-        int style = Font.PLAIN;
-        if ((fontStyle & CharacterStyleCarrier.BOLD) != 0) {
-            style |= Font.BOLD;
+        int styleFlags = Font.PLAIN;
+        if ((fontStyle & CharacterStyle.BOLD) != 0) {
+            styleFlags |= Font.BOLD;
         }
-        if ((fontStyle & CharacterStyleCarrier.ITALIC) != 0) {
-            style |= Font.ITALIC;
+        if ((fontStyle & CharacterStyle.ITALIC) != 0) {
+            styleFlags |= Font.ITALIC;
         }
-        font = font.deriveFont(style, Math.min(sBaseFontSize * res, 96));
-        if (carrier.isObfuscated()) {
-            final var randomChars = layoutEngine.lookupFastChars(font);
+        font = font.deriveFont(styleFlags, Math.min(sBaseFontSize * res, 96));
+        if (style.isObfuscated()) {
+            final var randomChars = mEngine.lookupFastChars(font);
             final float advance = randomChars.getValue()[0];
 
             float offset;
@@ -536,7 +554,7 @@ class TextLayoutProcessor {
             /* Process code point */
             for (int i = start; i < limit; i++) {
                 float renderOffset = GlyphManager.sBitmapLike ? Math.round(offset * scale) / scale : offset;
-                mTextList.add(new RandomGlyphRender(start + i, advance, renderOffset, decoration, randomChars));
+                mTextList.add(new RandomGlyphRender(start + i, advance, renderOffset, effect, randomChars));
 
                 offset += advance;
 
@@ -547,7 +565,7 @@ class TextLayoutProcessor {
                         ++i;
                     }
                 }
-                mHasEffect |= decoration != 0;
+                mHasEffect |= effect != 0;
             }
 
             // get offset in this run
@@ -573,7 +591,7 @@ class TextLayoutProcessor {
             GlyphVector vector = glyphManager.layoutGlyphVector(font, text, start, limit, isRtl);
             final int num = vector.getNumGlyphs();
 
-            final var digits = layoutEngine.lookupFastChars(font);
+            final var digitChars = mEngine.lookupFastChars(font);
 
             float offset = (float) vector.getGlyphPosition(0).getX();
             float nextOffset = 0;
@@ -602,18 +620,18 @@ class TextLayoutProcessor {
                 float renderOffset = GlyphManager.sBitmapLike ? Math.round(offset * scale) / scale : offset;
 
                 // ASCII digits are not on SMP
-                if (fastDigit && text[stripIndex] == '0') {
-                    mTextList.add(new DigitGlyphRender(stripIndex, renderOffset, advance, decoration, digits));
-                    mHasEffect |= decoration != 0;
+                if (isFastDigit && text[stripIndex] == '0') {
+                    mTextList.add(new DigitGlyphRender(stripIndex, renderOffset, advance, effect, digitChars));
+                    mHasEffect |= effect != 0;
                     continue;
                 }
 
                 int glyphCode = vector.getGlyphCode(i);
                 TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
 
-                mTextList.add(new StandardGlyphRender(stripIndex, renderOffset, advance, decoration, glyph));
+                mTextList.add(new StandardGlyphRender(stripIndex, renderOffset, advance, effect, glyph));
                 if (glyph != null) {
-                    mHasEffect |= decoration != 0;
+                    mHasEffect |= effect != 0;
                 }
             }
 
@@ -700,9 +718,9 @@ class TextLayoutProcessor {
              *  of ASCII
              * digits in the original string for fast glyph replacement during rendering.
              */
-            CharacterStyleCarrier carrier;
-            while (codeIndex < mCarriers.size() &&
-                    glyph.mStringIndex + shift >= (carrier = mCarriers.get(codeIndex)).mStringIndex) {
+            CharacterStyle carrier;
+            while (codeIndex < mStyles.size() &&
+                    glyph.mStringIndex + shift >= (carrier = mStyles.get(codeIndex)).mStringIndex) {
                 if (carrier.isFormattingCode()) {
                     shift += 2;
                 }
@@ -714,11 +732,11 @@ class TextLayoutProcessor {
 
         // insert color flags
         codeIndex = 0;
-        CharacterStyleCarrier carrier = mCarriers.get(codeIndex);
+        CharacterStyle carrier = mStyles.get(codeIndex);
         // In case of multiple consecutive color codes with the same stripIndex,
         // select the last one which will have active carrier
-        while (codeIndex < mCarriers.size() - 1) {
-            CharacterStyleCarrier c = mCarriers.get(codeIndex + 1);
+        while (codeIndex < mStyles.size() - 1) {
+            CharacterStyle c = mStyles.get(codeIndex + 1);
             if (carrier.mStripIndex == c.mStripIndex) {
                 carrier = c;
                 codeIndex++;
@@ -730,23 +748,23 @@ class TextLayoutProcessor {
         int color = carrier.getColor();
         BaseGlyphRender glyph;
         // If there's no input style at the beginning
-        if (color != CharacterStyleCarrier.NO_COLOR_SPECIFIED) {
+        if (color != CharacterStyle.NO_COLOR_SPECIFIED) {
             glyph = mAllList.get(0);
             glyph.mFlags &= ~BaseGlyphRender.COLOR_NO_CHANGE;
             glyph.mFlags |= color;
         }
 
-        if (++codeIndex >= mCarriers.size()) {
+        if (++codeIndex >= mStyles.size()) {
             return;
         }
-        for (int glyphIndex = 1; glyphIndex < mAllList.size() && codeIndex < mCarriers.size(); glyphIndex++) {
-            carrier = mCarriers.get(codeIndex);
+        for (int glyphIndex = 1; glyphIndex < mAllList.size() && codeIndex < mStyles.size(); glyphIndex++) {
+            carrier = mStyles.get(codeIndex);
 
             // In case of multiple consecutive color codes with the same stripIndex,
             // select the last one which will have active carrier,
             // don't compare indices with formatting codes
-            while (codeIndex < mCarriers.size() - 1) {
-                CharacterStyleCarrier c = mCarriers.get(codeIndex + 1);
+            while (codeIndex < mStyles.size() - 1) {
+                CharacterStyle c = mStyles.get(codeIndex + 1);
                 if (carrier.mStripIndex == c.mStripIndex) {
                     carrier = c;
                     codeIndex++;

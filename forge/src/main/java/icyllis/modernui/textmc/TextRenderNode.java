@@ -31,7 +31,8 @@ import java.util.Arrays;
 /**
  * The render node includes the most optimized layout results and rendering information.
  */
-class TextRenderNode {
+//TODO emoji, grapheme break
+public class TextRenderNode {
 
     /**
      * Sometimes naive, too simple.
@@ -63,8 +64,10 @@ class TextRenderNode {
      */
     public static volatile float sVanillaBaselineOffset = 7;
 
-    private static final int MAX_LIFESPAN_TICKS = 256; // 12.8 s
-
+    /**
+     * Countdown in seconds to recycle this node.
+     */
+    public static volatile int sMaxRecycleCountdownSeconds = 12;
 
     /**
      * All laid-out glyphs and their render info.
@@ -80,7 +83,10 @@ class TextRenderNode {
 
     private final boolean mHasEffect;
 
-    transient int mLifespan = MAX_LIFESPAN_TICKS;
+    /**
+     * Countdown in seconds to recycle this node.
+     */
+    private int mCountdown = sMaxRecycleCountdownSeconds;
 
     public TextRenderNode(@Nonnull BaseGlyphRender[] glyphs, float advance, boolean hasEffect) {
         mGlyphs = glyphs;
@@ -88,14 +94,20 @@ class TextRenderNode {
         mHasEffect = hasEffect;
     }
 
+    /**
+     * @return this with countdown reset
+     */
     @Nonnull
     public TextRenderNode get() {
-        mLifespan = MAX_LIFESPAN_TICKS;
+        mCountdown = sMaxRecycleCountdownSeconds;
         return this;
     }
 
-    public boolean tick() {
-        return --mLifespan < 0;
+    /**
+     * @return countdown to recycle
+     */
+    public boolean countdown() {
+        return --mCountdown < 0;
     }
 
     public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b,

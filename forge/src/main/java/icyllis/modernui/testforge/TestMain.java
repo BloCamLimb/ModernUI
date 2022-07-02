@@ -29,8 +29,7 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.font.FontPaint;
-import icyllis.modernui.graphics.font.GraphemeBreak;
+import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.math.*;
 import icyllis.modernui.opengl.*;
 import icyllis.modernui.test.SpectrumGraph;
@@ -126,7 +125,16 @@ public class TestMain {
 
         String name = Configuration.OPENGL_LIBRARY_NAME.get("null");
         LOGGER.info("{} {}", name, Paths.get(name).isAbsolute());
-*/
+        */
+        int[] codePoints = {0x1f469,0x1f3fc,0x200d,0x2764,0xfe0f,0x200d,0x1f48b,0x200d,0x1f469,0x1f3fd};
+        for (int cp : codePoints) {
+            LOGGER.info(MARKER, "0x{}: Emoji:{}, EmojiModifier:{}, EmojiModifierBase:{}, Combining:{}, VariationSelector:{}", Integer.toHexString(cp),
+                    Emoji.isEmoji(cp), Emoji.isEmojiModifier(cp), Emoji.isEmojiModifierBase(cp), FontCollection.isCombining(cp), FontCollection.isVariationSelector(cp));
+        }
+        String text = new String(codePoints, 0, codePoints.length);
+        GraphemeBreak.forTextRun(text.toCharArray(), Locale.getDefault(), 0, text.length(), (s, e) -> {
+            LOGGER.info(MARKER, "{} to {}", s, e);
+        });
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())
                     .log(System.Logger.Level.INFO, "AABBCC");
