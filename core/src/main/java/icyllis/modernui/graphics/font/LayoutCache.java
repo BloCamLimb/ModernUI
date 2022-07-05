@@ -149,6 +149,13 @@ public class LayoutCache {
     }
 
     /**
+     * Clear the cache.
+     */
+    public static void clear() {
+        sCache.invalidateAll();
+    }
+
+    /**
      * The cache key.
      */
     private static class Key {

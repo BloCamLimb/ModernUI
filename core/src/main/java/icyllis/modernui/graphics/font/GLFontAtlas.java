@@ -57,6 +57,7 @@ public class GLFontAtlas implements AutoCloseable {
     public static final int MIPMAP_LEVEL = 4;
 
     /**
+     * Config values.
      * Linear sampling with mipmaps;
      */
     public static volatile boolean sLinearSampling = true;

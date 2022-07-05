@@ -29,6 +29,7 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.font.LayoutCache;
 import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
@@ -38,6 +39,7 @@ import icyllis.modernui.testforge.TestListFragment;
 import icyllis.modernui.testforge.TestPauseFragment;
 import icyllis.modernui.text.Editable;
 import icyllis.modernui.text.Selection;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
 import icyllis.modernui.view.menu.MenuHelper;
@@ -603,7 +605,7 @@ public final class UIManager implements LifecycleOwner {
                 return;
             }
         }
-        if (!Screen.hasShiftDown() || !ModernUIForge.isDeveloperMode()) {
+        if (!Screen.hasControlDown() || !Screen.hasShiftDown() || !ModernUIForge.isDeveloperMode()) {
             return;
         }
         if (event.getAction() == GLFW_PRESS) {
@@ -666,6 +668,11 @@ public final class UIManager implements LifecycleOwner {
                         .getJavaLocale()).isRightToLeft()));*/
                     LOGGER.info(MARKER, "Debug GlyphManager");
                     GlyphManager.getInstance().debug();
+                    break;
+
+                case GLFW_KEY_V:
+                    LOGGER.info(MARKER, "Reload GlyphManager and TextLayoutEngine");
+                    TextLayoutEngine.getInstance().reloadEntirely();
                     break;
             }
         }

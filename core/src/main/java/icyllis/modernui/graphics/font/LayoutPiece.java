@@ -41,6 +41,7 @@ import java.util.List;
  * @see GraphemeBreak
  * @since 2.6
  */
+//TODO multiple graphics API
 public class LayoutPiece {
 
     // all glyphs used for rendering, invisible glyphs have been removed

@@ -61,10 +61,19 @@ class DigitGlyphRender extends BaseGlyphRender {
         if (idx != 0) {
             x += mDigits.getValue()[idx];
         }
-        x += glyph.x / res;
-        y += glyph.y / res;
-        final float w = glyph.width / res;
-        final float h = glyph.height / res;
+        final float w;
+        final float h;
+        if (TextLayoutProcessor.sPixelAligned) {
+            x += Math.round(glyph.x * res) / res;
+            y += Math.round(glyph.y * res) / res;
+            w = Math.round(glyph.width * res) / res;
+            h = Math.round(glyph.height * res) / res;
+        } else {
+            x += glyph.x / res;
+            y += glyph.y / res;
+            w = glyph.width / res;
+            h = glyph.height / res;
+        }
         builder.vertex(x, y, 0).color(r, g, b, a).uv(glyph.u1, glyph.v1).endVertex();
         builder.vertex(x, y + h, 0).color(r, g, b, a).uv(glyph.u1, glyph.v2).endVertex();
         builder.vertex(x + w, y + h, 0).color(r, g, b, a).uv(glyph.u2, glyph.v2).endVertex();

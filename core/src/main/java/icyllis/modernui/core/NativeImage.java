@@ -234,7 +234,7 @@ public final class NativeImage implements AutoCloseable {
     public static NativeImage download(@Nonnull Format format, @Nonnull GLFramebuffer framebuffer,
                                        int colorBuffer, boolean flipY) {
         Core.checkRenderThread();
-        if (framebuffer.isMsaaEnabled()) {
+        if (framebuffer.isMultisampled()) {
             throw new IllegalArgumentException("Cannot get pixels from a multisampling target");
         }
         final GLFramebuffer.Attachment attachment = framebuffer.getAttachment(colorBuffer);

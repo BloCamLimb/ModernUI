@@ -59,10 +59,12 @@ public class GlyphManager {
     private static final Color BG_COLOR = new Color(0, 0, 0, 0);
 
     /**
+     * Config values.
      * Bitmap-like fonts, with anti aliasing and high precision OFF.
      * This may require additional reviews on pixel alignment.
      */
-    public static volatile boolean sBitmapLike = false;
+    public static volatile boolean sAntiAliasing = true;
+    public static volatile boolean sFractionalMetrics = true;
 
     private static final Function<Font, GLFontAtlas> sFactory = f -> new GLFontAtlas();
 
@@ -201,6 +203,7 @@ public class GlyphManager {
         }
     }
 
+    @Nullable
     @RenderThread
     private GLBakedGlyph cacheGlyph(@Nonnull Font font, int glyphCode,
                                     @Nonnull GLFontAtlas atlas, @Nonnull GLBakedGlyph glyph) {
@@ -263,17 +266,19 @@ public class GlyphManager {
         // this only for shape rendering, so we turn it off
         mGraphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF);
 
-        if (sBitmapLike) {
-            mGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
-                    RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
-            mGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
-                    RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
-        } else {
-            // enable text antialias and highly precise rendering
+        if (sAntiAliasing) {
             mGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
                     RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        } else {
+            mGraphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                    RenderingHints.VALUE_TEXT_ANTIALIAS_OFF);
+        }
+        if (sFractionalMetrics) {
             mGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
                     RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        } else {
+            mGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                    RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
         }
     }
 

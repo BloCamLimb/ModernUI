@@ -394,7 +394,7 @@ public class MeasuredText {
         public final FontPaint mPaint;
         private final boolean mIsRtl;
 
-        // obtained from cache or newly created, but may removed from cache later
+        // obtained from cache or newly created, but may be removed from cache later
         private LayoutPiece mLayoutPiece;
         private boolean mComputedLayout;
 

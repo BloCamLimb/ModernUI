@@ -66,6 +66,7 @@ public class TextLayoutEngine {
      */
     //public static int sDefaultFontSize;
     public static volatile boolean sFixedResolution = false;
+    public static volatile boolean sSuperSampling = false;
 
     private static final ChatFormatting[] FORMATTING_TABLE = ChatFormatting.values();
 
@@ -216,11 +217,11 @@ public class TextLayoutEngine {
         } else {
             int guiScale = Math.round(ViewConfiguration.get().getViewScale() * 2);
             // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
-            if (GlyphManager.sBitmapLike || !GLFontAtlas.sLinearSampling) {
+            if (!sSuperSampling || !GLFontAtlas.sLinearSampling) {
                 mResolutionLevel = Math.min(guiScale, 9);
             } else if (guiScale > 2) {
-                // HD rendering, give it a bit larger, so looks smoother
-                mResolutionLevel = Math.min(Math.round(guiScale * 4 / 3f), 12);
+                // super sampling, give it a bit larger, so looks smoother
+                mResolutionLevel = Math.min((int) Math.ceil(guiScale * 4 / 3f), 12);
             } else {
                 // 1 or 2
                 mResolutionLevel = guiScale;
@@ -231,6 +232,13 @@ public class TextLayoutEngine {
         } else {
             LOGGER.info(MARKER, "Reloaded text layout engine, res level: {}->{}", oldLevel, mResolutionLevel);
         }
+    }
+
+    public void reloadEntirely() {
+        mGlyphManager.reload();
+        LOGGER.info(MARKER, "Reloaded glyph manager");
+        LayoutCache.clear();
+        reload();
     }
 
     /**
