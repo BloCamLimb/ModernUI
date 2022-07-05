@@ -536,9 +536,9 @@ public class CenterFragment extends Fragment {
 
                 var button = new SwitchButton();
                 button.setCheckedColor(THEME_COLOR);
-                button.setChecked(Config.CLIENT.bitmapLike.get());
+                button.setChecked(Config.CLIENT.antiAliasing.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.bitmapLike.set(checked);
+                    Config.CLIENT.antiAliasing.set(checked);
                     Config.CLIENT.saveAndReload();
                     Toast.makeText("Restart the game to work properly", Toast.LENGTH_SHORT)
                             .show();
@@ -640,7 +640,7 @@ public class CenterFragment extends Fragment {
             base.addView(font, params);
         }
 
-        base.setDividerDrawable(new Divider());
+        base.setDividerDrawable(new VerticalDivider());
         base.setDividerPadding(dp(8));
         base.setShowDividers(LinearLayout.SHOW_DIVIDER_BEGINNING | LinearLayout.SHOW_DIVIDER_MIDDLE | LinearLayout.SHOW_DIVIDER_END);
 
@@ -908,7 +908,7 @@ public class CenterFragment extends Fragment {
             base.addView(group, params);
         }
 
-        base.setDividerDrawable(new Divider());
+        base.setDividerDrawable(new VerticalDivider());
         base.setDividerPadding(dp(8));
         base.setShowDividers(LinearLayout.SHOW_DIVIDER_BEGINNING | LinearLayout.SHOW_DIVIDER_MIDDLE | LinearLayout.SHOW_DIVIDER_END);
 
@@ -965,15 +965,13 @@ public class CenterFragment extends Fragment {
             Keyframe kfStart = Keyframe.ofFloat(0, 0.75f);
             Keyframe kfEnd = Keyframe.ofFloat(1, 1);
             kfEnd.setInterpolator(TimeInterpolator.OVERSHOOT);
-            PropertyValuesHolder scaleX = PropertyValuesHolder.ofKeyframe(View.SCALE_X,
-                    kfStart, kfEnd);
-            PropertyValuesHolder scaleY = PropertyValuesHolder.ofKeyframe(View.SCALE_Y,
-                    kfStart.copy(), kfEnd.copy());
+            PropertyValuesHolder scaleX = PropertyValuesHolder.ofKeyframe(View.SCALE_X, kfStart, kfEnd);
+            PropertyValuesHolder scaleY = PropertyValuesHolder.ofKeyframe(View.SCALE_Y, kfStart.copy(), kfEnd.copy());
             kfStart = Keyframe.ofFloat(0, 0);
             kfEnd = Keyframe.ofFloat(1, 1);
             kfEnd.setInterpolator(TimeInterpolator.DECELERATE_CUBIC);
             PropertyValuesHolder alpha = PropertyValuesHolder.ofKeyframe(View.ALPHA, kfStart, kfEnd);
-            Animator animator = ObjectAnimator.ofPropertyValuesHolder(null, scaleX, scaleY, alpha);
+            final Animator animator = ObjectAnimator.ofPropertyValuesHolder(null, scaleX, scaleY, alpha);
             animator.setDuration(400);
             // we use keyframe-specified interpolators
             animator.setInterpolator(null);
@@ -984,18 +982,20 @@ public class CenterFragment extends Fragment {
 
     private static class Background extends Drawable {
 
-        private final float mRadius, mStrokeWidth;
+        private final float mRadius;
+        private final float mStrokeWidth;
 
         private Background() {
-            mRadius = dp(16);
+            mRadius = dp(8);
             mStrokeWidth = dp(4);
         }
 
         @Override
         public void draw(@Nonnull Canvas canvas) {
             Paint paint = Paint.take();
-            paint.setColor(BACKGROUND_COLOR);
             Rect bounds = getBounds();
+            paint.setStyle(Paint.FILL);
+            paint.setColor(BACKGROUND_COLOR);
             float inner = mStrokeWidth * 0.5f;
             canvas.drawRoundRect(bounds.left + inner, bounds.top + inner, bounds.right - inner,
                     bounds.bottom - inner, mRadius, paint);
@@ -1016,11 +1016,11 @@ public class CenterFragment extends Fragment {
         }
     }
 
-    private static class Divider extends Drawable {
+    private static class VerticalDivider extends Drawable {
 
         private final int mSize;
 
-        public Divider() {
+        public VerticalDivider() {
             mSize = dp(2);
         }
 

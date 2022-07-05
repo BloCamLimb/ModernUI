@@ -112,8 +112,8 @@ public final class GLFramebuffer extends GLObject {
         GL30C.glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, get());
     }
 
-    public boolean isMsaaEnabled() {
-        return mSampleCount > 0;
+    public boolean isMultisampled() {
+        return mSampleCount > 1;
     }
 
     @Nonnull
@@ -310,7 +310,7 @@ public final class GLFramebuffer extends GLObject {
 
         protected TextureAttachment(GLFramebuffer framebuffer, int attachmentPoint, int internalFormat) {
             super(framebuffer, attachmentPoint, internalFormat);
-            if (framebuffer.mSampleCount > 0) {
+            if (framebuffer.mSampleCount > 1) {
                 mTexture = new GLTexture(GL32C.GL_TEXTURE_2D_MULTISAMPLE);
             } else {
                 mTexture = new GLTexture(GL11C.GL_TEXTURE_2D);
@@ -331,7 +331,7 @@ public final class GLFramebuffer extends GLObject {
                 if (framebuffer == null) {
                     return false;
                 }
-                if (framebuffer.mSampleCount > 0) {
+                if (framebuffer.mSampleCount > 1) {
                     mTexture.allocate2DMS(mInternalFormat, width, height, framebuffer.mSampleCount);
                 } else {
                     mTexture.allocate2D(mInternalFormat, width, height, 0);

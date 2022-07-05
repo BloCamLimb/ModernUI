@@ -22,8 +22,8 @@ import com.ibm.icu.text.Bidi;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.font.FontCollection.Run;
-import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.graphics.font.GLBakedGlyph;
+import icyllis.modernui.graphics.font.GlyphManager;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -49,6 +49,7 @@ public class TextLayoutProcessor {
      * Config values.
      */
     public static volatile int sBaseFontSize = 8;
+    public static volatile boolean sPixelAligned = false;
 
     private final TextLayoutEngine mEngine;
 
@@ -553,7 +554,7 @@ public class TextLayoutProcessor {
 
             /* Process code point */
             for (int i = start; i < limit; i++) {
-                float renderOffset = GlyphManager.sBitmapLike ? Math.round(offset * scale) / scale : offset;
+                float renderOffset = sPixelAligned ? Math.round(offset * scale) / scale : offset;
                 mTextList.add(new RandomGlyphRender(start + i, advance, renderOffset, effect, randomChars));
 
                 offset += advance;
@@ -617,7 +618,7 @@ public class TextLayoutProcessor {
                 }
 
                 // Align with a full pixel
-                float renderOffset = GlyphManager.sBitmapLike ? Math.round(offset * scale) / scale : offset;
+                float renderOffset = sPixelAligned ? Math.round(offset * scale) / scale : offset;
 
                 // ASCII digits are not on SMP
                 if (isFastDigit && text[stripIndex] == '0') {

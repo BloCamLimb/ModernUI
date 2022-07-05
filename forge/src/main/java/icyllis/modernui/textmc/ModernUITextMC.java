@@ -137,8 +137,10 @@ public final class ModernUITextMC {
         //final ForgeConfigSpec.BooleanValue globalRenderer;
         public final ForgeConfigSpec.BooleanValue mAllowShadow;
         public final ForgeConfigSpec.BooleanValue mFixedResolution;
-        public final ForgeConfigSpec.EnumValue<FontSize> mFontSize;
+        public final ForgeConfigSpec.IntValue mBaseFontSize;
         public final ForgeConfigSpec.IntValue mBaseline;
+        public final ForgeConfigSpec.BooleanValue mSuperSampling;
+        public final ForgeConfigSpec.BooleanValue mPixelAligned;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -155,24 +157,29 @@ public final class ModernUITextMC {
                     "Apply Modern UI font renderer (including text layouts) to the entire game rather than only " +
                             "Modern UI itself.")
                     .define("globalRenderer", true);*/
-            mAllowShadow = builder.comment("Allow text renderer to draw text with shadow, setting to false can " +
-                            "improve performance a bit.")
+            mAllowShadow = builder.comment(
+                            "Allow text renderer to drop shadow, setting to false can improve performance.")
                     .define("allowShadow", true);
-            mFixedResolution = builder.comment("Fixed resolution level. When the GUI scale increases, the resolution " +
-                                    "level will not increase.",
-                            "In this case, gui scale should be even numbers (2, 4, 6...), based on Minecraft GUI " +
-                                    "system.",
-                            "If your fonts are not really bitmap fonts, then you should keep this setting false.")
+            mFixedResolution = builder.comment(
+                            "Fixed resolution level. When the GUI scale increases, the resolution level keeps.",
+                            "Gui scale should be even numbers (2, 4, 6...), based on Minecraft GUI system.",
+                            "If your fonts are not bitmap fonts, then you should keep this setting false.")
                     .define("fixedResolution", false);
-            mFontSize = builder.comment(
-                            "Use smaller or larger font for vanilla text layout. To be exact, " +
-                                    "small (7 * GuiScale), normal (8 * GuiScale), large (9 * GuiScale).",
-                            "A game restart is required to reload the setting properly.")
-                    .defineEnum("fontSize", FontSize.NORMAL);
+            mBaseFontSize = builder.comment(
+                            "Define base font size, vanilla is 8. For bitmap font, it's 8x or 16x if fixed resolution.")
+                    .defineInRange("fontSize", 8, 6, 10);
             mBaseline = builder.comment(
                             "Control vertical baseline for vanilla text layout, in normalized pixels.",
                             "For smaller font, 6 is recommended. The default value is 7.")
                     .defineInRange("baseline", 7, 5, 9);
+            mSuperSampling = builder.comment(
+                            "Super sampling can make the text more sharper with large font size or in the world.",
+                            "But in some cases, it will make the edge too blurry and difficult to read.")
+                    .define("superSampling", false);
+            mPixelAligned = builder.comment(
+                            "Enable to make each glyph in the text layout pixel aligned in the screen space.",
+                            "This may not deform the text with bitmap fonts or fixed resolutions or linear sampling.")
+                    .define("pixelAligned", false);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
@@ -214,14 +221,28 @@ public final class ModernUITextMC {
         }
 
         void reload() {
+            boolean reload = false;
             ModernFontRenderer.sAllowShadow = mAllowShadow.get();
-            boolean fixedResolution = mFixedResolution.get();
-            if (fixedResolution != TextLayoutEngine.sFixedResolution) {
-                TextLayoutEngine.sFixedResolution = fixedResolution;
+            if (TextLayoutEngine.sFixedResolution != mFixedResolution.get()) {
+                TextLayoutEngine.sFixedResolution = mFixedResolution.get();
+                reload = true;
+            }
+            if (TextLayoutProcessor.sBaseFontSize != mBaseFontSize.get()) {
+                TextLayoutProcessor.sBaseFontSize = mBaseFontSize.get();
+                reload = true;
+            }
+            TextRenderNode.sVanillaBaselineOffset = mBaseline.get().floatValue();
+            if (TextLayoutEngine.sSuperSampling != mSuperSampling.get()) {
+                TextLayoutEngine.sSuperSampling = mSuperSampling.get();
+                reload = true;
+            }
+            if (TextLayoutProcessor.sPixelAligned != mPixelAligned.get()) {
+                TextLayoutProcessor.sPixelAligned = mPixelAligned.get();
+                reload = true;
+            }
+            if (reload) {
                 Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reload());
             }
-            TextLayoutProcessor.sBaseFontSize = mFontSize.get().mBaseSize;
-            TextRenderNode.sVanillaBaselineOffset = mBaseline.get().floatValue();
             /*GlyphManagerForge.sPreferredFont = preferredFont.get();
             GlyphManagerForge.sAntiAliasing = antiAliasing.get();
             GlyphManagerForge.sHighPrecision = highPrecision.get();
@@ -229,18 +250,6 @@ public final class ModernUITextMC {
             GlyphManagerForge.sMipmapLevel = mipmapLevel.get();*/
             //GlyphManager.sResolutionLevel = resolutionLevel.get();
             //TextLayoutEngine.sDefaultFontSize = defaultFontSize.get();
-        }
-
-        private enum FontSize {
-            SMALL(7),
-            NORMAL(8),
-            LARGE(9);
-
-            private final int mBaseSize;
-
-            FontSize(int baseSize) {
-                mBaseSize = baseSize;
-            }
         }
     }
 }

@@ -25,8 +25,10 @@ import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.Color;
 import icyllis.modernui.graphics.font.GLFontAtlas;
 import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -189,7 +191,8 @@ final class Config {
 
         private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
 
-        final ForgeConfigSpec.BooleanValue bitmapLike;
+        final ForgeConfigSpec.BooleanValue antiAliasing;
+        final ForgeConfigSpec.BooleanValue fractionalMetrics;
         final ForgeConfigSpec.BooleanValue linearSampling;
         final ForgeConfigSpec.ConfigValue<List<? extends String>> fontFamily;
 
@@ -329,15 +332,15 @@ final class Config {
             builder.comment("Font Config")
                     .push("font");
 
-            bitmapLike = builder.comment(
-                            "Bitmap-like mode, anti-aliasing and high precision for glyph layouts are OFF.",
-                            "A game restart is required to reload the setting properly.")
-                    .define("bitmapLike", false);
+            antiAliasing = builder.comment(
+                            "Control the anti-aliasing of raw glyph rendering.")
+                    .define("antiAliasing", true);
+            fractionalMetrics = builder.comment(
+                            "Control the glyph metrics of raw text layout.")
+                    .define("fractionalMetrics", true);
             linearSampling = builder.comment(
-                            "Bilinear sampling font textures with mipmaps, magnification sampling will be always " +
-                                    "NEAREST.",
-                            "If your fonts are not really bitmap fonts, then you should keep this setting true.",
-                            "A game restart is required to reload the setting properly.")
+                            "Linear sampling font textures with mipmaps, mag filter will be always NEAREST.",
+                            "If your fonts are not bitmap fonts, then you should keep this setting true.")
                     .define("linearSampling", true);
             // Segoe UI, Source Han Sans CN Medium, Noto Sans, Open Sans, San Francisco, Calibri,
             // Microsoft YaHei UI, STHeiti, SimHei, SansSerif
@@ -448,8 +451,22 @@ final class Config {
                 });
             }
 
-            GlyphManager.sBitmapLike = bitmapLike.get();
-            GLFontAtlas.sLinearSampling = linearSampling.get();
+            boolean reload = false;
+            if (GlyphManager.sAntiAliasing != antiAliasing.get()) {
+                GlyphManager.sAntiAliasing = antiAliasing.get();
+                reload = true;
+            }
+            if (GlyphManager.sFractionalMetrics != fractionalMetrics.get()) {
+                GlyphManager.sFractionalMetrics = fractionalMetrics.get();
+                reload = true;
+            }
+            if (GLFontAtlas.sLinearSampling != linearSampling.get()) {
+                GLFontAtlas.sLinearSampling = linearSampling.get();
+                reload = true;
+            }
+            if (reload) {
+                Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reloadEntirely());
+            }
 
             ModernUI.getSelectedTypeface();
         }
