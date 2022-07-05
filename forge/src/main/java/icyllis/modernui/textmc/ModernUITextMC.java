@@ -102,8 +102,7 @@ public final class ModernUITextMC {
         });
         MuiForgeApi.addOnDebugDumpListener(pw -> {
             pw.print("Text Layout Entries: ");
-            pw.println(TextLayoutEngine.getInstance().getLayoutCacheSize());
-            pw.println("Glyph Manager:");
+            pw.println(TextLayoutEngine.getInstance().getLayoutCacheCount());
             GlyphManager.getInstance().dumpInfo(pw);
         });
         LOGGER.info(MARKER, "Loaded modern text engine");
@@ -134,6 +133,11 @@ public final class ModernUITextMC {
     @OnlyIn(Dist.CLIENT)
     public static class Config {
 
+        public static final int BASE_FONT_SIZE_MIN = 6;
+        public static final int BASE_FONT_SIZE_MAX = 10;
+        public static final int BASELINE_MIN = 4;
+        public static final int BASELINE_MAX = 10;
+
         //final ForgeConfigSpec.BooleanValue globalRenderer;
         public final ForgeConfigSpec.BooleanValue mAllowShadow;
         public final ForgeConfigSpec.BooleanValue mFixedResolution;
@@ -161,24 +165,25 @@ public final class ModernUITextMC {
                             "Allow text renderer to drop shadow, setting to false can improve performance.")
                     .define("allowShadow", true);
             mFixedResolution = builder.comment(
-                            "Fixed resolution level. When the GUI scale increases, the resolution level keeps.",
-                            "Gui scale should be even numbers (2, 4, 6...), based on Minecraft GUI system.",
+                            "Fix resolution level at 2. When the GUI scale increases, the resolution level remains.",
+                            "Then GUI scale should be even numbers (2, 4, 6...), based on Minecraft GUI system.",
                             "If your fonts are not bitmap fonts, then you should keep this setting false.")
                     .define("fixedResolution", false);
             mBaseFontSize = builder.comment(
-                            "Define base font size, vanilla is 8. For bitmap font, it's 8x or 16x if fixed resolution.")
-                    .defineInRange("fontSize", 8, 6, 10);
+                            "Control base font size, in GUI scaled pixels. The default and vanilla value is 8.",
+                            "For bitmap fonts, 8 represents a glyph size of 8x or 16x if fixed resolution.")
+                    .defineInRange("fontSize", 8, BASE_FONT_SIZE_MIN, BASE_FONT_SIZE_MAX);
             mBaseline = builder.comment(
-                            "Control vertical baseline for vanilla text layout, in normalized pixels.",
+                            "Control vertical baseline for vanilla text layout, in GUI scaled pixels.",
                             "For smaller font, 6 is recommended. The default value is 7.")
-                    .defineInRange("baseline", 7, 5, 9);
+                    .defineInRange("baseline", 7, BASELINE_MIN, BASELINE_MAX);
             mSuperSampling = builder.comment(
-                            "Super sampling can make the text more sharper with large font size or in the world.",
-                            "But in some cases, it will make the edge too blurry and difficult to read.")
+                            "Super sampling can make the text more sharper with large font size or in the 3D world.",
+                            "But perhaps it makes the path edge too blurry and difficult to read.")
                     .define("superSampling", false);
             mPixelAligned = builder.comment(
-                            "Enable to make each glyph in the text layout pixel aligned in the screen space.",
-                            "This may not deform the text with bitmap fonts or fixed resolutions or linear sampling.")
+                            "Enable to make each glyph pixel-aligned in text layout in screen space.",
+                            "Text rendering may be better with bitmap fonts or fixed resolution or linear sampling.")
                     .define("pixelAligned", false);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")

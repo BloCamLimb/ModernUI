@@ -336,24 +336,22 @@ final class Config {
                             "Control the anti-aliasing of raw glyph rendering.")
                     .define("antiAliasing", true);
             fractionalMetrics = builder.comment(
-                            "Control the glyph metrics of raw text layout.")
+                            "Control the fractional metrics of raw glyph rendering.")
                     .define("fractionalMetrics", true);
             linearSampling = builder.comment(
-                            "Linear sampling font textures with mipmaps, mag filter will be always NEAREST.",
+                            "Enable linear sampling for font atlases with mipmaps, mag filter will be always NEAREST.",
                             "If your fonts are not bitmap fonts, then you should keep this setting true.")
                     .define("linearSampling", true);
             // Segoe UI, Source Han Sans CN Medium, Noto Sans, Open Sans, San Francisco, Calibri,
             // Microsoft YaHei UI, STHeiti, SimHei, SansSerif
             fontFamily = builder.comment(
-                            "A set of font families with precedence relationships to determine the typeface to use.",
-                            "TrueType and OpenTrue are supported. Each list element can be one of the following three" +
-                                    " cases.",
-                            "1) Font family name for those installed on your PC, for instance: Segoe UI",
+                            "A set of font families with fallbacks to determine the typeface to use.",
+                            "TrueType & OpenTrue are supported. Each element can be one of the following three cases.",
+                            "1) Font family root name for those installed on your PC, for instance: Segoe UI",
                             "2) File path for external fonts on your PC, for instance: /usr/shared/fonts/x.otf",
                             "3) Resource location for those loaded with resource packs, for instance: " +
                                     "modernui:font/biliw.otf",
-                            "Using pixelated (bitmap) fonts should consider other settings, and glyph size should be " +
-                                    "16x.",
+                            "Using bitmap fonts should consider other text settings, default glyph size should be 16x.",
                             "This list is only read once when the game is loaded. A game restart is required to reload")
                     .defineList("fontFamily", () -> {
                         List<String> list = new ArrayList<>();
@@ -465,7 +463,7 @@ final class Config {
                 reload = true;
             }
             if (reload) {
-                Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reloadEntirely());
+                Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reloadEngine());
             }
 
             ModernUI.getSelectedTypeface();

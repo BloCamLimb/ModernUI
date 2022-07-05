@@ -46,7 +46,7 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
                 mixinClassName.equals("icyllis.modernui.forge.mixin.AccessVideoSettings")) {
             return false;
         }
-        if ((mLevel & ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING) != 0) {
+        if ((mLevel & ModernUIForge.BOOTSTRAP_DISABLE_SMOOTH_SCROLLING) != 0) {
             return !mixinClassName.equals("icyllis.modernui.forge.mixin.MixinScrollPanel") &&
                     !mixinClassName.equals("icyllis.modernui.forge.mixin.MixinSelectionList");
         }
