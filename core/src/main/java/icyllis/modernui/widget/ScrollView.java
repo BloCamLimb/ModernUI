@@ -135,7 +135,7 @@ public class ScrollView extends FrameLayout {
             @Override
             public void draw(@Nonnull Canvas canvas) {
                 Paint paint = Paint.get();
-                paint.setRGBA(84, 190, 196, (int) (mAlpha * 0.5));
+                paint.setRGBA(205, 163, 152, (int) (mAlpha * 0.5));
                 Rect bounds = getBounds();
                 canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
                         bounds.width() / 2f - 1, paint);
@@ -154,7 +154,7 @@ public class ScrollView extends FrameLayout {
                 Paint paint = Paint.get();
                 paint.setRGBA(128, 128, 128, (int) (mAlpha * 0.75));
                 paint.setStyle(Paint.STROKE);
-                paint.setStrokeWidth(3);
+                paint.setStrokeWidth(2);
                 Rect bounds = getBounds();
                 canvas.drawRoundRect(bounds.left + 1, bounds.top + 1, bounds.right - 1, bounds.bottom - 1,
                         bounds.width() / 2f - 1, paint);

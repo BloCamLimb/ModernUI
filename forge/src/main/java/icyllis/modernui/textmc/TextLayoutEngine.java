@@ -184,7 +184,7 @@ public class TextLayoutEngine {
      * Cleanup layout cache.
      */
     public void cleanup() {
-        int size = getLayoutCacheSize();
+        int size = getLayoutCacheCount();
         mVanillaCache.clear();
         mComponentCache.clear();
         mCompositeCache.clear();
@@ -205,6 +205,7 @@ public class TextLayoutEngine {
     }
 
     /**
+     * Reload layout engine.
      * Called when resolution level or language changed. This will call {@link #cleanup()}.
      */
     public void reload() {
@@ -234,7 +235,10 @@ public class TextLayoutEngine {
         }
     }
 
-    public void reloadEntirely() {
+    /**
+     * Reload both render engine and layout engine.
+     */
+    public void reloadEngine() {
         mGlyphManager.reload();
         LOGGER.info(MARKER, "Reloaded glyph manager");
         LayoutCache.clear();
@@ -457,7 +461,7 @@ public class TextLayoutEngine {
     /**
      * @return the number of layout entries
      */
-    public int getLayoutCacheSize() {
+    public int getLayoutCacheCount() {
         return mVanillaCache.size() + mComponentCache.size() + mCompositeCache.size();
     }
 

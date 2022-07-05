@@ -29,7 +29,6 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.font.LayoutCache;
 import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
@@ -119,6 +118,8 @@ public final class UIManager implements LifecycleOwner {
 
     // minecraft window
     private final Window mWindow = minecraft.getWindow();
+
+    private final PoseStack mEmptyPoseStack = new PoseStack();
 
     // the UI thread
     private final Thread mUiThread;
@@ -613,7 +614,7 @@ public final class UIManager implements LifecycleOwner {
                 case GLFW_KEY_Y:
                     LOGGER.info(MARKER, "Take screenshot");
                     // take a screenshot from MSAA framebuffer
-                    GLTexture sampled = GLFramebuffer.swap(mFramebuffer, GL_COLOR_ATTACHMENT0);
+                    GLTexture sampled = GLFramebuffer.resolve(mFramebuffer, GL_COLOR_ATTACHMENT0);
                     NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);
                     Util.ioPool().execute(() -> {
                         try (image) {
@@ -672,7 +673,7 @@ public final class UIManager implements LifecycleOwner {
 
                 case GLFW_KEY_V:
                     LOGGER.info(MARKER, "Reload GlyphManager and TextLayoutEngine");
-                    TextLayoutEngine.getInstance().reloadEntirely();
+                    TextLayoutEngine.getInstance().reloadEngine();
                     break;
             }
         }
@@ -759,7 +760,7 @@ public final class UIManager implements LifecycleOwner {
                 String error = Language.getInstance().getOrDefault("error.modernui.gl_caps");
                 int x = (mWindow.getGuiScaledWidth() - minecraft.font.width(error)) / 2;
                 int y = (mWindow.getGuiScaledHeight() + 4) / 2;
-                minecraft.font.draw(new PoseStack(), error, x, y, 0xFFFF0000);
+                minecraft.font.draw(mEmptyPoseStack, error, x, y, 0xFFFF0000);
             }
             return;
         }

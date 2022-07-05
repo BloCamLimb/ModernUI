@@ -46,6 +46,7 @@ public class TestFragment extends Fragment {
 
         {
             LinearLayout content = new TestLinearLayout();
+            content.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
             var params = new FrameLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
             base.addView(content, params);
         }

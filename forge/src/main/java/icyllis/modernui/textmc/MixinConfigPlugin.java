@@ -42,7 +42,7 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return (mLevel & ModernUIForge.BOOTSTRAP_TEXT_ENGINE) == 0;
+        return (mLevel & ModernUIForge.BOOTSTRAP_DISABLE_TEXT_ENGINE) == 0;
     }
 
     @Override

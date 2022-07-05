@@ -64,8 +64,8 @@ import static icyllis.modernui.ModernUI.*;
 public final class ModernUIForge {
 
     // false to disable extensions
-    public static final int BOOTSTRAP_TEXT_ENGINE = 0x1;
-    public static final int BOOTSTRAP_SMOOTH_SCROLLING = 0x2;
+    public static final int BOOTSTRAP_DISABLE_TEXT_ENGINE = 0x1;
+    public static final int BOOTSTRAP_DISABLE_SMOOTH_SCROLLING = 0x2;
 
     private static boolean sOptiFineLoaded;
 
@@ -286,7 +286,7 @@ public final class ModernUIForge {
 
         private Client() {
             super();
-            if ((getBootstrapLevel() & BOOTSTRAP_TEXT_ENGINE) == 0) {
+            if ((getBootstrapLevel() & BOOTSTRAP_DISABLE_TEXT_ENGINE) == 0) {
                 ModernUITextMC.init();
                 LOGGER.info(MARKER, "Initialized Modern UI text engine");
             }

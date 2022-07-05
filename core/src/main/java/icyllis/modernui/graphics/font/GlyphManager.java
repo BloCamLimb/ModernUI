@@ -196,11 +196,16 @@ public class GlyphManager {
     }
 
     public void dumpInfo(PrintWriter pw) {
+        int glyphSize = 0;
+        long memorySize = 0;
         for (var entry : mAtlases.entrySet()) {
-            pw.print(entry.getKey() + ", ");
-            entry.getValue().dumpShortInfo(pw);
-            pw.println();
+            glyphSize += entry.getValue().getGlyphCount();
+            memorySize += entry.getValue().getMemorySize();
         }
+        pw.print("GlyphManager: ");
+        pw.print("Atlases=" + mAtlases.size());
+        pw.print(", Glyphs=" + glyphSize);
+        pw.println(", MemorySize=" + memorySize);
     }
 
     @Nullable

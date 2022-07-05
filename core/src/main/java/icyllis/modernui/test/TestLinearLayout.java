@@ -18,11 +18,13 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.R;
 import icyllis.modernui.animation.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
+import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.graphics.font.FontCollection;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.opengl.GLTexture;
@@ -34,6 +36,7 @@ import icyllis.modernui.text.Spanned;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.util.FloatProperty;
+import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
 import icyllis.modernui.widget.*;
 
@@ -43,6 +46,8 @@ import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
+
+import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 public class TestLinearLayout extends LinearLayout {
 
@@ -166,7 +171,7 @@ public class TestLinearLayout extends LinearLayout {
 
         mTextView = tv;
 
-        for (int i = 0; i < 10; i++) {
+        for (int i = 0; i < 11; i++) {
             View v;
             LinearLayout.LayoutParams p;
             if (i == 4) {
@@ -202,6 +207,41 @@ public class TestLinearLayout extends LinearLayout {
                 //textField.setSingleLine();
                 //textField.setTransformationMethod(PasswordTransformationMethod.getInstance());
                 textField.setPadding(dp(12), 0, dp(12), 0);
+            } else if (i == 10) {
+                var layout = new LinearLayout();
+                layout.setOrientation(LinearLayout.HORIZONTAL);
+                layout.setHorizontalGravity(Gravity.START);
+
+                final int dp3 = dp(3);
+                final int dp6 = dp(6);
+                {
+                    var title = new TextView();
+                    title.setText("Title");
+                    title.setTextSize(14);
+                    title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+
+                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1);
+                    params.gravity = Gravity.START;
+                    layout.addView(title, params);
+                }
+                {
+                    var input = new EditText();
+                    input.setId(R.id.input);
+                    input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
+                    input.setTextSize(14);
+                    input.setPadding(dp3, 0, dp3, 0);
+                    input.setText("Value");
+
+                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                    params.gravity = Gravity.CENTER_VERTICAL;
+                    layout.addView(input, params);
+                }
+
+                var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+                params.gravity = Gravity.CENTER;
+                params.setMargins(dp6, 0, dp6, 0);
+                v = layout;
+                p = params;
             } else if (i == 5) {
                 RadioGroup group = new RadioGroup();
                 v = group;

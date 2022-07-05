@@ -59,10 +59,10 @@ public class CenterFragment extends Fragment {
     public View onCreateView(@Nullable ViewGroup container, @Nullable DataSet savedInstanceState) {
         final int dp6 = dp(6);
 
-        var content = new LinearLayout();
-        content.setId(R.id.content);
-        content.setOrientation(LinearLayout.VERTICAL);
-        content.setBackground(new Background());
+        var base = new LinearLayout();
+        base.setId(R.id.content);
+        base.setOrientation(LinearLayout.VERTICAL);
+        base.setBackground(new Background());
         {
             var title = new TextView();
             title.setId(R.id.title);
@@ -73,26 +73,26 @@ public class CenterFragment extends Fragment {
             var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(0, dp(12), 0, dp(12));
-            content.addView(title, params);
+            base.addView(title, params);
         }
 
         {
-            var panels = new LinearLayout();
-            panels.setOrientation(LinearLayout.HORIZONTAL);
+            var content = new LinearLayout();
+            content.setOrientation(LinearLayout.HORIZONTAL);
 
             boolean firstDown = Math.random() < 0.5;
 
             {
-                ScrollView primary = new ScrollView();
-                primary.addView(createPrimaryPanel(), MATCH_PARENT, WRAP_CONTENT);
+                ScrollView left = new ScrollView();
+                left.addView(createLeftPanel(), MATCH_PARENT, WRAP_CONTENT);
                 var params = new LinearLayout.LayoutParams(0, MATCH_PARENT, 1);
                 params.setMargins(dp6, dp6, dp6, dp6);
-                panels.addView(primary, params);
+                content.addView(left, params);
 
-                ObjectAnimator animator = ObjectAnimator.ofFloat(primary, View.TRANSLATION_Y,
+                ObjectAnimator animator = ObjectAnimator.ofFloat(left, View.TRANSLATION_Y,
                         dp(firstDown ? -200 : 200), 0);
                 animator.setInterpolator(TimeInterpolator.DECELERATE_CUBIC);
-                primary.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+                left.addOnLayoutChangeListener(new OnLayoutChangeListener() {
                     @Override
                     public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft,
                                                int oldTop, int oldRight, int oldBottom) {
@@ -100,20 +100,20 @@ public class CenterFragment extends Fragment {
                         v.removeOnLayoutChangeListener(this);
                     }
                 });
-                primary.setEdgeEffectColor(THEME_COLOR);
+                left.setEdgeEffectColor(THEME_COLOR);
             }
 
             {
-                ScrollView secondary = new ScrollView();
-                secondary.addView(createSecondaryPanel(), MATCH_PARENT, WRAP_CONTENT);
+                ScrollView right = new ScrollView();
+                right.addView(createRightPanel(), MATCH_PARENT, WRAP_CONTENT);
                 var params = new LinearLayout.LayoutParams(0, MATCH_PARENT, 1);
                 params.setMargins(dp6, dp6, dp6, dp6);
-                panels.addView(secondary, params);
+                content.addView(right, params);
 
-                ObjectAnimator animator = ObjectAnimator.ofFloat(secondary, View.TRANSLATION_Y,
+                ObjectAnimator animator = ObjectAnimator.ofFloat(right, View.TRANSLATION_Y,
                         dp(firstDown ? 200 : -200), 0);
                 animator.setInterpolator(TimeInterpolator.DECELERATE_CUBIC);
-                secondary.addOnLayoutChangeListener(new OnLayoutChangeListener() {
+                right.addOnLayoutChangeListener(new OnLayoutChangeListener() {
                     @Override
                     public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft,
                                                int oldTop, int oldRight, int oldBottom) {
@@ -121,673 +121,460 @@ public class CenterFragment extends Fragment {
                         v.removeOnLayoutChangeListener(this);
                     }
                 });
-                secondary.setEdgeEffectColor(THEME_COLOR);
+                right.setEdgeEffectColor(THEME_COLOR);
             }
 
             var params = new LinearLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT);
-            content.addView(panels, params);
+            base.addView(content, params);
         }
 
         var params = new FrameLayout.LayoutParams(dp(720), dp(450));
         params.gravity = Gravity.CENTER;
-        content.setLayoutParams(params);
-        return content;
+        base.setLayoutParams(params);
+        return base;
     }
 
-    // extension settings for Minecraft
     @Nonnull
-    private View createPrimaryPanel() {
+    private LinearLayout createCategory(String titleKey) {
+        var layout = new LinearLayout();
+        layout.setOrientation(LinearLayout.VERTICAL);
+
         final int dp6 = dp(6);
-
-        var base = new LinearLayout();
-        base.setOrientation(LinearLayout.VERTICAL);
+        final int dp12 = dp(12);
         {
-            var screen = new RelativeLayout();
+            var title = new TextView();
+            title.setId(R.id.title);
+            title.setText(I18n.get(titleKey));
+            title.setTextSize(16);
+            title.setTextColor(THEME_COLOR);
 
+            var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+            params.gravity = Gravity.START;
+            params.setMargins(dp6, dp6, dp6, dp6);
+            layout.addView(title, params);
+        }
+
+        var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        params.gravity = Gravity.CENTER;
+        params.setMargins(dp12, dp12, dp12, dp(18));
+        layout.setLayoutParams(params);
+
+        return layout;
+    }
+
+    @Nonnull
+    private LinearLayout createInputOption(String titleKey) {
+        var layout = new LinearLayout();
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setHorizontalGravity(Gravity.START);
+
+        final int dp3 = dp(3);
+        final int dp6 = dp(6);
+        {
+            var title = new TextView();
+            title.setText(I18n.get(titleKey));
+            title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+            title.setTextSize(14);
+
+            var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1);
+            params.gravity = Gravity.START | Gravity.CENTER_VERTICAL;
+            layout.addView(title, params);
+        }
+        {
+            var input = new EditText();
+            input.setId(R.id.input);
+            input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+            input.setTextSize(14);
+            input.setPadding(dp3, 0, dp3, 0);
+
+            StateListDrawable background = new StateListDrawable();
+            background.addState(StateSet.get(StateSet.VIEW_STATE_HOVERED), new InputBackground());
+            background.setEnterFadeDuration(300);
+            background.setExitFadeDuration(300);
+            input.setBackground(background);
+
+            var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+            params.gravity = Gravity.CENTER_VERTICAL;
+            layout.addView(input, params);
+        }
+
+        var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        params.gravity = Gravity.CENTER;
+        params.setMargins(dp6, 0, dp6, 0);
+        layout.setLayoutParams(params);
+
+        return layout;
+    }
+
+    @Nonnull
+    private LinearLayout createButtonOption(String titleKey) {
+        var layout = new LinearLayout();
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setHorizontalGravity(Gravity.START);
+
+        final int dp3 = dp(3);
+        final int dp6 = dp(6);
+        {
+            var title = new TextView();
+            title.setText(I18n.get(titleKey));
+            title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+            title.setTextSize(14);
+
+            var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1);
+            params.gravity = Gravity.CENTER_VERTICAL;
+            layout.addView(title, params);
+        }
+        {
+            var button = new SwitchButton();
+            button.setId(R.id.button1);
+            button.setCheckedColor(THEME_COLOR);
+
+            var params = new LinearLayout.LayoutParams(dp(36), dp(16));
+            params.gravity = Gravity.CENTER_VERTICAL;
+            params.setMargins(0, dp3, 0, dp3);
+            layout.addView(button, params);
+        }
+
+        var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        params.gravity = Gravity.CENTER;
+        params.setMargins(dp6, 0, dp6, 0);
+        layout.setLayoutParams(params);
+
+        return layout;
+    }
+
+    // Minecraft
+    @Nonnull
+    private View createLeftPanel() {
+        var panel = new LinearLayout();
+        panel.setOrientation(LinearLayout.VERTICAL);
+
+        {
+            // Screen
+            var category = createCategory("gui.modernui.center.category.screen");
             {
-                var title = new TextView();
-                title.setId(R.id.title);
-                title.setText(I18n.get("gui.modernui.center.category.screen"));
-                title.setTextSize(16);
-                title.setTextColor(THEME_COLOR);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                params.addRule(RelativeLayout.ALIGN_PARENT_START);
-                params.setMargins(dp6, dp6, dp6, dp6);
-                screen.addView(title, params);
-            }
-
-            {
-                var view = new TextView();
-                view.setId(12);
-                view.setText(I18n.get("gui.modernui.center.screen.backgroundDuration"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, R.id.title);
-                params.addRule(RelativeLayout.ALIGN_START, R.id.title);
-                screen.addView(view, params);
-
-                var input = new EditText();
+                var option = createInputOption("gui.modernui.center.screen.backgroundDuration");
+                var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Config.CLIENT.backgroundDuration.get().toString());
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(3));
-                input.setPadding(dp(4), 0, dp(4), 0);
-                input.setOnFocusChangeListener((__, hasFocus) -> {
+                input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
-                        int radius = Integer.parseInt(input.getText().toString());
-                        radius = FMath.clamp(radius, Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
-                        input.setText(Integer.toString(radius));
-                        if (radius != Config.CLIENT.backgroundDuration.get()) {
-                            Config.CLIENT.backgroundDuration.set(radius);
+                        EditText v = (EditText) view;
+                        int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
+                                Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
+                        v.setText(Integer.toString(value));
+                        if (value != Config.CLIENT.backgroundDuration.get()) {
+                            Config.CLIENT.backgroundDuration.set(value);
                             Config.CLIENT.saveAndReload();
                         }
                     }
                 });
-                StateListDrawable drawable = new StateListDrawable();
-                drawable.addState(StateSet.get(StateSet.VIEW_STATE_HOVERED), new InputBackground());
-                drawable.setEnterFadeDuration(300);
-                drawable.setExitFadeDuration(300);
-                input.setBackground(drawable);
-
-                params = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                params.addRule(RelativeLayout.ALIGN_BASELINE, 12);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp6, dp6, dp6);
-                screen.addView(input, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(16);
-                view.setText(I18n.get("gui.modernui.center.screen.blurEffect"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 12);
-                params.addRule(RelativeLayout.ALIGN_START, 12);
-                screen.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
+                var option = createButtonOption("gui.modernui.center.screen.blurEffect");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.blurEffect.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
                     Config.CLIENT.blurEffect.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 16);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                screen.addView(button, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(18);
-                view.setText(I18n.get("gui.modernui.center.screen.blurRadius"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 16);
-                params.addRule(RelativeLayout.ALIGN_START, 16);
-                screen.addView(view, params);
-
-                var input = new EditText();
+                var option = createInputOption("gui.modernui.center.screen.blurRadius");
+                var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Config.CLIENT.blurRadius.get().toString());
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
-                input.setPadding(dp(4), 0, dp(4), 0);
-                input.setOnFocusChangeListener((__, hasFocus) -> {
+                input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
-                        int radius = Integer.parseInt(input.getText().toString());
-                        radius = FMath.clamp(radius, Client.BLUR_RADIUS_MIN, Client.BLUR_RADIUS_MAX);
-                        input.setText(Integer.toString(radius));
-                        if (radius != Config.CLIENT.blurRadius.get()) {
-                            Config.CLIENT.blurRadius.set(radius);
+                        EditText v = (EditText) view;
+                        int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
+                                Client.BLUR_RADIUS_MIN, Client.BLUR_RADIUS_MAX);
+                        v.setText(Integer.toString(value));
+                        if (value != Config.CLIENT.blurRadius.get()) {
+                            Config.CLIENT.blurRadius.set(value);
                             Config.CLIENT.saveAndReload();
                         }
                     }
                 });
-                StateListDrawable drawable = new StateListDrawable();
-                drawable.addState(StateSet.get(StateSet.VIEW_STATE_HOVERED), new InputBackground());
-                drawable.setEnterFadeDuration(300);
-                drawable.setExitFadeDuration(300);
-                input.setBackground(drawable);
-
-                params = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                params.addRule(RelativeLayout.ALIGN_BASELINE, 18);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp6, dp6, dp6);
-                screen.addView(input, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(20);
-                view.setText(I18n.get("gui.modernui.center.screen.inventoryPause"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 18);
-                params.addRule(RelativeLayout.ALIGN_START, 18);
-                screen.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
+                var option = createButtonOption("gui.modernui.center.screen.inventoryPause");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.inventoryPause.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
                     Config.CLIENT.inventoryPause.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 20);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                screen.addView(button, params);
+                category.addView(option);
             }
-
-            var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
-            params.gravity = Gravity.CENTER;
-            params.setMargins(dp(12), dp(12), dp(12), dp(18));
-            base.addView(screen, params);
+            panel.addView(category);
         }
 
         {
-            var extension = new RelativeLayout();
-
+            var category = createCategory("gui.modernui.center.category.extension");
             {
-                var title = new TextView();
-                title.setId(R.id.title);
-                title.setText(I18n.get("gui.modernui.center.category.extension"));
-                title.setTextSize(16);
-                title.setTextColor(THEME_COLOR);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                params.addRule(RelativeLayout.ALIGN_PARENT_START);
-                params.setMargins(dp6, dp6, dp6, dp6);
-                extension.addView(title, params);
-            }
-
-            {
-                var view = new TextView();
-                view.setId(32);
-                view.setText(I18n.get("gui.modernui.center.extension.ding"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, R.id.title);
-                params.addRule(RelativeLayout.ALIGN_START, R.id.title);
-                extension.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
+                var option = createButtonOption("gui.modernui.center.extension.ding");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.ding.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
                     Config.CLIENT.ding.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 32);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                extension.addView(button, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(34);
-                view.setText(I18n.get("gui.modernui.center.extension.tooltip"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 32);
-                params.addRule(RelativeLayout.ALIGN_START, 32);
-                extension.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
+                var option = createButtonOption("gui.modernui.center.extension.tooltip");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.tooltip.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
                     Config.CLIENT.tooltip.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 34);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                extension.addView(button, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(35);
-                view.setText(I18n.get("gui.modernui.center.extension.tooltipDuration"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 34);
-                params.addRule(RelativeLayout.ALIGN_START, 34);
-                extension.addView(view, params);
-
-                var input = new EditText();
+                var option = createInputOption("gui.modernui.center.extension.tooltipDuration");
+                var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Config.CLIENT.tooltipDuration.get().toString());
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(3));
-                input.setPadding(dp(4), 0, dp(4), 0);
-                input.setOnFocusChangeListener((__, hasFocus) -> {
+                input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
-                        int radius = Integer.parseInt(input.getText().toString());
-                        radius = FMath.clamp(radius, Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
-                        input.setText(Integer.toString(radius));
-                        if (radius != Config.CLIENT.tooltipDuration.get()) {
-                            Config.CLIENT.tooltipDuration.set(radius);
+                        EditText v = (EditText) view;
+                        int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
+                                Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
+                        v.setText(Integer.toString(value));
+                        if (value != Config.CLIENT.tooltipDuration.get()) {
+                            Config.CLIENT.tooltipDuration.set(value);
                             Config.CLIENT.saveAndReload();
                         }
                     }
                 });
-                StateListDrawable drawable = new StateListDrawable();
-                drawable.addState(StateSet.get(StateSet.VIEW_STATE_HOVERED), new InputBackground());
-                drawable.setEnterFadeDuration(300);
-                drawable.setExitFadeDuration(300);
-                input.setBackground(drawable);
-
-                params = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                params.addRule(RelativeLayout.ALIGN_BASELINE, 35);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp6, dp6, dp6);
-                extension.addView(input, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(36);
-                view.setText(I18n.get("gui.modernui.center.extension.textEngine"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 35);
-                params.addRule(RelativeLayout.ALIGN_START, 35);
-                extension.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
-                button.setChecked((ModernUIForge.getBootstrapLevel() & ModernUIForge.BOOTSTRAP_TEXT_ENGINE) == 0);
+                var option = createButtonOption("gui.modernui.center.extension.smoothScrolling");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked((ModernUIForge.getBootstrapLevel() & ModernUIForge.BOOTSTRAP_DISABLE_SMOOTH_SCROLLING) == 0);
                 button.setOnCheckedChangeListener((__, checked) -> {
                     int level = ModernUIForge.getBootstrapLevel();
                     if (checked) {
-                        level &= ~ModernUIForge.BOOTSTRAP_TEXT_ENGINE;
+                        level &= ~ModernUIForge.BOOTSTRAP_DISABLE_SMOOTH_SCROLLING;
                     } else {
-                        level |= ModernUIForge.BOOTSTRAP_TEXT_ENGINE;
+                        level |= ModernUIForge.BOOTSTRAP_DISABLE_SMOOTH_SCROLLING;
                     }
                     ModernUIForge.setBootstrapLevel(level);
                     Toast.makeText("Restart the game to take effect", Toast.LENGTH_SHORT)
                             .show();
                 });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 36);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                extension.addView(button, params);
+                category.addView(option);
             }
-
-            {
-                var view = new TextView();
-                view.setId(38);
-                view.setText(I18n.get("gui.modernui.center.extension.smoothScrolling"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 36);
-                params.addRule(RelativeLayout.ALIGN_START, 36);
-                extension.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
-                button.setChecked((ModernUIForge.getBootstrapLevel() & ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING) == 0);
-                button.setOnCheckedChangeListener((__, checked) -> {
-                    int level = ModernUIForge.getBootstrapLevel();
-                    if (checked) {
-                        level &= ~ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING;
-                    } else {
-                        level |= ModernUIForge.BOOTSTRAP_SMOOTH_SCROLLING;
-                    }
-                    ModernUIForge.setBootstrapLevel(level);
-                    Toast.makeText("Restart the game to take effect", Toast.LENGTH_SHORT)
-                            .show();
-                });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 38);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                extension.addView(button, params);
-            }
-
-            var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
-            params.gravity = Gravity.CENTER;
-            params.setMargins(dp(12), dp(12), dp(12), dp(18));
-            base.addView(extension, params);
+            panel.addView(category);
         }
 
         {
-            var font = new RelativeLayout();
-
+            // Text Engine
+            var category = createCategory("gui.modernui.center.category.text");
             {
-                var title = new TextView();
-                title.setId(R.id.title);
-                title.setText(I18n.get("gui.modernui.center.category.text"));
-                title.setTextSize(16);
-                title.setTextColor(THEME_COLOR);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                params.addRule(RelativeLayout.ALIGN_PARENT_START);
-                params.setMargins(dp6, dp6, dp6, dp6);
-                font.addView(title, params);
-            }
-
-            {
-                var view = new TextView();
-                view.setId(40);
-                view.setText("Font family");
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, R.id.title);
-                params.addRule(RelativeLayout.ALIGN_START, R.id.title);
-                font.addView(view, params);
-            }
-
-            {
-                var view = new TextView();
-                view.setId(42);
-                view.setText("Bitmap-like");
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 40);
-                params.addRule(RelativeLayout.ALIGN_START, 40);
-                font.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
-                button.setChecked(Config.CLIENT.antiAliasing.get());
+                var option = createButtonOption("gui.modernui.center.text.textEngine");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked((ModernUIForge.getBootstrapLevel() & ModernUIForge.BOOTSTRAP_DISABLE_TEXT_ENGINE) == 0);
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.antiAliasing.set(checked);
-                    Config.CLIENT.saveAndReload();
-                    Toast.makeText("Restart the game to work properly", Toast.LENGTH_SHORT)
+                    int level = ModernUIForge.getBootstrapLevel();
+                    if (checked) {
+                        level &= ~ModernUIForge.BOOTSTRAP_DISABLE_TEXT_ENGINE;
+                    } else {
+                        level |= ModernUIForge.BOOTSTRAP_DISABLE_TEXT_ENGINE;
+                    }
+                    ModernUIForge.setBootstrapLevel(level);
+                    Toast.makeText("Restart the game to take effect", Toast.LENGTH_SHORT)
                             .show();
                 });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 42);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                font.addView(button, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(44);
-                view.setText("Linear sampling");
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 42);
-                params.addRule(RelativeLayout.ALIGN_START, 42);
-                font.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
-                button.setChecked(Config.CLIENT.linearSampling.get());
-                button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.linearSampling.set(checked);
-                    Config.CLIENT.saveAndReload();
-                    Toast.makeText("Restart the game to work properly", Toast.LENGTH_SHORT)
-                            .show();
-                });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 44);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                font.addView(button, params);
-            }
-
-            {
-                var view = new TextView();
-                view.setId(46);
-                view.setText("Allow shadow");
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 44);
-                params.addRule(RelativeLayout.ALIGN_START, 44);
-                font.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
+                var option = createButtonOption("gui.modernui.center.text.allowShadow");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mAllowShadow.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
                     ModernUITextMC.CONFIG.mAllowShadow.set(checked);
                     ModernUITextMC.CONFIG.saveAndReload();
                 });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 46);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                font.addView(button, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(48);
-                view.setText("Fixed resolution");
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 46);
-                params.addRule(RelativeLayout.ALIGN_START, 46);
-                font.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
+                var option = createButtonOption("gui.modernui.center.text.fixedResolution");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mFixedResolution.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
                     ModernUITextMC.CONFIG.mFixedResolution.set(checked);
                     ModernUITextMC.CONFIG.saveAndReload();
                 });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 48);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                font.addView(button, params);
+                category.addView(option);
             }
-
-            var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
-            params.gravity = Gravity.CENTER;
-            params.setMargins(dp(12), dp(12), dp(12), dp(18));
-            base.addView(font, params);
+            {
+                var option = createInputOption("gui.modernui.center.text.baseFontSize");
+                var input = option.<EditText>requireViewById(R.id.input);
+                input.setText(ModernUITextMC.CONFIG.mBaseFontSize.get().toString());
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
+                input.setOnFocusChangeListener((view, hasFocus) -> {
+                    if (!hasFocus) {
+                        EditText v = (EditText) view;
+                        int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
+                                ModernUITextMC.Config.BASE_FONT_SIZE_MIN, ModernUITextMC.Config.BASE_FONT_SIZE_MAX);
+                        v.setText(Integer.toString(value));
+                        if (value != ModernUITextMC.CONFIG.mBaseFontSize.get()) {
+                            ModernUITextMC.CONFIG.mBaseFontSize.set(value);
+                            ModernUITextMC.CONFIG.saveAndReload();
+                        }
+                    }
+                });
+                category.addView(option);
+            }
+            {
+                var option = createInputOption("gui.modernui.center.text.baseline");
+                var input = option.<EditText>requireViewById(R.id.input);
+                input.setText(ModernUITextMC.CONFIG.mBaseline.get().toString());
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
+                input.setOnFocusChangeListener((view, hasFocus) -> {
+                    if (!hasFocus) {
+                        EditText v = (EditText) view;
+                        int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
+                                ModernUITextMC.Config.BASELINE_MIN, ModernUITextMC.Config.BASELINE_MAX);
+                        v.setText(Integer.toString(value));
+                        if (value != ModernUITextMC.CONFIG.mBaseline.get()) {
+                            ModernUITextMC.CONFIG.mBaseline.set(value);
+                            ModernUITextMC.CONFIG.saveAndReload();
+                        }
+                    }
+                });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.superSampling");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(ModernUITextMC.CONFIG.mSuperSampling.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    ModernUITextMC.CONFIG.mSuperSampling.set(checked);
+                    ModernUITextMC.CONFIG.saveAndReload();
+                });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.pixelAligned");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(ModernUITextMC.CONFIG.mPixelAligned.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    ModernUITextMC.CONFIG.mPixelAligned.set(checked);
+                    ModernUITextMC.CONFIG.saveAndReload();
+                });
+                category.addView(option);
+            }
+            panel.addView(category);
         }
 
-        base.setDividerDrawable(new VerticalDivider());
-        base.setDividerPadding(dp(8));
-        base.setShowDividers(LinearLayout.SHOW_DIVIDER_BEGINNING | LinearLayout.SHOW_DIVIDER_MIDDLE | LinearLayout.SHOW_DIVIDER_END);
+        panel.setDividerDrawable(new Divider());
+        panel.setDividerPadding(dp(8));
+        panel.setShowDividers(LinearLayout.SHOW_DIVIDER_BEGINNING | LinearLayout.SHOW_DIVIDER_MIDDLE | LinearLayout.SHOW_DIVIDER_END);
 
-        return base;
+        return panel;
     }
 
     @Nonnull
-    private View createSecondaryPanel() {
+    private View createRightPanel() {
         final int dp6 = dp(6);
 
-        var base = new LinearLayout();
-        base.setOrientation(LinearLayout.VERTICAL);
+        var panel = new LinearLayout();
+        panel.setOrientation(LinearLayout.VERTICAL);
 
         {
-            var system = new RelativeLayout();
-
+            var category = createCategory("gui.modernui.center.category.system");
             {
-                var title = new TextView();
-                title.setId(R.id.title);
-                title.setText(I18n.get("gui.modernui.center.category.system"));
-                title.setTextSize(16);
-                title.setTextColor(THEME_COLOR);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.ALIGN_PARENT_TOP);
-                params.addRule(RelativeLayout.ALIGN_PARENT_START);
-                params.setMargins(dp6, dp6, dp6, dp6);
-                system.addView(title, params);
-            }
-
-            {
-                var view = new TextView();
-                view.setId(16);
-                view.setText(I18n.get("gui.modernui.center.system.forceRtlLayout"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, R.id.title);
-                params.addRule(RelativeLayout.ALIGN_START, R.id.title);
-                system.addView(view, params);
-
-                var button = new SwitchButton();
-                button.setCheckedColor(THEME_COLOR);
+                var option = createButtonOption("gui.modernui.center.system.forceRtlLayout");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.forceRtl.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
                     Config.CLIENT.forceRtl.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
-
-                params = new RelativeLayout.LayoutParams(dp(36), dp(16));
-                params.addRule(RelativeLayout.ALIGN_TOP, 16);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp(3), dp6, dp(3));
-                system.addView(button, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(18);
-                view.setText(I18n.get("gui.modernui.center.system.globalFontScale"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 16);
-                params.addRule(RelativeLayout.ALIGN_START, 16);
-                system.addView(view, params);
-
-                var input = new EditText();
+                var option = createInputOption("gui.modernui.center.system.globalFontScale");
+                var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Config.CLIENT.fontScale.get().toString());
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
                         new InputFilter.LengthFilter(4));
-                input.setPadding(dp(4), 0, dp(4), 0);
-                input.setOnFocusChangeListener((__, hasFocus) -> {
+                input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
-                        double radius = Double.parseDouble(input.getText().toString());
-                        radius = Math.max(Math.min(radius, Client.FONT_SCALE_MAX), Client.FONT_SCALE_MIN);
-                        input.setText(Double.toString(radius));
-                        if (radius != Config.CLIENT.fontScale.get()) {
-                            Config.CLIENT.fontScale.set(radius);
+                        EditText v = (EditText) view;
+                        double value = Math.max(Math.min(Double.parseDouble(v.getText().toString()),
+                                Client.FONT_SCALE_MAX), Client.FONT_SCALE_MIN);
+                        v.setText(Double.toString(value));
+                        if (value != Config.CLIENT.fontScale.get()) {
+                            Config.CLIENT.fontScale.set(value);
                             Config.CLIENT.saveAndReload();
                         }
                     }
                 });
-                StateListDrawable drawable = new StateListDrawable();
-                drawable.addState(StateSet.get(StateSet.VIEW_STATE_HOVERED), new InputBackground());
-                drawable.setEnterFadeDuration(300);
-                drawable.setExitFadeDuration(300);
-                input.setBackground(drawable);
-
-                params = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                params.addRule(RelativeLayout.ALIGN_BASELINE, 18);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp6, dp6, dp6);
-                system.addView(input, params);
+                category.addView(option);
             }
-
             {
-                var view = new TextView();
-                view.setId(20);
-                view.setText(I18n.get("gui.modernui.center.system.globalAnimationScale"));
-                view.setTextSize(14);
-
-                var params = new RelativeLayout.LayoutParams(WRAP_CONTENT,
-                        WRAP_CONTENT);
-                params.addRule(RelativeLayout.BELOW, 18);
-                params.addRule(RelativeLayout.ALIGN_START, 18);
-                system.addView(view, params);
-
-                var input = new EditText();
+                var option = createInputOption("gui.modernui.center.system.globalAnimationScale");
+                var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Float.toString(ValueAnimator.sDurationScale));
-                input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
-                input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
                         new InputFilter.LengthFilter(4));
-                input.setPadding(dp(4), 0, dp(4), 0);
-                input.setOnFocusChangeListener((__, hasFocus) -> {
+                input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
-                        double scale = Double.parseDouble(input.getText().toString());
-                        scale = Math.max(Math.min(scale, 10), 0.1);
-                        input.setText(Double.toString(scale));
+                        EditText v = (EditText) view;
+                        double scale = Math.max(Math.min(Double.parseDouble(v.getText().toString()), 10), 0.1);
+                        v.setText(Double.toString(scale));
                         if (scale != ValueAnimator.sDurationScale) {
                             ValueAnimator.sDurationScale = (float) scale;
                         }
                     }
                 });
-                StateListDrawable drawable = new StateListDrawable();
-                drawable.addState(StateSet.get(StateSet.VIEW_STATE_HOVERED), new InputBackground());
-                drawable.setEnterFadeDuration(300);
-                drawable.setExitFadeDuration(300);
-                input.setBackground(drawable);
-
-                params = new RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-                params.addRule(RelativeLayout.ALIGN_BASELINE, 20);
-                params.addRule(RelativeLayout.ALIGN_PARENT_END);
-                params.setMargins(dp6, dp6, dp6, dp6);
-                system.addView(input, params);
+                category.addView(option);
             }
+            panel.addView(category);
+        }
 
-            var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
-            params.gravity = Gravity.CENTER;
-            params.setMargins(dp(12), dp(12), dp(12), dp(18));
-            base.addView(system, params);
+        {
+            var category = createCategory("gui.modernui.center.category.font");
+            {
+                var option = createButtonOption("gui.modernui.center.font.antiAliasing");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(Config.CLIENT.antiAliasing.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    Config.CLIENT.antiAliasing.set(checked);
+                    Config.CLIENT.saveAndReload();
+                });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.font.fractionalMetrics");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(Config.CLIENT.fractionalMetrics.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    Config.CLIENT.fractionalMetrics.set(checked);
+                    Config.CLIENT.saveAndReload();
+                });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.font.linearSampling");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(Config.CLIENT.linearSampling.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    Config.CLIENT.linearSampling.set(checked);
+                    Config.CLIENT.saveAndReload();
+                });
+                category.addView(option);
+            }
+            panel.addView(category);
         }
 
         {
@@ -905,14 +692,14 @@ public class CenterFragment extends Fragment {
             var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
-            base.addView(group, params);
+            panel.addView(group, params);
         }
 
-        base.setDividerDrawable(new VerticalDivider());
-        base.setDividerPadding(dp(8));
-        base.setShowDividers(LinearLayout.SHOW_DIVIDER_BEGINNING | LinearLayout.SHOW_DIVIDER_MIDDLE | LinearLayout.SHOW_DIVIDER_END);
+        panel.setDividerDrawable(new Divider());
+        panel.setDividerPadding(dp(8));
+        panel.setShowDividers(LinearLayout.SHOW_DIVIDER_BEGINNING | LinearLayout.SHOW_DIVIDER_MIDDLE | LinearLayout.SHOW_DIVIDER_END);
 
-        return base;
+        return panel;
     }
 
     private void addSystemSetting(int id, String title, @Nonnull ViewGroup container, int max,
@@ -1016,11 +803,11 @@ public class CenterFragment extends Fragment {
         }
     }
 
-    private static class VerticalDivider extends Drawable {
+    private static class Divider extends Drawable {
 
         private final int mSize;
 
-        public VerticalDivider() {
+        public Divider() {
             mSize = dp(2);
         }
 

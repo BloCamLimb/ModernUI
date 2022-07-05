@@ -29,7 +29,6 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.PrintWriter;
 import java.nio.file.Path;
 
 import static icyllis.modernui.graphics.opengl.GLCore.*;
@@ -232,7 +231,12 @@ public class GLFontAtlas implements AutoCloseable {
         mTexture = null;
     }
 
-    public void dumpShortInfo(@Nonnull PrintWriter pw) {
-        pw.print("Glyphs: " + mGlyphs.size() + ", Memory: " + mTexture.getWidth() * mTexture.getHeight());
+    public int getGlyphCount() {
+        return mGlyphs.size();
+    }
+
+    public int getMemorySize() {
+        // R8, 1 byte per pixel
+        return mTexture.getWidth() * mTexture.getHeight() /* * 1 */;
     }
 }
