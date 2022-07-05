@@ -16,13 +16,14 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import org.lwjgl.opengl.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,8 +33,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * This class helps you create shaders and programs.
@@ -74,7 +73,7 @@ public class ShaderManager {
         Core.checkRenderThread();
         for (var map : mShaders.values()) {
             for (int shard : map.values()) {
-                glDeleteShader(shard);
+                GL20C.glDeleteShader(shard);
             }
         }
         mShaders.clear();
@@ -83,7 +82,7 @@ public class ShaderManager {
         }
         for (var map : mShaders.values()) {
             for (int shard : map.values()) {
-                glDeleteShader(shard);
+                GL20C.glDeleteShader(shard);
             }
         }
         mShaders.clear();
@@ -151,43 +150,43 @@ public class ShaderManager {
         }
         if (type == 0) {
             if (path.endsWith(".vert")) {
-                type = GL_VERTEX_SHADER;
+                type = GL20C.GL_VERTEX_SHADER;
             } else if (path.endsWith(".frag")) {
-                type = GL_FRAGMENT_SHADER;
+                type = GL20C.GL_FRAGMENT_SHADER;
             } else if (path.endsWith(".geom")) {
-                type = GL_GEOMETRY_SHADER;
+                type = GL32C.GL_GEOMETRY_SHADER;
             } else if (path.endsWith(".tesc")) {
-                type = GL_TESS_CONTROL_SHADER;
+                type = GL40C.GL_TESS_CONTROL_SHADER;
             } else if (path.endsWith(".tese")) {
-                type = GL_TESS_EVALUATION_SHADER;
+                type = GL40C.GL_TESS_EVALUATION_SHADER;
             } else if (path.endsWith(".comp")) {
-                type = GL_COMPUTE_SHADER;
+                type = GL43C.GL_COMPUTE_SHADER;
             } else {
-                ModernUI.LOGGER.warn(MARKER, "Unknown type identifier for shader source {}:{}", namespace, path);
+                ModernUI.LOGGER.warn(GLCore.MARKER, "Unknown type identifier for shader source {}:{}", namespace, path);
                 return 0;
             }
         }
         try (ReadableByteChannel channel = ModernUI.getInstance().getResourceChannel(namespace, path)) {
             String source = Core.readUTF8(channel);
             if (source == null) {
-                ModernUI.LOGGER.error(MARKER, "Failed to read shader source {}:{}", namespace, path);
+                ModernUI.LOGGER.error(GLCore.MARKER, "Failed to read shader source {}:{}", namespace, path);
                 mShaders.get(namespace).putIfAbsent(path, 0);
                 return 0;
             }
-            shader = glCreateShader(type);
-            glShaderSource(shader, source);
-            glCompileShader(shader);
-            if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
-                String log = glGetShaderInfoLog(shader, 8192).trim();
-                ModernUI.LOGGER.error(MARKER, "Failed to compile shader {}:{}\n{}", namespace, path, log);
-                glDeleteShader(shader);
+            shader = GL20C.glCreateShader(type);
+            GL20C.glShaderSource(shader, source);
+            GL20C.glCompileShader(shader);
+            if (GL20C.glGetShaderi(shader, GL20C.GL_COMPILE_STATUS) == GL11C.GL_FALSE) {
+                String log = GL20C.glGetShaderInfoLog(shader, 8192).trim();
+                ModernUI.LOGGER.error(GLCore.MARKER, "Failed to compile shader {}:{}\n{}", namespace, path, log);
+                GL20C.glDeleteShader(shader);
                 mShaders.get(namespace).putIfAbsent(path, 0);
                 return 0;
             }
             mShaders.get(namespace).putIfAbsent(path, shader);
             return shader;
         } catch (IOException e) {
-            ModernUI.LOGGER.error(MARKER, "Failed to get shader source {}:{}\n", namespace, path, e);
+            ModernUI.LOGGER.error(GLCore.MARKER, "Failed to get shader source {}:{}\n", namespace, path, e);
         }
         mShaders.get(namespace).putIfAbsent(path, 0);
         return 0;
@@ -211,22 +210,22 @@ public class ShaderManager {
         if (t != null && t.mProgram != 0) {
             program = t.mProgram;
         } else {
-            program = glCreateProgram();
+            program = GL20C.glCreateProgram();
         }
         for (int s : shards) {
-            glAttachShader(program, s);
+            GL20C.glAttachShader(program, s);
         }
-        glLinkProgram(program);
-        if (glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
-            String log = glGetProgramInfoLog(program, 8192);
-            ModernUI.LOGGER.error(MARKER, "Failed to link shader program\n{}", log);
+        GL20C.glLinkProgram(program);
+        if (GL20C.glGetProgrami(program, GL20C.GL_LINK_STATUS) == GL11C.GL_FALSE) {
+            String log = GL20C.glGetProgramInfoLog(program, 8192);
+            ModernUI.LOGGER.error(GLCore.MARKER, "Failed to link shader program\n{}", log);
             // also detaches all shaders
-            glDeleteProgram(program);
+            GL20C.glDeleteProgram(program);
             program = 0;
         } else {
             // clear attachment states, for further re-creation
             for (int s : shards) {
-                glDetachShader(program, s);
+                GL20C.glDetachShader(program, s);
             }
         }
         if (t == null) {

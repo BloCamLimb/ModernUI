@@ -1002,6 +1002,7 @@ public class CenterFragment extends Fragment {
             paint.setStyle(Paint.STROKE);
             paint.setColors(THEME_COLOR, THEME_COLOR_2, THEME_COLOR, THEME_COLOR_2);
             paint.setStrokeWidth(mStrokeWidth);
+            paint.setSmoothRadius(inner);
             canvas.drawRoundRect(bounds.left + inner, bounds.top + inner, bounds.right - inner,
                     bounds.bottom - inner, mRadius, paint);
             paint.drop();

@@ -24,8 +24,8 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.NativeImage;
-import icyllis.modernui.opengl.GLCore;
-import icyllis.modernui.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.GLCore;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import org.lwjgl.system.MemoryStack;
@@ -59,7 +59,7 @@ class EffectRenderType extends RenderType {
             WHITE.upload(0, 0, 0, 2, 2, 0, 0, 0, 1,
                     NativeImage.Format.RED.glFormat, GLCore.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels.flip()));
         }
-        WHITE.swizzleRGBA(GL_ONE, GL_ONE, GL_ONE, GL_RED);
+        WHITE.setSwizzle(GL_ONE, GL_ONE, GL_ONE, GL_RED);
         STATES = ImmutableList.of(
                 TextRenderType.RENDERTYPE_MODERN_TEXT,
                 TRANSLUCENT_TRANSPARENCY,

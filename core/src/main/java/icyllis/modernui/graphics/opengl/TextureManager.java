@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;

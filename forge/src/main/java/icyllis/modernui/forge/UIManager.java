@@ -21,6 +21,7 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.*;
@@ -28,10 +29,10 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.opengl.*;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.testforge.TestListFragment;
 import icyllis.modernui.testforge.TestPauseFragment;
@@ -45,11 +46,12 @@ import icyllis.modernui.widget.EditText;
 import net.minecraft.*;
 import net.minecraft.client.*;
 import net.minecraft.client.gui.components.ChatComponent;
+import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.locale.Language;
+import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -80,7 +82,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.opengl.GLCore.*;
+import static icyllis.modernui.graphics.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**
@@ -141,8 +143,8 @@ public final class UIManager implements LifecycleOwner {
     /// Rendering \\\
 
     // the UI framebuffer
-    private final GLFramebuffer mFramebuffer;
-    final GLSurfaceCanvas mCanvas;
+    private GLFramebuffer mFramebuffer;
+    GLSurfaceCanvas mCanvas;
     private final Matrix4 mProjectionMatrix = new Matrix4();
 
 
@@ -170,20 +172,9 @@ public final class UIManager implements LifecycleOwner {
     private int mButtonState;
 
     private UIManager() {
-        mCanvas = GLSurfaceCanvas.initialize();
-        glEnable(GL_MULTISAMPLE);
-        mFramebuffer = new GLFramebuffer(4);
-        mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
-        mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
-        mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
-        mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
-        // no depth buffer
-        mFramebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
-        mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
-
         // events
         MinecraftForge.EVENT_BUS.register(this);
-        MuiForgeApi.addOnWindowResizeListener(((width, height, guiScale, oldGuiScale) -> resize()));
+        MuiForgeApi.addOnWindowResizeListener((width, height, guiScale, oldGuiScale) -> resize());
 
         mUiThread = new Thread(this::run, "UI thread");
         mUiThread.start();
@@ -197,6 +188,27 @@ public final class UIManager implements LifecycleOwner {
         assert sInstance == null;
         sInstance = new UIManager();
         LOGGER.info(MARKER, "UI manager initialized");
+    }
+
+    @RenderThread
+    static void initializeRenderer() {
+        Core.checkRenderThread();
+        assert sInstance != null;
+        sInstance.mCanvas = !ModernUIForge.hasGLCapsError() ? GLSurfaceCanvas.initialize() : null;
+        glEnable(GL_MULTISAMPLE);
+        sInstance.mFramebuffer = new GLFramebuffer(4);
+        if (sInstance.mCanvas != null) {
+            sInstance.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+            sInstance.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
+            sInstance.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
+            sInstance.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
+            // no depth buffer
+            sInstance.mFramebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+            sInstance.mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+            LOGGER.info(MARKER, "UI renderer enabled");
+        } else {
+            LOGGER.info(MARKER, "UI renderer disabled");
+        }
     }
 
     @Nonnull
@@ -357,6 +369,24 @@ public final class UIManager implements LifecycleOwner {
         if (!mFirstScreenOpened) {
             if (sPlaySoundOnLoaded) {
                 minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f));
+            }
+            if (ModernUIForge.hasGLCapsError() && Config.CLIENT.showGLCapsError.get()) {
+                final String glRenderer = glGetString(GL_RENDERER);
+                final String glVersion = glGetString(GL_VERSION);
+                String extensions = String.join(", ", GLCore.getUnsupportedList());
+                ConfirmScreen newScreen = new ConfirmScreen(left -> {
+                    if (left) {
+                        Config.CLIENT.showGLCapsError.set(false);
+                        Config.CLIENT.saveAndReload();
+                    } else {
+                        Util.getPlatform().openUri("https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support");
+                    }
+                    minecraft.setScreen(null);
+                }, new TranslatableComponent("error.modernui.gl_caps"),
+                        new TranslatableComponent("error.modernui.gl_caps_desc", glRenderer, glVersion, extensions),
+                        new TranslatableComponent("gui.modernui.dont_show_again"),
+                        new TranslatableComponent("gui.modernui.ok"));
+                event.setScreen(newScreen);
             }
             mFirstScreenOpened = true;
         }
@@ -717,6 +747,15 @@ public final class UIManager implements LifecycleOwner {
 
     @RenderThread
     void render() {
+        if (mCanvas == null) {
+            if (mScreen != null) {
+                String error = Language.getInstance().getOrDefault("error.modernui.gl_caps");
+                int x = (mWindow.getGuiScaledWidth() - minecraft.font.width(error)) / 2;
+                int y = (mWindow.getGuiScaledHeight() + 4) / 2;
+                minecraft.font.draw(new PoseStack(), error, x, y, 0xFFFF0000);
+            }
+            return;
+        }
         RenderSystem.enableCull();
         RenderSystem.enableBlend();
         RenderSystem.activeTexture(GL_TEXTURE0);
@@ -882,10 +921,11 @@ public final class UIManager implements LifecycleOwner {
         ContextMenuBuilder mContextMenu;
         MenuHelper mContextMenuHelper;
 
-        @Nonnull
         @Override
         protected Canvas beginRecording(int width, int height) {
-            mCanvas.reset(width, height);
+            if (mCanvas != null) {
+                mCanvas.reset(width, height);
+            }
             return mCanvas;
         }
 
@@ -970,6 +1010,9 @@ public final class UIManager implements LifecycleOwner {
         }
 
         private void drawExtTooltipLocked(@Nonnull RenderTooltipEvent.Pre event, double cursorX, double cursorY) {
+            if (mCanvas == null) {
+                return;
+            }
             synchronized (mRenderLock) {
                 if (!mRedrawn) {
                     TooltipRenderer.drawTooltip(mCanvas, mWindow, event.getPoseStack(), event.getComponents(),

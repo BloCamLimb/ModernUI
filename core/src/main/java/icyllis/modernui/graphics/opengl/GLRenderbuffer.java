@@ -16,13 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.core.Core;
+import org.lwjgl.opengl.GL30C;
+import org.lwjgl.opengl.GL45C;
 
 import javax.annotation.Nonnull;
-
-import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * Represents OpenGL renderbuffer objects. Losing the reference to this object will
@@ -38,40 +38,40 @@ public final class GLRenderbuffer extends GLObject {
         if (ref == null) {
             ref = new Ref(this);
         }
-        return ref.id;
+        return ref.mId;
     }
 
     public void allocate(int internalFormat, int width, int height, int samples) {
         if (samples < 0) {
             throw new IllegalArgumentException();
         } else if (samples > 0) {
-            glNamedRenderbufferStorageMultisample(get(), samples, internalFormat, width, height);
+            GL45C.glNamedRenderbufferStorageMultisample(get(), samples, internalFormat, width, height);
         } else {
-            glNamedRenderbufferStorage(get(), internalFormat, width, height);
+            GL45C.glNamedRenderbufferStorage(get(), internalFormat, width, height);
         }
     }
 
     public int getWidth() {
-        return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_WIDTH);
+        return GL45C.glGetNamedRenderbufferParameteri(get(), GL30C.GL_RENDERBUFFER_WIDTH);
     }
 
     public int getHeight() {
-        return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_HEIGHT);
+        return GL45C.glGetNamedRenderbufferParameteri(get(), GL30C.GL_RENDERBUFFER_HEIGHT);
     }
 
     public int getInternalFormat() {
-        return glGetNamedRenderbufferParameteri(get(), GL_RENDERBUFFER_INTERNAL_FORMAT);
+        return GL45C.glGetNamedRenderbufferParameteri(get(), GL30C.GL_RENDERBUFFER_INTERNAL_FORMAT);
     }
 
     private static final class Ref extends GLObject.Ref {
 
         private Ref(@Nonnull GLRenderbuffer owner) {
-            super(owner, glCreateRenderbuffers());
+            super(owner, GL45C.glCreateRenderbuffers());
         }
 
         @Override
         public void run() {
-            Core.executeOnRenderThread(() -> glDeleteRenderbuffers(id));
+            Core.executeOnRenderThread(() -> GL30C.glDeleteRenderbuffers(mId));
         }
     }
 }

@@ -16,19 +16,18 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.core.Core;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.lang.ref.WeakReference;
 import java.nio.FloatBuffer;
-
-import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * This class represents a framebuffer object. It is used for creation of
@@ -50,14 +49,14 @@ public final class GLFramebuffer extends GLObject {
     private static final GLFramebuffer sSwapFramebuffer = new GLFramebuffer(0);
 
     static {
-        sSwapFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
-        sSwapFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+        sSwapFramebuffer.addTextureAttachment(GL30C.GL_COLOR_ATTACHMENT0, GL11C.GL_RGBA8);
+        sSwapFramebuffer.setDrawBuffer(GL30C.GL_COLOR_ATTACHMENT0);
     }
 
     // this can be Java GC-ed
     private final FloatBuffer mClearColor = BufferUtils.createFloatBuffer(4);
 
-    private final int mSamples;
+    private final int mSampleCount;
 
     @Nullable
     private Int2ObjectArrayMap<Attachment> mAttachments;
@@ -65,10 +64,10 @@ public final class GLFramebuffer extends GLObject {
     /**
      * Creates a framebuffer.
      *
-     * @param samples multisample anti-aliasing
+     * @param sampleCount number of samples
      */
-    public GLFramebuffer(int samples) {
-        mSamples = Math.max(0, samples);
+    public GLFramebuffer(int sampleCount) {
+        mSampleCount = Math.max(1, sampleCount);
     }
 
     /**
@@ -84,10 +83,10 @@ public final class GLFramebuffer extends GLObject {
         Attachment src = framebuffer.getAttachment(colorBuffer);
         int w = src.getWidth();
         int h = src.getHeight();
-        sSwapFramebuffer.getAttachment(GL_COLOR_ATTACHMENT0).make(w, h, false);
-        glBlitNamedFramebuffer(framebuffer.get(), sSwapFramebuffer.get(), 0, 0, w, h,
-                0, 0, w, h, GL_COLOR_BUFFER_BIT, GL_NEAREST);
-        return sSwapFramebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
+        sSwapFramebuffer.getAttachment(GL30C.GL_COLOR_ATTACHMENT0).make(w, h, false);
+        GL45C.glBlitNamedFramebuffer(framebuffer.get(), sSwapFramebuffer.get(), 0, 0, w, h,
+                0, 0, w, h, GL11C.GL_COLOR_BUFFER_BIT, GL11C.GL_NEAREST);
+        return sSwapFramebuffer.getAttachedTexture(GL30C.GL_COLOR_ATTACHMENT0);
     }
 
     @Override
@@ -95,26 +94,26 @@ public final class GLFramebuffer extends GLObject {
         if (ref == null) {
             ref = new Ref(this);
         }
-        return ref.id;
+        return ref.mId;
     }
 
     /**
      * Binds this framebuffer object to both draw and read target.
      */
     public void bind() {
-        glBindFramebuffer(GL_FRAMEBUFFER, get());
+        GL30C.glBindFramebuffer(GL30C.GL_FRAMEBUFFER, get());
     }
 
     public void bindDraw() {
-        glBindFramebuffer(GL_DRAW_FRAMEBUFFER, get());
+        GL30C.glBindFramebuffer(GL30C.GL_DRAW_FRAMEBUFFER, get());
     }
 
     public void bindRead() {
-        glBindFramebuffer(GL_READ_FRAMEBUFFER, get());
+        GL30C.glBindFramebuffer(GL30C.GL_READ_FRAMEBUFFER, get());
     }
 
     public boolean isMsaaEnabled() {
-        return mSamples > 0;
+        return mSampleCount > 0;
     }
 
     @Nonnull
@@ -140,7 +139,7 @@ public final class GLFramebuffer extends GLObject {
         Attachment attachment = mAttachments.remove(attachmentPoint);
         if (attachment != null) {
             attachment.close();
-            glNamedFramebufferTexture(get(), attachmentPoint, DEFAULT_TEXTURE, 0);
+            GL45C.glNamedFramebufferTexture(get(), attachmentPoint, GLCore.DEFAULT_TEXTURE, 0);
         }
         if (mAttachments.isEmpty()) {
             mAttachments = null;
@@ -154,7 +153,7 @@ public final class GLFramebuffer extends GLObject {
         int framebuffer = get();
         for (var entry : mAttachments.int2ObjectEntrySet()) {
             entry.getValue().close();
-            glNamedFramebufferTexture(framebuffer, entry.getIntKey(), DEFAULT_TEXTURE, 0);
+            GL45C.glNamedFramebufferTexture(framebuffer, entry.getIntKey(), GLCore.DEFAULT_TEXTURE, 0);
         }
         mAttachments.clear();
         mAttachments = null;
@@ -173,7 +172,7 @@ public final class GLFramebuffer extends GLObject {
      */
     public void clearColorBuffer() {
         // here drawbuffer is zero, because setDrawBuffer only set the buffer with index 0
-        glClearNamedFramebufferfv(get(), GL_COLOR, 0, mClearColor);
+        GL45C.glClearNamedFramebufferfv(get(), GL11C.GL_COLOR, 0, mClearColor);
     }
 
     /**
@@ -181,7 +180,7 @@ public final class GLFramebuffer extends GLObject {
      */
     public void clearDepthStencilBuffer() {
         // for depth or stencil, the drawbuffer must be 0
-        glClearNamedFramebufferfi(get(), GL_DEPTH_STENCIL, 0, 1.0f, 0);
+        GL45C.glClearNamedFramebufferfi(get(), GL30C.GL_DEPTH_STENCIL, 0, 1.0f, 0);
     }
 
     /**
@@ -195,11 +194,11 @@ public final class GLFramebuffer extends GLObject {
      * @param buffer enum buffer
      */
     public void setDrawBuffer(int buffer) {
-        glNamedFramebufferDrawBuffer(get(), buffer);
+        GL45C.glNamedFramebufferDrawBuffer(get(), buffer);
     }
 
     public void setReadBuffer(int buffer) {
-        glNamedFramebufferReadBuffer(get(), buffer);
+        GL45C.glNamedFramebufferReadBuffer(get(), buffer);
     }
 
     @Nonnull
@@ -242,12 +241,12 @@ public final class GLFramebuffer extends GLObject {
         throw new IllegalStateException("No attachment " + attachmentPoint);
     }
 
-    public void makeBuffers(int width, int height, boolean exactly) {
+    public void makeBuffers(int width, int height, boolean exact) {
         if (mAttachments == null) {
             return;
         }
         for (Attachment attachment : mAttachments.values()) {
-            attachment.make(width, height, exactly);
+            attachment.make(width, height, exact);
         }
     }
 
@@ -264,12 +263,12 @@ public final class GLFramebuffer extends GLObject {
     private static final class Ref extends GLObject.Ref {
 
         private Ref(@Nonnull GLFramebuffer owner) {
-            super(owner, glCreateFramebuffers());
+            super(owner, GL45C.glCreateFramebuffers());
         }
 
         @Override
         public void run() {
-            Core.executeOnRenderThread(() -> glDeleteFramebuffers(id));
+            Core.executeOnRenderThread(() -> GL30C.glDeleteFramebuffers(mId));
         }
     }
 
@@ -288,7 +287,7 @@ public final class GLFramebuffer extends GLObject {
             mInternalFormat = internalFormat;
         }
 
-        public abstract boolean make(int width, int height, boolean exactly);
+        public abstract boolean make(int width, int height, boolean exact);
 
         public int getWidth() {
             return mWidth;
@@ -311,19 +310,19 @@ public final class GLFramebuffer extends GLObject {
 
         protected TextureAttachment(GLFramebuffer framebuffer, int attachmentPoint, int internalFormat) {
             super(framebuffer, attachmentPoint, internalFormat);
-            if (framebuffer.mSamples > 0) {
-                mTexture = new GLTexture(GL_TEXTURE_2D_MULTISAMPLE);
+            if (framebuffer.mSampleCount > 0) {
+                mTexture = new GLTexture(GL32C.GL_TEXTURE_2D_MULTISAMPLE);
             } else {
-                mTexture = new GLTexture(GL_TEXTURE_2D);
+                mTexture = new GLTexture(GL11C.GL_TEXTURE_2D);
             }
         }
 
         @Override
-        public boolean make(int width, int height, boolean exactly) {
+        public boolean make(int width, int height, boolean exact) {
             if (width <= 0 || height <= 0) {
                 return false;
             }
-            if (exactly ? mWidth != width || mHeight != height :
+            if (exact ? mWidth != width || mHeight != height :
                     mWidth < width || mHeight < height) {
                 mWidth = width;
                 mHeight = height;
@@ -332,12 +331,12 @@ public final class GLFramebuffer extends GLObject {
                 if (framebuffer == null) {
                     return false;
                 }
-                if (framebuffer.mSamples > 0) {
-                    mTexture.allocate2DMS(mInternalFormat, width, height, framebuffer.mSamples);
+                if (framebuffer.mSampleCount > 0) {
+                    mTexture.allocate2DMS(mInternalFormat, width, height, framebuffer.mSampleCount);
                 } else {
                     mTexture.allocate2D(mInternalFormat, width, height, 0);
                 }
-                glNamedFramebufferTexture(framebuffer.get(), mAttachmentPoint, mTexture.get(), 0);
+                GL45C.glNamedFramebufferTexture(framebuffer.get(), mAttachmentPoint, mTexture.get(), 0);
                 return true;
             }
             return false;
@@ -360,11 +359,11 @@ public final class GLFramebuffer extends GLObject {
         }
 
         @Override
-        public boolean make(int width, int height, boolean exactly) {
+        public boolean make(int width, int height, boolean exact) {
             if (width <= 0 || height <= 0) {
                 return false;
             }
-            if (exactly ? mWidth != width || mHeight != height :
+            if (exact ? mWidth != width || mHeight != height :
                     mWidth < width || mHeight < height) {
                 mWidth = width;
                 mHeight = height;
@@ -373,8 +372,8 @@ public final class GLFramebuffer extends GLObject {
                 if (framebuffer == null) {
                     return false;
                 }
-                mRenderbuffer.allocate(mInternalFormat, width, height, framebuffer.mSamples);
-                glNamedFramebufferRenderbuffer(framebuffer.get(), mAttachmentPoint, GL_RENDERBUFFER,
+                mRenderbuffer.allocate(mInternalFormat, width, height, framebuffer.mSampleCount);
+                GL45C.glNamedFramebufferRenderbuffer(framebuffer.get(), mAttachmentPoint, GL30C.GL_RENDERBUFFER,
                         mRenderbuffer.get());
                 return true;
             }

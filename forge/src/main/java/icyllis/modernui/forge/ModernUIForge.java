@@ -77,6 +77,7 @@ public final class ModernUIForge {
     static volatile Integer sBootstrapLevel;
 
     public static boolean sInventoryScreenPausesGame;
+    public static boolean sGLCapsError; // write only
 
     static {
         try {
@@ -254,6 +255,10 @@ public final class ModernUIForge {
         return sOptiFineLoaded;
     }
 
+    public static boolean hasGLCapsError() {
+        return sGLCapsError && !Config.CLIENT.skipGLCapsError.get();
+    }
+
     @SuppressWarnings("UnusedReturnValue")
     public static <E extends Event & IModBusEvent> boolean post(@Nullable String ns, @Nonnull E e) {
         if (ns == null) {
@@ -272,7 +277,9 @@ public final class ModernUIForge {
     public static class Client extends ModernUI {
 
         static {
-            assert FMLEnvironment.dist.isClient();
+            if (!FMLEnvironment.dist.isClient()) {
+                throw new RuntimeException();
+            }
         }
 
         private volatile Typeface mTypeface;

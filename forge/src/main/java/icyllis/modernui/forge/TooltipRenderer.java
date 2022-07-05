@@ -25,7 +25,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.opengl.GLSurfaceCanvas;
+import icyllis.modernui.graphics.opengl.GLSurfaceCanvas;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -37,7 +37,7 @@ import javax.annotation.Nonnull;
 import java.nio.FloatBuffer;
 import java.util.List;
 
-import static icyllis.modernui.opengl.GLCore.*;
+import static icyllis.modernui.graphics.opengl.GLCore.*;
 
 /**
  * An extension that replaces vanilla tooltip style.
@@ -358,7 +358,7 @@ public final class TooltipRenderer {
 
         Paint paint = Paint.get();
 
-        paint.setFeatherRadius(0.5f);
+        paint.setSmoothRadius(0.5f);
 
         for (int i = 0; i < 4; i++) {
             int color = sFillColor[i];

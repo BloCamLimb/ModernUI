@@ -16,14 +16,13 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.core.Core;
+import org.lwjgl.opengl.*;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
-
-import static icyllis.modernui.opengl.GLCore.*;
 
 /**
  * Represents a OpenGL buffer object.
@@ -45,7 +44,7 @@ public class GLBuffer extends GLObject {
         if (ref == null) {
             ref = new Ref(this);
         }
-        return ref.id;
+        return ref.mId;
     }
 
     /**
@@ -57,7 +56,7 @@ public class GLBuffer extends GLObject {
      * @param index  the index of the binding point within the array specified by {@code target}
      */
     public void bindBase(int target, int index) {
-        glBindBufferBase(target, index, get());
+        GL30C.glBindBufferBase(target, index, get());
     }
 
     /**
@@ -71,7 +70,7 @@ public class GLBuffer extends GLObject {
      * @param size   the amount of data in bytes that can be read from the buffer object while used as an indexed target
      */
     public void bindRange(int target, int index, long offset, long size) {
-        glBindBufferRange(target, index, get(), offset, size);
+        GL30C.glBindBufferRange(target, index, get(), offset, size);
     }
 
     /**
@@ -83,7 +82,7 @@ public class GLBuffer extends GLObject {
      *              store by the application
      */
     public void allocate(long size, long data, int flags) {
-        nglNamedBufferStorage(get(), size, data, flags);
+        GL45C.nglNamedBufferStorage(get(), size, data, flags);
     }
 
     /**
@@ -94,7 +93,7 @@ public class GLBuffer extends GLObject {
      * @param usage the expected usage pattern of the data store
      */
     public void allocateM(long size, long data, int usage) {
-        nglNamedBufferData(get(), size, data, usage);
+        GL45C.nglNamedBufferData(get(), size, data, usage);
     }
 
     /**
@@ -105,7 +104,7 @@ public class GLBuffer extends GLObject {
      * @param data   a pointer to the new data that will be copied into the data store, can't be {@code NULL}
      */
     public void upload(long offset, long size, long data) {
-        nglNamedBufferSubData(get(), offset, size, data);
+        GL45C.nglNamedBufferSubData(get(), offset, size, data);
     }
 
     /**
@@ -115,18 +114,18 @@ public class GLBuffer extends GLObject {
      * @param data   a pointer to the new data that will be copied into the data store, can't be {@code NULL}
      */
     public void upload(long offset, @Nonnull ByteBuffer data) {
-        glNamedBufferSubData(get(), offset, data);
+        GL45C.glNamedBufferSubData(get(), offset, data);
     }
 
     private static final class Ref extends GLObject.Ref {
 
         private Ref(@Nonnull GLBuffer owner) {
-            super(owner, glCreateBuffers());
+            super(owner, GL45C.glCreateBuffers());
         }
 
         @Override
         public void run() {
-            Core.executeOnRenderThread(() -> glDeleteBuffers(id));
+            Core.executeOnRenderThread(() -> GL15C.glDeleteBuffers(mId));
         }
     }
 }

@@ -71,5 +71,11 @@
   "message.modernui.server_shutdown_min": "Сервер выключится через %s мин.",
 
   "warning.modernui.old_java": "Modern UI: Рекомендуется Java {2} или выше, у вас Java {3}. Обновите Java до более новой версии и выберите её для запуска игры, иначе вы не сможете использовать внешние шрифты или не всегда получите правильное расположение текста.",
-  "warning.modernui.old_opengl": "Modern UI: Версия OpenGL слишком старая. Требуется OpenGL {2} или выше (у вас OpenGL {3}). Обновите драйвер вашей видеокарты. Более новая версия macOS может не поддерживаться."
+  "warning.modernui.old_opengl": "Modern UI: Версия OpenGL слишком старая. Требуется OpenGL {2} или выше (у вас OpenGL {3}). Обновите драйвер вашей видеокарты. Более новая версия macOS может не поддерживаться.",
+
+  "error.modernui.gl_caps": "Modern UI Graphics Engine is Disabled",
+  "error.modernui.gl_caps_desc": "The graphics engine of Modern UI has been disabled due to the failure of OpenGL 4.5 core or ARB capability test. This means that all GUIs provided by Modern UI will not be rendered or drawn. However, the text engine, smooth scrolling, GUI scale slider option, blur background, game loading ding sound, inventory screen pause and other functions provided by Modern UI Forge extension are still available.\nGPU: %s, OpenGL: %s. The following ARB extensions are required: %s\nFor Windows and Linux, first update your GPU drivers. If you have integrated GPU, run Java applications with dedicated GPU. For macOS or in other cases, click OK for help.",
+
+  "gui.modernui.ok": "OK",
+  "gui.modernui.dont_show_again": "Don't show again"
 }

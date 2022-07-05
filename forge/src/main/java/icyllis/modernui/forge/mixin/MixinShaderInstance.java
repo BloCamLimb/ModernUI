@@ -20,8 +20,8 @@ package icyllis.modernui.forge.mixin;
 
 import com.mojang.blaze3d.shaders.Uniform;
 import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.opengl.GLSurfaceCanvas;
-import icyllis.modernui.opengl.GLCore;
+import icyllis.modernui.graphics.opengl.GLSurfaceCanvas;
+import icyllis.modernui.graphics.opengl.GLCore;
 import icyllis.modernui.forge.CanvasForge;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.renderer.ShaderInstance;

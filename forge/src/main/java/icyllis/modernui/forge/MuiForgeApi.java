@@ -226,6 +226,16 @@ public final class MuiForgeApi {
         Core.getUiHandlerAsync().post(r);
     }
 
+    /**
+     * Returns whether the graphics engine is disabled due to GL caps error.
+     * Call this after COMMON_SETUP event on render thread.
+     */
+    @OnlyIn(Dist.CLIENT)
+    @RenderThread
+    public static boolean isUiRendererDisabled() {
+        return ModernUIForge.hasGLCapsError();
+    }
+
     @OnlyIn(Dist.CLIENT)
     public static int calcGuiScales() {
         return calcGuiScales(Minecraft.getInstance().getWindow());

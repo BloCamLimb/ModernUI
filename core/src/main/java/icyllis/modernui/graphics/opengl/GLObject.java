@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
@@ -43,8 +43,8 @@ public abstract class GLObject implements AutoCloseable {
     /**
      * Returns the OpenGL object name currently associated with this object,
      * or create a {@link Ref} if not available. It may change in the future
-     * if it is explicitly deleted. When this method is called, the OpenGL
-     * object must be initialized.
+     * if it's explicitly deleted. When this method is called, the OpenGL
+     * object should be initialized (valid to use bindlessly).
      *
      * @return OpenGL object
      */
@@ -60,7 +60,7 @@ public abstract class GLObject implements AutoCloseable {
     @Override
     public void close() {
         if (ref != null) {
-            ref.cleanup.clean();
+            ref.mCleanup.clean();
             ref = null;
         }
     }
@@ -72,18 +72,18 @@ public abstract class GLObject implements AutoCloseable {
      */
     protected static abstract class Ref implements Runnable {
 
-        public final int id;
-        public final Cleaner.Cleanable cleanup;
+        public final Cleaner.Cleanable mCleanup;
+        public final int mId;
 
         /**
          * Registers the cleaner and also creates the OpenGL object for the given owner.
          *
-         * @param target the owner object
-         * @param i      the id/name representing the OpenGL object created by the owner
+         * @param owner the owner object
+         * @param id    the id/name representing the OpenGL object created by the owner
          */
-        protected Ref(@Nonnull GLObject target, int i) {
-            cleanup = ModernUI.registerCleanup(target, this);
-            id = i;
+        protected Ref(@Nonnull GLObject owner, int id) {
+            mCleanup = ModernUI.registerCleanup(owner, this);
+            mId = id;
         }
 
         /**

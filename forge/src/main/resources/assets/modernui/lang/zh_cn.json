@@ -71,5 +71,11 @@
   "message.modernui.server_shutdown_min": "服务器将在 %s 分钟内关闭",
 
   "warning.modernui.old_java": "Modern UI: 推荐 Java {2} 或更高的版本, 当前为 Java {3}, 请升级到较新版本的Java并选择它启动游戏, 否则你不能使用外置字体, 也不一定会得到正确的文字布局",
-  "warning.modernui.old_opengl": "Modern UI: OpenGL版本过旧, 需要 OpenGL {2} 或更高的版本, 当前为 OpenGL {3}, 请升级你的显卡驱动, 较新的macOS系统可能不支持"
+  "warning.modernui.old_opengl": "Modern UI: OpenGL版本过旧, 需要 OpenGL {2} 或更高的版本, 当前为 OpenGL {3}, 请升级你的显卡驱动, 较新的macOS系统可能不支持",
+
+  "error.modernui.gl_caps": "Modern UI 图形引擎已禁用",
+  "error.modernui.gl_caps_desc": "由于 OpenGL 4.5 core 或其 ARB capability 测试失败，Modern UI 的图形引擎已被禁用。这意味着所有由 Modern UI 原生提供的GUI将不会渲染或绘制。然而，由 Modern UI Forge 扩展所提供的文本引擎、平滑滚动、GUI比例滑块选项、虚化背景、游戏加载叮音效、物品栏界面暂停等其他功能仍然可用。\n显卡: %s, OpenGL: %s. 下列 ARB 扩展是必须的: %s\n对于 Windows 和 Linux，首先更新你的显卡驱动。如果你有核显，请使用独显运行 Java 应用。对于 macOS 或其他情况，点击 OK 寻求帮助",
+
+  "gui.modernui.ok": "OK",
+  "gui.modernui.dont_show_again": "不再显示"
 }

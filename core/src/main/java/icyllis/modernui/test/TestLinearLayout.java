@@ -25,8 +25,8 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.FontCollection;
 import icyllis.modernui.graphics.font.FontPaint;
-import icyllis.modernui.opengl.GLTexture;
-import icyllis.modernui.opengl.TextureManager;
+import icyllis.modernui.graphics.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
 import icyllis.modernui.text.Spannable;
@@ -376,7 +376,7 @@ public class TestLinearLayout extends LinearLayout {
         //canvas.drawRoundImage(ICON, 6, 160, 166, 320, iconRadius, paint);
 
         paint.setStyle(Paint.STROKE);
-        paint.setFeatherRadius(20.0f);
+        paint.setSmoothRadius(20.0f);
         paint.setStrokeWidth(40.0f);
         //canvas.drawArc(80, 400, 60, arcStart, arcStart - arcEnd, paint);
         canvas.drawArc(80, 400, 50, 60, 240, paint);
@@ -385,7 +385,7 @@ public class TestLinearLayout extends LinearLayout {
         paint.setStyle(Paint.FILL);
         canvas.drawCircle(80, 700, 60, paint);
 
-        paint.setFeatherRadius(2.0f);
+        paint.setSmoothRadius(2.0f);
 
         paint.setStyle(Paint.FILL);
         paint.setAlpha((int) (roundRectAlpha * 192));

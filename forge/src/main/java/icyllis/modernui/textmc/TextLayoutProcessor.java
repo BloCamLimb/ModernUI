@@ -23,7 +23,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.font.FontCollection.Run;
 import icyllis.modernui.graphics.font.GlyphManager;
-import icyllis.modernui.graphics.font.TexturedGlyph;
+import icyllis.modernui.graphics.font.GLBakedGlyph;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -627,7 +627,7 @@ public class TextLayoutProcessor {
                 }
 
                 int glyphCode = vector.getGlyphCode(i);
-                TexturedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
+                GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
 
                 mTextList.add(new StandardGlyphRender(stripIndex, renderOffset, advance, effect, glyph));
                 if (glyph != null) {

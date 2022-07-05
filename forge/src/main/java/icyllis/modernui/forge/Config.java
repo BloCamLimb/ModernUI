@@ -23,7 +23,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.Color;
-import icyllis.modernui.graphics.font.FontAtlas;
+import icyllis.modernui.graphics.font.GLFontAtlas;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.Util;
@@ -194,6 +194,7 @@ final class Config {
         final ForgeConfigSpec.ConfigValue<List<? extends String>> fontFamily;
 
         final ForgeConfigSpec.BooleanValue skipGLCapsError;
+        final ForgeConfigSpec.BooleanValue showGLCapsError;
 
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")
@@ -285,9 +286,12 @@ final class Config {
                     "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
                     .define("hudBars", false);*/
 
-            skipGLCapsError = builder.comment("A dialog popup is displayed when the OpenGL capability test fails.",
+            skipGLCapsError = builder.comment("UI renderer is disabled when the OpenGL capability test fails.",
                             "Sometimes the driver reports wrong values, you can enable this to ignore it.")
                     .define("skipGLCapsError", false);
+            showGLCapsError = builder.comment("A dialog popup is displayed when the OpenGL capability test fails.",
+                            "Set to false to not show it. This is ignored when skipGLCapsError=true")
+                    .define("showGLCapsError", true);
 
             builder.pop();
 
@@ -395,7 +399,7 @@ final class Config {
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
             ModernUIForge.sInventoryScreenPausesGame = inventoryPause.get();
-            TooltipRenderer.sTooltip = tooltip.get();
+            TooltipRenderer.sTooltip = !ModernUIForge.hasGLCapsError() && tooltip.get();
 
             colors = tooltipFill.get();
             color = 0xD4000000;
@@ -445,7 +449,7 @@ final class Config {
             }
 
             GlyphManager.sBitmapLike = bitmapLike.get();
-            FontAtlas.sLinearSampling = linearSampling.get();
+            GLFontAtlas.sLinearSampling = linearSampling.get();
 
             ModernUI.getSelectedTypeface();
         }

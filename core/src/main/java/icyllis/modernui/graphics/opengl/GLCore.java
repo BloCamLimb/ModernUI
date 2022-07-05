@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
@@ -71,6 +71,7 @@ public final class GLCore extends GL45C {
      */
     private static int sMaxTextureSize = 1024;
     private static int sMaxRenderbufferSize = 2048;
+    private static int sMaxArrayTextureLayers = 256;
 
     private static List<String> sUnsupportedList = Collections.emptyList();
 
@@ -163,9 +164,11 @@ public final class GLCore extends GL45C {
 
         sMaxTextureSize = glGetInteger(GL_MAX_TEXTURE_SIZE);
         sMaxRenderbufferSize = glGetInteger(GL_MAX_RENDERBUFFER_SIZE);
+        sMaxArrayTextureLayers = glGetInteger(GL_MAX_ARRAY_TEXTURE_LAYERS);
 
         LOGGER.info(MARKER, "Max texture size: {}", sMaxTextureSize);
-        LOGGER.info(MARKER, "Max render target size: {}", sMaxRenderbufferSize);
+        LOGGER.info(MARKER, "Max renderbuffer size: {}", sMaxRenderbufferSize);
+        LOGGER.info(MARKER, "Max array texture layers: {}", sMaxArrayTextureLayers);
 
         final List<String> unsupported;
         if (!caps.OpenGL45) {
@@ -279,6 +282,14 @@ public final class GLCore extends GL45C {
 
     public static int getMaxRenderbufferSize() {
         return sMaxRenderbufferSize;
+    }
+
+    public static int getMaxArrayTextureLayers() {
+        return sMaxArrayTextureLayers;
+    }
+
+    public static List<String> getUnsupportedList() {
+        return sUnsupportedList;
     }
 
     /**

@@ -153,7 +153,7 @@ public class Paint {
     private int mColor;
     private int mFlags;
     private float mStrokeWidth;
-    private float mFeatherRadius;
+    private float mSmoothRadius;
 
     // may be removed in the future
     private int[] mColors;
@@ -178,7 +178,7 @@ public class Paint {
         mColor = paint.mColor;
         mFlags = paint.mFlags;
         mStrokeWidth = paint.mStrokeWidth;
-        mFeatherRadius = paint.mFeatherRadius;
+        mSmoothRadius = paint.mSmoothRadius;
         if (paint.mColors != null) {
             setColors(paint.mColors);
         }
@@ -260,7 +260,7 @@ public class Paint {
         mColor = ~0;
         mFlags = DEFAULT_FLAGS;
         mStrokeWidth = 2;
-        mFeatherRadius = 2;
+        mSmoothRadius = 2;
     }
 
     /**
@@ -528,35 +528,32 @@ public class Paint {
     }
 
     /**
-     * Return the current feather radius. The default value is 2.0 px.
+     * Return the current smooth (feather) radius. The default value is 2.0 px.
      * <p>
-     * Feather effect is used to smooth or blur the edge of primitives by analytic geometry.
-     * You can also think of it as the softness (inverse of hardness) of the brush.
-     * It looks like anti-aliasing, but it does not affect the anti-aliasing.
+     * Feather effect is used to smooth or blur the edge of primitives by SDF.
+     * It can be used as the softness (inverse of hardness) of the brush.
+     * It can be used for provide anti-aliasing more than one pixel.
      *
      * @return the paint's feather radius, always non-negative
-     * @see #setFeatherRadius(float)
+     * @see #setSmoothRadius(float)
      */
-    public float getFeatherRadius() {
-        return mFeatherRadius;
+    public float getSmoothRadius() {
+        return mSmoothRadius;
     }
 
     /**
-     * Set the feather radius in pixels for this paint. The default value is 2.0 px.
+     * Set the smooth (feather) radius in pixels for this paint. The default value is 2.0 px.
      * <p>
-     * Feather effect is used to smooth or blur the edge of primitives by analytic geometry.
-     * You can also think of it as the softness (inverse of hardness) of the brush.
-     * It looks like anti-aliasing, but it does not affect the anti-aliasing.
+     * Feather effect is used to smooth or blur the edge of primitives by SDF.
+     * It can be used as the softness (inverse of hardness) of the brush.
+     * It can be used for provide anti-aliasing more than one pixel.
      * <p>
      * Negative values are treated as 0.
      *
      * @param radius the paint's feather radius, always non-negative
      */
-    public void setFeatherRadius(float radius) {
-        if (radius < 0) {
-            radius = 0;
-        }
-        mFeatherRadius = radius;
+    public void setSmoothRadius(float radius) {
+        mSmoothRadius = Math.max(0, radius);
     }
 
     /**
@@ -644,8 +641,8 @@ public class Paint {
         s.append(getBlendMode());
         s.append(", mStrokeWidth=");
         s.append(mStrokeWidth);
-        s.append(", mFeatherRadius=");
-        s.append(mFeatherRadius);
+        s.append(", mSmoothRadius=");
+        s.append(mSmoothRadius);
         s.append('}');
         return s.toString();
     }
