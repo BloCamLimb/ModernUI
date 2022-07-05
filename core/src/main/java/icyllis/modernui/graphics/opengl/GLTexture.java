@@ -16,17 +16,17 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
+import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.lang.ref.Cleaner;
+import java.nio.IntBuffer;
 
-import static icyllis.modernui.opengl.GLCore.*;
+import static icyllis.modernui.graphics.opengl.GLCore.*;
 
 /**
  * Represents OpenGL texture objects at low-level.
@@ -54,9 +54,19 @@ public class GLTexture extends GLObject {
     @Override
     public final int get() {
         if (ref == null) {
-            ref = new Ref(this);
+            final int texture = glGenTextures();
+            if (target == GL_TEXTURE_2D) {
+                final int p = glGetInteger(GL_TEXTURE_BINDING_2D);
+                glBindTexture(GL_TEXTURE_2D, texture);
+                glBindTexture(GL_TEXTURE_2D, p);
+            } else {
+                final int p = glGetInteger(GL_TEXTURE_BINDING_2D_MULTISAMPLE);
+                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, texture);
+                glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, p);
+            }
+            ref = new Ref(this, texture);
         }
-        return ref.id;
+        return ref.mId;
     }
 
     /**
@@ -164,7 +174,7 @@ public class GLTexture extends GLObject {
         dim |= (long) (glGetTextureLevelParameteri(texture, 0, GL_TEXTURE_HEIGHT) & SIZE_MASK) << HEIGHT_SHIFT;
         dim |= 1L << DEPTH_SHIFT;
         if (dimension != 0 && dimension != dim) {
-            ModernUI.LOGGER.warn(MARKER, "Inconsistent 2D texture dimension, set 0x{} but allocated 0x{}",
+            ModernUI.LOGGER.warn(GLCore.MARKER, "Inconsistent 2D texture dimension, set 0x{} but allocated 0x{}",
                     Long.toHexString(dimension), Long.toHexString(dim));
         }
         dimension = dim;
@@ -180,7 +190,7 @@ public class GLTexture extends GLObject {
      * @param maxLevel       max mipmap level, min is 0
      * @see #allocate2D(int, int, int, int)
      */
-    public void allocate2DM(int internalFormat, int width, int height, int maxLevel) {
+    public void allocate2DCompat(int internalFormat, int width, int height, int maxLevel) {
         if (target != GL_TEXTURE_2D) {
             throw new IllegalStateException();
         }
@@ -190,29 +200,29 @@ public class GLTexture extends GLObject {
         if (width < 1 || height < 1) {
             throw new IllegalArgumentException();
         }
-        final int texture = get();
-        glTextureParameteri(texture, GL_TEXTURE_BASE_LEVEL, 0);
-        glTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL, maxLevel);
-        glTextureParameteri(texture, GL_TEXTURE_MIN_LOD, 0);
-        glTextureParameteri(texture, GL_TEXTURE_MAX_LOD, maxLevel);
-
         final int p = glGetInteger(GL_TEXTURE_BINDING_2D);
-        glBindTexture(GL_TEXTURE_2D, texture);
+        glBindTexture(GL_TEXTURE_2D, get());
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, maxLevel);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_LOD, 0);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LOD, maxLevel);
+
         for (int level = 0; level <= maxLevel; level++) {
             nglTexImage2D(GL_TEXTURE_2D, level, internalFormat, width >> level,
                     height >> level, 0, GL_RED, GL_UNSIGNED_BYTE, MemoryUtil.NULL);
         }
-        glBindTexture(GL_TEXTURE_2D, p);
 
         long dim = 0;
-        dim |= (glGetTextureLevelParameteri(texture, 0, GL_TEXTURE_WIDTH) & SIZE_MASK);
-        dim |= (long) (glGetTextureLevelParameteri(texture, 0, GL_TEXTURE_HEIGHT) & SIZE_MASK) << HEIGHT_SHIFT;
+        dim |= (glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH) & SIZE_MASK);
+        dim |= (long) (glGetTexLevelParameteri(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT) & SIZE_MASK) << HEIGHT_SHIFT;
         dim |= 1L << DEPTH_SHIFT;
         if (dimension != 0 && dimension != dim) {
-            ModernUI.LOGGER.warn(MARKER, "Inconsistent 2D(M) texture dimension, set 0x{} but allocated 0x{}",
+            ModernUI.LOGGER.warn(GLCore.MARKER, "Inconsistent 2D(M) texture dimension, set 0x{} but allocated 0x{}",
                     Long.toHexString(dimension), Long.toHexString(dim));
         }
         dimension = dim;
+
+        glBindTexture(GL_TEXTURE_2D, p);
     }
 
     /**
@@ -239,7 +249,7 @@ public class GLTexture extends GLObject {
         dim |= (long) (glGetTextureLevelParameteri(texture, 0, GL_TEXTURE_HEIGHT) & SIZE_MASK) << HEIGHT_SHIFT;
         dim |= 1L << DEPTH_SHIFT;
         if (dimension != 0 && dimension != dim) {
-            ModernUI.LOGGER.warn(MARKER, "Inconsistent 2DMS texture dimension, set 0x{} but allocated 0x{}",
+            ModernUI.LOGGER.warn(GLCore.MARKER, "Inconsistent 2DMS texture dimension, set 0x{} but allocated 0x{}",
                     Long.toHexString(dimension), Long.toHexString(dim));
         }
         dimension = dim;
@@ -263,6 +273,29 @@ public class GLTexture extends GLObject {
         glPixelStorei(GL_UNPACK_SKIP_PIXELS, skipPixels);
         glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
         nglTextureSubImage2D(get(), level, x, y, width, height, format, type, pixels);
+    }
+
+    /**
+     * Upload image data to GPU.
+     *
+     * @param level     the level for the image
+     * @param rowLength row length if data width is not equal to texture width, or 0
+     * @param alignment pixel row alignment 1, 2, 4, 8
+     * @param format    the format of the data to upload, one of GL_RED, GL_RG, GL_RGB,
+     *                  GL_BGR, GL_RGBA, GL_BGRA, GL_DEPTH_COMPONENT, and GL_STENCIL_INDEX.
+     * @param type      the type of the data to upload, for example, unsigned byte
+     * @param pixels    the native pointer of pixels data
+     */
+    public void uploadCompat(int level, int x, int y, int width, int height, int rowLength, int skipRows,
+                             int skipPixels, int alignment, int format, int type, long pixels) {
+        glPixelStorei(GL_UNPACK_ROW_LENGTH, rowLength);
+        glPixelStorei(GL_UNPACK_SKIP_ROWS, skipRows);
+        glPixelStorei(GL_UNPACK_SKIP_PIXELS, skipPixels);
+        glPixelStorei(GL_UNPACK_ALIGNMENT, alignment);
+        final int p = glGetInteger(GL_TEXTURE_BINDING_2D);
+        glBindTexture(target, get());
+        nglTexSubImage2D(target, level, x, y, width, height, format, type, pixels);
+        glBindTexture(target, p);
     }
 
     /**
@@ -348,16 +381,47 @@ public class GLTexture extends GLObject {
         glTextureParameteri(texture, GL_TEXTURE_MAG_FILTER, magFilter);
     }
 
+    public void setFilterCompat(int minFilter, int magFilter) {
+        final int p = glGetInteger(GL_TEXTURE_BINDING_2D);
+        glBindTexture(target, get());
+        glTexParameteri(target, GL_TEXTURE_MIN_FILTER, minFilter);
+        glTexParameteri(target, GL_TEXTURE_MAG_FILTER, magFilter);
+        glBindTexture(target, p);
+    }
+
     /**
      * Swizzle RGBA read by shader programs.
      * <p>
      * For example: <code>swizzleRGBA(GL_ONE, GL_ONE, GL_ONE, GL_RED)</code>.
      * Then red channel will be read as alpha channel by shader, RGB is always 1
      *
-     * @param rgbaMask color masks
+     * @param r color masks
      */
-    public void swizzleRGBA(int... rgbaMask) {
-        glTextureParameteriv(get(), GL_TEXTURE_SWIZZLE_RGBA, rgbaMask);
+    public void setSwizzle(int r, int g, int b, int a) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer buffer = stack.mallocInt(4);
+            buffer.put(r).put(g).put(b).put(a).flip();
+            glTextureParameteriv(get(), GL_TEXTURE_SWIZZLE_RGBA, buffer);
+        }
+    }
+
+    /**
+     * Swizzle RGBA read by shader programs.
+     * <p>
+     * For example: <code>swizzleRGBA(GL_ONE, GL_ONE, GL_ONE, GL_RED)</code>.
+     * Then red channel will be read as alpha channel by shader, RGB is always 1
+     *
+     * @param r color masks
+     */
+    public void setSwizzleCompat(int r, int g, int b, int a) {
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer buffer = stack.mallocInt(4);
+            buffer.put(r).put(g).put(b).put(a).flip();
+            final int p = glGetInteger(GL_TEXTURE_BINDING_2D);
+            glBindTexture(target, get());
+            glTexParameteriv(target, GL_TEXTURE_SWIZZLE_RGBA, buffer);
+            glBindTexture(target, p);
+        }
     }
 
     /**
@@ -367,20 +431,30 @@ public class GLTexture extends GLObject {
         glGenerateTextureMipmap(get());
     }
 
+    /**
+     * Generates mipmaps.
+     */
+    public void generateMipmapCompat() {
+        final int p = glGetInteger(GL_TEXTURE_BINDING_2D);
+        glBindTexture(target, get());
+        glGenerateMipmap(target);
+        glBindTexture(target, p);
+    }
+
     @Override
     public void close() {
         super.close();
         dimension = 0;
     }
 
-    /**
+    /*
      * Regenerate the 2D texture to the new size.
      *
      * @param width  new width of the texture
      * @param height new height of the texture
      * @param copy   true to copy the level 0 image data from the old one to the new one
      */
-    public void resize(int width, int height, boolean copy) {
+    /*public void resize(int width, int height, boolean copy) {
         if (!isCreated()) {
             return;
         }
@@ -397,7 +471,7 @@ public class GLTexture extends GLObject {
         int maxLevel = glGetTextureParameteri(texture, GL_TEXTURE_MAX_LEVEL);
 
         Cleaner.Cleanable cleanup = recreate();
-        allocate2DM(internalFormat, width, height, maxLevel);
+        allocate2DCompat(internalFormat, width, height, maxLevel);
         if (copy) {
             glCopyImageSubData(texture, GL_TEXTURE_2D, 0, 0, 0, 0,
                     get(), GL_TEXTURE_2D, 0, 0, 0, 0,
@@ -409,36 +483,36 @@ public class GLTexture extends GLObject {
         if (cleanup != null) {
             cleanup.clean();
         }
-    }
+    }*/
 
     public int getInternalFormat() {
         return glGetTextureLevelParameteri(get(), 0, GL_TEXTURE_INTERNAL_FORMAT);
     }
 
-    /**
+    /*
      * Re-create the OpenGL texture and returns the cleanup action for the previous one.
      * You should call the cleanup action if you will not touch the previous texture any more.
      * Otherwise, it will be cleaned when this Texture object become phantom-reachable.
      *
      * @return cleanup action, null if this texture was recycled or never initialized
      */
-    @Nullable
+    /*@Nullable
     public final Cleaner.Cleanable recreate() {
         final var r = ref;
         ref = new Ref(this);
         dimension = 0;
-        return r != null ? r.cleanup : null;
-    }
+        return r != null ? r.mCleanup : null;
+    }*/
 
     private static final class Ref extends GLObject.Ref {
 
-        private Ref(@Nonnull GLTexture owner) {
-            super(owner, glCreateTextures(owner.target));
+        private Ref(@Nonnull GLTexture owner, int id) {
+            super(owner, id);
         }
 
         @Override
         public void run() {
-            Core.postOnRenderThread(() -> glDeleteTextures(id));
+            Core.postOnRenderThread(() -> glDeleteTextures(mId));
         }
     }
 }

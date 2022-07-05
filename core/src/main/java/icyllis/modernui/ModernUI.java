@@ -26,10 +26,10 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.opengl.*;
 import icyllis.modernui.text.Typeface;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
@@ -51,7 +51,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Locale;
 
-import static icyllis.modernui.opengl.GLCore.*;
+import static icyllis.modernui.graphics.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 /**

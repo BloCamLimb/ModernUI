@@ -16,15 +16,26 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
-public final class GLSampler extends GLObject {
+/**
+ * Represents OpenGL program objects.
+ */
+public class GLProgram {
 
-    public GLSampler() {
+    int mProgram;
+
+    public GLProgram() {
     }
 
-    @Override
-    public int get() {
-        return 0;
+    /**
+     * Use this shader program
+     */
+    public void use() {
+        GLCore.glUseProgram(mProgram);
+    }
+
+    public final int get() {
+        return mProgram;
     }
 }

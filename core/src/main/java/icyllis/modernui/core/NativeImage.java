@@ -24,8 +24,8 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.math.FMath;
-import icyllis.modernui.opengl.GLFramebuffer;
-import icyllis.modernui.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.GLFramebuffer;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.stb.STBIWriteCallback;
 import org.lwjgl.stb.STBIWriteCallbackI;
@@ -50,7 +50,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.stream.Collectors;
 
-import static icyllis.modernui.opengl.GLCore.*;
+import static icyllis.modernui.graphics.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**

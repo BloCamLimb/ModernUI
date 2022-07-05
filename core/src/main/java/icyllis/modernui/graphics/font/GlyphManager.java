@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
+import java.io.PrintWriter;
 import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.function.Function;
@@ -39,12 +40,18 @@ import java.util.function.Function;
  * Manages all glyphs, font atlases, measures glyph metrics and draw them of
  * different sizes and styles, and upload them to generated OpenGL textures.
  *
- * @see FontAtlas
+ * @see GLFontAtlas
  * @see FontCollection
  */
 public class GlyphManager {
 
     public static final Marker MARKER = MarkerManager.getMarker("Glyph");
+
+    /**
+     * The width in pixels of a transparent border between individual glyphs in the atlas.
+     * This border keeps neighboring glyphs from "bleeding through" when mipmap used.
+     */
+    public static final int GLYPH_BORDER = 1;
 
     /**
      * Transparent (alpha zero) black background color for use with BufferedImage.clearRect().
@@ -57,7 +64,7 @@ public class GlyphManager {
      */
     public static volatile boolean sBitmapLike = false;
 
-    private static final Function<Font, FontAtlas> sFactory = f -> new FontAtlas();
+    private static final Function<Font, GLFontAtlas> sFactory = f -> new GLFontAtlas();
 
     /**
      * The global instance.
@@ -67,7 +74,7 @@ public class GlyphManager {
     /**
      * All font atlases, with specified font family, size and style.
      */
-    private Map<Font, FontAtlas> mAtlases;
+    private Map<Font, GLFontAtlas> mAtlases;
 
     /**
      * Draw a single glyph onto this image and then loaded from here into an OpenGL texture.
@@ -111,8 +118,8 @@ public class GlyphManager {
      */
     public void reload() {
         if (mAtlases != null) {
-            for (FontAtlas atlas : mAtlases.values()) {
-                atlas.mTexture.close();
+            for (GLFontAtlas atlas : mAtlases.values()) {
+                atlas.close();
             }
         }
         mAtlases = new HashMap<>();
@@ -152,14 +159,11 @@ public class GlyphManager {
      */
     @Nullable
     @RenderThread
-    public TexturedGlyph lookupGlyph(@Nonnull Font font, int glyphCode) {
-        FontAtlas atlas = mAtlases.computeIfAbsent(font, sFactory);
-        TexturedGlyph glyph = atlas.getGlyph(glyphCode);
+    public GLBakedGlyph lookupGlyph(@Nonnull Font font, int glyphCode) {
+        GLFontAtlas atlas = mAtlases.computeIfAbsent(font, sFactory);
+        GLBakedGlyph glyph = atlas.getGlyph(glyphCode);
         if (glyph != null && glyph.texture == 0) {
-            glyph.texture = atlas.mTexture.get();
-            if (cacheGlyph(font, glyphCode, atlas, glyph)) {
-                return null;
-            }
+            return cacheGlyph(font, glyphCode, atlas, glyph);
         }
         return glyph;
     }
@@ -171,8 +175,8 @@ public class GlyphManager {
             // XXX: remove extension name
             basePath = basePath.substring(0, basePath.length() - 4);
         }
-        for (var atlas : mAtlases.entrySet()) {
-            Font font = atlas.getKey();
+        for (var entry : mAtlases.entrySet()) {
+            Font font = entry.getKey();
             ModernUI.LOGGER.info(MARKER, font);
             if (basePath != null) {
                 String style;
@@ -182,16 +186,24 @@ public class GlyphManager {
                     style = font.isItalic() ? "italic" : "plain";
                 }
                 String suffix = "_" + font.getFamily(Locale.ROOT) + "_" + style + "_" + font.getSize() + ".png";
-                atlas.getValue().debug(basePath + suffix.replaceAll(" ", "_"));
+                entry.getValue().debug(basePath + suffix.replaceAll(" ", "_"));
             } else {
-                atlas.getValue().debug(null);
+                entry.getValue().debug(null);
             }
         }
     }
 
+    public void dumpInfo(PrintWriter pw) {
+        for (var entry : mAtlases.entrySet()) {
+            pw.print(entry.getKey() + ", ");
+            entry.getValue().dumpShortInfo(pw);
+            pw.println();
+        }
+    }
+
     @RenderThread
-    private boolean cacheGlyph(@Nonnull Font font, int glyphCode, @Nonnull FontAtlas atlas,
-                               @Nonnull TexturedGlyph glyph) {
+    private GLBakedGlyph cacheGlyph(@Nonnull Font font, int glyphCode,
+                                    @Nonnull GLFontAtlas atlas, @Nonnull GLBakedGlyph glyph) {
         // there's no need to layout glyph vector, we only draw the specific glyphCode
         // which is already laid-out in LayoutEngine
         GlyphVector vector = font.createGlyphVector(mGraphics.getFontRenderContext(), new int[]{glyphCode});
@@ -200,26 +212,28 @@ public class GlyphManager {
 
         if (bounds.width == 0 || bounds.height == 0) {
             atlas.setEmpty(glyphCode);
-            return true;
+            return null;
         }
 
         //glyph.advance = vector.getGlyphMetrics(0).getAdvanceX();
-        glyph.offsetX = bounds.x;
-        glyph.offsetY = bounds.y;
+        glyph.x = bounds.x;
+        glyph.y = bounds.y;
         glyph.width = bounds.width;
         glyph.height = bounds.height;
+        int borderedWidth = bounds.width + GLYPH_BORDER * 2;
+        int borderedHeight = bounds.height + GLYPH_BORDER * 2;
 
-        if (bounds.width > mImage.getWidth() || bounds.height > mImage.getHeight()) {
+        while (borderedWidth > mImage.getWidth() || borderedHeight > mImage.getHeight()) {
             allocateImage(mImage.getWidth() << 1, mImage.getHeight() << 1);
         }
 
         // give it an offset to draw at origin
-        mGraphics.drawGlyphVector(vector, -bounds.x, -bounds.y);
+        mGraphics.drawGlyphVector(vector, GLYPH_BORDER - bounds.x, GLYPH_BORDER - bounds.y);
 
         // copy raw pixel data from BufferedImage to imageData array with one integer per pixel in 0xAARRGGBB form
-        mImage.getRGB(0, 0, bounds.width, bounds.height, mImageData, 0, bounds.width);
+        mImage.getRGB(0, 0, borderedWidth, borderedHeight, mImageData, 0, borderedWidth);
 
-        final int size = bounds.width * bounds.height;
+        final int size = borderedWidth * borderedHeight;
         for (int i = 0; i < size; i++) {
             // alpha channel for grayscale texture
             mImageBuffer.put((byte) (mImageData[i] >>> 24));
@@ -230,7 +244,7 @@ public class GlyphManager {
 
         mGraphics.clearRect(0, 0, mImage.getWidth(), mImage.getHeight());
         mImageBuffer.clear();
-        return false;
+        return glyph;
     }
 
     private void allocateImage(int width, int height) {

@@ -75,7 +75,7 @@ public class SpectrumGraph {
             long time = Core.timeMillis();
             float b = 1.5f + FMath.sin(time / 600f) / 2;
             paint.setRGBA(160, 155, 230, (int) (64 * b));
-            paint.setFeatherRadius(100);
+            paint.setSmoothRadius(100);
             paint.setStrokeWidth(200);
             paint.setStyle(Paint.STROKE);
             canvas.drawCircle(cx, cy, 130, paint);

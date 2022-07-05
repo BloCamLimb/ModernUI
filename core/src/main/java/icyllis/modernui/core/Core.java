@@ -19,7 +19,7 @@
 package icyllis.modernui.core;
 
 import icyllis.modernui.annotation.*;
-import icyllis.modernui.opengl.GLCore;
+import icyllis.modernui.graphics.opengl.GLCore;
 import org.lwjgl.Version;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;

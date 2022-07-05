@@ -129,8 +129,8 @@ public class TextLayoutEngine {
      * For fast digit replacement and obfuscated char rendering.
      * Map from 'derived font' to 'ASCII 33(!) to 126(~) characters with their standard advances and relative advances'.
      */
-    private final Map<Font, Map.Entry<TexturedGlyph[], float[]>> mFastCharMap = new HashMap<>();
-    private final Function<Font, Map.Entry<TexturedGlyph[], float[]>> mFastCharFunc = this.new FastCharFunc();
+    private final Map<Font, Map.Entry<GLBakedGlyph[], float[]>> mFastCharMap = new HashMap<>();
+    private final Function<Font, Map.Entry<GLBakedGlyph[], float[]>> mFastCharFunc = this.new FastCharFunc();
 
     /**
      * Determine font size. Integer.
@@ -216,7 +216,7 @@ public class TextLayoutEngine {
         } else {
             int guiScale = Math.round(ViewConfiguration.get().getViewScale() * 2);
             // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
-            if (GlyphManager.sBitmapLike || !FontAtlas.sLinearSampling) {
+            if (GlyphManager.sBitmapLike || !GLFontAtlas.sLinearSampling) {
                 mResolutionLevel = Math.min(guiScale, 9);
             } else if (guiScale > 2) {
                 // HD rendering, give it a bit larger, so looks smoother
@@ -487,17 +487,17 @@ public class TextLayoutEngine {
      * @return array of all fast char glyphs 0-9 (in that order), and others
      */
     @Nonnull
-    public Map.Entry<TexturedGlyph[], float[]> lookupFastChars(@Nonnull Font font) {
+    public Map.Entry<GLBakedGlyph[], float[]> lookupFastChars(@Nonnull Font font) {
         return mFastCharMap.computeIfAbsent(font, mFastCharFunc);
     }
 
-    private class FastCharFunc implements Function<Font, Map.Entry<TexturedGlyph[], float[]>> {
+    private class FastCharFunc implements Function<Font, Map.Entry<GLBakedGlyph[], float[]>> {
 
         @Nonnull
         @Override
-        public Map.Entry<TexturedGlyph[], float[]> apply(Font font) {
+        public Map.Entry<GLBakedGlyph[], float[]> apply(Font font) {
             // initial table
-            TexturedGlyph[] glyphs = new TexturedGlyph[94]; // 126 - 33 + 1
+            GLBakedGlyph[] glyphs = new GLBakedGlyph[94]; // 126 - 33 + 1
             // normalized offsets
             float[] offsets = new float[glyphs.length];
             char[] chars = new char[1];

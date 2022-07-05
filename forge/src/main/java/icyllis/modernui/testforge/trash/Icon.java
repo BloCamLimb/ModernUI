@@ -18,7 +18,7 @@
 
 package icyllis.modernui.testforge.trash;
 
-import icyllis.modernui.opengl.GLTexture;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import net.minecraft.resources.ResourceLocation;
 
 import javax.annotation.Nullable;

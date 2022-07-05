@@ -21,6 +21,8 @@ package icyllis.modernui.forge.mixin;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
+import icyllis.modernui.forge.ModernUIForge;
+import icyllis.modernui.graphics.opengl.GLCore;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.system.Configuration;
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,6 +53,7 @@ public class MixinRenderSystem {
     private static void onInitRenderer(int debugLevel, boolean debugSync, CallbackInfo ci) {
         Core.initMainThread();
         Core.initOpenGL();
+        ModernUIForge.sGLCapsError = !GLCore.getUnsupportedList().isEmpty();
     }
 
     /**

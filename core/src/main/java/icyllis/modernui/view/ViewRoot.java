@@ -326,7 +326,9 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
                 if (mInvalidated) {
                     mIsDrawing = true;
                     Canvas canvas = beginRecording(width, height);
-                    host.draw(canvas);
+                    if (canvas != null) {
+                        host.draw(canvas);
+                    }
                     mIsDrawing = false;
                     if (mKeepInvalidated) {
                         mKeepInvalidated = false;
@@ -445,7 +447,7 @@ public abstract class ViewRoot implements ViewParent, AttachInfo.Callbacks {
         return !mHandlingLayoutInLayoutRequest;
     }
 
-    @Nonnull
+    @Nullable
     protected abstract Canvas beginRecording(int width, int height);
 
     @MainThread

@@ -30,8 +30,8 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.math.*;
-import icyllis.modernui.opengl.*;
 import icyllis.modernui.test.SpectrumGraph;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.text.*;
@@ -47,13 +47,14 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.file.*;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.*;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.opengl.GLCore.*;
+import static icyllis.modernui.graphics.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
 
 @SuppressWarnings({"unused"})
@@ -126,15 +127,19 @@ public class TestMain {
         String name = Configuration.OPENGL_LIBRARY_NAME.get("null");
         LOGGER.info("{} {}", name, Paths.get(name).isAbsolute());
         */
-        int[] codePoints = {0x1f469,0x1f3fc,0x200d,0x2764,0xfe0f,0x200d,0x1f48b,0x200d,0x1f469,0x1f3fd};
+        int[] codePoints = {0x1f469, 0x1f3fc, 0x200d, 0x2764, 0xfe0f, 0x200d, 0x1f48b, 0x200d, 0x1f469, 0x1f3fd};
+        codePoints = new int[]{0x1F9D2, 0x200B, 0x1F3FB};
         for (int cp : codePoints) {
-            LOGGER.info(MARKER, "0x{}: Emoji:{}, EmojiModifier:{}, EmojiModifierBase:{}, Combining:{}, VariationSelector:{}", Integer.toHexString(cp),
-                    Emoji.isEmoji(cp), Emoji.isEmojiModifier(cp), Emoji.isEmojiModifierBase(cp), FontCollection.isCombining(cp), FontCollection.isVariationSelector(cp));
+            LOGGER.info(MARKER, "0x{}: Emoji:{}, EmojiModifier:{}, EmojiModifierBase:{}, Combining:{}, " +
+                            "VariationSelector:{}", Integer.toHexString(cp),
+                    Emoji.isEmoji(cp), Emoji.isEmojiModifier(cp), Emoji.isEmojiModifierBase(cp),
+                    FontCollection.isCombining(cp), FontCollection.isVariationSelector(cp));
         }
         String text = new String(codePoints, 0, codePoints.length);
         GraphemeBreak.forTextRun(text.toCharArray(), Locale.getDefault(), 0, text.length(), (s, e) -> {
-            LOGGER.info(MARKER, "{} to {}", s, e);
+            LOGGER.info(MARKER, "{}, {} to {}", text, s, e);
         });
+        LOGGER.info(MARKER, "ZWSP Combining:{}", Emoji.isEmoji(0x1F918));
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())
                     .log(System.Logger.Level.INFO, "AABBCC");

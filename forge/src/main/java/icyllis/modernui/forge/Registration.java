@@ -23,7 +23,8 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.forge.mixin.AccessOption;
 import icyllis.modernui.forge.mixin.AccessVideoSettings;
-import icyllis.modernui.opengl.*;
+import icyllis.modernui.graphics.opengl.ShaderManager;
+import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.testforge.TestContainerMenu;
 import icyllis.modernui.testforge.TestPauseFragment;
@@ -191,9 +192,7 @@ final class Registration {
 
         Minecraft.getInstance().execute(() -> {
             ModernUI.getSelectedTypeface();
-            if (!Config.CLIENT.skipGLCapsError.get()) {
-                GLCore.showCapsErrorDialog();
-            }
+            UIManager.initializeRenderer();
         });
 
         // Always replace static variable as an insurance policy

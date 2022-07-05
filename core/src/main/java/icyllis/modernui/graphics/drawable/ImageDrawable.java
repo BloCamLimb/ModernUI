@@ -22,7 +22,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.math.Rect;
-import icyllis.modernui.opengl.TextureManager;
+import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.view.Gravity;

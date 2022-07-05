@@ -24,10 +24,10 @@ package icyllis.modernui.graphics.font;
  * in a context.
  *
  * @see GlyphManager
- * @see FontAtlas
+ * @see GLFontAtlas
  * @since 2.0
  */
-public class TexturedGlyph {
+public class GLBakedGlyph {
 
     /**
      * The OpenGL texture ID that contains this glyph image.
@@ -35,22 +35,22 @@ public class TexturedGlyph {
     public int texture;
 
     /**
-     * The horizontal offset to baseline.
+     * The horizontal offset to baseline in pixels.
      */
-    public int offsetX;
+    public int x;
 
     /**
-     * The vertical offset to baseline.
+     * The vertical offset to baseline in pixels.
      */
-    public int offsetY;
+    public int y;
 
     /**
-     * The total width of this glyph image in pixels.
+     * The width of this glyph image in pixels (w/o padding).
      */
     public int width;
 
     /**
-     * The total height of this glyph image in pixels.
+     * The height of this glyph image in pixels (w/o padding).
      */
     public int height;
 
@@ -74,14 +74,14 @@ public class TexturedGlyph {
      */
     public float v2;
 
-    public TexturedGlyph() {
+    public GLBakedGlyph() {
     }
 
     @Override
     public String toString() {
-        return "Glyph{" + "tex=" + texture +
-                ",offX=" + offsetX +
-                ",offY=" + offsetY +
+        return "Glyph{tex=" + texture +
+                ",x=" + x +
+                ",y=" + y +
                 ",w=" + width +
                 ",h=" + height +
                 ",u1=" + u1 +

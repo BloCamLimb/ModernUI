@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.opengl;
+package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
@@ -31,6 +31,7 @@ import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.*;
+import org.lwjgl.opengl.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,7 +41,6 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.*;
 
-import static icyllis.modernui.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -248,12 +248,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mArcUBO = glCreateBuffers();
         glNamedBufferStorage(mArcUBO, ARC_UNIFORM_SIZE, GL_DYNAMIC_STORAGE_BIT);*/
 
-        mMatrixUBO.allocate(MATRIX_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mSmoothUBO.allocate(SMOOTH_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mArcUBO.allocate(ARC_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mBezierUBO.allocate(BEZIER_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mCircleUBO.allocate(CIRCLE_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
-        mRoundRectUBO.allocate(ROUND_RECT_UNIFORM_SIZE, NULL, GL_DYNAMIC_STORAGE_BIT);
+        mMatrixUBO.allocate(MATRIX_UNIFORM_SIZE, NULL, GL44C.GL_DYNAMIC_STORAGE_BIT);
+        mSmoothUBO.allocate(SMOOTH_UNIFORM_SIZE, NULL, GL44C.GL_DYNAMIC_STORAGE_BIT);
+        mArcUBO.allocate(ARC_UNIFORM_SIZE, NULL, GL44C.GL_DYNAMIC_STORAGE_BIT);
+        mBezierUBO.allocate(BEZIER_UNIFORM_SIZE, NULL, GL44C.GL_DYNAMIC_STORAGE_BIT);
+        mCircleUBO.allocate(CIRCLE_UNIFORM_SIZE, NULL, GL44C.GL_DYNAMIC_STORAGE_BIT);
+        mRoundRectUBO.allocate(ROUND_RECT_UNIFORM_SIZE, NULL, GL44C.GL_DYNAMIC_STORAGE_BIT);
 
         memPutInt(mUniformBuffers, mMatrixUBO.get());
         memPutInt(mUniformBuffers + 4, mSmoothUBO.get());
@@ -262,12 +262,12 @@ public final class GLSurfaceCanvas extends GLCanvas {
         memPutInt(mUniformBuffers + 16, mCircleUBO.get());
         memPutInt(mUniformBuffers + 20, mRoundRectUBO.get());
 
-        mFontSampler = glCreateSamplers();
-        glSamplerParameteri(mFontSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        mFontSampler = GL45C.glCreateSamplers();
+        GL33C.glSamplerParameteri(mFontSampler, GL11C.GL_TEXTURE_MIN_FILTER, GL11C.GL_LINEAR_MIPMAP_LINEAR);
         // FontAtlas MAG_FILTER is NEAREST, but it's not smooth in UI animations
-        glSamplerParameteri(mFontSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glSamplerParameteri(mFontSampler, GL_TEXTURE_MIN_LOD, 0);
-        glSamplerParameteri(mFontSampler, GL_TEXTURE_MAX_LOD, FontAtlas.MIPMAP_LEVEL);
+        GL33C.glSamplerParameteri(mFontSampler, GL11C.GL_TEXTURE_MAG_FILTER, GL11C.GL_LINEAR);
+        GL33C.glSamplerParameteri(mFontSampler, GL12C.GL_TEXTURE_MIN_LOD, 0);
+        GL33C.glSamplerParameteri(mFontSampler, GL12C.GL_TEXTURE_MAX_LOD, GLFontAtlas.MIPMAP_LEVEL);
 
         POS_COLOR.setVertexBuffer(GENERIC_BINDING, mPosColorVBO, 0);
         POS_COLOR_TEX.setVertexBuffer(GENERIC_BINDING, mPosColorTexVBO, 0);
@@ -362,7 +362,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @RenderThread
     public boolean bindVertexArray(int array) {
         if (mCurrVertexFormat != array) {
-            glBindVertexArray(array);
+            GL30C.glBindVertexArray(array);
             mCurrVertexFormat = array;
             return true;
         }
@@ -372,7 +372,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @RenderThread
     public void useProgram(int program) {
         if (mCurrProgram != program) {
-            glUseProgram(program);
+            GL20C.glUseProgram(program);
             mCurrProgram = program;
         }
     }
@@ -380,7 +380,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @RenderThread
     public void bindSampler(int sampler) {
         if (mCurrSampler != sampler) {
-            glBindSampler(0, sampler);
+            GL33C.glBindSampler(0, sampler);
             mCurrSampler = sampler;
         }
     }
@@ -388,7 +388,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @RenderThread
     public void bindTexture(int texture) {
         if (mCurrTexture != texture) {
-            glBindTextureUnit(0, texture);
+            GL45C.glBindTextureUnit(0, texture);
             mCurrTexture = texture;
         }
     }
@@ -420,10 +420,10 @@ public final class GLSurfaceCanvas extends GLCanvas {
         uploadBuffers();
 
         // uniform bindings are globally shared, we must re-bind before we use them
-        nglBindBuffersBase(GL_UNIFORM_BUFFER, MATRIX_BLOCK_BINDING, 6, mUniformBuffers);
+        GL44C.nglBindBuffersBase(GL31C.GL_UNIFORM_BUFFER, MATRIX_BLOCK_BINDING, 6, mUniformBuffers);
 
-        glStencilFuncSeparate(GL_FRONT, GL_EQUAL, 0, 0xff);
-        glStencilMaskSeparate(GL_FRONT, 0xff);
+        GL20C.glStencilFuncSeparate(GL11C.GL_FRONT, GL11C.GL_EQUAL, 0, 0xff);
+        GL20C.glStencilMaskSeparate(GL11C.GL_FRONT, 0xff);
 
         mCurrVertexFormat = 0;
         mCurrProgram = 0;
@@ -441,20 +441,20 @@ public final class GLSurfaceCanvas extends GLCanvas {
         // layer alphas
         int alphaIndex = 0;
         // draw buffers
-        int colorBuffer = GL_COLOR_ATTACHMENT0;
+        int colorBuffer = GL30C.GL_COLOR_ATTACHMENT0;
 
         for (int op : mDrawOps) {
             switch (op) {
                 case DRAW_TRIANGLE -> {
                     bindVertexArray(POS_COLOR.getVertexArray());
                     useProgram(COLOR_FILL.get());
-                    glDrawArrays(GL_TRIANGLES, posColorIndex, 3);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLES, posColorIndex, 3);
                     posColorIndex += 3;
                 }
                 case DRAW_RECT -> {
                     bindVertexArray(POS_COLOR.getVertexArray());
                     useProgram(COLOR_FILL.get());
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_FILL -> {
@@ -462,7 +462,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(ROUND_RECT_FILL.get());
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_RECT_STROKE -> {
@@ -470,7 +470,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(ROUND_RECT_STROKE.get());
                     mRoundRectUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ROUND_IMAGE -> {
@@ -480,7 +480,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindTexture(mTextures.remove().get());
                     mRoundRectUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
                 case DRAW_IMAGE -> {
@@ -488,7 +488,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(COLOR_TEX.get());
                     bindSampler(0);
                     bindTexture(mTextures.remove().get());
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
                 case DRAW_IMAGE_MS -> {
@@ -496,7 +496,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(COLOR_TEX_MS.get());
                     bindSampler(0);
                     bindTexture(mTextures.remove().get());
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorTexIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorTexIndex, 4);
                     posColorTexIndex += 4;
                 }
                 case DRAW_CIRCLE_FILL -> {
@@ -504,7 +504,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(CIRCLE_FILL.get());
                     mCircleUBO.upload(0, 12, uniformDataPtr);
                     uniformDataPtr += 12;
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_CIRCLE_STROKE -> {
@@ -512,7 +512,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(CIRCLE_STROKE.get());
                     mCircleUBO.upload(0, 16, uniformDataPtr);
                     uniformDataPtr += 16;
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_FILL -> {
@@ -520,7 +520,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(ARC_FILL.get());
                     mArcUBO.upload(0, 20, uniformDataPtr);
                     uniformDataPtr += 20;
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_ARC_STROKE -> {
@@ -528,7 +528,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(ARC_STROKE.get());
                     mArcUBO.upload(0, 24, uniformDataPtr);
                     uniformDataPtr += 24;
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_BEZIER -> {
@@ -536,46 +536,46 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     useProgram(BEZIER_CURVE.get());
                     mBezierUBO.upload(0, 28, uniformDataPtr);
                     uniformDataPtr += 28;
-                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                     posColorIndex += 4;
                 }
                 case DRAW_CLIP_PUSH -> {
                     int clipRef = mClipRefs.getInt(clipIndex);
 
                     if (clipRef >= 0) {
-                        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_INCR);
-                        glColorMaski(0, false, false, false, false);
+                        GL20C.glStencilOpSeparate(GL11C.GL_FRONT, GL11C.GL_KEEP, GL11C.GL_KEEP, GL11C.GL_INCR);
+                        GL30C.glColorMaski(0, false, false, false, false);
 
                         bindVertexArray(POS_COLOR.getVertexArray());
                         useProgram(COLOR_FILL.get());
-                        glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                        GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                         posColorIndex += 4;
 
-                        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP);
-                        glColorMaski(0, true, true, true, true);
+                        GL20C.glStencilOpSeparate(GL11C.GL_FRONT, GL11C.GL_KEEP, GL11C.GL_KEEP, GL11C.GL_KEEP);
+                        GL30C.glColorMaski(0, true, true, true, true);
                     }
 
-                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, Math.abs(clipRef), 0xff);
+                    GL20C.glStencilFuncSeparate(GL11C.GL_FRONT, GL11C.GL_EQUAL, Math.abs(clipRef), 0xff);
                     clipIndex++;
                 }
                 case DRAW_CLIP_POP -> {
                     int clipRef = mClipRefs.getInt(clipIndex);
 
                     if (clipRef >= 0) {
-                        glStencilFuncSeparate(GL_FRONT, GL_LESS, clipRef, 0xff);
-                        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_REPLACE);
-                        glColorMaski(0, false, false, false, false);
+                        GL20C.glStencilFuncSeparate(GL11C.GL_FRONT, GL11C.GL_LESS, clipRef, 0xff);
+                        GL20C.glStencilOpSeparate(GL11C.GL_FRONT, GL11C.GL_KEEP, GL11C.GL_KEEP, GL11C.GL_REPLACE);
+                        GL30C.glColorMaski(0, false, false, false, false);
 
                         bindVertexArray(POS_COLOR.getVertexArray());
                         useProgram(COLOR_FILL.get());
-                        glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                        GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, posColorIndex, 4);
                         posColorIndex += 4;
 
-                        glStencilOpSeparate(GL_FRONT, GL_KEEP, GL_KEEP, GL_KEEP);
-                        glColorMaski(0, true, true, true, true);
+                        GL20C.glStencilOpSeparate(GL11C.GL_FRONT, GL11C.GL_KEEP, GL11C.GL_KEEP, GL11C.GL_KEEP);
+                        GL30C.glColorMaski(0, true, true, true, true);
                     }
 
-                    glStencilFuncSeparate(GL_FRONT, GL_EQUAL, Math.abs(clipRef), 0xff);
+                    GL20C.glStencilFuncSeparate(GL11C.GL_FRONT, GL11C.GL_EQUAL, Math.abs(clipRef), 0xff);
                     clipIndex++;
                 }
                 case DRAW_TEXT -> {
@@ -585,10 +585,10 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     mMatrixUBO.upload(128, 16, uniformDataPtr);
                     uniformDataPtr += 16;
 
-                    final TexturedGlyph[] glyphs = mDrawTexts.get(textIndex++).build(this);
+                    final GLBakedGlyph[] glyphs = mDrawTexts.get(textIndex++).build(this);
 
                     if (mPosTexResized) {
-                        mPosTexVBO.allocateM(mPosTexMemory.capacity(), NULL, GL_DYNAMIC_DRAW);
+                        mPosTexVBO.allocateM(mPosTexMemory.capacity(), NULL, GL15C.GL_DYNAMIC_DRAW);
                         mPosTexResized = false;
                     }
                     mPosTexVBO.upload(0, mPosTexMemory.flip());
@@ -596,7 +596,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
                     for (int i = 0, e = glyphs.length; i < e; i++) {
                         bindTexture(glyphs[i].texture);
-                        glDrawArrays(GL_TRIANGLE_STRIP, i << 2, 4);
+                        GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, i << 2, 4);
                     }
                 }
                 case DRAW_MATRIX -> {
@@ -628,9 +628,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindSampler(0);
                     bindTexture(framebuffer.getAttachedTexture(colorBuffer).get());
                     framebuffer.setDrawBuffer(--colorBuffer);
-                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
-                    glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-                    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+                    GL11C.glBlendFunc(GL11C.GL_ONE, GL11C.GL_ONE_MINUS_SRC_ALPHA);
+                    GL11C.glDrawArrays(GL11C.GL_TRIANGLE_STRIP, 0, 4);
+                    GL14C.glBlendFuncSeparate(GL11C.GL_SRC_ALPHA, GL11C.GL_ONE_MINUS_SRC_ALPHA, GL11C.GL_ONE, GL11C.GL_ONE_MINUS_SRC_ALPHA);
                 }
                 case DRAW_CUSTOM -> mCustoms.remove().run();
                 default -> throw new IllegalStateException("Unexpected draw op " + op);
@@ -653,7 +653,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     @RenderThread
     private void uploadBuffers() {
         if (mPosColorResized) {
-            mPosColorVBO.allocateM(mPosColorMemory.capacity(), NULL, GL_DYNAMIC_DRAW);
+            mPosColorVBO.allocateM(mPosColorMemory.capacity(), NULL, GL15C.GL_DYNAMIC_DRAW);
             mPosColorResized = false;
         }
         mPosColorVBO.upload(0, mPosColorMemory.flip());
@@ -661,7 +661,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         if (mPosColorTexResized) {
             mPosColorTexVBO.allocateM(mPosColorTexMemory.capacity() + POS_COLOR_TEX_VERTEX_SIZE * 4, NULL,
-                    GL_DYNAMIC_DRAW);
+                    GL15C.GL_DYNAMIC_DRAW);
             mPosColorTexResized = false;
         }
         // preserve memory for layer rendering
@@ -1133,10 +1133,10 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     @RenderThread
-    private void putGlyph(@Nonnull TexturedGlyph glyph, float left, float top) {
+    private void putGlyph(@Nonnull GLBakedGlyph glyph, float left, float top) {
         ByteBuffer buffer = checkPosTexMemory();
-        left += glyph.offsetX;
-        top += glyph.offsetY;
+        left += glyph.x;
+        top += glyph.y;
         float right = left + glyph.width;
         float bottom = top + glyph.height;
         buffer.putFloat(left)
@@ -1192,7 +1192,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getFeatherRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
         putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1214,7 +1214,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getFeatherRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
         putRectColor(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1240,7 +1240,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getFeatherRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
         putRectColor(left, top, right, bottom, paint);
         checkUniformMemory()
                 .putFloat(x0)
@@ -1270,7 +1270,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getFeatherRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
         putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1289,7 +1289,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getFeatherRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
         putRectColor(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius, paint);
         checkUniformMemory()
                 .putFloat(cx)
@@ -1355,13 +1355,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
     // this is only used for offscreen
     public void drawLayer(@Nonnull GLTexture texture, float w, float h, int color, boolean flipY) {
         int target = texture.getTarget();
-        if (target == GL_TEXTURE_2D || target == GL_TEXTURE_2D_MULTISAMPLE) {
+        if (target == GL11C.GL_TEXTURE_2D || target == GL32C.GL_TEXTURE_2D_MULTISAMPLE) {
             drawMatrix();
             putRectColorUV(0, 0, w, h, color,
                     0, flipY ? h / texture.getHeight() : 0,
                     w / texture.getWidth(), flipY ? 0 : h / texture.getHeight());
             mTextures.add(texture);
-            mDrawOps.add(target == GL_TEXTURE_2D ? DRAW_IMAGE : DRAW_IMAGE_MS);
+            mDrawOps.add(target == GL11C.GL_TEXTURE_2D ? DRAW_IMAGE : DRAW_IMAGE_MS);
         } else {
             ModernUI.LOGGER.warn(MARKER, "Cannot draw texture target {}", target);
         }
@@ -1471,7 +1471,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getFeatherRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
         putRectColor(left, top, right, bottom, paint);
         ByteBuffer buffer = checkUniformMemory();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
@@ -1508,7 +1508,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(strokeRadius, paint.getFeatherRadius()));
+        drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
         putRectColor(left - strokeRadius, top - strokeRadius, right + strokeRadius, bottom + strokeRadius, paint);
         ByteBuffer buffer = checkUniformMemory();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
@@ -1548,7 +1548,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
             return;
         }
         drawMatrix();
-        drawSmooth(Math.min(radius, paint.getFeatherRadius()));
+        drawSmooth(Math.min(radius, paint.getSmoothRadius()));
         putRectColorUV(left, top, right, bottom, paint,
                 0, 0, 1, 1);
         checkUniformMemory()
@@ -1653,8 +1653,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
 
         @Nonnull
-        private TexturedGlyph[] build(@Nonnull GLSurfaceCanvas canvas) {
-            final TexturedGlyph[] glyphs = piece.getGlyphs();
+        private GLBakedGlyph[] build(@Nonnull GLSurfaceCanvas canvas) {
+            final GLBakedGlyph[] glyphs = piece.getGlyphs();
             final float[] positions = piece.getPositions();
             piece = null;
             for (int i = 0, e = glyphs.length; i < e; i++) {

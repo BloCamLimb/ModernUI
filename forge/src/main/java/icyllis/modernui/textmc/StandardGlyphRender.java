@@ -21,7 +21,7 @@ package icyllis.modernui.textmc;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.graphics.font.TexturedGlyph;
+import icyllis.modernui.graphics.font.GLBakedGlyph;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import javax.annotation.Nonnull;
@@ -33,10 +33,10 @@ class StandardGlyphRender extends BaseGlyphRender {
      * The immutable glyph to render
      */
     @Nullable
-    private final TexturedGlyph mGlyph;
+    private final GLBakedGlyph mGlyph;
 
     public StandardGlyphRender(int stripIndex, float offsetX, float advance, int decoration,
-                               @Nullable TexturedGlyph glyph) {
+                               @Nullable GLBakedGlyph glyph) {
         super(stripIndex, offsetX, advance, decoration);
         mGlyph = glyph;
     }
@@ -44,15 +44,15 @@ class StandardGlyphRender extends BaseGlyphRender {
     @Override
     public void drawGlyph(@Nonnull BufferBuilder builder, @Nonnull String input, float x, float y, int r, int g,
                           int b, int a, float res) {
-        TexturedGlyph glyph = mGlyph;
+        GLBakedGlyph glyph = mGlyph;
         if (glyph == null) {
             return;
         }
         builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR_TEX);
         RenderSystem.bindTexture(glyph.texture);
         x += mOffsetX;
-        x += glyph.offsetX / res;
-        y += glyph.offsetY / res;
+        x += glyph.x / res;
+        y += glyph.y / res;
         final float w = glyph.width / res;
         final float h = glyph.height / res;
         builder.vertex(x, y, 0).color(r, g, b, a).uv(glyph.u1, glyph.v1).endVertex();
@@ -66,14 +66,14 @@ class StandardGlyphRender extends BaseGlyphRender {
     @Override
     public void drawGlyph(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence input,
                           float x, float y, int r, int g, int b, int a, boolean seeThrough, int light, float res) {
-        TexturedGlyph glyph = mGlyph;
+        GLBakedGlyph glyph = mGlyph;
         if (glyph == null) {
             return;
         }
         VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
         x += mOffsetX;
-        x += glyph.offsetX / res;
-        y += glyph.offsetY / res;
+        x += glyph.x / res;
+        y += glyph.y / res;
         final float w = glyph.width / res;
         final float h = glyph.height / res;
         builder.vertex(matrix, x, y, 0).color(r, g, b, a).uv(glyph.u1, glyph.v1).uv2(light).endVertex();

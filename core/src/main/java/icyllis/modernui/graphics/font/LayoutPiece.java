@@ -45,7 +45,7 @@ public class LayoutPiece {
 
     // all glyphs used for rendering, invisible glyphs have been removed
     // the order is visually left-to-right. shared pointers
-    private TexturedGlyph[] mGlyphs;
+    private GLBakedGlyph[] mGlyphs;
 
     // x1 y1 x2 y2... relative to the same pivot, for rendering mGlyphs
     private float[] mPositions;
@@ -118,7 +118,7 @@ public class LayoutPiece {
         final FontMetricsInt extent = new FontMetricsInt();
 
         // async on render thread
-        final List<TexturedGlyph> glyphs = new ArrayList<>();
+        final List<GLBakedGlyph> glyphs = new ArrayList<>();
         final FloatList positions = new FloatArrayList();
         //final IntList charIndices = new IntArrayList();
 
@@ -150,11 +150,11 @@ public class LayoutPiece {
         }
         if (layout) {
             if (Core.isOnRenderThread()) {
-                mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
+                mGlyphs = glyphs.toArray(new GLBakedGlyph[0]);
                 mPositions = positions.toFloatArray();
             } else {
                 Core.postOnRenderThread(() -> {
-                    mGlyphs = glyphs.toArray(new TexturedGlyph[0]);
+                    mGlyphs = glyphs.toArray(new GLBakedGlyph[0]);
                     mPositions = positions.toFloatArray();
                 });
             }
@@ -196,11 +196,11 @@ public class LayoutPiece {
     private static class TextureWork implements Runnable {
 
         private final GlyphVector mVector;
-        private final List<TexturedGlyph> mGlyphs;
+        private final List<GLBakedGlyph> mGlyphs;
         private final FloatList mPositions;
         private final float mOffsetX;
 
-        private TextureWork(GlyphVector vector, List<TexturedGlyph> glyphs, FloatList positions, float offsetX) {
+        private TextureWork(GlyphVector vector, List<GLBakedGlyph> glyphs, FloatList positions, float offsetX) {
             mVector = vector;
             mGlyphs = glyphs;
             mPositions = positions;
@@ -211,7 +211,7 @@ public class LayoutPiece {
         public void run() {
             GlyphManager engine = GlyphManager.getInstance();
             for (int i = 0, e = mVector.getNumGlyphs(); i < e; i++) {
-                TexturedGlyph glyph = engine.lookupGlyph(mVector.getFont(), mVector.getGlyphCode(i));
+                GLBakedGlyph glyph = engine.lookupGlyph(mVector.getFont(), mVector.getGlyphCode(i));
                 // ignore invisible glyphs
                 if (glyph != null) {
                     mGlyphs.add(glyph);
@@ -231,7 +231,7 @@ public class LayoutPiece {
      * @return glyphs
      */
     @RenderThread
-    public TexturedGlyph[] getGlyphs() {
+    public GLBakedGlyph[] getGlyphs() {
         return mGlyphs;
     }
 

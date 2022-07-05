@@ -21,6 +21,7 @@ package icyllis.modernui.textmc;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.forge.*;
+import icyllis.modernui.graphics.font.GlyphManager;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -99,9 +100,11 @@ public final class ModernUITextMC {
                 TextLayoutEngine.getInstance().reload();
             }
         });
-        MuiForgeApi.addOnDebugDumpListener(builder -> {
-            builder.print("Text Layout Entries: ");
-            builder.println(TextLayoutEngine.getInstance().getLayoutCacheSize());
+        MuiForgeApi.addOnDebugDumpListener(pw -> {
+            pw.print("Text Layout Entries: ");
+            pw.println(TextLayoutEngine.getInstance().getLayoutCacheSize());
+            pw.println("Glyph Manager:");
+            GlyphManager.getInstance().dumpInfo(pw);
         });
         LOGGER.info(MARKER, "Loaded modern text engine");
     }

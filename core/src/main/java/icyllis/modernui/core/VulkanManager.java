@@ -30,7 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
 import static icyllis.modernui.ModernUI.LOGGER;
-import static icyllis.modernui.vulkan.VkCore.*;
+import static icyllis.modernui.graphics.vulkan.VkCore.*;
 import static org.lwjgl.system.MemoryUtil.*;
 import static org.lwjgl.vulkan.EXTBlendOperationAdvanced.VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME;
 import static org.lwjgl.vulkan.VK10.VK_VERSION_MAJOR;
