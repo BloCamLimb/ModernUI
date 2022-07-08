@@ -29,8 +29,9 @@ import javax.annotation.Nonnull;
  * will be all hashed together into the same entry. The draw method will then substitute the correct digit glyph on
  * the fly. This special digit handling gives a significant speedup on the F3 debug screen.
  *
- * @see net.minecraft.ChatFormatting
- * @see CompositeTextKey
+ * @author BloCamLimb
+ * @see CharacterStyle
+ * @see ComplexTextKey
  * @since 2.0
  */
 public class VanillaTextKey {
@@ -83,7 +84,7 @@ public class VanillaTextKey {
      */
     public VanillaTextKey update(@Nonnull String str, @Nonnull Style style) {
         mStr = str;
-        mStyle = CharacterStyle.getFlags(style);
+        mStyle = CharacterStyle.getAppearanceFlags(style);
         mHash = 0;
         return this;
     }

@@ -20,8 +20,11 @@ package icyllis.modernui.textmc;
 
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.systems.RenderSystem;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.text.*;
 import icyllis.modernui.textmc.mixin.MixinClientLanguage;
+import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -67,6 +70,7 @@ public class TextLayoutEngine {
     //public static int sDefaultFontSize;
     public static volatile boolean sFixedResolution = false;
     public static volatile boolean sSuperSampling = false;
+    public static volatile int sTextDirection = View.TEXT_DIRECTION_FIRST_STRONG;
 
     private static final ChatFormatting[] FORMATTING_TABLE = ChatFormatting.values();
 
@@ -118,8 +122,8 @@ public class TextLayoutEngine {
     /**
      * For deeply-processed texts.
      */
-    private final CompositeTextKey.Lookup mCompositeLookupKey = new CompositeTextKey.Lookup();
-    private Map<CompositeTextKey, TextRenderNode> mCompositeCache = new HashMap<>();
+    private final ComplexTextKey.Lookup mComplexLookupKey = new ComplexTextKey.Lookup();
+    private Map<ComplexTextKey, TextRenderNode> mComplexCache = new HashMap<>();
 
     /**
      * Shared layout engine.
@@ -137,6 +141,10 @@ public class TextLayoutEngine {
      * Determine font size. Integer.
      */
     private float mResolutionLevel;
+    /**
+     * Text direction.
+     */
+    private TextDirectionHeuristic mTextDirectionHeuristic = TextDirectionHeuristics.FIRSTSTRONG_LTR;
 
     /*
      * Remove all formatting code even though it's invalid {@link #getFormattingByCode(char)} == null
@@ -187,14 +195,14 @@ public class TextLayoutEngine {
         int size = getLayoutCacheCount();
         mVanillaCache.clear();
         mComponentCache.clear();
-        mCompositeCache.clear();
+        mComplexCache.clear();
         mFastCharMap.clear();
         boolean rehash = size > 500;
         if (rehash) {
             // Create new HashMap so that the internal hashtable of old maps are released as well
             mVanillaCache = new HashMap<>();
             mComponentCache = new HashMap<>();
-            mCompositeCache = new HashMap<>();
+            mComplexCache = new HashMap<>();
             //mDigitMap = new HashMap<>();
         }
         // Clear TextRenderType instances, but font textures are NOT released (intentionally)
@@ -228,17 +236,31 @@ public class TextLayoutEngine {
                 mResolutionLevel = guiScale;
             }
         }
+        Locale locale = ModernUI.getSelectedLocale();
+        boolean layoutRtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL;
+        mTextDirectionHeuristic = switch (sTextDirection) {
+            case View.TEXT_DIRECTION_ANY_RTL -> TextDirectionHeuristics.ANYRTL_LTR;
+            case View.TEXT_DIRECTION_LTR -> TextDirectionHeuristics.LTR;
+            case View.TEXT_DIRECTION_RTL -> TextDirectionHeuristics.RTL;
+            case View.TEXT_DIRECTION_LOCALE -> TextDirectionHeuristics.LOCALE;
+            case View.TEXT_DIRECTION_FIRST_STRONG_LTR -> TextDirectionHeuristics.FIRSTSTRONG_LTR;
+            case View.TEXT_DIRECTION_FIRST_STRONG_RTL -> TextDirectionHeuristics.FIRSTSTRONG_RTL;
+            default -> layoutRtl ? TextDirectionHeuristics.FIRSTSTRONG_RTL :
+                    TextDirectionHeuristics.FIRSTSTRONG_LTR;
+        };
         if (oldLevel == 0) {
-            LOGGER.info(MARKER, "Loaded text layout engine, res level: {}", mResolutionLevel);
+            LOGGER.info(MARKER, "Loaded text layout engine, res level: {}, locale: {}, layout RTL: {}",
+                    mResolutionLevel, locale, layoutRtl);
         } else {
-            LOGGER.info(MARKER, "Reloaded text layout engine, res level: {}->{}", oldLevel, mResolutionLevel);
+            LOGGER.info(MARKER, "Reloaded text layout engine, res level: {} to {}, locale: {}, layout RTL: {}",
+                    oldLevel, mResolutionLevel, locale, layoutRtl);
         }
     }
 
     /**
      * Reload both render engine and layout engine.
      */
-    public void reloadEngine() {
+    public void reloadAll() {
         mGlyphManager.reload();
         LOGGER.info(MARKER, "Reloaded glyph manager");
         LayoutCache.clear();
@@ -264,7 +286,7 @@ public class TextLayoutEngine {
         }
         TextRenderNode node = mVanillaCache.get(mVanillaLookupKey.update(text, Style.EMPTY));
         if (node == null) {
-            node = mProcessor.doLayout(text, Style.EMPTY);
+            node = mProcessor.performVanillaLayout(text, Style.EMPTY);
             mVanillaCache.put(mVanillaLookupKey.copy(), node);
             return node;
         }
@@ -291,7 +313,7 @@ public class TextLayoutEngine {
         }
         TextRenderNode node = mVanillaCache.get(mVanillaLookupKey.update(text, style));
         if (node == null) {
-            node = mProcessor.doLayout(text, style);
+            node = mProcessor.performVanillaLayout(text, style);
             mVanillaCache.put(mVanillaLookupKey.copy(), node);
             return node;
         }
@@ -320,15 +342,15 @@ public class TextLayoutEngine {
         if (text instanceof BaseComponent component) {
             node = mComponentCache.get(component);
             if (node == null) {
-                node = mProcessor.doLayout(text, Style.EMPTY);
+                node = mProcessor.performComplexLayout(text, Style.EMPTY);
                 mComponentCache.put(component, node);
                 return node;
             }
         } else {
-            node = mCompositeCache.get(mCompositeLookupKey.update(text, Style.EMPTY));
+            node = mComplexCache.get(mComplexLookupKey.update(text, Style.EMPTY));
             if (node == null) {
-                node = mProcessor.doLayout(text, Style.EMPTY);
-                mCompositeCache.put(mCompositeLookupKey.copy(), node);
+                node = mProcessor.performComplexLayout(text, Style.EMPTY);
+                mComplexCache.put(mComplexLookupKey.copy(), node);
                 return node;
             }
         }
@@ -357,15 +379,15 @@ public class TextLayoutEngine {
         if (text instanceof BaseComponent component) {
             node = mComponentCache.get(component);
             if (node == null) {
-                node = mProcessor.doLayout(text, style);
+                node = mProcessor.performComplexLayout(text, style);
                 mComponentCache.put(component, node);
                 return node;
             }
         } else {
-            node = mCompositeCache.get(mCompositeLookupKey.update(text, style));
+            node = mComplexCache.get(mComplexLookupKey.update(text, style));
             if (node == null) {
-                node = mProcessor.doLayout(text, style);
-                mCompositeCache.put(mCompositeLookupKey.copy(), node);
+                node = mProcessor.performComplexLayout(text, style);
+                mComplexCache.put(mComplexLookupKey.copy(), node);
                 return node;
             }
         }
@@ -404,24 +426,24 @@ public class TextLayoutEngine {
             if (text instanceof BaseComponent component) {
                 node = mComponentCache.get(component);
                 if (node == null) {
-                    node = mProcessor.doLayout(text, Style.EMPTY);
+                    node = mProcessor.performComplexLayout(text, Style.EMPTY);
                     mComponentCache.put(component, node);
                     return node;
                 }
             } else {
-                node = mCompositeCache.get(mCompositeLookupKey.update(text, Style.EMPTY));
+                node = mComplexCache.get(mComplexLookupKey.update(text, Style.EMPTY));
                 if (node == null) {
-                    node = mProcessor.doLayout(text, Style.EMPTY);
-                    mCompositeCache.put(mCompositeLookupKey.copy(), node);
+                    node = mProcessor.performComplexLayout(text, Style.EMPTY);
+                    mComplexCache.put(mComplexLookupKey.copy(), node);
                     return node;
                 }
             }
             return node.get();
         } else {
-            TextRenderNode node = mCompositeCache.get(mCompositeLookupKey.update(sequence));
+            TextRenderNode node = mComplexCache.get(mComplexLookupKey.update(sequence));
             if (node == null) {
-                node = mProcessor.doLayout(sequence);
-                mCompositeCache.put(mCompositeLookupKey.copy(), node);
+                node = mProcessor.performComplexLayout(sequence);
+                mComplexCache.put(mComplexLookupKey.copy(), node);
                 return node;
             }
             return node.get();
@@ -449,9 +471,9 @@ public class TextLayoutEngine {
     void tick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
             if (mTimer == 0) {
-                mVanillaCache.values().removeIf(TextRenderNode::countdown);
-                mComponentCache.values().removeIf(TextRenderNode::countdown);
-                mCompositeCache.values().removeIf(TextRenderNode::countdown);
+                mVanillaCache.values().removeIf(TextRenderNode::tick);
+                mComponentCache.values().removeIf(TextRenderNode::tick);
+                mComplexCache.values().removeIf(TextRenderNode::tick);
             }
             // convert ticks to seconds
             mTimer = (mTimer + 1) % 20;
@@ -462,7 +484,7 @@ public class TextLayoutEngine {
      * @return the number of layout entries
      */
     public int getLayoutCacheCount() {
-        return mVanillaCache.size() + mComponentCache.size() + mCompositeCache.size();
+        return mVanillaCache.size() + mComponentCache.size() + mComplexCache.size();
     }
 
     /**
@@ -488,6 +510,16 @@ public class TextLayoutEngine {
      */
     public float getResolutionLevel() {
         return mResolutionLevel;
+    }
+
+    /**
+     * Returns current text direction algorithm.
+     *
+     * @return text dir
+     */
+    @Nonnull
+    public TextDirectionHeuristic getTextDirectionHeuristic() {
+        return mTextDirectionHeuristic;
     }
 
     /**

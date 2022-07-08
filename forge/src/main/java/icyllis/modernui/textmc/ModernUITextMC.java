@@ -105,6 +105,17 @@ public final class ModernUITextMC {
             pw.println(TextLayoutEngine.getInstance().getLayoutCacheCount());
             GlyphManager.getInstance().dumpInfo(pw);
         });
+        {
+            int[] codePoints = {0x1f469, 0x1f3fc, 0x200d, 0x2764, 0xfe0f, 0x200d, 0x1f48b, 0x200d, 0x1f469, 0x1f3fd};
+            CharSequenceBuilder builder = new CharSequenceBuilder();
+            for (int cp : codePoints) {
+                builder.addCodePoint(cp);
+            }
+            String string = new String(codePoints, 0, codePoints.length);
+            if (builder.hashCode() != string.hashCode()) {
+                throw new RuntimeException("String.hashCode() is not identical to the specs");
+            }
+        }
         LOGGER.info(MARKER, "Loaded modern text engine");
     }
 
@@ -142,9 +153,9 @@ public final class ModernUITextMC {
         public final ForgeConfigSpec.BooleanValue mAllowShadow;
         public final ForgeConfigSpec.BooleanValue mFixedResolution;
         public final ForgeConfigSpec.IntValue mBaseFontSize;
-        public final ForgeConfigSpec.IntValue mBaseline;
+        public final ForgeConfigSpec.IntValue mBaselineShift;
         public final ForgeConfigSpec.BooleanValue mSuperSampling;
-        public final ForgeConfigSpec.BooleanValue mPixelAligned;
+        public final ForgeConfigSpec.BooleanValue mAlignPixels;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -172,19 +183,19 @@ public final class ModernUITextMC {
             mBaseFontSize = builder.comment(
                             "Control base font size, in GUI scaled pixels. The default and vanilla value is 8.",
                             "For bitmap fonts, 8 represents a glyph size of 8x or 16x if fixed resolution.")
-                    .defineInRange("fontSize", 8, BASE_FONT_SIZE_MIN, BASE_FONT_SIZE_MAX);
-            mBaseline = builder.comment(
+                    .defineInRange("baseFontSize", 8, BASE_FONT_SIZE_MIN, BASE_FONT_SIZE_MAX);
+            mBaselineShift = builder.comment(
                             "Control vertical baseline for vanilla text layout, in GUI scaled pixels.",
                             "For smaller font, 6 is recommended. The default value is 7.")
-                    .defineInRange("baseline", 7, BASELINE_MIN, BASELINE_MAX);
+                    .defineInRange("baselineShift", 7, BASELINE_MIN, BASELINE_MAX);
             mSuperSampling = builder.comment(
                             "Super sampling can make the text more sharper with large font size or in the 3D world.",
                             "But perhaps it makes the path edge too blurry and difficult to read.")
                     .define("superSampling", false);
-            mPixelAligned = builder.comment(
+            mAlignPixels = builder.comment(
                             "Enable to make each glyph pixel-aligned in text layout in screen space.",
                             "Text rendering may be better with bitmap fonts or fixed resolution or linear sampling.")
-                    .define("pixelAligned", false);
+                    .define("alignPixels", false);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
@@ -236,13 +247,13 @@ public final class ModernUITextMC {
                 TextLayoutProcessor.sBaseFontSize = mBaseFontSize.get();
                 reload = true;
             }
-            TextRenderNode.sVanillaBaselineOffset = mBaseline.get().floatValue();
+            TextRenderNode.sVanillaBaselineOffset = mBaselineShift.get().floatValue();
             if (TextLayoutEngine.sSuperSampling != mSuperSampling.get()) {
                 TextLayoutEngine.sSuperSampling = mSuperSampling.get();
                 reload = true;
             }
-            if (TextLayoutProcessor.sPixelAligned != mPixelAligned.get()) {
-                TextLayoutProcessor.sPixelAligned = mPixelAligned.get();
+            if (TextLayoutProcessor.sAlignPixels != mAlignPixels.get()) {
+                TextLayoutProcessor.sAlignPixels = mAlignPixels.get();
                 reload = true;
             }
             if (reload) {

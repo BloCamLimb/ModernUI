@@ -395,6 +395,16 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
+                var option = createButtonOption("gui.modernui.center.text.appScope");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.colorEmoji");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
                 var option = createButtonOption("gui.modernui.center.text.allowShadow");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mAllowShadow.get());
@@ -434,9 +444,9 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createInputOption("gui.modernui.center.text.baseline");
+                var option = createInputOption("gui.modernui.center.text.baselineShift");
                 var input = option.<EditText>requireViewById(R.id.input);
-                input.setText(ModernUITextMC.CONFIG.mBaseline.get().toString());
+                input.setText(ModernUITextMC.CONFIG.mBaselineShift.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
@@ -444,8 +454,8 @@ public class CenterFragment extends Fragment {
                         int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
                                 ModernUITextMC.Config.BASELINE_MIN, ModernUITextMC.Config.BASELINE_MAX);
                         v.setText(Integer.toString(value));
-                        if (value != ModernUITextMC.CONFIG.mBaseline.get()) {
-                            ModernUITextMC.CONFIG.mBaseline.set(value);
+                        if (value != ModernUITextMC.CONFIG.mBaselineShift.get()) {
+                            ModernUITextMC.CONFIG.mBaselineShift.set(value);
                             ModernUITextMC.CONFIG.saveAndReload();
                         }
                     }
@@ -463,13 +473,48 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.pixelAligned");
+                var option = createButtonOption("gui.modernui.center.text.alignPixels");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(ModernUITextMC.CONFIG.mPixelAligned.get());
+                button.setChecked(ModernUITextMC.CONFIG.mAlignPixels.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    ModernUITextMC.CONFIG.mPixelAligned.set(checked);
+                    ModernUITextMC.CONFIG.mAlignPixels.set(checked);
                     ModernUITextMC.CONFIG.saveAndReload();
                 });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.fastDigitRepl");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.fixSurrogate");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.substringAlgo");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.graphemeAlgo");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.bidiHeuristicAlgo");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.layoutLifespan");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("gui.modernui.center.text.rehashThreshold");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             panel.addView(category);

@@ -53,7 +53,7 @@ class StandardGlyphRender extends BaseGlyphRender {
         x += mOffsetX;
         final float w;
         final float h;
-        if (TextLayoutProcessor.sPixelAligned) {
+        if (TextLayoutProcessor.sAlignPixels) {
             x += Math.round(glyph.x * res) / res;
             y += Math.round(glyph.y * res) / res;
             w = Math.round(glyph.width * res) / res;

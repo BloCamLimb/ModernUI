@@ -36,8 +36,7 @@ import icyllis.modernui.math.Rect;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.testforge.TestListFragment;
 import icyllis.modernui.testforge.TestPauseFragment;
-import icyllis.modernui.text.Editable;
-import icyllis.modernui.text.Selection;
+import icyllis.modernui.text.*;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
@@ -50,6 +49,8 @@ import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.renderer.texture.*;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.*;
@@ -79,8 +80,8 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.lang.reflect.*;
+import java.util.Map;
 
 import static icyllis.modernui.ModernUI.LOGGER;
 import static icyllis.modernui.graphics.opengl.GLCore.*;
@@ -112,6 +113,11 @@ public final class UIManager implements LifecycleOwner {
 
     static final Method SEND_TO_CHAT = ObfuscationReflectionHelper.findMethod(ChatComponent.class, "m_93790_",
             Component.class, int.class, int.class, boolean.class);
+    static final Field BY_PATH = ObfuscationReflectionHelper.findField(TextureManager.class, "f_118468_");
+    static final Field TEXTURES_BY_NAME = ObfuscationReflectionHelper.findField(TextureAtlas.class, "f_118264_");
+    static final Field MAIN_IMAGE = ObfuscationReflectionHelper.findField(TextureAtlasSprite.class, "f_118342_");
+    static final Field IMAGE_PIXELS =
+            ObfuscationReflectionHelper.findField(com.mojang.blaze3d.platform.NativeImage.class, "f_84964_");
 
     // minecraft
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -673,7 +679,7 @@ public final class UIManager implements LifecycleOwner {
 
                 case GLFW_KEY_V:
                     LOGGER.info(MARKER, "Reload GlyphManager and TextLayoutEngine");
-                    TextLayoutEngine.getInstance().reloadEngine();
+                    TextLayoutEngine.getInstance().reloadAll();
                     break;
             }
         }
@@ -695,38 +701,106 @@ public final class UIManager implements LifecycleOwner {
         LOGGER.info(MARKER, str);
     }
 
-    private void dump(@Nonnull PrintWriter w) {
-        w.println(">>> Modern UI dump data <<<");
+    private void dump(@Nonnull PrintWriter pw) {
+        pw.println(">>> Modern UI dump data <<<");
 
-        w.print("Container Menu: ");
+        pw.print("Container Menu: ");
         LocalPlayer player = minecraft.player;
         AbstractContainerMenu menu = null;
         if (player != null) {
             menu = player.containerMenu;
         }
         if (menu != null) {
-            w.println(menu.getClass().getSimpleName());
+            pw.println(menu.getClass().getSimpleName());
             try {
                 ResourceLocation name = menu.getType().getRegistryName();
-                w.print("  Registry Name: ");
-                w.println(name);
+                pw.print("  Registry Name: ");
+                pw.println(name);
             } catch (Exception ignored) {
             }
         } else {
-            w.println((Object) null);
+            pw.println((Object) null);
         }
 
         Screen screen = minecraft.screen;
         if (screen != null) {
-            w.print("Screen: ");
-            w.println(screen.getClass());
+            pw.print("Screen: ");
+            pw.println(screen.getClass());
         }
 
         if (mFragmentController != null) {
-            mFragmentController.getFragmentManager().dump("", null, w);
+            mFragmentController.getFragmentManager().dump("", null, pw);
         }
 
-        ModernUIForge.dispatchOnDebugDump(w);
+        Map<ResourceLocation, AbstractTexture> textureMap = null;
+        try {
+            //noinspection unchecked
+            textureMap = (Map<ResourceLocation, AbstractTexture>) BY_PATH.get(minecraft.getTextureManager());
+        } catch (Exception ignored) {
+        }
+        if (textureMap != null && GLCore.getUnsupportedList().isEmpty()) {
+            long gpuSize = 0;
+            long cpuSize = 0;
+            int dynamicTextures = 0;
+            int textureAtlases = 0;
+            int atlasSprites = 0;
+            for (var texture : textureMap.values()) {
+                int tex = texture.getId();
+                if (tex != 0) {
+                    int internalFormat = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_INTERNAL_FORMAT);
+                    long width = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_WIDTH);
+                    long height = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_HEIGHT);
+                    int maxLevel = glGetTextureParameteri(tex, GL_TEXTURE_MAX_LEVEL);
+                    int bpp = switch (internalFormat) {
+                        case GL_R8, GL_RED -> 1;
+                        case GL_RG8, GL_RG -> 2;
+                        case GL_RGB8, GL_RGBA8, GL_RGB, GL_RGBA -> 4;
+                        default -> 0;
+                    };
+                    long size = width * height * bpp;
+                    if (maxLevel > 0) {
+                        size = ((size - (size >> ((maxLevel + 1) << 1))) << 2) / 3;
+                    }
+                    gpuSize += size;
+                }
+
+                if (texture instanceof DynamicTexture dynamicTexture) {
+                    var image = dynamicTexture.getPixels();
+                    try {
+                        if (image != null && IMAGE_PIXELS.getLong(image) != 0) {
+                            cpuSize += (long) image.getWidth() * image.getHeight() * image.format().components();
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    dynamicTextures++;
+                }
+                if (texture instanceof TextureAtlas textureAtlas) {
+                    try {
+                        @SuppressWarnings("unchecked") Map<ResourceLocation, TextureAtlasSprite> textures =
+                                (Map<ResourceLocation, TextureAtlasSprite>) TEXTURES_BY_NAME.get(textureAtlas);
+                        for (var sprite : textures.values()) {
+                            for (var image : (com.mojang.blaze3d.platform.NativeImage[]) MAIN_IMAGE.get(sprite)) {
+                                if (image != null && IMAGE_PIXELS.getLong(image) != 0) {
+                                    cpuSize += (long) image.getWidth() * image.getHeight() * image.format().components();
+                                }
+                            }
+                            atlasSprites++;
+                        }
+                    } catch (Exception ignored) {
+                    }
+                    textureAtlases++;
+                }
+            }
+            pw.print("TextureManager: ");
+            pw.print("Textures=" + textureMap.size());
+            pw.print(", DynamicTextures=" + dynamicTextures);
+            pw.print(", Atlases=" + textureAtlases);
+            pw.print(", Sprites=" + atlasSprites);
+            pw.print(", GPUMemory=" + TextUtils.binaryCompact(gpuSize) + " (" + gpuSize + " bytes)");
+            pw.println(", CPUMemory=" + TextUtils.binaryCompact(cpuSize) + " (" + cpuSize + " bytes)");
+        }
+
+        ModernUIForge.dispatchOnDebugDump(pw);
     }
 
     @MainThread
@@ -759,7 +833,7 @@ public final class UIManager implements LifecycleOwner {
             if (mScreen != null) {
                 String error = Language.getInstance().getOrDefault("error.modernui.gl_caps");
                 int x = (mWindow.getGuiScaledWidth() - minecraft.font.width(error)) / 2;
-                int y = (mWindow.getGuiScaledHeight() + 4) / 2;
+                int y = (mWindow.getGuiScaledHeight() - 8) / 2;
                 minecraft.font.draw(mEmptyPoseStack, error, x, y, 0xFFFF0000);
             }
             return;

@@ -21,6 +21,7 @@ package icyllis.modernui.graphics.font;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.NativeImage;
+import icyllis.modernui.text.TextUtils;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.BufferUtils;
@@ -205,7 +206,7 @@ public class GlyphManager {
         pw.print("GlyphManager: ");
         pw.print("Atlases=" + mAtlases.size());
         pw.print(", Glyphs=" + glyphSize);
-        pw.println(", MemorySize=" + memorySize);
+        pw.println(", MemorySize=" + TextUtils.binaryCompact(memorySize) + " (" + memorySize + " bytes)");
     }
 
     @Nullable

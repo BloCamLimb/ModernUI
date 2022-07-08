@@ -36,6 +36,7 @@ import icyllis.modernui.test.SpectrumGraph;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
+import icyllis.modernui.textmc.CharSequenceBuilder;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -128,7 +129,10 @@ public class TestMain {
         LOGGER.info("{} {}", name, Paths.get(name).isAbsolute());
         */
         int[] codePoints = {0x1f469, 0x1f3fc, 0x200d, 0x2764, 0xfe0f, 0x200d, 0x1f48b, 0x200d, 0x1f469, 0x1f3fd};
-        codePoints = new int[]{0x1F9D2, 0x200B, 0x1F3FB};
+        CharSequenceBuilder bufferBuilder = new CharSequenceBuilder();
+        for (int cp : codePoints) {
+            bufferBuilder.addCodePoint(cp);
+        }
         for (int cp : codePoints) {
             LOGGER.info(MARKER, "0x{}: Emoji:{}, EmojiModifier:{}, EmojiModifierBase:{}, Combining:{}, " +
                             "VariationSelector:{}", Integer.toHexString(cp),
@@ -140,6 +144,7 @@ public class TestMain {
             LOGGER.info(MARKER, "{}, {} to {}", text, s, e);
         });
         LOGGER.info(MARKER, "ZWSP Combining:{}", Emoji.isEmoji(0x1F918));
+        LOGGER.info(MARKER, "HashCodeEquals{}", bufferBuilder.hashCode() == text.hashCode());
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())
                     .log(System.Logger.Level.INFO, "AABBCC");
