@@ -24,13 +24,14 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.font.FontCollection.Run;
 import icyllis.modernui.graphics.font.GLBakedGlyph;
 import icyllis.modernui.graphics.font.GlyphManager;
-import it.unimi.dsi.fastutil.chars.CharArrayList;
+import icyllis.modernui.text.TextDirectionHeuristic;
+import icyllis.modernui.text.TextDirectionHeuristics;
+import icyllis.modernui.textmc.mixin.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
-import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.FormattedCharSink;
+import net.minecraft.util.*;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
@@ -40,23 +41,43 @@ import java.util.*;
 
 /**
  * This is where the text layout is actually performed.
+ *
+ * @see GlyphManager
+ * @see CharacterStyle
+ * @see MixinBidiReorder
+ * @see MixinClientLanguage
+ * @see MixinLanguage
+ * @see VanillaTextKey#update(String, Style)
+ * @see ComplexTextKey.Lookup#update(FormattedCharSequence)
+ * @see FormattedText
+ * @see FormattedCharSequence
+ * @see FormattedTextWrapper
+ * @see net.minecraft.client.gui.Font
+ * @see net.minecraft.client.StringSplitter
+ * @see net.minecraft.util.StringDecomposer
+ * @see net.minecraft.network.chat.Component
+ * @see net.minecraft.network.chat.SubStringSource
+ * @see net.minecraft.client.resources.language.FormattedBidiReorder
+ * @see icyllis.modernui.graphics.font.GraphemeBreak
  */
 //TODO emoji, grapheme break
 @RenderThread
 public class TextLayoutProcessor {
 
+    public static final char REPLACEMENT_CHAR = '\uFFFD';
+
     /**
      * Config values.
      */
     public static volatile int sBaseFontSize = 8;
-    public static volatile boolean sPixelAligned = false;
+    public static volatile boolean sAlignPixels = false;
 
     private final TextLayoutEngine mEngine;
 
     /**
      * Array to build char array.
      */
-    private final CharArrayList mChars = new CharArrayList();
+    private final CharSequenceBuilder mBuilder = new CharSequenceBuilder();
 
     /**
      * Array of temporary style carriers.
@@ -100,78 +121,17 @@ public class TextLayoutProcessor {
      */
     private boolean mHasEffect;
 
-    private final ContentBuilder mContentBuilder = new ContentBuilder();
-    private final BuilderSink mBuilderSink = new BuilderSink();
+    private final FormattedText.StyledContentConsumer<Unit> mContentBuilder =
+            new FormattedText.StyledContentConsumer<>() {
+                @Nonnull
+                @Override
+                public Optional<Unit> accept(@Nonnull Style style, @Nonnull String text) {
+                    return StringDecomposer.iterateFormatted(text, style, mSequenceBuilder) ? Optional.empty()
+                            : FormattedText.STOP_ITERATION;
+                }
+            };
 
-    public TextLayoutProcessor(TextLayoutEngine engine) {
-        mEngine = engine;
-    }
-
-    private void finishBidiRun(float adjust) {
-        if (adjust != 0) {
-            mBidiList.forEach(e -> e.mOffsetX += adjust);
-        }
-        mAllList.addAll(mBidiList);
-        mBidiList.clear();
-    }
-
-    private void finishTextRun(float adjust) {
-        if (adjust != 0) {
-            mTextList.forEach(e -> e.mOffsetX += adjust);
-        }
-        mBidiList.addAll(mTextList);
-        mTextList.clear();
-    }
-
-    private void reset() {
-        mChars.clear();
-        mStyles.clear();
-        mAllList.clear();
-        mStyleIndex = 0;
-        mAdvance = 0;
-        mLayoutRight = 0;
-        mHasEffect = false;
-        mContentBuilder.reset();
-        mBuilderSink.reset();
-    }
-
-    @Nonnull
-    public TextRenderNode doLayout(@Nonnull String text, @Nonnull Style style) {
-        char[] chars = stripFormattingCodes(text, style);
-        /*ModernUI.LOGGER.info("Layout: {}\n{}", new String(chars),
-                mCarriers.stream().map(Object::toString).collect(Collectors.joining("\n")));*/
-        TextRenderNode node = performLayout(chars, true);
-        /*ModernUI.LOGGER.info("Glyphs: \n{}",
-                mAllList.stream().map(Object::toString).collect(Collectors.joining("\n")));*/
-        reset();
-        return node;
-    }
-
-    @Nonnull
-    public TextRenderNode doLayout(@Nonnull FormattedText text, @Nonnull Style style) {
-        text.visit(mContentBuilder, style);
-        /*boolean show = !mChars.isEmpty() && mChars.getChar(0) == '[';
-        if (show) {
-            ModernUI.LOGGER.info("LayoutSequence: {}\n{}", new String(mChars.toCharArray()),
-                    mCarriers.stream().map(Objects::toString).collect(Collectors.joining("\n")));
-        }*/
-        TextRenderNode node = performLayout(mChars.toCharArray(), false);
-        /*if (show) {
-            ModernUI.LOGGER.info(mAllList.stream().map(Objects::toString).collect(Collectors.joining("\n")));
-        }*/
-        reset();
-        return node;
-    }
-
-    @Nonnull
-    public TextRenderNode doLayout(@Nonnull FormattedCharSequence sequence) {
-        sequence.accept(mBuilderSink);
-        TextRenderNode node = performLayout(mChars.toCharArray(), false);
-        reset();
-        return node;
-    }
-
-    private class ContentBuilder implements FormattedText.StyledContentConsumer<Object> {
+    /*private class ContentBuilder implements FormattedText.StyledContentConsumer<Object> {
 
         private int mShift;
         private int mNext;
@@ -194,8 +154,9 @@ public class TextLayoutProcessor {
 
                     ChatFormatting formatting = TextLayoutEngine.getFormattingByCode(text.charAt(i + 1));
                     if (formatting != null) {
-                        /* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a color
-                        formatting */
+                        *//* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a
+                        color
+                        formatting *//*
                         style = formatting == ChatFormatting.RESET ? base : style.applyLegacyFormat(formatting);
                         mStyles.add(new CharacterStyle(mNext, mNext - mShift, style, true));
                     }
@@ -205,26 +166,26 @@ public class TextLayoutProcessor {
                     mShift += 2;
                 } else if (Character.isHighSurrogate(c1)) {
                     if (i + 1 >= limit) {
-                        mChars.add('\uFFFD');
+                        mBuilder.addChar(REPLACEMENT_CHAR);
                         mNext++;
                         break;
                     }
 
                     char c2 = text.charAt(i + 1);
                     if (Character.isLowSurrogate(c2)) {
-                        mChars.add(c1);
-                        mChars.add(c2);
+                        mBuilder.addChar(c1);
+                        mBuilder.addChar(c2);
                         i++;
                         mNext++;
                     } else if (Character.isSurrogate(c1)) {
-                        mChars.add('\uFFFD');
+                        mBuilder.addChar(REPLACEMENT_CHAR);
                     } else {
-                        mChars.add(c1);
+                        mBuilder.addChar(c1);
                     }
                 } else if (Character.isSurrogate(c1)) {
-                    mChars.add('\uFFFD');
+                    mBuilder.addChar(REPLACEMENT_CHAR);
                 } else {
-                    mChars.add(c1);
+                    mBuilder.addChar(c1);
                 }
                 mNext++;
             }
@@ -236,14 +197,16 @@ public class TextLayoutProcessor {
             mShift = 0;
             mNext = 0;
         }
-    }
+    }*/
+
+    private final SequenceBuilder mSequenceBuilder = new SequenceBuilder();
 
     /**
      * Always LTR.
      *
      * @see FormattedTextWrapper#accept(FormattedCharSink)
      */
-    private class BuilderSink implements FormattedCharSink {
+    private class SequenceBuilder implements FormattedCharSink {
 
         private Style mStyle;
 
@@ -251,16 +214,11 @@ public class TextLayoutProcessor {
         public boolean accept(int index, @Nonnull Style style, int codePoint) {
             // note that index will be reset to 0 for composited char sequence
             // we should get the continuous string index
-            if (!Objects.equals(mStyle, style)) {
-                mStyles.add(new CharacterStyle(mChars.size(), mChars.size(), style, false));
+            if (mStyle == null || CharacterStyle.affectsCharacter(mStyle, style)) {
+                mStyles.add(new CharacterStyle(mBuilder.length(), mBuilder.length(), style, false));
                 mStyle = style;
             }
-            if (Character.isBmpCodePoint(codePoint)) {
-                mChars.add((char) codePoint);
-            } else {
-                mChars.add(Character.highSurrogate(codePoint));
-                mChars.add(Character.lowSurrogate(codePoint));
-            }
+            mBuilder.addCodePoint(codePoint);
             // continue
             return true;
         }
@@ -270,62 +228,120 @@ public class TextLayoutProcessor {
         }
     }
 
+    public TextLayoutProcessor(TextLayoutEngine engine) {
+        mEngine = engine;
+    }
+
+    private void finishBidiRun(float adjust) {
+        if (adjust != 0) {
+            mBidiList.forEach(e -> e.mOffsetX += adjust);
+        }
+        mAllList.addAll(mBidiList);
+        mBidiList.clear();
+    }
+
+    private void finishTextRun(float adjust) {
+        if (adjust != 0) {
+            mTextList.forEach(e -> e.mOffsetX += adjust);
+        }
+        mBidiList.addAll(mTextList);
+        mTextList.clear();
+    }
+
+    private void reset() {
+        mBuilder.clear();
+        mStyles.clear();
+        mAllList.clear();
+        mStyleIndex = 0;
+        mAdvance = 0;
+        mLayoutRight = 0;
+        mHasEffect = false;
+        mSequenceBuilder.reset();
+    }
+
+    @Nonnull
+    public TextRenderNode performVanillaLayout(@Nonnull String text, @Nonnull Style baseStyle) {
+        buildVanilla(text, baseStyle);
+        TextRenderNode node = performFullLayout(true);
+        reset();
+        return node;
+    }
+
+    @Nonnull
+    public TextRenderNode performComplexLayout(@Nonnull FormattedText text, @Nonnull Style baseStyle) {
+        if (text.visit(mContentBuilder, baseStyle).isPresent()) {
+            mBuilder.clear();
+        }
+        TextRenderNode node = performFullLayout(false);
+        reset();
+        return node;
+    }
+
+    @Nonnull
+    public TextRenderNode performComplexLayout(@Nonnull FormattedCharSequence sequence) {
+        if (!sequence.accept(mSequenceBuilder)) {
+            mBuilder.clear();
+        }
+        TextRenderNode node = performFullLayout(false);
+        reset();
+        return node;
+    }
+
     /**
      * Formatting codes are not involved in rendering, so we should first extract formatting codes
      * from the raw string into a stripped text. The color codes must be removed for a font's
      * context-sensitive glyph substitution to work (like Arabic letter middle form) or Bidi analysis.
+     * Results a new char array with all formatting codes removed from the given string.
      *
-     * @param text raw string with formatting codes to strip
-     * @param base the base style if no formatting applied (default or reset)
-     * @return a new char array with all formatting codes removed from the given string
+     * @param text      raw string with formatting codes to strip
+     * @param baseStyle the base style if no formatting applied (initial or reset)
      * @see net.minecraft.util.StringDecomposer
      */
-    @Nonnull
-    private char[] stripFormattingCodes(@Nonnull String text, @Nonnull Style base) {
+    private void buildVanilla(@Nonnull String text, @Nonnull final Style baseStyle) {
         int shift = 0;
 
-        Style style = base;
+        Style style = baseStyle;
         mStyles.add(new CharacterStyle(0, 0, style, false));
 
-        // also fix surrogate pairs
+        // also fix invalid surrogate pairs
         final int limit = text.length();
-        for (int next = 0; next < limit; ++next) {
-            char c1 = text.charAt(next);
+        for (int pos = 0; pos < limit; ++pos) {
+            char c1 = text.charAt(pos);
             if (c1 == ChatFormatting.PREFIX_CODE) {
-                if (next + 1 >= limit) {
+                if (pos + 1 >= limit) {
                     break;
                 }
 
-                ChatFormatting formatting = TextLayoutEngine.getFormattingByCode(text.charAt(next + 1));
+                ChatFormatting formatting = TextLayoutEngine.getFormattingByCode(text.charAt(pos + 1));
                 if (formatting != null) {
                     /* Classic formatting will set all FancyStyling (like BOLD, UNDERLINE) to false if it's a color
                     formatting */
-                    style = formatting == ChatFormatting.RESET ? base : style.applyLegacyFormat(formatting);
-                    mStyles.add(new CharacterStyle(next, next - shift, style, true));
+                    style = formatting == ChatFormatting.RESET ? baseStyle : style.applyLegacyFormat(formatting);
+                    mStyles.add(new CharacterStyle(pos, pos - shift, style, true));
                 }
 
-                next++;
+                pos++;
                 shift += 2;
             } else if (Character.isHighSurrogate(c1)) {
-                if (next + 1 >= limit) {
-                    mChars.add('\uFFFD');
+                if (pos + 1 >= limit) {
+                    mBuilder.addChar(REPLACEMENT_CHAR);
                     break;
                 }
 
-                char c2 = text.charAt(next + 1);
+                char c2 = text.charAt(pos + 1);
                 if (Character.isLowSurrogate(c2)) {
-                    mChars.add(c1);
-                    mChars.add(c2);
-                    ++next;
+                    mBuilder.addChar(c1);
+                    mBuilder.addChar(c2);
+                    ++pos;
                 } else if (Character.isSurrogate(c1)) {
-                    mChars.add('\uFFFD');
+                    mBuilder.addChar(REPLACEMENT_CHAR);
                 } else {
-                    mChars.add(c1);
+                    mBuilder.addChar(c1);
                 }
             } else if (Character.isSurrogate(c1)) {
-                mChars.add('\uFFFD');
+                mBuilder.addChar(REPLACEMENT_CHAR);
             } else {
-                mChars.add(c1);
+                mBuilder.addChar(c1);
             }
         }
 
@@ -354,14 +370,18 @@ public class TextLayoutProcessor {
             start = next + 2;
             shift += 2;
         }*/
-
-        return mChars.toCharArray();
     }
 
+    /**
+     * Perform text layout after building stripped characters.
+     *
+     * @param fastDigit whether to use fast digit replacement
+     * @return the full layout result
+     */
     @Nonnull
-    private TextRenderNode performLayout(@Nonnull char[] text, boolean isFastDigit) {
-        if (text.length > 0) {
-            performBidiAnalysis(text, isFastDigit);
+    private TextRenderNode performFullLayout(boolean fastDigit) {
+        if (!mBuilder.isEmpty()) {
+            performBidiAnalysis(mBuilder.toCharArray(), fastDigit);
             if (!mAllList.isEmpty()) {
                 adjustAndInsertColor();
                 return new TextRenderNode(mAllList.toArray(new BaseGlyphRender[0]), mAdvance, mHasEffect);
@@ -377,7 +397,7 @@ public class TextLayoutProcessor {
      * @param text the full plain text (without formatting codes) to analyze
      * @see #performStyleAnalysis(char[], int, int, boolean, boolean)
      */
-    private void performBidiAnalysis(@Nonnull char[] text, boolean isFastDigit) {
+    private void performBidiAnalysis(@Nonnull char[] text, boolean fastDigit) {
         /* Avoid performing full bidirectional analysis if text has no "strong" right-to-left characters */
         if (Bidi.requiresBidi(text, 0, text.length)) {
             /* Note that while requiresBidi() uses start/limit the Bidi constructor uses start/length */
@@ -385,7 +405,7 @@ public class TextLayoutProcessor {
 
             /* If text is entirely right-to-left, then insert an EntryText node for the entire string */
             if (bidi.isRightToLeft()) {
-                performStyleAnalysis(text, 0, text.length, true, isFastDigit);
+                performStyleAnalysis(text, 0, text.length, true, fastDigit);
             }
 
             /* Otherwise text has a mixture of LTR and RLT, and it requires full bidirectional analysis */
@@ -410,14 +430,14 @@ public class TextLayoutProcessor {
                     int logicalIndex = indexMap[visualIndex];
                     /* An odd numbered level indicates right-to-left ordering */
                     performStyleAnalysis(text, bidi.getRunStart(logicalIndex), bidi.getRunLimit(logicalIndex),
-                            (bidi.getRunLevel(logicalIndex) & 1) != 0, isFastDigit);
+                            (bidi.getRunLevel(logicalIndex) & 1) != 0, fastDigit);
                 }
             }
         }
 
         /* If text is entirely left-to-right, then insert an node for the entire string */
         else {
-            performStyleAnalysis(text, 0, text.length, false, isFastDigit);
+            performStyleAnalysis(text, 0, text.length, false, fastDigit);
         }
     }
 
@@ -431,7 +451,7 @@ public class TextLayoutProcessor {
      * @param limit end index (exclusive) of the text
      * @param isRtl layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      */
-    private void performStyleAnalysis(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean isFastDigit) {
+    private void performStyleAnalysis(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit) {
         float lastAdvance = mAdvance;
         if (isRtl) {
             mLayoutRight = lastAdvance;
@@ -464,14 +484,14 @@ public class TextLayoutProcessor {
             while (mStyleIndex < carrierLimit) {
                 mStyleIndex++;
                 CharacterStyle c = mStyles.get(mStyleIndex);
-                if (c.isLayoutAffecting(carrier)) {
+                if (c.affectsLayout(carrier)) {
                     next = c.mStripIndex;
                     break;
                 }
             }
 
             /* Layout the string segment with the style currently selected by the last color code */
-            performFontAnalysis(text, start, next, isRtl, isFastDigit, carrier);
+            performFontAnalysis(text, start, next, isRtl, fastDigit, carrier);
             start = next;
         }
 
@@ -494,14 +514,14 @@ public class TextLayoutProcessor {
      * @param style the style to lay out the text
      * @see icyllis.modernui.graphics.font.FontCollection#itemize(char[], int, int)
      */
-    private void performFontAnalysis(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean isFastDigit,
+    private void performFontAnalysis(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
                                      @Nonnull CharacterStyle style) {
         /*
          * Convert all digits in the string to a '0' before layout to ensure that any glyphs replaced on the fly will
          * all have the same positions. Under Windows, Java's "SansSerif" logical font uses the "Arial" font for
          * digits, in which the "1" digit is slightly narrower than all other digits. Digits are not on SMP.
          */
-        if (isFastDigit) {
+        if (fastDigit) {
             for (int i = start; i < limit; i++) {
                 if (text[i] <= '9' && text[i] >= '0') {
                     text[i] = '0';
@@ -511,7 +531,7 @@ public class TextLayoutProcessor {
 
         List<Run> items = ModernUI.getSelectedTypeface().getFontCollection().itemize(text, start, limit);
         for (Run run : items) {
-            performTextLayout(text, run.getStart(), run.getEnd(), isRtl, isFastDigit, style, run.getFont());
+            performTextLayout(text, run.getStart(), run.getEnd(), isRtl, fastDigit, style, run.getFont());
         }
     }
 
@@ -525,7 +545,7 @@ public class TextLayoutProcessor {
      * @param style the style to lay out the text
      * @param font  the derived font with fontStyle and fontSize
      */
-    private void performTextLayout(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean isFastDigit,
+    private void performTextLayout(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
                                    @Nonnull CharacterStyle style, @Nonnull Font font) {
         final int effect = style.getEffect();
         final int fontStyle = style.getFontStyle();
@@ -554,7 +574,7 @@ public class TextLayoutProcessor {
 
             /* Process code point */
             for (int i = start; i < limit; i++) {
-                float renderOffset = sPixelAligned ? Math.round(offset * scale) / scale : offset;
+                float renderOffset = sAlignPixels ? Math.round(offset * scale) / scale : offset;
                 mTextList.add(new RandomGlyphRender(start + i, advance, renderOffset, effect, randomChars));
 
                 offset += advance;
@@ -618,10 +638,10 @@ public class TextLayoutProcessor {
                 }
 
                 // Align with a full pixel
-                float renderOffset = sPixelAligned ? Math.round(offset * scale) / scale : offset;
+                float renderOffset = sAlignPixels ? Math.round(offset * scale) / scale : offset;
 
                 // ASCII digits are not on SMP
-                if (isFastDigit && text[stripIndex] == '0') {
+                if (fastDigit && text[stripIndex] == '0') {
                     mTextList.add(new DigitGlyphRender(stripIndex, renderOffset, advance, effect, digitChars));
                     mHasEffect |= effect != 0;
                     continue;
@@ -746,7 +766,7 @@ public class TextLayoutProcessor {
             }
         }
 
-        int color = carrier.getColor();
+        int color = carrier.getFullColor();
         BaseGlyphRender glyph;
         // If there's no input style at the beginning
         if (color != CharacterStyle.NO_COLOR_SPECIFIED) {
@@ -778,8 +798,8 @@ public class TextLayoutProcessor {
 
             // Can be equal, not formatting code in this case
             if (glyph.mStringIndex >= carrier.mStringIndex) {
-                if (carrier.getColor() != color) {
-                    color = carrier.getColor();
+                if (carrier.getFullColor() != color) {
+                    color = carrier.getFullColor();
                     glyph.mFlags &= ~BaseGlyphRender.COLOR_NO_CHANGE;
                     glyph.mFlags |= color;
                 }

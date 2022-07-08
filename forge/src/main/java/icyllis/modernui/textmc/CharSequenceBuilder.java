@@ -23,11 +23,16 @@ import it.unimi.dsi.fastutil.chars.CharArrayList;
 import javax.annotation.Nonnull;
 
 /**
- * Used for fast lookup.
+ * Used for comparing with char sequences, or build char sequences (string) or char arrays.
+ *
+ * @author BloCamLimb
  */
-class CharSequenceBuilder implements CharSequence {
+public class CharSequenceBuilder implements CharSequence {
 
     public final CharArrayList mChars = new CharArrayList();
+
+    public CharSequenceBuilder() {
+    }
 
     public void addChar(char c) {
         mChars.add(c);
@@ -48,9 +53,14 @@ class CharSequenceBuilder implements CharSequence {
         str.getChars(0, str.length(), mChars.elements(), offset);
     }
 
-    public CharArrayList trimChars() {
-        mChars.trim();
-        return mChars;
+    public void addCharSequence(@Nonnull CharSequence seq) {
+        int offset = mChars.size();
+        int length = seq.length();
+        mChars.size(offset + length);
+        char[] buf = mChars.elements();
+        for (int i = 0; i < length; i++) {
+            buf[offset + i] = seq.charAt(i);
+        }
     }
 
     public void clear() {
@@ -77,25 +87,47 @@ class CharSequenceBuilder implements CharSequence {
     }
 
     /**
-     * This method won't be called when querying/lookup
-     * But new a String when caching a text node as a reference
-     *
-     * @return reference str key
+     * @return new string
      */
     @Nonnull
     @Override
     public String toString() {
-        return new String(mChars.toCharArray());
+        return new String(mChars.elements(), 0, mChars.size());
+    }
+
+    /**
+     * @return new char array
+     */
+    @Nonnull
+    public char[] toCharArray() {
+        return mChars.toCharArray();
     }
 
     @Override
     public boolean equals(Object o) {
-        if (o.getClass() != CharArrayList.class) return false;
-        return mChars.equals((CharArrayList) o);
+        if (o instanceof CharSequence seq) {
+            int s = mChars.size();
+            if (s != seq.length()) return false;
+            char[] buf = mChars.elements();
+            for (int i = 0; i < s; i++)
+                if (buf[i] != seq.charAt(i))
+                    return false;
+            return true;
+        }
+        return false;
     }
 
+    /**
+     * Same as {@link String#hashCode()}.
+     *
+     * @return hash code
+     */
     @Override
     public int hashCode() {
-        return mChars.hashCode();
+        char[] buf = mChars.elements();
+        int h = 0, s = mChars.size();
+        for (int i = 0; i < s; i++)
+            h = 31 * h + buf[i];
+        return h;
     }
 }

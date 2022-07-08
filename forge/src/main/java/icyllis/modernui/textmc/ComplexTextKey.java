@@ -21,7 +21,6 @@ package icyllis.modernui.textmc;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
@@ -31,17 +30,19 @@ import javax.annotation.Nonnull;
 import java.util.*;
 
 /**
- * The key to iterate base {@link net.minecraft.network.chat.FormattedText} or
+ * The cache key to iterate base {@link net.minecraft.network.chat.FormattedText} or
  * {@link net.minecraft.util.FormattedCharSequence}. To builder multilayer texts.
  *
+ * @author BloCamLimb
+ * @see CharacterStyle
  * @see VanillaTextKey
  */
-public class CompositeTextKey {
+public class ComplexTextKey {
 
     /**
      * Layers.
      */
-    private Object[] mSequences;
+    private CharSequence[] mSequences;
 
     /**
      * Reference to vanilla's {@link Style}, we extract the value that will only affect the rendering effect
@@ -51,10 +52,10 @@ public class CompositeTextKey {
 
     int mHash;
 
-    private CompositeTextKey() {
+    private ComplexTextKey() {
     }
 
-    private CompositeTextKey(Object[] sequences, int[] styles, int hash) {
+    private ComplexTextKey(CharSequence[] sequences, int[] styles, int hash) {
         // chat formatting may render same as style, but we can't separate them easily
         mSequences = sequences;
         mStyles = styles;
@@ -65,11 +66,11 @@ public class CompositeTextKey {
     public boolean equals(Object o) {
         if (this == o) return true;
         // we never compare with a LookupKey
-        if (o.getClass() != CompositeTextKey.class) return false;
-        CompositeTextKey that = (CompositeTextKey) o;
+        if (o.getClass() != ComplexTextKey.class) return false;
 
-        if (!Arrays.equals(mSequences, that.mSequences)) return false;
-        return Arrays.equals(mStyles, that.mStyles);
+        ComplexTextKey key = (ComplexTextKey) o;
+        return Arrays.equals(mStyles, key.mStyles) &&
+                Arrays.equals(mSequences, key.mSequences);
     }
 
     @Override
@@ -77,7 +78,7 @@ public class CompositeTextKey {
         int h = mHash;
         if (h == 0) {
             h = 1;
-            for (Object s : mSequences)
+            for (CharSequence s : mSequences)
                 h = 31 * h + s.hashCode();
             int r = 1;
             for (int i : mStyles)
@@ -90,95 +91,96 @@ public class CompositeTextKey {
     /**
      * Designed for performance, and ensure strictly matching hashCode and equals for Key.
      */
-    public static class Lookup extends CompositeTextKey {
+    public static class Lookup extends ComplexTextKey {
 
-        private final Pool<CharSequenceBuilder> mPool = Pools.simple(20);
+        private final ArrayList<CharSequence> mSequences = new ArrayList<>();
+        private final IntArrayList mStyles = new IntArrayList();
 
-        private final List<Object> mSequences = new ArrayList<>();
-        private final IntList mStyles = new IntArrayList();
-
-        private Style mStyle;
-        private CharSequenceBuilder mBuffer;
-
-        private boolean mFromSequence;
-
-        // always visual order
-        private final FormattedText.StyledContentConsumer<?> mContentBuilder =
+        // always logical order
+        private final FormattedText.StyledContentConsumer<Object> mContentBuilder =
                 new FormattedText.StyledContentConsumer<>() {
                     @Nonnull
                     @Override
                     public Optional<Object> accept(@Nonnull Style style, @Nonnull String text) {
                         mSequences.add(text);
-                        mStyles.add(CharacterStyle.getFlags(style));
+                        mStyles.add(CharacterStyle.getAppearanceFlags(style));
                         return Optional.empty(); // continue
                     }
                 };
+
+        private final SequenceBuilder mSequenceBuilder = new SequenceBuilder();
 
         /**
          * Always LTR. Build multilayer text.
          *
          * @see FormattedTextWrapper#accept(FormattedCharSink)
          */
-        private final FormattedCharSink mBuilderSink = new FormattedCharSink() {
+        private class SequenceBuilder implements FormattedCharSink {
+
+            private final Pool<CharSequenceBuilder> mPool = Pools.simple(20);
+
+            private CharSequenceBuilder mBuilder = null;
+            private Style mStyle = null;
+
+            private void allocate() {
+                mBuilder = mPool.acquire();
+                if (mBuilder == null) {
+                    mBuilder = new CharSequenceBuilder();
+                } else {
+                    mBuilder.clear();
+                }
+            }
 
             @Override
             public boolean accept(int index, @Nonnull Style style, int codePoint) {
-                if (!Objects.equals(mStyle, style)) {
+                if (mStyle == null) {
+                    allocate();
+                } else if (CharacterStyle.affectsAppearance(mStyle, style)) {
                     // add last
-                    if (!mBuffer.isEmpty() && mStyle != null) {
-                        mSequences.add(mBuffer);
-                        mStyles.add(CharacterStyle.getFlags(mStyle));
-                        allocateBuffer();
+                    if (!mBuilder.isEmpty()) {
+                        mSequences.add(mBuilder);
+                        mStyles.add(CharacterStyle.getAppearanceFlags(mStyle));
+                        allocate();
                     }
                     mStyle = style;
                 }
-                mBuffer.addCodePoint(codePoint);
+                mBuilder.addCodePoint(codePoint);
                 // continue
                 return true;
             }
-        };
 
-        private void release() {
-            for (Object s : mSequences) {
-                if (s instanceof CharSequenceBuilder) {
+            private void end() {
+                // add last
+                if (mStyle != null && mBuilder != null && !mBuilder.isEmpty()) {
+                    mSequences.add(mBuilder);
+                    mStyles.add(CharacterStyle.getAppearanceFlags(mStyle));
+                }
+                for (CharSequence s : mSequences) {
                     mPool.release((CharSequenceBuilder) s);
                 }
+                mBuilder = null;
+                mStyle = null;
             }
+        }
+
+        private void reset() {
             mSequences.clear();
             mStyles.clear();
-            mStyle = null;
-        }
-
-        private void allocateBuffer() {
-            mBuffer = mPool.acquire();
-            if (mBuffer == null) {
-                mBuffer = new CharSequenceBuilder();
-            } else {
-                mBuffer.clear();
-            }
-        }
-
-        public CompositeTextKey update(@Nonnull FormattedText text, @Nonnull Style style) {
-            // deferred release if hit last time, or use it as backing buffers
-            release();
-            text.visit(mContentBuilder, style);
             mHash = 0;
-            mFromSequence = false;
+        }
+
+        @Nonnull
+        public ComplexTextKey update(@Nonnull FormattedText text, @Nonnull Style style) {
+            text.visit(mContentBuilder, style);
+            reset();
             return this;
         }
 
-        public CompositeTextKey update(@Nonnull FormattedCharSequence sequence) {
-            // deferred release if hit last time, or use it as backing buffers
-            release();
-            allocateBuffer();
-            sequence.accept(mBuilderSink);
-            // add last
-            if (!mBuffer.isEmpty() && mStyle != null) {
-                mSequences.add(mBuffer);
-                mStyles.add(CharacterStyle.getFlags(mStyle));
-            }
-            mHash = 0;
-            mFromSequence = true;
+        @Nonnull
+        public ComplexTextKey update(@Nonnull FormattedCharSequence sequence) {
+            sequence.accept(mSequenceBuilder);
+            mSequenceBuilder.end();
+            reset();
             return this;
         }
 
@@ -186,9 +188,9 @@ public class CompositeTextKey {
         public boolean equals(Object o) {
             if (this == o) return true;
             // we never compare with a LookupKey
-            if (o.getClass() != CompositeTextKey.class) return false;
+            if (o.getClass() != ComplexTextKey.class) return false;
 
-            CompositeTextKey key = (CompositeTextKey) o;
+            ComplexTextKey key = (ComplexTextKey) o;
 
             int length = key.mStyles.length;
             if (mStyles.size() != length) {
@@ -218,7 +220,7 @@ public class CompositeTextKey {
             int h = mHash;
             if (h == 0) {
                 h = 1;
-                for (Object s : mSequences)
+                for (CharSequence s : mSequences)
                     h = 31 * h + s.hashCode();
                 int r = 1;
                 for (int i : mStyles)
@@ -229,26 +231,17 @@ public class CompositeTextKey {
         }
 
         /**
-         * Make a cache key. For different hashCode implementation, we keep FormattedText
-         * and FormattedCharSequence separated even they are equal.
+         * Make a cache key. We always use String.hashCode() implementation.
          *
-         * @return base key
+         * @return a storage key
          */
-        public CompositeTextKey copy() {
-            Object[] sequences = new Object[mSequences.size()];
-            if (mFromSequence) {
-                for (int i = 0; i < sequences.length; i++) {
-                    sequences[i] = ((CharSequenceBuilder) mSequences.get(i)).trimChars();
-                }
-            } else {
-                // Strings
-                for (int i = 0; i < sequences.length; i++) {
-                    sequences[i] = mSequences.get(i);
-                }
+        @Nonnull
+        public ComplexTextKey copy() {
+            CharSequence[] sequences = new CharSequence[mSequences.size()];
+            for (int i = 0; i < sequences.length; i++) {
+                sequences[i] = mSequences.get(i).toString();
             }
-            // do not recycle
-            mSequences.clear();
-            return new CompositeTextKey(sequences, mStyles.toIntArray(), mHash);
+            return new ComplexTextKey(sequences, mStyles.toIntArray(), mHash);
         }
     }
 }

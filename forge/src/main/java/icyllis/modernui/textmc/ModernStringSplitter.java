@@ -129,7 +129,7 @@ public final class ModernStringSplitter {
             return text.length();
         }
         // the glyph array for a string is sorted by the visual order
-        int r = getTrimSize(node.mGlyphs, width);
+        int r = getTrimSize(node.mDGlyphs, width);
         return r == -1 ? text.length() : r;
     }
 
@@ -187,7 +187,7 @@ public final class ModernStringSplitter {
             return text;
         }
         // The glyph array for a string is sorted by the string's logical character position
-        BaseGlyphRender[] glyphs = node.mGlyphs;
+        BaseGlyphRender[] glyphs = node.mDGlyphs;
 
         // Add up the individual advance of each glyph until it exceeds the specified width
         float advance = 0;
@@ -233,7 +233,7 @@ public final class ModernStringSplitter {
         if (width >= node.mAdvance) {
             return null;
         }
-        final int r = getTrimSize(node.mGlyphs, width);
+        final int r = getTrimSize(node.mDGlyphs, width);
         if (r == -1) {
             return null;
         }
@@ -295,7 +295,7 @@ public final class ModernStringSplitter {
             return null;
         }
         // this is stringIndex WITH control codes, but deep processor contain NO control codes
-        final int r = getTrimSize(node.mGlyphs, width);
+        final int r = getTrimSize(node.mDGlyphs, width);
         if (r == -1) {
             return null;
         }
@@ -340,7 +340,7 @@ public final class ModernStringSplitter {
         if (width >= node.mAdvance) {
             return text;
         }
-        final int r = getTrimSize(node.mGlyphs, width);
+        final int r = getTrimSize(node.mDGlyphs, width);
         if (r == -1) {
             return text;
         }

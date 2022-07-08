@@ -21,6 +21,7 @@ package icyllis.modernui.textmc;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
+import icyllis.modernui.graphics.font.GLBakedGlyph;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Sheets;
 
@@ -29,16 +30,28 @@ import javax.annotation.Nullable;
 import java.util.Arrays;
 
 /**
- * The render node includes the most optimized layout results and rendering information.
+ * The render node contains all glyph layout information and rendering information.
  */
 //TODO emoji, grapheme break
 public class TextRenderNode {
 
     /**
      * Sometimes naive, too simple.
-     * In this case, input string must be empty.
+     * <p>
+     * This singleton cannot be placed in the cache!
      */
     public static final TextRenderNode EMPTY = new TextRenderNode(new BaseGlyphRender[0], 0, false) {
+
+        @Nonnull
+        @Override
+        public TextRenderNode get() {
+            throw new UnsupportedOperationException("Singleton!");
+        }
+
+        @Override
+        public boolean tick() {
+            throw new UnsupportedOperationException("Singleton!");
+        }
 
         @Override
         public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g,
@@ -65,54 +78,108 @@ public class TextRenderNode {
     public static volatile float sVanillaBaselineOffset = 7;
 
     /**
-     * Countdown in seconds to recycle this node.
+     * Time in seconds to recycle this node.
      */
-    public static volatile int sMaxRecycleCountdownSeconds = 12;
+    public static volatile int sLifespan = 12;
 
     /**
      * All laid-out glyphs and their render info.
      */
     @Nonnull
-    public final BaseGlyphRender[] mGlyphs;
+    public final BaseGlyphRender[] mDGlyphs;
+
+    /**
+     * All baked glyphs for rendering, empty glyphs have been removed from this array.
+     * The order is visually left-to-right (i.e. in visual order).
+     */
+    private GLBakedGlyph[] mGlyphs;
+
+    /**
+     * Glyphs to relative char indices of the raw string (with formatting codes).
+     * Same indexing with {@link #mGlyphs}, visual order to logical order.
+     */
+    private int[] mStringIndices;
+
+    /**
+     * Position x1 y1 x2 y2... relative to the same point, for rendering mGlyphs.
+     * Same indexing with {@link #mGlyphs}, align to left, in visual order.
+     * <p>
+     * Note the values are scaled to Minecraft GUI coordinates.
+     */
+    private float[] mPositions;
+
+    /**
+     * The length and order are relative to the raw string (with formatting codes).
+     * Only grapheme cluster bounds have advances, others are zeros. For example:
+     * [13.57, 0, 14.26, 0, 0]. {@link #mGlyphs}.length may less than grapheme cluster
+     * count (invisible glyphs are removed). Logical order.
+     * <p>
+     * Note the values are scaled to Minecraft GUI coordinates.
+     */
+    private float[] mAdvances;
+
+    /**
+     * Glyph rendering flags. Same indexing with {@link #mGlyphs}, visual order.
+     */
+    /*
+     * lower 24 bits - RGB color, ignored when has USE_PARAM_COLOR bit
+     * higher 8 bits
+     * |--------|
+     *         1  BOLD
+     *        1   ITALIC
+     *       1    UNDERLINE
+     *      1     STRIKETHROUGH
+     *     1      OBFUSCATED
+     *    1       FORMATTING_CODE
+     *   1        FAST_DIGIT
+     *  1         USE_PARAM_COLOR
+     * |--------|
+     */
+    private int[] mFlags;
 
     /**
      * Total advance of this text node.
-     * Normalized to Minecraft GUI system.
+     * <p>
+     * Note the values are scaled to Minecraft GUI coordinates.
      */
     public final float mAdvance;
 
     private final boolean mHasEffect;
 
     /**
-     * Countdown in seconds to recycle this node.
+     * Elapsed time in seconds since last use.
      */
-    private int mCountdown = sMaxRecycleCountdownSeconds;
+    private int mTimer = 0;
 
     public TextRenderNode(@Nonnull BaseGlyphRender[] glyphs, float advance, boolean hasEffect) {
-        mGlyphs = glyphs;
+        mDGlyphs = glyphs;
         mAdvance = advance;
         mHasEffect = hasEffect;
     }
 
     /**
-     * @return this with countdown reset
+     * Cache access.
+     *
+     * @return this with timer reset
      */
     @Nonnull
     public TextRenderNode get() {
-        mCountdown = sMaxRecycleCountdownSeconds;
+        mTimer = 0;
         return this;
     }
 
     /**
-     * @return countdown to recycle
+     * Cache access. Increment internal timer by one second.
+     *
+     * @return true to recycle
      */
-    public boolean countdown() {
-        return --mCountdown < 0;
+    public boolean tick() {
+        return ++mTimer > sLifespan;
     }
 
     public float drawText(@Nonnull BufferBuilder builder, @Nonnull String raw, float x, float y, int r, int g, int b,
                           int a, float res) {
-        if (mGlyphs.length == 0) {
+        if (mDGlyphs.length == 0) {
             return 0;
         }
         final int startR = r;
@@ -122,7 +189,7 @@ public class TextRenderNode {
         y += BASELINE_OFFSET;
         RenderSystem.enableTexture();
 
-        for (BaseGlyphRender glyph : mGlyphs) {
+        for (BaseGlyphRender glyph : mDGlyphs) {
             if ((glyph.mFlags & BaseGlyphRender.COLOR_NO_CHANGE) == 0) {
                 int color = glyph.mFlags;
                 if ((color & BaseGlyphRender.USE_INPUT_COLOR) != 0) {
@@ -144,7 +211,7 @@ public class TextRenderNode {
             b = startB;
             RenderSystem.disableTexture();
             builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
-            for (BaseGlyphRender glyph : mGlyphs) {
+            for (BaseGlyphRender glyph : mDGlyphs) {
                 if ((glyph.mFlags & BaseGlyphRender.COLOR_NO_CHANGE) == 0) {
                     int color = glyph.mFlags;
                     if ((color & BaseGlyphRender.USE_INPUT_COLOR) != 0) {
@@ -168,7 +235,7 @@ public class TextRenderNode {
     public float drawText(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable CharSequence raw,
                           float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough,
                           int colorBackground, int packedLight, float res) {
-        if (mGlyphs.length == 0) {
+        if (mDGlyphs.length == 0) {
             return 0;
         }
         final int startR = r;
@@ -181,7 +248,7 @@ public class TextRenderNode {
 
         y += sVanillaBaselineOffset;
 
-        for (BaseGlyphRender glyph : mGlyphs) {
+        for (BaseGlyphRender glyph : mDGlyphs) {
             if ((glyph.mFlags & BaseGlyphRender.COLOR_NO_CHANGE) == 0) {
                 int color = glyph.mFlags;
                 if ((color & BaseGlyphRender.USE_INPUT_COLOR) != 0) {
@@ -209,7 +276,7 @@ public class TextRenderNode {
             g = startG;
             b = startB;
             builder = source.getBuffer(EffectRenderType.getRenderType(seeThrough));
-            for (BaseGlyphRender glyph : mGlyphs) {
+            for (BaseGlyphRender glyph : mDGlyphs) {
                 if ((glyph.mFlags & BaseGlyphRender.COLOR_NO_CHANGE) == 0) {
                     int color = glyph.mFlags;
                     if ((color & BaseGlyphRender.USE_INPUT_COLOR) != 0) {
@@ -252,7 +319,7 @@ public class TextRenderNode {
     @Override
     public String toString() {
         return "TextRenderNode{" +
-                "glyphs=" + Arrays.toString(mGlyphs) +
+                "glyphs=" + Arrays.toString(mDGlyphs) +
                 ", advance=" + mAdvance +
                 ", hasEffect=" + mHasEffect +
                 '}';

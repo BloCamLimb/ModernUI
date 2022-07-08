@@ -463,7 +463,7 @@ final class Config {
                 reload = true;
             }
             if (reload) {
-                Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reloadEngine());
+                Minecraft.getInstance().submit(() -> TextLayoutEngine.getInstance().reloadAll());
             }
 
             ModernUI.getSelectedTypeface();
