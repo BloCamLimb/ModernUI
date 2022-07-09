@@ -33,6 +33,7 @@ import java.util.Map;
  *
  * @see VanillaTextKey
  */
+@Deprecated
 class DigitGlyphRender extends BaseGlyphRender {
 
     /**

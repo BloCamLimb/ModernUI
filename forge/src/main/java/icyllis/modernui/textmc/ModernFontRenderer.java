@@ -21,6 +21,7 @@ package icyllis.modernui.textmc;
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.Sheets;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.FormattedCharSequence;
@@ -34,6 +35,7 @@ import javax.annotation.Nonnull;
  *
  * @author BloCamLimb
  */
+//TODO
 @OnlyIn(Dist.CLIENT)
 public final class ModernFontRenderer {
 
@@ -93,16 +95,20 @@ public final class ModernFontRenderer {
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupVanillaNode(text);
-        float level = layoutEngine.getResolutionLevel();
+        float res = layoutEngine.getResolutionLevel();
+        // performance impact
+        if (source instanceof MultiBufferSource.BufferSource) {
+            ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
+        }
         if (dropShadow && sAllowShadow) {
             node.drawText(matrix, source, text, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
-                    seeThrough, colorBackground, packedLight, level);
+                    seeThrough, colorBackground, packedLight, res);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(SHADOW_OFFSET);
         }
 
         x += node.drawText(matrix, source, text, x, y, r, g, b, a, false,
-                seeThrough, colorBackground, packedLight, level);
+                seeThrough, colorBackground, packedLight, res);
         return (int) x + (dropShadow ? 1 : 0);
     }
 
@@ -126,8 +132,12 @@ public final class ModernFontRenderer {
         int b = color & 0xff;
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        TextRenderNode node = layoutEngine.lookupFormattedNode(text);
+        TextRenderNode node = layoutEngine.lookupComplexNode(text);
         float level = layoutEngine.getResolutionLevel();
+        // performance impact
+        if (source instanceof MultiBufferSource.BufferSource) {
+            ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
+        }
         if (dropShadow && sAllowShadow) {
             node.drawText(matrix, source, null, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
                     seeThrough, colorBackground, packedLight, level);
@@ -162,6 +172,10 @@ public final class ModernFontRenderer {
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupSequenceNode(text);
         float level = layoutEngine.getResolutionLevel();
+        // performance impact
+        if (source instanceof MultiBufferSource.BufferSource) {
+            ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
+        }
         if (dropShadow && sAllowShadow) {
             node.drawText(matrix, source, null, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
                     seeThrough, colorBackground, packedLight, level);

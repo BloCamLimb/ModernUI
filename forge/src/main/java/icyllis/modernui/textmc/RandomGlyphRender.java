@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.Random;
 
+@Deprecated
 class RandomGlyphRender extends BaseGlyphRender {
 
     private static final Random RANDOM = new Random();

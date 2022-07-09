@@ -39,8 +39,8 @@ import java.util.Optional;
  * @see MixinBidiReorder
  * @see MixinClientLanguage
  * @see MixinLanguage
- * @see ComplexTextKey.Lookup#update(FormattedCharSequence)
- * @see TextLayoutProcessor#performComplexLayout(FormattedCharSequence)
+ * @see MultilayerTextKey.Lookup#update(FormattedCharSequence)
+ * @see TextLayoutProcessor#performSequenceLayout(FormattedCharSequence)
  * @see net.minecraft.network.chat.SubStringSource
  * @see net.minecraft.client.resources.language.FormattedBidiReorder
  */

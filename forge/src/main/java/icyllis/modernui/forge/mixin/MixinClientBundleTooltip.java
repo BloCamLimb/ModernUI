@@ -32,6 +32,7 @@ public class MixinClientBundleTooltip {
             at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderColor(FFFF)V"))
     private void setColor(float f, float g, float h, float i) {
         if (TooltipRenderer.sTooltip) {
+            RenderSystem.enableBlend();
             RenderSystem.setShaderColor(f, g, h, TooltipRenderer.sAlpha * i);
         } else {
             RenderSystem.setShaderColor(f, g, h, i);

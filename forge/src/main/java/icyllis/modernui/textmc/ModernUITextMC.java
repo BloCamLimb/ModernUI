@@ -22,6 +22,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.forge.*;
 import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.text.TextUtils;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -78,7 +79,7 @@ public final class ModernUITextMC {
     @SubscribeEvent
     static void registerResourceListener(@Nonnull RegisterClientReloadListenersEvent event) {
         // language may reload, cause TranslatableComponent changed, so clear layout cache
-        event.registerReloadListener((ResourceManagerReloadListener) manager -> TextLayoutEngine.getInstance().reload());
+        event.registerReloadListener((ResourceManagerReloadListener) manager -> TextLayoutEngine.getInstance().reloadResources());
         LOGGER.debug(MARKER, "Registered language reload listener");
     }
 
@@ -101,8 +102,10 @@ public final class ModernUITextMC {
             }
         });
         MuiForgeApi.addOnDebugDumpListener(pw -> {
-            pw.print("Text Layout Entries: ");
-            pw.println(TextLayoutEngine.getInstance().getLayoutCacheCount());
+            pw.print("TextLayoutEngine: ");
+            pw.print("CacheCount=" + TextLayoutEngine.getInstance().getCacheCount());
+            int memorySize = TextLayoutEngine.getInstance().getCacheMemorySize();
+            pw.println(", CacheSize=" + TextUtils.binaryCompact(memorySize) + " (" + memorySize + " bytes)");
             GlyphManager.getInstance().dumpInfo(pw);
         });
         {
@@ -112,7 +115,7 @@ public final class ModernUITextMC {
                 builder.addCodePoint(cp);
             }
             String string = new String(codePoints, 0, codePoints.length);
-            if (builder.hashCode() != string.hashCode()) {
+            if (builder.hashCode() != string.hashCode() || builder.hashCode() != builder.toString().hashCode()) {
                 throw new RuntimeException("String.hashCode() is not identical to the specs");
             }
         }
@@ -247,7 +250,7 @@ public final class ModernUITextMC {
                 TextLayoutProcessor.sBaseFontSize = mBaseFontSize.get();
                 reload = true;
             }
-            TextRenderNode.sVanillaBaselineOffset = mBaselineShift.get().floatValue();
+            TextRenderNode.sBaselineOffset = mBaselineShift.get().floatValue();
             if (TextLayoutEngine.sSuperSampling != mSuperSampling.get()) {
                 TextLayoutEngine.sSuperSampling = mSuperSampling.get();
                 reload = true;

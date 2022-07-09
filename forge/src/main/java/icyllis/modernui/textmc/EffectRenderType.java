@@ -39,7 +39,7 @@ import static org.lwjgl.opengl.GL11C.GL_ONE;
 import static org.lwjgl.opengl.GL11C.GL_RED;
 
 @RenderThread
-class EffectRenderType extends RenderType {
+public class EffectRenderType extends RenderType {
 
     private static final GLTexture WHITE = new GLTexture(GLCore.GL_TEXTURE_2D);
 
@@ -50,16 +50,16 @@ class EffectRenderType extends RenderType {
     private static final ImmutableList<RenderStateShard> SEE_THROUGH_STATES;
 
     static {
-        WHITE.allocate2D(NativeImage.Format.RED.internalGlFormat, 2, 2, 0);
+        WHITE.allocate2DCompat(NativeImage.Format.RED.internalGlFormat, 2, 2, 0);
         try (MemoryStack stack = MemoryStack.stackPush()) {
             ByteBuffer pixels = stack.malloc(4);
             for (int i = 0; i < 4; i++) {
                 pixels.put((byte) 0xff);
             }
-            WHITE.upload(0, 0, 0, 2, 2, 0, 0, 0, 1,
+            WHITE.uploadCompat(0, 0, 0, 2, 2, 0, 0, 0, 1,
                     NativeImage.Format.RED.glFormat, GLCore.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels.flip()));
         }
-        WHITE.setSwizzle(GL_ONE, GL_ONE, GL_ONE, GL_RED);
+        WHITE.setSwizzleCompat(GL_ONE, GL_ONE, GL_ONE, GL_RED);
         STATES = ImmutableList.of(
                 TextRenderType.RENDERTYPE_MODERN_TEXT,
                 TRANSLUCENT_TRANSPARENCY,

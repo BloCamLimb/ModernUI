@@ -27,6 +27,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+@Deprecated
 class StandardGlyphRender extends BaseGlyphRender {
 
     /**

@@ -26,6 +26,7 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.textmc.mixin.MixinClientLanguage;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.TextComponent;
@@ -45,6 +46,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -71,6 +73,10 @@ public class TextLayoutEngine {
     public static volatile boolean sFixedResolution = false;
     public static volatile boolean sSuperSampling = false;
     public static volatile int sTextDirection = View.TEXT_DIRECTION_FIRST_STRONG;
+    /**
+     * Time in seconds to recycle a render node in the cache.
+     */
+    public static volatile int sCacheLifespan = 12;
 
     private static final ChatFormatting[] FORMATTING_TABLE = ChatFormatting.values();
 
@@ -122,8 +128,8 @@ public class TextLayoutEngine {
     /**
      * For deeply-processed texts.
      */
-    private final ComplexTextKey.Lookup mComplexLookupKey = new ComplexTextKey.Lookup();
-    private Map<ComplexTextKey, TextRenderNode> mComplexCache = new HashMap<>();
+    private final MultilayerTextKey.Lookup mMultilayerLookupKey = new MultilayerTextKey.Lookup();
+    private Map<MultilayerTextKey, TextRenderNode> mMultilayerCache = new HashMap<>();
 
     /**
      * Shared layout engine.
@@ -134,9 +140,88 @@ public class TextLayoutEngine {
      * For fast digit replacement and obfuscated char rendering.
      * Map from 'derived font' to 'ASCII 33(!) to 126(~) characters with their standard advances and relative advances'.
      */
-    private final Map<Font, Map.Entry<GLBakedGlyph[], float[]>> mFastCharMap = new HashMap<>();
-    private final Function<Font, Map.Entry<GLBakedGlyph[], float[]>> mFastCharFunc = this.new FastCharFunc();
+    private final Map<Font, FastCharSet> mFastCharMap = new HashMap<>();
+    private final Function<Font, FastCharSet> mFastCharFunc = new Function<>() {
+        @Nonnull
+        @Override
+        public FastCharSet apply(Font font) {
+            // initial table
+            GLBakedGlyph[] glyphs = new GLBakedGlyph[94]; // 126 - 33 + 1
+            // normalized offsets
+            float[] offsets = new float[glyphs.length];
+            char[] chars = new char[1];
+            int n = 0;
+            // 48 to 57, always cache all digits
+            for (int i = 0; i < 10; i++) {
+                chars[0] = (char) ('0' + i);
+                // no shaping
+                GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
+                float advance = (float) vector.getGlyphPosition(1).getX();
+                glyphs[i] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+                // '0' is standard, because it's wider than other digits in general
+                if (i == 0) {
+                    // 0 is standard advance
+                    offsets[n] = advance;
+                } else {
+                    // relative offset to standard advance, to center the glyph
+                    offsets[n] = (offsets[0] - advance) / 2f;
+                }
+                n++;
+            }
+            // 33 to 47
+            for (int i = 0; i < 15; i++) {
+                chars[0] = (char) (33 + i);
+                // no shaping
+                GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
+                float advance = (float) vector.getGlyphPosition(1).getX();
+                // too wide
+                if (advance + 0.5f > offsets[0]) {
+                    continue;
+                }
+                glyphs[n] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+                offsets[n] = (offsets[0] - advance) / 2f;
+                n++;
+            }
+            // 58 to 126
+            for (int i = 0; i < 69; i++) {
+                chars[0] = (char) (58 + i);
+                // no shaping
+                GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
+                float advance = (float) vector.getGlyphPosition(1).getX();
+                // too wide
+                if (advance + 0.5f > offsets[0]) {
+                    continue;
+                }
+                glyphs[n] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+                offsets[n] = (offsets[0] - advance) / 2f;
+                n++;
+            }
+            if (n < glyphs.length) {
+                glyphs = Arrays.copyOf(glyphs, n);
+                offsets = Arrays.copyOf(offsets, n);
+            }
+            float res = getResolutionLevel();
+            // the cache will be reset when resolution level changed
+            for (int i = 0; i < n; i++) {
+                offsets[i] /= res;
+            }
+            return new FastCharSet(glyphs, offsets);
+        }
+    };
 
+    /**
+     * Emoji sequence to sprite index (used as glyph code in emoji atlas).
+     */
+    private final Object2IntOpenHashMap<String> mEmojiMap = new Object2IntOpenHashMap<>();
+    private GLFontAtlas mEmojiAtlas;
+    private boolean mEmojiScanned = false;
+
+    private final Predicate<TextRenderNode> mTicker = node -> node.tick(sCacheLifespan);
+
+    /**
+     * Determine font size. Integer.
+     */
+    private float mGuiScale;
     /**
      * Determine font size. Integer.
      */
@@ -189,20 +274,28 @@ public class TextLayoutEngine {
     }
 
     /**
+     * @return the glyph manager
+     */
+    @Nonnull
+    public GlyphManager getGlyphManager() {
+        return mGlyphManager;
+    }
+
+    /**
      * Cleanup layout cache.
      */
     public void cleanup() {
-        int size = getLayoutCacheCount();
+        int size = getCacheCount();
         mVanillaCache.clear();
         mComponentCache.clear();
-        mComplexCache.clear();
+        mMultilayerCache.clear();
         mFastCharMap.clear();
         boolean rehash = size > 500;
         if (rehash) {
             // Create new HashMap so that the internal hashtable of old maps are released as well
             mVanillaCache = new HashMap<>();
             mComponentCache = new HashMap<>();
-            mComplexCache = new HashMap<>();
+            mMultilayerCache = new HashMap<>();
             //mDigitMap = new HashMap<>();
         }
         // Clear TextRenderType instances, but font textures are NOT released (intentionally)
@@ -219,12 +312,12 @@ public class TextLayoutEngine {
     public void reload() {
         cleanup();
 
+        final int guiScale = Math.round(ViewConfiguration.get().getViewScale() * 2);
         final float oldLevel = mResolutionLevel;
         if (sFixedResolution) {
             // make font size to 16 (8 * 2)
             mResolutionLevel = 2;
         } else {
-            int guiScale = Math.round(ViewConfiguration.get().getViewScale() * 2);
             // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
             if (!sSuperSampling || !GLFontAtlas.sLinearSampling) {
                 mResolutionLevel = Math.min(guiScale, 9);
@@ -236,6 +329,8 @@ public class TextLayoutEngine {
                 mResolutionLevel = guiScale;
             }
         }
+        mGuiScale = guiScale;
+
         Locale locale = ModernUI.getSelectedLocale();
         boolean layoutRtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL;
         mTextDirectionHeuristic = switch (sTextDirection) {
@@ -248,6 +343,7 @@ public class TextLayoutEngine {
             default -> layoutRtl ? TextDirectionHeuristics.FIRSTSTRONG_RTL :
                     TextDirectionHeuristics.FIRSTSTRONG_LTR;
         };
+
         if (oldLevel == 0) {
             LOGGER.info(MARKER, "Loaded text layout engine, res level: {}, locale: {}, layout RTL: {}",
                     mResolutionLevel, locale, layoutRtl);
@@ -255,6 +351,40 @@ public class TextLayoutEngine {
             LOGGER.info(MARKER, "Reloaded text layout engine, res level: {} to {}, locale: {}, layout RTL: {}",
                     oldLevel, mResolutionLevel, locale, layoutRtl);
         }
+    }
+
+    /**
+     * Called when language changed.
+     */
+    public void reloadResources() {
+        if (!mEmojiScanned) {
+            mEmojiScanned = true;
+            Minecraft.getInstance().getResourceManager().listResources("emoji", name -> {
+                if (name.length() > 64 || !name.endsWith(".png")) {
+                    return false;
+                }
+                String[] parts = name.substring(0, name.length() - 4).split("-");
+                if (parts.length == 0) {
+                    return false;
+                }
+                int[] codePoints = new int[parts.length];
+                for (int i = 0; i < parts.length; i++) {
+                    try {
+                        int codePoint = Integer.parseInt(parts[i], 16);
+                        if (!Character.isValidCodePoint(codePoint)) {
+                            return false;
+                        }
+                        codePoints[i] = codePoint;
+                    } catch (NumberFormatException e) {
+                        return false;
+                    }
+                }
+                mEmojiMap.put(new String(codePoints, 0, codePoints.length), mEmojiMap.size());
+                return false;
+            });
+            LOGGER.info("Scanned emoji map size: {}", mEmojiMap.size());
+        }
+        reload();
     }
 
     /**
@@ -328,14 +458,14 @@ public class TextLayoutEngine {
      * @return the full layout
      * @see FormattedTextWrapper
      */
-    public TextRenderNode lookupFormattedNode(@Nonnull FormattedText text) {
+    public TextRenderNode lookupComplexNode(@Nonnull FormattedText text) {
         if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
             // block
             return Minecraft.getInstance()
-                    .submit(() -> lookupFormattedNode(text))
+                    .submit(() -> lookupComplexNode(text))
                     .join();
         }
         TextRenderNode node;
@@ -347,10 +477,10 @@ public class TextLayoutEngine {
                 return node;
             }
         } else {
-            node = mComplexCache.get(mComplexLookupKey.update(text, Style.EMPTY));
+            node = mMultilayerCache.get(mMultilayerLookupKey.update(text, Style.EMPTY));
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, Style.EMPTY);
-                mComplexCache.put(mComplexLookupKey.copy(), node);
+                mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
                 return node;
             }
         }
@@ -361,18 +491,19 @@ public class TextLayoutEngine {
      * Lookup cached render node for multilayer text or create the layout.
      * To perform bidi analysis, we must have the full text of all layers.
      *
-     * @param text root node
+     * @param text  root node
+     * @param style base style
      * @return the full layout
      * @see FormattedTextWrapper
      */
-    public TextRenderNode lookupFormattedNode(@Nonnull FormattedText text, @Nonnull Style style) {
+    public TextRenderNode lookupComplexNode(@Nonnull FormattedText text, @Nonnull Style style) {
         if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
             // block
             return Minecraft.getInstance()
-                    .submit(() -> lookupFormattedNode(text, style))
+                    .submit(() -> lookupComplexNode(text, style))
                     .join();
         }
         TextRenderNode node;
@@ -384,10 +515,10 @@ public class TextLayoutEngine {
                 return node;
             }
         } else {
-            node = mComplexCache.get(mComplexLookupKey.update(text, style));
+            node = mMultilayerCache.get(mMultilayerLookupKey.update(text, style));
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, style);
-                mComplexCache.put(mComplexLookupKey.copy(), node);
+                mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
                 return node;
             }
         }
@@ -431,19 +562,19 @@ public class TextLayoutEngine {
                     return node;
                 }
             } else {
-                node = mComplexCache.get(mComplexLookupKey.update(text, Style.EMPTY));
+                node = mMultilayerCache.get(mMultilayerLookupKey.update(text, Style.EMPTY));
                 if (node == null) {
                     node = mProcessor.performComplexLayout(text, Style.EMPTY);
-                    mComplexCache.put(mComplexLookupKey.copy(), node);
+                    mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
                     return node;
                 }
             }
             return node.get();
         } else {
-            TextRenderNode node = mComplexCache.get(mComplexLookupKey.update(sequence));
+            TextRenderNode node = mMultilayerCache.get(mMultilayerLookupKey.update(sequence));
             if (node == null) {
-                node = mProcessor.performComplexLayout(sequence);
-                mComplexCache.put(mComplexLookupKey.copy(), node);
+                node = mProcessor.performSequenceLayout(sequence);
+                mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
                 return node;
             }
             return node.get();
@@ -471,9 +602,9 @@ public class TextLayoutEngine {
     void tick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
             if (mTimer == 0) {
-                mVanillaCache.values().removeIf(TextRenderNode::tick);
-                mComponentCache.values().removeIf(TextRenderNode::tick);
-                mComplexCache.values().removeIf(TextRenderNode::tick);
+                mVanillaCache.values().removeIf(mTicker);
+                mComponentCache.values().removeIf(mTicker);
+                mMultilayerCache.values().removeIf(mTicker);
             }
             // convert ticks to seconds
             mTimer = (mTimer + 1) % 20;
@@ -483,8 +614,25 @@ public class TextLayoutEngine {
     /**
      * @return the number of layout entries
      */
-    public int getLayoutCacheCount() {
-        return mVanillaCache.size() + mComponentCache.size() + mComplexCache.size();
+    public int getCacheCount() {
+        return mVanillaCache.size() + mComponentCache.size() + mMultilayerCache.size();
+    }
+
+    /**
+     * @return measurable cache size in bytes
+     */
+    public int getCacheMemorySize() {
+        int size = 0;
+        for (var n : mVanillaCache.values()) {
+            size += n.getMemorySize();
+        }
+        for (var n : mComponentCache.values()) {
+            size += n.getMemorySize();
+        }
+        for (var n : mMultilayerCache.values()) {
+            size += n.getMemorySize();
+        }
+        return size;
     }
 
     /**
@@ -501,6 +649,15 @@ public class TextLayoutEngine {
             if (f.getChar() == code)
                 return f;
         return null;
+    }
+
+    /**
+     * Returns current GUI scale for texts.
+     *
+     * @return scale factor, should be an integer that converted to float
+     */
+    public float getGuiScale() {
+        return mGuiScale;
     }
 
     /**
@@ -524,83 +681,32 @@ public class TextLayoutEngine {
 
     /**
      * Lookup fast char glyph with given font.
-     * The pair right is the offsetX to standard '0' advance alignment (already scaled by Minecraft).
+     * The pair right is the offsetX to standard '0' advance alignment (already scaled by GUI factor).
      * Because we assume FAST digit glyphs are monospaced, no matter whether it's a monospaced font.
      *
      * @param font derived font including style and font size
      * @return array of all fast char glyphs 0-9 (in that order), and others
      */
     @Nonnull
-    public Map.Entry<GLBakedGlyph[], float[]> lookupFastChars(@Nonnull Font font) {
+    public FastCharSet lookupFastChars(@Nonnull Font font) {
         return mFastCharMap.computeIfAbsent(font, mFastCharFunc);
     }
 
-    private class FastCharFunc implements Function<Font, Map.Entry<GLBakedGlyph[], float[]>> {
+    /**
+     * FastCharSet have uniform advances. Offset[0] is the advance for all glyphs.
+     * Other offsets is the relative offset to center the glyph. Normalized to
+     * Minecraft GUI system.
+     * <p>
+     * This is used to render fast digits and obfuscated chars.
+     */
+    public static class FastCharSet extends GLBakedGlyph {
 
-        @Nonnull
-        @Override
-        public Map.Entry<GLBakedGlyph[], float[]> apply(Font font) {
-            // initial table
-            GLBakedGlyph[] glyphs = new GLBakedGlyph[94]; // 126 - 33 + 1
-            // normalized offsets
-            float[] offsets = new float[glyphs.length];
-            char[] chars = new char[1];
-            int n = 0;
-            // 48 to 57, always cache all digits
-            for (int i = 0; i < 10; i++) {
-                chars[0] = (char) ('0' + i);
-                // no shaping
-                GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
-                float advance = (float) vector.getGlyphPosition(1).getX();
-                glyphs[i] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
-                // '0' is standard, because it's wider than other digits in general
-                if (i == 0) {
-                    // 0 is standard advance
-                    offsets[n] = advance;
-                } else {
-                    // relative offset to standard advance, to center the glyph
-                    offsets[n] = (offsets[0] - advance) / 2f;
-                }
-                n++;
-            }
-            // 33 to 47
-            for (int i = 0; i < 15; i++) {
-                chars[0] = (char) (33 + i);
-                // no shaping
-                GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
-                float advance = (float) vector.getGlyphPosition(1).getX();
-                // too wide
-                if (advance + 0.5f > offsets[0]) {
-                    continue;
-                }
-                glyphs[n] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
-                offsets[n] = (offsets[0] - advance) / 2f;
-                n++;
-            }
-            // 58 to 126
-            for (int i = 0; i < 69; i++) {
-                chars[0] = (char) (58 + i);
-                // no shaping
-                GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
-                float advance = (float) vector.getGlyphPosition(1).getX();
-                // too wide
-                if (advance + 0.5f > offsets[0]) {
-                    continue;
-                }
-                glyphs[n] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
-                offsets[n] = (offsets[0] - advance) / 2f;
-                n++;
-            }
-            if (n < glyphs.length) {
-                glyphs = Arrays.copyOf(glyphs, n);
-                offsets = Arrays.copyOf(offsets, n);
-            }
-            float res = getResolutionLevel();
-            // the cache will be reset when resolution level changed
-            for (int i = 0; i < n; i++) {
-                offsets[i] /= res;
-            }
-            return Map.entry(glyphs, offsets);
+        public final GLBakedGlyph[] glyphs;
+        public final float[] offsets;
+
+        public FastCharSet(GLBakedGlyph[] glyphs, float[] offsets) {
+            this.glyphs = glyphs;
+            this.offsets = offsets;
         }
     }
 
