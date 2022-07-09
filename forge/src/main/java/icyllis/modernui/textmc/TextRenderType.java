@@ -23,8 +23,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import icyllis.modernui.ModernUI;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.*;
 import net.minecraft.resources.ResourceLocation;
@@ -66,6 +65,11 @@ public class TextRenderType extends RenderType {
      */
     private static final ImmutableList<RenderStateShard> GENERAL_STATES;
     private static final ImmutableList<RenderStateShard> SEE_THROUGH_STATES;
+
+    private static final Int2ObjectFunction<TextRenderType> GENERAL_FUNC =
+            TextRenderType::new;
+    private static final Int2ObjectFunction<TextRenderType> SEE_THROUGH_FUNC =
+            t -> new TextRenderType(t, "modern_text_see_through");
 
     static {
         GENERAL_STATES = ImmutableList.of(
@@ -125,26 +129,15 @@ public class TextRenderType extends RenderType {
     }
 
     @Nonnull
-    static TextRenderType getOrCreate(int texture, boolean seeThrough) {
-        TextRenderType type;
+    public static TextRenderType getOrCreate(int texture, boolean seeThrough) {
         if (seeThrough) {
-            // do not use lambdas for deferred construction
-            type = SEE_THROUGH_TYPES.get(texture);
-            if (type == null) {
-                type = new TextRenderType(texture, "modern_text_see_through");
-                SEE_THROUGH_TYPES.put(texture, type);
-            }
+            return SEE_THROUGH_TYPES.computeIfAbsent(texture, SEE_THROUGH_FUNC);
         } else {
-            type = TYPES.get(texture);
-            if (type == null) {
-                type = new TextRenderType(texture);
-                TYPES.put(texture, type);
-            }
+            return TYPES.computeIfAbsent(texture, GENERAL_FUNC);
         }
-        return type;
     }
 
-    static void clear() {
+    public static void clear() {
         TYPES.clear();
         SEE_THROUGH_TYPES.clear();
     }

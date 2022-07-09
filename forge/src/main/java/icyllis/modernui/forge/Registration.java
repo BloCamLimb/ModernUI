@@ -28,6 +28,8 @@ import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.testforge.TestContainerMenu;
 import icyllis.modernui.testforge.TestPauseFragment;
+import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.view.View;
 import net.minecraft.client.*;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.client.resources.model.BakedModel;
@@ -111,6 +113,8 @@ final class Registration {
                 // Call in lambda, not in creating the lambda
                 handler.post(() -> UIManager.getInstance().updateLayoutDir());
             }
+            TooltipRenderer.sLayoutRTL = Config.CLIENT.forceRtl.get() ||
+                    TextUtils.getLayoutDirectionFromLocale(ModernUI.getSelectedLocale()) == View.LAYOUT_DIRECTION_RTL;
         });
 
         LOGGER.debug(MARKER, "Registered resource reload listener");

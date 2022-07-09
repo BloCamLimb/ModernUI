@@ -38,6 +38,8 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.textmc.CharSequenceBuilder;
 import icyllis.modernui.view.Gravity;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
@@ -103,6 +105,16 @@ public class TestMain {
     public static Track sTrack;
 
     static {
+        GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
+        ALL_FONTS = List.of(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
+        IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
+        GRAPHICS = IMAGE.createGraphics();
+        GRAPHICS.setColor(Color.BLACK);
+        GRAPHICS.fillRect(0, 0, 1024, 1024);
+        GRAPHICS.setColor(Color.WHITE);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         if (CREATE_WINDOW) {
             AudioManager.getInstance().initialize();
             try {
@@ -145,6 +157,9 @@ public class TestMain {
         });
         LOGGER.info(MARKER, "ZWSP Combining:{}", Emoji.isEmoji(0x1F918));
         LOGGER.info(MARKER, "HashCodeEquals{}", bufferBuilder.hashCode() == text.hashCode());
+
+        breakGraphemes(text);
+
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())
                     .log(System.Logger.Level.INFO, "AABBCC");
@@ -660,9 +675,44 @@ public class TestMain {
             GlyphVector vector = font.layoutGlyphVector(GRAPHICS.getFontRenderContext(),
                     s.toCharArray(), prevOffset, offset, Font.LAYOUT_RIGHT_TO_LEFT);
             for (int i = 0; i < vector.getNumGlyphs(); i++) {
-                LOGGER.info(MARKER, "GlyphCode: {}", vector.getGlyphCode(i));
+                LOGGER.info(MARKER, "GlyphCode: {}, GlyphIndex: {}, CharIndex: {}",
+                        vector.getGlyphCode(i), i, vector.getGlyphCharIndex(i));
             }
             prevOffset = offset;
+        }
+    }
+
+    public static void breakSegments(IntList styles, int start, int limit, boolean isRtl) {
+        if (isRtl) {
+            int lastOffset = limit;
+            int currOffset = limit - 1;
+            int lastStyle = styles.getInt(currOffset);
+            int currStyle;
+            while (currOffset > start) {
+                if ((currStyle = styles.getInt(currOffset - 1)) != lastStyle) {
+                    LOGGER.info("Segment: {} - {}, {}", currOffset, lastOffset, lastStyle);
+                    lastOffset = currOffset;
+                    lastStyle = currStyle;
+                }
+                currOffset--;
+            }
+            assert currOffset == start;
+            LOGGER.info("Segment: {} - {}, {}", currOffset, lastOffset, styles.getInt(currOffset));
+        } else {
+            int lastOffset = start;
+            int currOffset = start;
+            int lastStyle = styles.getInt(currOffset);
+            int currStyle;
+            while (currOffset < limit - 1) {
+                currOffset++;
+                if ((currStyle = styles.getInt(currOffset)) != lastStyle) {
+                    LOGGER.info("Segment: {} - {}, {}", lastOffset, currOffset, lastStyle);
+                    lastOffset = currOffset;
+                    lastStyle = currStyle;
+                }
+            }
+            assert currOffset == limit - 1;
+            LOGGER.info("Segment: {} - {}, {}", lastOffset, currOffset + 1, styles.getInt(currOffset));
         }
     }
 

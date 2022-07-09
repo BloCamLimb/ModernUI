@@ -68,6 +68,8 @@ public final class TooltipRenderer {
     private static final int[] sUseStrokeColor = new int[4];
     static volatile float sAnimationDuration; // milliseconds
 
+    static volatile boolean sLayoutRTL;
+
     private static boolean sDraw;
     public static float sAlpha;
 
@@ -294,11 +296,8 @@ public final class TooltipRenderer {
                             double cursorX, double cursorY, @Nonnull ItemRenderer itemRenderer) {
         sDraw = true;
 
-        final float partialX = (float) (cursorX - (int) cursorX);
-        final float partialY = (float) (cursorY - (int) cursorY);
-
-        float tooltipX = mouseX + TOOLTIP_SPACE + partialX;
-        float tooltipY = mouseY - TOOLTIP_SPACE + partialY;
+        float partialX = (float) (cursorX - (int) cursorX);
+        float partialY = (float) (cursorY - (int) cursorY);
 
         int tooltipWidth;
         int tooltipHeight;
@@ -315,13 +314,25 @@ public final class TooltipRenderer {
             }
         }
 
-        if (tooltipX + tooltipWidth > screenWidth) {
-            tooltipX -= 28 + tooltipWidth;
+        float tooltipX;
+        if (sLayoutRTL) {
+            tooltipX = mouseX + TOOLTIP_SPACE + partialX - 28 - tooltipWidth;
+            if (tooltipX - partialX < 4) {
+                tooltipX += 28 + tooltipWidth;
+            }
+        } else {
+            tooltipX = mouseX + TOOLTIP_SPACE + partialX;
+            if (tooltipX - partialX + tooltipWidth + 4 > screenWidth) {
+                tooltipX -= 28 + tooltipWidth;
+            }
         }
+        partialX = (tooltipX - (int) tooltipX);
 
+        float tooltipY = mouseY - TOOLTIP_SPACE + partialY;
         if (tooltipY + tooltipHeight + 6 > screenHeight) {
             tooltipY = screenHeight - tooltipHeight - 6;
         }
+        partialY = (tooltipY - (int) tooltipY);
 
         RenderSystem.disableDepthTest();
         RenderSystem.enableBlend();
@@ -401,7 +412,11 @@ public final class TooltipRenderer {
         poseStack.translate(partialX, partialY, 0);
         for (int i = 0; i < list.size(); i++) {
             ClientTooltipComponent component = list.get(i);
-            component.renderText(font, drawX, drawY, mat, source);
+            if (sLayoutRTL) {
+                component.renderText(font, drawX + tooltipWidth - component.getWidth(font), drawY, mat, source);
+            } else {
+                component.renderText(font, drawX, drawY, mat, source);
+            }
             if (i == 0) {
                 drawY += TITLE_GAP;
             }
@@ -416,7 +431,12 @@ public final class TooltipRenderer {
 
         for (int i = 0; i < list.size(); i++) {
             ClientTooltipComponent component = list.get(i);
-            component.renderImage(font, drawX, drawY, poseStack, itemRenderer, 400);
+            if (sLayoutRTL) {
+                component.renderImage(font, drawX + tooltipWidth - component.getWidth(font), drawY,
+                        poseStack, itemRenderer, 400);
+            } else {
+                component.renderImage(font, drawX, drawY, poseStack, itemRenderer, 400);
+            }
             if (i == 0) {
                 drawY += TITLE_GAP;
             }

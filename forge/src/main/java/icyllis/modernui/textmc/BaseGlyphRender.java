@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 /**
  * A rendering glyph. There is no better way to optimize, an instance takes up 40 bytes.
  */
+@Deprecated
 abstract class BaseGlyphRender {
 
     /**

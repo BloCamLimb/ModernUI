@@ -118,6 +118,7 @@ public final class UIManager implements LifecycleOwner {
     static final Field MAIN_IMAGE = ObfuscationReflectionHelper.findField(TextureAtlasSprite.class, "f_118342_");
     static final Field IMAGE_PIXELS =
             ObfuscationReflectionHelper.findField(com.mojang.blaze3d.platform.NativeImage.class, "f_84964_");
+    static final Field TEXTURE_ID = ObfuscationReflectionHelper.findField(AbstractTexture.class, "f_117950_");
 
     // minecraft
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -203,7 +204,7 @@ public final class UIManager implements LifecycleOwner {
     static void initializeRenderer() {
         Core.checkRenderThread();
         assert sInstance != null;
-        sInstance.mCanvas = !ModernUIForge.hasGLCapsError() ? GLSurfaceCanvas.initialize() : null;
+        sInstance.mCanvas = ModernUIForge.hasGLCapsError() ? null : GLSurfaceCanvas.initialize();
         glEnable(GL_MULTISAMPLE);
         sInstance.mFramebuffer = new GLFramebuffer(4);
         if (sInstance.mCanvas != null) {
@@ -214,9 +215,8 @@ public final class UIManager implements LifecycleOwner {
             // no depth buffer
             sInstance.mFramebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
             sInstance.mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
-            LOGGER.info(MARKER, "UI renderer enabled");
         } else {
-            LOGGER.info(MARKER, "UI renderer disabled");
+            LOGGER.info(MARKER, "Disabled UI renderer");
         }
     }
 
@@ -745,23 +745,26 @@ public final class UIManager implements LifecycleOwner {
             int textureAtlases = 0;
             int atlasSprites = 0;
             for (var texture : textureMap.values()) {
-                int tex = texture.getId();
-                if (tex != 0) {
-                    int internalFormat = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_INTERNAL_FORMAT);
-                    long width = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_WIDTH);
-                    long height = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_HEIGHT);
-                    int maxLevel = glGetTextureParameteri(tex, GL_TEXTURE_MAX_LEVEL);
-                    int bpp = switch (internalFormat) {
-                        case GL_R8, GL_RED -> 1;
-                        case GL_RG8, GL_RG -> 2;
-                        case GL_RGB8, GL_RGBA8, GL_RGB, GL_RGBA -> 4;
-                        default -> 0;
-                    };
-                    long size = width * height * bpp;
-                    if (maxLevel > 0) {
-                        size = ((size - (size >> ((maxLevel + 1) << 1))) << 2) / 3;
+                try {
+                    int tex = TEXTURE_ID.getInt(texture);
+                    if (tex > 0) {
+                        int internalFormat = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_INTERNAL_FORMAT);
+                        long width = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_WIDTH);
+                        long height = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_HEIGHT);
+                        int maxLevel = glGetTextureParameteri(tex, GL_TEXTURE_MAX_LEVEL);
+                        int bpp = switch (internalFormat) {
+                            case GL_R8, GL_RED -> 1;
+                            case GL_RG8, GL_RG -> 2;
+                            case GL_RGB8, GL_RGBA8, GL_RGB, GL_RGBA -> 4;
+                            default -> 0;
+                        };
+                        long size = width * height * bpp;
+                        if (maxLevel > 0) {
+                            size = ((size - (size >> ((maxLevel + 1) << 1))) << 2) / 3;
+                        }
+                        gpuSize += size;
                     }
-                    gpuSize += size;
+                } catch (Exception ignored) {
                 }
 
                 if (texture instanceof DynamicTexture dynamicTexture) {

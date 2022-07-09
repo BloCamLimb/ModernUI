@@ -38,12 +38,18 @@ public class CharSequenceBuilder implements CharSequence {
         mChars.add(c);
     }
 
-    public void addCodePoint(int codePoint) {
+    /**
+     * @param codePoint unicode code point
+     * @return char count
+     */
+    public int addCodePoint(int codePoint) {
         if (Character.isBmpCodePoint(codePoint)) {
             mChars.add((char) codePoint);
+            return 1;
         } else {
             mChars.add(Character.highSurrogate(codePoint));
             mChars.add(Character.lowSurrogate(codePoint));
+            return 2;
         }
     }
 

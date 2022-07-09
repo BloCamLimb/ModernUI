@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
 /**
  * Draw underline or strikethrough.
  */
-class TextRenderEffect {
+public class TextRenderEffect {
 
     /**
      * Offset from the string's baseline as which to draw the underline

@@ -31,7 +31,7 @@ import javax.annotation.Nonnull;
  *
  * @author BloCamLimb
  * @see CharacterStyle
- * @see ComplexTextKey
+ * @see MultilayerTextKey
  * @since 2.0
  */
 public class VanillaTextKey {
