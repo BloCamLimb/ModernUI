@@ -23,7 +23,8 @@ import com.ibm.icu.util.ULocale;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.font.*;
-import icyllis.modernui.text.*;
+import icyllis.modernui.text.TextDirectionHeuristic;
+import icyllis.modernui.text.TextDirectionHeuristics;
 import icyllis.modernui.textmc.mixin.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -486,13 +487,14 @@ public class TextLayoutProcessor {
         if (!mBuilder.isEmpty()) {
             final ULocale locale = ULocale.forLocale(ModernUI.getSelectedLocale());
             mAdvances.size(mBuilder.length());
-            performBidiAnalysis(mBuilder.toCharArray(), raw != null, locale);
+            final char[] textBuf = mBuilder.toCharArray();
+            performBidiAnalysis(textBuf, raw != null, locale);
             if (mAdvance > 0) {
                 if (raw != null) {
                     adjustForFastDigit(raw);
                 }
                 mLineBoundaries.sort(IntComparators.NATURAL_COMPARATOR);
-                return new TextRenderNode(mGlyphs.toArray(new GLBakedGlyph[0]), mCharIndices.toIntArray(),
+                return new TextRenderNode(textBuf, mGlyphs.toArray(new GLBakedGlyph[0]), mCharIndices.toIntArray(),
                         mPositions.toFloatArray(), mAdvances.toFloatArray(), mFlags.toIntArray(),
                         mLineBoundaries.toIntArray(), mAdvance, mHasEffect);
             }

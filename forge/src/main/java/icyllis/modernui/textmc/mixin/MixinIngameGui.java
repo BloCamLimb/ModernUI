@@ -64,7 +64,7 @@ public abstract class MixinIngameGui {
         if (player != null && player.experienceLevel > 0) {
             String s = Integer.toString(player.experienceLevel);
             Font font = getFont();
-            float w = ModernStringSplitter.measure(s);
+            float w = ModernStringSplitter.measureText(s);
             float x = (screenWidth - w) / 2;
             int y = screenHeight - 31 - 4;
             font.draw(matrix, s, x + 0.5f, y, 0);

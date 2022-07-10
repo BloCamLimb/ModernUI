@@ -24,8 +24,8 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.graphics.opengl.GLSurfaceCanvas;
+import icyllis.modernui.math.Matrix4;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -316,9 +316,9 @@ public final class TooltipRenderer {
 
         float tooltipX;
         if (sLayoutRTL) {
-            tooltipX = mouseX + TOOLTIP_SPACE + partialX - 28 - tooltipWidth;
+            tooltipX = mouseX + TOOLTIP_SPACE + partialX - 24 - tooltipWidth;
             if (tooltipX - partialX < 4) {
-                tooltipX += 28 + tooltipWidth;
+                tooltipX += 24 + tooltipWidth;
             }
         } else {
             tooltipX = mouseX + TOOLTIP_SPACE + partialX;

@@ -69,14 +69,11 @@ public abstract class MixinFontRenderer {
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight) {
         if (text instanceof FormattedTextWrapper)
-            if (((FormattedTextWrapper) text).mText.visit((s, t) -> s.getFont().equals(Minecraft.ALT_FONT) ?
+            // Handle Enchantment Table
+            if (((FormattedTextWrapper) text).mText.visit((style, string) -> style.getFont().equals(Minecraft.ALT_FONT) ?
                     FormattedText.STOP_ITERATION : Optional.empty(), Style.EMPTY).isPresent())
                 return callDrawInternal(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground,
                         packedLight);
-        /* else if (!text.accept((i, s, ch) -> !s.getFont().equals(Minecraft.ALT_FONT))) {
-            return callDrawInternal(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground,
-                    packedLight);
-        }*/
         return ModernFontRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
                 colorBackground, packedLight);
     }
