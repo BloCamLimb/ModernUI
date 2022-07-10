@@ -35,7 +35,6 @@ import javax.annotation.Nonnull;
  *
  * @author BloCamLimb
  */
-//TODO
 @OnlyIn(Dist.CLIENT)
 public final class ModernFontRenderer {
 
@@ -77,7 +76,7 @@ public final class ModernFontRenderer {
     public static int drawText(@Nonnull String text, float x, float y, int color, boolean dropShadow,
                                @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                                int colorBackground, int packedLight) {
-        if (text.length() == 0) {
+        if (text.isEmpty()) {
             return (int) x + (dropShadow ? 1 : 0);
         }
 
@@ -95,20 +94,22 @@ public final class ModernFontRenderer {
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupVanillaNode(text);
-        float res = layoutEngine.getResolutionLevel();
+        float scale = layoutEngine.getCoordinateScale();
+        float level = layoutEngine.getResolutionLevel();
         // performance impact
         if (source instanceof MultiBufferSource.BufferSource) {
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
-            node.drawText(matrix, source, text, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
-                    seeThrough, colorBackground, packedLight, res);
+            float offset = TextLayoutProcessor.sAlignPixels ? 1.0f : 0.8f;
+            node.drawText(matrix, source, text, x + offset, y + offset, r >> 2, g >> 2, b >> 2, a, true,
+                    seeThrough, colorBackground, packedLight, scale, level);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(SHADOW_OFFSET);
         }
 
         x += node.drawText(matrix, source, text, x, y, r, g, b, a, false,
-                seeThrough, colorBackground, packedLight, res);
+                seeThrough, colorBackground, packedLight, scale, level);
         return (int) x + (dropShadow ? 1 : 0);
     }
 
@@ -133,20 +134,22 @@ public final class ModernFontRenderer {
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupComplexNode(text);
+        float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
         // performance impact
         if (source instanceof MultiBufferSource.BufferSource) {
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
-            node.drawText(matrix, source, null, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
-                    seeThrough, colorBackground, packedLight, level);
+            float offset = TextLayoutProcessor.sAlignPixels ? 1.0f : 0.8f;
+            node.drawText(matrix, source, null, x + offset, y + offset, r >> 2, g >> 2, b >> 2, a, true,
+                    seeThrough, colorBackground, packedLight, scale, level);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(SHADOW_OFFSET);
         }
 
         x += node.drawText(matrix, source, null, x, y, r, g, b, a, false,
-                seeThrough, colorBackground, packedLight, level);
+                seeThrough, colorBackground, packedLight, scale, level);
         return (int) x + (dropShadow ? 1 : 0);
     }
 
@@ -171,20 +174,22 @@ public final class ModernFontRenderer {
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupSequenceNode(text);
+        float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
         // performance impact
         if (source instanceof MultiBufferSource.BufferSource) {
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
-            node.drawText(matrix, source, null, x + 0.8f, y + 0.8f, r >> 2, g >> 2, b >> 2, a, true,
-                    seeThrough, colorBackground, packedLight, level);
+            float offset = TextLayoutProcessor.sAlignPixels ? 1.0f : 0.8f;
+            node.drawText(matrix, source, null, x + offset, y + offset, r >> 2, g >> 2, b >> 2, a, true,
+                    seeThrough, colorBackground, packedLight, scale, level);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(SHADOW_OFFSET);
         }
 
         x += node.drawText(matrix, source, null, x, y, r, g, b, a, false,
-                seeThrough, colorBackground, packedLight, level);
+                seeThrough, colorBackground, packedLight, scale, level);
         return (int) x + (dropShadow ? 1 : 0);
     }
 

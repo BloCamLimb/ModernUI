@@ -31,12 +31,12 @@ public class TextRenderEffect {
     /**
      * Offset from the string's baseline as which to draw the underline
      */
-    private static final float UNDERLINE_OFFSET = 1.5f;
+    private static final float UNDERLINE_OFFSET = 0.5f;
 
     /**
      * Offset from the string's baseline as which to draw the strikethrough line
      */
-    private static final float STRIKETHROUGH_OFFSET = -3.0f;
+    private static final float STRIKETHROUGH_OFFSET = -3.5f;
 
     /**
      * Thickness of the underline
