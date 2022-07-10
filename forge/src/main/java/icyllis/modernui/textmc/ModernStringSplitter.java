@@ -18,12 +18,13 @@
 
 package icyllis.modernui.textmc;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.ComponentCollector;
 import net.minecraft.client.StringSplitter;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
-import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.FormattedCharSink;
+import net.minecraft.network.chat.*;
+import net.minecraft.util.*;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.apache.commons.lang3.mutable.MutableObject;
@@ -31,11 +32,11 @@ import org.apache.commons.lang3.mutable.MutableObject;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Optional;
+import java.util.function.BiConsumer;
 
 /**
- * Handle line breaks, get text width, etc. For Vanilla Only.
+ * Provides text measurement, Unicode grapheme cluster breaking, Unicode line breaking and so on.
  */
-//TODO unicode
 @OnlyIn(Dist.CLIENT)
 public final class ModernStringSplitter {
 
@@ -53,59 +54,118 @@ public final class ModernStringSplitter {
     }*/
 
     /**
-     * Get text width
+     * Measure the text and get the text advance.
+     * The text can contain formatting codes.
      *
-     * @param text text
-     * @return text width
+     * @param text the text to measure
+     * @return text advance in GUI scaled pixels
      */
-    public static float measure(@Nullable String text) {
-        if (text == null || text.isEmpty()) {
+    public static float measureText(@Nullable String text) {
+        if (text == null) {
             return 0;
         }
-        return TextLayoutEngine.getInstance().lookupVanillaNode(text).mAdvance;
+        return TextLayoutEngine.getInstance().lookupVanillaNode(text).getAdvance();
     }
 
     /**
-     * Get text width
+     * Measure the text and get the text advance.
+     * The text can contain formatting codes.
      *
-     * @param text text
-     * @return total width
+     * @param text the text to measure
+     * @return text advance in GUI scaled pixels
      */
-    public static float measure(@Nonnull FormattedText text) {
-        /*v.setValue(0);
-        // iterate all siblings
-        text.visit((s, t) -> {
-            if (!t.isEmpty()) {
-                if (s.getFont() != Minecraft.ALT_FONT)
-                    v.add(mFontEngine.lookupVanillaNode(t, s).mAdvance);
-                else {
-                    v.setValue(-1);
-                    return FormattedText.STOP_ITERATION;
-                }
-            }
-            // continue
-            return Optional.empty();
-        }, Style.EMPTY);
-        return v.floatValue() >= 0 ? v.floatValue() : super.stringWidth(text);*/
-        return TextLayoutEngine.getInstance().lookupComplexNode(text).mAdvance;
+    public static float measureText(@Nonnull FormattedText text) {
+        return TextLayoutEngine.getInstance().lookupComplexNode(text).getAdvance();
     }
 
     /**
-     * Get text width
+     * Measure the text and get the text advance.
      *
-     * @param text text
-     * @return total width
+     * @param text the text to measure
+     * @return text advance in GUI scaled pixels
      */
-    public static float measure(@Nonnull FormattedCharSequence text) {
-        /*v.setValue(0);
-        mFontEngine.handleSequence(text, (t, s) -> {
-            if (t.length() != 0) {
-                v.add(mFontEngine.lookupVanillaNode(t, s).mAdvance);
+    public static float measureText(@Nonnull FormattedCharSequence text) {
+        return TextLayoutEngine.getInstance().lookupSequenceNode(text).getAdvance();
+    }
+
+    /**
+     * Measure the text and perform Unicode GCB (grapheme cluster break).
+     * Returns the maximum index that the accumulated width not exceeds the width.
+     * <p>
+     * If forwards=false, returns the minimum index from the end instead (but still
+     * indexing from the start).
+     *
+     * @param node     the measured text to break
+     * @param forwards the leading position
+     * @param width    the max width in GUI scaled pixels
+     * @return break index (without formatting codes)
+     */
+    public static int breakText(@Nonnull TextRenderNode node, boolean forwards, float width) {
+        final int limit = node.getLength();
+        if (forwards) {
+            // TruncateAt.END
+            int i = 0;
+            while (i < limit) {
+                width -= node.getAdvances()[i];
+                if (width < 0.0f) break;
+                i++;
             }
-            return false;
-        });
-        return v.floatValue();*/
-        return TextLayoutEngine.getInstance().lookupSequenceNode(text).mAdvance;
+            while (i > 0 && node.getTextBuf()[i - 1] == ' ') i--;
+            return i;
+        } else {
+            // TruncateAt.START
+            int i = limit - 1;
+            while (i >= 0) {
+                width -= node.getAdvances()[i];
+                if (width < 0.0f) break;
+                i--;
+            }
+            while (i < limit - 1 && (node.getTextBuf()[i + 1] == ' ' || node.getAdvances()[i + 1] == 0.0f)) {
+                i++;
+            }
+            return i + 1;
+        }
+    }
+
+    /**
+     * Measure the text and perform Unicode GCB (grapheme cluster break).
+     * Returns the maximum index that the accumulated width not exceeds the width.
+     * <p>
+     * If forwards=false, returns the minimum index from the end instead (but still
+     * indexing from the start).
+     * <p>
+     * The text can contain formatting codes.
+     *
+     * @param text     the text to break
+     * @param width    the max width in GUI scaled pixels
+     * @param style    the base style for the text
+     * @param forwards the leading position
+     * @return break index
+     */
+    public static int breakText(@Nonnull String text, float width, @Nonnull Style style, boolean forwards) {
+        if (text.isEmpty() || width < 0) {
+            return 0;
+        }
+
+        final TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
+        if (width >= node.getAdvance()) {
+            return text.length();
+        }
+
+        int breakIndex = breakText(node, forwards, width);
+
+        // We assume that formatting codes belong to the next grapheme cluster in logical order
+        final int length = text.length();
+        for (int j = 0; j < length; j++) {
+            if (j == breakIndex) {
+                break;
+            }
+            if (text.charAt(j) == ChatFormatting.PREFIX_CODE) {
+                j++;
+                breakIndex += 2;
+            }
+        }
+        return breakIndex;
     }
 
     /**
@@ -114,264 +174,184 @@ public final class ModernStringSplitter {
      * Return the number of characters in a text that will completely fit inside
      * the specified width when rendered.
      *
-     * @param text  the text to trim
-     * @param width the max width
-     * @param style the style of the text
+     * @param text  the text to break
+     * @param width the max width in GUI scaled pixels
+     * @param style the base style for the text
      * @return the length of the text when it is trimmed to be at most /
      * the number of characters from text that will fit inside width
      */
-    public static int getTrimSize(@Nonnull String text, int width, @Nonnull Style style) {
-        if (text.isEmpty()) {
-            return 0;
-        }
-
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
-        if (width >= node.mAdvance) {
-            return text.length();
-        }
-        // the glyph array for a string is sorted by the visual order
-        /*int r = getTrimSize(node.mDGlyphs, width);
-        return r == -1 ? text.length() : r;*/
-        return text.length();
-    }
-
-    private static int getTrimSize(@Nonnull BaseGlyphRender[] glyphs, int width) {
-        // Add up the individual advance of each glyph until it exceeds the specified width
-        float advance = 0;
-        int glyphIndex = 0;
-        while (glyphIndex < glyphs.length) {
-            // always incr, see below
-            advance += glyphs[glyphIndex++].getAdvance();
-            if (advance > width) {
-                break;
-            }
-        }
-
-        // The string index of the last glyph that wouldn't fit gives the total desired length of the string in
-        // characters
-        // Note we should return the length of chars, so it's (index + 1)
-        // But we shouldn't break a glyph, so while loop find the next glyph
-        // So the index is the size to next glyph - 1
-        return glyphIndex < glyphs.length ? glyphs[glyphIndex].mStringIndex : -1;
+    public static int indexByWidth(@Nonnull String text, float width, @Nonnull Style style) {
+        return breakText(text, width, style, true);
     }
 
     /**
-     * Trim a text so that it fits in the specified width when rendered.
+     * Break a text forwards so that it fits in the specified width when rendered.
+     * The text can contain formatting codes.
      *
-     * @param text  the text to trim
-     * @param width the max width
-     * @param style the style of the text
+     * @param text  the text to break
+     * @param width the max width in GUI scaled pixels
+     * @param style the base style for the text
      * @return the trimmed text
      */
     @Nonnull
-    public static String trimText(@Nonnull String text, int width, @Nonnull Style style) {
-        if (text.isEmpty()) {
-            return text;
-        }
-        return text.substring(0, getTrimSize(text, width, style));
+    public static String headByWidth(@Nonnull String text, float width, @Nonnull Style style) {
+        return text.substring(0, indexByWidth(text, width, style));
     }
 
     /**
-     * Trim a text backwards so that it fits in the specified width when rendered.
+     * Break a text backwards so that it fits in the specified width when rendered.
+     * The text can contain formatting codes.
      *
-     * @param text  the text to trim
-     * @param width the max width
-     * @param style the style of the text
+     * @param text  the text to break
+     * @param width the max width in GUI scaled pixels
+     * @param style the base style for the text
      * @return the trimmed text
      */
     @Nonnull
-    public static String trimReverse(@Nonnull String text, int width, @Nonnull Style style) {
-        if (text.isEmpty()) {
-            return text;
-        }
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
-        if (width >= node.mAdvance) {
-            return text;
-        }
-        // The glyph array for a string is sorted by the string's logical character position
-        BaseGlyphRender[] glyphs = new BaseGlyphRender[0];
-
-        // Add up the individual advance of each glyph until it exceeds the specified width
-        float advance = 0;
-        int glyphIndex = glyphs.length - 1;
-        while (glyphIndex >= 0) {
-            advance += glyphs[glyphIndex].getAdvance();
-            if (advance <= width) {
-                glyphIndex--;
-            } else {
-                break;
-            }
-        }
-
-        // The string index of the last glyph that wouldn't fit gives the total desired length of the string in
-        // characters
-        int l = glyphIndex >= 0 ? glyphs[glyphIndex].mStringIndex : 0;
-        return text.substring(l);
+    public static String tailByWidth(@Nonnull String text, float width, @Nonnull Style style) {
+        return text.substring(breakText(text, width, style, false));
     }
 
     /**
-     * Trim a text to find the last sibling text style to handle its click or hover event
+     * Break a text forwards to find the text style at the given width to handle
+     * its click event or hover event.
      *
-     * @param text  the text to trim
-     * @param width the max width
-     * @return the last sibling text style
+     * @param text  the text to break
+     * @param width the max width in GUI scaled pixels
+     * @return the text style or null
      */
     @Nullable
-    public static Style styleAtWidth(@Nonnull FormattedText text, int width) {
-        /*v.setValue(width);
-        // iterate all siblings
-        return text.visit((s, t) -> {
-            if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
-                return Optional.of(s);
-            }
-            v.subtract(mFontEngine.lookupVanillaNode(t, s).mAdvance);
-            // continue
-            return Optional.empty();
-        }, Style.EMPTY).orElse(null);*/
-        if (width < 0) {
+    public static Style styleAtWidth(@Nonnull FormattedText text, float width) {
+        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY || width < 0) {
             return null;
         }
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text);
-        if (width >= node.mAdvance) {
+
+        final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text);
+        if (width >= node.getAdvance()) {
             return null;
         }
-        final int r = -1;//getTrimSize(node.mDGlyphs, width);
-        if (r == -1) {
-            return null;
-        }
+
+        final int breakIndex = breakText(node, true, width);
+
         return text.visit(new FormattedText.StyledContentConsumer<Style>() {
-            // continuous index
-            private int mNext;
+            private int mStripIndex;
 
             @Nonnull
             @Override
-            public Optional<Style> accept(@Nonnull Style s, @Nonnull String t) {
-                // Accept a layer, a layer may contain control codes,
-                // but there is no control codes between different layers
-                if (r >= mNext && r < mNext + t.length()) {
-                    return Optional.of(s);
-                } else {
-                    mNext += t.length();
-                    return Optional.empty();
+            public Optional<Style> accept(@Nonnull Style style, @Nonnull String string) {
+                final int length = string.length();
+                for (int i = 0; i < length; i++) {
+                    if (string.charAt(i) == ChatFormatting.PREFIX_CODE) {
+                        i++;
+                        continue;
+                    }
+                    // End index is exclusive, so ++index not index++
+                    if (++mStripIndex >= breakIndex) {
+                        return Optional.of(style); // stop iteration
+                    }
                 }
+                return Optional.empty(); // continue
             }
-        }, Style.EMPTY).orElse(null);
+        }, Style.EMPTY).orElse(null); // null should not happen
     }
 
     /**
-     * Trim a text to find the last sibling text style to handle its click or hover event
+     * Break a text forwards to find the text style at the given width to handle
+     * its click event or hover event.
      *
-     * @param text  the text to trim
-     * @param width the max width
-     * @return the last sibling text style
+     * @param text  the text to break
+     * @param width the max width in GUI scaled pixels
+     * @return the text style or null
      */
     @Nullable
-    public static Style styleAtWidth(@Nonnull FormattedCharSequence text, int width) {
-        /*v.setValue(width);
-        MutableObject<Style> sr = new MutableObject<>();
-        // iterate all siblings
-        if (!mFontEngine.handleSequence(text, (t, s) -> {
-            if (sizeToWidth0(t, v.floatValue(), s) < t.length()) {
-                sr.setValue(s);
-                // break with result
-                return true;
-            }
-            v.subtract(mFontEngine.lookupVanillaNode(t, s).mAdvance);
-            // continue
-            return false;
-        })) {
-            return sr.getValue();
-        }
-        return null;*/
-        if (width < 0) {
+    public static Style styleAtWidth(@Nonnull FormattedCharSequence text, float width) {
+        if (text == FormattedCharSequence.EMPTY || width < 0) {
             return null;
         }
-        // Hooks from Modern UI
+
         if (text instanceof FormattedTextWrapper) {
             // This is more accurate that do not shift control codes
             return styleAtWidth(((FormattedTextWrapper) text).mText, width);
         }
-        // Failed if someone uses lambdas
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupSequenceNode(text);
-        if (width >= node.mAdvance) {
+
+        final TextRenderNode node = TextLayoutEngine.getInstance().lookupSequenceNode(text);
+        if (width >= node.getAdvance()) {
             return null;
         }
-        // this is stringIndex WITH control codes, but deep processor contain NO control codes
-        final int r = -1;//getTrimSize(node.mDGlyphs, width);
-        if (r == -1) {
-            return null;
-        }
-        final MutableObject<Style> value = new MutableObject<>();
+
+        final int breakIndex = breakText(node, true, width);
+
+        final MutableObject<Style> result = new MutableObject<>();
         text.accept(new FormattedCharSink() {
-            // Note that index will be reset to 0 for composited char sequence
-            // we should get the continuous string index
-            private int mNext;
-            private int mLastLayerIndex;
+            private int mStripIndex;
 
             @Override
-            public boolean accept(int index, @Nonnull Style s, int ch) {
-                if (index < mLastLayerIndex) {
-                    mNext += mLastLayerIndex;
-                    mLastLayerIndex = index;
+            public boolean accept(int index, @Nonnull Style style, int codePoint) {
+                if ((mStripIndex += Character.charCount(codePoint)) >= breakIndex) {
+                    result.setValue(style);
+                    return false; // stop iteration
                 }
-                if ((mNext + index) >= r) {
-                    value.setValue(s);
-                    return false;
-                } else {
-                    return true;
-                }
+                return true; // continue
             }
         });
-        return value.getValue();
+        return result.getValue();
     }
 
     /**
-     * Trim to width.
+     * Break a text backwards so that it fits in the specified width when rendered.
+     * The text can contain formatting codes.
      *
-     * @param text  the text to trim
-     * @param width the max width
-     * @param style the default style of the text
-     * @return the trimmed multi text
+     * @param text  the text to break
+     * @param width the max width in GUI scaled pixels
+     * @param style the base style
+     * @return the trimmed text or the original text
      */
     @Nonnull
-    public static FormattedText trimText(@Nonnull FormattedText text, int width, @Nonnull Style style) {
-        if (width < 0) {
+    public static FormattedText headByWidth(@Nonnull FormattedText text, float width, @Nonnull Style style) {
+        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY || width < 0) {
             return FormattedText.EMPTY;
         }
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, style);
-        if (width >= node.mAdvance) {
+
+        final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, style);
+        if (width >= node.getAdvance()) {
             return text;
         }
-        final int r = -1;//getTrimSize(node.mDGlyphs, width);
-        if (r == -1) {
-            return text;
-        }
+
+        final int breakIndex = breakText(node, true, width);
+
         return text.visit(new FormattedText.StyledContentConsumer<FormattedText>() {
             private final ComponentCollector mCollector = new ComponentCollector();
-            private int mNext;
+            private int mSegmentIndex;
 
             @Nonnull
             @Override
-            public Optional<FormattedText> accept(@Nonnull Style s, @Nonnull String t) {
-                if (mNext + t.length() >= r) {
-                    String sub = t.substring(0, r - mNext);
-                    if (!sub.isEmpty()) {
-                        // add
-                        mCollector.append(FormattedText.of(sub, s));
+            public Optional<FormattedText> accept(@Nonnull Style sty, @Nonnull String string) {
+                final int length = string.length();
+                int stripIndex = 0;
+                for (int i = 0; i < length; i++) {
+                    if (string.charAt(i) == ChatFormatting.PREFIX_CODE) {
+                        i++;
+                        continue;
                     }
-                    // combine and break
-                    return Optional.of(mCollector.getResultOrEmpty());
+                    // End index is exclusive, so ++index not index++
+                    if (mSegmentIndex + ++stripIndex >= breakIndex) {
+                        String substring = string.substring(0, stripIndex);
+                        if (!substring.isEmpty()) {
+                            mCollector.append(FormattedText.of(substring, sty));
+                        }
+                        return Optional.of(mCollector.getResultOrEmpty()); // stop iteration
+                    }
                 }
-                if (!t.isEmpty()) {
-                    // add
-                    mCollector.append(FormattedText.of(t, s));
+                if (length > 0) {
+                    mCollector.append(FormattedText.of(string, sty));
                 }
-                mNext += t.length();
-                // continue
-                return Optional.empty();
+                mSegmentIndex += stripIndex;
+                return Optional.empty(); // continue
             }
-        }, style).orElse(text); // full text
+        }, style).orElse(text); // else the original text
     }
+
+    private static final int NOWHERE = 0xFFFFFFFF;
 
     /**
      * Wrap lines.
@@ -385,7 +365,6 @@ public final class ModernStringSplitter {
      * @param linePosConsumer accept each line result, params{line base style, start index (inclusive), end index
      *                        (exclusive)}
      */
-    //TODO hard to do, may never implement
     public static void wrapLines(@Nonnull String text, int width, @Nonnull Style style, boolean includeEndSpace,
                                  @Nonnull StringSplitter.LinePosConsumer linePosConsumer) {
         if (text.isEmpty()) {
@@ -393,9 +372,228 @@ public final class ModernStringSplitter {
             return;
         }
         TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
-        if (width >= node.mAdvance) {
+        if (width >= node.getAdvance()) {
             linePosConsumer.accept(style, 0, text.length());
             return;
+        }
+    }
+
+    /**
+     * Compute Unicode line breaking boundaries. If none, compute grapheme cluster boundaries.
+     * Returns the maximum index that the accumulated width not exceeds the width.
+     * <p>
+     * The text can contain formatting codes.
+     *
+     * @param text     the text to break line
+     * @param width    the width limit of the line
+     * @param style    the base style
+     * @param consumer the line consumer, second boolean false meaning it's the first line of a paragraph
+     */
+    public static void computeLineBreaks(@Nonnull FormattedText text, float width, @Nonnull Style style,
+                                         @Nonnull BiConsumer<FormattedText, Boolean> consumer) {
+        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY || width < 0) {
+            return;
+        }
+
+        final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, style);
+        if (width >= node.getAdvance()) {
+            consumer.accept(text, Boolean.FALSE);
+            return;
+        }
+
+        final LineBreaker lineBreaker = new LineBreaker(width);
+
+        int nextBoundaryIndex = 0;
+        int paraEnd;
+        for (int paraStart = 0; paraStart < node.getLength(); paraStart = paraEnd) {
+            paraEnd = -1;
+            for (int i = paraStart; i < node.getLength(); i++)
+                if (node.getTextBuf()[i] == '\n') {
+                    paraEnd = i;
+                    break;
+                }
+            if (paraEnd < 0) {
+                // No LINE_FEED(U+000A) character found. Use end of the text as the paragraph
+                // end.
+                paraEnd = node.getLength();
+            } else {
+                paraEnd++;  // Includes LINE_FEED(U+000A) to the prev paragraph.
+            }
+
+            nextBoundaryIndex = lineBreaker.process(node, paraStart, paraEnd, nextBoundaryIndex);
+        }
+
+        text.visit(new FormattedText.StyledContentConsumer<Unit>() {
+            private ComponentCollector mCollector = new ComponentCollector();
+            private int mStripIndex;
+
+            private int mBreakOffsetIndex = 0;
+            private int mBreakPointOffset = lineBreaker.mBreakPoints.getInt(mBreakOffsetIndex++);
+
+            private boolean mNonFirstLine = false;
+
+            @Nonnull
+            @Override
+            public Optional<Unit> accept(@Nonnull Style sty, @Nonnull String string) {
+                final int length = string.length();
+                int lastSubPos = 0;
+                for (int i = 0; i < length; i++) {
+                    if (string.charAt(i) == ChatFormatting.PREFIX_CODE) {
+                        i++;
+                        continue;
+                    }
+                    // End index is exclusive, so ++index not index++
+                    if (++mStripIndex >= mBreakPointOffset) {
+                        mCollector.append(FormattedText.of(string.substring(lastSubPos, i + 1), sty));
+                        lastSubPos = i + 1;
+                        consumer.accept(mCollector.getResultOrEmpty(), mNonFirstLine);
+                        if (mBreakOffsetIndex == lineBreaker.mBreakPoints.size()) {
+                            return FormattedText.STOP_ITERATION;
+                        }
+                        mCollector = new ComponentCollector();
+                        mBreakPointOffset = lineBreaker.mBreakPoints.getInt(mBreakOffsetIndex++);
+                        mNonFirstLine = true;
+                    }
+                }
+                mCollector.append(FormattedText.of(string.substring(lastSubPos), sty));
+                return Optional.empty(); // continue
+            }
+        }, style);
+    }
+
+    public static class LineBreaker {
+
+        private float mLineWidth;
+        private float mCharsAdvance;
+        private final float mLineWidthLimit;
+
+        private int mPrevBoundaryOffset;
+        private float mCharsAdvanceAtPrevBoundary;
+
+        private final IntList mBreakPoints = new IntArrayList();
+
+        public LineBreaker(float lineWidthLimit) {
+            mLineWidthLimit = lineWidthLimit;
+        }
+
+        public int process(@Nonnull TextRenderNode node, int start, int end, int nextBoundaryIndex) {
+            mLineWidth = 0;
+            mCharsAdvance = 0;
+            mPrevBoundaryOffset = NOWHERE;
+            mCharsAdvanceAtPrevBoundary = 0;
+
+            int nextBoundary = node.getLineBoundaries()[nextBoundaryIndex++];
+
+            for (int i = start; i < end; i++) {
+                updateLineWidth(node.getTextBuf()[i], node.getAdvances()[i]);
+
+                if (i + 1 == nextBoundary) {
+                    processLineBreak(node, i + 1);
+
+                    if (nextBoundary < end) {
+                        nextBoundary = node.getLineBoundaries()[nextBoundaryIndex++];
+                    }
+                    if (nextBoundary > end) {
+                        nextBoundary = end;
+                    }
+                }
+            }
+
+            if (getPrevLineBreakOffset() != end && mPrevBoundaryOffset != NOWHERE) {
+                // The remaining words in the last line.
+                breakLineAt(mPrevBoundaryOffset, 0, 0);
+            }
+
+            return nextBoundaryIndex;
+        }
+
+        private void processLineBreak(@Nonnull TextRenderNode node, int offset) {
+            while (mLineWidth > mLineWidthLimit) {
+                int start = getPrevLineBreakOffset();
+                // The word in the new line may still be too long for the line limit.
+                // Try general line break first, otherwise try grapheme boundary or out of the line width
+                if (!tryLineBreak() && doLineBreakWithGraphemeBounds(node, start, offset)) {
+                    return;
+                }
+            }
+
+            mPrevBoundaryOffset = offset;
+            mCharsAdvanceAtPrevBoundary = mCharsAdvance;
+        }
+
+        // general line break, use ICU line break iterator, not word breaker
+        private boolean tryLineBreak() {
+            if (mPrevBoundaryOffset == NOWHERE) {
+                return false;
+            }
+
+            breakLineAt(mPrevBoundaryOffset,
+                    mLineWidth - mCharsAdvanceAtPrevBoundary,
+                    mCharsAdvance - mCharsAdvanceAtPrevBoundary);
+            return true;
+        }
+
+        private boolean doLineBreakWithGraphemeBounds(@Nonnull TextRenderNode node, int start, int end) {
+            float width = node.getAdvances()[start];
+
+            // Starting from + 1 since at least one character needs to be assigned to a line.
+            for (int i = start + 1; i < end; i++) {
+                final float w = node.getAdvances()[i];
+                if (w == 0) {
+                    // w == 0 means here is not a grapheme bounds. Don't break here.
+                    continue;
+                }
+                if (width + w > mLineWidthLimit) {
+                    // Okay, here is the longest position.
+                    breakLineAt(i, mLineWidth - width, mCharsAdvance - width);
+                    // This method only breaks at the first longest offset, since we may want to hyphenate
+                    // the rest of the word.
+                    return false;
+                } else {
+                    width += w;
+                }
+            }
+
+            // Reaching here means even one character (or cluster) doesn't fit the line.
+            // Give up and break at the end of this range.
+            breakLineAt(end, 0, 0);
+            return true;
+        }
+
+        // Add a break point
+        private void breakLineAt(int offset, float remainingNextLineWidth, float remainingNextCharsAdvance) {
+            mBreakPoints.add(offset);
+
+            mLineWidth = remainingNextLineWidth;
+            mCharsAdvance = remainingNextCharsAdvance;
+            mPrevBoundaryOffset = NOWHERE;
+            mCharsAdvanceAtPrevBoundary = 0;
+        }
+
+        private void updateLineWidth(char c, float adv) {
+            mCharsAdvance += adv;
+            if (!icyllis.modernui.graphics.font.LineBreaker.isLineEndSpace(c)) {
+                mLineWidth = mCharsAdvance;
+            }
+        }
+
+        private int getPrevLineBreakOffset() {
+            return mBreakPoints.isEmpty() ? 0 : mBreakPoints.getInt(mBreakPoints.size() - 1);
+        }
+    }
+
+    public record LineComponent(String text, Style style) implements FormattedText {
+
+        @Nonnull
+        @Override
+        public <T> Optional<T> visit(@Nonnull FormattedText.ContentConsumer<T> consumer) {
+            return consumer.accept(text);
+        }
+
+        @Nonnull
+        @Override
+        public <T> Optional<T> visit(@Nonnull FormattedText.StyledContentConsumer<T> consumer, @Nonnull Style base) {
+            return consumer.accept(style.applyTo(base), this.text);
         }
     }
 }

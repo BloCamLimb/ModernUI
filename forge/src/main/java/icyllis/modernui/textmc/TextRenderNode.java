@@ -18,13 +18,14 @@
 
 package icyllis.modernui.textmc;
 
-import com.mojang.blaze3d.vertex.*;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.font.GLBakedGlyph;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Arrays;
 import java.util.Random;
 
 /**
@@ -39,8 +40,8 @@ public class TextRenderNode {
      * <p>
      * This singleton cannot be placed in the cache!
      */
-    public static final TextRenderNode EMPTY = new TextRenderNode(
-            new GLBakedGlyph[0], new int[0], new float[0], new float[0], new int[0], new int[0], 0, false) {
+    public static final TextRenderNode EMPTY = new TextRenderNode(new char[0], new GLBakedGlyph[0],
+            new int[0], new float[0], new float[0], new int[0], new int[0], 0, false) {
         @Nonnull
         @Override
         public TextRenderNode get() {
@@ -69,6 +70,11 @@ public class TextRenderNode {
      * Vertical adjustment to string position.
      */
     public static volatile float sBaselineOffset = BASELINE_OFFSET;
+
+    /**
+     * The copied text buffer without formatting codes in logical order.
+     */
+    private final char[] mTextBuf;
 
     /**
      * All baked glyphs for rendering, empty glyphs have been removed from this array.
@@ -134,7 +140,7 @@ public class TextRenderNode {
      * <p>
      * Note the values are scaled to Minecraft GUI coordinates.
      */
-    public final float mAdvance;
+    private final float mAdvance;
 
     /**
      * Precomputed value that indicates whether flags array contains any text effect flag.
@@ -147,6 +153,7 @@ public class TextRenderNode {
     private transient int mTimer = 0;
 
     private TextRenderNode(@Nonnull TextRenderNode node) {
+        mTextBuf = node.mTextBuf;
         mGlyphs = node.mGlyphs;
         mCharIndices = node.mCharIndices;
         mPositions = node.mPositions;
@@ -157,9 +164,11 @@ public class TextRenderNode {
         mHasEffect = node.mHasEffect;
     }
 
-    public TextRenderNode(@Nonnull GLBakedGlyph[] glyphs, @Nonnull int[] charIndices, @Nonnull float[] positions,
+    public TextRenderNode(char[] textBuf, @Nonnull GLBakedGlyph[] glyphs, @Nonnull int[] charIndices,
+                          @Nonnull float[] positions,
                           @Nonnull float[] advances, @Nonnull int[] flags, @Nonnull int[] lineBoundaries,
                           float advance, boolean hasEffect) {
+        mTextBuf = textBuf;
         mGlyphs = glyphs;
         mCharIndices = charIndices;
         mPositions = positions;
@@ -168,9 +177,10 @@ public class TextRenderNode {
         mLineBoundaries = lineBoundaries;
         mAdvance = advance;
         mHasEffect = hasEffect;
-        assert mGlyphs.length != mCharIndices.length;
-        assert mGlyphs.length * 2 != mPositions.length;
-        assert mGlyphs.length != mFlags.length;
+        assert mTextBuf.length == mAdvances.length;
+        assert mGlyphs.length == mCharIndices.length;
+        assert mGlyphs.length * 2 == mPositions.length;
+        assert mGlyphs.length == mFlags.length;
     }
 
     /**
@@ -379,6 +389,14 @@ public class TextRenderNode {
     }
 
     /**
+     * The copied text buffer without formatting codes in logical order.
+     */
+    @Nonnull
+    public char[] getTextBuf() {
+        return mTextBuf;
+    }
+
+    /**
      * All baked glyphs for rendering, empty glyphs have been removed from this array.
      * The order is visually left-to-right (i.e. in visual order). Fast digit chars and
      * obfuscated chars are {@link icyllis.modernui.textmc.TextLayoutEngine.FastCharSet}.
@@ -431,7 +449,7 @@ public class TextRenderNode {
      * @return length of the text
      */
     public int getLength() {
-        return mAdvances.length;
+        return mTextBuf.length;
     }
 
     /*
@@ -487,10 +505,11 @@ public class TextRenderNode {
      */
     public int getMemorySize() {
         int size = 0;
-        int n = mGlyphs.length;
-        size += 32 + (((n + 1) >> 1) << 4); // glyphs + charIndices
-        size += 16 + (((n + 1) >> 1) << 3); // flags
-        size += 16 + (n << 3); // positions
+        int glyphs = mGlyphs.length;
+        size += 32 + (((glyphs + 1) >> 1) << 4); // glyphs + charIndices
+        size += 16 + (((glyphs + 1) >> 1) << 3); // flags
+        size += 16 + (glyphs << 3); // positions
+        size += 16 + (((mTextBuf.length + 1) >> 1) << 2);
         size += 16 + (((mAdvances.length + 1) >> 1) << 3);
         size += 16 + (((mLineBoundaries.length + 1) >> 1) << 3);
         return size + 24;
@@ -499,45 +518,32 @@ public class TextRenderNode {
     @Override
     public String toString() {
         return "TextRenderNode{" +
-                "glyphs=" + mGlyphs.length +
-                ",length=" + mAdvances.length +
-                ",charIndices=" + toIntString(mCharIndices) +
+                "text=" + toEscapeChars(mTextBuf) +
+                ",glyphs=" + mGlyphs.length +
+                ",length=" + mTextBuf.length +
+                ",charIndices=" + Arrays.toString(mCharIndices) +
                 ",positions=" + toPosString(mPositions) +
-                ",advances=" + toFloatString(mAdvances) +
+                ",advances=" + Arrays.toString(mAdvances) +
                 ",flags=" + toFlagString(mFlags) +
-                ",lineBoundaries" + toIntString(mLineBoundaries) +
+                ",lineBoundaries" + Arrays.toString(mLineBoundaries) +
                 ",advance=" + mAdvance +
                 ",hasEffect=" + mHasEffect +
                 '}';
     }
 
     @Nonnull
-    private static String toIntString(@Nonnull int[] a) {
+    private static String toEscapeChars(@Nonnull char[] a) {
         int iMax = a.length - 1;
         if (iMax == -1)
-            return "[]";
+            return "";
         StringBuilder b = new StringBuilder();
-        b.append('[');
         for (int i = 0; ; i++) {
-            b.append(a[i]);
+            b.append("\\u");
+            String s = Integer.toHexString(a[i]);
+            b.append("0".repeat(4 - s.length()));
+            b.append(s);
             if (i == iMax)
-                return b.append(']').toString();
-            b.append(',');
-        }
-    }
-
-    @Nonnull
-    private static String toFloatString(@Nonnull float[] a) {
-        int iMax = a.length - 1;
-        if (iMax == -1)
-            return "[]";
-        StringBuilder b = new StringBuilder();
-        b.append('[');
-        for (int i = 0; ; i++) {
-            b.append(a[i]);
-            if (i == iMax)
-                return b.append(']').toString();
-            b.append(',');
+                return b.toString();
         }
     }
 
@@ -549,13 +555,12 @@ public class TextRenderNode {
         StringBuilder b = new StringBuilder();
         b.append('[');
         for (int i = 0; ; i++) {
-            b.append("x=");
             b.append(a[i++]);
-            b.append(",y=");
+            b.append('-');
             b.append(a[i]);
             if (i == iMax)
                 return b.append(']').toString();
-            b.append(',');
+            b.append(", ");
         }
     }
 
@@ -571,7 +576,7 @@ public class TextRenderNode {
             b.append(Integer.toHexString(a[i]));
             if (i == iMax)
                 return b.append(']').toString();
-            b.append(',');
+            b.append(" ");
         }
     }
 }

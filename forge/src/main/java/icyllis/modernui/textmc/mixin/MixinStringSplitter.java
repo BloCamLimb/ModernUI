@@ -21,18 +21,16 @@ package icyllis.modernui.textmc.mixin;
 import icyllis.modernui.textmc.ModernStringSplitter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.*;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.StringDecomposer;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import org.apache.commons.lang3.mutable.MutableFloat;
+import org.apache.commons.lang3.mutable.MutableInt;
+import org.spongepowered.asm.mixin.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.BiConsumer;
 
 @Mixin(StringSplitter.class)
 public class MixinStringSplitter {
@@ -47,7 +45,7 @@ public class MixinStringSplitter {
      */
     @Overwrite
     public float stringWidth(@Nullable String text) {
-        return ModernStringSplitter.measure(text);
+        return ModernStringSplitter.measureText(text);
     }
 
     /**
@@ -56,7 +54,7 @@ public class MixinStringSplitter {
      */
     @Overwrite
     public float stringWidth(@Nonnull FormattedText text) {
-        return ModernStringSplitter.measure(text);
+        return ModernStringSplitter.measureText(text);
     }
 
     /**
@@ -65,7 +63,7 @@ public class MixinStringSplitter {
      */
     @Overwrite
     public float stringWidth(@Nonnull FormattedCharSequence text) {
-        return ModernStringSplitter.measure(text);
+        return ModernStringSplitter.measureText(text);
     }
 
     /**
@@ -74,7 +72,7 @@ public class MixinStringSplitter {
      */
     @Overwrite
     public int plainIndexAtWidth(@Nonnull String text, int width, @Nonnull Style style) {
-        return ModernStringSplitter.getTrimSize(text, width, style);
+        return ModernStringSplitter.indexByWidth(text, width, style);
     }
 
     /**
@@ -83,7 +81,7 @@ public class MixinStringSplitter {
      */
     @Overwrite
     public String plainHeadByWidth(@Nonnull String text, int width, @Nonnull Style style) {
-        return ModernStringSplitter.trimText(text, width, style);
+        return ModernStringSplitter.headByWidth(text, width, style);
     }
 
     /**
@@ -92,7 +90,16 @@ public class MixinStringSplitter {
      */
     @Overwrite
     public String plainTailByWidth(@Nonnull String text, int width, @Nonnull Style style) {
-        return ModernStringSplitter.trimReverse(text, width, style);
+        return ModernStringSplitter.tailByWidth(text, width, style);
+    }
+
+    /**
+     * @author BloCamLimb
+     * @reason Modern Text Engine
+     */
+    @Overwrite
+    public int formattedIndexByWidth(@Nonnull String text, int width, @Nonnull Style style) {
+        return ModernStringSplitter.indexByWidth(text, width, style);
     }
 
     /**
@@ -120,33 +127,51 @@ public class MixinStringSplitter {
      * @reason Modern Text Engine
      */
     @Overwrite
+    public String formattedHeadByWidth(@Nonnull String text, int width, @Nonnull Style style) {
+        return ModernStringSplitter.headByWidth(text, width, style);
+    }
+
+    /**
+     * @author BloCamLimb
+     * @reason Modern Text Engine
+     */
+    @Overwrite
     public FormattedText headByWidth(@Nonnull FormattedText text, int width, @Nonnull Style style) {
-        if (text instanceof TextComponent) {
-            TextComponent c = (TextComponent) text;
-            if (c.getStyle().getFont().equals(Minecraft.ALT_FONT)) {
-                final float[] maxWidth = {width};
-                final int[] position = {0};
-                if (!StringDecomposer.iterate(c.getText(), c.getStyle(), (i, s, ch) -> {
-                    maxWidth[0] -= widthProvider.getWidth(ch, s);
-                    if (maxWidth[0] >= 0.0F) {
-                        position[0] = i + Character.charCount(ch);
-                        return true;
-                    } else {
-                        return false;
-                    }
-                })) {
-                    String sub = c.getText().substring(0, position[0]);
-                    if (!sub.isEmpty()) {
-                        return FormattedText.of(sub, c.getStyle());
-                    }
-                } else {
-                    if (!c.getText().isEmpty()) {
-                        return FormattedText.of(c.getText(), c.getStyle());
-                    }
+        // Handle Enchantment Table
+        if (text instanceof TextComponent component &&
+                component.getStyle().getFont().equals(Minecraft.ALT_FONT)) {
+            final MutableFloat maxWidth = new MutableFloat(width);
+            final MutableInt position = new MutableInt();
+            if (!StringDecomposer.iterate(component.getText(), component.getStyle(),
+                    (index, sty, codePoint) -> {
+                        if (maxWidth.addAndGet(-widthProvider.getWidth(codePoint, sty)) >= 0) {
+                            position.setValue(index + Character.charCount(codePoint));
+                            return true;
+                        } else {
+                            return false;
+                        }
+                    })) {
+                String substring = component.getText().substring(0, position.intValue());
+                if (!substring.isEmpty()) {
+                    return FormattedText.of(substring, component.getStyle());
                 }
-                return FormattedText.EMPTY;
+            } else {
+                if (!component.getText().isEmpty()) {
+                    return FormattedText.of(component.getText(), component.getStyle());
+                }
             }
+            return FormattedText.EMPTY;
         }
-        return ModernStringSplitter.trimText(text, width, style);
+        return ModernStringSplitter.headByWidth(text, width, style);
+    }
+
+    /**
+     * @author BloCamLimb
+     * @reason Modern Text Engine
+     */
+    @Overwrite
+    public void splitLines(@Nonnull FormattedText text, int width, @Nonnull Style style,
+                           @Nonnull BiConsumer<FormattedText, Boolean> consumer) {
+        ModernStringSplitter.computeLineBreaks(text, width, style, consumer);
     }
 }

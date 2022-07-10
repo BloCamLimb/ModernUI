@@ -37,6 +37,7 @@ import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.testforge.TestListFragment;
 import icyllis.modernui.testforge.TestPauseFragment;
 import icyllis.modernui.text.*;
+import icyllis.modernui.textmc.ModernStringSplitter;
 import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ContextMenuBuilder;
@@ -665,6 +666,19 @@ public final class UIManager implements LifecycleOwner {
                     }
                     break;
 
+                case GLFW_KEY_T:
+                    String text = "\u09b9\u09cd\u09af\u09be\n\u09b2\u09cb" + ChatFormatting.RED + "\uD83E\uDD14" +
+                            ChatFormatting.BOLD + "\uD83E\uDD14\uD83E\uDD14";
+                    for (int i = 1; i < 10; i++) {
+                        float width = i * 5;
+                        int index = ModernStringSplitter.breakText(text, width, Style.EMPTY, true);
+                        LOGGER.info("Break forwards: width {} index:{}", width, index);
+                        index = ModernStringSplitter.breakText(text, width, Style.EMPTY, false);
+                        LOGGER.info("Break backwards: width {} index:{}", width, index);
+                    }
+                    LOGGER.info(TextLayoutEngine.getInstance().lookupVanillaNode(text));
+                    break;
+
                 case GLFW_KEY_G:
                 /*if (minecraft.screen == null && minecraft.isLocalServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished()) {
@@ -941,6 +955,7 @@ public final class UIManager implements LifecycleOwner {
         }
         mDecor.setLayoutDirection(
                 Config.CLIENT.forceRtl.get() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
+        mDecor.forceLayout();
         mDecor.requestLayout();
     }
 
