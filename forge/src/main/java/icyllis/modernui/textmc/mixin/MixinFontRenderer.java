@@ -24,9 +24,7 @@ import icyllis.modernui.textmc.ModernFontRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.*;
 import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -70,12 +68,12 @@ public abstract class MixinFontRenderer {
     public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight) {
-        if (text instanceof FormattedTextWrapper) {
+        if (text instanceof FormattedTextWrapper)
             if (((FormattedTextWrapper) text).mText.visit((s, t) -> s.getFont().equals(Minecraft.ALT_FONT) ?
                     FormattedText.STOP_ITERATION : Optional.empty(), Style.EMPTY).isPresent())
                 return callDrawInternal(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground,
                         packedLight);
-        }/* else if (!text.accept((i, s, ch) -> !s.getFont().equals(Minecraft.ALT_FONT))) {
+        /* else if (!text.accept((i, s, ch) -> !s.getFont().equals(Minecraft.ALT_FONT))) {
             return callDrawInternal(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground,
                     packedLight);
         }*/

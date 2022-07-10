@@ -108,6 +108,7 @@ public class TextLayoutProcessor {
     private final IntArrayList mCharIndices = new IntArrayList();
     /**
      * Position x1 y1 x2 y2... relative to the same point, for rendering glyphs.
+     * These values are not offset to glyph additional baseline but aligned.
      * Same indexing with {@link #mGlyphs}, align to left, in visual order.
      * <p>
      * Note the values are scaled to Minecraft GUI coordinates.
@@ -757,7 +758,7 @@ public class TextLayoutProcessor {
                                 int styleFlags, @Nonnull Font font, @Nonnull ULocale locale) {
         final boolean hasEffect = (styleFlags & CharacterStyle.EFFECT_MASK) != 0;
         // Convert to float form for calculation, but actually an integer
-        final float scale = mEngine.getGuiScale();
+        final float scale = mEngine.getCoordinateScale();
 
         if ((styleFlags & CharacterStyle.OBFUSCATED) != 0) {
             final TextLayoutEngine.FastCharSet fastChars = mEngine.lookupFastChars(font);
@@ -801,7 +802,7 @@ public class TextLayoutProcessor {
                 finishFontRun(0);
             }*/
         } else {
-            final float res = mEngine.getResolutionLevel();
+            final float level = mEngine.getResolutionLevel();
             // HarfBuzz is introduced in Java 11 or higher, perform measure and layout below
             GlyphManager glyphManager = mEngine.getGlyphManager();
 
@@ -814,7 +815,7 @@ public class TextLayoutProcessor {
             while ((currPos = breaker.following(prevPos)) != BreakIterator.DONE) {
                 GlyphVector vector = glyphManager.layoutGlyphVector(font, text, prevPos, currPos, isRtl);
                 // Don't forget to normalize it
-                mAdvances.set(prevPos, (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / res);
+                mAdvances.set(prevPos, (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / level);
 
                 prevPos = currPos;
             }
@@ -851,8 +852,8 @@ public class TextLayoutProcessor {
 
                 int charIndex = vector.getGlyphCharIndex(i) + start;
 
-                float posX = (float) position.getX() / res + offsetX;
-                float posY = (float) position.getY() / res;
+                float posX = (float) position.getX() / level + offsetX;
+                float posY = (float) position.getY() / level;
                 // Align with a full pixel
                 if (alignPixels) {
                     posX = Math.round(posX * scale) / scale;
@@ -887,7 +888,7 @@ public class TextLayoutProcessor {
                 nextPosition = vector.getGlyphPosition(i + 1);
             }
 
-            mAdvance += (float) nextPosition.getX() / res;
+            mAdvance += (float) nextPosition.getX() / level;
 
             /*if (isRtl) {
                 finishFontRun(-nextOffset);
@@ -905,26 +906,23 @@ public class TextLayoutProcessor {
         if (!mHasFastDigit) {
             return;
         }
-        int stripIndex = 0;
         for (int i = 0; i < raw.length(); i++) {
             if (raw.charAt(i) == ChatFormatting.PREFIX_CODE) {
-                i++;
                 for (int j = 0; j < mCharIndices.size(); j++) {
                     int value = mCharIndices.getInt(j);
-                    if (value >= stripIndex) {
+                    if (value >= i) {
                         mCharIndices.set(j, value + 2);
                     }
                 }
-                continue;
+                i++;
             }
-            stripIndex++;
         }
         if (DEBUG) {
             for (int i = 0; i < mCharIndices.size(); i++) {
                 if ((mFlags.getInt(i) & CharacterStyle.FAST_DIGIT_REPLACEMENT) != 0) {
                     char c = raw.charAt(mCharIndices.getInt(i));
                     if (c > '9' || c < '0') {
-                        throw new IllegalStateException();
+                        ModernUI.LOGGER.error("Fast Indexing Error: {} {} {} {}", i, c, mCharIndices, raw);
                     }
                 }
             }

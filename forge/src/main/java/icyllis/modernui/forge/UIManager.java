@@ -885,6 +885,12 @@ public final class UIManager implements LifecycleOwner {
             if (mScreen != null) {
                 event.setCanceled(true);
             }
+            /*minecraft.font.draw(event.getMatrixStack(),
+                    ChatFormatting.DARK_RED + "Fuck you " + ChatFormatting.UNDERLINE + "OK " + mElapsedTimeMillis +
+                     " " + ChatFormatting.OBFUSCATED + "66" + ChatFormatting.RESET + " Fine", 20, 20, 0xFF0000);
+            minecraft.font.draw(event.getMatrixStack(),
+                    new TextComponent("Yes " + ChatFormatting.DARK_RED + "Fuck " + ChatFormatting.RESET + "That"),
+                    20, 60, 0x00FFFF);*/
         }
     }
 

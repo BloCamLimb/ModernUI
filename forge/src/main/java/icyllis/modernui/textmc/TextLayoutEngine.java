@@ -200,10 +200,10 @@ public class TextLayoutEngine {
                 glyphs = Arrays.copyOf(glyphs, n);
                 offsets = Arrays.copyOf(offsets, n);
             }
-            float res = getResolutionLevel();
+            float level = getResolutionLevel();
             // the cache will be reset when resolution level changed
             for (int i = 0; i < n; i++) {
-                offsets[i] /= res;
+                offsets[i] /= level;
             }
             return new FastCharSet(glyphs, offsets);
         }
@@ -221,7 +221,7 @@ public class TextLayoutEngine {
     /**
      * Determine font size. Integer.
      */
-    private float mGuiScale;
+    private float mCoordinateScale;
     /**
      * Determine font size. Integer.
      */
@@ -312,7 +312,7 @@ public class TextLayoutEngine {
     public void reload() {
         cleanup();
 
-        final int guiScale = Math.round(ViewConfiguration.get().getViewScale() * 2);
+        final int scale = Math.round(ViewConfiguration.get().getViewScale() * 2);
         final float oldLevel = mResolutionLevel;
         if (sFixedResolution) {
             // make font size to 16 (8 * 2)
@@ -320,16 +320,16 @@ public class TextLayoutEngine {
         } else {
             // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
             if (!sSuperSampling || !GLFontAtlas.sLinearSampling) {
-                mResolutionLevel = Math.min(guiScale, 9);
-            } else if (guiScale > 2) {
+                mResolutionLevel = Math.min(scale, 9);
+            } else if (scale > 2) {
                 // super sampling, give it a bit larger, so looks smoother
-                mResolutionLevel = Math.min((int) Math.ceil(guiScale * 4 / 3f), 12);
+                mResolutionLevel = Math.min((int) Math.ceil(scale * 4 / 3f), 12);
             } else {
                 // 1 or 2
-                mResolutionLevel = guiScale;
+                mResolutionLevel = scale;
             }
         }
-        mGuiScale = guiScale;
+        mCoordinateScale = scale;
 
         Locale locale = ModernUI.getSelectedLocale();
         boolean layoutRtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL;
@@ -656,8 +656,8 @@ public class TextLayoutEngine {
      *
      * @return scale factor, should be an integer that converted to float
      */
-    public float getGuiScale() {
-        return mGuiScale;
+    public float getCoordinateScale() {
+        return mCoordinateScale;
     }
 
     /**
