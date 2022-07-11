@@ -316,7 +316,7 @@ public class ArrayAdapter<T> extends BaseAdapter implements Filterable {
             text.setText(String.valueOf(item));
         }
 
-        text.setTextSize(16);
+        text.setTextSize(14);
         text.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
         final int dp4 = View.dp(4);
         text.setPadding(dp4, dp4, dp4, dp4);
