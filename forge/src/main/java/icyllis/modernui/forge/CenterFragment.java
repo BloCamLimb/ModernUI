@@ -34,6 +34,7 @@ import icyllis.modernui.text.InputFilter;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.text.method.DigitsInputFilter;
 import icyllis.modernui.textmc.ModernUITextMC;
+import icyllis.modernui.textmc.TextLayoutEngine;
 import icyllis.modernui.util.DataSet;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
@@ -66,7 +67,7 @@ public class CenterFragment extends Fragment {
         {
             var title = new TextView();
             title.setId(R.id.title);
-            title.setText(I18n.get("gui.modernui.center.title"));
+            title.setText(I18n.get("modernui.center.title"));
             title.setTextSize(22);
             title.setTextStyle(TextPaint.BOLD);
 
@@ -251,9 +252,9 @@ public class CenterFragment extends Fragment {
 
         {
             // Screen
-            var category = createCategory("gui.modernui.center.category.screen");
+            var category = createCategory("modernui.center.category.screen");
             {
-                var option = createInputOption("gui.modernui.center.screen.backgroundDuration");
+                var option = createInputOption("modernui.center.screen.backgroundDuration");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Config.CLIENT.backgroundDuration.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(3));
@@ -272,7 +273,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.screen.blurEffect");
+                var option = createButtonOption("modernui.center.screen.blurEffect");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.blurEffect.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -282,7 +283,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createInputOption("gui.modernui.center.screen.blurRadius");
+                var option = createInputOption("modernui.center.screen.blurRadius");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Config.CLIENT.blurRadius.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
@@ -301,7 +302,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.screen.inventoryPause");
+                var option = createButtonOption("modernui.center.screen.inventoryPause");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.inventoryPause.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -314,9 +315,9 @@ public class CenterFragment extends Fragment {
         }
 
         {
-            var category = createCategory("gui.modernui.center.category.extension");
+            var category = createCategory("modernui.center.category.extension");
             {
-                var option = createButtonOption("gui.modernui.center.extension.ding");
+                var option = createButtonOption("modernui.center.extension.ding");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.ding.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -326,7 +327,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.extension.tooltip");
+                var option = createButtonOption("modernui.center.extension.tooltip");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.tooltip.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -336,7 +337,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createInputOption("gui.modernui.center.extension.tooltipDuration");
+                var option = createInputOption("modernui.center.extension.tooltipDuration");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Config.CLIENT.tooltipDuration.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(3));
@@ -355,7 +356,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.extension.smoothScrolling");
+                var option = createButtonOption("modernui.center.extension.smoothScrolling");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked((ModernUIForge.getBootstrapLevel() & ModernUIForge.BOOTSTRAP_DISABLE_SMOOTH_SCROLLING) == 0);
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -376,9 +377,9 @@ public class CenterFragment extends Fragment {
 
         {
             // Text Engine
-            var category = createCategory("gui.modernui.center.category.text");
+            var category = createCategory("modernui.center.category.text");
             {
-                var option = createButtonOption("gui.modernui.center.text.textEngine");
+                var option = createButtonOption("modernui.center.text.textEngine");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked((ModernUIForge.getBootstrapLevel() & ModernUIForge.BOOTSTRAP_DISABLE_TEXT_ENGINE) == 0);
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -395,17 +396,22 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.appScope");
+                var option = createButtonOption("modernui.center.text.appScope");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.colorEmoji");
+                var option = createButtonOption("modernui.center.text.colorEmoji");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.allowShadow");
+                var option = createButtonOption("modernui.center.text.bitmapRepl");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("modernui.center.text.allowShadow");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mAllowShadow.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -415,7 +421,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.fixedResolution");
+                var option = createButtonOption("modernui.center.text.fixedResolution");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mFixedResolution.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -425,7 +431,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createInputOption("gui.modernui.center.text.baseFontSize");
+                var option = createInputOption("modernui.center.text.baseFontSize");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(ModernUITextMC.CONFIG.mBaseFontSize.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
@@ -444,7 +450,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createInputOption("gui.modernui.center.text.baselineShift");
+                var option = createInputOption("modernui.center.text.baselineShift");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(ModernUITextMC.CONFIG.mBaselineShift.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
@@ -463,7 +469,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.superSampling");
+                var option = createButtonOption("modernui.center.text.superSampling");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mSuperSampling.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -473,7 +479,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.alignPixels");
+                var option = createButtonOption("modernui.center.text.alignPixels");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mAlignPixels.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -483,38 +489,116 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.fastDigitRepl");
+                var option = new LinearLayout();
+                option.setOrientation(LinearLayout.HORIZONTAL);
+                option.setHorizontalGravity(Gravity.START);
+
+                final int dp6 = dp(6);
+                {
+                    var title = new TextView();
+                    title.setText(I18n.get("modernui.center.text.bidiHeuristicAlgo"));
+                    title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                    title.setTextSize(14);
+
+                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1);
+                    params.gravity = Gravity.CENTER_VERTICAL;
+                    option.addView(title, params);
+                }
+                {
+                    var spinner = new Spinner();
+                    spinner.setGravity(Gravity.END);
+                    spinner.setAdapter(new ArrayAdapter<>(TEXT_DIRS));
+                    spinner.setSelection(TextLayoutEngine.sTextDirection - 1);
+                    spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                            ModernUITextMC.CONFIG.mTextDirection.set(position + 1);
+                            ModernUITextMC.CONFIG.saveAndReload();
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+                        }
+                    });
+
+                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                    params.gravity = Gravity.CENTER_VERTICAL;
+                    option.addView(spinner, params);
+                }
+
+                var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+                params.gravity = Gravity.CENTER;
+                params.setMargins(dp6, 0, dp6, 0);
+                option.setLayoutParams(params);
+
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("modernui.center.text.textShaping");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.fixSurrogate");
+                var option = createButtonOption("modernui.center.text.fastDigitRepl");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.substringAlgo");
+                var option = createButtonOption("modernui.center.text.fixSurrogate");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.graphemeAlgo");
+                var option = createButtonOption("modernui.center.text.graphemeAlgo");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.bidiHeuristicAlgo");
+                var option = createButtonOption("modernui.center.text.lineBreakingAlgo");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.layoutLifespan");
+                var option = createButtonOption("modernui.center.text.substringAlgo");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.text.rehashThreshold");
-                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                var option = createInputOption("modernui.center.text.cacheLifespan");
+                var input = option.<EditText>requireViewById(R.id.input);
+                input.setText(ModernUITextMC.CONFIG.mCacheLifespan.get().toString());
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
+                input.setOnFocusChangeListener((view, hasFocus) -> {
+                    if (!hasFocus) {
+                        EditText v = (EditText) view;
+                        int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
+                                ModernUITextMC.Config.LIFESPAN_MIN, ModernUITextMC.Config.LIFESPAN_MAX);
+                        v.setText(Integer.toString(value));
+                        if (value != ModernUITextMC.CONFIG.mCacheLifespan.get()) {
+                            ModernUITextMC.CONFIG.mCacheLifespan.set(value);
+                            ModernUITextMC.CONFIG.saveAndReload();
+                        }
+                    }
+                });
+                category.addView(option);
+            }
+            {
+                var option = createInputOption("modernui.center.text.rehashThreshold");
+                var input = option.<EditText>requireViewById(R.id.input);
+                input.setText(ModernUITextMC.CONFIG.mRehashThreshold.get().toString());
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(4));
+                input.setOnFocusChangeListener((view, hasFocus) -> {
+                    if (!hasFocus) {
+                        EditText v = (EditText) view;
+                        int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
+                                ModernUITextMC.Config.REHASH_MIN, ModernUITextMC.Config.REHASH_MAX);
+                        v.setText(Integer.toString(value));
+                        if (value != ModernUITextMC.CONFIG.mRehashThreshold.get()) {
+                            ModernUITextMC.CONFIG.mRehashThreshold.set(value);
+                            ModernUITextMC.CONFIG.saveAndReload();
+                        }
+                    }
+                });
                 category.addView(option);
             }
             panel.addView(category);
@@ -535,9 +619,9 @@ public class CenterFragment extends Fragment {
         panel.setOrientation(LinearLayout.VERTICAL);
 
         {
-            var category = createCategory("gui.modernui.center.category.system");
+            var category = createCategory("modernui.center.category.system");
             {
-                var option = createButtonOption("gui.modernui.center.system.forceRtlLayout");
+                var option = createButtonOption("modernui.center.system.forceRtlLayout");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.forceRtl.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -547,7 +631,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createInputOption("gui.modernui.center.system.globalFontScale");
+                var option = createInputOption("modernui.center.system.globalFontScale");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Config.CLIENT.fontScale.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
@@ -567,7 +651,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createInputOption("gui.modernui.center.system.globalAnimationScale");
+                var option = createInputOption("modernui.center.system.globalAnimationScale");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(Float.toString(ValueAnimator.sDurationScale));
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
@@ -588,9 +672,14 @@ public class CenterFragment extends Fragment {
         }
 
         {
-            var category = createCategory("gui.modernui.center.category.font");
+            var category = createCategory("modernui.center.category.font");
             {
-                var option = createButtonOption("gui.modernui.center.font.antiAliasing");
+                var option = createButtonOption("modernui.center.font.fontFamily");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("modernui.center.font.antiAliasing");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.antiAliasing.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -600,7 +689,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.font.fractionalMetrics");
+                var option = createButtonOption("modernui.center.font.fractionalMetrics");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.fractionalMetrics.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -610,7 +699,7 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("gui.modernui.center.font.linearSampling");
+                var option = createButtonOption("modernui.center.font.linearSampling");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(Config.CLIENT.linearSampling.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
@@ -810,6 +899,24 @@ public class CenterFragment extends Fragment {
             return animator;
         }
         return super.onCreateAnimator(transit, enter, nextAnim);
+    }
+
+    private static final TextDir[] TEXT_DIRS = {
+            new TextDir(View.TEXT_DIRECTION_FIRST_STRONG, "FirstStrong"),
+            new TextDir(View.TEXT_DIRECTION_ANY_RTL, "AnyRTL-LTR"),
+            new TextDir(View.TEXT_DIRECTION_LTR, "LTR"),
+            new TextDir(View.TEXT_DIRECTION_RTL, "RTL"),
+            new TextDir(View.TEXT_DIRECTION_LOCALE, "Locale"),
+            new TextDir(View.TEXT_DIRECTION_FIRST_STRONG_LTR, "FirstStrong-LTR"),
+            new TextDir(View.TEXT_DIRECTION_FIRST_STRONG_RTL, "FirstStrong-RTL"),
+    };
+
+    private record TextDir(int key, String text) {
+
+        @Override
+        public String toString() {
+            return text;
+        }
     }
 
     private static class Background extends Drawable {

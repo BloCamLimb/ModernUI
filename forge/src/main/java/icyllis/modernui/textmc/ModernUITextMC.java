@@ -23,6 +23,7 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.forge.*;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.text.TextUtils;
+import icyllis.modernui.view.View;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
@@ -151,6 +152,10 @@ public final class ModernUITextMC {
         public static final int BASE_FONT_SIZE_MAX = 10;
         public static final int BASELINE_MIN = 4;
         public static final int BASELINE_MAX = 10;
+        public static final int LIFESPAN_MIN = 2;
+        public static final int LIFESPAN_MAX = 60;
+        public static final int REHASH_MIN = 0;
+        public static final int REHASH_MAX = 2000;
 
         //final ForgeConfigSpec.BooleanValue globalRenderer;
         public final ForgeConfigSpec.BooleanValue mAllowShadow;
@@ -159,6 +164,9 @@ public final class ModernUITextMC {
         public final ForgeConfigSpec.IntValue mBaselineShift;
         public final ForgeConfigSpec.BooleanValue mSuperSampling;
         public final ForgeConfigSpec.BooleanValue mAlignPixels;
+        public final ForgeConfigSpec.IntValue mCacheLifespan;
+        public final ForgeConfigSpec.IntValue mRehashThreshold;
+        public final ForgeConfigSpec.IntValue mTextDirection;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -199,6 +207,15 @@ public final class ModernUITextMC {
                             "Enable to make each glyph pixel-aligned in text layout in screen space.",
                             "Text rendering may be better with bitmap fonts or fixed resolution or linear sampling.")
                     .define("alignPixels", false);
+            mCacheLifespan = builder.comment(
+                            "Set the recycle time of layout cache in seconds, using least recently used algorithm.")
+                    .defineInRange("cacheLifespan", 12, LIFESPAN_MIN, LIFESPAN_MAX);
+            mRehashThreshold = builder.comment("Set the rehash threshold of layout cache")
+                    .defineInRange("rehashThreshold", 100, REHASH_MIN, REHASH_MAX);
+            mTextDirection = builder.comment(
+                            "Control bidirectional text heuristic algorithm.")
+                    .defineInRange("textDirection", View.TEXT_DIRECTION_FIRST_STRONG,
+                            View.TEXT_DIRECTION_FIRST_STRONG, View.TEXT_DIRECTION_FIRST_STRONG_RTL);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
@@ -241,7 +258,7 @@ public final class ModernUITextMC {
 
         void reload() {
             boolean reload = false;
-            ModernFontRenderer.sAllowShadow = mAllowShadow.get();
+            ModernTextRenderer.sAllowShadow = mAllowShadow.get();
             if (TextLayoutEngine.sFixedResolution != mFixedResolution.get()) {
                 TextLayoutEngine.sFixedResolution = mFixedResolution.get();
                 reload = true;
@@ -257,6 +274,12 @@ public final class ModernUITextMC {
             }
             if (TextLayoutProcessor.sAlignPixels != mAlignPixels.get()) {
                 TextLayoutProcessor.sAlignPixels = mAlignPixels.get();
+                reload = true;
+            }
+            TextLayoutEngine.sCacheLifespan = mCacheLifespan.get();
+            TextLayoutEngine.sRehashThreshold = mRehashThreshold.get();
+            if (TextLayoutEngine.sTextDirection != mTextDirection.get()) {
+                TextLayoutEngine.sTextDirection = mTextDirection.get();
                 reload = true;
             }
             if (reload) {
