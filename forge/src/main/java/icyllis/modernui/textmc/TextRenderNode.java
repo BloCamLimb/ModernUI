@@ -509,7 +509,7 @@ public class TextRenderNode {
         size += 32 + (((glyphs + 1) >> 1) << 4); // glyphs + charIndices
         size += 16 + (((glyphs + 1) >> 1) << 3); // flags
         size += 16 + (glyphs << 3); // positions
-        size += 16 + (((mTextBuf.length + 1) >> 1) << 2);
+        size += 16 + (((mTextBuf.length + 3) >> 1) << 2);
         size += 16 + (((mAdvances.length + 1) >> 1) << 3);
         size += 16 + (((mLineBoundaries.length + 1) >> 1) << 3);
         return size + 24;

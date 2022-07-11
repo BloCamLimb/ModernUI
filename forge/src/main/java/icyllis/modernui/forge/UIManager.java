@@ -22,6 +22,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.LayoutTransition;
 import icyllis.modernui.annotation.*;
@@ -567,12 +568,17 @@ public final class UIManager implements LifecycleOwner {
                 }
             }
             mButtonState = buttonState;
-            int actionButton = 1 << event.getButton();
             int action = event.getAction() == GLFW_PRESS ?
+                    MotionEvent.ACTION_BUTTON_PRESS : MotionEvent.ACTION_BUTTON_RELEASE;
+            int touchAction = event.getAction() == GLFW_PRESS ?
                     MotionEvent.ACTION_DOWN : MotionEvent.ACTION_UP;
-            if ((action == MotionEvent.ACTION_DOWN && (buttonState ^ actionButton) == 0)
-                    || (action == MotionEvent.ACTION_UP && buttonState == 0)) {
-                MotionEvent ev = MotionEvent.obtain(now, action, actionButton,
+            int actionButton = 1 << event.getButton();
+            MotionEvent ev = MotionEvent.obtain(now, action, actionButton,
+                    x, y, event.getModifiers(), buttonState, 0);
+            mRoot.enqueueInputEvent(ev);
+            if ((touchAction == MotionEvent.ACTION_DOWN && (buttonState ^ actionButton) == 0)
+                    || (touchAction == MotionEvent.ACTION_UP && buttonState == 0)) {
+                ev = MotionEvent.obtain(now, touchAction, actionButton,
                         x, y, event.getModifiers(), buttonState, 0);
                 mRoot.enqueueInputEvent(ev);
                 //LOGGER.info("Enqueue mouse event: {}", ev);
@@ -953,9 +959,9 @@ public final class UIManager implements LifecycleOwner {
         if (mDecor == null) {
             return;
         }
-        mDecor.setLayoutDirection(
-                Config.CLIENT.forceRtl.get() ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
-        mDecor.forceLayout();
+        boolean layoutRtl = Config.CLIENT.forceRtl.get() ||
+                TextUtils.getLayoutDirectionFromLocale(ModernUI.getSelectedLocale()) == View.LAYOUT_DIRECTION_RTL;
+        mDecor.setLayoutDirection(layoutRtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
         mDecor.requestLayout();
     }
 

@@ -367,7 +367,7 @@ public class CenterFragment extends Fragment {
                         level |= ModernUIForge.BOOTSTRAP_DISABLE_SMOOTH_SCROLLING;
                     }
                     ModernUIForge.setBootstrapLevel(level);
-                    Toast.makeText("Restart the game to take effect", Toast.LENGTH_SHORT)
+                    Toast.makeText(I18n.get("gui.modernui.restart_to_work"), Toast.LENGTH_SHORT)
                             .show();
                 });
                 category.addView(option);
@@ -390,7 +390,7 @@ public class CenterFragment extends Fragment {
                         level |= ModernUIForge.BOOTSTRAP_DISABLE_TEXT_ENGINE;
                     }
                     ModernUIForge.setBootstrapLevel(level);
-                    Toast.makeText("Restart the game to take effect", Toast.LENGTH_SHORT)
+                    Toast.makeText(I18n.get("gui.modernui.restart_to_work"), Toast.LENGTH_SHORT)
                             .show();
                 });
                 category.addView(option);

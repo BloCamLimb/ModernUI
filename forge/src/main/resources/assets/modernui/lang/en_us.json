@@ -86,5 +86,6 @@
   "error.modernui.gl_caps": "Modern UI Graphics Engine is Disabled",
   "error.modernui.gl_caps_desc": "The graphics engine of Modern UI has been disabled due to the failure of OpenGL 4.5 core or ARB capability test. This means that all GUIs provided by Modern UI will not be rendered or drawn. However, the text engine, smooth scrolling, GUI scale slider option, blur background, game loading ding sound, inventory screen pause and other functions provided by Modern UI Forge extension are still available.\nGPU: %s, OpenGL: %s. The following ARB extensions are required: %s\nFor Windows and Linux, first update your GPU drivers. If you have integrated GPU, run Java applications with dedicated GPU. For macOS or in other cases, click OK for help.",
   "gui.modernui.ok": "OK",
-  "gui.modernui.dont_show_again": "Don't show again"
+  "gui.modernui.dont_show_again": "Don't show again",
+  "gui.modernui.restart_to_work": "Restart the game for settings to take effect"
 }
