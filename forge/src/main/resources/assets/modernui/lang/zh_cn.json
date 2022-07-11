@@ -62,6 +62,7 @@
   "modernui.center.text.textShaping": "HarfBuzz文本整形",
   "modernui.center.text.fastDigitRepl": "快速数位替换",
   "modernui.center.text.fixSurrogate": "修复无效代理对",
+  "modernui.center.text.fastStreamingAlgo": "快速流式布局算法",
   "modernui.center.text.bidiHeuristicAlgo": "双向文本启发式算法",
   "modernui.center.text.graphemeAlgo": "字素簇分断算法",
   "modernui.center.text.lineBreakingAlgo": "Unicode换行算法",

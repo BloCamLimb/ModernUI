@@ -106,7 +106,9 @@ public final class ModernUITextMC {
             pw.print("TextLayoutEngine: ");
             pw.print("CacheCount=" + TextLayoutEngine.getInstance().getCacheCount());
             int memorySize = TextLayoutEngine.getInstance().getCacheMemorySize();
-            pw.println(", CacheSize=" + TextUtils.binaryCompact(memorySize) + " (" + memorySize + " bytes)");
+            pw.print(", CacheSize=" + TextUtils.binaryCompact(memorySize) + " (" + memorySize + " bytes)");
+            memorySize = TextLayoutEngine.getInstance().getEmojiAtlasMemorySize();
+            pw.println(", EmojiAtlasSize=" + TextUtils.binaryCompact(memorySize) + " (" + memorySize + " bytes)");
             GlyphManager.getInstance().dumpInfo(pw);
         });
         {
@@ -167,6 +169,7 @@ public final class ModernUITextMC {
         public final ForgeConfigSpec.IntValue mCacheLifespan;
         public final ForgeConfigSpec.IntValue mRehashThreshold;
         public final ForgeConfigSpec.IntValue mTextDirection;
+        public final ForgeConfigSpec.BooleanValue mColorEmoji;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -216,6 +219,9 @@ public final class ModernUITextMC {
                             "Control bidirectional text heuristic algorithm.")
                     .defineInRange("textDirection", View.TEXT_DIRECTION_FIRST_STRONG,
                             View.TEXT_DIRECTION_FIRST_STRONG, View.TEXT_DIRECTION_FIRST_STRONG_RTL);
+            mColorEmoji = builder.comment(
+                            "Whether to use colored emoji or just grayscale emoji.")
+                    .define("colorEmoji", true);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
@@ -280,6 +286,10 @@ public final class ModernUITextMC {
             TextLayoutEngine.sRehashThreshold = mRehashThreshold.get();
             if (TextLayoutEngine.sTextDirection != mTextDirection.get()) {
                 TextLayoutEngine.sTextDirection = mTextDirection.get();
+                reload = true;
+            }
+            if (TextLayoutProcessor.sColorEmoji != mColorEmoji.get()) {
+                TextLayoutProcessor.sColorEmoji = mColorEmoji.get();
                 reload = true;
             }
             if (reload) {

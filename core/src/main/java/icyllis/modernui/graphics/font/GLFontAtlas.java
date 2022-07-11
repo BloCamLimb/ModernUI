@@ -83,8 +83,15 @@ public class GLFontAtlas implements AutoCloseable {
     private int mWidth;
     private int mHeight;
 
+    private final boolean mColored;
+
     // create from any thread
     public GLFontAtlas() {
+        this(false);
+    }
+
+    public GLFontAtlas(boolean colored) {
+        mColored = colored;
     }
 
     @Nullable
@@ -125,7 +132,7 @@ public class GLFontAtlas implements AutoCloseable {
         mTexture.uploadCompat(0, mPosX - GlyphManager.GLYPH_BORDER, mPosY - GlyphManager.GLYPH_BORDER,
                 glyph.width + GlyphManager.GLYPH_BORDER * 2, glyph.height + GlyphManager.GLYPH_BORDER * 2,
                 0, 0, 0, 1,
-                GL_RED, GL_UNSIGNED_BYTE, pixels);
+                mColored ? GL_RGBA : GL_RED, GL_UNSIGNED_BYTE, pixels);
         mTexture.generateMipmapCompat();
 
         glyph.u1 = (float) mPosX / mWidth;
@@ -141,7 +148,7 @@ public class GLFontAtlas implements AutoCloseable {
         // never initialized
         if (mWidth == 0) {
             mWidth = mHeight = INITIAL_SIZE;
-            mTexture.allocate2DCompat(GL_R8, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
+            mTexture.allocate2DCompat(mColored ? GL_RGBA8 : GL_R8, INITIAL_SIZE, INITIAL_SIZE, MIPMAP_LEVEL);
             // we have border that not upload data, so generate mipmap may leave undefined data
             //mTexture.clear(0);
         } else {
@@ -159,7 +166,7 @@ public class GLFontAtlas implements AutoCloseable {
 
             // copy to new texture
             GLTexture newTexture = new GLTexture(GL_TEXTURE_2D);
-            newTexture.allocate2DCompat(GL_R8, mWidth, mHeight, MIPMAP_LEVEL);
+            newTexture.allocate2DCompat(mColored ? GL_RGBA8 : GL_R8, mWidth, mHeight, MIPMAP_LEVEL);
             if (sCopyFramebuffer == 0) {
                 sCopyFramebuffer = glGenFramebuffers();
             }
@@ -205,7 +212,9 @@ public class GLFontAtlas implements AutoCloseable {
             // we later generate mipmap
         }
         mTexture.setFilterCompat(sLinearSampling ? GL_LINEAR_MIPMAP_LINEAR : GL_NEAREST, GL_NEAREST);
-        mTexture.setSwizzleCompat(GL_ONE, GL_ONE, GL_ONE, GL_RED);
+        if (!mColored) {
+            mTexture.setSwizzleCompat(GL_ONE, GL_ONE, GL_ONE, GL_RED);
+        }
     }
 
     public void debug(@Nullable String path) {
@@ -215,7 +224,8 @@ public class GLFontAtlas implements AutoCloseable {
             }
         } else if (Core.isOnRenderThread()) {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "Glyphs: {}", mGlyphs.size());
-            try (NativeImage image = NativeImage.download(NativeImage.Format.RED, mTexture, false)) {
+            try (NativeImage image = NativeImage.download(mColored ? NativeImage.Format.RGBA : NativeImage.Format.RED,
+                    mTexture, false)) {
                 image.saveToPath(Path.of(path), NativeImage.SaveFormat.PNG, 0);
             } catch (IOException e) {
                 e.printStackTrace();
@@ -236,7 +246,7 @@ public class GLFontAtlas implements AutoCloseable {
     }
 
     public int getMemorySize() {
-        // R8, 1 byte per pixel
-        return mTexture.getWidth() * mTexture.getHeight() /* * 1 */;
+        int size = mTexture.getWidth() * mTexture.getHeight();
+        return mColored ? size << 2 : size;
     }
 }

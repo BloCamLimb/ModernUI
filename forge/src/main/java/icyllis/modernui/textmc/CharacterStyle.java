@@ -44,10 +44,9 @@ public class CharacterStyle {
      *      11    EFFECT_MASK
      *     1      OBFUSCATED
      *     11111  LAYOUT_MASK
-     *    1       FORMATTING_CODE
-     *   1        FAST_DIGIT_REPLACEMENT
+     *    1       FAST_DIGIT_REPLACEMENT
+     *   1        BITMAP_REPLACEMENT
      *  1         USE_PARAM_COLOR
-     *  1 111111  CHARACTER_STYLE
      * |--------|
      */
     /**
@@ -91,16 +90,21 @@ public class CharacterStyle {
 
     public static final int LAYOUT_MASK = FONT_STYLE_MASK | EFFECT_MASK | OBFUSCATED;
 
-    /**
+    /*
      * Whether from formatting codes (non-printing chars), or a {@link Style} object.
      */
-    public static final int FORMATTING_CODE = 0x20000000;
+    //public static final int FORMATTING_CODE = 0x20000000;
 
     /**
      * Represent to use fast digit replacement. Then advances will not change, just
      * replace their ASCII backed glyphs with new input string.
      */
-    public static final int FAST_DIGIT_REPLACEMENT = 0x40000000;
+    public static final int FAST_DIGIT_REPLACEMENT = 0x20000000;
+
+    /**
+     * Represent to use a color emoji or a bitmap.
+     */
+    public static final int BITMAP_REPLACEMENT = 0x40000000;
 
     /**
      * Bit mask representing to use param color, then lower 24 bits are ignored.
@@ -129,12 +133,13 @@ public class CharacterStyle {
      */
     private final int mFlags;
 
+    @Deprecated
     public CharacterStyle(int stringIndex, int stripIndex, Style style, boolean formattingCode) {
         mStringIndex = stringIndex;
         mStripIndex = stripIndex;
         int flags = getAppearanceFlags(style);
         if (formattingCode) {
-            flags |= FORMATTING_CODE;
+            //flags |= FORMATTING_CODE;
         }
         mFlags = flags;
     }
@@ -273,7 +278,7 @@ public class CharacterStyle {
      * @return formatting code
      */
     public boolean isFormattingCode() {
-        return (mFlags & FORMATTING_CODE) != 0;
+        return false;//(mFlags & FORMATTING_CODE) != 0;
     }
 
     /**

@@ -64,6 +64,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.ForgeIngameGui;
+import net.minecraftforge.client.gui.LoadingErrorScreen;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.common.MinecraftForge;
@@ -109,18 +110,23 @@ public final class UIManager implements LifecycleOwner {
 
     private static final int fragment_container = 0x01020007;
 
-    static final KeyMapping OPEN_CENTER_KEY = new KeyMapping(
+    public static final KeyMapping OPEN_CENTER_KEY = new KeyMapping(
             "key.modernui.openCenter", KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL,
             InputConstants.Type.KEYSYM, GLFW_KEY_K, "Modern UI");
 
-    static final Method SEND_TO_CHAT = ObfuscationReflectionHelper.findMethod(ChatComponent.class, "m_93790_",
-            Component.class, int.class, int.class, boolean.class);
-    static final Field BY_PATH = ObfuscationReflectionHelper.findField(TextureManager.class, "f_118468_");
-    static final Field TEXTURES_BY_NAME = ObfuscationReflectionHelper.findField(TextureAtlas.class, "f_118264_");
-    static final Field MAIN_IMAGE = ObfuscationReflectionHelper.findField(TextureAtlasSprite.class, "f_118342_");
-    static final Field IMAGE_PIXELS =
+    public static final Method SEND_TO_CHAT =
+            ObfuscationReflectionHelper.findMethod(ChatComponent.class, "m_93790_",
+                    Component.class, int.class, int.class, boolean.class);
+    public static final Field BY_PATH =
+            ObfuscationReflectionHelper.findField(TextureManager.class, "f_118468_");
+    public static final Field TEXTURES_BY_NAME =
+            ObfuscationReflectionHelper.findField(TextureAtlas.class, "f_118264_");
+    public static final Field MAIN_IMAGE =
+            ObfuscationReflectionHelper.findField(TextureAtlasSprite.class, "f_118342_");
+    public static final Field IMAGE_PIXELS =
             ObfuscationReflectionHelper.findField(com.mojang.blaze3d.platform.NativeImage.class, "f_84964_");
-    static final Field TEXTURE_ID = ObfuscationReflectionHelper.findField(AbstractTexture.class, "f_117950_");
+    public static final Field TEXTURE_ID =
+            ObfuscationReflectionHelper.findField(AbstractTexture.class, "f_117950_");
 
     // minecraft
     private final Minecraft minecraft = Minecraft.getInstance();
@@ -377,7 +383,7 @@ public final class UIManager implements LifecycleOwner {
         // true if there will be no screen to open
         boolean closeScreen = next == null;
 
-        if (!mFirstScreenOpened) {
+        if (!mFirstScreenOpened && !(next instanceof LoadingErrorScreen)) {
             if (sPlaySoundOnLoaded) {
                 minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f));
             }
@@ -698,8 +704,8 @@ public final class UIManager implements LifecycleOwner {
                     break;
 
                 case GLFW_KEY_V:
-                    LOGGER.info(MARKER, "Reload GlyphManager and TextLayoutEngine");
-                    TextLayoutEngine.getInstance().reloadAll();
+                    LOGGER.info(MARKER, "Dump Emoji Atlas");
+                    TextLayoutEngine.getInstance().dumpEmojiAtlas();
                     break;
             }
         }

@@ -19,30 +19,38 @@
 package icyllis.modernui.textmc;
 
 import com.ibm.icu.text.Bidi;
+import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.forge.UIManager;
 import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.text.*;
 import icyllis.modernui.textmc.mixin.MixinClientLanguage;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.texture.MipmapGenerator;
 import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.*;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.lwjgl.system.MemoryUtil;
+import org.lwjgl.system.libc.LibCString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.lang.ref.WeakReference;
+import java.nio.ByteBuffer;
 import java.util.List;
 import java.util.*;
 import java.util.function.Function;
@@ -211,11 +219,27 @@ public class TextLayoutEngine {
     };
 
     /**
+     * Gui scale = 4.
+     */
+    public static final int EMOJI_SIZE = 9 * 4;
+
+    /**
      * Emoji sequence to sprite index (used as glyph code in emoji atlas).
      */
-    private final Object2IntOpenHashMap<String> mEmojiMap = new Object2IntOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<CharSequence, EmojiEntry> mEmojiMap = new Object2ObjectOpenHashMap<>();
+    /**
+     * The key used to lookup emoji IDs.
+     */
+    private final CharSequenceBuilder mEmojiLookupKey = new CharSequenceBuilder();
+    /**
+     * The emoji texture atlas.
+     */
     private GLFontAtlas mEmojiAtlas;
+    private ByteBuffer mEmojiBuffer;
     private boolean mEmojiScanned = false;
+
+    private record EmojiEntry(int id, ResourceLocation location) {
+    }
 
     private final Predicate<TextRenderNode> mTicker = node -> node.tick(sCacheLifespan);
 
@@ -319,7 +343,7 @@ public class TextLayoutEngine {
             // make font size to 16 (8 * 2)
             mResolutionLevel = 2;
         } else {
-            // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft
+            // Note max font size is 96, see FontPaint, font size will be (8 * location) in Minecraft
             if (!sSuperSampling || !GLFontAtlas.sLinearSampling) {
                 mResolutionLevel = Math.min(scale, 9);
             } else if (scale > 2) {
@@ -346,10 +370,10 @@ public class TextLayoutEngine {
         };
 
         if (oldLevel == 0) {
-            LOGGER.info(MARKER, "Loaded text layout engine, res level: {}, locale: {}, layout RTL: {}",
+            LOGGER.info(MARKER, "Loaded text layout engine, location level: {}, locale: {}, layout RTL: {}",
                     mResolutionLevel, locale, layoutRtl);
         } else {
-            LOGGER.info(MARKER, "Reloaded text layout engine, res level: {} to {}, locale: {}, layout RTL: {}",
+            LOGGER.info(MARKER, "Reloaded text layout engine, location level: {} to {}, locale: {}, layout RTL: {}",
                     oldLevel, mResolutionLevel, locale, layoutRtl);
         }
     }
@@ -360,28 +384,31 @@ public class TextLayoutEngine {
     public void reloadResources() {
         if (!mEmojiScanned) {
             mEmojiScanned = true;
-            Minecraft.getInstance().getResourceManager().listResources("emoji", name -> {
-                if (name.length() > 64 || !name.endsWith(".png")) {
-                    return false;
+            Minecraft.getInstance().getResourceManager().listResources("emoji",
+                    name -> name.length() <= 64 && name.endsWith(".png")).forEach(res -> {
+                String[] paths = res.getPath().split("/");
+                if (paths.length == 0) {
+                    return;
                 }
+                String name = paths[paths.length - 1];
                 String[] parts = name.substring(0, name.length() - 4).split("-");
                 if (parts.length == 0) {
-                    return false;
+                    return;
                 }
                 int[] codePoints = new int[parts.length];
                 for (int i = 0; i < parts.length; i++) {
                     try {
                         int codePoint = Integer.parseInt(parts[i], 16);
                         if (!Character.isValidCodePoint(codePoint)) {
-                            return false;
+                            return;
                         }
                         codePoints[i] = codePoint;
                     } catch (NumberFormatException e) {
-                        return false;
+                        return;
                     }
                 }
-                mEmojiMap.put(new String(codePoints, 0, codePoints.length), mEmojiMap.size());
-                return false;
+                mEmojiMap.computeIfAbsent(new String(codePoints, 0, codePoints.length),
+                        s -> new EmojiEntry(mEmojiMap.size(), res));
             });
             LOGGER.info("Scanned emoji map size: {}", mEmojiMap.size());
         }
@@ -394,6 +421,11 @@ public class TextLayoutEngine {
     public void reloadAll() {
         mGlyphManager.reload();
         LOGGER.info(MARKER, "Reloaded glyph manager");
+        if (mEmojiAtlas != null) {
+            mEmojiAtlas.close();
+            mEmojiAtlas = null;
+            LOGGER.info(MARKER, "Reloaded emoji atlas");
+        }
         LayoutCache.clear();
         reload();
     }
@@ -597,6 +629,93 @@ public class TextLayoutEngine {
     }
 
     /**
+     * Given a grapheme cluster, locate the color emoji's pre-rendered image in the emoji atlas and
+     * return its cache entry. The entry stores the texture with the pre-rendered emoji image,
+     * as well as the position and size of that image within the texture.
+     *
+     * @param text  the text buffer
+     * @param start the cluster start index (inclusive)
+     * @param end   the cluster end index (exclusive)
+     * @return the cached emoji sprite or null
+     */
+    @Nullable
+    public GLBakedGlyph lookupEmoji(@Nonnull char[] text, int start, int end) {
+        final EmojiEntry entry = mEmojiMap.get(mEmojiLookupKey.updateCharArray(text, start, end));
+        if (entry == null) {
+            return null;
+        }
+        if (mEmojiAtlas == null) {
+            mEmojiAtlas = new GLFontAtlas(true);
+            int s = (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2);
+            mEmojiBuffer = MemoryUtil.memCalloc(1, s * s * 4);
+        }
+        GLBakedGlyph glyph = mEmojiAtlas.getGlyph(entry.id);
+        if (glyph != null && glyph.texture == 0) {
+            return cacheEmoji(entry.id, entry.location, mEmojiAtlas, glyph);
+        }
+        return glyph;
+    }
+
+    public void dumpEmojiAtlas() {
+        if (mEmojiAtlas != null) {
+            String basePath =
+                    icyllis.modernui.core.NativeImage.saveDialogGet(icyllis.modernui.core.NativeImage.SaveFormat.PNG,
+                            "EmojiAtlas");
+            mEmojiAtlas.debug(basePath);
+        }
+    }
+
+    public int getEmojiAtlasMemorySize() {
+        if (mEmojiAtlas != null) {
+            return mEmojiAtlas.getMemorySize();
+        }
+        return 0;
+    }
+
+    @Nullable
+    private GLBakedGlyph cacheEmoji(int id, @Nonnull ResourceLocation location,
+                                    @Nonnull GLFontAtlas atlas, @Nonnull GLBakedGlyph glyph) {
+        try (Resource res = Minecraft.getInstance().getResourceManager().getResource(location);
+             NativeImage image = NativeImage.read(res.getInputStream())) {
+            if ((image.getWidth() == EMOJI_SIZE && image.getHeight() == EMOJI_SIZE) ||
+                    (image.getWidth() == EMOJI_SIZE * 2 && image.getHeight() == EMOJI_SIZE * 2)) {
+                long dst = MemoryUtil.memAddress(mEmojiBuffer);
+                {
+                    NativeImage sub = null;
+                    if (image.getWidth() == EMOJI_SIZE * 2) {
+                        // Down-sampling
+                        sub = MipmapGenerator.generateMipLevels(image, 1)[1];
+                    }
+                    long src = UIManager.IMAGE_PIXELS.getLong(sub != null ? sub : image);
+                    // Add 1 pixel transparent border to prevent texture bleeding
+                    long dstOff = (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2 + GlyphManager.GLYPH_BORDER) * 4;
+                    for (int i = 0; i < EMOJI_SIZE; i++) {
+                        LibCString.nmemcpy(dst + dstOff, src + (i * EMOJI_SIZE * 4), EMOJI_SIZE * 4);
+                        dstOff += (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2) * 4;
+                    }
+                    if (sub != null) {
+                        sub.close();
+                    }
+                }
+                glyph.x = 0;
+                glyph.y = -TextRenderNode.BASELINE_OFFSET * 4; // baseline
+                glyph.width = EMOJI_SIZE;
+                glyph.height = EMOJI_SIZE;
+                atlas.stitch(glyph, dst);
+                return glyph;
+            } else {
+                atlas.setEmpty(id);
+                LOGGER.warn(MARKER, "Emoji is not 36x36 or 72x72, setting empty: {}", location);
+                return null;
+            }
+        } catch (Exception e) {
+            atlas.setEmpty(id);
+            LOGGER.warn(MARKER, "Failed to load emoji, setting empty: {}", location, e);
+            return null;
+        }
+    }
+
+    /**
      * Ticks the caches and clear unused entries.
      */
     @SubscribeEvent
@@ -664,7 +783,7 @@ public class TextLayoutEngine {
     /**
      * Returns current resolution level for texts.
      *
-     * @return res level, should be an integer that converted to float
+     * @return location level, should be an integer that converted to float
      */
     public float getResolutionLevel() {
         return mResolutionLevel;

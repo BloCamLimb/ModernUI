@@ -78,6 +78,7 @@ public class TextLayoutProcessor {
      */
     public static volatile int sBaseFontSize = 8;
     public static volatile boolean sAlignPixels = false;
+    public static volatile boolean sColorEmoji = true;
 
     private final TextLayoutEngine mEngine;
 
@@ -128,7 +129,7 @@ public class TextLayoutProcessor {
      * Glyph rendering flags. Same indexing with {@link #mGlyphs}, in visual order.
      */
     /*
-     * lower 24 bits - RGB color, ignored when has USE_PARAM_COLOR bit
+     * lower 24 bits - 0xRRGGBB color
      * higher 8 bits
      * |--------|
      *         1  BOLD
@@ -136,9 +137,9 @@ public class TextLayoutProcessor {
      *       1    UNDERLINE
      *      1     STRIKETHROUGH
      *     1      OBFUSCATED
-     *    1       FORMATTING_CODE
-     *   1        FAST_DIGIT_REPLACEMENT
-     *  1         NO_COLOR_SPECIFIED
+     *    1       FAST_DIGIT_REPLACEMENT
+     *   1        BITMAP_REPLACEMENT
+     *  1         USE_PARAM_COLOR
      * |--------|
      */
     private final IntArrayList mFlags = new IntArrayList();
@@ -486,6 +487,7 @@ public class TextLayoutProcessor {
     private TextRenderNode performFullLayout(@Nullable String raw) {
         if (!mBuilder.isEmpty()) {
             final boolean fastDigit = raw != null;
+            // locale for GCB
             final ULocale locale = ULocale.forLocale(ModernUI.getSelectedLocale());
             mAdvances.size(mBuilder.length());
             final char[] textBuf = mBuilder.toCharArray();
@@ -494,6 +496,7 @@ public class TextLayoutProcessor {
                 if (fastDigit) {
                     adjustForFastDigit(raw);
                 }
+                // Sort line boundaries to logical order, because runs are in visual order
                 mLineBoundaries.sort(IntComparators.NATURAL_COMPARATOR);
                 return new TextRenderNode(textBuf, mGlyphs.toArray(new GLBakedGlyph[0]), mCharIndices.toIntArray(),
                         mPositions.toFloatArray(), mAdvances.toFloatArray(), mFlags.toIntArray(),
@@ -728,7 +731,8 @@ public class TextLayoutProcessor {
         // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft by default
         float fontSize = Math.min(sBaseFontSize * mEngine.getResolutionLevel(), 96);
 
-        final var items = ModernUI.getSelectedTypeface().getFontCollection().itemize(text, start, limit);
+        final var items = ModernUI.getSelectedTypeface().getFontCollection()
+                .itemize(text, start, limit);
         // Font runs are in visual order
         for (int runIndex = isRtl ? items.size() - 1 : 0; isRtl ? runIndex >= 0 : runIndex < items.size(); ) {
             var run = items.get(runIndex);
@@ -764,6 +768,7 @@ public class TextLayoutProcessor {
         final float scale = mEngine.getCoordinateScale();
 
         if ((styleFlags & CharacterStyle.OBFUSCATED) != 0) {
+            // obfuscated layout, all repl
             final TextLayoutEngine.FastCharSet fastChars = mEngine.lookupFastChars(font);
             final boolean alignPixels = sAlignPixels;
             final float advance = fastChars.offsets[0];
@@ -804,6 +809,305 @@ public class TextLayoutProcessor {
             } else {
                 finishFontRun(0);
             }*/
+        } else if (sColorEmoji) {
+            // If we perform layout with bitmap replacement, we have more runs.
+            final float level = mEngine.getResolutionLevel();
+            // HarfBuzz is introduced in Java 11 or higher, perform measure and layout below
+            final GlyphManager glyphManager = mEngine.getGlyphManager();
+
+            TextLayoutEngine.FastCharSet fastChars = null;
+            final boolean alignPixels = sAlignPixels;
+
+            // Measure grapheme cluster in visual order
+            BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
+            final CharArrayIterator charIterator = new CharArrayIterator(text, start, limit);
+            breaker.setText(charIterator);
+            int prevPos;
+            int currPos;
+
+            if (isRtl) {
+                prevPos = limit;
+                int prevTextPos = limit;
+
+                while ((currPos = breaker.preceding(prevPos)) != BreakIterator.DONE) {
+                    final GLBakedGlyph emoji = mEngine.lookupEmoji(text, currPos, prevPos);
+                    // a replacement run
+                    if (emoji != null) {
+                        // a text run
+                        if (prevTextPos > prevPos) {
+                            // Layout glyphs in visual order.
+                            // We need baked glyph, strip index, posX, posY and render flag.
+                            final GlyphVector vector = glyphManager.layoutGlyphVector(
+                                    font, text, prevPos, prevTextPos, true);
+                            final int num = vector.getNumGlyphs();
+
+                            final float offsetX = mAdvance;
+
+                            Point2D position = vector.getGlyphPosition(0);
+                            Point2D nextPosition = position;
+                            for (int i = 0; i < num; i++, position = nextPosition) {
+                                int charIndex = vector.getGlyphCharIndex(i) + prevPos;
+
+                                float posX = (float) position.getX() / level + offsetX;
+                                float posY = (float) position.getY() / level;
+                                // Align with a full pixel
+                                if (alignPixels) {
+                                    posX = Math.round(posX * scale) / scale;
+                                    posY = Math.round(posY * scale) / scale;
+                                }
+
+                                // ASCII digits are not on SMP
+                                if (fastDigit && text[charIndex] == '0') {
+                                    if (fastChars == null) {
+                                        fastChars = mEngine.lookupFastChars(font);
+                                    }
+                                    mGlyphs.add(fastChars);
+                                    mCharIndices.add(charIndex);
+                                    mPositions.add(posX);
+                                    mPositions.add(posY);
+                                    mFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                                    mHasEffect |= hasEffect;
+                                    mHasFastDigit = true;
+                                } else {
+                                    int glyphCode = vector.getGlyphCode(i);
+                                    GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
+                                    if (glyph != null) {
+                                        mGlyphs.add(glyph);
+                                        mCharIndices.add(charIndex);
+                                        mPositions.add(posX);
+                                        mPositions.add(posY);
+                                        mFlags.add(styleFlags);
+                                        mHasEffect |= hasEffect;
+                                    }
+                                }
+
+                                nextPosition = vector.getGlyphPosition(i + 1);
+                            }
+
+                            mAdvance += (float) nextPosition.getX() / level;
+                        }
+
+                        // Normalization factor is constant
+                        mAdvances.set(currPos, TextLayoutEngine.EMOJI_SIZE / 4f);
+
+                        mGlyphs.add(emoji);
+                        mCharIndices.add(currPos);
+                        mPositions.add(alignPixels ? Math.round(mAdvance * scale) / scale : mAdvance);
+                        mPositions.add(0);
+                        mFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
+
+                        mAdvance += TextLayoutEngine.EMOJI_SIZE / 4f;
+
+                        prevTextPos = currPos;
+                    } else {
+                        GlyphVector vector = glyphManager.layoutGlyphVector(font, text, currPos, prevPos, true);
+                        // Don't forget to normalize it
+                        mAdvances.set(currPos, (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / level);
+                    }
+
+                    prevPos = currPos;
+                }
+
+                // last text run
+                if (prevTextPos > prevPos) {
+                    // Layout glyphs in visual order.
+                    // We need baked glyph, strip index, posX, posY and render flag.
+                    final GlyphVector vector = glyphManager.layoutGlyphVector(
+                            font, text, prevPos, prevTextPos, true);
+                    final int num = vector.getNumGlyphs();
+
+                    final float offsetX = mAdvance;
+
+                    Point2D position = vector.getGlyphPosition(0);
+                    Point2D nextPosition = position;
+                    for (int i = 0; i < num; i++, position = nextPosition) {
+                        int charIndex = vector.getGlyphCharIndex(i) + prevPos;
+
+                        float posX = (float) position.getX() / level + offsetX;
+                        float posY = (float) position.getY() / level;
+                        // Align with a full pixel
+                        if (alignPixels) {
+                            posX = Math.round(posX * scale) / scale;
+                            posY = Math.round(posY * scale) / scale;
+                        }
+
+                        // ASCII digits are not on SMP
+                        if (fastDigit && text[charIndex] == '0') {
+                            if (fastChars == null) {
+                                fastChars = mEngine.lookupFastChars(font);
+                            }
+                            mGlyphs.add(fastChars);
+                            mCharIndices.add(charIndex);
+                            mPositions.add(posX);
+                            mPositions.add(posY);
+                            mFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                            mHasEffect |= hasEffect;
+                            mHasFastDigit = true;
+                        } else {
+                            int glyphCode = vector.getGlyphCode(i);
+                            GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
+                            if (glyph != null) {
+                                mGlyphs.add(glyph);
+                                mCharIndices.add(charIndex);
+                                mPositions.add(posX);
+                                mPositions.add(posY);
+                                mFlags.add(styleFlags);
+                                mHasEffect |= hasEffect;
+                            }
+                        }
+
+                        nextPosition = vector.getGlyphPosition(i + 1);
+                    }
+
+                    mAdvance += (float) nextPosition.getX() / level;
+                }
+            } else {
+                prevPos = start;
+                int prevTextPos = start;
+
+                while ((currPos = breaker.following(prevPos)) != BreakIterator.DONE) {
+                    final GLBakedGlyph emoji = mEngine.lookupEmoji(text, prevPos, currPos);
+                    // a replacement run
+                    if (emoji != null) {
+                        // a text run
+                        if (prevTextPos < prevPos) {
+                            // Layout glyphs in visual order.
+                            // We need baked glyph, strip index, posX, posY and render flag.
+                            final GlyphVector vector = glyphManager.layoutGlyphVector(
+                                    font, text, prevTextPos, prevPos, false);
+                            final int num = vector.getNumGlyphs();
+
+                            final float offsetX = mAdvance;
+
+                            Point2D position = vector.getGlyphPosition(0);
+                            Point2D nextPosition = position;
+                            for (int i = 0; i < num; i++, position = nextPosition) {
+                                int charIndex = vector.getGlyphCharIndex(i) + prevTextPos;
+
+                                float posX = (float) position.getX() / level + offsetX;
+                                float posY = (float) position.getY() / level;
+                                // Align with a full pixel
+                                if (alignPixels) {
+                                    posX = Math.round(posX * scale) / scale;
+                                    posY = Math.round(posY * scale) / scale;
+                                }
+
+                                // ASCII digits are not on SMP
+                                if (fastDigit && text[charIndex] == '0') {
+                                    if (fastChars == null) {
+                                        fastChars = mEngine.lookupFastChars(font);
+                                    }
+                                    mGlyphs.add(fastChars);
+                                    mCharIndices.add(charIndex);
+                                    mPositions.add(posX);
+                                    mPositions.add(posY);
+                                    mFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                                    mHasEffect |= hasEffect;
+                                    mHasFastDigit = true;
+                                } else {
+                                    int glyphCode = vector.getGlyphCode(i);
+                                    GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
+                                    if (glyph != null) {
+                                        mGlyphs.add(glyph);
+                                        mCharIndices.add(charIndex);
+                                        mPositions.add(posX);
+                                        mPositions.add(posY);
+                                        mFlags.add(styleFlags);
+                                        mHasEffect |= hasEffect;
+                                    }
+                                }
+
+                                nextPosition = vector.getGlyphPosition(i + 1);
+                            }
+
+                            mAdvance += (float) nextPosition.getX() / level;
+                        }
+                        // Normalization factor is constant
+                        mAdvances.set(prevPos, TextLayoutEngine.EMOJI_SIZE / 4f);
+
+                        mGlyphs.add(emoji);
+                        mCharIndices.add(prevPos);
+                        mPositions.add(alignPixels ? Math.round(mAdvance * scale) / scale : mAdvance);
+                        mPositions.add(0);
+                        mFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
+
+                        mAdvance += TextLayoutEngine.EMOJI_SIZE / 4f;
+
+                        prevTextPos = currPos;
+                    } else {
+                        GlyphVector vector = glyphManager.layoutGlyphVector(font, text, prevPos, currPos, false);
+                        // Don't forget to normalize it
+                        mAdvances.set(prevPos, (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / level);
+                    }
+
+                    prevPos = currPos;
+                }
+
+                // last text run
+                if (prevTextPos < prevPos) {
+                    // Layout glyphs in visual order.
+                    // We need baked glyph, strip index, posX, posY and render flag.
+                    final GlyphVector vector = glyphManager.layoutGlyphVector(
+                            font, text, prevTextPos, prevPos, false);
+                    final int num = vector.getNumGlyphs();
+
+                    final float offsetX = mAdvance;
+
+                    Point2D position = vector.getGlyphPosition(0);
+                    Point2D nextPosition = position;
+                    for (int i = 0; i < num; i++, position = nextPosition) {
+                        int charIndex = vector.getGlyphCharIndex(i) + prevTextPos;
+
+                        float posX = (float) position.getX() / level + offsetX;
+                        float posY = (float) position.getY() / level;
+                        // Align with a full pixel
+                        if (alignPixels) {
+                            posX = Math.round(posX * scale) / scale;
+                            posY = Math.round(posY * scale) / scale;
+                        }
+
+                        // ASCII digits are not on SMP
+                        if (fastDigit && text[charIndex] == '0') {
+                            if (fastChars == null) {
+                                fastChars = mEngine.lookupFastChars(font);
+                            }
+                            mGlyphs.add(fastChars);
+                            mCharIndices.add(charIndex);
+                            mPositions.add(posX);
+                            mPositions.add(posY);
+                            mFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                            mHasEffect |= hasEffect;
+                            mHasFastDigit = true;
+                        } else {
+                            int glyphCode = vector.getGlyphCode(i);
+                            GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
+                            if (glyph != null) {
+                                mGlyphs.add(glyph);
+                                mCharIndices.add(charIndex);
+                                mPositions.add(posX);
+                                mPositions.add(posY);
+                                mFlags.add(styleFlags);
+                                mHasEffect |= hasEffect;
+                            }
+                        }
+
+                        nextPosition = vector.getGlyphPosition(i + 1);
+                    }
+
+                    mAdvance += (float) nextPosition.getX() / level;
+                }
+            }
+
+            // Compute line break boundaries, will be sorted into logical order.
+            breaker = BreakIterator.getLineInstance(locale);
+            charIterator.first();
+            breaker.setText(charIterator);
+            prevPos = start;
+            while ((currPos = breaker.following(prevPos)) != BreakIterator.DONE) {
+                mLineBoundaries.add(currPos);
+                prevPos = currPos;
+            }
+
         } else {
             final float level = mEngine.getResolutionLevel();
             // HarfBuzz is introduced in Java 11 or higher, perform measure and layout below
@@ -811,7 +1115,7 @@ public class TextLayoutProcessor {
 
             // Measure grapheme cluster in logical order
             BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
-            CharArrayIterator charIterator = new CharArrayIterator(text, start, limit);
+            final CharArrayIterator charIterator = new CharArrayIterator(text, start, limit);
             breaker.setText(charIterator);
             int prevPos = start;
             int currPos;
