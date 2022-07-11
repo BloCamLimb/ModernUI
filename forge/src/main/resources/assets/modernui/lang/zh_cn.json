@@ -86,5 +86,6 @@
   "error.modernui.gl_caps": "Modern UI 图形引擎已禁用",
   "error.modernui.gl_caps_desc": "由于 OpenGL 4.5 core 或其 ARB capability 测试失败，Modern UI 的图形引擎已被禁用。这意味着所有由 Modern UI 原生提供的GUI将不会渲染或绘制。然而，由 Modern UI Forge 扩展所提供的文本引擎、平滑滚动、GUI比例滑块选项、虚化背景、游戏加载叮音效、物品栏界面暂停等其他功能仍然可用。\n显卡: %s, OpenGL: %s. 下列 ARB 扩展是必须的: %s\n对于 Windows 和 Linux，首先更新你的显卡驱动。如果你有核显，请使用独显运行 Java 应用。对于 macOS 或其他情况，点击 OK 寻求帮助",
   "gui.modernui.ok": "OK",
-  "gui.modernui.dont_show_again": "不再显示"
+  "gui.modernui.dont_show_again": "不再显示",
+  "gui.modernui.restart_to_work": "重启游戏以使设置生效"
 }

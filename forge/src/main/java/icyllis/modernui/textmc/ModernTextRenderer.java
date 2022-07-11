@@ -20,6 +20,8 @@ package icyllis.modernui.textmc;
 
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
+import icyllis.modernui.graphics.font.GLFontAtlas;
+import icyllis.modernui.graphics.font.GlyphManager;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.network.chat.FormattedText;
@@ -36,7 +38,7 @@ import javax.annotation.Nonnull;
  * @author BloCamLimb
  */
 @OnlyIn(Dist.CLIENT)
-public final class ModernFontRenderer {
+public final class ModernTextRenderer {
 
     public static final Vector3f SHADOW_OFFSET = new Vector3f(0.0F, 0.0F, 0.03F);
 
@@ -96,8 +98,9 @@ public final class ModernFontRenderer {
         TextRenderNode node = layoutEngine.lookupVanillaNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        // performance impact
-        if (source instanceof MultiBufferSource.BufferSource) {
+        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling) &&
+                source instanceof MultiBufferSource.BufferSource) {
+            // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
@@ -136,8 +139,9 @@ public final class ModernFontRenderer {
         TextRenderNode node = layoutEngine.lookupComplexNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        // performance impact
-        if (source instanceof MultiBufferSource.BufferSource) {
+        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling) &&
+                source instanceof MultiBufferSource.BufferSource) {
+            // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
@@ -176,8 +180,9 @@ public final class ModernFontRenderer {
         TextRenderNode node = layoutEngine.lookupSequenceNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        // performance impact
-        if (source instanceof MultiBufferSource.BufferSource) {
+        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling) &&
+                source instanceof MultiBufferSource.BufferSource) {
+            // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {

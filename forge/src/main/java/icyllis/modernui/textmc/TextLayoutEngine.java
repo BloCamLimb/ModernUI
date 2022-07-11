@@ -77,6 +77,7 @@ public class TextLayoutEngine {
      * Time in seconds to recycle a render node in the cache.
      */
     public static volatile int sCacheLifespan = 12;
+    public static volatile int sRehashThreshold = 100;
 
     private static final ChatFormatting[] FORMATTING_TABLE = ChatFormatting.values();
 
@@ -290,7 +291,7 @@ public class TextLayoutEngine {
         mComponentCache.clear();
         mMultilayerCache.clear();
         mFastCharMap.clear();
-        boolean rehash = size > 500;
+        boolean rehash = size >= sRehashThreshold;
         if (rehash) {
             // Create new HashMap so that the internal hashtable of old maps are released as well
             mVanillaCache = new HashMap<>();

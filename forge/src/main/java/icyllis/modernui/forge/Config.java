@@ -336,8 +336,9 @@ final class Config {
                             "Control the anti-aliasing of raw glyph rendering.")
                     .define("antiAliasing", true);
             fractionalMetrics = builder.comment(
-                            "Control the fractional metrics of raw glyph rendering.")
-                    .define("fractionalMetrics", true);
+                            "Control the fractional metrics of raw glyph rendering.",
+                            "Disable for stronger fonts; Enable for smoother fonts.")
+                    .define("fractionalMetrics", false);
             linearSampling = builder.comment(
                             "Enable linear sampling for font atlases with mipmaps, mag filter will be always NEAREST.",
                             "If your fonts are not bitmap fonts, then you should keep this setting true.")

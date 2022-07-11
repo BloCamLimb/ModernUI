@@ -170,6 +170,16 @@ public class MixinStringSplitter {
      * @reason Modern Text Engine
      */
     @Overwrite
+    public void splitLines(@Nonnull String text, int width, @Nonnull Style style, boolean withEndSpace,
+                           @Nonnull StringSplitter.LinePosConsumer linePos) {
+        ModernStringSplitter.computeLineBreaks(text, width, style, linePos);
+    }
+
+    /**
+     * @author BloCamLimb
+     * @reason Modern Text Engine
+     */
+    @Overwrite
     public void splitLines(@Nonnull FormattedText text, int width, @Nonnull Style style,
                            @Nonnull BiConsumer<FormattedText, Boolean> consumer) {
         ModernStringSplitter.computeLineBreaks(text, width, style, consumer);

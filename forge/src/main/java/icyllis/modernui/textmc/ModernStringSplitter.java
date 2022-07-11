@@ -354,27 +354,83 @@ public final class ModernStringSplitter {
     private static final int NOWHERE = 0xFFFFFFFF;
 
     /**
-     * Wrap lines.
+     * Compute Unicode line breaking boundaries. If none, compute grapheme cluster boundaries.
+     * Returns the maximum index that the accumulated width not exceeds the width.
      * <p>
-     * For performance reasons, Unicode standard is not used, tab stops are not supported.
+     * The text can contain formatting codes.
      *
-     * @param text            text to handle
-     * @param width           line width
-     * @param style           style for the text
-     * @param includeEndSpace include the end space char index to consumer
-     * @param linePosConsumer accept each line result, params{line base style, start index (inclusive), end index
-     *                        (exclusive)}
+     * @param text     the text to break line
+     * @param width    the width limit of the line
+     * @param base     the base style
+     * @param consumer accept each line result, params lineBaseStyle, startIndex (inclusive), endIndex (exclusive)
      */
-    public static void wrapLines(@Nonnull String text, int width, @Nonnull Style style, boolean includeEndSpace,
-                                 @Nonnull StringSplitter.LinePosConsumer linePosConsumer) {
-        if (text.isEmpty()) {
-            linePosConsumer.accept(style, 0, 0);
+    public static void computeLineBreaks(@Nonnull String text, float width, @Nonnull Style base,
+                                         @Nonnull StringSplitter.LinePosConsumer consumer) {
+        if (text.isEmpty() || width < 0) {
             return;
         }
-        TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
+
+        final TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, base);
         if (width >= node.getAdvance()) {
-            linePosConsumer.accept(style, 0, text.length());
+            consumer.accept(base, 0, text.length());
             return;
+        }
+
+        // ignore styles generated from formatting codes
+        final LineBreaker lineBreaker = new LineBreaker(width);
+        final int end = node.getLength();
+
+        int nextBoundaryIndex = 0;
+        int paraEnd;
+        for (int paraStart = 0; paraStart < end; paraStart = paraEnd) {
+            paraEnd = -1;
+            for (int i = paraStart; i < end; i++)
+                if (node.getTextBuf()[i] == '\n') {
+                    paraEnd = i;
+                    break;
+                }
+            if (paraEnd < 0) {
+                // No LINE_FEED(U+000A) character found. Use end of the text as the paragraph
+                // end.
+                paraEnd = end;
+            } else {
+                paraEnd++;  // Includes LINE_FEED(U+000A) to the prev paragraph.
+            }
+
+            nextBoundaryIndex = lineBreaker.process(node, paraStart, paraEnd, nextBoundaryIndex);
+        }
+
+        final IntList result = lineBreaker.mBreakPoints;
+
+        int mStripIndex = 0;
+
+        int mBreakOffsetIndex = 0;
+        int mBreakPointOffset = result.getInt(mBreakOffsetIndex++);
+
+        Style currStyle = base;
+        Style lastStyle = base;
+        int lastSubPos = 0;
+        for (int i = 0, e = text.length(); i < e; i++) {
+            char c = text.charAt(i);
+            if (c == ChatFormatting.PREFIX_CODE) {
+                i++;
+                ChatFormatting formatting = TextLayoutEngine.getFormattingByCode(text.charAt(i));
+                if (formatting != null) {
+                    currStyle = formatting == ChatFormatting.RESET ? base :
+                            currStyle.applyLegacyFormat(formatting);
+                }
+                continue;
+            }
+            // End index is exclusive, so ++index not index++
+            if (++mStripIndex >= mBreakPointOffset) {
+                consumer.accept(lastStyle, lastSubPos, i + 1);
+                lastSubPos = i + 1;
+                lastStyle = currStyle;
+                if (mBreakOffsetIndex >= result.size()) {
+                    break;
+                }
+                mBreakPointOffset = result.getInt(mBreakOffsetIndex++);
+            }
         }
     }
 
@@ -386,28 +442,30 @@ public final class ModernStringSplitter {
      *
      * @param text     the text to break line
      * @param width    the width limit of the line
-     * @param style    the base style
+     * @param base     the base style
      * @param consumer the line consumer, second boolean false meaning it's the first line of a paragraph
      */
-    public static void computeLineBreaks(@Nonnull FormattedText text, float width, @Nonnull Style style,
+    public static void computeLineBreaks(@Nonnull FormattedText text, float width, @Nonnull Style base,
                                          @Nonnull BiConsumer<FormattedText, Boolean> consumer) {
         if (text == TextComponent.EMPTY || text == FormattedText.EMPTY || width < 0) {
             return;
         }
 
-        final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, style);
+        final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, base);
         if (width >= node.getAdvance()) {
             consumer.accept(text, Boolean.FALSE);
             return;
         }
 
+        // ignore styles generated from formatting codes
         final LineBreaker lineBreaker = new LineBreaker(width);
+        final int end = node.getLength();
 
         int nextBoundaryIndex = 0;
         int paraEnd;
-        for (int paraStart = 0; paraStart < node.getLength(); paraStart = paraEnd) {
+        for (int paraStart = 0; paraStart < end; paraStart = paraEnd) {
             paraEnd = -1;
-            for (int i = paraStart; i < node.getLength(); i++)
+            for (int i = paraStart; i < end; i++)
                 if (node.getTextBuf()[i] == '\n') {
                     paraEnd = i;
                     break;
@@ -415,7 +473,7 @@ public final class ModernStringSplitter {
             if (paraEnd < 0) {
                 // No LINE_FEED(U+000A) character found. Use end of the text as the paragraph
                 // end.
-                paraEnd = node.getLength();
+                paraEnd = end;
             } else {
                 paraEnd++;  // Includes LINE_FEED(U+000A) to the prev paragraph.
             }
@@ -423,42 +481,58 @@ public final class ModernStringSplitter {
             nextBoundaryIndex = lineBreaker.process(node, paraStart, paraEnd, nextBoundaryIndex);
         }
 
+        final IntList result = lineBreaker.mBreakPoints;
+
         text.visit(new FormattedText.StyledContentConsumer<Unit>() {
             private ComponentCollector mCollector = new ComponentCollector();
-            private int mStripIndex;
+            private int mStripIndex = 0;
 
             private int mBreakOffsetIndex = 0;
-            private int mBreakPointOffset = lineBreaker.mBreakPoints.getInt(mBreakOffsetIndex++);
+            private int mBreakPointOffset = result.getInt(mBreakOffsetIndex++);
 
-            private boolean mNonFirstLine = false;
+            private boolean mNonNewPara = false;
 
             @Nonnull
             @Override
-            public Optional<Unit> accept(@Nonnull Style sty, @Nonnull String string) {
-                final int length = string.length();
+            public Optional<Unit> accept(@Nonnull Style aStyle, @Nonnull String aText) {
+                Style currStyle = aStyle;
+                Style lastStyle = aStyle;
                 int lastSubPos = 0;
-                for (int i = 0; i < length; i++) {
-                    if (string.charAt(i) == ChatFormatting.PREFIX_CODE) {
+                for (int i = 0, e = aText.length(); i < e; i++) {
+                    char c = aText.charAt(i);
+                    if (c == ChatFormatting.PREFIX_CODE) {
                         i++;
+                        ChatFormatting formatting = TextLayoutEngine.getFormattingByCode(aText.charAt(i));
+                        if (formatting != null) {
+                            currStyle = formatting == ChatFormatting.RESET ? aStyle :
+                                    currStyle.applyLegacyFormat(formatting);
+                        }
                         continue;
                     }
                     // End index is exclusive, so ++index not index++
                     if (++mStripIndex >= mBreakPointOffset) {
-                        mCollector.append(FormattedText.of(string.substring(lastSubPos, i + 1), sty));
-                        lastSubPos = i + 1;
-                        consumer.accept(mCollector.getResultOrEmpty(), mNonFirstLine);
-                        if (mBreakOffsetIndex == lineBreaker.mBreakPoints.size()) {
+                        String substring = aText.substring(lastSubPos, i + 1);
+                        if (!substring.isEmpty()) {
+                            mCollector.append(FormattedText.of(substring, lastStyle));
+                        }
+                        consumer.accept(mCollector.getResultOrEmpty(), mNonNewPara);
+                        if (mBreakOffsetIndex >= result.size()) {
                             return FormattedText.STOP_ITERATION;
                         }
+                        lastSubPos = i + 1;
+                        lastStyle = currStyle;
                         mCollector = new ComponentCollector();
-                        mBreakPointOffset = lineBreaker.mBreakPoints.getInt(mBreakOffsetIndex++);
-                        mNonFirstLine = true;
+                        mBreakPointOffset = result.getInt(mBreakOffsetIndex++);
+                        mNonNewPara = c != '\n';
                     }
                 }
-                mCollector.append(FormattedText.of(string.substring(lastSubPos), sty));
+                String substring = aText.substring(lastSubPos);
+                if (!substring.isEmpty()) {
+                    mCollector.append(FormattedText.of(substring, lastStyle));
+                }
                 return Optional.empty(); // continue
             }
-        }, style);
+        }, base);
     }
 
     public static class LineBreaker {

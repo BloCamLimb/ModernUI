@@ -485,12 +485,13 @@ public class TextLayoutProcessor {
     @Nonnull
     private TextRenderNode performFullLayout(@Nullable String raw) {
         if (!mBuilder.isEmpty()) {
+            final boolean fastDigit = raw != null;
             final ULocale locale = ULocale.forLocale(ModernUI.getSelectedLocale());
             mAdvances.size(mBuilder.length());
             final char[] textBuf = mBuilder.toCharArray();
-            performBidiAnalysis(textBuf, raw != null, locale);
+            performBidiAnalysis(textBuf, fastDigit, locale);
             if (mAdvance > 0) {
-                if (raw != null) {
+                if (fastDigit) {
                     adjustForFastDigit(raw);
                 }
                 mLineBoundaries.sort(IntComparators.NATURAL_COMPARATOR);
@@ -806,12 +807,12 @@ public class TextLayoutProcessor {
         } else {
             final float level = mEngine.getResolutionLevel();
             // HarfBuzz is introduced in Java 11 or higher, perform measure and layout below
-            GlyphManager glyphManager = mEngine.getGlyphManager();
+            final GlyphManager glyphManager = mEngine.getGlyphManager();
 
             // Measure grapheme cluster in logical order
             BreakIterator breaker = BreakIterator.getCharacterInstance(locale);
-            CharArrayIterator iterator = new CharArrayIterator(text, start, limit);
-            breaker.setText(iterator);
+            CharArrayIterator charIterator = new CharArrayIterator(text, start, limit);
+            breaker.setText(charIterator);
             int prevPos = start;
             int currPos;
             while ((currPos = breaker.following(prevPos)) != BreakIterator.DONE) {
@@ -823,8 +824,8 @@ public class TextLayoutProcessor {
             }
             // Compute line break boundaries, will be sorted into logical order.
             breaker = BreakIterator.getLineInstance(locale);
-            iterator.first();
-            breaker.setText(iterator);
+            charIterator.first();
+            breaker.setText(charIterator);
             prevPos = start;
             while ((currPos = breaker.following(prevPos)) != BreakIterator.DONE) {
                 mLineBoundaries.add(currPos);

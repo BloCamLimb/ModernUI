@@ -20,7 +20,7 @@ package icyllis.modernui.textmc.mixin;
 
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.textmc.FormattedTextWrapper;
-import icyllis.modernui.textmc.ModernFontRenderer;
+import icyllis.modernui.textmc.ModernTextRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -44,7 +44,7 @@ public abstract class MixinFontRenderer {
     public int drawInBatch(@Nonnull String text, float x, float y, int color, boolean dropShadow,
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight, @Deprecated boolean bidiFlag) {
-        return ModernFontRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
+        return ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
                 colorBackground, packedLight);
     }
 
@@ -56,7 +56,7 @@ public abstract class MixinFontRenderer {
     public int drawInBatch(@Nonnull Component text, float x, float y, int color, boolean dropShadow,
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight) {
-        return ModernFontRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
+        return ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
                 colorBackground, packedLight);
     }
 
@@ -74,7 +74,7 @@ public abstract class MixinFontRenderer {
                     FormattedText.STOP_ITERATION : Optional.empty(), Style.EMPTY).isPresent())
                 return callDrawInternal(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground,
                         packedLight);
-        return ModernFontRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
+        return ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
                 colorBackground, packedLight);
     }
 
