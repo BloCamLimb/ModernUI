@@ -41,6 +41,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.jetbrains.annotations.ApiStatus;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
@@ -178,6 +179,7 @@ final class Config {
         //private final ForgeConfigSpec.BooleanValue hudBars;
         final ForgeConfigSpec.BooleanValue forceRtl;
         final ForgeConfigSpec.DoubleValue fontScale;
+        final ForgeConfigSpec.BooleanValue borderlessWindow;
 
         final ForgeConfigSpec.IntValue scrollbarSize;
         final ForgeConfigSpec.IntValue touchSlop;
@@ -289,6 +291,9 @@ final class Config {
                     "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
                     .define("hudBars", false);*/
 
+            borderlessWindow = builder.comment("Whether to use borderless window.")
+                    .define("borderlessWindow", false);
+
             skipGLCapsError = builder.comment("UI renderer is disabled when the OpenGL capability test fails.",
                             "Sometimes the driver reports wrong values, you can enable this to ignore it.")
                     .define("skipGLCapsError", false);
@@ -372,6 +377,10 @@ final class Config {
             builder.pop();
         }
 
+        void saveOnly() {
+            Util.ioPool().execute(() -> CLIENT_SPEC.save());
+        }
+
         void saveAndReload() {
             Util.ioPool().execute(() -> {
                 CLIENT_SPEC.save();
@@ -432,6 +441,12 @@ final class Config {
             TooltipRenderer.sAnimationDuration = tooltipDuration.get();
 
             UIManager.sPlaySoundOnLoaded = ding.get();
+            Minecraft.getInstance().tell(() -> {
+                GLFW.glfwSetWindowAttrib(Minecraft.getInstance().getWindow().getWindow(),
+                        GLFW.GLFW_DECORATED, borderlessWindow.get() ? GLFW.GLFW_FALSE : GLFW.GLFW_TRUE);
+                GLFW.glfwMaximizeWindow(Minecraft.getInstance().getWindow().getWindow());
+            });
+
             //TestHUD.sBars = hudBars.get();
             Handler handler = Core.getUiHandlerAsync();
             if (handler != null) {

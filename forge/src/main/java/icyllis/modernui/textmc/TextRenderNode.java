@@ -111,7 +111,7 @@ public class TextRenderNode {
     private final float[] mAdvances;
 
     /*
-     * lower 24 bits - RGB color, ignored when has USE_PARAM_COLOR bit
+     * lower 24 bits - 0xRRGGBB color
      * higher 8 bits
      * |--------|
      *         1  BOLD
@@ -119,9 +119,9 @@ public class TextRenderNode {
      *       1    UNDERLINE
      *      1     STRIKETHROUGH
      *     1      OBFUSCATED
-     *    1       FORMATTING_CODE
-     *   1        FAST_DIGIT_REPLACEMENT
-     *  1         NO_COLOR_SPECIFIED
+     *    1       FAST_DIGIT_REPLACEMENT
+     *   1        BITMAP_REPLACEMENT
+     *  1         USE_PARAM_COLOR
      * |--------|
      */
     /**
@@ -272,39 +272,49 @@ public class TextRenderNode {
             }
             final float rx;
             final float ry;
-            if (raw != null && (flag & CharacterStyle.FAST_DIGIT_REPLACEMENT) != 0) {
-                var chars = (TextLayoutEngine.FastCharSet) glyph;
-                int fastIndex = raw.charAt(mCharIndices[i]) - '0';
-                if (fastIndex < 0 || fastIndex > 9) {
-                    continue;
-                }
-                glyph = chars.glyphs[fastIndex];
-                if (fastIndex != 0) {
-                    rx = x + positions[i << 1] + glyph.x / level + chars.offsets[fastIndex];
-                } else {
-                    // 0 is standard, no additional offset
-                    rx = x + positions[i << 1] + glyph.x / level;
-                }
-            } else if ((flag & CharacterStyle.OBFUSCATED) != 0) {
-                var chars = (TextLayoutEngine.FastCharSet) glyph;
-                int fastIndex = RANDOM.nextInt(chars.glyphs.length);
-                glyph = chars.glyphs[fastIndex];
-                if (fastIndex != 0) {
-                    rx = x + positions[i << 1] + glyph.x / level + chars.offsets[fastIndex];
-                } else {
-                    // 0 is standard, no additional offset
-                    rx = x + positions[i << 1] + glyph.x / level;
-                }
+            final float w;
+            final float h;
+            if ((flag & CharacterStyle.BITMAP_REPLACEMENT) != 0) {
+                rx = x + positions[i << 1];
+                ry = y + positions[(i << 1) + 1] - BASELINE_OFFSET;
+                w = 9;
+                h = 9;
             } else {
-                rx = x + positions[i << 1] + glyph.x / level;
+                if (raw != null && (flag & CharacterStyle.FAST_DIGIT_REPLACEMENT) != 0) {
+                    var chars = (TextLayoutEngine.FastCharSet) glyph;
+                    int fastIndex = raw.charAt(mCharIndices[i]) - '0';
+                    if (fastIndex < 0 || fastIndex > 9) {
+                        continue;
+                    }
+                    glyph = chars.glyphs[fastIndex];
+                    if (fastIndex != 0) {
+                        rx = x + positions[i << 1] + glyph.x / level + chars.offsets[fastIndex];
+                    } else {
+                        // 0 is standard, no additional offset
+                        rx = x + positions[i << 1] + glyph.x / level;
+                    }
+                } else if ((flag & CharacterStyle.OBFUSCATED) != 0) {
+                    var chars = (TextLayoutEngine.FastCharSet) glyph;
+                    int fastIndex = RANDOM.nextInt(chars.glyphs.length);
+                    glyph = chars.glyphs[fastIndex];
+                    if (fastIndex != 0) {
+                        rx = x + positions[i << 1] + glyph.x / level + chars.offsets[fastIndex];
+                    } else {
+                        // 0 is standard, no additional offset
+                        rx = x + positions[i << 1] + glyph.x / level;
+                    }
+                } else {
+                    rx = x + positions[i << 1] + glyph.x / level;
+                }
+                ry = y + positions[(i << 1) + 1] + glyph.y / level;
+
+                w = glyph.width / level;
+                h = glyph.height / level;
             }
-            ry = y + positions[(i << 1) + 1] + glyph.y / level;
             /*if (alignPixels) {
                 rx = Math.round(rx * scale) / scale;
                 ry = Math.round(ry * scale) / scale;
             }*/
-            final float w = glyph.width / level;
-            final float h = glyph.height / level;
             if (texture != glyph.texture) {
                 texture = glyph.texture;
                 builder = source.getBuffer(TextRenderType.getOrCreate(texture, seeThrough));
@@ -453,7 +463,7 @@ public class TextRenderNode {
     }
 
     /*
-     * lower 24 bits - RGB color, ignored when has USE_PARAM_COLOR bit
+     * lower 24 bits - 0xRRGGBB color
      * higher 8 bits
      * |--------|
      *         1  BOLD
@@ -461,9 +471,9 @@ public class TextRenderNode {
      *       1    UNDERLINE
      *      1     STRIKETHROUGH
      *     1      OBFUSCATED
-     *    1       FORMATTING_CODE
-     *   1        FAST_DIGIT_REPLACEMENT
-     *  1         NO_COLOR_SPECIFIED
+     *    1       FAST_DIGIT_REPLACEMENT
+     *   1        BITMAP_REPLACEMENT
+     *  1         USE_PARAM_COLOR
      * |--------|
      */
 

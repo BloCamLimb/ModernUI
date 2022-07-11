@@ -21,6 +21,7 @@ package icyllis.modernui.textmc;
 import it.unimi.dsi.fastutil.chars.CharArrayList;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
  * Used for comparing with char sequences, or build char sequences (string) or char arrays.
@@ -36,6 +37,13 @@ public class CharSequenceBuilder implements CharSequence {
 
     public void addChar(char c) {
         mChars.add(c);
+    }
+
+    public void addCharArray(@Nonnull char[] chars, int start, int end) {
+        Objects.checkFromToIndex(start, end, chars.length);
+        int offset = mChars.size();
+        mChars.size(offset + end - start);
+        System.arraycopy(chars, start, mChars.elements(), offset, end - start);
     }
 
     /**
@@ -67,6 +75,14 @@ public class CharSequenceBuilder implements CharSequence {
         for (int i = 0; i < length; i++) {
             buf[offset + i] = seq.charAt(i);
         }
+    }
+
+    @Nonnull
+    public CharSequenceBuilder updateCharArray(@Nonnull char[] chars, int start, int end) {
+        Objects.checkFromToIndex(start, end, chars.length);
+        mChars.size(end - start);
+        System.arraycopy(chars, start, mChars.elements(), 0, end - start);
+        return this;
     }
 
     public void clear() {

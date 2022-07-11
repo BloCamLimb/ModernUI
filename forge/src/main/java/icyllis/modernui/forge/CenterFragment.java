@@ -45,6 +45,7 @@ import net.minecraftforge.common.ForgeConfigSpec.IntValue;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.ArrayList;
 
 import static icyllis.modernui.view.View.dp;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
@@ -402,12 +403,17 @@ public class CenterFragment extends Fragment {
             }
             {
                 var option = createButtonOption("modernui.center.text.colorEmoji");
-                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(ModernUITextMC.CONFIG.mColorEmoji.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    ModernUITextMC.CONFIG.mColorEmoji.set(checked);
+                    ModernUITextMC.CONFIG.saveAndReload();
+                });
                 category.addView(option);
             }
             {
                 var option = createButtonOption("modernui.center.text.bitmapRepl");
-                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(ModernUITextMC.CONFIG.mColorEmoji.get());
                 category.addView(option);
             }
             {
@@ -539,12 +545,17 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
+                var option = createButtonOption("modernui.center.text.fixSurrogate");
+                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                category.addView(option);
+            }
+            {
                 var option = createButtonOption("modernui.center.text.fastDigitRepl");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
             {
-                var option = createButtonOption("modernui.center.text.fixSurrogate");
+                var option = createButtonOption("modernui.center.text.fastStreamingAlgo");
                 option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
                 category.addView(option);
             }
@@ -674,8 +685,64 @@ public class CenterFragment extends Fragment {
         {
             var category = createCategory("modernui.center.category.font");
             {
-                var option = createButtonOption("modernui.center.font.fontFamily");
-                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
+                var option = new LinearLayout();
+                option.setOrientation(LinearLayout.HORIZONTAL);
+                option.setHorizontalGravity(Gravity.START);
+
+                final int dp3 = dp(3);
+                {
+                    var title = new TextView();
+                    title.setText(I18n.get("modernui.center.font.fontFamily"));
+                    title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                    title.setTextSize(14);
+
+                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 2);
+                    params.gravity = Gravity.START | Gravity.CENTER_VERTICAL;
+                    option.addView(title, params);
+                }
+                {
+                    var input = new EditText();
+                    input.setId(R.id.input);
+                    input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                    input.setTextSize(14);
+                    input.setPadding(dp3, 0, dp3, 0);
+
+                    input.setText(String.join("\n", Config.CLIENT.fontFamily.get()));
+                    input.setOnFocusChangeListener((view, hasFocus) -> {
+                        if (!hasFocus) {
+                            EditText v = (EditText) view;
+                            ArrayList<String> list = new ArrayList<>();
+                            for (String s : v.getText().toString().split("\n")) {
+                                if (!s.isBlank()) {
+                                    list.add(s);
+                                }
+                            }
+                            v.setText(String.join("\n", list));
+                            if (!Config.CLIENT.fontFamily.get().equals(list)) {
+                                Config.CLIENT.fontFamily.set(list);
+                                Config.CLIENT.saveOnly();
+                                Toast.makeText(I18n.get("gui.modernui.restart_to_work"), Toast.LENGTH_SHORT)
+                                        .show();
+                            }
+                        }
+                    });
+
+                    StateListDrawable background = new StateListDrawable();
+                    background.addState(StateSet.get(StateSet.VIEW_STATE_HOVERED), new InputBackground());
+                    background.setEnterFadeDuration(300);
+                    background.setExitFadeDuration(300);
+                    input.setBackground(background);
+
+                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1);
+                    params.gravity = Gravity.CENTER_VERTICAL;
+                    option.addView(input, params);
+                }
+
+                var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+                params.gravity = Gravity.CENTER;
+                params.setMargins(dp6, 0, dp6, 0);
+                option.setLayoutParams(params);
+
                 category.addView(option);
             }
             {
