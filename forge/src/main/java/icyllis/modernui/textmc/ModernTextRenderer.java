@@ -98,7 +98,7 @@ public final class ModernTextRenderer {
         TextRenderNode node = layoutEngine.lookupVanillaNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling) &&
+        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling || node.hasColorEmoji()) &&
                 source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
@@ -139,7 +139,7 @@ public final class ModernTextRenderer {
         TextRenderNode node = layoutEngine.lookupComplexNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling) &&
+        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling || node.hasColorEmoji()) &&
                 source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
@@ -180,7 +180,7 @@ public final class ModernTextRenderer {
         TextRenderNode node = layoutEngine.lookupSequenceNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling) &&
+        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling || node.hasColorEmoji()) &&
                 source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());

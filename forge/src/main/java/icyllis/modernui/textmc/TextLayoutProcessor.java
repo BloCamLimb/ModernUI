@@ -186,6 +186,7 @@ public class TextLayoutProcessor {
      */
     private boolean mHasEffect;
     private boolean mHasFastDigit;
+    private boolean mHasColorEmoji;
 
     /**
      * Always LTR.
@@ -358,6 +359,7 @@ public class TextLayoutProcessor {
         mAdvance = 0;
         mHasEffect = false;
         mHasFastDigit = false;
+        mHasColorEmoji = false;
     }
 
     @Nonnull
@@ -500,7 +502,7 @@ public class TextLayoutProcessor {
                 mLineBoundaries.sort(IntComparators.NATURAL_COMPARATOR);
                 return new TextRenderNode(textBuf, mGlyphs.toArray(new GLBakedGlyph[0]), mCharIndices.toIntArray(),
                         mPositions.toFloatArray(), mAdvances.toFloatArray(), mFlags.toIntArray(),
-                        mLineBoundaries.toIntArray(), mAdvance, mHasEffect);
+                        mLineBoundaries.toIntArray(), mAdvance, mHasEffect, mHasFastDigit, mHasColorEmoji);
             }
         }
         return TextRenderNode.makeEmpty();
@@ -887,16 +889,18 @@ public class TextLayoutProcessor {
                             mAdvance += (float) nextPosition.getX() / level;
                         }
 
-                        // Normalization factor is constant
-                        mAdvances.set(currPos, TextLayoutEngine.EMOJI_SIZE / 4f);
+                        // Normalization factor is constant, add additional 1 scaled advance,
+                        // we will add 0.5 baseline x to center it
+                        mAdvances.set(currPos, TextLayoutEngine.EMOJI_BASE_SIZE + 1);
 
                         mGlyphs.add(emoji);
                         mCharIndices.add(currPos);
                         mPositions.add(alignPixels ? Math.round(mAdvance * scale) / scale : mAdvance);
                         mPositions.add(0);
                         mFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
+                        mHasColorEmoji = true;
 
-                        mAdvance += TextLayoutEngine.EMOJI_SIZE / 4f;
+                        mAdvance += TextLayoutEngine.EMOJI_BASE_SIZE + 1;
 
                         prevTextPos = currPos;
                     } else {
@@ -1022,16 +1026,19 @@ public class TextLayoutProcessor {
 
                             mAdvance += (float) nextPosition.getX() / level;
                         }
-                        // Normalization factor is constant
-                        mAdvances.set(prevPos, TextLayoutEngine.EMOJI_SIZE / 4f);
+
+                        // Normalization factor is constant, add additional 1 scaled advance,
+                        // we will add 0.5 baseline x to center it
+                        mAdvances.set(prevPos, TextLayoutEngine.EMOJI_BASE_SIZE + 1);
 
                         mGlyphs.add(emoji);
                         mCharIndices.add(prevPos);
                         mPositions.add(alignPixels ? Math.round(mAdvance * scale) / scale : mAdvance);
                         mPositions.add(0);
                         mFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
+                        mHasColorEmoji = true;
 
-                        mAdvance += TextLayoutEngine.EMOJI_SIZE / 4f;
+                        mAdvance += TextLayoutEngine.EMOJI_BASE_SIZE + 1;
 
                         prevTextPos = currPos;
                     } else {

@@ -19,6 +19,7 @@
 package icyllis.modernui.forge;
 
 import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
@@ -30,6 +31,7 @@ import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ChatScreen;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -45,8 +47,7 @@ import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 
 import static icyllis.modernui.ModernUI.*;
@@ -179,7 +180,7 @@ final class Config {
         //private final ForgeConfigSpec.BooleanValue hudBars;
         final ForgeConfigSpec.BooleanValue forceRtl;
         final ForgeConfigSpec.DoubleValue fontScale;
-        final ForgeConfigSpec.BooleanValue borderlessWindow;
+        final ForgeConfigSpec.EnumValue<WindowMode> windowMode;
 
         final ForgeConfigSpec.IntValue scrollbarSize;
         final ForgeConfigSpec.IntValue touchSlop;
@@ -291,8 +292,8 @@ final class Config {
                     "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
                     .define("hudBars", false);*/
 
-            borderlessWindow = builder.comment("Whether to use borderless window.")
-                    .define("borderlessWindow", false);
+            windowMode = builder.comment("Control the window mode, normal mode does nothing.")
+                    .defineEnum("windowMode", WindowMode.NORMAL);
 
             skipGLCapsError = builder.comment("UI renderer is disabled when the OpenGL capability test fails.",
                             "Sometimes the driver reports wrong values, you can enable this to ignore it.")
@@ -342,8 +343,8 @@ final class Config {
                     .define("antiAliasing", true);
             fractionalMetrics = builder.comment(
                             "Control the fractional metrics of raw glyph rendering.",
-                            "Disable for stronger fonts; Enable for smoother fonts.")
-                    .define("fractionalMetrics", false);
+                            "Disable for rougher fonts; Enable for smoother fonts.")
+                    .define("fractionalMetrics", true);
             linearSampling = builder.comment(
                             "Enable linear sampling for font atlases with mipmaps, mag filter will be always NEAREST.",
                             "If your fonts are not bitmap fonts, then you should keep this setting true.")
@@ -361,10 +362,10 @@ final class Config {
                             "This list is only read once when the game is loaded. A game restart is required to reload")
                     .defineList("fontFamily", () -> {
                         List<String> list = new ArrayList<>();
+                        list.add("modernui:font/default.ttf");
                         list.add("Segoe UI");
                         list.add("modernui:font/biliw.otf");
                         list.add("Noto Sans");
-                        list.add("Open Sans");
                         list.add("San Francisco");
                         list.add("Calibri");
                         list.add("Microsoft YaHei UI");
@@ -441,11 +442,44 @@ final class Config {
             TooltipRenderer.sAnimationDuration = tooltipDuration.get();
 
             UIManager.sPlaySoundOnLoaded = ding.get();
-            Minecraft.getInstance().tell(() -> {
-                GLFW.glfwSetWindowAttrib(Minecraft.getInstance().getWindow().getWindow(),
-                        GLFW.GLFW_DECORATED, borderlessWindow.get() ? GLFW.GLFW_FALSE : GLFW.GLFW_TRUE);
-                GLFW.glfwMaximizeWindow(Minecraft.getInstance().getWindow().getWindow());
-            });
+            WindowMode winMode = windowMode.get();
+            if (winMode != WindowMode.NORMAL) {
+                Minecraft.getInstance().tell(() -> {
+                    Window winB3D = Minecraft.getInstance().getWindow();
+                    switch (winMode) {
+                        case FULLSCREEN -> {
+                            if (!winB3D.isFullscreen()) {
+                                winB3D.toggleFullScreen();
+                            }
+                        }
+                        case FULLSCREEN_BORDERLESS -> {
+                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                    GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
+                            GLFW.glfwMaximizeWindow(winB3D.getWindow());
+                        }
+                        case MAXIMIZED ->  {
+                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                    GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
+                            GLFW.glfwMaximizeWindow(winB3D.getWindow());
+                        }
+                        case MINIMIZED -> {
+                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                    GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
+                            GLFW.glfwIconifyWindow(winB3D.getWindow());
+                        }
+                        case WINDOWED -> {
+                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                    GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
+                            GLFW.glfwRestoreWindow(winB3D.getWindow());
+                        }
+                        case WINDOWED_BORDERLESS -> {
+                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                    GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
+                            GLFW.glfwRestoreWindow(winB3D.getWindow());
+                        }
+                    }
+                });
+            }
 
             //TestHUD.sBars = hudBars.get();
             Handler handler = Core.getUiHandlerAsync();
@@ -483,6 +517,22 @@ final class Config {
             }
 
             ModernUI.getSelectedTypeface();
+        }
+
+        public enum WindowMode {
+            NORMAL,
+            FULLSCREEN,
+            FULLSCREEN_BORDERLESS,
+            MAXIMIZED,
+            MINIMIZED,
+            WINDOWED,
+            WINDOWED_BORDERLESS;
+
+            @Nonnull
+            @Override
+            public String toString() {
+                return I18n.get("modernui.windowMode." + name().toLowerCase(Locale.ROOT));
+            }
         }
     }
 

@@ -18,6 +18,7 @@
 
 package icyllis.modernui.testforge;
 
+import com.google.gson.*;
 import com.ibm.icu.text.BreakIterator;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
@@ -40,6 +41,7 @@ import icyllis.modernui.textmc.CharSequenceBuilder;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.minecraft.util.GsonHelper;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
@@ -48,12 +50,15 @@ import javax.annotation.Nonnull;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.io.IOException;
+import java.io.*;
 import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import static icyllis.modernui.ModernUI.LOGGER;
@@ -159,6 +164,36 @@ public class TestMain {
         LOGGER.info(MARKER, "HashCodeEquals{}", bufferBuilder.hashCode() == text.hashCode());
 
         breakGraphemes(text);
+
+        Pattern pattern = Pattern.compile("(\\:(\\w|\\+|\\-)+\\:)(?=|[\\!\\.\\?]|$)");
+        String[] testStr = {
+                ":any-non-whitespace:",
+                ":kudos:",
+                ":text1:sample2:",
+                ":@(1@#\\$@SD: :s:",
+                ":nospace::inbetween: because there are 2 colons in the middle",
+                ":nospace:middle:nospace:`",
+        };
+        for (String test : testStr) {
+            Matcher matcher = pattern.matcher(test);
+            LOGGER.info("Test:{}", test);
+            while (matcher.find()) {
+                LOGGER.info("Index:{} to {}, Group:{}", matcher.start(), matcher.end(), matcher.group());
+            }
+        }
+
+        Gson gson = new Gson();
+        try (BufferedReader reader = new BufferedReader(
+                new InputStreamReader(
+                        new FileInputStream("E:/emoji_data.json"), StandardCharsets.UTF_8))){
+            JsonObject object = GsonHelper.fromJson(gson, reader, JsonObject.class);
+            for (var entry : object.entrySet()) {
+                JsonArray shortcodes = entry.getValue().getAsJsonArray().get(3).getAsJsonArray();
+                LOGGER.info("{} {}", entry.getKey(), shortcodes.get(0).getAsString());
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())
