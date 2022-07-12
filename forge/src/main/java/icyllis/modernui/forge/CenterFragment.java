@@ -312,6 +312,51 @@ public class CenterFragment extends Fragment {
                 });
                 category.addView(option);
             }
+            {
+                var option = new LinearLayout();
+                option.setOrientation(LinearLayout.HORIZONTAL);
+                option.setHorizontalGravity(Gravity.START);
+
+                final int dp6 = dp(6);
+                {
+                    var title = new TextView();
+                    title.setText(I18n.get("modernui.center.screen.windowMode"));
+                    title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                    title.setTextSize(14);
+
+                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1);
+                    params.gravity = Gravity.CENTER_VERTICAL;
+                    option.addView(title, params);
+                }
+                {
+                    var spinner = new Spinner();
+                    spinner.setGravity(Gravity.END);
+                    spinner.setAdapter(new ArrayAdapter<>(Client.WindowMode.values()));
+                    spinner.setSelection(Config.CLIENT.windowMode.get().ordinal());
+                    spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                            Config.CLIENT.windowMode.set(Client.WindowMode.values()[position]);
+                            Config.CLIENT.saveAndReload();
+                        }
+
+                        @Override
+                        public void onNothingSelected(AdapterView<?> parent) {
+                        }
+                    });
+
+                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
+                    params.gravity = Gravity.CENTER_VERTICAL;
+                    option.addView(spinner, params);
+                }
+
+                var params = new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+                params.gravity = Gravity.CENTER;
+                params.setMargins(dp6, 0, dp6, 0);
+                option.setLayoutParams(params);
+
+                category.addView(option);
+            }
             panel.addView(category);
         }
 
@@ -397,11 +442,6 @@ public class CenterFragment extends Fragment {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("modernui.center.text.appScope");
-                option.<SwitchButton>requireViewById(R.id.button1).setChecked(true);
-                category.addView(option);
-            }
-            {
                 var option = createButtonOption("modernui.center.text.colorEmoji");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mColorEmoji.get());
@@ -413,7 +453,24 @@ public class CenterFragment extends Fragment {
             }
             {
                 var option = createButtonOption("modernui.center.text.bitmapRepl");
-                option.<SwitchButton>requireViewById(R.id.button1).setChecked(ModernUITextMC.CONFIG.mColorEmoji.get());
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(ModernUITextMC.CONFIG.mBitmapReplacement.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    ModernUITextMC.CONFIG.mBitmapReplacement.set(checked);
+                    ModernUITextMC.CONFIG.saveOnly();
+                    Toast.makeText(I18n.get("gui.modernui.restart_to_work"), Toast.LENGTH_SHORT)
+                            .show();
+                });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("modernui.center.text.emojiShortcodes");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(ModernUITextMC.CONFIG.mEmojiShortcodes.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    ModernUITextMC.CONFIG.mEmojiShortcodes.set(checked);
+                    ModernUITextMC.CONFIG.saveAndReload();
+                });
                 category.addView(option);
             }
             {
@@ -695,15 +752,16 @@ public class CenterFragment extends Fragment {
                     title.setText(I18n.get("modernui.center.font.fontFamily"));
                     title.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                     title.setTextSize(14);
+                    title.setMinWidth(dp(60));
 
-                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 2);
+                    var params = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 2);
                     params.gravity = Gravity.START | Gravity.CENTER_VERTICAL;
                     option.addView(title, params);
                 }
                 {
                     var input = new EditText();
                     input.setId(R.id.input);
-                    input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
+                    input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_END);
                     input.setTextSize(14);
                     input.setPadding(dp3, 0, dp3, 0);
 
@@ -733,7 +791,7 @@ public class CenterFragment extends Fragment {
                     background.setExitFadeDuration(300);
                     input.setBackground(background);
 
-                    var params = new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT, 1);
+                    var params = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 5);
                     params.gravity = Gravity.CENTER_VERTICAL;
                     option.addView(input, params);
                 }

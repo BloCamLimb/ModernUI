@@ -40,8 +40,8 @@ public class TextRenderNode {
      * <p>
      * This singleton cannot be placed in the cache!
      */
-    public static final TextRenderNode EMPTY = new TextRenderNode(new char[0], new GLBakedGlyph[0],
-            new int[0], new float[0], new float[0], new int[0], new int[0], 0, false) {
+    public static final TextRenderNode EMPTY = new TextRenderNode(new char[0], new GLBakedGlyph[0], new int[0],
+            new float[0], new float[0], new int[0], new int[0], 0, false, false, false) {
         @Nonnull
         @Override
         public TextRenderNode get() {
@@ -146,6 +146,8 @@ public class TextRenderNode {
      * Precomputed value that indicates whether flags array contains any text effect flag.
      */
     private final boolean mHasEffect;
+    private final boolean mHasFastDigit;
+    private final boolean mHasColorEmoji;
 
     /**
      * Elapsed time in seconds since last use.
@@ -162,12 +164,14 @@ public class TextRenderNode {
         mLineBoundaries = node.mLineBoundaries;
         mAdvance = node.mAdvance;
         mHasEffect = node.mHasEffect;
+        mHasFastDigit = node.mHasFastDigit;
+        mHasColorEmoji = node.mHasColorEmoji;
     }
 
-    public TextRenderNode(char[] textBuf, @Nonnull GLBakedGlyph[] glyphs, @Nonnull int[] charIndices,
-                          @Nonnull float[] positions,
-                          @Nonnull float[] advances, @Nonnull int[] flags, @Nonnull int[] lineBoundaries,
-                          float advance, boolean hasEffect) {
+    public TextRenderNode(@Nonnull char[] textBuf, @Nonnull GLBakedGlyph[] glyphs, @Nonnull int[] charIndices,
+                          @Nonnull float[] positions, @Nonnull float[] advances, @Nonnull int[] flags,
+                          @Nonnull int[] lineBoundaries, float advance, boolean hasEffect, boolean hasFastDigit,
+                          boolean hasColorEmoji) {
         mTextBuf = textBuf;
         mGlyphs = glyphs;
         mCharIndices = charIndices;
@@ -177,6 +181,8 @@ public class TextRenderNode {
         mLineBoundaries = lineBoundaries;
         mAdvance = advance;
         mHasEffect = hasEffect;
+        mHasFastDigit = hasFastDigit;
+        mHasColorEmoji = hasColorEmoji;
         assert mTextBuf.length == mAdvances.length;
         assert mGlyphs.length == mCharIndices.length;
         assert mGlyphs.length * 2 == mPositions.length;
@@ -256,29 +262,18 @@ public class TextRenderNode {
         for (int i = 0, e = glyphs.length; i < e; i++) {
             GLBakedGlyph glyph = glyphs[i];
             final int flag = flags[i];
-            if ((flag & CharacterStyle.NO_COLOR_SPECIFIED) != 0) {
-                r = startR;
-                g = startG;
-                b = startB;
-            } else {
-                r = flag >> 16 & 0xff;
-                g = flag >> 8 & 0xff;
-                b = flag & 0xff;
-                if (isShadow) {
-                    r >>= 2;
-                    g >>= 2;
-                    b >>= 2;
-                }
-            }
             final float rx;
             final float ry;
             final float w;
             final float h;
             if ((flag & CharacterStyle.BITMAP_REPLACEMENT) != 0) {
-                rx = x + positions[i << 1];
+                if (isShadow) {
+                    continue;
+                }
+                rx = x + positions[i << 1] + 0.5f;
                 ry = y + positions[(i << 1) + 1] - BASELINE_OFFSET;
-                w = 9;
-                h = 9;
+                w = TextLayoutEngine.EMOJI_BASE_SIZE;
+                h = TextLayoutEngine.EMOJI_BASE_SIZE;
             } else {
                 if (raw != null && (flag & CharacterStyle.FAST_DIGIT_REPLACEMENT) != 0) {
                     var chars = (TextLayoutEngine.FastCharSet) glyph;
@@ -315,6 +310,20 @@ public class TextRenderNode {
                 rx = Math.round(rx * scale) / scale;
                 ry = Math.round(ry * scale) / scale;
             }*/
+            if ((flag & CharacterStyle.NO_COLOR_SPECIFIED) != 0) {
+                r = startR;
+                g = startG;
+                b = startB;
+            } else {
+                r = flag >> 16 & 0xff;
+                g = flag >> 8 & 0xff;
+                b = flag & 0xff;
+                if (isShadow) {
+                    r >>= 2;
+                    g >>= 2;
+                    b >>= 2;
+                }
+            }
             if (texture != glyph.texture) {
                 texture = glyph.texture;
                 builder = source.getBuffer(TextRenderType.getOrCreate(texture, seeThrough));
@@ -511,6 +520,20 @@ public class TextRenderNode {
     }
 
     /**
+     * Precomputed value that indicates whether flags array contains any fast digit replacement flag.
+     */
+    public boolean isHasFastDigit() {
+        return mHasFastDigit;
+    }
+
+    /**
+     * Precomputed value that indicates whether flags array contains any bitmap replacement flag.
+     */
+    public boolean hasColorEmoji() {
+        return mHasColorEmoji;
+    }
+
+    /**
      * @return measurable memory size in bytes of this object
      */
     public int getMemorySize() {
@@ -538,6 +561,8 @@ public class TextRenderNode {
                 ",lineBoundaries" + Arrays.toString(mLineBoundaries) +
                 ",advance=" + mAdvance +
                 ",hasEffect=" + mHasEffect +
+                ",hasFastDigit=" + mHasFastDigit +
+                ",hasColorEmoji=" + mHasColorEmoji +
                 '}';
     }
 

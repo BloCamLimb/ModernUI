@@ -29,8 +29,10 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -43,6 +45,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
+import java.util.regex.Matcher;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -122,6 +125,7 @@ public final class ModernUITextMC {
                 throw new RuntimeException("String.hashCode() is not identical to the specs");
             }
         }
+        MinecraftForge.EVENT_BUS.register(EventHandler.class);
         LOGGER.info(MARKER, "Loaded modern text engine");
     }
 
@@ -147,6 +151,43 @@ public final class ModernUITextMC {
         }
     }*/
 
+    static class EventHandler {
+
+        @SubscribeEvent
+        static void onClientChat(@Nonnull ClientChatEvent e) {
+            final String msg = e.getMessage();
+            if (CONFIG.mEmojiShortcodes.get() && !msg.startsWith("/")) {
+                final TextLayoutEngine engine = TextLayoutEngine.getInstance();
+                final Matcher matcher = TextLayoutEngine.EMOJI_SHORTCODE_PATTERN.matcher(msg);
+
+                StringBuilder builder = null;
+                int lastEnd = 0;
+                while (matcher.find()) {
+                    if (builder == null) {
+                        builder = new StringBuilder();
+                    }
+                    int st = matcher.start();
+                    int en = matcher.end();
+                    String emoji = null;
+                    if (en - st > 2) {
+                        emoji = engine.lookupEmojiShortcode(msg.substring(st + 1, en - 1));
+                    }
+                    if (emoji != null) {
+                        builder.append(msg, lastEnd, st);
+                        builder.append(emoji);
+                    } else {
+                        builder.append(msg, lastEnd, en);
+                    }
+                    lastEnd = en;
+                }
+                if (builder != null) {
+                    builder.append(msg, lastEnd, msg.length());
+                    e.setMessage(builder.toString());
+                }
+            }
+        }
+    }
+
     @OnlyIn(Dist.CLIENT)
     public static class Config {
 
@@ -170,6 +211,8 @@ public final class ModernUITextMC {
         public final ForgeConfigSpec.IntValue mRehashThreshold;
         public final ForgeConfigSpec.IntValue mTextDirection;
         public final ForgeConfigSpec.BooleanValue mColorEmoji;
+        public final ForgeConfigSpec.BooleanValue mBitmapReplacement;
+        public final ForgeConfigSpec.BooleanValue mEmojiShortcodes;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -220,8 +263,14 @@ public final class ModernUITextMC {
                     .defineInRange("textDirection", View.TEXT_DIRECTION_FIRST_STRONG,
                             View.TEXT_DIRECTION_FIRST_STRONG, View.TEXT_DIRECTION_FIRST_STRONG_RTL);
             mColorEmoji = builder.comment(
-                            "Whether to use colored emoji or just grayscale emoji.")
+                            "Whether to render colored emoji or just grayscale emoji.")
                     .define("colorEmoji", true);
+            mBitmapReplacement = builder.comment(
+                            "Whether to use bitmap replacement for non-Emoji character sequences. Restart is required.")
+                    .define("bitmapReplacement", false);
+            mEmojiShortcodes = builder.comment(
+                            "Allow to use Slack or Discord shortcodes to replace Emoji character sequences in chat.")
+                    .define("emojiShortcodes", true);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
@@ -244,6 +293,10 @@ public final class ModernUITextMC {
                     .defineInRange("defaultFontSize", 16, 12, 20);*/
 
             builder.pop();
+        }
+
+        public void saveOnly() {
+            Util.ioPool().execute(() -> CONFIG_SPEC.save());
         }
 
         public void saveAndReload() {

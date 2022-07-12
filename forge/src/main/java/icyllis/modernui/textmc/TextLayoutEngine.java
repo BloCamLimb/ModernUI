@@ -18,6 +18,7 @@
 
 package icyllis.modernui.textmc;
 
+import com.google.gson.*;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -28,7 +29,6 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.textmc.mixin.MixinClientLanguage;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.MipmapGenerator;
@@ -37,6 +37,7 @@ import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.GsonHelper;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
@@ -49,12 +50,16 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.regex.Pattern;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -86,6 +91,12 @@ public class TextLayoutEngine {
      */
     public static volatile int sCacheLifespan = 12;
     public static volatile int sRehashThreshold = 100;
+
+    /**
+     * Matches Slack emoji shortcode.
+     */
+    public static final Pattern EMOJI_SHORTCODE_PATTERN =
+            Pattern.compile("(\\:(\\w|\\+|\\-)+\\:)(?=|[\\!\\.\\?]|$)");
 
     private static final ChatFormatting[] FORMATTING_TABLE = ChatFormatting.values();
 
@@ -221,16 +232,22 @@ public class TextLayoutEngine {
     /**
      * Gui scale = 4.
      */
-    public static final int EMOJI_SIZE = 9 * 4;
+    public static final int EMOJI_SCALE = 4;
+    public static final int EMOJI_BASE_SIZE = 9;
+    public static final int EMOJI_SIZE = EMOJI_BASE_SIZE * EMOJI_SCALE;
 
     /**
      * Emoji sequence to sprite index (used as glyph code in emoji atlas).
      */
-    private final Object2ObjectOpenHashMap<CharSequence, EmojiEntry> mEmojiMap = new Object2ObjectOpenHashMap<>();
+    private final HashMap<CharSequence, EmojiEntry> mEmojiMap = new HashMap<>();
     /**
-     * The key used to lookup emoji IDs.
+     * The key used to lookup Emoji IDs.
      */
     private final CharSequenceBuilder mEmojiLookupKey = new CharSequenceBuilder();
+    /**
+     * Shortcodes to Emoji char sequences.
+     */
+    private final HashMap<String, String> mEmojiShortcodes = new HashMap<>();
     /**
      * The emoji texture atlas.
      */
@@ -238,7 +255,12 @@ public class TextLayoutEngine {
     private ByteBuffer mEmojiBuffer;
     private boolean mEmojiScanned = false;
 
-    private record EmojiEntry(int id, ResourceLocation location) {
+    /**
+     * @param id       used as glyph code
+     * @param location resource location
+     * @param sequence emoji char sequence
+     */
+    private record EmojiEntry(int id, ResourceLocation location, String sequence) {
     }
 
     private final Predicate<TextRenderNode> mTicker = node -> node.tick(sCacheLifespan);
@@ -384,6 +406,7 @@ public class TextLayoutEngine {
     public void reloadResources() {
         if (!mEmojiScanned) {
             mEmojiScanned = true;
+            final boolean nonBitmapRepl = !ModernUITextMC.CONFIG.mBitmapReplacement.get();
             Minecraft.getInstance().getResourceManager().listResources("emoji",
                     name -> name.length() <= 64 && name.endsWith(".png")).forEach(res -> {
                 String[] paths = res.getPath().split("/");
@@ -402,15 +425,58 @@ public class TextLayoutEngine {
                         if (!Character.isValidCodePoint(codePoint)) {
                             return;
                         }
+                        if (i == 0 && nonBitmapRepl && !Emoji.isEmoji(codePoint)) {
+                            return;
+                        }
                         codePoints[i] = codePoint;
                     } catch (NumberFormatException e) {
                         return;
                     }
                 }
-                mEmojiMap.computeIfAbsent(new String(codePoints, 0, codePoints.length),
-                        s -> new EmojiEntry(mEmojiMap.size(), res));
+                String sequence = new String(codePoints, 0, codePoints.length);
+                mEmojiMap.computeIfAbsent(sequence,
+                        s -> new EmojiEntry(mEmojiMap.size(), res, sequence));
             });
             LOGGER.info("Scanned emoji map size: {}", mEmojiMap.size());
+
+            try (Resource res = Minecraft.getInstance().getResourceManager().getResource(
+                    new ResourceLocation(ID, "emoji_data.json"));
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(
+                         res.getInputStream(), StandardCharsets.UTF_8))) {
+                JsonObject object = GsonHelper.fromJson(new Gson(), reader, JsonObject.class);
+                if (object != null) {
+                    for (var entry : object.entrySet()) {
+                        JsonArray shortcodes = entry.getValue().getAsJsonArray().get(3).getAsJsonArray();
+                        String[] parts = entry.getKey().split("-");
+                        if (parts.length == 0) {
+                            return;
+                        }
+                        mEmojiLookupKey.clear();
+                        for (String part : parts) {
+                            try {
+                                int codePoint = Integer.parseInt(part, 16);
+                                mEmojiLookupKey.addCodePoint(codePoint);
+                            } catch (NumberFormatException e) {
+                                return;
+                            }
+                        }
+                        final String sequence;
+                        final EmojiEntry cached = mEmojiMap.get(mEmojiLookupKey);
+                        // try to reuse emoji sequence
+                        if (cached != null) {
+                            sequence = cached.sequence;
+                        } else {
+                            sequence = mEmojiLookupKey.toString();
+                        }
+                        shortcodes.forEach(e -> mEmojiShortcodes.putIfAbsent(e.getAsString(), sequence));
+                    }
+                } else {
+                    LOGGER.info(MARKER, "Failed to load emoji data");
+                }
+            } catch (Exception e) {
+                LOGGER.info(MARKER, "Failed to load emoji data", e);
+            }
+            LOGGER.info("Loaded emoji shortcode size: {}", mEmojiShortcodes.size());
         }
         reload();
     }
@@ -647,6 +713,7 @@ public class TextLayoutEngine {
         if (mEmojiAtlas == null) {
             mEmojiAtlas = new GLFontAtlas(true);
             int s = (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2);
+            // RGBA, 4 bytes per pixel
             mEmojiBuffer = MemoryUtil.memCalloc(1, s * s * 4);
         }
         GLBakedGlyph glyph = mEmojiAtlas.getGlyph(entry.id);
@@ -654,6 +721,17 @@ public class TextLayoutEngine {
             return cacheEmoji(entry.id, entry.location, mEmojiAtlas, glyph);
         }
         return glyph;
+    }
+
+    /**
+     * Lookup Emoji char sequence from shortcode.
+     *
+     * @param shortcode the shortcode, e.g. cheese
+     * @return compiled Emoji code points
+     */
+    @Nullable
+    public String lookupEmojiShortcode(@Nonnull String shortcode) {
+        return mEmojiShortcodes.get(shortcode);
     }
 
     public void dumpEmojiAtlas() {
@@ -688,6 +766,7 @@ public class TextLayoutEngine {
                     }
                     long src = UIManager.IMAGE_PIXELS.getLong(sub != null ? sub : image);
                     // Add 1 pixel transparent border to prevent texture bleeding
+                    // RGBA is 4 bytes per pixel
                     long dstOff = (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2 + GlyphManager.GLYPH_BORDER) * 4;
                     for (int i = 0; i < EMOJI_SIZE; i++) {
                         LibCString.nmemcpy(dst + dstOff, src + (i * EMOJI_SIZE * 4), EMOJI_SIZE * 4);
@@ -698,14 +777,14 @@ public class TextLayoutEngine {
                     }
                 }
                 glyph.x = 0;
-                glyph.y = -TextRenderNode.BASELINE_OFFSET * 4; // baseline
+                glyph.y = 0; // x and y baseline is hardcoded in TextRenderNode
                 glyph.width = EMOJI_SIZE;
                 glyph.height = EMOJI_SIZE;
                 atlas.stitch(glyph, dst);
                 return glyph;
             } else {
                 atlas.setEmpty(id);
-                LOGGER.warn(MARKER, "Emoji is not 36x36 or 72x72, setting empty: {}", location);
+                LOGGER.warn(MARKER, "Emoji is not {}x or {}x, setting empty: {}", EMOJI_SIZE, EMOJI_SIZE * 2, location);
                 return null;
             }
         } catch (Exception e) {
