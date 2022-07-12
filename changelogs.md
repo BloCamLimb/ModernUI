@@ -1,5 +1,51 @@
 Changelogs
 ===
+### Modern UI 3.5.0.109 (2022-07-12)
+#### Forge Extension 1.18.2-40.0.12
+* Make extensions backward compatible to OpenGL 3.3
+* Add window mode config (like fullscreen borderless)
+* Add config of ignoring GL errors
+* Add GL error GUI and link directing
+* Add right-to-left layout for modern tooltips
+* Add in-game GUI for all new configs
+* Add dump of memory info of all textures
+* Fix tooltip shaking when rendering at bottom
+* Dispatch generic pointer events
+* Enable more configs to take effect in real-time without restarting
+* Disable Minecraft render thread assertions
+* Auto disable OptiFine fast render
+#### Modern Text Engine 1.18.2
+* Make text engine backward compatible to OpenGL 3.3
+* Add Slack and Discord Emoji shortcode support
+* Add BiDi text line breaking with color Emoji support
+* Add Unicode color Emoji support (Twemoji 14.0)
+* Add pre mipmap generation for bitmaps
+* Add bitmap replacement support for text layout
+* Add Unicode line breaking algorithm
+* Add Unicode text breaking algorithm
+* Add Unicode grapheme cluster break algorithm
+* Add substring conservative algorithm for line breaking
+* Add config of color emoji and grayscale emoji
+* Add config of BiDi text direction heuristic algorithm
+* Add config of font anti-aliasing and precise metrics
+* Add config of font base size and baseline shift
+* Add config of rehash threshold and recycle time
+* Add config of snapping to pixels for text layout
+* Add config of fixing invalid surrogate pairs
+* Add config of fast digit replacement
+* Add Minecraft vanilla TTF font
+* Add fast character replacement and optimize its generator
+* Add super-sampling config and disable it by default
+* Make BiDi text layout always in visual order
+* Fix discontinuous style in continuous text layout
+* Reduce the overhead of GL state changing
+* Optimize the recycling logic of text layout nodes
+* Optimize text layout and iteration performance
+* Optimize lookup key and searching
+* Refactor text layout engine
+#### Core Framework 3.5
+* Internal changes
+
 ### Modern UI 3.4.7.108 (2022-06-18)
 #### Forge Extension 1.18.2-40.0.12
 * Enhance layout transition when closed
