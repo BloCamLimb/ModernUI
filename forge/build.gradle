@@ -114,6 +114,8 @@ shadowJar {
     relocate 'com.vladsch.flexmark', 'icyllis.flexmark'
     relocate 'org.intellij.lang.annotations', 'icyllis.annotations'
     relocate 'org.jetbrains.annotations', 'icyllis.annotations'
+    relocate 'io.reactivex.rxjava3', 'icyllis.rxjava3'
+    relocate 'org.reactivestreams', 'icyllis.reactivestreams'
 
     exclude 'META-INF/CHANGES'
     exclude 'META-INF/DEPENDENCIES'
