@@ -439,6 +439,7 @@ public class TextLayoutEngine {
             });
             LOGGER.info("Scanned emoji map size: {}", mEmojiMap.size());
 
+            int mismatched = 0;
             try (Resource res = Minecraft.getInstance().getResourceManager().getResource(
                     new ResourceLocation(ID, "emoji_data.json"));
                  BufferedReader reader = new BufferedReader(new InputStreamReader(
@@ -452,23 +453,37 @@ public class TextLayoutEngine {
                             return;
                         }
                         mEmojiLookupKey.clear();
+                        int codePoint = 0;
                         for (String part : parts) {
                             try {
-                                int codePoint = Integer.parseInt(part, 16);
+                                codePoint = Integer.parseInt(part, 16);
                                 mEmojiLookupKey.addCodePoint(codePoint);
                             } catch (NumberFormatException e) {
                                 return;
                             }
                         }
                         final String sequence;
-                        final EmojiEntry cached = mEmojiMap.get(mEmojiLookupKey);
+                        EmojiEntry cached = mEmojiMap.get(mEmojiLookupKey);
                         // try to reuse emoji sequence
                         if (cached != null) {
                             sequence = cached.sequence;
+                        } else if (codePoint == 0xfe0f) {
+                            // try with last variation selector removed
+                            mEmojiLookupKey.mChars.size(mEmojiLookupKey.length() - 1);
+                            cached = mEmojiMap.get(mEmojiLookupKey);
+                            if (cached != null) {
+                                sequence = cached.sequence;
+                            } else {
+                                sequence = null;
+                            }
                         } else {
-                            sequence = mEmojiLookupKey.toString();
+                            sequence = null;
                         }
-                        shortcodes.forEach(e -> mEmojiShortcodes.putIfAbsent(e.getAsString(), sequence));
+                        if (sequence != null) {
+                            shortcodes.forEach(e -> mEmojiShortcodes.putIfAbsent(e.getAsString(), sequence));
+                        } else {
+                            mismatched++;
+                        }
                     }
                 } else {
                     LOGGER.info(MARKER, "Failed to load emoji data");
@@ -476,7 +491,8 @@ public class TextLayoutEngine {
             } catch (Exception e) {
                 LOGGER.info(MARKER, "Failed to load emoji data", e);
             }
-            LOGGER.info("Loaded emoji shortcode size: {}", mEmojiShortcodes.size());
+            LOGGER.info("Loaded emoji shortcodes: {}, mismatched emoji sequences: {}",
+                    mEmojiShortcodes.size(), mismatched);
         }
         reload();
     }
