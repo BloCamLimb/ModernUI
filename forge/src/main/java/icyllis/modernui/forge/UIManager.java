@@ -110,6 +110,7 @@ public final class UIManager implements LifecycleOwner {
 
     private static final int fragment_container = 0x01020007;
 
+    @SuppressWarnings("NoTranslation")
     public static final KeyMapping OPEN_CENTER_KEY = new KeyMapping(
             "key.modernui.openCenter", KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL,
             InputConstants.Type.KEYSYM, GLFW_KEY_K, "Modern UI");
@@ -213,19 +214,20 @@ public final class UIManager implements LifecycleOwner {
         Core.checkRenderThread();
         assert sInstance != null;
         sInstance.mCanvas = ModernUIForge.hasGLCapsError() ? null : GLSurfaceCanvas.initialize();
-        glEnable(GL_MULTISAMPLE);
-        sInstance.mFramebuffer = new GLFramebuffer(4);
+        //glEnable(GL_MULTISAMPLE);
+        GLFramebuffer framebuffer = new GLFramebuffer(4);
         if (sInstance.mCanvas != null) {
-            sInstance.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
-            sInstance.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
-            sInstance.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
-            sInstance.mFramebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
+            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT0, GL_RGBA8);
+            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT1, GL_RGBA8);
+            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT2, GL_RGBA8);
+            framebuffer.addTextureAttachment(GL_COLOR_ATTACHMENT3, GL_RGBA8);
             // no depth buffer
-            sInstance.mFramebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
-            sInstance.mFramebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
+            framebuffer.addRenderbufferAttachment(GL_STENCIL_ATTACHMENT, GL_STENCIL_INDEX8);
+            framebuffer.setDrawBuffer(GL_COLOR_ATTACHMENT0);
         } else {
             LOGGER.info(MARKER, "Disabled UI renderer");
         }
+        sInstance.mFramebuffer = framebuffer;
     }
 
     @Nonnull
@@ -920,8 +922,8 @@ public final class UIManager implements LifecycleOwner {
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOW)
-    void onRenderTooltip(@Nonnull RenderTooltipEvent.Pre event) {
+    @SubscribeEvent(priority = EventPriority.HIGH)
+    void onRenderTooltipH(@Nonnull RenderTooltipEvent.Pre event) {
         if (TooltipRenderer.sTooltip) {
             /*if (!(minecraft.font instanceof ModernFontRenderer)) {
                 ModernUI.LOGGER.fatal(MARKER, "Failed to hook FontRenderer, tooltip disabled");
@@ -944,6 +946,15 @@ public final class UIManager implements LifecycleOwner {
                         event.getMaxWidth(), event.getScreenWidth(), event.getScreenHeight(), window.getWidth(),
                         window.getHeight());
             }*/
+
+            // our tooltip is translucent, need transparency sorting
+            // we will cancel this event later, see below
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOW)
+    void onRenderTooltipL(@Nonnull RenderTooltipEvent.Pre event) {
+        if (TooltipRenderer.sTooltip) {
             event.setCanceled(true);
         }
     }
