@@ -633,7 +633,6 @@ public final class UIManager implements LifecycleOwner {
         if (event.getAction() == GLFW_PRESS) {
             switch (event.getKey()) {
                 case GLFW_KEY_Y:
-                    LOGGER.info(MARKER, "Take screenshot");
                     // take a screenshot from MSAA framebuffer
                     GLTexture sampled = GLFramebuffer.resolve(mFramebuffer, GL_COLOR_ATTACHMENT0);
                     NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);
@@ -647,22 +646,18 @@ public final class UIManager implements LifecycleOwner {
                     break;
 
                 case GLFW_KEY_H:
-                    LOGGER.info(MARKER, "Open TestFragment");
                     start(new TestFragment(), new UICallback());
                     break;
 
                 case GLFW_KEY_J:
-                    LOGGER.info(MARKER, "Open TestPauseFragment");
                     start(new TestPauseFragment(), new UICallback());
                     break;
 
                 case GLFW_KEY_U:
-                    LOGGER.info(MARKER, "Open TestListFragment");
                     start(new TestListFragment(), new UICallback());
                     break;
 
                 case GLFW_KEY_N:
-                    LOGGER.info(MARKER, "Post invalidate");
                     mDecor.postInvalidate();
                     break;
 
@@ -683,7 +678,7 @@ public final class UIManager implements LifecycleOwner {
                 case GLFW_KEY_T:
                     String text = "\u09b9\u09cd\u09af\u09be\n\u09b2\u09cb" + ChatFormatting.RED + "\uD83E\uDD14" +
                             ChatFormatting.BOLD + "\uD83E\uDD14\uD83E\uDD14";
-                    for (int i = 1; i < 10; i++) {
+                    for (int i = 1; i <= 10; i++) {
                         float width = i * 5;
                         int index = ModernStringSplitter.breakText(text, width, Style.EMPTY, true);
                         LOGGER.info("Break forwards: width {} index:{}", width, index);
@@ -701,13 +696,15 @@ public final class UIManager implements LifecycleOwner {
                 /*minecraft.getLanguageManager().getLanguages().forEach(l ->
                         ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l
                         .getJavaLocale()).isRightToLeft()));*/
-                    LOGGER.info(MARKER, "Debug GlyphManager");
                     GlyphManager.getInstance().debug();
                     break;
 
                 case GLFW_KEY_V:
-                    LOGGER.info(MARKER, "Dump Emoji Atlas");
                     TextLayoutEngine.getInstance().dumpEmojiAtlas();
+                    break;
+
+                case GLFW_KEY_F:
+                    System.gc();
                     break;
             }
         }
@@ -775,7 +772,7 @@ public final class UIManager implements LifecycleOwner {
             for (var texture : textureMap.values()) {
                 try {
                     int tex = TEXTURE_ID.getInt(texture);
-                    if (tex > 0) {
+                    if (glIsTexture(tex)) {
                         int internalFormat = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_INTERNAL_FORMAT);
                         long width = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_WIDTH);
                         long height = glGetTextureLevelParameteri(tex, 0, GL_TEXTURE_HEIGHT);
