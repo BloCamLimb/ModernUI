@@ -149,7 +149,7 @@ public final class ModernStringSplitter {
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
         if (width >= node.getAdvance()) {
-            return text.length();
+            return forwards ? text.length() : 0;
         }
 
         int breakIndex = breakText(node, forwards, width);

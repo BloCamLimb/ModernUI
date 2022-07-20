@@ -9,6 +9,7 @@ Changelogs
 * Adjust alpha threshold from 1 to 2
 * Fix NPE when font renders fast chars nothing
 * Fix line feed ignored when using fast path of line breaking
+* Fix text empty when using fast path of text breaking backwards
 #### Core Framework 3.5
 * Internal changes
 
