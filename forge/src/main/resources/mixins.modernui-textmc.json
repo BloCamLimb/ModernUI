@@ -9,6 +9,8 @@
     "MixinBidiReorder",
     "MixinChatFormatting",
     "MixinClientLanguage",
+    "MixinCommandSuggestions",
+    "MixinEditBox",
     "MixinFontRenderer",
     "MixinIngameGui",
     "MixinLanguage",

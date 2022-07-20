@@ -453,26 +453,42 @@ final class Config {
                             }
                         }
                         case FULLSCREEN_BORDERLESS -> {
+                            if (winB3D.isFullscreen()) {
+                                winB3D.toggleFullScreen();
+                            }
+                            GLFW.glfwRestoreWindow(winB3D.getWindow());
                             GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
                                     GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
                             GLFW.glfwMaximizeWindow(winB3D.getWindow());
                         }
-                        case MAXIMIZED ->  {
+                        case MAXIMIZED -> {
+                            if (winB3D.isFullscreen()) {
+                                winB3D.toggleFullScreen();
+                            }
                             GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
                                     GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
                             GLFW.glfwMaximizeWindow(winB3D.getWindow());
                         }
                         case MINIMIZED -> {
+                            if (winB3D.isFullscreen()) {
+                                winB3D.toggleFullScreen();
+                            }
                             GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
                                     GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
                             GLFW.glfwIconifyWindow(winB3D.getWindow());
                         }
                         case WINDOWED -> {
+                            if (winB3D.isFullscreen()) {
+                                winB3D.toggleFullScreen();
+                            }
                             GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
                                     GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
                             GLFW.glfwRestoreWindow(winB3D.getWindow());
                         }
                         case WINDOWED_BORDERLESS -> {
+                            if (winB3D.isFullscreen()) {
+                                winB3D.toggleFullScreen();
+                            }
                             GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
                                     GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
                             GLFW.glfwRestoreWindow(winB3D.getWindow());

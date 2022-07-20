@@ -1,5 +1,17 @@
 Changelogs
 ===
+### Modern UI 3.5.1.110 (2022-07-20)
+#### Forge Extension 1.18.2-40.0.12
+* Fix window mode sometimes didn't work correctly
+* Fix tooltip BG or FG transparency sorting and write into depth buffer
+#### Modern Text Engine 1.18.2
+* Enhance and smooth EditBox rendering
+* Adjust alpha threshold from 1 to 2
+* Fix NPE when font renders fast chars nothing
+* Fix line feed ignored when using fast path of line breaking
+#### Core Framework 3.5
+* Internal changes
+
 ### Modern UI 3.5.0.109 (2022-07-12)
 #### Forge Extension 1.18.2-40.0.12
 * Make extensions backward compatible to OpenGL 3.3

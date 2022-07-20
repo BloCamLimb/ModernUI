@@ -75,11 +75,11 @@ public final class ModernTextRenderer {
         }
     }*/
 
-    public static int drawText(@Nonnull String text, float x, float y, int color, boolean dropShadow,
-                               @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
-                               int colorBackground, int packedLight) {
+    public static float drawText(@Nonnull String text, float x, float y, int color, boolean dropShadow,
+                                 @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
+                                 int colorBackground, int packedLight) {
         if (text.isEmpty()) {
-            return (int) x + (dropShadow ? 1 : 0);
+            return x;
         }
 
         // ensure alpha, color can be ARGB, or can be RGB
@@ -89,7 +89,7 @@ public final class ModernTextRenderer {
         }*/
 
         int a = color >>> 24;
-        if (a == 0) a = 255;
+        if (a <= 1) a = 255;
         int r = color >> 16 & 0xff;
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
@@ -113,14 +113,14 @@ public final class ModernTextRenderer {
 
         x += node.drawText(matrix, source, text, x, y, r, g, b, a, false,
                 seeThrough, colorBackground, packedLight, scale, level);
-        return (int) x + (dropShadow ? 1 : 0);
+        return x;
     }
 
-    public static int drawText(@Nonnull FormattedText text, float x, float y, int color, boolean dropShadow,
-                               @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
-                               int colorBackground, int packedLight) {
+    public static float drawText(@Nonnull FormattedText text, float x, float y, int color, boolean dropShadow,
+                                 @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
+                                 int colorBackground, int packedLight) {
         if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
-            return (int) x + (dropShadow ? 1 : 0);
+            return x;
         }
 
         // ensure alpha, color can be ARGB, or can be RGB
@@ -130,7 +130,7 @@ public final class ModernTextRenderer {
         }*/
 
         int a = color >>> 24;
-        if (a == 0) a = 255;
+        if (a <= 1) a = 255;
         int r = color >> 16 & 0xff;
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
@@ -154,14 +154,14 @@ public final class ModernTextRenderer {
 
         x += node.drawText(matrix, source, null, x, y, r, g, b, a, false,
                 seeThrough, colorBackground, packedLight, scale, level);
-        return (int) x + (dropShadow ? 1 : 0);
+        return x;
     }
 
-    public static int drawText(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
-                               @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
-                               int colorBackground, int packedLight) {
+    public static float drawText(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
+                                 @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
+                                 int colorBackground, int packedLight) {
         if (text == FormattedCharSequence.EMPTY) {
-            return (int) x + (dropShadow ? 1 : 0);
+            return x;
         }
 
         // ensure alpha, color can be ARGB, or can be RGB
@@ -171,7 +171,7 @@ public final class ModernTextRenderer {
         }*/
 
         int a = color >>> 24;
-        if (a == 0) a = 255;
+        if (a <= 1) a = 255;
         int r = color >> 16 & 0xff;
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
@@ -195,7 +195,7 @@ public final class ModernTextRenderer {
 
         x += node.drawText(matrix, source, null, x, y, r, g, b, a, false,
                 seeThrough, colorBackground, packedLight, scale, level);
-        return (int) x + (dropShadow ? 1 : 0);
+        return x;
     }
 
     /*public static void change(boolean global, boolean shadow) {

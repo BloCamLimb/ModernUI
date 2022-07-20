@@ -334,7 +334,9 @@ public final class TooltipRenderer {
         }
         partialY = (tooltipY - (int) tooltipY);
 
-        RenderSystem.disableDepthTest();
+        // we should disable depth test, because texts may be translucent
+        // for compatibility reasons, we keep this enabled, and it doesn't seem to be a big problem
+        RenderSystem.enableDepthTest();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
