@@ -371,10 +371,20 @@ public final class ModernStringSplitter {
         }
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, base);
-        /*if (width >= node.getAdvance()) {
-            consumer.accept(base, 0, text.length());
-            return;
-        }*/
+        final char[] buf = node.getTextBuf();
+        if (width >= node.getAdvance()) {
+            boolean hasLineFeed = false;
+            for (int i = 0, e = node.getLength(); i < e; i++) {
+                if (buf[i] == '\n') {
+                    hasLineFeed = true;
+                    break;
+                }
+            }
+            if (!hasLineFeed) {
+                consumer.accept(base, 0, text.length());
+                return;
+            }
+        }
 
         // ignore styles generated from formatting codes
         final LineBreaker lineBreaker = new LineBreaker(width);
@@ -385,7 +395,7 @@ public final class ModernStringSplitter {
         for (int paraStart = 0; paraStart < end; paraStart = paraEnd) {
             paraEnd = -1;
             for (int i = paraStart; i < end; i++)
-                if (node.getTextBuf()[i] == '\n') {
+                if (buf[i] == '\n') {
                     paraEnd = i;
                     break;
                 }
@@ -397,7 +407,7 @@ public final class ModernStringSplitter {
                 paraEnd++;  // Includes LINE_FEED(U+000A) to the prev paragraph.
             }
 
-            nextBoundaryIndex = lineBreaker.process(node, paraStart, paraEnd, nextBoundaryIndex);
+            nextBoundaryIndex = lineBreaker.process(node, buf, paraStart, paraEnd, nextBoundaryIndex);
         }
 
         final IntList result = lineBreaker.mBreakPoints;
@@ -452,10 +462,20 @@ public final class ModernStringSplitter {
         }
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, base);
-        /*if (width >= node.getAdvance()) {
-            consumer.accept(text, Boolean.FALSE);
-            return;
-        }*/
+        final char[] buf = node.getTextBuf();
+        if (width >= node.getAdvance()) {
+            boolean hasLineFeed = false;
+            for (int i = 0, e = node.getLength(); i < e; i++) {
+                if (buf[i] == '\n') {
+                    hasLineFeed = true;
+                    break;
+                }
+            }
+            if (!hasLineFeed) {
+                consumer.accept(text, Boolean.FALSE);
+                return;
+            }
+        }
 
         // ignore styles generated from formatting codes
         final LineBreaker lineBreaker = new LineBreaker(width);
@@ -466,7 +486,7 @@ public final class ModernStringSplitter {
         for (int paraStart = 0; paraStart < end; paraStart = paraEnd) {
             paraEnd = -1;
             for (int i = paraStart; i < end; i++)
-                if (node.getTextBuf()[i] == '\n') {
+                if (buf[i] == '\n') {
                     paraEnd = i;
                     break;
                 }
@@ -478,7 +498,7 @@ public final class ModernStringSplitter {
                 paraEnd++;  // Includes LINE_FEED(U+000A) to the prev paragraph.
             }
 
-            nextBoundaryIndex = lineBreaker.process(node, paraStart, paraEnd, nextBoundaryIndex);
+            nextBoundaryIndex = lineBreaker.process(node, buf, paraStart, paraEnd, nextBoundaryIndex);
         }
 
         final IntList result = lineBreaker.mBreakPoints;
@@ -550,7 +570,8 @@ public final class ModernStringSplitter {
             mLineWidthLimit = lineWidthLimit;
         }
 
-        public int process(@Nonnull TextRenderNode node, int start, int end, int nextBoundaryIndex) {
+        public int process(@Nonnull TextRenderNode node, @Nonnull char[] buf,
+                           int start, int end, int nextBoundaryIndex) {
             mLineWidth = 0;
             mCharsAdvance = 0;
             mPrevBoundaryOffset = NOWHERE;
@@ -559,7 +580,7 @@ public final class ModernStringSplitter {
             int nextBoundary = node.getLineBoundaries()[nextBoundaryIndex++];
 
             for (int i = start; i < end; i++) {
-                updateLineWidth(node.getTextBuf()[i], node.getAdvances()[i]);
+                updateLineWidth(buf[i], node.getAdvances()[i]);
 
                 if (i + 1 == nextBoundary) {
                     processLineBreak(node, i + 1);
