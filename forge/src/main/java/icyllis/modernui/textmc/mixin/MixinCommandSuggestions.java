@@ -40,6 +40,10 @@ public abstract class MixinCommandSuggestions {
         throw new IllegalStateException();
     }
 
+    /**
+     * @author BloCamLimb
+     * @reason Optimization
+     */
     @Nullable
     @Overwrite
     private FormattedCharSequence formatChat(String viewText, int baseOffset) {
