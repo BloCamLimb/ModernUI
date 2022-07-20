@@ -341,7 +341,8 @@ public class TextLayoutProcessor {
             if (mGlyphs.size() != mFlags.size()) {
                 throw new IllegalStateException();
             }
-            if (mBuilder.length() != mLineBoundaries.getInt(mLineBoundaries.size() - 1)) {
+            if (!mBuilder.isEmpty() &&
+                    mBuilder.length() != mLineBoundaries.getInt(mLineBoundaries.size() - 1)) {
                 ModernUI.LOGGER.error("Last char cannot break line?");
             }
             if (Math.abs(mAdvances.doubleStream().sum() - mAdvance) > 1) {
@@ -367,7 +368,7 @@ public class TextLayoutProcessor {
         StringDecomposer.iterateFormatted(text, style, mSequenceBuilder);
         TextRenderNode node = performFullLayout(text);
         if (DEBUG) {
-            ModernUI.LOGGER.info("Performed Vanilla Layout: {}, {}", mBuilder.toString(), node);
+            ModernUI.LOGGER.info("Performed Vanilla Layout: {}, {}, {}", mBuilder.toString(), text, node);
         }
         reset();
         return node;
@@ -378,7 +379,7 @@ public class TextLayoutProcessor {
         text.visit(mContentBuilder, style);
         TextRenderNode node = performFullLayout(null);
         if (DEBUG) {
-            ModernUI.LOGGER.info("Performed Complex Layout: {}, {}", mBuilder.toString(), node);
+            ModernUI.LOGGER.info("Performed Complex Layout: {}, {}, {}", mBuilder.toString(), text, node);
         }
         reset();
         return node;
@@ -389,7 +390,7 @@ public class TextLayoutProcessor {
         sequence.accept(mSequenceBuilder);
         TextRenderNode node = performFullLayout(null);
         if (DEBUG) {
-            ModernUI.LOGGER.info("Performed Sequence Layout: {}, {}", mBuilder.toString(), node);
+            ModernUI.LOGGER.info("Performed Sequence Layout: {}, {}, {}", mBuilder.toString(), sequence, node);
         }
         reset();
         return node;

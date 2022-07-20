@@ -371,10 +371,10 @@ public final class ModernStringSplitter {
         }
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, base);
-        if (width >= node.getAdvance()) {
+        /*if (width >= node.getAdvance()) {
             consumer.accept(base, 0, text.length());
             return;
-        }
+        }*/
 
         // ignore styles generated from formatting codes
         final LineBreaker lineBreaker = new LineBreaker(width);
@@ -452,10 +452,10 @@ public final class ModernStringSplitter {
         }
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, base);
-        if (width >= node.getAdvance()) {
+        /*if (width >= node.getAdvance()) {
             consumer.accept(text, Boolean.FALSE);
             return;
-        }
+        }*/
 
         // ignore styles generated from formatting codes
         final LineBreaker lineBreaker = new LineBreaker(width);
