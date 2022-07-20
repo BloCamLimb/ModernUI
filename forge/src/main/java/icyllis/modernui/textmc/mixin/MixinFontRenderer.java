@@ -44,8 +44,8 @@ public abstract class MixinFontRenderer {
     public int drawInBatch(@Nonnull String text, float x, float y, int color, boolean dropShadow,
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight, @Deprecated boolean bidiFlag) {
-        return ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
-                colorBackground, packedLight);
+        return (int) ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
+                colorBackground, packedLight) + (dropShadow ? 1 : 0);
     }
 
     /**
@@ -56,8 +56,8 @@ public abstract class MixinFontRenderer {
     public int drawInBatch(@Nonnull Component text, float x, float y, int color, boolean dropShadow,
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight) {
-        return ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
-                colorBackground, packedLight);
+        return (int) ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
+                colorBackground, packedLight) + (dropShadow ? 1 : 0);
     }
 
     /**
@@ -74,8 +74,8 @@ public abstract class MixinFontRenderer {
                     FormattedText.STOP_ITERATION : Optional.empty(), Style.EMPTY).isPresent())
                 return callDrawInternal(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground,
                         packedLight);
-        return ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
-                colorBackground, packedLight);
+        return (int) ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
+                colorBackground, packedLight) + (dropShadow ? 1 : 0);
     }
 
     @Invoker

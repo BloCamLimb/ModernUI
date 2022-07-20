@@ -177,7 +177,9 @@ public class TextLayoutEngine {
                 // no shaping
                 GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
                 float advance = (float) vector.getGlyphPosition(1).getX();
-                glyphs[i] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+                GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+                Objects.requireNonNull(glyph, font + " does not support ASCII digits");
+                glyphs[i] = glyph;
                 // '0' is standard, because it's wider than other digits in general
                 if (i == 0) {
                     // 0 is standard advance
@@ -198,9 +200,12 @@ public class TextLayoutEngine {
                 if (advance + 0.5f > offsets[0]) {
                     continue;
                 }
-                glyphs[n] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
-                offsets[n] = (offsets[0] - advance) / 2f;
-                n++;
+                GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+                if (glyph != null) {
+                    glyphs[n] = glyph;
+                    offsets[n] = (offsets[0] - advance) / 2f;
+                    n++;
+                }
             }
             // 58 to 126
             for (int i = 0; i < 69; i++) {
@@ -212,9 +217,12 @@ public class TextLayoutEngine {
                 if (advance + 0.5f > offsets[0]) {
                     continue;
                 }
-                glyphs[n] = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
-                offsets[n] = (offsets[0] - advance) / 2f;
-                n++;
+                GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+                if (glyph != null) {
+                    glyphs[n] = glyph;
+                    offsets[n] = (offsets[0] - advance) / 2f;
+                    n++;
+                }
             }
             if (n < glyphs.length) {
                 glyphs = Arrays.copyOf(glyphs, n);

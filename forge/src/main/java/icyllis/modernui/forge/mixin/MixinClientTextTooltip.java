@@ -41,6 +41,7 @@ public class MixinClientTextTooltip {
                          int color, boolean dropShadow, Matrix4f matrix, MultiBufferSource source,
                          boolean seeThrough, int colorBackground, int packedLight) {
         if (TooltipRenderer.sTooltip) {
+            // vanilla alpha threshold is 4
             final int colorR = (Math.max((int) (TooltipRenderer.sAlpha * 255), 4) << 24) | (color & 0xFFFFFF);
             return font.drawInBatch(text, x, y, colorR, dropShadow, matrix, source, seeThrough, colorBackground,
                     packedLight);

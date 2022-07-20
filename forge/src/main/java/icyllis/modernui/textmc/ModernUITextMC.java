@@ -154,8 +154,8 @@ public final class ModernUITextMC {
     static class EventHandler {
 
         @SubscribeEvent
-        static void onClientChat(@Nonnull ClientChatEvent e) {
-            final String msg = e.getMessage();
+        static void onClientChat(@Nonnull ClientChatEvent event) {
+            final String msg = event.getMessage();
             if (CONFIG.mEmojiShortcodes.get() && !msg.startsWith("/")) {
                 final TextLayoutEngine engine = TextLayoutEngine.getInstance();
                 final Matcher matcher = TextLayoutEngine.EMOJI_SHORTCODE_PATTERN.matcher(msg);
@@ -182,7 +182,7 @@ public final class ModernUITextMC {
                 }
                 if (builder != null) {
                     builder.append(msg, lastEnd, msg.length());
-                    e.setMessage(builder.toString());
+                    event.setMessage(builder.toString());
                 }
             }
         }
