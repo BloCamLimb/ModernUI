@@ -726,6 +726,7 @@ public final class UIManager implements LifecycleOwner {
         LOGGER.info(MARKER, str);
     }
 
+    @SuppressWarnings("unchecked")
     private void dump(@Nonnull PrintWriter pw) {
         pw.println(">>> Modern UI dump data <<<");
 
@@ -759,7 +760,6 @@ public final class UIManager implements LifecycleOwner {
 
         Map<ResourceLocation, AbstractTexture> textureMap = null;
         try {
-            //noinspection unchecked
             textureMap = (Map<ResourceLocation, AbstractTexture>) BY_PATH.get(minecraft.getTextureManager());
         } catch (Exception ignored) {
         }
@@ -804,7 +804,7 @@ public final class UIManager implements LifecycleOwner {
                 }
                 if (texture instanceof TextureAtlas textureAtlas) {
                     try {
-                        @SuppressWarnings("unchecked") Map<ResourceLocation, TextureAtlasSprite> textures =
+                        Map<ResourceLocation, TextureAtlasSprite> textures =
                                 (Map<ResourceLocation, TextureAtlasSprite>) TEXTURES_BY_NAME.get(textureAtlas);
                         for (var sprite : textures.values()) {
                             for (var image : (com.mojang.blaze3d.platform.NativeImage[]) MAIN_IMAGE.get(sprite)) {
