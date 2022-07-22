@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.textmc.*;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.components.AbstractWidget;
 import net.minecraft.client.gui.components.EditBox;
@@ -176,8 +177,13 @@ public abstract class MixinEditBox extends AbstractWidget {
             if (!separate && !viewText.isEmpty()) {
                 TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(viewText);
                 float accAdv = 0;
+                int seekIndex = 0;
                 for (int i = 0; i < viewCursorPos; i++) {
-                    accAdv += node.getAdvances()[i];
+                    if (viewText.charAt(i) == ChatFormatting.PREFIX_CODE) {
+                        i++;
+                        continue;
+                    }
+                    accAdv += node.getAdvances()[seekIndex++];
                 }
                 cursorX = baseX + accAdv;
             } else {
@@ -210,8 +216,13 @@ public abstract class MixinEditBox extends AbstractWidget {
             TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(viewText);
             float startX = baseX;
             float endX = cursorX;
+            int seekIndex = 0;
             for (int i = 0; i < clampedViewHighlightPos; i++) {
-                startX += node.getAdvances()[i];
+                if (viewText.charAt(i) == ChatFormatting.PREFIX_CODE) {
+                    i++;
+                    continue;
+                }
+                startX += node.getAdvances()[seekIndex++];
             }
 
             if (endX < startX) {
