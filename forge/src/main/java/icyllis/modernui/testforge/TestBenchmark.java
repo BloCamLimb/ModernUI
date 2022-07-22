@@ -111,13 +111,11 @@ public class TestBenchmark {
 
     public static AS as = new AS();
 
-    @Benchmark
     public static void putIntObj() {
     }
 
     public static long sBuffer = MemoryUtil.nmemAlloc(4);
 
-    @Benchmark
     public static void putIntUnsafe() {
         long buf = sBuffer;
         for (int i = 0; i < 10000; i++) {

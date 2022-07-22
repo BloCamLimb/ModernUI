@@ -163,7 +163,7 @@ public class TestMain {
         LOGGER.info(MARKER, "ZWSP Combining:{}", Emoji.isEmoji(0x1F918));
         LOGGER.info(MARKER, "HashCodeEquals{}", bufferBuilder.hashCode() == text.hashCode());
 
-        breakGraphemes(text);
+        breakGraphemes("\u2b1b\u200c");
 
         Pattern pattern = Pattern.compile("(\\:(\\w|\\+|\\-)+\\:)(?=|[\\!\\.\\?]|$)");
         String[] testStr = {
