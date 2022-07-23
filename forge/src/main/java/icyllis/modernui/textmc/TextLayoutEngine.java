@@ -44,7 +44,6 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.lwjgl.system.MemoryUtil;
-import org.lwjgl.system.libc.LibCString;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -373,7 +372,7 @@ public class TextLayoutEngine {
             // make font size to 16 (8 * 2)
             mResolutionLevel = 2;
         } else {
-            // Note max font size is 96, see FontPaint, font size will be (8 * location) in Minecraft
+            // Note max font size is 96, see FontPaint, font size will be (8 * resolution) in Minecraft
             if (!sSuperSampling || !GLFontAtlas.sLinearSampling) {
                 mResolutionLevel = Math.min(scale, 9);
             } else if (scale > 2) {
@@ -400,10 +399,10 @@ public class TextLayoutEngine {
         };
 
         if (oldLevel == 0) {
-            LOGGER.info(MARKER, "Loaded text layout engine, location level: {}, locale: {}, layout RTL: {}",
+            LOGGER.info(MARKER, "Loaded text layout engine, resolution level: {}, locale: {}, layout RTL: {}",
                     mResolutionLevel, locale, layoutRtl);
         } else {
-            LOGGER.info(MARKER, "Reloaded text layout engine, location level: {} to {}, locale: {}, layout RTL: {}",
+            LOGGER.info(MARKER, "Reloaded text layout engine, resolution level: {} to {}, locale: {}, layout RTL: {}",
                     oldLevel, mResolutionLevel, locale, layoutRtl);
         }
     }
@@ -461,34 +460,42 @@ public class TextLayoutEngine {
                             return;
                         }
                         mEmojiLookupKey.clear();
-                        int codePoint = 0;
                         for (String part : parts) {
                             try {
-                                codePoint = Integer.parseInt(part, 16);
+                                int codePoint = Integer.parseInt(part, 16);
                                 mEmojiLookupKey.addCodePoint(codePoint);
                             } catch (NumberFormatException e) {
                                 return;
                             }
                         }
-                        final String sequence;
-                        EmojiEntry cached = mEmojiMap.get(mEmojiLookupKey);
+                        final String emojiSequence;
+                        EmojiEntry cachedEntry = mEmojiMap.get(mEmojiLookupKey);
                         // try to reuse emoji sequence
-                        if (cached != null) {
-                            sequence = cached.sequence;
-                        } else if (codePoint == 0xfe0f) {
-                            // try with last variation selector removed
-                            mEmojiLookupKey.mChars.size(mEmojiLookupKey.length() - 1);
-                            cached = mEmojiMap.get(mEmojiLookupKey);
-                            if (cached != null) {
-                                sequence = cached.sequence;
-                            } else {
-                                sequence = null;
-                            }
+                        if (cachedEntry != null) {
+                            emojiSequence = cachedEntry.sequence;
                         } else {
-                            sequence = null;
+                            // try with variation selector-16 removed
+                            mEmojiLookupKey.clear();
+                            for (String part : parts) {
+                                try {
+                                    int codePoint = Integer.parseInt(part, 16);
+                                    if (codePoint == 0xfe0f) {
+                                        continue;
+                                    }
+                                    mEmojiLookupKey.addCodePoint(codePoint);
+                                } catch (NumberFormatException e) {
+                                    return;
+                                }
+                            }
+                            cachedEntry = mEmojiMap.get(mEmojiLookupKey);
+                            if (cachedEntry != null) {
+                                emojiSequence = cachedEntry.sequence;
+                            } else {
+                                emojiSequence = null;
+                            }
                         }
-                        if (sequence != null) {
-                            shortcodes.forEach(e -> mEmojiShortcodes.putIfAbsent(e.getAsString(), sequence));
+                        if (emojiSequence != null) {
+                            shortcodes.forEach(e -> mEmojiShortcodes.putIfAbsent(e.getAsString(), emojiSequence));
                         } else {
                             mismatched++;
                         }
@@ -783,21 +790,21 @@ public class TextLayoutEngine {
                     (image.getWidth() == EMOJI_SIZE * 2 && image.getHeight() == EMOJI_SIZE * 2)) {
                 long dst = MemoryUtil.memAddress(mEmojiBuffer);
                 {
-                    NativeImage sub = null;
+                    NativeImage downSample = null;
                     if (image.getWidth() == EMOJI_SIZE * 2) {
                         // Down-sampling
-                        sub = MipmapGenerator.generateMipLevels(image, 1)[1];
+                        downSample = MipmapGenerator.generateMipLevels(image, 1)[1];
                     }
-                    long src = UIManager.IMAGE_PIXELS.getLong(sub != null ? sub : image);
+                    long src = UIManager.IMAGE_PIXELS.getLong(downSample != null ? downSample : image);
                     // Add 1 pixel transparent border to prevent texture bleeding
                     // RGBA is 4 bytes per pixel
                     long dstOff = (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2 + GlyphManager.GLYPH_BORDER) * 4;
                     for (int i = 0; i < EMOJI_SIZE; i++) {
-                        LibCString.nmemcpy(dst + dstOff, src + (i * EMOJI_SIZE * 4), EMOJI_SIZE * 4);
+                        MemoryUtil.memCopy(src + (i * EMOJI_SIZE * 4), dst + dstOff, EMOJI_SIZE * 4);
                         dstOff += (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2) * 4;
                     }
-                    if (sub != null) {
-                        sub.close();
+                    if (downSample != null) {
+                        downSample.close();
                     }
                 }
                 glyph.x = 0;
@@ -886,7 +893,7 @@ public class TextLayoutEngine {
     /**
      * Returns current resolution level for texts.
      *
-     * @return location level, should be an integer that converted to float
+     * @return resolution level, should be an integer that converted to float
      */
     public float getResolutionLevel() {
         return mResolutionLevel;
