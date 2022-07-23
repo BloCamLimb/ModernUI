@@ -718,7 +718,9 @@ public class TextLayoutProcessor {
          */
         if (fastDigit) {
             for (int i = start; i < limit; i++) {
-                if (text[i] <= '9' && text[i] >= '0') {
+                if (text[i] <= '9' && text[i] >= '0' &&
+                        // also check COMBINING ENCLOSING KEYCAP, don't break GCB
+                        (i + 1 >= limit || text[i + 1] != '\u20E3')) {
                     text[i] = '0';
                 }
             }
