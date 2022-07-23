@@ -70,7 +70,7 @@ public class Image {
             COMPRESSION_BC1_RGB8_UNORM = 2,
             COMPRESSION_BC1_RGBA8_UNORM = 3;
     @ApiStatus.Internal
-    public static final int COMPRESSION_LAST = COMPRESSION_BC1_RGBA8_UNORM;
+    public static final int LAST_COMPRESSION = COMPRESSION_BC1_RGBA8_UNORM;
 
     /**
      * Returns the full width of this image (as its texture).

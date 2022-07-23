@@ -16,8 +16,21 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
+package icyllis.arcui.core;
+
 /**
- * Engine package, also known as Hardware Graphics Interface (HGI).
- * It provides the common part of the rendering pipeline and the abstraction layer of different 3D graphics APIs.
+ * Clip ops.
  */
-package icyllis.arcui.engine;
+public final class ClipOp {
+
+    public static final byte
+            CLIP_OP_DIFFERENCE = 0, // target minus operand
+            CLIP_OP_INTERSECT = 1;  // target intersected with operand
+
+    static {
+        assert false;
+    }
+
+    private ClipOp() {
+    }
+}

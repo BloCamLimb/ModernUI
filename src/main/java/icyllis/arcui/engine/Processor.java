@@ -16,35 +16,17 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.core;
+package icyllis.arcui.engine;
+
+import javax.annotation.concurrent.Immutable;
 
 /**
- * GPU hierarchical clipping using stencil test.
+ * Provides custom shader code to the Arc UI shading pipeline. Processor objects <em>must</em> be
+ * immutable: after being constructed, their fields may not change.
  */
-public class ClipStack {
+@Immutable
+public abstract class Processor {
 
-    /**
-     * Clip ops.
-     */
-    public static final byte
-            OP_DIFFERENCE = 0,  // target minus operand
-            OP_INTERSECT = 1;   // target intersected with operand
-
-    /**
-     * Clip states.
-     */
-    public static final byte
-            STATE_EMPTY = 0,
-            STATE_WIDE_OPEN = 1,
-            STATE_DEVICE_RECT = 2,
-            STATE_DEVICE_ROUND_RECT = 3,
-            STATE_COMPLEX = 4;
-
-    public static final class Clip {
-
-        final Rect mShape = new Rect();
-
-        // model view matrix
-        final Matrix4 mMatrix = Matrix4.identity();
+    protected Processor() {
     }
 }

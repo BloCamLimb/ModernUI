@@ -97,7 +97,7 @@ public final class Types {
         return switch (type) {
             case TEXTURE_TYPE_2D -> false;
             case TEXTURE_TYPE_EXTERNAL -> true;
-            default -> throw new IllegalArgumentException();
+            default -> throw new IllegalArgumentException(String.valueOf(type));
         };
     }
 
@@ -127,12 +127,12 @@ public final class Types {
             case ImageInfo.COLOR_UNKNOWN -> 0;
             case ImageInfo.COLOR_ALPHA_8,
                     ImageInfo.COLOR_ALPHA_16,
-                    ImageInfo.COLOR_ALPHA_F32xxx,
-                    ImageInfo.COLOR_ALPHA_8xxx,
+                    ImageInfo.COLOR_ALPHA_F32XXX,
+                    ImageInfo.COLOR_ALPHA_8XXX,
                     ImageInfo.COLOR_ALPHA_F16 -> Color.ALPHA_CHANNEL_FLAG;
             case ImageInfo.COLOR_BGR_565,
                     ImageInfo.COLOR_RGB_888,
-                    ImageInfo.COLOR_RGB_888x -> Color.RGB_CHANNEL_FLAGS;
+                    ImageInfo.COLOR_RGB_888X -> Color.RGB_CHANNEL_FLAGS;
             case ImageInfo.COLOR_ABGR_4444,
                     ImageInfo.COLOR_BGRA_4444,
                     ImageInfo.COLOR_ARGB_4444,
@@ -150,12 +150,12 @@ public final class Types {
                     ImageInfo.COLOR_RG_1616 -> Color.RG_CHANNEL_FLAGS;
             case ImageInfo.COLOR_GRAY_8,
                     ImageInfo.COLOR_GRAY_F16,
-                    ImageInfo.COLOR_GRAY_8xxx -> Color.GRAY_CHANNEL_FLAG;
+                    ImageInfo.COLOR_GRAY_8XXX -> Color.GRAY_CHANNEL_FLAG;
             case ImageInfo.COLOR_GRAY_ALPHA_88 -> Color.GRAY_ALPHA_CHANNEL_FLAGS;
             case ImageInfo.COLOR_R_8,
                     ImageInfo.COLOR_R_F16,
                     ImageInfo.COLOR_R_16 -> Color.RED_CHANNEL_FLAG;
-            default -> throw new IllegalArgumentException();
+            default -> throw new IllegalArgumentException(String.valueOf(ct));
         };
     }
 
@@ -248,6 +248,98 @@ public final class Types {
             MIPMAP_STATUS_NONE = 0,     // Mips have not been allocated
             MIPMAP_STATUS_DIRTY = 1,    // Mips are allocated but the full mip tree does not have valid data
             MIPMAP_STATUS_VALID = 2;    // All levels fully allocated and have valid data in them
+
+    /**
+     * Types used to describe format of vertices in arrays.
+     */
+    public final static class VertexAttribType {
+
+        public static final byte
+                FLOAT = 0,
+                FLOAT2 = 1,
+                FLOAT3 = 2,
+                FLOAT4 = 3,
+                HALF = 4,
+                HALF2 = 5,
+                HALF4 = 6;
+        public static final byte
+                INT2 = 7,   // vector of 2 32-bit ints
+                INT3 = 8,   // vector of 3 32-bit ints
+                INT4 = 9;   // vector of 4 32-bit ints
+        public static final byte
+                BYTE = 10,   // signed byte
+                BYTE2 = 11,  // vector of 2 8-bit signed bytes
+                BYTE4 = 12,  // vector of 4 8-bit signed bytes
+                UBYTE = 13,  // unsigned byte
+                UBYTE2 = 14, // vector of 2 8-bit unsigned bytes
+                UBYTE4 = 15; // vector of 4 8-bit unsigned bytes
+        public static final byte
+                UBYTE_NORM = 16,  // unsigned byte, e.g. coverage, 0 -> 0.0f, 255 -> 1.0f.
+                UBYTE4_NORM = 17; // vector of 4 unsigned bytes, e.g. colors, 0 -> 0.0f, 255 -> 1.0f.
+        public static final byte
+                SHORT2 = 18,       // vector of 2 16-bit shorts.
+                SHORT4 = 19;       // vector of 4 16-bit shorts.
+        public static final byte
+                USHORT2 = 20,      // vector of 2 unsigned shorts. 0 -> 0, 65535 -> 65535.
+                USHORT2_NORM = 21; // vector of 2 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
+        public static final byte
+                INT = 22,
+                UINT = 23;
+        public static final byte
+                USHORT_NORM = 24;
+        public static final byte
+                USHORT4_NORM = 25; // vector of 4 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
+        public static final byte LAST = USHORT4_NORM;
+
+        public static int getSize(byte type) {
+            switch (type) {
+                case FLOAT:
+                    return Float.BYTES;
+                case FLOAT2:
+                    return 2 * Float.BYTES;
+                case FLOAT3:
+                    return 3 * Float.BYTES;
+                case FLOAT4:
+                    return 4 * Float.BYTES;
+                case HALF:
+                case USHORT_NORM:
+                    return Short.BYTES;
+                case HALF2:
+                case SHORT2:
+                case USHORT2:
+                case USHORT2_NORM:
+                    return 2 * Short.BYTES;
+                case HALF4:
+                case SHORT4:
+                case USHORT4_NORM:
+                    return 4 * Short.BYTES;
+                case INT2:
+                    return 2 * Integer.BYTES;
+                case INT3:
+                    return 3 * Integer.BYTES;
+                case INT4:
+                    return 4 * Integer.BYTES;
+                case BYTE:
+                case UBYTE:
+                case UBYTE_NORM:
+                    return Byte.BYTES;
+                case BYTE2:
+                case UBYTE2:
+                    return 2 * Byte.BYTES;
+                case BYTE4:
+                case UBYTE4:
+                case UBYTE4_NORM:
+                    return 4 * Byte.BYTES;
+                case INT:
+                case UINT:
+                    return Integer.BYTES;
+            }
+            throw new IllegalArgumentException(String.valueOf(type));
+        }
+
+        private VertexAttribType() {
+        }
+    }
 
     private Types() {
     }

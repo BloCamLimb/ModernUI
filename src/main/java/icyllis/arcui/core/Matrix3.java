@@ -323,18 +323,18 @@ public class Matrix3 implements Cloneable {
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
-     * @param out the round values
+     * @param result the round values
      */
-    public void mapRect(@Nonnull Rect r, @Nonnull Rect out) {
-        mapRect(r.left, r.top, r.right, r.bottom, out);
+    public void mapRect(@Nonnull Rect r, @Nonnull Rect result) {
+        mapRect(r.left, r.top, r.right, r.bottom, result);
     }
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
-     * @param out the round values
+     * @param result the round values
      */
-    public void mapRect(float l, float t, float r, float b, @Nonnull Rect out) {
+    public void mapRect(float l, float t, float r, float b, @Nonnull Rect result) {
         float x1 = m11 * l + m21 * t + m31;
         float y1 = m12 * l + m22 * t + m32;
         float x2 = m11 * r + m21 * t + m31;
@@ -358,36 +358,27 @@ public class Matrix3 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        out.left = Math.round(min(x1, x2, x3, x4));
-        out.top = Math.round(min(y1, y2, y3, y4));
-        out.right = Math.round(max(x1, x2, x3, x4));
-        out.bottom = Math.round(max(y1, y2, y3, y4));
+        result.left = Math.round(min(x1, x2, x3, x4));
+        result.top = Math.round(min(y1, y2, y3, y4));
+        result.right = Math.round(max(x1, x2, x3, x4));
+        result.bottom = Math.round(max(y1, y2, y3, y4));
     }
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
-     * @param out the round out values
+     * @param result the round out values
      */
-    public void mapRectOut(@Nonnull RectF r, @Nonnull Rect out) {
-        mapRectOut(r.left, r.top, r.right, r.bottom, out);
+    public void mapRectOut(@Nonnull Rect r, @Nonnull Rect result) {
+        mapRectOut(r.left, r.top, r.right, r.bottom, result);
     }
 
     /**
      * Map a rectangle points in the X-Y plane to get the maximum bounds.
      *
-     * @param out the round out values
+     * @param result the round out values
      */
-    public void mapRectOut(@Nonnull Rect r, @Nonnull Rect out) {
-        mapRectOut(r.left, r.top, r.right, r.bottom, out);
-    }
-
-    /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param out the round out values
-     */
-    public void mapRectOut(float l, float t, float r, float b, @Nonnull Rect out) {
+    public void mapRectOut(float l, float t, float r, float b, @Nonnull Rect result) {
         float x1 = m11 * l + m21 * t + m31;
         float y1 = m12 * l + m22 * t + m32;
         float x2 = m11 * r + m21 * t + m31;
@@ -411,10 +402,10 @@ public class Matrix3 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        out.left = (int) Math.floor(min(x1, x2, x3, x4));
-        out.top = (int) Math.floor(min(y1, y2, y3, y4));
-        out.right = (int) Math.ceil(max(x1, x2, x3, x4));
-        out.bottom = (int) Math.ceil(max(y1, y2, y3, y4));
+        result.left = (int) Math.floor(min(x1, x2, x3, x4));
+        result.top = (int) Math.floor(min(y1, y2, y3, y4));
+        result.right = (int) Math.ceil(max(x1, x2, x3, x4));
+        result.bottom = (int) Math.ceil(max(y1, y2, y3, y4));
     }
 
     /**

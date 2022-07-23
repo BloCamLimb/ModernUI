@@ -16,8 +16,31 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * Engine package, also known as Hardware Graphics Interface (HGI).
- * It provides the common part of the rendering pipeline and the abstraction layer of different 3D graphics APIs.
- */
 package icyllis.arcui.engine;
+
+import icyllis.arcui.core.Matrix4;
+import icyllis.arcui.core.Rect;
+
+/**
+ * GPU hierarchical clipping using stencil test.
+ */
+public class ClipStack {
+
+    /**
+     * Clip states.
+     */
+    public static final byte
+            STATE_EMPTY = 0,
+            STATE_WIDE_OPEN = 1,
+            STATE_DEVICE_RECT = 2,
+            STATE_DEVICE_ROUND_RECT = 3,
+            STATE_COMPLEX = 4;
+
+    public static final class Clip {
+
+        final Rect mShape = new Rect();
+
+        // model view matrix
+        final Matrix4 mMatrix = Matrix4.identity();
+    }
+}

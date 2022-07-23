@@ -95,7 +95,7 @@ public final class ImageInfo {
             COLOR_BGR_565,
             COLOR_ABGR_4444,
             COLOR_RGBA_8888,
-            COLOR_RGB_888x,
+            COLOR_RGB_888X,
             COLOR_RG_88,
             COLOR_BGRA_8888,
             COLOR_RGBA_1010102,
@@ -142,7 +142,7 @@ public final class ImageInfo {
      * Public API values.
      */
     public static final int
-            COLOR_RGB_888x = 6,         // pixel with 8 bits each for red, green, blue; in 32-bit word
+            COLOR_RGB_888X = 6,         // pixel with 8 bits each for red, green, blue; in 32-bit word
             COLOR_RG_88 = 7,            // pixel with 8 bits for red and green; in 16-bit word
             COLOR_BGRA_8888 = 8,        // pixel with 8 bits for blue, green, red, alpha; in 32-bit word
             COLOR_RGBA_1010102 = 9,     // 10 bits for red, green, blue; 2 bits for alpha; in 32-bit word
@@ -190,10 +190,10 @@ public final class ImageInfo {
      * only supports reading to RGBA8.)
      */
     public static final int
-            COLOR_ALPHA_8xxx = 21,
-            COLOR_ALPHA_F32xxx = 22,
-            COLOR_GRAY_8xxx = 23,
-            COLOR_R_8xxx = 24;
+            COLOR_ALPHA_8XXX = 21,
+            COLOR_ALPHA_F32XXX = 22,
+            COLOR_GRAY_8XXX = 23,
+            COLOR_R_8XXX = 24;
     /**
      * Engine values.
      * <p>
@@ -208,7 +208,7 @@ public final class ImageInfo {
             COLOR_BGRA_4444 = 30,
             COLOR_ARGB_4444 = 31; // see COLOR_ABGR_4444 for public usage
     @ApiStatus.Internal
-    public static final int COLOR_LAST = COLOR_ARGB_4444;
+    public static final int LAST_COLOR = COLOR_ARGB_4444;
 
     /**
      * Creates a color info based on the supplied color type and alpha type.
@@ -280,19 +280,19 @@ public final class ImageInfo {
             case COLOR_RGBA_8888,
                     COLOR_RG_F16,
                     COLOR_RG_1616,
-                    COLOR_R_8xxx,
-                    COLOR_GRAY_8xxx,
-                    COLOR_ALPHA_8xxx,
+                    COLOR_R_8XXX,
+                    COLOR_GRAY_8XXX,
+                    COLOR_ALPHA_8XXX,
                     COLOR_BGRA_1010102,
                     COLOR_RGBA_1010102,
                     COLOR_BGRA_8888,
-                    COLOR_RGB_888x,
+                    COLOR_RGB_888X,
                     COLOR_RGBA_8888_SRGB -> 4;
             case COLOR_RGBA_F16,
                     COLOR_RGBA_16161616,
                     COLOR_RGBA_F16_CLAMPED -> 8;
             case COLOR_RGBA_F32,
-                    COLOR_ALPHA_F32xxx -> 16;
+                    COLOR_ALPHA_F32XXX -> 16;
             default -> throw new IllegalArgumentException();
         };
     }

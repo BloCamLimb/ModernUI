@@ -18,8 +18,7 @@
 
 package icyllis.arcui.engine;
 
-import icyllis.arcui.core.ImageInfo;
-import icyllis.arcui.core.SharedPtr;
+import icyllis.arcui.core.*;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nullable;
@@ -53,13 +52,11 @@ public final class ResourceProvider {
     public static int makeApprox(int size) {
         size = Math.max(MIN_SCRATCH_TEXTURE_SIZE, size);
 
-        // isPowerOfTwo
-        if ((size & (size - 1)) == 0) {
+        if (MathUtil.isPowerOfTwo(size)) {
             return size;
         }
 
-        // ceilingPowerOfTwo
-        int ceilPow2 = 1 << -Integer.numberOfLeadingZeros(size - 1);
+        int ceilPow2 = MathUtil.ceilingPowerOfTwo(size);
         if (size <= MAGIC_TOLERANCE) {
             return ceilPow2;
         }

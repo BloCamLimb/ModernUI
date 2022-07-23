@@ -25,6 +25,7 @@ import icyllis.arcui.opengl.GLCore;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.MemoryStack;
 import org.lwjgl.system.Platform;
@@ -37,12 +38,19 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Objects;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TestManagedResource {
 
     public static void main(String[] args) {
         long time = System.nanoTime();
+        PrintWriter pw = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
+
         GLFW.glfwInit();
+        // load first
+        Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
         long window = GLFW.glfwCreateWindow(1600, 900, "Test Window", 0, 0);
@@ -50,11 +58,15 @@ public class TestManagedResource {
             throw new RuntimeException();
         }
         GLFW.glfwMakeContextCurrent(window);
+
         DirectContext directContext = DirectContext.makeOpenGL();
         if (directContext == null) {
             throw new RuntimeException();
         }
-        PrintWriter pw = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
+        String glVersion = GLCore.glGetString(GLCore.GL_VERSION);
+        pw.println("OpenGL version: " + glVersion);
+        pw.println("OpenGL vendor: " + GLCore.glGetString(GLCore.GL_VENDOR));
+        pw.println("OpenGL renderer: " + GLCore.glGetString(GLCore.GL_RENDERER));
 
         if (directContext.getCaps().isFormatTexturable(
                 new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,

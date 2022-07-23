@@ -41,7 +41,7 @@ package icyllis.arcui.engine;
  * call is submitted to the GPU. If the flush call fails due to an error and nothing will get sent
  * to the GPU, the submitted proc is called immediately. It is possibly that when work is finally
  * submitted, that the submission actual fails. In this case we will not reattempt to do the
- * submission. Skia notifies the client of these via the success bool passed into the submittedProc.
+ * submission. Arc UI notifies the client of these via the success bool passed into the submittedProc.
  * The submittedProc is useful to the client to know when semaphores that were sent with the flush
  * have actually been submitted to the GPU so that they can be waited on (or deleted if the submit
  * fails).

@@ -16,8 +16,23 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.engine.glsl;
+package icyllis.arcui.sksl;
 
-//TODO
-public abstract class UniformHandler {
+/**
+ * Domain-specific language parser, consumes SkSL source and invokes DSL functions to instantiate the program.
+ */
+public class DSLParser {
+
+    public static final byte
+            LAYOUT_TOKEN_LOCATION = 0,
+            LAYOUT_TOKEN_OFFSET = 1,
+            LAYOUT_TOKEN_BINDING = 2,
+            LAYOUT_TOKEN_INDEX = 3,
+            LAYOUT_TOKEN_SET = 4,
+            LAYOUT_TOKEN_BUILTIN = 5,
+            LAYOUT_TOKEN_INPUT_ATTACHMENT_INDEX = 6,
+            LAYOUT_TOKEN_ORIGIN_UPPER_LEFT = 7,
+            LAYOUT_TOKEN_BLEND_SUPPORT_ALL_EQUATIONS = 8,
+            LAYOUT_TOKEN_PUSH_CONSTANT = 9,
+            LAYOUT_TOKEN_COLOR = 10;
 }

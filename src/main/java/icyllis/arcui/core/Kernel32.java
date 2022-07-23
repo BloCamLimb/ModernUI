@@ -25,7 +25,7 @@ import java.nio.IntBuffer;
 import static org.lwjgl.system.APIUtil.apiGetFunctionAddress;
 import static org.lwjgl.system.Checks.*;
 import static org.lwjgl.system.JNI.*;
-import static org.lwjgl.system.MemoryUtil.memAddressSafe;
+import static org.lwjgl.system.MemoryUtil.*;
 
 /**
  * Native bindings to kernel32.dll.
@@ -48,7 +48,8 @@ public class Kernel32 {
         public static final long
                 CloseHandle = apiGetFunctionAddress(KERNEL32, "CloseHandle"),
                 GetHandleInformation = apiGetFunctionAddress(KERNEL32, "GetHandleInformation"),
-                GetLastError = apiGetFunctionAddress(KERNEL32, "GetLastError");
+                GetLastError = apiGetFunctionAddress(KERNEL32, "GetLastError"),
+                AddDllDirectory = apiGetFunctionAddress(KERNEL32, "AddDllDirectory");
 
     }
 
@@ -104,5 +105,20 @@ public class Kernel32 {
     public static int GetLastError() {
         long __functionAddress = Functions.GetLastError;
         return callI(__functionAddress);
+    }
+
+    /**
+     * Adds a directory to the process DLL search path.
+     *
+     * @param NewDirectory An absolute path to the directory to add to the search path.
+     * @return If the function fails, the return value is zero.
+     */
+    @NativeType("DLL_DIRECTORY_COOKIE")
+    public static long AddDllDirectory(@NativeType("PCWSTR") String NewDirectory) {
+        long __functionAddress = Functions.AddDllDirectory;
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            stack.nUTF16Safe(NewDirectory, true);
+            return callPP(NewDirectory == null ? NULL : stack.getPointerAddress(), __functionAddress);
+        }
     }
 }

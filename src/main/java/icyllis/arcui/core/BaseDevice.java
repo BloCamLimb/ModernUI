@@ -34,7 +34,7 @@ public abstract class BaseDevice extends MatrixProvider {
             CLIP_TYPE_RECT = 1,
             CLIP_TYPE_COMPLEX = 2;
 
-    // read only
+    // read only, device bounds
     protected final Rect mBounds = new Rect();
 
     private final ImageInfo mInfo;
@@ -53,7 +53,7 @@ public abstract class BaseDevice extends MatrixProvider {
     /**
      * Internal resize for optimization purposes.
      */
-    void resize(int width, int height) {
+    void privateResize(int width, int height) {
         mInfo.resize(width, height);
         mBounds.set(0, 0, width, height);
     }
@@ -188,7 +188,11 @@ public abstract class BaseDevice extends MatrixProvider {
     public void clipRect(RectF rect, int clipOp, boolean doAA) {
     }
 
-    public void replaceClip(Rect rect) {
+    public final void replaceClip(Rect rect) {
+        onReplaceClip(rect);
+    }
+
+    protected void onReplaceClip(Rect rect) {
     }
 
     public abstract boolean clipIsAA();

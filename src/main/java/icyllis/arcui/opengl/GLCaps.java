@@ -48,13 +48,13 @@ public final class GLCaps extends Caps {
     private final FormatInfo[] mFormatTable =
             new FormatInfo[GLTypes.LAST_COLOR_FORMAT + 1];
     private final int[] mColorTypeToFormatTable =
-            new int[ImageInfo.COLOR_LAST + 1];
+            new int[ImageInfo.LAST_COLOR + 1];
 
     // may contain null values that representing invalid
     private final GLBackendFormat[] mColorTypeToBackendFormat =
-            new GLBackendFormat[ImageInfo.COLOR_LAST + 1];
+            new GLBackendFormat[ImageInfo.LAST_COLOR + 1];
     private final GLBackendFormat[] mCompressionTypeToBackendFormat =
-            new GLBackendFormat[Image.COMPRESSION_LAST + 1];
+            new GLBackendFormat[Image.LAST_COMPRESSION + 1];
 
     /**
      * All required ARB extensions from OpenGL 3.3 to OpenGL 4.5
@@ -251,11 +251,13 @@ public final class GLCaps extends Caps {
         mDynamicStateArrayGeometryProcessorTextureSupport = true;
 
         int count = glGetInteger(GL_NUM_PROGRAM_BINARY_FORMATS);
-        if (count == 0) {
+        /*if (count == 0) {
             throw new AssertionError("No program binary formats are available");
-        }
+        }*/
         mProgramBinaryFormats = new int[count];
-        glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, mProgramBinaryFormats);
+        if (count > 0) {
+            glGetIntegerv(GL_PROGRAM_BINARY_FORMATS, mProgramBinaryFormats);
+        }
 
         initFormatTable(caps);
 
@@ -345,7 +347,7 @@ public final class GLCaps extends Caps {
             // Format: RGBA8, Surface: kRGB_888x
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[2] = new ColorTypeInfo();
-                ctInfo.mColorType = ImageInfo.COLOR_RGB_888x;
+                ctInfo.mColorType = ImageInfo.COLOR_RGB_888X;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG;
                 ctInfo.mReadSwizzle = Swizzle.RGB1;
 
@@ -354,7 +356,7 @@ public final class GLCaps extends Caps {
                 // Format: RGBA8, Surface: kRGB_888x, Data: kRGBA_888x
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[0] = new ExternalIOFormat();
-                    ioFormat.mColorType = ImageInfo.COLOR_RGB_888x;
+                    ioFormat.mColorType = ImageInfo.COLOR_RGB_888X;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = GL_RGBA;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -397,7 +399,7 @@ public final class GLCaps extends Caps {
                 // Format: R8, Surface: kR_8, Data: kR_8xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ImageInfo.COLOR_R_8xxx;
+                    ioFormat.mColorType = ImageInfo.COLOR_R_8XXX;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -427,7 +429,7 @@ public final class GLCaps extends Caps {
                 // Format: R8, Surface: kAlpha_8, Data: kAlpha_8xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ImageInfo.COLOR_ALPHA_8xxx;
+                    ioFormat.mColorType = ImageInfo.COLOR_ALPHA_8XXX;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -456,7 +458,7 @@ public final class GLCaps extends Caps {
                 // Format: R8, Surface: kGray_8, Data: kGray_8xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ImageInfo.COLOR_GRAY_8xxx;
+                    ioFormat.mColorType = ImageInfo.COLOR_GRAY_8XXX;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -659,7 +661,7 @@ public final class GLCaps extends Caps {
                 // Format: R16F, Surface: kAlpha_F16, Data: kAlpha_F32xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ImageInfo.COLOR_ALPHA_F32xxx;
+                    ioFormat.mColorType = ImageInfo.COLOR_ALPHA_F32XXX;
                     ioFormat.mExternalType = GL_FLOAT;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -691,9 +693,9 @@ public final class GLCaps extends Caps {
             // Format: RGB8, Surface: kRGB_888x
             {
                 ColorTypeInfo ctInfo = info.mColorTypeInfos[0] = new ColorTypeInfo();
-                ctInfo.mColorType = ImageInfo.COLOR_RGB_888x;
+                ctInfo.mColorType = ImageInfo.COLOR_RGB_888X;
                 ctInfo.mFlags = ColorTypeInfo.UPLOAD_DATA_FLAG | ColorTypeInfo.RENDERABLE_FLAG;
-                setColorTypeFormat(ImageInfo.COLOR_RGB_888x, GLTypes.FORMAT_RGB8);
+                setColorTypeFormat(ImageInfo.COLOR_RGB_888X, GLTypes.FORMAT_RGB8);
 
                 // External IO ColorTypes:
                 ctInfo.mExternalIOFormats = new ExternalIOFormat[2];
@@ -990,7 +992,7 @@ public final class GLCaps extends Caps {
                 // Format: R16, Surface: kAlpha_16, Data: kAlpha_8xxx
                 {
                     ExternalIOFormat ioFormat = ctInfo.mExternalIOFormats[1] = new ExternalIOFormat();
-                    ioFormat.mColorType = ImageInfo.COLOR_ALPHA_8xxx;
+                    ioFormat.mColorType = ImageInfo.COLOR_ALPHA_8XXX;
                     ioFormat.mExternalType = GL_UNSIGNED_BYTE;
                     ioFormat.mExternalWriteFormat = 0;
                     ioFormat.mExternalReadFormat = GL_RGBA;
@@ -1404,7 +1406,7 @@ public final class GLCaps extends Caps {
         int compression = srcFormat.getCompressionType();
         if (compression != Image.COMPRESSION_NONE) {
             return (DataUtils.compressionTypeIsOpaque(compression) ?
-                    ImageInfo.COLOR_RGB_888x :
+                    ImageInfo.COLOR_RGB_888X :
                     ImageInfo.COLOR_RGBA_8888); // alignment = 0
         }
 

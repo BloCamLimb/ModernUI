@@ -156,7 +156,7 @@ public class Canvas implements AutoCloseable {
      * @param height zero or greater
      */
     public Canvas(int width, int height) {
-        this(new VirtualDevice(0, 0, Math.max(width, 0), Math.max(height, 0)));
+        this(new NoPixelsDevice(0, 0, Math.max(width, 0), Math.max(height, 0)));
     }
 
     Canvas(BaseDevice device) {
@@ -1317,7 +1317,7 @@ public class Canvas implements AutoCloseable {
     }
 
     protected void onClipRect(RectF rect, boolean doAA) {
-        topDevice().clipRect(rect, ClipStack.OP_INTERSECT, doAA);
+        topDevice().clipRect(rect, ClipOp.CLIP_OP_INTERSECT, doAA);
         computeQuickRejectBounds();
     }
 

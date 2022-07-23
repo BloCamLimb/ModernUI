@@ -134,7 +134,7 @@ public abstract class Caps {
     }
 
     /**
-     * Is there hardware support for indirect draws? (Ganesh always supports indirect draws as long
+     * Is there hardware support for indirect draws? (Arc UI always supports indirect draws as long
      * as it can polyfill them with instanced calls, but this cap tells us if they are supported
      * natively.)
      */
@@ -401,7 +401,7 @@ public abstract class Caps {
 
         // There are known problems with 24 vs 32 bit BPP with this color type. Just fail for now if
         // using a transfer buffer.
-        if (colorType == ImageInfo.COLOR_RGB_888x) {
+        if (colorType == ImageInfo.COLOR_RGB_888X) {
             transferOffsetAlignment = 0;
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
@@ -577,7 +577,7 @@ public abstract class Caps {
         int compression = format.getCompressionType();
         if (compression != Image.COMPRESSION_NONE) {
             return colorType == (DataUtils.compressionTypeIsOpaque(compression) ?
-                    ImageInfo.COLOR_RGB_888x :
+                    ImageInfo.COLOR_RGB_888X :
                     ImageInfo.COLOR_RGBA_8888);
         }
         return onFormatCompatible(colorType, format);

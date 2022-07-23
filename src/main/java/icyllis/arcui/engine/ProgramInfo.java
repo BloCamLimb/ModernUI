@@ -16,8 +16,7 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-/**
- * Engine package, also known as Hardware Graphics Interface (HGI).
- * It provides the common part of the rendering pipeline and the abstraction layer of different 3D graphics APIs.
- */
 package icyllis.arcui.engine;
+
+public class ProgramInfo {
+}
