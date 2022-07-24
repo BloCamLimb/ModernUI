@@ -65,6 +65,7 @@ public final class OptiFineIntegration {
         if (of_fast_render != null) {
             try {
                 of_fast_render.setBoolean(minecraft.options, fastRender);
+                minecraft.options.save();
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }

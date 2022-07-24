@@ -20,7 +20,7 @@ package icyllis.modernui.textmc;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
-import icyllis.modernui.forge.*;
+import icyllis.modernui.forge.MuiForgeApi;
 import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.view.View;
@@ -95,10 +95,6 @@ public final class ModernUITextMC {
         Minecraft.getInstance().execute(() -> {
             ModernUI.getSelectedTypeface();
             TextLayoutEngine.getInstance().lookupVanillaNode(ModernUI.NAME_CPT);
-            if (ModernUIForge.isOptiFineLoaded()) {
-                OptiFineIntegration.setFastRender(false);
-                LOGGER.info(MARKER, "Disabled OptiFine Fast Render");
-            }
         });
         MuiForgeApi.addOnWindowResizeListener((width, height, newScale, oldScale) -> {
             if (Core.hasRenderThread() && newScale != oldScale) {
