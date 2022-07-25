@@ -18,83 +18,65 @@
 
 package icyllis.arcui.engine;
 
+/**
+ * @version skia 2022/07/23
+ */
 public class ShaderCaps extends icyllis.arcui.sksl.ShaderCaps {
-
-    /**
-     * Indicates how GLSL must interact with advanced blend equations. The KHR extension requires
-     * special layout qualifiers in the fragment shader.
-     */
-    public static final int
-            ADV_BLEND_EQ_INTERACTION_NOT_SUPPORTED = 0,     // No _blend_equation_advanced extension
-            ADV_BLEND_EQ_INTERACTION_AUTOMATIC = 1,         // No interaction required
-            ADV_BLEND_EQ_INTERACTION_GENERAL_ENABLE = 2;    // layout(blend_support_all_equations) out
-
-    // Stupid stuff
-    public final boolean mShaderDerivativeSupport = true;
-    public final boolean mIntegerSupport = true;
-    public final boolean mNonsquareMatrixSupport = true;
-    public final boolean mInverseHyperbolicSupport = true;
-    public final boolean mFlatInterpolationSupport = true;
-    public final boolean mNoPerspectiveInterpolationSupport = true;
-    public final boolean mSampleMaskSupport = true;
-
-    public final boolean mBuiltinFMASupport = true;
-    public final boolean mBuiltinDeterminantSupport = true;
-
-    // Used for specific driver bug workarounds
-    public final boolean mCanUseAnyFunctionInShader = true;
-    public final boolean mCanUseMinAndAbsTogether = true;
-    public final boolean mCanUseFractForNegativeValues = true;
-    public final boolean mMustForceNegatedAtanParamToFloat = false;
-    public final boolean mMustForceNegatedLdexpParamToMultiply = false;
-    public final boolean mAtan2ImplementedAsAtanYOverX = false;
-    public final boolean mMustDoOpBetweenFloorAndAbs = false;
-    public final boolean mMustGuardDivisionEvenAfterExplicitZeroCheck = false;
-    public final boolean mCanUseFragCoord = true;
-    public final boolean mIncompleteShortIntPrecision = false;
-    public final boolean mAddAndTrueToLoopCondition = false;
-    public final boolean mUnfoldShortCircuitAsTernary = false;
-    public final boolean mEmulateAbsIntFunction = false;
-    public final boolean mRewriteDoWhileLoops = false;
-    public final boolean mRewriteSwitchStatements = false;
-    public final boolean mRemovePowWithConstantExponent = false;
-    public final boolean mNoDefaultPrecisionForExternalSamplers = false;
-    public final boolean mRewriteMatrixVectorMultiply = false;
-    public final boolean mRewriteMatrixComparisons = false;
-
-    public final boolean mPreferFlatInterpolation = true;
-    public final boolean mVertexIDSupport = true;
-    public final boolean mInfinitySupport = true;
-    public final boolean mNonconstantArrayIndexSupport = true;
-    public final boolean mBitManipulationSupport = true;
-    public final boolean mHasLowFragmentPrecision = false;
-
-    // Used for specific driver bug workarounds
-    public final boolean mRequiresLocalOutputColorForFBFetch = false;
-    public final boolean mMustObfuscateUniformColor = false;
-    public final boolean mMustWriteToFragColor = false;
-    public final boolean mColorSpaceMathNeedsFloat = false;
-    public final boolean mCanUseFastMath = false;
-    public final boolean mAvoidDfDxForGradientsWhenPossible = false;
-
-    public String mVersionDeclString = "";
-
-    public boolean mFBFetchSupport = false;
-    public boolean mFBFetchNeedsCustomOutput = false;
-    public String mFBFetchColorName = null;
-    public String mFBFetchExtensionString = null;
-
-    public int mAdvBlendEqInteraction = ADV_BLEND_EQ_INTERACTION_NOT_SUPPORTED;
-
-    public boolean mFloatIs32Bits = true;
-    public boolean mHalfIs32Bits = false;
-    public boolean mReducedShaderMode = false;
 
     public boolean mDstReadInShaderSupport = false;
     public boolean mDualSourceBlendingSupport = false;
+    public boolean mPreferFlatInterpolation = false;
+    public boolean mVertexIDSupport = false;
+    // isinf() is defined, and floating point infinities are handled according to IEEE standards.
+    public boolean mInfinitySupport = false;
+    // Returns true if `expr` in `myArray[expr]` can be any integer expression. If false, `expr`
+    // must be a constant-index-expression as defined in the OpenGL ES2 specification, Appendix A.5.
+    public boolean mNonConstantArrayIndexSupport = false;
+    // frexp(), ldexp(), findMSB(), findLSB().
+    public boolean mBitManipulationSupport = false;
+    public boolean mHalfIs32Bits = false;
+    public boolean mHasLowFragmentPrecision = false;
+    // Use a reduced set of rendering algorithms or less optimal effects in order to reduce the
+    // number of unique shaders generated.
+    public boolean mReducedShaderMode = false;
+
+    // Used for specific driver bug workarounds
+    public boolean mRequiresLocalOutputColorForFBFetch = false;
+    // Workaround for Mali GPU opacity bug with uniform colors.
+    public boolean mMustObfuscateUniformColor = false;
+    // On Nexus 6, the GL context can get lost if a shader does not write a value to gl_FragColor.
+    public boolean mMustWriteToFragColor = false;
+    public boolean mColorSpaceMathNeedsFloat = false;
+    // When we have the option of using either dFdx or dfDy in a shader, this returns whether we
+    // should avoid using dFdx. We have found some drivers have bugs or lower precision when using
+    // dFdx.
+    public boolean mAvoidDfDxForGradientsWhenPossible = false;
+
+    // This contains the name of an extension that must be enabled in the shader, if such a thing is
+    // required in order to use a secondary output in the shader. This returns a nullptr if no such
+    // extension is required. However, the return value of this function does not say whether dual
+    // source blending is supported.
+    public String mSecondaryOutputExtensionString = null;
+
+    public String mNoPerspectiveInterpolationExtensionString = null;
+    public String mSampleVariablesExtensionString = null;
+
+    public String mFBFetchExtensionString = null;
 
     public int mMaxFragmentSamplers = 0;
-    public int mMaxTessellationSegments = 0;
+
+    public ShaderCaps() {
+    }
+
+    public String noPerspectiveInterpolationExtensionString() {
+        assert mNoPerspectiveInterpolationSupport;
+        return mNoPerspectiveInterpolationExtensionString;
+    }
+
+    public String sampleVariablesExtensionString() {
+        assert mSampleMaskSupport;
+        return mSampleVariablesExtensionString;
+    }
 
     public void applyOptionsOverrides(ContextOptions options) {
         if (options.mReducedShaderVariations) {

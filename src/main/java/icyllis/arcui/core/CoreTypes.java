@@ -21,6 +21,6 @@ package icyllis.arcui.core;
 /**
  * Constants and utilities for Core.
  */
-public final class Types {
+public final class CoreTypes {
 
 }

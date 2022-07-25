@@ -24,7 +24,7 @@ import icyllis.arcui.core.ImageInfo;
 /**
  * Constants and utilities for Engine.
  */
-public final class Types {
+public final class EngineTypes {
 
     /**
      * Possible 3D APIs that may be used by Engine.
@@ -101,17 +101,19 @@ public final class Types {
         };
     }
 
+    /**
+     * Shader types. HW Geometry shader is removed.
+     */
     public static final int
             SHADER_TYPE_VERTEX = 0,
-            SHADER_TYPE_GEOMETRY = 1,
-            SHADER_TYPE_FRAGMENT = 2;
+            SHADER_TYPE_FRAGMENT = 1;
 
+    /**
+     * Shader flags. HW Tessellation shaders are moved.
+     */
     public static final int
             SHADER_FLAG_VERTEX = 1,
-            SHADER_FLAG_TESS_CONTROL = 1 << 1,
-            SHADER_FLAG_TESS_EVALUATION = 1 << 2,
-            SHADER_FLAG_GEOMETRY = 1 << 3,
-            SHADER_FLAG_FRAGMENT = 1 << 4;
+            SHADER_FLAG_FRAGMENT = 1 << 1;
 
     /**
      * Describes the encoding of channel data in a ColorType.
@@ -250,97 +252,10 @@ public final class Types {
             MIPMAP_STATUS_VALID = 2;    // All levels fully allocated and have valid data in them
 
     /**
-     * Types used to describe format of vertices in arrays.
+     * ResourceHandle is an opaque handle to a resource.
      */
-    public final static class VertexAttribType {
+    public static final int INVALID_RESOURCE_HANDLE = -1;
 
-        public static final byte
-                FLOAT = 0,
-                FLOAT2 = 1,
-                FLOAT3 = 2,
-                FLOAT4 = 3,
-                HALF = 4,
-                HALF2 = 5,
-                HALF4 = 6;
-        public static final byte
-                INT2 = 7,   // vector of 2 32-bit ints
-                INT3 = 8,   // vector of 3 32-bit ints
-                INT4 = 9;   // vector of 4 32-bit ints
-        public static final byte
-                BYTE = 10,   // signed byte
-                BYTE2 = 11,  // vector of 2 8-bit signed bytes
-                BYTE4 = 12,  // vector of 4 8-bit signed bytes
-                UBYTE = 13,  // unsigned byte
-                UBYTE2 = 14, // vector of 2 8-bit unsigned bytes
-                UBYTE4 = 15; // vector of 4 8-bit unsigned bytes
-        public static final byte
-                UBYTE_NORM = 16,  // unsigned byte, e.g. coverage, 0 -> 0.0f, 255 -> 1.0f.
-                UBYTE4_NORM = 17; // vector of 4 unsigned bytes, e.g. colors, 0 -> 0.0f, 255 -> 1.0f.
-        public static final byte
-                SHORT2 = 18,       // vector of 2 16-bit shorts.
-                SHORT4 = 19;       // vector of 4 16-bit shorts.
-        public static final byte
-                USHORT2 = 20,      // vector of 2 unsigned shorts. 0 -> 0, 65535 -> 65535.
-                USHORT2_NORM = 21; // vector of 2 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
-        public static final byte
-                INT = 22,
-                UINT = 23;
-        public static final byte
-                USHORT_NORM = 24;
-        public static final byte
-                USHORT4_NORM = 25; // vector of 4 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
-        public static final byte LAST = USHORT4_NORM;
-
-        public static int getSize(byte type) {
-            switch (type) {
-                case FLOAT:
-                    return Float.BYTES;
-                case FLOAT2:
-                    return 2 * Float.BYTES;
-                case FLOAT3:
-                    return 3 * Float.BYTES;
-                case FLOAT4:
-                    return 4 * Float.BYTES;
-                case HALF:
-                case USHORT_NORM:
-                    return Short.BYTES;
-                case HALF2:
-                case SHORT2:
-                case USHORT2:
-                case USHORT2_NORM:
-                    return 2 * Short.BYTES;
-                case HALF4:
-                case SHORT4:
-                case USHORT4_NORM:
-                    return 4 * Short.BYTES;
-                case INT2:
-                    return 2 * Integer.BYTES;
-                case INT3:
-                    return 3 * Integer.BYTES;
-                case INT4:
-                    return 4 * Integer.BYTES;
-                case BYTE:
-                case UBYTE:
-                case UBYTE_NORM:
-                    return Byte.BYTES;
-                case BYTE2:
-                case UBYTE2:
-                    return 2 * Byte.BYTES;
-                case BYTE4:
-                case UBYTE4:
-                case UBYTE4_NORM:
-                    return 4 * Byte.BYTES;
-                case INT:
-                case UINT:
-                    return Integer.BYTES;
-            }
-            throw new IllegalArgumentException(String.valueOf(type));
-        }
-
-        private VertexAttribType() {
-        }
-    }
-
-    private Types() {
+    private EngineTypes() {
     }
 }

@@ -116,14 +116,14 @@ public final class ResourceProvider {
         width = makeApprox(width);
         height = makeApprox(height);
 
-        final Texture texture = findAndRefScratchTexture(width, height, format, Types.MIPMAPPED_NO, isProtected);
+        final Texture texture = findAndRefScratchTexture(width, height, format, EngineTypes.MIPMAPPED_NO, isProtected);
         if (texture != null) {
             return texture;
         }
 
         return mServer.createTexture(width, height,
                 format,
-                Types.MIPMAPPED_NO,
+                EngineTypes.MIPMAPPED_NO,
                 true,
                 isProtected);
     }

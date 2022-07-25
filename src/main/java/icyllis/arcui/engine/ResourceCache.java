@@ -489,7 +489,7 @@ public final class ResourceCache implements AutoCloseable {
         resource.mTimestamp = getNextTimestamp();
 
         if (!resource.isCleanable() &&
-                resource.getBudgetType() == Types.BUDGET_TYPE_BUDGETED) {
+                resource.getBudgetType() == EngineTypes.BUDGET_TYPE_BUDGETED) {
             mFlushableCount++;
         }
 
@@ -506,7 +506,7 @@ public final class ResourceCache implements AutoCloseable {
 
         int budgetedType = resource.getBudgetType();
 
-        if (budgetedType == Types.BUDGET_TYPE_BUDGETED) {
+        if (budgetedType == EngineTypes.BUDGET_TYPE_BUDGETED) {
             // Purge the resource immediately if we're over budget
             // Also purge if the resource has neither a valid scratch key nor a unique key.
             boolean hasKey = hasUniqueKey || resource.mScratchKey != null;
@@ -516,7 +516,7 @@ public final class ResourceCache implements AutoCloseable {
         } else {
             // We keep un-budgeted resources with a unique key in the cleanable queue of the cache,
             // so they can be reused again by the image connected to the unique key.
-            if (hasUniqueKey && budgetedType == Types.BUDGET_TYPE_CACHEABLE) {
+            if (hasUniqueKey && budgetedType == EngineTypes.BUDGET_TYPE_CACHEABLE) {
                 return;
             }
             // Check whether this resource could still be used as a scratch resource.
@@ -550,7 +550,7 @@ public final class ResourceCache implements AutoCloseable {
         long size = resource.getMemorySize();
         mCount++;
         mBytes += size;
-        if (resource.getBudgetType() == Types.BUDGET_TYPE_BUDGETED) {
+        if (resource.getBudgetType() == EngineTypes.BUDGET_TYPE_BUDGETED) {
             mBudgetedCount++;
             mBudgetedBytes += size;
         }
@@ -572,7 +572,7 @@ public final class ResourceCache implements AutoCloseable {
 
         mCount--;
         mBytes -= size;
-        if (resource.getBudgetType() == Types.BUDGET_TYPE_BUDGETED) {
+        if (resource.getBudgetType() == EngineTypes.BUDGET_TYPE_BUDGETED) {
             mBudgetedCount--;
             mBudgetedBytes -= size;
         }
@@ -661,7 +661,7 @@ public final class ResourceCache implements AutoCloseable {
         // resources are the only resources that can be in that state, and they aren't allowed to
         // transition from one budgeted state to another.
         boolean wasCleanable = resource.isCleanable();
-        if (resource.getBudgetType() == Types.BUDGET_TYPE_BUDGETED) {
+        if (resource.getBudgetType() == EngineTypes.BUDGET_TYPE_BUDGETED) {
             mBudgetedCount++;
             mBudgetedBytes += size;
             if (!resource.isCleanable() &&
@@ -674,7 +674,7 @@ public final class ResourceCache implements AutoCloseable {
             }
             clean();
         } else {
-            assert resource.getBudgetType() == Types.BUDGET_TYPE_CACHEABLE;
+            assert resource.getBudgetType() == EngineTypes.BUDGET_TYPE_CACHEABLE;
             mBudgetedCount--;
             mBudgetedBytes -= size;
             if (!resource.isCleanable() &&
@@ -711,7 +711,7 @@ public final class ResourceCache implements AutoCloseable {
             mCleanableQueue.removeAt(resource.mCacheIndex);
             addToNonCleanableArray(resource);
         } else if (!resource.hasRefOrCommandBufferUsage() &&
-                resource.getBudgetType() == Types.BUDGET_TYPE_BUDGETED) {
+                resource.getBudgetType() == EngineTypes.BUDGET_TYPE_BUDGETED) {
             assert mFlushableCount > 0;
             mFlushableCount--;
         }

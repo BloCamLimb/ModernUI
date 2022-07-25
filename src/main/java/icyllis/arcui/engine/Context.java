@@ -38,7 +38,7 @@ public abstract class Context implements AutoCloseable {
     /**
      * The 3D API backing this context.
      *
-     * @return see {@link Types}
+     * @return see {@link EngineTypes}
      */
     public final int getBackend() {
         return mThreadSafeProxy.mBackend;

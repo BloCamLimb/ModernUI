@@ -66,7 +66,7 @@ public final class TextureProxy extends SurfaceProxy {
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
         // created with positive widths and heights. The width and height are set to 0 only after a
         // failed instantiation. The former must be "approximate" fit while the latter can be either.
-        assert (width < 0 && height < 0 && backingFit == Types.BACKING_FIT_APPROX) ||
+        assert (width < 0 && height < 0 && backingFit == EngineTypes.BACKING_FIT_APPROX) ||
                 (width > 0 && height > 0);
     }
 
@@ -78,8 +78,8 @@ public final class TextureProxy extends SurfaceProxy {
                  boolean useAllocator,
                  boolean deferredProvider) {
         super(texture.getBackendFormat(), texture.getWidth(), texture.getHeight(),
-                texture.isMipmapped(), Types.BACKING_FIT_EXACT,
-                texture.getBudgetType() == Types.BUDGET_TYPE_BUDGETED,
+                texture.isMipmapped(), EngineTypes.BACKING_FIT_EXACT,
+                texture.getBudgetType() == EngineTypes.BUDGET_TYPE_BUDGETED,
                 texture.getFlags(), useAllocator, deferredProvider);
         mTexture = texture; // std::move
         mMipmapsDirty = texture.areMipmapsDirty();
@@ -113,7 +113,7 @@ public final class TextureProxy extends SurfaceProxy {
         if (mTexture != null) {
             return mTexture.getWidth();
         }
-        if (mBackingFit == Types.BACKING_FIT_EXACT) {
+        if (mBackingFit == EngineTypes.BACKING_FIT_EXACT) {
             return mWidth;
         }
         return ResourceProvider.makeApprox(mWidth);
@@ -125,7 +125,7 @@ public final class TextureProxy extends SurfaceProxy {
         if (mTexture != null) {
             return mTexture.getHeight();
         }
-        if (mBackingFit == Types.BACKING_FIT_EXACT) {
+        if (mBackingFit == EngineTypes.BACKING_FIT_EXACT) {
             return mHeight;
         }
         return ResourceProvider.makeApprox(mHeight);
@@ -150,10 +150,10 @@ public final class TextureProxy extends SurfaceProxy {
             return true;
         }
 
-        assert !mMipmapped || mBackingFit == Types.BACKING_FIT_EXACT;
+        assert !mMipmapped || mBackingFit == EngineTypes.BACKING_FIT_EXACT;
 
         final Texture texture;
-        if (mBackingFit == Types.BACKING_FIT_APPROX) {
+        if (mBackingFit == EngineTypes.BACKING_FIT_APPROX) {
             texture = provider.createApproxTexture(mWidth, mHeight, mFormat, isProtected());
         } else {
             texture = provider.createTexture(mWidth, mHeight, mFormat, mMipmapped, mBudgeted, isProtected());
@@ -197,7 +197,7 @@ public final class TextureProxy extends SurfaceProxy {
     public long getMemorySize() {
         // use proxy params
         return Texture.computeSize(mFormat, mWidth, mHeight,
-                1, mMipmapped, mBackingFit == Types.BACKING_FIT_APPROX);
+                1, mMipmapped, mBackingFit == EngineTypes.BACKING_FIT_APPROX);
     }
 
     @Override

@@ -83,7 +83,7 @@ public final class DirectContext extends RecordingContext {
      */
     @Nullable
     public static DirectContext makeOpenGL(ContextOptions options) {
-        DirectContext direct = new DirectContext(Types.OPENGL, options);
+        DirectContext direct = new DirectContext(EngineTypes.OPENGL, options);
         direct.mServer = GLServer.make(direct, options);
         if (direct.init()) {
             return direct;

@@ -406,7 +406,7 @@ public abstract class Caps {
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
         // Make those aligned reads out of the buffer even if the underlying API doesn't require it.
-        int channelFlags = Types.colorTypeChannelFlags(colorType);
+        int channelFlags = EngineTypes.colorTypeChannelFlags(colorType);
         if ((channelFlags == Color.RGBA_CHANNEL_FLAGS || channelFlags == Color.RGB_CHANNEL_FLAGS ||
                 channelFlags == Color.ALPHA_CHANNEL_FLAG || channelFlags == Color.GRAY_CHANNEL_FLAG) &&
                 ImageInfo.bytesPerPixel(colorType) == 4) {
@@ -543,7 +543,7 @@ public abstract class Caps {
         if (width > maxSize || height > maxSize) {
             return false;
         }
-        if (format.getTextureType() != Types.TEXTURE_TYPE_NONE) {
+        if (format.getTextureType() != EngineTypes.TEXTURE_TYPE_NONE) {
             return isFormatTexturable(format);
         } else {
             return true;
@@ -562,7 +562,7 @@ public abstract class Caps {
         if (width > maxSize || height > maxSize) {
             return false;
         }
-        if (format.getTextureType() != Types.TEXTURE_TYPE_NONE) {
+        if (format.getTextureType() != EngineTypes.TEXTURE_TYPE_NONE) {
             if (!isFormatTexturable(format)) {
                 return false;
             }

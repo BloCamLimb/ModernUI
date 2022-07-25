@@ -22,6 +22,7 @@ import icyllis.arcui.core.Kernel32;
 import icyllis.arcui.engine.*;
 import icyllis.arcui.opengl.GLBackendFormat;
 import icyllis.arcui.opengl.GLCore;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
@@ -39,8 +40,6 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class TestManagedResource {
 
@@ -70,15 +69,15 @@ public class TestManagedResource {
 
         if (directContext.getCaps().isFormatTexturable(
                 new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
-                        Types.TEXTURE_TYPE_2D))) {
+                        EngineTypes.TEXTURE_TYPE_2D))) {
             pw.println("Compressed format: OK");
         }
         Swizzle.make("rgb1");
         SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
 
         TextureProxy proxy = directContext.getProxyProvider().createTextureProxy(
-                new GLBackendFormat(GLCore.GL_RGBA8, Types.TEXTURE_TYPE_2D),
-                1600, 900, Types.MIPMAPPED_YES, Types.BACKING_FIT_EXACT, true, 0, false);
+                new GLBackendFormat(GLCore.GL_RGBA8, EngineTypes.TEXTURE_TYPE_2D),
+                1600, 900, EngineTypes.MIPMAPPED_YES, EngineTypes.BACKING_FIT_EXACT, true, 0, false);
         try (proxy) {
             pw.println(proxy);
         }
@@ -87,6 +86,15 @@ public class TestManagedResource {
             if (!Kernel32.CloseHandle(959595595959595959L)) {
                 pw.println("Failed to close handle");
             }
+        }
+
+        {
+            IntArrayList intArrayList = new IntArrayList();
+            KeyBuilder keyBuilder = new KeyBuilder.StringKeyBuilder(intArrayList);
+            keyBuilder.addBits(6, 0x2F, "");
+            keyBuilder.add32(0xC1111111);
+            keyBuilder.close();
+            pw.println(keyBuilder);
         }
 
         ByteBuffer image = null;

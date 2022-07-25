@@ -19,7 +19,7 @@
 package icyllis.arcui.opengl;
 
 import icyllis.arcui.engine.BackendFormat;
-import icyllis.arcui.engine.Types;
+import icyllis.arcui.engine.EngineTypes;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -32,16 +32,16 @@ public final class GLBackendFormat extends BackendFormat {
     private final int mTextureType;
 
     public GLBackendFormat(@NativeType("GLenum") int format, int textureType) {
-        assert textureType == Types.TEXTURE_TYPE_NONE ||
-                textureType == Types.TEXTURE_TYPE_2D ||
-                textureType == Types.TEXTURE_TYPE_EXTERNAL;
+        assert textureType == EngineTypes.TEXTURE_TYPE_NONE ||
+                textureType == EngineTypes.TEXTURE_TYPE_2D ||
+                textureType == EngineTypes.TEXTURE_TYPE_EXTERNAL;
         mFormat = format;
         mTextureType = textureType;
     }
 
     @Override
     public int getBackend() {
-        return Types.OPENGL;
+        return EngineTypes.OPENGL;
     }
 
     @Override
@@ -67,10 +67,10 @@ public final class GLBackendFormat extends BackendFormat {
     @Nonnull
     @Override
     public BackendFormat makeTexture2D() {
-        if (mTextureType == Types.TEXTURE_TYPE_2D) {
+        if (mTextureType == EngineTypes.TEXTURE_TYPE_2D) {
             return this;
         }
-        return new GLBackendFormat(mFormat, Types.TEXTURE_TYPE_2D);
+        return new GLBackendFormat(mFormat, EngineTypes.TEXTURE_TYPE_2D);
     }
 
     @Override

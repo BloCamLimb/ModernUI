@@ -32,7 +32,7 @@ public final class GLBackendTexture extends BackendTexture {
     // The GLTextureInfo must have a valid mFormat, can NOT be modified anymore.
     public GLBackendTexture(int width, int height, GLTextureInfo info) {
         this(width, height, info, new GLTextureParameters(), new GLBackendFormat(info.mFormat,
-                info.mMemoryHandle != -1 ? Types.TEXTURE_TYPE_EXTERNAL : Types.TEXTURE_TYPE_2D));
+                info.mMemoryHandle != -1 ? EngineTypes.TEXTURE_TYPE_EXTERNAL : EngineTypes.TEXTURE_TYPE_2D));
         assert info.mFormat != 0;
         // Make no assumptions about client's texture's parameters.
         glTextureParametersModified();
@@ -49,7 +49,7 @@ public final class GLBackendTexture extends BackendTexture {
 
     @Override
     public int getBackend() {
-        return Types.OPENGL;
+        return EngineTypes.OPENGL;
     }
 
     @Override

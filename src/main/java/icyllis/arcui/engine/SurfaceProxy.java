@@ -137,8 +137,8 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
         mSurfaceFlags = surfaceFlags;
         mUseAllocator = useAllocator;
         mDeferredProvider = deferredProvider;
-        if (format.getTextureType() == Types.TEXTURE_TYPE_EXTERNAL) {
-            mSurfaceFlags |= Types.INTERNAL_SURFACE_FLAG_READ_ONLY;
+        if (format.getTextureType() == EngineTypes.TEXTURE_TYPE_EXTERNAL) {
+            mSurfaceFlags |= EngineTypes.INTERNAL_SURFACE_FLAG_READ_ONLY;
         }
     }
 
@@ -188,7 +188,7 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
      */
     public final boolean isExact() {
         assert !isFullyLazy();
-        if (mBackingFit == Types.BACKING_FIT_EXACT) {
+        if (mBackingFit == EngineTypes.BACKING_FIT_EXACT) {
             return true;
         }
         return mWidth == ResourceProvider.makeApprox(mWidth) &&
@@ -307,11 +307,11 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
      * assignment in ResourceAllocator.
      */
     public final boolean isReadOnly() {
-        return (mSurfaceFlags & Types.INTERNAL_SURFACE_FLAG_READ_ONLY) != 0;
+        return (mSurfaceFlags & EngineTypes.INTERNAL_SURFACE_FLAG_READ_ONLY) != 0;
     }
 
     public final boolean isProtected() {
-        return (mSurfaceFlags & Types.INTERNAL_SURFACE_FLAG_PROTECTED) != 0;
+        return (mSurfaceFlags & EngineTypes.INTERNAL_SURFACE_FLAG_PROTECTED) != 0;
     }
 
     /**
@@ -370,7 +370,7 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
      * If true then the texture does not support MIP maps and only supports clamp wrap mode.
      */
     public final boolean hasRestrictedSampling() {
-        return Types.textureTypeHasRestrictedSampling(mFormat.getTextureType());
+        return EngineTypes.textureTypeHasRestrictedSampling(mFormat.getTextureType());
     }
 
     /**
@@ -389,14 +389,14 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
     // DO NOT ABUSE!!
     @ApiStatus.Internal
     public final boolean isProxyExact() {
-        return mBackingFit == Types.BACKING_FIT_EXACT;
+        return mBackingFit == EngineTypes.BACKING_FIT_EXACT;
     }
 
     // DO NOT ABUSE!!
     @ApiStatus.Internal
     public final void makeProxyExact(boolean allocatedCaseOnly) {
         assert !isFullyLazy();
-        if (mBackingFit == Types.BACKING_FIT_EXACT) {
+        if (mBackingFit == EngineTypes.BACKING_FIT_EXACT) {
             return;
         }
 
@@ -423,7 +423,7 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
 
         // The Approx uninstantiated case. Making this proxy be exact should be okay.
         // It could mess things up if prior decisions were based on the approximate size.
-        mBackingFit = Types.BACKING_FIT_EXACT;
+        mBackingFit = EngineTypes.BACKING_FIT_EXACT;
         // If GpuMemorySize is used when caching specialImages for the image filter DAG. If it has
         // already been computed we want to leave it alone so that amount will be removed when
         // the special image goes away. If it hasn't been computed yet it might as well compute the

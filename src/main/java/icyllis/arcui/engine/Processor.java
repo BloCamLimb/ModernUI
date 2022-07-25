@@ -19,6 +19,8 @@
 package icyllis.arcui.engine;
 
 import javax.annotation.concurrent.Immutable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 /**
  * Provides custom shader code to the Arc UI shading pipeline. Processor objects <em>must</em> be
@@ -27,6 +29,18 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public abstract class Processor {
 
+    public static final int INVALID_CLASS_ID = -1;
+
+    private static final ConcurrentHashMap<Class<? extends Processor>, Integer> CLASS_IDS = new ConcurrentHashMap<>();
+    private static final Function<Class<? extends Processor>, Integer> CLASS_ID_GEN = clz -> CLASS_IDS.size();
+
     protected Processor() {
+    }
+
+    /**
+     * @return Unique ID to identify this class in runtime.
+     */
+    public final int getClassID() {
+        return CLASS_IDS.computeIfAbsent(getClass(), CLASS_ID_GEN);
     }
 }

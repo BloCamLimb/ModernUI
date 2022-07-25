@@ -21,7 +21,10 @@ package icyllis.arcui.engine;
 import icyllis.arcui.core.MathUtil;
 import icyllis.arcui.core.SLType;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 /**
  * The GeometryProcessor represents some kind of geometric primitive.  This includes the shape
@@ -61,13 +64,7 @@ public abstract class GeometryProcessor extends Processor {
         }
 
         private final String mName;
-        /**
-         * @see icyllis.arcui.engine.Types.VertexAttribType
-         */
         private final byte mCPUType;
-        /**
-         * @see SLType
-         */
         private final byte mGPUType;
         private final int mOffset;
 
@@ -75,11 +72,12 @@ public abstract class GeometryProcessor extends Processor {
          * Makes an attribute whose offset will be implicitly determined by the types and ordering
          * of an array attributes.
          *
-         * @param cpuType see {@link Types.VertexAttribType}
+         * @param name    the attrib raw name, UpperCamelCase, cannot be null or empty
+         * @param cpuType see {@link VertexAttribType}
          * @param gpuType see {@link SLType}
          */
         public Attribute(String name, byte cpuType, byte gpuType) {
-            assert name != null && gpuType != SLType.VOID;
+            assert (name != null && gpuType != SLType.VOID);
             mName = name;
             mCPUType = cpuType;
             mGPUType = gpuType;
@@ -89,27 +87,35 @@ public abstract class GeometryProcessor extends Processor {
         /**
          * Makes an attribute with an explicit offset.
          *
-         * @param cpuType see {@link Types.VertexAttribType}
+         * @param name    the attrib raw name, UpperCamelCase, cannot be null or empty
+         * @param cpuType see {@link VertexAttribType}
          * @param gpuType see {@link SLType}
+         * @param offset  N-aligned offset
          */
         public Attribute(String name, byte cpuType, byte gpuType, int offset) {
-            assert name != null && gpuType != SLType.VOID;
-            assert offset != IMPLICIT_OFFSET && alignOffset(offset) == offset;
+            assert (name != null && gpuType != SLType.VOID);
+            assert (offset != IMPLICIT_OFFSET && alignOffset(offset) == offset);
             mName = name;
             mCPUType = cpuType;
             mGPUType = gpuType;
             mOffset = offset;
         }
 
-        public String getName() {
+        public final String name() {
             return mName;
         }
 
-        public byte getCPUType() {
+        /**
+         * @see VertexAttribType
+         */
+        public final byte cpuType() {
             return mCPUType;
         }
 
-        public byte getGPUType() {
+        /**
+         * @see SLType
+         */
+        public final byte gpuType() {
             return mGPUType;
         }
 
@@ -118,12 +124,208 @@ public abstract class GeometryProcessor extends Processor {
          * offsets (and total vertex stride) are implicitly determined from attribute order and
          * types. See {@link #IMPLICIT_OFFSET}.
          */
-        public int getOffset() {
+        public final int offset() {
             return mOffset;
         }
 
-        public int getSize() {
-            return Types.VertexAttribType.getSize(mCPUType);
+        /**
+         * @return CPU size in bytes
+         */
+        public final int size() {
+            return VertexAttribType.getSize(mCPUType);
         }
+
+        @Nonnull
+        public final ShaderVar asShaderVar() {
+            return new ShaderVar(mName, mGPUType, ShaderVar.TYPE_MODIFIER_IN);
+        }
+    }
+
+    /**
+     * A set of attributes that can iterated. The iterator handles hides two pieces of complexity:
+     * 1) It skips uninitialized attributes.
+     * 2) It always returns an attribute with a known offset.
+     */
+    public static class AttributeSet implements Iterable<Attribute> {
+
+        private Attribute[] mAttributes;
+        private int mStride;
+
+        public final int count() {
+            return mAttributes.length;
+        }
+
+        public final int stride() {
+            return mStride;
+        }
+
+        /**
+         * Init with implicit offsets and stride. No attributes can have a predetermined stride.
+         */
+        public final void initImplicit(@Nonnull Attribute[] attrs) {
+            mAttributes = attrs;
+            mStride = 0;
+            for (Attribute attr : attrs) {
+                assert (attr != null);
+                assert (attr.offset() == Attribute.IMPLICIT_OFFSET);
+                mStride += Attribute.alignOffset(attr.size());
+            }
+            assert (attrs.length <= 0xFFFF);
+            assert (mStride <= 0xFFFF);
+        }
+
+        /**
+         * Init with explicit offsets and stride. All attributes must be initialized and have
+         * an explicit offset aligned to 4 bytes and with no attribute crossing stride boundaries.
+         */
+        public final void initExplicit(@Nonnull Attribute[] attrs, int stride) {
+            mAttributes = attrs;
+            mStride = stride;
+            assert (Attribute.alignOffset(mStride) == mStride);
+            assert (assertExplicit(attrs));
+            assert (attrs.length <= 0xFFFF);
+            assert (mStride <= 0xFFFF);
+        }
+
+        private boolean assertExplicit(@Nonnull Attribute[] attrs) {
+            for (Attribute attr : attrs) {
+                assert (attr != null);
+                assert (attr.offset() != Attribute.IMPLICIT_OFFSET);
+                assert (Attribute.alignOffset(attr.offset()) == attr.offset());
+                assert (attr.offset() + attr.size() <= mStride);
+            }
+            return true;
+        }
+
+        public final void addToKey(@Nonnull KeyBuilder b) {
+            b.addBits(16, stride() & 0xFFFF, "stride");
+            b.addBits(16, count() & 0xFFFF, "attribute count");
+            int implicitOffset = 0;
+            for (Attribute attr : mAttributes) {
+                b.appendComment(attr.name());
+                b.addBits(8, attr.cpuType() & 0xFF, "attrType");
+                b.addBits(8, attr.gpuType() & 0xFF, "attrGpuType");
+                int offset;
+                if (attr.offset() != Attribute.IMPLICIT_OFFSET) {
+                    offset = attr.offset();
+                } else {
+                    offset = implicitOffset;
+                    implicitOffset += Attribute.alignOffset(attr.size());
+                }
+                b.addBits(16, offset & 0xFFFF, "attrOffset");
+            }
+        }
+
+        @Nonnull
+        @Override
+        public final Iterator<Attribute> iterator() {
+            return new Iter();
+        }
+
+        private class Iter implements Iterator<Attribute> {
+
+            private int mIndex;
+            private int mImplicitOffset;
+
+            @Override
+            public boolean hasNext() {
+                return mIndex < count();
+            }
+
+            @Nonnull
+            @Override
+            public Attribute next() {
+                try {
+                    final Attribute ret, curr = mAttributes[mIndex++];
+                    if (curr.offset() == Attribute.IMPLICIT_OFFSET) {
+                        ret = new Attribute(curr.name(), curr.cpuType(), curr.gpuType(), mImplicitOffset);
+                    } else {
+                        ret = curr;
+                    }
+                    mImplicitOffset += Attribute.alignOffset(curr.size());
+                    return ret;
+                } catch (Exception e) {
+                    throw new NoSuchElementException(e);
+                }
+            }
+        }
+    }
+
+    // GPs that need to use either float or ubyte colors can just call this to get a correctly
+    // configured Attribute struct
+    @Nonnull
+    protected static Attribute makeColorAttribute(String name, boolean wideColor) {
+        return new Attribute(name,
+                wideColor ? VertexAttribType.FLOAT4 : VertexAttribType.UBYTE4_NORM,
+                SLType.HALF4);
+    }
+
+    private final AttributeSet mVertexAttributes = new AttributeSet();      // binding = 0
+    private final AttributeSet mInstanceAttributes = new AttributeSet();    // binding = 1
+
+    private int mTextureSamplerCnt;
+
+    public GeometryProcessor() {
+    }
+
+    public final int numTextureSamplers() {
+        return mTextureSamplerCnt;
+    }
+
+    public final int numVertexAttributes() {
+        return mVertexAttributes.count();
+    }
+
+    public final AttributeSet vertexAttributes() {
+        return mVertexAttributes;
+    }
+
+    public final int numInstanceAttributes() {
+        return mInstanceAttributes.count();
+    }
+
+    public final AttributeSet instanceAttributes() {
+        return mInstanceAttributes;
+    }
+
+    public final boolean hasVertexAttributes() {
+        return mVertexAttributes.count() > 0;
+    }
+
+    public final boolean hasInstanceAttributes() {
+        return mInstanceAttributes.count() > 0;
+    }
+
+    /**
+     * A common practice is to populate the vertex/instance's memory using an implicit array of
+     * structs. In this case, it is best to assert that: stride == sizeof(struct)
+     */
+    public final int vertexStride() {
+        return mVertexAttributes.stride();
+    }
+
+    public final int instanceStride() {
+        return mInstanceAttributes.stride();
+    }
+
+    protected final void setVertexAttributes(Attribute[] attrs, int stride) {
+        mVertexAttributes.initExplicit(attrs, stride);
+    }
+
+    protected final void setInstanceAttributes(Attribute[] attrs, int stride) {
+        mInstanceAttributes.initExplicit(attrs, stride);
+    }
+
+    protected final void setVertexAttributesWithImplicitOffsets(Attribute[] attrs) {
+        mVertexAttributes.initImplicit(attrs);
+    }
+
+    protected final void setInstanceAttributesWithImplicitOffsets(Attribute[] attrs) {
+        mInstanceAttributes.initImplicit(attrs);
+    }
+
+    protected final void setTextureSamplerCnt(int cnt) {
+        assert (cnt >= 0);
+        mTextureSamplerCnt = cnt;
     }
 }

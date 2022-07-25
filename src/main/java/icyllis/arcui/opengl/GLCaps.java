@@ -193,7 +193,7 @@ public final class GLCaps extends Caps {
             mFBFetchRequiresEnablePerSample = false;
         }
 
-        mShaderCaps.mMaxTessellationSegments = glGetInteger(GL_MAX_TESS_GEN_LEVEL);
+        //mShaderCaps.mMaxTessellationSegments = glGetInteger(GL_MAX_TESS_GEN_LEVEL);
         mShaderCaps.mVersionDeclString = "#version 450\n";
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer range = stack.mallocInt(2);
@@ -920,7 +920,7 @@ public final class GLCaps extends Caps {
             info.mFlags = FormatInfo.TEXTURABLE_FLAG;
 
             mCompressionTypeToBackendFormat[Image.COMPRESSION_ETC2_RGB8_UNORM] =
-                    new GLBackendFormat(GL_COMPRESSED_RGB8_ETC2, Types.TEXTURE_TYPE_2D);
+                    new GLBackendFormat(GL_COMPRESSED_RGB8_ETC2, EngineTypes.TEXTURE_TYPE_2D);
 
             // There are no support ColorTypes for this format
         }
@@ -934,7 +934,7 @@ public final class GLCaps extends Caps {
                 info.mFlags = FormatInfo.TEXTURABLE_FLAG;
 
                 mCompressionTypeToBackendFormat[Image.COMPRESSION_BC1_RGB8_UNORM] =
-                        new GLBackendFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, Types.TEXTURE_TYPE_2D);
+                        new GLBackendFormat(GL_COMPRESSED_RGB_S3TC_DXT1_EXT, EngineTypes.TEXTURE_TYPE_2D);
             }
 
             // There are no support ColorTypes for this format
@@ -949,7 +949,7 @@ public final class GLCaps extends Caps {
                 info.mFlags = FormatInfo.TEXTURABLE_FLAG;
 
                 mCompressionTypeToBackendFormat[Image.COMPRESSION_BC1_RGBA8_UNORM] =
-                        new GLBackendFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, Types.TEXTURE_TYPE_2D);
+                        new GLBackendFormat(GL_COMPRESSED_RGBA_S3TC_DXT1_EXT, EngineTypes.TEXTURE_TYPE_2D);
             }
 
             // There are no support ColorTypes for this format
@@ -1242,7 +1242,7 @@ public final class GLCaps extends Caps {
         assert format != GLTypes.FORMAT_UNKNOWN &&
                 mColorTypeToFormatTable[colorType] == GLTypes.FORMAT_UNKNOWN;
         mColorTypeToFormatTable[colorType] = format;
-        mColorTypeToBackendFormat[colorType] = new GLBackendFormat(glFormatToEnum(format), Types.TEXTURE_TYPE_2D);
+        mColorTypeToBackendFormat[colorType] = new GLBackendFormat(glFormatToEnum(format), EngineTypes.TEXTURE_TYPE_2D);
     }
 
     @Override
@@ -1269,7 +1269,7 @@ public final class GLCaps extends Caps {
 
     @Override
     public boolean isFormatRenderable(int colorType, BackendFormat format, int sampleCount) {
-        if (format.getTextureType() == Types.TEXTURE_TYPE_EXTERNAL) {
+        if (format.getTextureType() == EngineTypes.TEXTURE_TYPE_EXTERNAL) {
             return false;
         }
         int f = format.getGLFormat();
@@ -1281,7 +1281,7 @@ public final class GLCaps extends Caps {
 
     @Override
     public boolean isFormatRenderable(BackendFormat format, int sampleCount) {
-        if (format.getTextureType() == Types.TEXTURE_TYPE_EXTERNAL) {
+        if (format.getTextureType() == EngineTypes.TEXTURE_TYPE_EXTERNAL) {
             return false;
         }
         return isFormatRenderable(format.getGLFormat(), sampleCount);

@@ -16,22 +16,25 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.engine.sl;
+package icyllis.arcui.engine.shading;
 
 import icyllis.arcui.core.SLType;
 import icyllis.arcui.engine.ShaderVar;
 
-public class SLVarying {
+/**
+ * @version skia 2022/07/23
+ */
+public class Varying {
 
     byte mType;
-    // initialized by GLSLVaryingHandler
-    String mVsOut;
-    String mFsIn;
+    // initialized by VaryingHandler
+    String mVsOut = null;
+    String mFsIn = null;
 
     /**
      * @param type see {@link icyllis.arcui.core.SLType}
      */
-    public SLVarying(byte type) {
+    public Varying(byte type) {
         // Metal doesn't support varying matrices, so we disallow them everywhere for consistency
         assert !SLType.isMatrixType(type);
         mType = type;
@@ -48,7 +51,7 @@ public class SLVarying {
         mFsIn = null;
     }
 
-    public byte getType() {
+    public byte type() {
         return mType;
     }
 

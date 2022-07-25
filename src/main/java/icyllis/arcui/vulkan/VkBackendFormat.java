@@ -19,7 +19,7 @@
 package icyllis.arcui.vulkan;
 
 import icyllis.arcui.engine.BackendFormat;
-import icyllis.arcui.engine.Types;
+import icyllis.arcui.engine.EngineTypes;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -33,12 +33,12 @@ public final class VkBackendFormat extends BackendFormat {
 
     public VkBackendFormat(@NativeType("VkFormat") int format, boolean isExternal) {
         mFormat = format;
-        mTextureType = isExternal ? Types.TEXTURE_TYPE_EXTERNAL : Types.TEXTURE_TYPE_2D;
+        mTextureType = isExternal ? EngineTypes.TEXTURE_TYPE_EXTERNAL : EngineTypes.TEXTURE_TYPE_2D;
     }
 
     @Override
     public int getBackend() {
-        return Types.VULKAN;
+        return EngineTypes.VULKAN;
     }
 
     @Override
@@ -59,7 +59,7 @@ public final class VkBackendFormat extends BackendFormat {
     @Nonnull
     @Override
     public BackendFormat makeTexture2D() {
-        if (mTextureType == Types.TEXTURE_TYPE_2D) {
+        if (mTextureType == EngineTypes.TEXTURE_TYPE_2D) {
             return this;
         }
         return new VkBackendFormat(mFormat, false);

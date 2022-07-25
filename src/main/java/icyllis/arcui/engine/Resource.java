@@ -103,7 +103,7 @@ public abstract class Resource {
     // set once in constructor, clear to null after being destroyed
     Server mServer;
 
-    private byte mBudgetType = Types.BUDGET_TYPE_NONE;
+    private byte mBudgetType = EngineTypes.BUDGET_TYPE_NONE;
     private boolean mWrapped = false;
     private final int mUniqueID;
 
@@ -291,7 +291,7 @@ public abstract class Resource {
         // resources are a special case: the unique keys give us a weak ref so that we can reuse the
         // same resource (rather than re-wrapping). When a wrapped resource is no longer referenced,
         // it will always be released - it is never converted to a scratch resource.
-        if (mBudgetType != Types.BUDGET_TYPE_BUDGETED && !mWrapped) {
+        if (mBudgetType != EngineTypes.BUDGET_TYPE_BUDGETED && !mWrapped) {
             return;
         }
 
@@ -329,15 +329,15 @@ public abstract class Resource {
             // We should never make a wrapped resource budgeted.
             assert !mWrapped;
             // Only wrapped resources can be in the partial budgeted state.
-            assert mBudgetType != Types.BUDGET_TYPE_CACHEABLE;
-            if (mServer != null && mBudgetType == Types.BUDGET_TYPE_NONE) {
+            assert mBudgetType != EngineTypes.BUDGET_TYPE_CACHEABLE;
+            if (mServer != null && mBudgetType == EngineTypes.BUDGET_TYPE_NONE) {
                 // Currently, resources referencing wrapped objects are not budgeted.
-                mBudgetType = Types.BUDGET_TYPE_BUDGETED;
+                mBudgetType = EngineTypes.BUDGET_TYPE_BUDGETED;
                 mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         } else {
-            if (mServer != null && mBudgetType == Types.BUDGET_TYPE_BUDGETED && mUniqueKey == null) {
-                mBudgetType = Types.BUDGET_TYPE_NONE;
+            if (mServer != null && mBudgetType == EngineTypes.BUDGET_TYPE_BUDGETED && mUniqueKey == null) {
+                mBudgetType = EngineTypes.BUDGET_TYPE_NONE;
                 mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         }
@@ -349,7 +349,7 @@ public abstract class Resource {
      */
     @ApiStatus.Internal
     public final int getBudgetType() {
-        assert mBudgetType == Types.BUDGET_TYPE_BUDGETED || mWrapped || mUniqueKey == null;
+        assert mBudgetType == EngineTypes.BUDGET_TYPE_BUDGETED || mWrapped || mUniqueKey == null;
         return mBudgetType;
     }
 
@@ -389,7 +389,7 @@ public abstract class Resource {
         // Resources in the partial budgeted state are never cleanable when they have a unique
         // key. The key must be removed/invalidated to make them cleanable.
         return !hasRef() && !hasCommandBufferUsage() &&
-                !(mBudgetType == Types.BUDGET_TYPE_CACHEABLE && mUniqueKey != null);
+                !(mBudgetType == EngineTypes.BUDGET_TYPE_CACHEABLE && mUniqueKey != null);
     }
 
     @ApiStatus.Internal
@@ -404,8 +404,8 @@ public abstract class Resource {
      * @param budgeted budgeted or not
      */
     protected final void registerWithCache(boolean budgeted) {
-        assert mBudgetType == Types.BUDGET_TYPE_NONE;
-        mBudgetType = budgeted ? Types.BUDGET_TYPE_BUDGETED : Types.BUDGET_TYPE_NONE;
+        assert mBudgetType == EngineTypes.BUDGET_TYPE_NONE;
+        mBudgetType = budgeted ? EngineTypes.BUDGET_TYPE_BUDGETED : EngineTypes.BUDGET_TYPE_NONE;
         mScratchKey = computeScratchKey();
         mServer.getContext().getResourceCache().insertResource(this);
     }
@@ -418,9 +418,9 @@ public abstract class Resource {
      * @param cacheable cacheable or not, cannot be budgeted (partial budgeted)
      */
     protected final void registerWithCacheWrapped(boolean cacheable) {
-        assert mBudgetType == Types.BUDGET_TYPE_NONE;
+        assert mBudgetType == EngineTypes.BUDGET_TYPE_NONE;
         // Resources referencing wrapped objects are never budgeted. They may be cached or uncached.
-        mBudgetType = cacheable ? Types.BUDGET_TYPE_CACHEABLE : Types.BUDGET_TYPE_NONE;
+        mBudgetType = cacheable ? EngineTypes.BUDGET_TYPE_CACHEABLE : EngineTypes.BUDGET_TYPE_NONE;
         mWrapped = true;
         mServer.getContext().getResourceCache().insertResource(this);
     }
@@ -460,7 +460,7 @@ public abstract class Resource {
      * key, and does not have a unique key.
      */
     final boolean isScratch() {
-        return mBudgetType == Types.BUDGET_TYPE_BUDGETED && mScratchKey != null && mUniqueKey == null;
+        return mBudgetType == EngineTypes.BUDGET_TYPE_BUDGETED && mScratchKey != null && mUniqueKey == null;
     }
 
     final boolean isUsableAsScratch() {
