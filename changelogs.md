@@ -1,5 +1,18 @@
 Changelogs
 ===
+### Modern UI 3.5.2.111 (2022-07-27)
+#### Forge Extension 1.18.2-40.0.12
+* Add debug stuff
+* Add traditional Chinese support
+#### Modern Text Engine 1.18.2
+* Add support for sign glowing text
+* Add shadow offset and outline offset config
+* Fix auto disable OptiFine fast render not working
+* Add support for COMBINING ENCLOSING KEYCAP
+* Fix index crash when EditBox contains formatting codes
+#### Core Framework 3.5
+* Internal changes
+
 ### Modern UI 3.5.1.110 (2022-07-20)
 #### Forge Extension 1.18.2-40.0.12
 * Fix window mode sometimes didn't work correctly

@@ -28,6 +28,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.DistExecutor;
@@ -66,6 +67,7 @@ public final class ModernUIForge {
     // false to disable extensions
     public static final int BOOTSTRAP_DISABLE_TEXT_ENGINE = 0x1;
     public static final int BOOTSTRAP_DISABLE_SMOOTH_SCROLLING = 0x2;
+    public static final int BOOTSTRAP_ENABLE_DEBUG_INJECTORS = 0x4;
 
     private static boolean sOptiFineLoaded;
 
@@ -123,6 +125,10 @@ public final class ModernUIForge {
 
         // the 'new' method is in another class, so it's class-loading-safe
         DistExecutor.safeCallWhenOn(Dist.CLIENT, () -> Client::new);
+
+        if ((getBootstrapLevel() & BOOTSTRAP_ENABLE_DEBUG_INJECTORS) != 0) {
+            MinecraftForge.EVENT_BUS.register(EventHandler.ClientDebug.class);
+        }
 
         ModList.get().forEachModContainer((modid, container) -> {
             if (container instanceof FMLModContainer) {

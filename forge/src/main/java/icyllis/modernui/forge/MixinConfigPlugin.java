@@ -50,6 +50,9 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
             return !mixinClassName.equals("icyllis.modernui.forge.mixin.MixinScrollPanel") &&
                     !mixinClassName.equals("icyllis.modernui.forge.mixin.MixinSelectionList");
         }
+        if ((mLevel & ModernUIForge.BOOTSTRAP_ENABLE_DEBUG_INJECTORS) == 0) {
+            return !mixinClassName.endsWith("DBG");
+        }
         return true;
     }
 

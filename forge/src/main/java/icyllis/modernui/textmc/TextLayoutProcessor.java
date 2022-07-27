@@ -76,7 +76,7 @@ public class TextLayoutProcessor {
     /**
      * Config values.
      */
-    public static volatile int sBaseFontSize = 8;
+    public static volatile float sBaseFontSize = 8;
     public static volatile boolean sAlignPixels = false;
     public static volatile boolean sColorEmoji = true;
 

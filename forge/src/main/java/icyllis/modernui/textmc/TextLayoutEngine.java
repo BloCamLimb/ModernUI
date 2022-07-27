@@ -832,9 +832,18 @@ public class TextLayoutEngine {
     void tick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
             if (mTimer == 0) {
+                int oldCount = getCacheCount();
                 mVanillaCache.values().removeIf(mTicker);
                 mComponentCache.values().removeIf(mTicker);
                 mMultilayerCache.values().removeIf(mTicker);
+                if (oldCount >= sRehashThreshold) {
+                    int newCount = getCacheCount();
+                    if (newCount < sRehashThreshold) {
+                        mVanillaCache = new HashMap<>(mVanillaCache);
+                        mComponentCache = new HashMap<>(mComponentCache);
+                        mMultilayerCache = new HashMap<>(mMultilayerCache);
+                    }
+                }
             }
             // convert ticks to seconds
             mTimer = (mTimer + 1) % 20;
@@ -859,8 +868,9 @@ public class TextLayoutEngine {
         for (var n : mComponentCache.values()) {
             size += n.getMemorySize();
         }
-        for (var n : mMultilayerCache.values()) {
-            size += n.getMemorySize();
+        for (var e : mMultilayerCache.entrySet()) {
+            size += e.getKey().getMemorySize();
+            size += e.getValue().getMemorySize();
         }
         return size;
     }

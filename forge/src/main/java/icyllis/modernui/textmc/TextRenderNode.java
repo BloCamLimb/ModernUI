@@ -59,6 +59,12 @@ public class TextRenderNode {
                               int background, int packedLight, float scale, float level) {
             return 0;
         }
+
+        @Override
+        public void drawTextOutline(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, float x, float y,
+                                    int r, int g, int b, int a, int packedLight, float scale, float level) {
+            // noop
+        }
     };
 
     /**
@@ -405,6 +411,101 @@ public class TextRenderNode {
         }
 
         return mAdvance;
+    }
+
+    /**
+     * Special case of drawText() when drawing the 8 times of outline of drawText8xOutline().
+     * No fast digit replacement, no shadow, no background, no underline, no strikethrough,
+     * no bitmap replacement, force to use input color, can have obfuscated rendering (but should not).
+     *
+     * @param matrix      the position transformation
+     * @param source      the vertex buffer source
+     * @param x           the left pos of the text line to render
+     * @param y           the baseline of the text line to render
+     * @param r           the default outline red value (0...255)
+     * @param g           the default outline green value (0...255)
+     * @param b           the default outline blue value (0...255)
+     * @param a           the alpha value (0...255)
+     * @param packedLight see {@link net.minecraft.client.renderer.LightTexture}
+     * @param scale       the gui scale factor
+     * @param level       the resolution level used to create this node
+     */
+    @SuppressWarnings("UnnecessaryLocalVariable")
+    public void drawTextOutline(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source,
+                                float x, float y, int r, int g, int b, int a, int packedLight,
+                                float scale, float level) {
+        if (mGlyphs.length == 0) {
+            return;
+        }
+
+        final GLBakedGlyph[] glyphs = mGlyphs;
+        final float[] positions = mPositions;
+        final int[] flags = mFlags;
+        //final boolean alignPixels = TextLayoutProcessor.sAlignPixels;
+
+        y += sBaselineOffset;
+
+        int texture = -1;
+        VertexConsumer builder = null;
+
+        for (int i = 0, e = glyphs.length; i < e; i++) {
+            GLBakedGlyph glyph = glyphs[i];
+            final int flag = flags[i];
+            final float rx;
+            final float ry;
+            final float w;
+            final float h;
+            if ((flag & CharacterStyle.BITMAP_REPLACEMENT) != 0) {
+                continue;
+            } else {
+                if ((flag & CharacterStyle.OBFUSCATED) != 0) {
+                    var chars = (TextLayoutEngine.FastCharSet) glyph;
+                    int fastIndex = RANDOM.nextInt(chars.glyphs.length);
+                    glyph = chars.glyphs[fastIndex];
+                    if (fastIndex != 0) {
+                        rx = x + positions[i << 1] + glyph.x / level + chars.offsets[fastIndex];
+                    } else {
+                        // 0 is standard, no additional offset
+                        rx = x + positions[i << 1] + glyph.x / level;
+                    }
+                } else {
+                    rx = x + positions[i << 1] + glyph.x / level;
+                }
+                ry = y + positions[(i << 1) + 1] + glyph.y / level;
+
+                w = glyph.width / level;
+                h = glyph.height / level;
+            }
+            /*if (alignPixels) {
+                rx = Math.round(rx * scale) / scale;
+                ry = Math.round(ry * scale) / scale;
+            }*/
+            if (texture != glyph.texture) {
+                texture = glyph.texture;
+                builder = source.getBuffer(TextRenderType.getOrCreate(texture, false));
+            }
+            assert builder != null;
+            builder.vertex(matrix, rx, ry, 0)
+                    .color(r, g, b, a)
+                    .uv(glyph.u1, glyph.v1)
+                    .uv2(packedLight)
+                    .endVertex();
+            builder.vertex(matrix, rx, ry + h, 0)
+                    .color(r, g, b, a)
+                    .uv(glyph.u1, glyph.v2)
+                    .uv2(packedLight)
+                    .endVertex();
+            builder.vertex(matrix, rx + w, ry + h, 0)
+                    .color(r, g, b, a)
+                    .uv(glyph.u2, glyph.v2)
+                    .uv2(packedLight)
+                    .endVertex();
+            builder.vertex(matrix, rx + w, ry, 0)
+                    .color(r, g, b, a)
+                    .uv(glyph.u2, glyph.v1)
+                    .uv2(packedLight)
+                    .endVertex();
+        }
     }
 
     /**

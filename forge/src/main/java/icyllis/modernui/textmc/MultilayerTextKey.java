@@ -90,11 +90,25 @@ public class MultilayerTextKey {
 
     @Override
     public String toString() {
-        return "ComplexTextKey{" +
+        return "MultilayerTextKey{" +
                 "mSequences=" + Arrays.toString(mSequences) +
                 ", mStyles=" + Arrays.toString(mStyles) +
                 ", mHash=" + mHash +
                 '}';
+    }
+
+    /**
+     * @return approximate memory usage
+     */
+    public int getMemorySize() {
+        int size = 0;
+        for (CharSequence s : mSequences) {
+            size += (((s.length() + 3) >> 1) << 2);
+        }
+        // same length though
+        size += 16 + (((mSequences.length + 1) >> 1) << 3);
+        size += 16 + (((mStyles.length + 1) >> 1) << 3);
+        return size + 24;
     }
 
     /**
