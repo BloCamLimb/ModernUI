@@ -20,6 +20,7 @@ package icyllis.modernui.textmc.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.textmc.ModernStringSplitter;
+import icyllis.modernui.textmc.ModernTextRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.Gui;
@@ -67,10 +68,11 @@ public abstract class MixinIngameGui {
             float w = ModernStringSplitter.measureText(s);
             float x = (screenWidth - w) / 2;
             int y = screenHeight - 31 - 4;
-            font.draw(matrix, s, x + 0.5f, y, 0);
-            font.draw(matrix, s, x - 0.5f, y, 0);
-            font.draw(matrix, s, x, y + 0.5f, 0);
-            font.draw(matrix, s, x, y - 0.5f, 0);
+            float offset = ModernTextRenderer.sOutlineOffset;
+            font.draw(matrix, s, x + offset, y, 0);
+            font.draw(matrix, s, x - offset, y, 0);
+            font.draw(matrix, s, x, y + offset, 0);
+            font.draw(matrix, s, x, y - offset, 0);
             font.draw(matrix, s, x, y, 0xff80ff20);
         }
     }

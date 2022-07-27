@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.font.GLBakedGlyph;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import javax.annotation.Nonnull;
@@ -90,7 +91,8 @@ class DigitGlyphRender extends BaseGlyphRender {
         if (idx < 0 || idx >= 10)
             return;
         GLBakedGlyph glyph = mDigits.getKey()[idx];
-        VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
+        VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture,
+                seeThrough ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL));
         x += mOffsetX;
         // 0 is standard, no need to offset
         if (idx != 0) {

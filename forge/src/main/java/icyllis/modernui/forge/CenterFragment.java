@@ -497,15 +497,15 @@ public class CenterFragment extends Fragment {
                 var option = createInputOption("modernui.center.text.baseFontSize");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(ModernUITextMC.CONFIG.mBaseFontSize.get().toString());
-                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true), new InputFilter.LengthFilter(5));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
                         EditText v = (EditText) view;
-                        int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
+                        float value = FMath.clamp(Float.parseFloat(v.getText().toString()),
                                 ModernUITextMC.Config.BASE_FONT_SIZE_MIN, ModernUITextMC.Config.BASE_FONT_SIZE_MAX);
-                        v.setText(Integer.toString(value));
+                        v.setText(Float.toString(value));
                         if (value != ModernUITextMC.CONFIG.mBaseFontSize.get()) {
-                            ModernUITextMC.CONFIG.mBaseFontSize.set(value);
+                            ModernUITextMC.CONFIG.mBaseFontSize.set((double) value);
                             ModernUITextMC.CONFIG.saveAndReload();
                         }
                     }
@@ -516,15 +516,15 @@ public class CenterFragment extends Fragment {
                 var option = createInputOption("modernui.center.text.baselineShift");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(ModernUITextMC.CONFIG.mBaselineShift.get().toString());
-                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true), new InputFilter.LengthFilter(5));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
                         EditText v = (EditText) view;
-                        int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
+                        float value = FMath.clamp(Float.parseFloat(v.getText().toString()),
                                 ModernUITextMC.Config.BASELINE_MIN, ModernUITextMC.Config.BASELINE_MAX);
-                        v.setText(Integer.toString(value));
+                        v.setText(Float.toString(value));
                         if (value != ModernUITextMC.CONFIG.mBaselineShift.get()) {
-                            ModernUITextMC.CONFIG.mBaselineShift.set(value);
+                            ModernUITextMC.CONFIG.mBaselineShift.set((double) value);
                             ModernUITextMC.CONFIG.saveAndReload();
                         }
                     }

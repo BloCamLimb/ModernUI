@@ -187,10 +187,14 @@ public final class ModernUITextMC {
     @OnlyIn(Dist.CLIENT)
     public static class Config {
 
-        public static final int BASE_FONT_SIZE_MIN = 6;
-        public static final int BASE_FONT_SIZE_MAX = 10;
-        public static final int BASELINE_MIN = 4;
-        public static final int BASELINE_MAX = 10;
+        public static final float BASE_FONT_SIZE_MIN = 6;
+        public static final float BASE_FONT_SIZE_MAX = 10;
+        public static final float BASELINE_MIN = 4;
+        public static final float BASELINE_MAX = 10;
+        public static final float SHADOW_OFFSET_MIN = 0.2f;
+        public static final float SHADOW_OFFSET_MAX = 4;
+        public static final float OUTLINE_OFFSET_MIN = 0.2f;
+        public static final float OUTLINE_OFFSET_MAX = 4;
         public static final int LIFESPAN_MIN = 2;
         public static final int LIFESPAN_MAX = 60;
         public static final int REHASH_MIN = 0;
@@ -199,8 +203,10 @@ public final class ModernUITextMC {
         //final ForgeConfigSpec.BooleanValue globalRenderer;
         public final ForgeConfigSpec.BooleanValue mAllowShadow;
         public final ForgeConfigSpec.BooleanValue mFixedResolution;
-        public final ForgeConfigSpec.IntValue mBaseFontSize;
-        public final ForgeConfigSpec.IntValue mBaselineShift;
+        public final ForgeConfigSpec.DoubleValue mBaseFontSize;
+        public final ForgeConfigSpec.DoubleValue mBaselineShift;
+        public final ForgeConfigSpec.DoubleValue mShadowOffset;
+        public final ForgeConfigSpec.DoubleValue mOutlineOffset;
         public final ForgeConfigSpec.BooleanValue mSuperSampling;
         public final ForgeConfigSpec.BooleanValue mAlignPixels;
         public final ForgeConfigSpec.IntValue mCacheLifespan;
@@ -236,11 +242,17 @@ public final class ModernUITextMC {
             mBaseFontSize = builder.comment(
                             "Control base font size, in GUI scaled pixels. The default and vanilla value is 8.",
                             "For bitmap fonts, 8 represents a glyph size of 8x or 16x if fixed resolution.")
-                    .defineInRange("baseFontSize", 8, BASE_FONT_SIZE_MIN, BASE_FONT_SIZE_MAX);
+                    .defineInRange("baseFontSize", 8.0, BASE_FONT_SIZE_MIN, BASE_FONT_SIZE_MAX);
             mBaselineShift = builder.comment(
                             "Control vertical baseline for vanilla text layout, in GUI scaled pixels.",
                             "For smaller font, 6 is recommended. The default value is 7.")
-                    .defineInRange("baselineShift", 7, BASELINE_MIN, BASELINE_MAX);
+                    .defineInRange("baselineShift", 7.0, BASELINE_MIN, BASELINE_MAX);
+            mShadowOffset = builder.comment(
+                    "Control the text shadow offset for vanilla text rendering, in GUI scaled pixels.")
+                    .defineInRange("shadowOffset", 0.8, SHADOW_OFFSET_MIN, SHADOW_OFFSET_MAX);
+            mOutlineOffset = builder.comment(
+                    "Control the text outline offset for vanilla text rendering, in GUI scaled pixels.")
+                    .defineInRange("outlineOffset", 0.5, OUTLINE_OFFSET_MIN, OUTLINE_OFFSET_MAX);
             mSuperSampling = builder.comment(
                             "Super sampling can make the text more sharper with large font size or in the 3D world.",
                             "But perhaps it makes the path edge too blurry and difficult to read.")
@@ -319,10 +331,12 @@ public final class ModernUITextMC {
                 reload = true;
             }
             if (TextLayoutProcessor.sBaseFontSize != mBaseFontSize.get()) {
-                TextLayoutProcessor.sBaseFontSize = mBaseFontSize.get();
+                TextLayoutProcessor.sBaseFontSize = mBaseFontSize.get().floatValue();
                 reload = true;
             }
             TextRenderNode.sBaselineOffset = mBaselineShift.get().floatValue();
+            ModernTextRenderer.sShadowOffset = mShadowOffset.get().floatValue();
+            ModernTextRenderer.sOutlineOffset = mOutlineOffset.get().floatValue();
             if (TextLayoutEngine.sSuperSampling != mSuperSampling.get()) {
                 TextLayoutEngine.sSuperSampling = mSuperSampling.get();
                 reload = true;

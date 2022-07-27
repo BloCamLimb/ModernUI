@@ -16,6 +16,7 @@
     "MixinClientPacketListener",
     "MixinClientTextTooltip",
     "MixinInventoryScreen",
+    "MixinLevelRendererDBG",
     "MixinMouseHandler",
     "MixinRenderSystem",
     "MixinScreen",

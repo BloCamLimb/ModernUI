@@ -22,6 +22,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.graphics.font.GLBakedGlyph;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 
 import javax.annotation.Nonnull;
@@ -84,7 +85,8 @@ class RandomGlyphRender extends BaseGlyphRender {
                           float x, float y, int r, int g, int b, int a, boolean seeThrough, int light, float res) {
         int idx = RANDOM.nextInt(mGlyphs.getKey().length);
         GLBakedGlyph glyph = mGlyphs.getKey()[idx];
-        VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture, seeThrough));
+        VertexConsumer builder = source.getBuffer(TextRenderType.getOrCreate(glyph.texture,
+                seeThrough ? Font.DisplayMode.SEE_THROUGH : Font.DisplayMode.NORMAL));
         x += mOffsetX;
         // 0 is standard, no need to offset
         if (idx != 0) {

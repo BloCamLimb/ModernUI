@@ -41,6 +41,7 @@ import javax.annotation.Nonnull;
 public final class ModernTextRenderer {
 
     public static final Vector3f SHADOW_OFFSET = new Vector3f(0.0F, 0.0F, 0.03F);
+    public static final Vector3f OUTLINE_OFFSET = new Vector3f(0.0F, 0.0F, 0.00001F);
 
     /*
      * Render thread instance
@@ -51,6 +52,8 @@ public final class ModernTextRenderer {
      * Config values
      */
     public static volatile boolean sAllowShadow = true;
+    public static volatile float sShadowOffset = 0.8f;
+    public static volatile float sOutlineOffset = 0.5f;
     //private boolean mGlobalRenderer = false;
 
     //private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
@@ -104,7 +107,7 @@ public final class ModernTextRenderer {
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
-            float offset = TextLayoutProcessor.sAlignPixels ? 1.0f : 0.8f;
+            float offset = sShadowOffset;
             node.drawText(matrix, source, text, x + offset, y + offset, r >> 2, g >> 2, b >> 2, a, true,
                     seeThrough, colorBackground, packedLight, scale, level);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
@@ -145,7 +148,7 @@ public final class ModernTextRenderer {
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
-            float offset = TextLayoutProcessor.sAlignPixels ? 1.0f : 0.8f;
+            float offset = sShadowOffset;
             node.drawText(matrix, source, null, x + offset, y + offset, r >> 2, g >> 2, b >> 2, a, true,
                     seeThrough, colorBackground, packedLight, scale, level);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
@@ -186,7 +189,7 @@ public final class ModernTextRenderer {
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
-            float offset = TextLayoutProcessor.sAlignPixels ? 1.0f : 0.8f;
+            float offset = sShadowOffset;
             node.drawText(matrix, source, null, x + offset, y + offset, r >> 2, g >> 2, b >> 2, a, true,
                     seeThrough, colorBackground, packedLight, scale, level);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
@@ -196,6 +199,53 @@ public final class ModernTextRenderer {
         x += node.drawText(matrix, source, null, x, y, r, g, b, a, false,
                 seeThrough, colorBackground, packedLight, scale, level);
         return x;
+    }
+
+    public static void drawText8xOutline(@Nonnull FormattedCharSequence text, float x, float y,
+                                         int color, int outlineColor, @Nonnull Matrix4f matrix,
+                                         @Nonnull MultiBufferSource source, int packedLight) {
+        if (text == FormattedCharSequence.EMPTY) {
+            return;
+        }
+
+        int a = color >>> 24;
+        if (a <= 1) a = 255;
+        int r = color >> 16 & 0xff;
+        int g = color >> 8 & 0xff;
+        int b = color & 0xff;
+
+        int oa = outlineColor >>> 24;
+        if (oa <= 1) oa = 255;
+        int or = outlineColor >> 16 & 0xff;
+        int og = outlineColor >> 8 & 0xff;
+        int ob = outlineColor & 0xff;
+
+        TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
+        TextRenderNode node = layoutEngine.lookupSequenceNode(text);
+        float scale = layoutEngine.getCoordinateScale();
+        float level = layoutEngine.getResolutionLevel();
+        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling || node.hasColorEmoji()) &&
+                source instanceof MultiBufferSource.BufferSource) {
+            // performance impact
+            ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
+        }
+
+        final float offset = sOutlineOffset;
+        matrix = matrix.copy();
+        // maybe there is a way to optimize this
+        for (int ox = -1; ox <= 1; ++ox) {
+            for (int oy = -1; oy <= 1; ++oy) {
+                if (ox == 0 && oy == 0) {
+                    continue;
+                }
+                node.drawTextOutline(matrix, source, x + ox * offset, y + oy * offset,
+                        or, og, ob, oa, packedLight, scale, level);
+                matrix.translate(OUTLINE_OFFSET);
+            }
+        }
+
+        node.drawText(matrix, source, null, x, y, r, g, b, a, false,
+                false, 0, packedLight, scale, level);
     }
 
     /*public static void change(boolean global, boolean shadow) {

@@ -25,6 +25,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import icyllis.modernui.ModernUI;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.VanillaPackResources;
@@ -57,19 +58,23 @@ public class TextRenderType extends RenderType {
     /**
      * Texture id to render type map
      */
-    private static final Int2ObjectMap<TextRenderType> TYPES = new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<TextRenderType> GENERAL_TYPES = new Int2ObjectOpenHashMap<>();
     private static final Int2ObjectMap<TextRenderType> SEE_THROUGH_TYPES = new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<TextRenderType> POLYGON_OFFSET_TYPES = new Int2ObjectOpenHashMap<>();
 
     /**
      * Only the texture id is different, the rest state are same
      */
     private static final ImmutableList<RenderStateShard> GENERAL_STATES;
     private static final ImmutableList<RenderStateShard> SEE_THROUGH_STATES;
+    private static final ImmutableList<RenderStateShard> POLYGON_OFFSET_STATES;
 
     private static final Int2ObjectFunction<TextRenderType> GENERAL_FUNC =
             TextRenderType::new;
     private static final Int2ObjectFunction<TextRenderType> SEE_THROUGH_FUNC =
             t -> new TextRenderType(t, "modern_text_see_through");
+    private static final Int2ObjectFunction<TextRenderType> POLYGON_OFFSET_FUNC =
+            t -> new TextRenderType(t, false);
 
     static {
         GENERAL_STATES = ImmutableList.of(
@@ -96,6 +101,19 @@ public class TextRenderType extends RenderType {
                 MAIN_TARGET,
                 DEFAULT_TEXTURING,
                 COLOR_WRITE,
+                DEFAULT_LINE
+        );
+        POLYGON_OFFSET_STATES = ImmutableList.of(
+                RENDERTYPE_MODERN_TEXT,
+                TRANSLUCENT_TRANSPARENCY,
+                LEQUAL_DEPTH_TEST,
+                CULL,
+                LIGHTMAP,
+                NO_OVERLAY,
+                POLYGON_OFFSET_LAYERING,
+                MAIN_TARGET,
+                DEFAULT_TEXTURING,
+                COLOR_DEPTH_WRITE,
                 DEFAULT_LINE
         );
     }
@@ -128,18 +146,38 @@ public class TextRenderType extends RenderType {
         this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES, texture);
     }
 
+    private TextRenderType(int texture, boolean ignored) {
+        super("modern_text",
+                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
+                VertexFormat.Mode.QUADS, 256, false, true,
+                () -> {
+                    POLYGON_OFFSET_STATES.forEach(RenderStateShard::setupRenderState);
+                    RenderSystem.enableTexture();
+                    RenderSystem.setShaderTexture(0, texture);
+                },
+                () -> POLYGON_OFFSET_STATES.forEach(RenderStateShard::clearRenderState));
+        this.hashCode = Objects.hash(super.hashCode(), POLYGON_OFFSET_STATES, texture);
+    }
+
     @Nonnull
     public static TextRenderType getOrCreate(int texture, boolean seeThrough) {
-        if (seeThrough) {
-            return SEE_THROUGH_TYPES.computeIfAbsent(texture, SEE_THROUGH_FUNC);
-        } else {
-            return TYPES.computeIfAbsent(texture, GENERAL_FUNC);
-        }
+        return seeThrough ? SEE_THROUGH_TYPES.computeIfAbsent(texture, SEE_THROUGH_FUNC) :
+                GENERAL_TYPES.computeIfAbsent(texture, GENERAL_FUNC);
+    }
+
+    @Nonnull
+    public static TextRenderType getOrCreate(int texture, Font.DisplayMode mode) {
+        return switch (mode) {
+            case NORMAL -> GENERAL_TYPES.computeIfAbsent(texture, GENERAL_FUNC);
+            case SEE_THROUGH -> SEE_THROUGH_TYPES.computeIfAbsent(texture, SEE_THROUGH_FUNC);
+            case POLYGON_OFFSET -> POLYGON_OFFSET_TYPES.computeIfAbsent(texture, POLYGON_OFFSET_FUNC);
+        };
     }
 
     public static void clear() {
-        TYPES.clear();
+        GENERAL_TYPES.clear();
         SEE_THROUGH_TYPES.clear();
+        POLYGON_OFFSET_TYPES.clear();
     }
 
     @Override

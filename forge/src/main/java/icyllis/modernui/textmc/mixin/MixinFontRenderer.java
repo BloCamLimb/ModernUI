@@ -95,4 +95,14 @@ public abstract class MixinFontRenderer {
     public String bidirectionalShaping(String text) {
         return text;
     }
+
+    /**
+     * @author BloCamLimb
+     * @reason Modern Text Engine
+     */
+    @Overwrite
+    public void drawInBatch8xOutline(@Nonnull FormattedCharSequence text, float x, float y, int color, int outlineColor,
+                                     @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, int packedLight) {
+        ModernTextRenderer.drawText8xOutline(text, x, y, color, outlineColor, matrix, source, packedLight);
+    }
 }

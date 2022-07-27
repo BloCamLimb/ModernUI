@@ -18,25 +18,29 @@
 
 package icyllis.modernui.forge;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.testforge.TestContainerMenu;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.ProgressOption;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.VideoSettingsScreen;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.client.event.ScreenOpenEvent;
+import net.minecraftforge.client.event.*;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import static icyllis.modernui.ModernUI.LOGGER;
 
 /**
  * Handles game server or client events from Forge event bus
@@ -70,6 +74,20 @@ final class EventHandler {
     static void onContainerClosed(PlayerContainerEvent.Close event) {
 
     }*/
+
+    @OnlyIn(Dist.CLIENT)
+    static class ClientDebug {
+
+        @SubscribeEvent
+        static void onRenderLevelLast(@Nonnull RenderLevelLastEvent event) {
+            if (Screen.hasAltDown() &&
+                    InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_KP_7)) {
+                LOGGER.info("Capture from RenderLevelLastEvent");
+                LOGGER.info("PoseStack.last().pose(): {}", event.getPoseStack().last().pose());
+                LOGGER.info("ProjectionMatrix: {}", event.getProjectionMatrix());
+            }
+        }
+    }
 
     /**
      * Handles game client events from Forge event bus

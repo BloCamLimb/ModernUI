@@ -27,6 +27,7 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.audio.*;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.core.*;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
@@ -48,6 +49,7 @@ import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
 import java.awt.*;
+import java.awt.Color;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.*;
@@ -194,6 +196,11 @@ public class TestMain {
         } catch (Exception e) {
             e.printStackTrace();
         }
+
+        int cOut = icyllis.modernui.graphics.Color.blend(BlendMode.SRC_OVER,
+                icyllis.modernui.graphics.Color.argb(0.4f, 0.6f, 0.2f, 0.8f),
+                icyllis.modernui.graphics.Color.argb(1.0f, 0.4f, 0.3f, 0.2f));
+        LOGGER.info("Color Blend: {}", Integer.toHexString(cOut));
 
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())
