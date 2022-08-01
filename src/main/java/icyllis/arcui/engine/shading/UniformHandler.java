@@ -20,6 +20,7 @@ package icyllis.arcui.engine.shading;
 
 import icyllis.arcui.core.SLType;
 import icyllis.arcui.engine.*;
+import icyllis.arcui.engine.shading.ProgramDataManager.UniformHandle;
 
 import javax.annotation.Nullable;
 
@@ -56,6 +57,7 @@ public abstract class UniformHandler {
      * @param name       the raw name (pre-mangling), cannot be null or empty
      * @return UniformHandle
      */
+    @UniformHandle
     public final int addUniform(Processor owner,
                                 int visibility,
                                 byte type,
@@ -71,6 +73,7 @@ public abstract class UniformHandler {
      * @param arrayCount see {@link ShaderVar}
      * @return UniformHandle
      */
+    @UniformHandle
     public final int addUniformArray(Processor owner,
                                      int visibility,
                                      byte type,
@@ -81,6 +84,7 @@ public abstract class UniformHandler {
         return internalAddUniformArray(owner, visibility, type, name, mangle, arrayCount);
     }
 
+    @UniformHandle
     protected abstract int internalAddUniformArray(Processor owner,
                                                    int visibility,
                                                    byte type,
@@ -91,14 +95,14 @@ public abstract class UniformHandler {
     /**
      * @param u UniformHandle
      */
-    public abstract ShaderVar getUniformVariable(int u);
+    public abstract ShaderVar getUniformVariable(@UniformHandle int u);
 
     /**
      * Shortcut for getUniformVariable(u).getName()
      *
      * @param u UniformHandle
      */
-    public final String getUniformName(int u) {
+    public final String getUniformName(@UniformHandle int u) {
         return getUniformVariable(u).getName();
     }
 

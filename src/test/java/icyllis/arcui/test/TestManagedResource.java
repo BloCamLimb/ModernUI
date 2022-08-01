@@ -28,8 +28,7 @@ import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBImage;
-import org.lwjgl.system.MemoryStack;
-import org.lwjgl.system.Platform;
+import org.lwjgl.system.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -40,6 +39,8 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
+
+import static org.lwjgl.system.MemoryUtil.memAddress;
 
 public class TestManagedResource {
 
@@ -97,32 +98,51 @@ public class TestManagedResource {
             pw.println(keyBuilder);
         }
 
-        ByteBuffer image = null;
-        try (FileChannel channel = FileChannel.open(Path.of("F:/Photoshop/Untitled-1.gif"), StandardOpenOption.READ);
-             MemoryStack stack = MemoryStack.stackPush()) {
-            ByteBuffer mapper = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
-            PointerBuffer delays = stack.mallocPointer(1);
-            IntBuffer x = stack.mallocInt(1);
-            IntBuffer y = stack.mallocInt(1);
-            IntBuffer z = stack.mallocInt(1);
-            IntBuffer channels = stack.mallocInt(1);
-            image = STBImage.stbi_load_gif_from_memory(mapper, delays, x, y, z, channels, 0);
-            if (image == null) {
-                throw new IOException();
+        ByteBuffer buffer = null;
+        long image = 0;
+        try (FileChannel channel = FileChannel.open(Path.of("C:/Users/Alisa/Desktop/8Cyx0G.gif"),
+                StandardOpenOption.READ)) {
+            //ByteBuffer mapper = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+            buffer = MemoryUtil.memAlloc((int) channel.size());
+            channel.read(buffer);
+            buffer.rewind();
+            pw.println("Raw size in bytes " + channel.size());
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                PointerBuffer delays = stack.mallocPointer(1);
+                IntBuffer x = stack.mallocInt(1);
+                IntBuffer y = stack.mallocInt(1);
+                IntBuffer z = stack.mallocInt(1);
+                IntBuffer channels = stack.mallocInt(1);
+                new Thread(() -> {
+                    try {
+                        Thread.sleep(200);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                    System.gc();
+                }).start();
+                image = STBImage.nstbi_load_gif_from_memory(memAddress(buffer), buffer.remaining(),
+                        memAddress(delays), memAddress(x), memAddress(y), memAddress(z), memAddress(channels), 0);
+                if (image == 0) {
+                    throw new IOException(STBImage.stbi_failure_reason());
+                }
+                IntBuffer delay = delays.getIntBuffer(z.get(0));
+                pw.printf("width:%d height:%s layers:%s channels:%s size_in_bytes:%s\n", x.get(0), y.get(0), z.get(0),
+                        channels.get(0), (long) x.get(0) * y.get(0) * z.get(0) * channels.get(0));
+                for (int i = 0; i < z.get(0); i++) {
+                    pw.print(delay.get(i) + " ");
+                }
+                pw.println();
+            } catch (IOException e) {
+                e.printStackTrace();
             }
-            IntBuffer delay = delays.getIntBuffer(z.get(0));
-            pw.printf("width:%d height:%s layers:%s channels:%s size_in_bytes:%s\n", x.get(0), y.get(0), z.get(0),
-                    channels.get(0), image.limit());
-            for (int i = 0; i < z.get(0); i++) {
-                pw.print(delay.get(i) + " ");
-            }
-            pw.println();
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
-            if (image != null) {
-                STBImage.stbi_image_free(image);
+            if (image != 0) {
+                STBImage.nstbi_image_free(image);
             }
+            MemoryUtil.memFree(buffer);
         }
 
         directContext.close();

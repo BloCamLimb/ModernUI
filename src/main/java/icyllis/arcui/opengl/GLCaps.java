@@ -65,7 +65,6 @@ public final class GLCaps extends Caps {
             "ARB_explicit_attrib_location",
             "ARB_instanced_arrays",
             "ARB_texture_swizzle",
-            "ARB_tessellation_shader",
             "ARB_draw_indirect",
             "ARB_ES2_compatibility",
             "ARB_get_program_binary",
@@ -112,9 +111,6 @@ public final class GLCaps extends Caps {
                 }
             }
             if (!caps.OpenGL40) {
-                if (!caps.GL_ARB_tessellation_shader) {
-                    throw new AssertionError("ARB_tessellation_shader is unavailable");
-                }
                 if (!caps.GL_ARB_draw_indirect) {
                     throw new AssertionError("ARB_draw_indirect is unavailable");
                 }

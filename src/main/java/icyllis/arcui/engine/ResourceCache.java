@@ -27,7 +27,7 @@ import javax.annotation.concurrent.NotThreadSafe;
 import java.util.*;
 
 /**
- * Manages the lifetime of all {@link Resource} instances.
+ * Manages the lifetime of all {@link GpuResource} instances.
  * <p>
  * Resources may optionally have two types of keys:
  * <ol>
@@ -98,9 +98,9 @@ import java.util.*;
 @NotThreadSafe
 public final class ResourceCache implements AutoCloseable {
 
-    private static final Comparator<Resource> TIMESTAMP_COMPARATOR =
+    private static final Comparator<GpuResource> TIMESTAMP_COMPARATOR =
             Comparator.comparingInt(resource -> resource.mTimestamp);
-    private static final Function<ResourceKey, Deque<Resource>> QUEUE_FACTORY =
+    private static final Function<ResourceKey, Deque<GpuResource>> QUEUE_FACTORY =
             k -> new ArrayDeque<>();
 
     private ProxyProvider mProxyProvider = null;
@@ -110,14 +110,14 @@ public final class ResourceCache implements AutoCloseable {
     // assigned as the resource's timestamp and then incremented. mCleanableQueue orders the
     // cleanable resources by this value, and thus is used to purge resources in LRU order.
     private int mTimestamp = 0;
-    private final PriorityQueue<Resource> mCleanableQueue;
-    private Resource[] mNonCleanableList;
+    private final PriorityQueue<GpuResource> mCleanableQueue;
+    private GpuResource[] mNonCleanableList;
     private int mNonCleanableSize;
 
     // This map holds all resources that can be used as scratch resources.
-    private final Object2ObjectOpenHashMap<ResourceKey, Deque<Resource>> mScratchMap;
+    private final Object2ObjectOpenHashMap<ResourceKey, Deque<GpuResource>> mScratchMap;
     // This map holds all resources that have unique keys.
-    private final Object2ObjectOpenHashMap<ResourceKey, Resource> mUniqueMap;
+    private final Object2ObjectOpenHashMap<ResourceKey, GpuResource> mUniqueMap;
 
     // our budget, used in clean()
     private long mMaxBytes = 1 << 28;
@@ -140,8 +140,8 @@ public final class ResourceCache implements AutoCloseable {
     ResourceCache(int contextID) {
         mContextID = contextID;
 
-        mCleanableQueue = new PriorityQueue<>(TIMESTAMP_COMPARATOR, Resource.QUEUE_ACCESSOR);
-        mNonCleanableList = new Resource[10]; // initial size must > 2
+        mCleanableQueue = new PriorityQueue<>(TIMESTAMP_COMPARATOR, GpuResource.QUEUE_ACCESSOR);
+        mNonCleanableList = new GpuResource[10]; // initial size must > 2
 
         mScratchMap = new Object2ObjectOpenHashMap<>();
         mUniqueMap = new Object2ObjectOpenHashMap<>();
@@ -228,13 +228,13 @@ public final class ResourceCache implements AutoCloseable {
         //fProxyProvider->removeAllUniqueKeys();
 
         while (mNonCleanableSize > 0) {
-            Resource back = mNonCleanableList[mNonCleanableSize - 1];
+            GpuResource back = mNonCleanableList[mNonCleanableSize - 1];
             assert !back.isDestroyed();
             back.free();
         }
 
         while (mCleanableQueue.size() > 0) {
-            Resource top = mCleanableQueue.peek();
+            GpuResource top = mCleanableQueue.peek();
             assert !top.isDestroyed();
             top.free();
         }
@@ -255,13 +255,13 @@ public final class ResourceCache implements AutoCloseable {
      */
     public void dropAll() {
         while (mNonCleanableSize > 0) {
-            Resource back = mNonCleanableList[mNonCleanableSize - 1];
+            GpuResource back = mNonCleanableList[mNonCleanableSize - 1];
             assert !back.isDestroyed();
             back.drop();
         }
 
         while (mCleanableQueue.size() > 0) {
-            Resource top = mCleanableQueue.peek();
+            GpuResource top = mCleanableQueue.peek();
             assert !top.isDestroyed();
             top.drop();
         }
@@ -282,10 +282,10 @@ public final class ResourceCache implements AutoCloseable {
      * Find a resource that matches a scratch key.
      */
     @Nullable
-    public Resource findAndRefScratchResource(ResourceKey key) {
+    public GpuResource findAndRefScratchResource(ResourceKey key) {
         assert key != null;
-        Deque<Resource> queue = mScratchMap.get(key);
-        Resource resource;
+        Deque<GpuResource> queue = mScratchMap.get(key);
+        GpuResource resource;
         if (queue != null && (resource = queue.pollFirst()) != null) {
             refAndMakeResourceMRU(resource);
             return resource;
@@ -298,9 +298,9 @@ public final class ResourceCache implements AutoCloseable {
      * Find a resource that matches a unique key.
      */
     @Nullable
-    public Resource findAndRefUniqueResource(ResourceKey key) {
+    public GpuResource findAndRefUniqueResource(ResourceKey key) {
         assert key != null;
-        Resource resource = mUniqueMap.get(key);
+        GpuResource resource = mUniqueMap.get(key);
         if (resource != null) {
             refAndMakeResourceMRU(resource);
         }
@@ -323,7 +323,7 @@ public final class ResourceCache implements AutoCloseable {
 
         boolean stillOverrun = isOverrun();
         while (stillOverrun && mCleanableQueue.size() > 0) {
-            Resource resource = mCleanableQueue.peek();
+            GpuResource resource = mCleanableQueue.peek();
             assert resource.isCleanable();
             resource.free();
             stillOverrun = isOverrun();
@@ -334,7 +334,7 @@ public final class ResourceCache implements AutoCloseable {
 
             stillOverrun = isOverrun();
             while (stillOverrun && mCleanableQueue.size() > 0) {
-                Resource resource = mCleanableQueue.peek();
+                GpuResource resource = mCleanableQueue.peek();
                 assert resource.isCleanable();
                 resource.free();
                 stillOverrun = isOverrun();
@@ -374,7 +374,7 @@ public final class ResourceCache implements AutoCloseable {
             // We could disable maintaining the heap property here, but it would add a lot of
             // complexity. Moreover, this is rarely called.
             while (mCleanableQueue.size() > 0) {
-                Resource resource = mCleanableQueue.peek();
+                GpuResource resource = mCleanableQueue.peek();
 
                 final long resourceTime = resource.getCleanUpTime();
                 if (cleanUpTime > 0 && resourceTime >= cleanUpTime) {
@@ -398,9 +398,9 @@ public final class ResourceCache implements AutoCloseable {
             }
 
             // Make a list of the scratch resources to delete
-            ArrayList<Resource> scratchResources = new ArrayList<>();
+            ArrayList<GpuResource> scratchResources = new ArrayList<>();
             for (int i = 0; i < mCleanableQueue.size(); i++) {
-                Resource resource = mCleanableQueue.get(i);
+                GpuResource resource = mCleanableQueue.get(i);
 
                 final long resourceTime = resource.getCleanUpTime();
                 if (cleanUpTime > 0 && resourceTime >= cleanUpTime) {
@@ -415,15 +415,15 @@ public final class ResourceCache implements AutoCloseable {
 
             // Delete the scratch resources. This must be done as a separate pass
             // to avoid messing up the sorted order of the queue
-            for (Resource scratchResource : scratchResources) {
+            for (GpuResource scratchResource : scratchResources) {
                 scratchResource.free();
             }
         }
 
         mCleanableQueue.trim();
-        for (ObjectIterator<Object2ObjectMap.Entry<ResourceKey, Deque<Resource>>> it =
+        for (ObjectIterator<Object2ObjectMap.Entry<ResourceKey, Deque<GpuResource>>> it =
              mScratchMap.object2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
-            Object2ObjectMap.Entry<ResourceKey, Deque<Resource>> entry = it.next();
+            Object2ObjectMap.Entry<ResourceKey, Deque<GpuResource>> entry = it.next();
             if (entry.getValue().isEmpty()) {
                 it.remove();
             }
@@ -468,7 +468,7 @@ public final class ResourceCache implements AutoCloseable {
         return isOverrun() && mCleanableQueue.isEmpty() && mFlushableCount > 0;
     }
 
-    void notifyACntReachedZero(Resource resource, boolean commandBufferUsage) {
+    void notifyACntReachedZero(GpuResource resource, boolean commandBufferUsage) {
         assert !resource.isDestroyed();
         assert isInCache(resource);
         // This resource should always be in the non-cleanable array when this function is called. It
@@ -535,7 +535,7 @@ public final class ResourceCache implements AutoCloseable {
         assert getResourceCount() < beforeCount;
     }
 
-    void insertResource(Resource resource) {
+    void insertResource(GpuResource resource) {
         assert !isInCache(resource);
         assert !resource.isDestroyed();
         assert !resource.isCleanable();
@@ -559,7 +559,7 @@ public final class ResourceCache implements AutoCloseable {
         clean();
     }
 
-    void removeResource(Resource resource) {
+    void removeResource(GpuResource resource) {
         assert isInCache(resource);
 
         long size = resource.getMemorySize();
@@ -578,7 +578,7 @@ public final class ResourceCache implements AutoCloseable {
         }
 
         if (resource.isUsableAsScratch()) {
-            Deque<Resource> queue = mScratchMap.get(resource.mScratchKey);
+            Deque<GpuResource> queue = mScratchMap.get(resource.mScratchKey);
             if (queue != null) {
                 queue.remove(resource);
             }
@@ -588,12 +588,12 @@ public final class ResourceCache implements AutoCloseable {
         }
     }
 
-    void changeUniqueKey(Resource resource, ResourceKey newKey) {
+    void changeUniqueKey(GpuResource resource, ResourceKey newKey) {
         assert isInCache(resource);
 
         // If another resource has the new key, remove its key then install the key on this resource.
         if (newKey != null) {
-            Resource old;
+            GpuResource old;
             if ((old = mUniqueMap.get(newKey)) != null) {
                 // If the old resource using the key is cleanable and is unreachable, then remove it.
                 if (old.mScratchKey == null && old.isCleanable()) {
@@ -617,7 +617,7 @@ public final class ResourceCache implements AutoCloseable {
                 // from the ScratchMap. The isUsableAsScratch call depends on us not adding the new
                 // unique key until after this check.
                 if (resource.isUsableAsScratch()) {
-                    Deque<Resource> queue = mScratchMap.get(resource.mScratchKey);
+                    Deque<GpuResource> queue = mScratchMap.get(resource.mScratchKey);
                     if (queue != null) {
                         queue.remove(resource);
                     }
@@ -631,7 +631,7 @@ public final class ResourceCache implements AutoCloseable {
         }
     }
 
-    void removeUniqueKey(Resource resource) {
+    void removeUniqueKey(GpuResource resource) {
         // Someone has a ref to this resource in order to have removed the key. When the ref count
         // reaches zero we will get a ref cnt notification and figure out what to do with it.
         if (resource.mUniqueKey != null) {
@@ -652,7 +652,7 @@ public final class ResourceCache implements AutoCloseable {
         assert !resource.isCleanable();
     }
 
-    void didChangeBudgetStatus(Resource resource) {
+    void didChangeBudgetStatus(GpuResource resource) {
         assert isInCache(resource);
 
         long size = resource.getMemorySize();
@@ -683,7 +683,7 @@ public final class ResourceCache implements AutoCloseable {
             }
             if (!resource.hasRef() && resource.mUniqueKey == null &&
                     resource.mScratchKey != null) {
-                Deque<Resource> queue = mScratchMap.get(resource.mScratchKey);
+                Deque<GpuResource> queue = mScratchMap.get(resource.mScratchKey);
                 if (queue != null) {
                     queue.remove(resource);
                 }
@@ -692,17 +692,17 @@ public final class ResourceCache implements AutoCloseable {
         assert wasCleanable == resource.isCleanable();
     }
 
-    void willRemoveScratchKey(Resource resource) {
+    void willRemoveScratchKey(GpuResource resource) {
         assert resource.mScratchKey != null;
         if (resource.isUsableAsScratch()) {
-            Deque<Resource> queue = mScratchMap.get(resource.mScratchKey);
+            Deque<GpuResource> queue = mScratchMap.get(resource.mScratchKey);
             if (queue != null) {
                 queue.remove(resource);
             }
         }
     }
 
-    private void refAndMakeResourceMRU(Resource resource) {
+    private void refAndMakeResourceMRU(GpuResource resource) {
         assert isInCache(resource);
 
         if (resource.isCleanable()) {
@@ -720,8 +720,8 @@ public final class ResourceCache implements AutoCloseable {
         resource.mTimestamp = getNextTimestamp();
     }
 
-    private void addToNonCleanableArray(Resource resource) {
-        Resource[] es = mNonCleanableList;
+    private void addToNonCleanableArray(GpuResource resource) {
+        GpuResource[] es = mNonCleanableList;
         final int s = mNonCleanableSize;
         if (s >= es.length) {
             // Grow the array, we assume (s >> 1) > 0;
@@ -732,11 +732,11 @@ public final class ResourceCache implements AutoCloseable {
         mNonCleanableSize = s + 1;
     }
 
-    private void removeFromNonCleanableArray(Resource resource) {
-        final Resource[] es = mNonCleanableList;
+    private void removeFromNonCleanableArray(GpuResource resource) {
+        final GpuResource[] es = mNonCleanableList;
         // Fill the hole we will create in the array with the tail object, adjust its index, and
         // then pop the array
-        final Resource tail = es[--mNonCleanableSize];
+        final GpuResource tail = es[--mNonCleanableSize];
         assert es[resource.mCacheIndex] == resource;
         es[resource.mCacheIndex] = tail;
         tail.mCacheIndex = resource.mCacheIndex;
@@ -792,7 +792,7 @@ public final class ResourceCache implements AutoCloseable {
         return mTimestamp++;
     }
 
-    private boolean isInCache(Resource resource) {
+    private boolean isInCache(GpuResource resource) {
         int index = resource.mCacheIndex;
         if (index < 0) {
             return false;

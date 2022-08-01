@@ -18,13 +18,5 @@
 
 package icyllis.arcui.engine;
 
-/**
- * Represents a device memory block that prefers to allocate GPU memory.
- * To be exact, GLBuffer or VkBuffer.
- */
-public abstract class Buffer extends Resource {
-
-    public Buffer(Server server) {
-        super(server);
-    }
+public class ProgramDesc {
 }

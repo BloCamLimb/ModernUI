@@ -16,28 +16,15 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.opengl;
+package icyllis.arcui.engine;
 
-import icyllis.arcui.engine.GpuBuffer;
+/**
+ * Represents a device memory block that <b>prefers</b> to allocate GPU memory.
+ * Also known as geometric buffer, g-buffer. To be exact, GLBuffer or VkBuffer.
+ */
+public abstract class GpuBuffer extends GpuResource {
 
-public final class GLBuffer extends GpuBuffer {
-
-    public GLBuffer(GLServer server) {
+    public GpuBuffer(Server server) {
         super(server);
-    }
-
-    @Override
-    public long getMemorySize() {
-        return 0;
-    }
-
-    @Override
-    protected void onFree() {
-
-    }
-
-    @Override
-    protected void onDrop() {
-
     }
 }

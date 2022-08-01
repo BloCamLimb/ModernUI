@@ -33,7 +33,7 @@ import javax.annotation.Nullable;
  * The naming of this class is just a convention, don't confuse this with
  * {@link icyllis.arcui.core.Surface} or {@link org.lwjgl.vulkan.KHRSurface},
  */
-public abstract class Surface extends Resource {
+public abstract class Surface extends GpuResource {
 
     protected final int mWidth;
     protected final int mHeight;

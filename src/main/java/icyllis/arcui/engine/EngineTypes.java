@@ -74,6 +74,29 @@ public final class EngineTypes {
             IO_TYPE_RW = 2;
 
     /**
+     * Describes the intended usage or the purpose of a GPU buffer.
+     */
+    public static final int
+            GPU_BUFFER_TYPE_VERTEX = 0,             // vertex buffer
+            GPU_BUFFER_TYPE_INDEX = 1,              // element buffer or index buffer
+            GPU_BUFFER_TYPE_DRAW_INDIRECT = 2,      // (draw) indirect buffer
+            GPU_BUFFER_TYPE_XFER_CPU_TO_GPU = 3,    // a.k.a upload, unpack, transfer src only
+            GPU_BUFFER_TYPE_XFER_GPU_TO_CPU = 4,    // a.k.a download, pack, transfer dst only
+            GPU_BUFFER_TYPE_UNIFORM = 5;            // uniform buffer
+    public static final int GPU_BUFFER_TYPE_COUNT = GPU_BUFFER_TYPE_UNIFORM + 1;
+
+    /**
+     * Provides a performance hint regarding the frequency at which a data store will be accessed.
+     * <p>
+     * DYNAMIC: Data store will be respecified repeatedly by CPU and GPU.
+     * <p>
+     * STATIC: Data store will be specified by CPU once and may be respecified repeatedly by GPU.
+     */
+    public static final int
+            ACCESS_PATTERN_DYNAMIC = 0,
+            ACCESS_PATTERN_STATIC = 1;
+
+    /**
      * The type of texture. There are only 2D.
      * <p>
      * NONE: Represents a general purpose that is not considered a texture, e.g. OpenGL renderbuffer.
@@ -164,15 +187,15 @@ public final class EngineTypes {
     /**
      * Geometric primitives used for drawing.
      * <p>
-     * We can't use POINTS or LINES, because both OpenGL and Vulkan can only guarantee
+     * We can't simply use POINTS or LINES, because both OpenGL and Vulkan can only guarantee
      * the rasterization of one pixel in screen coordinates, may or may not anti-aliased.
      */
     public static final byte
             PRIMITIVE_TYPE_TRIANGLES = 0,       // separate triangle
-            PRIMITIVE_TYPE_TRIANGLE_LIST = 0,   // separate triangle
             PRIMITIVE_TYPE_TRIANGLE_STRIP = 1,  // connected triangle
-            PRIMITIVE_TYPE_PATCHES = 2,         // separate patch, tessellation
-            PRIMITIVE_TYPE_PATCH_LIST = 2;      // separate patch, tessellation
+            PRIMITIVE_TYPE_POINTS = 2,          // 1 px only
+            PRIMITIVE_TYPE_LINES = 3,           // 1 px wide only
+            PRIMITIVE_TYPE_LINE_STRIP = 4;      // 1 px wide only
 
     /**
      * Mask formats. Used by the font cache. Important that these are 0-based.
@@ -220,7 +243,7 @@ public final class EngineTypes {
     /**
      * Flags shared between the Surface & SurfaceProxy class hierarchies.
      * <p>
-     * READ_ONLY: Means the pixels in the texture are read-only.
+     * READ_ONLY: Means the pixels in the texture are read-only. Texture only.
      * <p>
      * PROTECTED: Means if we are working with protected content.
      * <p>
@@ -252,9 +275,9 @@ public final class EngineTypes {
             MIPMAP_STATUS_VALID = 2;    // All levels fully allocated and have valid data in them
 
     /**
-     * ResourceHandle is an opaque handle to a resource.
+     * ResourceHandle is an opaque handle to a resource. It's actually a table index.
      */
-    public static final int INVALID_RESOURCE_HANDLE = -1;
+    public static final int INVALID_RESOURCE_HANDLE = ~0;
 
     private EngineTypes() {
     }

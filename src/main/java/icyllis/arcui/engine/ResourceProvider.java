@@ -73,12 +73,12 @@ public final class ResourceProvider {
     /**
      * Finds a resource in the cache, based on the specified key. Prior to calling this, the caller
      * must be sure that if a resource of exists in the cache with the given unique key then it is
-     * of type T. If the resource is no longer used, then {@link Resource#unref()} must be called.
+     * of type T. If the resource is no longer used, then {@link GpuResource#unref()} must be called.
      */
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public <T extends Resource> T findByUniqueKey(ResourceKey key) {
+    public <T extends GpuResource> T findByUniqueKey(ResourceKey key) {
         return mServer.getContext().isDropped() ? null : (T) mCache.findAndRefUniqueResource(key);
     }
 
@@ -337,7 +337,7 @@ public final class ResourceProvider {
         assert !mServer.getContext().isDropped();
         assert key != null;
 
-        Resource resource = mCache.findAndRefScratchResource(key);
+        GpuResource resource = mCache.findAndRefScratchResource(key);
         if (resource != null) {
             mServer.getStats().incNumScratchTexturesReused();
             return (Texture) resource;
@@ -445,7 +445,7 @@ public final class ResourceProvider {
         return mServer.wrapRenderableBackendTexture(texture, sampleCount, ownership);
     }
 
-    public void assignUniqueKeyToResource(ResourceKey key, Resource resource) {
+    public void assignUniqueKeyToResource(ResourceKey key, GpuResource resource) {
         assert mServer.getContext().isOnOwnerThread();
         if (mServer.getContext().isDropped() || resource == null) {
             return;

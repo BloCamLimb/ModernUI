@@ -19,8 +19,7 @@
 package icyllis.arcui.engine;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Provides custom shader code to the Arc UI shading pipeline. Processor objects <em>must</em> be
@@ -29,18 +28,34 @@ import java.util.function.Function;
 @Immutable
 public abstract class Processor {
 
-    public static final int INVALID_CLASS_ID = -1;
+    // Reserved ID for missing (null) processors
+    public static final int NULL_CLASS_ID = 0;
 
-    private static final ConcurrentHashMap<Class<? extends Processor>, Integer> CLASS_IDS = new ConcurrentHashMap<>();
-    private static final Function<Class<? extends Processor>, Integer> CLASS_ID_GEN = clz -> CLASS_IDS.size();
+    private static final AtomicInteger sNextClassID = new AtomicInteger(NULL_CLASS_ID + 1);
 
-    protected Processor() {
+    protected final int mClassID;
+
+    protected Processor(int classID) {
+        mClassID = classID;
+    }
+
+    protected static int genClassID() {
+        final int id = sNextClassID.getAndIncrement();
+        assert id != NULL_CLASS_ID : "This should never wrap as it should only be called once for each Processor " +
+                "subclass.";
+        return id;
     }
 
     /**
-     * @return Unique ID to identify this class in runtime.
+     * Human-meaningful string to identify this processor; may be embedded in generated shader
+     * code and must be a legal SkSL identifier prefix.
      */
-    public final int getClassID() {
-        return CLASS_IDS.computeIfAbsent(getClass(), CLASS_ID_GEN);
+    public abstract String name();
+
+    /**
+     * @return unique ID to identify this class at runtime.
+     */
+    public final int classID() {
+        return mClassID;
     }
 }

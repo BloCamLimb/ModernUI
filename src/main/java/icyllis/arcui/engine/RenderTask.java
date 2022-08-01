@@ -34,6 +34,16 @@ public abstract class RenderTask extends RefCnt {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
+    private static int createUniqueID() {
+        for (;;) {
+            final int value = sNextID.get();
+            final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
+            if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
+                return value;
+            }
+        }
+    }
+
     protected static final int
             CLOSED_FLAG = 0x01,     // This task can't accept any more dependencies.
             DETACHED_FLAG = 0x02,   // This task is detached from its creating DrawingManager.
@@ -89,7 +99,7 @@ public abstract class RenderTask extends RefCnt {
     private DrawingManager mDrawingManager;
 
     public RenderTask() {
-        mUniqueID = sNextID.getAndIncrement();
+        mUniqueID = createUniqueID();
     }
 
     public int getUniqueID() {

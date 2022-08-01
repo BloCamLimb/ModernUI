@@ -51,10 +51,12 @@ import java.util.concurrent.atomic.AtomicInteger;
  * instances will always be strong referenced, an explicit ref/unref is required
  * to determine whether to recycle/release them or not.
  * <p>
- * Use {@link ResourceProvider} to obtain <code>Resource</code> objects.
+ * Each GpuResource object should have immutable memory allocation.
+ * <p>
+ * Use {@link ResourceProvider} to obtain <code>GpuResource</code> objects.
  */
 @NotThreadSafe
-public abstract class Resource {
+public abstract class GpuResource {
 
     private static final VarHandle REF_CNT;
     private static final VarHandle COMMAND_BUFFER_USAGE_CNT;
@@ -62,8 +64,8 @@ public abstract class Resource {
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            REF_CNT = lookup.findVarHandle(Resource.class, "mRefCnt", int.class);
-            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(Resource.class, "mCommandBufferUsageCnt", int.class);
+            REF_CNT = lookup.findVarHandle(GpuResource.class, "mRefCnt", int.class);
+            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(GpuResource.class, "mCommandBufferUsageCnt", int.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -76,14 +78,24 @@ public abstract class Resource {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
-    static final PriorityQueue.Accessor<Resource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
+    private static int createUniqueID() {
+        for (;;) {
+            final int value = sNextID.get();
+            final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
+            if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
+                return value;
+            }
+        }
+    }
+
+    static final PriorityQueue.Accessor<GpuResource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
         @Override
-        public void setIndex(Resource resource, int index) {
+        public void setIndex(GpuResource resource, int index) {
             resource.mCacheIndex = index;
         }
 
         @Override
-        public int getIndex(Resource resource) {
+        public int getIndex(GpuResource resource) {
             return resource.mCacheIndex;
         }
     };
@@ -107,9 +119,9 @@ public abstract class Resource {
     private boolean mWrapped = false;
     private final int mUniqueID;
 
-    public Resource(Server server) {
+    public GpuResource(Server server) {
         mServer = server;
-        mUniqueID = sNextID.getAndIncrement();
+        mUniqueID = createUniqueID();
     }
 
     /**

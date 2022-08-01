@@ -18,8 +18,7 @@
 
 package icyllis.arcui.engine.shading;
 
-import icyllis.arcui.engine.Caps;
-import icyllis.arcui.engine.ShaderCaps;
+import icyllis.arcui.engine.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.Nonnull;
@@ -40,6 +39,12 @@ public abstract class ProgramBuilder {
      * would be substage 2 of stubstage 0 of stage 1 and would be mangled as "_S1_c0_c2".
      */
     private final IntArrayList mSubstageIndices = new IntArrayList();
+
+    public final VertexShaderBuilder mVS = new VertexShaderBuilder(this);
+    public final FragmentShaderBuilder mFS = new FragmentShaderBuilder(this);
+
+    public ProgramBuilder(ProgramDesc desc, ProgramInfo programInfo) {
+    }
 
     public abstract Caps caps();
 

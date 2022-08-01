@@ -20,6 +20,7 @@ package icyllis.arcui.engine;
 
 import icyllis.arcui.core.MathUtil;
 import icyllis.arcui.core.SLType;
+import icyllis.arcui.engine.shading.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
@@ -265,7 +266,8 @@ public abstract class GeometryProcessor extends Processor {
 
     private int mTextureSamplerCnt;
 
-    public GeometryProcessor() {
+    protected GeometryProcessor(int classID) {
+        super(classID);
     }
 
     public final int numTextureSamplers() {
@@ -327,5 +329,19 @@ public abstract class GeometryProcessor extends Processor {
     protected final void setTextureSamplerCnt(int cnt) {
         assert (cnt >= 0);
         mTextureSamplerCnt = cnt;
+    }
+
+    public static abstract class ProgramImpl {
+
+        public record EmitArgs(VertexGeoBuilder vertBuilder,
+                               FPFragmentBuilder fragBuilder,
+                               VaryingHandler varyingHandler,
+                               UniformHandler uniformHandler,
+                               ShaderCaps shaderCaps,
+                               GeometryProcessor geomProc,
+                               String outputColor,
+                               String outputCoverage,
+                               int[] texSamplers) {
+        }
     }
 }

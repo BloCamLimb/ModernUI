@@ -18,31 +18,8 @@
 
 package icyllis.arcui.engine.shading;
 
-import java.util.ArrayList;
-
 /**
- * Base class for all shaders builders
+ * Interface for all shaders builders.
  */
-public abstract class ShaderBuilder {
-
-    protected static final int
-            EXTENSIONS = 0,
-            DEFINITIONS = 1,
-            PRECISION_QUALIFIER = 2,
-            LAYOUT_QUALIFIERS = 3,
-            UNIFORMS = 4,
-            INPUTS = 5,
-            OUTPUTS = 6,
-            FUNCTIONS = 7,
-            MAIN = 8,
-            CODE = 9;
-    protected static final int PRESERVE = CODE + 6; // 6 == Reasonable upper bound on number of processor stages
-
-    protected final ProgramBuilder mProgramBuilder;
-    protected final ArrayList<StringBuilder> mShaderStrings = new ArrayList<>(PRESERVE);
-    protected String mCompilerString;
-
-    public ShaderBuilder(ProgramBuilder programBuilder) {
-        mProgramBuilder = programBuilder;
-    }
+public interface ShaderBuilder {
 }

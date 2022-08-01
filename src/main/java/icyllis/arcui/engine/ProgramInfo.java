@@ -19,4 +19,15 @@
 package icyllis.arcui.engine;
 
 public class ProgramInfo {
+
+    public ProgramInfo(Caps caps,
+                       SurfaceProxyView targetView,
+                       boolean usesMSAASurface,
+                       Pipeline pipeline,
+                       UserStencilSettings userStencilSettings,
+                       GeometryProcessor geomProc,
+                       byte primitiveType,
+                       int renderPassXferBarriers,
+                       int colorLoadOp) {
+    }
 }

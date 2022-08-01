@@ -19,7 +19,7 @@
 package icyllis.arcui.engine;
 
 /**
- * The ResourceAllocator explicitly distributes {@link Resource}s at flush time. It operates by
+ * The ResourceAllocator explicitly distributes {@link GpuResource}s at flush time. It operates by
  * being given the usage intervals of the various proxies. It keeps these intervals in a singly
  * linked list sorted by increasing start index. (It also maintains a hash table from proxyID
  * to interval to find proxy reuse). The ResourceAllocator uses Registers (in the sense of register

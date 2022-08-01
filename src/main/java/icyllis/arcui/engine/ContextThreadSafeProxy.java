@@ -37,6 +37,16 @@ public final class ContextThreadSafeProxy {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
+    private static int createUniqueID() {
+        for (;;) {
+            final int value = sNextID.get();
+            final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
+            if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
+                return value;
+            }
+        }
+    }
+
     final int mBackend;
     final ContextOptions mOptions;
     final int mContextID;
@@ -51,7 +61,7 @@ public final class ContextThreadSafeProxy {
     ContextThreadSafeProxy(int backend, ContextOptions options) {
         mBackend = backend;
         mOptions = options;
-        mContextID = sNextID.getAndIncrement();
+        mContextID = createUniqueID();
     }
 
     /**

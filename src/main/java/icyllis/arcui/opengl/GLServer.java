@@ -61,22 +61,26 @@ public final class GLServer extends Server {
     @SuppressWarnings("ConstantConditions")
     @Nullable
     public static GLServer make(DirectContext context, ContextOptions options) {
-        // get or create
-        GLCapabilities caps;
+        GLCapabilities capabilities;
         try {
-            caps = GL.getCapabilities();
-            if (caps == null) {
+            capabilities = GL.getCapabilities();
+            if (capabilities == null) {
                 // checks may be disabled
-                caps = GL.createCapabilities();
+                capabilities = GL.createCapabilities();
             }
         } catch (IllegalStateException e) {
             // checks may be enabled
-            caps = GL.createCapabilities();
+            capabilities = GL.createCapabilities();
         }
-        if (caps == null) {
+        if (capabilities == null) {
             return null;
         }
-        return new GLServer(context, new GLCaps(options, caps));
+        try {
+            return new GLServer(context, new GLCaps(options, capabilities));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
     public void bindFramebuffer(int target, int framebuffer) {

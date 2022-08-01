@@ -16,28 +16,14 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.opengl;
+package icyllis.arcui.engine.shading;
 
-import icyllis.arcui.engine.GpuBuffer;
+/**
+ * This class implements the various vertex builder interfaces.
+ */
+public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeoBuilder {
 
-public final class GLBuffer extends GpuBuffer {
-
-    public GLBuffer(GLServer server) {
-        super(server);
-    }
-
-    @Override
-    public long getMemorySize() {
-        return 0;
-    }
-
-    @Override
-    protected void onFree() {
-
-    }
-
-    @Override
-    protected void onDrop() {
-
+    public VertexShaderBuilder(ProgramBuilder programBuilder) {
+        super(programBuilder);
     }
 }

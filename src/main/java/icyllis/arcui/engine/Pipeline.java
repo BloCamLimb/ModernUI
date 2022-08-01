@@ -20,7 +20,7 @@ package icyllis.arcui.engine;
 
 /**
  * This immutable object contains information needed to build a shader program and set API
- * state for a draw. It is used along with a GeometryProcessor and a source of geometric
+ * state for a draw. It is used along with a {@link GeometryProcessor} and a source of geometric
  * data to draw.
  */
 public class Pipeline {

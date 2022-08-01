@@ -16,28 +16,23 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.opengl;
+package icyllis.arcui.engine.shading;
 
-import icyllis.arcui.engine.GpuBuffer;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 
-public final class GLBuffer extends GpuBuffer {
+/**
+ * Manages the resources used by a shader program.
+ * <p>
+ * The resources are objects the program uses to communicate with the
+ * application code.
+ */
+public class ProgramDataManager {
 
-    public GLBuffer(GLServer server) {
-        super(server);
-    }
-
-    @Override
-    public long getMemorySize() {
-        return 0;
-    }
-
-    @Override
-    protected void onFree() {
-
-    }
-
-    @Override
-    protected void onDrop() {
-
+    /**
+     * Marks an integer as an opaque handle to a uniform resource.
+     */
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface UniformHandle {
     }
 }

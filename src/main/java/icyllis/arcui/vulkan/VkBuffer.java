@@ -18,9 +18,9 @@
 
 package icyllis.arcui.vulkan;
 
-import icyllis.arcui.engine.Buffer;
+import icyllis.arcui.engine.GpuBuffer;
 
-public final class VkBuffer extends Buffer {
+public final class VkBuffer extends GpuBuffer {
 
     public VkBuffer(VkServer server) {
         super(server);
