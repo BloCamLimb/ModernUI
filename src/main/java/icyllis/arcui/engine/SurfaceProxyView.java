@@ -29,7 +29,7 @@ public final class SurfaceProxyView implements AutoCloseable {
 
     public SurfaceProxyView(@SharedPtr SurfaceProxy proxy) {
         mProxy = proxy; // std::move()
-        mOrigin = EngineTypes.SURFACE_ORIGIN_TOP_LEFT;
+        mOrigin = EngineTypes.SurfaceOrigin_TopLeft;
         mSwizzle = Swizzle.RGBA;
     }
 
@@ -108,7 +108,7 @@ public final class SurfaceProxyView implements AutoCloseable {
             mProxy.unref();
         }
         mProxy = null;
-        mOrigin = EngineTypes.SURFACE_ORIGIN_TOP_LEFT;
+        mOrigin = EngineTypes.SurfaceOrigin_TopLeft;
         mSwizzle = Swizzle.RGBA;
     }
 

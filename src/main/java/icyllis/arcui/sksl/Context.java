@@ -22,4 +22,22 @@ package icyllis.arcui.sksl;
  * Contains compiler-wide objects, which currently means the core types.
  */
 public class Context {
+
+    // The Context holds all of the built-in types.
+    public final BuiltinTypes mTypes = new BuiltinTypes();
+
+    // The Context holds a reference to our shader caps bits.
+    public final ShaderCaps mCaps;
+
+    // The Context holds a pointer to our error reporter.
+    public ErrorReporter mErrors;
+
+    // The Context holds a pointer to the shared name-mangler.
+    public Mangler mMangler;
+
+    public Context(ShaderCaps caps, ErrorReporter errors, Mangler mangler) {
+        mCaps = caps;
+        mErrors = errors;
+        mMangler = mangler;
+    }
 }

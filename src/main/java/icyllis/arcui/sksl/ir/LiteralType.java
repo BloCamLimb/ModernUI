@@ -16,31 +16,35 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl.ast;
+package icyllis.arcui.sksl.ir;
 
 import javax.annotation.Nonnull;
 
-public final class VectorType extends Type {
+public final class LiteralType extends Type {
 
-    private final ScalarType mComponentType;
-    private final int mColumns;
+    private final Type mScalarType;
+    private final int mPriority;
 
-    VectorType(String name, String abbrev, Type componentType, int columns) {
-        super(name, abbrev, KIND_VECTOR);
-        assert columns >= 2 && columns <= 4;
-        mComponentType = (ScalarType) componentType;
-        mColumns = columns;
+    LiteralType(String name, Type scalarType, int priority) {
+        super(name, "L", KIND_LITERAL);
+        mScalarType = scalarType;
+        mPriority = priority;
     }
 
     @Nonnull
     @Override
-    public ScalarType getComponentType() {
-        return mComponentType;
+    public Type getLiteralScalarType() {
+        return mScalarType;
+    }
+
+    @Override
+    public int getPriority() {
+        return mPriority;
     }
 
     @Override
     public int getColumns() {
-        return mColumns;
+        return 1;
     }
 
     @Override
@@ -49,17 +53,32 @@ public final class VectorType extends Type {
     }
 
     @Override
-    public int getBitWidth() {
-        return mComponentType.getBitWidth();
+    public byte getScalarKind() {
+        return mScalarType.getScalarKind();
     }
 
     @Override
-    public boolean isVector() {
+    public int getBitWidth() {
+        return mScalarType.getBitWidth();
+    }
+
+    @Override
+    public boolean isScalar() {
+        return true;
+    }
+
+    @Override
+    public boolean isLiteral() {
+        return true;
+    }
+
+    @Override
+    public boolean isPrivate() {
         return true;
     }
 
     @Override
     public int getSlots() {
-        return mColumns;
+        return 1;
     }
 }

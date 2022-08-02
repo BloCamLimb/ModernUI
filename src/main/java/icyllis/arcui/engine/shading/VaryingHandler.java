@@ -20,23 +20,15 @@ package icyllis.arcui.engine.shading;
 
 import icyllis.arcui.core.SLType;
 import icyllis.arcui.engine.*;
-import org.intellij.lang.annotations.MagicConstant;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 
 public class VaryingHandler {
 
-    @MagicConstant(intValues = {INTERPOLATION_INTERPOLATED, INTERPOLATION_CAN_BE_FLAT, INTERPOLATION_MUST_BE_FLAT})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface Interpolation {
-    }
-
     public static final int
-            INTERPOLATION_INTERPOLATED = 0,
-            INTERPOLATION_CAN_BE_FLAT = 1,  // Use "flat" if it will be faster.
-            INTERPOLATION_MUST_BE_FLAT = 2; // Use "flat" even if it is known to be slow.
+            Interpolation_Interpolated = 0,
+            Interpolation_CanBeFlat = 1,  // Use "flat" if it will be faster.
+            Interpolation_MustBeFlat = 2; // Use "flat" even if it is known to be slow.
 
     protected static class VaryingInfo {
 
@@ -47,7 +39,7 @@ public class VaryingHandler {
         public boolean mIsFlat;
         public String mVsOut;
         /**
-         * @see EngineTypes#SHADER_FLAG_VERTEX
+         * @see EngineTypes#ShaderFlag_Vertex
          */
         public int mVisibility;
     }
@@ -81,7 +73,7 @@ public class VaryingHandler {
     }
 
     public final void addVarying(String name, Varying varying) {
-        addVarying(name, varying, INTERPOLATION_INTERPOLATED);
+        addVarying(name, varying, Interpolation_Interpolated);
     }
 
     /**
@@ -91,8 +83,8 @@ public class VaryingHandler {
      * attribute and pass it through to an output value in a fragment shader, use
      * addPassThroughAttribute.
      */
-    public final void addVarying(String name, Varying varying, @Interpolation int interpolation) {
-        assert SLType.isFloatType(varying.type()) || interpolation == INTERPOLATION_MUST_BE_FLAT;
+    public final void addVarying(String name, Varying varying, int interpolation) {
+        assert SLType.isFloatType(varying.type()) || interpolation == Interpolation_MustBeFlat;
         VaryingInfo v = new VaryingInfo();
 
         assert varying.mType != SLType.VOID;
@@ -103,16 +95,16 @@ public class VaryingHandler {
         v.mVisibility = 0;
         if (varying.isInVertexShader()) {
             varying.mVsOut = v.mVsOut;
-            v.mVisibility |= EngineTypes.SHADER_FLAG_VERTEX;
+            v.mVisibility |= EngineTypes.ShaderFlag_Vertex;
         }
         if (varying.isInFragmentShader()) {
             varying.mFsIn = v.mVsOut;
-            v.mVisibility |= EngineTypes.SHADER_FLAG_FRAGMENT;
+            v.mVisibility |= EngineTypes.ShaderFlag_Fragment;
         }
     }
 
     public final void addPassThroughAttribute(ShaderVar vsVar, String output) {
-        addPassThroughAttribute(vsVar, output, INTERPOLATION_INTERPOLATED);
+        addPassThroughAttribute(vsVar, output, Interpolation_Interpolated);
     }
 
     /**
@@ -121,18 +113,18 @@ public class VaryingHandler {
      * be defined in the fragment shader before the call is made.
      */
     //TODO it might be nicer behavior to have a flag to declare output inside these calls
-    public final void addPassThroughAttribute(ShaderVar vsVar, String output, @Interpolation int interpolation) {
+    public final void addPassThroughAttribute(ShaderVar vsVar, String output, int interpolation) {
 
     }
 
     private static boolean useFlatInterpolation(int interpolation, ShaderCaps shaderCaps) {
         switch (interpolation) {
-            case INTERPOLATION_INTERPOLATED:
+            case Interpolation_Interpolated:
                 return false;
-            case INTERPOLATION_CAN_BE_FLAT:
+            case Interpolation_CanBeFlat:
                 assert !shaderCaps.mPreferFlatInterpolation || shaderCaps.mFlatInterpolationSupport;
                 return shaderCaps.mPreferFlatInterpolation;
-            case INTERPOLATION_MUST_BE_FLAT:
+            case Interpolation_MustBeFlat:
                 assert shaderCaps.mFlatInterpolationSupport;
                 return true;
         }

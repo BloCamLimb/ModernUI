@@ -68,7 +68,7 @@ public abstract class Texture extends Surface {
     }
 
     /**
-     * @return either {@link EngineTypes#TEXTURE_TYPE_2D} or {@link EngineTypes#TEXTURE_TYPE_EXTERNAL}
+     * @return either {@link EngineTypes#TextureType_2D} or {@link EngineTypes#TextureType_External}
      */
     public abstract int getTextureType();
 
@@ -100,9 +100,9 @@ public abstract class Texture extends Surface {
 
     public final int getMipmapStatus() {
         if (isMipmapped()) {
-            return mMipmapsDirty ? EngineTypes.MIPMAP_STATUS_DIRTY : EngineTypes.MIPMAP_STATUS_VALID;
+            return mMipmapsDirty ? EngineTypes.MipmapStatus_Dirty : EngineTypes.MipmapStatus_Valid;
         }
-        return EngineTypes.MIPMAP_STATUS_NONE;
+        return EngineTypes.MipmapStatus_None;
     }
 
     public abstract int getMaxMipmapLevel();
@@ -124,10 +124,10 @@ public abstract class Texture extends Surface {
     public final int getFlags() {
         int flags = 0;
         if (isReadOnly()) {
-            flags |= EngineTypes.INTERNAL_SURFACE_FLAG_READ_ONLY;
+            flags |= EngineTypes.InternalSurfaceFlag_ReadOnly;
         }
         if (isProtected()) {
-            flags |= EngineTypes.INTERNAL_SURFACE_FLAG_PROTECTED;
+            flags |= EngineTypes.InternalSurfaceFlag_Protected;
         }
         return flags;
     }
@@ -158,7 +158,7 @@ public abstract class Texture extends Surface {
         assert sampleCount == 1 || !mipmapped;
         // For external formats we do not actually know the real size of the resource, so we just return
         // 0 here to indicate this.
-        if (format.getTextureType() == EngineTypes.TEXTURE_TYPE_EXTERNAL) {
+        if (format.getTextureType() == EngineTypes.TextureType_External) {
             return 0;
         }
         if (approx) {
@@ -194,7 +194,7 @@ public abstract class Texture extends Surface {
         assert sampleCount == 1 || levelCount == 1;
         // For external formats we do not actually know the real size of the resource, so we just return
         // 0 here to indicate this.
-        if (format.getTextureType() == EngineTypes.TEXTURE_TYPE_EXTERNAL) {
+        if (format.getTextureType() == EngineTypes.TextureType_External) {
             return 0;
         }
         if (approx) {

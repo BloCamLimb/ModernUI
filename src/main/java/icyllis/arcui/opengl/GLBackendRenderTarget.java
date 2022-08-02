@@ -44,7 +44,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
 
     @Override
     public int getBackend() {
-        return EngineTypes.OPENGL;
+        return EngineTypes.OpenGL;
     }
 
     @Override
@@ -67,7 +67,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
     @Override
     public GLBackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(mInfo.mFormat, EngineTypes.TEXTURE_TYPE_NONE);
+            mBackendFormat = new GLBackendFormat(mInfo.mFormat, EngineTypes.TextureType_None);
         }
         return mBackendFormat;
     }

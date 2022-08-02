@@ -20,12 +20,9 @@ package icyllis.arcui.engine.ops;
 
 import icyllis.arcui.core.RectF;
 import icyllis.arcui.engine.*;
-import org.intellij.lang.annotations.MagicConstant;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -55,32 +52,35 @@ public abstract class Op {
 
     private static final AtomicInteger sNextClassID = new AtomicInteger(NULL_CLASS_ID + 1);
 
-    @MagicConstant(intValues = {COMBINE_RESULT_MERGED, COMBINE_RESULT_MAY_CHAIN, COMBINE_RESULT_CANNOT_COMBINE})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface CombineResult {
-    }
-
     /**
      * The op that combineIfPossible was called on now represents its own work plus that of
      * the passed op. The passed op should be destroyed without being flushed. Currently it
      * is not legal to merge an op passed to combineIfPossible() the passed op is already in a
      * chain (though the op on which combineIfPossible() was called may be).
      */
-    public static final int COMBINE_RESULT_MERGED = 0;
+    public static final int CombineResult_Merged = 0;
     /**
      * The caller *may* (but is not required) to chain these ops together. If they are chained
      * then prepare() and execute() will be called on the head op but not the other ops in the
      * chain. The head op will prepare and execute on behalf of all the ops in the chain.
      */
-    public static final int COMBINE_RESULT_MAY_CHAIN = 1;
+    public static final int CombineResult_MayChain = 1;
     /**
      * The ops cannot be combined.
      */
-    public static final int COMBINE_RESULT_CANNOT_COMBINE = 2;
+    public static final int CombineResult_CannotCombine = 2;
 
-    private static final int
-            BOUNDS_FLAG_AA_BLOAT = 0x1 << 16,
-            BOUNDS_FLAG_ZERO_AREA = 0x2 << 16;
+    /**
+     * Indicates that the op will produce geometry that extends beyond its bounds for the
+     * purpose of ensuring that the fragment shader runs on partially covered pixels for
+     * non-MSAA antialiasing.
+     */
+    private static final int BoundsFlag_AABloat = 0x1 << 16;
+    /**
+     * Indicates that the geometry being drawn in a hairline stroke. A point that is drawn in device
+     * space is also considered a hairline.
+     */
+    private static final int BoundsFlag_ZeroArea = 0x2 << 16;
 
     // we uniquely own this
     private Op mNextInChain;
@@ -108,14 +108,16 @@ public abstract class Op {
 
     public abstract String name();
 
-    @CombineResult
+    /**
+     * @return CombineResult
+     */
     public final int combineIfPossible(@Nonnull Op op, Caps caps) {
         assert op != this;
         if (classID() != op.classID()) {
-            return COMBINE_RESULT_CANNOT_COMBINE;
+            return CombineResult_CannotCombine;
         }
         var result = onCombineIfPossible(op, caps);
-        if (result == COMBINE_RESULT_MERGED) {
+        if (result == CombineResult_Merged) {
             mFlags |= op.mFlags & ~0xFFFF;
             mLeft = Math.min(mLeft, op.mLeft);
             mTop = Math.min(mTop, op.mTop);
@@ -125,13 +127,15 @@ public abstract class Op {
         return result;
     }
 
-    @CombineResult
+    /**
+     * @return CombineResult
+     */
     protected int onCombineIfPossible(Op op, Caps caps) {
-        return COMBINE_RESULT_CANNOT_COMBINE;
+        return CombineResult_CannotCombine;
     }
 
     /**
-     * Determined by subclass constructor.
+     * Must be called at least once before use.
      */
     protected final void setBounds(float left, float top, float right, float bottom,
                                    boolean aaBloat, boolean zeroArea) {
@@ -140,8 +144,8 @@ public abstract class Op {
         mRight = right;
         mBottom = bottom;
         mFlags = (mFlags & 0xFFFF) |
-                (aaBloat ? BOUNDS_FLAG_AA_BLOAT : 0) |
-                (zeroArea ? BOUNDS_FLAG_ZERO_AREA : 0);
+                (aaBloat ? BoundsFlag_AABloat : 0) |
+                (zeroArea ? BoundsFlag_ZeroArea : 0);
     }
 
     public final void getBounds(@Nonnull RectF bounds) {
@@ -168,14 +172,14 @@ public abstract class Op {
      * @return true if this has analytical anti-aliasing bloat when determining coverage (outset by 0.5)
      */
     public final boolean hasAABloat() {
-        return (mFlags & BOUNDS_FLAG_AA_BLOAT) != 0;
+        return (mFlags & BoundsFlag_AABloat) != 0;
     }
 
     /**
      * @return true if this draws a primitive that has zero area, we can also call hairline
      */
     public final boolean hasZeroArea() {
-        return (mFlags & BOUNDS_FLAG_ZERO_AREA) != 0;
+        return (mFlags & BoundsFlag_ZeroArea) != 0;
     }
 
     /**

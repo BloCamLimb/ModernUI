@@ -32,16 +32,16 @@ public final class GLBackendFormat extends BackendFormat {
     private final int mTextureType;
 
     public GLBackendFormat(@NativeType("GLenum") int format, int textureType) {
-        assert textureType == EngineTypes.TEXTURE_TYPE_NONE ||
-                textureType == EngineTypes.TEXTURE_TYPE_2D ||
-                textureType == EngineTypes.TEXTURE_TYPE_EXTERNAL;
+        assert textureType == EngineTypes.TextureType_None ||
+                textureType == EngineTypes.TextureType_2D ||
+                textureType == EngineTypes.TextureType_External;
         mFormat = format;
         mTextureType = textureType;
     }
 
     @Override
     public int getBackend() {
-        return EngineTypes.OPENGL;
+        return EngineTypes.OpenGL;
     }
 
     @Override
@@ -67,10 +67,10 @@ public final class GLBackendFormat extends BackendFormat {
     @Nonnull
     @Override
     public BackendFormat makeTexture2D() {
-        if (mTextureType == EngineTypes.TEXTURE_TYPE_2D) {
+        if (mTextureType == EngineTypes.TextureType_2D) {
             return this;
         }
-        return new GLBackendFormat(mFormat, EngineTypes.TEXTURE_TYPE_2D);
+        return new GLBackendFormat(mFormat, EngineTypes.TextureType_2D);
     }
 
     @Override

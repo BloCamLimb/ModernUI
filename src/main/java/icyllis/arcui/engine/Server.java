@@ -19,7 +19,7 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.SharedPtr;
-import icyllis.arcui.sksl.ShaderCompiler;
+import icyllis.arcui.sksl.Compiler;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
@@ -39,7 +39,7 @@ public abstract class Server {
     // this server is managed by this context
     protected final DirectContext mContext;
     protected final Caps mCaps;
-    protected final ShaderCompiler mCompiler;
+    protected final Compiler mCompiler;
 
     protected final Stats mStats = new Stats();
 
@@ -50,7 +50,7 @@ public abstract class Server {
         assert context != null && caps != null;
         mContext = context;
         mCaps = caps;
-        mCompiler = new ShaderCompiler(caps.mShaderCaps);
+        mCompiler = new Compiler(caps.mShaderCaps);
     }
 
     public final DirectContext getContext() {
@@ -67,7 +67,7 @@ public abstract class Server {
     /**
      * Gets the compiler used for compiling SkSL into backend shader code.
      */
-    public final ShaderCompiler getShaderCompiler() {
+    public final Compiler getShaderCompiler() {
         return mCompiler;
     }
 

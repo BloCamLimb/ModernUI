@@ -16,23 +16,10 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl.ast;
+package icyllis.arcui.sksl;
 
-import javax.annotation.Nonnull;
-import java.util.List;
-
-public final class GenericType extends Type {
-
-    private final List<Type> mCoercibleTypes;
-
-    GenericType(String name, List<Type> coercibleTypes) {
-        super(name, "G", KIND_GENERIC);
-        mCoercibleTypes = coercibleTypes;
-    }
-
-    @Nonnull
-    @Override
-    public List<Type> getCoercibleTypes() {
-        return mCoercibleTypes;
-    }
+/**
+ * Thread-safe class that tracks per-thread state associated with SkSL output.
+ */
+public class ThreadContext {
 }

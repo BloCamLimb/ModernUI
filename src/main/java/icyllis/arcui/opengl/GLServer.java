@@ -118,7 +118,7 @@ public final class GLServer extends Server {
             return null;
         }
         // We only support TEXTURE_2D.
-        if (format.getTextureType() != EngineTypes.TEXTURE_TYPE_2D) {
+        if (format.getTextureType() != EngineTypes.TextureType_2D) {
             return null;
         }
         int texture = createTextureObject(width, height, format.getGLFormat(), levelCount);

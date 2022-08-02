@@ -16,9 +16,9 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl.ast;
+package icyllis.arcui.sksl.ir;
 
-import icyllis.arcui.sksl.Qualifiers;
+import icyllis.arcui.sksl.Modifiers;
 import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
@@ -143,7 +143,7 @@ public class Type extends Symbol {
      * @param start the start offset
      * @param end   the end offset
      */
-    public record Field(int start, int end, Qualifiers qualifiers, String name, Type type) {
+    public record Field(int start, int end, Modifiers modifiers, String name, Type type) {
 
         @Nonnull
         public String getDescription() {

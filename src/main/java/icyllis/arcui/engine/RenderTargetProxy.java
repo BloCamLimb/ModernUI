@@ -18,6 +18,7 @@
 
 package icyllis.arcui.engine;
 
+import icyllis.arcui.core.CoreTypes;
 import icyllis.arcui.core.SharedPtr;
 
 import javax.annotation.Nonnull;
@@ -72,7 +73,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
         // created with positive widths and heights. The width and height are set to 0 only after a
         // failed instantiation. The former must be "approximate" fit while the latter can be either.
-        assert (width < 0 && height < 0 && backingFit == EngineTypes.BACKING_FIT_APPROX) ||
+        assert (width < 0 && height < 0 && backingFit == CoreTypes.BackingFit_Approx) ||
                 (width > 0 && height > 0);
     }
 

@@ -18,6 +18,7 @@
 
 package icyllis.arcui.test;
 
+import icyllis.arcui.core.CoreTypes;
 import icyllis.arcui.core.Kernel32;
 import icyllis.arcui.engine.*;
 import icyllis.arcui.opengl.GLBackendFormat;
@@ -70,15 +71,15 @@ public class TestManagedResource {
 
         if (directContext.getCaps().isFormatTexturable(
                 new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
-                        EngineTypes.TEXTURE_TYPE_2D))) {
+                        EngineTypes.TextureType_2D))) {
             pw.println("Compressed format: OK");
         }
         Swizzle.make("rgb1");
         SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
 
         TextureProxy proxy = directContext.getProxyProvider().createTextureProxy(
-                new GLBackendFormat(GLCore.GL_RGBA8, EngineTypes.TEXTURE_TYPE_2D),
-                1600, 900, EngineTypes.MIPMAPPED_YES, EngineTypes.BACKING_FIT_EXACT, true, 0, false);
+                new GLBackendFormat(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
+                1600, 900, EngineTypes.Mipmapped_Yes, CoreTypes.BackingFit_Exact, true, 0, false);
         try (proxy) {
             pw.println(proxy);
         }

@@ -16,7 +16,7 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl.ast;
+package icyllis.arcui.sksl.ir;
 
 public final class TextureType extends Type {
 

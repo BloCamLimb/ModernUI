@@ -19,7 +19,7 @@
 package icyllis.arcui.sksl;
 
 /**
- * Domain-specific language parser, consumes SkSL source and invokes DSL functions to instantiate the program.
+ * Domain-specific language parser, consumes SkSL text and invokes DSL functions to instantiate the program.
  */
 public class DSLParser {
 
@@ -35,4 +35,10 @@ public class DSLParser {
             LAYOUT_TOKEN_BLEND_SUPPORT_ALL_EQUATIONS = 8,
             LAYOUT_TOKEN_PUSH_CONSTANT = 9,
             LAYOUT_TOKEN_COLOR = 10;
+
+    private final Compiler mCompiler;
+
+    public DSLParser(Compiler compiler, String text, byte kind, ProgramSettings settings) {
+        mCompiler = compiler;
+    }
 }

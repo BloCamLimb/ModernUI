@@ -16,18 +16,14 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.core;
+package icyllis.arcui.engine.ops;
 
 /**
- * Constants and utilities for Core.
+ * Base class for mesh-drawing DrawOps.
  */
-public final class CoreTypes {
+public abstract class MeshDrawOp extends DrawOp {
 
-    /**
-     * Indicates whether a backing store needs to be an exact match or can be
-     * larger than is strictly necessary. False: Approx; True: Exact.
-     */
-    public static final boolean
-            BackingFit_Approx = false,
-            BackingFit_Exact = true;
+    protected MeshDrawOp(int classID) {
+        super(classID);
+    }
 }

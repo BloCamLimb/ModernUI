@@ -16,18 +16,23 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.core;
+package icyllis.arcui.sksl;
 
-/**
- * Constants and utilities for Core.
- */
-public final class CoreTypes {
+import icyllis.arcui.sksl.ir.SymbolTable;
+
+//TODO
+public class Mangler {
+
+    private int mCounter;
 
     /**
-     * Indicates whether a backing store needs to be an exact match or can be
-     * larger than is strictly necessary. False: Approx; True: Exact.
+     * Mangles baseName to create a name that is unique within symbolTable.
      */
-    public static final boolean
-            BackingFit_Approx = false,
-            BackingFit_Exact = true;
+    public String uniqueName(String baseName, SymbolTable symbolTable) {
+        return baseName;
+    }
+
+    public void reset() {
+        mCounter = 0;
+    }
 }

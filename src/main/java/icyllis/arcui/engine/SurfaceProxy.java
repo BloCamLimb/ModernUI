@@ -18,6 +18,7 @@
 
 package icyllis.arcui.engine;
 
+import icyllis.arcui.core.CoreTypes;
 import icyllis.arcui.core.RefCnt;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -137,8 +138,8 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
         mSurfaceFlags = surfaceFlags;
         mUseAllocator = useAllocator;
         mDeferredProvider = deferredProvider;
-        if (format.getTextureType() == EngineTypes.TEXTURE_TYPE_EXTERNAL) {
-            mSurfaceFlags |= EngineTypes.INTERNAL_SURFACE_FLAG_READ_ONLY;
+        if (format.getTextureType() == EngineTypes.TextureType_External) {
+            mSurfaceFlags |= EngineTypes.InternalSurfaceFlag_ReadOnly;
         }
     }
 
@@ -188,7 +189,7 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
      */
     public final boolean isExact() {
         assert !isFullyLazy();
-        if (mBackingFit == EngineTypes.BACKING_FIT_EXACT) {
+        if (mBackingFit == CoreTypes.BackingFit_Exact) {
             return true;
         }
         return mWidth == ResourceProvider.makeApprox(mWidth) &&
@@ -307,11 +308,11 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
      * assignment in ResourceAllocator.
      */
     public final boolean isReadOnly() {
-        return (mSurfaceFlags & EngineTypes.INTERNAL_SURFACE_FLAG_READ_ONLY) != 0;
+        return (mSurfaceFlags & EngineTypes.InternalSurfaceFlag_ReadOnly) != 0;
     }
 
     public final boolean isProtected() {
-        return (mSurfaceFlags & EngineTypes.INTERNAL_SURFACE_FLAG_PROTECTED) != 0;
+        return (mSurfaceFlags & EngineTypes.InternalSurfaceFlag_Protected) != 0;
     }
 
     /**
@@ -389,14 +390,14 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
     // DO NOT ABUSE!!
     @ApiStatus.Internal
     public final boolean isProxyExact() {
-        return mBackingFit == EngineTypes.BACKING_FIT_EXACT;
+        return mBackingFit == CoreTypes.BackingFit_Exact;
     }
 
     // DO NOT ABUSE!!
     @ApiStatus.Internal
     public final void makeProxyExact(boolean allocatedCaseOnly) {
         assert !isFullyLazy();
-        if (mBackingFit == EngineTypes.BACKING_FIT_EXACT) {
+        if (mBackingFit == CoreTypes.BackingFit_Exact) {
             return;
         }
 
@@ -423,7 +424,7 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
 
         // The Approx uninstantiated case. Making this proxy be exact should be okay.
         // It could mess things up if prior decisions were based on the approximate size.
-        mBackingFit = EngineTypes.BACKING_FIT_EXACT;
+        mBackingFit = CoreTypes.BackingFit_Exact;
         // If GpuMemorySize is used when caching specialImages for the image filter DAG. If it has
         // already been computed we want to leave it alone so that amount will be removed when
         // the special image goes away. If it hasn't been computed yet it might as well compute the

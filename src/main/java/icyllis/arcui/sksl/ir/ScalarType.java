@@ -16,47 +16,53 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl.ast;
+package icyllis.arcui.sksl.ir;
 
-import javax.annotation.Nonnull;
+public final class ScalarType extends Type {
 
-public final class SamplerType extends Type {
+    private final byte mScalarKind;
+    private final int mPriority;
+    private final int mBitWidth;
 
-    private final TextureType mTextureType;
-
-    SamplerType(String name, Type textureType) {
-        super(name, "Z", KIND_SAMPLER);
-        mTextureType = (TextureType) textureType;
-    }
-
-    @Nonnull
-    @Override
-    public TextureType getTextureType() {
-        return mTextureType;
+    ScalarType(String name, String abbrev, byte scalarKind, int priority, int bitWidth) {
+        super(name, abbrev, KIND_SCALAR);
+        mScalarKind = scalarKind;
+        mPriority = priority;
+        mBitWidth = bitWidth;
     }
 
     @Override
-    public int getDimensions() {
-        return mTextureType.getDimensions();
+    public byte getScalarKind() {
+        return mScalarKind;
     }
 
     @Override
-    public boolean isDepth() {
-        return mTextureType.isDepth();
+    public int getPriority() {
+        return mPriority;
     }
 
     @Override
-    public boolean isLayered() {
-        return mTextureType.isLayered();
+    public int getBitWidth() {
+        return mBitWidth;
     }
 
     @Override
-    public boolean isMultisampled() {
-        return mTextureType.isMultisampled();
+    public int getColumns() {
+        return 1;
     }
 
     @Override
-    public boolean isSampled() {
-        return mTextureType.isSampled();
+    public int getRows() {
+        return 1;
+    }
+
+    @Override
+    public boolean isScalar() {
+        return true;
+    }
+
+    @Override
+    public int getSlots() {
+        return 1;
     }
 }

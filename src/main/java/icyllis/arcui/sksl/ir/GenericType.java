@@ -16,18 +16,23 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.core;
+package icyllis.arcui.sksl.ir;
 
-/**
- * Constants and utilities for Core.
- */
-public final class CoreTypes {
+import javax.annotation.Nonnull;
+import java.util.List;
 
-    /**
-     * Indicates whether a backing store needs to be an exact match or can be
-     * larger than is strictly necessary. False: Approx; True: Exact.
-     */
-    public static final boolean
-            BackingFit_Approx = false,
-            BackingFit_Exact = true;
+public final class GenericType extends Type {
+
+    private final List<Type> mCoercibleTypes;
+
+    GenericType(String name, List<Type> coercibleTypes) {
+        super(name, "G", KIND_GENERIC);
+        mCoercibleTypes = coercibleTypes;
+    }
+
+    @Nonnull
+    @Override
+    public List<Type> getCoercibleTypes() {
+        return mCoercibleTypes;
+    }
 }

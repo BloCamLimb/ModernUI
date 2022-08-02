@@ -16,18 +16,27 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.core;
+package icyllis.arcui.engine.ops;
 
 /**
- * Constants and utilities for Core.
+ * Base class for Ops that draw. These ops can draw into an op list's RenderTarget.
  */
-public final class CoreTypes {
+public abstract class DrawOp extends Op {
+
+    protected DrawOp(int classID) {
+        super(classID);
+    }
 
     /**
-     * Indicates whether a backing store needs to be an exact match or can be
-     * larger than is strictly necessary. False: Approx; True: Exact.
+     * Called before setting up the AppliedClip and before finalize. This information is required
+     * to determine how to compute a AppliedClip from a Clip for this op.
      */
-    public static final boolean
-            BackingFit_Approx = false,
-            BackingFit_Exact = true;
+    public abstract boolean usesMSAA();
+
+    /**
+     * Called after finalize, at which point every op should know whether it will need stencil.
+     */
+    public abstract boolean usesStencil();
+
+    //TODO more methods
 }

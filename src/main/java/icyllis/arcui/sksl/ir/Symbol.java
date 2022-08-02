@@ -16,18 +16,31 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.core;
+package icyllis.arcui.sksl.ir;
+
+import javax.annotation.Nonnull;
 
 /**
- * Constants and utilities for Core.
+ * Represents a symbol table entry.
  */
-public final class CoreTypes {
+public abstract class Symbol extends Node {
 
-    /**
-     * Indicates whether a backing store needs to be an exact match or can be
-     * larger than is strictly necessary. False: Approx; True: Exact.
-     */
-    public static final boolean
-            BackingFit_Approx = false,
-            BackingFit_Exact = true;
+    private final String mName;
+    private final Type mType;
+
+    protected Symbol(int start, int end, String name, Type type) {
+        super(start, end);
+        mName = name;
+        mType = type;
+    }
+
+    @Nonnull
+    public final String getName() {
+        return mName;
+    }
+
+    @Nonnull
+    public Type getType() {
+        return mType;
+    }
 }

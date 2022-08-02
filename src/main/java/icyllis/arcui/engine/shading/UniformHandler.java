@@ -130,7 +130,7 @@ public abstract class UniformHandler {
         for (int i = numUniforms() - 1; i >= 0; i--) {
             final UniformInfo u = uniform(i);
             if (u.mOwner == owner && u.mRawName.equals(rawName)) {
-                u.mVisibility |= EngineTypes.SHADER_FLAG_VERTEX;
+                u.mVisibility |= EngineTypes.ShaderFlag_Vertex;
                 return u.mVariable;
             }
         }

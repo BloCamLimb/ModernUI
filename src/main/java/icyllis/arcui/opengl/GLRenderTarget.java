@@ -75,7 +75,7 @@ public final class GLRenderTarget extends RenderTarget {
         mMSAAColorBuffer = msaaColorBuffer;
         mOwnership = ownership;
         if ((framebuffer | msaaFramebuffer) == 0) {
-            mFlags |= EngineTypes.INTERNAL_SURFACE_FLAG_GL_WRAP_DEFAULT_FRAMEBUFFER;
+            mFlags |= EngineTypes.InternalSurfaceFlag_GLWrapsDefaultFramebuffer;
         }
     }
 
@@ -101,7 +101,7 @@ public final class GLRenderTarget extends RenderTarget {
         mMSAAColorBuffer = msaaColorBuffer;
         mOwnership = ownership;
         if ((framebuffer | msaaFramebuffer) == 0) {
-            mFlags |= EngineTypes.INTERNAL_SURFACE_FLAG_GL_WRAP_DEFAULT_FRAMEBUFFER;
+            mFlags |= EngineTypes.InternalSurfaceFlag_GLWrapsDefaultFramebuffer;
         }
     }
 
@@ -249,7 +249,7 @@ public final class GLRenderTarget extends RenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), EngineTypes.TEXTURE_TYPE_2D);
+            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), EngineTypes.TextureType_2D);
         }
         return mBackendFormat;
     }

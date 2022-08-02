@@ -100,7 +100,7 @@ public abstract class RenderTarget extends RecycledResource {
      * Describes the backend format of color buffers.
      * <p>
      * Unlike {@link BackendRenderTarget#getBackendFormat()} which returns texture type of NONE.
-     * This method is always {@link EngineTypes#TEXTURE_TYPE_2D}.
+     * This method is always {@link EngineTypes#TextureType_2D}.
      */
     @Nonnull
     public abstract BackendFormat getBackendFormat();

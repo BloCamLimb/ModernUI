@@ -18,10 +18,10 @@
 
 package icyllis.arcui.sksl;
 
-import icyllis.arcui.engine.ShaderCaps;
-
-public class ShaderCompiler {
-
-    public ShaderCompiler(ShaderCaps caps) {
-    }
+/**
+ * De-duplicates Modifiers objects and stores them in a shared pool. Modifiers are fairly heavy, and
+ * tend to be reused a lot, so deduplication can be a significant win.
+ */
+//TODO optimization
+public class ModifiersPool {
 }

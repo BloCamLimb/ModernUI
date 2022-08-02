@@ -16,31 +16,19 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl.ast;
-
-import javax.annotation.Nonnull;
+package icyllis.arcui.sksl;
 
 /**
- * Represents a symbol table entry.
+ * Holds the compiler settings for a program.
  */
-public abstract class Symbol extends Node {
+public class ProgramSettings {
 
-    private final String mName;
-    private final Type mType;
-
-    protected Symbol(int start, int end, String name, Type type) {
-        super(start, end);
-        mName = name;
-        mType = type;
-    }
-
-    @Nonnull
-    public final String getName() {
-        return mName;
-    }
-
-    @Nonnull
-    public Type getType() {
-        return mType;
-    }
+    /**
+     * SkSL supports several different program kinds.
+     */
+    public static final byte
+            ProgramKind_Fragment = 0,
+            ProgramKind_Vertex = 1,
+            ProgramKind_Compute = 2;
+    //TODO more ProgramKinds
 }

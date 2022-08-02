@@ -22,68 +22,60 @@ import icyllis.arcui.core.Color;
 import icyllis.arcui.core.ImageInfo;
 
 /**
- * Constants and utilities for Engine.
+ * Constants and utilities for Arc UI Engine.
  */
 public final class EngineTypes {
 
     /**
-     * Possible 3D APIs that may be used by Engine.
+     * Possible 3D APIs that may be used by Arc UI.
      */
     public static final int
-            OPENGL = 0, // OpenGL 4.5 core profile
-            VULKAN = 1; // Vulkan 1.1
+            OpenGL = 0, // OpenGL 4.5 core profile
+            Vulkan = 1; // Vulkan 1.1
 
     /**
      * Used to say whether a texture has mip levels allocated or not.
      */
     public static final boolean
-            MIPMAPPED_NO = false,
-            MIPMAPPED_YES = true;
+            Mipmapped_No = false,
+            Mipmapped_Yes = true;
 
     /**
      * Image and Surfaces can be stored such that (0, 0) in texture space may correspond to
      * either the top-left or bottom-left content pixel.
      */
     public static final int
-            SURFACE_ORIGIN_TOP_LEFT = 0,
-            SURFACE_ORIGIN_BOTTOM_LEFT = 1;
-
-    /**
-     * Indicates whether a backing store needs to be an exact match or can be
-     * larger than is strictly necessary. False: Approx; True: Exact.
-     */
-    public static final boolean
-            BACKING_FIT_APPROX = false,
-            BACKING_FIT_EXACT = true;
+            SurfaceOrigin_TopLeft = 0,
+            SurfaceOrigin_BottomLeft = 1;
 
     /**
      * @see icyllis.arcui.opengl.GLServer#markDirty(int)
      */
     public static final int
-            GL_DIRTY_FLAG_RENDER_TARGET = 1,
-            GL_DIRTY_FLAG_TEXTURE = 1 << 1,
-            GL_DIRTY_FLAG_VIEW = 1 << 2,
-            GL_DIRTY_FLAG_BLEND = 1 << 3;
+            GLBackendState_RenderTarget = 1,
+            GLBackendState_TextureBinding = 1 << 1, // Also includes samplers bound to texture units.
+            GLBackendState_View = 1 << 2,           // View state stands for scissor and viewport
+            GLBackendState_Blend = 1 << 3;
 
     /**
-     * Indicates the type of pending IO operations that can be recorded for gpu resources.
+     * Indicates the type of pending IO operations that can be recorded for GPU resources.
      */
     public static final int
-            IO_TYPE_READ = 0,
-            IO_TYPE_WRITE = 1,
-            IO_TYPE_RW = 2;
+            IOType_Read = 0,
+            IOType_Write = 1,
+            IOType_RW = 2;
 
     /**
      * Describes the intended usage or the purpose of a GPU buffer.
      */
     public static final int
-            GPU_BUFFER_TYPE_VERTEX = 0,             // vertex buffer
-            GPU_BUFFER_TYPE_INDEX = 1,              // element buffer or index buffer
-            GPU_BUFFER_TYPE_DRAW_INDIRECT = 2,      // (draw) indirect buffer
-            GPU_BUFFER_TYPE_XFER_CPU_TO_GPU = 3,    // a.k.a upload, unpack, transfer src only
-            GPU_BUFFER_TYPE_XFER_GPU_TO_CPU = 4,    // a.k.a download, pack, transfer dst only
-            GPU_BUFFER_TYPE_UNIFORM = 5;            // uniform buffer
-    public static final int GPU_BUFFER_TYPE_COUNT = GPU_BUFFER_TYPE_UNIFORM + 1;
+            GpuBufferType_Vertex = 0,       // vertex buffer
+            GpuBufferType_Index = 1,        // element buffer or index buffer
+            GpuBufferType_DrawIndirect = 2, // (draw) indirect buffer
+            GpuBufferType_XferCpuToGpu = 3, // upload, unpack, transfer src only
+            GpuBufferType_XferGpuToCpu = 4, // download, pack, transfer dst only
+            GpuBufferType_Uniform = 5;      // uniform buffer
+    public static final int GpuBufferTypeCount = GpuBufferType_Uniform + 1;
 
     /**
      * Provides a performance hint regarding the frequency at which a data store will be accessed.
@@ -93,8 +85,8 @@ public final class EngineTypes {
      * STATIC: Data store will be specified by CPU once and may be respecified repeatedly by GPU.
      */
     public static final int
-            ACCESS_PATTERN_DYNAMIC = 0,
-            ACCESS_PATTERN_STATIC = 1;
+            AccessPattern_Dynamic = 0,
+            AccessPattern_Static = 1;
 
     /**
      * The type of texture. There are only 2D.
@@ -108,9 +100,9 @@ public final class EngineTypes {
      * We assume external textures are read-only and don't track their memory usage.
      */
     public static final int
-            TEXTURE_TYPE_NONE = 0,
-            TEXTURE_TYPE_2D = 1,
-            TEXTURE_TYPE_EXTERNAL = 2;
+            TextureType_None = 0,
+            TextureType_2D = 1,
+            TextureType_External = 2;
 
     /**
      * Rectangle and external textures only support the clamp wrap mode and do not support
@@ -118,25 +110,25 @@ public final class EngineTypes {
      */
     public static boolean textureTypeHasRestrictedSampling(int type) {
         return switch (type) {
-            case TEXTURE_TYPE_2D -> false;
-            case TEXTURE_TYPE_EXTERNAL -> true;
+            case TextureType_2D -> false;
+            case TextureType_External -> true;
             default -> throw new IllegalArgumentException(String.valueOf(type));
         };
     }
 
     /**
-     * Shader types. HW Geometry shader is removed.
+     * Shader types. Geometry shader and tessellation shaders are removed.
      */
     public static final int
-            SHADER_TYPE_VERTEX = 0,
-            SHADER_TYPE_FRAGMENT = 1;
+            ShaderType_Vertex = 0,
+            ShaderType_Fragment = 1;
 
     /**
-     * Shader flags. HW Tessellation shaders are moved.
+     * Shader flags. Tessellation shaders are removed.
      */
     public static final int
-            SHADER_FLAG_VERTEX = 1,
-            SHADER_FLAG_FRAGMENT = 1 << 1;
+            ShaderFlag_Vertex = 1,
+            ShaderFlag_Fragment = 1 << 1;
 
     /**
      * Describes the encoding of channel data in a ColorType.
@@ -191,11 +183,11 @@ public final class EngineTypes {
      * the rasterization of one pixel in screen coordinates, may or may not anti-aliased.
      */
     public static final byte
-            PRIMITIVE_TYPE_TRIANGLES = 0,       // separate triangle
-            PRIMITIVE_TYPE_TRIANGLE_STRIP = 1,  // connected triangle
-            PRIMITIVE_TYPE_POINTS = 2,          // 1 px only
-            PRIMITIVE_TYPE_LINES = 3,           // 1 px wide only
-            PRIMITIVE_TYPE_LINE_STRIP = 4;      // 1 px wide only
+            PrimitiveType_Triangles = 0,        // separate triangle
+            PrimitiveType_TriangleStrip = 1,    // connected triangle
+            PrimitiveType_Points = 2,           // 1 px only
+            PrimitiveType_Lines = 3,            // 1 px wide only
+            PrimitiveType_LineStrip = 4;        // 1 px wide only
 
     /**
      * Mask formats. Used by the font cache. Important that these are 0-based.
@@ -203,9 +195,9 @@ public final class EngineTypes {
      * Using L-shift to get the number of bytes-per-pixel for the specified mask format.
      */
     public static final int
-            MASK_FORMAT_A8 = 0,     // 1-byte per pixel
-            MASK_FORMAT_A565 = 1,   // 2-bytes per pixel, RGB represent 3-channel LCD coverage
-            MASK_FORMAT_ARGB = 2;   // 4-bytes per pixel, color format
+            MaskFormat_A8 = 0,     // 1-byte per pixel
+            MaskFormat_A565 = 1,   // 2-bytes per pixel, RGB represent 3-channel LCD coverage
+            MaskFormat_ARGB = 2;   // 4-bytes per pixel, color format
 
     /**
      * Budget types. Used with resources with a large memory allocation, such as Buffers and Textures.
@@ -219,26 +211,26 @@ public final class EngineTypes {
      * has a unique key. Scratch keys are ignored.
      */
     public static final byte
-            BUDGET_TYPE_BUDGETED = 0,
-            BUDGET_TYPE_NONE = 1,
-            BUDGET_TYPE_CACHEABLE = 2;
+            BudgetType_Budgeted = 0,
+            BudgetType_None = 1,
+            BudgetType_Cacheable = 2;
 
     /**
      * Load ops. Used to specify the load operation to be used when an OpsTask/OpsRenderPass
      * begins execution.
      */
     public static final int
-            LOAD_OP_LOAD = 0,
-            LOAD_OP_CLEAR = 1,
-            LOAD_OP_DISCARD = 2;
+            LoadOp_Load = 0,
+            LoadOp_Clear = 1,
+            LoadOp_Discard = 2;
 
     /**
      * Store ops. Used to specify the store operation to be used when an OpsTask/OpsRenderPass
      * ends execution.
      */
     public static final int
-            STORE_OP_STORE = 0,
-            STORE_OP_DISCARD = 1;
+            StoreOp_Store = 0,
+            StoreOp_Discard = 1;
 
     /**
      * Flags shared between the Surface & SurfaceProxy class hierarchies.
@@ -260,19 +252,19 @@ public final class EngineTypes {
      * sample from the same image we are drawing to.
      */
     public static final int
-            INTERNAL_SURFACE_FLAG_READ_ONLY = 1,
-            INTERNAL_SURFACE_FLAG_PROTECTED = 1 << 1,
-            INTERNAL_SURFACE_FLAG_REQUIRE_MANUAL_MSAA_RESOLVE = 1 << 2,
-            INTERNAL_SURFACE_FLAG_GL_WRAP_DEFAULT_FRAMEBUFFER = 1 << 3,
-            INTERNAL_SURFACE_FLAG_VK_SUPPORT_INPUT_ATTACHMENT = 1 << 4;
+            InternalSurfaceFlag_ReadOnly = 1,
+            InternalSurfaceFlag_Protected = 1 << 1,
+            InternalSurfaceFlag_RequiresManualMSAAResolve = 1 << 2,
+            InternalSurfaceFlag_GLWrapsDefaultFramebuffer = 1 << 3,
+            InternalSurfaceFlag_VkSupportsInputAttachment = 1 << 4;
 
     /**
      * Used to describe the current state of Mips on a Texture
      */
     public static final int
-            MIPMAP_STATUS_NONE = 0,     // Mips have not been allocated
-            MIPMAP_STATUS_DIRTY = 1,    // Mips are allocated but the full mip tree does not have valid data
-            MIPMAP_STATUS_VALID = 2;    // All levels fully allocated and have valid data in them
+            MipmapStatus_None = 0,     // Mips have not been allocated
+            MipmapStatus_Dirty = 1,    // Mips are allocated but the full mip tree does not have valid data
+            MipmapStatus_Valid = 2;    // All levels fully allocated and have valid data in them
 
     /**
      * ResourceHandle is an opaque handle to a resource. It's actually a table index.

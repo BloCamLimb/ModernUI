@@ -16,18 +16,18 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.core;
+package icyllis.arcui.sksl.lex;
 
-/**
- * Constants and utilities for Core.
- */
-public final class CoreTypes {
+import it.unimi.dsi.fastutil.ints.IntList;
 
-    /**
-     * Indicates whether a backing store needs to be an exact match or can be
-     * larger than is strictly necessary. False: Approx; True: Exact.
-     */
-    public static final boolean
-            BackingFit_Approx = false,
-            BackingFit_Exact = true;
+public class DFAState {
+
+    public int mId;
+    public IntList mLabel;
+    public boolean mIsScanned;
+
+    public DFAState(int id, IntList label) {
+        mId = id;
+        mLabel = label;
+    }
 }

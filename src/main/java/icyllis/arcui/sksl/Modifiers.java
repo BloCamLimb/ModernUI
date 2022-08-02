@@ -20,7 +20,6 @@ package icyllis.arcui.sksl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
-import java.util.Objects;
 
 /**
  * A set of qualifier keywords (in, out, uniform, etc.) appearing before a declaration.
@@ -29,7 +28,7 @@ import java.util.Objects;
  * @param flags  the other qualifiers
  */
 @Immutable
-public record Qualifiers(Layout layout, int flags) {
+public record Modifiers(Layout layout, int flags) {
 
     /**
      * OpenGL 4.2 or ARB_shading_language_420pack removes the ordering restriction in most cases.
@@ -101,14 +100,14 @@ public record Qualifiers(Layout layout, int flags) {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Qualifiers that = (Qualifiers) o;
-        if (flags != that.flags) return false;
-        return Objects.equals(layout, that.layout);
+        Modifiers that = (Modifiers) o;
+        return flags == that.flags &&
+                layout.equals(that.layout);
     }
 
     @Override
     public int hashCode() {
-        int result = layout != null ? layout.hashCode() : 0;
+        int result = layout.hashCode();
         result = 31 * result + flags;
         return result;
     }
