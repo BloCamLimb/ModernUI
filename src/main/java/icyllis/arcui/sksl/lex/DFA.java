@@ -18,30 +18,39 @@
 
 package icyllis.arcui.sksl.lex;
 
-import it.unimi.dsi.fastutil.ints.IntList;
-
-import java.util.List;
+import java.util.Arrays;
 
 /**
  * Tables representing a deterministic finite automaton for matching regular expressions.
  */
 public class DFA {
 
-    // maps chars to the row index of fTransitions, as multiple characters may map to the same row.
+    public static final int INVALID = -1;
+
+    // maps chars to the row index of mTransitions, as multiple characters may map to the same row.
     // starting from state s and looking at char c, the new state is
-    // fTransitions[fCharMappings[c]][s].
-    IntList fCharMappings;
+    // mTransitions[mCharMappings[c]][s].
+    public final int[] mCharMappings;
 
     // one row per character mapping, one column per state
-    List<IntList> fTransitions;
+    public final int[][] mTransitions;
 
-    // contains, for each state, the token id we should report when matching ends in that state (-1
-    // for no match)
-    IntList fAccepts;
+    // contains, for each state, the token id we should report when matching ends in that state
+    // (INVALID for no match)
+    public final int[] mAccepts;
 
-    public DFA(IntList fCharMappings, List<IntList> fTransitions, IntList fAccepts) {
-        this.fCharMappings = fCharMappings;
-        this.fTransitions = fTransitions;
-        this.fAccepts = fAccepts;
+    public DFA(int[] charMappings, int[][] transitions, int[] accepts) {
+        mCharMappings = charMappings;
+        mTransitions = transitions;
+        mAccepts = accepts;
+    }
+
+    @Override
+    public String toString() {
+        return "DFA{" +
+                "mCharMappings=" + Arrays.toString(mCharMappings) +
+                ", mTransitions=" + Arrays.toString(mTransitions) +
+                ", mAccepts=" + Arrays.toString(mAccepts) +
+                '}';
     }
 }

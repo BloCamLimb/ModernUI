@@ -21,7 +21,8 @@ package icyllis.arcui.sksl.lex;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
 
-import java.util.List;
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
 
 /**
  * A nondeterministic finite automaton for matching regular expressions. The NFA is initialized with
@@ -30,14 +31,14 @@ import java.util.List;
 public class NFA {
 
     public int mRegexCount = 0;
-    public List<NFAState> mStates;
-    public IntList mStartStates;
+    public ArrayList<NFAState> mStates = new ArrayList<>();
+    public IntArrayList mStartStates = new IntArrayList();
 
     /**
      * Adds a new regular expression to the set of expressions matched by this automaton, returning
      * its index.
      */
-    public int addRegex(RegexNode regex) {
+    public int addRegex(@Nonnull RegexNode regex) {
         IntList accept = new IntArrayList();
         // we reserve token 0 for END_OF_FILE, so this starts at 1
         accept.add(addState(new NFAState(++mRegexCount)));
@@ -49,7 +50,7 @@ public class NFA {
     /**
      * Adds a new state to the NFA, returning its index.
      */
-    public int addState(NFAState s) {
+    public int addState(@Nonnull NFAState s) {
         mStates.add(s);
         return mStates.size() - 1;
     }
@@ -59,7 +60,7 @@ public class NFA {
      * (in addRegex order) matching expression, or -1 if no match. This is relatively slow and used
      * only for debugging purposes; the NFA should be converted to a DFA before actual use.
      */
-    public int match(String s) {
+    public int match(@Nonnull String s) {
         var states = mStartStates;
         for (int i = 0; i < s.length(); ++i) {
             var next = new IntArrayList();

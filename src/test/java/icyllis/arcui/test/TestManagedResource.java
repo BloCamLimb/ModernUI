@@ -23,6 +23,7 @@ import icyllis.arcui.core.Kernel32;
 import icyllis.arcui.engine.*;
 import icyllis.arcui.opengl.GLBackendFormat;
 import icyllis.arcui.opengl.GLCore;
+import icyllis.arcui.sksl.lex.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -39,6 +40,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
+import java.util.Arrays;
 import java.util.Objects;
 
 import static org.lwjgl.system.MemoryUtil.memAddress;
@@ -84,6 +86,8 @@ public class TestManagedResource {
             pw.println(proxy);
         }
 
+        testLexicon(pw);
+
         if (Platform.get() == Platform.WINDOWS) {
             if (!Kernel32.CloseHandle(959595595959595959L)) {
                 pw.println("Failed to close handle");
@@ -99,9 +103,29 @@ public class TestManagedResource {
             pw.println(keyBuilder);
         }
 
+        directContext.close();
+        GLFW.glfwDestroyWindow(window);
+        GLFW.glfwTerminate();
+
+        try {
+            assert false;
+        } catch (AssertionError e) {
+            System.out.println("Assertion works " + (System.nanoTime() - time) / 1000000);
+        }
+    }
+
+    public static void testLexicon(PrintWriter pw) {
+        pw.println("Mapping: " + Arrays.toString(Lexer.MAPPINGS));
+        pw.println("Accepts: " + Arrays.toString(Lexer.ACCEPTS));
+        pw.println("Full: " + Arrays.deepToString(Lexer.FULL));
+        pw.println("Compact: " + Arrays.toString(Lexer.COMPACT));
+        pw.println("Indices: " + Arrays.toString(Lexer.INDICES));
+    }
+
+    public static void decodeLargeGIFUsingSTBImage(PrintWriter pw, String path) {
         ByteBuffer buffer = null;
         long image = 0;
-        try (FileChannel channel = FileChannel.open(Path.of("C:/Users/Alisa/Desktop/8Cyx0G.gif"),
+        try (FileChannel channel = FileChannel.open(Path.of(path),
                 StandardOpenOption.READ)) {
             //ByteBuffer mapper = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
             buffer = MemoryUtil.memAlloc((int) channel.size());
@@ -144,16 +168,6 @@ public class TestManagedResource {
                 STBImage.nstbi_image_free(image);
             }
             MemoryUtil.memFree(buffer);
-        }
-
-        directContext.close();
-        GLFW.glfwDestroyWindow(window);
-        GLFW.glfwTerminate();
-
-        try {
-            assert false;
-        } catch (AssertionError e) {
-            System.out.println("Assertion works " + (System.nanoTime() - time) / 1000000);
         }
     }
 }

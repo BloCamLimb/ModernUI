@@ -20,16 +20,21 @@ package icyllis.arcui.sksl.lex;
 
 import it.unimi.dsi.fastutil.ints.*;
 
-import java.util.*;
+import javax.annotation.Nonnull;
+import java.util.ArrayList;
+import java.util.HashMap;
+
+import static icyllis.arcui.sksl.lex.DFA.INVALID;
 
 public class NFAtoDFA {
 
-    private static final char START_CHAR = 9;
-    private static final char END_CHAR = 126;
+    public static final char START_CHAR = 9;
+    public static final char END_CHAR = 126;
 
     private final NFA mNFA;
+
     private final HashMap<IntList, DFAState> mStates = new HashMap<>();
-    private ArrayList<IntList> mTransitions = new ArrayList<>();
+    private final ArrayList<IntArrayList> mTransitions = new ArrayList<>();
     private final IntArrayList mCharMappings = new IntArrayList();
     private final IntArrayList mAccepts = new IntArrayList();
 
@@ -52,14 +57,20 @@ public class NFAtoDFA {
 
         computeMappings();
 
-        return new DFA(mCharMappings, mTransitions, mAccepts);
+        int[][] transitions = new int[mTransitions.size()][];
+        for (int i = 0; i < mTransitions.size(); i++) {
+            transitions[i] = mTransitions.get(i).toIntArray();
+        }
+
+        return new DFA(mCharMappings.toIntArray(), transitions, mAccepts.toIntArray());
     }
 
     /**
      * Returns an existing state with the given label, or creates a new one and returns it.
      */
+    @Nonnull
     private DFAState getState(IntList label) {
-        var state = mStates.get(label);
+        DFAState state = mStates.get(label);
         if (state == null) {
             int id = mStates.size();
             state = new DFAState(id, label);
@@ -91,12 +102,12 @@ public class NFAtoDFA {
         }
         var row = mTransitions.get(c);
         while (row.size() <= start) {
-            row.add(-1);
+            row.add(INVALID);
         }
         row.set(start, next);
     }
 
-    void scanState(DFAState state) {
+    void scanState(@Nonnull DFAState state) {
         state.mIsScanned = true;
         for (char c = START_CHAR; c <= END_CHAR; ++c) {
             var next = new IntArrayList();
@@ -106,7 +117,8 @@ public class NFAtoDFA {
                 if (nfaState.accept(c)) {
                     for (int nextState : nfaState.mNext) {
                         if (mNFA.mStates.get(nextState).mKind == NFAState.Kind_Accept) {
-                            bestAccept = Math.min(bestAccept, mNFA.mStates.get(nextState).mData.getInt(0));
+                            bestAccept = Math.min(bestAccept,
+                                    mNFA.mStates.get(nextState).mData.getInt(0));
                         }
                         add(nextState, next);
                     }
@@ -117,7 +129,7 @@ public class NFAtoDFA {
             addTransition(c, state.mId, nextState.mId);
             if (bestAccept != Integer.MAX_VALUE) {
                 while (mAccepts.size() <= nextState.mId) {
-                    mAccepts.add(-1);
+                    mAccepts.add(INVALID);
                 }
                 mAccepts.set(nextState.mId, bestAccept);
             }
@@ -132,22 +144,23 @@ public class NFAtoDFA {
     // identical (e.g. [0-9] are treated the same way by all lexer rules)
     void computeMappings() {
         // mappings[<input row>] = <output row>
-        ArrayList<IntList> uniques = new ArrayList<>();
+        ArrayList<IntArrayList> uniques = new ArrayList<>();
         // this could be done more efficiently, but O(n^2) is plenty fast for our purposes
-        for (int i = 0; i < mTransitions.size(); ++i) {
+        for (var transition : mTransitions) {
             int found = -1;
             for (int j = 0; j < uniques.size(); ++j) {
-                if (uniques.get(j).equals(mTransitions.get(i))) {
+                if (uniques.get(j).equals(transition)) {
                     found = j;
                     break;
                 }
             }
             if (found == -1) {
                 found = uniques.size();
-                uniques.add(mTransitions.get(i));
+                uniques.add(transition);
             }
             mCharMappings.add(found);
         }
-        mTransitions = uniques;
+        mTransitions.clear();
+        mTransitions.addAll(uniques);
     }
 }

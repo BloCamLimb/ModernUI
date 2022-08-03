@@ -81,15 +81,15 @@ public class RegexParser {
         term();
         switch (peek()) {
             case '*' -> {
-                mStack.push(new RegexNode(RegexNode.Kind_Star, pop()));
+                mStack.push(new RegexNode(RegexNode.kStar_Kind, pop()));
                 ++mIndex;
             }
             case '+' -> {
-                mStack.push(new RegexNode(RegexNode.Kind_Plus, pop()));
+                mStack.push(new RegexNode(RegexNode.kPlus_Kind, pop()));
                 ++mIndex;
             }
             case '?' -> {
-                mStack.push(new RegexNode(RegexNode.Kind_Question, pop()));
+                mStack.push(new RegexNode(RegexNode.kQuestion_Kind, pop()));
                 ++mIndex;
             }
         }
@@ -110,7 +110,7 @@ public class RegexParser {
                     sequence();
                     RegexNode right = pop();
                     RegexNode left = pop();
-                    mStack.push(new RegexNode(RegexNode.Kind_Concat, left, right));
+                    mStack.push(new RegexNode(RegexNode.kConcat_Kind, left, right));
                     break;
             }
         }
@@ -122,11 +122,11 @@ public class RegexParser {
      */
     private RegexNode escapeSequence(char c) {
         return switch (c) {
-            case 'n' -> new RegexNode(RegexNode.Kind_Char, '\n');
-            case 'r' -> new RegexNode(RegexNode.Kind_Char, '\r');
-            case 't' -> new RegexNode(RegexNode.Kind_Char, '\t');
-            case 's' -> new RegexNode(RegexNode.Kind_Charset, " \t\n\r");
-            default -> new RegexNode(RegexNode.Kind_Char, c);
+            case 'n' -> new RegexNode(RegexNode.kChar_Kind, '\n');
+            case 'r' -> new RegexNode(RegexNode.kChar_Kind, '\r');
+            case 't' -> new RegexNode(RegexNode.kChar_Kind, '\t');
+            case 's' -> new RegexNode(RegexNode.kCharset_Kind, " \t\n\r");
+            default -> new RegexNode(RegexNode.kChar_Kind, c);
         };
     }
 
@@ -139,7 +139,7 @@ public class RegexParser {
             ++mIndex;
             mStack.push(escapeSequence(peek()));
         } else {
-            mStack.push(new RegexNode(RegexNode.Kind_Char, c));
+            mStack.push(new RegexNode(RegexNode.kChar_Kind, c));
         }
         ++mIndex;
     }
@@ -149,7 +149,7 @@ public class RegexParser {
      */
     private void dot() {
         expect('.');
-        mStack.push(new RegexNode(RegexNode.Kind_Dot));
+        mStack.push(new RegexNode(RegexNode.kDot_Kind));
     }
 
     /**
@@ -169,14 +169,14 @@ public class RegexParser {
         if (peek() == '-') {
             ++mIndex;
             if (peek() == ']') {
-                mStack.push(new RegexNode(RegexNode.Kind_Char, '-'));
+                mStack.push(new RegexNode(RegexNode.kChar_Kind, '-'));
             } else {
                 literal();
                 RegexNode end = pop();
-                assert (end.mKind == RegexNode.Kind_Char);
+                assert (end.mKind == RegexNode.kChar_Kind);
                 RegexNode start = pop();
-                assert (start.mKind == RegexNode.Kind_Char);
-                mStack.push(new RegexNode(RegexNode.Kind_Range, start, end));
+                assert (start.mKind == RegexNode.kChar_Kind);
+                mStack.push(new RegexNode(RegexNode.kRange_Kind, start, end));
             }
         }
     }
@@ -187,7 +187,7 @@ public class RegexParser {
     private void set() {
         expect('[');
         int depth = mStack.size();
-        RegexNode set = new RegexNode(RegexNode.Kind_Charset);
+        RegexNode set = new RegexNode(RegexNode.kCharset_Kind);
         if (peek() == '^') {
             ++mIndex;
             set.mPayload = 1;
@@ -218,7 +218,7 @@ public class RegexParser {
                 regex();
                 RegexNode right = pop();
                 RegexNode left = pop();
-                mStack.push(new RegexNode(RegexNode.Kind_Or, left, right));
+                mStack.push(new RegexNode(RegexNode.kOr_Kind, left, right));
                 break;
             }
             case END: // fall through

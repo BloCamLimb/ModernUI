@@ -42,23 +42,21 @@ import javax.annotation.concurrent.Immutable;
 public record Layout(int flags, int location, int offset, int binding, int index, int set, int builtin,
                      int inputAttachmentIndex) {
 
-    private static final String SEPARATOR = ", ";
-
     // GLSL layout qualifiers, order-independent.
     public static final int
-            ORIGIN_UPPER_LEFT_FLAG = 1,
-            PUSH_CONSTANT_FLAG = 1 << 1,
-            BLEND_SUPPORT_ALL_EQUATIONS_FLAG = 1 << 2;
-
+            kOriginUpperLeft_Flag = 1,
+            kPushConstant_Flag = 1 << 1,
+            kBlendSupportAllEquations_Flag = 1 << 2,
+            kColor_Flag = 1 << 3;
     // These flags indicate if the qualifier appeared, regardless of the accompanying value.
     public static final int
-            LOCATION_FLAG = 1 << 4,
-            OFFSET_FLAG = 1 << 5,
-            BINDING_FLAG = 1 << 6,
-            INDEX_FLAG = 1 << 7,
-            SET_FLAG = 1 << 8,
-            BUILTIN_FLAG = 1 << 9,
-            INPUT_ATTACHMENT_INDEX_FLAG = 1 << 10;
+            kLocation_Flag = 1 << 4,
+            kOffset_Flag = 1 << 5,
+            kBinding_Flag = 1 << 6,
+            kIndex_Flag = 1 << 7,
+            kSet_Flag = 1 << 8,
+            kBuiltin_Flag = 1 << 9,
+            kInputAttachmentIndex_Flag = 1 << 10;
 
     @Nonnull
     public static Layout builtin(int builtin) {
@@ -66,86 +64,94 @@ public record Layout(int flags, int location, int offset, int binding, int index
     }
 
     @Nonnull
-    StringBuilder getDescriptionBuilder() {
+    public String description() {
+        return descriptionBuilder().toString();
+    }
+
+    @Nonnull
+    StringBuilder descriptionBuilder() {
         final StringBuilder result = new StringBuilder();
-        boolean separator = false;
+        boolean firstSeparator = true;
         if (location >= 0) {
-            separator = true;
+            firstSeparator = false;
             result.append("location = ").append(location);
         }
         if (offset >= 0) {
-            if (separator)
-                result.append(SEPARATOR);
+            if (firstSeparator)
+                firstSeparator = false;
             else
-                separator = true;
+                result.append(", ");
             result.append("offset = ").append(offset);
         }
         if (binding >= 0) {
-            if (separator)
-                result.append(SEPARATOR);
+            if (firstSeparator)
+                firstSeparator = false;
             else
-                separator = true;
+                result.append(", ");
             result.append("binding = ").append(binding);
         }
         if (index >= 0) {
-            if (separator)
-                result.append(SEPARATOR);
+            if (firstSeparator)
+                firstSeparator = false;
             else
-                separator = true;
+                result.append(", ");
             result.append("index = ").append(index);
         }
         if (set >= 0) {
-            if (separator)
-                result.append(SEPARATOR);
+            if (firstSeparator)
+                firstSeparator = false;
             else
-                separator = true;
+                result.append(", ");
             result.append("set = ").append(set);
         }
-        // no use in GLSL
-        /*if (builtin >= 0) {
-            if (separator)
-                result.append(SEPARATOR);
+        if (builtin >= 0) {
+            if (firstSeparator)
+                firstSeparator = false;
             else
-                separator = true;
+                result.append(", ");
             result.append("builtin = ").append(builtin);
-        }*/
+        }
         if (inputAttachmentIndex >= 0) {
-            if (separator)
-                result.append(SEPARATOR);
+            if (firstSeparator)
+                firstSeparator = false;
             else
-                separator = true;
+                result.append(", ");
             result.append("input_attachment_index = ").append(inputAttachmentIndex);
         }
-        if ((flags & ORIGIN_UPPER_LEFT_FLAG) != 0) {
-            if (separator)
-                result.append(SEPARATOR);
+        if ((flags & kOriginUpperLeft_Flag) != 0) {
+            if (firstSeparator)
+                firstSeparator = false;
             else
-                separator = true;
+                result.append(", ");
             result.append("origin_upper_left");
         }
-        if ((flags & BLEND_SUPPORT_ALL_EQUATIONS_FLAG) != 0) {
-            if (separator)
-                result.append(SEPARATOR);
+        if ((flags & kBlendSupportAllEquations_Flag) != 0) {
+            if (firstSeparator)
+                firstSeparator = false;
             else
-                separator = true;
+                result.append(", ");
             result.append("blend_support_all_equations");
         }
-        if ((flags & PUSH_CONSTANT_FLAG) != 0) {
-            if (separator)
-                result.append(SEPARATOR);
+        if ((flags & kPushConstant_Flag) != 0) {
+            if (firstSeparator)
+                firstSeparator = false;
+            else
+                result.append(", ");
             result.append("push_constant");
         }
-        assert (separator && !result.isEmpty()) || (!separator && result.isEmpty());
-        if (separator) {
+        if ((flags & kColor_Flag) != 0) {
+            if (firstSeparator)
+                firstSeparator = false;
+            else
+                result.append(", ");
+            result.append("color");
+        }
+        assert (!firstSeparator && !result.isEmpty()) || (firstSeparator && result.isEmpty());
+        if (!firstSeparator) {
             result.insert(0, "layout (");
             result.append(")");
         }
         return result;
-    }
-
-    @Nonnull
-    public String getDescription() {
-        return getDescriptionBuilder().toString();
     }
 
     @Override

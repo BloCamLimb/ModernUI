@@ -18,6 +18,8 @@
 
 package icyllis.arcui.sksl;
 
+import icyllis.arcui.sksl.lex.*;
+
 /**
  * Domain-specific language parser, consumes SkSL text and invokes DSL functions to instantiate the program.
  */
@@ -37,8 +39,43 @@ public class DSLParser {
             LAYOUT_TOKEN_COLOR = 10;
 
     private final Compiler mCompiler;
+    private final String mText;
+
+    private int mOffset;
+    private int mLastOffset;
 
     public DSLParser(Compiler compiler, String text, byte kind, ProgramSettings settings) {
         mCompiler = compiler;
+        mText = text;
+    }
+
+    public int next() {
+        // note that we cheat here: normally a lexer needs to worry about the case
+        // where a token has a prefix which is not itself a valid token - for instance,
+        // maybe we have a valid token 'while', but 'w', 'wh', etc. are not valid
+        // tokens. Our grammar doesn't have this property, so we can simplify the logic
+        // a bit.
+        int startOffset = mOffset;
+        int state = 1;
+        for (;;) {
+            if (mOffset >= mText.length()) {
+                if (startOffset == mText.length() || Lexer.ACCEPTS[state] == DFA.INVALID) {
+                    return Lexer.TK_END_OF_FILE;
+                }
+                break;
+            }
+            int c = (mText.charAt(mOffset) - NFAtoDFA.START_CHAR);
+            if (c >= NFAtoDFA.END_CHAR - NFAtoDFA.START_CHAR) {
+                c = Lexer.INVALID_CHAR;
+            }
+            int newState = Lexer.getTransition(Lexer.MAPPINGS[c], state);
+            if (newState == 0) {
+                break;
+            }
+            state = newState;
+            ++mOffset;
+        }
+        mLastOffset = startOffset;
+        return Lexer.ACCEPTS[state];
     }
 }

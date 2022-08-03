@@ -28,15 +28,16 @@ import java.util.List;
  */
 public class RegexNode {
 
-    public static final int Kind_Char = 0;
-    public static final int Kind_Charset = 1;
-    public static final int Kind_Concat = 2;
-    public static final int Kind_Dot = 3;
-    public static final int Kind_Or = 4;
-    public static final int Kind_Plus = 5;
-    public static final int Kind_Range = 6;
-    public static final int Kind_Question = 7;
-    public static final int Kind_Star = 8;
+    public static final int
+            kChar_Kind = 0,
+            kCharset_Kind = 1,
+            kConcat_Kind = 2,
+            kDot_Kind = 3,
+            kOr_Kind = 4,
+            kPlus_Kind = 5,
+            kRange_Kind = 6,
+            kQuestion_Kind = 7,
+            kStar_Kind = 8;
 
     public int mKind;
     public char mPayload;
@@ -55,7 +56,7 @@ public class RegexNode {
         mKind = kind;
         mPayload = 0;
         for (int i = 0; i < children.length(); i++) {
-            mChildren.add(new RegexNode(Kind_Char, children.charAt(i)));
+            mChildren.add(new RegexNode(kChar_Kind, children.charAt(i)));
         }
     }
 
@@ -76,17 +77,17 @@ public class RegexNode {
      */
     public IntList createStates(NFA nfa, IntList accept) {
         return switch (mKind) {
-            case Kind_Char -> IntLists.singleton(nfa.addState(new NFAState(mPayload, accept)));
-            case Kind_Charset -> {
+            case kChar_Kind -> IntLists.singleton(nfa.addState(new NFAState(mPayload, accept)));
+            case kCharset_Kind -> {
                 var chars = new IntArrayList();
                 for (var child : mChildren) {
-                    if (child.mKind == Kind_Char) {
+                    if (child.mKind == kChar_Kind) {
                         while (chars.size() <= child.mPayload) {
                             chars.add(0);
                         }
                         chars.set(child.mPayload, 1);
                     } else {
-                        assert (child.mKind == Kind_Range);
+                        assert (child.mKind == kRange_Kind);
                         while (chars.size() <= child.mChildren.get(1).mPayload) {
                             chars.add(0);
                         }
@@ -99,17 +100,17 @@ public class RegexNode {
                 }
                 yield IntLists.singleton(nfa.addState(new NFAState(mPayload != 0, chars, accept)));
             }
-            case Kind_Concat -> {
+            case kConcat_Kind -> {
                 var right = mChildren.get(1).createStates(nfa, accept);
                 yield mChildren.get(0).createStates(nfa, right);
             }
-            case Kind_Dot -> IntLists.singleton(nfa.addState(new NFAState(NFAState.Kind_Dot, accept)));
-            case Kind_Or -> {
+            case kDot_Kind -> IntLists.singleton(nfa.addState(new NFAState(NFAState.Kind_Dot, accept)));
+            case kOr_Kind -> {
                 var result = new IntArrayList(mChildren.get(0).createStates(nfa, accept));
                 result.addAll(mChildren.get(1).createStates(nfa, accept));
                 yield result;
             }
-            case Kind_Plus -> {
+            case kPlus_Kind -> {
                 var next = new IntArrayList(accept);
                 int id = nfa.addState(NFAState.PLACEHOLDER);
                 next.add(id);
@@ -117,12 +118,12 @@ public class RegexNode {
                 nfa.mStates.set(id, new NFAState(result));
                 yield result;
             }
-            case Kind_Question -> {
+            case kQuestion_Kind -> {
                 var result = new IntArrayList(mChildren.get(0).createStates(nfa, accept));
                 result.addAll(accept);
                 yield result;
             }
-            case Kind_Star -> {
+            case kStar_Kind -> {
                 var next = new IntArrayList(accept);
                 int id = nfa.addState(NFAState.PLACEHOLDER);
                 next.add(id);

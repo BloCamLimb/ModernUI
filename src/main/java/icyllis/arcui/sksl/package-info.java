@@ -17,9 +17,7 @@
  */
 
 /**
- * Derivative of Skia Shading Language, used to assemble and generate
- * GLSL shaders in real-time, May be directly for OpenGL, or compile to
- * SPIR-V for Vulkan, based on GLSL version 450.
+ * Derivative of Skia Shading Language, based on GLSL version 450.
  */
 @ParametersAreNonnullByDefault
 package icyllis.arcui.sksl;

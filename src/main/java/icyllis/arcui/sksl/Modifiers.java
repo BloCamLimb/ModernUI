@@ -19,78 +19,79 @@
 package icyllis.arcui.sksl;
 
 import javax.annotation.Nonnull;
-import javax.annotation.concurrent.Immutable;
 
 /**
  * A set of qualifier keywords (in, out, uniform, etc.) appearing before a declaration.
  *
- * @param layout the layout qualifiers
- * @param flags  the other qualifiers
+ * @param layout layout qualifiers
+ * @param flags  other qualifiers
  */
-@Immutable
 public record Modifiers(Layout layout, int flags) {
 
     /**
      * OpenGL 4.2 or ARB_shading_language_420pack removes the ordering restriction in most cases.
-     * <p>
-     * IN, OUT may be storage qualifier, or parameter qualifier
      */
     // GLSL interpolation qualifiers, only one qualifier can be used
     public static final int
-            SMOOTH_FLAG = 0,                // (default) perspective correct interpolation
-            FLAT_FLAG = 1,                  // no interpolation
-            NO_PERSPECTIVE_FLAG = 1 << 1;   // linear interpolation
-
+            kSmooth_Flag = 1,               // (default and can be explicitly declared)
+            kFlat_Flag = 1 << 1,            // no interpolation
+            kNoPerspective_Flag = 1 << 2;   // linear interpolation
     // GLSL storage qualifiers, only one qualifier can be used
     // GLSL parameter qualifiers, one of const, in, out, inout
     public static final int
-            UNIFORM_FLAG = 1 << 2,
-            BUFFER_FLAG = 1 << 3,
-            CONST_FLAG = 1 << 4,
-            IN_FLAG = 1 << 5,
-            OUT_FLAG = 1 << 6;
-
+            kConst_Flag = 1 << 3,
+            kUniform_Flag = 1 << 4,
+            kIn_Flag = 1 << 5,
+            kOut_Flag = 1 << 6;
+    public static final int
+            kShared_Flag = 1 << 7;  // for compute shaders
     // SkSL extensions, not present in GLSL
     public static final int
-            HAS_SIDE_EFFECTS_FLAG = 1 << 10,
-            INLINE_FLAG = 1 << 11,
-            NO_INLINE_FLAG = 1 << 12;
+            kHasSideEffects_Flag = 1 << 8,
+            kInline_Flag = 1 << 9,
+            kNoInline_Flag = 1 << 10;
 
     @Nonnull
-    public String getDescription() {
-        final StringBuilder result = layout.getDescriptionBuilder();
-        result.append(" ");
+    public String description() {
+        final StringBuilder result = layout.descriptionBuilder();
 
         // SkSL extensions
-        if ((flags & HAS_SIDE_EFFECTS_FLAG) != 0) {
+        if ((flags & kHasSideEffects_Flag) != 0) {
             result.append("sk_has_side_effects ");
         }
-        if ((flags & NO_INLINE_FLAG) != 0) {
+        if ((flags & kInline_Flag) != 0) {
+            result.append("inline ");
+        }
+        if ((flags & kNoInline_Flag) != 0) {
             result.append("noinline ");
         }
 
         // Real GLSL qualifiers (must be specified in order in GLSL 4.1 and below)
-        if ((flags & FLAT_FLAG) != 0) {
+        if ((flags & kSmooth_Flag) != 0) {
+            result.append("smooth ");
+        }
+        if ((flags & kFlat_Flag) != 0) {
             result.append("flat ");
         }
-        if ((flags & NO_PERSPECTIVE_FLAG) != 0) {
+        if ((flags & kNoPerspective_Flag) != 0) {
             result.append("noperspective ");
         }
-        if ((flags & UNIFORM_FLAG) != 0) {
-            result.append("uniform ");
-        }
-        if ((flags & BUFFER_FLAG) != 0) {
-            result.append("buffer ");
-        }
-        if ((flags & CONST_FLAG) != 0) {
+        if ((flags & kConst_Flag) != 0) {
             result.append("const ");
         }
-        if ((flags & IN_FLAG) != 0 && (flags & OUT_FLAG) != 0) {
+        if ((flags & kUniform_Flag) != 0) {
+            result.append("uniform ");
+        }
+        if ((flags & kIn_Flag) != 0 && (flags & kOut_Flag) != 0) {
             result.append("inout ");
-        } else if ((flags & IN_FLAG) != 0) {
+        } else if ((flags & kIn_Flag) != 0) {
             result.append("in ");
-        } else if ((flags & OUT_FLAG) != 0) {
+        } else if ((flags & kOut_Flag) != 0) {
             result.append("out ");
+        }
+
+        if ((flags & kShared_Flag) != 0) {
+            result.append("shared ");
         }
 
         return result.toString();
@@ -100,15 +101,12 @@ public record Modifiers(Layout layout, int flags) {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Modifiers that = (Modifiers) o;
-        return flags == that.flags &&
-                layout.equals(that.layout);
+        Modifiers modifiers = (Modifiers) o;
+        return flags == modifiers.flags && layout.equals(modifiers.layout);
     }
 
     @Override
     public int hashCode() {
-        int result = layout.hashCode();
-        result = 31 * result + flags;
-        return result;
+        return 31 * layout.hashCode() + flags;
     }
 }

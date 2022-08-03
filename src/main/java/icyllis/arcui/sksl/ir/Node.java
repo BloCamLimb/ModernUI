@@ -31,7 +31,8 @@ public abstract class Node {
     protected final int mEnd;
 
     protected Node(int start, int end) {
-        assert start >= 0 && start <= end;
+        assert (start <= end);
+        assert (start <= 0xFFFFFF);
         mStart = start;
         mEnd = end;
     }
