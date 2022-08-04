@@ -43,8 +43,9 @@ public record Modifiers(Layout layout, int flags) {
             kUniform_Flag = 1 << 4,
             kIn_Flag = 1 << 5,
             kOut_Flag = 1 << 6;
+    // We use the Metal name for this one (corresponds to the GLSL 'shared' modifier)
     public static final int
-            kShared_Flag = 1 << 7;  // for compute shaders
+            kThreadgroup_Flag = 1 << 7;  // for compute shaders
     // SkSL extensions, not present in GLSL
     public static final int
             kHasSideEffects_Flag = 1 << 8,
@@ -90,8 +91,9 @@ public record Modifiers(Layout layout, int flags) {
             result.append("out ");
         }
 
-        if ((flags & kShared_Flag) != 0) {
-            result.append("shared ");
+        // We're using a non-GLSL name for this one; the GLSL equivalent is "shared"
+        if ((flags & kThreadgroup_Flag) != 0) {
+            result.append("threadgroup ");
         }
 
         return result.toString();

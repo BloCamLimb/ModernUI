@@ -35,8 +35,6 @@ public class Main {
      * Added: smooth
      * <p>
      * Removed: static if, static switch, highp, mediump, lowp, es3
-     * <p>
-     * Renamed: threadgroup -> shared
      */
     public static final String LEXICON = """
             FLOAT_LITERAL  = [0-9]*\\.[0-9]+([eE][+-]?[0-9]+)?|[0-9]+\\.[0-9]*([eE][+-]?[0-9]+)?|[0-9]+([eE][+-]?[0-9]+)
@@ -45,13 +43,11 @@ public class Main {
             TRUE_LITERAL   = "true"
             FALSE_LITERAL  = "false"
             IF             = "if"
-            STATIC_IF      = "@if"
             ELSE           = "else"
             FOR            = "for"
             WHILE          = "while"
             DO             = "do"
             SWITCH         = "switch"
-            STATIC_SWITCH  = "@switch"
             CASE           = "case"
             DEFAULT        = "default"
             BREAK          = "break"
@@ -63,6 +59,7 @@ public class Main {
             INOUT          = "inout"
             UNIFORM        = "uniform"
             CONST          = "const"
+            SMOOTH         = "smooth"
             FLAT           = "flat"
             NOPERSPECTIVE  = "noperspective"
             INLINE         = "inline"
@@ -70,10 +67,6 @@ public class Main {
             HASSIDEEFFECTS = "sk_has_side_effects"
             STRUCT         = "struct"
             LAYOUT         = "layout"
-            HIGHP          = "highp"
-            MEDIUMP        = "mediump"
-            LOWP           = "lowp"
-            ES3            = "$es3"
             THREADGROUP    = "threadgroup"
             RESERVED       = attribute|varying|precision|invariant|asm|class|union|enum|typedef|template|this|packed|goto|volatile|public|static|extern|external|interface|long|double|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|sampler[12]DShadow|sampler3DRect|sampler2DRectShadow|samplerCube|sizeof|cast|namespace|using|gl_[0-9a-zA-Z_]*
             IDENTIFIER     = [a-zA-Z_$][0-9a-zA-Z_]*

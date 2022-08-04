@@ -24,8 +24,6 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static icyllis.arcui.sksl.lex.DFA.INVALID;
-
 public class NFAtoDFA {
 
     public static final char START_CHAR = 9;
@@ -102,7 +100,7 @@ public class NFAtoDFA {
         }
         var row = mTransitions.get(c);
         while (row.size() <= start) {
-            row.add(INVALID);
+            row.add(DFA.INVALID);
         }
         row.set(start, next);
     }
@@ -129,7 +127,7 @@ public class NFAtoDFA {
             addTransition(c, state.mId, nextState.mId);
             if (bestAccept != Integer.MAX_VALUE) {
                 while (mAccepts.size() <= nextState.mId) {
-                    mAccepts.add(INVALID);
+                    mAccepts.add(DFA.INVALID);
                 }
                 mAccepts.set(nextState.mId, bestAccept);
             }

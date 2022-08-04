@@ -117,8 +117,6 @@ public class TestManagedResource {
     public static void testLexicon(PrintWriter pw) {
         pw.println("Mapping: " + Arrays.toString(Lexer.MAPPINGS));
         pw.println("Accepts: " + Arrays.toString(Lexer.ACCEPTS));
-        pw.println("Full: " + Arrays.deepToString(Lexer.FULL));
-        pw.println("Compact: " + Arrays.toString(Lexer.COMPACT));
         pw.println("Indices: " + Arrays.toString(Lexer.INDICES));
     }
 
