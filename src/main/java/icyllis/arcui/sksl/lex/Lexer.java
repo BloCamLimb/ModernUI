@@ -18,116 +18,8 @@
 
 package icyllis.arcui.sksl.lex;
 
-import it.unimi.dsi.fastutil.ints.*;
-
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.Arrays;
-
-/**
- * Runtime-generated SkSL lexicon on static initializing.
- */
-@SuppressWarnings("AssertWithSideEffects")
+@SuppressWarnings("ConstantConditions")
 public class Lexer {
-
-    /**
-     * Modified SkSL lexicon.
-     * <p>
-     * Added: smooth
-     * <p>
-     * Removed: static if, static switch, highp, mediump, lowp, es3
-     * <p>
-     * Renamed: threadgroup -> shared
-     */
-    public static final String LEXICON = """
-            FLOAT_LITERAL  = [0-9]*\\.[0-9]+([eE][+-]?[0-9]+)?|[0-9]+\\.[0-9]*([eE][+-]?[0-9]+)?|[0-9]+([eE][+-]?[0-9]+)
-            INT_LITERAL    = ([1-9][0-9]*|0[0-7]*|0[xX][0-9a-fA-F]+)[uU]?
-            BAD_OCTAL      = (0[0-9]+)[uU]?
-            TRUE_LITERAL   = "true"
-            FALSE_LITERAL  = "false"
-            IF             = "if"
-            STATIC_IF      = "@if"
-            ELSE           = "else"
-            FOR            = "for"
-            WHILE          = "while"
-            DO             = "do"
-            SWITCH         = "switch"
-            STATIC_SWITCH  = "@switch"
-            CASE           = "case"
-            DEFAULT        = "default"
-            BREAK          = "break"
-            CONTINUE       = "continue"
-            DISCARD        = "discard"
-            RETURN         = "return"
-            IN             = "in"
-            OUT            = "out"
-            INOUT          = "inout"
-            UNIFORM        = "uniform"
-            CONST          = "const"
-            FLAT           = "flat"
-            NOPERSPECTIVE  = "noperspective"
-            INLINE         = "inline"
-            NOINLINE       = "noinline"
-            HASSIDEEFFECTS = "sk_has_side_effects"
-            STRUCT         = "struct"
-            LAYOUT         = "layout"
-            HIGHP          = "highp"
-            MEDIUMP        = "mediump"
-            LOWP           = "lowp"
-            ES3            = "$es3"
-            THREADGROUP    = "threadgroup"
-            RESERVED       = attribute|varying|precision|invariant|asm|class|union|enum|typedef|template|this|packed|goto|volatile|public|static|extern|external|interface|long|double|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|sampler[12]DShadow|sampler3DRect|sampler2DRectShadow|samplerCube|sizeof|cast|namespace|using|gl_[0-9a-zA-Z_]*
-            IDENTIFIER     = [a-zA-Z_$][0-9a-zA-Z_]*
-            DIRECTIVE      = #[a-zA-Z_][0-9a-zA-Z_]*
-            LPAREN         = "("
-            RPAREN         = ")"
-            LBRACE         = "{"
-            RBRACE         = "}"
-            LBRACKET       = "["
-            RBRACKET       = "]"
-            DOT            = "."
-            COMMA          = ","
-            PLUSPLUS       = "++"
-            MINUSMINUS     = "--"
-            PLUS           = "+"
-            MINUS          = "-"
-            STAR           = "*"
-            SLASH          = "/"
-            PERCENT        = "%"
-            SHL            = "<<"
-            SHR            = ">>"
-            BITWISEOR      = "|"
-            BITWISEXOR     = "^"
-            BITWISEAND     = "&"
-            BITWISENOT     = "~"
-            LOGICALOR      = "||"
-            LOGICALXOR     = "^^"
-            LOGICALAND     = "&&"
-            LOGICALNOT     = "!"
-            QUESTION       = "?"
-            COLON          = ":"
-            EQ             = "="
-            EQEQ           = "=="
-            NEQ            = "!="
-            GT             = ">"
-            LT             = "<"
-            GTEQ           = ">="
-            LTEQ           = "<="
-            PLUSEQ         = "+="
-            MINUSEQ        = "-="
-            STAREQ         = "*="
-            SLASHEQ        = "/="
-            PERCENTEQ      = "%="
-            SHLEQ          = "<<="
-            SHREQ          = ">>="
-            BITWISEOREQ    = "|="
-            BITWISEXOREQ   = "^="
-            BITWISEANDEQ   = "&="
-            SEMICOLON      = ";"
-            WHITESPACE     = \\s+
-            LINE_COMMENT   = //.*
-            BLOCK_COMMENT  = /\\*([^*]|\\*[^/])*\\*/
-            INVALID        = .""";
 
     /**
      * 0 is reserved for END_OF_FILE, others are sequential and match with lexicon.
@@ -224,270 +116,2725 @@ public class Lexer {
             TK_INVALID = 88,
             TK_NONE = DFA.INVALID;
 
-    // The number of bits to use per entry in our compact transition table. This is customizable:
-    // - 1-bit: reasonable in theory. Doesn't actually pack many slices.
-    // - 2-bit: best fit for our data. Packs extremely well.
-    // - 4-bit: packs all but one slice, but doesn't save as much space overall.
-    // - 8-bit: way too large (an 8-bit LUT plus an 8-bit data table is as big as a 16-bit table)
-    // Other values don't divide cleanly into a byte and do not work.
-    public static final int NUM_BITS = 2;
-
-    // These values are derived from kNumBits and shouldn't need to change.
-    public static final int NUM_VALUES = (1 << NUM_BITS) - 1;
-    public static final int DATA_PER_BYTE = Byte.SIZE / NUM_BITS;
-    public static final int DATA_PER_BYTE_SHIFT = Integer.SIZE - Integer.numberOfLeadingZeros(DATA_PER_BYTE);
-
-    // IndexEntry = int16_t; = short
-    // FullEntry = uint16_t[numTransitions]; = short[]
-    // CompactEntry = uint32_t values; uint8_t data[ceil((float) numTransitions / DATA_PER_BYTE)];
     public record CompactEntry(int values, byte[] data) {
-
-        @Nonnull
-        @Override
-        public String toString() {
-            return "CompactEntry{" +
-                    "values=" + values +
-                    ", data=" + Arrays.toString(data) +
-                    '}';
-        }
     }
 
-    // Arbitrarily-chosen character which is greater than startChar, and should not appear in actual
-    // input.
-    public static final char INVALID_CHAR = 18;
-
-    public static final byte[] MAPPINGS;
-    public static final short[][] FULL;
-    public static final CompactEntry[] COMPACT;
-    public static final short[] INDICES;
-    public static final byte[] ACCEPTS;
-
-    public static final int BITS_PER_VALUE;
-    public static final int MAX_VALUE;
-
-    static {
-        final NFA nfa = new NFA();
-        final RegexParser regexParser = new RegexParser();
-        int token = 0;
-        for (var line : LEXICON.split("\n")) {
-            String[] split = line.split("\\s+");
-            assert split.length == 3;
-            String name = split[0];
-            String delimiter = split[1];
-            String pattern = split[2];
-            assert !name.isEmpty();
-            assert delimiter.equals("=");
-            assert !pattern.isEmpty();
-            try {
-                // we reserve token 0 for END_OF_FILE, so this starts at 1
-                assert Lexer.class.getField("TK_" + name).getInt(null) == ++token;
-            } catch (Exception e) {
-                assert false;
+    public static final char INVALID_CHAR;
+    public static final byte[] MAPPINGS = {
+            1, 2, 3, 3, 1, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 3, 3, 3, 3,
+            3, 3, 3, 3, 3, 1, 4, 3, 5,
+            6, 7, 8, 3, 9, 10, 11, 12, 13,
+            14, 15, 16, 17, 18, 19, 20, 21, 22,
+            22, 22, 23, 23, 24, 25, 26, 27, 28,
+            29, 30, 31, 31, 32, 33, 34, 31, 35,
+            35, 35, 35, 35, 35, 35, 35, 35, 35,
+            35, 36, 37, 35, 38, 35, 35, 39, 35,
+            35, 40, 3, 41, 42, 43, 3, 44, 45,
+            46, 47, 48, 49, 50, 51, 52, 35, 53,
+            54, 55, 56, 57, 58, 35, 59, 60, 61,
+            62, 63, 64, 65, 66, 67, 68, 69, 70,
+            71
+    };
+    public static final short[][] FULL = {
+            {
+                    0, 2, 3, 4, 5, 7, 9, 14, 16,
+                    19, 20, 21, 23, 26, 27, 30, 35, 41,
+                    60, 60, 60, 60, 60, 60, 62, 63, 64,
+                    68, 70, 74, 75, 84, 84, 84, 84, 84,
+                    84, 84, 84, 84, 85, 86, 87, 84, 90,
+                    100, 105, 121, 141, 153, 169, 174, 182, 84,
+                    206, 216, 223, 249, 254, 270, 276, 348, 374,
+                    390, 402, 84, 84, 84, 407, 408, 411, 412
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 42, 0, 50,
+                    50, 50, 50, 50, 50, 51, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 52, 0,
+                    0, 0, 57, 58, 0, 0, 0, 0, 0,
+                    0, 0, 0, 52, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 57,
+                    0, 0, 58, 0, 0, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 42, 0, 50,
+                    50, 50, 50, 50, 50, 51, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 52, 0,
+                    0, 0, 56, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 52, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 56,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 42, 0, 51,
+                    51, 51, 51, 51, 51, 51, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 52, 0,
+                    0, 0, 55, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 52, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 55,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 42, 0, 61,
+                    61, 61, 61, 61, 61, 61, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 52, 0,
+                    0, 0, 57, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 52, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 57,
+                    0, 0, 0, 0, 0, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 10,
+                    10, 10, 10, 10, 10, 10, 0, 0, 0,
+                    0, 0, 0, 0, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 0, 0, 0, 10, 106,
+                    10, 10, 10, 10, 10, 10, 10, 10, 10,
+                    109, 10, 10, 112, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 10, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 10,
+                    10, 10, 10, 10, 10, 10, 0, 0, 0,
+                    0, 0, 0, 0, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 0, 0, 0, 10, 10,
+                    10, 10, 10, 122, 10, 10, 10, 128, 10,
+                    10, 10, 10, 134, 10, 10, 10, 10, 10,
+                    138, 10, 10, 10, 10, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 10,
+                    10, 10, 10, 10, 10, 10, 0, 0, 0,
+                    0, 0, 0, 0, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 0, 0, 0, 10, 10,
+                    10, 10, 10, 10, 10, 10, 10, 10, 10,
+                    142, 10, 145, 10, 10, 10, 10, 10, 10,
+                    10, 10, 147, 10, 10, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 10,
+                    10, 10, 10, 10, 10, 10, 0, 0, 0,
+                    0, 0, 0, 0, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 0, 0, 0, 10, 154,
+                    10, 10, 10, 10, 10, 10, 10, 158, 10,
+                    161, 10, 10, 164, 10, 10, 10, 10, 10,
+                    166, 10, 10, 10, 10, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 10,
+                    10, 10, 10, 10, 10, 10, 0, 0, 0,
+                    0, 0, 0, 0, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 0, 0, 0, 10, 10,
+                    10, 10, 10, 10, 10, 10, 10, 10, 10,
+                    185, 10, 10, 189, 192, 10, 10, 194, 10,
+                    200, 10, 10, 10, 10, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 10,
+                    10, 10, 10, 10, 10, 10, 0, 0, 0,
+                    0, 0, 0, 0, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 0, 0, 0, 10, 255,
+                    10, 10, 10, 10, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 10, 259, 10, 10, 266,
+                    10, 10, 10, 10, 10, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 10,
+                    10, 10, 10, 10, 10, 10, 0, 0, 0,
+                    0, 0, 0, 0, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 0, 0, 0, 10, 277,
+                    10, 10, 10, 10, 10, 10, 10, 309, 313,
+                    10, 10, 10, 10, 10, 10, 10, 331, 339,
+                    10, 343, 10, 10, 10, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 10,
+                    283, 290, 301, 10, 10, 10, 0, 0, 0,
+                    0, 0, 0, 0, 10, 306, 10, 10, 10,
+                    10, 10, 10, 10, 0, 0, 0, 10, 10,
+                    10, 10, 10, 10, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 10, 0, 0, 0, 0
+            },
+            {
+                    0, 0, 0, 0, 0, 0, 0, 0, 0,
+                    0, 0, 0, 0, 0, 0, 0, 0, 10,
+                    10, 10, 10, 10, 10, 10, 0, 0, 0,
+                    0, 0, 0, 0, 10, 10, 10, 10, 10,
+                    10, 10, 10, 10, 0, 0, 0, 10, 10,
+                    10, 10, 10, 349, 10, 10, 355, 10, 10,
+                    10, 10, 10, 10, 10, 366, 10, 10, 10,
+                    10, 10, 10, 369, 10, 0, 0, 0, 0
             }
-            if (pattern.startsWith("\"")) {
-                assert (pattern.length()) > 2 && pattern.endsWith("\"");
-                var node = new RegexNode(RegexNode.kChar_Kind, pattern.charAt(1));
-                for (int i = 2; i < pattern.length() - 1; ++i) {
-                    node = new RegexNode(RegexNode.kConcat_Kind, node,
-                            new RegexNode(RegexNode.kChar_Kind, pattern.charAt(i)));
-                }
-                nfa.addRegex(node);
-            } else {
-                nfa.addRegex(regexParser.parse(pattern));
-            }
-        }
-        final NFAtoDFA converter = new NFAtoDFA(nfa);
-        final DFA dfa = converter.convert();
-
-        int states = 0;
-        for (var row : dfa.mTransitions) {
-            states = Math.max(states, row.length);
-        }
-
-        // Find the first character mapped in our DFA.
-        int startChar = 0;
-        for (; startChar < dfa.mCharMappings.length; ++startChar) {
-            if (dfa.mCharMappings[startChar] != 0) {
-                break;
-            }
-        }
-
-        assert startChar == NFAtoDFA.START_CHAR;
-        MAPPINGS = new byte[dfa.mCharMappings.length - startChar];
-        for (int index = 0; index < MAPPINGS.length; ++index) {
-            MAPPINGS[index] = (byte) dfa.mCharMappings[index + startChar];
-        }
-
-        record WorkingCompactEntry(IntArrayList v, IntArrayList data) {
-        }
-
-        int numTransitions = dfa.mTransitions.length;
-
-        // Assemble our compact and full data tables, and an index into them.
-        ArrayList<WorkingCompactEntry> compactEntries = new ArrayList<>();
-        ArrayList<IntArrayList> fullEntries = new ArrayList<>();
-        IntArrayList indices = new IntArrayList();
-        for (int s = 0; s < states; ++s) {
-            // Copy all the transitions for this state into a flat array, and into a histogram (counting
-            // the number of unique state-transition values). Most states only transition to a few
-            // possible new states.
-            var transitionSet = new IntArraySet();
-            var data = new IntArrayList(numTransitions);
-            data.size(numTransitions);
-            for (int t = 0; t < numTransitions; ++t) {
-                if (s < dfa.mTransitions[t].length) {
-                    int value = dfa.mTransitions[t][s];
-                    assert (value >= 0 && value < states);
-                    data.set(t, value);
-                    transitionSet.add(value);
-                }
-            }
-
-            transitionSet.remove(0);
-            if (transitionSet.size() <= NUM_VALUES) {
-                // This table only contained a small number of unique nonzero values.
-                // Use a compact representation that squishes each value down to a few bits.
-                // Create a compact entry with the unique values from the transition set, padded out with zeros
-                // and sorted.
-                var result = new WorkingCompactEntry(new IntArrayList(NUM_VALUES), new IntArrayList());
-                result.v.addAll(transitionSet);
-                result.v.size(NUM_VALUES);
-                result.v.sort(IntComparators.OPPOSITE_COMPARATOR);
-
-                // Create a mapping from real values to small values.
-                var translationTable = new Int2IntArrayMap();
-                for (int index = 0; index < result.v.size(); ++index) {
-                    translationTable.put(result.v.getInt(index), index);
-                }
-                translationTable.put(0, result.v.size());
-
-                // Convert the real values into small values.
-                for (int index = 0; index < data.size(); ++index) {
-                    int value = data.getInt(index);
-                    assert (translationTable.containsKey(value));
-                    result.data.add(translationTable.get(value));
-                }
-
-                int index = -1;
-                // Look for an existing entry that exactly matches this one.
-                for (int i = 0; i < compactEntries.size(); ++i) {
-                    if (compactEntries.get(i).equals(result)) {
-                        index = i;
-                        break;
-                    }
-                }
-
-                if (index == -1) {
-                    // Add this as a new entry.
-                    index = compactEntries.size();
-                    compactEntries.add(result);
-                }
-                // Compact entries start at 0 and go up from there.
-                indices.add(index);
-            } else {
-                // Create a full entry with this data.
-                int index = -1;
-                // Look for an existing entry that exactly matches this one.
-                for (int i = 0; i < fullEntries.size(); ++i) {
-                    if (fullEntries.get(i).equals(data)) {
-                        index = i;
-                        break;
-                    }
-                }
-                if (index == -1) {
-                    // Add this as a new entry.
-                    index = fullEntries.size();
-                    fullEntries.add(data);
-                }
-                // Bit-not is used so that full entries start at -1 and go down from there.
-                indices.add(~index);
-            }
-        }
-
-        // Find the largest value for each compact-entry slot.
-        int maxValue = 0;
-        for (var entry : compactEntries) {
-            for (int index = 0; index < NUM_VALUES; ++index) {
-                maxValue = Math.max(maxValue, entry.v.getInt(index));
-            }
-        }
-
-        // Figure out how many bits we need to store our max value.
-        int bitsPerValue = Integer.SIZE - Integer.numberOfLeadingZeros(maxValue - 1);
-        MAX_VALUE = (1 << bitsPerValue) - 1;
-
-        // If we exceed 10 bits per value, three values would overflow 32 bits. If this happens, we'll
-        // need to pack our values another way.
-        assert (bitsPerValue <= Integer.SIZE / NUM_VALUES);
-        BITS_PER_VALUE = bitsPerValue;
-
-        FULL = new short[fullEntries.size()][];
-        for (int i = 0; i < fullEntries.size(); ++i) {
-            var data = fullEntries.get(i);
-            assert (data.size() == numTransitions);
-            short[] full = new short[numTransitions];
-            for (int j = 0; j < data.size(); j++) {
-                full[j] = (short) data.getInt(j);
-            }
-            FULL[i] = full;
-        }
-
-        int compactDataBytes = (int) Math.ceil((float) numTransitions / DATA_PER_BYTE);
-        COMPACT = new CompactEntry[compactEntries.size()];
-        for (int i = 0; i < compactEntries.size(); ++i) {
-            var entry = compactEntries.get(i);
-            // We pack all three values into `v`. If NUM_BITS were to change, we would need to adjust
-            // this packing algorithm.
-            assert (entry.v.size() == NUM_VALUES);
-            int values = entry.v.getInt(0) |
-                    (entry.v.getInt(1) << bitsPerValue) |
-                    (entry.v.getInt(2) << (2 * bitsPerValue));
-
-            byte[] compact = new byte[compactDataBytes];
-            COMPACT[i] = new CompactEntry(values, compact);
-
-            int shiftBits = 0, combinedBits = 0, j = 0;
-            for (int index = 0; index < numTransitions; index++) {
-                combinedBits |= entry.data.getInt(index) << shiftBits;
-                shiftBits += NUM_BITS;
-                if (shiftBits == 8) {
-                    compact[j++] = (byte) combinedBits;
-                    shiftBits = 0;
-                    combinedBits = 0;
-                }
-            }
-            if (shiftBits > 0) {
-                // Flush any partial values.
-                compact[j] = (byte) combinedBits;
-            }
-        }
-
-        INDICES = new short[indices.size()];
-        for (int i = 0; i < indices.size(); ++i) {
-            INDICES[i] = (short) indices.getInt(i);
-        }
-
-        ACCEPTS = new byte[states];
-        for (int i = 0; i < states; ++i) {
-            if (i < dfa.mAccepts.length) {
-                ACCEPTS[i] = (byte) dfa.mAccepts[i];
-            } else {
-                ACCEPTS[i] = DFA.INVALID;
-            }
-        }
-    }
+    };
+    public static final CompactEntry[] COMPACT = {
+            new CompactEntry(0,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(3,
+                    new byte[]{
+                            -61, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(6,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(8,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, -1, 63,
+                            0, 0, 63, 0,
+                            0, 0, 0, 0,
+                            0, -1
+                    }),
+            new CompactEntry(8,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, 63,
+                            0, 0, 63, 0,
+                            0, 0, 0, 0,
+                            0, -1
+                    }),
+            new CompactEntry(11 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(10,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, 63,
+                            0, 0, 63, 0,
+                            0, 0, 0, 0,
+                            0, -1
+                    }),
+            new CompactEntry(12 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(13 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 84, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(15,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(18 | (17 << 9),
+                    new byte[]{
+                            -1, -1, -3, -1,
+                            -1, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(22,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(25 | (24 << 9),
+                    new byte[]{
+                            -1, -1, -1, -3,
+                            -1, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(29 | (28 << 9),
+                    new byte[]{
+                            -1, -1, -1, -33,
+                            -1, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(31,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(32 | (31 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, -1,
+                            -49, -1, -1, -1,
+                            -4, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(34 | (33 << 9),
+                    new byte[]{
+                            -1, -1, -1, -35,
+                            3, 0, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(34,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(40 | (39 << 9) | (36 << 18),
+                    new byte[]{
+                            -1, -1, -65, -1,
+                            -3, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(37 | (36 << 9),
+                    new byte[]{
+                            87, 85, 21, 85,
+                            85, 85, 85, 85,
+                            85, 85, 85, 85,
+                            85, 85, 85, 85,
+                            85, 85
+                    }),
+            new CompactEntry(38 | (36 << 9),
+                    new byte[]{
+                            87, 85, 85, 85,
+                            84, 85, 85, 85,
+                            85, 85, 85, 85,
+                            85, 85, 85, 85,
+                            85, 85
+                    }),
+            new CompactEntry(39,
+                    new byte[]{
+                            51, 0, 0, 0,
+                            0, 0, 0, 0,
+                            0, 0, 0, 0,
+                            0, 0, 0, 0,
+                            0, 0
+                    }),
+            new CompactEntry(47 | (43 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, -1,
+                            -49, -1, -1, -1,
+                            -4, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(44 | (43 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, -1,
+                            -49, -1, -1, -1,
+                            -4, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(46 | (45 << 9),
+                    new byte[]{
+                            -1, -1, -1, -35,
+                            3, 0, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(46,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(49 | (48 << 9),
+                    new byte[]{
+                            -1, -1, -1, -35,
+                            3, 0, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(49,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(54 | (53 << 9),
+                    new byte[]{
+                            -1, -1, -1, -35,
+                            3, 0, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(54,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(59,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, 63,
+                            -64, -1, -1, 0,
+                            -16, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(59 | (57 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, 63,
+                            -64, -33, -1, 0,
+                            -16, -1, -1, -33,
+                            -1, -1
+                    }),
+            new CompactEntry(67 | (65 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 31, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(66,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(69,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(72 | (71 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 127, -4,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(73,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 63, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(78 | (76 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -3, -1, -4,
+                            -1, -1
+                    }),
+            new CompactEntry(77,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -13, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(79,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -4, -1
+                    }),
+            new CompactEntry(80,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -4, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(81,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -13,
+                            -1, -1
+                    }),
+            new CompactEntry(82,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -49,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(83,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            63, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(89 | (88 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 127, -1,
+                            -1, -1, -49, -1,
+                            -1, -1, -1, -1,
+                            -1, -1
+                    }),
+            new CompactEntry(93 | (91 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -86, -86, -86, -95,
+                            -86, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 21, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(94 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(95 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(96 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(97 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 81,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(98 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(99 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(101 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(102 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(103 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(104 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 81, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(107 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(108 | (92 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -88, -86, -86, -90,
+                            -86, -1
+                    }),
+            new CompactEntry(110 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(111 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(113 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(116 | (114 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -86, -86, -86, -95,
+                            -86, -1
+                    }),
+            new CompactEntry(115 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(117 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(118 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(119 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(120 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(123 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            81, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(124 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(125 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(126 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(127 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(129 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(130 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(131 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(132 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(133 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 21,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(135 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(136 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 81,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(137 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(139 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(140 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            23, 80, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(143 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(144 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(146 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(148 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(149 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(150 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(151 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(152 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(155 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(156 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(157 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(159 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 85,
+                            81, -1
+                    }),
+            new CompactEntry(160 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 21,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(162 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(163 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(165 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(167 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(168 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(172 | (170 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -86, -102, -94, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(171 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 63, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(171,
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            3, 0, -1, 63,
+                            0, 0, 63, 0,
+                            0, 0, 0, 0,
+                            0, -1
+                    }),
+            new CompactEntry(173 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 81, 85,
+                            85, -1
+                    }),
+            new CompactEntry(179 | (175 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -86, -87, -86, 42,
+                            -86, -1
+                    }),
+            new CompactEntry(176 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            69, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(177 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            21, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(178 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(180 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(181 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(184 | (183 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -90, -86, -88, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(186 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(187 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(188 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(190 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(191 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(193 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(195 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(196 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(197 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            81, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(198 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(199 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(201 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(202 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(203 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(204 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(205 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(212 | (207 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -87,
+                            -86, -86, -94, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(208 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 85,
+                            69, -1
+                    }),
+            new CompactEntry(209 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 81, 85,
+                            85, -1
+                    }),
+            new CompactEntry(210 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(211 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(214 | (213 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -86, -86, -87, -86,
+                            -88, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            69, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(215 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(217 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(218 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 21,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(219 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(220 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(221 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 21, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(222 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(231 | (224 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -87,
+                            -86, -86, -94, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(225 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 21, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(226 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(227 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(228 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(229 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(230 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(238 | (232 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -86, -87, -118, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(233 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(234 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(235 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(236 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(237 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(239 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(240 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(241 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(242 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(243 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(244 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(245 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(246 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(247 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 21,
+                            85, -1
+                    }),
+            new CompactEntry(248 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(250 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(251 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(252 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(253 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(256 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(257 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 81, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(258 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(260 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(261 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(262 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(263 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(264 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(265 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 81, 85,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(267 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 81,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(268 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(269 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(271 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(272 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(273 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(274 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(275 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(278 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 21, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(279 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(280 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(281 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(282 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(284 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            81, 85, 127, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(285 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 81, 127, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(286 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            21, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(287 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(288 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 21,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(289 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 81, 85,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 85,
+                            84, -1
+                    }),
+            new CompactEntry(291 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            81, 85, 127, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(292 | (285 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -92, -65, -86,
+                            -86, -86, -86, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(293 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(294 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(295 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(296 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 81, 127, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(297 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            21, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(298 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(299 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 21,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(300 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 81, 85,
+                            85, -1
+                    }),
+            new CompactEntry(302 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            81, 85, 127, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(303 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 84, 127, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(304 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(305 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(307 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(308 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 81,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(310 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 85,
+                            21, -1
+                    }),
+            new CompactEntry(311 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(312 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 81, 85,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            81, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(314 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 63, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(315 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            21, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(316 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(317 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(318 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 63, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(319 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(320 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(321 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 21,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(322 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(323 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 63, 85,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(324 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(325 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            81, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(326 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            81, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(327 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(328 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(329 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(330 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 84,
+                            85, -1
+                    }),
+            new CompactEntry(335 | (332 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -87,
+                            -86, -86, 42, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(333 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(334 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(336 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(337 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(338 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(340 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(341 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(342 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(92 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(344 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(345 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(346 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 69,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(347 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            21, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(350 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 21, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(351 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(352 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(353 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(354 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(357 | (356 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -86, -87, 42, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(358 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(359 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(360 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 21,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(361 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            69, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(362 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(363 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 81, 85,
+                            85, -1
+                    }),
+            new CompactEntry(364 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(365 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(367 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 69,
+                            85, -1
+                    }),
+            new CompactEntry(368 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(370 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 69, 85,
+                            85, -1
+                    }),
+            new CompactEntry(371 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(372 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 21,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(373 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(387 | (375 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -86, -86, -87, -88,
+                            -86, -1
+                    }),
+            new CompactEntry(382 | (376 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -86, -87, -86, -88,
+                            -86, -1
+                    }),
+            new CompactEntry(381 | (377 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -86,
+                            -90, -86, -94, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(378 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 81, 85,
+                            85, -1
+                    }),
+            new CompactEntry(379 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(380 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 21, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(383 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(384 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            69, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(385 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(386 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(388 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(389 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(396 | (391 << 9) | (10 << 18),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -85, -86, -1, -65,
+                            -86, -86, -65, -87,
+                            -86, -86, -94, -86,
+                            -86, -1
+                    }),
+            new CompactEntry(392 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 21, 85,
+                            85, -1
+                    }),
+            new CompactEntry(393 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 85,
+                            69, -1
+                    }),
+            new CompactEntry(394 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(395 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 84, 85,
+                            85, -1
+                    }),
+            new CompactEntry(397 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(398 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 84,
+                            85, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(399 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 85, 85, 81,
+                            85, -1
+                    }),
+            new CompactEntry(400 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(401 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(403 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            21, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(404 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 84, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(405 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            85, 69, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(406 | (10 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            87, 85, -1, 127,
+                            85, 85, 127, 85,
+                            84, 85, 85, 85,
+                            85, -1
+                    }),
+            new CompactEntry(410 | (409 << 9),
+                    new byte[]{
+                            -1, -1, -1, -1,
+                            -1, -1, 127, -1,
+                            -1, -1, -1, -1,
+                            -1, -1, -1, -1,
+                            -1, -13
+                    })
+    };
+    public static final short[] INDICES = {
+            0, -1, 1, 1, 0, 2, 0, 3, 4,
+            5, 6, 7, 8, 6, 9, 0, 10, 0,
+            0, 0, 0, 11, 0, 12, 0, 0, 0,
+            13, 0, 0, 14, 15, 16, 17, 17, 18,
+            19, 20, 0, 21, 0, -2, 22, 23, 24,
+            25, 25, 26, 27, 27, -3, -4, 28, 29,
+            29, 0, 0, 0, 30, 31, -5, -5, 0,
+            0, 32, 33, 0, 0, 34, 0, 35, 0,
+            36, 0, 0, 37, 38, 0, 39, 40, 41,
+            42, 43, 0, 6, 0, 0, 44, 0, 0,
+            45, 46, 6, 47, 48, 49, 50, 51, 52,
+            53, 54, 55, 56, 57, 6, -6, 58, 59,
+            6, 60, 61, 62, 63, 64, 65, 6, 66,
+            67, 68, 69, 6, -7, 70, 71, 72, 73,
+            74, 6, 75, 76, 77, 78, 79, 6, 80,
+            81, 82, 53, 83, 84, 85, -8, 86, 87,
+            6, 88, 46, 89, 90, 91, 92, 93, 94,
+            -9, 95, 96, 97, 6, 98, 99, 100, 101,
+            102, 6, 103, 6, 104, 105, 85, 106, 107,
+            108, 109, 110, 111, 112, 113, 114, 6, 115,
+            116, 85, 117, 6, -10, 118, 119, 120, 6,
+            121, 122, 6, 123, 124, 125, 126, 127, 128,
+            129, 53, 130, 131, 132, 133, 134, 124, 135,
+            136, 137, 138, 139, 6, 140, 141, 142, 6,
+            143, 144, 145, 146, 147, 148, 6, 149, 150,
+            151, 152, 153, 154, 155, 53, 156, 157, 158,
+            159, 160, 161, 6, 162, 163, 164, 165, 166,
+            167, 168, 169, 170, 171, 6, 172, 173, 174,
+            175, 124, -11, 176, 177, 178, 100, 179, 180,
+            181, 182, 183, 184, 185, 186, 187, 188, 189,
+            190, 191, 192, 193, 194, 6, -12, 195, 196,
+            197, 198, 199, -13, 200, 201, 202, 203, 204,
+            205, 206, 207, 208, 209, 210, 211, 212, 213,
+            214, 215, 216, 206, 217, 218, 219, 220, 124,
+            221, 222, 53, 223, 224, 225, 226, 227, 228,
+            229, 230, 231, 232, 233, 234, 235, 236, 237,
+            238, 239, 240, 241, 242, 243, 6, 244, 245,
+            246, 189, 247, 248, 249, 6, 250, 251, 252,
+            253, 254, 255, 256, 257, 6, -14, 258, 259,
+            260, 261, 262, 53, 263, 62, 264, 265, 266,
+            267, 268, 269, 270, 271, 6, 272, 273, 6,
+            274, 275, 276, 277, 226, 278, 279, 280, 281,
+            282, 283, 6, 185, 284, 285, 286, 287, 100,
+            288, 289, 141, 290, 291, 292, 293, 294, 141,
+            295, 296, 297, 298, 299, 53, 300, 301, 302,
+            303, 6, 0, 304, 0, 0, 0, 0
+    };
+    public static final byte[] ACCEPTS = {
+            -1, -1, 85, 85, 88, 64, 69, 88, 39,
+            38, 38, 38, 38, 35, 54, 78, 59, 63,
+            83, 40, 41, 52, 76, 50, 48, 74, 47,
+            51, 49, 75, 46, 1, -1, -1, 1, 53,
+            -1, -1, 87, 86, 77, 2, 1, 1, -1,
+            -1, 1, -1, -1, 1, 2, 3, -1, -1,
+            1, 3, 2, 2, -1, 2, 2, 2, 66,
+            84, 71, 55, 79, 73, 67, 68, 70, 72,
+            56, 80, 65, 88, -1, 7, -1, -1, -1,
+            -1, -1, 13, 38, 44, 45, 58, 82, 62,
+            38, 38, 37, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 16, 38, 38, 38,
+            14, 38, 38, 38, 38, 38, 38, 24, 38,
+            38, 38, 38, 17, 38, 38, 38, 38, 38,
+            38, 15, 38, 38, 38, 38, 38, 18, 11,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            8, 38, 38, 38, 38, 38, 38, 37, 38,
+            38, 38, 38, 38, 5, 38, 38, 38, 38,
+            38, 25, 38, 9, 38, 38, 38, 38, 38,
+            37, 38, 38, 38, 38, 38, 38, 32, 38,
+            38, 38, 38, 6, 20, 38, 38, 38, 27,
+            38, 38, 22, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 31, 38, 38, 38, 34,
+            38, 38, 38, 38, 38, 38, 33, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 28, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 26, 38, 38, 21,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 19, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 29, 38, 38,
+            38, 38, 38, 38, 38, 30, 38, 38, 38,
+            38, 38, 38, 38, 38, 12, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 36, 38, 38, 4,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 23, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 38, 38, 38, 38, 38, 38, 38, 38,
+            38, 10, 42, 57, 81, 61, 43, 60
+    };
 
     public static int getTransition(int transition, int state) {
         short index = INDICES[state];
-        if (index < 0) {
-            // XXX: the maximum value does not exceed 32767, so it does not need to be converted to unsigned short
-            return FULL[~index][transition];
-        }
-        CompactEntry entry = COMPACT[index];
-        int v = entry.data[transition >> DATA_PER_BYTE_SHIFT] & 0xFF;
-        v >>= NUM_BITS * (transition & (DATA_PER_BYTE - 1));
-        v &= NUM_VALUES;
-        v *= BITS_PER_VALUE;
-        return (entry.values >>> v) & MAX_VALUE;
+        if (index < 0) return FULL[~index][transition] & 0xFFFF;
+        final CompactEntry entry = COMPACT[index];
+        int v = entry.data[transition >> 2] & 0xFF;
+        v >>= 2 * (transition & 3);
+        v &= 3;
+        v *= 9;
+        return (entry.values >>> v) & 511;
+    }
+
+    static {
+        // Arbitrarily-chosen character which is greater than startChar, and should not appear in actual
+        // input.
+        INVALID_CHAR = 18;
+        assert INVALID_CHAR > NFAtoDFA.START_CHAR;
+    }
+
+    private Lexer() {
     }
 }
