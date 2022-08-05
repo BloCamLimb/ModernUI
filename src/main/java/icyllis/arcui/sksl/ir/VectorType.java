@@ -26,7 +26,7 @@ public final class VectorType extends Type {
     private final int mColumns;
 
     VectorType(String name, String abbrev, Type componentType, int columns) {
-        super(name, abbrev, KIND_VECTOR);
+        super(name, abbrev, TypeKind_Vector);
         assert columns >= 2 && columns <= 4;
         mComponentType = (ScalarType) componentType;
         mColumns = columns;
@@ -34,23 +34,23 @@ public final class VectorType extends Type {
 
     @Nonnull
     @Override
-    public ScalarType getComponentType() {
+    public ScalarType componentType() {
         return mComponentType;
     }
 
     @Override
-    public int getColumns() {
+    public int columns() {
         return mColumns;
     }
 
     @Override
-    public int getRows() {
+    public int rows() {
         return 1;
     }
 
     @Override
-    public int getBitWidth() {
-        return mComponentType.getBitWidth();
+    public int bitWidth() {
+        return mComponentType.bitWidth();
     }
 
     @Override
@@ -59,7 +59,7 @@ public final class VectorType extends Type {
     }
 
     @Override
-    public int getSlots() {
+    public int slotCount() {
         return mColumns;
     }
 }

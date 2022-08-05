@@ -28,6 +28,8 @@ import javax.annotation.Nonnull;
  */
 public record Modifiers(Layout layout, int flags) {
 
+    private static final Modifiers EMPTY = new Modifiers(Layout.empty(), 0);
+
     /**
      * OpenGL 4.2 or ARB_shading_language_420pack removes the ordering restriction in most cases.
      */
@@ -51,6 +53,11 @@ public record Modifiers(Layout layout, int flags) {
             kHasSideEffects_Flag = 1 << 8,
             kInline_Flag = 1 << 9,
             kNoInline_Flag = 1 << 10;
+
+    @Nonnull
+    public static Modifiers empty() {
+        return EMPTY;
+    }
 
     @Nonnull
     public String description() {

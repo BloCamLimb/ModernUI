@@ -100,7 +100,7 @@ public class RegexParser {
      */
     private void sequence() {
         quantifiedTerm();
-        for (; ; ) {
+        for (;;) {
             switch (peek()) {
                 case END: // fall through
                 case '|': // fall through
@@ -194,7 +194,7 @@ public class RegexParser {
         } else {
             set.mPayload = 0;
         }
-        for (; ; ) {
+        for (;;) {
             switch (peek()) {
                 case ']' -> {
                     ++mIndex;

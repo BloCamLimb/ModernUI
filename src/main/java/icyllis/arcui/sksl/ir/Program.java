@@ -16,24 +16,10 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.sksl.codegen;
-
-import icyllis.arcui.sksl.Context;
-import icyllis.arcui.sksl.ir.Program;
+package icyllis.arcui.sksl.ir;
 
 /**
- * Abstract superclass of all code generators, which take a Program as input and produce code as
- * output.
+ * Represents a fully-digested program, ready for code generation.
  */
-public abstract class CodeGenerator {
-
-    public final Context mContext;
-    public final Program mProgram;
-    public StringBuilder mOut;
-
-    public CodeGenerator(Context context, Program program, StringBuilder out) {
-        mContext = context;
-        mProgram = program;
-        mOut = out;
-    }
+public class Program {
 }

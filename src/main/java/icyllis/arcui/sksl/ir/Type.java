@@ -18,11 +18,11 @@
 
 package icyllis.arcui.sksl.ir;
 
+import icyllis.arcui.sksl.Context;
 import icyllis.arcui.sksl.Modifiers;
 import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
-import java.util.Collections;
 import java.util.List;
 
 /**
@@ -33,111 +33,6 @@ public class Type extends Symbol {
     public static final int MAX_ABBREV_LENGTH = 3;
 
     /**
-     * Kinds of Type.
-     */
-    public static final byte
-            KIND_ARRAY = 0,
-            KIND_GENERIC = 1,
-            KIND_LITERAL = 2,
-            KIND_MATRIX = 3,
-            KIND_OTHER = 4,
-            KIND_SAMPLER = 5,
-            KIND_SEPARATE_SAMPLER = 6,
-            KIND_SCALAR = 7,
-            KIND_STRUCT = 8,
-            KIND_TEXTURE = 9,
-            KIND_VECTOR = 10,
-            KIND_VOID = 11,
-            KIND_COLOR_FILTER = 12,
-            KIND_SHADER = 13,
-            KIND_BLENDER = 14;
-
-    /**
-     * Kinds of ScalarType.
-     */
-    public static final byte
-            SCALAR_KIND_FLOAT = 0,
-            SCALAR_KIND_SIGNED = 1,
-            SCALAR_KIND_UNSIGNED = 2,
-            SCALAR_KIND_BOOLEAN = 3,
-            SCALAR_KIND_DEFAULT = 4;
-
-    /**
-     * CoercionCost.
-     */
-    public static final class CoercionCost {
-
-        ///// CONSTANTS
-
-        public static final long
-                FREE = 0,
-                IMPOSSIBLE = 1L << (31 + 31);
-
-        ///// CONSTRUCTORS
-
-        public static long makeNormalCost(int normalCost) {
-            assert normalCost >= 0;
-            return normalCost;
-        }
-
-        public static long makeNarrowingCost(int narrowingCost) {
-            assert narrowingCost >= 0;
-            return (long) narrowingCost << 31;
-        }
-
-        public static long makeCoercionCost(int normalCost, int narrowingCost, boolean impossible) {
-            assert normalCost >= 0;
-            assert narrowingCost >= 0;
-            return makeNormalCost(normalCost) |
-                    makeNarrowingCost(narrowingCost) |
-                    (impossible ? IMPOSSIBLE : 0);
-        }
-
-        ///// GETTERS
-
-        public static int getNormalCost(long coercionCost) {
-            return (int) (coercionCost & 0x7FFFFFFF);
-        }
-
-        public static int getNarrowingCost(long coercionCost) {
-            return (int) ((coercionCost >> 31) & 0x7FFFFFFF);
-        }
-
-        public static boolean getImpossible(long coercionCost) {
-            return (coercionCost & IMPOSSIBLE) != 0;
-        }
-
-        ///// METHODS
-
-        public static boolean isImpossible(long coercionCost, boolean allowNarrowing) {
-            return !getImpossible(coercionCost) && (allowNarrowing || getNarrowingCost(coercionCost) == 0);
-        }
-
-        ///// OPERATORS
-
-        // Addition of two costs. Saturates at IMPOSSIBLE.
-        public static long add(long lhs, long rhs) {
-            if (getImpossible(lhs) || getImpossible(rhs)) {
-                return IMPOSSIBLE;
-            }
-            return makeCoercionCost(getNormalCost(lhs) + getNormalCost(rhs),
-                    getNarrowingCost(lhs) + getNarrowingCost(rhs), false);
-        }
-
-        public static int compare(long lhs, long rhs) {
-            int res = Boolean.compare(getImpossible(lhs), getImpossible(rhs));
-            if (res != 0) {
-                return res;
-            }
-            res = Integer.compare(getNarrowingCost(lhs), getNarrowingCost(rhs));
-            if (res != 0) {
-                return res;
-            }
-            return Integer.compare(getNormalCost(lhs), getNormalCost(rhs));
-        }
-    }
-
-    /**
      * Struct member.
      *
      * @param start the start offset
@@ -146,12 +41,43 @@ public class Type extends Symbol {
     public record Field(int start, int end, Modifiers modifiers, String name, Type type) {
 
         @Nonnull
-        public String getDescription() {
-            return type.getDisplayName() + " " + name + ";";
+        public String description() {
+            return type.displayName() + " " + name + ";";
         }
     }
 
-    private final String mAbbrev;
+    /**
+     * Kinds of Type.
+     */
+    public static final byte
+            TypeKind_Array = 0,
+            TypeKind_Generic = 1,
+            TypeKind_Literal = 2,
+            TypeKind_Matrix = 3,
+            TypeKind_Other = 4,
+            TypeKind_Sampler = 5,
+            TypeKind_SeparateSampler = 6,
+            TypeKind_Scalar = 7,
+            TypeKind_Struct = 8,
+            TypeKind_Texture = 9,
+            TypeKind_Vector = 10,
+            TypeKind_Void = 11;
+    public static final byte
+            TypeKind_ColorFilter = 12,
+            TypeKind_Shader = 13,
+            TypeKind_Blender = 14;
+
+    /**
+     * Kinds of ScalarType.
+     */
+    public static final byte
+            ScalarKind_Float = 0,
+            ScalarKind_Signed = 1,
+            ScalarKind_Unsigned = 2,
+            ScalarKind_Boolean = 3,
+            ScalarKind_NonScalar = 4;
+
+    private final String mAbbreviatedName;
     private final byte mTypeKind;
 
     Type(String name, String abbrev, byte kind) {
@@ -159,9 +85,9 @@ public class Type extends Symbol {
     }
 
     Type(String name, String abbrev, byte kind, int start, int end) {
-        super(start, end, name, null);
-        assert abbrev.length() <= MAX_ABBREV_LENGTH;
-        mAbbrev = abbrev;
+        super(start, end, Kind_Type, name, null);
+        assert (abbrev.length() <= MAX_ABBREV_LENGTH);
+        mAbbreviatedName = abbrev;
         mTypeKind = kind;
     }
 
@@ -187,7 +113,7 @@ public class Type extends Symbol {
      */
     @Nonnull
     public static Type makeGenericType(String name, Type... types) {
-        return new GenericType(name, List.of(types));
+        return new GenericType(name, types);
     }
 
     /**
@@ -256,7 +182,7 @@ public class Type extends Symbol {
      */
     @Nonnull
     @Override
-    public final Type getType() {
+    public final Type type() {
         return this;
     }
 
@@ -264,7 +190,7 @@ public class Type extends Symbol {
      * If this is an alias, returns the underlying type, otherwise returns this.
      */
     @Nonnull
-    public Type getResolvedType() {
+    public Type resolve() {
         return this;
     }
 
@@ -274,7 +200,7 @@ public class Type extends Symbol {
      * itself.
      */
     @Nonnull
-    public Type getComponentType() {
+    public Type componentType() {
         return this;
     }
 
@@ -283,13 +209,12 @@ public class Type extends Symbol {
      * a texture type of texture2D).
      */
     @Nonnull
-    public Type getTextureType() {
-        assert false;
-        return this;
+    public Type textureType() {
+        throw new AssertionError();
     }
 
     @Nonnull
-    public Type getLiteralScalarType() {
+    public Type scalarTypeForLiteral() {
         return this;
     }
 
@@ -297,47 +222,47 @@ public class Type extends Symbol {
      * Returns true if these types are equal after alias resolution.
      */
     public final boolean matches(@Nonnull Type other) {
-        return getResolvedType().getName().equals(other.getResolvedType().getName());
+        return resolve().name().equals(other.resolve().name());
     }
 
     /**
      * Returns an abbreviated name of the type, meant for name-mangling. (e.g. float4x4 -> f44)
      */
     @Nonnull
-    public final String getAbbreviation() {
-        return mAbbrev;
+    public final String abbreviatedName() {
+        return mAbbreviatedName;
     }
 
     /**
      * Returns the category (scalar, vector, matrix, etc.) of this type.
      */
-    public final byte getTypeKind() {
+    public final byte typeKind() {
         return mTypeKind;
     }
 
     /**
-     * Returns the ScalarKind of this type (always DEFAULT for non-scalar values).
+     * Returns the ScalarKind of this type (always NonScalar for non-scalar values).
      */
-    public byte getScalarKind() {
-        return SCALAR_KIND_DEFAULT;
+    public byte scalarKind() {
+        return ScalarKind_NonScalar;
     }
 
     /**
      * Converts a component type and a size (float, 10) into an array name ("float[10]").
      */
     public final String getArrayName(int arraySize) {
-        return String.format("%s[%d]", getName(), arraySize);
+        return String.format("%s[%d]", name(), arraySize);
     }
 
     @Nonnull
-    public final String getDisplayName() {
-        return getLiteralScalarType().getName();
+    public final String displayName() {
+        return scalarTypeForLiteral().name();
     }
 
     @Nonnull
     @Override
-    public final String getDescription() {
-        return getDisplayName();
+    public final String description() {
+        return displayName();
     }
 
     /**
@@ -354,22 +279,22 @@ public class Type extends Symbol {
      * Returns true if this type is either private, or contains a private field (recursively).
      */
     public boolean isPrivate() {
-        return getName().startsWith("$");
+        return name().startsWith("$");
     }
 
     /**
      * Returns true if this type is a bool.
      */
     public final boolean isBoolean() {
-        return getScalarKind() == SCALAR_KIND_BOOLEAN;
+        return scalarKind() == ScalarKind_Boolean;
     }
 
     /**
      * Returns true if this is a numeric scalar type.
      */
     public final boolean isNumber() {
-        return switch (getScalarKind()) {
-            case SCALAR_KIND_FLOAT, SCALAR_KIND_SIGNED, SCALAR_KIND_UNSIGNED -> true;
+        return switch (scalarKind()) {
+            case ScalarKind_Float, ScalarKind_Signed, ScalarKind_Unsigned -> true;
             default -> false;
         };
     }
@@ -378,45 +303,45 @@ public class Type extends Symbol {
      * Returns true if this is a floating-point scalar type (float or half).
      */
     public final boolean isFloat() {
-        return getScalarKind() == SCALAR_KIND_FLOAT;
+        return scalarKind() == ScalarKind_Float;
     }
 
     /**
      * Returns true if this is a signed scalar type (int or short).
      */
     public final boolean isSigned() {
-        return getScalarKind() == SCALAR_KIND_SIGNED;
+        return scalarKind() == ScalarKind_Signed;
     }
 
     /**
      * Returns true if this is an unsigned scalar type (uint or ushort).
      */
     public final boolean isUnsigned() {
-        return getScalarKind() == SCALAR_KIND_UNSIGNED;
+        return scalarKind() == ScalarKind_Unsigned;
     }
 
     /**
      * Returns true if this is a signed or unsigned integer.
      */
     public final boolean isInteger() {
-        return switch (getScalarKind()) {
-            case SCALAR_KIND_SIGNED, SCALAR_KIND_UNSIGNED -> true;
+        return switch (scalarKind()) {
+            case ScalarKind_Signed, ScalarKind_Unsigned -> true;
             default -> false;
         };
     }
 
     /**
      * Returns true if this is an "opaque type" (an external object which the shader references in
-     * some fashion). https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Opaque_types
+     * some fashion). <a href="https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Opaque_types">Link</a>
      */
     public final boolean isOpaque() {
         return switch (mTypeKind) {
-            case KIND_SAMPLER,
-                    KIND_SEPARATE_SAMPLER,
-                    KIND_TEXTURE,
-                    KIND_COLOR_FILTER,
-                    KIND_SHADER,
-                    KIND_BLENDER -> true;
+            case TypeKind_Sampler,
+                    TypeKind_SeparateSampler,
+                    TypeKind_Texture,
+                    TypeKind_ColorFilter,
+                    TypeKind_Shader,
+                    TypeKind_Blender -> true;
             default -> false;
         };
     }
@@ -425,9 +350,8 @@ public class Type extends Symbol {
      * Returns the "priority" of a number type, in order of float > half > int > short.
      * When operating on two number types, the result is the higher-priority type.
      */
-    public int getPriority() {
-        assert false;
-        return -1;
+    public int priority() {
+        throw new AssertionError();
     }
 
     /**
@@ -435,74 +359,76 @@ public class Type extends Symbol {
      * another type.
      */
     public final boolean canCoerceTo(Type other, boolean allowNarrowing) {
-        return CoercionCost.isImpossible(getCoercionCost(other), allowNarrowing);
+        return CoercionCost.isPossible(coercionCost(other), allowNarrowing);
     }
 
     /**
      * Determines the "cost" of coercing (implicitly converting) this type to another type. The cost
      * is a number with no particular meaning other than that lower costs are preferable to higher
      * costs. Returns IMPOSSIBLE if the coercion is not possible.
+     *
+     * @see CoercionCost
      */
-    public final long getCoercionCost(Type other) {
+    public final long coercionCost(Type other) {
         if (matches(other)) {
-            return CoercionCost.FREE;
+            return CoercionCost.free();
         }
-        if (mTypeKind == other.mTypeKind && (isVector() || isMatrix() || isArray())) {
+        if (typeKind() == other.typeKind() &&
+                (isVector() || isMatrix() || isArray())) {
             // Vectors/matrices/arrays of the same size can be coerced if their component type can be.
-            if (isMatrix() && (getRows() != other.getRows())) {
-                return CoercionCost.IMPOSSIBLE;
+            if (isMatrix() && (rows() != other.rows())) {
+                return CoercionCost.impossible();
             }
-            if (getColumns() != other.getColumns()) {
-                return CoercionCost.IMPOSSIBLE;
+            if (columns() != other.columns()) {
+                return CoercionCost.impossible();
             }
-            return getComponentType().getCoercionCost(other.getComponentType());
+            return componentType().coercionCost(other.componentType());
         }
         if (isNumber() && other.isNumber()) {
             if (isLiteral() && isInteger()) {
-                return CoercionCost.FREE;
-            } else if (getScalarKind() != other.getScalarKind()) {
-                return CoercionCost.IMPOSSIBLE;
-            } else if (other.getPriority() >= getPriority()) {
-                return CoercionCost.makeNormalCost(other.getPriority() - getPriority());
+                return CoercionCost.free();
+            } else if (scalarKind() != other.scalarKind()) {
+                return CoercionCost.impossible();
+            } else if (other.priority() >= priority()) {
+                return CoercionCost.normal(other.priority() - priority());
             } else {
-                return CoercionCost.makeNarrowingCost(getPriority() - other.getPriority());
+                return CoercionCost.narrowing(priority() - other.priority());
             }
         }
-        if (mTypeKind == KIND_GENERIC) {
-            final List<Type> types = getCoercibleTypes();
-            for (int i = 0; i < types.size(); i++) {
-                if (types.get(i).matches(other)) {
-                    return CoercionCost.makeNormalCost(i + 1);
+        if (mTypeKind == TypeKind_Generic) {
+            final Type[] types = coercibleTypes();
+            for (int i = 0; i < types.length; i++) {
+                if (types[i].matches(other)) {
+                    return CoercionCost.normal(i + 1);
                 }
             }
         }
-        return CoercionCost.IMPOSSIBLE;
+        return CoercionCost.impossible();
     }
 
     /**
      * For generic types, returns the types that this generic type can substitute for.
      */
     @Nonnull
-    public List<Type> getCoercibleTypes() {
-        assert false;
-        return Collections.emptyList();
+    public Type[] coercibleTypes() {
+        throw new AssertionError();
     }
 
     /**
      * For integer types, returns the minimum value that can fit in the type.
      */
-    public final long getMinimumValue() {
+    public long minimumValue() {
         assert isInteger();
-        return isUnsigned() ? 0 : -(1L << (getBitWidth() - 1));
+        return isUnsigned() ? 0 : -(1L << (bitWidth() - 1));
     }
 
     /**
      * For integer types, returns the maximum value that can fit in the type.
      */
-    public final long getMaximumValue() {
+    public long maximumValue() {
         assert isInteger();
-        return (isUnsigned() ? (1L << getBitWidth())
-                : (1L << (getBitWidth() - 1))) - 1;
+        return (isUnsigned() ? (1L << bitWidth())
+                : (1L << (bitWidth() - 1))) - 1;
     }
 
     /**
@@ -510,44 +436,44 @@ public class Type extends Symbol {
      * For scalars, returns 1. For arrays, returns either the size of the array (if known) or -1.
      * For all other types, causes an assertion failure.
      */
-    public int getColumns() {
-        assert false;
-        return -1;
+    public int columns() {
+        throw new AssertionError();
     }
 
     /**
      * For matrices, returns the number of rows (e.g. mat2x4 returns 4). For vectors and scalars,
      * returns 1. For all other types, causes an assertion failure.
      */
-    public int getRows() {
-        assert false;
-        return -1;
+    public int rows() {
+        throw new AssertionError();
     }
 
     /**
      * Returns the number of scalars needed to hold this type.
      */
-    public int getSlots() {
+    public int slotCount() {
         return 0;
     }
 
-    public int getDimensions() {
-        assert false;
-        return Spv.SpvDim1D;
+    @Nonnull
+    public Field[] fields() {
+        throw new AssertionError();
+    }
+
+    public int dimensions() {
+        throw new AssertionError();
     }
 
     public boolean isDepth() {
-        assert false;
-        return false;
+        throw new AssertionError();
     }
 
     public boolean isLayered() {
-        assert false;
-        return false;
+        throw new AssertionError();
     }
 
     public final boolean isVoid() {
-        return mTypeKind == KIND_VOID;
+        return mTypeKind == TypeKind_Void;
     }
 
     public boolean isScalar() {
@@ -581,9 +507,9 @@ public class Type extends Symbol {
     // Is this type something that can be bound & sampled from an RuntimeEffect?
     // Includes types that represent stages of the ENGINE (colorFilter, shader, blender).
     public final boolean isEffectChild() {
-        return mTypeKind == KIND_COLOR_FILTER ||
-                mTypeKind == KIND_SHADER ||
-                mTypeKind == KIND_BLENDER;
+        return mTypeKind == TypeKind_ColorFilter ||
+                mTypeKind == TypeKind_Shader ||
+                mTypeKind == TypeKind_Blender;
     }
 
     public boolean isMultisampled() {
@@ -597,14 +523,212 @@ public class Type extends Symbol {
     }
 
     public final boolean hasPrecision() {
-        return getComponentType().isNumber() || mTypeKind == KIND_SAMPLER;
+        return componentType().isNumber() || mTypeKind == TypeKind_Sampler;
     }
 
     public final boolean highPrecision() {
-        return getBitWidth() >= 32;
+        return bitWidth() >= 32;
     }
 
-    public int getBitWidth() {
+    public int bitWidth() {
         return 0;
+    }
+
+    /**
+     * Returns the corresponding vector or matrix type with the specified number of columns and
+     * rows.
+     */
+    public final Type toCompound(Context context, int columns, int rows) {
+        assert (isScalar());
+        if (columns == 1 && rows == 1) {
+            return this;
+        }
+        if (matches(context.mTypes.mFloat) || matches(context.mTypes.mFloatLiteral)) {
+            return switch (rows) {
+                case 1 -> switch (columns) {
+                    case 2 -> context.mTypes.mFloat2;
+                    case 3 -> context.mTypes.mFloat3;
+                    case 4 -> context.mTypes.mFloat4;
+                    default -> throw new IllegalStateException();
+                };
+                case 2 -> switch (columns) {
+                    case 2 -> context.mTypes.mFloat2x2;
+                    case 3 -> context.mTypes.mFloat3x2;
+                    case 4 -> context.mTypes.mFloat4x2;
+                    default -> throw new IllegalStateException();
+                };
+                case 3 -> switch (columns) {
+                    case 2 -> context.mTypes.mFloat2x3;
+                    case 3 -> context.mTypes.mFloat3x3;
+                    case 4 -> context.mTypes.mFloat4x3;
+                    default -> throw new IllegalStateException();
+                };
+                case 4 -> switch (columns) {
+                    case 2 -> context.mTypes.mFloat2x4;
+                    case 3 -> context.mTypes.mFloat3x4;
+                    case 4 -> context.mTypes.mFloat4x4;
+                    default -> throw new IllegalStateException();
+                };
+                default -> throw new IllegalStateException();
+            };
+        } else if (matches(context.mTypes.mHalf)) {
+            return switch (rows) {
+                case 1 -> switch (columns) {
+                    case 2 -> context.mTypes.mHalf2;
+                    case 3 -> context.mTypes.mHalf3;
+                    case 4 -> context.mTypes.mHalf4;
+                    default -> throw new IllegalStateException();
+                };
+                case 2 -> switch (columns) {
+                    case 2 -> context.mTypes.mHalf2x2;
+                    case 3 -> context.mTypes.mHalf3x2;
+                    case 4 -> context.mTypes.mHalf4x2;
+                    default -> throw new IllegalStateException();
+                };
+                case 3 -> switch (columns) {
+                    case 2 -> context.mTypes.mHalf2x3;
+                    case 3 -> context.mTypes.mHalf3x3;
+                    case 4 -> context.mTypes.mHalf4x3;
+                    default -> throw new IllegalStateException();
+                };
+                case 4 -> switch (columns) {
+                    case 2 -> context.mTypes.mHalf2x4;
+                    case 3 -> context.mTypes.mHalf3x4;
+                    case 4 -> context.mTypes.mHalf4x4;
+                    default -> throw new IllegalStateException();
+                };
+                default -> throw new IllegalStateException();
+            };
+        } else if (matches(context.mTypes.mInt) || matches(context.mTypes.mIntLiteral)) {
+            if (rows == 1) {
+                return switch (columns) {
+                    case 2 -> context.mTypes.mInt2;
+                    case 3 -> context.mTypes.mInt3;
+                    case 4 -> context.mTypes.mInt4;
+                    default -> throw new IllegalStateException();
+                };
+            }
+            throw new IllegalStateException();
+        } else if (matches(context.mTypes.mShort)) {
+            if (rows == 1) {
+                return switch (columns) {
+                    case 2 -> context.mTypes.mShort2;
+                    case 3 -> context.mTypes.mShort3;
+                    case 4 -> context.mTypes.mShort4;
+                    default -> throw new IllegalStateException();
+                };
+            }
+            throw new IllegalStateException();
+        } else if (matches(context.mTypes.mUInt)) {
+            if (rows == 1) {
+                return switch (columns) {
+                    case 2 -> context.mTypes.mUInt2;
+                    case 3 -> context.mTypes.mUInt3;
+                    case 4 -> context.mTypes.mUInt4;
+                    default -> throw new IllegalStateException();
+                };
+            }
+            throw new IllegalStateException();
+        } else if (matches(context.mTypes.mUShort)) {
+            if (rows == 1) {
+                return switch (columns) {
+                    case 2 -> context.mTypes.mUShort2;
+                    case 3 -> context.mTypes.mUShort3;
+                    case 4 -> context.mTypes.mUShort4;
+                    default -> throw new IllegalStateException();
+                };
+            }
+            throw new IllegalStateException();
+        } else if (matches(context.mTypes.mBool)) {
+            if (rows == 1) {
+                return switch (columns) {
+                    case 2 -> context.mTypes.mBool2;
+                    case 3 -> context.mTypes.mBool3;
+                    case 4 -> context.mTypes.mBool4;
+                    default -> throw new IllegalStateException();
+                };
+            }
+            throw new IllegalStateException();
+        }
+        throw new IllegalStateException();
+    }
+
+    /**
+     * CoercionCost. The values are packed into a long value.
+     *
+     * @see #coercionCost(Type)
+     */
+    public static final class CoercionCost {
+
+        ///// Pack
+
+        public static long free() {
+            return 0;
+        }
+
+        public static long normal(int cost) {
+            assert cost >= 0;
+            return cost;
+        }
+
+        public static long narrowing(int cost) {
+            assert cost >= 0;
+            return (long) cost << 32;
+        }
+
+        public static long impossible() {
+            // any negative value means impossible
+            return 0x80000000_80000000L;
+        }
+
+        private static long make(int normalCost, int narrowingCost) {
+            return normal(normalCost) | narrowing(narrowingCost);
+        }
+
+        ///// Unpack
+
+        public static int getNormalCost(long coercionCost) {
+            return (int) coercionCost;
+        }
+
+        public static int getNarrowingCost(long coercionCost) {
+            return (int) (coercionCost >> 32);
+        }
+
+        public static boolean isImpossible(long coercionCost) {
+            // any negative value means impossible
+            return (coercionCost & impossible()) != 0;
+        }
+
+        ///// METHODS
+
+        public static boolean isPossible(long coercionCost, boolean allowNarrowing) {
+            return !isImpossible(coercionCost) && (allowNarrowing || getNarrowingCost(coercionCost) == 0);
+        }
+
+        ///// OPERATORS
+
+        // Addition of two costs. Saturates at IMPOSSIBLE.
+        public static long concat(long lhs, long rhs) {
+            if (isImpossible(lhs) || isImpossible(rhs)) {
+                return impossible();
+            }
+            // overflow becomes impossible (should not happen)
+            return make(getNormalCost(lhs) + getNormalCost(rhs),
+                    getNarrowingCost(lhs) + getNarrowingCost(rhs));
+        }
+
+        public static int compare(long lhs, long rhs) {
+            // order is, impossible, then narrowing, then normal
+            int res = Boolean.compare(isImpossible(lhs), isImpossible(rhs));
+            if (res != 0) {
+                return res;
+            }
+            res = Integer.compare(getNarrowingCost(lhs), getNarrowingCost(rhs));
+            if (res != 0) {
+                return res;
+            }
+            return Integer.compare(getNormalCost(lhs), getNormalCost(rhs));
+        }
     }
 }

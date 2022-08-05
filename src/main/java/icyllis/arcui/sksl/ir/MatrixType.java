@@ -27,7 +27,7 @@ public final class MatrixType extends Type {
     private final int mRows;
 
     MatrixType(String name, String abbrev, Type componentType, int columns, int rows) {
-        super(name, abbrev, KIND_MATRIX);
+        super(name, abbrev, TypeKind_Matrix);
         assert columns >= 2 && columns <= 4;
         assert rows >= 2 && rows <= 4;
         mComponentType = (ScalarType) componentType;
@@ -37,23 +37,23 @@ public final class MatrixType extends Type {
 
     @Nonnull
     @Override
-    public ScalarType getComponentType() {
+    public ScalarType componentType() {
         return mComponentType;
     }
 
     @Override
-    public int getColumns() {
+    public int columns() {
         return mColumns;
     }
 
     @Override
-    public int getRows() {
+    public int rows() {
         return mRows;
     }
 
     @Override
-    public int getBitWidth() {
-        return mComponentType.getBitWidth();
+    public int bitWidth() {
+        return mComponentType.bitWidth();
     }
 
     @Override
@@ -62,7 +62,7 @@ public final class MatrixType extends Type {
     }
 
     @Override
-    public int getSlots() {
+    public int slotCount() {
         return mColumns * mRows;
     }
 }

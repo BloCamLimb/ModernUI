@@ -122,43 +122,43 @@ public class BuiltinTypes {
      */
     public BuiltinTypes() {
         mFloat = Type.makeScalarType(
-                "float", "f", Type.SCALAR_KIND_FLOAT, /*priority=*/10, /*bitWidth=*/32);
+                "float", "f", Type.ScalarKind_Float, /*priority=*/10, /*bitWidth=*/32);
         mFloat2 = Type.makeVectorType("float2", "f2", mFloat, /*columns=*/2);
         mFloat3 = Type.makeVectorType("float3", "f3", mFloat, /*columns=*/3);
         mFloat4 = Type.makeVectorType("float4", "f4", mFloat, /*columns=*/4);
         mHalf = Type.makeScalarType(
-                "half", "h", Type.SCALAR_KIND_FLOAT, /*priority=*/9, /*bitWidth=*/16);
+                "half", "h", Type.ScalarKind_Float, /*priority=*/9, /*bitWidth=*/16);
         mHalf2 = Type.makeVectorType("half2", "h2", mHalf, /*columns=*/2);
         mHalf3 = Type.makeVectorType("half3", "h3", mHalf, /*columns=*/3);
         mHalf4 = Type.makeVectorType("half4", "h4", mHalf, /*columns=*/4);
         mInt = Type.makeScalarType(
-                "int", "i", Type.SCALAR_KIND_SIGNED, /*priority=*/7, /*bitWidth=*/32);
+                "int", "i", Type.ScalarKind_Signed, /*priority=*/7, /*bitWidth=*/32);
         mInt2 = Type.makeVectorType("int2", "i2", mInt, /*columns=*/2);
         mInt3 = Type.makeVectorType("int3", "i3", mInt, /*columns=*/3);
         mInt4 = Type.makeVectorType("int4", "i4", mInt, /*columns=*/4);
         mUInt = Type.makeScalarType(
-                "uint", "I", Type.SCALAR_KIND_UNSIGNED, /*priority=*/6, /*bitWidth=*/32);
+                "uint", "I", Type.ScalarKind_Unsigned, /*priority=*/6, /*bitWidth=*/32);
         mUInt2 = Type.makeVectorType("uint2", "I2", mUInt, /*columns=*/2);
         mUInt3 = Type.makeVectorType("uint3", "I3", mUInt, /*columns=*/3);
         mUInt4 = Type.makeVectorType("uint4", "I4", mUInt, /*columns=*/4);
         mShort = Type.makeScalarType(
-                "short", "s", Type.SCALAR_KIND_SIGNED, /*priority=*/4, /*bitWidth=*/16);
+                "short", "s", Type.ScalarKind_Signed, /*priority=*/4, /*bitWidth=*/16);
         mShort2 = Type.makeVectorType("short2", "s2", mShort, /*columns=*/2);
         mShort3 = Type.makeVectorType("short3", "s3", mShort, /*columns=*/3);
         mShort4 = Type.makeVectorType("short4", "s4", mShort, /*columns=*/4);
         mUShort = Type.makeScalarType(
-                "ushort", "S", Type.SCALAR_KIND_UNSIGNED, /*priority=*/3, /*bitWidth=*/16);
+                "ushort", "S", Type.ScalarKind_Unsigned, /*priority=*/3, /*bitWidth=*/16);
         mUShort2 = Type.makeVectorType("ushort2", "S2", mUShort, /*columns=*/2);
         mUShort3 = Type.makeVectorType("ushort3", "S3", mUShort, /*columns=*/3);
         mUShort4 = Type.makeVectorType("ushort4", "S4", mUShort, /*columns=*/4);
         mBool = Type.makeScalarType(
-                "bool", "b", Type.SCALAR_KIND_BOOLEAN, /*priority=*/0, /*bitWidth=*/1);
+                "bool", "b", Type.ScalarKind_Boolean, /*priority=*/0, /*bitWidth=*/1);
         mBool2 = Type.makeVectorType("bool2", "b2", mBool, /*columns=*/2);
         mBool3 = Type.makeVectorType("bool3", "b3", mBool, /*columns=*/3);
         mBool4 = Type.makeVectorType("bool4", "b4", mBool, /*columns=*/4);
-        mInvalid = Type.makeSpecialType(Compiler.INVALID_TAG, "O", Type.KIND_OTHER);
-        mPoison = Type.makeSpecialType(Compiler.POISON_TAG, "P", Type.KIND_OTHER);
-        mVoid = Type.makeSpecialType("void", "v", Type.KIND_VOID);
+        mInvalid = Type.makeSpecialType(Compiler.INVALID_TAG, "O", Type.TypeKind_Other);
+        mPoison = Type.makeSpecialType(Compiler.POISON_TAG, "P", Type.TypeKind_Other);
+        mVoid = Type.makeSpecialType("void", "v", Type.TypeKind_Void);
         mFloatLiteral = Type.makeLiteralType("$floatLiteral", mFloat, /*priority=*/8);
         mIntLiteral = Type.makeLiteralType("$intLiteral", mInt, /*priority=*/5);
         mFloat2x2 = Type.makeMatrixType("float2x2", "f22", mFloat, /*columns=*/2, /*rows=*/2);

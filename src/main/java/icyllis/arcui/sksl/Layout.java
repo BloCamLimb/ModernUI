@@ -42,6 +42,8 @@ import javax.annotation.concurrent.Immutable;
 public record Layout(int flags, int location, int offset, int binding, int index, int set, int builtin,
                      int inputAttachmentIndex) {
 
+    private static final Layout EMPTY = builtin(-1);
+
     // GLSL layout qualifiers, order-independent.
     public static final int
             kOriginUpperLeft_Flag = 1,
@@ -57,6 +59,11 @@ public record Layout(int flags, int location, int offset, int binding, int index
             kSet_Flag = 1 << 8,
             kBuiltin_Flag = 1 << 9,
             kInputAttachmentIndex_Flag = 1 << 10;
+
+    @Nonnull
+    public static Layout empty() {
+        return EMPTY;
+    }
 
     @Nonnull
     public static Layout builtin(int builtin) {

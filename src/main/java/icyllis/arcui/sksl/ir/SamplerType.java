@@ -25,19 +25,19 @@ public final class SamplerType extends Type {
     private final TextureType mTextureType;
 
     SamplerType(String name, Type textureType) {
-        super(name, "Z", KIND_SAMPLER);
+        super(name, "Z", TypeKind_Sampler);
         mTextureType = (TextureType) textureType;
     }
 
     @Nonnull
     @Override
-    public TextureType getTextureType() {
+    public TextureType textureType() {
         return mTextureType;
     }
 
     @Override
-    public int getDimensions() {
-        return mTextureType.getDimensions();
+    public int dimensions() {
+        return mTextureType.dimensions();
     }
 
     @Override

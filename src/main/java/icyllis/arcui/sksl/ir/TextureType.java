@@ -28,7 +28,7 @@ public final class TextureType extends Type {
 
     TextureType(String name, int dimensions, boolean isDepth, boolean isLayered,
                 boolean isMultisampled, boolean isSampled) {
-        super(name, "T", KIND_TEXTURE);
+        super(name, "T", TypeKind_Texture);
         mDimensions = dimensions;
         mIsDepth = isDepth;
         mIsLayered = isLayered;
@@ -37,7 +37,7 @@ public final class TextureType extends Type {
     }
 
     @Override
-    public int getDimensions() {
+    public int dimensions() {
         return mDimensions;
     }
 

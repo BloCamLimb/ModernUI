@@ -23,16 +23,16 @@ import java.util.List;
 
 public final class GenericType extends Type {
 
-    private final List<Type> mCoercibleTypes;
+    private final Type[] mCoercibleTypes;
 
-    GenericType(String name, List<Type> coercibleTypes) {
-        super(name, "G", KIND_GENERIC);
+    GenericType(String name, Type[] coercibleTypes) {
+        super(name, "G", TypeKind_Generic);
         mCoercibleTypes = coercibleTypes;
     }
 
     @Nonnull
     @Override
-    public List<Type> getCoercibleTypes() {
+    public Type[] coercibleTypes() {
         return mCoercibleTypes;
     }
 }

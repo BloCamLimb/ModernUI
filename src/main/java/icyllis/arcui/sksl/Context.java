@@ -29,6 +29,11 @@ public class Context {
     // The Context holds a reference to our shader caps bits.
     public final ShaderCaps mCaps;
 
+    // The Context holds a pointer to the configuration of the program being compiled.
+    public int mKind;
+    public ProgramSettings mSettings;
+    public boolean mIsBuiltinCode;
+
     // The Context holds a pointer to our error reporter.
     public ErrorReporter mErrors;
 

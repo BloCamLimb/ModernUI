@@ -26,7 +26,7 @@ public final class ArrayType extends Type {
     private final int mColumns;
 
     ArrayType(String name, Type componentType, int columns) {
-        super(name, componentType.getAbbreviation(), KIND_ARRAY);
+        super(name, componentType.abbreviatedName(), TypeKind_Array);
         // Only allow explicitly-sized arrays.
         assert columns > 0;
         // Disallow multi-dimensional arrays.
@@ -42,18 +42,18 @@ public final class ArrayType extends Type {
 
     @Nonnull
     @Override
-    public Type getComponentType() {
+    public Type componentType() {
         return mComponentType;
     }
 
     @Override
-    public int getColumns() {
+    public int columns() {
         return mColumns;
     }
 
     @Override
-    public int getBitWidth() {
-        return mComponentType.getBitWidth();
+    public int bitWidth() {
+        return mComponentType.bitWidth();
     }
 
     @Override
@@ -62,7 +62,7 @@ public final class ArrayType extends Type {
     }
 
     @Override
-    public int getSlots() {
-        return mColumns * mComponentType.getSlots();
+    public int slotCount() {
+        return mColumns * mComponentType.slotCount();
     }
 }

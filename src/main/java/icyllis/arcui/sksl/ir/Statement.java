@@ -18,45 +18,38 @@
 
 package icyllis.arcui.sksl.ir;
 
-import javax.annotation.Nonnull;
-
 /**
- * Represents a symbol table entry.
+ * Abstract supertype of all statements.
  */
-public abstract class Symbol extends Node {
+public abstract class Statement extends Node {
 
-    public static final int Kind_First = ProgramElement.Kind_Last + 1;
+    public static final int Kind_First = Symbol.Kind_Last + 1;
     public static final int
-            Kind_External = Kind_First,
-            Kind_Field = Kind_First + 1,
-            Kind_FunctionDeclaration = Kind_First + 2,
-            Kind_Type = Kind_First + 3,
-            Kind_UnresolvedFunction = Kind_First + 4,
-            Kind_Variable = Kind_First + 5;
-    public static final int Kind_Last = Kind_Variable;
+            Kind_Block = Kind_First,
+            Kind_Break = Kind_First + 1,
+            Kind_Continue = Kind_First + 2,
+            Kind_Discard = Kind_First + 3,
+            Kind_Do = Kind_First + 4,
+            Kind_Expression = Kind_First + 5,
+            Kind_For = Kind_First + 6,
+            Kind_If = Kind_First + 7,
+            Kind_Nop = Kind_First + 8,
+            Kind_Return = Kind_First + 9,
+            Kind_Switch = Kind_First + 10,
+            Kind_SwitchCase = Kind_First + 11,
+            Kind_VarDeclaration = Kind_First + 12;
+    public static final int Kind_Last = Kind_VarDeclaration;
 
-    private final String mName;
-    private final Type mType;
-
-    protected Symbol(int start, int end, int kind, String name, Type type) {
+    protected Statement(int start, int end, int kind) {
         super(start, end, kind);
         assert (kind >= Kind_First && kind <= Kind_Last);
-        mName = name;
-        mType = type;
     }
 
     public final int kind() {
         return mKind;
     }
 
-    @Nonnull
-    public final String name() {
-        return mName;
-    }
-
-    @Nonnull
-    public Type type() {
-        assert (mType != null);
-        return mType;
+    public boolean isEmpty() {
+        return false;
     }
 }

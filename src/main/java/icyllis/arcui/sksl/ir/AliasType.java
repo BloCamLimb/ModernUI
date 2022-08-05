@@ -26,45 +26,45 @@ public final class AliasType extends Type {
     private final Type mTargetType;
 
     AliasType(String name, Type targetType) {
-        super(name, targetType.getAbbreviation(), targetType.getTypeKind());
+        super(name, targetType.abbreviatedName(), targetType.typeKind());
         mTargetType = targetType;
     }
 
     @Nonnull
     @Override
-    public Type getResolvedType() {
+    public Type resolve() {
         return mTargetType;
     }
 
     @Nonnull
     @Override
-    public Type getComponentType() {
-        return mTargetType.getComponentType();
+    public Type componentType() {
+        return mTargetType.componentType();
     }
 
     @Override
-    public byte getScalarKind() {
-        return mTargetType.getScalarKind();
+    public byte scalarKind() {
+        return mTargetType.scalarKind();
     }
 
     @Override
-    public int getPriority() {
-        return mTargetType.getPriority();
+    public int priority() {
+        return mTargetType.priority();
     }
 
     @Override
-    public int getColumns() {
-        return mTargetType.getColumns();
+    public int columns() {
+        return mTargetType.columns();
     }
 
     @Override
-    public int getRows() {
-        return mTargetType.getRows();
+    public int rows() {
+        return mTargetType.rows();
     }
 
     @Override
-    public int getBitWidth() {
-        return mTargetType.getBitWidth();
+    public int bitWidth() {
+        return mTargetType.bitWidth();
     }
 
     @Override
@@ -73,8 +73,8 @@ public final class AliasType extends Type {
     }
 
     @Override
-    public int getSlots() {
-        return mTargetType.getSlots();
+    public int slotCount() {
+        return mTargetType.slotCount();
     }
 
     @Override
@@ -113,13 +113,18 @@ public final class AliasType extends Type {
     }
 
     @Override
+    public boolean isStruct() {
+        return mTargetType.isStruct();
+    }
+
+    @Override
     public boolean isInterfaceBlock() {
         return mTargetType.isInterfaceBlock();
     }
 
     @Nonnull
     @Override
-    public List<Type> getCoercibleTypes() {
-        return mTargetType.getCoercibleTypes();
+    public Type[] coercibleTypes() {
+        return mTargetType.coercibleTypes();
     }
 }

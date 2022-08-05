@@ -25,34 +25,34 @@ public final class ScalarType extends Type {
     private final int mBitWidth;
 
     ScalarType(String name, String abbrev, byte scalarKind, int priority, int bitWidth) {
-        super(name, abbrev, KIND_SCALAR);
+        super(name, abbrev, TypeKind_Scalar);
         mScalarKind = scalarKind;
         mPriority = priority;
         mBitWidth = bitWidth;
     }
 
     @Override
-    public byte getScalarKind() {
+    public byte scalarKind() {
         return mScalarKind;
     }
 
     @Override
-    public int getPriority() {
+    public int priority() {
         return mPriority;
     }
 
     @Override
-    public int getBitWidth() {
+    public int bitWidth() {
         return mBitWidth;
     }
 
     @Override
-    public int getColumns() {
+    public int columns() {
         return 1;
     }
 
     @Override
-    public int getRows() {
+    public int rows() {
         return 1;
     }
 
@@ -62,7 +62,7 @@ public final class ScalarType extends Type {
     }
 
     @Override
-    public int getSlots() {
+    public int slotCount() {
         return 1;
     }
 }

@@ -26,40 +26,40 @@ public final class LiteralType extends Type {
     private final int mPriority;
 
     LiteralType(String name, Type scalarType, int priority) {
-        super(name, "L", KIND_LITERAL);
+        super(name, "L", TypeKind_Literal);
         mScalarType = scalarType;
         mPriority = priority;
     }
 
     @Nonnull
     @Override
-    public Type getLiteralScalarType() {
+    public Type scalarTypeForLiteral() {
         return mScalarType;
     }
 
     @Override
-    public int getPriority() {
+    public int priority() {
         return mPriority;
     }
 
     @Override
-    public int getColumns() {
+    public int columns() {
         return 1;
     }
 
     @Override
-    public int getRows() {
+    public int rows() {
         return 1;
     }
 
     @Override
-    public byte getScalarKind() {
-        return mScalarType.getScalarKind();
+    public byte scalarKind() {
+        return mScalarType.scalarKind();
     }
 
     @Override
-    public int getBitWidth() {
-        return mScalarType.getBitWidth();
+    public int bitWidth() {
+        return mScalarType.bitWidth();
     }
 
     @Override
@@ -78,7 +78,7 @@ public final class LiteralType extends Type {
     }
 
     @Override
-    public int getSlots() {
+    public int slotCount() {
         return 1;
     }
 }

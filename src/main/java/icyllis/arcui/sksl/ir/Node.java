@@ -27,34 +27,29 @@ import javax.annotation.Nonnull;
 public abstract class Node {
 
     // position of this element within the program being compiled, for error reporting purposes
-    protected final int mStart;
-    protected final int mEnd;
+    public final int mStart;
+    public final int mEnd;
 
-    protected Node(int start, int end) {
+    protected final int mKind;
+
+    protected Node(int start, int end, int kind) {
         assert (start <= end);
         assert (start <= 0xFFFFFF);
         mStart = start;
         mEnd = end;
-    }
-
-    public int getStart() {
-        return mStart;
-    }
-
-    public int getEnd() {
-        return mEnd;
+        mKind = kind;
     }
 
     public int getLine(String source) {
-        if (source == null) {
+        if (mStart == -1 || source == null) {
             return -1;
         }
         // we allow the offset to equal the length, because that's where TK_END_OF_FILE is reported
-        assert mStart <= source.length();
+        int offset = Math.min(mStart, source.length());
         int line = 1;
-        for (int i = 0; i < mStart; i++) {
+        for (int i = 0; i < offset; i++) {
             if (source.charAt(i) == '\n') {
-                ++line;
+                line++;
             }
         }
         return line;
@@ -62,12 +57,12 @@ public abstract class Node {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + getDescription() + "}";
+        return getClass().getSimpleName() + "{" + description() + "}";
     }
 
     /**
      * Describes this intermediate representation.
      */
     @Nonnull
-    public abstract String getDescription();
+    public abstract String description();
 }
