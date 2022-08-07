@@ -19,7 +19,7 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.SharedPtr;
-import icyllis.arcui.sksl.Compiler;
+import icyllis.arcui.arsl.Compiler;
 import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
@@ -65,7 +65,7 @@ public abstract class Server {
     }
 
     /**
-     * Gets the compiler used for compiling SkSL into backend shader code.
+     * Gets the compiler used for compiling ArSL into backend shader code.
      */
     public final Compiler getShaderCompiler() {
         return mCompiler;

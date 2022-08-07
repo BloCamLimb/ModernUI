@@ -21,7 +21,7 @@ package icyllis.arcui.engine;
 /**
  * @version skia 2022/07/23
  */
-public class ShaderCaps extends icyllis.arcui.sksl.ShaderCaps {
+public class ShaderCaps extends icyllis.arcui.arsl.ShaderCaps {
 
     public boolean mDstReadInShaderSupport = false;
     public boolean mDualSourceBlendingSupport = false;

@@ -23,7 +23,7 @@ import icyllis.arcui.core.Kernel32;
 import icyllis.arcui.engine.*;
 import icyllis.arcui.opengl.GLBackendFormat;
 import icyllis.arcui.opengl.GLCore;
-import icyllis.arcui.sksl.lex.*;
+import icyllis.arcui.arsl.lex.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
