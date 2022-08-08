@@ -21,6 +21,7 @@ package icyllis.arcui.engine;
 import icyllis.arcui.core.MathUtil;
 import icyllis.arcui.core.SLType;
 import icyllis.arcui.engine.shading.*;
+import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
@@ -333,15 +334,74 @@ public abstract class GeometryProcessor extends Processor {
 
     public static abstract class ProgramImpl {
 
-        public record EmitArgs(VertexGeoBuilder vertBuilder,
-                               FPFragmentBuilder fragBuilder,
-                               VaryingHandler varyingHandler,
-                               UniformHandler uniformHandler,
-                               ShaderCaps shaderCaps,
-                               GeometryProcessor geomProc,
-                               String outputColor,
-                               String outputCoverage,
-                               int[] texSamplers) {
+        public static final class Args {
+
+            // EmitArgs
+            public final VertexGeoBuilder mVertBuilder;
+            public final FPFragmentBuilder mFragBuilder;
+            public final VaryingHandler mVaryingHandler;
+            public final UniformHandler mUniformHandler;
+            public final ShaderCaps mShaderCaps;
+            public final GeometryProcessor mGeomProc;
+            public final String mOutputColor;
+            public final String mOutputCoverage;
+            public final int[] mTexSamplers;
+
+            // Used to specify the output variable used by the GP to store its device position. It can
+            // either be a float2 or a float3 (in order to handle perspective). The subclass sets this
+            // in its onEmitCode().
+            public ShaderVar mPositionVar;
+            // Used to specify the variable storing the draw's local coordinates. It can be either a
+            // float2, float3, or void. It can only be void when no FP needs local coordinates. This
+            // variable can be an attribute or local variable, but should not itself be a varying.
+            // ProgramImpl automatically determines if this must be passed to a FS.
+            public ShaderVar mLocalCoordVar;
+            // The GP can specify the local coord var either in the VS or FS. When either is possible
+            // the VS is preferable. It may allow derived coordinates to be interpolated from the VS
+            // instead of computed in the FS per pixel.
+            public int mLocalCoordShader = EngineTypes.ShaderType_Vertex;
+
+            public Args(VertexGeoBuilder vertBuilder,
+                        FPFragmentBuilder fragBuilder,
+                        VaryingHandler varyingHandler,
+                        UniformHandler uniformHandler,
+                        ShaderCaps shaderCaps,
+                        GeometryProcessor geomProc,
+                        String outputColor,
+                        String outputCoverage,
+                        int[] texSamplers) {
+                mVertBuilder = vertBuilder;
+                mFragBuilder = fragBuilder;
+                mVaryingHandler = varyingHandler;
+                mUniformHandler = uniformHandler;
+                mShaderCaps = shaderCaps;
+                mGeomProc = geomProc;
+                mOutputColor = outputColor;
+                mOutputCoverage = outputCoverage;
+                mTexSamplers = texSamplers;
+            }
         }
+
+        /**
+         * Emits the code from this geometry processor into the shaders. For any FP in the pipeline that
+         * has its input coords implemented by the GP as a varying, the varying will be accessible in
+         * the returned map and should be used when the FP code is emitted. The FS variable containing
+         * the GP's output local coords is also returned.
+         **/
+        public final void emitCode(Args args, Pipeline pipeline) {
+            onEmitCode(args);
+
+            VertexGeoBuilder vBuilder = args.mVertBuilder;
+            // Emit the vertex position to the hardware in the normalized window coordinates it expects.
+            assert (args.mPositionVar != null) &&
+                    ((args.mPositionVar.getType() == SLType.FLOAT2) ||
+                            (args.mPositionVar.getType() == SLType.FLOAT3));
+            //TODO emit normalized position
+            if (args.mPositionVar.getType() == SLType.FLOAT2) {
+                args.mVaryingHandler.setNoPerspective();
+            }
+        }
+
+        protected abstract void onEmitCode(Args args);
     }
 }

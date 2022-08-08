@@ -31,6 +31,9 @@ public final class VkBackendFormat extends BackendFormat {
     private final int mFormat;
     private final int mTextureType;
 
+    /**
+     * @see #makeVk(int, boolean)
+     */
     public VkBackendFormat(@NativeType("VkFormat") int format, boolean isExternal) {
         mFormat = format;
         mTextureType = isExternal ? EngineTypes.TextureType_External : EngineTypes.TextureType_2D;
@@ -62,7 +65,7 @@ public final class VkBackendFormat extends BackendFormat {
         if (mTextureType == EngineTypes.TextureType_2D) {
             return this;
         }
-        return new VkBackendFormat(mFormat, false);
+        return makeVk(mFormat, false);
     }
 
     @Override

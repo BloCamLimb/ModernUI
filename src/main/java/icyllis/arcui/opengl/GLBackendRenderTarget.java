@@ -18,8 +18,7 @@
 
 package icyllis.arcui.opengl;
 
-import icyllis.arcui.engine.BackendRenderTarget;
-import icyllis.arcui.engine.EngineTypes;
+import icyllis.arcui.engine.*;
 
 import javax.annotation.Nonnull;
 
@@ -67,7 +66,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
     @Override
     public GLBackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(mInfo.mFormat, EngineTypes.TextureType_None);
+            mBackendFormat = BackendFormat.makeGL(mInfo.mFormat, EngineTypes.TextureType_None);
         }
         return mBackendFormat;
     }

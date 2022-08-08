@@ -249,7 +249,7 @@ public final class GLRenderTarget extends RenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), EngineTypes.TextureType_2D);
+            mBackendFormat = BackendFormat.makeGL(glFormatToEnum(mFormat), EngineTypes.TextureType_2D);
         }
         return mBackendFormat;
     }

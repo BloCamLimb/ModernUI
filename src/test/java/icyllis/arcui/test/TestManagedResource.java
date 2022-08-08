@@ -18,8 +18,8 @@
 
 package icyllis.arcui.test;
 
-import icyllis.arcui.core.CoreTypes;
-import icyllis.arcui.core.Kernel32;
+import icyllis.arcui.core.*;
+import icyllis.arcui.core.MathUtil;
 import icyllis.arcui.engine.*;
 import icyllis.arcui.opengl.GLBackendFormat;
 import icyllis.arcui.opengl.GLCore;
@@ -72,7 +72,7 @@ public class TestManagedResource {
         pw.println("OpenGL renderer: " + GLCore.glGetString(GLCore.GL_RENDERER));
 
         if (directContext.getCaps().isFormatTexturable(
-                new GLBackendFormat(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
+                BackendFormat.makeGL(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
                         EngineTypes.TextureType_2D))) {
             pw.println("Compressed format: OK");
         }
@@ -80,7 +80,7 @@ public class TestManagedResource {
         SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
 
         TextureProxy proxy = directContext.getProxyProvider().createTextureProxy(
-                new GLBackendFormat(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
+                BackendFormat.makeGL(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
                 1600, 900, EngineTypes.Mipmapped_Yes, CoreTypes.BackingFit_Exact, true, 0, false);
         try (proxy) {
             pw.println(proxy);
@@ -92,6 +92,47 @@ public class TestManagedResource {
             if (!Kernel32.CloseHandle(959595595959595959L)) {
                 pw.println("Failed to close handle");
             }
+        }
+
+        {
+            Matrix4 mat = Matrix4.identity();
+            mat.m34 = 1 / 576f;
+            //mat.preTranslateZ(-20f);
+            mat.preRotateY(MathUtil.PI_O_3);
+            float[] p1 = new float[]{-25,-15};
+            float[] p2 = new float[]{25,-15};
+            float[] p3 = new float[]{25,15};
+            float[] p4 = new float[]{-25,15};
+            pw.println(mat);
+            mat.mapPoint(p1);
+            mat.mapPoint(p2);
+            mat.mapPoint(p3);
+            mat.mapPoint(p4);
+            pw.println(Arrays.toString(p1));
+            pw.println(Arrays.toString(p2));
+            pw.println(Arrays.toString(p3));
+            pw.println(Arrays.toString(p4));
+
+
+            Camera.Camera3D camera3D = new Camera.Camera3D();
+            Matrix4 transformMat = Matrix4.identity();
+            transformMat.preRotateY(MathUtil.PI_O_3);
+            Matrix3 outMatrix = new Matrix3();
+            camera3D.getMatrix(transformMat, outMatrix, pw);
+            pw.println("Orien: " + camera3D.mOrientation);
+            pw.println(outMatrix);
+            p1 = new float[]{-25,-15};
+            p2 = new float[]{25,-15};
+            p3 = new float[]{25,15};
+            p4 = new float[]{-25,15};
+            outMatrix.mapPoint(p1);
+            outMatrix.mapPoint(p2);
+            outMatrix.mapPoint(p3);
+            outMatrix.mapPoint(p4);
+            pw.println(Arrays.toString(p1));
+            pw.println(Arrays.toString(p2));
+            pw.println(Arrays.toString(p3));
+            pw.println(Arrays.toString(p4));
         }
 
         {

@@ -95,6 +95,8 @@ public class ShaderVar {
 
     /**
      * Get the type.
+     *
+     * @see SLType
      */
     public byte getType() {
         return mType;

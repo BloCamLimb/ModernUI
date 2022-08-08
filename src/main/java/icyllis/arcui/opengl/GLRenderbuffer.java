@@ -157,7 +157,7 @@ public final class GLRenderbuffer extends Surface {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = new GLBackendFormat(glFormatToEnum(mFormat), EngineTypes.TextureType_None);
+            mBackendFormat = BackendFormat.makeGL(glFormatToEnum(mFormat), EngineTypes.TextureType_None);
         }
         return mBackendFormat;
     }

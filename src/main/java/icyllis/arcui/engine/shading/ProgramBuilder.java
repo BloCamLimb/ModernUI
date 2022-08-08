@@ -43,7 +43,12 @@ public abstract class ProgramBuilder {
     public final VertexShaderBuilder mVS = new VertexShaderBuilder(this);
     public final FragmentShaderBuilder mFS = new FragmentShaderBuilder(this);
 
+    public final ProgramDesc mDesc;
+    public final ProgramInfo mProgramInfo;
+
     public ProgramBuilder(ProgramDesc desc, ProgramInfo programInfo) {
+        mDesc = desc;
+        mProgramInfo = programInfo;
     }
 
     public abstract Caps caps();
@@ -87,13 +92,64 @@ public abstract class ProgramBuilder {
         return out;
     }
 
+    public abstract UniformHandler uniformHandler();
+
+    public abstract VaryingHandler varyingHandler();
+
+    protected boolean emitAndInstallProcs() {
+        // inputColor, inputCoverage
+        String[] input = new String[2];
+        if (!emitAndInstallGeomProc(input)) {
+            return false;
+        }
+        return false;
+    }
+
+    // advanceStage is called by program creator between each processor's emit code.  It increments
+    // the stage index for variable name mangling, and also ensures verification variables in the
+    // fragment shader are cleared.
+    private void advanceStage() {
+        mStageIndex++;
+        mFS.nextStage();
+    }
+
     @Nonnull
     private String getMangleSuffix() {
         assert mStageIndex >= 0;
-        StringBuilder suffix = new StringBuilder("_S" + mStageIndex);
-        for (var c : mSubstageIndices) {
+        StringBuilder suffix = new StringBuilder("_S").append(mStageIndex);
+        for (int c : mSubstageIndices) {
             suffix.append("_c").append(c);
         }
         return suffix.toString();
+    }
+
+    private boolean emitAndInstallGeomProc(String[] output) {
+        final GeometryProcessor geomProc = mProgramInfo.geomProc();
+
+        // Program builders have a bit of state we need to clear with each effect
+        advanceStage();
+        if (output[0] == null) {
+            output[0] = nameVariable('\0', "outputColor");
+        }
+        if (output[1] == null) {
+            output[1] = nameVariable('\0', "outputCoverage");
+        }
+
+        mFS.codeAppendf("// Stage %d, %s\n", mStageIndex, geomProc.name());
+        mVS.codeAppendf("// Geometry Processor %s\n", geomProc.name());
+
+        var args = new GeometryProcessor.ProgramImpl.Args(
+                mVS,
+                mFS,
+                varyingHandler(),
+                uniformHandler(),
+                shaderCaps(),
+                geomProc,
+                output[0],
+                output[1],
+                new int[0]
+        );
+
+        return false;
     }
 }

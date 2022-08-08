@@ -19,8 +19,11 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.Image;
+import icyllis.arcui.opengl.GLBackendFormat;
 import icyllis.arcui.opengl.GLTypes;
+import icyllis.arcui.vulkan.VkBackendFormat;
 import icyllis.arcui.vulkan.VkCore;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -32,7 +35,48 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public abstract class BackendFormat {
 
+    private static final Int2ObjectOpenHashMap<GLBackendFormat> sGLBackendFormats =
+            new Int2ObjectOpenHashMap<>(25, 0.8f);
+    private static final Int2ObjectOpenHashMap<VkBackendFormat> sVkBackendFormats =
+            new Int2ObjectOpenHashMap<>(25, 0.8f);
+
     protected BackendFormat() {
+    }
+
+    @Nonnull
+    public static GLBackendFormat makeGL(@NativeType("GLenum") int format, int textureType) {
+        // if this failed, use long key
+        assert (format < (1 << 30)) && (textureType >= 0 && textureType <= 3);
+        int key = (format) | (textureType << 30);
+        // harmless race
+        GLBackendFormat backendFormat = sGLBackendFormats.get(key);
+        if (backendFormat != null) {
+            return backendFormat;
+        }
+        backendFormat = new GLBackendFormat(format, textureType);
+        // cache only known formats
+        if (backendFormat.getBytesPerBlock() != 0) {
+            sGLBackendFormats.put(key, backendFormat);
+        }
+        return backendFormat;
+    }
+
+    @Nonnull
+    public static VkBackendFormat makeVk(@NativeType("VkFormat") int format, boolean isExternal) {
+        // if this failed, use long key
+        assert (format >= 0);
+        int key = (format) | (isExternal ? Integer.MIN_VALUE : 0);
+        // harmless race
+        VkBackendFormat backendFormat = sVkBackendFormats.get(key);
+        if (backendFormat != null) {
+            return backendFormat;
+        }
+        backendFormat = new VkBackendFormat(format, isExternal);
+        // cache only known formats
+        if (backendFormat.getBytesPerBlock() != 0) {
+            sVkBackendFormats.put(key, backendFormat);
+        }
+        return backendFormat;
     }
 
     /**
@@ -87,7 +131,7 @@ public abstract class BackendFormat {
     public abstract boolean isSRGB();
 
     /**
-     * @see Image
+     * @see Image#COMPRESSION_NONE
      */
     public abstract int getCompressionType();
 

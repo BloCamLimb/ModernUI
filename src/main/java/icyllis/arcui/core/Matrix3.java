@@ -34,15 +34,15 @@ public class Matrix3 implements Cloneable {
     // [m11 m12 m13]
     // [m21 m22 m23]
     // [m31 m32 m33] <- [m31 m32] represents the origin
-    protected float m11;
-    protected float m12;
-    protected float m13;
-    protected float m21;
-    protected float m22;
-    protected float m23;
-    protected float m31;
-    protected float m32;
-    protected float m33;
+    public float m11;
+    public float m12;
+    public float m13;
+    public float m21;
+    public float m22;
+    public float m23;
+    public float m31;
+    public float m32;
+    public float m33;
 
     /**
      * Create a zero matrix.
@@ -406,6 +406,17 @@ public class Matrix3 implements Cloneable {
         result.top = (int) Math.floor(min(y1, y2, y3, y4));
         result.right = (int) Math.ceil(max(x1, x2, x3, x4));
         result.bottom = (int) Math.ceil(max(y1, y2, y3, y4));
+    }
+
+    public void mapPoint(float[] p) {
+        float x1 = m11 * p[0] + m21 * p[1] + m31;
+        float y1 = m12 * p[0] + m22 * p[1] + m32;
+        // project
+        float w = 1.0f / (m13 * p[0] + m23 * p[1] + m33);
+        x1 *= w;
+        y1 *= w;
+        p[0] = x1;
+        p[1] = y1;
     }
 
     /**

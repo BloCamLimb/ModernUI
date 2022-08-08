@@ -38,22 +38,22 @@ public class Matrix4 implements Cloneable {
     // [m21 m22 m23 m24]
     // [m31 m32 m33 m34]
     // [m41 m42 m43 m44] <- [m41 m42 m43] represents the origin
-    protected float m11;
-    protected float m12;
-    protected float m13;
-    protected float m14;
-    protected float m21;
-    protected float m22;
-    protected float m23;
-    protected float m24;
-    protected float m31;
-    protected float m32;
-    protected float m33;
-    protected float m34;
-    protected float m41;
-    protected float m42;
-    protected float m43;
-    protected float m44;
+    public float m11;
+    public float m12;
+    public float m13;
+    public float m14;
+    public float m21;
+    public float m22;
+    public float m23;
+    public float m24;
+    public float m31;
+    public float m32;
+    public float m33;
+    public float m34;
+    public float m41;
+    public float m42;
+    public float m43;
+    public float m44;
 
     /**
      * Create a zero matrix.
@@ -1789,24 +1789,13 @@ public class Matrix4 implements Cloneable {
         }
     }
 
-    public float mapPointX(float x, float y) {
-        if (isAffine()) {
-            return m11 * x + m21 * y + m41;
-        } else {
-            final float f = m11 * x + m21 * y + m41;
-            float w = 1.0f / (m14 * x + m24 * y + m44);
-            return f * w;
-        }
-    }
-
-    public float mapPointY(float x, float y) {
-        if (isAffine()) {
-            return m12 * x + m22 * y + m42;
-        } else {
-            final float f = m12 * x + m22 * y + m42;
-            float w = 1.0f / (m14 * x + m24 * y + m44);
-            return f * w;
-        }
+    public void mapVec3(float[] vec) {
+        final float x = m11 * vec[0] + m21 * vec[1] + m41 * vec[2];
+        final float y = m12 * vec[0] + m22 * vec[1] + m42 * vec[2];
+        final float w = m14 * vec[0] + m24 * vec[1] + m44 * vec[2];
+        vec[0] = x;
+        vec[1] = y;
+        vec[2] = w;
     }
 
     /**

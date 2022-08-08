@@ -23,4 +23,5 @@ package icyllis.arcui.engine.shading;
  * rasterizer.
  */
 public interface VertexGeoBuilder extends ShaderBuilder {
+
 }

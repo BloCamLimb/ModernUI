@@ -20,6 +20,19 @@ package icyllis.arcui.engine;
 
 public class ProgramInfo {
 
+    private int                                   mNumSamples;
+    private boolean                                  mNeedsStencil;
+    private BackendFormat                       mBackendFormat;
+    private int                       mOrigin;
+    private boolean                                  mTargetHasVkResolveAttachmentWithInput;
+    private int                                   mTargetsNumSamples;
+    private Pipeline                     mPipeline;
+    private UserStencilSettings          mUserStencilSettings;
+    private GeometryProcessor            mGeomProc;
+    private byte                       mPrimitiveType;
+    private int                    mRenderPassXferBarriers;
+    private int                              mColorLoadOp;
+
     public ProgramInfo(Caps caps,
                        SurfaceProxyView targetView,
                        boolean usesMSAASurface,
@@ -29,5 +42,10 @@ public class ProgramInfo {
                        byte primitiveType,
                        int renderPassXferBarriers,
                        int colorLoadOp) {
+        mGeomProc = geomProc;
+    }
+
+    public GeometryProcessor geomProc() {
+        return mGeomProc;
     }
 }

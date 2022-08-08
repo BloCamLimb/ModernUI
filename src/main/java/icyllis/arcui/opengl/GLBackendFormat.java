@@ -31,6 +31,9 @@ public final class GLBackendFormat extends BackendFormat {
     private final int mFormat;
     private final int mTextureType;
 
+    /**
+     * @see BackendFormat#makeGL(int, int)
+     */
     public GLBackendFormat(@NativeType("GLenum") int format, int textureType) {
         assert textureType == EngineTypes.TextureType_None ||
                 textureType == EngineTypes.TextureType_2D ||
@@ -70,7 +73,7 @@ public final class GLBackendFormat extends BackendFormat {
         if (mTextureType == EngineTypes.TextureType_2D) {
             return this;
         }
-        return new GLBackendFormat(mFormat, EngineTypes.TextureType_2D);
+        return makeGL(mFormat, EngineTypes.TextureType_2D);
     }
 
     @Override
