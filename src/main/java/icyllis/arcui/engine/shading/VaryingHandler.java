@@ -23,7 +23,7 @@ import icyllis.arcui.engine.*;
 
 import java.util.ArrayList;
 
-public class VaryingHandler {
+public abstract class VaryingHandler {
 
     public static final int
             Interpolation_Interpolated = 0,
@@ -32,16 +32,13 @@ public class VaryingHandler {
 
     protected static class VaryingInfo {
 
-        /**
-         * @see icyllis.arcui.core.SLType
-         */
         public byte mType;
         public boolean mIsFlat;
         public String mVsOut;
-        /**
-         * @see EngineTypes#ShaderFlag_Vertex
-         */
         public int mVisibility;
+
+        public VaryingInfo() {
+        }
     }
 
     protected final ArrayList<VaryingInfo> mVaryings = new ArrayList<>();
@@ -53,9 +50,9 @@ public class VaryingHandler {
 
     protected final ProgramBuilder mProgramBuilder;
 
-    String mDefaultInterpolationModifier;
+    String mDefaultInterpolationModifier = "smooth";
 
-    public VaryingHandler(ProgramBuilder programBuilder) {
+    protected VaryingHandler(ProgramBuilder programBuilder) {
         mProgramBuilder = programBuilder;
     }
 
@@ -70,9 +67,11 @@ public class VaryingHandler {
         if (!caps.mNoPerspectiveInterpolationSupport) {
             return;
         }
+        mDefaultInterpolationModifier = "noperspective";
     }
 
-    public final void addVarying(String name, Varying varying) {
+    public final void addVarying(String name,
+                                 Varying varying) {
         addVarying(name, varying, Interpolation_Interpolated);
     }
 
@@ -83,14 +82,15 @@ public class VaryingHandler {
      * attribute and pass it through to an output value in a fragment shader, use
      * addPassThroughAttribute.
      */
-    public final void addVarying(String name, Varying varying, int interpolation) {
-        assert SLType.isFloatType(varying.type()) || interpolation == Interpolation_MustBeFlat;
-        VaryingInfo v = new VaryingInfo();
+    public final void addVarying(String name,
+                                 Varying varying,
+                                 int interpolation) {
+        assert (varying.mType != SLType.Void);
+        assert (SLType.isFloatType(varying.mType) || interpolation == Interpolation_MustBeFlat);
+        var v = new VaryingInfo();
 
-        assert varying.mType != SLType.VOID;
         v.mType = varying.mType;
         v.mIsFlat = useFlatInterpolation(interpolation, mProgramBuilder.shaderCaps());
-        // since our target is fragment shader, so prefix it by 'f'
         v.mVsOut = mProgramBuilder.nameVariable('f', name);
         v.mVisibility = 0;
         if (varying.isInVertexShader()) {
@@ -101,9 +101,11 @@ public class VaryingHandler {
             varying.mFsIn = v.mVsOut;
             v.mVisibility |= EngineTypes.ShaderFlag_Fragment;
         }
+        mVaryings.add(v);
     }
 
-    public final void addPassThroughAttribute(ShaderVar vsVar, String output) {
+    public final void addPassThroughAttribute(ShaderVar vsVar,
+                                              String output) {
         addPassThroughAttribute(vsVar, output, Interpolation_Interpolated);
     }
 
@@ -112,9 +114,15 @@ public class VaryingHandler {
      * fragment shader. Though this adds code to vertex and fragment stages, 'output' is expected to
      * be defined in the fragment shader before the call is made.
      */
-    //TODO it might be nicer behavior to have a flag to declare output inside these calls
-    public final void addPassThroughAttribute(ShaderVar vsVar, String output, int interpolation) {
-
+    public final void addPassThroughAttribute(ShaderVar vsVar,
+                                              String output,
+                                              int interpolation) {
+        assert (vsVar.getType() != SLType.Void);
+        assert (!output.isEmpty());
+        Varying v = new Varying(vsVar.getType());
+        addVarying(vsVar.getName(), v, interpolation);
+        mProgramBuilder.mVS.codeAppendf("%s = %s;\n", v.vsOut(), vsVar.getName());
+        mProgramBuilder.mFS.codeAppendf("%s = %s;\n", output, v.fsIn());
     }
 
     private static boolean useFlatInterpolation(int interpolation, ShaderCaps shaderCaps) {
@@ -129,5 +137,81 @@ public class VaryingHandler {
                 return true;
         }
         throw new IllegalArgumentException(String.valueOf(interpolation));
+    }
+
+    public final void emitAttributes(GeometryProcessor gp) {
+        for (var attr : gp.vertexAttributes()) {
+            addAttribute(attr.asShaderVar());
+        }
+        for (var attr : gp.instanceAttributes()) {
+            addAttribute(attr.asShaderVar());
+        }
+    }
+
+    private void addAttribute(ShaderVar var) {
+        assert (var.getTypeModifier() == ShaderVar.TYPE_MODIFIER_IN);
+        for (var attr : mVertexInputs) {
+            // if attribute already added, don't add it again
+            if (attr.getName().equals(var.getName())) {
+                return;
+            }
+        }
+        mVertexInputs.add(var);
+    }
+
+    // This should be called once all attributes and varyings have been added to the
+    // VaryingHandler and before getting/adding any of the declarations to the shaders.
+    public final void end() {
+        for (var v : mVaryings) {
+            String modifier = v.mIsFlat ? "flat" : mDefaultInterpolationModifier;
+            if ((v.mVisibility & EngineTypes.ShaderFlag_Vertex) != 0) {
+                mVertexOutputs.add(new ShaderVar(v.mVsOut, v.mType, ShaderVar.TYPE_MODIFIER_OUT,
+                        ShaderVar.NON_ARRAY, "", modifier));
+            }
+            if ((v.mVisibility & EngineTypes.ShaderFlag_Fragment) != 0) {
+                String fsIn = v.mVsOut;
+                mFragInputs.add(new ShaderVar(fsIn, v.mType, ShaderVar.TYPE_MODIFIER_IN,
+                        ShaderVar.NON_ARRAY, "", modifier));
+            }
+        }
+        onEnd();
+    }
+
+    protected abstract void onEnd();
+
+    protected static void assignLocations(ArrayList<ShaderVar> vars) {
+        int locationIndex = 0;
+        for (var var : vars) {
+            String location = "location = " + locationIndex;
+            var.addLayoutQualifier(location);
+
+            int elementSize = SLType.locationSize(var.getType());
+            assert (elementSize > 0);
+            int numElements = var.isArray() ? var.getArrayCount() : 1;
+            assert (numElements > 0);
+            locationIndex += elementSize * numElements;
+        }
+
+        //TODO check max location capability
+    }
+
+    // called after end
+    public final void getVertDecls(StringBuilder inputDecls, StringBuilder outputDecls) {
+        appendDecls(mVertexInputs, inputDecls);
+        appendDecls(mVertexOutputs, outputDecls);
+    }
+
+    // called after end
+    public final void getFragDecls(StringBuilder inputDecls, StringBuilder outputDecls) {
+        appendDecls(mFragInputs, inputDecls);
+        appendDecls(mFragOutputs, outputDecls);
+    }
+
+    // helper function for get*Decls
+    private static void appendDecls(ArrayList<ShaderVar> vars, StringBuilder out) {
+        for (var var : vars) {
+            var.appendDecl(out);
+            out.append(";\n");
+        }
     }
 }

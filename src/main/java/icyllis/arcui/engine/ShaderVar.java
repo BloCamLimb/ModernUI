@@ -150,13 +150,12 @@ public class ShaderVar {
         }
         if (mTypeModifier != TYPE_MODIFIER_NONE) {
             out.append(switch (mTypeModifier) {
-                case TYPE_MODIFIER_OUT -> "out";
-                case TYPE_MODIFIER_IN -> "in";
-                case TYPE_MODIFIER_IN_OUT -> "inout";
-                case TYPE_MODIFIER_UNIFORM -> "uniform";
-                default -> "";
+                case TYPE_MODIFIER_OUT -> "out ";
+                case TYPE_MODIFIER_IN -> "in ";
+                case TYPE_MODIFIER_IN_OUT -> "inout ";
+                case TYPE_MODIFIER_UNIFORM -> "uniform ";
+                default -> throw new IllegalStateException();
             });
-            out.append(" ");
         }
         byte type = getType();
         if (isArray()) {

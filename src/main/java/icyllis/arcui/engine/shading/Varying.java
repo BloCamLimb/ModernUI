@@ -21,33 +21,35 @@ package icyllis.arcui.engine.shading;
 import icyllis.arcui.core.SLType;
 import icyllis.arcui.engine.ShaderVar;
 
-public class Varying {
+public final class Varying {
 
     byte mType;
-    // initialized by VaryingHandler
     String mVsOut = null;
     String mFsIn = null;
 
     /**
-     * @param type see {@link icyllis.arcui.core.SLType}
+     * @param type see {@link SLType}
      */
     public Varying(byte type) {
         // Metal doesn't support varying matrices, so we disallow them everywhere for consistency
-        assert !SLType.isMatrixType(type);
+        assert (type != SLType.Void && !SLType.isMatrixType(type));
         mType = type;
     }
 
     /**
-     * @param type see {@link icyllis.arcui.core.SLType}
+     * @param type see {@link SLType}
      */
     public void reset(byte type) {
         // Metal doesn't support varying matrices, so we disallow them everywhere for consistency
-        assert !SLType.isMatrixType(type);
+        assert (type != SLType.Void && !SLType.isMatrixType(type));
         mType = type;
         mVsOut = null;
         mFsIn = null;
     }
 
+    /**
+     * @return see {@link SLType}
+     */
     public byte type() {
         return mType;
     }
@@ -74,11 +76,11 @@ public class Varying {
 
     public ShaderVar vsOutVar() {
         assert isInVertexShader();
-        return new ShaderVar(vsOut(), mType, ShaderVar.TYPE_MODIFIER_OUT);
+        return new ShaderVar(mVsOut, mType, ShaderVar.TYPE_MODIFIER_OUT);
     }
 
     public ShaderVar fsInVar() {
         assert isInFragmentShader();
-        return new ShaderVar(fsIn(), mType, ShaderVar.TYPE_MODIFIER_IN);
+        return new ShaderVar(mFsIn, mType, ShaderVar.TYPE_MODIFIER_IN);
     }
 }

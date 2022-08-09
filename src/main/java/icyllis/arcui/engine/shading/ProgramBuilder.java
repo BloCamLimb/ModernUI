@@ -98,7 +98,7 @@ public abstract class ProgramBuilder {
 
     public abstract VaryingHandler varyingHandler();
 
-    protected boolean emitAndInstallProcs() {
+    protected final boolean emitAndInstallProcs() {
         // inputColor, inputCoverage
         String[] input = new String[2];
         if (!emitAndInstallGeomProc(input)) {
@@ -157,5 +157,11 @@ public abstract class ProgramBuilder {
         mGPImpl.emitCode(args, mProgramInfo.pipeline());
 
         return true;
+    }
+
+    protected final void endShaders() {
+        varyingHandler().end();
+        mVS.end(EngineTypes.ShaderFlag_Vertex);
+        mFS.end(EngineTypes.ShaderFlag_Fragment);
     }
 }

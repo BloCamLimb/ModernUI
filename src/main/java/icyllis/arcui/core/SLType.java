@@ -26,63 +26,63 @@ import javax.annotation.Nonnull;
 public final class SLType {
 
     public static final byte
-            VOID                    = 0,
-            BOOL                    = 1,
-            BVEC2                   = 2,
-            BVEC3                   = 3,
-            BVEC4                   = 4,
-            INT                     = 5,
-            IVEC2                   = 6,
-            IVEC3                   = 7,
-            IVEC4                   = 8,
-            UINT                    = 9,
-            UVEC2                   = 10,
-            UVEC3                   = 11,
-            UVEC4                   = 12,
-            FLOAT                   = 13,
-            VEC2                    = 14,
-            VEC3                    = 15,
-            VEC4                    = 16,
-            MAT2                    = 17,
-            MAT3                    = 18,
-            MAT4                    = 19,
-            SAMPLER2D               = 20,
-            TEXTURE2D               = 21,
-            SAMPLER                 = 22,
-            SUBPASSINPUT            = 23;
-    public static final byte LAST = SUBPASSINPUT;
+            Void            = 0,
+            Bool            = 1,
+            BVec2           = 2,
+            BVec3           = 3,
+            BVec4           = 4,
+            Int             = 5,
+            IVec2           = 6,
+            IVec3           = 7,
+            IVec4           = 8,
+            UInt            = 9,
+            UVec2           = 10,
+            UVec3           = 11,
+            UVec4           = 12,
+            Float           = 13,
+            Vec2            = 14,
+            Vec3            = 15,
+            Vec4            = 16,
+            Mat2            = 17,
+            Mat3            = 18,
+            Mat4            = 19,
+            Sampler2D       = 20,
+            Texture2D       = 21,
+            Sampler         = 22,
+            SubpassInput    = 23;
+    public static final byte Last = SubpassInput;
 
     /**
      * Is the shading language type float (including vectors/matrices)?
      */
     public static boolean isFloatType(byte type) {
         switch (type) {
-            case FLOAT:
-            case VEC2:
-            case VEC3:
-            case VEC4:
-            case MAT2:
-            case MAT3:
-            case MAT4:
+            case Float:
+            case Vec2:
+            case Vec3:
+            case Vec4:
+            case Mat2:
+            case Mat3:
+            case Mat4:
                 return true;
 
-            case VOID:
-            case SAMPLER2D:
-            case BOOL:
-            case BVEC2:
-            case BVEC3:
-            case BVEC4:
-            case INT:
-            case IVEC2:
-            case IVEC3:
-            case IVEC4:
-            case UINT:
-            case UVEC2:
-            case UVEC3:
-            case UVEC4:
-            case TEXTURE2D:
-            case SAMPLER:
-            case SUBPASSINPUT:
+            case Void:
+            case Sampler2D:
+            case Bool:
+            case BVec2:
+            case BVec3:
+            case BVec4:
+            case Int:
+            case IVec2:
+            case IVec3:
+            case IVec4:
+            case UInt:
+            case UVec2:
+            case UVec3:
+            case UVec4:
+            case Texture2D:
+            case Sampler:
+            case SubpassInput:
                 return false;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -93,82 +93,157 @@ public final class SLType {
      */
     public static boolean isIntegralType(byte type) {
         switch (type) {
-            case INT:
-            case IVEC2:
-            case IVEC3:
-            case IVEC4:
-            case UINT:
-            case UVEC2:
-            case UVEC3:
-            case UVEC4:
+            case Int:
+            case IVec2:
+            case IVec3:
+            case IVec4:
+            case UInt:
+            case UVec2:
+            case UVec3:
+            case UVec4:
                 return true;
 
-            case FLOAT:
-            case VEC2:
-            case VEC3:
-            case VEC4:
-            case MAT2:
-            case MAT3:
-            case MAT4:
-            case VOID:
-            case SAMPLER2D:
-            case BOOL:
-            case BVEC2:
-            case BVEC3:
-            case BVEC4:
-            case TEXTURE2D:
-            case SAMPLER:
-            case SUBPASSINPUT:
+            case Float:
+            case Vec2:
+            case Vec3:
+            case Vec4:
+            case Mat2:
+            case Mat3:
+            case Mat4:
+            case Void:
+            case Sampler2D:
+            case Bool:
+            case BVec2:
+            case BVec3:
+            case BVec4:
+            case Texture2D:
+            case Sampler:
+            case SubpassInput:
                 return false;
         }
         throw new IllegalArgumentException(String.valueOf(type));
     }
 
     /**
-     * Is the shading language type supported as a uniform (ie, does it have a corresponding set
-     * function on GrGLSLProgramDataManager)?
+     * Is the shading language type boolean (including vectors)?
      */
-    public static boolean canBeUniformValue(byte type) {
-        return isFloatType(type) || isIntegralType(type);
+    public static boolean isBooleanType(byte type) {
+        switch (type) {
+            case Bool:
+            case BVec2:
+            case BVec3:
+            case BVec4:
+                return true;
+
+            case Float:
+            case Vec2:
+            case Vec3:
+            case Vec4:
+            case Mat2:
+            case Mat3:
+            case Mat4:
+            case Void:
+            case Sampler2D:
+            case Int:
+            case IVec2:
+            case IVec3:
+            case IVec4:
+            case UInt:
+            case UVec2:
+            case UVec3:
+            case UVec4:
+            case Texture2D:
+            case Sampler:
+            case SubpassInput:
+                return false;
+        }
+        throw new IllegalArgumentException(String.valueOf(type));
     }
 
     /**
-     * If the type represents a single value or vector return the vector length, else -1.
+     * Is the shading language type supported as a uniform block member.
      */
-    public static int vecLength(byte type) {
+    public static boolean canBeUniformValue(byte type) {
+        return isFloatType(type) || isIntegralType(type) || isBooleanType(type);
+    }
+
+    /**
+     * If the type represents a single value or vector return the number of components, else -1.
+     */
+    public static int vectorDim(byte type) {
         switch (type) {
-            case BOOL:
-            case INT:
-            case UINT:
-            case FLOAT:
+            case Bool:
+            case Int:
+            case UInt:
+            case Float:
                 return 1;
 
-            case BVEC2:
-            case IVEC2:
-            case UVEC2:
-            case VEC2:
+            case BVec2:
+            case IVec2:
+            case UVec2:
+            case Vec2:
                 return 2;
 
-            case BVEC3:
-            case IVEC3:
-            case UVEC3:
-            case VEC3:
+            case BVec3:
+            case IVec3:
+            case UVec3:
+            case Vec3:
                 return 3;
 
-            case BVEC4:
-            case IVEC4:
-            case UVEC4:
-            case VEC4:
+            case BVec4:
+            case IVec4:
+            case UVec4:
+            case Vec4:
                 return 4;
 
-            case MAT2:
-            case MAT3:
-            case MAT4:
-            case VOID:
-            case SAMPLER2D:
-            case TEXTURE2D:
-            case SAMPLER:
-            case SUBPASSINPUT:
+            case Mat2:
+            case Mat3:
+            case Mat4:
+            case Void:
+            case Sampler2D:
+            case Texture2D:
+            case Sampler:
+            case SubpassInput:
+                return -1;
+        }
+        throw new IllegalArgumentException(String.valueOf(type));
+    }
+
+    /**
+     * If the type represents a square matrix, return its order; otherwise, -1.
+     */
+    public static int matrixOrder(byte type) {
+        switch (type) {
+            case Mat2:
+                return 2;
+
+            case Mat3:
+                return 3;
+
+            case Mat4:
+                return 4;
+
+            case Void:
+            case Bool:
+            case BVec2:
+            case BVec3:
+            case BVec4:
+            case Int:
+            case IVec2:
+            case IVec3:
+            case IVec4:
+            case UInt:
+            case UVec2:
+            case UVec3:
+            case UVec4:
+            case Float:
+            case Vec2:
+            case Vec3:
+            case Vec4:
+            case Sampler2D:
+            case Texture2D:
+            case Sampler:
+            case SubpassInput:
                 return -1;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -176,32 +251,32 @@ public final class SLType {
 
     public static boolean isCombinedSamplerType(byte type) {
         switch (type) {
-            case SAMPLER2D:
+            case Sampler2D:
                 return true;
 
-            case VOID:
-            case FLOAT:
-            case VEC2:
-            case VEC3:
-            case VEC4:
-            case MAT2:
-            case MAT3:
-            case MAT4:
-            case INT:
-            case IVEC2:
-            case IVEC3:
-            case IVEC4:
-            case UINT:
-            case UVEC2:
-            case UVEC3:
-            case UVEC4:
-            case BOOL:
-            case BVEC2:
-            case BVEC3:
-            case BVEC4:
-            case TEXTURE2D:
-            case SAMPLER:
-            case SUBPASSINPUT:
+            case Void:
+            case Float:
+            case Vec2:
+            case Vec3:
+            case Vec4:
+            case Mat2:
+            case Mat3:
+            case Mat4:
+            case Int:
+            case IVec2:
+            case IVec3:
+            case IVec4:
+            case UInt:
+            case UVec2:
+            case UVec3:
+            case UVec4:
+            case Bool:
+            case BVec2:
+            case BVec3:
+            case BVec4:
+            case Texture2D:
+            case Sampler:
+            case SubpassInput:
                 return false;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -209,33 +284,72 @@ public final class SLType {
 
     public static boolean isMatrixType(byte type) {
         switch (type) {
-            case MAT2:
-            case MAT3:
-            case MAT4:
+            case Mat2:
+            case Mat3:
+            case Mat4:
                 return true;
 
-            case VOID:
-            case BOOL:
-            case BVEC2:
-            case BVEC3:
-            case BVEC4:
-            case FLOAT:
-            case VEC2:
-            case VEC3:
-            case VEC4:
-            case INT:
-            case IVEC2:
-            case IVEC3:
-            case IVEC4:
-            case UINT:
-            case UVEC2:
-            case UVEC3:
-            case UVEC4:
-            case SAMPLER2D:
-            case TEXTURE2D:
-            case SAMPLER:
-            case SUBPASSINPUT:
+            case Void:
+            case Bool:
+            case BVec2:
+            case BVec3:
+            case BVec4:
+            case Float:
+            case Vec2:
+            case Vec3:
+            case Vec4:
+            case Int:
+            case IVec2:
+            case IVec3:
+            case IVec4:
+            case UInt:
+            case UVec2:
+            case UVec3:
+            case UVec4:
+            case Sampler2D:
+            case Texture2D:
+            case Sampler:
+            case SubpassInput:
                 return false;
+        }
+        throw new IllegalArgumentException(String.valueOf(type));
+    }
+
+    /**
+     * Returns the number of locations take up by a given SLType. We assume that all
+     * scalar values are 32 bits.
+     */
+    public static int locationSize(byte type) {
+        switch (type) {
+            case Bool:
+            case BVec2:
+            case BVec3:
+            case BVec4:
+            case Int:
+            case IVec2:
+            case IVec3:
+            case IVec4:
+            case UInt:
+            case UVec2:
+            case UVec3:
+            case UVec4:
+            case Float:
+            case Vec2:
+            case Vec3:
+            case Vec4:
+                return 1;
+            case Mat2:
+                return 2;
+            case Mat3:
+                return 3;
+            case Mat4:
+                return 4;
+            case Void:
+            case Sampler2D:
+            case Texture2D:
+            case Sampler:
+            case SubpassInput:
+                return 0;
         }
         throw new IllegalArgumentException(String.valueOf(type));
     }
@@ -243,30 +357,30 @@ public final class SLType {
     @Nonnull
     public static String typeString(byte type) {
         switch (type) {
-            case VOID:          return "void";
-            case BOOL:          return "bool";
-            case BVEC2:         return "bvec2";
-            case BVEC3:         return "bvec3";
-            case BVEC4:         return "bvec4";
-            case INT:           return "int";
-            case IVEC2:         return "ivec2";
-            case IVEC3:         return "ivec3";
-            case IVEC4:         return "ivec4";
-            case UINT:          return "uint";
-            case UVEC2:         return "uvec2";
-            case UVEC3:         return "uvec3";
-            case UVEC4:         return "uvec4";
-            case FLOAT:         return "float";
-            case VEC2:          return "vec2";
-            case VEC3:          return "vec3";
-            case VEC4:          return "vec4";
-            case MAT2:          return "mat2";
-            case MAT3:          return "mat3";
-            case MAT4:          return "mat4";
-            case SAMPLER2D:     return "sampler2D";
-            case TEXTURE2D:     return "texture2D";
-            case SAMPLER:       return "sampler";
-            case SUBPASSINPUT:  return "subpassInput";
+            case Void:          return "void";
+            case Bool:          return "bool";
+            case BVec2:         return "bvec2";
+            case BVec3:         return "bvec3";
+            case BVec4:         return "bvec4";
+            case Int:           return "int";
+            case IVec2:         return "ivec2";
+            case IVec3:         return "ivec3";
+            case IVec4:         return "ivec4";
+            case UInt:          return "uint";
+            case UVec2:         return "uvec2";
+            case UVec3:         return "uvec3";
+            case UVec4:         return "uvec4";
+            case Float:         return "float";
+            case Vec2:          return "vec2";
+            case Vec3:          return "vec3";
+            case Vec4:          return "vec4";
+            case Mat2:          return "mat2";
+            case Mat3:          return "mat3";
+            case Mat4:          return "mat4";
+            case Sampler2D:     return "sampler2D";
+            case Texture2D:     return "texture2D";
+            case Sampler:       return "sampler";
+            case SubpassInput:  return "subpassInput";
         }
         throw new IllegalArgumentException(String.valueOf(type));
     }

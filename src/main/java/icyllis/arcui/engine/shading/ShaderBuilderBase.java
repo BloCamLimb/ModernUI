@@ -20,8 +20,8 @@ package icyllis.arcui.engine.shading;
 
 import icyllis.arcui.engine.ShaderVar;
 
-import java.util.Formatter;
-import java.util.Locale;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Base class for all shaders builders.
@@ -36,10 +36,9 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
             INPUTS = 4,
             OUTPUTS = 5,
             FUNCTIONS = 6,
-            MAIN = 7,
-            CODE = 8;
+            CODE = 7;
     // Reasonable upper bound on number of processor stages
-    protected static final int PREALLOC = CODE + 6;
+    protected static final int PREALLOC = CODE + 7;
 
     protected final ProgramBuilder mProgramBuilder;
     protected final StringBuilder[] mShaderStrings = new StringBuilder[PREALLOC];
@@ -56,6 +55,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
             mShaderStrings[i] = new StringBuilder();
         }
         mCodeIndex = CODE;
+        codeAppend("void main() {");
     }
 
     public void codeAppend(String str) {
@@ -129,13 +129,23 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         return mShaderStrings[FUNCTIONS];
     }
 
-    protected final StringBuilder main() {
-        return mShaderStrings[MAIN];
-    }
-
     protected final StringBuilder code() {
         return mShaderStrings[mCodeIndex];
     }
+
+    public final void end(int visibility) {
+        assert (visibility != 0);
+        mProgramBuilder.uniformHandler().appendUniformDecls(visibility, uniforms());
+        onEnd();
+        // append the 'footer' to code
+        code().append("}");
+
+        mCompilerString = Arrays.stream(mShaderStrings, 0, mCodeIndex + 1)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.joining("\n\n"));
+    }
+
+    protected abstract void onEnd();
 
     private static class Prependable implements Appendable {
 

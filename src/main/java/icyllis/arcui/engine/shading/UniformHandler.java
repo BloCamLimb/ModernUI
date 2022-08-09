@@ -27,25 +27,25 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
 /**
- * Abstract class that builds uniform blocks.
+ * Abstract class that builds uniforms.
  * <p>
  * The uniform blocks are generally defined as:
  * <pre><code>
  * // Anonymous block
- * layout(std140, binding = 0) uniform CommonBlock {
+ * layout(std140, binding = 0) uniform UniformBlock {
  *     vec4 u_OrthoProj;        // required
  *     mat3 u_ModelView;        // required
  *     vec4 u_DstTextureCoords; // optional
- * }
- * layout(std140, binding = 1) uniform EffectBlock {
  *     // per-effect uniforms...
- * }
- * </code></pre>
+ * }</code></pre>
+ * Per-effect uniforms are updated more frequently (generally, each draw op).
  */
 public abstract class UniformHandler {
 
-    // Keep consistent with Skia
-    public static final String NO_MANGLE_PREFIX = "sk_";
+    public static final String NO_MANGLE_PREFIX = "u_";
+
+    public static final String ORTHOPROJ = "u_OrthoProj";
+    public static final String MODELVIEW = "u_ModelView";
 
     public static class UniformInfo {
 
@@ -65,6 +65,9 @@ public abstract class UniformHandler {
     public @interface SamplerHandle {
     }
 
+    // The bindings for the main descriptor set.
+    public static final int UNIFORM_BINDING = 0;
+
     protected final ProgramBuilder mProgramBuilder;
 
     protected UniformHandler(ProgramBuilder programBuilder) {
@@ -80,7 +83,7 @@ public abstract class UniformHandler {
      * {@link #addUniformArray(Processor, int, byte, String, int)} variant to add an array of
      * uniforms.
      *
-     * @param visibility see ShaderFlag
+     * @param visibility combination of ShaderFlags
      * @param type       see {@link SLType}
      * @param name       the raw name (pre-mangling), cannot be null or empty
      * @return UniformHandle
@@ -92,14 +95,14 @@ public abstract class UniformHandler {
                                 String name) {
         assert (owner != null && name != null && !name.isEmpty());
         assert (visibility != 0);
-        assert (type >= 0 && type <= SLType.LAST);
+        assert (type >= 0 && type <= SLType.Last);
         assert (!SLType.isCombinedSamplerType(type));
         boolean mangleName = !name.startsWith(NO_MANGLE_PREFIX);
         return internalAddUniformArray(owner, visibility, type, name, mangleName, ShaderVar.NON_ARRAY);
     }
 
     /**
-     * @param visibility see ShaderFlag
+     * @param visibility combination of ShaderFlags
      * @param type       see {@link SLType}
      * @param name       the raw name (pre-mangling), cannot be null or empty
      * @param arrayCount the number of elements, cannot be zero
@@ -113,38 +116,30 @@ public abstract class UniformHandler {
                                      int arrayCount) {
         assert (owner != null && name != null && !name.isEmpty());
         assert (visibility != 0);
-        assert (type >= 0 && type <= SLType.LAST);
+        assert (type >= 0 && type <= SLType.Last);
         assert (!SLType.isCombinedSamplerType(type));
         assert (arrayCount >= 1);
         boolean mangleName = !name.startsWith(NO_MANGLE_PREFIX);
         return internalAddUniformArray(owner, visibility, type, name, mangleName, arrayCount);
     }
 
-    @UniformHandle
-    protected abstract int internalAddUniformArray(Processor owner,
-                                                   int visibility,
-                                                   byte type,
-                                                   String name,
-                                                   boolean mangleName,
-                                                   int arrayCount);
-
     /**
-     * @param u UniformHandle
+     * @param handle UniformHandle
      */
-    public abstract ShaderVar getUniformVariable(@UniformHandle int u);
+    public abstract ShaderVar getUniformVariable(@UniformHandle int handle);
 
     /**
-     * Shortcut for getUniformVariable(u).getName()
+     * Shortcut for getUniformVariable(handle).getName()
      *
-     * @param u UniformHandle
+     * @param handle UniformHandle
      */
-    public final String getUniformName(@UniformHandle int u) {
-        return getUniformVariable(u).getName();
+    public final String getUniformName(@UniformHandle int handle) {
+        return getUniformVariable(handle).getName();
     }
 
     public abstract int numUniforms();
 
-    public abstract UniformInfo uniform(int idx);
+    public abstract UniformInfo uniform(int index);
 
     // Looks up a uniform that was added by 'owner' with the given 'rawName' (pre-mangling).
     // If there is no such uniform, null is returned.
@@ -176,6 +171,42 @@ public abstract class UniformHandler {
         return null;
     }
 
+    @UniformHandle
+    protected abstract int internalAddUniformArray(Processor owner,
+                                                   int visibility,
+                                                   byte type,
+                                                   String name,
+                                                   boolean mangleName,
+                                                   int arrayCount);
+
+    @SamplerHandle
+    protected abstract int addSampler(BackendFormat backendFormat,
+                                      int samplerState,
+                                      short swizzle,
+                                      String name);
+
+    protected abstract String samplerVariable(@SamplerHandle int handle);
+
+    protected abstract short samplerSwizzle(@SamplerHandle int handle);
+
+    @SamplerHandle
+    protected int addInputSampler(short swizzle, String name) {
+        throw new UnsupportedOperationException();
+    }
+
+    protected String inputSamplerVariable(@SamplerHandle int handle) {
+        throw new UnsupportedOperationException();
+    }
+
+    protected short inputSamplerSwizzle(@SamplerHandle int handle) {
+        throw new UnsupportedOperationException();
+    }
+
+    /**
+     * @param visibility one of ShaderFlags
+     */
+    protected abstract void appendUniformDecls(int visibility, StringBuilder out);
+
     /**
      * Returns the base alignment in bytes taken up in UBO for SLTypes.
      *
@@ -186,36 +217,36 @@ public abstract class UniformHandler {
      */
     public static int getAlignmentMask(byte type, boolean nonArray, boolean std430) {
         switch (type) {
-            case SLType.BOOL:   // fall through
-            case SLType.INT:    // fall through
-            case SLType.UINT:   // fall through
-            case SLType.FLOAT:  // fall through
+            case SLType.Bool:   // fall through
+            case SLType.Int:    // fall through
+            case SLType.UInt:   // fall through
+            case SLType.Float:  // fall through
                 return std430 || nonArray ? Float.BYTES - 1 : 4 * Float.BYTES - 1; // N - 1
-            case SLType.BVEC2:  // fall through
-            case SLType.IVEC2:  // fall through
-            case SLType.UVEC2:  // fall through
-            case SLType.VEC2:   // fall through
+            case SLType.BVec2:  // fall through
+            case SLType.IVec2:  // fall through
+            case SLType.UVec2:  // fall through
+            case SLType.Vec2:   // fall through
                 return std430 || nonArray ? 2 * Float.BYTES - 1 : 4 * Float.BYTES - 1; // 2N - 1
-            case SLType.BVEC3:  // fall through
-            case SLType.BVEC4:  // fall through
-            case SLType.IVEC3:  // fall through
-            case SLType.IVEC4:  // fall through
-            case SLType.UVEC3:  // fall through
-            case SLType.UVEC4:  // fall through
-            case SLType.VEC3:   // fall through
-            case SLType.VEC4:   // fall through
-            case SLType.MAT3:   // fall through
-            case SLType.MAT4:   // fall through
+            case SLType.BVec3:  // fall through
+            case SLType.BVec4:  // fall through
+            case SLType.IVec3:  // fall through
+            case SLType.IVec4:  // fall through
+            case SLType.UVec3:  // fall through
+            case SLType.UVec4:  // fall through
+            case SLType.Vec3:   // fall through
+            case SLType.Vec4:   // fall through
+            case SLType.Mat3:   // fall through
+            case SLType.Mat4:   // fall through
                 return 4 * Float.BYTES - 1; // 4N - 1
-            case SLType.MAT2:
+            case SLType.Mat2:
                 return std430 ? 2 * Float.BYTES - 1 : 4 * Float.BYTES - 1; // as an array of Vec2
 
             // This query is only valid for certain types.
-            case SLType.VOID:
-            case SLType.SAMPLER2D:
-            case SLType.TEXTURE2D:
-            case SLType.SAMPLER:
-            case SLType.SUBPASSINPUT:
+            case SLType.Void:
+            case SLType.Sampler2D:
+            case SLType.Texture2D:
+            case SLType.Sampler:
+            case SLType.SubpassInput:
                 throw new IllegalStateException(String.valueOf(type));
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -231,43 +262,43 @@ public abstract class UniformHandler {
      */
     public static int getSize(byte type, boolean std430) {
         switch (type) {
-            case SLType.FLOAT:
+            case SLType.Float:
                 return Float.BYTES;
-            case SLType.VEC2:
+            case SLType.Vec2:
                 return 2 * Float.BYTES;
-            case SLType.VEC3:
+            case SLType.Vec3:
                 return 3 * Float.BYTES;
-            case SLType.VEC4:
+            case SLType.Vec4:
                 return 4 * Float.BYTES;
-            case SLType.BOOL:   // fall through
-            case SLType.INT:    // fall through
-            case SLType.UINT:
+            case SLType.Bool:   // fall through
+            case SLType.Int:    // fall through
+            case SLType.UInt:
                 return Integer.BYTES;
-            case SLType.BVEC2:  // fall through
-            case SLType.IVEC2:  // fall through
-            case SLType.UVEC2:
+            case SLType.BVec2:  // fall through
+            case SLType.IVec2:  // fall through
+            case SLType.UVec2:
                 return 2 * Integer.BYTES;
-            case SLType.BVEC3:  // fall through
-            case SLType.IVEC3:  // fall through
-            case SLType.UVEC3:
+            case SLType.BVec3:  // fall through
+            case SLType.IVec3:  // fall through
+            case SLType.UVec3:
                 return 3 * Integer.BYTES;
-            case SLType.BVEC4:  // fall through
-            case SLType.IVEC4:  // fall through
-            case SLType.UVEC4:
+            case SLType.BVec4:  // fall through
+            case SLType.IVec4:  // fall through
+            case SLType.UVec4:
                 return 4 * Integer.BYTES;
-            case SLType.MAT2:
+            case SLType.Mat2:
                 return std430 ? 2 * 2 * Float.BYTES : 2 * 4 * Float.BYTES;
-            case SLType.MAT3:
+            case SLType.Mat3:
                 return 3 * 4 * Float.BYTES;
-            case SLType.MAT4:
+            case SLType.Mat4:
                 return 4 * 4 * Float.BYTES;
 
             // This query is only valid for certain types.
-            case SLType.VOID:
-            case SLType.SAMPLER2D:
-            case SLType.TEXTURE2D:
-            case SLType.SAMPLER:
-            case SLType.SUBPASSINPUT:
+            case SLType.Void:
+            case SLType.Sampler2D:
+            case SLType.Texture2D:
+            case SLType.Sampler:
+            case SLType.SubpassInput:
                 throw new IllegalStateException(String.valueOf(type));
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -288,8 +319,8 @@ public abstract class UniformHandler {
                                        byte type,
                                        int arrayCount,
                                        boolean std430) {
-        assert (type >= 0 && type <= SLType.LAST);
-        assert (arrayCount >= ShaderVar.NON_ARRAY);
+        assert (type >= 0 && type <= SLType.Last);
+        assert (arrayCount == ShaderVar.NON_ARRAY) || (arrayCount >= 1);
         int alignmentMask = getAlignmentMask(type, arrayCount == ShaderVar.NON_ARRAY, std430);
         return (offset + alignmentMask) & ~alignmentMask;
     }
@@ -297,8 +328,8 @@ public abstract class UniformHandler {
     public static int getAlignedStride(byte type,
                                        int arrayCount,
                                        boolean std430) {
-        assert (type >= 0 && type <= SLType.LAST);
-        assert (arrayCount >= ShaderVar.NON_ARRAY);
+        assert (type >= 0 && type <= SLType.Last);
+        assert (arrayCount == ShaderVar.NON_ARRAY) || (arrayCount >= 1);
         if (arrayCount == ShaderVar.NON_ARRAY) {
             return getSize(type, std430);
         } else {

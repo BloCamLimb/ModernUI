@@ -78,7 +78,7 @@ public abstract class GeometryProcessor extends Processor {
          * @param gpuType see {@link SLType}
          */
         public Attribute(String name, byte cpuType, byte gpuType) {
-            assert (name != null && gpuType != SLType.VOID);
+            assert (name != null && gpuType != SLType.Void);
             mName = name;
             mCPUType = cpuType;
             mGPUType = gpuType;
@@ -94,7 +94,7 @@ public abstract class GeometryProcessor extends Processor {
          * @param offset  N-aligned offset
          */
         public Attribute(String name, byte cpuType, byte gpuType, int offset) {
-            assert (name != null && gpuType != SLType.VOID);
+            assert (name != null && gpuType != SLType.Void);
             assert (offset != IMPLICIT_OFFSET && alignOffset(offset) == offset);
             mName = name;
             mCPUType = cpuType;
@@ -256,7 +256,7 @@ public abstract class GeometryProcessor extends Processor {
     // configured Attribute struct
     @Nonnull
     protected static Attribute makeColorAttribute(String name, boolean wideColor) {
-        return new Attribute(name, wideColor ? VertexAttribType.FLOAT4 : VertexAttribType.UBYTE4_NORM, SLType.VEC4);
+        return new Attribute(name, wideColor ? VertexAttribType.FLOAT4 : VertexAttribType.UBYTE4_NORM, SLType.Vec4);
     }
 
     private final AttributeSet mVertexAttributes = new AttributeSet();      // binding = 0
@@ -416,10 +416,10 @@ public abstract class GeometryProcessor extends Processor {
             VertexGeoBuilder vBuilder = args.mVertBuilder;
             // Emit the vertex position to the hardware in the normalized window coordinates it expects.
             assert (args.mPositionVar != null) &&
-                    ((args.mPositionVar.getType() == SLType.VEC2) ||
-                            (args.mPositionVar.getType() == SLType.VEC3));
+                    ((args.mPositionVar.getType() == SLType.Vec2) ||
+                            (args.mPositionVar.getType() == SLType.Vec3));
             //TODO emit normalized position
-            if (args.mPositionVar.getType() == SLType.VEC2) {
+            if (args.mPositionVar.getType() == SLType.Vec2) {
                 args.mVaryingHandler.setNoPerspective();
             }
         }
@@ -432,8 +432,11 @@ public abstract class GeometryProcessor extends Processor {
      * along with an associated SamplerState. The actual proxies used are stored in either the
      * fixed or dynamic state arrays. TextureSamplers don't perform any coord manipulation to account
      * for texture origin.
+     *
+     * @param samplerState see {@link SamplerState}
+     * @param swizzle      see {@link Swizzle}
      */
-    public record TextureSampler(int samplerState, BackendFormat backendFormat, short swizzle) {
+    public record TextureSampler(BackendFormat backendFormat, int samplerState, short swizzle) {
 
         public int textureType() {
             return backendFormat.getTextureType();

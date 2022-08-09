@@ -16,19 +16,23 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.engine.shading;
+package icyllis.arcui.opengl;
 
-/**
- * This class implements the various fragment builder interfaces.
- */
-public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragmentBuilder, XPFragmentBuilder {
+import icyllis.arcui.engine.shading.ProgramBuilder;
+import icyllis.arcui.engine.shading.VaryingHandler;
 
-    public FragmentShaderBuilder(ProgramBuilder programBuilder) {
+public class GLVaryingHandler extends VaryingHandler {
+
+    GLVaryingHandler(ProgramBuilder programBuilder) {
         super(programBuilder);
     }
 
     @Override
     protected void onEnd() {
-        mProgramBuilder.varyingHandler().getFragDecls(inputs(), outputs());
+        // OpenGL 4.5 requires these
+        assignLocations(mVertexInputs);
+        assignLocations(mVertexOutputs);
+        assignLocations(mFragInputs);
+        assignLocations(mFragOutputs);
     }
 }
