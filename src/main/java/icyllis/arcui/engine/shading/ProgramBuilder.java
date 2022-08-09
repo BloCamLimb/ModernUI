@@ -46,6 +46,8 @@ public abstract class ProgramBuilder {
     public final ProgramDesc mDesc;
     public final ProgramInfo mProgramInfo;
 
+    public GeometryProcessor.ProgramImpl mGPImpl;
+
     public ProgramBuilder(ProgramDesc desc, ProgramInfo programInfo) {
         mDesc = desc;
         mProgramInfo = programInfo;
@@ -102,7 +104,7 @@ public abstract class ProgramBuilder {
         if (!emitAndInstallGeomProc(input)) {
             return false;
         }
-        return false;
+        return true;
     }
 
     // advanceStage is called by program creator between each processor's emit code.  It increments
@@ -138,6 +140,9 @@ public abstract class ProgramBuilder {
         mFS.codeAppendf("// Stage %d, %s\n", mStageIndex, geomProc.name());
         mVS.codeAppendf("// Geometry Processor %s\n", geomProc.name());
 
+        assert (mGPImpl == null);
+        mGPImpl = geomProc.makeProgramImpl(shaderCaps());
+
         var args = new GeometryProcessor.ProgramImpl.Args(
                 mVS,
                 mFS,
@@ -149,7 +154,8 @@ public abstract class ProgramBuilder {
                 output[1],
                 new int[0]
         );
+        mGPImpl.emitCode(args, mProgramInfo.pipeline());
 
-        return false;
+        return true;
     }
 }

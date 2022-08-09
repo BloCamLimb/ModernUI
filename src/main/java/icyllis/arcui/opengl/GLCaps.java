@@ -190,7 +190,7 @@ public final class GLCaps extends Caps {
         }
 
         //mShaderCaps.mMaxTessellationSegments = glGetInteger(GL_MAX_TESS_GEN_LEVEL);
-        mShaderCaps.mVersionDeclString = "#version 450\n";
+        mShaderCaps.mVersionDeclString = "#version 450 core\n";
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer range = stack.mallocInt(2);
             int bits = glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_HIGH_FLOAT, range);

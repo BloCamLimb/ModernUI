@@ -48,7 +48,7 @@ public abstract class Processor {
 
     /**
      * Human-meaningful string to identify this processor; may be embedded in generated shader
-     * code and must be a legal ArSL identifier prefix.
+     * code and must be a legal SkSL identifier prefix.
      */
     public abstract String name();
 

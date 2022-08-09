@@ -21,9 +21,6 @@ package icyllis.arcui.engine.shading;
 import icyllis.arcui.core.SLType;
 import icyllis.arcui.engine.ShaderVar;
 
-/**
- * @version skia 2022/07/23
- */
 public class Varying {
 
     byte mType;

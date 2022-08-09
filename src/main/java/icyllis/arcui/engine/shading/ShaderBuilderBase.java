@@ -31,16 +31,15 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     protected static final int
             EXTENSIONS = 0,
             DEFINITIONS = 1,
-            PRECISION_QUALIFIER = 2,
-            LAYOUT_QUALIFIERS = 3,
-            UNIFORMS = 4,
-            INPUTS = 5,
-            OUTPUTS = 6,
-            FUNCTIONS = 7,
-            MAIN = 8,
-            CODE = 9;
+            LAYOUT_QUALIFIERS = 2,
+            UNIFORMS = 3,
+            INPUTS = 4,
+            OUTPUTS = 5,
+            FUNCTIONS = 6,
+            MAIN = 7,
+            CODE = 8;
     // Reasonable upper bound on number of processor stages
-    protected static final int PREALLOC = CODE + 7;
+    protected static final int PREALLOC = CODE + 6;
 
     protected final ProgramBuilder mProgramBuilder;
     protected final StringBuilder[] mShaderStrings = new StringBuilder[PREALLOC];
@@ -108,10 +107,6 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
 
     protected final StringBuilder definitions() {
         return mShaderStrings[DEFINITIONS];
-    }
-
-    protected final StringBuilder precisionQualifier() {
-        return mShaderStrings[PRECISION_QUALIFIER];
     }
 
     protected final StringBuilder layoutQualifiers() {

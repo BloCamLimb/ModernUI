@@ -21,7 +21,6 @@ package icyllis.arcui.engine;
 import icyllis.arcui.core.MathUtil;
 import icyllis.arcui.core.SLType;
 import icyllis.arcui.engine.shading.*;
-import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
@@ -257,9 +256,7 @@ public abstract class GeometryProcessor extends Processor {
     // configured Attribute struct
     @Nonnull
     protected static Attribute makeColorAttribute(String name, boolean wideColor) {
-        return new Attribute(name,
-                wideColor ? VertexAttribType.FLOAT4 : VertexAttribType.UBYTE4_NORM,
-                SLType.HALF4);
+        return new Attribute(name, wideColor ? VertexAttribType.FLOAT4 : VertexAttribType.UBYTE4_NORM, SLType.VEC4);
     }
 
     private final AttributeSet mVertexAttributes = new AttributeSet();      // binding = 0
@@ -311,6 +308,25 @@ public abstract class GeometryProcessor extends Processor {
         return mInstanceAttributes.stride();
     }
 
+    /**
+     * Adds a key on the KeyBuilder that reflects any variety in the code that the
+     * geometry processor subclass can emit.
+     */
+    public abstract void addToKey(KeyBuilder b);
+
+    public final void getAttributeKey(KeyBuilder b) {
+        b.appendComment("vertex attributes");
+        mVertexAttributes.addToKey(b);
+        b.appendComment("instance attributes");
+        mInstanceAttributes.addToKey(b);
+    }
+
+    /**
+     * Returns a new instance of the appropriate implementation class for the given
+     * GeometryProcessor.
+     */
+    public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);
+
     protected final void setVertexAttributes(Attribute[] attrs, int stride) {
         mVertexAttributes.initExplicit(attrs, stride);
     }
@@ -332,6 +348,12 @@ public abstract class GeometryProcessor extends Processor {
         mTextureSamplerCnt = cnt;
     }
 
+    /**
+     * Every {@link GeometryProcessor} must be capable of creating a subclass of ProgramImpl. The
+     * ProgramImpl emits the shader code that implements the GeometryProcessor, is attached to the
+     * generated backend API pipeline/program and used to extract uniform data from
+     * GeometryProcessor instances.
+     */
     public static abstract class ProgramImpl {
 
         public static final class Args {
@@ -394,14 +416,27 @@ public abstract class GeometryProcessor extends Processor {
             VertexGeoBuilder vBuilder = args.mVertBuilder;
             // Emit the vertex position to the hardware in the normalized window coordinates it expects.
             assert (args.mPositionVar != null) &&
-                    ((args.mPositionVar.getType() == SLType.FLOAT2) ||
-                            (args.mPositionVar.getType() == SLType.FLOAT3));
+                    ((args.mPositionVar.getType() == SLType.VEC2) ||
+                            (args.mPositionVar.getType() == SLType.VEC3));
             //TODO emit normalized position
-            if (args.mPositionVar.getType() == SLType.FLOAT2) {
+            if (args.mPositionVar.getType() == SLType.VEC2) {
                 args.mVaryingHandler.setNoPerspective();
             }
         }
 
         protected abstract void onEmitCode(Args args);
+    }
+
+    /**
+     * Used to capture the properties of the TextureProxies required/expected by a GeometryProcessor
+     * along with an associated SamplerState. The actual proxies used are stored in either the
+     * fixed or dynamic state arrays. TextureSamplers don't perform any coord manipulation to account
+     * for texture origin.
+     */
+    public record TextureSampler(int samplerState, BackendFormat backendFormat, short swizzle) {
+
+        public int textureType() {
+            return backendFormat.getTextureType();
+        }
     }
 }
