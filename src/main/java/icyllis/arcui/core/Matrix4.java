@@ -18,19 +18,32 @@
 
 package icyllis.arcui.core;
 
+import icyllis.arcui.engine.DataUtils;
+import sun.misc.Unsafe;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 import static icyllis.arcui.core.MathUtil.*;
-import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.system.MemoryUtil.memGetFloat;
 
 /**
  * Represents a 4x4 row-major matrix.
  */
 @SuppressWarnings("unused")
 public class Matrix4 implements Cloneable {
+
+    public static final long OFFSET;
+
+    static {
+        try {
+            OFFSET = DataUtils.UNSAFE.objectFieldOffset(Matrix4.class.getDeclaredField("m11"));
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("No UNSAFE", e);
+        }
+    }
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -706,22 +719,16 @@ public class Matrix4 implements Cloneable {
      * @param p the pointer of the array to store
      */
     public void put(long p) {
-        memPutFloat(p, m11);
-        memPutFloat(p + 4, m12);
-        memPutFloat(p + 8, m13);
-        memPutFloat(p + 12, m14);
-        memPutFloat(p + 16, m21);
-        memPutFloat(p + 20, m22);
-        memPutFloat(p + 24, m23);
-        memPutFloat(p + 28, m24);
-        memPutFloat(p + 32, m31);
-        memPutFloat(p + 36, m32);
-        memPutFloat(p + 40, m33);
-        memPutFloat(p + 44, m34);
-        memPutFloat(p + 48, m41);
-        memPutFloat(p + 52, m42);
-        memPutFloat(p + 56, m43);
-        memPutFloat(p + 60, m44);
+        final Unsafe unsafe = DataUtils.UNSAFE;
+        final long src = OFFSET;
+        unsafe.putLong(null, p, unsafe.getLong(this, src));
+        unsafe.putLong(null, p + 8, unsafe.getLong(this, src + 8));
+        unsafe.putLong(null, p + 16, unsafe.getLong(this, src + 16));
+        unsafe.putLong(null, p + 24, unsafe.getLong(this, src + 24));
+        unsafe.putLong(null, p + 32, unsafe.getLong(this, src + 32));
+        unsafe.putLong(null, p + 40, unsafe.getLong(this, src + 40));
+        unsafe.putLong(null, p + 48, unsafe.getLong(this, src + 48));
+        unsafe.putLong(null, p + 56, unsafe.getLong(this, src + 56));
     }
 
     /**

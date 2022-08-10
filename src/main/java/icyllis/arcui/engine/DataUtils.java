@@ -19,8 +19,24 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.Image;
+import org.lwjgl.system.MemoryUtil;
+import sun.misc.Unsafe;
+
+import java.lang.reflect.Field;
 
 public final class DataUtils {
+
+    public static final Unsafe UNSAFE;
+
+    static {
+        try {
+            Field unsafe = MemoryUtil.class.getDeclaredField("UNSAFE");
+            unsafe.setAccessible(true);
+            UNSAFE = (Unsafe) unsafe.get(null);
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("No UNSAFE", e);
+        }
+    }
 
     public static boolean compressionTypeIsOpaque(int compression) {
         return switch (compression) {

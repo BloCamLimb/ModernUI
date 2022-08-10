@@ -208,7 +208,7 @@ public abstract class UniformHandler {
     protected abstract void appendUniformDecls(int visibility, StringBuilder out);
 
     /**
-     * Returns the base alignment in bytes taken up in UBO for SLTypes.
+     * Returns the base alignment mask in bytes taken up in UBO for SLTypes.
      *
      * @param type     see {@link SLType}
      * @param nonArray true for a single element, false for an array of elements
@@ -259,6 +259,7 @@ public abstract class UniformHandler {
      * @param type   see {@link SLType}
      * @param std430 true for std430 layout, false for std140 layout
      * @return size in bytes
+     * @see UniformDataManager
      */
     public static int getSize(byte type, boolean std430) {
         switch (type) {
@@ -325,6 +326,9 @@ public abstract class UniformHandler {
         return (offset + alignmentMask) & ~alignmentMask;
     }
 
+    /**
+     * @see UniformDataManager
+     */
     public static int getAlignedStride(byte type,
                                        int arrayCount,
                                        boolean std430) {

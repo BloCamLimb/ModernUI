@@ -18,6 +18,9 @@
 
 package icyllis.arcui.core;
 
+import icyllis.arcui.engine.DataUtils;
+import sun.misc.Unsafe;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -28,6 +31,16 @@ import static icyllis.arcui.core.MathUtil.*;
  */
 @SuppressWarnings("unused")
 public class Matrix3 implements Cloneable {
+
+    public static final long OFFSET;
+
+    static {
+        try {
+            OFFSET = DataUtils.UNSAFE.objectFieldOffset(Matrix3.class.getDeclaredField("m11"));
+        } catch (Exception e) {
+            throw new UnsupportedOperationException("No UNSAFE", e);
+        }
+    }
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -164,6 +177,25 @@ public class Matrix3 implements Cloneable {
         m31 = mat.m31;
         m32 = mat.m32;
         m33 = mat.m33;
+    }
+
+    /**
+     * Get this matrix data, store them into an address (UNSAFE).
+     * The data matches std140 layout so it is not tightly packed.
+     * NOTE: This method does not perform memory security checks.
+     *
+     * @param p the pointer of the array to store
+     */
+    public void putAligned(long p) {
+        final Unsafe unsafe = DataUtils.UNSAFE;
+        final long src = OFFSET;
+        // we assume src is 12 with 64-bit VM, so start with int and then long, so more dword aligned
+        unsafe.putInt(null, p, unsafe.getInt(this, src));
+        unsafe.putLong(null, p + 4, unsafe.getLong(this, src + 4));
+        unsafe.putInt(null, p + 16, unsafe.getInt(this, src + 12));
+        unsafe.putLong(null, p + 20, unsafe.getLong(this, src + 16));
+        unsafe.putInt(null, p + 32, unsafe.getInt(this, src + 24));
+        unsafe.putLong(null, p + 36, unsafe.getLong(this, src + 28));
     }
 
     /**

@@ -93,55 +93,9 @@ public class TestManagedResource {
             }
         }
 
-        {
-            Matrix4 mat = Matrix4.identity();
-            mat.m34 = 1 / 576f;
-            //mat.preTranslateZ(-20f);
-            mat.preRotateY(MathUtil.PI_O_3);
-            float[] p1 = new float[]{-25,-15};
-            float[] p2 = new float[]{25,-15};
-            float[] p3 = new float[]{25,15};
-            float[] p4 = new float[]{-25,15};
-            pw.println(mat);
-            mat.mapPoint(p1);
-            mat.mapPoint(p2);
-            mat.mapPoint(p3);
-            mat.mapPoint(p4);
-            pw.println(Arrays.toString(p1));
-            pw.println(Arrays.toString(p2));
-            pw.println(Arrays.toString(p3));
-            pw.println(Arrays.toString(p4));
+        testCamera(pw);
 
-
-            Camera.Camera3D camera3D = new Camera.Camera3D();
-            Matrix4 transformMat = Matrix4.identity();
-            transformMat.preRotateY(MathUtil.PI_O_3);
-            Matrix3 outMatrix = new Matrix3();
-            camera3D.getMatrix(transformMat, outMatrix, pw);
-            pw.println("Orien: " + camera3D.mOrientation);
-            pw.println(outMatrix);
-            p1 = new float[]{-25,-15};
-            p2 = new float[]{25,-15};
-            p3 = new float[]{25,15};
-            p4 = new float[]{-25,15};
-            outMatrix.mapPoint(p1);
-            outMatrix.mapPoint(p2);
-            outMatrix.mapPoint(p3);
-            outMatrix.mapPoint(p4);
-            pw.println(Arrays.toString(p1));
-            pw.println(Arrays.toString(p2));
-            pw.println(Arrays.toString(p3));
-            pw.println(Arrays.toString(p4));
-        }
-
-        {
-            IntArrayList intArrayList = new IntArrayList();
-            KeyBuilder keyBuilder = new KeyBuilder.StringKeyBuilder(intArrayList);
-            keyBuilder.addBits(6, 0x2F, "");
-            keyBuilder.add32(0xC1111111);
-            keyBuilder.close();
-            pw.println(keyBuilder);
-        }
+        testKeyBuilder(pw);
 
         directContext.close();
         GLFW.glfwDestroyWindow(window);
@@ -155,9 +109,57 @@ public class TestManagedResource {
     }
 
     public static void testLexicon(PrintWriter pw) {
-        pw.println("Mapping: " + Arrays.toString(Lexer.MAPPINGS));
-        pw.println("Accepts: " + Arrays.toString(Lexer.ACCEPTS));
-        pw.println("Indices: " + Arrays.toString(Lexer.INDICES));
+        pw.println("Matrix3 offset: " + Matrix3.OFFSET);
+    }
+
+    public static void testKeyBuilder(PrintWriter pw) {
+        IntArrayList intArrayList = new IntArrayList();
+        KeyBuilder keyBuilder = new KeyBuilder.StringKeyBuilder(intArrayList);
+        keyBuilder.addBits(6, 0x2F, "");
+        keyBuilder.add32(0xC1111111);
+        keyBuilder.close();
+        pw.println(keyBuilder);
+    }
+
+    public static void testCamera(PrintWriter pw) {
+        Matrix4 mat = Matrix4.identity();
+        mat.m34 = 1 / 576f;
+        //mat.preTranslateZ(-20f);
+        mat.preRotateY(MathUtil.PI_O_3);
+        float[] p1 = new float[]{-25,-15};
+        float[] p2 = new float[]{25,-15};
+        float[] p3 = new float[]{25,15};
+        float[] p4 = new float[]{-25,15};
+        pw.println(mat);
+        mat.mapPoint(p1);
+        mat.mapPoint(p2);
+        mat.mapPoint(p3);
+        mat.mapPoint(p4);
+        pw.println(Arrays.toString(p1));
+        pw.println(Arrays.toString(p2));
+        pw.println(Arrays.toString(p3));
+        pw.println(Arrays.toString(p4));
+
+
+        Camera.Camera3D camera3D = new Camera.Camera3D();
+        Matrix4 transformMat = Matrix4.identity();
+        transformMat.preRotateY(MathUtil.PI_O_3);
+        Matrix3 outMatrix = new Matrix3();
+        camera3D.getMatrix(transformMat, outMatrix, pw);
+        pw.println("Orien: " + camera3D.mOrientation);
+        pw.println(outMatrix);
+        p1 = new float[]{-25,-15};
+        p2 = new float[]{25,-15};
+        p3 = new float[]{25,15};
+        p4 = new float[]{-25,15};
+        outMatrix.mapPoint(p1);
+        outMatrix.mapPoint(p2);
+        outMatrix.mapPoint(p3);
+        outMatrix.mapPoint(p4);
+        pw.println(Arrays.toString(p1));
+        pw.println(Arrays.toString(p2));
+        pw.println(Arrays.toString(p3));
+        pw.println(Arrays.toString(p4));
     }
 
     public static void decodeLargeGIFUsingSTBImage(PrintWriter pw, String path) {
