@@ -20,6 +20,8 @@ package icyllis.arcui.engine;
 
 /**
  * Represents a rgba swizzle. It's represented as a short.
+ * <p>
+ * Note: max swizzle value is 0x5555, so (AND 0xFFFF) is not required when implicitly cast to int.
  */
 public final class Swizzle {
 

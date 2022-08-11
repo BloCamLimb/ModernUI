@@ -27,6 +27,8 @@ import javax.annotation.concurrent.Immutable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+import static icyllis.arcui.engine.EngineTypes.*;
+
 /**
  * The GeometryProcessor represents some kind of geometric primitive.  This includes the shape
  * of the primitive and the inherent color of the primitive.  The GeometryProcessor is
@@ -65,23 +67,23 @@ public abstract class GeometryProcessor extends Processor {
         }
 
         private final String mName;
-        private final byte mCPUType;
-        private final byte mGPUType;
+        private final byte mSrcType;
+        private final byte mDstType;
         private final int mOffset;
 
         /**
          * Makes an attribute whose offset will be implicitly determined by the types and ordering
          * of an array attributes.
          *
-         * @param name    the attrib raw name, UpperCamelCase, cannot be null or empty
-         * @param cpuType see {@link VertexAttribType}
-         * @param gpuType see {@link SLType}
+         * @param name    the attrib raw name, cannot be null or empty
+         * @param srcType the data type in vertex buffer, see VertexAttribType
+         * @param dstType the data type in vertex shader, see {@link SLType}
          */
-        public Attribute(String name, byte cpuType, byte gpuType) {
-            assert (name != null && gpuType != SLType.Void);
+        public Attribute(String name, byte srcType, byte dstType) {
+            assert (name != null && dstType != SLType.Void);
             mName = name;
-            mCPUType = cpuType;
-            mGPUType = gpuType;
+            mSrcType = srcType;
+            mDstType = dstType;
             mOffset = IMPLICIT_OFFSET;
         }
 
@@ -89,16 +91,16 @@ public abstract class GeometryProcessor extends Processor {
          * Makes an attribute with an explicit offset.
          *
          * @param name    the attrib raw name, UpperCamelCase, cannot be null or empty
-         * @param cpuType see {@link VertexAttribType}
-         * @param gpuType see {@link SLType}
+         * @param srcType the data type in vertex buffer, see VertexAttribType
+         * @param dstType the data type in vertex shader, see {@link SLType}
          * @param offset  N-aligned offset
          */
-        public Attribute(String name, byte cpuType, byte gpuType, int offset) {
-            assert (name != null && gpuType != SLType.Void);
+        public Attribute(String name, byte srcType, byte dstType, int offset) {
+            assert (name != null && dstType != SLType.Void);
             assert (offset != IMPLICIT_OFFSET && alignOffset(offset) == offset);
             mName = name;
-            mCPUType = cpuType;
-            mGPUType = gpuType;
+            mSrcType = srcType;
+            mDstType = dstType;
             mOffset = offset;
         }
 
@@ -107,17 +109,17 @@ public abstract class GeometryProcessor extends Processor {
         }
 
         /**
-         * @see VertexAttribType
+         * @return the data type in vertex buffer, see VertexAttribType
          */
-        public final byte cpuType() {
-            return mCPUType;
+        public final byte srcType() {
+            return mSrcType;
         }
 
         /**
-         * @see SLType
+         * @return the data type in vertex shader, see {@link SLType}
          */
-        public final byte gpuType() {
-            return mGPUType;
+        public final byte dstType() {
+            return mDstType;
         }
 
         /**
@@ -130,15 +132,15 @@ public abstract class GeometryProcessor extends Processor {
         }
 
         /**
-         * @return CPU size in bytes
+         * @return size in bytes
          */
         public final int size() {
-            return VertexAttribType.getSize(mCPUType);
+            return vertexAttribTypeSize(mSrcType);
         }
 
         @Nonnull
         public final ShaderVar asShaderVar() {
-            return new ShaderVar(mName, mGPUType, ShaderVar.TYPE_MODIFIER_IN);
+            return new ShaderVar(mName, mDstType, ShaderVar.TypeModifier_In);
         }
     }
 
@@ -204,8 +206,8 @@ public abstract class GeometryProcessor extends Processor {
             int implicitOffset = 0;
             for (Attribute attr : mAttributes) {
                 b.appendComment(attr.name());
-                b.addBits(8, attr.cpuType() & 0xFF, "attrType");
-                b.addBits(8, attr.gpuType() & 0xFF, "attrGpuType");
+                b.addBits(8, attr.srcType() & 0xFF, "attrType");
+                b.addBits(8, attr.dstType() & 0xFF, "attrGpuType");
                 int offset;
                 if (attr.offset() != Attribute.IMPLICIT_OFFSET) {
                     offset = attr.offset();
@@ -239,7 +241,7 @@ public abstract class GeometryProcessor extends Processor {
                 try {
                     final Attribute ret, curr = mAttributes[mIndex++];
                     if (curr.offset() == Attribute.IMPLICIT_OFFSET) {
-                        ret = new Attribute(curr.name(), curr.cpuType(), curr.gpuType(), mImplicitOffset);
+                        ret = new Attribute(curr.name(), curr.srcType(), curr.dstType(), mImplicitOffset);
                     } else {
                         ret = curr;
                     }
@@ -256,7 +258,7 @@ public abstract class GeometryProcessor extends Processor {
     // configured Attribute struct
     @Nonnull
     protected static Attribute makeColorAttribute(String name, boolean wideColor) {
-        return new Attribute(name, wideColor ? VertexAttribType.FLOAT4 : VertexAttribType.UBYTE4_NORM, SLType.Vec4);
+        return new Attribute(name, wideColor ? Float4_VertexAttribType : UByte4_norm_VertexAttribType, SLType.Vec4);
     }
 
     private final AttributeSet mVertexAttributes = new AttributeSet();      // binding = 0
@@ -270,6 +272,10 @@ public abstract class GeometryProcessor extends Processor {
 
     public final int numTextureSamplers() {
         return mTextureSamplerCnt;
+    }
+
+    public TextureSampler textureSampler(int index) {
+        throw new UnsupportedOperationException();
     }
 
     public final int numVertexAttributes() {
@@ -313,13 +319,6 @@ public abstract class GeometryProcessor extends Processor {
      * geometry processor subclass can emit.
      */
     public abstract void addToKey(KeyBuilder b);
-
-    public final void getAttributeKey(KeyBuilder b) {
-        b.appendComment("vertex attributes");
-        mVertexAttributes.addToKey(b);
-        b.appendComment("instance attributes");
-        mInstanceAttributes.addToKey(b);
-    }
 
     /**
      * Returns a new instance of the appropriate implementation class for the given
@@ -381,7 +380,7 @@ public abstract class GeometryProcessor extends Processor {
             // The GP can specify the local coord var either in the VS or FS. When either is possible
             // the VS is preferable. It may allow derived coordinates to be interpolated from the VS
             // instead of computed in the FS per pixel.
-            public int mLocalCoordShader = EngineTypes.ShaderType_Vertex;
+            public int mLocalCoordShader = Vertex_ShaderType;
 
             public Args(VertexGeoBuilder vertBuilder,
                         FPFragmentBuilder fragBuilder,

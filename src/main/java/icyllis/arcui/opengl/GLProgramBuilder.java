@@ -21,6 +21,9 @@ package icyllis.arcui.opengl;
 import icyllis.arcui.engine.*;
 import icyllis.arcui.engine.shading.*;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 public class GLProgramBuilder extends ProgramBuilder {
 
     private final GLServer mServer;
@@ -32,6 +35,13 @@ public class GLProgramBuilder extends ProgramBuilder {
         mServer = server;
         mVaryingHandler = new GLVaryingHandler(this);
         mUniformHandler = new GLUniformHandler(this);
+    }
+
+    @Nullable
+    static GLProgram createProgram(DirectContext dContext,
+                                   final ProgramDesc desc,
+                                   final ProgramInfo programInfo) {
+        return null;
     }
 
     @Override
@@ -47,5 +57,15 @@ public class GLProgramBuilder extends ProgramBuilder {
     @Override
     public VaryingHandler varyingHandler() {
         return mVaryingHandler;
+    }
+
+    @Nonnull
+    private GLProgram createProgram(int programID) {
+        return GLProgram.make(mServer,
+                programID,
+                mUniformHandler.mUniforms,
+                mUniformHandler.mCurrentOffset,
+                mUniformHandler.mSamplers,
+                mGPImpl);
     }
 }

@@ -19,7 +19,6 @@
 package icyllis.arcui.engine;
 
 import javax.annotation.concurrent.Immutable;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Provides custom shader code to the Arc UI shading pipeline. Processor objects <em>must</em> be
@@ -28,22 +27,16 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Immutable
 public abstract class Processor {
 
-    // Reserved ID for missing (null) processors
-    public static final int NULL_CLASS_ID = 0;
-
-    private static final AtomicInteger sNextClassID = new AtomicInteger(NULL_CLASS_ID + 1);
+    /**
+     * Class IDs.
+     */
+    public static final int
+            Null_ClassID = 0; // Reserved ID for missing (null) processors
 
     protected final int mClassID;
 
     protected Processor(int classID) {
         mClassID = classID;
-    }
-
-    protected static int genClassID() {
-        final int id = sNextClassID.getAndIncrement();
-        assert id != NULL_CLASS_ID : "This should never wrap as it should only be called once for each Processor " +
-                "subclass.";
-        return id;
     }
 
     /**
@@ -53,7 +46,7 @@ public abstract class Processor {
     public abstract String name();
 
     /**
-     * @return unique ID to identify this class at runtime.
+     * @return unique ID that identifies this processor class.
      */
     public final int classID() {
         return mClassID;

@@ -20,6 +20,7 @@ package icyllis.arcui.engine;
 
 import icyllis.arcui.core.*;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
@@ -618,6 +619,11 @@ public abstract class Caps {
 
     @Nullable
     public abstract BackendFormat getCompressedBackendFormat(int compressionType);
+
+    @Nonnull
+    public abstract ProgramDesc makeDesc(ProgramDesc desc,
+                                         RenderTarget renderTarget,
+                                         final ProgramInfo programInfo);
 
     protected final void finishInitialization(ContextOptions options) {
         if (!mNativeDrawIndirectSupport) {

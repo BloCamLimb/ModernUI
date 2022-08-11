@@ -23,6 +23,8 @@ import icyllis.arcui.engine.*;
 
 import java.util.ArrayList;
 
+import static icyllis.arcui.engine.EngineTypes.*;
+
 public abstract class VaryingHandler {
 
     public static final int
@@ -50,7 +52,7 @@ public abstract class VaryingHandler {
 
     protected final ProgramBuilder mProgramBuilder;
 
-    String mDefaultInterpolationModifier = "smooth";
+    private String mDefaultInterpolationModifier = "smooth";
 
     protected VaryingHandler(ProgramBuilder programBuilder) {
         mProgramBuilder = programBuilder;
@@ -95,11 +97,11 @@ public abstract class VaryingHandler {
         v.mVisibility = 0;
         if (varying.isInVertexShader()) {
             varying.mVsOut = v.mVsOut;
-            v.mVisibility |= EngineTypes.ShaderFlag_Vertex;
+            v.mVisibility |= Vertex_ShaderFlag;
         }
         if (varying.isInFragmentShader()) {
             varying.mFsIn = v.mVsOut;
-            v.mVisibility |= EngineTypes.ShaderFlag_Fragment;
+            v.mVisibility |= Fragment_ShaderFlag;
         }
         mVaryings.add(v);
     }
@@ -149,7 +151,7 @@ public abstract class VaryingHandler {
     }
 
     private void addAttribute(ShaderVar var) {
-        assert (var.getTypeModifier() == ShaderVar.TYPE_MODIFIER_IN);
+        assert (var.getTypeModifier() == ShaderVar.TypeModifier_In);
         for (var attr : mVertexInputs) {
             // if attribute already added, don't add it again
             if (attr.getName().equals(var.getName())) {
@@ -164,14 +166,14 @@ public abstract class VaryingHandler {
     public final void end() {
         for (var v : mVaryings) {
             String modifier = v.mIsFlat ? "flat" : mDefaultInterpolationModifier;
-            if ((v.mVisibility & EngineTypes.ShaderFlag_Vertex) != 0) {
-                mVertexOutputs.add(new ShaderVar(v.mVsOut, v.mType, ShaderVar.TYPE_MODIFIER_OUT,
-                        ShaderVar.NON_ARRAY, "", modifier));
+            if ((v.mVisibility & Vertex_ShaderFlag) != 0) {
+                mVertexOutputs.add(new ShaderVar(v.mVsOut, v.mType, ShaderVar.TypeModifier_Out,
+                        ShaderVar.NonArray, "", modifier));
             }
-            if ((v.mVisibility & EngineTypes.ShaderFlag_Fragment) != 0) {
+            if ((v.mVisibility & Fragment_ShaderFlag) != 0) {
                 String fsIn = v.mVsOut;
-                mFragInputs.add(new ShaderVar(fsIn, v.mType, ShaderVar.TYPE_MODIFIER_IN,
-                        ShaderVar.NON_ARRAY, "", modifier));
+                mFragInputs.add(new ShaderVar(fsIn, v.mType, ShaderVar.TypeModifier_In,
+                        ShaderVar.NonArray, "", modifier));
             }
         }
         onEnd();

@@ -34,6 +34,7 @@ import java.util.List;
  */
 public abstract class Server {
 
+    // 1, 2, 4, 8, 16, ...
     protected static final int MAX_NUM_SAMPLES_COUNT = 8;
 
     // this server is managed by this context

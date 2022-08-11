@@ -90,7 +90,7 @@ public abstract class ProgramBuilder {
                 out += suffix;
             }
         }
-        assert !out.contains("__");
+        assert (!out.contains("__"));
         return out;
     }
 
@@ -161,7 +161,7 @@ public abstract class ProgramBuilder {
 
     protected final void endShaders() {
         varyingHandler().end();
-        mVS.end(EngineTypes.ShaderFlag_Vertex);
-        mFS.end(EngineTypes.ShaderFlag_Fragment);
+        mVS.end(EngineTypes.Vertex_ShaderFlag);
+        mFS.end(EngineTypes.Fragment_ShaderFlag);
     }
 }

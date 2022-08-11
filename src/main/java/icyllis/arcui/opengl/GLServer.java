@@ -36,6 +36,9 @@ public final class GLServer extends Server {
 
     final GLCaps mCaps;
 
+    //TODO cleanup
+    private final GLProgramCache mProgramCache;
+
     // This map holds all render targets. The texture and render target are mutually exclusive.
     // The texture is single sampled, the render targets may be multisampled.
     private final Object2ObjectOpenHashMap<GLTexture, RenderTarget[]> mRenderTargetMap;
@@ -47,7 +50,7 @@ public final class GLServer extends Server {
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
-
+        mProgramCache = new GLProgramCache(256);
         mRenderTargetMap = new Object2ObjectOpenHashMap<>();
     }
 
@@ -96,13 +99,7 @@ public final class GLServer extends Server {
 
     @Override
     public ThreadSafePipelineBuilder getPipelineBuilder() {
-        //TODO
-        return new ThreadSafePipelineBuilder() {
-            @Override
-            public void close() throws Exception {
-
-            }
-        };
+        return mProgramCache;
     }
 
     @Nullable

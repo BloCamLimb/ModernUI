@@ -21,41 +21,43 @@ package icyllis.arcui.engine;
 import icyllis.arcui.core.SLType;
 
 /**
- * Represents a variable in a shader
+ * Represents a variable in a shader.
  */
 public class ShaderVar {
 
+    /**
+     * TypeModifiers
+     */
     public static final byte
-            TYPE_MODIFIER_NONE = 0,
-            TYPE_MODIFIER_OUT = 1,
-            TYPE_MODIFIER_IN = 2,
-            TYPE_MODIFIER_IN_OUT = 3,
-            TYPE_MODIFIER_UNIFORM = 4;
+            TypeModifier_None = 0,
+            TypeModifier_Out = 1,
+            TypeModifier_In = 2,
+            TypeModifier_InOut = 3,
+            TypeModifier_Uniform = 4;
 
     /**
      * Values for array count that have special meaning. We allow 1-sized arrays.
      */
-    public static final int
-            NON_ARRAY = 0; // not an array
+    public static final int NonArray = 0; // not an array
 
-    private byte mType;
+    private final byte mType;
     private byte mTypeModifier;
-    private int mCount;
+    private final int mCount;
 
-    private String mName;
+    private final String mName;
     private String mLayoutQualifier;
     private String mExtraModifiers;
 
     public ShaderVar(String name, byte type) {
-        this(name, type, TYPE_MODIFIER_NONE, NON_ARRAY);
+        this(name, type, TypeModifier_None, NonArray);
     }
 
     public ShaderVar(String name, byte type, int arrayCount) {
-        this(name, type, TYPE_MODIFIER_NONE, arrayCount);
+        this(name, type, TypeModifier_None, arrayCount);
     }
 
     public ShaderVar(String name, byte type, byte typeModifier) {
-        this(name, type, typeModifier, NON_ARRAY);
+        this(name, type, typeModifier, NonArray);
     }
 
     public ShaderVar(String name, byte type, byte typeModifier, int arrayCount) {
@@ -64,6 +66,11 @@ public class ShaderVar {
 
     public ShaderVar(String name, byte type, byte typeModifier, int arrayCount,
                      String layoutQualifier, String extraModifier) {
+        assert (name != null && !name.isEmpty());
+        assert (type >= 0 && type <= SLType.Last);
+        assert (typeModifier >= TypeModifier_None && typeModifier <= TypeModifier_Uniform);
+        assert (arrayCount == NonArray || arrayCount > 0);
+        assert (layoutQualifier != null && extraModifier != null);
         mType = type;
         mTypeModifier = typeModifier;
         mCount = arrayCount;
@@ -76,11 +83,11 @@ public class ShaderVar {
      * Is the var an array.
      */
     public boolean isArray() {
-        return mCount != NON_ARRAY;
+        return mCount != NonArray;
     }
 
     /**
-     * Get the array length.
+     * Get the array length. May be {@link #NonArray}.
      */
     public int getArrayCount() {
         return mCount;
@@ -107,6 +114,7 @@ public class ShaderVar {
     }
 
     public void setTypeModifier(byte typeModifier) {
+        assert (typeModifier >= TypeModifier_None && typeModifier <= TypeModifier_Uniform);
         mTypeModifier = typeModifier;
     }
 
@@ -114,9 +122,7 @@ public class ShaderVar {
      * Appends to the layout qualifier.
      */
     public void addLayoutQualifier(String layoutQualifier) {
-        if (layoutQualifier == null || layoutQualifier.isEmpty()) {
-            return;
-        }
+        assert (layoutQualifier != null && !layoutQualifier.isEmpty());
         if (mLayoutQualifier.isEmpty()) {
             mLayoutQualifier = layoutQualifier;
         } else {
@@ -124,10 +130,11 @@ public class ShaderVar {
         }
     }
 
+    /**
+     * Appends to the modifiers.
+     */
     public void addModifier(String modifier) {
-        if (modifier == null || modifier.isEmpty()) {
-            return;
-        }
+        assert (modifier != null && !modifier.isEmpty());
         if (mExtraModifiers.isEmpty()) {
             mExtraModifiers = modifier;
         } else {
@@ -148,18 +155,18 @@ public class ShaderVar {
             out.append(mExtraModifiers);
             out.append(" ");
         }
-        if (mTypeModifier != TYPE_MODIFIER_NONE) {
+        if (mTypeModifier != TypeModifier_None) {
             out.append(switch (mTypeModifier) {
-                case TYPE_MODIFIER_OUT -> "out ";
-                case TYPE_MODIFIER_IN -> "in ";
-                case TYPE_MODIFIER_IN_OUT -> "inout ";
-                case TYPE_MODIFIER_UNIFORM -> "uniform ";
+                case TypeModifier_Out -> "out ";
+                case TypeModifier_In -> "in ";
+                case TypeModifier_InOut -> "inout ";
+                case TypeModifier_Uniform -> "uniform ";
                 default -> throw new IllegalStateException();
             });
         }
         byte type = getType();
         if (isArray()) {
-            assert getArrayCount() > 0;
+            assert (getArrayCount() > 0);
             out.append(SLType.typeString(type));
             out.append(" ");
             out.append(getName());

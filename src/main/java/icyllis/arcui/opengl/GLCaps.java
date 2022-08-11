@@ -26,6 +26,7 @@ import org.lwjgl.opengl.EXTWindowRectangles;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.IntBuffer;
 import java.util.Arrays;
@@ -1331,6 +1332,14 @@ public final class GLCaps extends Caps {
     @Override
     public BackendFormat getCompressedBackendFormat(int compressionType) {
         return mCompressionTypeToBackendFormat[compressionType];
+    }
+
+    @Nonnull
+    @Override
+    public ProgramDesc makeDesc(ProgramDesc desc,
+                                RenderTarget renderTarget,
+                                final ProgramInfo programInfo) {
+        return ProgramDesc.build(desc, programInfo, this);
     }
 
     @Override

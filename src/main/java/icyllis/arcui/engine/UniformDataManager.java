@@ -46,7 +46,7 @@ public abstract class UniformDataManager implements ProgramDataManager, AutoClos
 
     /**
      * @param uniformCount the number of uniforms
-     * @param uniformSize  the size in bytes
+     * @param uniformSize  the uniform block size in bytes
      */
     public UniformDataManager(int uniformCount, int uniformSize) {
         assert (uniformCount >= 1 && uniformSize >= Float.BYTES);

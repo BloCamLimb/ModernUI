@@ -28,6 +28,8 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static icyllis.arcui.engine.EngineTypes.*;
+
 /**
  * Base class for operating server memory objects that can be kept in the
  * {@link ResourceCache}. Such resources will have a large memory allocation.
@@ -79,7 +81,7 @@ public abstract class GpuResource {
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
     private static int createUniqueID() {
-        for (;;) {
+        for (; ; ) {
             final int value = sNextID.get();
             final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
@@ -115,7 +117,7 @@ public abstract class GpuResource {
     // set once in constructor, clear to null after being destroyed
     Server mServer;
 
-    private byte mBudgetType = EngineTypes.BudgetType_None;
+    private byte mBudgetType = BudgetType_None;
     private boolean mWrapped = false;
     private final int mUniqueID;
 
@@ -303,7 +305,7 @@ public abstract class GpuResource {
         // resources are a special case: the unique keys give us a weak ref so that we can reuse the
         // same resource (rather than re-wrapping). When a wrapped resource is no longer referenced,
         // it will always be released - it is never converted to a scratch resource.
-        if (mBudgetType != EngineTypes.BudgetType_Budgeted && !mWrapped) {
+        if (mBudgetType != BudgetType_Budgeted && !mWrapped) {
             return;
         }
 
@@ -341,15 +343,15 @@ public abstract class GpuResource {
             // We should never make a wrapped resource budgeted.
             assert !mWrapped;
             // Only wrapped resources can be in the partial budgeted state.
-            assert mBudgetType != EngineTypes.BudgetType_Cacheable;
-            if (mServer != null && mBudgetType == EngineTypes.BudgetType_None) {
+            assert mBudgetType != BudgetType_Cacheable;
+            if (mServer != null && mBudgetType == BudgetType_None) {
                 // Currently, resources referencing wrapped objects are not budgeted.
-                mBudgetType = EngineTypes.BudgetType_Budgeted;
+                mBudgetType = BudgetType_Budgeted;
                 mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         } else {
-            if (mServer != null && mBudgetType == EngineTypes.BudgetType_Budgeted && mUniqueKey == null) {
-                mBudgetType = EngineTypes.BudgetType_None;
+            if (mServer != null && mBudgetType == BudgetType_Budgeted && mUniqueKey == null) {
+                mBudgetType = BudgetType_None;
                 mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         }
@@ -361,7 +363,7 @@ public abstract class GpuResource {
      */
     @ApiStatus.Internal
     public final int getBudgetType() {
-        assert mBudgetType == EngineTypes.BudgetType_Budgeted || mWrapped || mUniqueKey == null;
+        assert mBudgetType == BudgetType_Budgeted || mWrapped || mUniqueKey == null;
         return mBudgetType;
     }
 
@@ -401,7 +403,7 @@ public abstract class GpuResource {
         // Resources in the partial budgeted state are never cleanable when they have a unique
         // key. The key must be removed/invalidated to make them cleanable.
         return !hasRef() && !hasCommandBufferUsage() &&
-                !(mBudgetType == EngineTypes.BudgetType_Cacheable && mUniqueKey != null);
+                !(mBudgetType == BudgetType_Cacheable && mUniqueKey != null);
     }
 
     @ApiStatus.Internal
@@ -416,8 +418,8 @@ public abstract class GpuResource {
      * @param budgeted budgeted or not
      */
     protected final void registerWithCache(boolean budgeted) {
-        assert mBudgetType == EngineTypes.BudgetType_None;
-        mBudgetType = budgeted ? EngineTypes.BudgetType_Budgeted : EngineTypes.BudgetType_None;
+        assert mBudgetType == BudgetType_None;
+        mBudgetType = budgeted ? BudgetType_Budgeted : BudgetType_None;
         mScratchKey = computeScratchKey();
         mServer.getContext().getResourceCache().insertResource(this);
     }
@@ -430,9 +432,9 @@ public abstract class GpuResource {
      * @param cacheable cacheable or not, cannot be budgeted (partial budgeted)
      */
     protected final void registerWithCacheWrapped(boolean cacheable) {
-        assert mBudgetType == EngineTypes.BudgetType_None;
+        assert mBudgetType == BudgetType_None;
         // Resources referencing wrapped objects are never budgeted. They may be cached or uncached.
-        mBudgetType = cacheable ? EngineTypes.BudgetType_Cacheable : EngineTypes.BudgetType_None;
+        mBudgetType = cacheable ? BudgetType_Cacheable : BudgetType_None;
         mWrapped = true;
         mServer.getContext().getResourceCache().insertResource(this);
     }
@@ -472,7 +474,7 @@ public abstract class GpuResource {
      * key, and does not have a unique key.
      */
     final boolean isScratch() {
-        return mBudgetType == EngineTypes.BudgetType_Budgeted && mScratchKey != null && mUniqueKey == null;
+        return mBudgetType == BudgetType_Budgeted && mScratchKey != null && mUniqueKey == null;
     }
 
     final boolean isUsableAsScratch() {

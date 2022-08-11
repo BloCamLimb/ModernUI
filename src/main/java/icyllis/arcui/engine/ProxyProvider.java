@@ -108,7 +108,7 @@ public final class ProxyProvider {
             return null;
         }
 
-        if (!mContext.getCaps().validateTextureParams(width, height, format)) {
+        if (!mContext.caps().validateTextureParams(width, height, format)) {
             return null;
         }
 
@@ -136,7 +136,7 @@ public final class ProxyProvider {
             return null;
         }
 
-        if (!mContext.getCaps().validateRenderTargetParams(width, height, format, sampleCount)) {
+        if (!mContext.caps().validateRenderTargetParams(width, height, format, sampleCount)) {
             return null;
         }
 
@@ -167,7 +167,7 @@ public final class ProxyProvider {
             return null;
         }
 
-        sampleCount = mContext.getCaps().getRenderTargetSampleCount(sampleCount, texture.getBackendFormat());
+        sampleCount = mContext.caps().getRenderTargetSampleCount(sampleCount, texture.getBackendFormat());
         assert sampleCount > 0;
         //TODO
         return null;

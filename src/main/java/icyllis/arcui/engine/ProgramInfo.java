@@ -22,17 +22,22 @@ public class ProgramInfo {
 
     private int mNumSamples;
     private boolean mNeedsStencil;
-    private BackendFormat mBackendFormat;
-    private int mOrigin;
+    private final BackendFormat mBackendFormat;
+    private final int mOrigin;
     private boolean mTargetHasVkResolveAttachmentWithInput;
     private int mTargetsNumSamples;
-    private Pipeline mPipeline;
-    private UserStencilSettings mUserStencilSettings;
-    private GeometryProcessor mGeomProc;
-    private byte mPrimitiveType;
-    private int mRenderPassXferBarriers;
-    private int mColorLoadOp;
+    private final Pipeline mPipeline;
+    private final UserStencilSettings mUserStencilSettings;
+    private final GeometryProcessor mGeomProc;
+    private final byte mPrimitiveType;
+    private final int mRenderPassXferBarriers;
+    private final int mColorLoadOp;
 
+    /**
+     * @param primitiveType          see PrimitiveType
+     * @param renderPassXferBarriers see XferBarrierFlags
+     * @param colorLoadOp            see LoadOp
+     */
     public ProgramInfo(Caps caps,
                        SurfaceProxyView targetView,
                        boolean usesMSAASurface,
@@ -42,7 +47,36 @@ public class ProgramInfo {
                        byte primitiveType,
                        int renderPassXferBarriers,
                        int colorLoadOp) {
+        assert (caps != null);
+        assert (targetView != null);
+        assert (pipeline != null);
+        assert (userStencilSettings != null);
+        assert (geomProc != null);
+        assert (primitiveType >= 0 && primitiveType <= EngineTypes.PrimitiveType_Last);
+        assert (colorLoadOp >= 0 && colorLoadOp <= EngineTypes.LoadOp_Last);
+        mBackendFormat = targetView.getProxy().getBackendFormat();
+        mOrigin = targetView.getOrigin();
+        mPipeline = pipeline;
+        mUserStencilSettings = userStencilSettings;
         mGeomProc = geomProc;
+        mPrimitiveType = primitiveType;
+        mRenderPassXferBarriers = renderPassXferBarriers;
+        mColorLoadOp = colorLoadOp;
+    }
+
+    public UserStencilSettings userStencilSettings() {
+        return mUserStencilSettings;
+    }
+
+    public BackendFormat backendFormat() {
+        return mBackendFormat;
+    }
+
+    /**
+     * @return see SurfaceOrigin
+     */
+    public int origin() {
+        return mOrigin;
     }
 
     public Pipeline pipeline() {
@@ -51,5 +85,26 @@ public class ProgramInfo {
 
     public GeometryProcessor geomProc() {
         return mGeomProc;
+    }
+
+    /**
+     * @return see PrimitiveType
+     */
+    public byte primitiveType() {
+        return mPrimitiveType;
+    }
+
+    /**
+     * @return XferBarrierFlags
+     */
+    public int renderPassBarriers() {
+        return mRenderPassXferBarriers;
+    }
+
+    /**
+     * @return see LoadOp
+     */
+    public int colorLoadOp() {
+        return mColorLoadOp;
     }
 }

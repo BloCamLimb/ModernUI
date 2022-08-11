@@ -22,6 +22,8 @@ import icyllis.arcui.core.SharedPtr;
 
 import javax.annotation.Nonnull;
 
+import static icyllis.arcui.engine.EngineTypes.*;
+
 /**
  * Represents 2D textures can be sampled by shaders, can also be used as attachments
  * of render targets.
@@ -100,9 +102,9 @@ public abstract class Texture extends Surface {
 
     public final int getMipmapStatus() {
         if (isMipmapped()) {
-            return mMipmapsDirty ? EngineTypes.MipmapStatus_Dirty : EngineTypes.MipmapStatus_Valid;
+            return mMipmapsDirty ? MipmapStatus_Dirty : MipmapStatus_Valid;
         }
-        return EngineTypes.MipmapStatus_None;
+        return MipmapStatus_None;
     }
 
     public abstract int getMaxMipmapLevel();
@@ -124,10 +126,10 @@ public abstract class Texture extends Surface {
     public final int getFlags() {
         int flags = 0;
         if (isReadOnly()) {
-            flags |= EngineTypes.InternalSurfaceFlag_ReadOnly;
+            flags |= InternalSurfaceFlag_ReadOnly;
         }
         if (isProtected()) {
-            flags |= EngineTypes.InternalSurfaceFlag_Protected;
+            flags |= InternalSurfaceFlag_Protected;
         }
         return flags;
     }
@@ -158,7 +160,7 @@ public abstract class Texture extends Surface {
         assert sampleCount == 1 || !mipmapped;
         // For external formats we do not actually know the real size of the resource, so we just return
         // 0 here to indicate this.
-        if (format.getTextureType() == EngineTypes.TextureType_External) {
+        if (format.getTextureType() == TextureType_External) {
             return 0;
         }
         if (approx) {
@@ -194,7 +196,7 @@ public abstract class Texture extends Surface {
         assert sampleCount == 1 || levelCount == 1;
         // For external formats we do not actually know the real size of the resource, so we just return
         // 0 here to indicate this.
-        if (format.getTextureType() == EngineTypes.TextureType_External) {
+        if (format.getTextureType() == TextureType_External) {
             return 0;
         }
         if (approx) {

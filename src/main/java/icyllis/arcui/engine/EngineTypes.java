@@ -103,6 +103,7 @@ public final class EngineTypes {
             TextureType_None = 0,
             TextureType_2D = 1,
             TextureType_External = 2;
+    public static final int TextureType_Last = TextureType_External;
 
     /**
      * Rectangle and external textures only support the clamp wrap mode and do not support
@@ -120,15 +121,15 @@ public final class EngineTypes {
      * Shader types. Geometry shader and tessellation shaders are removed.
      */
     public static final int
-            ShaderType_Vertex = 0,
-            ShaderType_Fragment = 1;
+            Vertex_ShaderType = 0,
+            Fragment_ShaderType = 1;
 
     /**
      * Shader flags. Tessellation shaders are removed.
      */
     public static final int
-            ShaderFlag_Vertex = 1,
-            ShaderFlag_Fragment = 1 << 1;
+            Vertex_ShaderFlag = 1,
+            Fragment_ShaderFlag = 1 << 1;
 
     /**
      * Describes the encoding of channel data in a ColorType.
@@ -188,6 +189,7 @@ public final class EngineTypes {
             PrimitiveType_Points = 2,           // 1 px only
             PrimitiveType_Lines = 3,            // 1 px wide only
             PrimitiveType_LineStrip = 4;        // 1 px wide only
+    public static final byte PrimitiveType_Last = PrimitiveType_LineStrip;
 
     /**
      * Mask formats. Used by the font cache. Important that these are 0-based.
@@ -223,6 +225,7 @@ public final class EngineTypes {
             LoadOp_Load = 0,
             LoadOp_Clear = 1,
             LoadOp_Discard = 2;
+    public static final int LoadOp_Last = LoadOp_Discard;
 
     /**
      * Store ops. Used to specify the store operation to be used when an OpsTask/OpsRenderPass
@@ -265,6 +268,95 @@ public final class EngineTypes {
             MipmapStatus_None = 0,     // Mips have not been allocated
             MipmapStatus_Dirty = 1,    // Mips are allocated but the full mip tree does not have valid data
             MipmapStatus_Valid = 2;    // All levels fully allocated and have valid data in them
+
+    /**
+     * Types used to describe format of vertices in arrays.
+     */
+    public static final byte
+            Float_VertexAttribType = 0,
+            Float2_VertexAttribType = 1,
+            Float3_VertexAttribType = 2,
+            Float4_VertexAttribType = 3,
+            Half_VertexAttribType = 4,
+            Half2_VertexAttribType = 5,
+            Half4_VertexAttribType = 6;
+    public static final byte
+            Int2_VertexAttribType = 7,   // vector of 2 32-bit ints
+            Int3_VertexAttribType = 8,   // vector of 3 32-bit ints
+            Int4_VertexAttribType = 9;   // vector of 4 32-bit ints
+    public static final byte
+            Byte_VertexAttribType = 10,   // signed byte
+            Byte2_VertexAttribType = 11,  // vector of 2 8-bit signed bytes
+            Byte4_VertexAttribType = 12,  // vector of 4 8-bit signed bytes
+            UByte_VertexAttribType = 13,  // unsigned byte
+            UByte2_VertexAttribType = 14, // vector of 2 8-bit unsigned bytes
+            UByte4_VertexAttribType = 15; // vector of 4 8-bit unsigned bytes
+    public static final byte
+            UByte_norm_VertexAttribType = 16,  // unsigned byte, e.g. coverage, 0 -> 0.0f, 255 -> 1.0f.
+            UByte4_norm_VertexAttribType = 17; // vector of 4 unsigned bytes, e.g. colors, 0 -> 0.0f, 255 -> 1.0f.
+    public static final byte
+            Short2_VertexAttribType = 18,       // vector of 2 16-bit shorts.
+            Short4_VertexAttribType = 19;       // vector of 4 16-bit shorts.
+    public static final byte
+            UShort2_VertexAttribType = 20,      // vector of 2 unsigned shorts. 0 -> 0, 65535 -> 65535.
+            UShort2_norm_VertexAttribType = 21; // vector of 2 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
+    public static final byte
+            Int_VertexAttribType = 22,
+            UInt_VertexAttribType = 23;
+    public static final byte
+            UShort_norm_VertexAttribType = 24;
+    public static final byte
+            UShort4_norm_VertexAttribType = 25; // vector of 4 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
+    public static final byte Last_VertexAttribType = UShort4_norm_VertexAttribType;
+
+    /**
+     * @return size in bytes
+     */
+    public static int vertexAttribTypeSize(byte type) {
+        switch (type) {
+            case Float_VertexAttribType:
+                return Float.BYTES;
+            case Float2_VertexAttribType:
+                return 2 * Float.BYTES;
+            case Float3_VertexAttribType:
+                return 3 * Float.BYTES;
+            case Float4_VertexAttribType:
+                return 4 * Float.BYTES;
+            case Half_VertexAttribType:
+            case UShort_norm_VertexAttribType:
+                return Short.BYTES;
+            case Half2_VertexAttribType:
+            case Short2_VertexAttribType:
+            case UShort2_VertexAttribType:
+            case UShort2_norm_VertexAttribType:
+                return 2 * Short.BYTES;
+            case Half4_VertexAttribType:
+            case Short4_VertexAttribType:
+            case UShort4_norm_VertexAttribType:
+                return 4 * Short.BYTES;
+            case Int2_VertexAttribType:
+                return 2 * Integer.BYTES;
+            case Int3_VertexAttribType:
+                return 3 * Integer.BYTES;
+            case Int4_VertexAttribType:
+                return 4 * Integer.BYTES;
+            case Byte_VertexAttribType:
+            case UByte_VertexAttribType:
+            case UByte_norm_VertexAttribType:
+                return Byte.BYTES;
+            case Byte2_VertexAttribType:
+            case UByte2_VertexAttribType:
+                return 2 * Byte.BYTES;
+            case Byte4_VertexAttribType:
+            case UByte4_VertexAttribType:
+            case UByte4_norm_VertexAttribType:
+                return 4 * Byte.BYTES;
+            case Int_VertexAttribType:
+            case UInt_VertexAttribType:
+                return Integer.BYTES;
+        }
+        throw new IllegalArgumentException(String.valueOf(type));
+    }
 
     /**
      * ResourceHandle is an opaque handle to a resource. It's actually a table index.

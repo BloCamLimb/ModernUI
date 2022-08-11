@@ -162,7 +162,7 @@ public abstract class Context implements AutoCloseable {
     }
 
     @ApiStatus.Internal
-    public final Caps getCaps() {
+    public final Caps caps() {
         return mThreadSafeProxy.mCaps;
     }
 

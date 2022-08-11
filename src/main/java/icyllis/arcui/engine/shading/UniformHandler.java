@@ -98,7 +98,7 @@ public abstract class UniformHandler {
         assert (type >= 0 && type <= SLType.Last);
         assert (!SLType.isCombinedSamplerType(type));
         boolean mangleName = !name.startsWith(NO_MANGLE_PREFIX);
-        return internalAddUniformArray(owner, visibility, type, name, mangleName, ShaderVar.NON_ARRAY);
+        return internalAddUniformArray(owner, visibility, type, name, mangleName, ShaderVar.NonArray);
     }
 
     /**
@@ -161,7 +161,7 @@ public abstract class UniformHandler {
         for (int i = numUniforms() - 1; i >= 0; i--) {
             final UniformInfo u = uniform(i);
             if (u.mOwner == owner && u.mRawName.equals(rawName)) {
-                u.mVisibility |= EngineTypes.ShaderFlag_Vertex;
+                u.mVisibility |= EngineTypes.Vertex_ShaderFlag;
                 return u.mVariable;
             }
         }
@@ -321,8 +321,8 @@ public abstract class UniformHandler {
                                        int arrayCount,
                                        boolean std430) {
         assert (type >= 0 && type <= SLType.Last);
-        assert (arrayCount == ShaderVar.NON_ARRAY) || (arrayCount >= 1);
-        int alignmentMask = getAlignmentMask(type, arrayCount == ShaderVar.NON_ARRAY, std430);
+        assert (arrayCount == ShaderVar.NonArray) || (arrayCount >= 1);
+        int alignmentMask = getAlignmentMask(type, arrayCount == ShaderVar.NonArray, std430);
         return (offset + alignmentMask) & ~alignmentMask;
     }
 
@@ -333,8 +333,8 @@ public abstract class UniformHandler {
                                        int arrayCount,
                                        boolean std430) {
         assert (type >= 0 && type <= SLType.Last);
-        assert (arrayCount == ShaderVar.NON_ARRAY) || (arrayCount >= 1);
-        if (arrayCount == ShaderVar.NON_ARRAY) {
+        assert (arrayCount == ShaderVar.NonArray) || (arrayCount >= 1);
+        if (arrayCount == ShaderVar.NonArray) {
             return getSize(type, std430);
         } else {
             final int elementSize;

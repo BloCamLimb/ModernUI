@@ -79,7 +79,7 @@ public abstract class SurfaceContext implements AutoCloseable {
     }
 
     public final Caps getCaps() {
-        return mContext.getCaps();
+        return mContext.caps();
     }
 
     protected final DrawingManager getDrawingManager() {

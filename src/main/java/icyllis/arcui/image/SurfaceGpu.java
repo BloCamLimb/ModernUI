@@ -63,7 +63,7 @@ public final class SurfaceGpu extends Surface {
             return null;
         }
 
-        if (!validateBackendTexture(context.getCaps(), backendTexture, sampleCount, colorType, true)) {
+        if (!validateBackendTexture(context.caps(), backendTexture, sampleCount, colorType, true)) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }

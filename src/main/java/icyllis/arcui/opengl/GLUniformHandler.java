@@ -25,6 +25,9 @@ import icyllis.arcui.engine.shading.UniformHandler;
 
 import java.util.ArrayList;
 
+/**
+ * Builds a Uniform Block with std140 layout.
+ */
 public class GLUniformHandler extends UniformHandler {
 
     public static class GLUniformInfo extends UniformInfo {
@@ -88,7 +91,7 @@ public class GLUniformHandler extends UniformHandler {
         var tempInfo = new GLUniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,
                 type,
-                ShaderVar.TYPE_MODIFIER_NONE,
+                ShaderVar.TypeModifier_None,
                 arrayCount,
                 layoutQualifier,
                 "");
@@ -116,12 +119,12 @@ public class GLUniformHandler extends UniformHandler {
         var tempInfo = new GLSamplerInfo();
         tempInfo.mVariable = new ShaderVar(mangleName,
                 SLType.Sampler2D,
-                ShaderVar.TYPE_MODIFIER_UNIFORM,
-                ShaderVar.NON_ARRAY,
+                ShaderVar.TypeModifier_Uniform,
+                ShaderVar.NonArray,
                 layoutQualifier,
                 "");
 
-        tempInfo.mVisibility = EngineTypes.ShaderFlag_Fragment;
+        tempInfo.mVisibility = EngineTypes.Fragment_ShaderFlag;
         tempInfo.mOwner = null;
         tempInfo.mRawName = name;
         tempInfo.mSwizzle = swizzle;

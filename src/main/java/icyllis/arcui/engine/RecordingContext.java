@@ -88,14 +88,14 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
      * Gets the maximum supported texture size.
      */
     public final int getMaxTextureSize() {
-        return getCaps().mMaxTextureSize;
+        return caps().mMaxTextureSize;
     }
 
     /**
      * Gets the maximum supported render target size.
      */
     public final int getMaxRenderTargetSize() {
-        return getCaps().mMaxRenderTargetSize;
+        return caps().mMaxRenderTargetSize;
     }
 
     @ApiStatus.Internal

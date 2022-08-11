@@ -18,8 +18,77 @@
 
 package icyllis.arcui.engine;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public abstract class ThreadSafePipelineBuilder implements AutoCloseable {
 
+    protected final Stats mStats = new Stats();
+
     public ThreadSafePipelineBuilder() {
+    }
+
+    public final Stats stats() {
+        return mStats;
+    }
+
+    public static class Stats {
+
+        private final AtomicInteger mShaderCompilations = new AtomicInteger();
+
+        private final AtomicInteger mNumInlineCompilationFailures = new AtomicInteger();
+
+        private final AtomicInteger mNumPreCompilationFailures = new AtomicInteger();
+
+        private final AtomicInteger mNumCompilationFailures = new AtomicInteger();
+        private final AtomicInteger mNumPartialCompilationSuccesses = new AtomicInteger();
+        private final AtomicInteger mNumCompilationSuccesses = new AtomicInteger();
+
+        public int shaderCompilations() {
+            return mShaderCompilations.get();
+        }
+
+        public void incShaderCompilations() {
+            mShaderCompilations.getAndIncrement();
+        }
+
+        public int numInlineCompilationFailures() {
+            return mNumInlineCompilationFailures.get();
+        }
+
+        public void incNumInlineCompilationFailures() {
+            mNumInlineCompilationFailures.getAndIncrement();
+        }
+
+        public int numPreCompilationFailures() {
+            return mNumPreCompilationFailures.get();
+        }
+
+        public void incNumPreCompilationFailures() {
+            mNumPreCompilationFailures.getAndIncrement();
+        }
+
+        public int numCompilationFailures() {
+            return mNumCompilationFailures.get();
+        }
+
+        public void incNumCompilationFailures() {
+            mNumCompilationFailures.getAndIncrement();
+        }
+
+        public int numPartialCompilationSuccesses() {
+            return mNumPartialCompilationSuccesses.get();
+        }
+
+        public void incNumPartialCompilationSuccesses() {
+            mNumPartialCompilationSuccesses.getAndIncrement();
+        }
+
+        public int numCompilationSuccesses() {
+            return mNumCompilationSuccesses.get();
+        }
+
+        public void incNumCompilationSuccesses() {
+            mNumCompilationSuccesses.getAndIncrement();
+        }
     }
 }

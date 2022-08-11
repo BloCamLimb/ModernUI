@@ -22,7 +22,6 @@ import icyllis.arcui.core.*;
 import icyllis.arcui.core.MathUtil;
 import icyllis.arcui.engine.*;
 import icyllis.arcui.opengl.GLCore;
-import icyllis.arcui.sksl.lex.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -70,7 +69,7 @@ public class TestManagedResource {
         pw.println("OpenGL vendor: " + GLCore.glGetString(GLCore.GL_VENDOR));
         pw.println("OpenGL renderer: " + GLCore.glGetString(GLCore.GL_RENDERER));
 
-        if (directContext.getCaps().isFormatTexturable(
+        if (directContext.caps().isFormatTexturable(
                 BackendFormat.makeGL(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
                         EngineTypes.TextureType_2D))) {
             pw.println("Compressed format: OK");
@@ -117,7 +116,7 @@ public class TestManagedResource {
         KeyBuilder keyBuilder = new KeyBuilder.StringKeyBuilder(intArrayList);
         keyBuilder.addBits(6, 0x2F, "");
         keyBuilder.add32(0xC1111111);
-        keyBuilder.close();
+        keyBuilder.flush();
         pw.println(keyBuilder);
     }
 

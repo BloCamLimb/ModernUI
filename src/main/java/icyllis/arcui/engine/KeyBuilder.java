@@ -18,35 +18,81 @@
 
 package icyllis.arcui.engine;
 
-import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.Hash;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 
-public class KeyBuilder implements AutoCloseable {
+import java.util.Arrays;
 
-    private final IntList mData;
+/**
+ * Used to build packed storage key and lookup in HashMap.
+ * <p>
+ * Note: A {@link #flush()} is expected at the end of key building.
+ */
+public class KeyBuilder {
+
+    /**
+     * The hash strategy for CustomHashMap.
+     */
+    public static final Hash.Strategy<Object> HASH_STRATEGY = new Hash.Strategy<>() {
+        @Override
+        public int hashCode(Object o) {
+            return o instanceof int[] key ? Arrays.hashCode(key) : o.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object a, Object b) {
+            return a instanceof int[] key ? Arrays.equals(key, (int[]) b) : a.equals(b);
+        }
+    };
+
+    protected final IntArrayList mData;
     private int mCurValue = 0;
     private int mBitsUsed = 0;  // ... in current value
 
-    public KeyBuilder(IntList data) {
+    public KeyBuilder() {
+        mData = new IntArrayList();
+    }
+
+    public KeyBuilder(IntArrayList data) {
         mData = data;
     }
 
-    @Override
-    public void close() {
-        flush();
+    /**
+     * Resets this key builder to initial state.
+     */
+    public final void reset() {
+        assert (mCurValue == 0 && mBitsUsed == 0);
+        mData.clear();
     }
 
-    public void addBits(int numBits, int val, String label) {
-        assert numBits > 0 && numBits <= Integer.SIZE;
-        assert numBits == Integer.SIZE || (Integer.SIZE - Integer.numberOfLeadingZeros(val) <= numBits);
+    /**
+     * @return the number of ints
+     */
+    public final int length() {
+        assert (mCurValue == 0 && mBitsUsed == 0);
+        return mData.size();
+    }
 
-        mCurValue |= (val << mBitsUsed);
+    /**
+     * @return true if this key builder contains no bits
+     */
+    public final boolean isEmpty() {
+        assert (mCurValue == 0 && mBitsUsed == 0);
+        return mData.isEmpty();
+    }
+
+    public void addBits(int numBits, int value, String label) {
+        assert numBits > 0 && numBits <= Integer.SIZE;
+        assert numBits == Integer.SIZE || (Integer.SIZE - Integer.numberOfLeadingZeros(value) <= numBits);
+
+        mCurValue |= (value << mBitsUsed);
         mBitsUsed += numBits;
 
         if (mBitsUsed >= Integer.SIZE) {
             // Overflow, start a new working value
             mData.add(mCurValue);
             int excess = mBitsUsed - Integer.SIZE;
-            mCurValue = excess != 0 ? (val >>> (numBits - excess)) : 0;
+            mCurValue = excess != 0 ? (value >>> (numBits - excess)) : 0;
             mBitsUsed = excess;
         }
 
@@ -68,8 +114,10 @@ public class KeyBuilder implements AutoCloseable {
     public void appendComment(String comment) {
     }
 
-    // Introduces a word-boundary in the key. Must be called before using the key with any cache,
-    // but can also be called to create a break between generic data and backend-specific data.
+    /**
+     * Introduces a word-boundary in the key. Must be called before using the key with any cache,
+     * but can also be called to create a break between generic data and backend-specific data.
+     */
     public final void flush() {
         if (mBitsUsed != 0) {
             mData.add(mCurValue);
@@ -78,21 +126,65 @@ public class KeyBuilder implements AutoCloseable {
         }
     }
 
+    /**
+     * Trims this key builder so that the memory alloc is minimal.
+     * <p>
+     * This method can use this instance as a static key but preserve subclass features.
+     */
+    public final void trim() {
+        assert (mCurValue == 0 && mBitsUsed == 0);
+        mData.trim();
+    }
+
+    /**
+     * @return a deep copy of packed int array as storage key
+     */
+    public final int[] toKey() {
+        assert (mCurValue == 0 && mBitsUsed == 0);
+        return mData.toIntArray();
+    }
+
+    /**
+     * Same as {@link Arrays#hashCode(int[])}.
+     */
+    @Override
+    public final int hashCode() {
+        assert (mCurValue == 0 && mBitsUsed == 0);
+        int[] e = mData.elements();
+        int h = 1, s = mData.size();
+        for (int i = 0; i < s; i++)
+            h = 31 * h + e[i];
+        return h;
+    }
+
+    /**
+     * Compares with packed int array.
+     */
+    @Override
+    public final boolean equals(Object o) {
+        assert (mCurValue == 0 && mBitsUsed == 0);
+        return o instanceof int[] key &&
+                Arrays.equals(mData.elements(), 0, mData.size(), key, 0, key.length);
+    }
+
     // for debug purposes
     public static class StringKeyBuilder extends KeyBuilder {
 
-        private final StringBuilder mStringBuilder = new StringBuilder();
+        public final StringBuilder mStringBuilder = new StringBuilder();
 
-        public StringKeyBuilder(IntList data) {
+        public StringKeyBuilder() {
+        }
+
+        public StringKeyBuilder(IntArrayList data) {
             super(data);
         }
 
         @Override
-        public void addBits(int numBits, int val, String label) {
-            super.addBits(numBits, val, label);
+        public void addBits(int numBits, int value, String label) {
+            super.addBits(numBits, value, label);
             mStringBuilder.append(label)
                     .append(": ")
-                    .append(val & 0xFFFFFFFFL) // to unsigned int
+                    .append(value & 0xFFFFFFFFL) // to unsigned int
                     .append('\n');
         }
 
@@ -100,10 +192,6 @@ public class KeyBuilder implements AutoCloseable {
         public void appendComment(String comment) {
             mStringBuilder.append(comment)
                     .append('\n');
-        }
-
-        public StringBuilder getStringBuilder() {
-            return mStringBuilder;
         }
 
         @Override
