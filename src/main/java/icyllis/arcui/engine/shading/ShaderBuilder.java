@@ -22,4 +22,28 @@ package icyllis.arcui.engine.shading;
  * Interface for all shaders builders.
  */
 public interface ShaderBuilder {
+
+    /**
+     * Writes the specified string to one of the shaders.
+     */
+    void codeAppend(String str);
+
+    /**
+     * Writes a formatted string to one of the shaders using the specified format
+     * string and arguments.
+     *
+     * @see java.util.Formatter#format(String, Object...)
+     */
+    void codeAppendf(String format, Object... args);
+
+    /**
+     * Similar to {@link #codeAppendf(String, Object...)}, but writes at the beginning.
+     */
+    void codePrependf(String format, Object... args);
+
+    /**
+     * Generates a mangled name for a helper function in the fragment shader. Will give consistent
+     * results if called more than once.
+     */
+    String getMangledName(String baseName);
 }

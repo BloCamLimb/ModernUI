@@ -51,7 +51,7 @@ public final class GLTexture extends Texture {
         mBackendTexture = new GLBackendTexture(width, height, info, new GLTextureParameters(), format);
         mOwnership = ownership;
 
-        if (glFormatIsCompressed(format.getGLFormat()) || format.getTextureType() == EngineTypes.TextureType_External) {
+        if (glFormatIsCompressed(format.getGLFormat()) || format.textureType() == EngineTypes.TextureType_External) {
             setReadOnly();
         }
 
@@ -77,7 +77,7 @@ public final class GLTexture extends Texture {
 
         // compressed formats always set 'ioType' to READ
         assert ioType == EngineTypes.IOType_Read || glFormatIsCompressed(format.getGLFormat());
-        if (ioType == EngineTypes.IOType_Read || format.getTextureType() == EngineTypes.TextureType_External) {
+        if (ioType == EngineTypes.IOType_Read || format.textureType() == EngineTypes.TextureType_External) {
             setReadOnly();
         }
 

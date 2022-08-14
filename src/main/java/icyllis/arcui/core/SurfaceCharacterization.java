@@ -90,7 +90,7 @@ public final class SurfaceCharacterization {
 
         assert !mMipmapped || mTexturable;
         assert !mTexturable || !mGLWrapDefaultFramebuffer;
-        int backend = mBackendFormat.getBackend();
+        int backend = mBackendFormat.backend();
         assert !mGLWrapDefaultFramebuffer || backend == EngineTypes.OpenGL;
         assert (!mVkSecondaryCommandBuffer && !mVkSupportInputAttachment) || backend == EngineTypes.Vulkan;
         assert !mVkSecondaryCommandBuffer || !mVkSupportInputAttachment;

@@ -124,16 +124,16 @@ public final class ContextThreadSafeProxy {
             return null;
         }
 
-        if (mBackend != backendFormat.getBackend()) {
+        if (mBackend != backendFormat.backend()) {
             return null;
         }
 
-        if (backendFormat.getBackend() != EngineTypes.OpenGL && glWrapDefaultFramebuffer) {
+        if (backendFormat.backend() != EngineTypes.OpenGL && glWrapDefaultFramebuffer) {
             // The flag can only be used for a OpenGL backend.
             return null;
         }
 
-        if (backendFormat.getBackend() != EngineTypes.Vulkan &&
+        if (backendFormat.backend() != EngineTypes.Vulkan &&
                 (vkSupportInputAttachment || vkSecondaryCommandBuffer)) {
             // The flags can only be used for a Vulkan backend.
             return null;
@@ -215,7 +215,7 @@ public final class ContextThreadSafeProxy {
         BackendFormat format = mCaps.getCompressedBackendFormat(compressionType);
 
         assert format == null ||
-                (format.getTextureType() == EngineTypes.TextureType_2D && mCaps.isFormatTexturable(format));
+                (format.textureType() == EngineTypes.TextureType_2D && mCaps.isFormatTexturable(format));
         return format;
     }
 

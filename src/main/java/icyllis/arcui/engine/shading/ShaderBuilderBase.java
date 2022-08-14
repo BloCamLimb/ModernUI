@@ -42,7 +42,6 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
 
     protected final ProgramBuilder mProgramBuilder;
     protected final StringBuilder[] mShaderStrings = new StringBuilder[PREALLOC];
-    protected String mCompilerString;
 
     protected int mCodeIndex;
 
@@ -58,6 +57,10 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         codeAppend("void main() {");
     }
 
+    /**
+     * Writes the specified string to one of the shaders.
+     */
+    @Override
     public void codeAppend(String str) {
         code().append(str);
     }
@@ -66,6 +69,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
      * Writes a formatted string to one of the shaders using the specified format
      * string and arguments.
      */
+    @Override
     public void codeAppendf(String format, Object... args) {
         if (mCodeFormatter == null)
             mCodeFormatter = new Formatter(code(), Locale.ROOT);
@@ -75,6 +79,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     /**
      * Similar to {@link #codeAppendf(String, Object...)}, but writes at the beginning.
      */
+    @Override
     public void codePrependf(String format, Object... args) {
         if (mCodeFormatterPre == null)
             mCodeFormatterPre = new Formatter(new Prependable(code()), Locale.ROOT);
@@ -87,6 +92,11 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     public void declAppend(ShaderVar var) {
         var.appendDecl(code());
         codeAppend(";");
+    }
+
+    @Override
+    public String getMangledName(String baseName) {
+        return mProgramBuilder.nameVariable('\0', baseName);
     }
 
     protected final void nextStage() {
@@ -133,19 +143,19 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         return mShaderStrings[mCodeIndex];
     }
 
-    public final void end(int visibility) {
+    public final String finish(int visibility) {
         assert (visibility != 0);
         mProgramBuilder.uniformHandler().appendUniformDecls(visibility, uniforms());
-        onEnd();
+        onFinish();
         // append the 'footer' to code
         code().append("}");
 
-        mCompilerString = Arrays.stream(mShaderStrings, 0, mCodeIndex + 1)
+        return Arrays.stream(mShaderStrings, 0, mCodeIndex + 1)
                 .filter(s -> !s.isEmpty())
                 .collect(Collectors.joining("\n\n"));
     }
 
-    protected abstract void onEnd();
+    protected abstract void onFinish();
 
     private static class Prependable implements Appendable {
 

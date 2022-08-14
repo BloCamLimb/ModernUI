@@ -18,6 +18,7 @@
 
 package icyllis.arcui.engine;
 
+import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 /**
@@ -31,7 +32,8 @@ public abstract class Processor {
      * Class IDs.
      */
     public static final int
-            Null_ClassID = 0; // Reserved ID for missing (null) processors
+            Null_ClassID = 0, // Reserved ID for missing (null) processors
+            CircularRRect_Geom_ClassID = 1;
 
     protected final int mClassID;
 
@@ -43,6 +45,7 @@ public abstract class Processor {
      * Human-meaningful string to identify this processor; may be embedded in generated shader
      * code and must be a legal SkSL identifier prefix.
      */
+    @Nonnull
     public abstract String name();
 
     /**

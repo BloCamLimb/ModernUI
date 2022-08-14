@@ -50,7 +50,7 @@ public abstract class Op {
 
     private static final int NULL_CLASS_ID = 0;
 
-    private static final AtomicInteger sNextClassID = new AtomicInteger(NULL_CLASS_ID + 1);
+    private static final AtomicInteger sNextClassID = new AtomicInteger(1);
 
     /**
      * The op that combineIfPossible was called on now represents its own work plus that of
@@ -95,17 +95,15 @@ public abstract class Op {
     private float mBottom;
 
     protected Op(int classID) {
-        assert classID != NULL_CLASS_ID && classID == (classID & 0xFFFF);
+        assert (classID != NULL_CLASS_ID && (classID & 0xFFFF) == classID);
         mFlags = classID;
     }
 
-    protected static int genClassID() {
-        final int id = sNextClassID.getAndIncrement();
-        assert id != NULL_CLASS_ID : "This should never wrap as it should only be called once for each Op " +
-                "subclass.";
-        return id;
+    protected static int genOpClassID() {
+        return sNextClassID.getAndIncrement();
     }
 
+    @Nonnull
     public abstract String name();
 
     /**

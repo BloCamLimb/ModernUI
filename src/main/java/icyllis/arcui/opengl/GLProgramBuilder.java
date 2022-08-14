@@ -21,8 +21,9 @@ package icyllis.arcui.opengl;
 import icyllis.arcui.engine.*;
 import icyllis.arcui.engine.shading.*;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+
+import static icyllis.arcui.opengl.GLCore.*;
 
 public class GLProgramBuilder extends ProgramBuilder {
 
@@ -30,7 +31,7 @@ public class GLProgramBuilder extends ProgramBuilder {
     private final GLVaryingHandler mVaryingHandler;
     private final GLUniformHandler mUniformHandler;
 
-    public GLProgramBuilder(GLServer server, ProgramDesc desc, ProgramInfo programInfo) {
+    private GLProgramBuilder(GLServer server, ProgramDesc desc, ProgramInfo programInfo) {
         super(desc, programInfo);
         mServer = server;
         mVaryingHandler = new GLVaryingHandler(this);
@@ -41,7 +42,72 @@ public class GLProgramBuilder extends ProgramBuilder {
     static GLProgram createProgram(DirectContext dContext,
                                    final ProgramDesc desc,
                                    final ProgramInfo programInfo) {
-        return null;
+        GLServer glServer = (GLServer) dContext.getServer();
+
+        GLProgramBuilder builder = new GLProgramBuilder(glServer, desc, programInfo);
+        if (!builder.emitAndInstallProcs()) {
+            return null;
+        }
+        return builder.finish();
+    }
+
+    @Nullable
+    private GLProgram finish() {
+        int program = glCreateProgram();
+        if (program == 0) {
+            return null;
+        }
+
+        varyingHandler().finish();
+        String vertSource = mVS.finish(EngineTypes.Vertex_ShaderFlag);
+        String fragSource = mFS.finish(EngineTypes.Fragment_ShaderFlag);
+
+        ShaderErrorHandler errorHandler = mServer.getContext().getShaderErrorHandler();
+
+        int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, fragSource,
+                mServer.getPipelineBuilder().stats(), errorHandler);
+        if (frag == 0) {
+            glDeleteProgram(program);
+            return null;
+        }
+
+        int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, vertSource,
+                mServer.getPipelineBuilder().stats(), errorHandler);
+        if (vert == 0) {
+            glDeleteProgram(program);
+            glDeleteShader(frag);
+            return null;
+        }
+
+        glLinkProgram(program);
+
+        if (glGetProgrami(program, GL_LINK_STATUS) == GL_FALSE) {
+            try {
+                String allShaders = String.format("""
+                        // Vertex GLSL
+                        %s
+                        // Fragment GLSL
+                        %s
+                        """, vertSource, fragSource);
+                String log = glGetProgramInfoLog(program).trim();
+                errorHandler.compileError(allShaders, log);
+                return null;
+            } finally {
+                glDeleteProgram(program);
+                glDeleteShader(frag);
+                glDeleteShader(vert);
+            }
+        }
+
+        glDeleteShader(frag);
+        glDeleteShader(vert);
+
+        return GLProgram.make(mServer,
+                program,
+                mUniformHandler.mUniforms,
+                mUniformHandler.mCurrentOffset,
+                mUniformHandler.mSamplers,
+                mGPImpl);
     }
 
     @Override
@@ -57,15 +123,5 @@ public class GLProgramBuilder extends ProgramBuilder {
     @Override
     public VaryingHandler varyingHandler() {
         return mVaryingHandler;
-    }
-
-    @Nonnull
-    private GLProgram createProgram(int programID) {
-        return GLProgram.make(mServer,
-                programID,
-                mUniformHandler.mUniforms,
-                mUniformHandler.mCurrentOffset,
-                mUniformHandler.mSamplers,
-                mGPImpl);
     }
 }

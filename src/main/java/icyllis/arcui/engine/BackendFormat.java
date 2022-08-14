@@ -19,11 +19,10 @@
 package icyllis.arcui.engine;
 
 import icyllis.arcui.core.Image;
-import icyllis.arcui.opengl.GLBackendFormat;
-import icyllis.arcui.opengl.GLTypes;
+import icyllis.arcui.opengl.*;
 import icyllis.arcui.vulkan.VkBackendFormat;
 import icyllis.arcui.vulkan.VkCore;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -35,30 +34,18 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public abstract class BackendFormat {
 
-    private static final Int2ObjectOpenHashMap<GLBackendFormat> sGLBackendFormats =
-            new Int2ObjectOpenHashMap<>(25, 0.8f);
-    private static final Int2ObjectOpenHashMap<VkBackendFormat> sVkBackendFormats =
-            new Int2ObjectOpenHashMap<>(25, 0.8f);
-
-    protected BackendFormat() {
-    }
+    private static final Long2ObjectOpenHashMap<GLBackendFormat> sGLBackendFormats =
+            new Long2ObjectOpenHashMap<>(25, 0.8f);
+    private static final Long2ObjectOpenHashMap<VkBackendFormat> sVkBackendFormats =
+            new Long2ObjectOpenHashMap<>(25, 0.8f);
 
     @Nonnull
     public static GLBackendFormat makeGL(@NativeType("GLenum") int format, int textureType) {
-        // if this failed, use long key
-        assert (format < (1 << 30)) && (textureType >= 0 && textureType <= 3);
-        int key = (format) | (textureType << 30);
-        // harmless race
-        GLBackendFormat backendFormat = sGLBackendFormats.get(key);
-        if (backendFormat != null) {
-            return backendFormat;
+        if (GLCore.isUnknownFormat(format)) {
+            return new GLBackendFormat(format, textureType);
         }
-        backendFormat = new GLBackendFormat(format, textureType);
-        // cache only known formats
-        if (backendFormat.getBytesPerBlock() != 0) {
-            sGLBackendFormats.put(key, backendFormat);
-        }
-        return backendFormat;
+        return sGLBackendFormats.computeIfAbsent(format | ((long) textureType << 32),
+                key -> new GLBackendFormat((int) key, (int) (key >> 32))); // this lambda is singleton
     }
 
     @Nonnull
@@ -72,7 +59,7 @@ public abstract class BackendFormat {
             return backendFormat;
         }
         backendFormat = new VkBackendFormat(format, isExternal);
-        // cache only known formats
+        //TODO cache only known formats
         if (backendFormat.getBytesPerBlock() != 0) {
             sVkBackendFormats.put(key, backendFormat);
         }
@@ -80,14 +67,14 @@ public abstract class BackendFormat {
     }
 
     /**
-     * @return see Types
+     * @return see EngineTypes
      */
-    public abstract int getBackend();
+    public abstract int backend();
 
     /**
-     * @return see Types
+     * @return see TextureType
      */
-    public abstract int getTextureType();
+    public abstract int textureType();
 
     /**
      * Gets the channels present in the format as a bitfield of ColorChannelFlag values.

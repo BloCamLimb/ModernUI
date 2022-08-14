@@ -65,10 +65,7 @@ public class ProgramDesc extends KeyBuilder {
         b.addBits(8, geomProc.classID(), "gpClassID");
 
         geomProc.addToKey(b);
-        b.appendComment("vertex attributes");
-        geomProc.vertexAttributes().addToKey(b);
-        b.appendComment("instance attributes");
-        geomProc.instanceAttributes().addToKey(b);
+        geomProc.getAttributeKey(b);
 
         int numTextureSamplers = geomProc.numTextureSamplers();
         b.add32(numTextureSamplers, "gpNumSamplers");
@@ -76,7 +73,7 @@ public class ProgramDesc extends KeyBuilder {
             final var sampler = geomProc.textureSampler(i);
             final var backendFormat = sampler.backendFormat();
 
-            b.addBits(2, backendFormat.getTextureType(), "textureType");
+            b.addBits(2, backendFormat.textureType(), "textureType");
             b.addBits(16, sampler.swizzle(), "swizzle");
         }
     }

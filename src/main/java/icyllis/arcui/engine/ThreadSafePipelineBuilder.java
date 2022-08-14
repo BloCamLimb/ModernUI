@@ -20,12 +20,14 @@ package icyllis.arcui.engine;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-public abstract class ThreadSafePipelineBuilder implements AutoCloseable {
+public abstract class ThreadSafePipelineBuilder {
 
     protected final Stats mStats = new Stats();
 
     public ThreadSafePipelineBuilder() {
     }
+
+    protected abstract void close();
 
     public final Stats stats() {
         return mStats;

@@ -142,11 +142,11 @@ public abstract class VaryingHandler {
     }
 
     public final void emitAttributes(GeometryProcessor gp) {
-        for (var attr : gp.vertexAttributes()) {
-            addAttribute(attr.asShaderVar());
+        for (var it = gp.vertexAttributes(); it.hasNext(); ) {
+            addAttribute(it.next().asShaderVar());
         }
-        for (var attr : gp.instanceAttributes()) {
-            addAttribute(attr.asShaderVar());
+        for (var it = gp.instanceAttributes(); it.hasNext(); ) {
+            addAttribute(it.next().asShaderVar());
         }
     }
 
@@ -163,7 +163,7 @@ public abstract class VaryingHandler {
 
     // This should be called once all attributes and varyings have been added to the
     // VaryingHandler and before getting/adding any of the declarations to the shaders.
-    public final void end() {
+    public final void finish() {
         for (var v : mVaryings) {
             String modifier = v.mIsFlat ? "flat" : mDefaultInterpolationModifier;
             if ((v.mVisibility & Vertex_ShaderFlag) != 0) {
@@ -176,12 +176,12 @@ public abstract class VaryingHandler {
                         ShaderVar.NonArray, "", modifier));
             }
         }
-        onEnd();
+        onFinish();
     }
 
-    protected abstract void onEnd();
+    protected abstract void onFinish();
 
-    protected static void assignLocations(ArrayList<ShaderVar> vars) {
+    protected static void assignSequentialLocations(ArrayList<ShaderVar> vars) {
         int locationIndex = 0;
         for (var var : vars) {
             String location = "location = " + locationIndex;
@@ -194,7 +194,9 @@ public abstract class VaryingHandler {
             locationIndex += elementSize * numElements;
         }
 
-        //TODO check max location capability
+        // GP has restricted the number of vertex attributes.
+        // If the backend does not support it, an error will be reported in creating the program.
+        // Vertex shader outputs and fragment shader inputs have no restriction.
     }
 
     // called after end

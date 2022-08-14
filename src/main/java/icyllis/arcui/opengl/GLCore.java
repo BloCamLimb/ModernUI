@@ -20,6 +20,8 @@ package icyllis.arcui.opengl;
 
 import icyllis.arcui.core.Color;
 import icyllis.arcui.core.Image;
+import icyllis.arcui.engine.ShaderErrorHandler;
+import icyllis.arcui.engine.ThreadSafePipelineBuilder;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.NativeType;
 
@@ -105,6 +107,40 @@ public final class GLCore extends GL45C {
             case GL_STENCIL_INDEX16 -> GLTypes.FORMAT_STENCIL_INDEX16;
             case GL_DEPTH24_STENCIL8 -> GLTypes.FORMAT_DEPTH24_STENCIL8;
             default -> GLTypes.FORMAT_UNKNOWN;
+        };
+    }
+
+    /**
+     * @return true if {@link #glFormatFromEnum(int)} returns {@link GLTypes#FORMAT_UNKNOWN}
+     */
+    public static boolean isUnknownFormat(@NativeType("GLenum") int glFormat) {
+        return switch (glFormat) {
+            case GL_RGBA8,
+                    GL_R8,
+                    GL_ALPHA8_EXT,
+                    GL_LUMINANCE8_EXT,
+                    GL_LUMINANCE8_ALPHA8_EXT,
+                    GL_BGRA8_EXT,
+                    GL_RGB565,
+                    GL_RGBA16F,
+                    GL_LUMINANCE16F_EXT,
+                    GL_R16F,
+                    GL_RGB8,
+                    GL_RG8,
+                    GL_RGB10_A2,
+                    GL_RGBA4,
+                    GL_SRGB8_ALPHA8,
+                    GL_COMPRESSED_RGB8_ETC2,
+                    GL_COMPRESSED_RGB_S3TC_DXT1_EXT,
+                    GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
+                    GL_R16,
+                    GL_RG16,
+                    GL_RGBA16,
+                    GL_RG16F,
+                    GL_STENCIL_INDEX8,
+                    GL_STENCIL_INDEX16,
+                    GL_DEPTH24_STENCIL8 -> false;
+            default -> true;
         };
     }
 
@@ -343,6 +379,36 @@ public final class GLCore extends GL45C {
             case GL_DEPTH24_STENCIL8 -> "DEPTH24_STENCIL8";
             default -> "Unknown";
         };
+    }
+
+    public static int glCompileAndAttachShader(int program,
+                                               int type,
+                                               String source,
+                                               ThreadSafePipelineBuilder.Stats stats,
+                                               ShaderErrorHandler errorHandler) {
+        // Specify GLSL source to the driver.
+        int shader = glCreateShader(type);
+        if (shader == 0) {
+            return 0;
+        }
+        glShaderSource(shader, source);
+
+        stats.incShaderCompilations();
+        glCompileShader(shader);
+
+        if (glGetShaderi(shader, GL_COMPILE_STATUS) == GL_FALSE) {
+            try {
+                String log = glGetShaderInfoLog(shader).trim();
+                errorHandler.compileError(source, log);
+                return 0;
+            } finally {
+                glDeleteShader(shader);
+            }
+        }
+
+        // Attach the shader, but defer deletion until after we have linked the program.
+        glAttachShader(program, shader);
+        return shader;
     }
 
     private GLCore() {

@@ -28,6 +28,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import static icyllis.arcui.engine.EngineTypes.*;
+import static icyllis.arcui.engine.shading.UniformHandler.SamplerHandle;
 
 /**
  * The GeometryProcessor represents some kind of geometric primitive.  This includes the shape
@@ -62,6 +63,9 @@ public abstract class GeometryProcessor extends Processor {
 
         public static final int IMPLICIT_OFFSET = -1;
 
+        /**
+         * It must be N-aligned for all types, where N is sizeof(float).
+         */
         public static int alignOffset(int offset) {
             return MathUtil.align4(offset);
         }
@@ -75,12 +79,16 @@ public abstract class GeometryProcessor extends Processor {
          * Makes an attribute whose offset will be implicitly determined by the types and ordering
          * of an array attributes.
          *
-         * @param name    the attrib raw name, cannot be null or empty
+         * @param name    the attrib name, cannot be null or empty
          * @param srcType the data type in vertex buffer, see VertexAttribType
          * @param dstType the data type in vertex shader, see {@link SLType}
          */
         public Attribute(String name, byte srcType, byte dstType) {
             assert (name != null && dstType != SLType.Void);
+            assert (srcType >= 0 && srcType <= Last_VertexAttribType);
+            assert (dstType >= 0 && dstType <= SLType.Last);
+            assert (!name.isEmpty() && !name.startsWith("_"));
+            assert (SLType.locationSize(dstType) > 0);
             mName = name;
             mSrcType = srcType;
             mDstType = dstType;
@@ -90,13 +98,17 @@ public abstract class GeometryProcessor extends Processor {
         /**
          * Makes an attribute with an explicit offset.
          *
-         * @param name    the attrib raw name, UpperCamelCase, cannot be null or empty
+         * @param name    the attrib name, UpperCamelCase, cannot be null or empty
          * @param srcType the data type in vertex buffer, see VertexAttribType
          * @param dstType the data type in vertex shader, see {@link SLType}
          * @param offset  N-aligned offset
          */
         public Attribute(String name, byte srcType, byte dstType, int offset) {
             assert (name != null && dstType != SLType.Void);
+            assert (srcType >= 0 && srcType <= Last_VertexAttribType);
+            assert (dstType >= 0 && dstType <= SLType.Last);
+            assert (!name.isEmpty() && !name.startsWith("_"));
+            assert (SLType.locationSize(dstType) > 0);
             assert (offset != IMPLICIT_OFFSET && alignOffset(offset) == offset);
             mName = name;
             mSrcType = srcType;
@@ -132,10 +144,20 @@ public abstract class GeometryProcessor extends Processor {
         }
 
         /**
-         * @return size in bytes
+         * @return the size of the source data in bytes
          */
-        public final int size() {
+        public final int stepSize() {
             return vertexAttribTypeSize(mSrcType);
+        }
+
+        /**
+         * @return the total size for this attribute in bytes
+         */
+        public final int totalSize() {
+            int size = stepSize();
+            int count = SLType.locationSize(mDstType);
+            assert (size > 0 && count > 0);
+            return size * count;
         }
 
         @Nonnull
@@ -145,107 +167,139 @@ public abstract class GeometryProcessor extends Processor {
     }
 
     /**
-     * A set of attributes that can iterated. The iterator handles hides two pieces of complexity:
-     * 1) It skips uninitialized attributes.
-     * 2) It always returns an attribute with a known offset.
+     * A set of attributes that can iterated.
      */
+    @Immutable
     public static class AttributeSet implements Iterable<Attribute> {
 
-        private Attribute[] mAttributes;
-        private int mStride;
+        private static final Iterator<Attribute> EMPTY_ITER = new Iterator<>() {
+            @Override
+            public boolean hasNext() {
+                return false;
+            }
 
-        public final int count() {
-            return mAttributes.length;
+            @Override
+            public Attribute next() {
+                throw new NoSuchElementException();
+            }
+        };
+
+        private final Attribute[] mAttributes;
+        private final int mStride;
+
+        private AttributeSet(Attribute[] attributes, int stride) {
+            mAttributes = attributes;
+            mStride = stride;
+        }
+
+        /**
+         * Create an attribute set with implicit offsets and stride. No attributes can have a
+         * predetermined stride.
+         */
+        @Nonnull
+        public static AttributeSet makeImplicit(@Nonnull Attribute... attrs) {
+            assert (attrs.length > 0 && attrs.length <= 0x1F);
+            int stride = 0;
+            for (Attribute attr : attrs) {
+                assert (attr != null);
+                assert (attr.offset() == Attribute.IMPLICIT_OFFSET);
+                stride += Attribute.alignOffset(attr.totalSize());
+            }
+            assert (stride <= 0xFFF);
+            return new AttributeSet(attrs, stride);
+        }
+
+        /**
+         * Create an attribute set with explicit offsets and stride. All attributes must be
+         * initialized and have an explicit offset aligned to 4 bytes and with no attribute
+         * crossing stride boundaries.
+         */
+        @Nonnull
+        public static AttributeSet makeExplicit(int stride, @Nonnull Attribute... attrs) {
+            assert (stride > 0 && stride <= 0xFFF);
+            assert (Attribute.alignOffset(stride) == stride);
+            assert (attrs.length > 0 && attrs.length <= 0x1F);
+            for (Attribute attr : attrs) {
+                assert (attr != null);
+                assert (attr.offset() != Attribute.IMPLICIT_OFFSET);
+                assert (Attribute.alignOffset(attr.offset()) == attr.offset());
+                assert (attr.offset() + attr.totalSize() <= stride);
+            }
+            return new AttributeSet(attrs, stride);
         }
 
         public final int stride() {
             return mStride;
         }
 
-        /**
-         * Init with implicit offsets and stride. No attributes can have a predetermined stride.
-         */
-        public final void initImplicit(@Nonnull Attribute[] attrs) {
-            mAttributes = attrs;
-            mStride = 0;
-            for (Attribute attr : attrs) {
-                assert (attr != null);
-                assert (attr.offset() == Attribute.IMPLICIT_OFFSET);
-                mStride += Attribute.alignOffset(attr.size());
-            }
-            assert (attrs.length <= 0xFFFF);
-            assert (mStride <= 0xFFFF);
-        }
-
-        /**
-         * Init with explicit offsets and stride. All attributes must be initialized and have
-         * an explicit offset aligned to 4 bytes and with no attribute crossing stride boundaries.
-         */
-        public final void initExplicit(@Nonnull Attribute[] attrs, int stride) {
-            mAttributes = attrs;
-            mStride = stride;
-            assert (Attribute.alignOffset(mStride) == mStride);
-            assert (assertExplicit(attrs));
-            assert (attrs.length <= 0xFFFF);
-            assert (mStride <= 0xFFFF);
-        }
-
-        private boolean assertExplicit(@Nonnull Attribute[] attrs) {
-            for (Attribute attr : attrs) {
-                assert (attr != null);
-                assert (attr.offset() != Attribute.IMPLICIT_OFFSET);
-                assert (Attribute.alignOffset(attr.offset()) == attr.offset());
-                assert (attr.offset() + attr.size() <= mStride);
-            }
-            return true;
-        }
-
-        public final void addToKey(@Nonnull KeyBuilder b) {
-            b.addBits(16, stride() & 0xFFFF, "stride");
-            b.addBits(16, count() & 0xFFFF, "attribute count");
+        public final void addToKey(@Nonnull KeyBuilder b, int mask) {
+            int rawCount = mAttributes.length;
+            // max stride is no less than 2048, we assume the minimum
+            // max attribs is no less than 16, we assume the minimum
+            b.addBits(12, stride(), "stride");
+            b.addBits(5, rawCount, "attribute count");
             int implicitOffset = 0;
-            for (Attribute attr : mAttributes) {
-                b.appendComment(attr.name());
-                b.addBits(8, attr.srcType() & 0xFF, "attrType");
-                b.addBits(8, attr.dstType() & 0xFF, "attrGpuType");
-                int offset;
-                if (attr.offset() != Attribute.IMPLICIT_OFFSET) {
-                    offset = attr.offset();
+            for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
+                final Attribute attr = mAttributes[i];
+                if ((mask & bit) != 0) {
+                    b.appendComment(attr.name());
+                    b.addBits(8, attr.srcType() & 0xFF, "attrType");
+                    b.addBits(8, attr.dstType() & 0xFF, "attrGpuType");
+                    int offset;
+                    if (attr.offset() != Attribute.IMPLICIT_OFFSET) {
+                        offset = attr.offset();
+                    } else {
+                        offset = implicitOffset;
+                        implicitOffset += Attribute.alignOffset(attr.totalSize());
+                    }
+                    b.addBits(12, offset, "attrOffset");
                 } else {
-                    offset = implicitOffset;
-                    implicitOffset += Attribute.alignOffset(attr.size());
+                    b.appendComment("unusedAttr");
+                    b.addBits(8, 0xFF, "attrType");
+                    b.addBits(8, 0xFF, "attrGpuType");
+                    b.addBits(12, 0xFFF, "attrOffset");
                 }
-                b.addBits(16, offset & 0xFFFF, "attrOffset");
             }
         }
 
         @Nonnull
         @Override
-        public final Iterator<Attribute> iterator() {
-            return new Iter();
+        public Iterator<Attribute> iterator() {
+            return new Iter((1 << mAttributes.length) - 1);
         }
 
         private class Iter implements Iterator<Attribute> {
 
+            private final int mMask;
+            private final int mCount;
+
             private int mIndex;
             private int mImplicitOffset;
 
+            public Iter(int mask) {
+                mMask = mask;
+                mCount = Integer.bitCount(mask);
+            }
+
             @Override
             public boolean hasNext() {
-                return mIndex < count();
+                return mIndex < mCount;
             }
 
             @Nonnull
             @Override
             public Attribute next() {
                 try {
+                    while ((mMask & (1 << mIndex)) == 0) {
+                        mIndex++; // skip unused
+                    }
                     final Attribute ret, curr = mAttributes[mIndex++];
                     if (curr.offset() == Attribute.IMPLICIT_OFFSET) {
                         ret = new Attribute(curr.name(), curr.srcType(), curr.dstType(), mImplicitOffset);
                     } else {
                         ret = curr;
                     }
-                    mImplicitOffset += Attribute.alignOffset(curr.size());
+                    mImplicitOffset += Attribute.alignOffset(curr.totalSize());
                     return ret;
                 } catch (Exception e) {
                     throw new NoSuchElementException(e);
@@ -254,62 +308,101 @@ public abstract class GeometryProcessor extends Processor {
         }
     }
 
-    // GPs that need to use either float or ubyte colors can just call this to get a correctly
-    // configured Attribute struct
+    /**
+     * GPs that need to use either float or ubyte colors can just call this to get a correctly
+     * configured Attribute struct
+     */
     @Nonnull
     protected static Attribute makeColorAttribute(String name, boolean wideColor) {
         return new Attribute(name, wideColor ? Float4_VertexAttribType : UByte4_norm_VertexAttribType, SLType.Vec4);
     }
 
-    private final AttributeSet mVertexAttributes = new AttributeSet();      // binding = 0
-    private final AttributeSet mInstanceAttributes = new AttributeSet();    // binding = 1
-
-    private int mTextureSamplerCnt;
+    private AttributeSet mVertexAttributes;      // binding = 0, divisor = 0
+    private AttributeSet mInstanceAttributes;    // binding = 1, divisor = 1
+    private int mVertexAttributesMask;
+    private int mInstanceAttributesMask;
 
     protected GeometryProcessor(int classID) {
         super(classID);
     }
 
-    public final int numTextureSamplers() {
-        return mTextureSamplerCnt;
+    public int numTextureSamplers() {
+        return 0;
     }
 
+    @Nonnull
     public TextureSampler textureSampler(int index) {
         throw new UnsupportedOperationException();
     }
 
+    /**
+     * Returns the number of used per-vertex attributes.
+     */
     public final int numVertexAttributes() {
-        return mVertexAttributes.count();
+        return Integer.bitCount(mVertexAttributesMask);
     }
 
-    public final AttributeSet vertexAttributes() {
-        return mVertexAttributes;
+    /**
+     * Returns an iterator of used per-vertex attributes. It's safe to call even if there's no attribute.
+     * The iterator handles hides two pieces of complexity:
+     * <ol>
+     * <li>It skips uninitialized attributes.</li>
+     * <li>It always returns an attribute with a known offset.</li>
+     * </ol>
+     */
+    @Nonnull
+    public final Iterator<Attribute> vertexAttributes() {
+        assert (mVertexAttributesMask == 0 || mVertexAttributes != null);
+        return mVertexAttributesMask == 0 ? AttributeSet.EMPTY_ITER :
+                mVertexAttributes.new Iter(mVertexAttributesMask);
     }
 
+    /**
+     * Returns the number of used per-instance attributes.
+     */
     public final int numInstanceAttributes() {
-        return mInstanceAttributes.count();
+        return Integer.bitCount(mInstanceAttributesMask);
     }
 
-    public final AttributeSet instanceAttributes() {
-        return mInstanceAttributes;
+    /**
+     * Returns an iterator of used per-instance attributes. It's safe to call even if there's no attribute.
+     * The iterator handles hides two pieces of complexity:
+     * <ol>
+     * <li>It skips uninitialized attributes.</li>
+     * <li>It always returns an attribute with a known offset.</li>
+     * </ol>
+     */
+    @Nonnull
+    public final Iterator<Attribute> instanceAttributes() {
+        assert (mInstanceAttributesMask == 0 || mInstanceAttributes != null);
+        return mInstanceAttributesMask == 0 ? AttributeSet.EMPTY_ITER :
+                mInstanceAttributes.new Iter(mInstanceAttributesMask);
     }
 
     public final boolean hasVertexAttributes() {
-        return mVertexAttributes.count() > 0;
+        assert (mVertexAttributesMask == 0 || mVertexAttributes != null);
+        return mVertexAttributesMask != 0;
     }
 
     public final boolean hasInstanceAttributes() {
-        return mInstanceAttributes.count() > 0;
+        assert (mInstanceAttributesMask == 0 || mInstanceAttributes != null);
+        return mInstanceAttributesMask != 0;
     }
 
     /**
      * A common practice is to populate the vertex/instance's memory using an implicit array of
-     * structs. In this case, it is best to assert that: stride == sizeof(struct)
+     * structs. In this case, it is best to assert that: stride == sizeof(struct).
+     * Note: call this only when {@link #hasVertexAttributes()} returns true.
      */
     public final int vertexStride() {
         return mVertexAttributes.stride();
     }
 
+    /**
+     * Note: call this only when {@link #hasInstanceAttributes()} returns true.
+     *
+     * @see #vertexStride()
+     */
     public final int instanceStride() {
         return mInstanceAttributes.stride();
     }
@@ -320,31 +413,51 @@ public abstract class GeometryProcessor extends Processor {
      */
     public abstract void addToKey(KeyBuilder b);
 
+    public final void getAttributeKey(KeyBuilder b) {
+        b.appendComment("vertex attributes");
+        mVertexAttributes.addToKey(b, mVertexAttributesMask);
+        b.appendComment("instance attributes");
+        mInstanceAttributes.addToKey(b, mInstanceAttributesMask);
+    }
+
     /**
      * Returns a new instance of the appropriate implementation class for the given
-     * GeometryProcessor.
+     * GeometryProcessor. This method is called only when the specified key does not
+     * exist in the program cache.
+     *
+     * @see #addToKey(KeyBuilder)
      */
+    @Nonnull
     public abstract ProgramImpl makeProgramImpl(ShaderCaps caps);
 
-    protected final void setVertexAttributes(Attribute[] attrs, int stride) {
-        mVertexAttributes.initExplicit(attrs, stride);
+    /**
+     * Sets per-vertex attributes. Passes a shared {@link AttributeSet} containing all attributes,
+     * and then use mask to control which of them are used by this GeometryProcessor instance.
+     * Note: Call this in subclasses constructor.
+     *
+     * @param attrs all per-vertex attributes
+     * @param mask  a mask determining which attributes to use, can be zero
+     */
+    protected final void setVertexAttributes(AttributeSet attrs, int mask) {
+        assert (mVertexAttributes == null && attrs != null);
+        assert (Integer.SIZE - Integer.numberOfLeadingZeros(mask) <= attrs.mAttributes.length);
+        mVertexAttributes = attrs;
+        mVertexAttributesMask = mask;
     }
 
-    protected final void setInstanceAttributes(Attribute[] attrs, int stride) {
-        mInstanceAttributes.initExplicit(attrs, stride);
-    }
-
-    protected final void setVertexAttributesWithImplicitOffsets(Attribute[] attrs) {
-        mVertexAttributes.initImplicit(attrs);
-    }
-
-    protected final void setInstanceAttributesWithImplicitOffsets(Attribute[] attrs) {
-        mInstanceAttributes.initImplicit(attrs);
-    }
-
-    protected final void setTextureSamplerCnt(int cnt) {
-        assert (cnt >= 0);
-        mTextureSamplerCnt = cnt;
+    /**
+     * Sets per-instance attributes. Passes a shared {@link AttributeSet} containing all attributes,
+     * and then use mask to control which of them are used by this GeometryProcessor instance.
+     * Note: Call this in subclasses constructor.
+     *
+     * @param attrs all per-instance attributes
+     * @param mask  a mask determining which attributes to use, can be zero
+     */
+    protected final void setInstanceAttributes(AttributeSet attrs, int mask) {
+        assert (mInstanceAttributes == null && attrs != null);
+        assert (Integer.SIZE - Integer.numberOfLeadingZeros(mask) <= attrs.mAttributes.length);
+        mInstanceAttributes = attrs;
+        mInstanceAttributesMask = mask;
     }
 
     /**
@@ -366,7 +479,10 @@ public abstract class GeometryProcessor extends Processor {
             public final GeometryProcessor mGeomProc;
             public final String mOutputColor;
             public final String mOutputCoverage;
+            @SamplerHandle
             public final int[] mTexSamplers;
+
+            // GPArgs
 
             // Used to specify the output variable used by the GP to store its device position. It can
             // either be a float2 or a float3 (in order to handle perspective). The subclass sets this
@@ -390,7 +506,7 @@ public abstract class GeometryProcessor extends Processor {
                         GeometryProcessor geomProc,
                         String outputColor,
                         String outputCoverage,
-                        int[] texSamplers) {
+                        @SamplerHandle int[] texSamplers) {
                 mVertBuilder = vertBuilder;
                 mFragBuilder = fragBuilder;
                 mVaryingHandler = varyingHandler;
@@ -438,7 +554,7 @@ public abstract class GeometryProcessor extends Processor {
     public record TextureSampler(BackendFormat backendFormat, int samplerState, short swizzle) {
 
         public int textureType() {
-            return backendFormat.getTextureType();
+            return backendFormat.textureType();
         }
     }
 }

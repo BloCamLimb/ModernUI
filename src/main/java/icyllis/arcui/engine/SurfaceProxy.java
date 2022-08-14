@@ -138,7 +138,7 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
         mSurfaceFlags = surfaceFlags;
         mUseAllocator = useAllocator;
         mDeferredProvider = deferredProvider;
-        if (format.getTextureType() == EngineTypes.TextureType_External) {
+        if (format.textureType() == EngineTypes.TextureType_External) {
             mSurfaceFlags |= EngineTypes.InternalSurfaceFlag_ReadOnly;
         }
     }
@@ -364,14 +364,14 @@ public abstract sealed class SurfaceProxy extends RefCnt permits TextureProxy, R
     }
 
     public final int getTextureType() {
-        return mFormat.getTextureType();
+        return mFormat.textureType();
     }
 
     /**
      * If true then the texture does not support MIP maps and only supports clamp wrap mode.
      */
     public final boolean hasRestrictedSampling() {
-        return EngineTypes.textureTypeHasRestrictedSampling(mFormat.getTextureType());
+        return EngineTypes.textureTypeHasRestrictedSampling(mFormat.textureType());
     }
 
     /**

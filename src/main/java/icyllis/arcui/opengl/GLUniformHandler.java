@@ -108,7 +108,7 @@ public class GLUniformHandler extends UniformHandler {
     @Override
     protected int addSampler(BackendFormat backendFormat, int samplerState, short swizzle, String name) {
         assert (name != null && !name.isEmpty());
-        assert (backendFormat.getTextureType() == EngineTypes.TextureType_2D);
+        assert (backendFormat.textureType() == EngineTypes.TextureType_2D);
 
         String mangleName = mProgramBuilder.nameVariable('u', name, /*mangle=*/true);
 

@@ -28,7 +28,7 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeoB
     }
 
     @Override
-    protected void onEnd() {
+    protected void onFinish() {
         mProgramBuilder.varyingHandler().getVertDecls(inputs(), outputs());
     }
 }

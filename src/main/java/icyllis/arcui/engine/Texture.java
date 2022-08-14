@@ -160,7 +160,7 @@ public abstract class Texture extends Surface {
         assert sampleCount == 1 || !mipmapped;
         // For external formats we do not actually know the real size of the resource, so we just return
         // 0 here to indicate this.
-        if (format.getTextureType() == TextureType_External) {
+        if (format.textureType() == TextureType_External) {
             return 0;
         }
         if (approx) {
@@ -196,7 +196,7 @@ public abstract class Texture extends Surface {
         assert sampleCount == 1 || levelCount == 1;
         // For external formats we do not actually know the real size of the resource, so we just return
         // 0 here to indicate this.
-        if (format.getTextureType() == TextureType_External) {
+        if (format.textureType() == TextureType_External) {
             return 0;
         }
         if (approx) {

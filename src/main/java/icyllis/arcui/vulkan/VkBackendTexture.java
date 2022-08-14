@@ -63,7 +63,7 @@ public final class VkBackendTexture extends BackendTexture {
 
     @Override
     public int getTextureType() {
-        return mBackendFormat.getTextureType();
+        return mBackendFormat.textureType();
     }
 
     @Override

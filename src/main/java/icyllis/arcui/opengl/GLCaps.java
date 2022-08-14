@@ -1266,7 +1266,7 @@ public final class GLCaps extends Caps {
 
     @Override
     public boolean isFormatRenderable(int colorType, BackendFormat format, int sampleCount) {
-        if (format.getTextureType() == EngineTypes.TextureType_External) {
+        if (format.textureType() == EngineTypes.TextureType_External) {
             return false;
         }
         int f = format.getGLFormat();
@@ -1278,7 +1278,7 @@ public final class GLCaps extends Caps {
 
     @Override
     public boolean isFormatRenderable(BackendFormat format, int sampleCount) {
-        if (format.getTextureType() == EngineTypes.TextureType_External) {
+        if (format.textureType() == EngineTypes.TextureType_External) {
             return false;
         }
         return isFormatRenderable(format.getGLFormat(), sampleCount);

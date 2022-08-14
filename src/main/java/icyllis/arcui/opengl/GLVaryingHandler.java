@@ -28,11 +28,11 @@ public class GLVaryingHandler extends VaryingHandler {
     }
 
     @Override
-    protected void onEnd() {
-        // OpenGL 4.5 requires these
-        assignLocations(mVertexInputs);
-        assignLocations(mVertexOutputs);
-        assignLocations(mFragInputs);
-        assignLocations(mFragOutputs);
+    protected void onFinish() {
+        // OpenGL 3.3: explicit_attrib_location
+        assignSequentialLocations(mVertexInputs);
+        assignSequentialLocations(mVertexOutputs);
+        assignSequentialLocations(mFragInputs);
+        assignSequentialLocations(mFragOutputs);
     }
 }

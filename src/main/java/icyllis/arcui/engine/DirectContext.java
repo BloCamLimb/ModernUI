@@ -120,6 +120,11 @@ public final class DirectContext extends RecordingContext {
     }
 
     @ApiStatus.Internal
+    public Server getServer() {
+        return mServer;
+    }
+
+    @ApiStatus.Internal
     public ResourceCache getResourceCache() {
         return mResourceCache;
     }

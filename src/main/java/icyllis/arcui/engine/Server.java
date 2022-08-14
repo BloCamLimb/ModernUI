@@ -27,8 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents the application-controlled 3D API server, holding a reference
- * to {@link DirectContext}. It is responsible for creating / deleting 3D API objects,
+ * Represents the client connection to the backend 3D API, holding a reference to
+ * {@link DirectContext}. It is responsible for creating / deleting 3D API objects,
  * controlling binding status, uploading and downloading data, transferring
  * 3D API commands, etc. Most methods are expected on render thread.
  */

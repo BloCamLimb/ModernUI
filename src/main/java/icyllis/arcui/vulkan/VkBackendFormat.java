@@ -40,12 +40,12 @@ public final class VkBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getBackend() {
+    public int backend() {
         return EngineTypes.Vulkan;
     }
 
     @Override
-    public int getTextureType() {
+    public int textureType() {
         return mTextureType;
     }
 

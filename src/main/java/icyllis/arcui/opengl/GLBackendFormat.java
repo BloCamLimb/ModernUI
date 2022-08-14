@@ -43,12 +43,12 @@ public final class GLBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getBackend() {
+    public int backend() {
         return OpenGL;
     }
 
     @Override
-    public int getTextureType() {
+    public int textureType() {
         return mTextureType;
     }
 

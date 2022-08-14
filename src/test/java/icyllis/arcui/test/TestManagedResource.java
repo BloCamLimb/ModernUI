@@ -40,6 +40,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.function.IntConsumer;
 
 import static org.lwjgl.system.MemoryUtil.memAddress;
 
@@ -68,6 +69,9 @@ public class TestManagedResource {
         pw.println("OpenGL version: " + glVersion);
         pw.println("OpenGL vendor: " + GLCore.glGetString(GLCore.GL_VENDOR));
         pw.println("OpenGL renderer: " + GLCore.glGetString(GLCore.GL_RENDERER));
+        pw.println("Max vertex attribs: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIBS));
+        pw.println("Max vertex bindings: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_BINDINGS));
+        pw.println("Max vertex stride: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
 
         if (directContext.caps().isFormatTexturable(
                 BackendFormat.makeGL(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
@@ -105,6 +109,10 @@ public class TestManagedResource {
         } catch (AssertionError e) {
             System.out.println("Assertion works " + (System.nanoTime() - time) / 1000000);
         }
+    }
+
+    public static void testLambda(PrintWriter pw, IntConsumer intConsumer) {
+        pw.println("Consumer IDENTITY: " + intConsumer);
     }
 
     public static void testLexicon(PrintWriter pw) {

@@ -40,8 +40,8 @@ public abstract class ProgramBuilder {
      */
     private final IntArrayList mSubstageIndices = new IntArrayList();
 
-    public final VertexShaderBuilder mVS = new VertexShaderBuilder(this);
-    public final FragmentShaderBuilder mFS = new FragmentShaderBuilder(this);
+    public final VertexShaderBuilder mVS;
+    public final FragmentShaderBuilder mFS;
 
     public final ProgramDesc mDesc;
     public final ProgramInfo mProgramInfo;
@@ -51,6 +51,8 @@ public abstract class ProgramBuilder {
     public ProgramBuilder(ProgramDesc desc, ProgramInfo programInfo) {
         mDesc = desc;
         mProgramInfo = programInfo;
+        mVS = new VertexShaderBuilder(this);
+        mFS = new FragmentShaderBuilder(this);
     }
 
     public abstract Caps caps();
@@ -157,11 +159,5 @@ public abstract class ProgramBuilder {
         mGPImpl.emitCode(args, mProgramInfo.pipeline());
 
         return true;
-    }
-
-    protected final void endShaders() {
-        varyingHandler().end();
-        mVS.end(EngineTypes.Vertex_ShaderFlag);
-        mFS.end(EngineTypes.Fragment_ShaderFlag);
     }
 }

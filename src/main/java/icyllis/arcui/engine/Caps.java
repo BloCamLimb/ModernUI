@@ -544,7 +544,7 @@ public abstract class Caps {
         if (width > maxSize || height > maxSize) {
             return false;
         }
-        if (format.getTextureType() != EngineTypes.TextureType_None) {
+        if (format.textureType() != EngineTypes.TextureType_None) {
             return isFormatTexturable(format);
         } else {
             return true;
@@ -563,7 +563,7 @@ public abstract class Caps {
         if (width > maxSize || height > maxSize) {
             return false;
         }
-        if (format.getTextureType() != EngineTypes.TextureType_None) {
+        if (format.textureType() != EngineTypes.TextureType_None) {
             if (!isFormatTexturable(format)) {
                 return false;
             }

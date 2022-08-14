@@ -28,7 +28,7 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
     }
 
     @Override
-    protected void onEnd() {
+    protected void onFinish() {
         mProgramBuilder.varyingHandler().getFragDecls(inputs(), outputs());
     }
 }
