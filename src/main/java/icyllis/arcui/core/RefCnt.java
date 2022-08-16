@@ -50,8 +50,8 @@ public abstract class RefCnt implements AutoCloseable {
         } catch (AssertionError e) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 // Subclasses should override toString() for debug purposes
-                TRACKER.forEach((o, __) -> System.err.printf("Leaked: %s\n", o.toString()));
-                assert TRACKER.isEmpty();
+                TRACKER.forEach((o, __) -> System.err.printf("Unexpected RefCnt %d on %s\n", o.mRefCnt, o));
+                assert TRACKER.isEmpty() : "Memory leaks in reference counted objects";
             }, "RefCnt-Tracker"));
         }
     }

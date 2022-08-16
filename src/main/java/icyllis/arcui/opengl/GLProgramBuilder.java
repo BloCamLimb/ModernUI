@@ -28,13 +28,13 @@ import static icyllis.arcui.opengl.GLCore.*;
 public class GLProgramBuilder extends ProgramBuilder {
 
     private final GLServer mServer;
-    private final GLVaryingHandler mVaryingHandler;
+    private final VaryingHandler mVaryingHandler;
     private final GLUniformHandler mUniformHandler;
 
     private GLProgramBuilder(GLServer server, ProgramDesc desc, ProgramInfo programInfo) {
         super(desc, programInfo);
         mServer = server;
-        mVaryingHandler = new GLVaryingHandler(this);
+        mVaryingHandler = new VaryingHandler(this);
         mUniformHandler = new GLUniformHandler(this);
     }
 
@@ -59,8 +59,8 @@ public class GLProgramBuilder extends ProgramBuilder {
         }
 
         varyingHandler().finish();
-        String vertSource = mVS.finish(EngineTypes.Vertex_ShaderFlag);
-        String fragSource = mFS.finish(EngineTypes.Fragment_ShaderFlag);
+        String vertSource = mVS.finish(shaderCaps(), EngineTypes.Vertex_ShaderFlag);
+        String fragSource = mFS.finish(shaderCaps(), EngineTypes.Fragment_ShaderFlag);
 
         ShaderErrorHandler errorHandler = mServer.getContext().getShaderErrorHandler();
 
@@ -98,6 +98,14 @@ public class GLProgramBuilder extends ProgramBuilder {
                 glDeleteShader(vert);
             }
         }
+
+        String allShaders = String.format("""
+                        // Vertex GLSL
+                        %s
+                        // Fragment GLSL
+                        %s
+                        """, vertSource, fragSource);
+        System.out.println(allShaders);
 
         glDeleteShader(frag);
         glDeleteShader(vert);

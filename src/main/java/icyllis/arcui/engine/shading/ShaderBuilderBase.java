@@ -18,6 +18,7 @@
 
 package icyllis.arcui.engine.shading;
 
+import icyllis.arcui.engine.ShaderCaps;
 import icyllis.arcui.engine.ShaderVar;
 
 import java.util.*;
@@ -143,16 +144,17 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         return mShaderStrings[mCodeIndex];
     }
 
-    public final String finish(int visibility) {
+    public final String finish(ShaderCaps shaderCaps, int visibility) {
         assert (visibility != 0);
+        extensions().append(shaderCaps.mVersionDeclString);
         mProgramBuilder.uniformHandler().appendUniformDecls(visibility, uniforms());
         onFinish();
         // append the 'footer' to code
         code().append("}");
 
         return Arrays.stream(mShaderStrings, 0, mCodeIndex + 1)
-                .filter(s -> !s.isEmpty())
-                .collect(Collectors.joining("\n\n"));
+                .filter(s -> s.length() > 0)
+                .collect(Collectors.joining("\n"));
     }
 
     protected abstract void onFinish();

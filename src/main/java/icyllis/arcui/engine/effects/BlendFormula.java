@@ -16,23 +16,10 @@
  * License along with Arc UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcui.opengl;
+package icyllis.arcui.engine.effects;
 
-import icyllis.arcui.engine.shading.ProgramBuilder;
-import icyllis.arcui.engine.shading.VaryingHandler;
-
-public class GLVaryingHandler extends VaryingHandler {
-
-    GLVaryingHandler(ProgramBuilder programBuilder) {
-        super(programBuilder);
-    }
-
-    @Override
-    protected void onFinish() {
-        // OpenGL 3.3: explicit_attrib_location
-        assignSequentialLocations(mVertexInputs);
-        assignSequentialLocations(mVertexOutputs);
-        assignSequentialLocations(mFragInputs);
-        assignSequentialLocations(mFragOutputs);
-    }
+/**
+ * Wraps the shader outputs and HW blend state that comprise a Porter Duff blend mode with coverage.
+ */
+public class BlendFormula {
 }

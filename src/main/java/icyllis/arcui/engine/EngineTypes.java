@@ -361,7 +361,7 @@ public final class EngineTypes {
     /**
      * ResourceHandle is an opaque handle to a resource. It's actually a table index.
      */
-    public static final int INVALID_RESOURCE_HANDLE = ~0;
+    public static final int INVALID_RESOURCE_HANDLE = -1;
 
     private EngineTypes() {
     }

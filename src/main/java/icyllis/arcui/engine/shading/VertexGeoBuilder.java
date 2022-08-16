@@ -18,6 +18,7 @@
 
 package icyllis.arcui.engine.shading;
 
+import icyllis.arcui.engine.GeometryProcessor;
 import icyllis.arcui.engine.ShaderVar;
 
 /**
@@ -25,6 +26,13 @@ import icyllis.arcui.engine.ShaderVar;
  * rasterizer.
  */
 public interface VertexGeoBuilder extends ShaderBuilder {
+
+    /**
+     * Emits per-vertex and per-instance attributes to vertex shader inputs.
+     *
+     * @param geomProc the geometry processor
+     */
+    void emitAttributes(GeometryProcessor geomProc);
 
     /**
      * Emits world position and transforms it into the clip space.

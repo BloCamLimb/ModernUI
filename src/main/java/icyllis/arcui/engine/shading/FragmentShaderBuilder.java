@@ -18,17 +18,50 @@
 
 package icyllis.arcui.engine.shading;
 
+import icyllis.arcui.core.SLType;
+import icyllis.arcui.engine.ShaderVar;
+
+import javax.annotation.Nullable;
+
 /**
  * This class implements the various fragment builder interfaces.
  */
 public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragmentBuilder, XPFragmentBuilder {
 
+    public static final String PRIMARY_COLOR_OUTPUT_NAME = "FragColor0";
+    public static final String SECONDARY_COLOR_OUTPUT_NAME = "FragColor1";
+
+    // fragment shader has at most two outputs, the second one is used for dual source blending
+    private final ShaderVar mPrimaryOutput;
+    private ShaderVar mSecondaryOutput;
+
     public FragmentShaderBuilder(ProgramBuilder programBuilder) {
         super(programBuilder);
+
+        mPrimaryOutput = new ShaderVar(PRIMARY_COLOR_OUTPUT_NAME, SLType.Vec4, ShaderVar.TypeModifier_Out,
+                ShaderVar.NonArray, "location = 0, index = 0", "");
     }
 
     @Override
     protected void onFinish() {
-        mProgramBuilder.varyingHandler().getFragDecls(inputs(), outputs());
+        mProgramBuilder.varyingHandler().getFragDecls(inputs());
+
+        mPrimaryOutput.appendDecl(outputs());
+        outputs().append(";\n");
+        if (mSecondaryOutput != null) {
+            mSecondaryOutput.appendDecl(outputs());
+            outputs().append(";\n");
+        }
+    }
+
+    public void enableSecondaryOutput() {
+        assert (mSecondaryOutput == null);
+        mSecondaryOutput = new ShaderVar(SECONDARY_COLOR_OUTPUT_NAME, SLType.Vec4, ShaderVar.TypeModifier_Out,
+                ShaderVar.NonArray, "location = 0, index = 1", "");
+    }
+
+    @Nullable
+    public String getSecondaryColorOutputName() {
+        return (mSecondaryOutput == null) ? null : SECONDARY_COLOR_OUTPUT_NAME;
     }
 }

@@ -52,19 +52,19 @@ public class ShaderVar {
      * Defaults to a void with no type modifier or layout qualifier.
      */
     public ShaderVar() {
-        this("", SLType.Void);
+        this("", SLType.Void, TypeModifier_None, NonArray, "", "");
     }
 
     public ShaderVar(String name, byte type) {
-        this(name, type, TypeModifier_None, NonArray);
+        this(name, type, TypeModifier_None, NonArray, "", "");
     }
 
     public ShaderVar(String name, byte type, int arrayCount) {
-        this(name, type, TypeModifier_None, arrayCount);
+        this(name, type, TypeModifier_None, arrayCount, "", "");
     }
 
     public ShaderVar(String name, byte type, byte typeModifier) {
-        this(name, type, typeModifier, NonArray);
+        this(name, type, typeModifier, NonArray, "", "");
     }
 
     public ShaderVar(String name, byte type, byte typeModifier, int arrayCount) {
@@ -73,7 +73,7 @@ public class ShaderVar {
 
     public ShaderVar(String name, byte type, byte typeModifier, int arrayCount,
                      String layoutQualifier, String extraModifier) {
-        assert (name != null && !name.isEmpty());
+        assert (name != null);
         assert (type >= 0 && type <= SLType.Last);
         assert (typeModifier >= TypeModifier_None && typeModifier <= TypeModifier_Uniform);
         assert (arrayCount == NonArray || arrayCount > 0);

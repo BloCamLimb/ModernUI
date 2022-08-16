@@ -33,7 +33,7 @@ import java.lang.annotation.RetentionPolicy;
  * <pre><code>
  * // Anonymous block
  * layout(std140, binding = 0) uniform UniformBlock {
- *     vec4 sk_OrthoProj;       // required
+ *     vec4 u_OrthoProj;        // required
  *     vec4 u_DstTextureCoords; // optional
  *     mat3 u_ModelView;        // optional
  *     // per-effect uniforms...
@@ -42,7 +42,7 @@ import java.lang.annotation.RetentionPolicy;
  */
 public abstract class UniformHandler {
 
-    public static final String NO_MANGLE_PREFIX = "sk_";
+    public static final String NO_MANGLE_PREFIX = "u_";
 
     public static class UniformInfo {
 

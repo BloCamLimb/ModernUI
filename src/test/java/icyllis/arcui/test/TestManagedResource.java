@@ -21,7 +21,8 @@ package icyllis.arcui.test;
 import icyllis.arcui.core.*;
 import icyllis.arcui.core.MathUtil;
 import icyllis.arcui.engine.*;
-import icyllis.arcui.opengl.GLCore;
+import icyllis.arcui.engine.geom.CircleGeometryProcessor;
+import icyllis.arcui.opengl.*;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -89,6 +90,22 @@ public class TestManagedResource {
         try (proxy) {
             pw.println(proxy);
         }
+
+        GLProgram program =
+                ((GLProgramCache) directContext.getServer().getPipelineBuilder()).findOrCreateProgram(directContext,
+                        new ProgramInfo(directContext.caps(),
+                                new SurfaceProxyView(directContext.getProxyProvider().createRenderTargetProxy(
+                                        BackendFormat.makeGL(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
+                                        800, 800, 4, false, CoreTypes.BackingFit_Exact,
+                                        true, 0, true
+                                )),
+                                true,
+                                null,
+                                null,
+                                new CircleGeometryProcessor(true, true, true, true, true, Matrix3.identity()),
+                                EngineTypes.PrimitiveType_Triangles, 0, EngineTypes.LoadOp_Discard));
+
+        pw.println(directContext.getServer().getPipelineBuilder().stats());
 
         testLexicon(pw);
 

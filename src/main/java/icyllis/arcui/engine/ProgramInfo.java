@@ -49,8 +49,8 @@ public class ProgramInfo {
                        int colorLoadOp) {
         assert (caps != null);
         assert (targetView != null);
-        assert (pipeline != null);
-        assert (userStencilSettings != null);
+        //assert (pipeline != null);
+        //assert (userStencilSettings != null);
         assert (geomProc != null);
         assert (primitiveType >= 0 && primitiveType <= EngineTypes.PrimitiveType_Last);
         assert (colorLoadOp >= 0 && colorLoadOp <= EngineTypes.LoadOp_Last);

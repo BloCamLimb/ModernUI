@@ -143,28 +143,28 @@ public class CircleGeometryProcessor extends GeometryProcessor {
             final VaryingHandler varyingHandler = args.mVaryingHandler;
 
             // emit attributes
-            varyingHandler.emitAttributes(args.mGeomProc);
+            vertBuilder.emitAttributes(args.mGeomProc);
             fragBuilder.codeAppend("""
                     vec4 circleEdge;
                     """);
             varyingHandler.addPassThroughAttribute(CIRCLE_EDGE, "circleEdge");
             if (clipPlane) {
                 fragBuilder.codeAppend("""
-                        vec4 clipPlane;
+                        vec3 clipPlane;
                         """);
                 varyingHandler.addPassThroughAttribute(CLIP_PLANE,
                         "clipPlane", VaryingHandler.Interpolation_CanBeFlat);
             }
             if (isectPlane) {
                 fragBuilder.codeAppend("""
-                        vec4 isectPlane;
+                        vec3 isectPlane;
                         """);
                 varyingHandler.addPassThroughAttribute(ISECT_PLANE,
                         "isectPlane", VaryingHandler.Interpolation_CanBeFlat);
             }
             if (unionPlane) {
                 fragBuilder.codeAppend("""
-                        vec4 unionPlane;
+                        vec3 unionPlane;
                         """);
                 varyingHandler.addPassThroughAttribute(UNION_PLANE,
                         "unionPlane", VaryingHandler.Interpolation_CanBeFlat);
@@ -176,7 +176,7 @@ public class CircleGeometryProcessor extends GeometryProcessor {
                         """);
                 varyingHandler.addPassThroughAttribute(ROUND_CAP_CENTERS,
                         "roundCapCenters", VaryingHandler.Interpolation_CanBeFlat);
-                varyingHandler.addVarying("capRadius", capRadius,
+                varyingHandler.addVarying("CapRadius", capRadius,
                         VaryingHandler.Interpolation_CanBeFlat);
                 // This is the cap radius in normalized space where the outer radius is 1 and
                 // circledEdge.w is the normalized inner radius.

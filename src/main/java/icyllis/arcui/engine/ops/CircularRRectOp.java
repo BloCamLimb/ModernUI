@@ -105,27 +105,27 @@ public final class CircularRRectOp extends MeshDrawOp {
 
             @Override
             protected void onEmitCode(Args args) {
-                final Processor proc = (Processor) args.mGeomProc;
-                final VertexGeoBuilder vert = args.mVertBuilder;
-                final FPFragmentBuilder frag = args.mFragBuilder;
-                final VaryingHandler varyings = args.mVaryingHandler;
-                final UniformHandler uniforms = args.mUniformHandler;
+                final Processor geomProc = (Processor) args.mGeomProc;
+                final VertexGeoBuilder vertBuilder = args.mVertBuilder;
+                final FPFragmentBuilder fragBuilder = args.mFragBuilder;
+                final VaryingHandler varyingHandler = args.mVaryingHandler;
+                final UniformHandler uniformHandler = args.mUniformHandler;
 
                 // emit attributes
-                varyings.emitAttributes(proc);
-                varyings.addPassThroughAttribute(POS, "p");
+                vertBuilder.emitAttributes(geomProc);
+                varyingHandler.addPassThroughAttribute(POS, "p");
 
-                String sizeUniformName = uniforms.getUniformName(
-                        mSizeUniform = uniforms.addUniform(proc,
+                String sizeUniformName = uniformHandler.getUniformName(
+                        mSizeUniform = uniformHandler.addUniform(geomProc,
                                 EngineTypes.Fragment_ShaderFlag,
                                 SLType.Vec2,
                                 "Size"));
-                String radiusUniformName = uniforms.getUniformName(
-                        mRadiusUniform = uniforms.addUniform(proc,
+                String radiusUniformName = uniformHandler.getUniformName(
+                        mRadiusUniform = uniformHandler.addUniform(geomProc,
                                 EngineTypes.Fragment_ShaderFlag,
                                 SLType.Float,
                                 "Radius"));
-                frag.codeAppendf("""
+                fragBuilder.codeAppendf("""
                                 vec2 q = abs(p) - %1$s + %2$s;
                                 float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - %2$s;
                                 """,

@@ -19,13 +19,19 @@
 package icyllis.arcui.engine.shading;
 
 import icyllis.arcui.core.SLType;
+import icyllis.arcui.engine.GeometryProcessor;
 import icyllis.arcui.engine.ShaderVar;
 import icyllis.arcui.sksl.Compiler;
+
+import java.util.ArrayList;
 
 /**
  * This class implements the various vertex builder interfaces.
  */
 public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeoBuilder {
+
+    // vertex shader inputs are vertex attributes
+    private final ArrayList<ShaderVar> mInputs = new ArrayList<>();
 
     public VertexShaderBuilder(ProgramBuilder programBuilder) {
         super(programBuilder);
@@ -33,7 +39,40 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeoB
 
     @Override
     protected void onFinish() {
-        mProgramBuilder.varyingHandler().getVertDecls(inputs(), outputs());
+        // assign sequential locations, this setup *MUST* be consistent with
+        // creating VertexArrayObject or PipelineVertexInputState later
+        int locationIndex = 0;
+        for (var var : mInputs) {
+            String location = "location = " + locationIndex;
+            var.addLayoutQualifier(location);
+
+            // may contain matrix that takes up multiple locations
+            int elementSize = SLType.locationSize(var.getType());
+            assert (elementSize > 0);
+            // we add this for now, there are currently no arrays though
+            int numElements = var.isArray() ? var.getArrayCount() : 1;
+            assert (numElements > 0);
+            locationIndex += elementSize * numElements;
+        }
+
+        //TODO check max attrib count, minimum is 16
+
+        mProgramBuilder.appendDecls(mInputs, inputs());
+        mProgramBuilder.varyingHandler().getVertDecls(outputs());
+    }
+
+    @Override
+    public void emitAttributes(GeometryProcessor geomProc) {
+        for (var it = geomProc.vertexAttributes(); it.hasNext(); ) {
+            var var = it.next().asShaderVar();
+            assert (var.getTypeModifier() == ShaderVar.TypeModifier_In);
+            mInputs.add(var);
+        }
+        for (var it = geomProc.instanceAttributes(); it.hasNext(); ) {
+            var var = it.next().asShaderVar();
+            assert (var.getTypeModifier() == ShaderVar.TypeModifier_In);
+            mInputs.add(var);
+        }
     }
 
     @Override

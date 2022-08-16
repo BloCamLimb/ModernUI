@@ -18,10 +18,17 @@
 
 package icyllis.arcui.engine.shading;
 
+import icyllis.arcui.core.SLType;
 import icyllis.arcui.engine.*;
+import icyllis.arcui.sksl.Compiler;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
+
+import static icyllis.arcui.engine.EngineTypes.*;
+import static icyllis.arcui.engine.shading.ProgramDataManager.UniformHandle;
+import static icyllis.arcui.engine.shading.UniformHandler.SamplerHandle;
 
 public abstract class ProgramBuilder {
 
@@ -46,7 +53,16 @@ public abstract class ProgramBuilder {
     public final ProgramDesc mDesc;
     public final ProgramInfo mProgramInfo;
 
+    /**
+     * Built-in uniform handles.
+     */
+    @UniformHandle
+    public int mOrthoProjUniform = INVALID_RESOURCE_HANDLE;
+
     public GeometryProcessor.ProgramImpl mGPImpl;
+
+    // This is used to check that we don't exceed the allowable number of resources in a shader.
+    private int mNumFragmentSamplers;
 
     public ProgramBuilder(ProgramDesc desc, ProgramInfo programInfo) {
         mDesc = desc;
@@ -106,6 +122,16 @@ public abstract class ProgramBuilder {
         if (!emitAndInstallGeomProc(input)) {
             return false;
         }
+        if (!emitAndInstallDstTexture()) {
+            return false;
+        }
+        if (!emitAndInstallFragProcs(input)) {
+            return false;
+        }
+        //TODO currently hack here
+        mFS.codeAppendf("""
+                %s = %s * %s;
+                """, FragmentShaderBuilder.PRIMARY_COLOR_OUTPUT_NAME, input[0], input[1]);
         return true;
     }
 
@@ -139,11 +165,32 @@ public abstract class ProgramBuilder {
             output[1] = nameVariable('\0', "outputCoverage");
         }
 
+        assert (mOrthoProjUniform == INVALID_RESOURCE_HANDLE);
+        mOrthoProjUniform = uniformHandler().addUniform(
+                null,
+                Vertex_ShaderFlag,
+                SLType.Vec4,
+                Compiler.ORTHOPROJ_NAME);
+
         mFS.codeAppendf("// Stage %d, %s\n", mStageIndex, geomProc.name());
         mVS.codeAppendf("// Geometry Processor %s\n", geomProc.name());
 
         assert (mGPImpl == null);
         mGPImpl = geomProc.makeProgramImpl(shaderCaps());
+
+        @SamplerHandle
+        int[] texSamplers = new int[geomProc.numTextureSamplers()];
+        for (int i = 0; i < geomProc.numTextureSamplers(); i++) {
+            String name = "TextureSampler_" + i;
+            final var sampler = geomProc.textureSampler(i);
+            texSamplers[i] = emitSampler(sampler.backendFormat(),
+                    sampler.samplerState(),
+                    sampler.swizzle(),
+                    name);
+            if (texSamplers[i] == INVALID_RESOURCE_HANDLE) {
+                return false;
+            }
+        }
 
         var args = new GeometryProcessor.ProgramImpl.Args(
                 mVS,
@@ -154,10 +201,33 @@ public abstract class ProgramBuilder {
                 geomProc,
                 output[0],
                 output[1],
-                new int[0]
+                texSamplers
         );
         mGPImpl.emitCode(args, mProgramInfo.pipeline());
 
         return true;
+    }
+
+    private boolean emitAndInstallDstTexture() {
+        //TODO currently no dst texture
+        return true;
+    }
+
+    private boolean emitAndInstallFragProcs(String[] input) {
+        //TODO currently no frag procs
+        return true;
+    }
+
+    @SamplerHandle
+    private int emitSampler(BackendFormat backendFormat, int samplerState, short swizzle, String name) {
+        ++mNumFragmentSamplers;
+        return uniformHandler().addSampler(backendFormat, samplerState, swizzle, name);
+    }
+
+    void appendDecls(ArrayList<ShaderVar> vars, StringBuilder out) {
+        for (var var : vars) {
+            var.appendDecl(out);
+            out.append(";\n");
+        }
     }
 }

@@ -92,5 +92,17 @@ public abstract class ThreadSafePipelineBuilder {
         public void incNumCompilationSuccesses() {
             mNumCompilationSuccesses.getAndIncrement();
         }
+
+        @Override
+        public String toString() {
+            return "Stats{" +
+                    "mShaderCompilations=" + mShaderCompilations +
+                    ", mNumInlineCompilationFailures=" + mNumInlineCompilationFailures +
+                    ", mNumPreCompilationFailures=" + mNumPreCompilationFailures +
+                    ", mNumCompilationFailures=" + mNumCompilationFailures +
+                    ", mNumPartialCompilationSuccesses=" + mNumPartialCompilationSuccesses +
+                    ", mNumCompilationSuccesses=" + mNumCompilationSuccesses +
+                    '}';
+        }
     }
 }

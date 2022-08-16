@@ -25,7 +25,7 @@ import java.util.ArrayList;
 
 import static icyllis.arcui.engine.EngineTypes.*;
 
-public abstract class VaryingHandler {
+public class VaryingHandler {
 
     public static final int
             Interpolation_Interpolated = 0,
@@ -45,16 +45,15 @@ public abstract class VaryingHandler {
 
     protected final ArrayList<VaryingInfo> mVaryings = new ArrayList<>();
 
-    protected final ArrayList<ShaderVar> mVertexInputs = new ArrayList<>();
     protected final ArrayList<ShaderVar> mVertexOutputs = new ArrayList<>();
     protected final ArrayList<ShaderVar> mFragInputs = new ArrayList<>();
-    protected final ArrayList<ShaderVar> mFragOutputs = new ArrayList<>();
 
     protected final ProgramBuilder mProgramBuilder;
 
+    // the default interpolation qualifier is smooth (with perspective)
     private String mDefaultInterpolationModifier = "smooth";
 
-    protected VaryingHandler(ProgramBuilder programBuilder) {
+    public VaryingHandler(ProgramBuilder programBuilder) {
         mProgramBuilder = programBuilder;
     }
 
@@ -72,6 +71,10 @@ public abstract class VaryingHandler {
         mDefaultInterpolationModifier = "noperspective";
     }
 
+    /**
+     * Convenience for {@link #addVarying(String, Varying, int)}
+     * that uses smooth or noperspective interpolation.
+     */
     public final void addVarying(String name,
                                  Varying varying) {
         addVarying(name, varying, Interpolation_Interpolated);
@@ -106,6 +109,10 @@ public abstract class VaryingHandler {
         mVaryings.add(v);
     }
 
+    /**
+     * Convenience for {@link #addPassThroughAttribute(GeometryProcessor.Attribute, String, int)}
+     * that uses smooth or noperspective interpolation.
+     */
     public final void addPassThroughAttribute(GeometryProcessor.Attribute attr,
                                               String output) {
         addPassThroughAttribute(attr, output, Interpolation_Interpolated);
@@ -141,81 +148,39 @@ public abstract class VaryingHandler {
         throw new IllegalArgumentException(String.valueOf(interpolation));
     }
 
-    public final void emitAttributes(GeometryProcessor gp) {
-        for (var it = gp.vertexAttributes(); it.hasNext(); ) {
-            addAttribute(it.next().asShaderVar());
-        }
-        for (var it = gp.instanceAttributes(); it.hasNext(); ) {
-            addAttribute(it.next().asShaderVar());
-        }
-    }
-
-    private void addAttribute(ShaderVar var) {
-        assert (var.getTypeModifier() == ShaderVar.TypeModifier_In);
-        for (var attr : mVertexInputs) {
-            // if attribute already added, don't add it again
-            if (attr.getName().equals(var.getName())) {
-                return;
-            }
-        }
-        mVertexInputs.add(var);
-    }
-
     // This should be called once all attributes and varyings have been added to the
     // VaryingHandler and before getting/adding any of the declarations to the shaders.
     public final void finish() {
+        int locationIndex = 0;
         for (var v : mVaryings) {
+            String layoutQualifier = "location = " + locationIndex;
             String modifier = v.mIsFlat ? "flat" : mDefaultInterpolationModifier;
             if ((v.mVisibility & Vertex_ShaderFlag) != 0) {
                 mVertexOutputs.add(new ShaderVar(v.mVsOut, v.mType, ShaderVar.TypeModifier_Out,
-                        ShaderVar.NonArray, "", modifier));
+                        ShaderVar.NonArray, layoutQualifier, modifier));
             }
             if ((v.mVisibility & Fragment_ShaderFlag) != 0) {
                 String fsIn = v.mVsOut;
                 mFragInputs.add(new ShaderVar(fsIn, v.mType, ShaderVar.TypeModifier_In,
-                        ShaderVar.NonArray, "", modifier));
+                        ShaderVar.NonArray, layoutQualifier, modifier));
             }
+            int locationSize = SLType.locationSize(v.mType);
+            assert (locationSize > 0);
+            locationIndex += locationSize;
         }
         onFinish();
     }
 
-    protected abstract void onFinish();
-
-    protected static void assignSequentialLocations(ArrayList<ShaderVar> vars) {
-        int locationIndex = 0;
-        for (var var : vars) {
-            String location = "location = " + locationIndex;
-            var.addLayoutQualifier(location);
-
-            int elementSize = SLType.locationSize(var.getType());
-            assert (elementSize > 0);
-            int numElements = var.isArray() ? var.getArrayCount() : 1;
-            assert (numElements > 0);
-            locationIndex += elementSize * numElements;
-        }
-
-        // GP has restricted the number of vertex attributes.
-        // If the backend does not support it, an error will be reported in creating the program.
-        // Vertex shader outputs and fragment shader inputs have no restriction.
+    protected void onFinish() {
     }
 
     // called after end
-    public final void getVertDecls(StringBuilder inputDecls, StringBuilder outputDecls) {
-        appendDecls(mVertexInputs, inputDecls);
-        appendDecls(mVertexOutputs, outputDecls);
+    public final void getVertDecls(StringBuilder outputDecls) {
+        mProgramBuilder.appendDecls(mVertexOutputs, outputDecls);
     }
 
     // called after end
-    public final void getFragDecls(StringBuilder inputDecls, StringBuilder outputDecls) {
-        appendDecls(mFragInputs, inputDecls);
-        appendDecls(mFragOutputs, outputDecls);
-    }
-
-    // helper function for get*Decls
-    private static void appendDecls(ArrayList<ShaderVar> vars, StringBuilder out) {
-        for (var var : vars) {
-            var.appendDecl(out);
-            out.append(";\n");
-        }
+    public final void getFragDecls(StringBuilder inputDecls) {
+        mProgramBuilder.appendDecls(mFragInputs, inputDecls);
     }
 }
