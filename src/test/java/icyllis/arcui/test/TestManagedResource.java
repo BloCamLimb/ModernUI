@@ -73,6 +73,8 @@ public class TestManagedResource {
         pw.println("Max vertex bindings: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_BINDINGS));
         pw.println("Max vertex stride: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
 
+        pw.println("0f int bits: " + (-0.0f == 0.0f));
+
         if (directContext.caps().isFormatTexturable(
                 BackendFormat.makeGL(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
                         EngineTypes.TextureType_2D))) {

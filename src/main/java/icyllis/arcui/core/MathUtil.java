@@ -43,7 +43,7 @@ public final class MathUtil {
     public static final float DEG_TO_RAD = 0.01745329251994329576923690768489f;
     public static final float RAD_TO_DEG = 57.295779513082320876798154814105f;
 
-    public static final float SQRT_OF_TWO = (float) Math.sqrt(2.0);
+    public static final float SQRT_OF_TWO = 1.4142135623730950488016887242097f;
 
     /**
      * @return true if <code>a</code> is approximately equal to zero

@@ -18,16 +18,17 @@
 
 package icyllis.arcui.engine;
 
-import icyllis.arcui.core.MathUtil;
-import icyllis.arcui.core.SLType;
+import icyllis.arcui.core.*;
 import icyllis.arcui.engine.shading.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import static icyllis.arcui.engine.EngineTypes.*;
+import static icyllis.arcui.engine.shading.ProgramDataManager.UniformHandle;
 import static icyllis.arcui.engine.shading.UniformHandler.SamplerHandle;
 
 /**
@@ -468,6 +469,9 @@ public abstract class GeometryProcessor extends Processor {
      */
     public static abstract class ProgramImpl {
 
+        /**
+         * Combination of input args and output args.
+         */
         public static final class Args {
 
             // EmitArgs
@@ -479,23 +483,27 @@ public abstract class GeometryProcessor extends Processor {
             public final GeometryProcessor mGeomProc;
             public final String mOutputColor;
             public final String mOutputCoverage;
-            @SamplerHandle
-            public final int[] mTexSamplers;
+            public final @SamplerHandle int[] mTexSamplers;
 
             // GPArgs
-
-            // Used to specify the output variable used by the GP to store its device position. It can
-            // either be a float2 or a float3 (in order to handle perspective). The subclass sets this
-            // in its onEmitCode().
-            public ShaderVar mPositionVar;
-            // Used to specify the variable storing the draw's local coordinates. It can be either a
-            // float2, float3, or void. It can only be void when no FP needs local coordinates. This
-            // variable can be an attribute or local variable, but should not itself be a varying.
-            // ProgramImpl automatically determines if this must be passed to a FS.
-            public ShaderVar mLocalCoordVar;
-            // The GP can specify the local coord var either in the VS or FS. When either is possible
-            // the VS is preferable. It may allow derived coordinates to be interpolated from the VS
-            // instead of computed in the FS per pixel.
+            /**
+             * Used to specify the output variable used by the GP to store its world position. It can
+             * either be a vec2 or a vec3 (in order to handle perspective). The subclass must set this
+             * in its {@link ProgramImpl#onEmitCode(Args)}.
+             */
+            public final ShaderVar mPositionVar = new ShaderVar();
+            /**
+             * Used to specify the variable storing the draw's local coordinates. It can be either a
+             * vec2, vec3, or void. It can only be void when no FP needs local coordinates. This
+             * variable can be an attribute or local variable, but should not itself be a varying.
+             * ProgramImpl automatically determines if this must be passed to a Fragment Shader.
+             */
+            public final ShaderVar mLocalCoordVar = new ShaderVar();
+            /**
+             * The GP can specify the local coord var either in the VS or FS. When either is possible
+             * the VS is preferable. It may allow derived coordinates to be interpolated from the VS
+             * instead of computed in the FS per pixel.
+             */
             public int mLocalCoordShader = Vertex_ShaderType;
 
             public Args(VertexGeoBuilder vertBuilder,
@@ -519,27 +527,165 @@ public abstract class GeometryProcessor extends Processor {
             }
         }
 
+        public static final int MATRIX_KEY_BITS = 1;
+
+        /**
+         * GPs that use writeOutputPosition and/or writeLocalCoord must incorporate the matrix type
+         * into their key, and should use this function or one of the other related helpers.
+         */
+        public static int computeMatrixKey(Matrix3 mat) {
+            if (mat.isScaleTranslate()) {
+                // compact form; use a vec4 uniform
+                return 0b0;
+            }
+            // general form; use a mat3 uniform
+            return 0b1;
+        }
+
+        /**
+         * A helper for setting the matrix on a uniform handle initialized through
+         * writeOutputPosition or writeLocalCoord. Automatically handles elided uniforms,
+         * scale+translate matrices, and state tracking (if provided state pointer is non-null).
+         *
+         * @param matrix the matrix to set, must be immutable
+         * @param state  the current state
+         * @return new state, eiter matrix or state
+         */
+        protected static Matrix3 setTransform(@Nonnull ProgramDataManager pdm,
+                                              @UniformHandle int uniform,
+                                              @Nonnull Matrix3 matrix,
+                                              @Nullable Matrix3 state) {
+            if (uniform == INVALID_RESOURCE_HANDLE ||
+                    (state != null && state.equals(matrix))) {
+                // No update needed
+                return state;
+            }
+            if (matrix.isScaleTranslate()) {
+                // ComputeMatrixKey and writeX() assume the uniform is a float4 (can't assert since nothing
+                // is exposed on a handle, but should be caught lower down).
+                pdm.set4f(uniform, matrix.getScaleX(), matrix.getTranslateX(),
+                        matrix.getScaleY(), matrix.getTranslateY());
+            } else {
+                pdm.setMatrix3f(uniform, matrix);
+            }
+            return matrix;
+        }
+
+        /**
+         * Helpers for adding code to write the transformed vertex position. The first simple version
+         * just writes a variable named by 'posName' into the position output variable with the
+         * assumption that the position is 2D. The second version transforms the input position by a
+         * view matrix and the output variable is 2D or 3D depending on whether the view matrix is
+         * perspective. Both versions declare the output position variable and will set
+         * {@link Args#mPositionVar}.
+         *
+         * @param inPos the local variable or the attribute, type must be either vec2 or vec3
+         * @return the uniform resource handle to the model view, for uploading to UBO
+         */
+        @UniformHandle
+        protected static int writeWorldPosition(Args args,
+                                                ShaderVar inPos,
+                                                Matrix3 modelView) {
+            return writeVertexPosition(args.mVertBuilder,
+                    args.mUniformHandler,
+                    inPos,
+                    modelView,
+                    "ModelView",
+                    args.mPositionVar,
+                    "_worldPos");
+        }
+
         /**
          * Emits the code from this geometry processor into the shaders. For any FP in the pipeline that
          * has its input coords implemented by the GP as a varying, the varying will be accessible in
          * the returned map and should be used when the FP code is emitted. The FS variable containing
          * the GP's output local coords is also returned.
-         **/
+         */
         public final void emitCode(Args args, Pipeline pipeline) {
             onEmitCode(args);
 
-            VertexGeoBuilder vBuilder = args.mVertBuilder;
-            // Emit the vertex position to the hardware in the normalized window coordinates it expects.
-            assert (args.mPositionVar != null) &&
-                    ((args.mPositionVar.getType() == SLType.Vec2) ||
-                            (args.mPositionVar.getType() == SLType.Vec3));
-            //TODO emit normalized position
+            VertexGeoBuilder v = args.mVertBuilder;
+            // Emit the vertex position to the hardware in the normalized device coordinates it expects.
+            assert (args.mPositionVar.getType() == SLType.Vec2 ||
+                    args.mPositionVar.getType() == SLType.Vec3);
+            v.emitNormalizedPosition(args.mPositionVar);
             if (args.mPositionVar.getType() == SLType.Vec2) {
                 args.mVaryingHandler.setNoPerspective();
             }
         }
 
+        /**
+         * A ProgramImpl instance can be reused with any GeometryProcessor that produces the same key.
+         * This function reads data from a GeometryProcessor and updates any uniform variables
+         * required by the shaders created in emitCode(). The GeometryProcessor parameter is
+         * guaranteed to be of the same type and to have an identical processor key as the
+         * GeometryProcessor that created this ProgramImpl.
+         */
+        public abstract void setData(ProgramDataManager pdm,
+                                     ShaderCaps shaderCaps,
+                                     GeometryProcessor geomProc);
+
         protected abstract void onEmitCode(Args args);
+    }
+
+    @UniformHandle
+    static int writeVertexPosition(VertexGeoBuilder vertBuilder,
+                                   UniformHandler uniformHandler,
+                                   ShaderVar inPos,
+                                   Matrix3 matrix,
+                                   String matrixName,
+                                   ShaderVar outPos,
+                                   String outName) {
+        assert (inPos.getType() == SLType.Vec2 || inPos.getType() == SLType.Vec3);
+
+        boolean useCompactTransform = matrix.isScaleTranslate();
+        int matrixUniform = uniformHandler.addUniform(null,
+                Vertex_ShaderFlag,
+                useCompactTransform ? SLType.Vec4 : SLType.Mat3,
+                matrixName);
+        String mangledMatrixName = uniformHandler.getUniformName(matrixUniform);
+
+        if (inPos.getType() == SLType.Vec3) {
+            // A float3 stays a float3 whether the matrix adds perspective
+            if (useCompactTransform) {
+                vertBuilder.codeAppendf("vec3 %s = vec3(%s.xz, 1.0) * %s + vec3(%s.yw, 0.0);\n",
+                        outName,
+                        mangledMatrixName,
+                        inPos.getName(),
+                        mangledMatrixName);
+            } else {
+                vertBuilder.codeAppendf("vec3 %s = %s * %s;\n",
+                        outName,
+                        mangledMatrixName,
+                        inPos.getName());
+            }
+            outPos.set(outName, SLType.Vec3);
+            return matrixUniform;
+        }
+        if (matrix.hasPerspective()) {
+            // A float2 is promoted to a float3 if we add perspective via the matrix
+            assert (!useCompactTransform);
+            vertBuilder.codeAppendf("vec3 %s = %s * vec3(%s.xy, 1.0);\n",
+                    outName,
+                    mangledMatrixName,
+                    inPos.getName());
+            outPos.set(outName, SLType.Vec3);
+            return matrixUniform;
+        }
+        if (useCompactTransform) {
+            vertBuilder.codeAppendf("vec2 %s = %s.xz * %s + %s.yw;\n",
+                    outName,
+                    mangledMatrixName,
+                    inPos.getName(),
+                    mangledMatrixName);
+        } else {
+            vertBuilder.codeAppendf("vec2 %s = (%s * vec3(%s.xy, 1.0)).xy;\n",
+                    outName,
+                    mangledMatrixName,
+                    inPos.getName());
+        }
+        outPos.set(outName, SLType.Vec2);
+        return matrixUniform;
     }
 
     /**

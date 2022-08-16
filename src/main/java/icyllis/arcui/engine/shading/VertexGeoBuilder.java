@@ -18,10 +18,18 @@
 
 package icyllis.arcui.engine.shading;
 
+import icyllis.arcui.engine.ShaderVar;
+
 /**
  * Base class for vertex shader builder. This is the stage that computes input geometry for the
  * rasterizer.
  */
 public interface VertexGeoBuilder extends ShaderBuilder {
 
+    /**
+     * Emits world position and transforms it into the clip space.
+     *
+     * @param worldPos the world position variable
+     */
+    void emitNormalizedPosition(ShaderVar worldPos);
 }

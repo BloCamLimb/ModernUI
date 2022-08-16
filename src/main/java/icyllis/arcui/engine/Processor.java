@@ -33,7 +33,8 @@ public abstract class Processor {
      */
     public static final int
             Null_ClassID = 0, // Reserved ID for missing (null) processors
-            CircularRRect_Geom_ClassID = 1;
+            CircularRRect_Geom_ClassID = 1,
+            Circle_Geom_ClassID = 2;
 
     protected final int mClassID;
 

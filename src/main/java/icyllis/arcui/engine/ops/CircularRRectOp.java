@@ -97,6 +97,13 @@ public final class CircularRRectOp extends MeshDrawOp {
             private int mRadiusUniform;
 
             @Override
+            public void setData(ProgramDataManager pdm,
+                                ShaderCaps shaderCaps,
+                                GeometryProcessor geomProc) {
+
+            }
+
+            @Override
             protected void onEmitCode(Args args) {
                 final Processor proc = (Processor) args.mGeomProc;
                 final VertexGeoBuilder vert = args.mVertBuilder;
@@ -106,7 +113,7 @@ public final class CircularRRectOp extends MeshDrawOp {
 
                 // emit attributes
                 varyings.emitAttributes(proc);
-                varyings.addPassThroughAttribute(POS.asShaderVar(), "p");
+                varyings.addPassThroughAttribute(POS, "p");
 
                 String sizeUniformName = uniforms.getUniformName(
                         mSizeUniform = uniforms.addUniform(proc,

@@ -33,19 +33,16 @@ import java.lang.annotation.RetentionPolicy;
  * <pre><code>
  * // Anonymous block
  * layout(std140, binding = 0) uniform UniformBlock {
- *     vec4 u_OrthoProj;        // required
- *     mat3 u_ModelView;        // required
+ *     vec4 sk_OrthoProj;       // required
  *     vec4 u_DstTextureCoords; // optional
+ *     mat3 u_ModelView;        // optional
  *     // per-effect uniforms...
  * }</code></pre>
  * Per-effect uniforms are updated more frequently (generally, each draw op).
  */
 public abstract class UniformHandler {
 
-    public static final String NO_MANGLE_PREFIX = "u_";
-
-    public static final String ORTHOPROJ = "u_OrthoProj";
-    public static final String MODELVIEW = "u_ModelView";
+    public static final String NO_MANGLE_PREFIX = "sk_";
 
     public static class UniformInfo {
 
@@ -83,6 +80,7 @@ public abstract class UniformHandler {
      * {@link #addUniformArray(Processor, int, byte, String, int)} variant to add an array of
      * uniforms.
      *
+     * @param owner      the raw ptr to owner, may be null
      * @param visibility combination of ShaderFlags
      * @param type       see {@link SLType}
      * @param name       the raw name (pre-mangling), cannot be null or empty
@@ -93,7 +91,7 @@ public abstract class UniformHandler {
                                 int visibility,
                                 byte type,
                                 String name) {
-        assert (owner != null && name != null && !name.isEmpty());
+        assert (name != null && !name.isEmpty());
         assert (visibility != 0);
         assert (type >= 0 && type <= SLType.Last);
         assert (!SLType.isCombinedSamplerType(type));
@@ -102,6 +100,7 @@ public abstract class UniformHandler {
     }
 
     /**
+     * @param owner      the raw ptr to owner, may be null
      * @param visibility combination of ShaderFlags
      * @param type       see {@link SLType}
      * @param name       the raw name (pre-mangling), cannot be null or empty
@@ -114,7 +113,7 @@ public abstract class UniformHandler {
                                      byte type,
                                      String name,
                                      int arrayCount) {
-        assert (owner != null && name != null && !name.isEmpty());
+        assert (name != null && !name.isEmpty());
         assert (visibility != 0);
         assert (type >= 0 && type <= SLType.Last);
         assert (!SLType.isCombinedSamplerType(type));
@@ -211,9 +210,9 @@ public abstract class UniformHandler {
      * Returns the base alignment mask in bytes taken up in UBO for SLTypes.
      *
      * @param type     see {@link SLType}
-     * @param nonArray true for a single element, false for an array of elements
+     * @param nonArray true for a single scalar or vector, false for an array of scalars or vectors
      * @param std430   true for std430 layout, false for std140 layout
-     * @return base alignment
+     * @return base alignment mask
      */
     public static int getAlignmentMask(byte type, boolean nonArray, boolean std430) {
         switch (type) {

@@ -32,7 +32,7 @@ import static org.lwjgl.system.MemoryUtil.memGetFloat;
 /**
  * Represents a 4x4 row-major matrix.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"unused", "deprecation"})
 public class Matrix4 implements Cloneable {
 
     public static final long OFFSET;
@@ -41,7 +41,7 @@ public class Matrix4 implements Cloneable {
         try {
             OFFSET = DataUtils.UNSAFE.objectFieldOffset(Matrix4.class.getDeclaredField("m11"));
         } catch (Exception e) {
-            throw new UnsupportedOperationException("No UNSAFE", e);
+            throw new UnsupportedOperationException("No OFFSET", e);
         }
     }
 
@@ -105,7 +105,7 @@ public class Matrix4 implements Cloneable {
      */
     @Nonnull
     public static Matrix4 copy(@Nullable Matrix4 mat) {
-        return mat == null ? identity() : mat.copy();
+        return mat == null ? identity() : mat.clone();
     }
 
     /**
@@ -720,15 +720,36 @@ public class Matrix4 implements Cloneable {
      */
     public void put(long p) {
         final Unsafe unsafe = DataUtils.UNSAFE;
-        final long src = OFFSET;
-        unsafe.putLong(null, p, unsafe.getLong(this, src));
-        unsafe.putLong(null, p + 8, unsafe.getLong(this, src + 8));
-        unsafe.putLong(null, p + 16, unsafe.getLong(this, src + 16));
-        unsafe.putLong(null, p + 24, unsafe.getLong(this, src + 24));
-        unsafe.putLong(null, p + 32, unsafe.getLong(this, src + 32));
-        unsafe.putLong(null, p + 40, unsafe.getLong(this, src + 40));
-        unsafe.putLong(null, p + 48, unsafe.getLong(this, src + 48));
-        unsafe.putLong(null, p + 56, unsafe.getLong(this, src + 56));
+        final long offset = OFFSET;
+        unsafe.putLong(null, p, unsafe.getLong(this, offset));
+        unsafe.putLong(null, p + 8, unsafe.getLong(this, offset + 8));
+        unsafe.putLong(null, p + 16, unsafe.getLong(this, offset + 16));
+        unsafe.putLong(null, p + 24, unsafe.getLong(this, offset + 24));
+        unsafe.putLong(null, p + 32, unsafe.getLong(this, offset + 32));
+        unsafe.putLong(null, p + 40, unsafe.getLong(this, offset + 40));
+        unsafe.putLong(null, p + 48, unsafe.getLong(this, offset + 48));
+        unsafe.putLong(null, p + 56, unsafe.getLong(this, offset + 56));
+    }
+
+    /**
+     * Similar to {@link #put(long)}, but also compare the memory.
+     *
+     * @param p the pointer of the array to store
+     * @return true if data is changed
+     */
+    @SuppressWarnings("UnnecessaryLocalVariable")
+    public boolean compareAndPut(long p) {
+        final Unsafe unsafe = DataUtils.UNSAFE;
+        final long offset = OFFSET;
+        boolean changed = false;
+        for (int i = 0; i < 64; i += 8) {
+            long val = unsafe.getLong(this, offset + i);
+            if (changed || val != unsafe.getLong(null, p + i)) {
+                unsafe.putLong(null, p + i, val);
+                changed = true;
+            }
+        }
+        return changed;
     }
 
     /**
@@ -1896,6 +1917,28 @@ public class Matrix4 implements Cloneable {
                 approxEqual(m11, m22, m33, m44, 1.0f);
     }
 
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and
+     * column is dropped.
+     * <pre>{@code
+     * [ a b x c ]      [ a b c ]
+     * [ d e x f ]  ->  [ d e f ]
+     * [ x x x x ]      [ g h i ]
+     * [ g h x i ]
+     * }</pre>
+     */
+    public void toMatrix3(@Nonnull Matrix3 out) {
+        out.m11 = m11;
+        out.m12 = m12;
+        out.m13 = m14;
+        out.m21 = m21;
+        out.m22 = m22;
+        out.m23 = m24;
+        out.m31 = m41;
+        out.m32 = m42;
+        out.m33 = m44;
+    }
+
     public boolean equal(@Nonnull Matrix4 mat) {
         return m11 == mat.m11 &&
                 m12 == mat.m12 &&
@@ -2015,7 +2058,8 @@ public class Matrix4 implements Cloneable {
      * @return a deep copy of this matrix
      */
     @Nonnull
-    public Matrix4 copy() {
+    @Override
+    public Matrix4 clone() {
         try {
             return (Matrix4) super.clone();
         } catch (CloneNotSupportedException e) {

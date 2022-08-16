@@ -139,7 +139,7 @@ public abstract class BaseDevice extends MatrixProvider {
         // To get the transform from this space to the other device's, transform from our space to
         // global and then from global to the other device.
         out.set(mDeviceToGlobal);
-        out.postMul(device.mGlobalToDevice);
+        out.postMultiply(device.mGlobalToDevice);
     }
 
     @Override

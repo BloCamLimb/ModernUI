@@ -54,7 +54,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
             mShaderStrings[i] = new StringBuilder();
         }
         mCodeIndex = CODE;
-        codeAppend("void main() {");
+        codeAppend("void main() {\n");
     }
 
     /**
@@ -91,7 +91,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
      */
     public void declAppend(ShaderVar var) {
         var.appendDecl(code());
-        codeAppend(";");
+        codeAppend(";\n");
     }
 
     @Override

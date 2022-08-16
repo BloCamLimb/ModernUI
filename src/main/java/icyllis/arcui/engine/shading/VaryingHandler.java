@@ -106,9 +106,9 @@ public abstract class VaryingHandler {
         mVaryings.add(v);
     }
 
-    public final void addPassThroughAttribute(ShaderVar vsVar,
+    public final void addPassThroughAttribute(GeometryProcessor.Attribute attr,
                                               String output) {
-        addPassThroughAttribute(vsVar, output, Interpolation_Interpolated);
+        addPassThroughAttribute(attr, output, Interpolation_Interpolated);
     }
 
     /**
@@ -116,14 +116,14 @@ public abstract class VaryingHandler {
      * fragment shader. Though this adds code to vertex and fragment stages, 'output' is expected to
      * be defined in the fragment shader before the call is made.
      */
-    public final void addPassThroughAttribute(ShaderVar vsVar,
+    public final void addPassThroughAttribute(GeometryProcessor.Attribute attr,
                                               String output,
                                               int interpolation) {
-        assert (vsVar.getType() != SLType.Void);
+        assert (attr.dstType() != SLType.Void);
         assert (!output.isEmpty());
-        Varying v = new Varying(vsVar.getType());
-        addVarying(vsVar.getName(), v, interpolation);
-        mProgramBuilder.mVS.codeAppendf("%s = %s;\n", v.vsOut(), vsVar.getName());
+        Varying v = new Varying(attr.dstType());
+        addVarying(attr.name(), v, interpolation);
+        mProgramBuilder.mVS.codeAppendf("%s = %s;\n", v.vsOut(), attr.name());
         mProgramBuilder.mFS.codeAppendf("%s = %s;\n", output, v.fsIn());
     }
 

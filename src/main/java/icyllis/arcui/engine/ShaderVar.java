@@ -40,13 +40,20 @@ public class ShaderVar {
      */
     public static final int NonArray = 0; // not an array
 
-    private final byte mType;
+    private byte mType;
     private byte mTypeModifier;
     private final int mCount;
 
-    private final String mName;
+    private String mName;
     private String mLayoutQualifier;
     private String mExtraModifiers;
+
+    /**
+     * Defaults to a void with no type modifier or layout qualifier.
+     */
+    public ShaderVar() {
+        this("", SLType.Void);
+    }
 
     public ShaderVar(String name, byte type) {
         this(name, type, TypeModifier_None, NonArray);
@@ -77,6 +84,15 @@ public class ShaderVar {
         mName = name;
         mLayoutQualifier = layoutQualifier;
         mExtraModifiers = extraModifier;
+    }
+
+    /**
+     * Sets as a non-array. Internally used with the default constructor.
+     */
+    public void set(String name, byte type) {
+        assert (type != SLType.Void);
+        mType = type;
+        mName = name;
     }
 
     /**
