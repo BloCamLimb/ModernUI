@@ -2,7 +2,7 @@ modLoader="javafml"
 loaderVersion="[39,)"
 issueTrackerURL="https://github.com/BloCamLimb/ModernUI/issues"
 logoFile= "modernui_logo.png"
-license="Multi-licensing, see https://github.com/BloCamLimb/ModernUI for details"
+license="All Rights Reserved"
 
 [[mods]]
     modId="modernui"

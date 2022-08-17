@@ -47,6 +47,7 @@ import icyllis.modernui.widget.CoordinatorLayout;
 import icyllis.modernui.widget.EditText;
 import net.minecraft.*;
 import net.minecraft.client.*;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
@@ -379,6 +380,33 @@ public final class UIManager implements LifecycleOwner {
         transition.enableTransitionType(LayoutTransition.DISAPPEARING);
     }
 
+    Screen createCapsErrorScreen() {
+        final String glRenderer = glGetString(GL_RENDERER);
+        final String glVersion = glGetString(GL_VERSION);
+        String extensions = String.join(", ", GLCore.getUnsupportedList());
+        return new ConfirmScreen(dontShow -> {
+            if (dontShow) {
+                Config.CLIENT.showGLCapsError.set(false);
+                Config.CLIENT.saveAndReload();
+            }
+            minecraft.setScreen(null);
+        }, new TranslatableComponent("error.modernui.gl_caps"),
+                new TranslatableComponent("error.modernui.gl_caps_desc", glRenderer, glVersion, extensions),
+                new TranslatableComponent("gui.modernui.dont_show_again"),
+                CommonComponents.GUI_CANCEL) {
+            @Override
+            protected void addButtons(int i) {
+                this.addExitButton(new Button(this.width / 2 - 50 - 105, i, 100, 20, this.yesButton,
+                        b -> this.callback.accept(true)));
+                this.addExitButton(new Button(this.width / 2 - 50, i, 100, 20,
+                        new TranslatableComponent("gui.modernui.ok"), b -> Util.getPlatform().openUri(
+                        "https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support")));
+                this.addExitButton(new Button(this.width / 2 - 50 + 105, i, 100, 20, this.noButton,
+                        b -> this.callback.accept(false)));
+            }
+        };
+    }
+
     @SubscribeEvent
     void onGuiOpen(@Nonnull ScreenOpenEvent event) {
         final Screen next = event.getScreen();
@@ -395,22 +423,7 @@ public final class UIManager implements LifecycleOwner {
                 LOGGER.info(MARKER, "Disabled OptiFine Fast Render");
             }
             if (ModernUIForge.hasGLCapsError() && Config.CLIENT.showGLCapsError.get()) {
-                final String glRenderer = glGetString(GL_RENDERER);
-                final String glVersion = glGetString(GL_VERSION);
-                String extensions = String.join(", ", GLCore.getUnsupportedList());
-                ConfirmScreen newScreen = new ConfirmScreen(left -> {
-                    if (left) {
-                        Config.CLIENT.showGLCapsError.set(false);
-                        Config.CLIENT.saveAndReload();
-                    } else {
-                        Util.getPlatform().openUri("https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support");
-                    }
-                    minecraft.setScreen(null);
-                }, new TranslatableComponent("error.modernui.gl_caps"),
-                        new TranslatableComponent("error.modernui.gl_caps_desc", glRenderer, glVersion, extensions),
-                        new TranslatableComponent("gui.modernui.dont_show_again"),
-                        new TranslatableComponent("gui.modernui.ok"));
-                event.setScreen(newScreen);
+                event.setScreen(createCapsErrorScreen());
             }
             mFirstScreenOpened = true;
         }
