@@ -1,5 +1,14 @@
 Changelogs
 ===
+### Modern UI 3.5.3.112 (2022-08-17)
+#### Forge Extension 1.18.2-40.0.12
+* Enhance GL caps error screen
+* Add support for requesting OpenGL 4.6 or 4.5 core profile window avoiding GL caps errors
+#### Modern Text Engine 1.18.2
+* No updates
+#### Core Framework 3.5
+* Internal changes
+
 ### Modern UI 3.5.2.111 (2022-07-27)
 #### Forge Extension 1.18.2-40.0.12
 * Add debug stuff
