@@ -28,9 +28,9 @@ public class ShaderCaps {
      * special layout qualifiers in the fragment shader.
      */
     public static final int
-            ADV_BLEND_EQ_INTERACTION_NOT_SUPPORTED = 0,     // No _blend_equation_advanced extension
-            ADV_BLEND_EQ_INTERACTION_AUTOMATIC = 1,         // No interaction required
-            ADV_BLEND_EQ_INTERACTION_GENERAL_ENABLE = 2;    // layout(blend_support_all_equations) out
+            NotSupported_AdvBlendEqInteraction = 0,     // No _blend_equation_advanced extension
+            Automatic_AdvBlendEqInteraction = 1,        // No interaction required
+            GeneralEnable_AdvBlendEqInteraction = 2;    // layout(blend_support_all_equations) out
 
     public boolean mShaderDerivativeSupport = true;
     /**
@@ -103,13 +103,13 @@ public class ShaderCaps {
     public String mSecondExternalTextureExtensionString = null;
     public String mFBFetchColorName = null;
 
-    public int mAdvBlendEqInteraction = ADV_BLEND_EQ_INTERACTION_NOT_SUPPORTED;
+    public int mAdvBlendEqInteraction = NotSupported_AdvBlendEqInteraction;
 
     public ShaderCaps() {
     }
 
     public final boolean mustEnableAdvBlendEqs() {
-        return mAdvBlendEqInteraction >= ADV_BLEND_EQ_INTERACTION_GENERAL_ENABLE;
+        return mAdvBlendEqInteraction >= GeneralEnable_AdvBlendEqInteraction;
     }
 
     // XXX: we are in core profile

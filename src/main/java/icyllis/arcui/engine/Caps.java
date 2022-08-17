@@ -68,6 +68,7 @@ public abstract class Caps {
     protected BlendEquationSupport mBlendEquationSupport = BlendEquationSupport.BASIC;
 
     protected int mMapBufferFlags;
+    protected int mBufferMapThreshold;
 
     protected int mMaxRenderTargetSize = 1;
     protected int mMaxPreferredRenderTargetSize = 1;
@@ -80,6 +81,7 @@ public abstract class Caps {
     protected int mMaxPushConstantsSize = 0;
 
     public Caps(ContextOptions options) {
+        mBufferMapThreshold = options.mBufferMapThreshold;
     }
 
     /**
@@ -460,6 +462,11 @@ public abstract class Caps {
 
     public final boolean transferFromBufferToTextureSupport() {
         return true;
+    }
+
+    public final int bufferMapThreshold() {
+        assert (mBufferMapThreshold >= 0);
+        return mBufferMapThreshold;
     }
 
     /**

@@ -91,6 +91,12 @@ public class TestManagedResource {
             pw.println(proxy);
         }
 
+        Matrix4 transform = Matrix4.identity();
+        transform.m34 = 1 / 4096f;
+        transform.preRotateX(MathUtil.PI_O_3);
+        Matrix3 matrix3 = new Matrix3();
+        transform.toMatrix3(matrix3);
+        pw.println(matrix3);
         GLProgram program =
                 ((GLProgramCache) directContext.getServer().getPipelineBuilder()).findOrCreateProgram(directContext,
                         new ProgramInfo(directContext.caps(),
@@ -102,7 +108,7 @@ public class TestManagedResource {
                                 true,
                                 null,
                                 null,
-                                new CircleGeometryProcessor(true, true, true, true, true, Matrix3.identity()),
+                                new CircleGeometryProcessor(true, true, true, true, true, matrix3),
                                 EngineTypes.PrimitiveType_Triangles, 0, EngineTypes.LoadOp_Discard));
 
         pw.println(directContext.getServer().getPipelineBuilder().stats());

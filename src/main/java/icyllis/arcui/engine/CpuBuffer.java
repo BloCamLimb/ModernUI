@@ -18,41 +18,41 @@
 
 package icyllis.arcui.engine;
 
+import icyllis.arcui.core.RefCnt;
+import org.lwjgl.system.MemoryUtil;
+
 /**
- * Represents a device memory block that <b>prefers</b> to allocate GPU memory.
- * Also known as geometric buffer, g-buffer. To be exact, GLBuffer or VkBuffer.
+ * Represents an immutable block of native CPU memory.
+ * <p>
+ * The instances are atomic reference counted, and may be used as shared pointers.
  */
-public abstract class GpuBuffer extends GpuResource implements Buffer {
+public final class CpuBuffer extends RefCnt implements Buffer {
 
-    private final int mSizeInBytes;
+    private final int mSize;
+    private final long mData;
 
-    public GpuBuffer(Server server, int sizeInBytes) {
-        super(server);
-        mSizeInBytes = sizeInBytes;
+    public CpuBuffer(int size) {
+        assert (size > 0);
+        mSize = size;
+        mData = MemoryUtil.nmemAlignedAllocChecked(Long.BYTES, size);
     }
 
     @Override
     public int size() {
-        return mSizeInBytes;
+        return mSize;
+    }
+
+    public long data() {
+        return mData;
     }
 
     @Override
     public boolean isCpuBuffer() {
-        return false;
+        return true;
     }
 
-    public long map() {
-        return 0;
-    }
-
-    public void unmap() {
-    }
-
-    public boolean isMapped() {
-        return false;
-    }
-
-    public boolean updateData(long src, int offset, int size) {
-        return false;
+    @Override
+    protected void onFree() {
+        MemoryUtil.nmemAlignedFree(mData);
     }
 }

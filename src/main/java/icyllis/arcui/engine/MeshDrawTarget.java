@@ -18,10 +18,49 @@
 
 package icyllis.arcui.engine;
 
+import javax.annotation.Nullable;
+import java.nio.ByteBuffer;
+
 /**
  * Abstract interface that supports creating vertices, indices, and meshes, as well as
  * invoking GPU draw operations.
  */
 //TODO
 public interface MeshDrawTarget {
+
+    /**
+     * Makes space for vertex data. The returned pointer is the location where vertex data
+     * should be written. On return the buffer that will hold the data as well as an offset into
+     * the buffer (in 'vertexSize' units) where the data will be placed.
+     *
+     * @return may NULL if failed
+     */
+    long makeVertexSpace(Mesh mesh);
+
+    /**
+     * Makes space for instance data. The returned pointer is the location where instance data
+     * should be written. On return the buffer that will hold the data as well as an offset into
+     * the buffer (in 'instanceSize' units) where the data will be placed.
+     *
+     * @return may NULL if failed
+     */
+    long makeInstanceSpace(Mesh mesh);
+
+    /**
+     * Helper method.
+     *
+     * @return may null if failed
+     * @see #makeVertexSpace(Mesh)
+     */
+    @Nullable
+    ByteBuffer makeVertexWriter(Mesh mesh);
+
+    /**
+     * Helper method.
+     *
+     * @return may null if failed
+     * @see #makeInstanceSpace(Mesh)
+     */
+    @Nullable
+    ByteBuffer makeInstanceWriter(Mesh mesh);
 }

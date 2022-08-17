@@ -90,6 +90,7 @@ public class Matrix3 implements Cloneable {
      * Create a zero matrix.
      */
     public Matrix3() {
+        mTypeMask = Unknown_Mask;
     }
 
     /**
@@ -101,6 +102,7 @@ public class Matrix3 implements Cloneable {
     public static Matrix3 identity() {
         final Matrix3 mat = new Matrix3();
         mat.m11 = mat.m22 = mat.m33 = 1.0f;
+        mat.mTypeMask = Identity_Mask | AxisAligned_Mask;
         return mat;
     }
 

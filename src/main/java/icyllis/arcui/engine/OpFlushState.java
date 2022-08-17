@@ -18,5 +18,43 @@
 
 package icyllis.arcui.engine;
 
-public class OpFlushState {
+import javax.annotation.Nullable;
+import java.nio.ByteBuffer;
+
+/**
+ * Tracks the state across all the GrOps (really just the GrDrawOps) in a OpsTask flush.
+ */
+public class OpFlushState implements MeshDrawTarget {
+
+    private final VertexBufferAllocPool mVertexPool;
+    private final InstanceBufferAllocPool mInstancePool;
+
+    public OpFlushState(Server server,
+                        ResourceProvider resourceProvider,
+                        BufferAllocPool.CpuBufferCache cpuBufferCache) {
+        mVertexPool = new VertexBufferAllocPool(server, cpuBufferCache);
+        mInstancePool = new InstanceBufferAllocPool(server, cpuBufferCache);
+    }
+
+    @Override
+    public long makeVertexSpace(Mesh mesh) {
+        return mVertexPool.makeSpace(mesh);
+    }
+
+    @Override
+    public long makeInstanceSpace(Mesh mesh) {
+        return mInstancePool.makeSpace(mesh);
+    }
+
+    @Nullable
+    @Override
+    public ByteBuffer makeVertexWriter(Mesh mesh) {
+        return mVertexPool.makeWriter(mesh);
+    }
+
+    @Nullable
+    @Override
+    public ByteBuffer makeInstanceWriter(Mesh mesh) {
+        return mInstancePool.makeWriter(mesh);
+    }
 }

@@ -189,7 +189,8 @@ public class CircleGeometryProcessor extends GeometryProcessor {
             fragBuilder.codeAppendf("""
                     vec4 %s;
                     """, args.mOutputColor);
-            varyingHandler.addPassThroughAttribute(COLOR, args.mOutputColor);
+            varyingHandler.addPassThroughAttribute(COLOR, args.mOutputColor,
+                    VaryingHandler.Interpolation_CanBeFlat);
 
             // setup position
             mModelViewUniform = writeWorldPosition(args, POSITION.asShaderVar(), geomProc.mModelView);

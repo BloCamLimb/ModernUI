@@ -23,7 +23,7 @@ import icyllis.arcui.engine.GpuBuffer;
 public final class GLBuffer extends GpuBuffer {
 
     public GLBuffer(GLServer server) {
-        super(server);
+        super(server, 0);
     }
 
     @Override

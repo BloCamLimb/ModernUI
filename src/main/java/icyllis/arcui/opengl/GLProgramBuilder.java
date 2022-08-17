@@ -99,6 +99,7 @@ public class GLProgramBuilder extends ProgramBuilder {
             }
         }
 
+        //TODO remove this and replace with a function
         String allShaders = String.format("""
                         // Vertex GLSL
                         %s

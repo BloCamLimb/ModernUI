@@ -18,10 +18,12 @@
 
 package icyllis.arcui.engine.ops;
 
+import icyllis.arcui.engine.Mesh;
+
 /**
  * Base class for mesh-drawing DrawOps.
  */
-public abstract class MeshDrawOp extends DrawOp {
+public abstract class MeshDrawOp extends DrawOp implements Mesh {
 
     protected MeshDrawOp(int classID) {
         super(classID);

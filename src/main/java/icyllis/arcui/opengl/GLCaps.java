@@ -182,48 +182,47 @@ public final class GLCaps extends Caps {
         // When we are abandoning the context we cannot call into GL thus we should skip any sync work.
         mMustSyncGpuDuringDiscard = false;
 
-        if (caps.GL_EXT_shader_framebuffer_fetch) {
-            mShaderCaps.mFBFetchNeedsCustomOutput = true;
-            mShaderCaps.mFBFetchSupport = true;
-            mShaderCaps.mFBFetchColorName = "gl_LastFragData[0]";
-            mShaderCaps.mFBFetchExtensionString = "GL_EXT_shader_framebuffer_fetch";
-            mFBFetchRequiresEnablePerSample = false;
-        }
+        initGLSL(caps);
+        ShaderCaps shaderCaps = mShaderCaps;
 
-        //mShaderCaps.mMaxTessellationSegments = glGetInteger(GL_MAX_TESS_GEN_LEVEL);
-        mShaderCaps.mVersionDeclString = "#version 450 core\n";
-        try (MemoryStack stack = MemoryStack.stackPush()) {
-            IntBuffer range = stack.mallocInt(2);
-            int bits = glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_HIGH_FLOAT, range);
-            mShaderCaps.mFloatIs32Bits = range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
-            bits = glGetShaderPrecisionFormat(GL_VERTEX_SHADER, GL_HIGH_FLOAT, range);
-            mShaderCaps.mFloatIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
-
-            bits = glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_MEDIUM_FLOAT, range);
-            mShaderCaps.mHalfIs32Bits = range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
-            bits = glGetShaderPrecisionFormat(GL_VERTEX_SHADER, GL_MEDIUM_FLOAT, range);
-            mShaderCaps.mHalfIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
-        }
-        mShaderCaps.mDualSourceBlendingSupport = true;
+        // OpenGL 3.3
+        shaderCaps.mDualSourceBlendingSupport = true;
+        // Desktop
+        shaderCaps.mShaderDerivativeSupport = true;
+        // OpenGL 3.0
+        shaderCaps.mIntegerSupport = true;
+        // GLSL 130
+        shaderCaps.mNonSquareMatrixSupport = true;
+        // GLSL 130
+        shaderCaps.mInverseHyperbolicSupport = true;
 
         if (caps.GL_NV_conservative_raster) {
             mConservativeRasterSupport = true;
         }
 
-        mShaderCaps.mMaxFragmentSamplers = Math.min(32, glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS));
+        // GLSL 130
+        shaderCaps.mRewriteSwitchStatements = false;
+        // Protect ourselves against tracking huge amounts of texture state.
+        shaderCaps.mMaxFragmentSamplers = Math.min(32, glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS));
 
         if (caps.GL_NV_blend_equation_advanced_coherent) {
             mBlendEquationSupport = BlendEquationSupport.ADVANCED_COHERENT;
-            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.ADV_BLEND_EQ_INTERACTION_AUTOMATIC;
+            shaderCaps.mAdvBlendEqInteraction = ShaderCaps.Automatic_AdvBlendEqInteraction;
         } else if (caps.GL_KHR_blend_equation_advanced_coherent) {
             mBlendEquationSupport = BlendEquationSupport.ADVANCED_COHERENT;
-            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.ADV_BLEND_EQ_INTERACTION_GENERAL_ENABLE;
+            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.GeneralEnable_AdvBlendEqInteraction;
         } else if (caps.GL_NV_blend_equation_advanced) {
             mBlendEquationSupport = BlendEquationSupport.ADVANCED;
-            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.ADV_BLEND_EQ_INTERACTION_AUTOMATIC;
+            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.Automatic_AdvBlendEqInteraction;
         } else if (caps.GL_KHR_blend_equation_advanced) {
             mBlendEquationSupport = BlendEquationSupport.ADVANCED;
-            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.ADV_BLEND_EQ_INTERACTION_GENERAL_ENABLE;
+            mShaderCaps.mAdvBlendEqInteraction = ShaderCaps.GeneralEnable_AdvBlendEqInteraction;
+        }
+
+        // On many GPUs, map memory is very expensive, so we effectively disable it here by setting the
+        // threshold to the maximum unless the client gives us a hint that map memory is cheap.
+        if (mBufferMapThreshold < 0) {
+            mBufferMapThreshold = Integer.MAX_VALUE;
         }
 
         mAnisotropySupport = caps.OpenGL46 ||
@@ -262,6 +261,55 @@ public final class GLCaps extends Caps {
 
         // For now these two are equivalent, but we could have dst read in shader via some other method.
         mShaderCaps.mDstReadInShaderSupport = mShaderCaps.mFBFetchSupport;
+    }
+
+    private void initGLSL(GLCapabilities caps) {
+        ShaderCaps shaderCaps = mShaderCaps;
+        if (caps.GL_EXT_shader_framebuffer_fetch) {
+            shaderCaps.mFBFetchNeedsCustomOutput = true;
+            shaderCaps.mFBFetchSupport = true;
+            shaderCaps.mFBFetchColorName = "gl_LastFragData[0]";
+            shaderCaps.mFBFetchExtensionString = "GL_EXT_shader_framebuffer_fetch";
+            mFBFetchRequiresEnablePerSample = false;
+        }
+
+        // GLSL 130
+        shaderCaps.mFlatInterpolationSupport = true;
+        // Desktop
+        shaderCaps.mPreferFlatInterpolation = true;
+        // GLSL 130
+        shaderCaps.mNoPerspectiveInterpolationSupport = true;
+        // GLSL 400
+        shaderCaps.mSampleMaskSupport = true;
+
+        shaderCaps.mVersionDeclString = "#version 450 core\n";
+        // Desktop
+        shaderCaps.mVertexIDSupport = true;
+        // GLSL 330
+        shaderCaps.mInfinitySupport = true;
+        // Desktop
+        shaderCaps.mNonConstantArrayIndexSupport = true;
+        // GLSL 400
+        shaderCaps.mBitManipulationSupport = true;
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer range = stack.mallocInt(2);
+            int bits = glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_HIGH_FLOAT, range);
+            shaderCaps.mFloatIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
+            bits = glGetShaderPrecisionFormat(GL_VERTEX_SHADER, GL_HIGH_FLOAT, range);
+            shaderCaps.mFloatIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
+
+            bits = glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_MEDIUM_FLOAT, range);
+            shaderCaps.mHalfIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
+            bits = glGetShaderPrecisionFormat(GL_VERTEX_SHADER, GL_MEDIUM_FLOAT, range);
+            shaderCaps.mHalfIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
+        }
+
+        shaderCaps.mHasLowFragmentPrecision = false;
+        // GLSL 400
+        shaderCaps.mBuiltinFMASupport = true;
+        // GLSL 150
+        shaderCaps.mBuiltinDeterminantSupport = true;
     }
 
     private void initFormatTable(GLCapabilities caps) {

@@ -445,6 +445,20 @@ public final class ResourceProvider {
         return mServer.wrapRenderableBackendTexture(texture, sampleCount, ownership);
     }
 
+    /**
+     * Returns a buffer.
+     *
+     * @param size          minimum size of buffer to return.
+     * @param intendedType  hint to the graphics subsystem about what the buffer will be used for.
+     * @param accessPattern hint to the graphics subsystem about how the data will be accessed.
+     * @return the buffer if successful, otherwise nullptr.
+     */
+    @Nullable
+    @SharedPtr
+    public GpuBuffer createBuffer(int size, int intendedType, int accessPattern) {
+        return null;
+    }
+
     public void assignUniqueKeyToResource(ResourceKey key, GpuResource resource) {
         assert mServer.getContext().isOnOwnerThread();
         if (mServer.getContext().isDropped() || resource == null) {

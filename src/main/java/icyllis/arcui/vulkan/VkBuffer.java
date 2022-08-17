@@ -23,7 +23,7 @@ import icyllis.arcui.engine.GpuBuffer;
 public final class VkBuffer extends GpuBuffer {
 
     public VkBuffer(VkServer server) {
-        super(server);
+        super(server, 0);
     }
 
     @Override

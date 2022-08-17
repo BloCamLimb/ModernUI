@@ -19,40 +19,21 @@
 package icyllis.arcui.engine;
 
 /**
- * Represents a device memory block that <b>prefers</b> to allocate GPU memory.
- * Also known as geometric buffer, g-buffer. To be exact, GLBuffer or VkBuffer.
+ * Base class for a GPU buffer object or a client side arrays.
  */
-public abstract class GpuBuffer extends GpuResource implements Buffer {
+public interface Buffer {
 
-    private final int mSizeInBytes;
+    void ref();
 
-    public GpuBuffer(Server server, int sizeInBytes) {
-        super(server);
-        mSizeInBytes = sizeInBytes;
-    }
+    void unref();
 
-    @Override
-    public int size() {
-        return mSizeInBytes;
-    }
+    /**
+     * Size of the buffer in bytes.
+     */
+    int size();
 
-    @Override
-    public boolean isCpuBuffer() {
-        return false;
-    }
-
-    public long map() {
-        return 0;
-    }
-
-    public void unmap() {
-    }
-
-    public boolean isMapped() {
-        return false;
-    }
-
-    public boolean updateData(long src, int offset, int size) {
-        return false;
-    }
+    /**
+     * Is this an instance of {@link CpuBuffer}? Otherwise, an instance of {@link GpuBuffer}.
+     */
+    boolean isCpuBuffer();
 }
