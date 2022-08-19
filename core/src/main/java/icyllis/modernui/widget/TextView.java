@@ -4063,6 +4063,11 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
                 ((Editable) mText).replace(Math.min(selStart, selEnd), Math.max(selStart, selEnd), "\n");
                 return true;
             }
+            //TODO currently we hack here, because space has it character, consuming this event
+            // can prevent it from being handled further by the parent view
+            if (keyCode == KeyEvent.KEY_SPACE && (event.hasNoModifiers() || event.isShiftPressed())) {
+                return true;
+            }
         }
 
         if (mMovement != null && mLayout != null) {

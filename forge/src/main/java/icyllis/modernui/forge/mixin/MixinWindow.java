@@ -25,6 +25,7 @@ import icyllis.modernui.forge.MuiForgeApi;
 import icyllis.modernui.math.FMath;
 import icyllis.modernui.view.ViewConfiguration;
 import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWErrorCallback;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -71,30 +72,53 @@ public abstract class MixinWindow {
             remap = false
     )
     private void onInit(int x, int y) {
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 4);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 6);
-        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
-        GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
-        GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
-        long window = GLFW.glfwCreateWindow(1, 1, "", 0, 0);
-        if (window != 0) {
-            GLFW.glfwDestroyWindow(window);
+        GLFWErrorCallback callback = GLFW.glfwSetErrorCallback(null);
+        try {
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 4);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 6);
+            GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_PROFILE, GLFW.GLFW_OPENGL_CORE_PROFILE);
+            GLFW.glfwWindowHint(GLFW.GLFW_OPENGL_FORWARD_COMPAT, GLFW.GLFW_TRUE);
+            GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
+            long window = GLFW.glfwCreateWindow(1, 1, "", 0, 0);
+            if (window != 0) {
+                GLFW.glfwDestroyWindow(window);
+                ModernUI.LOGGER.info(ModernUI.MARKER, "Promoted to OpenGL 4.6 Core Profile");
+                return;
+            }
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 4);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 5);
+            window = GLFW.glfwCreateWindow(1, 1, "", 0, 0);
+            if (window != 0) {
+                GLFW.glfwDestroyWindow(window);
+                ModernUI.LOGGER.info(ModernUI.MARKER, "Promoted to OpenGL 4.5 Core Profile");
+                return;
+            }
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 4);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 1);
+            window = GLFW.glfwCreateWindow(1, 1, "", 0, 0);
+            if (window != 0) {
+                GLFW.glfwDestroyWindow(window);
+                ModernUI.LOGGER.info(ModernUI.MARKER, "Promoted to OpenGL 4.1 Core Profile");
+                return;
+            }
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 3);
+            window = GLFW.glfwCreateWindow(1, 1, "", 0, 0);
+            if (window != 0) {
+                GLFW.glfwDestroyWindow(window);
+                ModernUI.LOGGER.info(ModernUI.MARKER, "Promoted to OpenGL 3.3 Core Profile");
+                return;
+            }
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2);
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Fallback to OpenGL 3.2 Core Profile");
+        } catch (Exception e) {
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
+            GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2);
+            ModernUI.LOGGER.debug(ModernUI.MARKER, "Fallback to OpenGL 3.2 Core Profile", e);
+        } finally {
             GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_TRUE);
-            ModernUI.LOGGER.info(ModernUI.MARKER, "Promoted to OpenGL 4.6 Core Profile");
-            return;
+            GLFW.glfwSetErrorCallback(callback);
         }
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 4);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 5);
-        window = GLFW.glfwCreateWindow(1, 1, "", 0, 0);
-        if (window != 0) {
-            GLFW.glfwDestroyWindow(window);
-            GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_TRUE);
-            ModernUI.LOGGER.info(ModernUI.MARKER, "Promoted to OpenGL 4.5 Core Profile");
-            return;
-        }
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MAJOR, 3);
-        GLFW.glfwWindowHint(GLFW.GLFW_CONTEXT_VERSION_MINOR, 2);
-        GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_TRUE);
-        ModernUI.LOGGER.debug(ModernUI.MARKER, "Fallback to OpenGL 3.2 Core Profile");
     }
 }

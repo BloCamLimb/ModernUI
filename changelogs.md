@@ -1,5 +1,15 @@
 Changelogs
 ===
+### Modern UI 3.5.4.113 (2022-08-19)
+#### Forge Extension 1.18.2-40.0.12
+* Add support for creating window with the highest OpenGL it can
+* Fix config reloading even if nothing changed
+* Add debug stuff
+#### Modern Text Engine 1.18.2
+* No updates
+#### Core Framework 3.5
+* Workaround SPACE tunneling event is not consumed in EditText
+
 ### Modern UI 3.5.3.112 (2022-08-17)
 #### Forge Extension 1.18.2-40.0.12
 * Enhance GL caps error screen
