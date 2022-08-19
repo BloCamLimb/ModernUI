@@ -202,6 +202,8 @@ final class Config {
         final ForgeConfigSpec.BooleanValue skipGLCapsError;
         final ForgeConfigSpec.BooleanValue showGLCapsError;
 
+        private WindowMode mLastWindowMode;
+
         private Client(@Nonnull ForgeConfigSpec.Builder builder) {
             builder.comment("Screen Config")
                     .push("screen");
@@ -442,59 +444,63 @@ final class Config {
             TooltipRenderer.sAnimationDuration = tooltipDuration.get();
 
             UIManager.sPlaySoundOnLoaded = ding.get();
-            WindowMode winMode = windowMode.get();
-            if (winMode != WindowMode.NORMAL) {
-                Minecraft.getInstance().tell(() -> {
-                    Window winB3D = Minecraft.getInstance().getWindow();
-                    switch (winMode) {
-                        case FULLSCREEN -> {
-                            if (!winB3D.isFullscreen()) {
-                                winB3D.toggleFullScreen();
+
+            WindowMode newWindowMode = windowMode.get();
+            if (mLastWindowMode != newWindowMode) {
+                mLastWindowMode = newWindowMode;
+                if (newWindowMode != WindowMode.NORMAL) {
+                    Minecraft.getInstance().tell(() -> {
+                        Window winB3D = Minecraft.getInstance().getWindow();
+                        switch (newWindowMode) {
+                            case FULLSCREEN -> {
+                                if (!winB3D.isFullscreen()) {
+                                    winB3D.toggleFullScreen();
+                                }
+                            }
+                            case FULLSCREEN_BORDERLESS -> {
+                                if (winB3D.isFullscreen()) {
+                                    winB3D.toggleFullScreen();
+                                }
+                                GLFW.glfwRestoreWindow(winB3D.getWindow());
+                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                        GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
+                                GLFW.glfwMaximizeWindow(winB3D.getWindow());
+                            }
+                            case MAXIMIZED -> {
+                                if (winB3D.isFullscreen()) {
+                                    winB3D.toggleFullScreen();
+                                }
+                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                        GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
+                                GLFW.glfwMaximizeWindow(winB3D.getWindow());
+                            }
+                            case MINIMIZED -> {
+                                if (winB3D.isFullscreen()) {
+                                    winB3D.toggleFullScreen();
+                                }
+                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                        GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
+                                GLFW.glfwIconifyWindow(winB3D.getWindow());
+                            }
+                            case WINDOWED -> {
+                                if (winB3D.isFullscreen()) {
+                                    winB3D.toggleFullScreen();
+                                }
+                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                        GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
+                                GLFW.glfwRestoreWindow(winB3D.getWindow());
+                            }
+                            case WINDOWED_BORDERLESS -> {
+                                if (winB3D.isFullscreen()) {
+                                    winB3D.toggleFullScreen();
+                                }
+                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
+                                        GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
+                                GLFW.glfwRestoreWindow(winB3D.getWindow());
                             }
                         }
-                        case FULLSCREEN_BORDERLESS -> {
-                            if (winB3D.isFullscreen()) {
-                                winB3D.toggleFullScreen();
-                            }
-                            GLFW.glfwRestoreWindow(winB3D.getWindow());
-                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                    GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                            GLFW.glfwMaximizeWindow(winB3D.getWindow());
-                        }
-                        case MAXIMIZED -> {
-                            if (winB3D.isFullscreen()) {
-                                winB3D.toggleFullScreen();
-                            }
-                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                    GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                            GLFW.glfwMaximizeWindow(winB3D.getWindow());
-                        }
-                        case MINIMIZED -> {
-                            if (winB3D.isFullscreen()) {
-                                winB3D.toggleFullScreen();
-                            }
-                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                    GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                            GLFW.glfwIconifyWindow(winB3D.getWindow());
-                        }
-                        case WINDOWED -> {
-                            if (winB3D.isFullscreen()) {
-                                winB3D.toggleFullScreen();
-                            }
-                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                    GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                            GLFW.glfwRestoreWindow(winB3D.getWindow());
-                        }
-                        case WINDOWED_BORDERLESS -> {
-                            if (winB3D.isFullscreen()) {
-                                winB3D.toggleFullScreen();
-                            }
-                            GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                    GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                            GLFW.glfwRestoreWindow(winB3D.getWindow());
-                        }
-                    }
-                });
+                    });
+                }
             }
 
             //TestHUD.sBars = hudBars.get();

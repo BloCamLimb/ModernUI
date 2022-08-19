@@ -650,50 +650,14 @@ public final class UIManager implements LifecycleOwner {
         }
         if (event.getAction() == GLFW_PRESS) {
             switch (event.getKey()) {
-                case GLFW_KEY_Y:
-                    // take a screenshot from MSAA framebuffer
-                    GLTexture sampled = GLFramebuffer.resolve(mFramebuffer, GL_COLOR_ATTACHMENT0);
-                    NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);
-                    Util.ioPool().execute(() -> {
-                        try (image) {
-                            image.saveDialog(NativeImage.SaveFormat.PNG);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    });
-                    break;
-
-                case GLFW_KEY_H:
-                    start(new TestFragment(), new UICallback());
-                    break;
-
-                case GLFW_KEY_J:
-                    start(new TestPauseFragment(), new UICallback());
-                    break;
-
-                case GLFW_KEY_U:
-                    start(new TestListFragment(), new UICallback());
-                    break;
-
-                case GLFW_KEY_N:
-                    mDecor.postInvalidate();
-                    break;
-
-                case GLFW_KEY_P:
-                    dump();
-                    break;
-
-                case GLFW_KEY_M:
-                    if (minecraft.gameRenderer.currentEffect() == null) {
-                        LOGGER.info(MARKER, "Load radial blur effect");
-                        minecraft.gameRenderer.loadEffect(new ResourceLocation("shaders/post/radial_blur.json"));
-                    } else {
-                        LOGGER.info(MARKER, "Stop post-processing effect");
-                        minecraft.gameRenderer.shutdownEffect();
-                    }
-                    break;
-
-                case GLFW_KEY_T:
+                case GLFW_KEY_Y -> takeScreenshot();
+                case GLFW_KEY_H -> start(new TestFragment(), new UICallback());
+                case GLFW_KEY_J -> start(new TestPauseFragment(), new UICallback());
+                case GLFW_KEY_U -> start(new TestListFragment(), new UICallback());
+                case GLFW_KEY_N -> mDecor.postInvalidate();
+                case GLFW_KEY_P -> dump();
+                case GLFW_KEY_M -> changeRadialBlur();
+                case GLFW_KEY_T -> {
                     String text = "\u09b9\u09cd\u09af\u09be\n\u09b2\u09cb" + ChatFormatting.RED + "\uD83E\uDD14" +
                             ChatFormatting.BOLD + "\uD83E\uDD14\uD83E\uDD14";
                     for (int i = 1; i <= 10; i++) {
@@ -704,9 +668,8 @@ public final class UIManager implements LifecycleOwner {
                         LOGGER.info("Break backwards: width {} index:{}", width, index);
                     }
                     LOGGER.info(TextLayoutEngine.getInstance().lookupVanillaNode(text));
-                    break;
-
-                case GLFW_KEY_G:
+                }
+                case GLFW_KEY_G ->
                 /*if (minecraft.screen == null && minecraft.isLocalServer() &&
                         minecraft.getSingleplayerServer() != null && !minecraft.getSingleplayerServer().isPublished()) {
                     start(new TestPauseUI());
@@ -714,21 +677,37 @@ public final class UIManager implements LifecycleOwner {
                 /*minecraft.getLanguageManager().getLanguages().forEach(l ->
                         ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l
                         .getJavaLocale()).isRightToLeft()));*/
-                    GlyphManager.getInstance().debug();
-                    break;
-
-                case GLFW_KEY_V:
-                    TextLayoutEngine.getInstance().dumpEmojiAtlas();
-                    break;
-
-                case GLFW_KEY_F:
-                    System.gc();
-                    break;
+                        GlyphManager.getInstance().debug();
+                case GLFW_KEY_V -> TextLayoutEngine.getInstance().dumpEmojiAtlas();
+                case GLFW_KEY_F -> System.gc();
             }
         }
     }
 
-    private void dump() {
+    void takeScreenshot() {
+        // take a screenshot from MSAA framebuffer
+        GLTexture sampled = GLFramebuffer.resolve(mFramebuffer, GL_COLOR_ATTACHMENT0);
+        NativeImage image = NativeImage.download(NativeImage.Format.RGBA, sampled, true);
+        Util.ioPool().execute(() -> {
+            try (image) {
+                image.saveDialog(NativeImage.SaveFormat.PNG);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        });
+    }
+
+    void changeRadialBlur() {
+        if (minecraft.gameRenderer.currentEffect() == null) {
+            LOGGER.info(MARKER, "Load radial blur effect");
+            minecraft.gameRenderer.loadEffect(new ResourceLocation("shaders/post/radial_blur.json"));
+        } else {
+            LOGGER.info(MARKER, "Stop post-processing effect");
+            minecraft.gameRenderer.shutdownEffect();
+        }
+    }
+
+    void dump() {
         StringBuilder builder = new StringBuilder();
         try (var w = new PrintWriter(new StringBuilderWriter(builder))) {
             dump(w);

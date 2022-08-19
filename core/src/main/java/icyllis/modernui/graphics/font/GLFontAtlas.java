@@ -247,6 +247,10 @@ public class GLFontAtlas implements AutoCloseable {
 
     public int getMemorySize() {
         int size = mTexture.getWidth() * mTexture.getHeight();
-        return mColored ? size << 2 : size;
+        if (mColored) {
+            size <<= 2;
+        }
+        size = ((size - (size >> ((MIPMAP_LEVEL + 1) << 1))) << 2) / 3;
+        return size;
     }
 }

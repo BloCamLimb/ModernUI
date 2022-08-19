@@ -20,6 +20,7 @@ package icyllis.modernui.forge;
 
 import icyllis.modernui.R;
 import icyllis.modernui.animation.*;
+import icyllis.modernui.core.Core;
 import icyllis.modernui.forge.Config.Client;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.fragment.FragmentTransaction;
@@ -27,6 +28,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
+import icyllis.modernui.graphics.font.GlyphManager;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.math.FMath;
 import icyllis.modernui.math.Rect;
@@ -40,6 +42,7 @@ import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.View.OnLayoutChangeListener;
 import icyllis.modernui.widget.*;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.common.ForgeConfigSpec.IntValue;
 
@@ -336,8 +339,11 @@ public class CenterFragment extends Fragment {
                     spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                         @Override
                         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                            Config.CLIENT.windowMode.set(Client.WindowMode.values()[position]);
-                            Config.CLIENT.saveAndReload();
+                            Client.WindowMode windowMode = Client.WindowMode.values()[position];
+                            if (Config.CLIENT.windowMode.get() != windowMode) {
+                                Config.CLIENT.windowMode.set(windowMode);
+                                Config.CLIENT.saveAndReload();
+                            }
                         }
 
                         @Override
@@ -497,7 +503,8 @@ public class CenterFragment extends Fragment {
                 var option = createInputOption("modernui.center.text.baseFontSize");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(ModernUITextMC.CONFIG.mBaseFontSize.get().toString());
-                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true), new InputFilter.LengthFilter(5));
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
+                        new InputFilter.LengthFilter(5));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
                         EditText v = (EditText) view;
@@ -516,7 +523,8 @@ public class CenterFragment extends Fragment {
                 var option = createInputOption("modernui.center.text.baselineShift");
                 var input = option.<EditText>requireViewById(R.id.input);
                 input.setText(ModernUITextMC.CONFIG.mBaselineShift.get().toString());
-                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true), new InputFilter.LengthFilter(5));
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
+                        new InputFilter.LengthFilter(5));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
                         EditText v = (EditText) view;
@@ -575,8 +583,11 @@ public class CenterFragment extends Fragment {
                     spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                         @Override
                         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                            ModernUITextMC.CONFIG.mTextDirection.set(position + 1);
-                            ModernUITextMC.CONFIG.saveAndReload();
+                            int value = position + 1;
+                            if (ModernUITextMC.CONFIG.mTextDirection.get() != value) {
+                                ModernUITextMC.CONFIG.mTextDirection.set(value);
+                                ModernUITextMC.CONFIG.saveAndReload();
+                            }
                         }
 
                         @Override
@@ -952,6 +963,59 @@ public class CenterFragment extends Fragment {
             params.gravity = Gravity.CENTER;
             params.setMargins(dp(12), dp(12), dp(12), dp(18));
             panel.addView(group, params);
+        }
+
+        if (ModernUIForge.isDeveloperMode()) {
+            var category = createCategory("Debug");
+            {
+                var option = createInputOption("Gamma");
+                var input = option.<EditText>requireViewById(R.id.input);
+                input.setText(Double.toString(Minecraft.getInstance().options.gamma));
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
+                        new InputFilter.LengthFilter(6));
+                input.setOnFocusChangeListener((view, hasFocus) -> {
+                    if (!hasFocus) {
+                        EditText v = (EditText) view;
+                        double gamma = Double.parseDouble(v.getText().toString());
+                        v.setText(Double.toString(gamma));
+                        // no sync, but safe
+                        Minecraft.getInstance().options.gamma = gamma;
+                    }
+                });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("Take Screenshot (Y)");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(false);
+                button.setOnCheckedChangeListener((__, checked) ->
+                        Core.postOnRenderThread(() -> UIManager.getInstance().takeScreenshot()));
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("Debug Dump (P)");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(false);
+                button.setOnCheckedChangeListener((__, checked) ->
+                        Core.postOnMainThread(() -> UIManager.getInstance().dump()));
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("Debug Glyph Manager (G)");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(false);
+                button.setOnCheckedChangeListener((__, checked) ->
+                        Core.postOnMainThread(() -> GlyphManager.getInstance().debug()));
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("GC (F)");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(false);
+                button.setOnCheckedChangeListener((__, checked) -> System.gc());
+                category.addView(option);
+            }
+            panel.addView(category);
         }
 
         panel.setDividerDrawable(new Divider());
