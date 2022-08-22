@@ -74,6 +74,17 @@ public abstract class Server {
 
     public abstract ThreadSafePipelineBuilder getPipelineBuilder();
 
+    /**
+     * Called by context when the underlying backend context is already or will be destroyed
+     * before {@link DirectContext}.
+     * <p>
+     * If cleanup is true, free allocated resources (other than {@link ResourceCache}) before
+     * returning and ensure no backend 3D API calls will be made after this method returns.
+     * Otherwise, no cleanup should be attempted, immediately cease making backend API calls.
+     */
+    public void disconnect(boolean cleanup) {
+    }
+
     public final Stats getStats() {
         return mStats;
     }
@@ -101,6 +112,12 @@ public abstract class Server {
      */
     protected void onDirtyContext(int dirtyFlags) {
     }
+
+    public abstract BufferAllocPool getVertexPool();
+
+    public abstract BufferAllocPool getInstancePool();
+
+    public abstract BufferAllocPool getIndexPool();
 
     /**
      * Creates a texture object and allocates its server memory. In other words, the

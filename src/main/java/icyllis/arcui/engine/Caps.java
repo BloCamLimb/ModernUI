@@ -56,8 +56,6 @@ public abstract class Caps {
 
     protected boolean mAnisotropySupport = false;
     protected boolean mGpuTracingSupport = false;
-    protected boolean mNativeDrawIndirectSupport = false;
-    protected boolean mUseClientSideIndirectBuffers = false;
     protected boolean mConservativeRasterSupport = false;
     protected boolean mTransferPixelsToRowBytesSupport = false;
     protected boolean mMustSyncGpuDuringDiscard = true;
@@ -134,19 +132,6 @@ public abstract class Caps {
 
     public final boolean drawInstancedSupport() {
         return true;
-    }
-
-    /**
-     * Is there hardware support for indirect draws? (Arc UI always supports indirect draws as long
-     * as it can polyfill them with instanced calls, but this cap tells us if they are supported
-     * natively.)
-     */
-    public final boolean nativeDrawIndirectSupport() {
-        return mNativeDrawIndirectSupport;
-    }
-
-    public final boolean useClientSideIndirectBuffers() {
-        return mUseClientSideIndirectBuffers;
     }
 
     public final boolean conservativeRasterSupport() {
@@ -633,12 +618,6 @@ public abstract class Caps {
                                          final ProgramInfo programInfo);
 
     protected final void finishInitialization(ContextOptions options) {
-        if (!mNativeDrawIndirectSupport) {
-            // We will implement indirect draws with a polyfill, so the commands need to reside in CPU
-            // memory.
-            mUseClientSideIndirectBuffers = true;
-        }
-
         mShaderCaps.applyOptionsOverrides(options);
         onApplyOptionsOverrides(options);
 

@@ -67,26 +67,50 @@ public final class EngineTypes {
 
     /**
      * Describes the intended usage or the purpose of a GPU buffer.
+     * This will affect memory allocation, etc.
+     * <ul>
+     *     <li>Vertex: Vertex buffer and instance buffer. Per-vertex attributes and
+     *     per-instance attributes.</li>
+     *     <li>Index: Index buffer (element buffer).</li>
+     *     <li>Uniform: Uniform block storage.</li>
+     *     <li>XferSrcToDst: Transfer buffer, used for uploading data.</li>
+     *     <li>XferDstToSrc: Transfer buffer, used for downloading data.</li>
+     * </ul>
      */
     public static final int
             GpuBufferType_Vertex = 0,       // vertex buffer
             GpuBufferType_Index = 1,        // element buffer or index buffer
-            GpuBufferType_DrawIndirect = 2, // (draw) indirect buffer
-            GpuBufferType_XferCpuToGpu = 3, // upload, unpack, transfer src only
-            GpuBufferType_XferGpuToCpu = 4, // download, pack, transfer dst only
-            GpuBufferType_Uniform = 5;      // uniform buffer
-    public static final int GpuBufferTypeCount = GpuBufferType_Uniform + 1;
+            GpuBufferType_Uniform = 2,      // uniform buffer
+            GpuBufferType_XferSrcToDst = 3, // transfer src only
+            GpuBufferType_XferDstToSrc = 4; // transfer dst only
+    public static final int GpuBufferType_Last = GpuBufferType_XferDstToSrc;
+
+    // Debug tool.
+    public static boolean checkGpuBufferType(int bufferType) {
+        return bufferType >= 0 && bufferType <= GpuBufferType_Last;
+    }
 
     /**
-     * Provides a performance hint regarding the frequency at which a data store will be accessed.
-     * <p>
-     * DYNAMIC: Data store will be respecified repeatedly by CPU and GPU.
-     * <p>
-     * STATIC: Data store will be specified by CPU once and may be respecified repeatedly by GPU.
+     * Provides a pattern regarding the frequency at which a data store will be accessed.
+     * <ul>
+     *     <li>Dynamic: Data store will be respecified randomly by Host and Device.
+     *     (Sparse read and writes, uniform buffer, staging buffer, etc.)</li>
+     *     <li>Static: Data store will be specified by Host once and may be respecified
+     *     repeatedly by Device. (Fixed index buffer, etc.)</li>
+     *     <li>Stream: Data store will be respecified once by Host and used at most a frame.
+     *     (Per-frame updates, VBO, etc.)</li>
+     * </ul>
      */
     public static final int
             AccessPattern_Dynamic = 0,
-            AccessPattern_Static = 1;
+            AccessPattern_Static = 1,
+            AccessPattern_Stream = 2;
+    public static final int AccessPattern_Last = AccessPattern_Stream;
+
+    // Debug tool.
+    public static boolean checkAccessPattern(int accessPattern) {
+        return accessPattern >= 0 && accessPattern <= AccessPattern_Last;
+    }
 
     /**
      * The type of texture. There are only 2D.

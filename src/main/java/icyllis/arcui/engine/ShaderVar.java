@@ -74,7 +74,7 @@ public class ShaderVar {
     public ShaderVar(String name, byte type, byte typeModifier, int arrayCount,
                      String layoutQualifier, String extraModifier) {
         assert (name != null);
-        assert (type >= 0 && type <= SLType.Last);
+        assert (SLType.checkSLType(type));
         assert (typeModifier >= TypeModifier_None && typeModifier <= TypeModifier_Uniform);
         assert (arrayCount == NonArray || arrayCount > 0);
         assert (layoutQualifier != null && extraModifier != null);

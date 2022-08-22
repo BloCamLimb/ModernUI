@@ -32,6 +32,9 @@ public interface MeshDrawTarget {
      * Makes space for vertex data. The returned pointer is the location where vertex data
      * should be written. On return the buffer that will hold the data as well as an offset into
      * the buffer (in 'vertexSize' units) where the data will be placed.
+     * <p>
+     * This method requires {@link Mesh#getVertexSize()} and {@link Mesh#getVertexCount()} as
+     * arguments and {@link Mesh#setVertexBuffer(GpuBuffer, int)} as results.
      *
      * @return may NULL if failed
      */
@@ -41,6 +44,9 @@ public interface MeshDrawTarget {
      * Makes space for instance data. The returned pointer is the location where instance data
      * should be written. On return the buffer that will hold the data as well as an offset into
      * the buffer (in 'instanceSize' units) where the data will be placed.
+     * <p>
+     * This method requires {@link Mesh#getInstanceSize()} and {@link Mesh#getInstanceCount()} as
+     * arguments and {@link Mesh#setInstanceBuffer(GpuBuffer, int)} as results.
      *
      * @return may NULL if failed
      */

@@ -113,6 +113,8 @@ public class TestManagedResource {
 
         pw.println(directContext.getServer().getPipelineBuilder().stats());
 
+        testGLBufferMap(pw, directContext);
+
         testLexicon(pw);
 
         if (Platform.get() == Platform.WINDOWS) {
@@ -133,6 +135,18 @@ public class TestManagedResource {
             assert false;
         } catch (AssertionError e) {
             System.out.println("Assertion works " + (System.nanoTime() - time) / 1000000);
+        }
+    }
+
+    public static void testGLBufferMap(PrintWriter pw, DirectContext dContext) {
+        GLBuffer buffer = GLBuffer.make((GLServer) dContext.getServer(), 16384,
+                EngineTypes.GpuBufferType_Vertex,
+                EngineTypes.AccessPattern_Dynamic);
+        pw.println("GLBuffer: " + buffer);
+        if (buffer != null) {
+            pw.println("MapPtr: " + buffer.map());
+            buffer.unmap();
+            //buffer.unref();
         }
     }
 

@@ -135,7 +135,7 @@ public final class GLCaps extends Caps {
                     throw new AssertionError("ARB_internalformat_query is unavailable");
                 }
                 if (!caps.GL_ARB_shading_language_420pack) {
-                    throw new AssertionError("GL_ARB_shading_language_420pack is unavailable");
+                    throw new AssertionError("ARB_shading_language_420pack is unavailable");
                 }
             }
             if (!caps.OpenGL43) {
@@ -241,8 +241,6 @@ public final class GLCaps extends Caps {
         if (caps.GL_EXT_window_rectangles) {
             mMaxWindowRectangles = glGetInteger(EXTWindowRectangles.GL_MAX_WINDOW_RECTANGLES_EXT);
         }
-
-        mNativeDrawIndirectSupport = true;
 
         mDynamicStateArrayGeometryProcessorTextureSupport = true;
 

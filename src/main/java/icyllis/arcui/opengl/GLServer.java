@@ -36,7 +36,6 @@ public final class GLServer extends Server {
 
     final GLCaps mCaps;
 
-    //TODO cleanup
     private final GLProgramCache mProgramCache;
 
     // This map holds all render targets. The texture and render target are mutually exclusive.
@@ -47,11 +46,19 @@ public final class GLServer extends Server {
 
     private final RenderTargetObjects mTmpRTObjects = new RenderTargetObjects();
 
+    private final CpuBufferCache mCpuBufferCache;
+
+    private final GLBufferAllocPool mVertexPool;
+    private final GLBufferAllocPool mInstancePool;
+
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
         mProgramCache = new GLProgramCache(256);
         mRenderTargetMap = new Object2ObjectOpenHashMap<>();
+        mCpuBufferCache = new CpuBufferCache(6);
+        mVertexPool = GLBufferAllocPool.makeVertex(this, mCpuBufferCache);
+        mInstancePool = GLBufferAllocPool.makeInstance(this, mCpuBufferCache);
     }
 
     /**
@@ -86,6 +93,20 @@ public final class GLServer extends Server {
         }
     }
 
+    @Override
+    public void disconnect(boolean cleanup) {
+        super.disconnect(cleanup);
+        mVertexPool.reset();
+        mInstancePool.reset();
+        mCpuBufferCache.releaseAll();
+
+        if (cleanup) {
+            mProgramCache.reset();
+        } else {
+            mProgramCache.discard();
+        }
+    }
+
     public void bindFramebuffer(int target, int framebuffer) {
         glBindFramebuffer(target, framebuffer);
     }
@@ -100,6 +121,21 @@ public final class GLServer extends Server {
     @Override
     public ThreadSafePipelineBuilder getPipelineBuilder() {
         return mProgramCache;
+    }
+
+    @Override
+    public BufferAllocPool getVertexPool() {
+        return mVertexPool;
+    }
+
+    @Override
+    public BufferAllocPool getInstancePool() {
+        return mInstancePool;
+    }
+
+    @Override
+    public BufferAllocPool getIndexPool() {
+        return null;
     }
 
     @Nullable

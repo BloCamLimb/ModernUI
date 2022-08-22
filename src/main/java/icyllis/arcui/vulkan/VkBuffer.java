@@ -20,10 +20,11 @@ package icyllis.arcui.vulkan;
 
 import icyllis.arcui.engine.GpuBuffer;
 
+//TODO
 public final class VkBuffer extends GpuBuffer {
 
     public VkBuffer(VkServer server) {
-        super(server, 0);
+        super(server, 0, 0, 0);
     }
 
     @Override
@@ -39,5 +40,20 @@ public final class VkBuffer extends GpuBuffer {
     @Override
     protected void onDrop() {
 
+    }
+
+    @Override
+    protected void onMap() {
+
+    }
+
+    @Override
+    protected void onUnmap() {
+
+    }
+
+    @Override
+    protected boolean onUpdateData(long data, int offset, int size) {
+        return false;
     }
 }

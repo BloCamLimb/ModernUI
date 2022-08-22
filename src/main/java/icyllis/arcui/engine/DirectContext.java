@@ -156,5 +156,9 @@ public final class DirectContext extends RecordingContext {
     @Override
     public void close() {
         super.close();
+        if (mResourceCache != null) {
+            mResourceCache.releaseAll();
+        }
+        mServer.disconnect(true);
     }
 }

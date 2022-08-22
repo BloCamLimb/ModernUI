@@ -52,6 +52,11 @@ public final class SLType {
             SubpassInput    = 23;
     public static final byte Last = SubpassInput;
 
+    // Debug tool.
+    public static boolean checkSLType(byte type) {
+        return type >= 0 && type <= Last;
+    }
+
     /**
      * Is the shading language type float (including vectors/matrices)?
      */

@@ -87,7 +87,7 @@ public abstract class GeometryProcessor extends Processor {
         public Attribute(String name, byte srcType, byte dstType) {
             assert (name != null && dstType != SLType.Void);
             assert (srcType >= 0 && srcType <= Last_VertexAttribType);
-            assert (dstType >= 0 && dstType <= SLType.Last);
+            assert (SLType.checkSLType(dstType));
             assert (!name.isEmpty() && !name.startsWith("_"));
             assert (SLType.locationSize(dstType) > 0);
             mName = name;
@@ -107,7 +107,7 @@ public abstract class GeometryProcessor extends Processor {
         public Attribute(String name, byte srcType, byte dstType, int offset) {
             assert (name != null && dstType != SLType.Void);
             assert (srcType >= 0 && srcType <= Last_VertexAttribType);
-            assert (dstType >= 0 && dstType <= SLType.Last);
+            assert (SLType.checkSLType(dstType));
             assert (!name.isEmpty() && !name.startsWith("_"));
             assert (SLType.locationSize(dstType) > 0);
             assert (offset != IMPLICIT_OFFSET && alignOffset(offset) == offset);

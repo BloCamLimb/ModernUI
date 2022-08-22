@@ -231,19 +231,19 @@ public final class ResourceCache implements AutoCloseable {
 
         while (mNonCleanableSize > 0) {
             GpuResource back = mNonCleanableList[mNonCleanableSize - 1];
-            assert !back.isDestroyed();
+            assert !back.wasDestroyed();
             back.free();
         }
 
         while (mCleanableQueue.size() > 0) {
             GpuResource top = mCleanableQueue.peek();
-            assert !top.isDestroyed();
+            assert !top.wasDestroyed();
             top.free();
         }
 
         assert mScratchMap.isEmpty();
         assert mUniqueMap.isEmpty();
-        assert mCount == 0;
+        assert mCount == 0 : mCount;
         assert getResourceCount() == 0;
         assert mBytes == 0;
         assert mBudgetedCount == 0;
@@ -258,13 +258,13 @@ public final class ResourceCache implements AutoCloseable {
     public void dropAll() {
         while (mNonCleanableSize > 0) {
             GpuResource back = mNonCleanableList[mNonCleanableSize - 1];
-            assert !back.isDestroyed();
+            assert !back.wasDestroyed();
             back.drop();
         }
 
         while (mCleanableQueue.size() > 0) {
             GpuResource top = mCleanableQueue.peek();
-            assert !top.isDestroyed();
+            assert !top.wasDestroyed();
             top.drop();
         }
 
@@ -471,7 +471,7 @@ public final class ResourceCache implements AutoCloseable {
     }
 
     void notifyACntReachedZero(GpuResource resource, boolean commandBufferUsage) {
-        assert !resource.isDestroyed();
+        assert !resource.wasDestroyed();
         assert isInCache(resource);
         // This resource should always be in the non-cleanable array when this function is called. It
         // will be moved to the queue if it is newly cleanable.
@@ -539,7 +539,7 @@ public final class ResourceCache implements AutoCloseable {
 
     void insertResource(GpuResource resource) {
         assert !isInCache(resource);
-        assert !resource.isDestroyed();
+        assert !resource.wasDestroyed();
         assert !resource.isCleanable();
 
         // We must set the timestamp before adding to the array in case the timestamp wraps, and we wind
@@ -547,7 +547,6 @@ public final class ResourceCache implements AutoCloseable {
         resource.mTimestamp = getNextTimestamp();
 
         addToNonCleanableArray(resource);
-        mCount++;
 
         long size = resource.getMemorySize();
         mCount++;

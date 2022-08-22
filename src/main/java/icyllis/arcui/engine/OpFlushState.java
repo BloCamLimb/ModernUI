@@ -26,35 +26,32 @@ import java.nio.ByteBuffer;
  */
 public class OpFlushState implements MeshDrawTarget {
 
-    private final VertexBufferAllocPool mVertexPool;
-    private final InstanceBufferAllocPool mInstancePool;
+    private final Server mServer;
 
     public OpFlushState(Server server,
-                        ResourceProvider resourceProvider,
-                        BufferAllocPool.CpuBufferCache cpuBufferCache) {
-        mVertexPool = new VertexBufferAllocPool(server, cpuBufferCache);
-        mInstancePool = new InstanceBufferAllocPool(server, cpuBufferCache);
+                        ResourceProvider resourceProvider) {
+        mServer = server;
     }
 
     @Override
     public long makeVertexSpace(Mesh mesh) {
-        return mVertexPool.makeSpace(mesh);
+        return mServer.getVertexPool().makeSpace(mesh);
     }
 
     @Override
     public long makeInstanceSpace(Mesh mesh) {
-        return mInstancePool.makeSpace(mesh);
+        return mServer.getInstancePool().makeSpace(mesh);
     }
 
     @Nullable
     @Override
     public ByteBuffer makeVertexWriter(Mesh mesh) {
-        return mVertexPool.makeWriter(mesh);
+        return mServer.getVertexPool().makeWriter(mesh);
     }
 
     @Nullable
     @Override
     public ByteBuffer makeInstanceWriter(Mesh mesh) {
-        return mInstancePool.makeWriter(mesh);
+        return mServer.getInstancePool().makeWriter(mesh);
     }
 }

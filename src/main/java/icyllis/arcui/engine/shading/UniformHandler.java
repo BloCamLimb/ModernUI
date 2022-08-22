@@ -93,7 +93,7 @@ public abstract class UniformHandler {
                                 String name) {
         assert (name != null && !name.isEmpty());
         assert (visibility != 0);
-        assert (type >= 0 && type <= SLType.Last);
+        assert (SLType.checkSLType(type));
         assert (!SLType.isCombinedSamplerType(type));
         boolean mangleName = !name.startsWith(NO_MANGLE_PREFIX);
         return internalAddUniformArray(owner, visibility, type, name, mangleName, ShaderVar.NonArray);
@@ -115,7 +115,7 @@ public abstract class UniformHandler {
                                      int arrayCount) {
         assert (name != null && !name.isEmpty());
         assert (visibility != 0);
-        assert (type >= 0 && type <= SLType.Last);
+        assert (SLType.checkSLType(type));
         assert (!SLType.isCombinedSamplerType(type));
         assert (arrayCount >= 1);
         boolean mangleName = !name.startsWith(NO_MANGLE_PREFIX);
@@ -319,7 +319,7 @@ public abstract class UniformHandler {
                                        byte type,
                                        int arrayCount,
                                        boolean std430) {
-        assert (type >= 0 && type <= SLType.Last);
+        assert (SLType.checkSLType(type));
         assert (arrayCount == ShaderVar.NonArray) || (arrayCount >= 1);
         int alignmentMask = getAlignmentMask(type, arrayCount == ShaderVar.NonArray, std430);
         return (offset + alignmentMask) & ~alignmentMask;
@@ -331,7 +331,7 @@ public abstract class UniformHandler {
     public static int getAlignedStride(byte type,
                                        int arrayCount,
                                        boolean std430) {
-        assert (type >= 0 && type <= SLType.Last);
+        assert (SLType.checkSLType(type));
         assert (arrayCount == ShaderVar.NonArray) || (arrayCount >= 1);
         if (arrayCount == ShaderVar.NonArray) {
             return getSize(type, std430);

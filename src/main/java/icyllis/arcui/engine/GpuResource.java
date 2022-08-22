@@ -238,7 +238,7 @@ public abstract class GpuResource {
      *
      * @return true if the object has been freed or dropped, false otherwise.
      */
-    public final boolean isDestroyed() {
+    public final boolean wasDestroyed() {
         return mServer == null;
     }
 

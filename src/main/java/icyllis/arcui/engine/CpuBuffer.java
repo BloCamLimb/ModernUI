@@ -34,7 +34,7 @@ public final class CpuBuffer extends RefCnt implements Buffer {
     public CpuBuffer(int size) {
         assert (size > 0);
         mSize = size;
-        mData = MemoryUtil.nmemAlignedAllocChecked(Long.BYTES, size);
+        mData = MemoryUtil.nmemAllocChecked(size);
     }
 
     @Override
@@ -53,6 +53,6 @@ public final class CpuBuffer extends RefCnt implements Buffer {
 
     @Override
     protected void onFree() {
-        MemoryUtil.nmemAlignedFree(mData);
+        MemoryUtil.nmemFree(mData);
     }
 }
