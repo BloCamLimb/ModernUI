@@ -7,8 +7,8 @@ plugins {
 apply plugin: 'java'
 
 version = "${core_version}" as String
-group = 'icyllis.arcui'
-archivesBaseName = 'ArcUI'
+group = 'icyllis.arctic'
+archivesBaseName = 'Arctic'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
@@ -84,7 +84,7 @@ java {
 jar {
     manifest {
         attributes(
-                "Specification-Title": "ArcUI",
+                "Specification-Title": "Arctic",
                 "Specification-Vendor": "BloCamLimb",
                 "Specification-Version": "1",
                 "Implementation-Title": project.name,
@@ -126,11 +126,11 @@ publishing {
                 name = rootProject.name
                 packaging = 'pom'
                 scm {
-                    url = 'https://github.com/BloCamLimb/ArcUI.git'
+                    url = 'https://github.com/BloCamLimb/Arctic.git'
                 }
                 issueManagement {
                     system = 'github'
-                    url = 'https://github.com/BloCamLimb/ArcUI/issues'
+                    url = 'https://github.com/BloCamLimb/Arctic/issues'
                 }
                 licenses {
                     license {
