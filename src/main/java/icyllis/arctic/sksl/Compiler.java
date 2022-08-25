@@ -30,7 +30,6 @@ import javax.annotation.Nonnull;
  */
 public class Compiler {
 
-    public static final String ORTHOPROJ_NAME = "u_OrthoProj";
     public static final String INVALID_TAG = "<INVALID>";
     public static final String POISON_TAG = "<POISON>";
 

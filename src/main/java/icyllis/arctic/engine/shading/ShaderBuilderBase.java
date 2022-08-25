@@ -18,7 +18,6 @@
 
 package icyllis.arctic.engine.shading;
 
-import icyllis.arctic.engine.ShaderCaps;
 import icyllis.arctic.engine.ShaderVar;
 
 import java.util.*;
@@ -144,10 +143,8 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         return mShaderStrings[mCodeIndex];
     }
 
-    public final String finish(ShaderCaps shaderCaps, int visibility) {
-        assert (visibility != 0);
-        extensions().append(shaderCaps.mVersionDeclString);
-        mProgramBuilder.uniformHandler().appendUniformDecls(visibility, uniforms());
+    public final String finish() {
+        extensions().append(mProgramBuilder.shaderCaps().mVersionDeclString);
         onFinish();
         // append the 'footer' to code
         code().append("}");

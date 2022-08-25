@@ -38,7 +38,9 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         super(desc, programInfo);
         mServer = server;
         mVaryingHandler = new VaryingHandler(this);
-        mUniformHandler = new GLUniformHandler(this);
+        mUniformHandler = new GLUniformHandler(this,
+                UniformHandler.EFFECT_BINDING,
+                UniformHandler.EFFECT_BLOCK_NAME);
     }
 
     @Nullable
@@ -61,8 +63,8 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         }
 
         mVaryingHandler.finish();
-        String vertSource = mVS.finish(shaderCaps(), EngineTypes.Vertex_ShaderFlag);
-        String fragSource = mFS.finish(shaderCaps(), EngineTypes.Fragment_ShaderFlag);
+        String vertSource = mVS.finish();
+        String fragSource = mFS.finish();
 
         ShaderErrorHandler errorHandler = mServer.getContext().getShaderErrorHandler();
 

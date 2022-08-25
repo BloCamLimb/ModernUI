@@ -22,6 +22,7 @@ import icyllis.arctic.core.SLType;
 import icyllis.arctic.engine.*;
 import icyllis.arctic.engine.shading.ProgramBuilder;
 import icyllis.arctic.engine.shading.UniformHandler;
+import it.unimi.dsi.fastutil.shorts.ShortArrayList;
 
 import java.util.ArrayList;
 
@@ -30,29 +31,18 @@ import java.util.ArrayList;
  */
 public class GLUniformHandler extends UniformHandler {
 
-    public static class GLUniformInfo extends UniformInfo {
-
-        public int mOffset;
-
-        public GLUniformInfo() {
-        }
-    }
-
-    public static class GLSamplerInfo extends UniformInfo {
-
-        public short mSwizzle;
-
-        public GLSamplerInfo() {
-        }
-    }
-
-    final ArrayList<GLUniformInfo> mUniforms = new ArrayList<>();
-    final ArrayList<GLSamplerInfo> mSamplers = new ArrayList<>();
+    final ArrayList<UniformInfo> mUniforms = new ArrayList<>();
+    final ArrayList<UniformInfo> mSamplers = new ArrayList<>();
+    final ShortArrayList mSamplerSwizzles = new ShortArrayList();
 
     int mCurrentOffset;
 
-    GLUniformHandler(ProgramBuilder programBuilder) {
-        super(programBuilder);
+    GLUniformHandler(ProgramBuilder programBuilder,
+                     int binding,
+                     String blockName) {
+        super(programBuilder,
+                binding,
+                blockName);
     }
 
     @Override
@@ -84,11 +74,13 @@ public class GLUniformHandler extends UniformHandler {
 
         // In OpenGL, we can only use std140 layout
         int offset = getAlignedOffset(mCurrentOffset, type, arrayCount, false);
-        mCurrentOffset += getAlignedStride(type, arrayCount, false);
+        mCurrentOffset += getAlignedSize(type, arrayCount, false);
+
+        int handle = mUniforms.size();
 
         String layoutQualifier = "offset = " + offset;
 
-        var tempInfo = new GLUniformInfo();
+        var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,
                 type,
                 ShaderVar.TypeModifier_None,
@@ -100,7 +92,6 @@ public class GLUniformHandler extends UniformHandler {
         tempInfo.mRawName = name;
         tempInfo.mOffset = offset;
 
-        int handle = mUniforms.size();
         mUniforms.add(tempInfo);
         return handle;
     }
@@ -116,20 +107,21 @@ public class GLUniformHandler extends UniformHandler {
 
         String layoutQualifier = "location = " + handle;
 
-        var tempInfo = new GLSamplerInfo();
+        var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(mangleName,
                 SLType.Sampler2D,
                 ShaderVar.TypeModifier_Uniform,
                 ShaderVar.NonArray,
                 layoutQualifier,
                 "");
-
         tempInfo.mVisibility = EngineTypes.Fragment_ShaderFlag;
         tempInfo.mOwner = null;
         tempInfo.mRawName = name;
-        tempInfo.mSwizzle = swizzle;
 
         mSamplers.add(tempInfo);
+        mSamplerSwizzles.add(swizzle);
+        assert (mSamplers.size() == mSamplerSwizzles.size());
+
         return handle;
     }
 
@@ -140,7 +132,7 @@ public class GLUniformHandler extends UniformHandler {
 
     @Override
     protected short samplerSwizzle(int handle) {
-        return mSamplers.get(handle).mSwizzle;
+        return mSamplerSwizzles.getShort(handle);
     }
 
     @Override
@@ -160,8 +152,10 @@ public class GLUniformHandler extends UniformHandler {
             if ((uniform.mVisibility & visibility) != 0) {
                 if (!firstVisible) {
                     out.append("layout(std140, binding = ");
-                    out.append(UNIFORM_BINDING);
-                    out.append(") uniform UniformBlock {\n");
+                    out.append(mBinding);
+                    out.append(") uniform ");
+                    out.append(mBlockName);
+                    out.append(" {\n");
                     firstVisible = true;
                 }
                 uniform.mVariable.appendDecl(out);

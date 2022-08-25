@@ -19,9 +19,7 @@
 package icyllis.arctic.engine.shading;
 
 import icyllis.arctic.core.SLType;
-import icyllis.arctic.engine.GeometryProcessor;
-import icyllis.arctic.engine.ShaderVar;
-import icyllis.arctic.sksl.Compiler;
+import icyllis.arctic.engine.*;
 
 import java.util.ArrayList;
 
@@ -56,6 +54,7 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeoB
 
         //TODO check max attrib count, minimum is 16
 
+        mProgramBuilder.uniformHandler().appendUniformDecls(EngineTypes.Vertex_ShaderFlag, uniforms());
         mProgramBuilder.appendDecls(mInputs, inputs());
         mProgramBuilder.varyingHandler().getVertDecls(outputs());
     }
@@ -79,12 +78,12 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeoB
         if (worldPos.getType() == SLType.Vec3) {
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.zz * %2$s.yw, 0.0, %1$s.z);
-                    """, worldPos.getName(), Compiler.ORTHOPROJ_NAME);
+                    """, worldPos.getName(), UniformHandler.ORTHOPROJ_NAME);
         } else {
             assert (worldPos.getType() == SLType.Vec2);
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %2$s.yw, 0.0, 1.0);
-                    """, worldPos.getName(), Compiler.ORTHOPROJ_NAME);
+                    """, worldPos.getName(), UniformHandler.ORTHOPROJ_NAME);
         }
     }
 }

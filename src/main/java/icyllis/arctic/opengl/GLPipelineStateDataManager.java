@@ -20,7 +20,7 @@ package icyllis.arctic.opengl;
 
 import icyllis.arctic.core.SLType;
 import icyllis.arctic.engine.UniformDataManager;
-import icyllis.arctic.opengl.GLUniformHandler.GLUniformInfo;
+import icyllis.arctic.engine.shading.UniformHandler;
 
 import java.util.List;
 
@@ -35,11 +35,11 @@ public class GLPipelineStateDataManager extends UniformDataManager {
      * @param uniforms    the uniforms
      * @param uniformSize the uniform block size in bytes
      */
-    GLPipelineStateDataManager(List<GLUniformInfo> uniforms, int uniformSize) {
+    GLPipelineStateDataManager(List<UniformHandler.UniformInfo> uniforms, int uniformSize) {
         super(uniforms.size(), uniformSize);
         assert !uniforms.isEmpty();
         for (int i = 0; i < uniforms.size(); i++) {
-            GLUniformInfo uniformInfo = uniforms.get(i);
+            UniformHandler.UniformInfo uniformInfo = uniforms.get(i);
             assert ((uniformInfo.mOffset & 0xFFFFFF) == uniformInfo.mOffset);
             assert (SLType.canBeUniformValue(uniformInfo.mVariable.getType()));
             mUniforms[i] = uniformInfo.mOffset | (uniformInfo.mVariable.getType() << 24);

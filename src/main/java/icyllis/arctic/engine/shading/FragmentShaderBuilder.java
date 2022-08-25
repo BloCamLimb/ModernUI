@@ -19,6 +19,7 @@
 package icyllis.arctic.engine.shading;
 
 import icyllis.arctic.core.SLType;
+import icyllis.arctic.engine.EngineTypes;
 import icyllis.arctic.engine.ShaderVar;
 
 import javax.annotation.Nullable;
@@ -44,6 +45,7 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
 
     @Override
     protected void onFinish() {
+        mProgramBuilder.uniformHandler().appendUniformDecls(EngineTypes.Fragment_ShaderFlag, uniforms());
         mProgramBuilder.varyingHandler().getFragDecls(inputs());
 
         mPrimaryOutput.appendDecl(outputs());

@@ -20,7 +20,6 @@ package icyllis.arctic.engine.shading;
 
 import icyllis.arctic.core.SLType;
 import icyllis.arctic.engine.*;
-import icyllis.arctic.sksl.Compiler;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 
 import javax.annotation.Nonnull;
@@ -170,7 +169,7 @@ public abstract class ProgramBuilder {
                 null,
                 Vertex_ShaderFlag,
                 SLType.Vec4,
-                Compiler.ORTHOPROJ_NAME);
+                UniformHandler.ORTHOPROJ_NAME);
 
         mFS.codeAppendf("// Stage %d, %s\n", mStageIndex, geomProc.name());
         mVS.codeAppendf("// Geometry Processor %s\n", geomProc.name());

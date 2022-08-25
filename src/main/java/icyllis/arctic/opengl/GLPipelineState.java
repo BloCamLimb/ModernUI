@@ -20,6 +20,7 @@ package icyllis.arctic.opengl;
 
 import icyllis.arctic.core.SharedPtr;
 import icyllis.arctic.engine.GeometryProcessor;
+import icyllis.arctic.engine.shading.UniformHandler;
 
 import java.util.List;
 
@@ -29,7 +30,7 @@ import java.util.List;
  * and other similar objects that are used along with the GLProgram and GLVertexArray in the draw.
  * This includes both allocating and freeing these objects, as well as updating their values.
  */
-//TODO
+//TODO set and bind UBO, VBO, IBO, textures
 public class GLPipelineState implements AutoCloseable {
 
     @SharedPtr
@@ -42,9 +43,9 @@ public class GLPipelineState implements AutoCloseable {
 
     GLPipelineState(GLServer server,
                     @SharedPtr GLPipeline pipeline,
-                    List<GLUniformHandler.GLUniformInfo> uniforms,
+                    List<UniformHandler.UniformInfo> uniforms,
                     int uniformSize,
-                    List<GLUniformHandler.GLSamplerInfo> samplers,
+                    List<UniformHandler.UniformInfo> samplers,
                     GeometryProcessor.ProgramImpl gpImpl) {
         mPipeline = pipeline;
         mGPImpl = gpImpl;
@@ -69,5 +70,6 @@ public class GLPipelineState implements AutoCloseable {
         mPipeline.drop();
     }
 
-
+    public void bind() {
+    }
 }

@@ -32,10 +32,13 @@ import java.lang.annotation.RetentionPolicy;
  * The uniform blocks are generally defined as:
  * <pre><code>
  * // Anonymous block
- * layout(std140, binding = 0) uniform UniformBlock {
- *     vec4 u_OrthoProj;        // required
- *     vec4 u_DstTextureCoords; // optional
- *     mat3 u_ModelView;        // optional
+ * layout(std140, binding = 0) uniform CommonBlock {
+ *     layout(offset = 0) vec4 u_OrthoProj;
+ *     layout(offset = 16) vec4 u_ModelView0;
+ *     layout(offset = 32) mat3 u_ModelView1;
+ *     layout(offset = 80) vec4 u_DstTextureCoords;
+ * }
+ * layout(std140, binding = 1) uniform EffectBlock {
  *     // per-effect uniforms...
  * }</code></pre>
  * Per-effect uniforms are updated more frequently (generally, each draw op).
@@ -44,12 +47,25 @@ public abstract class UniformHandler {
 
     public static final String NO_MANGLE_PREFIX = "u_";
 
+    /**
+     * Builtin uniforms are in Common Block.
+     */
+    public static final String ORTHOPROJ_NAME = "u_OrthoProj";
+    public static final String MODELVIEW0_NAME = "u_ModelView0";
+    public static final String MODELVIEW1_NAME = "u_ModelView1";
+    public static final String DSTTEXTURECOORDS_NAME = "u_DstTextureCoords";
+
     public static class UniformInfo {
 
         public ShaderVar mVariable;
         public int mVisibility;
         public Processor mOwner;
         public String mRawName;
+
+        /**
+         * The offset using std140 layout, only valid for non-opaque types.
+         */
+        public int mOffset;
 
         public UniformInfo() {
         }
@@ -62,13 +78,26 @@ public abstract class UniformHandler {
     public @interface SamplerHandle {
     }
 
-    // The bindings for the main descriptor set.
-    public static final int UNIFORM_BINDING = 0;
+    /**
+     * The bindings for the main descriptor set.
+     */
+    public static final int COMMON_BINDING = 0;
+    public static final int EFFECT_BINDING = 1; // will use Push Constants if possible
+
+    public static final String COMMON_BLOCK_NAME = "CommonBlock";
+    public static final String EFFECT_BLOCK_NAME = "EffectBlock";
 
     protected final ProgramBuilder mProgramBuilder;
 
-    protected UniformHandler(ProgramBuilder programBuilder) {
+    protected final int mBinding;
+    protected final String mBlockName;
+
+    protected UniformHandler(ProgramBuilder programBuilder,
+                             int binding,
+                             String blockName) {
         mProgramBuilder = programBuilder;
+        mBinding = binding;
+        mBlockName = blockName;
     }
 
     /**
@@ -307,7 +336,7 @@ public abstract class UniformHandler {
     /**
      * Given the current offset into the UBO data, calculate the offset for the uniform we're trying to
      * add taking into consideration all alignment requirements. Use aligned offset plus
-     * {@link #getAlignedStride(byte, int, boolean)} to get the offset to the end of the new uniform.
+     * {@link #getAlignedSize(byte, int, boolean)} to get the offset to the end of the new uniform.
      *
      * @param offset     the current offset
      * @param type       see {@link SLType}
@@ -328,9 +357,9 @@ public abstract class UniformHandler {
     /**
      * @see UniformDataManager
      */
-    public static int getAlignedStride(byte type,
-                                       int arrayCount,
-                                       boolean std430) {
+    public static int getAlignedSize(byte type,
+                                     int arrayCount,
+                                     boolean std430) {
         assert (SLType.checkSLType(type));
         assert (arrayCount == ShaderVar.NonArray) || (arrayCount >= 1);
         if (arrayCount == ShaderVar.NonArray) {
