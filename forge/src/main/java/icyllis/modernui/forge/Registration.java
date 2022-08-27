@@ -18,50 +18,49 @@
 
 package icyllis.modernui.forge;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.DataResult;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
-import icyllis.modernui.forge.mixin.AccessOption;
-import icyllis.modernui.forge.mixin.AccessVideoSettings;
+import icyllis.modernui.forge.mixin.AccessOptions;
 import icyllis.modernui.graphics.opengl.ShaderManager;
 import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.testforge.TestContainerMenu;
 import icyllis.modernui.testforge.TestPauseFragment;
-import icyllis.modernui.text.TextUtils;
-import icyllis.modernui.view.View;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.*;
-import net.minecraft.client.gui.screens.VideoSettingsScreen;
+import net.minecraft.client.gui.components.CycleButton;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.network.chat.TextComponent;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
+import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.client.event.*;
-import net.minecraftforge.client.model.ForgeModelBakery;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
-import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
+import java.util.stream.IntStream;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -75,25 +74,25 @@ final class Registration {
     }
 
     @SubscribeEvent
-    static void registerMenus(@Nonnull RegistryEvent.Register<MenuType<?>> event) {
+    static void register(@Nonnull RegisterEvent event) {
         if (ModernUIForge.sDevelopment) {
-            event.getRegistry().register(IForgeMenuType.create(TestContainerMenu::new)
-                    .setRegistryName("test"));
+            event.register(ForgeRegistries.MENU_TYPES.getRegistryKey(), Registration::registerMenus);
+            event.register(ForgeRegistries.ITEMS.getRegistryKey(), Registration::registerItems);
         }
     }
 
-    @SubscribeEvent
-    static void registerItems(@Nonnull RegistryEvent.Register<Item> event) {
-        if (ModernUIForge.sDevelopment) {
-            Item.Properties properties = new Item.Properties().stacksTo(1);
-            event.getRegistry().register(new ProjectBuilderItem(properties)
-                    .setRegistryName("project_builder"));
-        }
+    static void registerMenus(@Nonnull RegisterEvent.RegisterHelper<MenuType<?>> helper) {
+        helper.register(MuiRegistries.TEST_MENU_KEY, IForgeMenuType.create(TestContainerMenu::new));
+    }
+
+    static void registerItems(@Nonnull RegisterEvent.RegisterHelper<Item> helper) {
+        Item.Properties properties = new Item.Properties().stacksTo(1);
+        helper.register(MuiRegistries.PROJECT_BUILDER_ITEM_KEY, new ProjectBuilderItem(properties));
     }
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
-    static void loadingClient(ParticleFactoryRegisterEvent event) {
+    static void loadingClient(RegisterParticleProvidersEvent event) {
         // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread (render thread)
         // this event fired before RegisterClientReloadListenersEvent
         UIManager.initialize();
@@ -111,10 +110,8 @@ final class Registration {
             // FML may throw ex, so it can be null
             if (handler != null) {
                 // Call in lambda, not in creating the lambda
-                handler.post(() -> UIManager.getInstance().updateLayoutDir());
+                handler.post(() -> UIManager.getInstance().updateLayoutDir(Config.CLIENT.forceRtl.get()));
             }
-            TooltipRenderer.sLayoutRTL = Config.CLIENT.forceRtl.get() ||
-                    TextUtils.getLayoutDirectionFromLocale(ModernUI.getSelectedLocale()) == View.LAYOUT_DIRECTION_RTL;
         });
 
         LOGGER.debug(MARKER, "Registered resource reload listener");
@@ -147,7 +144,7 @@ final class Registration {
             throw new IllegalStateException();
         }*/
         NetworkMessages.sNetwork = new NetworkHandler("", () -> NetworkMessages::msg,
-                null, "340", true);
+                null, "360", true);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 
@@ -190,11 +187,17 @@ final class Registration {
 
     @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
+    static void registerKeyMapping(@Nonnull RegisterKeyMappingsEvent event) {
+        event.register(UIManager.OPEN_CENTER_KEY);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         //SettingsManager.INSTANCE.buildAllSettings();
         //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
 
-        Minecraft.getInstance().execute(() -> {
+        event.enqueueWork(() -> {
             ModernUI.getSelectedTypeface();
             UIManager.initializeRenderer();
         });
@@ -210,9 +213,32 @@ final class Registration {
                         ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString(options
                         .guiScale))))
         );*/
-        ClientRegistry.registerKeyBinding(UIManager.OPEN_CENTER_KEY);
 
-        Option[] settings = null;
+        OptionInstance<Integer> newGuiScale = new OptionInstance<>("options.guiScale",
+                OptionInstance.noTooltip(),
+                (caption, value) -> {
+                    if (value == 0) {
+                        return Options.genericValueLabel(caption, Component.translatable("options.guiScale.auto")
+                                .append(Component.literal(" (" + (MuiForgeApi.calcGuiScales() >> 4 & 0xf) + ")")));
+                    } else {
+                        MutableComponent valueComponent = Component.literal(value.toString());
+                        if (value < (MuiForgeApi.calcGuiScales() >> 8 & 0xf)) {
+                            valueComponent.withStyle(ChatFormatting.RED);
+                        }
+                        return Options.genericValueLabel(caption, valueComponent);
+                    }
+                },
+                new GuiScaleValueSet(), 0, value -> {
+            if (value != Minecraft.getInstance().getWindow().getGuiScale()) {
+                Minecraft.getInstance().resizeDisplay();
+            }
+        });
+        ((AccessOptions) Minecraft.getInstance().options).setGuiScale(newGuiScale);
+        if (ModernUIForge.isOptiFineLoaded()) {
+            OptiFineIntegration.setGuiScale(newGuiScale);
+        }
+
+        /*Option[] settings = null;
         boolean captured = false;
         if (ModernUIForge.isOptiFineLoaded()) {
             try {
@@ -239,10 +265,11 @@ final class Registration {
                             }
                         },
                         (options, progressOption) -> options.guiScale == 0 ?
-                                ((AccessOption) progressOption)
+                                ((AccessOptions) progressOption)
                                         .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
-                                                .append(new TextComponent(" (" + (MuiForgeApi.calcGuiScales() >> 4 & 0xf) + ")"))) :
-                                ((AccessOption) progressOption)
+                                                .append(new TextComponent(" (" + (MuiForgeApi.calcGuiScales() >> 4 &
+                                                0xf) + ")"))) :
+                                ((AccessOptions) progressOption)
                                         .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
                 );
                 settings[i] = EventHandler.Client.sNewGuiScale = option;
@@ -252,6 +279,58 @@ final class Registration {
         }
         if (!captured) {
             LOGGER.error(MARKER, "Failed to capture video settings");
+        }*/
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    static class GuiScaleValueSet implements OptionInstance.IntRangeBase,
+            OptionInstance.SliderableOrCyclableValueSet<Integer> {
+
+        @Override
+        public int minInclusive() {
+            return 0;
+        }
+
+        @Override
+        public int maxInclusive() {
+            return MuiForgeApi.calcGuiScales() & 0xf;
+        }
+
+        @Nonnull
+        @Override
+        public Integer fromSliderValue(double progress) {
+            return Math.toIntExact(Math.round(Mth.map(progress, 0.0, 1.0, minInclusive(), maxInclusive())));
+        }
+
+        @Nonnull
+        @Override
+        public Optional<Integer> validateValue(@Nonnull Integer value) {
+            return Optional.of(Mth.clamp(value, minInclusive(), maxInclusive()));
+        }
+
+        @Nonnull
+        @Override
+        public Codec<Integer> codec() {
+            Function<Integer, DataResult<Integer>> function = value -> {
+                int max = maxInclusive() + 1;
+                if (value.compareTo(minInclusive()) >= 0 && value.compareTo(max) <= 0) {
+                    return DataResult.success(value);
+                }
+                return DataResult.error(
+                        "Value " + value + " outside of range [" + minInclusive() + ":" + max + "]", value);
+            };
+            return Codec.INT.flatXmap(function, function);
+        }
+
+        @Nonnull
+        @Override
+        public CycleButton.ValueListSupplier<Integer> valueListSupplier() {
+            return CycleButton.ValueListSupplier.create(IntStream.range(minInclusive(), maxInclusive() + 1).boxed().toList());
+        }
+
+        @Override
+        public boolean createCycleButton() {
+            return false;
         }
     }
 
@@ -273,16 +352,16 @@ final class Registration {
     static class ModClientDev {
 
         @SubscribeEvent
-        static void onRegistryModel(@Nonnull ModelRegistryEvent event) {
-            ForgeModelBakery.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_main"));
-            ForgeModelBakery.addSpecialModel(new ResourceLocation(ModernUI.ID, "item/project_builder_cube"));
+        static void onRegistryModel(@Nonnull ModelEvent.RegisterAdditional event) {
+            event.register(new ResourceLocation(ModernUI.ID, "item/project_builder_main"));
+            event.register(new ResourceLocation(ModernUI.ID, "item/project_builder_cube"));
         }
 
         @SubscribeEvent
-        static void onBakeModel(@Nonnull ModelBakeEvent event) {
-            Map<ResourceLocation, BakedModel> registry = event.getModelRegistry();
+        static void onBakeModel(@Nonnull ModelEvent.BakingCompleted event) {
+            Map<ResourceLocation, BakedModel> registry = event.getModels();
             replaceModel(registry, new ModelResourceLocation(ModernUI.ID, "project_builder", "inventory"),
-                    baseModel -> new ProjectBuilderModel(baseModel, event.getModelLoader()));
+                    baseModel -> new ProjectBuilderModel(baseModel, event.getModelBakery()));
         }
 
         private static void replaceModel(@Nonnull Map<ResourceLocation, BakedModel> modelRegistry,

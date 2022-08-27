@@ -18,23 +18,16 @@
 
 package icyllis.modernui.forge.mixin;
 
-import net.minecraft.client.CycleOption;
-import net.minecraft.client.Option;
-import net.minecraft.network.chat.Component;
+import net.minecraft.client.OptionInstance;
+import net.minecraft.client.Options;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.gen.Accessor;
-import org.spongepowered.asm.mixin.gen.Invoker;
 
-@Mixin(Option.class)
-public interface AccessOption {
+@Mixin(Options.class)
+public interface AccessOptions {
 
     @Mutable
-    @Accessor("GUI_SCALE")
-    static void setGuiScale(CycleOption<Integer> option) {
-        throw new IllegalStateException();
-    }
-
-    @Invoker
-    Component callGenericValueLabel(Component component);
+    @Accessor("guiScale")
+    void setGuiScale(OptionInstance<Integer> option);
 }

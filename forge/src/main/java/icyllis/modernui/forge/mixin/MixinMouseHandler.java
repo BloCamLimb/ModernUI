@@ -18,7 +18,7 @@
 
 package icyllis.modernui.forge.mixin;
 
-import icyllis.modernui.forge.UIManager;
+import icyllis.modernui.forge.ModernUIForge;
 import net.minecraft.client.MouseHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -50,6 +50,6 @@ public class MixinMouseHandler {
     @Inject(method = "onScroll", at = @At(value = "INVOKE",
             target = "Lnet/minecraft/client/gui/screens/Screen;mouseScrolled(DDD)Z"))
     private void onScrollCallback(long handle, double xoffset, double yoffset, CallbackInfo ci) {
-        UIManager.onScroll(xoffset, yoffset);
+        ModernUIForge.dispatchOnScroll(xoffset, yoffset);
     }
 }

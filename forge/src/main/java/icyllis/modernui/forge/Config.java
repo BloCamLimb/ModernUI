@@ -280,7 +280,7 @@ final class Config {
                     }, $ -> true);
             tooltipDuration = builder.comment(
                             "The duration of tooltip alpha animation in milliseconds. (0 = OFF)")
-                    .defineInRange("animationDuration", 200, ANIM_DURATION_MIN, ANIM_DURATION_MAX);
+                    .defineInRange("animationDuration", 100, ANIM_DURATION_MIN, ANIM_DURATION_MAX);
 
             builder.pop();
 
@@ -507,7 +507,7 @@ final class Config {
             Handler handler = Core.getUiHandlerAsync();
             if (handler != null) {
                 handler.post(() -> {
-                    UIManager.getInstance().updateLayoutDir();
+                    UIManager.getInstance().updateLayoutDir(forceRtl.get());
                     ViewConfiguration.get().setFontScale(fontScale.get().floatValue());
                     ViewConfiguration.get().setScrollbarSize(scrollbarSize.get());
                     ViewConfiguration.get().setTouchSlop(touchSlop.get());

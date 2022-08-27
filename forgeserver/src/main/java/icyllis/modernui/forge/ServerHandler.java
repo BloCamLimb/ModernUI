@@ -21,7 +21,6 @@ package icyllis.modernui.forge;
 import net.minecraft.ChatFormatting;
 import net.minecraft.Util;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppingEvent;
@@ -135,7 +134,7 @@ final class ServerHandler {
                 str = "Server will shutdown in %d seconds";
             }
             LOGGER.info(MARKER, String.format(str, l));
-            final Component component = new TranslatableComponent(key, l).withStyle(ChatFormatting.LIGHT_PURPLE);
+            final Component component = Component.translatable(key, l).withStyle(ChatFormatting.LIGHT_PURPLE);
             ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(p -> p.displayClientMessage(component, true));
         }
     }

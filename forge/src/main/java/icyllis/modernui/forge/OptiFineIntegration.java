@@ -18,8 +18,7 @@
 
 package icyllis.modernui.forge;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.Options;
+import net.minecraft.client.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -49,7 +48,7 @@ public final class OptiFineIntegration {
             Constructor<?> constructor = clazz.getConstructor(Screen.class, Options.class);
             minecraft.setScreen((Screen) constructor.newInstance(minecraft.screen, minecraft.options));
         } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException |
-                InstantiationException | InvocationTargetException e) {
+                 InstantiationException | InvocationTargetException e) {
             e.printStackTrace();
         }
     }
@@ -69,6 +68,16 @@ public final class OptiFineIntegration {
             } catch (IllegalAccessException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    public static void setGuiScale(OptionInstance<Integer> option) {
+        Minecraft minecraft = Minecraft.getInstance();
+        try {
+            Field field = Options.class.getDeclaredField("GUI_SCALE");
+            field.set(minecraft.options, option);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 }

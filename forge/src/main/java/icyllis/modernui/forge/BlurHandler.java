@@ -225,8 +225,7 @@ public enum BlurHandler {
         builder.vertex(matrix, x1, y2, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
         color = mBackgroundColor[2];
         builder.vertex(matrix, x2, y2, z).color(color >> 16 & 0xff, color >> 8 & 0xff, color & 0xff, color >>> 24).endVertex();
-        builder.end();
-        BufferUploader.end(builder);
+        BufferUploader.drawWithShader(builder.end());
 
         RenderSystem.disableBlend();
         RenderSystem.enableTexture();

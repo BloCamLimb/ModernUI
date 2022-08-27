@@ -216,9 +216,10 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         while (!window.shouldClose()) {
             int width = window.getWidth(), height = window.getHeight();
             glBindFramebuffer(GL_FRAMEBUFFER, DEFAULT_FRAMEBUFFER);
+            glDisable(GL_CULL_FACE);
             resetFrame(window);
             if (mRoot != null) {
-                canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW + 1));
+                canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW * 2 + 1, true));
                 mRoot.flushDrawCommands(canvas, framebuffer);
             }
             if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {

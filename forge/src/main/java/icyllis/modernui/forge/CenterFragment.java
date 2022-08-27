@@ -970,7 +970,7 @@ public class CenterFragment extends Fragment {
             {
                 var option = createInputOption("Gamma");
                 var input = option.<EditText>requireViewById(R.id.input);
-                input.setText(Double.toString(Minecraft.getInstance().options.gamma));
+                input.setText(Minecraft.getInstance().options.gamma().get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
                         new InputFilter.LengthFilter(6));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
@@ -979,7 +979,7 @@ public class CenterFragment extends Fragment {
                         double gamma = Double.parseDouble(v.getText().toString());
                         v.setText(Double.toString(gamma));
                         // no sync, but safe
-                        Minecraft.getInstance().options.gamma = gamma;
+                        Minecraft.getInstance().options.gamma().set(gamma);
                     }
                 });
                 category.addView(option);

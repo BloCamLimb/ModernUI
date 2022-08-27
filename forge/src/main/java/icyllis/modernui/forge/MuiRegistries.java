@@ -23,27 +23,31 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.registries.ObjectHolder;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 @SuppressWarnings("unused")
-@ObjectHolder(ModernUI.ID)
 public final class MuiRegistries {
 
     /**
-     * Sounds (Client Only)
+     * Sounds (Client only, no registration)
      */
     public static final SoundEvent BUTTON_CLICK_1 = new SoundEvent(new ResourceLocation(ModernUI.ID, "button1"));
     public static final SoundEvent BUTTON_CLICK_2 = new SoundEvent(new ResourceLocation(ModernUI.ID, "button2"));
 
     /**
-     * Container Menus (Development Only)
+     * Container Menus (Development only)
      */
-    @ObjectHolder("test")
-    public static MenuType<?> TEST_MENU;
+    public static final ResourceLocation
+            TEST_MENU_KEY = new ResourceLocation(ModernUI.ID, "test");
+    public static final RegistryObject<MenuType<?>> TEST_MENU = RegistryObject.createOptional(
+            TEST_MENU_KEY, ForgeRegistries.MENU_TYPES.getRegistryKey(), ModernUI.ID);
 
     /**
-     * Items (Development Only)
+     * Items (Development only)
      */
-    @ObjectHolder("project_builder")
-    public static Item PROJECT_BUILDER_ITEM;
+    public static final ResourceLocation
+            PROJECT_BUILDER_ITEM_KEY = new ResourceLocation(ModernUI.ID, "project_builder");
+    public static final RegistryObject<Item> PROJECT_BUILDER_ITEM = RegistryObject.createOptional(
+            PROJECT_BUILDER_ITEM_KEY, ForgeRegistries.ITEMS.getRegistryKey(), ModernUI.ID);
 }

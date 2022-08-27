@@ -26,6 +26,7 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.math.FMath;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
@@ -51,6 +52,10 @@ import java.util.function.Consumer;
  */
 public final class MuiForgeApi {
 
+    static final CopyOnWriteArrayList<OnScrollListener> sOnScrollListeners =
+            new CopyOnWriteArrayList<>();
+    static final CopyOnWriteArrayList<OnScreenChangeListener> sOnScreenChangeListeners =
+            new CopyOnWriteArrayList<>();
     static final CopyOnWriteArrayList<OnWindowResizeListener> sOnWindowResizeListeners =
             new CopyOnWriteArrayList<>();
     static final CopyOnWriteArrayList<OnDebugDumpListener> sOnDebugDumpListeners =
@@ -290,6 +295,48 @@ public final class MuiForgeApi {
     }
 
     /**
+     * Registers a callback to be called when {@link org.lwjgl.glfw.GLFWScrollCallback} is called.
+     *
+     * @param listener the listener to register
+     * @see OnScrollListener
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static void addOnScrollListener(@Nonnull OnScrollListener listener) {
+        sOnScrollListeners.addIfAbsent(listener);
+    }
+
+    /**
+     * Remove a registered listener.
+     *
+     * @param listener the listener to unregister
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static void removeOnScrollListener(@Nonnull OnScrollListener listener) {
+        sOnScrollListeners.remove(listener);
+    }
+
+    /**
+     * Registers a callback to be called when {@link Minecraft#setScreen(Screen)} is called.
+     *
+     * @param listener the listener to register
+     * @see OnScreenChangeListener
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static void addOnScreenChangeListener(@Nonnull OnScreenChangeListener listener) {
+        sOnScreenChangeListeners.addIfAbsent(listener);
+    }
+
+    /**
+     * Remove a registered listener.
+     *
+     * @param listener the listener to unregister
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static void removeOnScreenChangeListener(@Nonnull OnScreenChangeListener listener) {
+        sOnScreenChangeListeners.remove(listener);
+    }
+
+    /**
      * Registers a callback to be invoked at the beginning of {@link Minecraft#resizeDisplay()}.
      *
      * @param listener the listener to register
@@ -329,6 +376,31 @@ public final class MuiForgeApi {
     @OnlyIn(Dist.CLIENT)
     public static void removeOnDebugDumpListener(@Nonnull OnDebugDumpListener listener) {
         sOnDebugDumpListeners.remove(listener);
+    }
+
+    @FunctionalInterface
+    public interface OnScrollListener {
+
+        /**
+         * Called when a scroll event polling from the main handler and responding to the main window.
+         *
+         * @param scrollX raw relative movement of the horizontal scroll wheel or touchpad gesture
+         * @param scrollY raw relative movement of the vertical scroll wheel or touchpad gesture
+         */
+        void onScroll(double scrollX, double scrollY);
+    }
+
+    @FunctionalInterface
+    public interface OnScreenChangeListener {
+
+        /**
+         * Called when {@link Minecraft#setScreen(Screen)} is called, and after Forge's
+         * event is fired.
+         *
+         * @param oldScreen the old screen
+         * @param newScreen the new screen
+         */
+        void onScreenChange(@Nullable Screen oldScreen, @Nullable Screen newScreen);
     }
 
     @FunctionalInterface

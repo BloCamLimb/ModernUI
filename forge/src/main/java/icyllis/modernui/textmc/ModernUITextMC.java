@@ -149,6 +149,7 @@ public final class ModernUITextMC {
 
     static class EventHandler {
 
+        //TODO chat hack
         @SubscribeEvent
         static void onClientChat(@Nonnull ClientChatEvent event) {
             final String msg = event.getMessage();
@@ -178,7 +179,7 @@ public final class ModernUITextMC {
                 }
                 if (builder != null) {
                     builder.append(msg, lastEnd, msg.length());
-                    event.setMessage(builder.toString());
+                    //event.setMessage(builder.toString());
                 }
             }
         }

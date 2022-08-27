@@ -38,7 +38,7 @@ final class Registration {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        NetworkMessages.sNetwork = new NetworkHandler("", null, null, "340", true);
+        NetworkMessages.sNetwork = new NetworkHandler("", null, null, "360", true);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 

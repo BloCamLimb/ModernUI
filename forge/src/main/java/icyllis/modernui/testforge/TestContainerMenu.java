@@ -27,6 +27,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.DataSlot;
 import net.minecraft.world.inventory.MenuConstructor;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -61,7 +62,7 @@ public class TestContainerMenu extends AbstractContainerMenu {
      * On the server, you should call {@link MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)},
      * whose {@link MenuConstructor} provides you container id. On the client, you should
      * register the menu type via {@link net.minecraftforge.common.extensions.IForgeMenuType} along
-     * with {@link net.minecraftforge.event.RegistryEvent},
+     * with {@link net.minecraftforge.registries.RegisterEvent},
      * whose {@link net.minecraftforge.network.IContainerFactory} provides you container id and
      * the additional data sent by server.
      *
@@ -71,7 +72,7 @@ public class TestContainerMenu extends AbstractContainerMenu {
      * @see MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)
      */
     public TestContainerMenu(int containerId, @Nonnull Inventory inventory, @Nonnull FriendlyByteBuf data) {
-        super(MuiRegistries.TEST_MENU, containerId);
+        super(MuiRegistries.TEST_MENU.get(), containerId);
         mDiamond = data.readBoolean();
     }
 
@@ -87,7 +88,7 @@ public class TestContainerMenu extends AbstractContainerMenu {
      * On the server, you should call {@link MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)},
      * whose {@link MenuConstructor} provides you container id. On the client, you should
      * register the menu type via {@link net.minecraftforge.common.extensions.IForgeMenuType} along
-     * with {@link net.minecraftforge.event.RegistryEvent},
+     * with {@link net.minecraftforge.registries.RegisterEvent},
      * whose {@link net.minecraftforge.network.IContainerFactory} provides you container id and
      * the additional data sent by server.
      *
@@ -97,7 +98,7 @@ public class TestContainerMenu extends AbstractContainerMenu {
      * @see MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)
      */
     public TestContainerMenu(int containerId, @Nonnull Inventory inventory, @Nonnull Player player) {
-        super(MuiRegistries.TEST_MENU, containerId);
+        super(MuiRegistries.TEST_MENU.get(), containerId);
     }
 
     /**
@@ -139,6 +140,12 @@ public class TestContainerMenu extends AbstractContainerMenu {
     @Override
     protected final void addDataSlots(@Nonnull ContainerData array) {
         throw new UnsupportedOperationException();
+    }
+
+    @Nonnull
+    @Override
+    public ItemStack quickMoveStack(@Nonnull Player player, int index) {
+        return ItemStack.EMPTY;
     }
 
     @Deprecated

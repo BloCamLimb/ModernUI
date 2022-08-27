@@ -21,12 +21,9 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.ModernUI;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.BlockModelRotation;
-import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.BakedModelWrapper;
-import net.minecraftforge.client.model.ForgeModelBakery;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
@@ -45,13 +42,15 @@ final class ProjectBuilderModel extends BakedModelWrapper<BakedModel> {
 
     private static BakedModel bakeCustomModel(@Nonnull ModelBakery bakery, String name) {
         ResourceLocation location = new ResourceLocation(ModernUI.ID, name);
-        return bakery.bake(location, BlockModelRotation.X0_Y0, ForgeModelBakery.defaultTextureGetter());
+        return bakery.bake(location, BlockModelRotation.X0_Y0, Material::sprite);
     }
 
     @Nonnull
     @Override
-    public BakedModel handlePerspective(@Nonnull ItemTransforms.TransformType transformType, @Nonnull PoseStack ps) {
-        super.handlePerspective(transformType, ps);
+    public BakedModel applyTransform(@Nonnull ItemTransforms.TransformType transformType,
+                                     @Nonnull PoseStack poseStack,
+                                     boolean applyLeftHandTransform) {
+        super.applyTransform(transformType, poseStack, applyLeftHandTransform);
         return this;
     }
 

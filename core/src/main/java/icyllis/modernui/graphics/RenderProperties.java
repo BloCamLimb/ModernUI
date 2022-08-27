@@ -93,11 +93,16 @@ public class RenderProperties {
             // because it's 2D rendering, the Z value is used only for transparency sorting
             // which happens on the application layer, so there's no need to report the Z value to GPU
             matrix.setTranslate(mPivotX + mTranslationX, mPivotY + mTranslationY, 0);
-            matrix.preRotate((float) Math.toRadians(mRotationX),
-                    (float) Math.toRadians(mRotationY),
-                    (float) Math.toRadians(mRotationZ));
             matrix.preScale(mScaleX, mScaleY);
             matrix.preTranslate(-mPivotX, -mPivotY);
+            Matrix4 matrix2 = Matrix4.identity();
+            matrix2.m34 = 1 / 1920f; // TODO camera distance and optimize
+            matrix2.preRotate((float) Math.toRadians(mRotationX),
+                    (float) Math.toRadians(mRotationY),
+                    (float) Math.toRadians(mRotationZ));
+            matrix2.preTranslate(-mPivotX, -mPivotY);
+            matrix2.postTranslate(mPivotX + mTranslationX, mPivotY + mTranslationY);
+            matrix.postMul(matrix2);
             return matrix;
         }
         return mMatrix;

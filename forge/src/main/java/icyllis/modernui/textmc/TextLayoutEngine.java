@@ -32,10 +32,8 @@ import icyllis.modernui.view.ViewConfiguration;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.MipmapGenerator;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.GsonHelper;
 import net.minecraftforge.api.distmarker.Dist;
@@ -49,8 +47,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.awt.*;
 import java.awt.font.GlyphVector;
-import java.io.BufferedReader;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
@@ -142,7 +139,7 @@ public class TextLayoutEngine {
     /**
      * For styled texts.
      */
-    private Map<BaseComponent, TextRenderNode> mComponentCache = new HashMap<>();
+    private Map<MutableComponent, TextRenderNode> mComponentCache = new HashMap<>();
 
     /**
      * For deeply-processed texts.
@@ -412,104 +409,113 @@ public class TextLayoutEngine {
      */
     public void reloadResources() {
         if (!mEmojiScanned) {
+            scanEmoji();
+            scanShortcodes();
             mEmojiScanned = true;
-            final boolean nonBitmapRepl = !ModernUITextMC.CONFIG.mBitmapReplacement.get();
-            Minecraft.getInstance().getResourceManager().listResources("emoji",
-                    name -> name.length() <= 64 && name.endsWith(".png")).forEach(res -> {
-                String[] paths = res.getPath().split("/");
-                if (paths.length == 0) {
-                    return;
-                }
-                String name = paths[paths.length - 1];
-                String[] parts = name.substring(0, name.length() - 4).split("-");
-                if (parts.length == 0) {
-                    return;
-                }
-                int[] codePoints = new int[parts.length];
-                for (int i = 0; i < parts.length; i++) {
-                    try {
-                        int codePoint = Integer.parseInt(parts[i], 16);
-                        if (!Character.isValidCodePoint(codePoint)) {
-                            return;
-                        }
-                        if (i == 0 && nonBitmapRepl && !Emoji.isEmoji(codePoint)) {
-                            return;
-                        }
-                        codePoints[i] = codePoint;
-                    } catch (NumberFormatException e) {
+        }
+        reload();
+    }
+
+    private void scanEmoji() {
+        final boolean emojiOnly = !ModernUITextMC.CONFIG.mBitmapReplacement.get();
+        Predicate<ResourceLocation> filter =
+                location -> location.getPath().length() <= 64 && location.getPath().endsWith(".png");
+        Minecraft.getInstance().getResourceManager().listResources("emoji", filter)
+                .forEach((location, resource) -> {
+                    String[] paths = location.getPath().split("/");
+                    if (paths.length == 0) {
                         return;
                     }
-                }
-                String sequence = new String(codePoints, 0, codePoints.length);
-                mEmojiMap.computeIfAbsent(sequence,
-                        s -> new EmojiEntry(mEmojiMap.size(), res, sequence));
-            });
-            LOGGER.info("Scanned emoji map size: {}", mEmojiMap.size());
-
-            int mismatched = 0;
-            try (Resource res = Minecraft.getInstance().getResourceManager().getResource(
-                    new ResourceLocation(ID, "emoji_data.json"));
-                 BufferedReader reader = new BufferedReader(new InputStreamReader(
-                         res.getInputStream(), StandardCharsets.UTF_8))) {
-                JsonObject object = GsonHelper.fromJson(new Gson(), reader, JsonObject.class);
-                if (object != null) {
-                    for (var entry : object.entrySet()) {
-                        JsonArray shortcodes = entry.getValue().getAsJsonArray().get(3).getAsJsonArray();
-                        String[] parts = entry.getKey().split("-");
-                        if (parts.length == 0) {
+                    String name = paths[paths.length - 1];
+                    String[] parts = name.substring(0, name.length() - 4).split("-");
+                    if (parts.length == 0) {
+                        return;
+                    }
+                    int[] codePoints = new int[parts.length];
+                    for (int i = 0; i < parts.length; i++) {
+                        try {
+                            int codePoint = Integer.parseInt(parts[i], 16);
+                            if (!Character.isValidCodePoint(codePoint)) {
+                                return;
+                            }
+                            if (i == 0 && emojiOnly && !Emoji.isEmoji(codePoint)) {
+                                return;
+                            }
+                            codePoints[i] = codePoint;
+                        } catch (NumberFormatException e) {
                             return;
                         }
+                    }
+                    final String sequence = new String(codePoints, 0, codePoints.length);
+                    mEmojiMap.computeIfAbsent(sequence,
+                            __ -> new EmojiEntry(mEmojiMap.size(), location, sequence));
+                });
+        LOGGER.info("Scanned emoji map size: {}", mEmojiMap.size());
+    }
+
+    private void scanShortcodes() {
+        int mismatched = 0;
+        try (InputStream inputStream = Minecraft.getInstance().getResourceManager().open(
+                new ResourceLocation(ID, "emoji_data.json"));
+             BufferedReader reader = new BufferedReader(new InputStreamReader(
+                     inputStream, StandardCharsets.UTF_8))) {
+            JsonObject object = GsonHelper.fromJson(new Gson(), reader, JsonObject.class);
+            if (object != null) {
+                for (var entry : object.entrySet()) {
+                    JsonArray shortcodes = entry.getValue().getAsJsonArray().get(3).getAsJsonArray();
+                    String[] parts = entry.getKey().split("-");
+                    if (parts.length == 0) {
+                        return;
+                    }
+                    mEmojiLookupKey.clear();
+                    for (String part : parts) {
+                        try {
+                            int codePoint = Integer.parseInt(part, 16);
+                            mEmojiLookupKey.addCodePoint(codePoint);
+                        } catch (NumberFormatException e) {
+                            return;
+                        }
+                    }
+                    final String sequence;
+                    EmojiEntry cachedEntry = mEmojiMap.get(mEmojiLookupKey);
+                    // try to reuse emoji sequence
+                    if (cachedEntry != null) {
+                        sequence = cachedEntry.sequence;
+                    } else {
+                        // try with variation selector-16 removed
                         mEmojiLookupKey.clear();
                         for (String part : parts) {
                             try {
                                 int codePoint = Integer.parseInt(part, 16);
+                                if (codePoint == 0xfe0f) {
+                                    continue;
+                                }
                                 mEmojiLookupKey.addCodePoint(codePoint);
                             } catch (NumberFormatException e) {
                                 return;
                             }
                         }
-                        final String emojiSequence;
-                        EmojiEntry cachedEntry = mEmojiMap.get(mEmojiLookupKey);
-                        // try to reuse emoji sequence
+                        cachedEntry = mEmojiMap.get(mEmojiLookupKey);
                         if (cachedEntry != null) {
-                            emojiSequence = cachedEntry.sequence;
+                            sequence = cachedEntry.sequence;
                         } else {
-                            // try with variation selector-16 removed
-                            mEmojiLookupKey.clear();
-                            for (String part : parts) {
-                                try {
-                                    int codePoint = Integer.parseInt(part, 16);
-                                    if (codePoint == 0xfe0f) {
-                                        continue;
-                                    }
-                                    mEmojiLookupKey.addCodePoint(codePoint);
-                                } catch (NumberFormatException e) {
-                                    return;
-                                }
-                            }
-                            cachedEntry = mEmojiMap.get(mEmojiLookupKey);
-                            if (cachedEntry != null) {
-                                emojiSequence = cachedEntry.sequence;
-                            } else {
-                                emojiSequence = null;
-                            }
-                        }
-                        if (emojiSequence != null) {
-                            shortcodes.forEach(e -> mEmojiShortcodes.putIfAbsent(e.getAsString(), emojiSequence));
-                        } else {
-                            mismatched++;
+                            sequence = null;
                         }
                     }
-                } else {
-                    LOGGER.info(MARKER, "Failed to load emoji data");
+                    if (sequence != null) {
+                        shortcodes.forEach(e -> mEmojiShortcodes.putIfAbsent(e.getAsString(), sequence));
+                    } else {
+                        mismatched++;
+                    }
                 }
-            } catch (Exception e) {
-                LOGGER.info(MARKER, "Failed to load emoji data", e);
+            } else {
+                LOGGER.info(MARKER, "Failed to parse emoji data");
             }
-            LOGGER.info("Loaded emoji shortcodes: {}, mismatched emoji sequences: {}",
-                    mEmojiShortcodes.size(), mismatched);
+        } catch (Exception e) {
+            LOGGER.info(MARKER, "Failed to load emoji data", e);
         }
-        reload();
+        LOGGER.info("Loaded emoji shortcodes: {}, mismatched emoji sequences: {}",
+                mEmojiShortcodes.size(), mismatched);
     }
 
     /**
@@ -589,7 +595,7 @@ public class TextLayoutEngine {
      * @see FormattedTextWrapper
      */
     public TextRenderNode lookupComplexNode(@Nonnull FormattedText text) {
-        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
+        if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
@@ -599,7 +605,7 @@ public class TextLayoutEngine {
                     .join();
         }
         TextRenderNode node;
-        if (text instanceof BaseComponent component) {
+        if (text instanceof MutableComponent component) {
             node = mComponentCache.get(component);
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, Style.EMPTY);
@@ -627,7 +633,7 @@ public class TextLayoutEngine {
      * @see FormattedTextWrapper
      */
     public TextRenderNode lookupComplexNode(@Nonnull FormattedText text, @Nonnull Style style) {
-        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
+        if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
@@ -637,7 +643,7 @@ public class TextLayoutEngine {
                     .join();
         }
         TextRenderNode node;
-        if (text instanceof BaseComponent component) {
+        if (text instanceof MutableComponent component) {
             node = mComponentCache.get(component);
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, style);
@@ -680,11 +686,11 @@ public class TextLayoutEngine {
         // check if we intercepted it by Language.getVisualOrder()
         if (sequence instanceof FormattedTextWrapper) {
             FormattedText text = ((FormattedTextWrapper) sequence).mText;
-            if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
+            if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
                 return TextRenderNode.EMPTY;
             }
             TextRenderNode node;
-            if (text instanceof BaseComponent component) {
+            if (text instanceof MutableComponent component) {
                 node = mComponentCache.get(component);
                 if (node == null) {
                     node = mProcessor.performComplexLayout(text, Style.EMPTY);
@@ -784,8 +790,8 @@ public class TextLayoutEngine {
     @Nullable
     private GLBakedGlyph cacheEmoji(int id, @Nonnull ResourceLocation location,
                                     @Nonnull GLFontAtlas atlas, @Nonnull GLBakedGlyph glyph) {
-        try (Resource res = Minecraft.getInstance().getResourceManager().getResource(location);
-             NativeImage image = NativeImage.read(res.getInputStream())) {
+        try (InputStream inputStream = Minecraft.getInstance().getResourceManager().open(location);
+             NativeImage image = NativeImage.read(inputStream)) {
             if ((image.getWidth() == EMOJI_SIZE && image.getHeight() == EMOJI_SIZE) ||
                     (image.getWidth() == EMOJI_SIZE * 2 && image.getHeight() == EMOJI_SIZE * 2)) {
                 long dst = MemoryUtil.memAddress(mEmojiBuffer);

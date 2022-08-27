@@ -1,7 +1,8 @@
 {
     "pack": {
         "description": "Modern UI for Minecraft",
-        "pack_format": 8,
-        "_comment": ""
+        "pack_format": 9,
+        "forge:resource_pack_format": 9,
+        "forge:data_pack_format": 10
     }
 }
