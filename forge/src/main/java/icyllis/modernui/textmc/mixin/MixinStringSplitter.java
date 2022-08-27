@@ -22,6 +22,7 @@ import icyllis.modernui.textmc.ModernStringSplitter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.contents.LiteralContents;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.StringDecomposer;
 import org.apache.commons.lang3.mutable.MutableFloat;
@@ -138,11 +139,13 @@ public class MixinStringSplitter {
     @Overwrite
     public FormattedText headByWidth(@Nonnull FormattedText text, int width, @Nonnull Style style) {
         // Handle Enchantment Table
-        if (text instanceof TextComponent component &&
-                component.getStyle().getFont().equals(Minecraft.ALT_FONT)) {
+        if (text instanceof Component component &&
+                component.getSiblings().isEmpty() &&
+                component.getStyle().getFont().equals(Minecraft.ALT_FONT) &&
+                component.getContents() instanceof LiteralContents literal) {
             final MutableFloat maxWidth = new MutableFloat(width);
             final MutableInt position = new MutableInt();
-            if (!StringDecomposer.iterate(component.getText(), component.getStyle(),
+            if (!StringDecomposer.iterate(literal.text(), component.getStyle(),
                     (index, sty, codePoint) -> {
                         if (maxWidth.addAndGet(-widthProvider.getWidth(codePoint, sty)) >= 0) {
                             position.setValue(index + Character.charCount(codePoint));
@@ -151,13 +154,13 @@ public class MixinStringSplitter {
                             return false;
                         }
                     })) {
-                String substring = component.getText().substring(0, position.intValue());
+                String substring = literal.text().substring(0, position.intValue());
                 if (!substring.isEmpty()) {
                     return FormattedText.of(substring, component.getStyle());
                 }
             } else {
-                if (!component.getText().isEmpty()) {
-                    return FormattedText.of(component.getText(), component.getStyle());
+                if (!literal.text().isEmpty()) {
+                    return FormattedText.of(literal.text(), component.getStyle());
                 }
             }
             return FormattedText.EMPTY;

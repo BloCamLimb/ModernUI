@@ -222,7 +222,7 @@ public final class ModernStringSplitter {
      */
     @Nullable
     public static Style styleAtWidth(@Nonnull FormattedText text, float width) {
-        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY || width < 0) {
+        if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY || width < 0) {
             return null;
         }
 
@@ -308,7 +308,7 @@ public final class ModernStringSplitter {
      */
     @Nonnull
     public static FormattedText headByWidth(@Nonnull FormattedText text, float width, @Nonnull Style style) {
-        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY || width < 0) {
+        if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY || width < 0) {
             return FormattedText.EMPTY;
         }
 
@@ -457,7 +457,7 @@ public final class ModernStringSplitter {
      */
     public static void computeLineBreaks(@Nonnull FormattedText text, float width, @Nonnull Style base,
                                          @Nonnull BiConsumer<FormattedText, Boolean> consumer) {
-        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY || width < 0) {
+        if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY || width < 0) {
             return;
         }
 

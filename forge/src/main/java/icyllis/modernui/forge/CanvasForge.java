@@ -207,12 +207,13 @@ public final class CanvasForge {
         RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
     }
 
+    //TODO
     @RenderThread
     private void end(@Nonnull ByteBuffer buffer, @Nonnull VertexFormat.Mode mode, @Nonnull VertexFormat format,
                      @Nonnull VertexFormat.IndexType indexType, int indexCount, boolean sequentialIndex) {
         final GLSurfaceCanvas canvas = mCanvas;
 
-        if (canvas.bindVertexArray(format.getOrCreateVertexArrayObject())) {
+        /*if (canvas.bindVertexArray(format.getOrCreateVertexArrayObject())) {
             // minecraft is stupid so that it clears these bindings after a draw call
             glBindBuffer(GL_ARRAY_BUFFER, format.getOrCreateVertexBufferObject());
             format.setupBufferState();
@@ -233,7 +234,7 @@ public final class CanvasForge {
             buffer.limit(pos + indexCount * indexType.bytes);
             glBufferData(GL_ELEMENT_ARRAY_BUFFER, buffer, GL_DYNAMIC_DRAW);
             indexBufferType = indexType.asGLType;
-        }
+        }*/
 
         final ShaderInstance shader = RenderSystem.getShader();
         assert shader != null;
@@ -288,7 +289,7 @@ public final class CanvasForge {
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
-        glDrawElements(mode.asGLMode, indexCount, indexBufferType, MemoryUtil.NULL);
+        //glDrawElements(mode.asGLMode, indexCount, indexBufferType, MemoryUtil.NULL);
     }
 
     private class BufferSource implements MultiBufferSource {
@@ -318,12 +319,11 @@ public final class CanvasForge {
                     builder.setQuadSortOrigin(0, 0, 0);
                 }*/
 
-                builder.end();
+                BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
                 mLastType.setupRenderState();
 
-                Pair<BufferBuilder.DrawState, ByteBuffer> pair = builder.popNextBuffer();
-                BufferBuilder.DrawState state = pair.getFirst();
-                ByteBuffer buffer = pair.getSecond();
+                BufferBuilder.DrawState state = renderedBuffer.drawState();
+                ByteBuffer buffer = renderedBuffer.vertexBuffer();
 
                 if (state.vertexCount() > 0) {
                     buffer.position(0)

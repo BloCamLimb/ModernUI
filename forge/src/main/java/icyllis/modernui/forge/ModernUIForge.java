@@ -24,8 +24,8 @@ import icyllis.modernui.text.Typeface;
 import icyllis.modernui.textmc.ModernUITextMC;
 import icyllis.modernui.view.ViewManager;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
@@ -71,7 +71,7 @@ public final class ModernUIForge {
 
     private static boolean sOptiFineLoaded;
 
-    static volatile boolean sInterceptTipTheScales;
+    //static volatile boolean sInterceptTipTheScales;
 
     static volatile boolean sDevelopment;
     static volatile boolean sDeveloperMode;
@@ -116,8 +116,15 @@ public final class ModernUIForge {
 
         // TipTheScales doesn't work with OptiFine
         if (ModList.get().isLoaded("tipthescales") && !sOptiFineLoaded) {
-            sInterceptTipTheScales = true;
-            LOGGER.info(MARKER, "Disabled TipTheScales");
+            //sInterceptTipTheScales = true;
+            LOGGER.fatal(MARKER, "Detected TipTheScales without OptiFine");
+            throw new UnsupportedOperationException("Please remove TipTheScales, Modern UI can do everything it can, " +
+                    "and Modern UI is also compatible with OptiFine");
+        }
+        if (ModList.get().isLoaded("reblured")) {
+            LOGGER.fatal(MARKER, "Detected ReBlurred");
+            throw new UnsupportedOperationException("Please remove ReBlurred, Modern UI can do everything it can, " +
+                    "and Modern UI has better performance than it");
         }
 
         Config.init();
@@ -144,12 +151,29 @@ public final class ModernUIForge {
 
     // INTERNAL HOOK
     @OnlyIn(Dist.CLIENT)
+    public static void dispatchOnScroll(double scrollX, double scrollY) {
+        for (var l : MuiForgeApi.sOnScrollListeners) {
+            l.onScroll(scrollX, scrollY);
+        }
+    }
+
+    // INTERNAL HOOK
+    @OnlyIn(Dist.CLIENT)
+    public static void dispatchOnScreenChange(@Nullable Screen oldScreen, @Nullable Screen newScreen) {
+        for (var l : MuiForgeApi.sOnScreenChangeListeners) {
+            l.onScreenChange(oldScreen, newScreen);
+        }
+    }
+
+    // INTERNAL HOOK
+    @OnlyIn(Dist.CLIENT)
     public static void dispatchOnWindowResize(int width, int height, int guiScale, int oldGuiScale) {
         for (var l : MuiForgeApi.sOnWindowResizeListeners) {
             l.onWindowResize(width, height, guiScale, oldGuiScale);
         }
     }
 
+    // INTERNAL HOOK
     @OnlyIn(Dist.CLIENT)
     public static void dispatchOnDebugDump(@Nonnull PrintWriter writer) {
         for (var l : MuiForgeApi.sOnDebugDumpListeners) {
@@ -219,18 +243,20 @@ public final class ModernUIForge {
                 Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
                         cfg.replaceAll("\\\\", "/")));
                 selected.add(f);
-                LOGGER.debug(MARKER, "Font {} was loaded with config value {} as LOCAL FILE",
+                LOGGER.debug(MARKER, "Font '{}' was loaded with config value '{}' as LOCAL FILE",
                         f.getFamily(Locale.ROOT), cfg);
                 continue;
             } catch (Exception ignored) {
             }
-            try (Resource resource = Minecraft.getInstance().getResourceManager()
-                    .getResource(new ResourceLocation(cfg))) {
-                Font f = Font.createFont(Font.TRUETYPE_FONT, resource.getInputStream());
-                selected.add(f);
-                LOGGER.debug(MARKER, "Font {} was loaded with config value {} as RESOURCE PACK",
-                        f.getFamily(Locale.ROOT), cfg);
-                continue;
+            try {
+                try (InputStream inputStream = Minecraft.getInstance().getResourceManager()
+                        .open(new ResourceLocation(cfg))) {
+                    Font f = Font.createFont(Font.TRUETYPE_FONT, inputStream);
+                    selected.add(f);
+                    LOGGER.debug(MARKER, "Font '{}' was loaded with config value '{}' as RESOURCE PACK",
+                            f.getFamily(Locale.ROOT), cfg);
+                    continue;
+                }
             } catch (Exception ignored) {
             }
             Optional<Font> font = FontCollection.sAllFontFamilies.stream()
@@ -239,12 +265,12 @@ public final class ModernUIForge {
             if (font.isPresent()) {
                 Font f = font.get();
                 selected.add(f);
-                LOGGER.debug(MARKER, "Font {} was loaded with config value {} as SYSTEM FONT",
+                LOGGER.debug(MARKER, "Font '{}' was loaded with config value '{}' as SYSTEM FONT",
                         f.getFamily(Locale.ROOT), cfg);
                 continue;
             }
             hasFail = true;
-            LOGGER.info(MARKER, "Font {} failed to load or invalid", cfg);
+            LOGGER.info(MARKER, "Font '{}' failed to load or invalid", cfg);
         }
         if (hasFail && isDeveloperMode()) {
             LOGGER.debug(MARKER, "Available system font names: {}",
@@ -336,7 +362,7 @@ public final class ModernUIForge {
         @Nonnull
         @Override
         public InputStream getResourceStream(@Nonnull String res, @Nonnull String path) throws IOException {
-            return Minecraft.getInstance().getResourceManager().getResource(new ResourceLocation(res, path)).getInputStream();
+            return Minecraft.getInstance().getResourceManager().open(new ResourceLocation(res, path));
         }
 
         @Nonnull

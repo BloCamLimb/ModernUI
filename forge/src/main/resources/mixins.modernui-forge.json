@@ -9,14 +9,14 @@
     "MixinServerPacketListener"
   ],
   "client": [
-    "AccessOption",
+    "AccessOptions",
     "AccessPostChain",
-    "AccessVideoSettings",
     "MixinClientBundleTooltip",
     "MixinClientPacketListener",
     "MixinClientTextTooltip",
     "MixinInventoryScreen",
     "MixinLevelRendererDBG",
+    "MixinMinecraft",
     "MixinMouseHandler",
     "MixinRenderSystem",
     "MixinScreen",

@@ -24,8 +24,8 @@ import icyllis.modernui.graphics.font.GLFontAtlas;
 import icyllis.modernui.graphics.font.GlyphManager;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Sheets;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.FormattedText;
-import net.minecraft.network.chat.TextComponent;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -122,7 +122,7 @@ public final class ModernTextRenderer {
     public static float drawText(@Nonnull FormattedText text, float x, float y, int color, boolean dropShadow,
                                  @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                                  int colorBackground, int packedLight) {
-        if (text == TextComponent.EMPTY || text == FormattedText.EMPTY) {
+        if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
             return x;
         }
 

@@ -28,14 +28,16 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.VanillaPackResources;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
-import net.minecraft.server.packs.resources.SimpleResource;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Objects;
+import java.util.Optional;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -213,12 +215,13 @@ public class TextRenderType extends RenderType {
         final VanillaPackResources resources = Minecraft.getInstance().getClientPackSource().getVanillaPack();
         final ResourceProvider provider = location -> {
             // don't worry
-            InputStream stream = ModernUITextMC.class
+            @SuppressWarnings("resource") final InputStream stream = ModernUITextMC.class
                     .getResourceAsStream("/assets/" + location.getNamespace() + "/" + location.getPath());
             if (stream == null) {
-                return resources.getResource(location);
+                return Optional.of(new Resource(resources.getName(),
+                        () -> resources.getResource(PackType.CLIENT_RESOURCES, location)));
             }
-            return new SimpleResource(ModernUI.ID, location, stream, null);
+            return Optional.of(new Resource(ModernUI.ID, () -> stream));
         };
         try {
             sShader = new ShaderInstance(provider, SHADER_RL,

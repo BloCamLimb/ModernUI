@@ -163,6 +163,9 @@ public class TestLinearLayout extends LinearLayout {
         tv.setTextAlignment(TEXT_ALIGNMENT_GRAVITY);
 
         mTextView = tv;
+        /*setRotationY(-30);
+        setRotationX(45);
+        setRotation(60);*/
 
         for (int i = 0; i < 11; i++) {
             View v;
@@ -595,7 +598,7 @@ public class TestLinearLayout extends LinearLayout {
                         invalidate();
                     }).setInterpolator(interpolator));
             animation.invertFull();*/
-            PropertyValuesHolder pvh1 = PropertyValuesHolder.ofFloat(ROTATION, 0, 720);
+            PropertyValuesHolder pvh1 = PropertyValuesHolder.ofFloat(ROTATION, 0, 360);
             PropertyValuesHolder pvh2 = PropertyValuesHolder.ofFloat(SCALE_X, 1, 0.2f);
             PropertyValuesHolder pvh3 = PropertyValuesHolder.ofFloat(SCALE_Y, 1, 0.2f);
             PropertyValuesHolder pvh4 = PropertyValuesHolder.ofFloat(TRANSLATION_X, 0, 60);
@@ -604,6 +607,7 @@ public class TestLinearLayout extends LinearLayout {
             mAnimator = ObjectAnimator.ofPropertyValuesHolder(this, pvh1, pvh2, pvh3, pvh4, pvh5, pvh6);
             mAnimator.setRepeatCount(1);
             mAnimator.setRepeatMode(ObjectAnimator.REVERSE);
+            mAnimator.setDuration(3000);
             setClickable(true);
         }
 

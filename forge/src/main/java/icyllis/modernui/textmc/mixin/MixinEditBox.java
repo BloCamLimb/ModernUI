@@ -252,8 +252,7 @@ public abstract class MixinEditBox extends AbstractWidget {
                     .color(51, 181, 229, 102).endVertex();
             builder.vertex(matrix, startX, baseY - 1, 0)
                     .color(51, 181, 229, 102).endVertex();
-            builder.end();
-            BufferUploader.end(builder);
+            BufferUploader.drawWithShader(builder.end());
             RenderSystem.enableTexture();
             RenderSystem.enableDepthTest();
         } else if (cursorVisible) {
@@ -274,8 +273,7 @@ public abstract class MixinEditBox extends AbstractWidget {
                         .color(208, 208, 208, 255).endVertex();
                 builder.vertex(matrix, cursorX - 0.5f, baseY - 1, 0)
                         .color(208, 208, 208, 255).endVertex();
-                builder.end();
-                BufferUploader.end(builder);
+                BufferUploader.drawWithShader(builder.end());
                 RenderSystem.enableTexture();
             } else {
                 ModernTextRenderer.drawText(CURSOR_APPEND_CHARACTER, cursorX, baseY, color, true,

@@ -48,7 +48,6 @@ import icyllis.modernui.widget.EditText;
 import net.minecraft.*;
 import net.minecraft.client.*;
 import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.ChatComponent;
 import net.minecraft.client.gui.screens.ConfirmScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.player.LocalPlayer;
@@ -64,8 +63,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.*;
-import net.minecraftforge.client.gui.ForgeIngameGui;
 import net.minecraftforge.client.gui.LoadingErrorScreen;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.common.MinecraftForge;
@@ -73,6 +72,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
@@ -84,7 +84,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.reflect.*;
+import java.lang.reflect.Field;
 import java.util.Map;
 
 import static icyllis.modernui.ModernUI.LOGGER;
@@ -116,9 +116,9 @@ public final class UIManager implements LifecycleOwner {
             "key.modernui.openCenter", KeyConflictContext.UNIVERSAL, KeyModifier.CONTROL,
             InputConstants.Type.KEYSYM, GLFW_KEY_K, "Modern UI");
 
-    public static final Method SEND_TO_CHAT =
+    /*public static final Method SEND_TO_CHAT =
             ObfuscationReflectionHelper.findMethod(ChatComponent.class, "m_93790_",
-                    Component.class, int.class, int.class, boolean.class);
+                    Component.class, int.class, int.class, boolean.class);*/
     public static final Field BY_PATH =
             ObfuscationReflectionHelper.findField(TextureManager.class, "f_118468_");
     public static final Field TEXTURES_BY_NAME =
@@ -194,6 +194,8 @@ public final class UIManager implements LifecycleOwner {
     private UIManager() {
         // events
         MinecraftForge.EVENT_BUS.register(this);
+        MuiForgeApi.addOnScrollListener(this::onScroll);
+        MuiForgeApi.addOnScreenChangeListener(this::onScreenChange);
         MuiForgeApi.addOnWindowResizeListener((width, height, guiScale, oldGuiScale) -> resize());
 
         mUiThread = new Thread(this::run, "UI thread");
@@ -390,16 +392,16 @@ public final class UIManager implements LifecycleOwner {
                 Config.CLIENT.saveAndReload();
             }
             minecraft.setScreen(null);
-        }, new TranslatableComponent("error.modernui.gl_caps"),
-                new TranslatableComponent("error.modernui.gl_caps_desc", glRenderer, glVersion, extensions),
-                new TranslatableComponent("gui.modernui.dont_show_again"),
+        }, Component.translatable("error.modernui.gl_caps"),
+                Component.translatable("error.modernui.gl_caps_desc", glRenderer, glVersion, extensions),
+                Component.translatable("gui.modernui.dont_show_again"),
                 CommonComponents.GUI_CANCEL) {
             @Override
             protected void addButtons(int i) {
                 this.addExitButton(new Button(this.width / 2 - 50 - 105, i, 100, 20, this.yesButton,
                         b -> this.callback.accept(true)));
                 this.addExitButton(new Button(this.width / 2 - 50, i, 100, 20,
-                        new TranslatableComponent("gui.modernui.ok"), b -> Util.getPlatform().openUri(
+                        Component.translatable("gui.modernui.ok"), b -> Util.getPlatform().openUri(
                         "https://github.com/BloCamLimb/ModernUI/wiki/OpenGL-4.5-support")));
                 this.addExitButton(new Button(this.width / 2 - 50 + 105, i, 100, 20, this.noButton,
                         b -> this.callback.accept(false)));
@@ -408,8 +410,8 @@ public final class UIManager implements LifecycleOwner {
     }
 
     @SubscribeEvent
-    void onGuiOpen(@Nonnull ScreenOpenEvent event) {
-        final Screen next = event.getScreen();
+    void onGuiOpen(@Nonnull ScreenEvent.Opening event) {
+        final Screen next = event.getNewScreen();
         // true if there will be no screen to open
         boolean closeScreen = next == null;
 
@@ -423,7 +425,7 @@ public final class UIManager implements LifecycleOwner {
                 LOGGER.info(MARKER, "Disabled OptiFine Fast Render");
             }
             if (ModernUIForge.hasGLCapsError() && Config.CLIENT.showGLCapsError.get()) {
-                event.setScreen(createCapsErrorScreen());
+                event.setNewScreen(createCapsErrorScreen());
             }
             mFirstScreenOpened = true;
         }
@@ -447,6 +449,13 @@ public final class UIManager implements LifecycleOwner {
         }
     }
 
+    private void onScreenChange(@Nullable Screen oldScreen, @Nullable Screen newScreen) {
+        BlurHandler.INSTANCE.blur(newScreen);
+        if (newScreen == null) {
+            removed();
+        }
+    }
+
     @UiThread
     private void init() {
         long startTime = System.nanoTime();
@@ -460,7 +469,7 @@ public final class UIManager implements LifecycleOwner {
         mDecor.setFocusableInTouchMode(true);
         mDecor.setWillNotDraw(true);
         mDecor.setId(R.id.content);
-        updateLayoutDir();
+        updateLayoutDir(false);
 
         mFragmentContainerView = new FragmentContainerView();
         mFragmentContainerView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
@@ -577,7 +586,7 @@ public final class UIManager implements LifecycleOwner {
      * @see net.minecraftforge.client.event.InputEvent
      */
     @SubscribeEvent
-    void onPostMouseInput(@Nonnull InputEvent.MouseInputEvent event) {
+    void onPostMouseInput(@Nonnull InputEvent.MouseButton.Post event) {
         // We should ensure (overlay == null && screen != null)
         // and the screen must be a mui screen
         if (minecraft.getOverlay() == null && mScreen != null) {
@@ -613,11 +622,11 @@ public final class UIManager implements LifecycleOwner {
     }
 
     // Hook method, DO NOT CALL
-    public static void onScroll(double scrollX, double scrollY) {
-        if (sInstance.mScreen != null) {
+    private void onScroll(double scrollX, double scrollY) {
+        if (mScreen != null) {
             final long now = Core.timeNanos();
-            final Window window = sInstance.mWindow;
-            final MouseHandler mouseHandler = sInstance.minecraft.mouseHandler;
+            final Window window = mWindow;
+            final MouseHandler mouseHandler = minecraft.mouseHandler;
             float x = (float) (mouseHandler.xpos() *
                     window.getWidth() / window.getScreenWidth());
             float y = (float) (mouseHandler.ypos() *
@@ -626,12 +635,12 @@ public final class UIManager implements LifecycleOwner {
                     x, y, 0);
             event.setAxisValue(MotionEvent.AXIS_HSCROLL, (float) scrollX);
             event.setAxisValue(MotionEvent.AXIS_VSCROLL, (float) scrollY);
-            sInstance.mRoot.enqueueInputEvent(event);
+            mRoot.enqueueInputEvent(event);
         }
     }
 
     @SubscribeEvent
-    void onPostKeyInput(@Nonnull InputEvent.KeyInputEvent event) {
+    void onPostKeyInput(@Nonnull InputEvent.Key event) {
         if (mScreen != null) {
             int action = event.getAction() == GLFW_RELEASE ? KeyEvent.ACTION_UP : KeyEvent.ACTION_DOWN;
             KeyEvent keyEvent = KeyEvent.obtain(Core.timeNanos(), action, event.getKey(), 0,
@@ -714,11 +723,13 @@ public final class UIManager implements LifecycleOwner {
         }
         String str = builder.toString();
         if (minecraft.level != null) {
-            try {
-                SEND_TO_CHAT.invoke(minecraft.gui.getChat(), new TextComponent(str).withStyle(ChatFormatting.GRAY),
+            /*try {
+                SEND_TO_CHAT.invoke(minecraft.gui.getChat(), ,
                         0xCBD366, minecraft.gui.getGuiTicks(), false);
+
             } catch (IllegalAccessException | InvocationTargetException ignored) {
-            }
+            }*/
+            minecraft.gui.getChat().addMessage(Component.literal(str).withStyle(ChatFormatting.GRAY));
         }
         LOGGER.info(MARKER, str);
     }
@@ -736,7 +747,7 @@ public final class UIManager implements LifecycleOwner {
         if (menu != null) {
             pw.println(menu.getClass().getSimpleName());
             try {
-                ResourceLocation name = menu.getType().getRegistryName();
+                ResourceLocation name = ForgeRegistries.MENU_TYPES.getKey(menu.getType());
                 pw.print("  Registry Name: ");
                 pw.println(name);
             } catch (Exception ignored) {
@@ -863,7 +874,7 @@ public final class UIManager implements LifecycleOwner {
             }
             return;
         }
-        RenderSystem.enableCull();
+        RenderSystem.disableCull();
         RenderSystem.enableBlend();
         RenderSystem.activeTexture(GL_TEXTURE0);
         RenderSystem.disableDepthTest();
@@ -875,9 +886,10 @@ public final class UIManager implements LifecycleOwner {
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
 
-        // TODO need multiple canvas instances, tooltip shares this now, but different thread
+        // TODO need multiple canvas instances, tooltip shares this now, but different thread; remove Z transform
         mCanvas.setProjection(mProjectionMatrix.setOrthographic(
-                mWindow.getWidth(), mWindow.getHeight(), 0, icyllis.modernui.core.Window.LAST_SYSTEM_WINDOW + 1));
+                mWindow.getWidth(), mWindow.getHeight(), 0, icyllis.modernui.core.Window.LAST_SYSTEM_WINDOW * 2 + 1,
+                true));
         mRoot.flushDrawCommands(mCanvas, mFramebuffer, mWindow.getWidth(), mWindow.getHeight());
 
         glBindVertexArray(oldVertexArray);
@@ -889,7 +901,7 @@ public final class UIManager implements LifecycleOwner {
     }
 
     @SubscribeEvent
-    void onRenderGameOverlayLayer(@Nonnull RenderGameOverlayEvent.PreLayer event) {
+    void onRenderGameOverlayLayer(@Nonnull RenderGuiOverlayEvent.Pre event) {
         /*switch (event.getType()) {
             case CROSSHAIRS:
                 event.setCanceled(mScreen != null);
@@ -903,7 +915,7 @@ public final class UIManager implements LifecycleOwner {
                     TestHUD.sInstance.drawBars(mFCanvas);
                 break;*//*
         }*/
-        if (event.getOverlay() == ForgeIngameGui.CROSSHAIR_ELEMENT) {
+        if (event.getOverlay() == VanillaGuiOverlay.CROSSHAIR.type()) {
             if (mScreen != null) {
                 event.setCanceled(true);
             }
@@ -966,14 +978,15 @@ public final class UIManager implements LifecycleOwner {
     }
 
     @UiThread
-    void updateLayoutDir() {
+    void updateLayoutDir(boolean forceRTL) {
         if (mDecor == null) {
             return;
         }
-        boolean layoutRtl = Config.CLIENT.forceRtl.get() ||
+        boolean layoutRtl = forceRTL ||
                 TextUtils.getLayoutDirectionFromLocale(ModernUI.getSelectedLocale()) == View.LAYOUT_DIRECTION_RTL;
         mDecor.setLayoutDirection(layoutRtl ? View.LAYOUT_DIRECTION_RTL : View.LAYOUT_DIRECTION_LOCALE);
         mDecor.requestLayout();
+        TooltipRenderer.sLayoutRTL = layoutRtl;
     }
 
     @MainThread
@@ -1125,8 +1138,9 @@ public final class UIManager implements LifecycleOwner {
                     // do alpha fade in
                     int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
                     alpha = alpha << 8 | alpha;
+                    alpha = alpha << 16 | alpha;
                     // premultiplied alpha
-                    canvas.drawLayer(layer, width, height, alpha << 16 | alpha, true);
+                    canvas.drawLayer(layer, width, height, alpha, true);
                     canvas.draw(null);
                 }
             }

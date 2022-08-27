@@ -37,22 +37,22 @@ public final class Matrix4 implements Cloneable {
     // [m21 m22 m23 m24]
     // [m31 m32 m33 m34]
     // [m41 m42 m43 m44] <- [m41 m42 m43] represents the origin
-    float m11;
-    float m12;
-    float m13;
-    float m14;
-    float m21;
-    float m22;
-    float m23;
-    float m24;
-    float m31;
-    float m32;
-    float m33;
-    float m34;
-    float m41;
-    float m42;
-    float m43;
-    float m44;
+    public float m11;
+    public float m12;
+    public float m13;
+    public float m14;
+    public float m21;
+    public float m22;
+    public float m23;
+    public float m24;
+    public float m31;
+    public float m32;
+    public float m33;
+    public float m34;
+    public float m41;
+    public float m42;
+    public float m43;
+    public float m44;
 
     /**
      * Create a zero matrix.
@@ -141,17 +141,18 @@ public final class Matrix4 implements Cloneable {
      * @param height the distance from bottom frustum plane to top frustum plane
      * @param near   the near frustum plane, must be positive
      * @param far    the far frustum plane, must be positive
+     * @param flipY  whether to flip the projection vertically
      * @return the resulting matrix
      */
     @Nonnull
-    public static Matrix4 makeOrthographic(float width, float height, float near, float far) {
+    public static Matrix4 makeOrthographic(float width, float height, float near, float far, boolean flipY) {
         final Matrix4 mat = new Matrix4();
         float invNF = 1.0f / (near - far);
         mat.m11 = 2.0f / width;
-        mat.m22 = -2.0f / height;
+        mat.m22 = flipY ? -2.0f / height : 2.0f / height;
         mat.m33 = 2.0f * invNF;
         mat.m41 = -1.0f;
-        mat.m42 = 1.0f;
+        mat.m42 = flipY ? 1.0f : -1.0f;
         mat.m43 = (near + far) * invNF;
         mat.m44 = 1.0f;
         return mat;
@@ -890,24 +891,24 @@ public final class Matrix4 implements Cloneable {
     }
 
     /**
-     * Set this matrix to an orthographic projection matrix. The left plane and top plane
-     * are considered to be 0.
+     * Set this matrix to an orthographic projection matrix.
      *
      * @param width  the distance from right frustum plane to left frustum plane
      * @param height the distance from bottom frustum plane to top frustum plane
      * @param near   the near frustum plane, must be positive
      * @param far    the far frustum plane, must be positive
+     * @param flipY  whether to flip the projection vertically
      * @return this
      */
     @Nonnull
-    public Matrix4 setOrthographic(float width, float height, float near, float far) {
+    public Matrix4 setOrthographic(float width, float height, float near, float far, boolean flipY) {
         float invNF = 1.0f / (near - far);
         m11 = 2.0f / width;
         m12 = 0.0f;
         m13 = 0.0f;
         m14 = 0.0f;
         m21 = 0.0f;
-        m22 = -2.0f / height;
+        m22 = flipY ? -2.0f / height : 2.0f / height;
         m23 = 0.0f;
         m24 = 0.0f;
         m31 = 0.0f;
@@ -915,7 +916,7 @@ public final class Matrix4 implements Cloneable {
         m33 = 2.0f * invNF;
         m34 = 0.0f;
         m41 = -1.0f;
-        m42 = 1.0f;
+        m42 = flipY ? 1.0f : -1.0f;
         m43 = (near + far) * invNF;
         m44 = 1.0f;
         return this;

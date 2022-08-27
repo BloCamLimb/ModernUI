@@ -184,18 +184,7 @@ public class TestMain {
             }
         }
 
-        Gson gson = new Gson();
-        try (BufferedReader reader = new BufferedReader(
-                new InputStreamReader(
-                        new FileInputStream("E:/emoji_data.json"), StandardCharsets.UTF_8))){
-            JsonObject object = GsonHelper.fromJson(gson, reader, JsonObject.class);
-            for (var entry : object.entrySet()) {
-                JsonArray shortcodes = entry.getValue().getAsJsonArray().get(3).getAsJsonArray();
-                LOGGER.info("{} {}", entry.getKey(), shortcodes.get(0).getAsString());
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        testMarkdownParsing();
 
         int cOut = icyllis.modernui.graphics.Color.blend(BlendMode.SRC_OVER,
                 icyllis.modernui.graphics.Color.argb(0.4f, 0.6f, 0.2f, 0.8f),
