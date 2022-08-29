@@ -7,8 +7,8 @@ plugins {
 apply plugin: 'java'
 
 version = "${core_version}" as String
-group = 'icyllis.arctic'
-archivesBaseName = 'Arctic'
+group = 'icyllis.arcticgi'
+archivesBaseName = 'ArcticGI'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
@@ -22,6 +22,9 @@ dependencies {
     compileOnly 'org.jetbrains:annotations:23.0.0'
 
     implementation "it.unimi.dsi:fastutil:8.5.8"
+
+    testImplementation 'org.openjdk.jmh:jmh-core:1.35'
+    testAnnotationProcessor 'org.openjdk.jmh:jmh-generator-annprocess:1.35'
 
     def lwjglNatives
     switch (OperatingSystem.current()) {
@@ -84,13 +87,26 @@ java {
 jar {
     manifest {
         attributes(
-                "Specification-Title": "Arctic",
+                "Specification-Title": "ArcticGI",
                 "Specification-Vendor": "BloCamLimb",
                 "Specification-Version": "1",
                 "Implementation-Title": project.name,
                 "Implementation-Version": project.version,
                 "Implementation-Vendor": "BloCamLimb",
                 "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+        )
+    }
+}
+
+if (project.hasProperty("jks")) {
+    jar.doLast {
+        ant.signjar(
+                keypass: project.getProperty("jks_keypass"),
+                storepass: project.getProperty("jks_pass"),
+                jar: jar.archiveFile.get(),
+                storetype: 'jks',
+                keystore: project.getProperty("jks"),
+                alias: project.getProperty("jks_alias")
         )
     }
 }
@@ -126,11 +142,11 @@ publishing {
                 name = rootProject.name
                 packaging = 'pom'
                 scm {
-                    url = 'https://github.com/BloCamLimb/Arctic.git'
+                    url = 'https://github.com/BloCamLimb/ArcticGI.git'
                 }
                 issueManagement {
                     system = 'github'
-                    url = 'https://github.com/BloCamLimb/Arctic/issues'
+                    url = 'https://github.com/BloCamLimb/ArcticGI/issues'
                 }
                 licenses {
                     license {
