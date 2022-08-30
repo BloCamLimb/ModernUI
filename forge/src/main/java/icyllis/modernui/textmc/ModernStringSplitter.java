@@ -25,8 +25,7 @@ import net.minecraft.client.ComponentCollector;
 import net.minecraft.client.StringSplitter;
 import net.minecraft.network.chat.*;
 import net.minecraft.util.*;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.commons.lang3.mutable.MutableObject;
 
 import javax.annotation.Nonnull;
@@ -37,8 +36,13 @@ import java.util.function.BiConsumer;
 /**
  * Provides text measurement, Unicode grapheme cluster breaking, Unicode line breaking and so on.
  */
-@OnlyIn(Dist.CLIENT)
 public final class ModernStringSplitter {
+
+    static {
+        if (FMLEnvironment.dist.isDedicatedServer()) {
+            throw new RuntimeException();
+        }
+    }
 
     //private final TextLayoutEngine mFontEngine = TextLayoutEngine.getInstance();
 

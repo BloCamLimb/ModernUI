@@ -22,6 +22,7 @@ import icyllis.modernui.ModernUI;
 import org.spongepowered.asm.mixin.Mixins;
 import org.spongepowered.asm.mixin.connect.IMixinConnector;
 
+@Deprecated
 public class MixinConnector implements IMixinConnector {
 
     @Override

@@ -23,13 +23,9 @@ import icyllis.modernui.forge.MuiRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.DataSlot;
-import net.minecraft.world.inventory.MenuConstructor;
+import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -45,9 +41,9 @@ public class TestContainerMenu extends AbstractContainerMenu {
      * This constructor should be only used on client.
      * Indicates that this menu is only used for view layout without any network communication.
      */
-    @OnlyIn(Dist.CLIENT)
     public TestContainerMenu() {
         super(null, 0);
+        assert (FMLEnvironment.dist.isClient());
     }
 
     /**

@@ -157,7 +157,6 @@ final class Config {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static class Client {
 
         public static final int ANIM_DURATION_MIN = 0;

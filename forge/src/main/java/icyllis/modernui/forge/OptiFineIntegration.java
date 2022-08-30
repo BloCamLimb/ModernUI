@@ -20,17 +20,18 @@ package icyllis.modernui.forge;
 
 import net.minecraft.client.*;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import org.jetbrains.annotations.ApiStatus;
 
 import java.lang.reflect.*;
 
-@OnlyIn(Dist.CLIENT)
+@ApiStatus.Internal
 public final class OptiFineIntegration {
 
     private static Field of_fast_render;
 
     static {
+        assert (FMLEnvironment.dist.isClient());
         try {
             of_fast_render = Options.class.getDeclaredField("ofFastRender");
         } catch (NoSuchFieldException e) {

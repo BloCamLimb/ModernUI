@@ -21,44 +21,33 @@ package icyllis.modernui.forge;
 import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.platform.Window;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.datafixers.util.Pair;
+import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.opengl.GLSurfaceCanvas;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.opengl.GLSurfaceCanvas;
 import icyllis.modernui.math.Matrix4;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import it.unimi.dsi.fastutil.objects.Object2IntArrayMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.LightTexture;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.*;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.entity.ItemRenderer;
-import net.minecraft.client.renderer.texture.AbstractTexture;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.renderer.texture.*;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.lwjgl.BufferUtils;
-import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-import java.util.ArrayDeque;
-import java.util.Objects;
-import java.util.Queue;
+import java.util.*;
 
 import static icyllis.modernui.graphics.opengl.GLCore.*;
 
@@ -69,6 +58,10 @@ import static icyllis.modernui.graphics.opengl.GLCore.*;
  * @author BloCamLimb
  */
 public final class CanvasForge {
+
+    static {
+        assert (FMLEnvironment.dist.isClient());
+    }
 
     private static final CanvasForge sInstance = new CanvasForge();
 

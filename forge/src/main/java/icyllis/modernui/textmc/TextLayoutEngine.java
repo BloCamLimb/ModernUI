@@ -36,11 +36,10 @@ import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.util.GsonHelper;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -67,13 +66,18 @@ import static icyllis.modernui.ModernUI.*;
  *
  * @since 2.0
  */
-@OnlyIn(Dist.CLIENT)
 public class TextLayoutEngine {
 
     /**
      * Instance on main/render thread
      */
     private static volatile TextLayoutEngine sInstance;
+
+    static {
+        if (FMLEnvironment.dist.isDedicatedServer()) {
+            throw new RuntimeException();
+        }
+    }
 
     /**
      * Config values

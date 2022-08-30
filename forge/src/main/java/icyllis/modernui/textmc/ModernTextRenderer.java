@@ -27,8 +27,7 @@ import net.minecraft.client.renderer.Sheets;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nonnull;
 
@@ -37,8 +36,13 @@ import javax.annotation.Nonnull;
  *
  * @author BloCamLimb
  */
-@OnlyIn(Dist.CLIENT)
 public final class ModernTextRenderer {
+
+    static {
+        if (FMLEnvironment.dist.isDedicatedServer()) {
+            throw new RuntimeException();
+        }
+    }
 
     public static final Vector3f SHADOW_OFFSET = new Vector3f(0.0F, 0.0F, 0.03F);
     public static final Vector3f OUTLINE_OFFSET = new Vector3f(0.0F, 0.0F, 0.00001F);

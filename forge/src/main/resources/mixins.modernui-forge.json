@@ -5,14 +5,10 @@
   "compatibilityLevel": "JAVA_17",
   "plugin": "icyllis.modernui.forge.MixinConfigPlugin",
   "package": "icyllis.modernui.forge.mixin",
-  "mixins": [
-    "MixinServerPacketListener"
-  ],
   "client": [
     "AccessOptions",
     "AccessPostChain",
     "MixinClientBundleTooltip",
-    "MixinClientPacketListener",
     "MixinClientTextTooltip",
     "MixinInventoryScreen",
     "MixinLevelRendererDBG",

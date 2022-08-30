@@ -19,7 +19,6 @@
 package icyllis.modernui.forge;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -31,8 +30,6 @@ import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
-
-import static icyllis.modernui.forge.ModernUIForge.*;
 
 /**
  * Public APIs for Minecraft Forge mods to Modern UI.
@@ -101,11 +98,10 @@ public final class MuiForgeApi {
      *                 to the menu supplier (IContainerFactory) that registered on client
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      */
-    @SuppressWarnings("deprecation")
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
         if (!(player instanceof ServerPlayer p)) {
-            LOGGER.warn(MARKER, "openMenu() is not called from logical server",
+            ModernUIForge.LOGGER.warn(ModernUIForge.MARKER, "openMenu() is not called from logical server",
                     new Exception().fillInStackTrace());
             return;
         }
@@ -118,7 +114,7 @@ public final class MuiForgeApi {
         if (menu == null) {
             return;
         }
-        NetworkMessages.openMenu(menu.containerId, Registry.MENU.getId(menu.getType()), writer, p);
+        NetworkMessages.openMenu(menu, writer).sendToPlayer(p);
         p.initMenu(menu);
         p.containerMenu = menu;
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(p, menu));

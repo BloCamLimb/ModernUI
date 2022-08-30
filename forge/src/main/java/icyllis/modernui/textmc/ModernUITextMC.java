@@ -27,8 +27,6 @@ import icyllis.modernui.view.View;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -42,6 +40,7 @@ import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.ParallelDispatchEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
@@ -52,8 +51,13 @@ import static icyllis.modernui.ModernUI.*;
 /**
  * Modern UI Text MC can bootstrap independently.
  */
-@OnlyIn(Dist.CLIENT)
 public final class ModernUITextMC {
+
+    static {
+        if (FMLEnvironment.dist.isDedicatedServer()) {
+            throw new RuntimeException();
+        }
+    }
 
     public static Config CONFIG;
     private static ForgeConfigSpec CONFIG_SPEC;
@@ -61,12 +65,10 @@ public final class ModernUITextMC {
     private ModernUITextMC() {
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static void init() {
         FMLJavaModLoadingContext.get().getModEventBus().register(ModernUITextMC.class);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static void initConfig() {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.NAME_CPT), ModernUI.NAME_CPT);
         ModContainer mod = ModLoadingContext.get().getActiveContainer();
@@ -79,7 +81,6 @@ public final class ModernUITextMC {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CONFIG::onReload);
     }
 
-    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void registerResourceListener(@Nonnull RegisterClientReloadListenersEvent event) {
         // language may reload, cause TranslatableComponent changed, so clear layout cache
@@ -87,7 +88,6 @@ public final class ModernUITextMC {
         LOGGER.debug(MARKER, "Registered language reload listener");
     }
 
-    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
         // preload text engine, note that this event is fired after client config first load
@@ -125,7 +125,6 @@ public final class ModernUITextMC {
         LOGGER.info(MARKER, "Loaded modern text engine");
     }
 
-    @OnlyIn(Dist.CLIENT)
     @SubscribeEvent
     static void onParallelDispatch(@Nonnull ParallelDispatchEvent event) {
         // since Forge EVENT_BUS is not started yet, we should manually maintain that
@@ -185,7 +184,6 @@ public final class ModernUITextMC {
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static class Config {
 
         public static final float BASE_FONT_SIZE_MIN = 6;
@@ -249,10 +247,10 @@ public final class ModernUITextMC {
                             "For smaller font, 6 is recommended. The default value is 7.")
                     .defineInRange("baselineShift", 7.0, BASELINE_MIN, BASELINE_MAX);
             mShadowOffset = builder.comment(
-                    "Control the text shadow offset for vanilla text rendering, in GUI scaled pixels.")
+                            "Control the text shadow offset for vanilla text rendering, in GUI scaled pixels.")
                     .defineInRange("shadowOffset", 0.8, SHADOW_OFFSET_MIN, SHADOW_OFFSET_MAX);
             mOutlineOffset = builder.comment(
-                    "Control the text outline offset for vanilla text rendering, in GUI scaled pixels.")
+                            "Control the text outline offset for vanilla text rendering, in GUI scaled pixels.")
                     .defineInRange("outlineOffset", 0.5, OUTLINE_OFFSET_MIN, OUTLINE_OFFSET_MAX);
             mSuperSampling = builder.comment(
                             "Super sampling can make the text more sharper with large font size or in the 3D world.",

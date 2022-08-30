@@ -23,11 +23,11 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.testforge.TestContainerMenu;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nonnull;
 
@@ -64,26 +64,18 @@ final class EventHandler {
 
     }*/
 
-    @OnlyIn(Dist.CLIENT)
-    static class ClientDebug {
-
-        /*@SubscribeEvent
-        static void onRenderLevelLast(@Nonnull RenderLevelLastEvent event) {
-            if (Screen.hasAltDown() &&
-                    InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_KP_7)) {
-                LOGGER.info("Capture from RenderLevelLastEvent");
-                LOGGER.info("PoseStack.last().pose(): {}", event.getPoseStack().last().pose());
-                LOGGER.info("ProjectionMatrix: {}", event.getProjectionMatrix());
-            }
-        }*/
-    }
-
     /**
      * Handles game client events from Forge event bus
      */
-    @OnlyIn(Dist.CLIENT)
     @Mod.EventBusSubscriber(modid = ModernUI.ID, value = Dist.CLIENT)
     static class Client {
+
+        static {
+            assert (FMLEnvironment.dist.isClient());
+        }
+
+        private Client() {
+        }
 
         //static OptionInstance<Integer> sNewGuiScale;
 
@@ -210,4 +202,24 @@ final class EventHandler {
 
         }
     }*/
+
+    static class ClientDebug {
+
+        static {
+            assert (FMLEnvironment.dist.isClient());
+        }
+
+        private ClientDebug() {
+        }
+
+        /*@SubscribeEvent
+        static void onRenderLevelLast(@Nonnull RenderLevelLastEvent event) {
+            if (Screen.hasAltDown() &&
+                    InputConstants.isKeyDown(Minecraft.getInstance().getWindow().getWindow(), GLFW.GLFW_KEY_KP_7)) {
+                LOGGER.info("Capture from RenderLevelLastEvent");
+                LOGGER.info("PoseStack.last().pose(): {}", event.getPoseStack().last().pose());
+                LOGGER.info("ProjectionMatrix: {}", event.getProjectionMatrix());
+            }
+        }*/
+    }
 }
