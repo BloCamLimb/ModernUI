@@ -30,6 +30,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.ItemRenderer;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.BufferUtils;
 
@@ -44,6 +45,10 @@ import static icyllis.modernui.graphics.opengl.GLCore.*;
  */
 @ApiStatus.Internal
 public final class TooltipRenderer {
+
+    static {
+        assert (FMLEnvironment.dist.isClient());
+    }
 
     // config value
     public static volatile boolean sTooltip = true;

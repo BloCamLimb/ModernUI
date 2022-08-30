@@ -59,8 +59,6 @@ import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.LoadingErrorScreen;
@@ -71,6 +69,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.io.output.StringBuilderWriter;
@@ -81,7 +80,6 @@ import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
@@ -96,12 +94,16 @@ import static org.lwjgl.glfw.GLFW.*;
  * This class is public only for some hooking methods.
  */
 @ApiStatus.Internal
-@NotThreadSafe
-@OnlyIn(Dist.CLIENT)
 public final class UIManager implements LifecycleOwner {
 
     // the logger marker
     static final Marker MARKER = MarkerManager.getMarker("UIManager");
+
+    static {
+        if (FMLEnvironment.dist.isDedicatedServer()) {
+            throw new RuntimeException();
+        }
+    }
 
     // configs
     static volatile boolean sPlaySoundOnLoaded;
@@ -280,7 +282,7 @@ public final class UIManager implements LifecycleOwner {
     @MainThread
     void start(LocalPlayer p, AbstractContainerMenu menu, @Nonnull ResourceLocation key) {
         // internally called, so no explicitly checks
-        assert minecraft.isSameThread();
+        assert (minecraft.isSameThread());
         final OpenMenuEvent event = new OpenMenuEvent(menu);
         ModernUIForge.post(key.getNamespace(), event);
         final Fragment fragment = event.getFragment();

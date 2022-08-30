@@ -18,31 +18,38 @@
 
 package icyllis.modernui.forge;
 
+import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import org.jetbrains.annotations.ApiStatus;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
 /**
  * Internal use.
  */
-public final class NetworkMessages {
+@ApiStatus.Internal
+public final class NetworkMessages extends NetworkHandler {
 
     private static final int S2C_OPEN_MENU = 0;
 
     static NetworkHandler sNetwork;
 
-    private NetworkMessages() {
+    NetworkMessages() {
+        super(new ResourceLocation(ModernUIForge.ID, "network"), "360", true);
     }
 
-    static void openMenu(int containerId, int menuId, @Nullable Consumer<FriendlyByteBuf> writer, ServerPlayer p) {
-        FriendlyByteBuf buf = NetworkHandler.buffer(S2C_OPEN_MENU);
-        buf.writeVarInt(containerId);
-        buf.writeVarInt(menuId);
+    @SuppressWarnings("deprecation")
+    static PacketBuffer openMenu(@Nonnull AbstractContainerMenu menu, @Nullable Consumer<FriendlyByteBuf> writer) {
+        PacketBuffer buf = sNetwork.buffer(S2C_OPEN_MENU);
+        buf.writeVarInt(menu.containerId);
+        buf.writeVarInt(Registry.MENU.getId(menu.getType()));
         if (writer != null) {
             writer.accept(buf);
         }
-        sNetwork.sendToPlayer(buf, p);
+        return buf;
     }
 }

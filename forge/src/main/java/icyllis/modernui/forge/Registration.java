@@ -42,15 +42,16 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 
@@ -90,33 +91,6 @@ final class Registration {
         helper.register(MuiRegistries.PROJECT_BUILDER_ITEM_KEY, new ProjectBuilderItem(properties));
     }
 
-    @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
-    static void loadingClient(RegisterParticleProvidersEvent event) {
-        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread (render thread)
-        // this event fired before RegisterClientReloadListenersEvent
-        UIManager.initialize();
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
-    static void registerResourceListener(@Nonnull RegisterClientReloadListenersEvent event) {
-        // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread (render thread)
-        // this event fired after ParticleFactoryRegisterEvent
-        event.registerReloadListener((ResourceManagerReloadListener) manager -> {
-            ShaderManager.getInstance().reload();
-            TextureManager.getInstance().reload();
-            Handler handler = Core.getUiHandlerAsync();
-            // FML may throw ex, so it can be null
-            if (handler != null) {
-                // Call in lambda, not in creating the lambda
-                handler.post(() -> UIManager.getInstance().updateLayoutDir(Config.CLIENT.forceRtl.get()));
-            }
-        });
-
-        LOGGER.debug(MARKER, "Registered resource reload listener");
-    }
-
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
         /*byte[] bytes = null;
@@ -143,8 +117,8 @@ final class Registration {
         if (bytes == null) {
             throw new IllegalStateException();
         }*/
-        NetworkMessages.sNetwork = new NetworkHandler("", () -> NetworkMessages::msg,
-                null, "360", true);
+        NetworkMessages.sNetwork = DistExecutor.safeRunForDist(() -> NetworkMessages.Client::new,
+                () -> NetworkMessages::new);
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 
@@ -185,171 +159,216 @@ final class Registration {
         return sb.toString();
     }
 
-    @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
-    static void registerKeyMapping(@Nonnull RegisterKeyMappingsEvent event) {
-        event.register(UIManager.OPEN_CENTER_KEY);
-    }
+    @Mod.EventBusSubscriber(modid = ModernUI.ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    static class ModClient {
 
-    @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
-    static void setupClient(@Nonnull FMLClientSetupEvent event) {
-        //SettingsManager.INSTANCE.buildAllSettings();
-        //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
-
-        event.enqueueWork(() -> {
-            ModernUI.getSelectedTypeface();
-            UIManager.initializeRenderer();
-        });
-
-        // Always replace static variable as an insurance policy
-        /*AccessOption.setGuiScale(new CycleOption("options.guiScale",
-                (options, integer) -> options.guiScale = Integer.remainderUnsigned(
-                        options.guiScale + integer, (MForgeCompat.calcGuiScales() & 0xf) + 1),
-                (options, cycleOption) -> options.guiScale == 0 ?
-                        ((AccessOption) cycleOption).callGenericValueLabel(new TranslatableComponent("options" +
-                                ".guiScale.auto")
-                                .append(new TextComponent(" (" + (MForgeCompat.calcGuiScales() >> 4 & 0xf) + ")"))) :
-                        ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString(options
-                        .guiScale))))
-        );*/
-
-        OptionInstance<Integer> newGuiScale = new OptionInstance<>("options.guiScale",
-                OptionInstance.noTooltip(),
-                (caption, value) -> {
-                    if (value == 0) {
-                        return Options.genericValueLabel(caption, Component.translatable("options.guiScale.auto")
-                                .append(Component.literal(" (" + (MuiForgeApi.calcGuiScales() >> 4 & 0xf) + ")")));
-                    } else {
-                        MutableComponent valueComponent = Component.literal(value.toString());
-                        if (value < (MuiForgeApi.calcGuiScales() >> 8 & 0xf)) {
-                            valueComponent.withStyle(ChatFormatting.RED);
-                        }
-                        return Options.genericValueLabel(caption, valueComponent);
-                    }
-                },
-                new GuiScaleValueSet(), 0, value -> {
-            if (value != Minecraft.getInstance().getWindow().getGuiScale()) {
-                Minecraft.getInstance().resizeDisplay();
-            }
-        });
-        ((AccessOptions) Minecraft.getInstance().options).setGuiScale(newGuiScale);
-        if (ModernUIForge.isOptiFineLoaded()) {
-            OptiFineIntegration.setGuiScale(newGuiScale);
+        static {
+            assert (FMLEnvironment.dist.isClient());
         }
 
-        /*Option[] settings = null;
-        boolean captured = false;
-        if (ModernUIForge.isOptiFineLoaded()) {
-            try {
-                Field field = VideoSettingsScreen.class.getDeclaredField("videoOptions");
-                field.setAccessible(true);
-                settings = (Option[]) field.get(null);
-            } catch (Exception e) {
-                LOGGER.error(ModernUI.MARKER, "Failed to be compatible with OptiFine video settings", e);
-            }
-        } else {
-            settings = AccessVideoSettings.getOptions();
+        private ModClient() {
         }
-        if (settings != null) {
-            for (int i = 0; i < settings.length; i++) {
-                if (settings[i] != Option.GUI_SCALE) {
-                    continue;
+
+        @SubscribeEvent
+        static void loadingClient(RegisterParticleProvidersEvent event) {
+            // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread (render thread)
+            // this event fired before RegisterClientReloadListenersEvent
+            UIManager.initialize();
+        }
+
+        @SubscribeEvent
+        static void registerResourceListener(@Nonnull RegisterClientReloadListenersEvent event) {
+            // this event fired after LOAD_REGISTRIES and before COMMON_SETUP on client main thread (render thread)
+            // this event fired after ParticleFactoryRegisterEvent
+            event.registerReloadListener((ResourceManagerReloadListener) manager -> {
+                ShaderManager.getInstance().reload();
+                TextureManager.getInstance().reload();
+                Handler handler = Core.getUiHandlerAsync();
+                // FML may throw ex, so it can be null
+                if (handler != null) {
+                    // Call in lambda, not in creating the lambda
+                    handler.post(() -> UIManager.getInstance().updateLayoutDir(Config.CLIENT.forceRtl.get()));
                 }
-                ProgressOption option = new ProgressOption("options.guiScale", 0, 2, 1,
-                        options -> (double) options.guiScale,
-                        (options, aDouble) -> {
-                            if (options.guiScale != aDouble.intValue()) {
-                                options.guiScale = aDouble.intValue();
-                                Minecraft.getInstance().resizeDisplay();
+            });
+
+            LOGGER.debug(MARKER, "Registered resource reload listener");
+        }
+
+        @SubscribeEvent
+        static void registerKeyMapping(@Nonnull RegisterKeyMappingsEvent event) {
+            event.register(UIManager.OPEN_CENTER_KEY);
+        }
+
+        @SubscribeEvent
+        static void setupClient(@Nonnull FMLClientSetupEvent event) {
+            //SettingsManager.INSTANCE.buildAllSettings();
+            //UIManager.getInstance().registerMenuScreen(Registration.TEST_MENU, menu -> new TestUI());
+
+            event.enqueueWork(() -> {
+                ModernUI.getSelectedTypeface();
+                UIManager.initializeRenderer();
+            });
+
+            // Always replace static variable as an insurance policy
+            /*AccessOption.setGuiScale(new CycleOption("options.guiScale",
+                    (options, integer) -> options.guiScale = Integer.remainderUnsigned(
+                            options.guiScale + integer, (MForgeCompat.calcGuiScales() & 0xf) + 1),
+                    (options, cycleOption) -> options.guiScale == 0 ?
+                            ((AccessOption) cycleOption).callGenericValueLabel(new TranslatableComponent("options" +
+                                    ".guiScale.auto")
+                                    .append(new TextComponent(" (" + (MForgeCompat.calcGuiScales() >> 4 & 0xf) + ")")
+                                    )) :
+                            ((AccessOption) cycleOption).callGenericValueLabel(new TextComponent(Integer.toString
+                            (options
+                            .guiScale))))
+            );*/
+
+            OptionInstance<Integer> newGuiScale = new OptionInstance<>("options.guiScale",
+                    OptionInstance.noTooltip(),
+                    (caption, value) -> {
+                        if (value == 0) {
+                            return Options.genericValueLabel(caption, Component.translatable("options.guiScale.auto")
+                                    .append(Component.literal(" (" + (MuiForgeApi.calcGuiScales() >> 4 & 0xf) + ")")));
+                        } else {
+                            MutableComponent valueComponent = Component.literal(value.toString());
+                            if (value < (MuiForgeApi.calcGuiScales() >> 8 & 0xf)) {
+                                valueComponent.withStyle(ChatFormatting.RED);
                             }
-                        },
-                        (options, progressOption) -> options.guiScale == 0 ?
-                                ((AccessOptions) progressOption)
-                                        .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
-                                                .append(new TextComponent(" (" + (MuiForgeApi.calcGuiScales() >> 4 &
-                                                0xf) + ")"))) :
-                                ((AccessOptions) progressOption)
-                                        .callGenericValueLabel(new TextComponent(Integer.toString(options.guiScale)))
-                );
-                settings[i] = EventHandler.Client.sNewGuiScale = option;
-                captured = true;
-                break;
-            }
-        }
-        if (!captured) {
-            LOGGER.error(MARKER, "Failed to capture video settings");
-        }*/
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    static class GuiScaleValueSet implements OptionInstance.IntRangeBase,
-            OptionInstance.SliderableOrCyclableValueSet<Integer> {
-
-        @Override
-        public int minInclusive() {
-            return 0;
-        }
-
-        @Override
-        public int maxInclusive() {
-            return MuiForgeApi.calcGuiScales() & 0xf;
-        }
-
-        @Nonnull
-        @Override
-        public Integer fromSliderValue(double progress) {
-            return Math.toIntExact(Math.round(Mth.map(progress, 0.0, 1.0, minInclusive(), maxInclusive())));
-        }
-
-        @Nonnull
-        @Override
-        public Optional<Integer> validateValue(@Nonnull Integer value) {
-            return Optional.of(Mth.clamp(value, minInclusive(), maxInclusive()));
-        }
-
-        @Nonnull
-        @Override
-        public Codec<Integer> codec() {
-            Function<Integer, DataResult<Integer>> function = value -> {
-                int max = maxInclusive() + 1;
-                if (value.compareTo(minInclusive()) >= 0 && value.compareTo(max) <= 0) {
-                    return DataResult.success(value);
+                            return Options.genericValueLabel(caption, valueComponent);
+                        }
+                    },
+                    new GuiScaleValueSet(), 0, value -> {
+                if (value != Minecraft.getInstance().getWindow().getGuiScale()) {
+                    Minecraft.getInstance().resizeDisplay();
                 }
-                return DataResult.error(
-                        "Value " + value + " outside of range [" + minInclusive() + ":" + max + "]", value);
-            };
-            return Codec.INT.flatXmap(function, function);
-        }
+            });
+            ((AccessOptions) Minecraft.getInstance().options).setGuiScale(newGuiScale);
+            if (ModernUIForge.isOptiFineLoaded()) {
+                OptiFineIntegration.setGuiScale(newGuiScale);
+            }
 
-        @Nonnull
-        @Override
-        public CycleButton.ValueListSupplier<Integer> valueListSupplier() {
-            return CycleButton.ValueListSupplier.create(IntStream.range(minInclusive(), maxInclusive() + 1).boxed().toList());
-        }
-
-        @Override
-        public boolean createCycleButton() {
-            return false;
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    @SubscribeEvent
-    static void onMenuOpen(@Nonnull OpenMenuEvent event) {
-        if (ModernUIForge.sDevelopment) {
-            if (event.getMenu() instanceof TestContainerMenu c) {
-                if (c.isDiamond()) {
-                    event.set(new TestFragment());
-                } else {
-                    event.set(new TestPauseFragment());
+            /*Option[] settings = null;
+            boolean captured = false;
+            if (ModernUIForge.isOptiFineLoaded()) {
+                try {
+                    Field field = VideoSettingsScreen.class.getDeclaredField("videoOptions");
+                    field.setAccessible(true);
+                    settings = (Option[]) field.get(null);
+                } catch (Exception e) {
+                    LOGGER.error(ModernUI.MARKER, "Failed to be compatible with OptiFine video settings", e);
+                }
+            } else {
+                settings = AccessVideoSettings.getOptions();
+            }
+            if (settings != null) {
+                for (int i = 0; i < settings.length; i++) {
+                    if (settings[i] != Option.GUI_SCALE) {
+                        continue;
+                    }
+                    ProgressOption option = new ProgressOption("options.guiScale", 0, 2, 1,
+                            options -> (double) options.guiScale,
+                            (options, aDouble) -> {
+                                if (options.guiScale != aDouble.intValue()) {
+                                    options.guiScale = aDouble.intValue();
+                                    Minecraft.getInstance().resizeDisplay();
+                                }
+                            },
+                            (options, progressOption) -> options.guiScale == 0 ?
+                                    ((AccessOptions) progressOption)
+                                            .callGenericValueLabel(new TranslatableComponent("options.guiScale.auto")
+                                                    .append(new TextComponent(" (" + (MuiForgeApi.calcGuiScales() >> 4 &
+                                                    0xf) + ")"))) :
+                                    ((AccessOptions) progressOption)
+                                            .callGenericValueLabel(new TextComponent(Integer.toString(options
+                                            .guiScale)))
+                    );
+                    settings[i] = EventHandler.Client.sNewGuiScale = option;
+                    captured = true;
+                    break;
                 }
             }
+            if (!captured) {
+                LOGGER.error(MARKER, "Failed to capture video settings");
+            }*/
+        }
+
+        static class GuiScaleValueSet implements OptionInstance.IntRangeBase,
+                OptionInstance.SliderableOrCyclableValueSet<Integer> {
+
+            static {
+                assert (FMLEnvironment.dist.isClient());
+            }
+
+            @Override
+            public int minInclusive() {
+                return 0;
+            }
+
+            @Override
+            public int maxInclusive() {
+                return MuiForgeApi.calcGuiScales() & 0xf;
+            }
+
+            @Nonnull
+            @Override
+            public Integer fromSliderValue(double progress) {
+                return Math.toIntExact(Math.round(Mth.map(progress, 0.0, 1.0, minInclusive(), maxInclusive())));
+            }
+
+            @Nonnull
+            @Override
+            public Optional<Integer> validateValue(@Nonnull Integer value) {
+                return Optional.of(Mth.clamp(value, minInclusive(), maxInclusive()));
+            }
+
+            @Nonnull
+            @Override
+            public Codec<Integer> codec() {
+                Function<Integer, DataResult<Integer>> function = value -> {
+                    int max = maxInclusive() + 1;
+                    if (value.compareTo(minInclusive()) >= 0 && value.compareTo(max) <= 0) {
+                        return DataResult.success(value);
+                    }
+                    return DataResult.error(
+                            "Value " + value + " outside of range [" + minInclusive() + ":" + max + "]", value);
+                };
+                return Codec.INT.flatXmap(function, function);
+            }
+
+            @Nonnull
+            @Override
+            public CycleButton.ValueListSupplier<Integer> valueListSupplier() {
+                return CycleButton.ValueListSupplier.create(IntStream.range(minInclusive(), maxInclusive() + 1).boxed().toList());
+            }
+
+            @Override
+            public boolean createCycleButton() {
+                return false;
+            }
+        }
+
+        @SubscribeEvent
+        static void onMenuOpen(@Nonnull OpenMenuEvent event) {
+            if (ModernUIForge.sDevelopment) {
+                if (event.getMenu() instanceof TestContainerMenu c) {
+                    if (c.isDiamond()) {
+                        event.set(new TestFragment());
+                    } else {
+                        event.set(new TestPauseFragment());
+                    }
+                }
+            }
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     static class ModClientDev {
+
+        static {
+            assert (FMLEnvironment.dist.isClient());
+        }
+
+        private ModClientDev() {
+        }
 
         @SubscribeEvent
         static void onRegistryModel(@Nonnull ModelEvent.RegisterAdditional event) {

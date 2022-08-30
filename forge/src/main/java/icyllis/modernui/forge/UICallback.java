@@ -19,16 +19,13 @@
 package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.platform.InputConstants;
-import icyllis.modernui.annotation.MainThread;
-import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.annotation.UiThread;
+import icyllis.modernui.annotation.*;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.view.KeyEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuConstructor;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nonnull;
 
@@ -39,8 +36,13 @@ import javax.annotation.Nonnull;
  * @see MuiForgeApi#openGui(Fragment, UICallback)
  * @see OpenMenuEvent#set(Fragment, UICallback)
  */
-@OnlyIn(Dist.CLIENT)
 public class UICallback {
+
+    static {
+        if (FMLEnvironment.dist.isDedicatedServer()) {
+            throw new RuntimeException();
+        }
+    }
 
     /**
      * Determine whether the key event is considered as a back key.

@@ -42,10 +42,10 @@ public class MixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        if (ModernUIForge.isOptiFineLoaded() &&
+        /*if (ModernUIForge.isOptiFineLoaded() &&
                 mixinClassName.equals("icyllis.modernui.forge.mixin.AccessVideoSettings")) {
             return false;
-        }
+        }*/
         if ((mLevel & ModernUIForge.BOOTSTRAP_DISABLE_SMOOTH_SCROLLING) != 0) {
             return !mixinClassName.equals("icyllis.modernui.forge.mixin.MixinScrollPanel") &&
                     !mixinClassName.equals("icyllis.modernui.forge.mixin.MixinSelectionList");

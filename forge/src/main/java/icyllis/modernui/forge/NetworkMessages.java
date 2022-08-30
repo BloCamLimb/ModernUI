@@ -18,15 +18,17 @@
 
 package icyllis.modernui.forge;
 
-import net.minecraft.client.Minecraft;
+import icyllis.modernui.ModernUI;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.thread.BlockableEventLoop;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.network.NetworkEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,20 +38,15 @@ import java.util.function.Supplier;
 /**
  * Internal use.
  */
-public final class NetworkMessages {
+@ApiStatus.Internal
+public sealed class NetworkMessages extends NetworkHandler {
 
     private static final int S2C_OPEN_MENU = 0;
 
     static NetworkHandler sNetwork;
 
-    private NetworkMessages() {
-    }
-
-    // a safe supplier
-    @Nonnull
-    static NetworkHandler.ClientListener msg() {
-        // this supplier won't be called on dedicated server, so it's in the inner class
-        return C::msg;
+    NetworkMessages() {
+        super(new ResourceLocation(ModernUI.ID, "network"), "360", true);
     }
 
     /*@Deprecated
@@ -61,29 +58,37 @@ public final class NetworkMessages {
         return sNetwork.dispatcher(buf);
     }*/
 
-    static void openMenu(int containerId, int menuId, @Nullable Consumer<FriendlyByteBuf> writer, ServerPlayer p) {
-        FriendlyByteBuf buf = NetworkHandler.buffer(S2C_OPEN_MENU);
-        buf.writeVarInt(containerId);
-        buf.writeVarInt(menuId);
+    @SuppressWarnings("deprecation")
+    static PacketBuffer openMenu(@Nonnull AbstractContainerMenu menu, @Nullable Consumer<FriendlyByteBuf> writer) {
+        PacketBuffer buf = sNetwork.buffer(S2C_OPEN_MENU);
+        buf.writeVarInt(menu.containerId);
+        buf.writeVarInt(Registry.MENU.getId(menu.getType()));
         if (writer != null) {
             writer.accept(buf);
         }
-        sNetwork.sendToPlayer(buf, p);
+        return buf;
     }
 
     // this class doesn't load on dedicated server
-    @OnlyIn(Dist.CLIENT)
-    private static final class C {
+    static final class Client extends NetworkMessages {
 
-        private C() {
+        static {
+            assert (FMLEnvironment.dist.isClient());
         }
 
-        private static void msg(short index, @Nonnull FriendlyByteBuf payload, @Nonnull Supplier<LocalPlayer> player) {
+        Client() {
+        }
+
+        @Override
+        protected void handleClientMessage(int index,
+                                           @Nonnull FriendlyByteBuf payload,
+                                           @Nonnull Supplier<NetworkEvent.Context> source,
+                                           @Nonnull BlockableEventLoop<?> looper) {
             /*case 0:
                     syncFood(payload, player);
                     break;*/
             if (index == S2C_OPEN_MENU) {
-                openMenu(payload, player);
+                openMenu(payload, source, looper);
             }
         }
 
@@ -95,15 +100,17 @@ public final class NetworkMessages {
         }*/
 
         @SuppressWarnings("deprecation")
-        private static void openMenu(@Nonnull FriendlyByteBuf payload, @Nonnull Supplier<LocalPlayer> player) {
+        private static void openMenu(@Nonnull FriendlyByteBuf payload,
+                                     @Nonnull Supplier<NetworkEvent.Context> source,
+                                     @Nonnull BlockableEventLoop<?> looper) {
             final int containerId = payload.readVarInt();
             // No barrier, SAFE
             final MenuType<?> type = Registry.MENU.byIdOrThrow(payload.readVarInt());
             final ResourceLocation key = Registry.MENU.getKey(type);
             assert key != null;
             payload.retain();
-            Minecraft.getInstance().execute(() -> {
-                final LocalPlayer p = player.get();
+            looper.execute(() -> {
+                final LocalPlayer p = getClientPlayer(source);
                 if (p != null) {
                     UIManager.getInstance().start(p, type.create(containerId, p.getInventory(), payload), key);
                 }

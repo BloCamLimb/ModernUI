@@ -26,23 +26,24 @@ import icyllis.modernui.animation.ColorEvaluator;
 import icyllis.modernui.forge.mixin.AccessPostChain;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.PostChain;
-import net.minecraft.client.renderer.PostPass;
+import net.minecraft.client.renderer.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
+import java.util.*;
 
-@OnlyIn(Dist.CLIENT)
+/**
+ * Handling the blur effect of screen background. Client only.
+ */
 public enum BlurHandler {
     INSTANCE;
+
+    static {
+        assert (FMLEnvironment.dist.isClient());
+    }
 
     // minecraft namespace
     private static final ResourceLocation BLUR_POST_EFFECT = new ResourceLocation("shaders/post/blur_fast.json");
@@ -207,6 +208,7 @@ public enum BlurHandler {
         }
     }
 
+    // INTERNAL HOOK
     public void drawScreenBackground(@Nonnull Screen screen, @Nonnull PoseStack stack, int x1, int y1, int x2, int y2) {
         RenderSystem.disableTexture();
         RenderSystem.enableBlend();

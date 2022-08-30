@@ -18,6 +18,7 @@
 
 package icyllis.modernui.forge;
 
+import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.text.Typeface;
@@ -27,7 +28,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -131,7 +131,7 @@ public final class ModernUIForge {
         LocalStorage.init();
 
         // the 'new' method is in another class, so it's class-loading-safe
-        DistExecutor.safeCallWhenOn(Dist.CLIENT, () -> Client::new);
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> Client::new);
 
         if ((getBootstrapLevel() & BOOTSTRAP_ENABLE_DEBUG_INJECTORS) != 0) {
             MinecraftForge.EVENT_BUS.register(EventHandler.ClientDebug.class);
@@ -150,7 +150,6 @@ public final class ModernUIForge {
     }
 
     // INTERNAL HOOK
-    @OnlyIn(Dist.CLIENT)
     public static void dispatchOnScroll(double scrollX, double scrollY) {
         for (var l : MuiForgeApi.sOnScrollListeners) {
             l.onScroll(scrollX, scrollY);
@@ -158,7 +157,6 @@ public final class ModernUIForge {
     }
 
     // INTERNAL HOOK
-    @OnlyIn(Dist.CLIENT)
     public static void dispatchOnScreenChange(@Nullable Screen oldScreen, @Nullable Screen newScreen) {
         for (var l : MuiForgeApi.sOnScreenChangeListeners) {
             l.onScreenChange(oldScreen, newScreen);
@@ -166,7 +164,6 @@ public final class ModernUIForge {
     }
 
     // INTERNAL HOOK
-    @OnlyIn(Dist.CLIENT)
     public static void dispatchOnWindowResize(int width, int height, int guiScale, int oldGuiScale) {
         for (var l : MuiForgeApi.sOnWindowResizeListeners) {
             l.onWindowResize(width, height, guiScale, oldGuiScale);
@@ -174,7 +171,6 @@ public final class ModernUIForge {
     }
 
     // INTERNAL HOOK
-    @OnlyIn(Dist.CLIENT)
     public static void dispatchOnDebugDump(@Nonnull PrintWriter writer) {
         for (var l : MuiForgeApi.sOnDebugDumpListeners) {
             l.onDebugDump(writer);
@@ -305,11 +301,10 @@ public final class ModernUIForge {
         }
     }
 
-    // should not make OnlyIn Dist.CLIENT, we require the constructor method
     public static class Client extends ModernUI {
 
         static {
-            if (!FMLEnvironment.dist.isClient()) {
+            if (FMLEnvironment.dist.isDedicatedServer()) {
                 throw new RuntimeException();
             }
         }
@@ -344,6 +339,13 @@ public final class ModernUIForge {
             synchronized (this) {
                 // should be a worker thread
                 if (mTypeface == null) {
+                    if (RenderSystem.isOnRenderThread()) {
+                        LOGGER.error(MARKER,
+                                "Loading typeface on the render thread, but it should be on a worker thread.\n"
+                                        + "Don't report to Modern UI, but to other mods as displayed in stack trace.",
+                                new Exception("Loading typeface at the wrong mod loading stage")
+                                        .fillInStackTrace());
+                    }
                     Set<Font> set = new LinkedHashSet<>();
                     List<? extends String> configs = Config.CLIENT.fontFamily.get();
                     if (configs != null) {

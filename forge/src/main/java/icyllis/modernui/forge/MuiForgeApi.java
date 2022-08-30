@@ -28,14 +28,11 @@ import icyllis.modernui.math.FMath;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 
@@ -127,7 +124,6 @@ public final class MuiForgeApi {
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      * @see OpenMenuEvent
      */
-    @SuppressWarnings("deprecation")
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
         if (!(player instanceof ServerPlayer p)) {
@@ -144,7 +140,7 @@ public final class MuiForgeApi {
         if (menu == null) {
             return;
         }
-        NetworkMessages.openMenu(menu.containerId, Registry.MENU.getId(menu.getType()), writer, p);
+        NetworkMessages.openMenu(menu, writer).sendToPlayer(p);
         p.initMenu(menu);
         p.containerMenu = menu;
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(p, menu));
@@ -161,7 +157,6 @@ public final class MuiForgeApi {
      *
      * @param fragment the fragment
      */
-    @OnlyIn(Dist.CLIENT)
     @MainThread
     public static void openGui(@Nonnull Fragment fragment) {
         UIManager.getInstance().start(fragment, null);
@@ -179,7 +174,6 @@ public final class MuiForgeApi {
      * @param fragment the fragment
      * @param callback the UI callback, null meaning a default setup
      */
-    @OnlyIn(Dist.CLIENT)
     @MainThread
     public static void openGui(@Nonnull Fragment fragment, @Nullable UICallback callback) {
         UIManager.getInstance().start(fragment, callback);
@@ -191,7 +185,6 @@ public final class MuiForgeApi {
      *
      * @return elapsed time in milliseconds
      */
-    @OnlyIn(Dist.CLIENT)
     @RenderThread
     public static long getElapsedTime() {
         return UIManager.getElapsedTime();
@@ -202,7 +195,6 @@ public final class MuiForgeApi {
      *
      * @return frame time in milliseconds
      */
-    @OnlyIn(Dist.CLIENT)
     @RenderThread
     public static long getFrameTime() {
         return getFrameTimeNanos() / 1000000;
@@ -213,7 +205,6 @@ public final class MuiForgeApi {
      *
      * @return frame time in nanoseconds
      */
-    @OnlyIn(Dist.CLIENT)
     @RenderThread
     public static long getFrameTimeNanos() {
         return UIManager.getFrameTimeNanos();
@@ -226,7 +217,6 @@ public final class MuiForgeApi {
      *
      * @param r the Runnable that will be executed
      */
-    @OnlyIn(Dist.CLIENT)
     public static void postToUiThread(@Nonnull Runnable r) {
         Core.getUiHandlerAsync().post(r);
     }
@@ -235,23 +225,19 @@ public final class MuiForgeApi {
      * Returns whether the graphics engine is disabled due to GL caps error.
      * Call this after COMMON_SETUP event on render thread.
      */
-    @OnlyIn(Dist.CLIENT)
     @RenderThread
     public static boolean isUiRendererDisabled() {
         return ModernUIForge.hasGLCapsError();
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static int calcGuiScales() {
         return calcGuiScales(Minecraft.getInstance().getWindow());
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static int calcGuiScales(@Nonnull Window window) {
         return calcGuiScales(window.getWidth(), window.getHeight());
     }
 
-    @OnlyIn(Dist.CLIENT)
     public static int calcGuiScales(int framebufferWidth, int framebufferHeight) {
         int w = framebufferWidth / 16;
         int h = framebufferHeight / 9;
@@ -300,7 +286,6 @@ public final class MuiForgeApi {
      * @param listener the listener to register
      * @see OnScrollListener
      */
-    @OnlyIn(Dist.CLIENT)
     public static void addOnScrollListener(@Nonnull OnScrollListener listener) {
         sOnScrollListeners.addIfAbsent(listener);
     }
@@ -310,7 +295,6 @@ public final class MuiForgeApi {
      *
      * @param listener the listener to unregister
      */
-    @OnlyIn(Dist.CLIENT)
     public static void removeOnScrollListener(@Nonnull OnScrollListener listener) {
         sOnScrollListeners.remove(listener);
     }
@@ -321,7 +305,6 @@ public final class MuiForgeApi {
      * @param listener the listener to register
      * @see OnScreenChangeListener
      */
-    @OnlyIn(Dist.CLIENT)
     public static void addOnScreenChangeListener(@Nonnull OnScreenChangeListener listener) {
         sOnScreenChangeListeners.addIfAbsent(listener);
     }
@@ -331,7 +314,6 @@ public final class MuiForgeApi {
      *
      * @param listener the listener to unregister
      */
-    @OnlyIn(Dist.CLIENT)
     public static void removeOnScreenChangeListener(@Nonnull OnScreenChangeListener listener) {
         sOnScreenChangeListeners.remove(listener);
     }
@@ -342,7 +324,6 @@ public final class MuiForgeApi {
      * @param listener the listener to register
      * @see OnWindowResizeListener
      */
-    @OnlyIn(Dist.CLIENT)
     public static void addOnWindowResizeListener(@Nonnull OnWindowResizeListener listener) {
         sOnWindowResizeListeners.addIfAbsent(listener);
     }
@@ -352,7 +333,6 @@ public final class MuiForgeApi {
      *
      * @param listener the listener to unregister
      */
-    @OnlyIn(Dist.CLIENT)
     public static void removeOnWindowResizeListener(@Nonnull OnWindowResizeListener listener) {
         sOnWindowResizeListeners.remove(listener);
     }
@@ -363,7 +343,6 @@ public final class MuiForgeApi {
      * @param listener the listener to register
      * @see OnDebugDumpListener
      */
-    @OnlyIn(Dist.CLIENT)
     public static void addOnDebugDumpListener(@Nonnull OnDebugDumpListener listener) {
         sOnDebugDumpListeners.addIfAbsent(listener);
     }
@@ -373,7 +352,6 @@ public final class MuiForgeApi {
      *
      * @param listener the listener to unregister
      */
-    @OnlyIn(Dist.CLIENT)
     public static void removeOnDebugDumpListener(@Nonnull OnDebugDumpListener listener) {
         sOnDebugDumpListeners.remove(listener);
     }

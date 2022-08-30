@@ -24,11 +24,10 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.eventbus.api.Cancelable;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.fml.event.IModBusEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.IContainerFactory;
 
 import javax.annotation.Nonnull;
@@ -54,15 +53,18 @@ import java.util.function.Consumer;
  * This event will be only posted to your own mod event bus on client main thread.
  * It's an error if no fragment set along with this event.
  * <p>
- * All menu types are registered via {@link net.minecraftforge.event.RegistryEvent.Register} ,
+ * All menu types are registered via {@link net.minecraftforge.registries.RegisterEvent} ,
  * use {@link net.minecraftforge.common.extensions.IForgeMenuType#create(IContainerFactory)}
  * to create your registry entries when the registry event is triggered.
  *
  * @see MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)
  */
 @Cancelable
-@OnlyIn(Dist.CLIENT)
 public final class OpenMenuEvent extends Event implements IModBusEvent {
+
+    static {
+        assert (FMLEnvironment.dist.isClient());
+    }
 
     @Nonnull
     private final AbstractContainerMenu mMenu;

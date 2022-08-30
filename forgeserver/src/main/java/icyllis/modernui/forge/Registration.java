@@ -30,7 +30,7 @@ import static icyllis.modernui.forge.ModernUIForge.*;
 /**
  * This class handles mod loading events, all registry entries are only available under the development mode.
  */
-@Mod.EventBusSubscriber(modid = ID, bus = Mod.EventBusSubscriber.Bus.MOD)
+@Mod.EventBusSubscriber(modid = ModernUIForge.ID, bus = Mod.EventBusSubscriber.Bus.MOD)
 final class Registration {
 
     private Registration() {
@@ -38,7 +38,7 @@ final class Registration {
 
     @SubscribeEvent
     static void setupCommon(@Nonnull FMLCommonSetupEvent event) {
-        NetworkMessages.sNetwork = new NetworkHandler("", null, null, "360", true);
+        NetworkMessages.sNetwork = new NetworkMessages();
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 

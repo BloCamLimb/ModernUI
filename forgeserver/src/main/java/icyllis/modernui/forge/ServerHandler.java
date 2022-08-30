@@ -32,8 +32,6 @@ import javax.annotation.Nonnull;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import static icyllis.modernui.forge.ModernUIForge.*;
-
 final class ServerHandler {
 
     static final ServerHandler INSTANCE = new ServerHandler();
@@ -79,17 +77,19 @@ final class ServerHandler {
                         }
                         target = Math.min(t, target);
                     } else {
-                        LOGGER.warn(MARKER, "Wrong time format while setting auto-shutdown time, " +
+                        ModernUIForge.LOGGER.warn(ModernUIForge.MARKER, "Wrong time format while setting " +
+                                "auto-shutdown time, " +
                                 "input: {}", s);
                     }
                 } catch (NumberFormatException | IndexOutOfBoundsException e) {
-                    LOGGER.error(MARKER, "Wrong time format while setting auto-shutdown time, " +
+                    ModernUIForge.LOGGER.error(ModernUIForge.MARKER, "Wrong time format while setting auto-shutdown " +
+                            "time, " +
                             "input: {}", s, e);
                 }
             }
             if (target < Integer.MAX_VALUE && target > current) {
                 mShutdownTime = Util.getMillis() + (target - current) * 1000L;
-                LOGGER.debug(MARKER, "Server will shutdown at {}",
+                ModernUIForge.LOGGER.debug(ModernUIForge.MARKER, "Server will shutdown at {}",
                         SimpleDateFormat.getDateTimeInstance().format(new Date(mShutdownTime)));
                 mNextShutdownNotify = mShutdownNotifyTimes[mShutdownNotifyTimes.length - 1];
             } else {
@@ -133,7 +133,7 @@ final class ServerHandler {
                 key = "message.modernui.server_shutdown_sec";
                 str = "Server will shutdown in %d seconds";
             }
-            LOGGER.info(MARKER, String.format(str, l));
+            ModernUIForge.LOGGER.info(ModernUIForge.MARKER, String.format(str, l));
             final Component component = Component.translatable(key, l).withStyle(ChatFormatting.LIGHT_PURPLE);
             ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers().forEach(p -> p.displayClientMessage(component, true));
         }
