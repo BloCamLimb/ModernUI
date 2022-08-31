@@ -24,6 +24,9 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.thread.BlockableEventLoop;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.event.EventNetworkChannel;
@@ -64,7 +67,9 @@ public class NetworkHandler {
                 this::tryServerVersionOnClient,
                 this::tryClientVersionOnServer);
 
-        channel.addListener(this::onClientCustomPayload);
+        if (FMLEnvironment.dist.isClient()) {
+            channel.addListener(this::onClientCustomPayload);
+        }
         channel.addListener(this::onServerCustomPayload);
     }
 
@@ -97,6 +102,8 @@ public class NetworkHandler {
         return mOptional && protocol.equals(NetworkRegistry.ABSENT) || mProtocol.equals(protocol);
     }
 
+    // server to client
+    @OnlyIn(Dist.CLIENT)
     protected void onClientCustomPayload(@Nonnull NetworkEvent.ServerCustomPayloadEvent event) {
         FriendlyByteBuf payload = event.getPayload();
         LocalPlayer currentPlayer = Minecraft.getInstance().player;
@@ -106,6 +113,7 @@ public class NetworkHandler {
         event.getSource().get().setPacketHandled(true);
     }
 
+    // client to server
     protected void onServerCustomPayload(@Nonnull NetworkEvent.ClientCustomPayloadEvent event) {
         FriendlyByteBuf payload = event.getPayload();
         ServerPlayer currentPlayer = event.getSource().get().getSender();
@@ -131,6 +139,7 @@ public class NetworkHandler {
      * @param looper  the game event loop
      * @see #getClientPlayer(Supplier)
      */
+    @OnlyIn(Dist.CLIENT)
     protected void handleClientMessage(int index,
                                        @Nonnull FriendlyByteBuf payload,
                                        @Nonnull Supplier<NetworkEvent.Context> source,
@@ -173,6 +182,7 @@ public class NetworkHandler {
      * @see #handleClientMessage(int, FriendlyByteBuf, Supplier, BlockableEventLoop)
      */
     @Nullable
+    @OnlyIn(Dist.CLIENT)
     public static LocalPlayer getClientPlayer(@Nonnull Supplier<NetworkEvent.Context> source) {
         return source.get().getNetworkManager().isConnected() ? Minecraft.getInstance().player : null;
     }
