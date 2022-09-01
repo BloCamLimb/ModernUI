@@ -374,6 +374,7 @@ final class Config {
                         list.add("STHeiti");
                         list.add("SimHei");
                         list.add("SansSerif");
+                        list.add("modernui:font/muii18ncompat/muii18ncompat.ttf");
                         return list;
                     }, s -> true);
 
