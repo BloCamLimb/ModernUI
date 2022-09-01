@@ -21,6 +21,13 @@ package icyllis.modernui.forge;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.testforge.TestContainerMenu;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
@@ -28,6 +35,7 @@ import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.network.NetworkHooks;
 
 import javax.annotation.Nonnull;
 
@@ -43,7 +51,24 @@ final class EventHandler {
             final boolean diamond;
             if (event.getSide().isServer() && ((diamond = event.getItemStack().is(Items.DIAMOND))
                     || event.getItemStack().is(Items.EMERALD))) {
-                MuiForgeApi.openMenu(event.getEntity(), TestContainerMenu::new, buf -> buf.writeBoolean(diamond));
+                if (event.getEntity().isShiftKeyDown()) {
+                    NetworkHooks.openScreen((ServerPlayer) event.getEntity(), new MenuProvider() {
+                        @Nonnull
+                        @Override
+                        public Component getDisplayName() {
+                            return CommonComponents.EMPTY;
+                        }
+
+                        @Override
+                        public AbstractContainerMenu createMenu(int containerId,
+                                                                @Nonnull Inventory inventory,
+                                                                @Nonnull Player player) {
+                            return new TestContainerMenu(containerId, inventory, player);
+                        }
+                    }, buf -> buf.writeBoolean(diamond));
+                } else {
+                    MuiForgeApi.openMenu(event.getEntity(), TestContainerMenu::new, buf -> buf.writeBoolean(diamond));
+                }
             }
         }
     }

@@ -32,6 +32,7 @@ import icyllis.modernui.testforge.TestPauseFragment;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.*;
 import net.minecraft.client.gui.components.CycleButton;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.network.chat.Component;
@@ -57,8 +58,6 @@ import net.minecraftforge.registries.RegisterEvent;
 
 import javax.annotation.Nonnull;
 import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -117,8 +116,10 @@ final class Registration {
         if (bytes == null) {
             throw new IllegalStateException();
         }*/
-        NetworkMessages.sNetwork = DistExecutor.safeRunForDist(() -> NetworkMessages.Client::new,
-                () -> NetworkMessages::new);
+        if (ModernUIForge.sDevelopment) {
+            NetworkMessages.sNetwork = DistExecutor.safeRunForDist(() -> NetworkMessages.Client::new,
+                    () -> NetworkMessages::new);
+        }
 
         MinecraftForge.EVENT_BUS.register(ServerHandler.INSTANCE);
 
@@ -128,7 +129,7 @@ final class Registration {
         }
     }
 
-    @Nonnull
+    /*@Nonnull
     private static String digest(@Nonnull byte[] in) {
         try {
             in = MessageDigest.getInstance("MD5").digest(in);
@@ -157,7 +158,7 @@ final class Registration {
         }
         sb.append(Integer.toHexString(in[15] & 0xFF));
         return sb.toString();
-    }
+    }*/
 
     @Mod.EventBusSubscriber(modid = ModernUI.ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
     static class ModClient {
@@ -207,6 +208,10 @@ final class Registration {
             event.enqueueWork(() -> {
                 ModernUI.getSelectedTypeface();
                 UIManager.initializeRenderer();
+                if (ModernUIForge.sDevelopment) {
+                    MenuScreens.register(MuiRegistries.TEST_MENU.get(), MenuScreenFactory.create(menu ->
+                            menu.isDiamond() ? new TestFragment() : new TestPauseFragment()));
+                }
             });
 
             // Always replace static variable as an insurance policy

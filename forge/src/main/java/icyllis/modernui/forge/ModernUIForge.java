@@ -137,16 +137,18 @@ public final class ModernUIForge {
             MinecraftForge.EVENT_BUS.register(EventHandler.ClientDebug.class);
         }
 
-        ModList.get().forEachModContainer((modid, container) -> {
-            if (container instanceof FMLModContainer) {
-                final String namespace = container.getNamespace();
-                if (!namespace.equals("forge")) {
-                    sModEventBuses.put(namespace, ((FMLModContainer) container).getEventBus());
+        if (sDevelopment) {
+            ModList.get().forEachModContainer((modid, container) -> {
+                if (container instanceof FMLModContainer) {
+                    final String namespace = container.getNamespace();
+                    if (!namespace.equals("forge")) {
+                        sModEventBuses.put(namespace, ((FMLModContainer) container).getEventBus());
+                    }
                 }
-            }
-        });
+            });
+        }
 
-        LOGGER.info(MARKER, "Initialized Modern UI, FML mods: {}", sModEventBuses.size());
+        LOGGER.info(MARKER, "Initialized Modern UI");
     }
 
     // INTERNAL HOOK
@@ -236,15 +238,6 @@ public final class ModernUIForge {
                 continue;
             }
             try {
-                Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
-                        cfg.replaceAll("\\\\", "/")));
-                selected.add(f);
-                LOGGER.debug(MARKER, "Font '{}' was loaded with config value '{}' as LOCAL FILE",
-                        f.getFamily(Locale.ROOT), cfg);
-                continue;
-            } catch (Exception ignored) {
-            }
-            try {
                 try (InputStream inputStream = Minecraft.getInstance().getResourceManager()
                         .open(new ResourceLocation(cfg))) {
                     Font f = Font.createFont(Font.TRUETYPE_FONT, inputStream);
@@ -253,6 +246,15 @@ public final class ModernUIForge {
                             f.getFamily(Locale.ROOT), cfg);
                     continue;
                 }
+            } catch (Exception ignored) {
+            }
+            try {
+                Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
+                        cfg.replaceAll("\\\\", "/")));
+                selected.add(f);
+                LOGGER.debug(MARKER, "Font '{}' was loaded with config value '{}' as LOCAL FILE",
+                        f.getFamily(Locale.ROOT), cfg);
+                continue;
             } catch (Exception ignored) {
             }
             Optional<Font> font = FontCollection.sAllFontFamilies.stream()

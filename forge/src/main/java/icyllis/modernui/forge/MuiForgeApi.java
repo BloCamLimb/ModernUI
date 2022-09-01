@@ -35,6 +35,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -67,6 +68,7 @@ public final class MuiForgeApi {
      *
      * @return {@code true} if server started
      */
+    @ApiStatus.Internal
     public static boolean isServerStarted() {
         return ServerHandler.INSTANCE.mStarted;
     }
@@ -84,7 +86,9 @@ public final class MuiForgeApi {
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      * @see OpenMenuEvent
+     * @deprecated use {@link MenuScreenFactory} instead
      */
+    @Deprecated
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider) {
         openMenu(player, provider, (Consumer<FriendlyByteBuf>) null);
     }
@@ -104,7 +108,9 @@ public final class MuiForgeApi {
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      * @see OpenMenuEvent
+     * @deprecated use {@link MenuScreenFactory} instead
      */
+    @Deprecated
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nonnull BlockPos pos) {
         openMenu(player, provider, buf -> buf.writeBlockPos(pos));
     }
@@ -124,6 +130,7 @@ public final class MuiForgeApi {
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      * @see OpenMenuEvent
      */
+    @ApiStatus.Internal
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
         if (!(player instanceof ServerPlayer p)) {
@@ -153,30 +160,14 @@ public final class MuiForgeApi {
      * This is served as a local interaction model, the server will not intersect with this before.
      * Otherwise, initiate this with a network model via {@link OpenMenuEvent#set(Fragment)})}.
      * <p>
-     * Note that the fragment can even be reused, but it's not encouraged.
+     * Optionally, the main {@link Fragment} can implement {@link ScreenCallback}
+     * to describe the screen properties.
      *
      * @param fragment the fragment
      */
     @MainThread
-    public static void openGui(@Nonnull Fragment fragment) {
-        UIManager.getInstance().start(fragment, null);
-    }
-
-    /**
-     * Start the lifecycle of user interface with the fragment and create views.
-     * This method must be called from client side main thread.
-     * <p>
-     * This is served as a local interaction model, the server will not intersect with this before.
-     * Otherwise, initiate this with a network model via {@link OpenMenuEvent#set(Fragment)})}.
-     * <p>
-     * Note that the fragment can even be reused, but it's not encouraged.
-     *
-     * @param fragment the fragment
-     * @param callback the UI callback, null meaning a default setup
-     */
-    @MainThread
-    public static void openGui(@Nonnull Fragment fragment, @Nullable UICallback callback) {
-        UIManager.getInstance().start(fragment, callback);
+    public static void openScreen(@Nonnull Fragment fragment) {
+        UIManager.getInstance().open(fragment);
     }
 
     /**
@@ -211,9 +202,9 @@ public final class MuiForgeApi {
     }
 
     /**
-     * Post a runnable to be executed asynchronously on UI thread.
+     * Post a runnable to be executed asynchronously (no barrier) on UI thread.
      * This method is equivalent to calling {@link Core#getUiHandlerAsync()},
-     * but {@link Core} is not a stable API.
+     * but {@link Core} is not a public API.
      *
      * @param r the Runnable that will be executed
      */
@@ -226,7 +217,7 @@ public final class MuiForgeApi {
      * Call this after COMMON_SETUP event on render thread.
      */
     @RenderThread
-    public static boolean isUiRendererDisabled() {
+    public static boolean hasNoRenderer() {
         return ModernUIForge.hasGLCapsError();
     }
 

@@ -90,7 +90,7 @@ public enum BlurHandler {
         boolean blocked = false;
         if (hasScreen && sBlurEffect) {
             if (nextScreen instanceof MuiScreen screen) {
-                UICallback callback = screen.getCallback();
+                ScreenCallback callback = screen.getCallback();
                 if (callback != null) {
                     blocked = !callback.shouldBlurBackground();
                 }

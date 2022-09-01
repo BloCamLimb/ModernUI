@@ -34,6 +34,8 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 import javax.annotation.Nonnull;
@@ -58,6 +60,7 @@ public final class PacketBuffer extends FriendlyByteBuf {
      * <p>
      * This is the only method to be called on the client. Packet data cannot exceed 32,600 bytes.
      */
+    @OnlyIn(Dist.CLIENT)
     public void sendToServer() {
         ClientPacketListener connection = Minecraft.getInstance().getConnection();
         if (connection != null) {

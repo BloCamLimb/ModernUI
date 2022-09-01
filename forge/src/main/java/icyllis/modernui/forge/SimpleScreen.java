@@ -37,14 +37,13 @@ final class SimpleScreen extends Screen implements MuiScreen {
 
     private final UIManager mHost;
     private final Fragment mFragment;
-    @Nullable
-    private final UICallback mCallback;
+    private final ScreenCallback mCallback;
 
-    SimpleScreen(UIManager host, Fragment fragment, @Nullable UICallback callback) {
+    SimpleScreen(UIManager host, Fragment fragment) {
         super(CommonComponents.EMPTY);
         mHost = host;
         mFragment = fragment;
-        mCallback = callback;
+        mCallback = fragment instanceof ScreenCallback __ ? __ : null;
     }
 
     /*@Override
@@ -95,7 +94,7 @@ final class SimpleScreen extends Screen implements MuiScreen {
 
     @Nullable
     @Override
-    public UICallback getCallback() {
+    public ScreenCallback getCallback() {
         return mCallback;
     }
 

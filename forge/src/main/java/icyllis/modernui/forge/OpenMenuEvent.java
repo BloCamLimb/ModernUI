@@ -21,18 +21,16 @@ package icyllis.modernui.forge;
 import icyllis.modernui.fragment.Fragment;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraftforge.eventbus.api.Cancelable;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.fml.event.IModBusEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.network.IContainerFactory;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.function.Consumer;
 
 /**
  * This event is triggered when the server requires the client to open a user
@@ -57,8 +55,9 @@ import java.util.function.Consumer;
  * use {@link net.minecraftforge.common.extensions.IForgeMenuType#create(IContainerFactory)}
  * to create your registry entries when the registry event is triggered.
  *
- * @see MuiForgeApi#openMenu(Player, MenuConstructor, Consumer)
+ * @see MenuScreenFactory
  */
+@ApiStatus.Internal
 @Cancelable
 public final class OpenMenuEvent extends Event implements IModBusEvent {
 
@@ -70,7 +69,6 @@ public final class OpenMenuEvent extends Event implements IModBusEvent {
     private final AbstractContainerMenu mMenu;
 
     private Fragment mFragment;
-    private UICallback mCallback;
 
     OpenMenuEvent(@Nonnull AbstractContainerMenu menu) {
         mMenu = menu;
@@ -93,18 +91,7 @@ public final class OpenMenuEvent extends Event implements IModBusEvent {
      * @param fragment the fragment
      */
     public void set(@Nonnull Fragment fragment) {
-        set(fragment, null);
-    }
-
-    /**
-     * Set the fragment for the menu. The event will be auto canceled.
-     *
-     * @param fragment the fragment
-     * @param callback the UI callback, null meaning a default setup
-     */
-    public void set(@Nonnull Fragment fragment, @Nullable UICallback callback) {
         mFragment = fragment;
-        mCallback = callback;
         if (!isCanceled()) {
             setCanceled(true);
         }
@@ -113,10 +100,5 @@ public final class OpenMenuEvent extends Event implements IModBusEvent {
     @Nullable
     Fragment getFragment() {
         return mFragment;
-    }
-
-    @Nullable
-    UICallback getCallback() {
-        return mCallback;
     }
 }

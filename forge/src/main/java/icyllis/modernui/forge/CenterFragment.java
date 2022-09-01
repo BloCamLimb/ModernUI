@@ -53,7 +53,7 @@ import java.util.ArrayList;
 import static icyllis.modernui.view.View.dp;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
-public class CenterFragment extends Fragment {
+public class CenterFragment extends Fragment implements ScreenCallback {
 
     public static final int BACKGROUND_COLOR = 0xc0292a2c;
     public static final int THEME_COLOR = 0xffcda398;

@@ -2727,7 +2727,12 @@ public class DataSet {
      * @param output the data output
      * @throws IOException if an IO error occurs
      */
-    public static void writeDataSet(DataSet set, DataOutput output) throws IOException {
+    public static void writeDataSet(@Nullable DataSet set, DataOutput output) throws IOException {
+        if (set == null) {
+            output.writeByte(VAL_NULL);
+            output.writeByte(VAL_NULL);
+            return;
+        }
         final Iterator<Int2ObjectMap.Entry<Object>> it = set.intEntryIterator();
         if (it != null) {
             while (it.hasNext()) {

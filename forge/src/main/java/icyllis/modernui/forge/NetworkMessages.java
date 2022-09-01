@@ -19,9 +19,12 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.fragment.Fragment;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.Registry;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -110,11 +113,27 @@ public sealed class NetworkMessages extends NetworkHandler {
             assert key != null;
             payload.retain();
             looper.execute(() -> {
-                final LocalPlayer p = getClientPlayer(source);
-                if (p != null) {
-                    UIManager.getInstance().start(p, type.create(containerId, p.getInventory(), payload), key);
+                try {
+                    final LocalPlayer p = getClientPlayer(source);
+                    if (p != null) {
+                        final AbstractContainerMenu menu = type.create(containerId, p.getInventory(), payload);
+                        final OpenMenuEvent event = new OpenMenuEvent(menu);
+                        ModernUIForge.post(key.getNamespace(), event);
+                        final Fragment fragment = event.getFragment();
+                        if (fragment == null) {
+                            p.closeContainer(); // close server menu whatever it is
+                        } else {
+                            p.containerMenu = menu;
+                            Minecraft.getInstance().setScreen(new MenuScreen<>(UIManager.getInstance(),
+                                    fragment,
+                                    menu,
+                                    p.getInventory(),
+                                    CommonComponents.EMPTY));
+                        }
+                    }
+                } finally {
+                    payload.release();
                 }
-                payload.release();
             });
         }
     }

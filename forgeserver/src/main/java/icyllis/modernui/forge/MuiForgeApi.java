@@ -26,16 +26,13 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.function.Consumer;
 
-/**
- * Public APIs for Minecraft Forge mods to Modern UI.
- *
- * @since 3.3
- */
+@ApiStatus.Internal
 public final class MuiForgeApi {
 
     private MuiForgeApi() {
@@ -47,6 +44,7 @@ public final class MuiForgeApi {
      *
      * @return {@code true} if server started
      */
+    @ApiStatus.Internal
     public static boolean isServerStarted() {
         return ServerHandler.INSTANCE.mStarted;
     }
@@ -63,6 +61,7 @@ public final class MuiForgeApi {
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      */
+    @Deprecated
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider) {
         openMenu(player, provider, (Consumer<FriendlyByteBuf>) null);
     }
@@ -81,6 +80,7 @@ public final class MuiForgeApi {
      * @see #openMenu(Player, MenuConstructor, Consumer)
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      */
+    @Deprecated
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider, @Nonnull BlockPos pos) {
         openMenu(player, provider, buf -> buf.writeBlockPos(pos));
     }
@@ -98,6 +98,7 @@ public final class MuiForgeApi {
      *                 to the menu supplier (IContainerFactory) that registered on client
      * @see net.minecraftforge.common.extensions.IForgeMenuType#create(net.minecraftforge.network.IContainerFactory)
      */
+    @ApiStatus.Internal
     public static void openMenu(@Nonnull Player player, @Nonnull MenuConstructor provider,
                                 @Nullable Consumer<FriendlyByteBuf> writer) {
         if (!(player instanceof ServerPlayer p)) {

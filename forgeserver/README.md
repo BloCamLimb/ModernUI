@@ -1,1 +1,1 @@
-This is a slim version for dedicated server and is independent of the core, this version cannot be used for development. Keep this in sync with ModernUI-Forge.
+Deprecated since Minecraft 1.19
