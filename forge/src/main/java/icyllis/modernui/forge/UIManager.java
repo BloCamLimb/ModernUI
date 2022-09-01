@@ -240,14 +240,14 @@ public final class UIManager implements LifecycleOwner {
         // Do not push into stack, since it's lazily init
         if (sInstance == null)
             throw new IllegalStateException("UI manager was never initialized. " +
-                    "Please check whether the loader threw an exception before.");
+                    "Please check whether FML threw an exception before.");
         return sInstance;
     }
 
     @UiThread
     private void run() {
         init();
-        while (true) {
+        while (mRunning) {
             try {
                 Looper.loop();
             } catch (Throwable e) {
@@ -263,39 +263,20 @@ public final class UIManager implements LifecycleOwner {
             }
             break;
         }
+        LOGGER.info(MARKER, "Quited UI thread");
     }
 
     /**
      * Schedule UI and create views.
      *
      * @param fragment the main fragment
-     * @param callback the user interface callbacks
      */
     @MainThread
-    void start(@Nonnull Fragment fragment, @Nullable UICallback callback) {
+    void open(@Nonnull Fragment fragment) {
         if (!minecraft.isSameThread()) {
             throw new IllegalStateException("Not called from main thread");
         }
-        minecraft.setScreen(new SimpleScreen(this, fragment, callback));
-    }
-
-    @MainThread
-    void start(LocalPlayer p, AbstractContainerMenu menu, @Nonnull ResourceLocation key) {
-        // internally called, so no explicitly checks
-        assert (minecraft.isSameThread());
-        final OpenMenuEvent event = new OpenMenuEvent(menu);
-        ModernUIForge.post(key.getNamespace(), event);
-        final Fragment fragment = event.getFragment();
-        if (fragment == null) {
-            p.closeContainer(); // close server menu whatever it is
-            if (ModernUIForge.isDeveloperMode()) {
-                // only log to devs
-                LOGGER.warn(MARKER, "No fragment set, closing menu {}, registry key {}", menu, key);
-            }
-        } else {
-            p.containerMenu = menu;
-            minecraft.setScreen(new MenuScreen<>(menu, p.getInventory(), this, fragment, event.getCallback()));
-        }
+        minecraft.setScreen(new SimpleScreen(this, fragment));
     }
 
     @MainThread
@@ -652,7 +633,7 @@ public final class UIManager implements LifecycleOwner {
         if (event.getAction() == GLFW_PRESS) {
             InputConstants.Key key = InputConstants.getKey(event.getKey(), event.getScanCode());
             if (OPEN_CENTER_KEY.isActiveAndMatches(key)) {
-                start(new CenterFragment(), new UICallback());
+                open(new CenterFragment());
                 return;
             }
         }
@@ -662,9 +643,9 @@ public final class UIManager implements LifecycleOwner {
         if (event.getAction() == GLFW_PRESS) {
             switch (event.getKey()) {
                 case GLFW_KEY_Y -> takeScreenshot();
-                case GLFW_KEY_H -> start(new TestFragment(), new UICallback());
-                case GLFW_KEY_J -> start(new TestPauseFragment(), new UICallback());
-                case GLFW_KEY_U -> start(new TestListFragment(), new UICallback());
+                case GLFW_KEY_H -> open(new TestFragment());
+                case GLFW_KEY_J -> open(new TestPauseFragment());
+                case GLFW_KEY_U -> open(new TestListFragment());
                 case GLFW_KEY_N -> mDecor.postInvalidate();
                 case GLFW_KEY_P -> dump();
                 case GLFW_KEY_M -> changeRadialBlur();
@@ -1202,9 +1183,9 @@ public final class UIManager implements LifecycleOwner {
                 helper = mContextMenu.showPopup(originalView, 0, 0);
             }
 
-            if (helper != null) {
-                //helper.setPresenterCallback(callback);
-            }
+            /*if (helper != null) {
+                helper.setPresenterCallback(callback);
+            }*/
 
             mContextMenuHelper = helper;
             return helper != null;

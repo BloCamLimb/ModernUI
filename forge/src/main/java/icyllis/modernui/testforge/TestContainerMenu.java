@@ -26,6 +26,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.loading.FMLEnvironment;
+import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import java.util.function.Consumer;
@@ -33,6 +34,7 @@ import java.util.function.Consumer;
 /**
  * Example.
  */
+@ApiStatus.Internal
 public class TestContainerMenu extends AbstractContainerMenu {
 
     private boolean mDiamond;

@@ -38,5 +38,5 @@ public sealed interface MuiScreen permits MenuScreen, SimpleScreen {
      * @return a callback describes the screen properties
      */
     @Nullable
-    UICallback getCallback();
+    ScreenCallback getCallback();
 }

@@ -19,13 +19,10 @@
 package icyllis.modernui.forge;
 
 import io.netty.buffer.Unpooled;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
-import net.minecraft.network.protocol.game.ServerboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -51,20 +48,6 @@ public final class PacketBuffer extends FriendlyByteBuf {
     PacketBuffer(ResourceLocation name) {
         super(Unpooled.buffer());
         mName = name;
-    }
-
-    /**
-     * Send the message to server.
-     * <p>
-     * This is the only method to be called on the client. Packet data cannot exceed 32,600 bytes.
-     */
-    public void sendToServer() {
-        ClientPacketListener connection = Minecraft.getInstance().getConnection();
-        if (connection != null) {
-            connection.send(new ServerboundCustomPayloadPacket(mName, this));
-        } else {
-            release(); // do not wait for GC
-        }
     }
 
     /**

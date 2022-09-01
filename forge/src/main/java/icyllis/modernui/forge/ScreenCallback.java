@@ -23,26 +23,17 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.view.KeyEvent;
 import net.minecraft.client.Minecraft;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.MenuConstructor;
-import net.minecraftforge.fml.loading.FMLEnvironment;
 
 import javax.annotation.Nonnull;
 
 /**
  * Callback of a screen. Methods will be invoked from different threads.
- * Null represents using default values.
+ * Make your main {@link Fragment} implements this interface, or to use default values.
  *
- * @see MuiForgeApi#openGui(Fragment, UICallback)
- * @see OpenMenuEvent#set(Fragment, UICallback)
+ * @see MenuScreenFactory
+ * @see MuiForgeApi#openScreen(Fragment)
  */
-public class UICallback {
-
-    static {
-        if (FMLEnvironment.dist.isDedicatedServer()) {
-            throw new RuntimeException();
-        }
-    }
+public interface ScreenCallback {
 
     /**
      * Determine whether the key event is considered as a back key.
@@ -50,15 +41,15 @@ public class UICallback {
      * <p>
      * Call Frequency: a key pressed at least.
      * <p>
-     * Default value: Escape for {@link MuiForgeApi#openGui(Fragment)}, Escape and Inventory Key (default is E)
-     * for {@link MuiForgeApi#openMenu(Player, MenuConstructor)}.
+     * Default value: Escape for {@link MuiForgeApi#openScreen(Fragment)},
+     * Escape and Inventory Key (default is E) for {@link MenuScreenFactory}.
      *
      * @param keyCode the key code, like {@link KeyEvent#KEY_E} (equivalent to GLFW)
      * @param event   the key event
      * @return whether the key event is considered as a back key
      */
     @UiThread
-    public boolean isBackKey(int keyCode, @Nonnull KeyEvent event) {
+    default boolean isBackKey(int keyCode, @Nonnull KeyEvent event) {
         if (keyCode == KeyEvent.KEY_ESCAPE)
             return true;
         InputConstants.Key key = InputConstants.getKey(keyCode, event.getScanCode());
@@ -73,7 +64,7 @@ public class UICallback {
      * @return whether the screen should close
      */
     @MainThread
-    public boolean shouldClose() {
+    default boolean shouldClose() {
         return true;
     }
 
@@ -83,13 +74,13 @@ public class UICallback {
      * <p>
      * Call Frequency: each tick.
      * <p>
-     * Default value: true for {@link MuiForgeApi#openGui(Fragment)}, false for
-     * {@link MuiForgeApi#openMenu(Player, MenuConstructor)}.
+     * Default value: true for {@link MuiForgeApi#openScreen(Fragment)},
+     * false for {@link MenuScreenFactory}.
      *
      * @return whether to pause game
      */
     @MainThread
-    public boolean isPauseScreen() {
+    default boolean isPauseScreen() {
         return false;
     }
 
@@ -104,7 +95,7 @@ public class UICallback {
      * @return whether to draw a default background
      */
     @RenderThread
-    public boolean hasDefaultBackground() {
+    default boolean hasDefaultBackground() {
         return true;
     }
 
@@ -119,7 +110,7 @@ public class UICallback {
      * @return whether the game world should be blurred
      */
     @RenderThread
-    public boolean shouldBlurBackground() {
+    default boolean shouldBlurBackground() {
         return true;
     }
 }

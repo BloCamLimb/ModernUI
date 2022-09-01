@@ -22,7 +22,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.fragment.Fragment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 
@@ -44,13 +44,13 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     private final UIManager mHost;
     private final Fragment mFragment;
-    private final UICallback mCallback;
+    private final ScreenCallback mCallback;
 
-    MenuScreen(@Nonnull T menu, Inventory inventory, UIManager host, Fragment fragment, UICallback callback) {
-        super(menu, inventory, CommonComponents.EMPTY);
+    MenuScreen(UIManager host, Fragment fragment, @Nonnull T menu, Inventory inventory, Component title) {
+        super(menu, inventory, title);
         mHost = host;
         mFragment = fragment;
-        mCallback = callback;
+        mCallback = fragment instanceof ScreenCallback __ ? __ : null;
     }
 
     /*@Override
@@ -106,7 +106,7 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Nullable
     @Override
-    public UICallback getCallback() {
+    public ScreenCallback getCallback() {
         return mCallback;
     }
 
