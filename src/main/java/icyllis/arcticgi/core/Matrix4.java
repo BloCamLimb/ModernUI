@@ -1382,9 +1382,9 @@ public class Matrix4 implements Cloneable {
      * Rotates this matrix about the X-axis with the given angle in radians.
      * <p>
      * When used with a right-handed coordinate system, the produced rotation
-     * will rotate a vector clockwise around the rotation axis, when viewing
-     * along the negative axis direction towards the origin. When used with
-     * a left-handed coordinate system, the rotation is counter-clockwise.
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      * <p>
      * This is equivalent to pre-multiplying by a rotation matrix.
      * <table border="1">
@@ -1396,41 +1396,41 @@ public class Matrix4 implements Cloneable {
      *   <tr>
      *     <td>0</th>
      *     <td>cos&theta;</th>
-     *     <td>-sin&theta;</th>
+     *     <td>sin&theta;</th>
      *   </tr>
      *   <tr>
      *     <td>0</th>
-     *     <td>sin&theta;</th>
+     *     <td>-sin&theta;</th>
      *     <td>cos&theta;</th>
      *   </tr>
      * </table>
      *
      * @param angle the rotation angle in radians.
      */
-    public void preRotateX(float angle) {
-        final float s = (float) Math.sin(angle);
-        final float c = (float) Math.cos(angle);
-        final float f21 = c * m21 - s * m31;
-        final float f22 = c * m22 - s * m32;
-        final float f23 = c * m23 - s * m33;
-        final float f24 = c * m24 - s * m34;
-        m31 = s * m21 + c * m31;
-        m32 = s * m22 + c * m32;
-        m33 = s * m23 + c * m33;
-        m34 = s * m24 + c * m34;
-        m21 = f21;
-        m22 = f22;
-        m23 = f23;
-        m24 = f24;
+    public void preRotateX(double angle) {
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
+        final double f21 = c * m21 + s * m31;
+        final double f22 = c * m22 + s * m32;
+        final double f23 = c * m23 + s * m33;
+        final double f24 = c * m24 + s * m34;
+        m31 = (float) (c * m31 - s * m21);
+        m32 = (float) (c * m32 - s * m22);
+        m33 = (float) (c * m33 - s * m23);
+        m34 = (float) (c * m34 - s * m24);
+        m21 = (float) f21;
+        m22 = (float) f22;
+        m23 = (float) f23;
+        m24 = (float) f24;
     }
 
     /**
      * Post-rotates this matrix about the X-axis with the given angle in radians.
      * <p>
      * When used with a right-handed coordinate system, the produced rotation
-     * will rotate a vector clockwise around the rotation axis, when viewing
-     * along the negative axis direction towards the origin. When used with
-     * a left-handed coordinate system, the rotation is counter-clockwise.
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      * <p>
      * This is equivalent to post-multiplying by a rotation matrix.
      * <table border="1">
@@ -1442,48 +1442,48 @@ public class Matrix4 implements Cloneable {
      *   <tr>
      *     <td>0</th>
      *     <td>cos&theta;</th>
-     *     <td>-sin&theta;</th>
+     *     <td>sin&theta;</th>
      *   </tr>
      *   <tr>
      *     <td>0</th>
-     *     <td>sin&theta;</th>
+     *     <td>-sin&theta;</th>
      *     <td>cos&theta;</th>
      *   </tr>
      * </table>
      *
      * @param angle the rotation angle in radians.
      */
-    public void postRotateX(float angle) {
-        final float s = (float) Math.sin(angle);
-        final float c = (float) Math.cos(angle);
-        final float f13 = c * m13 - s * m12;
-        final float f23 = c * m23 - s * m22;
-        final float f33 = c * m33 - s * m32;
-        final float f43 = c * m43 - s * m42;
-        m12 = s * m13 + c * m12;
-        m22 = s * m23 + c * m22;
-        m32 = s * m33 + c * m32;
-        m42 = s * m43 + c * m42;
-        m13 = f13;
-        m23 = f23;
-        m33 = f33;
-        m43 = f43;
+    public void postRotateX(double angle) {
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
+        final double f13 = c * m13 + s * m12;
+        final double f23 = c * m23 + s * m22;
+        final double f33 = c * m33 + s * m32;
+        final double f43 = c * m43 + s * m42;
+        m12 = (float) (c * m12 - s * m13);
+        m22 = (float) (c * m22 - s * m23);
+        m32 = (float) (c * m32 - s * m33);
+        m42 = (float) (c * m42 - s * m43);
+        m13 = (float) f13;
+        m23 = (float) f23;
+        m33 = (float) f33;
+        m43 = (float) f43;
     }
 
     /**
      * Rotates this matrix about the Y-axis with the given angle in radians.
      * <p>
      * When used with a right-handed coordinate system, the produced rotation
-     * will rotate a vector clockwise around the rotation axis, when viewing
-     * along the negative axis direction towards the origin. When used with
-     * a left-handed coordinate system, the rotation is counter-clockwise.
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      * <p>
      * This is equivalent to pre-multiplying by a rotation matrix.
      * <table border="1">
      *   <tr>
      *     <td>cos&theta;</th>
      *     <td>0</th>
-     *     <td>sin&theta;</th>
+     *     <td>-sin&theta;</th>
      *   </tr>
      *   <tr>
      *     <td>0</th>
@@ -1491,7 +1491,7 @@ public class Matrix4 implements Cloneable {
      *     <td>0</th>
      *   </tr>
      *   <tr>
-     *     <td>-sin&theta;</th>
+     *     <td>sin&theta;</th>
      *     <td>0</th>
      *     <td>cos&theta;</th>
      *   </tr>
@@ -1499,37 +1499,37 @@ public class Matrix4 implements Cloneable {
      *
      * @param angle the rotation angle in radians.
      */
-    public void preRotateY(float angle) {
-        final float s = (float) Math.sin(angle);
-        final float c = (float) Math.cos(angle);
-        final float f11 = c * m11 + s * m31;
-        final float f12 = c * m12 + s * m32;
-        final float f13 = c * m13 + s * m33;
-        final float f14 = c * m14 + s * m34;
-        m31 = c * m31 - s * m11;
-        m32 = c * m32 - s * m12;
-        m33 = c * m33 - s * m13;
-        m34 = c * m34 - s * m14;
-        m11 = f11;
-        m12 = f12;
-        m13 = f13;
-        m14 = f14;
+    public void preRotateY(double angle) {
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
+        final double f11 = c * m11 - s * m31;
+        final double f12 = c * m12 - s * m32;
+        final double f13 = c * m13 - s * m33;
+        final double f14 = c * m14 - s * m34;
+        m31 = (float) (s * m11 + c * m31);
+        m32 = (float) (s * m12 + c * m32);
+        m33 = (float) (s * m13 + c * m33);
+        m34 = (float) (s * m14 + c * m34);
+        m11 = (float) f11;
+        m12 = (float) f12;
+        m13 = (float) f13;
+        m14 = (float) f14;
     }
 
     /**
      * Post-rotates this matrix about the Y-axis with the given angle in radians.
      * <p>
      * When used with a right-handed coordinate system, the produced rotation
-     * will rotate a vector clockwise around the rotation axis, when viewing
-     * along the negative axis direction towards the origin. When used with
-     * a left-handed coordinate system, the rotation is counter-clockwise.
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      * <p>
      * This is equivalent to post-multiplying by a rotation matrix.
      * <table border="1">
      *   <tr>
      *     <td>cos&theta;</th>
      *     <td>0</th>
-     *     <td>sin&theta;</th>
+     *     <td>-sin&theta;</th>
      *   </tr>
      *   <tr>
      *     <td>0</th>
@@ -1537,7 +1537,7 @@ public class Matrix4 implements Cloneable {
      *     <td>0</th>
      *   </tr>
      *   <tr>
-     *     <td>-sin&theta;</th>
+     *     <td>sin&theta;</th>
      *     <td>0</th>
      *     <td>cos&theta;</th>
      *   </tr>
@@ -1545,40 +1545,40 @@ public class Matrix4 implements Cloneable {
      *
      * @param angle the rotation angle in radians.
      */
-    public void postRotateY(float angle) {
-        final float s = (float) Math.sin(angle);
-        final float c = (float) Math.cos(angle);
-        final float f13 = c * m13 + s * m11;
-        final float f23 = c * m23 + s * m21;
-        final float f33 = c * m33 + s * m31;
-        final float f43 = c * m43 + s * m41;
-        m11 = c * m11 - s * m13;
-        m21 = c * m21 - s * m23;
-        m31 = c * m31 - s * m33;
-        m41 = c * m41 - s * m43;
-        m13 = f13;
-        m23 = f23;
-        m33 = f33;
-        m43 = f43;
+    public void postRotateY(double angle) {
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
+        final double f13 = c * m13 - s * m11;
+        final double f23 = c * m23 - s * m21;
+        final double f33 = c * m33 - s * m31;
+        final double f43 = c * m43 - s * m41;
+        m11 = (float) (s * m13 + c * m11);
+        m21 = (float) (s * m23 + c * m21);
+        m31 = (float) (s * m33 + c * m31);
+        m41 = (float) (s * m43 + c * m41);
+        m13 = (float) f13;
+        m23 = (float) f23;
+        m33 = (float) f33;
+        m43 = (float) f43;
     }
 
     /**
      * Rotates this matrix about the Z-axis with the given angle in radians.
      * <p>
      * When used with a right-handed coordinate system, the produced rotation
-     * will rotate a vector clockwise around the rotation axis, when viewing
-     * along the negative axis direction towards the origin. When used with
-     * a left-handed coordinate system, the rotation is counter-clockwise.
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      * <p>
      * This is equivalent to pre-multiplying by a rotation matrix.
      * <table border="1">
      *   <tr>
      *     <td>cos&theta;</th>
-     *     <td>-sin&theta;</th>
+     *     <td>sin&theta;</th>
      *     <td>0</th>
      *   </tr>
      *   <tr>
-     *     <td>sin&theta;</th>
+     *     <td>-sin&theta;</th>
      *     <td>cos&theta;</th>
      *     <td>0</th>
      *   </tr>
@@ -1591,40 +1591,40 @@ public class Matrix4 implements Cloneable {
      *
      * @param angle the rotation angle in radians.
      */
-    public void preRotateZ(float angle) {
-        final float s = (float) Math.sin(angle);
-        final float c = (float) Math.cos(angle);
-        final float f11 = c * m11 - s * m21;
-        final float f12 = c * m12 - s * m22;
-        final float f13 = c * m13 - s * m23;
-        final float f14 = c * m14 - s * m24;
-        m21 = s * m11 + c * m21;
-        m22 = s * m12 + c * m22;
-        m23 = s * m13 + c * m23;
-        m24 = s * m14 + c * m24;
-        m11 = f11;
-        m12 = f12;
-        m13 = f13;
-        m14 = f14;
+    public void preRotateZ(double angle) {
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
+        final double f11 = c * m11 + s * m21;
+        final double f12 = c * m12 + s * m22;
+        final double f13 = c * m13 + s * m23;
+        final double f14 = c * m14 + s * m24;
+        m21 = (float) (c * m21 - s * m11);
+        m22 = (float) (c * m22 - s * m12);
+        m23 = (float) (c * m23 - s * m13);
+        m24 = (float) (c * m24 - s * m14);
+        m11 = (float) f11;
+        m12 = (float) f12;
+        m13 = (float) f13;
+        m14 = (float) f14;
     }
 
     /**
      * Post-rotates this matrix about the Z-axis with the given angle in radians.
      * <p>
      * When used with a right-handed coordinate system, the produced rotation
-     * will rotate a vector clockwise around the rotation axis, when viewing
-     * along the negative axis direction towards the origin. When used with
-     * a left-handed coordinate system, the rotation is counter-clockwise.
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      * <p>
      * This is equivalent to post-multiplying by a rotation matrix.
      * <table border="1">
      *   <tr>
      *     <td>cos&theta;</th>
-     *     <td>-sin&theta;</th>
+     *     <td>sin&theta;</th>
      *     <td>0</th>
      *   </tr>
      *   <tr>
-     *     <td>sin&theta;</th>
+     *     <td>-sin&theta;</th>
      *     <td>cos&theta;</th>
      *     <td>0</th>
      *   </tr>
@@ -1637,21 +1637,21 @@ public class Matrix4 implements Cloneable {
      *
      * @param angle the rotation angle in radians.
      */
-    public void postRotateZ(float angle) {
-        final float s = (float) Math.sin(angle);
-        final float c = (float) Math.cos(angle);
-        final float f12 = c * m12 - s * m11;
-        final float f22 = c * m22 - s * m21;
-        final float f32 = c * m32 - s * m31;
-        final float f42 = c * m42 - s * m41;
-        m11 = s * m12 + c * m11;
-        m21 = s * m22 + c * m21;
-        m31 = s * m32 + c * m31;
-        m41 = s * m42 + c * m41;
-        m12 = f12;
-        m22 = f22;
-        m32 = f32;
-        m42 = f42;
+    public void postRotateZ(double angle) {
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
+        final double f12 = c * m12 + s * m11;
+        final double f22 = c * m22 + s * m21;
+        final double f32 = c * m32 + s * m31;
+        final double f42 = c * m42 + s * m41;
+        m11 = (float) (c * m11 - s * m12);
+        m21 = (float) (c * m21 - s * m22);
+        m31 = (float) (c * m31 - s * m32);
+        m41 = (float) (c * m41 - s * m42);
+        m12 = (float) f12;
+        m22 = (float) f22;
+        m32 = (float) f32;
+        m42 = (float) f42;
     }
 
     /**
@@ -1659,30 +1659,30 @@ public class Matrix4 implements Cloneable {
      * <p>
      * The rotations are applied in the given order and using chained rotation per axis:
      * <ul>
-     *  <li>x - pitch - {@link #preRotateX(float)}</li>
-     *  <li>y - yaw   - {@link #preRotateY(float)}</li>
-     *  <li>z - roll  - {@link #preRotateZ(float)}</li>
+     *  <li>x - pitch - {@link #preRotateX(double)}</li>
+     *  <li>y - yaw   - {@link #preRotateY(double)}</li>
+     *  <li>z - roll  - {@link #preRotateZ(double)}</li>
      * </ul>
      * </p>
      * When used with a right-handed coordinate system, the produced rotation
-     * will rotate a vector clockwise around the rotation axis, when viewing
-     * along the negative axis direction towards the origin. When used with
-     * a left-handed coordinate system, the rotation is counter-clockwise.
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      * <p>
      * This is equivalent to pre-multiplying by three rotation matrices.
      *
-     * @param pitch the Euler pitch angle in radians. (rotation about the X axis)
-     * @param yaw   the Euler yaw angle in radians. (rotation about the Y axis)
-     * @param roll  the Euler roll angle in radians. (rotation about the Z axis)
-     * @see #preRotateY(float)
-     * @see #preRotateZ(float)
-     * @see #preRotateX(float)
+     * @param angleX the Euler pitch angle in radians. (rotation about the X axis)
+     * @param angleY the Euler yaw angle in radians. (rotation about the Y axis)
+     * @param angleZ the Euler roll angle in radians. (rotation about the Z axis)
+     * @see #preRotateY(double)
+     * @see #preRotateZ(double)
+     * @see #preRotateX(double)
      */
-    public void preRotate(float pitch, float yaw, float roll) {
+    public void preRotate(double angleX, double angleY, double angleZ) {
         // same as using Quaternion, 48 multiplications
-        preRotateX(pitch);
-        preRotateY(yaw);
-        preRotateZ(roll);
+        preRotateX(angleX);
+        preRotateY(angleY);
+        preRotateZ(angleZ);
     }
 
     /**
@@ -1690,114 +1690,198 @@ public class Matrix4 implements Cloneable {
      * <p>
      * The rotations are applied in the given order and using chained rotation per axis:
      * <ul>
-     *  <li>x - pitch - {@link #postRotateX(float)}</li>
-     *  <li>y - yaw   - {@link #postRotateY(float)}</li>
-     *  <li>z - roll  - {@link #postRotateZ(float)}</li>
+     *  <li>x - pitch - {@link #postRotateX(double)}</li>
+     *  <li>y - yaw   - {@link #postRotateY(double)}</li>
+     *  <li>z - roll  - {@link #postRotateZ(double)}</li>
      * </ul>
      * </p>
      * When used with a right-handed coordinate system, the produced rotation
-     * will rotate a vector clockwise around the rotation axis, when viewing
-     * along the negative axis direction towards the origin. When used with
-     * a left-handed coordinate system, the rotation is counter-clockwise.
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      * <p>
      * This is equivalent to post-multiplying by three rotation matrices.
      *
-     * @param pitch the Euler pitch angle in radians. (rotation about the X axis)
-     * @param yaw   the Euler yaw angle in radians. (rotation about the Y axis)
-     * @param roll  the Euler roll angle in radians. (rotation about the Z axis)
-     * @see #postRotateX(float)
-     * @see #postRotateY(float)
-     * @see #postRotateZ(float)
+     * @param angleX the Euler pitch angle in radians. (rotation about the X axis)
+     * @param angleY the Euler yaw angle in radians. (rotation about the Y axis)
+     * @param angleZ the Euler roll angle in radians. (rotation about the Z axis)
+     * @see #postRotateX(double)
+     * @see #postRotateY(double)
+     * @see #postRotateZ(double)
      */
-    public void postRotate(float pitch, float yaw, float roll) {
+    public void postRotate(double angleX, double angleY, double angleZ) {
         // same as using Quaternion, 48 multiplications
-        postRotateX(pitch);
-        postRotateY(yaw);
-        postRotateZ(roll);
+        postRotateX(angleX);
+        postRotateY(angleY);
+        postRotateZ(angleZ);
     }
 
     /**
      * Rotates this matrix about an arbitrary axis with the given angle in radians.
-     * The axis must be normalized. If it is determined that the rotation axis is
-     * X, Y or Z, use axis-specified methods instead.
+     * The axis described by the three components must be normalized. If it is
+     * known that the rotation axis is X, Y or Z, use axis-specified methods instead.
      * <p>
      * When used with a right-handed coordinate system, the produced rotation
-     * will rotate a vector clockwise around the rotation axis, when viewing
-     * along the negative axis direction towards the origin. When used with
-     * a left-handed coordinate system, the rotation is counter-clockwise.
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
      * <p>
-     * This is equivalent to pre-multiplying by a rotation matrix.
+     * This is equivalent to pre-multiplying by a quaternion.
      *
      * @param x     x-coordinate of rotation axis
      * @param y     y-coordinate of rotation axis
      * @param z     z-coordinate of rotation axis
      * @param angle rotation angle in radians
-     * @see #preRotateX(float)
-     * @see #preRotateY(float)
-     * @see #preRotateZ(float)
+     * @see #preRotateX(double)
+     * @see #preRotateY(double)
+     * @see #preRotateZ(double)
      */
-    public void preRotate(float x, float y, float z, float angle) {
+    public void preRotate(double x, double y, double z, double angle) {
         if (angle == 0) {
             return;
         }
-        // 52 multiplications
-        angle *= 0.5f;
-        final float s = (float) Math.sin(angle);
-        final float c = (float) Math.cos(angle);
+        // 52 multiplications, the fastest path
+        angle *= 0.5;
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
         x *= s;
         y *= s;
         z *= s;
         // we assume the axis is normalized
-        final float xs = 2.0f * x;
-        final float ys = 2.0f * y;
-        final float zs = 2.0f * z;
+        final double xs = 2.0 * x;
+        final double ys = 2.0 * y;
+        final double zs = 2.0 * z;
 
-        final float xx = x * xs;
-        final float xy = x * ys;
-        final float xz = x * zs;
-        final float xw = xs * c;
-        final float yy = y * ys;
-        final float yz = y * zs;
-        final float yw = ys * c;
-        final float zz = z * zs;
-        final float zw = zs * c;
+        final double xx = x * xs;
+        final double xy = x * ys;
+        final double xz = x * zs;
+        final double xw = xs * c;
+        final double yy = y * ys;
+        final double yz = y * zs;
+        final double yw = ys * c;
+        final double zz = z * zs;
+        final double zw = zs * c;
 
-        x = 1.0f - (yy + zz);
-        y = xy - zw;
-        z = xz + yw;
-        final float f11 = x * m11 + y * m21 + z * m31;
-        final float f12 = x * m12 + y * m22 + z * m32;
-        final float f13 = x * m13 + y * m23 + z * m33;
-        final float f14 = x * m14 + y * m24 + z * m34;
+        x = 1.0 - (yy + zz);
+        y = xy + zw;
+        z = xz - yw;
+        final double f11 = x * m11 + y * m21 + z * m31;
+        final double f12 = x * m12 + y * m22 + z * m32;
+        final double f13 = x * m13 + y * m23 + z * m33;
+        final double f14 = x * m14 + y * m24 + z * m34;
 
-        x = xy + zw;
-        y = 1.0f - (xx + zz);
-        z = yz - xw;
-        final float f21 = x * m11 + y * m21 + z * m31;
-        final float f22 = x * m12 + y * m22 + z * m32;
-        final float f23 = x * m13 + y * m23 + z * m33;
-        final float f24 = x * m14 + y * m24 + z * m34;
+        x = xy - zw;
+        y = 1.0 - (xx + zz);
+        z = yz + xw;
+        final double f21 = x * m11 + y * m21 + z * m31;
+        final double f22 = x * m12 + y * m22 + z * m32;
+        final double f23 = x * m13 + y * m23 + z * m33;
+        final double f24 = x * m14 + y * m24 + z * m34;
 
-        x = xz - yw;
-        y = yz + xw;
-        z = 1.0f - (xx + yy);
-        final float f31 = x * m11 + y * m21 + z * m31;
-        final float f32 = x * m12 + y * m22 + z * m32;
-        final float f33 = x * m13 + y * m23 + z * m33;
-        final float f34 = x * m14 + y * m24 + z * m34;
+        x = xz + yw;
+        y = yz - xw;
+        z = 1.0 - (xx + yy);
+        final double f31 = x * m11 + y * m21 + z * m31;
+        final double f32 = x * m12 + y * m22 + z * m32;
+        final double f33 = x * m13 + y * m23 + z * m33;
+        final double f34 = x * m14 + y * m24 + z * m34;
 
-        m11 = f11;
-        m12 = f12;
-        m13 = f13;
-        m14 = f14;
-        m21 = f21;
-        m22 = f22;
-        m23 = f23;
-        m24 = f24;
-        m31 = f31;
-        m32 = f32;
-        m33 = f33;
-        m34 = f34;
+        m11 = (float) f11;
+        m12 = (float) f12;
+        m13 = (float) f13;
+        m14 = (float) f14;
+        m21 = (float) f21;
+        m22 = (float) f22;
+        m23 = (float) f23;
+        m24 = (float) f24;
+        m31 = (float) f31;
+        m32 = (float) f32;
+        m33 = (float) f33;
+        m34 = (float) f34;
+    }
+
+    /**
+     * Post-rotates this matrix about an arbitrary axis with the given angle in radians.
+     * The axis described by the three components must be normalized. If it is
+     * known that the rotation axis is X, Y or Z, use axis-specified methods instead.
+     * <p>
+     * When used with a right-handed coordinate system, the produced rotation
+     * will rotate a vector counter-clockwise around the rotation axis, when
+     * viewing along the negative axis direction towards the origin. When
+     * used with a left-handed coordinate system, the rotation is clockwise.
+     * <p>
+     * This is equivalent to post-multiplying by a quaternion.
+     *
+     * @param x     x-coordinate of rotation axis
+     * @param y     y-coordinate of rotation axis
+     * @param z     z-coordinate of rotation axis
+     * @param angle rotation angle in radians
+     * @see #postRotateX(double)
+     * @see #postRotateY(double)
+     * @see #postRotateZ(double)
+     */
+    public void postRotate(double x, double y, double z, double angle) {
+        if (angle == 0) {
+            return;
+        }
+        // 52 multiplications, the fastest path
+        angle *= 0.5;
+        final double s = Math.sin(angle);
+        final double c = Math.cos(angle);
+        x *= s;
+        y *= s;
+        z *= s;
+        // we assume the axis is normalized
+        final double xs = 2.0 * x;
+        final double ys = 2.0 * y;
+        final double zs = 2.0 * z;
+
+        final double xx = x * xs;
+        final double xy = x * ys;
+        final double xz = x * zs;
+        final double xw = xs * c;
+        final double yy = y * ys;
+        final double yz = y * zs;
+        final double yw = ys * c;
+        final double zz = z * zs;
+        final double zw = zs * c;
+
+        final double f11 = 1.0 - (yy + zz);
+        final double f12 = xy + zw;
+        final double f13 = xz - yw;
+
+        final double f21 = xy - zw;
+        final double f22 = 1.0 - (xx + zz);
+        final double f23 = yz + xw;
+
+        final double f31 = xz + yw;
+        final double f32 = yz - xw;
+        final double f33 = 1.0 - (xx + yy);
+
+        x = m11 * f11 + m12 * f21 + m13 * f31;
+        y = m11 * f12 + m12 * f22 + m13 * f32;
+        z = m11 * f13 + m12 * f23 + m13 * f33;
+        m11 = (float) x;
+        m12 = (float) y;
+        m13 = (float) z;
+        x = m21 * f11 + m22 * f21 + m23 * f31;
+        y = m21 * f12 + m22 * f22 + m23 * f32;
+        z = m21 * f13 + m22 * f23 + m23 * f33;
+        m21 = (float) x;
+        m22 = (float) y;
+        m23 = (float) z;
+        x = m31 * f11 + m32 * f21 + m33 * f31;
+        y = m31 * f12 + m32 * f22 + m33 * f32;
+        z = m31 * f13 + m32 * f23 + m33 * f33;
+        m31 = (float) x;
+        m32 = (float) y;
+        m33 = (float) z;
+        x = m41 * f11 + m42 * f21 + m43 * f31;
+        y = m41 * f12 + m42 * f22 + m43 * f32;
+        z = m41 * f13 + m42 * f23 + m43 * f33;
+        m41 = (float) x;
+        m42 = (float) y;
+        m43 = (float) z;
     }
 
     /**
@@ -2153,10 +2237,10 @@ public class Matrix4 implements Cloneable {
     public String toString() {
         return String.format("""
                         Matrix4:
-                        %10.5f %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f %10.5f
+                        %10.6f %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f %10.6f
                         """,
                 m11, m12, m13, m14,
                 m21, m22, m23, m24,

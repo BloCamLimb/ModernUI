@@ -863,9 +863,9 @@ public class Matrix3 implements Cloneable {
     public String toString() {
         return String.format("""
                         Matrix3:
-                        %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f
-                        %10.5f %10.5f %10.5f
+                        %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f
+                        %10.6f %10.6f %10.6f
                         """,
                 m11, m12, m13,
                 m21, m22, m23,

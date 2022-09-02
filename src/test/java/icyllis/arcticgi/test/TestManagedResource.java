@@ -143,12 +143,17 @@ public class TestManagedResource {
 
     public static void testRightHandedRotation(PrintWriter pw) {
         Matrix4 mat = Matrix4.identity();
-        mat.preRotateX(MathUtil.PI_O_3);
+        mat.preRotateZ(MathUtil.PI_O_3);
         pw.println("preRotateX " + mat);
 
         Matrix4 mat2 = Matrix4.identity();
-        mat2.preRotate(1, 0, 0, MathUtil.PI_O_3);
+        mat2.preRotate(0, 0, 1, MathUtil.PI_O_3);
         pw.println("preRotateAxisAngle " + mat2);
+
+        final double x = mat2.m11 * 2 + mat2.m21 * 2 + mat2.m31 * 2 + mat2.m41;
+        final double y = mat2.m12 * 2 + mat2.m22 * 2 + mat2.m32 * 2 + mat2.m42;
+        final double z = mat2.m13 * 2 + mat2.m23 * 2 + mat2.m33 * 2 + mat2.m43;
+        pw.println("Point: " + x + ", " + y + ", " + z);
     }
 
     public static void testLexicon(PrintWriter pw) {
