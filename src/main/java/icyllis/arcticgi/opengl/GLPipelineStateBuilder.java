@@ -61,8 +61,8 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         }
 
         mVaryingHandler.finish();
-        String vertSource = mVS.finish();
-        String fragSource = mFS.finish();
+        String vertSource = mVS.build();
+        String fragSource = mFS.build();
 
         ShaderErrorHandler errorHandler = mServer.getContext().getShaderErrorHandler();
 

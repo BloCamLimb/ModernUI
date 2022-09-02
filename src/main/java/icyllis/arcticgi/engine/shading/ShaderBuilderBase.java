@@ -143,7 +143,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         return mShaderStrings[mCodeIndex];
     }
 
-    public final String finish() {
+    public final String build() {
         extensions().append(mProgramBuilder.shaderCaps().mVersionDeclString);
         onFinish();
         // append the 'footer' to code

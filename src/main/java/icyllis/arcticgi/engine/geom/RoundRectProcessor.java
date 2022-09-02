@@ -36,17 +36,19 @@ public class RoundRectProcessor extends GeometryProcessor {
     /**
      * Per-vertex attributes.
      */
+    // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
     public static final Attribute
             POSITION = new Attribute("Position", Float2_VertexAttribType, SLType.Vec2);
     /**
      * Per-instance attributes.
      */
+    // per-multiplied color
     public static final Attribute
             COLOR = new Attribute("Color", Float4_VertexAttribType, SLType.Vec4);
     // scale x, translate x, scale y, translate y
     public static final Attribute
             LOCAL_RECT = new Attribute("LocalRect", Float4_VertexAttribType, SLType.Vec4);
-    // radius, stroke radius (stroke)
+    // radius, stroke radius (if stroke, or 0)
     public static final Attribute
             RADII = new Attribute("Radii", Float2_VertexAttribType, SLType.Vec2);
     public static final Attribute
@@ -110,8 +112,9 @@ public class RoundRectProcessor extends GeometryProcessor {
 
             Varying rectEdge = new Varying(SLType.Vec2);
             varyingHandler.addVarying("RectEdge", rectEdge);
+            // add stroke radius and a full pixel bloat
             vertBuilder.codeAppendf("""
-                    vec2 rectEdge = (%s.xz + %s.y) * %s + 1.0;
+                    vec2 rectEdge = (%s.xz + %s.y + 1.0) * %s;
                     %s = rectEdge;
                     """, LOCAL_RECT.name(), RADII.name(), POSITION.name(), rectEdge.vsOut());
             fragBuilder.codeAppendf("""
@@ -125,13 +128,6 @@ public class RoundRectProcessor extends GeometryProcessor {
             varyingHandler.addPassThroughAttribute(COLOR, outputColor,
                     VaryingHandler.Interpolation_CanBeFlat);
 
-            // setup position
-            vertBuilder.codeAppendf("""
-                    vec2 localPos = rectEdge + %s.yw;
-                    """, LOCAL_RECT.name());
-            localPos.set("localPos", SLType.Vec2);
-            writeWorldPosition(vertBuilder, localPos, MODEL_VIEW.name(), worldPos);
-
             Varying sizeAndRadii = new Varying(SLType.Vec4);
             varyingHandler.addVarying("SizeAndRadii", sizeAndRadii,
                     VaryingHandler.Interpolation_CanBeFlat);
@@ -142,17 +138,33 @@ public class RoundRectProcessor extends GeometryProcessor {
                     vec4 sizeAndRadii = %s;
                     """, sizeAndRadii.fsIn());
 
-            fragBuilder.codeAppend("""
-                    vec2 q = abs(rectEdge) - sizeAndRadii.xy + sizeAndRadii.z;
-                    float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - sizeAndRadii.z;
-                    """);
+            // setup position
+            vertBuilder.codeAppendf("""
+                    vec2 localPos = rectEdge + %s.yw;
+                    """, LOCAL_RECT.name());
+            localPos.set("localPos", SLType.Vec2);
+            writeWorldPosition(vertBuilder, localPos, MODEL_VIEW.name(), worldPos);
+
             if (stroke) {
                 fragBuilder.codeAppend("""
-                        float edgeAlpha = 1.0 - smoothstep(-0.5, 0.5, abs(d) - sizeAndRadii.w);
+                        vec2 q = abs(rectEdge) - sizeAndRadii.xy + sizeAndRadii.z;
+                        float d = min(max(q.x, q.y), 0.0) + length(max(q, 0.0)) - sizeAndRadii.z;
+                        """);
+            } else {
+                // simplified version
+                fragBuilder.codeAppend("""
+                        vec2 q = abs(rectEdge) - sizeAndRadii.xy + sizeAndRadii.z;
+                        float d = length(max(q, 0.0)) - sizeAndRadii.z;
+                        """);
+            }
+            if (stroke) {
+                // outer bloat 0.5, inner bloat 1.0
+                fragBuilder.codeAppend("""
+                        float edgeAlpha = 1.0 - smoothstep(-1.0, 0.5, abs(d) - sizeAndRadii.w);
                         """);
             } else {
                 fragBuilder.codeAppend("""
-                        float edgeAlpha = 1.0 - smoothstep(-0.5, 0.5, d);
+                        float edgeAlpha = 1.0 - smoothstep(-1.0, 0.5, d);
                         """);
             }
             fragBuilder.codeAppendf("""

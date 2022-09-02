@@ -124,6 +124,8 @@ public class TestManagedResource {
 
         testCamera(pw);
 
+        testRightHandedRotation(pw);
+
         testKeyBuilder(pw);
 
         testSimilarity(pw);
@@ -139,8 +141,14 @@ public class TestManagedResource {
         }
     }
 
-    public static void testLambda(PrintWriter pw, IntConsumer intConsumer) {
-        pw.println("Consumer IDENTITY: " + intConsumer);
+    public static void testRightHandedRotation(PrintWriter pw) {
+        Matrix4 mat = Matrix4.identity();
+        mat.preRotateX(MathUtil.PI_O_3);
+        pw.println("preRotateX " + mat);
+
+        Matrix4 mat2 = Matrix4.identity();
+        mat2.preRotate(1, 0, 0, MathUtil.PI_O_3);
+        pw.println("preRotateAxisAngle " + mat2);
     }
 
     public static void testLexicon(PrintWriter pw) {
