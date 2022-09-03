@@ -16,9 +16,12 @@ dependencies {
     implementation "org.apache.logging.log4j:log4j-api:${log4j_version}"
     implementation "com.ibm.icu:icu4j:${icu4j_version}"
     implementation "it.unimi.dsi:fastutil:${fastutil_version}"
+
     implementation "com.github.ben-manes.caffeine:caffeine:${caffeine_version}"
     implementation "com.vladsch.flexmark:flexmark:${flexmark_version}"
     implementation "io.reactivex.rxjava3:rxjava:${rxjava_version}"
+
+    //implementation "icyllis.arcticgi:ArcticGI:${arc_version}"
 
     def lwjglNatives
     switch (OperatingSystem.current()) {

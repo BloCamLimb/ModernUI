@@ -20,8 +20,6 @@ package icyllis.modernui.textmc;
 
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
-import icyllis.modernui.graphics.font.GLFontAtlas;
-import icyllis.modernui.graphics.font.GlyphManager;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.Sheets;
 import net.minecraft.network.chat.CommonComponents;
@@ -105,8 +103,7 @@ public final class ModernTextRenderer {
         TextRenderNode node = layoutEngine.lookupVanillaNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling || node.hasColorEmoji()) &&
-                source instanceof MultiBufferSource.BufferSource) {
+        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
@@ -146,8 +143,7 @@ public final class ModernTextRenderer {
         TextRenderNode node = layoutEngine.lookupComplexNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling || node.hasColorEmoji()) &&
-                source instanceof MultiBufferSource.BufferSource) {
+        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
@@ -187,8 +183,7 @@ public final class ModernTextRenderer {
         TextRenderNode node = layoutEngine.lookupSequenceNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling || node.hasColorEmoji()) &&
-                source instanceof MultiBufferSource.BufferSource) {
+        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
@@ -228,15 +223,14 @@ public final class ModernTextRenderer {
         TextRenderNode node = layoutEngine.lookupSequenceNode(text);
         float scale = layoutEngine.getCoordinateScale();
         float level = layoutEngine.getResolutionLevel();
-        if ((GlyphManager.sAntiAliasing || GLFontAtlas.sLinearSampling || node.hasColorEmoji()) &&
-                source instanceof MultiBufferSource.BufferSource) {
+        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
 
         final float offset = sOutlineOffset;
         matrix = matrix.copy();
-        // maybe there is a way to optimize this
+        //TODO maybe there is a way to optimize this
         for (int ox = -1; ox <= 1; ++ox) {
             for (int oy = -1; oy <= 1; ++oy) {
                 if (ox == 0 && oy == 0) {

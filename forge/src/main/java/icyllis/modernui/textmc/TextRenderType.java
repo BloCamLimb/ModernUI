@@ -20,9 +20,9 @@ package icyllis.modernui.textmc;
 
 import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.*;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.textmc.mixin.AccessRenderBuffers;
 import it.unimi.dsi.fastutil.ints.*;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
@@ -34,9 +34,9 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Objects;
 import java.util.Optional;
 
 import static icyllis.modernui.ModernUI.*;
@@ -60,7 +60,7 @@ public class TextRenderType extends RenderType {
     /**
      * Texture id to render type map
      */
-    private static final Int2ObjectMap<TextRenderType> GENERAL_TYPES = new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectSortedMap<TextRenderType> GENERAL_TYPES = new Int2ObjectLinkedOpenHashMap<>();
     private static final Int2ObjectMap<TextRenderType> SEE_THROUGH_TYPES = new Int2ObjectOpenHashMap<>();
     private static final Int2ObjectMap<TextRenderType> POLYGON_OFFSET_TYPES = new Int2ObjectOpenHashMap<>();
 
@@ -71,12 +71,8 @@ public class TextRenderType extends RenderType {
     private static final ImmutableList<RenderStateShard> SEE_THROUGH_STATES;
     private static final ImmutableList<RenderStateShard> POLYGON_OFFSET_STATES;
 
-    private static final Int2ObjectFunction<TextRenderType> GENERAL_FUNC =
-            TextRenderType::new;
-    private static final Int2ObjectFunction<TextRenderType> SEE_THROUGH_FUNC =
-            t -> new TextRenderType(t, "modern_text_see_through");
-    private static final Int2ObjectFunction<TextRenderType> POLYGON_OFFSET_FUNC =
-            t -> new TextRenderType(t, false);
+    private static TextRenderType sFirstGeneralType;
+    private static final BufferBuilder sFirstBufferBuilder = new BufferBuilder(131072);
 
     static {
         GENERAL_STATES = ImmutableList.of(
@@ -120,79 +116,64 @@ public class TextRenderType extends RenderType {
         );
     }
 
-    private final int hashCode;
-
-    private TextRenderType(int texture) {
-        super("modern_text",
-                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
-                VertexFormat.Mode.QUADS, 256, false, true,
-                () -> {
-                    GENERAL_STATES.forEach(RenderStateShard::setupRenderState);
-                    RenderSystem.enableTexture();
-                    RenderSystem.setShaderTexture(0, texture);
-                },
-                () -> GENERAL_STATES.forEach(RenderStateShard::clearRenderState));
-        this.hashCode = Objects.hash(super.hashCode(), GENERAL_STATES, texture);
-    }
-
-    private TextRenderType(int texture, String t) {
-        super(t,
-                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
-                VertexFormat.Mode.QUADS, 256, false, true,
-                () -> {
-                    SEE_THROUGH_STATES.forEach(RenderStateShard::setupRenderState);
-                    RenderSystem.enableTexture();
-                    RenderSystem.setShaderTexture(0, texture);
-                },
-                () -> SEE_THROUGH_STATES.forEach(RenderStateShard::clearRenderState));
-        this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES, texture);
-    }
-
-    private TextRenderType(int texture, boolean ignored) {
-        super("modern_text",
-                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
-                VertexFormat.Mode.QUADS, 256, false, true,
-                () -> {
-                    POLYGON_OFFSET_STATES.forEach(RenderStateShard::setupRenderState);
-                    RenderSystem.enableTexture();
-                    RenderSystem.setShaderTexture(0, texture);
-                },
-                () -> POLYGON_OFFSET_STATES.forEach(RenderStateShard::clearRenderState));
-        this.hashCode = Objects.hash(super.hashCode(), POLYGON_OFFSET_STATES, texture);
+    private TextRenderType(String name, int bufferSize, Runnable setupState, Runnable clearState) {
+        super(name, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS,
+                bufferSize, false, true, setupState, clearState);
     }
 
     @Nonnull
     public static TextRenderType getOrCreate(int texture, boolean seeThrough) {
-        return seeThrough ? SEE_THROUGH_TYPES.computeIfAbsent(texture, SEE_THROUGH_FUNC) :
-                GENERAL_TYPES.computeIfAbsent(texture, GENERAL_FUNC);
+        return seeThrough ? SEE_THROUGH_TYPES.computeIfAbsent(texture, TextRenderType::makeSeeThroughType) :
+                GENERAL_TYPES.computeIfAbsent(texture, TextRenderType::makeGeneralType);
+    }
+
+    @Nonnull
+    private static TextRenderType makeGeneralType(int texture) {
+        TextRenderType renderType = new TextRenderType("modern_text", 256, () -> {
+            GENERAL_STATES.forEach(RenderStateShard::setupRenderState);
+            RenderSystem.enableTexture();
+            RenderSystem.setShaderTexture(0, texture);
+        }, () -> GENERAL_STATES.forEach(RenderStateShard::clearRenderState));
+        if (sFirstGeneralType == null) {
+            assert (GENERAL_TYPES.isEmpty());
+            sFirstGeneralType = renderType;
+            ((AccessRenderBuffers) Minecraft.getInstance().renderBuffers()).getFixedBuffers()
+                    .put(renderType, sFirstBufferBuilder);
+        }
+        return renderType;
+    }
+
+    @Nonnull
+    private static TextRenderType makeSeeThroughType(int texture) {
+        return new TextRenderType("modern_text_see_through", 256, () -> {
+            SEE_THROUGH_STATES.forEach(RenderStateShard::setupRenderState);
+            RenderSystem.enableTexture();
+            RenderSystem.setShaderTexture(0, texture);
+        }, () -> SEE_THROUGH_STATES.forEach(RenderStateShard::clearRenderState));
     }
 
     @Nonnull
     public static TextRenderType getOrCreate(int texture, Font.DisplayMode mode) {
-        return switch (mode) {
-            case NORMAL -> GENERAL_TYPES.computeIfAbsent(texture, GENERAL_FUNC);
-            case SEE_THROUGH -> SEE_THROUGH_TYPES.computeIfAbsent(texture, SEE_THROUGH_FUNC);
-            case POLYGON_OFFSET -> POLYGON_OFFSET_TYPES.computeIfAbsent(texture, POLYGON_OFFSET_FUNC);
-        };
+        throw new IllegalStateException();
+    }
+
+    @Nullable
+    public static TextRenderType firstGeneralType() {
+        return sFirstGeneralType;
     }
 
     public static void clear() {
+        if (sFirstGeneralType != null) {
+            assert (!GENERAL_TYPES.isEmpty());
+            if (!((AccessRenderBuffers) Minecraft.getInstance().renderBuffers()).getFixedBuffers()
+                    .remove(sFirstGeneralType, sFirstBufferBuilder)) {
+                throw new IllegalStateException();
+            }
+            sFirstGeneralType = null;
+        }
         GENERAL_TYPES.clear();
         SEE_THROUGH_TYPES.clear();
-        POLYGON_OFFSET_TYPES.clear();
-    }
-
-    @Override
-    public int hashCode() {
-        return hashCode;
-    }
-
-    /**
-     * Singleton, the constructor is private
-     */
-    @Override
-    public boolean equals(Object o) {
-        return this == o;
+        sFirstBufferBuilder.clear();
     }
 
     public static ShaderInstance getShader() {

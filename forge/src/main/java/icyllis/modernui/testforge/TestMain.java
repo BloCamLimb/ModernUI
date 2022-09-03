@@ -18,7 +18,6 @@
 
 package icyllis.modernui.testforge;
 
-import com.google.gson.*;
 import com.ibm.icu.text.BreakIterator;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Document;
@@ -27,10 +26,10 @@ import icyllis.modernui.ModernUI;
 import icyllis.modernui.audio.*;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.core.*;
-import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.math.*;
@@ -40,21 +39,18 @@ import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.textmc.CharSequenceBuilder;
 import icyllis.modernui.view.Gravity;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.util.GsonHelper;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
 import java.awt.Color;
+import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
-import java.io.*;
+import java.io.IOException;
 import java.nio.channels.FileChannel;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.List;
