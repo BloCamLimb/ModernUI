@@ -309,6 +309,8 @@ public class TextLayoutEngine {
         reload();
         // events
         MinecraftForge.EVENT_BUS.register(this);
+        // OpenGL texture ID changed
+        mGlyphManager.addAtlasResizeCallback(TextRenderType::clear);
     }
 
     /**
@@ -353,7 +355,7 @@ public class TextLayoutEngine {
             mMultilayerCache = new HashMap<>();
             //mDigitMap = new HashMap<>();
         }
-        // Clear TextRenderType instances, but font textures are NOT released (intentionally)
+        // Clear TextRenderType instances, but font textures are not released
         TextRenderType.clear();
         if (size > 0) {
             LOGGER.info(MARKER, "Cleanup {} text layout entries, rehash: {}", size, rehash);
@@ -824,12 +826,12 @@ public class TextLayoutEngine {
                 atlas.stitch(glyph, dst);
                 return glyph;
             } else {
-                atlas.setEmpty(id);
+                atlas.setNull(id);
                 LOGGER.warn(MARKER, "Emoji is not {}x or {}x, setting empty: {}", EMOJI_SIZE, EMOJI_SIZE * 2, location);
                 return null;
             }
         } catch (Exception e) {
-            atlas.setEmpty(id);
+            atlas.setNull(id);
             LOGGER.warn(MARKER, "Failed to load emoji, setting empty: {}", location, e);
             return null;
         }

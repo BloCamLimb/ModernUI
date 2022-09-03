@@ -18,10 +18,12 @@
 
 package icyllis.modernui.graphics.font;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.NativeImage;
 import icyllis.modernui.text.TextUtils;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Object2IntFunction;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.BufferUtils;
@@ -34,8 +36,7 @@ import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.PrintWriter;
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.function.Function;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
  * Manages all glyphs, font atlases, measures glyph metrics and draw them of
@@ -67,17 +68,22 @@ public class GlyphManager {
     public static volatile boolean sAntiAliasing = true;
     public static volatile boolean sFractionalMetrics = true;
 
-    private static final Function<Font, GLFontAtlas> sFactory = f -> new GLFontAtlas();
-
     /**
      * The global instance.
      */
     private static volatile GlyphManager sInstance;
 
     /**
-     * All font atlases, with specified font family, size and style.
+     * All font atlases, with specified font size.
      */
-    private Map<Font, GLFontAtlas> mAtlases;
+    private Int2ObjectOpenHashMap<GLFontAtlas> mAtlases;
+
+    /**
+     * Font (with size and style) to int key.
+     */
+    private Object2IntOpenHashMap<Font> mFontTable;
+
+    private final Object2IntFunction<Font> mFontTableMapper = f -> mFontTable.size();
 
     /**
      * Draw a single glyph onto this image and then loaded from here into an OpenGL texture.
@@ -98,6 +104,8 @@ public class GlyphManager {
      * A direct buffer used for loading the pre-rendered glyph images into OpenGL textures.
      */
     private ByteBuffer mImageBuffer;
+
+    private final CopyOnWriteArrayList<Runnable> mAtlasResizeCallbacks = new CopyOnWriteArrayList<>();
 
     private GlyphManager() {
         // init
@@ -125,7 +133,9 @@ public class GlyphManager {
                 atlas.close();
             }
         }
-        mAtlases = new HashMap<>();
+        mAtlases = new Int2ObjectOpenHashMap<>();
+        mFontTable = new Object2IntOpenHashMap<>();
+        mFontTable.defaultReturnValue(-1);
         allocateImage(64, 64);
     }
 
@@ -163,10 +173,12 @@ public class GlyphManager {
     @Nullable
     @RenderThread
     public GLBakedGlyph lookupGlyph(@Nonnull Font font, int glyphCode) {
-        GLFontAtlas atlas = mAtlases.computeIfAbsent(font, sFactory);
-        GLBakedGlyph glyph = atlas.getGlyph(glyphCode);
+        long fontKey = mFontTable.computeIfAbsent(font, mFontTableMapper);
+        long key = (fontKey << 32L) | glyphCode;
+        GLFontAtlas atlas = mAtlases.computeIfAbsent(font.getSize(), __ -> new GLFontAtlas());
+        GLBakedGlyph glyph = atlas.getGlyph(key);
         if (glyph != null && glyph.texture == 0) {
-            return cacheGlyph(font, glyphCode, atlas, glyph);
+            return cacheGlyph(font, glyphCode, atlas, glyph, key);
         }
         return glyph;
     }
@@ -178,20 +190,13 @@ public class GlyphManager {
             // XXX: remove extension name
             basePath = basePath.substring(0, basePath.length() - 4);
         }
-        for (var entry : mAtlases.entrySet()) {
-            Font font = entry.getKey();
-            ModernUI.LOGGER.info(MARKER, font);
+        int index = 0;
+        for (var atlas : mAtlases.values()) {
             if (basePath != null) {
-                String style;
-                if (font.isBold()) {
-                    style = font.isItalic() ? "bolditalic" : "bold";
-                } else {
-                    style = font.isItalic() ? "italic" : "plain";
-                }
-                String suffix = "_" + font.getFamily(Locale.ROOT) + "_" + style + "_" + font.getSize() + ".png";
-                entry.getValue().debug(basePath + suffix.replaceAll(" ", "_"));
+                atlas.debug(basePath + "_" + index);
+                index++;
             } else {
-                entry.getValue().debug(null);
+                atlas.debug(null);
             }
         }
     }
@@ -199,9 +204,9 @@ public class GlyphManager {
     public void dumpInfo(PrintWriter pw) {
         int glyphSize = 0;
         long memorySize = 0;
-        for (var entry : mAtlases.entrySet()) {
-            glyphSize += entry.getValue().getGlyphCount();
-            memorySize += entry.getValue().getMemorySize();
+        for (var atlas : mAtlases.values()) {
+            glyphSize += atlas.getGlyphCount();
+            memorySize += atlas.getMemorySize();
         }
         pw.print("GlyphManager: ");
         pw.print("Atlases=" + mAtlases.size());
@@ -212,7 +217,8 @@ public class GlyphManager {
     @Nullable
     @RenderThread
     private GLBakedGlyph cacheGlyph(@Nonnull Font font, int glyphCode,
-                                    @Nonnull GLFontAtlas atlas, @Nonnull GLBakedGlyph glyph) {
+                                    @Nonnull GLFontAtlas atlas, @Nonnull GLBakedGlyph glyph,
+                                    long key) {
         // there's no need to layout glyph vector, we only draw the specific glyphCode
         // which is already laid-out in LayoutEngine
         GlyphVector vector = font.createGlyphVector(mGraphics.getFontRenderContext(), new int[]{glyphCode});
@@ -220,7 +226,7 @@ public class GlyphManager {
         Rectangle bounds = vector.getPixelBounds(null, 0, 0);
 
         if (bounds.width == 0 || bounds.height == 0) {
-            atlas.setEmpty(glyphCode);
+            atlas.setNull(key);
             return null;
         }
 
@@ -249,7 +255,12 @@ public class GlyphManager {
         }
         mImageBuffer.flip();
 
-        atlas.stitch(glyph, MemoryUtil.memAddress(mImageBuffer));
+        boolean resized = atlas.stitch(glyph, MemoryUtil.memAddress(mImageBuffer));
+        if (resized) {
+            for (var r : mAtlasResizeCallbacks) {
+                r.run();
+            }
+        }
 
         mGraphics.clearRect(0, 0, mImage.getWidth(), mImage.getHeight());
         mImageBuffer.clear();
@@ -261,7 +272,7 @@ public class GlyphManager {
         mGraphics = mImage.createGraphics();
 
         mImageData = new int[width * height];
-        mImageBuffer = BufferUtils.createByteBuffer(mImageData.length);
+        mImageBuffer = BufferUtils.createByteBuffer(mImageData.length); // auto GC
 
         // set background color for use with clearRect()
         mGraphics.setBackground(BG_COLOR);
@@ -286,6 +297,14 @@ public class GlyphManager {
             mGraphics.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
                     RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
         }
+    }
+
+    public void addAtlasResizeCallback(Runnable callback) {
+        mAtlasResizeCallbacks.add(callback);
+    }
+
+    public void removeAtlasResizeCallback(Runnable callback) {
+        mAtlasResizeCallbacks.remove(callback);
     }
 
     /**

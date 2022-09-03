@@ -23,8 +23,8 @@ import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.core.NativeImage;
 import icyllis.modernui.graphics.opengl.GLTexture;
-import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -34,9 +34,10 @@ import java.nio.file.Path;
 import static icyllis.modernui.graphics.opengl.GLCore.*;
 
 /**
- * Maintains a font texture atlas, which is specified with a font family, size and style.
- * The glyphs in the texture are tightly packed, dynamically generated with mipmaps. Each
- * glyph is represented as a {@link GLBakedGlyph}.
+ * Maintains a font texture atlas, which is specified with a font size. In this way,
+ * the glyphs can have similar sizes so that it will help to tightly packed these
+ * sprites. Glyphs are dynamically generated with mipmaps. Each glyph is represented
+ * as a {@link GLBakedGlyph}.
  * <p>
  * The initial texture size is 256*256, and each resize double the height and width
  * alternately. For example, 256*256 -> 256*512 -> 512*512 -> 512*1024 -> 1024*1024.
@@ -46,6 +47,7 @@ import static icyllis.modernui.graphics.opengl.GLCore.*;
  * @see GlyphManager
  * @see GLBakedGlyph
  */
+//TODO handle too many glyphs?
 @RenderThread
 public class GLFontAtlas implements AutoCloseable {
 
@@ -67,7 +69,7 @@ public class GLFontAtlas implements AutoCloseable {
     private static int sCopyFramebuffer;
 
     // OpenHashMap uses less memory than RBTree/AVLTree, but higher than ArrayMap
-    private final Int2ObjectMap<GLBakedGlyph> mGlyphs = new Int2ObjectOpenHashMap<>();
+    private final Long2ObjectMap<GLBakedGlyph> mGlyphs = new Long2ObjectOpenHashMap<>();
 
     // texture can change by resizing
     private GLTexture mTexture = new GLTexture(GL_TEXTURE_2D);
@@ -95,20 +97,21 @@ public class GLFontAtlas implements AutoCloseable {
     }
 
     @Nullable
-    public GLBakedGlyph getGlyph(int glyphCode) {
+    public GLBakedGlyph getGlyph(long key) {
         // cached factory
-        return mGlyphs.computeIfAbsent(glyphCode, i -> new GLBakedGlyph());
+        return mGlyphs.computeIfAbsent(key, __ -> new GLBakedGlyph());
     }
 
     // needed when the glyph has nothing to render
-    public void setEmpty(int glyphCode) {
-        mGlyphs.put(glyphCode, null);
+    public void setNull(long key) {
+        mGlyphs.put(key, null);
     }
 
-    public void stitch(@Nonnull GLBakedGlyph glyph, long pixels) {
+    public boolean stitch(@Nonnull GLBakedGlyph glyph, long pixels) {
+        boolean resized = false;
         glyph.texture = mTexture.get();
         if (mWidth == 0) {
-            resize();
+            resize(); // first init
         }
         if (mPosX + glyph.width + GlyphManager.GLYPH_BORDER >= mWidth) {
             mPosX = GlyphManager.GLYPH_BORDER;
@@ -126,6 +129,7 @@ public class GLFontAtlas implements AutoCloseable {
                 mPosY = GlyphManager.GLYPH_BORDER;
             }
             resize();
+            resized = true;
         }
 
         // include border
@@ -142,6 +146,8 @@ public class GLFontAtlas implements AutoCloseable {
 
         mPosX += glyph.width + GlyphManager.GLYPH_BORDER * 2;
         mLineHeight = Math.max(mLineHeight, glyph.height);
+
+        return resized;
     }
 
     private void resize() {
@@ -219,8 +225,9 @@ public class GLFontAtlas implements AutoCloseable {
 
     public void debug(@Nullable String path) {
         if (path == null) {
-            for (var glyph : mGlyphs.int2ObjectEntrySet()) {
-                ModernUI.LOGGER.info(GlyphManager.MARKER, "GlyphCode {}: {}", glyph.getIntKey(), glyph.getValue());
+            for (var glyph : mGlyphs.long2ObjectEntrySet()) {
+                ModernUI.LOGGER.info(GlyphManager.MARKER, "Key {}: {}",
+                        Long.toHexString(glyph.getLongKey()), glyph.getValue());
             }
         } else if (Core.isOnRenderThread()) {
             ModernUI.LOGGER.info(GlyphManager.MARKER, "Glyphs: {}", mGlyphs.size());
@@ -237,8 +244,8 @@ public class GLFontAtlas implements AutoCloseable {
     public void close() {
         if (mTexture != null) {
             mTexture.close();
+            mTexture = null;
         }
-        mTexture = null;
     }
 
     public int getGlyphCount() {
