@@ -18,25 +18,29 @@
 
 package icyllis.modernui.forge.mixin;
 
-import com.mojang.blaze3d.systems.RenderSystem;
-import icyllis.modernui.forge.TooltipRenderer;
-import net.minecraft.client.gui.screens.inventory.tooltip.ClientBundleTooltip;
+import com.mojang.authlib.minecraft.TelemetrySession;
+import com.mojang.authlib.minecraft.UserApiService;
+import icyllis.modernui.forge.ModernUIForge;
+import net.minecraft.client.ClientTelemetryManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(ClientBundleTooltip.class)
-public class MixinClientBundleTooltip {
+import java.util.concurrent.Executor;
 
-    @Redirect(method = "blit",
-            at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/systems/RenderSystem;setShaderColor(FFFF)V"))
-    private void setColor(float r, float g, float b, float a) {
-        if (TooltipRenderer.sTooltip) {
-            RenderSystem.enableBlend();
-            // MULTIPLY BLENDING, UN_PREMULTIPLIED COLOR
-            RenderSystem.setShaderColor(r, g, b, TooltipRenderer.sAlpha * a);
+@Mixin(ClientTelemetryManager.class)
+public class MixinClientTelemetryManager {
+
+    @Redirect(method = "<init>",
+            at = @At(value = "INVOKE",
+                    target = "Lcom/mojang/authlib/minecraft/UserApiService;newTelemetrySession" +
+                            "(Ljava/util/concurrent/Executor;)Lcom/mojang/authlib/minecraft/TelemetrySession;",
+                    remap = false))
+    private TelemetrySession onCreateTelemetrySession(UserApiService service, Executor executor) {
+        if (ModernUIForge.sRemoveTelemetrySession) {
+            return TelemetrySession.DISABLED;
         } else {
-            RenderSystem.setShaderColor(r, g, b, a);
+            return service.newTelemetrySession(executor);
         }
     }
 }

@@ -9,6 +9,7 @@
     "AccessRenderBuffers",
     "MixinBidiReorder",
     "MixinChatFormatting",
+    "MixinChatScreen",
     "MixinClientLanguage",
     "MixinCommandSuggestions",
     "MixinEditBox",

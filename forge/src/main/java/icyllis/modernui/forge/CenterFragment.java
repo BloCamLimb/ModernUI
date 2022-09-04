@@ -43,17 +43,22 @@ import icyllis.modernui.view.*;
 import icyllis.modernui.view.View.OnLayoutChangeListener;
 import icyllis.modernui.widget.*;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.OptionInstance;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.common.ForgeConfigSpec.IntValue;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 
 import static icyllis.modernui.view.View.dp;
 import static icyllis.modernui.view.ViewGroup.LayoutParams.*;
 
 public class CenterFragment extends Fragment implements ScreenCallback {
+
+    private static final Field OPTION_VALUE = ObfuscationReflectionHelper.findField(OptionInstance.class, "f_231481_");
 
     public static final int BACKGROUND_COLOR = 0xc0292a2c;
     public static final int THEME_COLOR = 0xffcda398;
@@ -540,6 +545,46 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                 category.addView(option);
             }
             {
+                var option = createInputOption("modernui.center.text.shadowOffset");
+                var input = option.<EditText>requireViewById(R.id.input);
+                input.setText(ModernUITextMC.CONFIG.mShadowOffset.get().toString());
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
+                        new InputFilter.LengthFilter(5));
+                input.setOnFocusChangeListener((view, hasFocus) -> {
+                    if (!hasFocus) {
+                        EditText v = (EditText) view;
+                        float value = FMath.clamp(Float.parseFloat(v.getText().toString()),
+                                ModernUITextMC.Config.SHADOW_OFFSET_MIN, ModernUITextMC.Config.SHADOW_OFFSET_MAX);
+                        v.setText(Float.toString(value));
+                        if (value != ModernUITextMC.CONFIG.mShadowOffset.get()) {
+                            ModernUITextMC.CONFIG.mShadowOffset.set((double) value);
+                            ModernUITextMC.CONFIG.saveAndReload();
+                        }
+                    }
+                });
+                category.addView(option);
+            }
+            {
+                var option = createInputOption("modernui.center.text.outlineOffset");
+                var input = option.<EditText>requireViewById(R.id.input);
+                input.setText(ModernUITextMC.CONFIG.mOutlineOffset.get().toString());
+                input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
+                        new InputFilter.LengthFilter(5));
+                input.setOnFocusChangeListener((view, hasFocus) -> {
+                    if (!hasFocus) {
+                        EditText v = (EditText) view;
+                        float value = FMath.clamp(Float.parseFloat(v.getText().toString()),
+                                ModernUITextMC.Config.OUTLINE_OFFSET_MIN, ModernUITextMC.Config.OUTLINE_OFFSET_MAX);
+                        v.setText(Float.toString(value));
+                        if (value != ModernUITextMC.CONFIG.mOutlineOffset.get()) {
+                            ModernUITextMC.CONFIG.mOutlineOffset.set((double) value);
+                            ModernUITextMC.CONFIG.saveAndReload();
+                        }
+                    }
+                });
+                category.addView(option);
+            }
+            {
                 var option = createButtonOption("modernui.center.text.superSampling");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mSuperSampling.get());
@@ -966,7 +1011,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
         }
 
         if (ModernUIForge.isDeveloperMode()) {
-            var category = createCategory("Debug");
+            var category = createCategory("Developer");
             {
                 var option = createInputOption("Gamma");
                 var input = option.<EditText>requireViewById(R.id.input);
@@ -979,8 +1024,43 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                         double gamma = Double.parseDouble(v.getText().toString());
                         v.setText(Double.toString(gamma));
                         // no sync, but safe
-                        Minecraft.getInstance().options.gamma().set(gamma);
+                        try {
+                            // no listener
+                            OPTION_VALUE.set(Minecraft.getInstance().options.gamma(), gamma);
+                        } catch (Exception e) {
+                            Minecraft.getInstance().options.gamma().set(gamma);
+                        }
                     }
+                });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("Remove Message Signature");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(Config.CLIENT.removeSignature.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    Config.CLIENT.removeSignature.set(checked);
+                    Config.CLIENT.saveAndReload();
+                });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("Remove Telemetry Session");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(Config.CLIENT.removeTelemetry.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    Config.CLIENT.removeTelemetry.set(checked);
+                    Config.CLIENT.saveAndReload();
+                });
+                category.addView(option);
+            }
+            {
+                var option = createButtonOption("Secure Profile Public Key");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(Config.CLIENT.securePublicKey.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    Config.CLIENT.securePublicKey.set(checked);
+                    Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
             }
@@ -993,7 +1073,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                 category.addView(option);
             }
             {
-                var option = createButtonOption("Debug Dump (P)");
+                var option = createButtonOption("Dump UI Manager (P)");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(false);
                 button.setOnCheckedChangeListener((__, checked) ->

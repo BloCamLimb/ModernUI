@@ -178,6 +178,9 @@ final class Config {
         final ForgeConfigSpec.BooleanValue forceRtl;
         final ForgeConfigSpec.DoubleValue fontScale;
         final ForgeConfigSpec.EnumValue<WindowMode> windowMode;
+        final ForgeConfigSpec.BooleanValue removeSignature;
+        final ForgeConfigSpec.BooleanValue removeTelemetry;
+        final ForgeConfigSpec.BooleanValue securePublicKey;
 
         final ForgeConfigSpec.IntValue scrollbarSize;
         final ForgeConfigSpec.IntValue touchSlop;
@@ -300,6 +303,12 @@ final class Config {
             showGLCapsError = builder.comment("A dialog popup is displayed when the OpenGL capability test fails.",
                             "Set to false to not show it. This is ignored when skipGLCapsError=true")
                     .define("showGLCapsError", true);
+            removeSignature = builder.comment("Remove signature of chat messages and commands.")
+                    .define("removeSignature", false);
+            removeTelemetry = builder.comment("Remove telemetry event of client behaviors.")
+                    .define("removeTelemetry", false);
+            securePublicKey = builder.comment("Don't report profile's public key to server.")
+                    .define("securePublicKey", false);
 
             builder.pop();
 
@@ -411,6 +420,10 @@ final class Config {
             BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
 
             ModernUIForge.sInventoryScreenPausesGame = inventoryPause.get();
+            ModernUIForge.sRemoveMessageSignature = removeSignature.get();
+            ModernUIForge.sRemoveTelemetrySession = removeTelemetry.get();
+            ModernUIForge.sSecureProfilePublicKey = securePublicKey.get();
+
             TooltipRenderer.sTooltip = !ModernUIForge.hasGLCapsError() && tooltip.get();
 
             colors = tooltipFill.get();

@@ -58,6 +58,8 @@
   "modernui.center.text.fixedResolution": "Fixed Resolution",
   "modernui.center.text.baseFontSize": "Base Font Size",
   "modernui.center.text.baselineShift": "Baseline Shift",
+  "modernui.center.text.shadowOffset": "Shadow Offset",
+  "modernui.center.text.outlineOffset": "Outline Offset",
   "modernui.center.text.superSampling": "Supersampling",
   "modernui.center.text.alignPixels": "Snap to Pixels",
   "modernui.center.text.textShaping": "HarfBuzz Text Shaping",

@@ -79,6 +79,9 @@ public final class ModernUIForge {
     static volatile Integer sBootstrapLevel;
 
     public static boolean sInventoryScreenPausesGame;
+    public static boolean sRemoveMessageSignature;
+    public static boolean sRemoveTelemetrySession;
+    public static boolean sSecureProfilePublicKey;
     public static boolean sGLCapsError; // write only
 
     static {

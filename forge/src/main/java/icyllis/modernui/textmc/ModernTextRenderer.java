@@ -43,7 +43,7 @@ public final class ModernTextRenderer {
     }
 
     public static final Vector3f SHADOW_OFFSET = new Vector3f(0.0F, 0.0F, 0.03F);
-    public static final Vector3f OUTLINE_OFFSET = new Vector3f(0.0F, 0.0F, 0.00001F);
+    public static final Vector3f OUTLINE_OFFSET = new Vector3f(0.0F, 0.0F, 0.0001F);
 
     /*
      * Render thread instance
@@ -230,7 +230,7 @@ public final class ModernTextRenderer {
 
         final float offset = sOutlineOffset;
         matrix = matrix.copy();
-        //TODO maybe there is a way to optimize this
+        //TODO use one-pass shader without transparency?
         for (int ox = -1; ox <= 1; ++ox) {
             for (int oy = -1; oy <= 1; ++oy) {
                 if (ox == 0 && oy == 0) {
