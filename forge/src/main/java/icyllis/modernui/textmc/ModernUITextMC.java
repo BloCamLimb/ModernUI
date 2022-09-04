@@ -27,10 +27,8 @@ import icyllis.modernui.view.View;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -44,7 +42,6 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLPaths;
 
 import javax.annotation.Nonnull;
-import java.util.regex.Matcher;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -118,7 +115,7 @@ public final class ModernUITextMC {
                 throw new RuntimeException("String.hashCode() is not identical to the specs");
             }
         }
-        MinecraftForge.EVENT_BUS.register(EventHandler.class);
+        //MinecraftForge.EVENT_BUS.register(EventHandler.class);
         LOGGER.info(MARKER, "Loaded modern text engine");
     }
 
@@ -143,9 +140,8 @@ public final class ModernUITextMC {
         }
     }*/
 
-    static class EventHandler {
+    /*static class EventHandler {
 
-        //TODO chat hack
         @SubscribeEvent
         static void onClientChat(@Nonnull ClientChatEvent event) {
             final String msg = event.getMessage();
@@ -179,7 +175,7 @@ public final class ModernUITextMC {
                 }
             }
         }
-    }
+    }*/
 
     public static class Config {
 

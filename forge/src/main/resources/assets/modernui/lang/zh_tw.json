@@ -58,6 +58,8 @@
   "modernui.center.text.fixedResolution": "固定解析度",
   "modernui.center.text.baseFontSize": "字體大小基值",
   "modernui.center.text.baselineShift": "基線偏移",
+  "modernui.center.text.shadowOffset": "陰影偏移",
+  "modernui.center.text.outlineOffset": "輪廓偏移",
   "modernui.center.text.superSampling": "超取樣",
   "modernui.center.text.alignPixels": "對齊到像素",
   "modernui.center.text.textShaping": "HarfBuzz 文字塑形",
