@@ -61,8 +61,8 @@ public class TextRenderNode {
         }
 
         @Override
-        public void drawTextOutline(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, float x, float y,
-                                    int r, int g, int b, int a, int packedLight, float scale, float level) {
+        public void drawTextGlow(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, float x, float y,
+                                 int r, int g, int b, int a, int packedLight, float scale, float level) {
             // noop
         }
     };
@@ -414,7 +414,7 @@ public class TextRenderNode {
     }
 
     /**
-     * Special case of drawText() when drawing the 8 times of outline of drawText8xOutline().
+     * Special case of drawText() when drawing the glowing outline of drawText8xOutline().
      * No fast digit replacement, no shadow, no background, no underline, no strikethrough,
      * no bitmap replacement, force to use input color, can have obfuscated rendering (but should not).
      *
@@ -431,9 +431,9 @@ public class TextRenderNode {
      * @param level       the resolution level used to create this node
      */
     @SuppressWarnings("UnnecessaryLocalVariable")
-    public void drawTextOutline(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source,
-                                float x, float y, int r, int g, int b, int a, int packedLight,
-                                float scale, float level) {
+    public void drawTextGlow(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source,
+                             float x, float y, int r, int g, int b, int a, int packedLight,
+                             float scale, float level) {
         if (mGlyphs.length == 0) {
             return;
         }
@@ -448,6 +448,7 @@ public class TextRenderNode {
         int texture = -1;
         VertexConsumer builder = null;
 
+        final float sBloat = Math.min(1.0f, 3.0f / level);
         for (int i = 0, e = glyphs.length; i < e; i++) {
             GLBakedGlyph glyph = glyphs[i];
             final int flag = flags[i];
@@ -482,27 +483,29 @@ public class TextRenderNode {
             }*/
             if (texture != glyph.texture) {
                 texture = glyph.texture;
-                builder = source.getBuffer(TextRenderType.getOrCreate(texture, false));
+                builder = source.getBuffer(TextRenderType.getOrCreateGlow(texture));
             }
             assert builder != null;
-            builder.vertex(matrix, rx, ry, 0)
+            float uBloat = 1.5f * (glyph.u2 - glyph.u1) / glyph.width;
+            float vBloat = 1.5f * (glyph.v2 - glyph.v1) / glyph.height;
+            builder.vertex(matrix, rx - sBloat, ry - sBloat, 0.0001f)
                     .color(r, g, b, a)
-                    .uv(glyph.u1, glyph.v1)
+                    .uv(glyph.u1 - uBloat, glyph.v1 - vBloat)
                     .uv2(packedLight)
                     .endVertex();
-            builder.vertex(matrix, rx, ry + h, 0)
+            builder.vertex(matrix, rx - sBloat, ry + h + sBloat, 0.0001f)
                     .color(r, g, b, a)
-                    .uv(glyph.u1, glyph.v2)
+                    .uv(glyph.u1 - uBloat, glyph.v2 + vBloat)
                     .uv2(packedLight)
                     .endVertex();
-            builder.vertex(matrix, rx + w, ry + h, 0)
+            builder.vertex(matrix, rx + w + sBloat, ry + h + sBloat, 0)
                     .color(r, g, b, a)
-                    .uv(glyph.u2, glyph.v2)
+                    .uv(glyph.u2 + uBloat, glyph.v2 + vBloat)
                     .uv2(packedLight)
                     .endVertex();
-            builder.vertex(matrix, rx + w, ry, 0)
+            builder.vertex(matrix, rx + w + sBloat, ry - sBloat, 0)
                     .color(r, g, b, a)
-                    .uv(glyph.u2, glyph.v1)
+                    .uv(glyph.u2 + uBloat, glyph.v1 - vBloat)
                     .uv2(packedLight)
                     .endVertex();
         }

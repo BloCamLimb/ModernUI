@@ -53,7 +53,7 @@ public class GlyphManager {
      * The width in pixels of a transparent border between individual glyphs in the atlas.
      * This border keeps neighboring glyphs from "bleeding through" when mipmap used.
      */
-    public static final int GLYPH_BORDER = 1;
+    public static final int GLYPH_BORDER = 2;
 
     /**
      * Transparent (alpha zero) black background color for use with BufferedImage.clearRect().

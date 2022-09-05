@@ -19,19 +19,18 @@
 package icyllis.modernui.textmc.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.Tesselator;
 import icyllis.modernui.textmc.ModernStringSplitter;
 import icyllis.modernui.textmc.ModernTextRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.network.chat.Component;
 import org.objectweb.asm.Opcodes;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Gui.class)
@@ -63,17 +62,13 @@ public abstract class MixinIngameGui {
     private void drawExperience(PoseStack matrix, int i, CallbackInfo ci) {
         LocalPlayer player = minecraft.player;
         if (player != null && player.experienceLevel > 0) {
-            String s = Integer.toString(player.experienceLevel);
-            Font font = getFont();
+            Component s = Component.literal(Integer.toString(player.experienceLevel));
             float w = ModernStringSplitter.measureText(s);
             float x = (screenWidth - w) / 2;
             int y = screenHeight - 31 - 4;
-            float offset = ModernTextRenderer.sOutlineOffset;
-            font.draw(matrix, s, x + offset, y, 0);
-            font.draw(matrix, s, x - offset, y, 0);
-            font.draw(matrix, s, x, y + offset, 0);
-            font.draw(matrix, s, x, y - offset, 0);
-            font.draw(matrix, s, x, y, 0xff80ff20);
+            MultiBufferSource.BufferSource source = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
+            ModernTextRenderer.drawText8xOutline(s, x, y, 0xff80ff20, 0xff000000, matrix.last().pose(), source);
+            source.endBatch();
         }
     }
 }

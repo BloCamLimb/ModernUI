@@ -20,8 +20,7 @@ package icyllis.modernui.textmc;
 
 import com.mojang.math.Matrix4f;
 import com.mojang.math.Vector3f;
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.*;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.util.FormattedCharSequence;
@@ -30,7 +29,7 @@ import net.minecraftforge.fml.loading.FMLEnvironment;
 import javax.annotation.Nonnull;
 
 /**
- * Modern Text Engine to Minecraft font renderer.
+ * Modern Text Engine designed for Minecraft text rendering system.
  *
  * @author BloCamLimb
  */
@@ -43,7 +42,7 @@ public final class ModernTextRenderer {
     }
 
     public static final Vector3f SHADOW_OFFSET = new Vector3f(0.0F, 0.0F, 0.03F);
-    public static final Vector3f OUTLINE_OFFSET = new Vector3f(0.0F, 0.0F, 0.0001F);
+    public static final Vector3f OUTLINE_OFFSET = new Vector3f(0.0F, 0.0F, 0.001F);
 
     /*
      * Render thread instance
@@ -200,6 +199,42 @@ public final class ModernTextRenderer {
         return x;
     }
 
+    public static void drawText8xOutline(@Nonnull FormattedText text, float x, float y,
+                                         int color, int outlineColor, @Nonnull Matrix4f matrix,
+                                         @Nonnull MultiBufferSource source) {
+        if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
+            return;
+        }
+
+        int a = color >>> 24;
+        if (a <= 1) a = 255;
+        int r = color >> 16 & 0xff;
+        int g = color >> 8 & 0xff;
+        int b = color & 0xff;
+
+        int oa = outlineColor >>> 24;
+        if (oa <= 1) oa = 255;
+        int or = outlineColor >> 16 & 0xff;
+        int og = outlineColor >> 8 & 0xff;
+        int ob = outlineColor & 0xff;
+
+        TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
+        TextRenderNode node = layoutEngine.lookupComplexNode(text);
+        float scale = layoutEngine.getCoordinateScale();
+        float level = layoutEngine.getResolutionLevel();
+        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
+            // performance impact
+            ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
+        }
+
+        matrix = matrix.copy();
+        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, LightTexture.FULL_BRIGHT, scale, level);
+        matrix.translate(OUTLINE_OFFSET);
+
+        node.drawText(matrix, source, null, x, y, r, g, b, a, false,
+                false, 0, LightTexture.FULL_BRIGHT, scale, level);
+    }
+
     public static void drawText8xOutline(@Nonnull FormattedCharSequence text, float x, float y,
                                          int color, int outlineColor, @Nonnull Matrix4f matrix,
                                          @Nonnull MultiBufferSource source, int packedLight) {
@@ -228,19 +263,9 @@ public final class ModernTextRenderer {
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
 
-        final float offset = sOutlineOffset;
         matrix = matrix.copy();
-        //TODO use one-pass shader without transparency?
-        for (int ox = -1; ox <= 1; ++ox) {
-            for (int oy = -1; oy <= 1; ++oy) {
-                if (ox == 0 && oy == 0) {
-                    continue;
-                }
-                node.drawTextOutline(matrix, source, x + ox * offset, y + oy * offset,
-                        or, og, ob, oa, packedLight, scale, level);
-                matrix.translate(OUTLINE_OFFSET);
-            }
-        }
+        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, packedLight, scale, level);
+        matrix.translate(OUTLINE_OFFSET);
 
         node.drawText(matrix, source, null, x, y, r, g, b, a, false,
                 false, 0, packedLight, scale, level);
