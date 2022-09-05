@@ -18,6 +18,7 @@
     "MixinLanguage",
     "MixinLevelRenderer",
     "MixinRenderSystem",
+    "MixinSignRenderer",
     "MixinStringSplitter"
   ]
 }

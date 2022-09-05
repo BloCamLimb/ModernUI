@@ -40,7 +40,7 @@ import static icyllis.modernui.graphics.opengl.GLCore.*;
  * as a {@link GLBakedGlyph}.
  * <p>
  * The initial texture size is 256*256, and each resize double the height and width
- * alternately. For example, 256*256 -> 256*512 -> 512*512 -> 512*1024 -> 1024*1024.
+ * alternately. For example, 512*512 -> 512*1024 -> 1024*1024.
  * The max texture size would be 16384*16384 and the image is 8-bit grayscale.
  * The OpenGL texture will change due to increasing the texture size.
  *
@@ -51,7 +51,7 @@ import static icyllis.modernui.graphics.opengl.GLCore.*;
 @RenderThread
 public class GLFontAtlas implements AutoCloseable {
 
-    public static final int INITIAL_SIZE = 256;
+    public static final int INITIAL_SIZE = 512;
     /**
      * Max mipmap level.
      */

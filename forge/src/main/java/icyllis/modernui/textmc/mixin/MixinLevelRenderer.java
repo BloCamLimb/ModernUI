@@ -50,9 +50,13 @@ public class MixinLevelRenderer {
                               LightTexture lightTexture,
                               Matrix4f projectionMatrix,
                               CallbackInfo ci) {
-        TextRenderType firstGeneralType = TextRenderType.firstGeneralType();
-        if (firstGeneralType != null) {
-            renderBuffers.bufferSource().endBatch(firstGeneralType);
+        TextRenderType firstType = TextRenderType.firstType();
+        TextRenderType firstGlowType = TextRenderType.firstGlowType();
+        if (firstGlowType != null) {
+            renderBuffers.bufferSource().endBatch(firstGlowType);
+        }
+        if (firstType != null) {
+            renderBuffers.bufferSource().endBatch(firstType);
         }
     }
 }
