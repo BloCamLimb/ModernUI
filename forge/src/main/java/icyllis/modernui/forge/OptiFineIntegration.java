@@ -76,6 +76,7 @@ public final class OptiFineIntegration {
         Minecraft minecraft = Minecraft.getInstance();
         try {
             Field field = Options.class.getDeclaredField("GUI_SCALE");
+            field.setAccessible(true);
             field.set(minecraft.options, option);
         } catch (Exception e) {
             e.printStackTrace();
