@@ -1,5 +1,19 @@
 Changelogs
 ===
+### Modern UI 3.6.0.114 (2022-09-07)
+#### Forge Extension 1.19.2-43.1.2
+* Add I18n compat characters
+* Add new API and remove server dependency
+* Change registration and network to internal
+* Support for OptiFine 1.19.2
+* Migrate to MC & Forge 1.19.2
+#### Modern Text Engine 1.19.2
+* Add new glowing text effect
+* Add deferred rendering to improve performance
+* Migrate to MC 1.19.2
+#### Core Framework 3.6
+* Compact font atlas generation
+
 ### Modern UI 3.5.4.113 (2022-08-19)
 #### Forge Extension 1.18.2-40.0.12
 * Add support for creating window with the highest OpenGL it can

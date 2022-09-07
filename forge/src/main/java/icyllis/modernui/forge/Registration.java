@@ -228,7 +228,7 @@ final class Registration {
                             .guiScale))))
             );*/
 
-            OptionInstance<Integer> newGuiScale = new OptionInstance<>("options.guiScale",
+            final OptionInstance<Integer> newGuiScale = new OptionInstance<>("options.guiScale",
                     OptionInstance.noTooltip(),
                     (caption, value) -> {
                         if (value == 0) {
@@ -250,6 +250,7 @@ final class Registration {
             ((AccessOptions) Minecraft.getInstance().options).setGuiScale(newGuiScale);
             if (ModernUIForge.isOptiFineLoaded()) {
                 OptiFineIntegration.setGuiScale(newGuiScale);
+                LOGGER.info(MARKER, "Set OptiFine GUI Scale");
             }
 
             /*Option[] settings = null;
