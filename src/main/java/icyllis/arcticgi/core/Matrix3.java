@@ -74,23 +74,19 @@ public class Matrix3 implements Cloneable {
     // [m11 m12 m13]
     // [m21 m22 m23]
     // [m31 m32 m33] <- [m31 m32] represents the origin
-    public float m11;
-    public float m12;
-    public float m13;
-    public float m21;
-    public float m22;
-    public float m23;
-    public float m31;
-    public float m32;
-    public float m33;
+    float m11;
+    float m12;
+    float m13;
+    float m21;
+    float m22;
+    float m23;
+    float m31;
+    float m32;
+    float m33;
 
-    private int mTypeMask;
+    int mTypeMask;
 
-    /**
-     * Create a zero matrix.
-     */
-    public Matrix3() {
-        mTypeMask = Unknown_Mask;
+    Matrix3() {
     }
 
     /**
@@ -100,10 +96,33 @@ public class Matrix3 implements Cloneable {
      */
     @Nonnull
     public static Matrix3 identity() {
-        final Matrix3 mat = new Matrix3();
-        mat.m11 = mat.m22 = mat.m33 = 1.0f;
-        mat.mTypeMask = Identity_Mask | AxisAligned_Mask;
-        return mat;
+        final Matrix3 m = new Matrix3();
+        m.m11 = m.m22 = m.m33 = 1.0f;
+        m.mTypeMask = Identity_Mask | AxisAligned_Mask;
+        return m;
+    }
+
+    /**
+     * Create a new matrix from the given elements.
+     *
+     * @param scaleX the value of m11
+     * @param shearY the value of m12
+     * @param persp0 the value of m13
+     * @param shearX the value of m21
+     * @param scaleY the value of m22
+     * @param persp1 the value of m23
+     * @param transX the value of m31
+     * @param transY the value of m32
+     * @param persp2 the value of m33
+     * @return the matrix
+     */
+    @Nonnull
+    public static Matrix3 makeAll(float scaleX, float shearY, float persp0,
+                                  float shearX, float scaleY, float persp1,
+                                  float transX, float transY, float persp2) {
+        final Matrix3 m = new Matrix3();
+        m.setAll(scaleX, shearY, persp0, shearX, scaleY, persp1, transX, transY, persp2);
+        return m;
     }
 
     /**
@@ -354,37 +373,65 @@ public class Matrix3 implements Cloneable {
     }
 
     /**
-     * Sets this matrix to identity.
+     * Reset this matrix to the identity.
      */
     public void setIdentity() {
-        m11 = 1;
-        m12 = 0;
-        m13 = 0;
-        m21 = 0;
-        m22 = 1;
-        m23 = 0;
-        m31 = 0;
-        m32 = 0;
-        m33 = 1;
+        m11 = 1.0f;
+        m12 = 0.0f;
+        m13 = 0.0f;
+        m21 = 0.0f;
+        m22 = 1.0f;
+        m23 = 0.0f;
+        m31 = 0.0f;
+        m32 = 0.0f;
+        m33 = 1.0f;
         mTypeMask = Identity_Mask | AxisAligned_Mask;
     }
 
     /**
-     * Set this matrix elements to be given matrix.
+     * Store the values of the given matrix into this matrix.
      *
-     * @param mat the matrix to copy from
+     * @param m the matrix to copy from
      */
-    public void set(@Nonnull Matrix3 mat) {
-        m11 = mat.m11;
-        m12 = mat.m12;
-        m13 = mat.m13;
-        m21 = mat.m21;
-        m22 = mat.m22;
-        m23 = mat.m23;
-        m31 = mat.m31;
-        m32 = mat.m32;
-        m33 = mat.m33;
-        mTypeMask = mat.mTypeMask;
+    public void set(@Nonnull Matrix3 m) {
+        m11 = m.m11;
+        m12 = m.m12;
+        m13 = m.m13;
+        m21 = m.m21;
+        m22 = m.m22;
+        m23 = m.m23;
+        m31 = m.m31;
+        m32 = m.m32;
+        m33 = m.m33;
+        mTypeMask = m.mTypeMask;
+    }
+
+    /**
+     * Sets all values from parameters.
+     *
+     * @param scaleX horizontal scale factor to store
+     * @param shearX horizontal skew factor to store
+     * @param transX horizontal translation to store
+     * @param shearY vertical skew factor to store
+     * @param scaleY vertical scale factor to store
+     * @param transY vertical translation to store
+     * @param persp0 input x-axis values perspective factor to store
+     * @param persp1 input y-axis values perspective factor to store
+     * @param persp2 perspective scale factor to store
+     */
+    public void setAll(float scaleX, float shearY, float persp0,
+                       float shearX, float scaleY, float persp1,
+                       float transX, float transY, float persp2) {
+        m11 = scaleX;
+        m12 = shearY;
+        m13 = persp0;
+        m21 = shearX;
+        m22 = scaleY;
+        m23 = persp1;
+        m31 = transX;
+        m32 = transY;
+        m33 = persp2;
+        mTypeMask = Matrix3.Unknown_Mask;
     }
 
     /**
@@ -421,37 +468,10 @@ public class Matrix3 implements Cloneable {
         unsafe.putFloat(null, p + 40, m33);
     }
 
-    /*
-     * Similar to {@link #putAligned(long)}, but also compare the memory.
-     *
-     * @param p the pointer of the array to store
-     * @return true if data is changed
-     */
-    /*@SuppressWarnings("UnnecessaryLocalVariable")
-    public boolean compareAndPutAligned(long p) {
-        final Unsafe unsafe = DataUtils.UNSAFE;
-        final long offset = OFFSET;
-        boolean changed = false;
-        for (int i = 0; i < 3; i++) {
-            long src = offset + i * 12, dst = p + i * 16;
-            int val0 = unsafe.getInt(this, src);
-            if (changed || val0 != unsafe.getInt(null, dst)) {
-                unsafe.putInt(null, dst, val0);
-                changed = true;
-            }
-            long val1 = unsafe.getLong(this, src + 4);
-            if (changed || val1 != unsafe.getLong(null, dst + 4)) {
-                unsafe.putLong(null, dst + 4, val1);
-                changed = true;
-            }
-        }
-        return changed;
-    }*/
-
     /**
-     * Compute the determinant of this matrix.
+     * Return the determinant of this matrix.
      *
-     * @return the determinant of this matrix
+     * @return the determinant
      */
     public float determinant() {
         return (m11 * m22 - m12 * m21) * m33 +
@@ -460,27 +480,21 @@ public class Matrix3 implements Cloneable {
     }
 
     /**
-     * Compute the trace of this matrix.
-     *
-     * @return the trace of this matrix
-     */
-    public float trace() {
-        return m11 + m22 + m33;
-    }
-
-    /**
-     * Compute the transpose of this matrix.
+     * Transpose this matrix.
      */
     public void transpose() {
-        float t = m21;
-        m21 = m12;
-        m12 = t;
-        t = m31;
-        m31 = m13;
-        m13 = t;
-        t = m32;
-        m32 = m23;
-        m23 = t;
+        final float f12 = m21;
+        final float f13 = m31;
+        final float f21 = m12;
+        final float f23 = m32;
+        final float f31 = m13;
+        final float f32 = m23;
+        m12 = f12;
+        m13 = f13;
+        m21 = f21;
+        m23 = f23;
+        m31 = f31;
+        m32 = f32;
     }
 
     /**

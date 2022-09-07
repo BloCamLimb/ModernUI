@@ -22,6 +22,7 @@ import javax.annotation.Nonnull;
 
 /**
  * The NoPixelsDevice draws nothing, but tracks device's clip.
+ * Used for deferred rendering.
  */
 public class NoPixelsDevice extends BaseDevice {
 
@@ -46,7 +47,7 @@ public class NoPixelsDevice extends BaseDevice {
     }
 
     public final void resetForNextPicture(int left, int top, int right, int bottom) {
-        privateResize(right - left, bottom - top);
+        resize(right - left, bottom - top);
         setOrigin(null, left, top);
         for (int i = mClipIndex; i > 0; i--) {
             pop();
@@ -114,13 +115,13 @@ public class NoPixelsDevice extends BaseDevice {
 
     @Override
     public void clipRect(RectF rect, int clipOp, boolean doAA) {
-        writableClip().opRect(rect, localToDevice(), clipOp, doAA);
+        writableClip().opRect(rect, getLocalToDevice(), clipOp, doAA);
     }
 
     @Override
     protected void onReplaceClip(Rect globalRect) {
         final Rect deviceRect = mTmpBounds;
-        globalToDevice().mapRect(globalRect, deviceRect);
+        getGlobalToDevice().mapRect(globalRect, deviceRect);
         final ClipState clip = writableClip();
         if (!deviceRect.intersect(mBounds)) {
             clip.setEmpty();

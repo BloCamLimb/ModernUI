@@ -27,7 +27,6 @@ import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
 import static icyllis.arcticgi.core.MathUtil.*;
-import static org.lwjgl.system.MemoryUtil.memGetFloat;
 
 /**
  * Represents a 4x4 row-major matrix using the right-hand rule.
@@ -77,6 +76,30 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
+     * Create a matrix copied from an existing matrix.
+     *
+     * @param m the matrix to create from
+     */
+    public Matrix4(@Nonnull Matrix4 m) {
+        m11 = m.m11;
+        m12 = m.m12;
+        m13 = m.m13;
+        m14 = m.m14;
+        m21 = m.m21;
+        m22 = m.m22;
+        m23 = m.m23;
+        m24 = m.m24;
+        m31 = m.m31;
+        m32 = m.m32;
+        m33 = m.m33;
+        m34 = m.m34;
+        m41 = m.m41;
+        m42 = m.m42;
+        m43 = m.m43;
+        m44 = m.m44;
+    }
+
+    /**
      * Create a matrix from an array of elements in row-major.
      *
      * @param a the array to create from
@@ -87,25 +110,15 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Create a matrix copied from an existing matrix.
-     *
-     * @param mat the matrix to create from
-     * @see #set(Matrix4)
-     */
-    public Matrix4(@Nonnull Matrix4 mat) {
-        set(mat);
-    }
-
-    /**
      * Create a copy of {@code mat} if not null, otherwise a new identity matrix.
      * Note: we assume null is identity.
      *
-     * @param mat the matrix to copy from
+     * @param m the matrix to copy from
      * @return a copy of the matrix
      */
     @Nonnull
-    public static Matrix4 copy(@Nullable Matrix4 mat) {
-        return mat == null ? identity() : mat.clone();
+    public static Matrix4 copy(@Nullable Matrix4 m) {
+        return m == null ? identity() : m.clone();
     }
 
     /**
@@ -115,110 +128,9 @@ public class Matrix4 implements Cloneable {
      */
     @Nonnull
     public static Matrix4 identity() {
-        final Matrix4 mat = new Matrix4();
-        mat.m11 = mat.m22 = mat.m33 = mat.m44 = 1.0f;
-        return mat;
-    }
-
-    /**
-     * Create an orthographic projection matrix.
-     *
-     * @param left   the left frustum plane
-     * @param right  the right frustum plane
-     * @param bottom the bottom frustum plane
-     * @param top    the top frustum plane
-     * @param near   the near frustum plane, must be positive
-     * @param far    the far frustum plane, must be positive
-     * @return the resulting matrix
-     */
-    @Nonnull
-    public static Matrix4 makeOrthographic(float left, float right, float bottom, float top, float near, float far) {
-        final Matrix4 mat = new Matrix4();
-        float invRL = 1.0f / (right - left);
-        float invTB = 1.0f / (top - bottom);
-        float invNF = 1.0f / (near - far);
-        mat.m11 = 2.0f * invRL;
-        mat.m22 = 2.0f * invTB;
-        mat.m33 = 2.0f * invNF;
-        mat.m41 = -(right + left) * invRL;
-        mat.m42 = -(top + bottom) * invTB;
-        mat.m43 = (near + far) * invNF;
-        mat.m44 = 1.0f;
-        return mat;
-    }
-
-    /**
-     * Create an orthographic projection matrix. The left plane and top plane
-     * are considered to be 0.
-     *
-     * @param width  the distance from right frustum plane to left frustum plane
-     * @param height the distance from bottom frustum plane to top frustum plane
-     * @param near   the near frustum plane, must be positive
-     * @param far    the far frustum plane, must be positive
-     * @return the resulting matrix
-     */
-    @Nonnull
-    public static Matrix4 makeOrthographic(float width, float height, float near, float far) {
-        final Matrix4 mat = new Matrix4();
-        float invNF = 1.0f / (near - far);
-        mat.m11 = 2.0f / width;
-        mat.m22 = -2.0f / height;
-        mat.m33 = 2.0f * invNF;
-        mat.m41 = -1.0f;
-        mat.m42 = 1.0f;
-        mat.m43 = (near + far) * invNF;
-        mat.m44 = 1.0f;
-        return mat;
-    }
-
-    /**
-     * Create a perspective projection matrix.
-     *
-     * @param left   the left frustum plane
-     * @param right  the right frustum plane
-     * @param bottom the bottom frustum plane
-     * @param top    the top frustum plane
-     * @param near   the near frustum plane, must be positive
-     * @param far    the far frustum plane, must be positive
-     * @return the resulting matrix
-     */
-    @Nonnull
-    public static Matrix4 makePerspective(float left, float right, float bottom, float top, float near, float far) {
-        final Matrix4 mat = new Matrix4();
-        float invRL = 1.0f / (right - left);
-        float invTB = 1.0f / (top - bottom);
-        float invNF = 1.0f / (near - far);
-        float tNear = 2.0f * near;
-        mat.m11 = tNear * invRL;
-        mat.m22 = tNear * invTB;
-        mat.m31 = (right + left) * invRL;
-        mat.m32 = (top + bottom) * invTB;
-        mat.m33 = (near + far) * invNF;
-        mat.m34 = -1.0f;
-        mat.m43 = tNear * far * invNF;
-        return mat;
-    }
-
-    /**
-     * Create a perspective projection matrix.
-     *
-     * @param fov    the angle of field of view in radians (0,PI)
-     * @param aspect aspect ratio of the view (width / height)
-     * @param near   the near frustum plane, must be positive
-     * @param far    the far frustum plane, must be positive
-     * @return the resulting matrix
-     */
-    @Nonnull
-    public static Matrix4 makePerspective(float fov, float aspect, float near, float far) {
-        final Matrix4 mat = new Matrix4();
-        float y = (float) (1.0 / Math.tan(fov * 0.5));
-        float invNF = 1.0f / (near - far);
-        mat.m11 = y / aspect;
-        mat.m22 = y;
-        mat.m33 = (near + far) * invNF;
-        mat.m34 = -1.0f;
-        mat.m43 = 2.0f * far * near * invNF;
-        return mat;
+        final Matrix4 m = new Matrix4();
+        m.m11 = m.m22 = m.m33 = m.m44 = 1.0f;
+        return m;
     }
 
     /**
@@ -231,154 +143,110 @@ public class Matrix4 implements Cloneable {
      */
     @Nonnull
     public static Matrix4 makeTranslate(float x, float y, float z) {
-        final Matrix4 mat = new Matrix4();
-        mat.m11 = 1.0f;
-        mat.m22 = 1.0f;
-        mat.m33 = 1.0f;
-        mat.m41 = x;
-        mat.m42 = y;
-        mat.m43 = z;
-        mat.m44 = 1.0f;
-        return mat;
+        final Matrix4 m = new Matrix4();
+        m.m11 = 1.0f;
+        m.m22 = 1.0f;
+        m.m33 = 1.0f;
+        m.m41 = x;
+        m.m42 = y;
+        m.m43 = z;
+        m.m44 = 1.0f;
+        return m;
+    }
+
+    /**
+     * Create a new scaling transformation matrix.
+     *
+     * @param x the x-component of the scaling
+     * @param y the y-component of the scaling
+     * @param z the z-component of the scaling
+     * @return the resulting matrix
+     */
+    @Nonnull
+    public static Matrix4 makeScale(float x, float y, float z) {
+        final Matrix4 m = new Matrix4();
+        m.m11 = x;
+        m.m22 = y;
+        m.m33 = z;
+        m.m44 = 1.0f;
+        return m;
     }
 
     /**
      * Add each element of the given matrix to the corresponding element of this matrix.
      *
-     * @param mat the addend
+     * @param m the addend
      */
-    public void add(@Nonnull Matrix4 mat) {
-        m11 += mat.m11;
-        m12 += mat.m12;
-        m13 += mat.m13;
-        m14 += mat.m14;
-        m21 += mat.m21;
-        m22 += mat.m22;
-        m23 += mat.m23;
-        m24 += mat.m24;
-        m31 += mat.m31;
-        m32 += mat.m32;
-        m33 += mat.m33;
-        m34 += mat.m34;
-        m41 += mat.m41;
-        m42 += mat.m42;
-        m43 += mat.m43;
-        m44 += mat.m44;
+    public void add(@Nonnull Matrix4 m) {
+        m11 += m.m11;
+        m12 += m.m12;
+        m13 += m.m13;
+        m14 += m.m14;
+        m21 += m.m21;
+        m22 += m.m22;
+        m23 += m.m23;
+        m24 += m.m24;
+        m31 += m.m31;
+        m32 += m.m32;
+        m33 += m.m33;
+        m34 += m.m34;
+        m41 += m.m41;
+        m42 += m.m42;
+        m43 += m.m43;
+        m44 += m.m44;
     }
 
     /**
      * Subtract each element of the given matrix from the corresponding element of this matrix.
      *
-     * @param mat the subtrahend
+     * @param m the subtrahend
      */
-    public void sub(@Nonnull Matrix4 mat) {
-        m11 -= mat.m11;
-        m12 -= mat.m12;
-        m13 -= mat.m13;
-        m14 -= mat.m14;
-        m21 -= mat.m21;
-        m22 -= mat.m22;
-        m23 -= mat.m23;
-        m24 -= mat.m24;
-        m31 -= mat.m31;
-        m32 -= mat.m32;
-        m33 -= mat.m33;
-        m34 -= mat.m34;
-        m41 -= mat.m41;
-        m42 -= mat.m42;
-        m43 -= mat.m43;
-        m44 -= mat.m44;
+    public void subtract(@Nonnull Matrix4 m) {
+        m11 -= m.m11;
+        m12 -= m.m12;
+        m13 -= m.m13;
+        m14 -= m.m14;
+        m21 -= m.m21;
+        m22 -= m.m22;
+        m23 -= m.m23;
+        m24 -= m.m24;
+        m31 -= m.m31;
+        m32 -= m.m32;
+        m33 -= m.m33;
+        m34 -= m.m34;
+        m41 -= m.m41;
+        m42 -= m.m42;
+        m43 -= m.m43;
+        m44 -= m.m44;
     }
 
     /**
-     * Pre-multiply this matrix by a 4x4 matrix, whose top left 3x3 is the given
-     * 3x3 matrix, and forth row and column are identity. (mat3 * this)
+     * Pre-multiply this matrix by the given <code>right</code> matrix.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>right</code>
+     * matrix, then the new matrix will be <code>R * M</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * R * M</code>, the
+     * transformation of the right matrix will be applied first.
      *
-     * @param mat the matrix to multiply
+     * @param right the right matrix to multiply
      */
-    public void preMul(@Nonnull Matrix3 mat) {
-        final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m13 * m31;
-        final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m13 * m32;
-        final float f13 = mat.m11 * m13 + mat.m12 * m23 + mat.m13 * m33;
-        final float f14 = mat.m11 * m14 + mat.m12 * m24 + mat.m13 * m34;
-        final float f21 = mat.m21 * m11 + mat.m22 * m21 + mat.m23 * m31;
-        final float f22 = mat.m21 * m12 + mat.m22 * m22 + mat.m23 * m32;
-        final float f23 = mat.m21 * m13 + mat.m22 * m23 + mat.m23 * m33;
-        final float f24 = mat.m21 * m14 + mat.m22 * m24 + mat.m23 * m34;
-        final float f31 = mat.m31 * m11 + mat.m32 * m21 + mat.m33 * m31;
-        final float f32 = mat.m31 * m12 + mat.m32 * m22 + mat.m33 * m32;
-        final float f33 = mat.m31 * m13 + mat.m32 * m23 + mat.m33 * m33;
-        final float f34 = mat.m31 * m14 + mat.m32 * m24 + mat.m33 * m34;
-        m11 = f11;
-        m12 = f12;
-        m13 = f13;
-        m14 = f14;
-        m21 = f21;
-        m22 = f22;
-        m23 = f23;
-        m24 = f24;
-        m31 = f31;
-        m32 = f32;
-        m33 = f33;
-        m34 = f34;
-    }
-
-    /**
-     * Post-multiply this matrix by a 4x4 matrix, whose top left 3x3 is the given
-     * 3x3 matrix, and forth row and column are identity. (this * Matrix4(mat3))
-     *
-     * @param mat the matrix to multiply with
-     */
-    public void postMul(@Nonnull Matrix3 mat) {
-        float f1 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31;
-        float f2 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32;
-        float f3 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33;
-        m11 = f1;
-        m12 = f2;
-        m13 = f3;
-        f1 = m21 * mat.m11 + m22 * mat.m21 + m23 * mat.m31;
-        f2 = m21 * mat.m12 + m22 * mat.m22 + m23 * mat.m32;
-        f3 = m21 * mat.m13 + m22 * mat.m23 + m23 * mat.m33;
-        m21 = f1;
-        m22 = f2;
-        m23 = f3;
-        f1 = m31 * mat.m11 + m32 * mat.m21 + m33 * mat.m31;
-        f2 = m31 * mat.m12 + m32 * mat.m22 + m33 * mat.m32;
-        f3 = m31 * mat.m13 + m32 * mat.m23 + m33 * mat.m33;
-        m31 = f1;
-        m32 = f2;
-        m33 = f3;
-        f1 = m41 * mat.m11 + m42 * mat.m21 + m43 * mat.m31;
-        f2 = m41 * mat.m12 + m42 * mat.m22 + m43 * mat.m32;
-        f3 = m41 * mat.m13 + m42 * mat.m23 + m43 * mat.m33;
-        m41 = f1;
-        m42 = f2;
-        m43 = f3;
-    }
-
-    /**
-     * Pre-multiply this matrix by the given matrix.
-     * (mat4 * this)
-     *
-     * @param mat the matrix to multiply
-     */
-    public void preMul(@Nonnull Matrix4 mat) {
-        final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m13 * m31 + mat.m14 * m41;
-        final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m13 * m32 + mat.m14 * m42;
-        final float f13 = mat.m11 * m13 + mat.m12 * m23 + mat.m13 * m33 + mat.m14 * m43;
-        final float f14 = mat.m11 * m14 + mat.m12 * m24 + mat.m13 * m34 + mat.m14 * m44;
-        final float f21 = mat.m21 * m11 + mat.m22 * m21 + mat.m23 * m31 + mat.m24 * m41;
-        final float f22 = mat.m21 * m12 + mat.m22 * m22 + mat.m23 * m32 + mat.m24 * m42;
-        final float f23 = mat.m21 * m13 + mat.m22 * m23 + mat.m23 * m33 + mat.m24 * m43;
-        final float f24 = mat.m21 * m14 + mat.m22 * m24 + mat.m23 * m34 + mat.m24 * m44;
-        final float f31 = mat.m31 * m11 + mat.m32 * m21 + mat.m33 * m31 + mat.m34 * m41;
-        final float f32 = mat.m31 * m12 + mat.m32 * m22 + mat.m33 * m32 + mat.m34 * m42;
-        final float f33 = mat.m31 * m13 + mat.m32 * m23 + mat.m33 * m33 + mat.m34 * m43;
-        final float f34 = mat.m31 * m14 + mat.m32 * m24 + mat.m33 * m34 + mat.m34 * m44;
-        final float f41 = mat.m41 * m11 + mat.m42 * m21 + mat.m43 * m31 + mat.m44 * m41;
-        final float f42 = mat.m41 * m12 + mat.m42 * m22 + mat.m43 * m32 + mat.m44 * m42;
-        final float f43 = mat.m41 * m13 + mat.m42 * m23 + mat.m43 * m33 + mat.m44 * m43;
-        final float f44 = mat.m41 * m14 + mat.m42 * m24 + mat.m43 * m34 + mat.m44 * m44;
+    public void preMultiply(@Nonnull Matrix4 right) {
+        final float f11 = m11 * right.m11 + m21 * right.m12 + m31 * right.m13 + m41 * right.m14;
+        final float f12 = m12 * right.m11 + m22 * right.m12 + m32 * right.m13 + m42 * right.m14;
+        final float f13 = m13 * right.m11 + m23 * right.m12 + m33 * right.m13 + m43 * right.m14;
+        final float f14 = m14 * right.m11 + m24 * right.m12 + m34 * right.m13 + m44 * right.m14;
+        final float f21 = m11 * right.m21 + m21 * right.m22 + m31 * right.m23 + m41 * right.m24;
+        final float f22 = m12 * right.m21 + m22 * right.m22 + m32 * right.m23 + m42 * right.m24;
+        final float f23 = m13 * right.m21 + m23 * right.m22 + m33 * right.m23 + m43 * right.m24;
+        final float f24 = m14 * right.m21 + m24 * right.m22 + m34 * right.m23 + m44 * right.m24;
+        final float f31 = m11 * right.m31 + m21 * right.m32 + m31 * right.m33 + m41 * right.m34;
+        final float f32 = m12 * right.m31 + m22 * right.m32 + m32 * right.m33 + m42 * right.m34;
+        final float f33 = m13 * right.m31 + m23 * right.m32 + m33 * right.m33 + m43 * right.m34;
+        final float f34 = m14 * right.m31 + m24 * right.m32 + m34 * right.m33 + m44 * right.m34;
+        final float f41 = m11 * right.m41 + m21 * right.m42 + m31 * right.m43 + m41 * right.m44;
+        final float f42 = m12 * right.m41 + m22 * right.m42 + m32 * right.m43 + m42 * right.m44;
+        final float f43 = m13 * right.m41 + m23 * right.m42 + m33 * right.m43 + m43 * right.m44;
+        final float f44 = m14 * right.m41 + m24 * right.m42 + m34 * right.m43 + m44 * right.m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -398,28 +266,50 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-multiply this matrix by the given matrix.
-     * (this * mat4)
+     * Pre-multiply this matrix by the given <code>right</code> matrix.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>right</code>
+     * matrix, then the new matrix will be <code>R * M</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * R * M</code>, the
+     * transformation of the right matrix will be applied first.
      *
-     * @param mat the matrix to multiply
+     * @param r11 the m11 element of the right matrix
+     * @param r12 the m12 element of the right matrix
+     * @param r13 the m13 element of the right matrix
+     * @param r14 the m14 element of the right matrix
+     * @param r21 the m21 element of the right matrix
+     * @param r22 the m22 element of the right matrix
+     * @param r23 the m23 element of the right matrix
+     * @param r24 the m24 element of the right matrix
+     * @param r31 the m31 element of the right matrix
+     * @param r32 the m32 element of the right matrix
+     * @param r33 the m33 element of the right matrix
+     * @param r34 the m34 element of the right matrix
+     * @param r41 the m41 element of the right matrix
+     * @param r42 the m42 element of the right matrix
+     * @param r43 the m43 element of the right matrix
+     * @param r44 the m44 element of the right matrix
      */
-    public void postMul(@Nonnull Matrix4 mat) {
-        final float f11 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31 + m14 * mat.m41;
-        final float f12 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32 + m14 * mat.m42;
-        final float f13 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33 + m14 * mat.m43;
-        final float f14 = m11 * mat.m14 + m12 * mat.m24 + m13 * mat.m34 + m14 * mat.m44;
-        final float f21 = m21 * mat.m11 + m22 * mat.m21 + m23 * mat.m31 + m24 * mat.m41;
-        final float f22 = m21 * mat.m12 + m22 * mat.m22 + m23 * mat.m32 + m24 * mat.m42;
-        final float f23 = m21 * mat.m13 + m22 * mat.m23 + m23 * mat.m33 + m24 * mat.m43;
-        final float f24 = m21 * mat.m14 + m22 * mat.m24 + m23 * mat.m34 + m24 * mat.m44;
-        final float f31 = m31 * mat.m11 + m32 * mat.m21 + m33 * mat.m31 + m34 * mat.m41;
-        final float f32 = m31 * mat.m12 + m32 * mat.m22 + m33 * mat.m32 + m34 * mat.m42;
-        final float f33 = m31 * mat.m13 + m32 * mat.m23 + m33 * mat.m33 + m34 * mat.m43;
-        final float f34 = m31 * mat.m14 + m32 * mat.m24 + m33 * mat.m34 + m34 * mat.m44;
-        final float f41 = m41 * mat.m11 + m42 * mat.m21 + m43 * mat.m31 + m44 * mat.m41;
-        final float f42 = m41 * mat.m12 + m42 * mat.m22 + m43 * mat.m32 + m44 * mat.m42;
-        final float f43 = m41 * mat.m13 + m42 * mat.m23 + m43 * mat.m33 + m44 * mat.m43;
-        final float f44 = m41 * mat.m14 + m42 * mat.m24 + m43 * mat.m34 + m44 * mat.m44;
+    public void preMultiply(float r11, float r12, float r13, float r14,
+                            float r21, float r22, float r23, float r24,
+                            float r31, float r32, float r33, float r34,
+                            float r41, float r42, float r43, float r44) {
+        final float f11 = m11 * r11 + m21 * r12 + m31 * r13 + m41 * r14;
+        final float f12 = m12 * r11 + m22 * r12 + m32 * r13 + m42 * r14;
+        final float f13 = m13 * r11 + m23 * r12 + m33 * r13 + m43 * r14;
+        final float f14 = m14 * r11 + m24 * r12 + m34 * r13 + m44 * r14;
+        final float f21 = m11 * r21 + m21 * r22 + m31 * r23 + m41 * r24;
+        final float f22 = m12 * r21 + m22 * r22 + m32 * r23 + m42 * r24;
+        final float f23 = m13 * r21 + m23 * r22 + m33 * r23 + m43 * r24;
+        final float f24 = m14 * r21 + m24 * r22 + m34 * r23 + m44 * r24;
+        final float f31 = m11 * r31 + m21 * r32 + m31 * r33 + m41 * r34;
+        final float f32 = m12 * r31 + m22 * r32 + m32 * r33 + m42 * r34;
+        final float f33 = m13 * r31 + m23 * r32 + m33 * r33 + m43 * r34;
+        final float f34 = m14 * r31 + m24 * r32 + m34 * r33 + m44 * r34;
+        final float f41 = m11 * r41 + m21 * r42 + m31 * r43 + m41 * r44;
+        final float f42 = m12 * r41 + m22 * r42 + m32 * r43 + m42 * r44;
+        final float f43 = m13 * r41 + m23 * r42 + m33 * r43 + m43 * r44;
+        final float f44 = m14 * r41 + m24 * r42 + m34 * r43 + m44 * r44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -439,7 +329,287 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Clear this matrix to zero.
+     * Post-multiply this matrix by the given <code>left</code> matrix.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>left</code>
+     * matrix, then the new matrix will be <code>M * L</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * M * L</code>, the
+     * transformation of <code>this</code> matrix will be applied first.
+     *
+     * @param left the left matrix to multiply
+     */
+    public void postMultiply(@Nonnull Matrix4 left) {
+        final float f11 = left.m11 * m11 + left.m21 * m12 + left.m31 * m13 + left.m41 * m14;
+        final float f12 = left.m12 * m11 + left.m22 * m12 + left.m32 * m13 + left.m42 * m14;
+        final float f13 = left.m13 * m11 + left.m23 * m12 + left.m33 * m13 + left.m43 * m14;
+        final float f14 = left.m14 * m11 + left.m24 * m12 + left.m34 * m13 + left.m44 * m14;
+        final float f21 = left.m11 * m21 + left.m21 * m22 + left.m31 * m23 + left.m41 * m24;
+        final float f22 = left.m12 * m21 + left.m22 * m22 + left.m32 * m23 + left.m42 * m24;
+        final float f23 = left.m13 * m21 + left.m23 * m22 + left.m33 * m23 + left.m43 * m24;
+        final float f24 = left.m14 * m21 + left.m24 * m22 + left.m34 * m23 + left.m44 * m24;
+        final float f31 = left.m11 * m31 + left.m21 * m32 + left.m31 * m33 + left.m41 * m34;
+        final float f32 = left.m12 * m31 + left.m22 * m32 + left.m32 * m33 + left.m42 * m34;
+        final float f33 = left.m13 * m31 + left.m23 * m32 + left.m33 * m33 + left.m43 * m34;
+        final float f34 = left.m14 * m31 + left.m24 * m32 + left.m34 * m33 + left.m44 * m34;
+        final float f41 = left.m11 * m41 + left.m21 * m42 + left.m31 * m43 + left.m41 * m44;
+        final float f42 = left.m12 * m41 + left.m22 * m42 + left.m32 * m43 + left.m42 * m44;
+        final float f43 = left.m13 * m41 + left.m23 * m42 + left.m33 * m43 + left.m43 * m44;
+        final float f44 = left.m14 * m41 + left.m24 * m42 + left.m34 * m43 + left.m44 * m44;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m34 = f34;
+        m41 = f41;
+        m42 = f42;
+        m43 = f43;
+        m44 = f44;
+    }
+
+    /**
+     * Post-multiply this matrix by the given <code>left</code> matrix.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>left</code>
+     * matrix, then the new matrix will be <code>M * L</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * M * L</code>, the
+     * transformation of <code>this</code> matrix will be applied first.
+     *
+     * @param l11 the m11 element of the left matrix
+     * @param l12 the m12 element of the left matrix
+     * @param l13 the m13 element of the left matrix
+     * @param l14 the m14 element of the left matrix
+     * @param l21 the m21 element of the left matrix
+     * @param l22 the m22 element of the left matrix
+     * @param l23 the m23 element of the left matrix
+     * @param l24 the m24 element of the left matrix
+     * @param l31 the m31 element of the left matrix
+     * @param l32 the m32 element of the left matrix
+     * @param l33 the m33 element of the left matrix
+     * @param l34 the m34 element of the left matrix
+     * @param l41 the m41 element of the left matrix
+     * @param l42 the m42 element of the left matrix
+     * @param l43 the m43 element of the left matrix
+     * @param l44 the m44 element of the left matrix
+     */
+    public void postMultiply(float l11, float l12, float l13, float l14,
+                             float l21, float l22, float l23, float l24,
+                             float l31, float l32, float l33, float l34,
+                             float l41, float l42, float l43, float l44) {
+        final float f11 = l11 * m11 + l21 * m12 + l31 * m13 + l41 * m14;
+        final float f12 = l12 * m11 + l22 * m12 + l32 * m13 + l42 * m14;
+        final float f13 = l13 * m11 + l23 * m12 + l33 * m13 + l43 * m14;
+        final float f14 = l14 * m11 + l24 * m12 + l34 * m13 + l44 * m14;
+        final float f21 = l11 * m21 + l21 * m22 + l31 * m23 + l41 * m24;
+        final float f22 = l12 * m21 + l22 * m22 + l32 * m23 + l42 * m24;
+        final float f23 = l13 * m21 + l23 * m22 + l33 * m23 + l43 * m24;
+        final float f24 = l14 * m21 + l24 * m22 + l34 * m23 + l44 * m24;
+        final float f31 = l11 * m31 + l21 * m32 + l31 * m33 + l41 * m34;
+        final float f32 = l12 * m31 + l22 * m32 + l32 * m33 + l42 * m34;
+        final float f33 = l13 * m31 + l23 * m32 + l33 * m33 + l43 * m34;
+        final float f34 = l14 * m31 + l24 * m32 + l34 * m33 + l44 * m34;
+        final float f41 = l11 * m41 + l21 * m42 + l31 * m43 + l41 * m44;
+        final float f42 = l12 * m41 + l22 * m42 + l32 * m43 + l42 * m44;
+        final float f43 = l13 * m41 + l23 * m42 + l33 * m43 + l43 * m44;
+        final float f44 = l14 * m41 + l24 * m42 + l34 * m43 + l44 * m44;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m34 = f34;
+        m41 = f41;
+        m42 = f42;
+        m43 = f43;
+        m44 = f44;
+    }
+
+    /**
+     * Pre-multiply this matrix by the given <code>right</code> matrix. The matrix will be
+     * expanded to a 4x4 matrix.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>right</code>
+     * matrix, then the new matrix will be <code>R * M</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * R * M</code>, the
+     * transformation of the right matrix will be applied first.
+     *
+     * @param right the right matrix to multiply
+     */
+    public void preMultiplyNoZ(@Nonnull Matrix3 right) {
+        final float f11 = m11 * right.m11 + m21 * right.m12 + m41 * right.m13;
+        final float f12 = m12 * right.m11 + m22 * right.m12 + m42 * right.m13;
+        final float f13 = m13 * right.m11 + m23 * right.m12 + m43 * right.m13;
+        final float f14 = m14 * right.m11 + m24 * right.m12 + m44 * right.m13;
+        final float f21 = m11 * right.m21 + m21 * right.m22 + m41 * right.m23;
+        final float f22 = m12 * right.m21 + m22 * right.m22 + m42 * right.m23;
+        final float f23 = m13 * right.m21 + m23 * right.m22 + m43 * right.m23;
+        final float f24 = m14 * right.m21 + m24 * right.m22 + m44 * right.m23;
+        final float f41 = m11 * right.m31 + m21 * right.m32 + m41 * right.m33;
+        final float f42 = m12 * right.m31 + m22 * right.m32 + m42 * right.m33;
+        final float f43 = m13 * right.m31 + m23 * right.m32 + m43 * right.m33;
+        final float f44 = m14 * right.m31 + m24 * right.m32 + m44 * right.m33;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m41 = f41;
+        m42 = f42;
+        m43 = f43;
+        m44 = f44;
+    }
+
+    /**
+     * Post-multiply this matrix by the given <code>left</code> matrix. The matrix will be
+     * expanded to a 4x4 matrix.
+     * <pre>{@code
+     * [ a b c ]      [ a b 0 c ]
+     * [ d e f ]  ->  [ d e 0 f ]
+     * [ g h i ]      [ 0 0 1 0 ]
+     *                [ g h 0 i ]
+     * }</pre>
+     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>left</code>
+     * matrix, then the new matrix will be <code>M * L</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * M * L</code>, the
+     * transformation of <code>this</code> matrix will be applied first.
+     *
+     * @param left the left matrix to multiply
+     */
+    public void postMultiplyNoZ(@Nonnull Matrix3 left) {
+        final float f11 = left.m11 * m11 + left.m21 * m12 + left.m31 * m14;
+        final float f12 = left.m12 * m11 + left.m22 * m12 + left.m32 * m14;
+        final float f14 = left.m13 * m11 + left.m23 * m12 + left.m33 * m14;
+        final float f21 = left.m11 * m21 + left.m21 * m22 + left.m31 * m24;
+        final float f22 = left.m12 * m21 + left.m22 * m22 + left.m32 * m24;
+        final float f24 = left.m13 * m21 + left.m23 * m22 + left.m33 * m24;
+        final float f31 = left.m11 * m31 + left.m21 * m32 + left.m31 * m34;
+        final float f32 = left.m12 * m31 + left.m22 * m32 + left.m32 * m34;
+        final float f34 = left.m13 * m31 + left.m23 * m32 + left.m33 * m34;
+        final float f41 = left.m11 * m41 + left.m21 * m42 + left.m31 * m44;
+        final float f42 = left.m12 * m41 + left.m22 * m42 + left.m32 * m44;
+        final float f44 = left.m13 * m41 + left.m23 * m42 + left.m33 * m44;
+        m11 = f11;
+        m12 = f12;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m34 = f34;
+        m41 = f41;
+        m42 = f42;
+        m44 = f44;
+    }
+
+    /**
+     * Pre-multiply this matrix by the given <code>right</code> matrix. The matrix will be
+     * expanded to a 4x4 matrix.
+     * <pre>{@code
+     * [ a b c ]      [ a b c 0 ]
+     * [ d e f ]  ->  [ d e f 0 ]
+     * [ g h i ]      [ g h i 0 ]
+     *                [ 0 0 0 1 ]
+     * }</pre>
+     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>right</code>
+     * matrix, then the new matrix will be <code>R * M</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * R * M</code>, the
+     * transformation of the right matrix will be applied first.
+     *
+     * @param right the right matrix to multiply
+     */
+    public void preMultiplyNoW(@Nonnull Matrix3 right) {
+        final float f11 = m11 * right.m11 + m21 * right.m12 + m31 * right.m13;
+        final float f12 = m12 * right.m11 + m22 * right.m12 + m32 * right.m13;
+        final float f13 = m13 * right.m11 + m23 * right.m12 + m33 * right.m13;
+        final float f14 = m14 * right.m11 + m24 * right.m12 + m34 * right.m13;
+        final float f21 = m11 * right.m21 + m21 * right.m22 + m31 * right.m23;
+        final float f22 = m12 * right.m21 + m22 * right.m22 + m32 * right.m23;
+        final float f23 = m13 * right.m21 + m23 * right.m22 + m33 * right.m23;
+        final float f24 = m14 * right.m21 + m24 * right.m22 + m34 * right.m23;
+        final float f31 = m11 * right.m31 + m21 * right.m32 + m31 * right.m33;
+        final float f32 = m12 * right.m31 + m22 * right.m32 + m32 * right.m33;
+        final float f33 = m13 * right.m31 + m23 * right.m32 + m33 * right.m33;
+        final float f34 = m14 * right.m31 + m24 * right.m32 + m34 * right.m33;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m34 = f34;
+    }
+
+    /**
+     * Post-multiply this matrix by the given <code>left</code> matrix. The matrix will be
+     * expanded to a 4x4 matrix.
+     * <pre>{@code
+     * [ a b c ]      [ a b c 0 ]
+     * [ d e f ]  ->  [ d e f 0 ]
+     * [ g h i ]      [ g h i 0 ]
+     *                [ 0 0 0 1 ]
+     * }</pre>
+     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>left</code>
+     * matrix, then the new matrix will be <code>M * L</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * M * L</code>, the
+     * transformation of <code>this</code> matrix will be applied first.
+     *
+     * @param left the left matrix to multiply
+     */
+    public void postMultiplyNoW(@Nonnull Matrix3 left) {
+        final float f11 = left.m11 * m11 + left.m21 * m12 + left.m31 * m13;
+        final float f12 = left.m12 * m11 + left.m22 * m12 + left.m32 * m13;
+        final float f13 = left.m13 * m11 + left.m23 * m12 + left.m33 * m13;
+        final float f21 = left.m11 * m21 + left.m21 * m22 + left.m31 * m23;
+        final float f22 = left.m12 * m21 + left.m22 * m22 + left.m32 * m23;
+        final float f23 = left.m13 * m21 + left.m23 * m22 + left.m33 * m23;
+        final float f31 = left.m11 * m31 + left.m21 * m32 + left.m31 * m33;
+        final float f32 = left.m12 * m31 + left.m22 * m32 + left.m32 * m33;
+        final float f33 = left.m13 * m31 + left.m23 * m32 + left.m33 * m33;
+        final float f41 = left.m11 * m41 + left.m21 * m42 + left.m31 * m43;
+        final float f42 = left.m12 * m41 + left.m22 * m42 + left.m32 * m43;
+        final float f43 = left.m13 * m41 + left.m23 * m42 + left.m33 * m43;
+        m11 = f11;
+        m12 = f12;
+        m13 = f13;
+        m21 = f21;
+        m22 = f22;
+        m23 = f23;
+        m31 = f31;
+        m32 = f32;
+        m33 = f33;
+        m41 = f41;
+        m42 = f42;
+        m43 = f43;
+    }
+
+    /**
+     * Set all elements of this matrix to <code>0</code>.
      */
     public void setZero() {
         m11 = 0.0f;
@@ -461,7 +631,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Clear this matrix to identity.
+     * Reset this matrix to the identity.
      */
     public void setIdentity() {
         m11 = 1.0f;
@@ -483,57 +653,74 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Set this matrix elements to be given matrix.
+     * Store the values of the given matrix into this matrix.
      *
-     * @param mat the matrix to copy from
+     * @param m the matrix to copy from
      */
-    public void set(@Nonnull Matrix4 mat) {
-        m11 = mat.m11;
-        m12 = mat.m12;
-        m13 = mat.m13;
-        m14 = mat.m14;
-        m21 = mat.m21;
-        m22 = mat.m22;
-        m23 = mat.m23;
-        m24 = mat.m24;
-        m31 = mat.m31;
-        m32 = mat.m32;
-        m33 = mat.m33;
-        m34 = mat.m34;
-        m41 = mat.m41;
-        m42 = mat.m42;
-        m43 = mat.m43;
-        m44 = mat.m44;
+    public void set(@Nonnull Matrix4 m) {
+        m11 = m.m11;
+        m12 = m.m12;
+        m13 = m.m13;
+        m14 = m.m14;
+        m21 = m.m21;
+        m22 = m.m22;
+        m23 = m.m23;
+        m24 = m.m24;
+        m31 = m.m31;
+        m32 = m.m32;
+        m33 = m.m33;
+        m34 = m.m34;
+        m41 = m.m41;
+        m42 = m.m42;
+        m43 = m.m43;
+        m44 = m.m44;
     }
 
     /**
-     * Set this matrix elements from an array.
-     * <table border="1">
-     *   <tr>
-     *     <td>a[0]</th>
-     *     <td>a[1]</th>
-     *     <td>a[2]</th>
-     *     <td>a[3]</th>
-     *   </tr>
-     *   <tr>
-     *     <td>a[4]</th>
-     *     <td>a[5]</th>
-     *     <td>a[6]</th>
-     *     <td>a[7]</th>
-     *   </tr>
-     *   <tr>
-     *     <td>a[8]</th>
-     *     <td>a[9]</th>
-     *     <td>a[10]</th>
-     *     <td>a[11]</th>
-     *   </tr>
-     *   <tr>
-     *     <td>a[12]</th>
-     *     <td>a[13]</th>
-     *     <td>a[14]</th>
-     *     <td>a[15]</th>
-     *   </tr>
-     * </table>
+     * Set the values within this matrix to the given float values.
+     *
+     * @param m11 the new value of m11
+     * @param m12 the new value of m12
+     * @param m13 the new value of m13
+     * @param m14 the new value of m14
+     * @param m21 the new value of m21
+     * @param m22 the new value of m22
+     * @param m23 the new value of m23
+     * @param m24 the new value of m24
+     * @param m31 the new value of m31
+     * @param m32 the new value of m32
+     * @param m33 the new value of m33
+     * @param m34 the new value of m34
+     * @param m41 the new value of m41
+     * @param m42 the new value of m42
+     * @param m43 the new value of m43
+     * @param m44 the new value of m44
+     */
+    public void set(float m11, float m12, float m13, float m14,
+                    float m21, float m22, float m23, float m24,
+                    float m31, float m32, float m33, float m34,
+                    float m41, float m42, float m43, float m44) {
+        this.m11 = m11;
+        this.m12 = m12;
+        this.m13 = m13;
+        this.m14 = m14;
+        this.m21 = m21;
+        this.m22 = m22;
+        this.m23 = m23;
+        this.m24 = m24;
+        this.m31 = m31;
+        this.m32 = m32;
+        this.m33 = m33;
+        this.m34 = m34;
+        this.m41 = m41;
+        this.m42 = m42;
+        this.m43 = m43;
+        this.m44 = m44;
+    }
+
+    /**
+     * Set the values in the matrix using a float array that contains
+     * the matrix elements in row-major order.
      *
      * @param a the array to copy from
      */
@@ -557,95 +744,108 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Set this matrix elements from an array.
+     * Set the values in the matrix using a float array that contains
+     * the matrix elements in row-major order.
+     *
+     * @param a      the array to copy from
+     * @param offset the element offset
+     */
+    public void set(@Nonnull float[] a, int offset) {
+        m11 = a[offset];
+        m12 = a[offset + 1];
+        m13 = a[offset + 2];
+        m14 = a[offset + 3];
+        m21 = a[offset + 4];
+        m22 = a[offset + 5];
+        m23 = a[offset + 6];
+        m24 = a[offset + 7];
+        m31 = a[offset + 8];
+        m32 = a[offset + 9];
+        m33 = a[offset + 10];
+        m34 = a[offset + 11];
+        m41 = a[offset + 12];
+        m42 = a[offset + 13];
+        m43 = a[offset + 14];
+        m44 = a[offset + 15];
+    }
+
+    /**
+     * Set the values in the matrix using a float array that contains
+     * the matrix elements in row-major order.
      *
      * @param a the array to copy from
-     * @see #Matrix4(float...)
      */
     public void set(@Nonnull ByteBuffer a) {
-        m11 = a.getFloat();
-        m12 = a.getFloat();
-        m13 = a.getFloat();
-        m14 = a.getFloat();
-        m21 = a.getFloat();
-        m22 = a.getFloat();
-        m23 = a.getFloat();
-        m24 = a.getFloat();
-        m31 = a.getFloat();
-        m32 = a.getFloat();
-        m33 = a.getFloat();
-        m34 = a.getFloat();
-        m41 = a.getFloat();
-        m42 = a.getFloat();
-        m43 = a.getFloat();
-        m44 = a.getFloat();
+        int offset = a.position();
+        m11 = a.getFloat(offset);
+        m12 = a.getFloat(offset + 4);
+        m13 = a.getFloat(offset + 8);
+        m14 = a.getFloat(offset + 12);
+        m21 = a.getFloat(offset + 16);
+        m22 = a.getFloat(offset + 20);
+        m23 = a.getFloat(offset + 24);
+        m24 = a.getFloat(offset + 28);
+        m31 = a.getFloat(offset + 32);
+        m32 = a.getFloat(offset + 36);
+        m33 = a.getFloat(offset + 40);
+        m34 = a.getFloat(offset + 44);
+        m41 = a.getFloat(offset + 48);
+        m42 = a.getFloat(offset + 52);
+        m43 = a.getFloat(offset + 56);
+        m44 = a.getFloat(offset + 60);
     }
 
     /**
-     * Set this matrix elements from an array.
+     * Set the values in the matrix using a float array that contains
+     * the matrix elements in row-major order.
      *
      * @param a the array to copy from
-     * @see #Matrix4(float...)
      */
     public void set(@Nonnull FloatBuffer a) {
-        m11 = a.get();
-        m12 = a.get();
-        m13 = a.get();
-        m14 = a.get();
-        m21 = a.get();
-        m22 = a.get();
-        m23 = a.get();
-        m24 = a.get();
-        m31 = a.get();
-        m32 = a.get();
-        m33 = a.get();
-        m34 = a.get();
-        m41 = a.get();
-        m42 = a.get();
-        m43 = a.get();
-        m44 = a.get();
+        int offset = a.position();
+        m11 = a.get(offset);
+        m12 = a.get(offset + 1);
+        m13 = a.get(offset + 2);
+        m14 = a.get(offset + 3);
+        m21 = a.get(offset + 4);
+        m22 = a.get(offset + 5);
+        m23 = a.get(offset + 6);
+        m24 = a.get(offset + 7);
+        m31 = a.get(offset + 8);
+        m32 = a.get(offset + 9);
+        m33 = a.get(offset + 10);
+        m34 = a.get(offset + 11);
+        m41 = a.get(offset + 12);
+        m42 = a.get(offset + 13);
+        m43 = a.get(offset + 14);
+        m44 = a.get(offset + 15);
     }
 
     /**
-     * Set this matrix elements from an address. (UNSAFE).
-     * NOTE: This method does not perform memory security checks.
+     * Set the values in the matrix using an address that contains
+     * the matrix elements in row-major order (UNSAFE).
      *
      * @param p the pointer of the array to copy from
      */
     public void set(long p) {
-        m11 = memGetFloat(p);
-        m12 = memGetFloat(p + 4);
-        m13 = memGetFloat(p + 8);
-        m14 = memGetFloat(p + 12);
-        m21 = memGetFloat(p + 16);
-        m22 = memGetFloat(p + 20);
-        m23 = memGetFloat(p + 24);
-        m24 = memGetFloat(p + 28);
-        m31 = memGetFloat(p + 32);
-        m32 = memGetFloat(p + 36);
-        m33 = memGetFloat(p + 40);
-        m34 = memGetFloat(p + 44);
-        m41 = memGetFloat(p + 48);
-        m42 = memGetFloat(p + 52);
-        m43 = memGetFloat(p + 56);
-        m44 = memGetFloat(p + 60);
+        final Unsafe unsafe = DataUtils.UNSAFE;
+        final long offset = OFFSET;
+        unsafe.putLong(this, offset, unsafe.getLong(p));
+        unsafe.putLong(this, offset + 8, unsafe.getLong(p + 8));
+        unsafe.putLong(this, offset + 16, unsafe.getLong(p + 16));
+        unsafe.putLong(this, offset + 24, unsafe.getLong(p + 24));
+        unsafe.putLong(this, offset + 32, unsafe.getLong(p + 32));
+        unsafe.putLong(this, offset + 40, unsafe.getLong(p + 40));
+        unsafe.putLong(this, offset + 48, unsafe.getLong(p + 48));
+        unsafe.putLong(this, offset + 56, unsafe.getLong(p + 56));
     }
 
     /**
-     * Set this matrix elements to be given matrix.
+     * Store this matrix into the give float array in row-major order.
      *
-     * @param mat the matrix to store
+     * @param a the array to store into
      */
-    public void put(@Nonnull Matrix4 mat) {
-        mat.set(this);
-    }
-
-    /**
-     * Get this matrix data, store them into an array.
-     *
-     * @param a the array to store
-     */
-    public void put(@Nonnull float[] a) {
+    public void store(@Nonnull float[] a) {
         a[0] = m11;
         a[1] = m12;
         a[2] = m13;
@@ -665,97 +865,102 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Get this matrix data, store them into an array.
+     * Store this matrix into the give float array in row-major order.
+     *
+     * @param a      the array to store into
+     * @param offset the element offset
+     */
+    public void store(@Nonnull float[] a, int offset) {
+        a[offset] = m11;
+        a[offset + 1] = m12;
+        a[offset + 2] = m13;
+        a[offset + 3] = m14;
+        a[offset + 4] = m21;
+        a[offset + 5] = m22;
+        a[offset + 6] = m23;
+        a[offset + 7] = m24;
+        a[offset + 8] = m31;
+        a[offset + 9] = m32;
+        a[offset + 10] = m33;
+        a[offset + 11] = m34;
+        a[offset + 12] = m41;
+        a[offset + 13] = m42;
+        a[offset + 14] = m43;
+        a[offset + 15] = m44;
+    }
+
+    /**
+     * Store this matrix into the give float array in row-major order.
      *
      * @param a the pointer of the array to store
      */
-    public void put(@Nonnull ByteBuffer a) {
-        a.putFloat(m11);
-        a.putFloat(m12);
-        a.putFloat(m13);
-        a.putFloat(m14);
-        a.putFloat(m21);
-        a.putFloat(m22);
-        a.putFloat(m23);
-        a.putFloat(m24);
-        a.putFloat(m31);
-        a.putFloat(m32);
-        a.putFloat(m33);
-        a.putFloat(m34);
-        a.putFloat(m41);
-        a.putFloat(m42);
-        a.putFloat(m43);
-        a.putFloat(m44);
+    public void store(@Nonnull ByteBuffer a) {
+        int offset = a.position();
+        a.putFloat(offset, m11);
+        a.putFloat(offset + 4, m12);
+        a.putFloat(offset + 8, m13);
+        a.putFloat(offset + 12, m14);
+        a.putFloat(offset + 16, m21);
+        a.putFloat(offset + 20, m22);
+        a.putFloat(offset + 24, m23);
+        a.putFloat(offset + 28, m24);
+        a.putFloat(offset + 32, m31);
+        a.putFloat(offset + 36, m32);
+        a.putFloat(offset + 40, m33);
+        a.putFloat(offset + 44, m34);
+        a.putFloat(offset + 48, m41);
+        a.putFloat(offset + 52, m42);
+        a.putFloat(offset + 56, m43);
+        a.putFloat(offset + 60, m44);
     }
 
     /**
-     * Get this matrix data, store them into an array.
+     * Store this matrix into the give float array in row-major order.
      *
      * @param a the pointer of the array to store
      */
-    public void put(@Nonnull FloatBuffer a) {
-        a.put(m11);
-        a.put(m12);
-        a.put(m13);
-        a.put(m14);
-        a.put(m21);
-        a.put(m22);
-        a.put(m23);
-        a.put(m24);
-        a.put(m31);
-        a.put(m32);
-        a.put(m33);
-        a.put(m34);
-        a.put(m41);
-        a.put(m42);
-        a.put(m43);
-        a.put(m44);
+    public void store(@Nonnull FloatBuffer a) {
+        int offset = a.position();
+        a.put(offset, m11);
+        a.put(offset + 1, m12);
+        a.put(offset + 2, m13);
+        a.put(offset + 3, m14);
+        a.put(offset + 4, m21);
+        a.put(offset + 5, m22);
+        a.put(offset + 6, m23);
+        a.put(offset + 7, m24);
+        a.put(offset + 8, m31);
+        a.put(offset + 9, m32);
+        a.put(offset + 10, m33);
+        a.put(offset + 11, m34);
+        a.put(offset + 12, m41);
+        a.put(offset + 13, m42);
+        a.put(offset + 14, m43);
+        a.put(offset + 15, m44);
     }
 
     /**
-     * Get this matrix data, store them into an address (UNSAFE).
-     * NOTE: This method does not perform memory security checks.
+     * Store this matrix into the given address in row-major order (UNSAFE).
      *
      * @param p the pointer of the array to store
      */
-    public void put(long p) {
+    public void store(long p) {
         final Unsafe unsafe = DataUtils.UNSAFE;
         final long offset = OFFSET;
-        unsafe.putLong(null, p, unsafe.getLong(this, offset));
-        unsafe.putLong(null, p + 8, unsafe.getLong(this, offset + 8));
-        unsafe.putLong(null, p + 16, unsafe.getLong(this, offset + 16));
-        unsafe.putLong(null, p + 24, unsafe.getLong(this, offset + 24));
-        unsafe.putLong(null, p + 32, unsafe.getLong(this, offset + 32));
-        unsafe.putLong(null, p + 40, unsafe.getLong(this, offset + 40));
-        unsafe.putLong(null, p + 48, unsafe.getLong(this, offset + 48));
-        unsafe.putLong(null, p + 56, unsafe.getLong(this, offset + 56));
+        unsafe.putLong(p, unsafe.getLong(this, offset));
+        unsafe.putLong(p + 8, unsafe.getLong(this, offset + 8));
+        unsafe.putLong(p + 16, unsafe.getLong(this, offset + 16));
+        unsafe.putLong(p + 24, unsafe.getLong(this, offset + 24));
+        unsafe.putLong(p + 32, unsafe.getLong(this, offset + 32));
+        unsafe.putLong(p + 40, unsafe.getLong(this, offset + 40));
+        unsafe.putLong(p + 48, unsafe.getLong(this, offset + 48));
+        unsafe.putLong(p + 56, unsafe.getLong(this, offset + 56));
     }
 
-    /*
-     * Similar to {@link #put(long)}, but also compare the memory.
-     *
-     * @param p the pointer of the array to store
-     * @return true if data is changed
-     */
-    /*@SuppressWarnings("UnnecessaryLocalVariable")
-    public boolean compareAndPut(long p) {
-        final Unsafe unsafe = DataUtils.UNSAFE;
-        final long offset = OFFSET;
-        boolean changed = false;
-        for (int i = 0; i < 64; i += 8) {
-            long val = unsafe.getLong(this, offset + i);
-            if (changed || val != unsafe.getLong(null, p + i)) {
-                unsafe.putLong(null, p + i, val);
-                changed = true;
-            }
-        }
-        return changed;
-    }*/
-
     /**
-     * Compute the determinant of this matrix.
+     * Return the determinant of this matrix.
      *
-     * @return the determinant of this matrix
+     * @return the determinant
      */
     public float determinant() {
         return (m11 * m22 - m12 * m21) * (m33 * m44 - m34 * m43) -
@@ -767,36 +972,33 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Compute the trace of this matrix.
-     *
-     * @return the trace of this matrix
-     */
-    public float trace() {
-        return m11 + m22 + m33 + m44;
-    }
-
-    /**
-     * Compute the transpose of this matrix.
+     * Transpose this matrix.
      */
     public void transpose() {
-        float t = m21;
-        m21 = m12;
-        m12 = t;
-        t = m31;
-        m31 = m13;
-        m13 = t;
-        t = m32;
-        m32 = m23;
-        m23 = t;
-        t = m41;
-        m41 = m14;
-        m14 = t;
-        t = m42;
-        m42 = m24;
-        m24 = t;
-        t = m43;
-        m43 = m34;
-        m34 = t;
+        final float f12 = m21;
+        final float f13 = m31;
+        final float f14 = m41;
+        final float f21 = m12;
+        final float f23 = m32;
+        final float f24 = m42;
+        final float f31 = m13;
+        final float f32 = m23;
+        final float f34 = m43;
+        final float f41 = m14;
+        final float f42 = m24;
+        final float f43 = m34;
+        m12 = f12;
+        m13 = f13;
+        m14 = f14;
+        m21 = f21;
+        m23 = f23;
+        m24 = f24;
+        m31 = f31;
+        m32 = f32;
+        m34 = f34;
+        m41 = f41;
+        m42 = f42;
+        m43 = f43;
     }
 
     /**
@@ -836,34 +1038,22 @@ public class Matrix4 implements Cloneable {
         }
         // calc algebraic cofactor and transpose
         det = 1.0f / det;
-        b00 *= det;
-        b01 *= det;
-        b02 *= det;
-        b03 *= det;
-        b04 *= det;
-        b05 *= det;
-        b06 *= det;
-        b07 *= det;
-        b08 *= det;
-        b09 *= det;
-        b10 *= det;
-        b11 *= det;
-        final float f11 = m22 * b11 - m23 * b10 + m24 * b09;
-        final float f12 = m23 * b08 - m21 * b11 - m24 * b07;
-        final float f13 = m21 * b10 - m22 * b08 + m24 * b06;
-        final float f14 = m22 * b07 - m21 * b09 - m23 * b06;
-        final float f21 = m13 * b10 - m12 * b11 - m14 * b09;
-        final float f22 = m11 * b11 - m13 * b08 + m14 * b07;
-        final float f23 = m12 * b08 - m11 * b10 - m14 * b06;
-        final float f24 = m11 * b09 - m12 * b07 + m13 * b06;
-        final float f31 = m42 * b05 - m43 * b04 + m44 * b03;
-        final float f32 = m43 * b02 - m41 * b05 - m44 * b01;
-        final float f33 = m41 * b04 - m42 * b02 + m44 * b00;
-        final float f34 = m42 * b01 - m41 * b03 - m43 * b00;
-        final float f41 = m33 * b04 - m32 * b05 - m34 * b03;
-        final float f42 = m31 * b05 - m33 * b02 + m34 * b01;
-        final float f43 = m32 * b02 - m31 * b04 - m34 * b00;
-        final float f44 = m31 * b03 - m32 * b01 + m33 * b00;
+        final float f11 = (m22 * b11 - m23 * b10 + m24 * b09) * det;
+        final float f12 = (m23 * b08 - m21 * b11 - m24 * b07) * det;
+        final float f13 = (m21 * b10 - m22 * b08 + m24 * b06) * det;
+        final float f14 = (m22 * b07 - m21 * b09 - m23 * b06) * det;
+        final float f21 = (m13 * b10 - m12 * b11 - m14 * b09) * det;
+        final float f22 = (m11 * b11 - m13 * b08 + m14 * b07) * det;
+        final float f23 = (m12 * b08 - m11 * b10 - m14 * b06) * det;
+        final float f24 = (m11 * b09 - m12 * b07 + m13 * b06) * det;
+        final float f31 = (m42 * b05 - m43 * b04 + m44 * b03) * det;
+        final float f32 = (m43 * b02 - m41 * b05 - m44 * b01) * det;
+        final float f33 = (m41 * b04 - m42 * b02 + m44 * b00) * det;
+        final float f34 = (m42 * b01 - m41 * b03 - m43 * b00) * det;
+        final float f41 = (m33 * b04 - m32 * b05 - m34 * b03) * det;
+        final float f42 = (m31 * b05 - m33 * b02 + m34 * b01) * det;
+        final float f43 = (m32 * b02 - m31 * b04 - m34 * b00) * det;
+        final float f44 = (m31 * b03 - m32 * b01 + m33 * b00) * det;
         dest.m11 = f11;
         dest.m21 = f12;
         dest.m31 = f13;
@@ -884,221 +1074,161 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Set this matrix to an orthographic projection matrix.
+     * Set this matrix to be an orthographic projection transformation for a
+     * right-handed coordinate system using the given NDC z range.
      *
-     * @param left   the left frustum plane
-     * @param right  the right frustum plane
-     * @param bottom the bottom frustum plane
-     * @param top    the top frustum plane
-     * @param near   the near frustum plane, must be positive
-     * @param far    the far frustum plane, must be positive
-     * @return this
+     * @param left      the distance from the center to the left frustum edge
+     * @param right     the distance from the center to the right frustum edge
+     * @param bottom    the distance from the center to the bottom frustum edge
+     * @param top       the distance from the center to the top frustum edge
+     * @param near      near clipping plane distance
+     * @param far       far clipping plane distance
+     * @param zeroToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                  <code>true</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                  <code>false</code>
      */
-    @Nonnull
-    public Matrix4 setOrthographic(float left, float right, float bottom, float top, float near, float far) {
-        float invRL = 1.0f / (right - left);
-        float invTB = 1.0f / (top - bottom);
-        float invNF = 1.0f / (near - far);
-        m11 = 2.0f * invRL;
+    public void setOrthographic(float left, float right, float bottom, float top,
+                                float near, float far, boolean zeroToOne) {
+        m11 = 2.0f / (right - left);
         m12 = 0.0f;
         m13 = 0.0f;
         m14 = 0.0f;
         m21 = 0.0f;
-        m22 = 2.0f * invTB;
+        m22 = 2.0f / (top - bottom);
         m23 = 0.0f;
         m24 = 0.0f;
         m31 = 0.0f;
         m32 = 0.0f;
-        m33 = 2.0f * invNF;
+        m33 = (zeroToOne ? 1.0f : 2.0f) / (near - far);
         m34 = 0.0f;
-        m41 = -(right + left) * invRL;
-        m42 = -(top + bottom) * invTB;
-        m43 = (near + far) * invNF;
+        m41 = (right + left) / (left - right);
+        m42 = (top + bottom) / (bottom - top);
+        m43 = (zeroToOne ? near : (far + near)) / (near - far);
         m44 = 1.0f;
-        return this;
     }
 
     /**
-     * Set this matrix to an orthographic projection matrix. The left plane and top plane
-     * are considered to be 0.
+     * Set this matrix to be an orthographic projection transformation for a
+     * left-handed coordinate system using the given NDC z range.
      *
-     * @param width  the distance from right frustum plane to left frustum plane
-     * @param height the distance from bottom frustum plane to top frustum plane
-     * @param near   the near frustum plane, must be positive
-     * @param far    the far frustum plane, must be positive
-     * @return this
+     * @param left      the distance from the center to the left frustum edge
+     * @param right     the distance from the center to the right frustum edge
+     * @param bottom    the distance from the center to the bottom frustum edge
+     * @param top       the distance from the center to the top frustum edge
+     * @param near      near clipping plane distance
+     * @param far       far clipping plane distance
+     * @param zeroToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                  <code>true</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                  <code>false</code>
      */
-    @Nonnull
-    public Matrix4 setOrthographic(float width, float height, float near, float far, boolean flipY) {
-        float invNF = 1.0f / (near - far);
-        m11 = 2.0f / width;
+    public void setOrthographicLH(float left, float right, float bottom, float top,
+                                  float near, float far, boolean zeroToOne) {
+        m11 = 2.0f / (right - left);
         m12 = 0.0f;
         m13 = 0.0f;
         m14 = 0.0f;
         m21 = 0.0f;
-        m22 = flipY ? -2.0f / height : 2.0f / height;
+        m22 = 2.0f / (top - bottom);
         m23 = 0.0f;
         m24 = 0.0f;
         m31 = 0.0f;
         m32 = 0.0f;
-        m33 = 2.0f * invNF;
+        m33 = (zeroToOne ? 1.0f : 2.0f) / (far - near);
         m34 = 0.0f;
-        m41 = -1.0f;
-        m42 = flipY ? 1.0f : -1.0f;
-        m43 = (near + far) * invNF;
+        m41 = (right + left) / (left - right);
+        m42 = (top + bottom) / (bottom - top);
+        m43 = (zeroToOne ? near : (far + near)) / (near - far);
         m44 = 1.0f;
-        return this;
     }
 
     /**
-     * Set this matrix to a perspective projection matrix.
+     * Set this matrix to be a symmetric perspective projection frustum transformation
+     * for a right-handed coordinate system using the given NDC z range.
      *
-     * @param left   the left frustum plane
-     * @param right  the right frustum plane
-     * @param bottom the bottom frustum plane
-     * @param top    the top frustum plane
-     * @param near   the near frustum plane, must be positive
-     * @param far    the far frustum plane, must be positive
-     * @return this
+     * @param fov       the field of view in radians (must be greater than zero and less than PI)
+     * @param aspect    the aspect ratio of the view (i.e. width / height)
+     * @param near      the near clipping plane, must be positive
+     * @param far       the far clipping plane, must be positive
+     * @param zeroToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                  <code>true</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                  <code>false</code>
      */
-    @Nonnull
-    public Matrix4 setPerspective(float left, float right, float bottom, float top, float near, float far) {
-        float invRL = 1.0f / (right - left);
-        float invTB = 1.0f / (top - bottom);
-        float invNF = 1.0f / (near - far);
-        float tNear = 2.0f * near;
-        m11 = tNear * invRL;
+    public void setPerspective(double fov, double aspect, float near, float far, boolean zeroToOne) {
+        double h = Math.tan(fov * 0.5);
+        m11 = (float) (1.0 / (h * aspect));
         m12 = 0.0f;
         m13 = 0.0f;
         m14 = 0.0f;
         m21 = 0.0f;
-        m22 = tNear * invTB;
+        m22 = (float) (1.0 / h);
         m23 = 0.0f;
         m24 = 0.0f;
-        m31 = (right + left) * invRL;
-        m32 = (top + bottom) * invTB;
-        m33 = (near + far) * invNF;
+        m31 = 0.0f;
+        m32 = 0.0f;
+        if (far == Float.POSITIVE_INFINITY) {
+            m33 = MathUtil.EPS - 1.0f;
+            m43 = (MathUtil.EPS - (zeroToOne ? 1.0f : 2.0f)) * near;
+        } else if (near == Float.POSITIVE_INFINITY) {
+            m33 = (zeroToOne ? 0.0f : 1.0f) - MathUtil.EPS;
+            m43 = ((zeroToOne ? 1.0f : 2.0f) - MathUtil.EPS) * far;
+        } else {
+            m33 = (zeroToOne ? far : (far + near)) / (near - far);
+            m43 = (zeroToOne ? far : (far + far)) * near / (near - far);
+        }
         m34 = -1.0f;
         m41 = 0.0f;
         m42 = 0.0f;
-        m43 = tNear * far * invNF;
         m44 = 0.0f;
-        return this;
     }
 
     /**
-     * Set this matrix to a perspective projection matrix.
+     * Set this matrix to be a symmetric perspective projection frustum transformation
+     * for a left-handed coordinate system using the given NDC z range.
      *
-     * @param fov    the angle of field of view in radians (0,PI)
-     * @param aspect aspect ratio of the view (width / height)
-     * @param near   the near frustum plane, must be positive
-     * @param far    the far frustum plane, must be positive
-     * @return this
+     * @param fov       the field of view in radians (must be greater than zero and less than PI)
+     * @param aspect    the aspect ratio of the view (i.e. width / height)
+     * @param near      the near clipping plane, must be positive
+     * @param far       the far clipping plane, must be positive
+     * @param zeroToOne whether to use Vulkan's and Direct3D's NDC z range of <code>[0..+1]</code> when
+     *                  <code>true</code> or whether to use OpenGL's NDC z range of <code>[-1..+1]</code> when
+     *                  <code>false</code>
      */
-    @Nonnull
-    public Matrix4 setPerspective(float fov, float aspect, float near, float far) {
-        float y = (float) (1.0 / Math.tan(fov * 0.5));
-        float invNF = 1.0f / (near - far);
-        m11 = y / aspect;
+    public void setPerspectiveLH(double fov, double aspect, float near, float far, boolean zeroToOne) {
+        double h = Math.tan(fov * 0.5);
+        m11 = (float) (1.0 / (h * aspect));
         m12 = 0.0f;
         m13 = 0.0f;
         m14 = 0.0f;
         m21 = 0.0f;
-        m22 = y;
+        m22 = (float) (1.0 / h);
         m23 = 0.0f;
         m24 = 0.0f;
         m31 = 0.0f;
         m32 = 0.0f;
-        m33 = (near + far) * invNF;
-        m34 = -1.0f;
+        if (far == Float.POSITIVE_INFINITY) {
+            m33 = MathUtil.EPS - 1.0f;
+            m43 = (MathUtil.EPS - (zeroToOne ? 1.0f : 2.0f)) * near;
+        } else if (near == Float.POSITIVE_INFINITY) {
+            m33 = (zeroToOne ? 0.0f : 1.0f) - MathUtil.EPS;
+            m43 = ((zeroToOne ? 1.0f : 2.0f) - MathUtil.EPS) * far;
+        } else {
+            m33 = (zeroToOne ? far : (far + near)) / (far - near);
+            m43 = (zeroToOne ? far : (far + far)) * near / (near - far);
+        }
+        m34 = 1.0f;
         m41 = 0.0f;
         m42 = 0.0f;
-        m43 = 2.0f * far * near * invNF;
         m44 = 0.0f;
-        return this;
     }
 
     /**
-     * Translates this matrix by given vector. This is equivalent to
-     * pre-multiplying by a translation matrix.
-     *
-     * @param dx the x-component of the translation
-     */
-    public void preTranslateX(float dx) {
-        m41 += dx * m11;
-        m42 += dx * m12;
-        m43 += dx * m13;
-        m44 += dx * m14;
-    }
-
-    /**
-     * Post-translates this matrix by given vector. This is equivalent to
-     * post-multiplying by a translation matrix.
-     *
-     * @param dx the x-component of the translation
-     */
-    public void postTranslateX(float dx) {
-        m11 += dx * m14;
-        m21 += dx * m24;
-        m31 += dx * m34;
-        m41 += dx * m44;
-    }
-
-    /**
-     * Translates this matrix by given vector. This is equivalent to
-     * pre-multiplying by a translation matrix.
-     *
-     * @param dy the y-component of the translation
-     */
-    public void preTranslateY(float dy) {
-        m41 += dy * m21;
-        m42 += dy * m22;
-        m43 += dy * m23;
-        m44 += dy * m24;
-    }
-
-    /**
-     * Post-translates this matrix by given vector. This is equivalent to
-     * post-multiplying by a translation matrix.
-     *
-     * @param dy the y-component of the translation
-     */
-    public void postTranslateY(float dy) {
-        m12 += dy * m14;
-        m22 += dy * m24;
-        m32 += dy * m34;
-        m42 += dy * m44;
-    }
-
-    /**
-     * Translates this matrix by given vector. This is equivalent to
-     * pre-multiplying by a translation matrix.
-     *
-     * @param dz the z-component of the translation
-     */
-    public void preTranslateZ(float dz) {
-        m41 += dz * m31;
-        m42 += dz * m32;
-        m43 += dz * m33;
-        m44 += dz * m34;
-    }
-
-    /**
-     * Post-translates this matrix by given vector. This is equivalent to
-     * post-multiplying by a translation matrix.
-     *
-     * @param dz the z-component of the translation
-     */
-    public void postTranslateZ(float dz) {
-        m13 += dz * m14;
-        m23 += dz * m24;
-        m33 += dz * m34;
-        m43 += dz * m44;
-    }
-
-    /**
-     * Translates this matrix by given changes. This is equivalent to
-     * pre-multiplying by a translation matrix.
+     * Apply a translation to this matrix by translating by the given number of
+     * units in x, y and z.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>T</code> the translation
+     * matrix, then the new matrix will be <code>T * M</code> (row-major). So when
+     * transforming a vector <code>v</code> with the new matrix by using
+     * <code>v * T * M</code>, the translation will be applied first.
      *
      * @param dx the x-component of the translation
      * @param dy the y-component of the translation
@@ -1112,8 +1242,13 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Translates this matrix by given changes. This is equivalent to
-     * pre-multiplying by a translation matrix.
+     * Apply a translation to this matrix by translating by the given number of
+     * units in x, y and z.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>T</code> the translation
+     * matrix, then the new matrix will be <code>T * M</code> (row-major). So when
+     * transforming a vector <code>v</code> with the new matrix by using
+     * <code>v * T * M</code>, the translation will be applied first.
      *
      * @param dx the x-component of the translation
      * @param dy the y-component of the translation
@@ -1126,8 +1261,13 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-translates this matrix by given changes. This is equivalent to
-     * post-multiplying by a translation matrix.
+     * Post-multiply a translation to this matrix by translating by the given number of
+     * units in x, y and z.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>T</code> the translation
+     * matrix, then the new matrix will be <code>M * T</code> (row-major). So when
+     * transforming a vector <code>v</code> with the new matrix by using
+     * <code>v * M * T</code>, the translation will be applied last.
      *
      * @param dx the x-component of the translation
      * @param dy the y-component of the translation
@@ -1149,8 +1289,13 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-translates this matrix by given changes. This is equivalent to
-     * post-multiplying by a translation matrix.
+     * Post-multiply a translation to this matrix by translating by the given number of
+     * units in x, y and z.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>T</code> the translation
+     * matrix, then the new matrix will be <code>M * T</code> (row-major). So when
+     * transforming a vector <code>v</code> with the new matrix by using
+     * <code>v * M * T</code>, the translation will be applied last.
      *
      * @param dx the x-component of the translation
      * @param dy the y-component of the translation
@@ -1167,7 +1312,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Sets this matrix to a translation matrix by given components.
+     * Set this matrix to be a simple translation matrix.
      *
      * @param x the x-component of the translation
      * @param y the y-component of the translation
@@ -1193,86 +1338,13 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Scales this matrix by given vector. This is equivalent to
-     * pre-multiplying by a scale matrix.
-     *
-     * @param s the x-component of the scale
-     */
-    public void preScaleX(float s) {
-        m11 *= s;
-        m12 *= s;
-        m13 *= s;
-        m14 *= s;
-    }
-
-    /**
-     * Post-scales this matrix by given vector. This is equivalent to
-     * post-multiplying by a scale matrix.
-     *
-     * @param s the x-component of the scale
-     */
-    public void postScaleX(float s) {
-        m11 *= s;
-        m21 *= s;
-        m31 *= s;
-        m41 *= s;
-    }
-
-    /**
-     * Scales this matrix by given vector. This is equivalent to
-     * pre-multiplying by a scale matrix.
-     *
-     * @param s the y-component of the scale
-     */
-    public void preScaleY(float s) {
-        m21 *= s;
-        m22 *= s;
-        m23 *= s;
-        m24 *= s;
-    }
-
-    /**
-     * Post-scales this matrix by given vector. This is equivalent to
-     * post-multiplying by a scale matrix.
-     *
-     * @param s the y-component of the scale
-     */
-    public void postScaleY(float s) {
-        m12 *= s;
-        m22 *= s;
-        m32 *= s;
-        m42 *= s;
-    }
-
-    /**
-     * Scales this matrix by given vector. This is equivalent to
-     * pre-multiplying by a scale matrix.
-     *
-     * @param s the x-component of the scale
-     */
-    public void preScaleZ(float s) {
-        m31 *= s;
-        m32 *= s;
-        m33 *= s;
-        m34 *= s;
-    }
-
-    /**
-     * Post-scales this matrix by given vector. This is equivalent to
-     * post-multiplying by a scale matrix.
-     *
-     * @param s the x-component of the scale
-     */
-    public void postScaleZ(float s) {
-        m13 *= s;
-        m23 *= s;
-        m33 *= s;
-        m43 *= s;
-    }
-
-    /**
-     * Scales this matrix by given vector. This is equivalent to
-     * pre-multiplying by a scale matrix.
+     * Apply scaling to <code>this</code> matrix by scaling the base axes by the given x,
+     * y and z factors and store the result in <code>dest</code>.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>S</code> the scaling matrix,
+     * then the new matrix will be <code>S * M</code> (row-major). So when transforming a
+     * vector <code>v</code> with the new matrix by using <code>v * S * M</code>,
+     * the scaling will be applied first.
      *
      * @param sx the x-component of the scale
      * @param sy the y-component of the scale
@@ -1294,8 +1366,13 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Scales this matrix by given vector. This is equivalent to
-     * pre-multiplying by a scale matrix.
+     * Apply scaling to <code>this</code> matrix by scaling the base axes by the given x,
+     * y and z factors and store the result in <code>dest</code>.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>S</code> the scaling matrix,
+     * then the new matrix will be <code>S * M</code> (row-major). So when transforming a
+     * vector <code>v</code> with the new matrix by using <code>v * S * M</code>,
+     * the scaling will be applied first.
      *
      * @param sx the x-component of the scale
      * @param sy the y-component of the scale
@@ -1312,8 +1389,13 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-scales this matrix by given vector. This is equivalent to
-     * post-multiplying by a scale matrix.
+     * Post-multiply scaling to <code>this</code> matrix by scaling the base axes by the given x,
+     * y and z factors and store the result in <code>dest</code>.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>S</code> the scaling matrix,
+     * then the new matrix will be <code>M * S</code> (row-major). So when transforming a
+     * vector <code>v</code> with the new matrix by using <code>v * M * S</code>,
+     * the scaling will be applied last.
      *
      * @param sx the x-component of the scale
      * @param sy the y-component of the scale
@@ -1335,8 +1417,13 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-scales this matrix by given vector. This is equivalent to
-     * post-multiplying by a scale matrix.
+     * Post-multiply scaling to <code>this</code> matrix by scaling the base axes by the given x,
+     * y and z factors and store the result in <code>dest</code>.
+     * <p>
+     * If <code>M</code> is <code>this</code> matrix and <code>S</code> the scaling matrix,
+     * then the new matrix will be <code>M * S</code> (row-major). So when transforming a
+     * vector <code>v</code> with the new matrix by using <code>v * M * S</code>,
+     * the scaling will be applied last.
      *
      * @param sx the x-component of the scale
      * @param sy the y-component of the scale
@@ -1353,7 +1440,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Sets this matrix to a scale matrix by given components.
+     * Set this matrix to be a simple scale matrix.
      *
      * @param x the x-component of the scale
      * @param y the y-component of the scale
@@ -1885,67 +1972,104 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param r the rectangle to transform
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
     public void mapRect(@Nonnull RectF r) {
-        float x1 = m11 * r.left + m21 * r.top + m41;
-        float y1 = m12 * r.left + m22 * r.top + m42;
-        float x2 = m11 * r.right + m21 * r.top + m41;
-        float y2 = m12 * r.right + m22 * r.top + m42;
-        float x3 = m11 * r.left + m21 * r.bottom + m41;
-        float y3 = m12 * r.left + m22 * r.bottom + m42;
-        float x4 = m11 * r.right + m21 * r.bottom + m41;
-        float y4 = m12 * r.right + m22 * r.bottom + m42;
-        if (!isAffine()) {
-            // project
-            float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
-            x1 *= w;
-            y1 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.top + m44);
-            x2 *= w;
-            y2 *= w;
-            w = 1.0f / (m14 * r.left + m24 * r.bottom + m44);
-            x3 *= w;
-            y3 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.bottom + m44);
-            x4 *= w;
-            y4 *= w;
-        }
-        r.left = min(x1, x2, x3, x4);
-        r.top = min(y1, y2, y3, y4);
-        r.right = max(x1, x2, x3, x4);
-        r.bottom = max(y1, y2, y3, y4);
+        mapRect(r.left, r.top, r.right, r.bottom, r);
     }
 
     /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param r    the rectangle to transform
-     * @param dest the round values
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull RectF r, @Nonnull Rect dest) {
-        float x1 = m11 * r.left + m21 * r.top + m41;
-        float y1 = m12 * r.left + m22 * r.top + m42;
-        float x2 = m11 * r.right + m21 * r.top + m41;
-        float y2 = m12 * r.right + m22 * r.top + m42;
-        float x3 = m11 * r.left + m21 * r.bottom + m41;
-        float y3 = m12 * r.left + m22 * r.bottom + m42;
-        float x4 = m11 * r.right + m21 * r.bottom + m41;
-        float y4 = m12 * r.right + m22 * r.bottom + m42;
-        if (!isAffine()) {
+    public void mapRect(@Nonnull RectF r, @Nonnull RectF dest) {
+        mapRect(r.left, r.top, r.right, r.bottom, dest);
+    }
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    public void mapRect(float left, float top, float right, float bottom, @Nonnull RectF dest) {
+        float x1 = m11 * left + m21 * top + m41;
+        float y1 = m12 * left + m22 * top + m42;
+        float x2 = m11 * right + m21 * top + m41;
+        float y2 = m12 * right + m22 * top + m42;
+        float x3 = m11 * left + m21 * bottom + m41;
+        float y3 = m12 * left + m22 * bottom + m42;
+        float x4 = m11 * right + m21 * bottom + m41;
+        float y4 = m12 * right + m22 * bottom + m42;
+        if (hasPerspective()) {
             // project
-            float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
+            float w;
+            w = 1.0f / (m14 * left + m24 * top + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.top + m44);
+            w = 1.0f / (m14 * right + m24 * top + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m14 * r.left + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * left + m24 * bottom + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * right + m24 * bottom + m44);
+            x4 *= w;
+            y4 *= w;
+        }
+        dest.left = min(x1, x2, x3, x4);
+        dest.top = min(y1, y2, y3, y4);
+        dest.right = max(x1, x2, x3, x4);
+        dest.bottom = max(y1, y2, y3, y4);
+    }
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    public void mapRect(@Nonnull RectF r, @Nonnull Rect dest) {
+        mapRect(r.left, r.top, r.right, r.bottom, dest);
+    }
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    public void mapRect(@Nonnull Rect r, @Nonnull Rect dest) {
+        mapRect(r.left, r.top, r.right, r.bottom, dest);
+    }
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect dest) {
+        float x1 = m11 * left + m21 * top + m41;
+        float y1 = m12 * left + m22 * top + m42;
+        float x2 = m11 * right + m21 * top + m41;
+        float y2 = m12 * right + m22 * top + m42;
+        float x3 = m11 * left + m21 * bottom + m41;
+        float y3 = m12 * left + m22 * bottom + m42;
+        float x4 = m11 * right + m21 * bottom + m41;
+        float y4 = m12 * right + m22 * bottom + m42;
+        if (hasPerspective()) {
+            // project
+            float w;
+            w = 1.0f / (m14 * left + m24 * top + m44);
+            x1 *= w;
+            y1 *= w;
+            w = 1.0f / (m14 * right + m24 * top + m44);
+            x2 *= w;
+            y2 *= w;
+            w = 1.0f / (m14 * left + m24 * bottom + m44);
+            x3 *= w;
+            y3 *= w;
+            w = 1.0f / (m14 * right + m24 * bottom + m44);
             x4 *= w;
             y4 *= w;
         }
@@ -1956,32 +2080,50 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Map a rectangle points in the X-Y plane to get the maximum bounds.
-     *
-     * @param r    the rectangle to transform
-     * @param dest the round out values
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
     public void mapRectOut(@Nonnull RectF r, @Nonnull Rect dest) {
-        float x1 = m11 * r.left + m21 * r.top + m41;
-        float y1 = m12 * r.left + m22 * r.top + m42;
-        float x2 = m11 * r.right + m21 * r.top + m41;
-        float y2 = m12 * r.right + m22 * r.top + m42;
-        float x3 = m11 * r.left + m21 * r.bottom + m41;
-        float y3 = m12 * r.left + m22 * r.bottom + m42;
-        float x4 = m11 * r.right + m21 * r.bottom + m41;
-        float y4 = m12 * r.right + m22 * r.bottom + m42;
-        if (!isAffine()) {
+        mapRectOut(r.left, r.top, r.right, r.bottom, dest);
+    }
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    public void mapRectOut(@Nonnull Rect r, @Nonnull Rect dest) {
+        mapRectOut(r.left, r.top, r.right, r.bottom, dest);
+    }
+
+    /**
+     * Map the four corners of 'r' and return the bounding box of those points. The four corners of
+     * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
+     * rectangle will be the bounding box of the projected points after being clipped to w > 0.
+     */
+    public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect dest) {
+        float x1 = m11 * left + m21 * top + m41;
+        float y1 = m12 * left + m22 * top + m42;
+        float x2 = m11 * right + m21 * top + m41;
+        float y2 = m12 * right + m22 * top + m42;
+        float x3 = m11 * left + m21 * bottom + m41;
+        float y3 = m12 * left + m22 * bottom + m42;
+        float x4 = m11 * right + m21 * bottom + m41;
+        float y4 = m12 * right + m22 * bottom + m42;
+        if (hasPerspective()) {
             // project
-            float w = 1.0f / (m14 * r.left + m24 * r.top + m44);
+            float w;
+            w = 1.0f / (m14 * left + m24 * top + m44);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.top + m44);
+            w = 1.0f / (m14 * right + m24 * top + m44);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m14 * r.left + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * left + m24 * bottom + m44);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m14 * r.right + m24 * r.bottom + m44);
+            w = 1.0f / (m14 * right + m24 * bottom + m44);
             x4 *= w;
             y4 *= w;
         }
@@ -2091,7 +2233,7 @@ public class Matrix4 implements Cloneable {
     }
 
     public boolean hasPerspective() {
-        return !isAffine();
+        return m14 != 0 || m24 != 0 || m34 != 0 || m44 != 1;
     }
 
     public boolean hasTranslation() {
@@ -2112,8 +2254,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Converts this 4x4 matrix to 3x3 matrix, the third row and
-     * column is dropped.
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are dropped.
      * <pre>{@code
      * [ a b x c ]      [ a b c ]
      * [ d e x f ]  ->  [ d e f ]
@@ -2121,16 +2262,65 @@ public class Matrix4 implements Cloneable {
      * [ g h x i ]
      * }</pre>
      */
-    public void toMatrix3(@Nonnull Matrix3 out) {
-        out.m11 = m11;
-        out.m12 = m12;
-        out.m13 = m14;
-        out.m21 = m21;
-        out.m22 = m22;
-        out.m23 = m24;
-        out.m31 = m41;
-        out.m32 = m42;
-        out.m33 = m44;
+    public void toM33NoZ(@Nonnull Matrix3 dest) {
+        dest.setAll(
+                m11, m12, m14,
+                m21, m22, m24,
+                m41, m42, m44
+        );
+    }
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are dropped.
+     * <pre>{@code
+     * [ a b x c ]      [ a b c ]
+     * [ d e x f ]  ->  [ d e f ]
+     * [ x x x x ]      [ g h i ]
+     * [ g h x i ]
+     * }</pre>
+     */
+    @Nonnull
+    public Matrix3 toM33NoZ() {
+        return Matrix3.makeAll(
+                m11, m12, m14,
+                m21, m22, m24,
+                m41, m42, m44
+        );
+    }
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are dropped.
+     * <pre>{@code
+     * [ a b c x ]      [ a b c ]
+     * [ d e f x ]  ->  [ d e f ]
+     * [ g h i x ]      [ g h i ]
+     * [ x x x x ]
+     * }</pre>
+     */
+    public void toM33NoW(@Nonnull Matrix3 dest) {
+        dest.setAll(
+                m11, m12, m13,
+                m21, m22, m23,
+                m31, m32, m33
+        );
+    }
+
+    /**
+     * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are dropped.
+     * <pre>{@code
+     * [ a b c x ]      [ a b c ]
+     * [ d e f x ]  ->  [ d e f ]
+     * [ g h i x ]      [ g h i ]
+     * [ x x x x ]
+     * }</pre>
+     */
+    @Nonnull
+    public Matrix3 toM33NoW() {
+        return Matrix3.makeAll(
+                m11, m12, m13,
+                m21, m22, m23,
+                m31, m32, m33
+        );
     }
 
     public boolean equal(@Nonnull Matrix4 mat) {

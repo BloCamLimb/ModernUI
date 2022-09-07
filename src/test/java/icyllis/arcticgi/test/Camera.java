@@ -25,7 +25,7 @@ import java.io.PrintWriter;
 // deprecated Skia feature
 public class Camera {
 
-    public static class Patch3D {
+    /*public static class Patch3D {
 
         public final Vector3 mU = new Vector3();
         public final Vector3 mV = new Vector3();
@@ -134,5 +134,5 @@ public class Camera {
                 o.m33 = (axis.z);
             }
         }
-    }
+    }*/
 }

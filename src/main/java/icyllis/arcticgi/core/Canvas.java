@@ -160,7 +160,6 @@ public class Canvas implements AutoCloseable {
     }
 
     Canvas(BaseDevice device) {
-        device.setMarkerStack(mMarkerStack);
         mSaveCount = 1;
         mMCStack[0] = new MCRec(device);
         mBaseDevice = device;
@@ -577,7 +576,7 @@ public class Canvas implements AutoCloseable {
         if (!matrix.isIdentity()) {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
-            transform.preMul(matrix);
+            transform.preMultiply(matrix);
             topDevice().setGlobalTransform(matrix);
             didConcat(matrix);
         }
@@ -794,7 +793,7 @@ public class Canvas implements AutoCloseable {
                 return false;
             }
             bounds.set(device.getClipBounds());
-            device.deviceToGlobal().mapRect(bounds);
+            device.getDeviceToGlobal().mapRect(bounds);
             bounds.roundOut(bounds);
             // adjust it outwards in case we are antialiasing
             bounds.inset(-1.0f, -1.0f);
@@ -820,7 +819,7 @@ public class Canvas implements AutoCloseable {
             return false;
         } else {
             bounds.set(device.getClipBounds());
-            device.deviceToGlobal().mapRectOut(bounds, bounds);
+            device.getDeviceToGlobal().mapRectOut(bounds, bounds);
             return !bounds.isEmpty();
         }
     }
@@ -1446,7 +1445,7 @@ public class Canvas implements AutoCloseable {
             mQuickRejectBounds.setEmpty();
         } else {
             mQuickRejectBounds.set(device.getClipBounds());
-            device.deviceToGlobal().mapRect(mQuickRejectBounds);
+            device.getDeviceToGlobal().mapRect(mQuickRejectBounds);
             // Expand bounds out by 1 in case we are anti-aliasing.  We store the
             // bounds as floats to enable a faster quick reject implementation.
             mQuickRejectBounds.inset(-1.0f, -1.0f);

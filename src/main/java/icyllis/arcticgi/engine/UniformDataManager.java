@@ -534,7 +534,7 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Mat4);
         long buffer = getBufferPtrAndMarkDirty(uni);
-        matrix.put(buffer);
+        matrix.store(buffer);
     }
 
     @Override

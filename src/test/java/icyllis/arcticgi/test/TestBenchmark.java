@@ -50,6 +50,6 @@ public class TestBenchmark {
 
     @Benchmark
     public void uploadMethod1() {
-        mMatrix.put(mData);
+        mMatrix.store(mData);
     }
 }

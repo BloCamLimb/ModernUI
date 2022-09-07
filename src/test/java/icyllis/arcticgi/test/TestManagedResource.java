@@ -41,7 +41,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.function.IntConsumer;
 
 import static org.lwjgl.system.MemoryUtil.memAddress;
 
@@ -94,8 +93,7 @@ public class TestManagedResource {
         Matrix4 transform = Matrix4.identity();
         transform.m34 = 1 / 4096f;
         transform.preRotateX(MathUtil.PI_O_3);
-        Matrix3 matrix3 = new Matrix3();
-        transform.toMatrix3(matrix3);
+        Matrix3 matrix3 = transform.toM33NoZ();
         pw.println(matrix3);
 
         GLServer server = (GLServer) directContext.getServer();
@@ -122,7 +120,7 @@ public class TestManagedResource {
             }
         }
 
-        testCamera(pw);
+        //testCamera(pw);
 
         testRightHandedRotation(pw);
 
@@ -147,7 +145,7 @@ public class TestManagedResource {
         pw.println("preRotateX " + mat);
 
         Matrix4 mat2 = Matrix4.identity();
-        mat2.preRotate(0, 0, 1, MathUtil.PI_O_3);
+        mat2.setPerspective(Math.toRadians(75), 16 / 9., 0, 2000, false);
         pw.println("preRotateAxisAngle " + mat2);
 
         final double x = mat2.m11 * 2 + mat2.m21 * 2 + mat2.m31 * 2 + mat2.m41;
@@ -172,14 +170,13 @@ public class TestManagedResource {
     public static void testSimilarity(PrintWriter pw) {
         Matrix4 mat = Matrix4.identity();
         mat.preRotateZ(MathUtil.PI_O_2 * 29);
-        Matrix3 m3 = new Matrix3();
-        mat.toMatrix3(m3);
+        Matrix3 m3 = mat.toM33NoZ();
         pw.println(m3);
         pw.println(m3.getType());
         pw.println("Similarity: " + m3.isSimilarity());
     }
 
-    public static void testCamera(PrintWriter pw) {
+    /*public static void testCamera(PrintWriter pw) {
         Matrix4 mat = Matrix4.identity();
         mat.m34 = 1 / 576f;
         //mat.preTranslateZ(-20f);
@@ -218,7 +215,7 @@ public class TestManagedResource {
         pw.println(Arrays.toString(p2));
         pw.println(Arrays.toString(p3));
         pw.println(Arrays.toString(p4));
-    }
+    }*/
 
     public static void decodeLargeGIFUsingSTBImage(PrintWriter pw, String path) {
         ByteBuffer buffer = null;

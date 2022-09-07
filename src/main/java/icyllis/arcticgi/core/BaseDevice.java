@@ -34,16 +34,12 @@ public abstract class BaseDevice extends MatrixProvider {
             CLIP_TYPE_RECT = 1,
             CLIP_TYPE_COMPLEX = 2;
 
-    // read only, device bounds
-    protected final Rect mBounds = new Rect();
+    final ImageInfo mInfo;
+    final Rect mBounds = new Rect();
 
-    private final ImageInfo mInfo;
-    // mDeviceToGlobal and mGlobalToDevice are inverses of each other; there are never that many
-    // Devices, so pay the memory cost to avoid recalculating the inverse.
-    private final Matrix3 mDeviceToGlobal = Matrix3.identity();
-    private final Matrix3 mGlobalToDevice = Matrix3.identity();
-
-    private MarkerStack mMarkerStack;
+    // mDeviceToGlobal and mGlobalToDevice are inverses of each other
+    final Matrix4 mDeviceToGlobal = Matrix4.identity();
+    final Matrix4 mGlobalToDevice = Matrix4.identity();
 
     public BaseDevice(ImageInfo info) {
         mInfo = info;
@@ -53,14 +49,13 @@ public abstract class BaseDevice extends MatrixProvider {
     /**
      * Internal resize for optimization purposes.
      */
-    void privateResize(int width, int height) {
+    void resize(int width, int height) {
         mInfo.resize(width, height);
         mBounds.set(0, 0, width, height);
     }
 
     /**
-     * Return ImageInfo for this device. If the canvas is not backed by GPU,
-     * then the info's ColorType will be {@link ImageInfo#COLOR_UNKNOWN}.
+     * Return image info for this device.
      */
     @Nonnull
     public final ImageInfo getImageInfo() {
@@ -75,8 +70,18 @@ public abstract class BaseDevice extends MatrixProvider {
         return mInfo.height();
     }
 
-    public final void getBounds(Rect bounds) {
-        bounds.set(mBounds);
+    /**
+     * @return read-only
+     */
+    public final Rect getBounds() {
+        return mBounds;
+    }
+
+    /**
+     * Return the bounds of the device in the coordinate space of this device.
+     */
+    public final void getBounds(@Nonnull Rect bounds) {
+        bounds.set(getBounds());
     }
 
     /**
@@ -84,12 +89,8 @@ public abstract class BaseDevice extends MatrixProvider {
      * canvas. The root device will have its top-left at 0,0, but other devices
      * such as those associated with saveLayer may have a non-zero origin.
      */
-    public final void getGlobalBounds(Rect bounds) {
-        if (mDeviceToGlobal.isIdentity()) {
-            bounds.set(mBounds);
-        } else {
-            mDeviceToGlobal.mapRectOut(mBounds, bounds);
-        }
+    public final void getGlobalBounds(@Nonnull Rect bounds) {
+        mDeviceToGlobal.mapRectOut(getBounds(), bounds);
     }
 
     /**
@@ -98,7 +99,7 @@ public abstract class BaseDevice extends MatrixProvider {
      * draws unless the clip is further modified (at which point this will
      * return the updated bounds).
      */
-    public final void getClipBounds(Rect bounds) {
+    public final void getClipBounds(@Nonnull Rect bounds) {
         bounds.set(getClipBounds());
     }
 
@@ -107,7 +108,7 @@ public abstract class BaseDevice extends MatrixProvider {
      * into the global canvas' space (or root device space). This includes the translation
      * necessary to account for the device's origin.
      */
-    public final Matrix3 deviceToGlobal() {
+    public final Matrix4 getDeviceToGlobal() {
         return mDeviceToGlobal;
     }
 
@@ -115,7 +116,7 @@ public abstract class BaseDevice extends MatrixProvider {
      * Return the inverse of getDeviceToGlobal(), mapping from the global canvas' space (or root
      * device space) into this device's coordinate space.
      */
-    public final Matrix3 globalToDevice() {
+    public final Matrix4 getGlobalToDevice() {
         return mGlobalToDevice;
     }
 
@@ -124,9 +125,11 @@ public abstract class BaseDevice extends MatrixProvider {
      * and any relative translation between the two spaces is in integer pixel units.
      */
     public final boolean isPixelAlignedToGlobal() {
-        float x = mDeviceToGlobal.getTranslateX();
-        float y = mDeviceToGlobal.getTranslateY();
-        return x == Math.round(x) && y == Math.round(y) && mDeviceToGlobal.isTranslate();
+        Matrix4 mat = mDeviceToGlobal;
+        return mat.m11 == 1 && mat.m12 == 0 && mat.m13 == 0 && mat.m14 == 0 &&
+                mat.m21 == 0 && mat.m22 == 1 && mat.m23 == 0 && mat.m24 == 0 &&
+                mat.m31 == 0 && mat.m32 == 0 && mat.m33 == 1 && mat.m34 == 0 &&
+                mat.m41 == Math.floor(mat.m41) && mat.m42 == Math.floor(mat.m42) && mat.m43 == 0 && mat.m44 == 1;
     }
 
     /**
@@ -135,40 +138,11 @@ public abstract class BaseDevice extends MatrixProvider {
      * that device is drawn to the root device, the net effect will be that this device's contents
      * have been transformed by the global transform.
      */
-    public final void getRelativeTransform(final BaseDevice device, Matrix3 out) {
+    public final void getRelativeTransform(@Nonnull BaseDevice device, @Nonnull Matrix4 dest) {
         // To get the transform from this space to the other device's, transform from our space to
         // global and then from global to the other device.
-        out.set(mDeviceToGlobal);
-        out.postMultiply(device.mGlobalToDevice);
-    }
-
-    @Override
-    public final boolean getLocalToMarker(int id, Matrix4 localToMarker) {
-        // The marker stack stores CTM snapshots, which are "marker to global" matrices.
-        // We ask for the (cached) inverse, which is a "global to marker" matrix.
-        Matrix4 globalToMarker = null;
-        // ID 0 is special, and refers to the CTM (local-to-global)
-        if (mMarkerStack != null && (id == 0 || (globalToMarker = mMarkerStack.findMarkerInverse(id)) != null)) {
-            // globalToMarker will still be the identity if id is zero
-            if (globalToMarker == null) {
-                localToMarker.setIdentity();
-            } else {
-                localToMarker.set(globalToMarker);
-            }
-            localToMarker.preMul(mDeviceToGlobal);
-            localToMarker.preMul(mLocalToDevice);
-            return true;
-        }
-        return false;
-    }
-
-    @Nullable
-    public final MarkerStack getMarkerStack() {
-        return mMarkerStack;
-    }
-
-    public final void setMarkerStack(@Nullable MarkerStack markerStack) {
-        mMarkerStack = markerStack;
+        dest.set(mDeviceToGlobal);
+        dest.postMultiply(device.mGlobalToDevice);
     }
 
     public final void save() {
@@ -206,10 +180,8 @@ public abstract class BaseDevice extends MatrixProvider {
             mLocalToDevice.set(globalTransform);
             mLocalToDevice.normalizePerspective();
         }
-        if (!mGlobalToDevice.isIdentity()) {
-            // Map from the global CTM state to this device's coordinate system.
-            mLocalToDevice.postMul(mGlobalToDevice);
-        }
+        // Map from the global transform state to this device's coordinate system.
+        mLocalToDevice.postMultiply(mGlobalToDevice);
     }
 
     public final void setLocalToDevice(@Nullable Matrix4 localToDevice) {
@@ -240,17 +212,20 @@ public abstract class BaseDevice extends MatrixProvider {
      * will include a pre-translation by T(deviceOriginX, deviceOriginY), and the final
      * local-to-device matrix will have a post-translation of T(-deviceOriginX, -deviceOriginY).
      */
-    final void setCoordinateSystem(@Nullable Matrix3 deviceToGlobal, @Nullable Matrix4 localToDevice,
-                                   int bufferOriginX, int bufferOriginY) {
+    final void setCoordinateSystem(@Nullable Matrix4 deviceToGlobal,
+                                   @Nullable Matrix4 globalToDevice,
+                                   @Nullable Matrix4 localToDevice,
+                                   int bufferOriginX,
+                                   int bufferOriginY) {
         if (deviceToGlobal == null) {
             mDeviceToGlobal.setIdentity();
             mGlobalToDevice.setIdentity();
         } else {
+            assert (globalToDevice != null);
             mDeviceToGlobal.set(deviceToGlobal);
             mDeviceToGlobal.normalizePerspective();
-            if (!mDeviceToGlobal.invert(mGlobalToDevice)) {
-                throw new IllegalStateException();
-            }
+            mGlobalToDevice.set(globalToDevice);
+            mGlobalToDevice.normalizePerspective();
         }
         if (localToDevice == null) {
             mLocalToDevice.setIdentity();
@@ -270,7 +245,7 @@ public abstract class BaseDevice extends MatrixProvider {
      * unique origin.
      */
     final void setOrigin(@Nullable Matrix4 globalTransform, int x, int y) {
-        setCoordinateSystem(null, globalTransform, x, y);
+        setCoordinateSystem(null, null, globalTransform, x, y);
     }
 
     protected void onSave() {

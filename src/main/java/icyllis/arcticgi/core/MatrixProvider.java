@@ -34,24 +34,20 @@ public abstract class MatrixProvider {
     /**
      * Create a matrix provider with the given matrix.
      *
-     * @param localToDevice the backing matrix
+     * @param localToDevice the reference to the backing matrix
      */
-    public MatrixProvider(final Matrix4 localToDevice) {
+    public MatrixProvider(Matrix4 localToDevice) {
+        assert (localToDevice != null);
         mLocalToDevice = localToDevice;
     }
 
     /**
-     * {@code const Matrix4& localToDevice() const;}
+     * {@code const Matrix4& getLocalToDevice() const;}
      *
      * @return the backing local-to-device matrix
      */
     @Nonnull
-    public final Matrix4 localToDevice() {
+    public final Matrix4 getLocalToDevice() {
         return mLocalToDevice;
     }
-
-    /**
-     * {@code virtual bool getLocalToMarker(uint32_t id, Matrix4* localToMarker) const = 0;}
-     */
-    public abstract boolean getLocalToMarker(int id, Matrix4 localToMarker);
 }
