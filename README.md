@@ -27,6 +27,9 @@ If you have any questions, feel free to join our [Discord](https://discord.gg/km
 * Modern UI Assets ─ UI layouts, textures, shaders, models, documents and so on
   - Copyright (C) 2019-2022 BloCamLimb et al.
   - [![License](https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-yellow.svg?style=flat-square)](https://creativecommons.org/licenses/by-nc-sa/4.0/)
+* Additional Assets
+  - [source-han-sans](https://github.com/adobe-fonts/source-han-sans) by Adobe, licensed under the OFL-1.1
+  - [Twemoji](https://github.com/twitter/twemoji) by Twitter, licensed under the MIT License
 * Libraries
   - [lwjgl](https://github.com/LWJGL/lwjgl3) licensed under the BSD-3-Clause
   - [caffeine](https://github.com/ben-manes/caffeine) by Ben Manes, licensed under the Apache-2.0
