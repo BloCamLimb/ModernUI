@@ -20,9 +20,7 @@ package icyllis.arcticgi.engine;
 
 import icyllis.arcticgi.core.Image;
 import icyllis.arcticgi.opengl.*;
-import icyllis.arcticgi.vulkan.VkBackendFormat;
 import icyllis.arcticgi.vulkan.VkCore;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -33,38 +31,6 @@ import javax.annotation.concurrent.Immutable;
  */
 @Immutable
 public abstract class BackendFormat {
-
-    private static final Long2ObjectOpenHashMap<GLBackendFormat> sGLBackendFormats =
-            new Long2ObjectOpenHashMap<>(25, 0.8f);
-    private static final Long2ObjectOpenHashMap<VkBackendFormat> sVkBackendFormats =
-            new Long2ObjectOpenHashMap<>(25, 0.8f);
-
-    @Nonnull
-    public static GLBackendFormat makeGL(@NativeType("GLenum") int format, int textureType) {
-        if (GLCore.isUnknownFormat(format)) {
-            return new GLBackendFormat(format, textureType);
-        }
-        return sGLBackendFormats.computeIfAbsent(format | ((long) textureType << 32),
-                key -> new GLBackendFormat((int) key, (int) (key >> 32))); // this lambda is singleton
-    }
-
-    @Nonnull
-    public static VkBackendFormat makeVk(@NativeType("VkFormat") int format, boolean isExternal) {
-        // if this failed, use long key
-        assert (format >= 0);
-        int key = (format) | (isExternal ? Integer.MIN_VALUE : 0);
-        // harmless race
-        VkBackendFormat backendFormat = sVkBackendFormats.get(key);
-        if (backendFormat != null) {
-            return backendFormat;
-        }
-        backendFormat = new VkBackendFormat(format, isExternal);
-        //TODO cache only known formats
-        if (backendFormat.getBytesPerBlock() != 0) {
-            sVkBackendFormats.put(key, backendFormat);
-        }
-        return backendFormat;
-    }
 
     /**
      * @return see EngineTypes

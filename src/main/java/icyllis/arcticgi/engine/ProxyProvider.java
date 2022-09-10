@@ -24,7 +24,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import javax.annotation.Nullable;
 
 /**
- * A factory for creating {@link SurfaceProxy}-derived objects. This class may be used on
+ * A factory for creating {@link TextureProxy}-derived objects. This class may be used on
  * the creating thread of {@link RecordingContext}.
  */
 public final class ProxyProvider {
@@ -34,7 +34,7 @@ public final class ProxyProvider {
 
     // This holds the texture proxies that have unique keys. The resourceCache does not get a ref
     // on these proxies, but they must send a message to the resourceCache when they are deleted.
-    private final Object2ObjectOpenHashMap<ResourceKey, TextureProxy> mUniquelyKeyedProxies;
+    private final Object2ObjectOpenHashMap<Object, TextureProxy> mUniquelyKeyedProxies;
 
     ProxyProvider(RecordingContext context) {
         mContext = context;
@@ -51,7 +51,7 @@ public final class ProxyProvider {
      * Assigns a unique key to a proxy. The proxy will be findable via this key using
      * {@link #findProxyByUniqueKey()}. It is an error if an existing proxy already has a key.
      */
-    public boolean assignUniqueKeyToProxy(ResourceKey key, TextureProxy proxy) {
+    public boolean assignUniqueKeyToProxy(Object key, TextureProxy proxy) {
         assert key != null;
         if (mContext.isDropped() || proxy == null) {
             return false;
@@ -77,11 +77,11 @@ public final class ProxyProvider {
      * Sets the unique key of the provided proxy to the unique key of the surface. The surface must
      * have a valid unique key.
      */
-    public void adoptUniqueKeyFromSurface(SurfaceProxy proxy, Texture texture) {
+    public void adoptUniqueKeyFromSurface(TextureProxy proxy, Texture texture) {
         //TODO
     }
 
-    public void processInvalidUniqueKey(ResourceKey key, SurfaceProxy proxy, boolean invalidateResource) {
+    public void processInvalidUniqueKey(Object key, TextureProxy proxy, boolean invalidateResource) {
     }
 
     /**
@@ -118,14 +118,14 @@ public final class ProxyProvider {
 
     @Nullable
     @SharedPtr
-    public RenderTargetProxy createRenderTargetProxy(BackendFormat format,
-                                                     int width, int height,
-                                                     int sampleCount,
-                                                     boolean mipmapped,
-                                                     boolean backingFit,
-                                                     boolean budgeted,
-                                                     int surfaceFlags,
-                                                     boolean useAllocator) {
+    public TextureRenderTargetProxy createRenderTextureProxy(BackendFormat format,
+                                                             int width, int height,
+                                                             int sampleCount,
+                                                             boolean mipmapped,
+                                                             boolean backingFit,
+                                                             boolean budgeted,
+                                                             int surfaceFlags,
+                                                             boolean useAllocator) {
         assert mContext.isOnOwnerThread();
         if (mContext.isDropped()) {
             return null;
@@ -140,7 +140,7 @@ public final class ProxyProvider {
             return null;
         }
 
-        return new RenderTargetProxy(format, width, height, sampleCount, mipmapped, backingFit,
+        return new TextureRenderTargetProxy(format, width, height, sampleCount, mipmapped, backingFit,
                 budgeted, surfaceFlags, useAllocator, isDeferredProvider());
     }
 
@@ -153,11 +153,11 @@ public final class ProxyProvider {
      */
     @Nullable
     @SharedPtr
-    public RenderTargetProxy wrapRenderableBackendTexture(BackendTexture texture,
-                                                          int sampleCount,
-                                                          boolean ownership,
-                                                          boolean cacheable,
-                                                          Runnable releaseCallback) {
+    public TextureRenderTargetProxy wrapRenderableBackendTexture(BackendTexture texture,
+                                                                 int sampleCount,
+                                                                 boolean ownership,
+                                                                 boolean cacheable,
+                                                                 Runnable releaseCallback) {
         if (mContext.isDropped()) {
             return null;
         }

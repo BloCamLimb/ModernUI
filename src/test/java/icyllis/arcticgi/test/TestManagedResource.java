@@ -39,7 +39,6 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
 import java.util.Objects;
 
 import static org.lwjgl.system.MemoryUtil.memAddress;
@@ -76,7 +75,7 @@ public class TestManagedResource {
         pw.println("0f int bits: " + (-0.0f == 0.0f));
 
         if (directContext.caps().isFormatTexturable(
-                BackendFormat.makeGL(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
+                GLBackendFormat.make(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
                         EngineTypes.TextureType_2D))) {
             pw.println("Compressed format: OK");
         }
@@ -84,7 +83,7 @@ public class TestManagedResource {
         SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
 
         TextureProxy proxy = directContext.getProxyProvider().createTextureProxy(
-                BackendFormat.makeGL(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
+                GLBackendFormat.make(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
                 1600, 900, EngineTypes.Mipmapped_Yes, CoreTypes.BackingFit_Exact, true, 0, false);
         try (proxy) {
             pw.println(proxy);
@@ -99,8 +98,8 @@ public class TestManagedResource {
         GLServer server = (GLServer) directContext.getServer();
         GLPipelineStateCache pipelineStateCache = (GLPipelineStateCache) server.getPipelineBuilder();
         GLPipelineState pipelineState = pipelineStateCache.findOrCreatePipelineState(server,
-                new ProgramInfo(new SurfaceProxyView(directContext.getProxyProvider().createRenderTargetProxy(
-                        BackendFormat.makeGL(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
+                new ProgramInfo(new SurfaceProxyView(directContext.getProxyProvider().createRenderTextureProxy(
+                        GLBackendFormat.make(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
                         800, 800, 4, false, CoreTypes.BackingFit_Exact,
                         true, 0, true
                 )), new RoundRectProcessor(true),

@@ -36,7 +36,7 @@ public final class ResourceProvider {
     private final Server mServer;
     private final ResourceCache mCache;
 
-    private final Surface.Key mTmpSurfaceKey = new Surface.Key();
+    private final Surface.ScratchKey mTmpSurfaceKey = new Surface.ScratchKey();
 
     ResourceProvider(Server server, ResourceCache cache) {
         mServer = server;
@@ -78,7 +78,7 @@ public final class ResourceProvider {
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public <T extends GpuResource> T findByUniqueKey(ResourceKey key) {
+    public <T extends GpuResource> T findByUniqueKey(Object key) {
         return mServer.getContext().isDropped() ? null : (T) mCache.findAndRefUniqueResource(key);
     }
 
@@ -332,7 +332,7 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public Texture findAndRefScratchTexture(ResourceKey key) {
+    public Texture findAndRefScratchTexture(Object key) {
         assert mServer.getContext().isOnOwnerThread();
         assert !mServer.getContext().isDropped();
         assert key != null;
@@ -360,13 +360,12 @@ public final class ResourceProvider {
         assert !format.isCompressed();
         assert mServer.getCaps().validateTextureParams(width, height, format);
 
-        return findAndRefScratchTexture(Surface.computeScratchKey(
+        return findAndRefScratchTexture(mTmpSurfaceKey.compute(
                 format,
                 width, height,
                 1,
                 mipmapped,
-                isProtected,
-                mTmpSurfaceKey));
+                isProtected));
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -459,7 +458,7 @@ public final class ResourceProvider {
         return null;
     }
 
-    public void assignUniqueKeyToResource(ResourceKey key, GpuResource resource) {
+    public void assignUniqueKeyToResource(Object key, GpuResource resource) {
         assert mServer.getContext().isOnOwnerThread();
         if (mServer.getContext().isDropped() || resource == null) {
             return;

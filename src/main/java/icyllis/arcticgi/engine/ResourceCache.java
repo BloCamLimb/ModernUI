@@ -20,7 +20,7 @@ package icyllis.arcticgi.engine;
 
 import icyllis.arcticgi.core.PriorityQueue;
 import it.unimi.dsi.fastutil.Function;
-import it.unimi.dsi.fastutil.objects.*;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
@@ -102,8 +102,8 @@ public final class ResourceCache implements AutoCloseable {
 
     private static final Comparator<GpuResource> TIMESTAMP_COMPARATOR =
             Comparator.comparingInt(resource -> resource.mTimestamp);
-    private static final Function<ResourceKey, Deque<GpuResource>> QUEUE_FACTORY =
-            k -> new ArrayDeque<>();
+    private static final Function<Object, Deque<GpuResource>> QUEUE_FACTORY =
+            __ -> new ArrayDeque<>();
 
     private ProxyProvider mProxyProvider = null;
     private ThreadSafeCache mThreadSafeCache = null;
@@ -117,9 +117,9 @@ public final class ResourceCache implements AutoCloseable {
     private int mNonCleanableSize;
 
     // This map holds all resources that can be used as scratch resources.
-    private final Object2ObjectOpenHashMap<ResourceKey, Deque<GpuResource>> mScratchMap;
+    private final Object2ObjectOpenHashMap<Object, Deque<GpuResource>> mScratchMap;
     // This map holds all resources that have unique keys.
-    private final Object2ObjectOpenHashMap<ResourceKey, GpuResource> mUniqueMap;
+    private final Object2ObjectOpenHashMap<Object, GpuResource> mUniqueMap;
 
     // our budget, used in clean()
     private long mMaxBytes = 1 << 28;
@@ -284,7 +284,7 @@ public final class ResourceCache implements AutoCloseable {
      * Find a resource that matches a scratch key.
      */
     @Nullable
-    public GpuResource findAndRefScratchResource(ResourceKey key) {
+    public GpuResource findAndRefScratchResource(Object key) {
         assert key != null;
         Deque<GpuResource> queue = mScratchMap.get(key);
         GpuResource resource;
@@ -300,7 +300,7 @@ public final class ResourceCache implements AutoCloseable {
      * Find a resource that matches a unique key.
      */
     @Nullable
-    public GpuResource findAndRefUniqueResource(ResourceKey key) {
+    public GpuResource findAndRefUniqueResource(Object key) {
         assert key != null;
         GpuResource resource = mUniqueMap.get(key);
         if (resource != null) {
@@ -312,7 +312,7 @@ public final class ResourceCache implements AutoCloseable {
     /**
      * Query whether a unique key exists in the cache.
      */
-    public boolean hasUniqueKey(ResourceKey key) {
+    public boolean hasUniqueKey(Object key) {
         return mUniqueMap.containsKey(key);
     }
 
@@ -423,9 +423,8 @@ public final class ResourceCache implements AutoCloseable {
         }
 
         mCleanableQueue.trim();
-        for (ObjectIterator<Object2ObjectMap.Entry<ResourceKey, Deque<GpuResource>>> it =
-             mScratchMap.object2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
-            Object2ObjectMap.Entry<ResourceKey, Deque<GpuResource>> entry = it.next();
+        for (var it = mScratchMap.object2ObjectEntrySet().fastIterator(); it.hasNext(); ) {
+            var entry = it.next();
             if (entry.getValue().isEmpty()) {
                 it.remove();
             }
@@ -480,7 +479,7 @@ public final class ResourceCache implements AutoCloseable {
         if (!commandBufferUsage) {
             if (resource.isUsableAsScratch()) {
                 mScratchMap.computeIfAbsent(resource.mScratchKey, QUEUE_FACTORY)
-                        .addLast(resource);
+                        .addFirst(resource);
             }
         }
 
@@ -589,7 +588,7 @@ public final class ResourceCache implements AutoCloseable {
         }
     }
 
-    void changeUniqueKey(GpuResource resource, ResourceKey newKey) {
+    void changeUniqueKey(GpuResource resource, Object newKey) {
         assert isInCache(resource);
 
         // If another resource has the new key, remove its key then install the key on this resource.
@@ -644,7 +643,7 @@ public final class ResourceCache implements AutoCloseable {
         }
         if (resource.isUsableAsScratch()) {
             mScratchMap.computeIfAbsent(resource.mScratchKey, QUEUE_FACTORY)
-                    .addLast(resource);
+                    .addFirst(resource);
         }
 
         // Removing a unique key from a partial budgeted resource would make the resource
@@ -671,7 +670,7 @@ public final class ResourceCache implements AutoCloseable {
             }
             if (resource.isUsableAsScratch()) {
                 mScratchMap.computeIfAbsent(resource.mScratchKey, QUEUE_FACTORY)
-                        .addLast(resource);
+                        .addFirst(resource);
             }
             clean();
         } else {

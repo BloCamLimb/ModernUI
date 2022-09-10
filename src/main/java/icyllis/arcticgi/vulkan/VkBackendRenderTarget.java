@@ -88,7 +88,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = BackendFormat.makeVk(mInfo.mFormat, false);
+            mBackendFormat = VkBackendFormat.make(mInfo.mFormat, false);
         }
         return mBackendFormat;
     }

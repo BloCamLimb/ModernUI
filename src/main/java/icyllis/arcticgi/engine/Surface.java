@@ -23,15 +23,7 @@ import javax.annotation.Nullable;
 
 /**
  * Base class that represents something that can be color or depth/stencil
- * attachments of framebuffers, it contains data of 2D images. To be exact,
- * GLTexture, GLRenderbuffer and VkImage. Depth and stencil are packed
- * and used together.
- * <p>
- * We abstract this class from {@link Texture} because GLRenderbuffer can
- * be used as attachments, but they are not textures.
- * <p>
- * The naming of this class is just a convention, don't confuse this with
- * {@link icyllis.arcticgi.core.Surface} or {@link org.lwjgl.vulkan.KHRSurface},
+ * attachments of framebuffers. It provides the backing store of 2D images.
  */
 public abstract class Surface extends GpuResource {
 
@@ -103,81 +95,76 @@ public abstract class Surface extends GpuResource {
 
     @Nullable
     @Override
-    protected final ResourceKey computeScratchKey() {
+    protected final ScratchKey computeScratchKey() {
         BackendFormat format = getBackendFormat();
         if (format.isCompressed()) {
             return null;
         }
-        return computeScratchKey(format, mWidth, mHeight,
+        return new ScratchKey().compute(
+                format,
+                mWidth, mHeight,
                 getSampleCount(),
                 isMipmapped(),
-                isProtected(),
-                new Key());
+                isProtected());
     }
 
     /**
-     * Compute a {@link Surface} key. The usage is limited to the following cases and cannot be mixed.
-     * Don't confuse this with {@link icyllis.arcticgi.core.Surface} or
-     * {@link icyllis.arcticgi.core.SurfaceCharacterization}, core package surfaces are render targets.
-     * <p>
-     * <h3>For OpenGL</h3>
-     * <ul>
-     *     <code>isProtected</code> must be false.
-     *     <li><code>sampleCount</code> is 1, it's {@link icyllis.arcticgi.opengl.GLTexture},
-     *     used as textures and can be promoted to render targets (managed by {@link Server}).</li>
-     *     <li><code>sampleCount</code> is > 1, it's {@link icyllis.arcticgi.opengl.GLRenderbuffer}
-     *     and can be stencil attachments or MSAA color attachments of render targets,
-     *     <code>mipmapped</code> must be false.</li>
-     * </ul>
-     * <p>
-     * <h3>For Vulkan</h3>
-     * <ul>
-     *     <li><code>sampleCount</code> is 1, it's {@link icyllis.arcticgi.vulkan.VkImage},
-     *     used as textures and can be promoted to render targets (managed by {@link Server}).</li>
-     *     <li><code>sampleCount</code> is > 1, it's {@link icyllis.arcticgi.vulkan.VkImage},
-     *     and can be stencil attachments or MSAA color attachments of render targets,
-     *     <code>mipmapped</code> must be false.</li>
-     * </ul>
-     * <p>
-     * Format can not be compressed. Stencil and MSAA color attachments are distinguished by format.
-     *
-     * @return the scratch key
+     * Storage key of attachments, may be compared with {@link TextureProxy}.
      */
-    @Nonnull
-    public static Key computeScratchKey(BackendFormat format,
-                                        int width, int height,
-                                        int sampleCount,
-                                        boolean mipmapped,
-                                        boolean isProtected,
-                                        Key key) {
-        assert width > 0 && height > 0;
-        assert sampleCount > 0;
-        assert sampleCount == 1 || !mipmapped;
-        key.mWidth = width;
-        key.mHeight = height;
-        key.mFormat = format.getFormatKey();
-        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (sampleCount << 2);
-        return key;
-    }
+    public static class ScratchKey {
 
-    public static class Key extends ResourceKey {
+        public int mWidth;
+        public int mHeight;
+        public int mFormat;
+        public int mFlags;
 
-        int mWidth;
-        int mHeight;
-        int mFormat;
-        int mFlags;
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Key key = (Key) o;
-            if (mWidth != key.mWidth) return false;
-            if (mHeight != key.mHeight) return false;
-            if (mFormat != key.mFormat) return false;
-            return mFlags == key.mFlags;
+        /**
+         * Compute a {@link Surface} key. The usage is limited to the following cases and cannot be mixed.
+         * Don't confuse this with {@link icyllis.arcticgi.core.Surface} or
+         * {@link icyllis.arcticgi.core.SurfaceCharacterization}, core package surfaces are render targets.
+         * <p>
+         * <h3>For OpenGL</h3>
+         * <ul>
+         *     <code>isProtected</code> must be false.
+         *     <li><code>sampleCount</code> is 1, it's {@link icyllis.arcticgi.opengl.GLTexture},
+         *     used as textures and can be promoted to render targets (managed by {@link Server}).</li>
+         *     <li><code>sampleCount</code> is > 1, it's {@link icyllis.arcticgi.opengl.GLRenderbuffer}
+         *     and can be stencil attachments or MSAA color attachments of render targets,
+         *     <code>mipmapped</code> must be false.</li>
+         * </ul>
+         * <p>
+         * <h3>For Vulkan</h3>
+         * <ul>
+         *     <li><code>sampleCount</code> is 1, it's {@link icyllis.arcticgi.vulkan.VkImage},
+         *     used as textures and can be promoted to render targets (managed by {@link Server}).</li>
+         *     <li><code>sampleCount</code> is > 1, it's {@link icyllis.arcticgi.vulkan.VkImage},
+         *     and can be stencil attachments or MSAA color attachments of render targets,
+         *     <code>mipmapped</code> must be false.</li>
+         * </ul>
+         * <p>
+         * Format can not be compressed. Stencil and MSAA color attachments are distinguished by format.
+         *
+         * @return the scratch key
+         */
+        @Nonnull
+        public ScratchKey compute(BackendFormat format,
+                                  int width, int height,
+                                  int sampleCount,
+                                  boolean mipmapped,
+                                  boolean isProtected) {
+            assert (width > 0 && height > 0);
+            assert (sampleCount > 0);
+            assert (sampleCount == 1 || !mipmapped);
+            mWidth = width;
+            mHeight = height;
+            mFormat = format.getFormatKey();
+            mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (sampleCount << 2);
+            return this;
         }
 
+        /**
+         * Keep {@link TextureProxy#hashCode()} sync with this.
+         */
         @Override
         public int hashCode() {
             int result = mWidth;
@@ -185,6 +172,20 @@ public abstract class Surface extends GpuResource {
             result = 31 * result + mFormat;
             result = 31 * result + mFlags;
             return result;
+        }
+
+        /**
+         * Keep {@link TextureProxy#equals(Object)}} sync with this.
+         */
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ScratchKey key = (ScratchKey) o;
+            if (mWidth != key.mWidth) return false;
+            if (mHeight != key.mHeight) return false;
+            if (mFormat != key.mFormat) return false;
+            return mFlags == key.mFlags;
         }
     }
 }

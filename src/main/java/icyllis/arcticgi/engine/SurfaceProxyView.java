@@ -20,20 +20,23 @@ package icyllis.arcticgi.engine;
 
 import icyllis.arcticgi.core.SharedPtr;
 
+/**
+ * Views a {@link SurfaceProxy} on client side.
+ */
 public final class SurfaceProxyView implements AutoCloseable {
 
     @SharedPtr
-    SurfaceProxy mProxy;
+    TextureProxy mProxy;
     int mOrigin;
     short mSwizzle;
 
-    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy) {
+    public SurfaceProxyView(@SharedPtr TextureProxy proxy) {
         mProxy = proxy; // std::move()
         mOrigin = EngineTypes.SurfaceOrigin_TopLeft;
         mSwizzle = Swizzle.RGBA;
     }
 
-    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy, int origin, short swizzle) {
+    public SurfaceProxyView(@SharedPtr TextureProxy proxy, int origin, short swizzle) {
         mProxy = proxy; // std::move()
         mOrigin = origin;
         mSwizzle = swizzle;
@@ -54,7 +57,7 @@ public final class SurfaceProxyView implements AutoCloseable {
     /**
      * Returns smart pointer value (raw ptr).
      */
-    public SurfaceProxy getProxy() {
+    public TextureProxy getProxy() {
         return mProxy;
     }
 
@@ -62,7 +65,7 @@ public final class SurfaceProxyView implements AutoCloseable {
      * Returns a smart pointer (as if on the stack).
      */
     @SharedPtr
-    public SurfaceProxy refProxy() {
+    public TextureProxy refProxy() {
         mProxy.ref();
         return mProxy;
     }
@@ -72,22 +75,23 @@ public final class SurfaceProxyView implements AutoCloseable {
      * properties associated with the detached proxy.
      */
     @SharedPtr
-    public SurfaceProxy detachProxy() {
+    public TextureProxy detachProxy() {
         // just like std::move(), R-value reference
-        SurfaceProxy proxy = mProxy;
+        TextureProxy proxy = mProxy;
         mProxy = null;
         return proxy;
     }
 
     /**
-     * @return see {@link EngineTypes}
+     * @see EngineTypes#SurfaceOrigin_TopLeft
+     * @see EngineTypes#SurfaceOrigin_BottomLeft
      */
     public int getOrigin() {
         return mOrigin;
     }
 
     /**
-     * @return see {@link Swizzle}
+     * @see Swizzle
      */
     public short getSwizzle() {
         return mSwizzle;

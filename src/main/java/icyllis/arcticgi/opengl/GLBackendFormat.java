@@ -19,6 +19,7 @@
 package icyllis.arcticgi.opengl;
 
 import icyllis.arcticgi.engine.BackendFormat;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -28,11 +29,14 @@ import static icyllis.arcticgi.opengl.GLCore.*;
 
 public final class GLBackendFormat extends BackendFormat {
 
+    private static final Long2ObjectOpenHashMap<GLBackendFormat> sGLBackendFormats =
+            new Long2ObjectOpenHashMap<>(25, 0.8f);
+
     private final int mFormat;
     private final int mTextureType;
 
     /**
-     * @see BackendFormat#makeGL(int, int)
+     * @see #make(int, int)
      */
     public GLBackendFormat(@NativeType("GLenum") int format, int textureType) {
         assert textureType == TextureType_None ||
@@ -40,6 +44,15 @@ public final class GLBackendFormat extends BackendFormat {
                 textureType == TextureType_External;
         mFormat = format;
         mTextureType = textureType;
+    }
+
+    @Nonnull
+    public static GLBackendFormat make(@NativeType("GLenum") int format, int textureType) {
+        if (isUnknownFormat(format)) {
+            return new GLBackendFormat(format, textureType);
+        }
+        return sGLBackendFormats.computeIfAbsent(format | ((long) textureType << 32),
+                key -> new GLBackendFormat((int) key, (int) (key >> 32))); // this lambda is singleton
     }
 
     @Override
@@ -73,7 +86,7 @@ public final class GLBackendFormat extends BackendFormat {
         if (mTextureType == TextureType_2D) {
             return this;
         }
-        return makeGL(mFormat, TextureType_2D);
+        return make(mFormat, TextureType_2D);
     }
 
     @Override

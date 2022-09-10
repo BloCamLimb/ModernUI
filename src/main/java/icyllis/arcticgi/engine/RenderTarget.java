@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
  * color buffer and stencil buffer cannot be recycled.
  * <p>
  * Using {@link ResourceProvider} to obtain RenderTarget directly, or
- * {@link RenderTargetProxy} for deferred operations.
+ * {@link TextureRenderTargetProxy} for deferred operations.
  */
 public abstract class RenderTarget extends RecycledResource {
 

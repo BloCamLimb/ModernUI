@@ -24,6 +24,13 @@ package icyllis.arcticgi.core;
 public final class CoreTypes {
 
     /**
+     * Indicates whether an allocation should count against a cache budget.
+     */
+    public static final boolean
+            Budgeted_No = false,
+            Budgeted_Yes = true;
+
+    /**
      * Indicates whether a backing store needs to be an exact match or can be
      * larger than is strictly necessary. False: Approx; True: Exact.
      */

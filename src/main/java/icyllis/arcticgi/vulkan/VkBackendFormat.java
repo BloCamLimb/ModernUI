@@ -20,6 +20,7 @@ package icyllis.arcticgi.vulkan;
 
 import icyllis.arcticgi.engine.BackendFormat;
 import icyllis.arcticgi.engine.EngineTypes;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -28,15 +29,36 @@ import static icyllis.arcticgi.vulkan.VkCore.*;
 
 public final class VkBackendFormat extends BackendFormat {
 
+    private static final Long2ObjectOpenHashMap<VkBackendFormat> sVkBackendFormats =
+            new Long2ObjectOpenHashMap<>(25, 0.8f);
+
     private final int mFormat;
     private final int mTextureType;
 
     /**
-     * @see #makeVk(int, boolean)
+     * @see #make(int, boolean)
      */
     public VkBackendFormat(@NativeType("VkFormat") int format, boolean isExternal) {
         mFormat = format;
         mTextureType = isExternal ? EngineTypes.TextureType_External : EngineTypes.TextureType_2D;
+    }
+
+    @Nonnull
+    public static VkBackendFormat make(@NativeType("VkFormat") int format, boolean isExternal) {
+        // if this failed, use long key
+        assert (format >= 0);
+        int key = (format) | (isExternal ? Integer.MIN_VALUE : 0);
+        // harmless race
+        VkBackendFormat backendFormat = sVkBackendFormats.get(key);
+        if (backendFormat != null) {
+            return backendFormat;
+        }
+        backendFormat = new VkBackendFormat(format, isExternal);
+        //TODO cache only known formats
+        if (backendFormat.getBytesPerBlock() != 0) {
+            sVkBackendFormats.put(key, backendFormat);
+        }
+        return backendFormat;
     }
 
     @Override
@@ -65,7 +87,7 @@ public final class VkBackendFormat extends BackendFormat {
         if (mTextureType == EngineTypes.TextureType_2D) {
             return this;
         }
-        return makeVk(mFormat, false);
+        return make(mFormat, false);
     }
 
     @Override

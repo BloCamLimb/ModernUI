@@ -37,7 +37,7 @@ import static icyllis.arcticgi.engine.EngineTypes.*;
  * is locked. Additionally, it may create more surfaces and attach them to it. These
  * surfaces are budgeted but cannot be reused. In most cases, we reuse textures, so
  * these surfaces are reused together. When renderable is not required, the cache
- * will give priority to the texture without promotion. See {@link RenderTargetProxy}.
+ * will give priority to the texture without promotion. See {@link TextureRenderTargetProxy}.
  */
 public abstract class Texture extends Surface {
 

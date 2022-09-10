@@ -80,8 +80,11 @@ public abstract class GpuResource {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
-    private static int createUniqueID() {
-        for (; ; ) {
+    /**
+     * Generates a unique ID from the resource pool. 0 is reserved.
+     */
+    static int createUniqueID() {
+        for (;;) {
             final int value = sNextID.get();
             final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
@@ -111,8 +114,8 @@ public abstract class GpuResource {
     private long mCleanUpTime;
 
     // null meaning invalid, lazy initialized
-    ResourceKey mScratchKey;
-    ResourceKey mUniqueKey;
+    Object mScratchKey;
+    Object mUniqueKey;
 
     // set once in constructor, clear to null after being destroyed
     Server mServer;
@@ -254,16 +257,6 @@ public abstract class GpuResource {
     }
 
     /**
-     * Same as {@link #getContext()}, but tends to return a nonnull value.
-     *
-     * @throws NullPointerException if this resource has been free()ed or drop()ed
-     */
-    @Nonnull
-    public final DirectContext requireContext() {
-        return mServer.getContext();
-    }
-
-    /**
      * Gets an id that is unique for this Resource object. It is static in that it does
      * not change when the content of the Resource object changes. This will never return 0.
      */
@@ -287,7 +280,7 @@ public abstract class GpuResource {
      * associated unique key.
      */
     @Nullable
-    public final ResourceKey getUniqueKey() {
+    public final Object getUniqueKey() {
         return mUniqueKey;
     }
 
@@ -298,7 +291,7 @@ public abstract class GpuResource {
      * this resource takes over the key.
      */
     @ApiStatus.Internal
-    public final void setUniqueKey(ResourceKey key) {
+    public final void setUniqueKey(Object key) {
         assert hasRef();
 
         // Uncached resources can never have a unique key, unless they're wrapped resources. Wrapped
@@ -382,7 +375,7 @@ public abstract class GpuResource {
      */
     @ApiStatus.Internal
     @Nullable
-    public final ResourceKey getScratchKey() {
+    public final Object getScratchKey() {
         return mScratchKey;
     }
 
@@ -465,7 +458,7 @@ public abstract class GpuResource {
      * By default, resources are not recycled as scratch.
      */
     @Nullable
-    protected ResourceKey computeScratchKey() {
+    protected Object computeScratchKey() {
         return null;
     }
 

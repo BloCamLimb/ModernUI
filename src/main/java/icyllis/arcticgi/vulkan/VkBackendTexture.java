@@ -41,7 +41,7 @@ public final class VkBackendTexture extends BackendTexture {
 
     // The VkImageInfo can NOT be modified anymore.
     public VkBackendTexture(int width, int height, VkImageInfo info) {
-        this(width, height, info, new VkSharedImageInfo(info), BackendFormat.makeVk(info.mFormat,
+        this(width, height, info, new VkSharedImageInfo(info), VkBackendFormat.make(info.mFormat,
                 info.mMemoryHandle != -1 || info.mImageTiling == VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT));
     }
 

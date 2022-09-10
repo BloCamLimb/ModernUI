@@ -26,7 +26,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * This class abstracts a task that targets a single {@link SurfaceProxy}, participates in the
+ * This class abstracts a task that targets a single {@link TextureProxy}, participates in the
  * {@link DrawingManager}'s DAG, and implements the onExecute method to modify its target proxy's
  * contents. (e.g., an opsTask that executes a command buffer, a task to regenerate mipmaps, etc.)
  */
@@ -94,7 +94,7 @@ public abstract class RenderTask extends RefCnt {
     private final List<RenderTask> mDependents = new ArrayList<>();
 
     @SharedPtr
-    protected final List<SurfaceProxy> mTargets = new ArrayList<>();
+    protected final List<TextureProxy> mTargets = new ArrayList<>();
 
     private DrawingManager mDrawingManager;
 
