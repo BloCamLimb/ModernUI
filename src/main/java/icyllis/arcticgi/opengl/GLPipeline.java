@@ -100,13 +100,18 @@ public class GLPipeline extends GLManagedResource {
 
         if (geomProc.hasInstanceAttributes()) {
             instanceBinding = bindingIndex;
-            setVertexFormat(geomProc.instanceAttributes(),
+            attribIndex = setVertexFormat(geomProc.instanceAttributes(),
                     vertexArray,
                     attribIndex,
                     instanceBinding);
             glVertexArrayBindingDivisor(vertexArray,
                     instanceBinding,
                     1); // per-instance
+        }
+
+        if (attribIndex > server.getCaps().maxVertexAttributes()) {
+            glDeleteVertexArrays(vertexArray);
+            return null;
         }
 
         return new GLPipeline(server,
@@ -158,18 +163,12 @@ public class GLPipeline extends GLManagedResource {
                     glVertexArrayAttribFormat(vertexArray, location, 2, GL_HALF_FLOAT, /*normalized*/false, offset);
             case Half4_VertexAttribType ->
                     glVertexArrayAttribFormat(vertexArray, location, 4, GL_HALF_FLOAT, /*normalized*/false, offset);
-            case Int2_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 2, GL_INT, offset);
-            case Int3_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 3, GL_INT, offset);
-            case Int4_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 4, GL_INT, offset);
-            case Byte_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 1, GL_BYTE, offset);
-            case Byte2_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 2, GL_BYTE, offset);
-            case Byte4_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 4, GL_BYTE, offset);
+            case Int2_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 2, GL_INT, offset);
+            case Int3_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 3, GL_INT, offset);
+            case Int4_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 4, GL_INT, offset);
+            case Byte_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 1, GL_BYTE, offset);
+            case Byte2_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 2, GL_BYTE, offset);
+            case Byte4_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 4, GL_BYTE, offset);
             case UByte_VertexAttribType ->
                     glVertexArrayAttribIFormat(vertexArray, location, 1, GL_UNSIGNED_BYTE, offset);
             case UByte2_VertexAttribType ->
@@ -180,18 +179,14 @@ public class GLPipeline extends GLManagedResource {
                     glVertexArrayAttribFormat(vertexArray, location, 1, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
             case UByte4_norm_VertexAttribType ->
                     glVertexArrayAttribFormat(vertexArray, location, 4, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
-            case Short2_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 2, GL_SHORT, offset);
-            case Short4_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 4, GL_SHORT, offset);
+            case Short2_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 2, GL_SHORT, offset);
+            case Short4_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 4, GL_SHORT, offset);
             case UShort2_VertexAttribType ->
                     glVertexArrayAttribIFormat(vertexArray, location, 2, GL_UNSIGNED_SHORT, offset);
             case UShort2_norm_VertexAttribType ->
                     glVertexArrayAttribFormat(vertexArray, location, 2, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
-            case Int_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 1, GL_INT, offset);
-            case UInt_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 1, GL_UNSIGNED_INT, offset);
+            case Int_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 1, GL_INT, offset);
+            case UInt_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 1, GL_UNSIGNED_INT, offset);
             case UShort_norm_VertexAttribType ->
                     glVertexArrayAttribFormat(vertexArray, location, 1, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
             case UShort4_norm_VertexAttribType ->
@@ -201,7 +196,7 @@ public class GLPipeline extends GLManagedResource {
     }
 
     @Override
-    public void onFree() {
+    public void dispose() {
         if (mProgram != 0) {
             glDeleteProgram(mProgram);
             mProgram = 0;

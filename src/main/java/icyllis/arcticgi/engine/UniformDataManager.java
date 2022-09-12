@@ -538,7 +538,7 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
     }
 
     @Override
-    protected void onFree() {
+    protected void dispose() {
         nmemAlignedFree(mUniformData);
     }
 

@@ -18,7 +18,7 @@
 
 package icyllis.arcticgi.engine.ops;
 
-import icyllis.arcticgi.core.RectF;
+import icyllis.arcticgi.core.Rect2f;
 import icyllis.arcticgi.engine.*;
 
 import javax.annotation.Nonnull;
@@ -146,7 +146,7 @@ public abstract class Op {
                 (zeroArea ? BoundsFlag_ZeroArea : 0);
     }
 
-    public final void getBounds(@Nonnull RectF bounds) {
+    public final void getBounds(@Nonnull Rect2f bounds) {
         bounds.set(mLeft, mTop, mRight, mBottom);
     }
 
@@ -207,7 +207,7 @@ public abstract class Op {
      * @param chainBounds If this op is chained then chainBounds is the union of the bounds of all ops in the chain.
      *                    Otherwise, this op's bounds.
      */
-    public abstract void onExecute(OpFlushState state, RectF chainBounds);
+    public abstract void onExecute(OpFlushState state, Rect2f chainBounds);
 
     /**
      * Concatenates two op chains. This op must be a tail and the passed op must be a head. The ops

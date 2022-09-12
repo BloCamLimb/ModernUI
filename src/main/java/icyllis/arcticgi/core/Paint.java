@@ -844,7 +844,7 @@ public class Paint {
      * raw rectangle (the raw bounds of a shape), and adjusts it for stylistic
      * effects in the paint (e.g. stroking). If needed, it uses the storage
      * parameter. It returns the adjusted bounds that can then be used
-     * for {@link Canvas#quickReject(RectF)} tests.
+     * for {@link Canvas#quickReject(Rect2f)} tests.
      * <p>
      * This method ensures that orig will not be modified, and the result
      * will always be stored into the storage rect.
@@ -853,7 +853,7 @@ public class Paint {
      * @param storage fast computed bounds of geometry
      */
     @ApiStatus.Internal
-    public final void computeFastBounds(RectF orig, RectF storage) {
+    public final void computeFastBounds(Rect2f orig, Rect2f storage) {
         int style = getStyle();
         // ultra fast-case: filling with no effects that affect geometry
         if (style == FILL) {

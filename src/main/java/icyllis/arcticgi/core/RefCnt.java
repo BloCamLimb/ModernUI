@@ -18,24 +18,26 @@
 
 package icyllis.arcticgi.core;
 
+import it.unimi.dsi.fastutil.objects.*;
+
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.Comparator;
 
 /**
  * Base class for objects that may be shared by multiple objects. When an
  * existing owner wants to share a reference, it calls {@link #ref()}.
  * When an owner wants to release its reference, it calls {@link #unref()}.
  * When the shared object's reference count goes to zero as the result of
- * an {@link #unref()} call, its {@link #onFree()} is called. It is an
+ * an {@link #unref()} call, its {@link #dispose()} is called. It is an
  * error for the destructor to be called explicitly (or via the object
- * going out of scope on the stack or calling {@link #onFree()}) if
+ * going out of scope on the stack or calling {@link #dispose()}) if
  * {@link #getRefCnt()} > 1.
  */
 public abstract class RefCnt implements AutoCloseable {
 
     private static final VarHandle REF_CNT;
-    private static final ConcurrentHashMap<RefCnt, Boolean> TRACKER;
+    private static final Object2BooleanMap<RefCnt> TRACKER;
 
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
@@ -44,14 +46,15 @@ public abstract class RefCnt implements AutoCloseable {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        TRACKER = new ConcurrentHashMap<>(0, 0.9f);
+        TRACKER = Object2BooleanMaps.synchronize(
+                new Object2BooleanAVLTreeMap<>(Comparator.comparingInt(System::identityHashCode)));
         try {
             assert false;
         } catch (AssertionError e) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 // Subclasses should override toString() for debug purposes
-                TRACKER.forEach((o, __) -> System.err.printf("Unexpected RefCnt %d on %s\n", o.mRefCnt, o));
-                assert TRACKER.isEmpty() : "Memory leaks in reference counted objects";
+                TRACKER.forEach((o, __) -> System.err.printf("RefCnt %d: %s\n", o.mRefCnt, o));
+                assert TRACKER.isEmpty() : "Memory leaks in reference-counted objects";
             }, "RefCnt-Tracker"));
         }
     }
@@ -62,9 +65,8 @@ public abstract class RefCnt implements AutoCloseable {
     /**
      * Default constructor, initializing the reference count to 1.
      */
-    @SuppressWarnings("AssertWithSideEffects")
     public RefCnt() {
-        assert TRACKER.put(this, Boolean.TRUE) == null;
+        assert !TRACKER.put(this, true);
     }
 
     /**
@@ -79,29 +81,29 @@ public abstract class RefCnt implements AutoCloseable {
     }
 
     /**
-     * Increases the reference count by 1 on the client. Must be balanced by a call to unref().
-     * It's an error to call this method if the reference count has already reached zero.
+     * Increases the reference count by 1 on the client. Must be balanced by a call to
+     * {@link #unref()}. It's an error to call this method if the reference count has
+     * already reached zero.
      */
     public final void ref() {
         // std::memory_order_seq_cst, maybe relaxed?
         assert mRefCnt > 0;
-        // stronger than std::memory_order_relaxed
+        // no barrier required, stronger than std::memory_order_relaxed
         REF_CNT.getAndAddRelease(this, 1);
     }
 
     /**
      * Decreases the reference count by 1 on the client. If the reference count is 1 before
-     * the decrement, then {@link #onFree()} is called. It's an error to call this method if
-     * the reference count has already reached zero.
+     * the decrement, then {@link #dispose()} is called. It's an error to call this method
+     * if the reference count has already reached zero.
      */
-    @SuppressWarnings("AssertWithSideEffects")
     public final void unref() {
         // std::memory_order_seq_cst, maybe relaxed?
         assert mRefCnt > 0;
         // stronger than std::memory_order_acq_rel
         if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
-            onFree();
-            assert TRACKER.remove(this) == Boolean.TRUE;
+            dispose();
+            assert TRACKER.removeBoolean(this);
         }
     }
 
@@ -125,11 +127,12 @@ public abstract class RefCnt implements AutoCloseable {
     }
 
     /**
-     * This must be used with caution. It is only valid to call this when 'threadIsolatedTestCnt'
-     * refs are known to be isolated to the current thread. That is, it is known that there are at
-     * least 'threadIsolatedTestCnt' refs for which no other thread may make a balancing unref()
-     * call. Assuming the contract is followed, if this returns false then no other thread has
-     * ownership of this. If it returns true then another thread *may* have ownership.
+     * Internal only. This must be used with caution. It is only valid to call this when
+     * <code>threadIsolatedTestCnt</code> refs are known to be isolated to the current thread.
+     * That is, it is known that there are at least <code>threadIsolatedTestCnt</code> refs
+     * for which no other thread may make a balancing {@link #unref()} call. Assuming the
+     * contract is followed, if this returns false then no other thread has ownership of
+     * this. If it returns true then another thread <em>may</em> have ownership.
      */
     public final boolean refCntGreaterThan(int threadIsolatedTestCnt) {
         // std::memory_order_acquire
@@ -142,5 +145,5 @@ public abstract class RefCnt implements AutoCloseable {
     /**
      * Override this method to invoke de-allocation of the underlying resource.
      */
-    protected abstract void onFree();
+    protected abstract void dispose();
 }

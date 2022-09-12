@@ -24,7 +24,7 @@ public class ImageFilter {
         return true;
     }
 
-    public void computeFastBounds(RectF src, RectF dst) {
+    public void computeFastBounds(Rect2f src, Rect2f dst) {
         dst.set(src);
     }
 }

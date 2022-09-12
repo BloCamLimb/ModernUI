@@ -1976,8 +1976,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull RectF r) {
-        mapRect(r.left, r.top, r.right, r.bottom, r);
+    public void mapRect(@Nonnull Rect2f r) {
+        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, r);
     }
 
     /**
@@ -1985,8 +1985,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull RectF r, @Nonnull RectF dest) {
-        mapRect(r.left, r.top, r.right, r.bottom, dest);
+    public void mapRect(@Nonnull Rect2f r, @Nonnull Rect2f dest) {
+        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
     }
 
     /**
@@ -1994,7 +1994,7 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(float left, float top, float right, float bottom, @Nonnull RectF dest) {
+    public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect2f dest) {
         float x1 = m11 * left + m21 * top + m41;
         float y1 = m12 * left + m22 * top + m42;
         float x2 = m11 * right + m21 * top + m41;
@@ -2019,10 +2019,10 @@ public class Matrix4 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        dest.left = min(x1, x2, x3, x4);
-        dest.top = min(y1, y2, y3, y4);
-        dest.right = max(x1, x2, x3, x4);
-        dest.bottom = max(y1, y2, y3, y4);
+        dest.mLeft = min(x1, x2, x3, x4);
+        dest.mTop = min(y1, y2, y3, y4);
+        dest.mRight = max(x1, x2, x3, x4);
+        dest.mBottom = max(y1, y2, y3, y4);
     }
 
     /**
@@ -2030,8 +2030,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull RectF r, @Nonnull Rect dest) {
-        mapRect(r.left, r.top, r.right, r.bottom, dest);
+    public void mapRect(@Nonnull Rect2f r, @Nonnull Rect2i dest) {
+        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
     }
 
     /**
@@ -2039,8 +2039,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(@Nonnull Rect r, @Nonnull Rect dest) {
-        mapRect(r.left, r.top, r.right, r.bottom, dest);
+    public void mapRect(@Nonnull Rect2i r, @Nonnull Rect2i dest) {
+        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
     }
 
     /**
@@ -2048,7 +2048,7 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect dest) {
+    public void mapRect(float left, float top, float right, float bottom, @Nonnull Rect2i dest) {
         float x1 = m11 * left + m21 * top + m41;
         float y1 = m12 * left + m22 * top + m42;
         float x2 = m11 * right + m21 * top + m41;
@@ -2073,10 +2073,10 @@ public class Matrix4 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        dest.left = Math.round(min(x1, x2, x3, x4));
-        dest.top = Math.round(min(y1, y2, y3, y4));
-        dest.right = Math.round(max(x1, x2, x3, x4));
-        dest.bottom = Math.round(max(y1, y2, y3, y4));
+        dest.mLeft = Math.round(min(x1, x2, x3, x4));
+        dest.mTop = Math.round(min(y1, y2, y3, y4));
+        dest.mRight = Math.round(max(x1, x2, x3, x4));
+        dest.mBottom = Math.round(max(y1, y2, y3, y4));
     }
 
     /**
@@ -2084,8 +2084,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(@Nonnull RectF r, @Nonnull Rect dest) {
-        mapRectOut(r.left, r.top, r.right, r.bottom, dest);
+    public void mapRectOut(@Nonnull Rect2f r, @Nonnull Rect2i dest) {
+        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
     }
 
     /**
@@ -2093,8 +2093,8 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(@Nonnull Rect r, @Nonnull Rect dest) {
-        mapRectOut(r.left, r.top, r.right, r.bottom, dest);
+    public void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i dest) {
+        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, dest);
     }
 
     /**
@@ -2102,7 +2102,7 @@ public class Matrix4 implements Cloneable {
      * 'r' are assumed to have z = 0 and w = 1. If the matrix has perspective, the returned
      * rectangle will be the bounding box of the projected points after being clipped to w > 0.
      */
-    public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect dest) {
+    public void mapRectOut(float left, float top, float right, float bottom, @Nonnull Rect2i dest) {
         float x1 = m11 * left + m21 * top + m41;
         float y1 = m12 * left + m22 * top + m42;
         float x2 = m11 * right + m21 * top + m41;
@@ -2127,10 +2127,10 @@ public class Matrix4 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        dest.left = (int) Math.floor(min(x1, x2, x3, x4));
-        dest.top = (int) Math.floor(min(y1, y2, y3, y4));
-        dest.right = (int) Math.ceil(max(x1, x2, x3, x4));
-        dest.bottom = (int) Math.ceil(max(y1, y2, y3, y4));
+        dest.mLeft = (int) Math.floor(min(x1, x2, x3, x4));
+        dest.mTop = (int) Math.floor(min(y1, y2, y3, y4));
+        dest.mRight = (int) Math.ceil(max(x1, x2, x3, x4));
+        dest.mBottom = (int) Math.ceil(max(y1, y2, y3, y4));
     }
 
     /**

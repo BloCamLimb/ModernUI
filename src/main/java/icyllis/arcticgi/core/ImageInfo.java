@@ -347,7 +347,7 @@ public final class ImageInfo {
      * @param height    pixel row count; must be zero or greater
      * @param colorInfo the pixel encoding consisting of ColorType, AlphaType
      */
-    ImageInfo(int width, int height, int colorInfo) {
+    public ImageInfo(int width, int height, int colorInfo) {
         mWidth = width;
         mHeight = height;
         mColorInfo = colorInfo;

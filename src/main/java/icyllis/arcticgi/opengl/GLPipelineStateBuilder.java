@@ -18,6 +18,7 @@
 
 package icyllis.arcticgi.opengl;
 
+import icyllis.arcticgi.core.SharedPtr;
 import icyllis.arcticgi.engine.*;
 import icyllis.arcticgi.engine.shading.*;
 
@@ -108,6 +109,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         glDeleteShader(frag);
         glDeleteShader(vert);
 
+        //TODO debug only, will remove
         String allShaders = String.format("""
                         // Vertex GLSL
                         %s
@@ -116,6 +118,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
                         """, vertSource, fragSource);
         System.out.println(allShaders);
 
+        @SharedPtr
         GLPipeline pipeline = GLPipeline.make(mServer, mProgramInfo.geomProc(), program);
         if (pipeline == null) {
             glDeleteProgram(program);

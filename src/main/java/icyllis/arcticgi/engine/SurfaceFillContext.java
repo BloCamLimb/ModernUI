@@ -24,14 +24,6 @@ public class SurfaceFillContext extends SurfaceContext {
                               SurfaceProxyView readView,
                               SurfaceProxyView writeView,
                               int colorInfo) {
-        this(context, readView, writeView, colorInfo, false);
-    }
-
-    public SurfaceFillContext(RecordingContext context,
-                              SurfaceProxyView readView,
-                              SurfaceProxyView writeView,
-                              int colorInfo,
-                              boolean flushTimeOpsTask) {
         super(context, readView, colorInfo);
     }
 }

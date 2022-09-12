@@ -27,7 +27,7 @@ import javax.annotation.Nullable;
 /**
  * Base class for drawing devices.
  */
-public abstract class BaseDevice extends MatrixProvider {
+public abstract class BaseDevice extends RefCnt implements MatrixProvider {
 
     protected static final int
             CLIP_TYPE_EMPTY = 0,
@@ -35,7 +35,9 @@ public abstract class BaseDevice extends MatrixProvider {
             CLIP_TYPE_COMPLEX = 2;
 
     final ImageInfo mInfo;
-    final Rect mBounds = new Rect();
+    final Rect2i mBounds = new Rect2i();
+
+    final Matrix4 mLocalToDevice = Matrix4.identity();
 
     // mDeviceToGlobal and mGlobalToDevice are inverses of each other
     final Matrix4 mDeviceToGlobal = Matrix4.identity();
@@ -52,6 +54,10 @@ public abstract class BaseDevice extends MatrixProvider {
     void resize(int width, int height) {
         mInfo.resize(width, height);
         mBounds.set(0, 0, width, height);
+    }
+
+    @Override
+    protected void dispose() {
     }
 
     /**
@@ -73,14 +79,14 @@ public abstract class BaseDevice extends MatrixProvider {
     /**
      * @return read-only
      */
-    public final Rect getBounds() {
+    public final Rect2i getBounds() {
         return mBounds;
     }
 
     /**
      * Return the bounds of the device in the coordinate space of this device.
      */
-    public final void getBounds(@Nonnull Rect bounds) {
+    public final void getBounds(@Nonnull Rect2i bounds) {
         bounds.set(getBounds());
     }
 
@@ -89,7 +95,7 @@ public abstract class BaseDevice extends MatrixProvider {
      * canvas. The root device will have its top-left at 0,0, but other devices
      * such as those associated with saveLayer may have a non-zero origin.
      */
-    public final void getGlobalBounds(@Nonnull Rect bounds) {
+    public final void getGlobalBounds(@Nonnull Rect2i bounds) {
         mDeviceToGlobal.mapRectOut(getBounds(), bounds);
     }
 
@@ -99,8 +105,14 @@ public abstract class BaseDevice extends MatrixProvider {
      * draws unless the clip is further modified (at which point this will
      * return the updated bounds).
      */
-    public final void getClipBounds(@Nonnull Rect bounds) {
+    public final void getClipBounds(@Nonnull Rect2i bounds) {
         bounds.set(getClipBounds());
+    }
+
+    @Nonnull
+    @Override
+    public final Matrix4 getLocalToDevice() {
+        return mLocalToDevice;
     }
 
     /**
@@ -159,14 +171,14 @@ public abstract class BaseDevice extends MatrixProvider {
         setLocalToDevice(localToDevice);
     }
 
-    public void clipRect(RectF rect, int clipOp, boolean doAA) {
+    public void clipRect(Rect2f rect, int clipOp, boolean doAA) {
     }
 
-    public final void replaceClip(Rect rect) {
+    public final void replaceClip(Rect2i rect) {
         onReplaceClip(rect);
     }
 
-    protected void onReplaceClip(Rect rect) {
+    protected void onReplaceClip(Rect2i rect) {
     }
 
     public abstract boolean clipIsAA();
@@ -256,7 +268,7 @@ public abstract class BaseDevice extends MatrixProvider {
 
     protected abstract int getClipType();
 
-    protected abstract Rect getClipBounds();
+    protected abstract Rect2i getClipBounds();
 
     /**
      * These are called inside the per-device-layer loop for each draw call.

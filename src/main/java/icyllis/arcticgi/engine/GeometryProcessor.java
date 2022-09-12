@@ -207,14 +207,14 @@ public abstract class GeometryProcessor extends Processor {
          */
         @Nonnull
         public static AttributeSet makeImplicit(@Nonnull Attribute... attrs) {
-            assert (attrs.length > 0 && attrs.length <= 0x1F);
+            assert (attrs.length > 0 && attrs.length <= Integer.SIZE);
             int stride = 0;
             for (Attribute attr : attrs) {
                 assert (attr != null);
                 assert (attr.offset() == Attribute.IMPLICIT_OFFSET);
                 stride += Attribute.alignOffset(attr.totalSize());
             }
-            assert (stride <= 0xFFF);
+            assert (stride <= 0xFFFF);
             return new AttributeSet(attrs, Attribute.IMPLICIT_OFFSET);
         }
 
@@ -225,9 +225,9 @@ public abstract class GeometryProcessor extends Processor {
          */
         @Nonnull
         public static AttributeSet makeExplicit(int stride, @Nonnull Attribute... attrs) {
-            assert (stride > 0 && stride <= 0xFFF);
+            assert (stride > 0 && stride <= 0xFFFF);
             assert (Attribute.alignOffset(stride) == stride);
-            assert (attrs.length > 0 && attrs.length <= 0x1F);
+            assert (attrs.length > 0 && attrs.length <= Integer.SIZE);
             for (Attribute attr : attrs) {
                 assert (attr != null);
                 assert (attr.offset() != Attribute.IMPLICIT_OFFSET);
@@ -239,7 +239,8 @@ public abstract class GeometryProcessor extends Processor {
 
         final int stride(int mask) {
             if (mStride == Attribute.IMPLICIT_OFFSET) {
-                int rawCount = mAttributes.length, stride = 0;
+                final int rawCount = mAttributes.length;
+                int stride = 0;
                 for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
                     final Attribute attr = mAttributes[i];
                     if ((mask & bit) != 0) {
@@ -252,9 +253,22 @@ public abstract class GeometryProcessor extends Processor {
             return mStride;
         }
 
+        final int numLocations(int mask) {
+            final int rawCount = mAttributes.length;
+            int locations = 0;
+            for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
+                final Attribute attr = mAttributes[i];
+                if ((mask & bit) != 0) {
+                    locations += attr.locationSize();
+                }
+            }
+            return locations;
+        }
+
         final void addToKey(@Nonnull KeyBuilder b, int mask) {
-            int rawCount = mAttributes.length;
-            b.addBits(5, rawCount, "attribute count");
+            final int rawCount = mAttributes.length;
+            // max attribs is no less than 16, we assume the minimum
+            b.addBits(6, rawCount, "attribute count");
             int implicitOffset = 0;
             for (int i = 0, bit = 1; i < rawCount; i++, bit <<= 1) {
                 final Attribute attr = mAttributes[i];
@@ -269,29 +283,31 @@ public abstract class GeometryProcessor extends Processor {
                         offset = implicitOffset;
                         implicitOffset += Attribute.alignOffset(attr.totalSize());
                     }
-                    b.addBits(12, offset, "attrOffset");
+                    assert (offset >= 0 && offset <= 0xFFFF);
+                    b.addBits(16, offset, "attrOffset");
                 } else {
                     b.appendComment("unusedAttr");
                     b.addBits(8, 0xFF, "attrType");
                     b.addBits(8, 0xFF, "attrGpuType");
-                    b.addBits(12, 0xFFF, "attrOffset");
+                    b.addBits(16, 0xFFFF, "attrOffset");
                 }
             }
-            int stride;
+            final int stride;
             if (mStride == Attribute.IMPLICIT_OFFSET) {
                 stride = implicitOffset;
             } else {
                 stride = mStride;
             }
             // max stride is no less than 2048, we assume the minimum
-            // max attribs is no less than 16, we assume the minimum
-            b.addBits(12, stride, "stride");
+            assert (stride > 0 && stride <= 0xFFFF);
+            assert (Attribute.alignOffset(stride) == stride);
+            b.addBits(16, stride, "stride");
         }
 
         @Nonnull
         @Override
         public Iterator<Attribute> iterator() {
-            return new Iter((1 << mAttributes.length) - 1);
+            return new Iter(~0 >>> Integer.SIZE - mAttributes.length);
         }
 
         private class Iter implements Iterator<Attribute> {
@@ -363,9 +379,23 @@ public abstract class GeometryProcessor extends Processor {
 
     /**
      * Returns the number of used per-vertex attributes.
+     * Note: attribute of a matrix type counts as just one.
+     *
+     * @see #numVertexLocations()
      */
     public final int numVertexAttributes() {
         return Integer.bitCount(mVertexAttributesMask);
+    }
+
+    /**
+     * Returns the number of used per-vertex attribute locations.
+     *
+     * @see SLType#locationSize(byte)
+     * @see #numVertexAttributes()
+     */
+    public final int numVertexLocations() {
+        assert (mVertexAttributesMask == 0 || mVertexAttributes != null);
+        return mVertexAttributesMask == 0 ? 0 : mVertexAttributes.numLocations(mVertexAttributesMask);
     }
 
     /**
@@ -385,9 +415,23 @@ public abstract class GeometryProcessor extends Processor {
 
     /**
      * Returns the number of used per-instance attributes.
+     * Note: attribute of a matrix type counts as just one.
+     *
+     * @see #numInstanceLocations()
      */
     public final int numInstanceAttributes() {
         return Integer.bitCount(mInstanceAttributesMask);
+    }
+
+    /**
+     * Returns the number of used per-instance attribute locations.
+     *
+     * @see SLType#locationSize(byte)
+     * @see #numInstanceAttributes()
+     */
+    public final int numInstanceLocations() {
+        assert (mInstanceAttributesMask == 0 || mInstanceAttributes != null);
+        return mInstanceAttributesMask == 0 ? 0 : mInstanceAttributes.numLocations(mInstanceAttributesMask);
     }
 
     /**
@@ -463,9 +507,8 @@ public abstract class GeometryProcessor extends Processor {
      */
     protected final void setVertexAttributes(AttributeSet attrs, int mask) {
         assert (mVertexAttributes == null && attrs != null);
-        assert (Integer.SIZE - Integer.numberOfLeadingZeros(mask) <= attrs.mAttributes.length);
         mVertexAttributes = attrs;
-        mVertexAttributesMask = mask;
+        mVertexAttributesMask = mask & (~0 >>> (Integer.SIZE - attrs.mAttributes.length));
     }
 
     /**
@@ -480,7 +523,7 @@ public abstract class GeometryProcessor extends Processor {
         assert (mInstanceAttributes == null && attrs != null);
         assert (Integer.SIZE - Integer.numberOfLeadingZeros(mask) <= attrs.mAttributes.length);
         mInstanceAttributes = attrs;
-        mInstanceAttributesMask = mask;
+        mInstanceAttributesMask = mask & (~0 >>> (Integer.SIZE - attrs.mAttributes.length));
     }
 
     /**

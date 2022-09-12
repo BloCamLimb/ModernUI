@@ -18,22 +18,46 @@
 
 package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.core.Rect;
-import icyllis.arcticgi.core.SharedPtr;
+import icyllis.arcticgi.core.*;
+import icyllis.arcticgi.engine.ops.Op;
 
 /**
- * The OpsRenderPass is a series of commands (draws, clears, and discards), which all target the
+ * The {@link OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the
  * same render target. It is possible that these commands execute immediately (OpenGL), or get buffered
- * up for later execution (Vulkan). {@link icyllis.arcticgi.engine.ops.Op Ops} execute into a OpsRenderPass.
+ * up for later execution (Vulkan). {@link Op Ops} execute into a {@link OpsRenderPass}.
  */
 //TODO
-public class OpsRenderPass {
+public abstract class OpsRenderPass {
+
+    /**
+     * DrawPipelineStatus.
+     */
+    private static final int
+            DrawPipelineStatus_Ok = 0,
+            DrawPipelineStatus_NotConfigured = 1,
+            DrawPipelineStatus_FailedToBind = 2;
+
+    private int mDrawPipelineStatus = DrawPipelineStatus_NotConfigured;
+
+    public abstract Server getServer();
+
+    /**
+     * Updates the internal pipeline state for drawing with the provided {@link ProgramInfo}. Enters an
+     * internal "bad" state if the pipeline could not be set.
+     *
+     * @param programInfo the pipeline state
+     * @param drawBounds  the draw's sub-area of the render target
+     */
+    public void bindPipeline(ProgramInfo programInfo, Rect2f drawBounds) {
+
+        mDrawPipelineStatus = DrawPipelineStatus_Ok;
+    }
 
     protected void set(@SharedPtr Surface colorAttachment,
                        @SharedPtr Surface resolveAttachment,
                        @SharedPtr Surface stencilAttachment,
                        int origin,
-                       Rect bounds,
+                       Rect2i bounds,
                        int colorLoadOp,
                        int colorStoreOp,
                        float colorClearR,

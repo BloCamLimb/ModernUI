@@ -18,20 +18,56 @@
 
 package icyllis.arcticgi.engine;
 
+import icyllis.arcticgi.core.ImageInfo;
+import icyllis.arcticgi.core.SharedPtr;
+
 public class SurfaceDrawContext extends SurfaceFillContext {
 
     public SurfaceDrawContext(RecordingContext context,
                               SurfaceProxyView readView,
                               SurfaceProxyView writeView,
-                              int colorInfo) {
-        this(context, readView, writeView, colorInfo, false);
+                              int colorType) {
+        super(context, readView, writeView, ImageInfo.makeColorInfo(colorType, ImageInfo.ALPHA_PREMULTIPLIED));
     }
 
-    public SurfaceDrawContext(RecordingContext context,
-                              SurfaceProxyView readView,
-                              SurfaceProxyView writeView,
-                              int colorInfo,
-                              boolean flushTimeOpsTask) {
-        super(context, readView, writeView, colorInfo, flushTimeOpsTask);
+    public static SurfaceDrawContext make(
+            RecordingContext context,
+            BackendFormat format,
+            int width, int height,
+            int sampleCount,
+            boolean mipmapped,
+            boolean backingFit,
+            boolean budgeted,
+            boolean isProtected,
+            int surfaceFlags,
+            int origin,
+            short readSwizzle,
+            short writeSwizzle) {
+        if (context.isDropped()) {
+            return null;
+        }
+
+        @SharedPtr
+        TextureProxy proxy = context.getProxyProvider().createRenderTextureProxy(
+                format,
+                width,
+                height,
+                sampleCount,
+                mipmapped,
+                backingFit,
+                budgeted,
+                surfaceFlags,
+                true
+        );
+        if (proxy == null) {
+            return null;
+        }
+
+        // two views, inc one more ref
+        proxy.ref();
+        SurfaceProxyView readView = new SurfaceProxyView(proxy, origin, readSwizzle);
+        SurfaceProxyView writeView = new SurfaceProxyView(proxy, origin, writeSwizzle);
+
+        return new SurfaceDrawContext(context, readView, writeView, ImageInfo.COLOR_UNKNOWN);
     }
 }

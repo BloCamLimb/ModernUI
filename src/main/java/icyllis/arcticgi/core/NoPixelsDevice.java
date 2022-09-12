@@ -32,10 +32,10 @@ public class NoPixelsDevice extends BaseDevice {
     private ClipState[] mClipStack = new ClipState[CLIP_POOL_SIZE];
     private int mClipIndex = 0;
 
-    private final Rect mTmpBounds = new Rect();
+    private final Rect2i mTmpBounds = new Rect2i();
 
-    public NoPixelsDevice(@Nonnull Rect bounds) {
-        this(bounds.left, bounds.top, bounds.right, bounds.bottom);
+    public NoPixelsDevice(@Nonnull Rect2i bounds) {
+        this(bounds.mLeft, bounds.mTop, bounds.mRight, bounds.mBottom);
     }
 
     public NoPixelsDevice(int left, int top, int right, int bottom) {
@@ -114,13 +114,13 @@ public class NoPixelsDevice extends BaseDevice {
     }
 
     @Override
-    public void clipRect(RectF rect, int clipOp, boolean doAA) {
+    public void clipRect(Rect2f rect, int clipOp, boolean doAA) {
         writableClip().opRect(rect, getLocalToDevice(), clipOp, doAA);
     }
 
     @Override
-    protected void onReplaceClip(Rect globalRect) {
-        final Rect deviceRect = mTmpBounds;
+    protected void onReplaceClip(Rect2i globalRect) {
+        final Rect2i deviceRect = mTmpBounds;
         getGlobalToDevice().mapRect(globalRect, deviceRect);
         final ClipState clip = writableClip();
         if (!deviceRect.intersect(mBounds)) {
@@ -153,7 +153,7 @@ public class NoPixelsDevice extends BaseDevice {
     }
 
     @Override
-    protected Rect getClipBounds() {
+    protected Rect2i getClipBounds() {
         return clip().getBounds();
     }
 
@@ -167,7 +167,7 @@ public class NoPixelsDevice extends BaseDevice {
      */
     private static final class ClipState {
 
-        private final Rect mClipBounds = new Rect();
+        private final Rect2i mClipBounds = new Rect2i();
         private int mDeferredSaveCount = 0;
         private boolean mIsAA = false;
         private boolean mIsRect = true;
@@ -187,7 +187,7 @@ public class NoPixelsDevice extends BaseDevice {
         }
 
         // do not modify
-        public Rect getBounds() {
+        public Rect2i getBounds() {
             return mClipBounds;
         }
 
@@ -203,11 +203,11 @@ public class NoPixelsDevice extends BaseDevice {
             mIsAA = false;
         }
 
-        public void setRect(Rect r) {
-            setRect(r.left, r.top, r.right, r.bottom);
+        public void setRect(Rect2i r) {
+            setRect(r.mLeft, r.mTop, r.mRight, r.mBottom);
         }
 
-        public void opRect(final RectF localRect, final Matrix4 localToDevice, int clipOp, boolean doAA) {
+        public void opRect(final Rect2f localRect, final Matrix4 localToDevice, int clipOp, boolean doAA) {
             applyOpParams(clipOp, doAA, localToDevice.isScaleTranslate());
             switch (clipOp) {
                 case ClipOp.CLIP_OP_INTERSECT:
@@ -219,7 +219,7 @@ public class NoPixelsDevice extends BaseDevice {
                 default:
                     throw new IllegalArgumentException();
             }
-            final Rect deviceRect = new Rect();
+            final Rect2i deviceRect = new Rect2i();
             if (doAA) {
                 localToDevice.mapRectOut(localRect, deviceRect);
             } else {
@@ -228,7 +228,7 @@ public class NoPixelsDevice extends BaseDevice {
             opRect(deviceRect, clipOp);
         }
 
-        public void opRect(final Rect deviceRect, int clipOp) {
+        public void opRect(final Rect2i deviceRect, int clipOp) {
             applyOpParams(clipOp, false, true);
 
             if (clipOp == ClipOp.CLIP_OP_INTERSECT) {
@@ -242,7 +242,7 @@ public class NoPixelsDevice extends BaseDevice {
                 if (mClipBounds.isEmpty()) {
                     return;
                 }
-                if (deviceRect.isEmpty() || !Rect.intersects(mClipBounds, deviceRect)) {
+                if (deviceRect.isEmpty() || !Rect2i.intersects(mClipBounds, deviceRect)) {
                     return;
                 }
                 if (deviceRect.contains(mClipBounds)) {

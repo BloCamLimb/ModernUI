@@ -303,7 +303,7 @@ public class TextureProxy extends SurfaceProxy {
     }
 
     @Override
-    protected void onFree() {
+    protected void dispose() {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
         if (mTexture != null) {

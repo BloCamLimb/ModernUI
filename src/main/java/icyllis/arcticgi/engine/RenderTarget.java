@@ -155,7 +155,7 @@ public abstract class RenderTarget extends RecycledResource {
     }
 
     @Override
-    protected void onFree() {
+    protected void dispose() {
         if (mStencilBuffer != null) {
             mStencilBuffer.unref();
         }

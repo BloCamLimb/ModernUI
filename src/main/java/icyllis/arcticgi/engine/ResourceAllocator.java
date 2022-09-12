@@ -269,6 +269,8 @@ public class ResourceAllocator {
             }
             if (cur.reset()) {
                 freeInterval(cur);
+            } else {
+                assert false;
             }
         }
         mIntervalList.clear();

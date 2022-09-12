@@ -296,8 +296,8 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     @Override
-    protected void onFree() {
-        super.onFree();
+    protected void dispose() {
+        super.dispose();
         if (mOwnership) {
             final GLServer server = getServer();
             if (mFramebuffer != 0) {

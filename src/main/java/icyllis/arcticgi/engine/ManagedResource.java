@@ -28,9 +28,9 @@ import icyllis.arcticgi.core.RefCnt;
  * wants to share a reference, it calls {@link #ref()}. When an owner wants
  * to release its reference, it calls {@link #unref()}. When the shared
  * object's reference count goes to zero as the result of an {@link #unref()}
- * call, its {@link #onFree()} is called. It is an error for the destructor
+ * call, its {@link #dispose()} is called. It is an error for the destructor
  * to be called explicitly (or via the object going out of scope on the
- * stack or calling {@link #onFree()}) if {@link #getRefCnt()} > 1.
+ * stack or calling {@link #dispose()}) if {@link #getRefCnt()} > 1.
  */
 public abstract class ManagedResource extends RefCnt {
 

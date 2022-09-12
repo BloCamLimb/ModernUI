@@ -26,7 +26,7 @@ import icyllis.arcticgi.core.*;
 public final class Device extends BaseDevice {
 
     public Device(SurfaceDrawContext context, boolean initContents) {
-        super(null);
+        super(new ImageInfo(context.getWidth(), context.getHeight(), context.getColorInfo()));
     }
 
     @Override
@@ -45,7 +45,7 @@ public final class Device extends BaseDevice {
     }
 
     @Override
-    protected Rect getClipBounds() {
+    protected Rect2i getClipBounds() {
         return null;
     }
 

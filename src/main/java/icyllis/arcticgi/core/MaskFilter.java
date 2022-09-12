@@ -20,7 +20,7 @@ package icyllis.arcticgi.core;
 
 public class MaskFilter {
 
-    public void computeFastBounds(RectF src, RectF dst) {
+    public void computeFastBounds(Rect2f src, Rect2f dst) {
         src.roundOut(dst);
     }
 }

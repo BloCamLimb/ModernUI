@@ -18,7 +18,7 @@
 
 package icyllis.arcticgi.engine.ops;
 
-import icyllis.arcticgi.core.RectF;
+import icyllis.arcticgi.core.Rect2f;
 import icyllis.arcticgi.core.SLType;
 import icyllis.arcticgi.engine.*;
 import icyllis.arcticgi.engine.shading.*;
@@ -52,7 +52,7 @@ public final class CircularRRectOp extends MeshDrawOp {
     }
 
     @Override
-    public void onExecute(OpFlushState state, RectF chainBounds) {
+    public void onExecute(OpFlushState state, Rect2f chainBounds) {
 
     }
 

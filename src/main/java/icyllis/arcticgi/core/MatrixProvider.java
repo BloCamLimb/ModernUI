@@ -20,26 +20,7 @@ package icyllis.arcticgi.core;
 
 import javax.annotation.Nonnull;
 
-public abstract class MatrixProvider {
-
-    final Matrix4 mLocalToDevice;
-
-    /**
-     * Create a matrix provider with an identity matrix.
-     */
-    public MatrixProvider() {
-        this(Matrix4.identity());
-    }
-
-    /**
-     * Create a matrix provider with the given matrix.
-     *
-     * @param localToDevice the reference to the backing matrix
-     */
-    public MatrixProvider(Matrix4 localToDevice) {
-        assert (localToDevice != null);
-        mLocalToDevice = localToDevice;
-    }
+public interface MatrixProvider {
 
     /**
      * {@code const Matrix4& getLocalToDevice() const;}
@@ -47,7 +28,5 @@ public abstract class MatrixProvider {
      * @return the backing local-to-device matrix
      */
     @Nonnull
-    public final Matrix4 getLocalToDevice() {
-        return mLocalToDevice;
-    }
+    Matrix4 getLocalToDevice();
 }

@@ -25,6 +25,6 @@ package icyllis.arcticgi.engine;
 public final class RenderTargetProxy extends SurfaceProxy {
 
     @Override
-    protected void onFree() {
+    protected void dispose() {
     }
 }

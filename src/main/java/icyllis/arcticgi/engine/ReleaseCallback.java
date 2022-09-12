@@ -29,7 +29,7 @@ public abstract class ReleaseCallback extends RefCnt {
     }
 
     @Override
-    protected final void onFree() {
+    protected final void dispose() {
         onRelease();
     }
 

@@ -19,7 +19,7 @@
 package icyllis.arcticgi.engine;
 
 import icyllis.arcticgi.core.Matrix4;
-import icyllis.arcticgi.core.Rect;
+import icyllis.arcticgi.core.Rect2i;
 
 /**
  * GPU hierarchical clipping using stencil test.
@@ -38,7 +38,7 @@ public class ClipStack {
 
     public static final class Clip {
 
-        final Rect mShape = new Rect();
+        final Rect2i mShape = new Rect2i();
 
         // model view matrix
         final Matrix4 mMatrix = Matrix4.identity();

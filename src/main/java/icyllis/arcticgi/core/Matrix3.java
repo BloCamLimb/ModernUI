@@ -577,34 +577,34 @@ public class Matrix3 implements Cloneable {
      *
      * @param r the rectangle to transform
      */
-    public void mapRect(@Nonnull RectF r) {
-        float x1 = m11 * r.left + m21 * r.top + m31;
-        float y1 = m12 * r.left + m22 * r.top + m32;
-        float x2 = m11 * r.right + m21 * r.top + m31;
-        float y2 = m12 * r.right + m22 * r.top + m32;
-        float x3 = m11 * r.left + m21 * r.bottom + m31;
-        float y3 = m12 * r.left + m22 * r.bottom + m32;
-        float x4 = m11 * r.right + m21 * r.bottom + m31;
-        float y4 = m12 * r.right + m22 * r.bottom + m32;
+    public void mapRect(@Nonnull Rect2f r) {
+        float x1 = m11 * r.mLeft + m21 * r.mTop + m31;
+        float y1 = m12 * r.mLeft + m22 * r.mTop + m32;
+        float x2 = m11 * r.mRight + m21 * r.mTop + m31;
+        float y2 = m12 * r.mRight + m22 * r.mTop + m32;
+        float x3 = m11 * r.mLeft + m21 * r.mBottom + m31;
+        float y3 = m12 * r.mLeft + m22 * r.mBottom + m32;
+        float x4 = m11 * r.mRight + m21 * r.mBottom + m31;
+        float y4 = m12 * r.mRight + m22 * r.mBottom + m32;
         if (hasPerspective()) {
             // project
-            float w = 1.0f / (m13 * r.left + m23 * r.top + m33);
+            float w = 1.0f / (m13 * r.mLeft + m23 * r.mTop + m33);
             x1 *= w;
             y1 *= w;
-            w = 1.0f / (m13 * r.right + m23 * r.top + m33);
+            w = 1.0f / (m13 * r.mRight + m23 * r.mTop + m33);
             x2 *= w;
             y2 *= w;
-            w = 1.0f / (m13 * r.left + m23 * r.bottom + m33);
+            w = 1.0f / (m13 * r.mLeft + m23 * r.mBottom + m33);
             x3 *= w;
             y3 *= w;
-            w = 1.0f / (m13 * r.right + m23 * r.bottom + m33);
+            w = 1.0f / (m13 * r.mRight + m23 * r.mBottom + m33);
             x4 *= w;
             y4 *= w;
         }
-        r.left = min(x1, x2, x3, x4);
-        r.top = min(y1, y2, y3, y4);
-        r.right = max(x1, x2, x3, x4);
-        r.bottom = max(y1, y2, y3, y4);
+        r.mLeft = min(x1, x2, x3, x4);
+        r.mTop = min(y1, y2, y3, y4);
+        r.mRight = max(x1, x2, x3, x4);
+        r.mBottom = max(y1, y2, y3, y4);
     }
 
     /**
@@ -612,8 +612,8 @@ public class Matrix3 implements Cloneable {
      *
      * @param out the round values
      */
-    public void mapRect(@Nonnull RectF r, @Nonnull Rect out) {
-        mapRect(r.left, r.top, r.right, r.bottom, out);
+    public void mapRect(@Nonnull Rect2f r, @Nonnull Rect2i out) {
+        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, out);
     }
 
     /**
@@ -621,8 +621,8 @@ public class Matrix3 implements Cloneable {
      *
      * @param out the round values
      */
-    public void mapRect(@Nonnull Rect r, @Nonnull Rect out) {
-        mapRect(r.left, r.top, r.right, r.bottom, out);
+    public void mapRect(@Nonnull Rect2i r, @Nonnull Rect2i out) {
+        mapRect(r.mLeft, r.mTop, r.mRight, r.mBottom, out);
     }
 
     /**
@@ -630,7 +630,7 @@ public class Matrix3 implements Cloneable {
      *
      * @param out the round values
      */
-    public void mapRect(float l, float t, float r, float b, @Nonnull Rect out) {
+    public void mapRect(float l, float t, float r, float b, @Nonnull Rect2i out) {
         float x1 = m11 * l + m21 * t + m31;
         float y1 = m12 * l + m22 * t + m32;
         float x2 = m11 * r + m21 * t + m31;
@@ -654,10 +654,10 @@ public class Matrix3 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        out.left = Math.round(min(x1, x2, x3, x4));
-        out.top = Math.round(min(y1, y2, y3, y4));
-        out.right = Math.round(max(x1, x2, x3, x4));
-        out.bottom = Math.round(max(y1, y2, y3, y4));
+        out.mLeft = Math.round(min(x1, x2, x3, x4));
+        out.mTop = Math.round(min(y1, y2, y3, y4));
+        out.mRight = Math.round(max(x1, x2, x3, x4));
+        out.mBottom = Math.round(max(y1, y2, y3, y4));
     }
 
     /**
@@ -665,8 +665,8 @@ public class Matrix3 implements Cloneable {
      *
      * @param result the round out values
      */
-    public void mapRectOut(@Nonnull Rect r, @Nonnull Rect result) {
-        mapRectOut(r.left, r.top, r.right, r.bottom, result);
+    public void mapRectOut(@Nonnull Rect2i r, @Nonnull Rect2i result) {
+        mapRectOut(r.mLeft, r.mTop, r.mRight, r.mBottom, result);
     }
 
     /**
@@ -674,7 +674,7 @@ public class Matrix3 implements Cloneable {
      *
      * @param result the round out values
      */
-    public void mapRectOut(float l, float t, float r, float b, @Nonnull Rect result) {
+    public void mapRectOut(float l, float t, float r, float b, @Nonnull Rect2i result) {
         float x1 = m11 * l + m21 * t + m31;
         float y1 = m12 * l + m22 * t + m32;
         float x2 = m11 * r + m21 * t + m31;
@@ -698,10 +698,10 @@ public class Matrix3 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        result.left = (int) Math.floor(min(x1, x2, x3, x4));
-        result.top = (int) Math.floor(min(y1, y2, y3, y4));
-        result.right = (int) Math.ceil(max(x1, x2, x3, x4));
-        result.bottom = (int) Math.ceil(max(y1, y2, y3, y4));
+        result.mLeft = (int) Math.floor(min(x1, x2, x3, x4));
+        result.mTop = (int) Math.floor(min(y1, y2, y3, y4));
+        result.mRight = (int) Math.ceil(max(x1, x2, x3, x4));
+        result.mBottom = (int) Math.ceil(max(y1, y2, y3, y4));
     }
 
     public void mapPoint(float[] p) {

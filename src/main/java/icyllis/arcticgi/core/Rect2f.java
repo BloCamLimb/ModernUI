@@ -19,28 +19,27 @@
 package icyllis.arcticgi.core;
 
 /**
- * RectF holds four float coordinates describing the upper and lower bounds
- * of a rectangle. (left, top, right, bottom). These fields can be accessed
- * directly. Use width() and height() to retrieve the rectangle's width and
- * height.
+ * The {@link Rect2f} holds four float coordinates describing the upper and
+ * lower bounds of a rectangle. (left, top, right, bottom). These fields can
+ * be accessed directly. Use width() and height() to retrieve the rectangle's
+ * width and height.
  * <p>
- * Rect may be created from outer bounds or from position, width, and
- * height. Rect describes an area; if its right is less than or equal
- * to its left, or if its bottom is less than or equal to its top,
- * it is considered empty.
+ * Rect may be created from outer bounds or from position, width, and height.
+ * Rect describes an area; if its right is less than or equal to its left,
+ * or if its bottom is less than or equal to its top, it is considered empty.
  */
 @SuppressWarnings("unused")
-public class RectF {
+public class Rect2f {
 
-    public float left;
-    public float top;
-    public float right;
-    public float bottom;
+    public float mLeft;
+    public float mTop;
+    public float mRight;
+    public float mBottom;
 
     /**
-     * Create a new empty RectF. All coordinates are initialized to 0.
+     * Create a new empty rectangle. All coordinates are initialized to 0.
      */
-    public RectF() {
+    public Rect2f() {
     }
 
     /**
@@ -53,11 +52,11 @@ public class RectF {
      * @param right  the X coordinate of the right side of the rectangle
      * @param bottom the Y coordinate of the bottom of the rectangle
      */
-    public RectF(float left, float top, float right, float bottom) {
-        this.left = left;
-        this.top = top;
-        this.right = right;
-        this.bottom = bottom;
+    public Rect2f(float left, float top, float right, float bottom) {
+        mLeft = left;
+        mTop = top;
+        mRight = right;
+        mBottom = bottom;
     }
 
     /**
@@ -67,11 +66,11 @@ public class RectF {
      * @param r the rectangle whose coordinates are copied into the new
      *          rectangle
      */
-    public RectF(RectF r) {
-        left = r.left;
-        top = r.top;
-        right = r.right;
-        bottom = r.bottom;
+    public Rect2f(Rect2f r) {
+        mLeft = r.mLeft;
+        mTop = r.mTop;
+        mRight = r.mRight;
+        mBottom = r.mBottom;
     }
 
     /**
@@ -81,11 +80,11 @@ public class RectF {
      * @param r the rectangle whose coordinates are copied into the new
      *          rectangle
      */
-    public RectF(Rect r) {
-        left = r.left;
-        top = r.top;
-        right = r.right;
-        bottom = r.bottom;
+    public Rect2f(Rect2i r) {
+        mLeft = r.mLeft;
+        mTop = r.mTop;
+        mRight = r.mRight;
+        mBottom = r.mBottom;
     }
 
     /**
@@ -96,7 +95,7 @@ public class RectF {
      * @return true if width() or height() are zero or negative
      */
     public final boolean isEmpty() {
-        return right <= left || bottom <= top;
+        return mRight <= mLeft || mBottom <= mTop;
     }
 
     /**
@@ -107,7 +106,7 @@ public class RectF {
      * @return true if width() or height() are zero or positive
      */
     public final boolean isSorted() {
-        return left <= right && top <= bottom;
+        return mLeft <= mRight && mTop <= mBottom;
     }
 
     /**
@@ -116,7 +115,7 @@ public class RectF {
      * @return true if no member is infinite or NaN
      */
     public final boolean isFinite() {
-        return Float.isFinite(left) && Float.isFinite(top) && Float.isFinite(right) && Float.isFinite(bottom);
+        return Float.isFinite(mLeft) && Float.isFinite(mTop) && Float.isFinite(mRight) && Float.isFinite(mBottom);
     }
 
     /**
@@ -124,7 +123,7 @@ public class RectF {
      * (i.e. left <= right) so the result may be negative.
      */
     public final float width() {
-        return right - left;
+        return mRight - mLeft;
     }
 
     /**
@@ -132,7 +131,7 @@ public class RectF {
      * (i.e. top <= bottom) so the result may be negative.
      */
     public final float height() {
-        return bottom - top;
+        return mBottom - mTop;
     }
 
     /**
@@ -140,7 +139,7 @@ public class RectF {
      * a valid rectangle (i.e. left <= right)
      */
     public final float centerX() {
-        return (left + right) * 0.5f;
+        return (mLeft + mRight) * 0.5f;
     }
 
     /**
@@ -148,14 +147,14 @@ public class RectF {
      * a valid rectangle (i.e. top <= bottom)
      */
     public final float centerY() {
-        return (top + bottom) * 0.5f;
+        return (mTop + mBottom) * 0.5f;
     }
 
     /**
      * Set the rectangle to (0,0,0,0)
      */
     public final void setEmpty() {
-        left = right = top = bottom = 0;
+        mLeft = mRight = mTop = mBottom = 0;
     }
 
     /**
@@ -169,10 +168,10 @@ public class RectF {
      * @param bottom the Y coordinate of the bottom of the rectangle
      */
     public final void set(float left, float top, float right, float bottom) {
-        this.left = left;
-        this.top = top;
-        this.right = right;
-        this.bottom = bottom;
+        mLeft = left;
+        mTop = top;
+        mRight = right;
+        mBottom = bottom;
     }
 
     /**
@@ -181,11 +180,11 @@ public class RectF {
      * @param src the rectangle whose coordinates are copied into this
      *            rectangle.
      */
-    public final void set(RectF src) {
-        this.left = src.left;
-        this.top = src.top;
-        this.right = src.right;
-        this.bottom = src.bottom;
+    public final void set(Rect2f src) {
+        mLeft = src.mLeft;
+        mTop = src.mTop;
+        mRight = src.mRight;
+        mBottom = src.mBottom;
     }
 
     /**
@@ -194,11 +193,11 @@ public class RectF {
      * @param src the rectangle whose coordinates are copied into this
      *            rectangle.
      */
-    public final void set(Rect src) {
-        this.left = src.left;
-        this.top = src.top;
-        this.right = src.right;
-        this.bottom = src.bottom;
+    public final void set(Rect2i src) {
+        mLeft = src.mLeft;
+        mTop = src.mTop;
+        mRight = src.mRight;
+        mBottom = src.mBottom;
     }
 
     /**
@@ -209,10 +208,10 @@ public class RectF {
      * @param dy the amount to add to the rectangle's top and bottom coordinates
      */
     public final void offset(float dx, float dy) {
-        left += dx;
-        top += dy;
-        right += dx;
-        bottom += dy;
+        mLeft += dx;
+        mTop += dy;
+        mRight += dx;
+        mBottom += dy;
     }
 
     /**
@@ -223,10 +222,10 @@ public class RectF {
      * @param newTop  the new "top" coordinate for the rectangle
      */
     public final void offsetTo(float newLeft, float newTop) {
-        right += newLeft - left;
-        bottom += newTop - top;
-        left = newLeft;
-        top = newTop;
+        mRight += newLeft - mLeft;
+        mBottom += newTop - mTop;
+        mLeft = newLeft;
+        mTop = newTop;
     }
 
     /**
@@ -239,10 +238,10 @@ public class RectF {
      * @param dy the amount to add(subtract) from the rectangle's top(bottom)
      */
     public final void inset(float dx, float dy) {
-        left += dx;
-        top += dy;
-        right -= dx;
-        bottom -= dy;
+        mLeft += dx;
+        mTop += dy;
+        mRight -= dx;
+        mBottom -= dy;
     }
 
     /**
@@ -254,10 +253,10 @@ public class RectF {
      * @param bottom the amount to subtract from the rectangle's bottom
      */
     public final void inset(float left, float top, float right, float bottom) {
-        this.left += left;
-        this.top += top;
-        this.right -= right;
-        this.bottom -= bottom;
+        mLeft += left;
+        mTop += top;
+        mRight -= right;
+        mBottom -= bottom;
     }
 
     /**
@@ -266,11 +265,11 @@ public class RectF {
      *
      * @param insets the rectangle specifying the insets on all side.
      */
-    public final void inset(RectF insets) {
-        left += insets.left;
-        top += insets.top;
-        right -= insets.right;
-        bottom -= insets.bottom;
+    public final void inset(Rect2f insets) {
+        mLeft += insets.mLeft;
+        mTop += insets.mTop;
+        mRight -= insets.mRight;
+        mBottom -= insets.mBottom;
     }
 
     /**
@@ -279,11 +278,11 @@ public class RectF {
      *
      * @param insets the rectangle specifying the insets on all side.
      */
-    public final void inset(Rect insets) {
-        left += insets.left;
-        top += insets.top;
-        right -= insets.right;
-        bottom -= insets.bottom;
+    public final void inset(Rect2i insets) {
+        mLeft += insets.mLeft;
+        mTop += insets.mTop;
+        mRight -= insets.mRight;
+        mBottom -= insets.mBottom;
     }
 
     /**
@@ -295,10 +294,10 @@ public class RectF {
      * @param bottom the amount to add from the rectangle's bottom
      */
     public final void adjust(float left, float top, float right, float bottom) {
-        this.left += left;
-        this.top += top;
-        this.right += right;
-        this.bottom += bottom;
+        mLeft += left;
+        mTop += top;
+        mRight += right;
+        mBottom += bottom;
     }
 
     /**
@@ -306,11 +305,11 @@ public class RectF {
      *
      * @param adjusts the rectangle specifying the adjusts on all side.
      */
-    public final void adjust(RectF adjusts) {
-        left += adjusts.left;
-        top += adjusts.top;
-        right += adjusts.right;
-        bottom += adjusts.bottom;
+    public final void adjust(Rect2f adjusts) {
+        mLeft += adjusts.mLeft;
+        mTop += adjusts.mTop;
+        mRight += adjusts.mRight;
+        mBottom += adjusts.mBottom;
     }
 
     /**
@@ -318,11 +317,11 @@ public class RectF {
      *
      * @param adjusts the rectangle specifying the adjusts on all side.
      */
-    public final void adjust(Rect adjusts) {
-        left += adjusts.left;
-        top += adjusts.top;
-        right += adjusts.right;
-        bottom += adjusts.bottom;
+    public final void adjust(Rect2i adjusts) {
+        mLeft += adjusts.mLeft;
+        mTop += adjusts.mTop;
+        mRight += adjusts.mRight;
+        mBottom += adjusts.mBottom;
     }
 
     /**
@@ -337,7 +336,7 @@ public class RectF {
      * means left <= x < right and top <= y < bottom
      */
     public final boolean contains(float x, float y) {
-        return x >= left && x < right && y >= top && y < bottom;
+        return x >= mLeft && x < mRight && y >= mTop && y < mBottom;
     }
 
     /**
@@ -354,10 +353,10 @@ public class RectF {
      */
     public final boolean contains(float left, float top, float right, float bottom) {
         // check for empty first
-        return this.left < this.right && this.top < this.bottom
+        return mLeft < mRight && mTop < mBottom
                 // now check for containment
-                && this.left <= left && this.top <= top
-                && this.right >= right && this.bottom >= bottom;
+                && mLeft <= left && mTop <= top
+                && mRight >= right && mBottom >= bottom;
     }
 
     /**
@@ -368,11 +367,11 @@ public class RectF {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public final boolean contains(RectF r) {
+    public final boolean contains(Rect2f r) {
         // check for empty first
-        return this.left < this.right && this.top < this.bottom
+        return mLeft < mRight && mTop < mBottom
                 // now check for containment
-                && left <= r.left && top <= r.top && right >= r.right && bottom >= r.bottom;
+                && mLeft <= r.mLeft && mTop <= r.mTop && mRight >= r.mRight && mBottom >= r.mBottom;
     }
 
     /**
@@ -383,18 +382,18 @@ public class RectF {
      * @return true if the specified rectangle r is inside or equal to this
      * rectangle
      */
-    public final boolean contains(Rect r) {
+    public final boolean contains(Rect2i r) {
         // check for empty first
-        return this.left < this.right && this.top < this.bottom
+        return mLeft < mRight && mTop < mBottom
                 // now check for containment
-                && left <= r.left && top <= r.top && right >= r.right && bottom >= r.bottom;
+                && mLeft <= r.mLeft && mTop <= r.mTop && mRight >= r.mRight && mBottom >= r.mBottom;
     }
 
     /**
      * If the rectangle specified by left,top,right,bottom intersects this
      * rectangle, return true and set this rectangle to that intersection,
      * otherwise return false and do not change this rectangle. Note: To
-     * just test for intersection, use {@link #intersects(RectF, RectF)}.
+     * just test for intersection, use {@link #intersects(Rect2f, Rect2f)}.
      *
      * @param left   the left side of the rectangle being intersected with this
      *               rectangle
@@ -408,17 +407,17 @@ public class RectF {
      * return false and do not change this rectangle.
      */
     public final boolean intersect(float left, float top, float right, float bottom) {
-        float tmpL = Math.max(this.left, left);
-        float tmpT = Math.max(this.top, top);
-        float tmpR = Math.min(this.right, right);
-        float tmpB = Math.min(this.bottom, bottom);
+        float tmpL = Math.max(mLeft, left);
+        float tmpT = Math.max(mTop, top);
+        float tmpR = Math.min(mRight, right);
+        float tmpB = Math.min(mBottom, bottom);
         if (tmpR <= tmpL || tmpB <= tmpT) {
             return false;
         }
-        this.left = tmpL;
-        this.top = tmpT;
-        this.right = tmpR;
-        this.bottom = tmpB;
+        mLeft = tmpL;
+        mTop = tmpT;
+        mRight = tmpR;
+        mBottom = tmpB;
         return true;
     }
 
@@ -432,8 +431,8 @@ public class RectF {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public final boolean intersect(RectF r) {
-        return intersect(r.left, r.top, r.right, r.bottom);
+    public final boolean intersect(Rect2f r) {
+        return intersect(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
@@ -446,8 +445,8 @@ public class RectF {
      * (and this rectangle is then set to that intersection) else
      * return false and do not change this rectangle.
      */
-    public final boolean intersect(Rect r) {
-        return intersect(r.left, r.top, r.right, r.bottom);
+    public final boolean intersect(Rect2i r) {
+        return intersect(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
@@ -457,10 +456,10 @@ public class RectF {
      * @see #inset(float, float, float, float) but without checking if the rects overlap.
      */
     public final void intersectNoCheck(float left, float top, float right, float bottom) {
-        this.left = Math.max(this.left, left);
-        this.top = Math.max(this.top, top);
-        this.right = Math.min(this.right, right);
-        this.bottom = Math.min(this.bottom, bottom);
+        mLeft = Math.max(mLeft, left);
+        mTop = Math.max(mTop, top);
+        mRight = Math.min(mRight, right);
+        mBottom = Math.min(mBottom, bottom);
     }
 
     /**
@@ -469,8 +468,8 @@ public class RectF {
      *
      * @see #inset(float, float, float, float) but without checking if the rects overlap.
      */
-    public final void intersectNoCheck(RectF r) {
-        intersectNoCheck(r.left, r.top, r.right, r.bottom);
+    public final void intersectNoCheck(Rect2f r) {
+        intersectNoCheck(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
@@ -479,8 +478,8 @@ public class RectF {
      *
      * @see #inset(float, float, float, float) but without checking if the rects overlap.
      */
-    public final void intersectNoCheck(Rect r) {
-        intersectNoCheck(r.left, r.top, r.right, r.bottom);
+    public final void intersectNoCheck(Rect2i r) {
+        intersectNoCheck(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
@@ -494,18 +493,18 @@ public class RectF {
      * this rectangle to that intersection. If they do not, return
      * false and do not change this rectangle.
      */
-    public final boolean intersect(RectF a, RectF b) {
-        float tmpL = Math.max(a.left, b.left);
-        float tmpT = Math.max(a.top, b.top);
-        float tmpR = Math.min(a.right, b.right);
-        float tmpB = Math.min(a.bottom, b.bottom);
+    public final boolean intersect(Rect2f a, Rect2f b) {
+        float tmpL = Math.max(a.mLeft, b.mLeft);
+        float tmpT = Math.max(a.mTop, b.mTop);
+        float tmpR = Math.min(a.mRight, b.mRight);
+        float tmpB = Math.min(a.mBottom, b.mBottom);
         if (tmpR <= tmpL || tmpB <= tmpT) {
             return false;
         }
-        left = tmpL;
-        top = tmpT;
-        right = tmpR;
-        bottom = tmpB;
+        mLeft = tmpL;
+        mTop = tmpT;
+        mRight = tmpR;
+        mBottom = tmpB;
         return true;
     }
 
@@ -523,10 +522,10 @@ public class RectF {
      * no event is this rectangle modified.
      */
     public final boolean intersects(float left, float top, float right, float bottom) {
-        float tmpL = Math.max(this.left, left);
-        float tmpT = Math.max(this.top, top);
-        float tmpR = Math.min(this.right, right);
-        float tmpB = Math.min(this.bottom, bottom);
+        float tmpL = Math.max(mLeft, left);
+        float tmpT = Math.max(mTop, top);
+        float tmpR = Math.min(mRight, right);
+        float tmpB = Math.min(mBottom, bottom);
         return tmpR > tmpL && tmpB > tmpT;
     }
 
@@ -539,8 +538,8 @@ public class RectF {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public final boolean intersects(RectF r) {
-        return intersects(r.left, r.top, r.right, r.bottom);
+    public final boolean intersects(Rect2f r) {
+        return intersects(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
@@ -552,25 +551,25 @@ public class RectF {
      * @return true if the specified rectangle intersects this rectangle. In
      * no event is this rectangle modified.
      */
-    public final boolean intersects(Rect r) {
-        return intersects(r.left, r.top, r.right, r.bottom);
+    public final boolean intersects(Rect2i r) {
+        return intersects(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
      * Returns true if the two specified rectangles intersect. In no event are
      * either of the rectangles modified. To record the intersection,
-     * use {@link #intersect(RectF)} or {@link #intersect(RectF, RectF)}.
+     * use {@link #intersect(Rect2f)} or {@link #intersect(Rect2f, Rect2f)}.
      *
      * @param a the first rectangle being tested for intersection
      * @param b the second rectangle being tested for intersection
      * @return true if the two specified rectangles intersect. In no event are
      * either of the rectangles modified.
      */
-    public static boolean intersects(RectF a, RectF b) {
-        float tmpL = Math.max(a.left, b.left);
-        float tmpT = Math.max(a.top, b.top);
-        float tmpR = Math.min(a.right, b.right);
-        float tmpB = Math.min(a.bottom, b.bottom);
+    public static boolean intersects(Rect2f a, Rect2f b) {
+        float tmpL = Math.max(a.mLeft, b.mLeft);
+        float tmpT = Math.max(a.mTop, b.mTop);
+        float tmpR = Math.min(a.mRight, b.mRight);
+        float tmpB = Math.min(a.mBottom, b.mBottom);
         return tmpR > tmpL && tmpB > tmpT;
     }
 
@@ -578,54 +577,54 @@ public class RectF {
      * Set the dst integer Rect by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    public final void round(Rect dst) {
-        dst.set(Math.round(left), Math.round(top),
-                Math.round(right), Math.round(bottom));
+    public final void round(Rect2i dst) {
+        dst.set(Math.round(mLeft), Math.round(mTop),
+                Math.round(mRight), Math.round(mBottom));
     }
 
     /**
      * Set the dst integer Rect by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    public final void roundIn(Rect dst) {
-        dst.set((int) Math.ceil(left), (int) Math.ceil(top),
-                (int) Math.floor(right), (int) Math.floor(bottom));
+    public final void roundIn(Rect2i dst) {
+        dst.set((int) Math.ceil(mLeft), (int) Math.ceil(mTop),
+                (int) Math.floor(mRight), (int) Math.floor(mBottom));
     }
 
     /**
      * Set the dst integer Rect by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    public final void roundOut(Rect dst) {
-        dst.set((int) Math.floor(left), (int) Math.floor(top),
-                (int) Math.ceil(right), (int) Math.ceil(bottom));
+    public final void roundOut(Rect2i dst) {
+        dst.set((int) Math.floor(mLeft), (int) Math.floor(mTop),
+                (int) Math.ceil(mRight), (int) Math.ceil(mBottom));
     }
 
     /**
      * Set the dst rectangle by rounding this rectangle's coordinates
      * to their nearest integer values.
      */
-    public final void round(RectF dst) {
-        dst.set(Math.round(left), Math.round(top),
-                Math.round(right), Math.round(bottom));
+    public final void round(Rect2f dst) {
+        dst.set(Math.round(mLeft), Math.round(mTop),
+                Math.round(mRight), Math.round(mBottom));
     }
 
     /**
      * Set the dst rectangle by rounding "in" this rectangle, choosing the
      * ceiling of top and left, and the floor of right and bottom.
      */
-    public final void roundIn(RectF dst) {
-        dst.set((float) Math.ceil(left), (float) Math.ceil(top),
-                (float) Math.floor(right), (float) Math.floor(bottom));
+    public final void roundIn(Rect2f dst) {
+        dst.set((float) Math.ceil(mLeft), (float) Math.ceil(mTop),
+                (float) Math.floor(mRight), (float) Math.floor(mBottom));
     }
 
     /**
      * Set the dst rectangle by rounding "out" this rectangle, choosing the
      * floor of top and left, and the ceiling of right and bottom.
      */
-    public final void roundOut(RectF dst) {
-        dst.set((float) Math.floor(left), (float) Math.floor(top),
-                (float) Math.ceil(right), (float) Math.ceil(bottom));
+    public final void roundOut(Rect2f dst) {
+        dst.set((float) Math.floor(mLeft), (float) Math.floor(mTop),
+                (float) Math.ceil(mRight), (float) Math.ceil(mBottom));
     }
 
     /**
@@ -643,17 +642,17 @@ public class RectF {
         if (left >= right || top >= bottom) {
             return;
         }
-        if (this.left < this.right && this.top < this.bottom) {
-            if (this.left > left) this.left = left;
-            if (this.top > top) this.top = top;
-            if (this.right < right) this.right = right;
-            if (this.bottom < bottom) this.bottom = bottom;
+        if (mLeft < mRight && mTop < mBottom) {
+            if (mLeft > left) mLeft = left;
+            if (mTop > top) mTop = top;
+            if (mRight < right) mRight = right;
+            if (mBottom < bottom) mBottom = bottom;
         } else {
             // if we are empty, just assign
-            this.left = left;
-            this.top = top;
-            this.right = right;
-            this.bottom = bottom;
+            mLeft = left;
+            mTop = top;
+            mRight = right;
+            mBottom = bottom;
         }
     }
 
@@ -664,8 +663,8 @@ public class RectF {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public final void join(RectF r) {
-        join(r.left, r.top, r.right, r.bottom);
+    public final void join(Rect2f r) {
+        join(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
@@ -675,8 +674,8 @@ public class RectF {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public final void join(Rect r) {
-        join(r.left, r.top, r.right, r.bottom);
+    public final void join(Rect2i r) {
+        join(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
@@ -691,10 +690,10 @@ public class RectF {
      * @param bottom the bottom edge being unioned with this rectangle
      */
     public final void joinNoCheck(float left, float top, float right, float bottom) {
-        this.left = Math.min(this.left, left);
-        this.top = Math.min(this.top, top);
-        this.right = Math.max(this.right, right);
-        this.bottom = Math.max(this.bottom, bottom);
+        mLeft = Math.min(mLeft, left);
+        mTop = Math.min(mTop, top);
+        mRight = Math.max(mRight, right);
+        mBottom = Math.max(mBottom, bottom);
     }
 
     /**
@@ -705,8 +704,8 @@ public class RectF {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public final void joinNoCheck(RectF r) {
-        joinNoCheck(r.left, r.top, r.right, r.bottom);
+    public final void joinNoCheck(Rect2f r) {
+        joinNoCheck(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
@@ -717,8 +716,8 @@ public class RectF {
      *
      * @param r the rectangle being unioned with this rectangle
      */
-    public final void joinNoCheck(Rect r) {
-        joinNoCheck(r.left, r.top, r.right, r.bottom);
+    public final void joinNoCheck(Rect2i r) {
+        joinNoCheck(r.mLeft, r.mTop, r.mRight, r.mBottom);
     }
 
     /**
@@ -728,21 +727,21 @@ public class RectF {
      * @param y The y coordinate of the point to add to the rectangle
      */
     public final void join(float x, float y) {
-        if (left < right && top < bottom) {
-            if (x < left) {
-                left = x;
-            } else if (x > right) {
-                right = x;
+        if (mLeft < mRight && mTop < mBottom) {
+            if (x < mLeft) {
+                mLeft = x;
+            } else if (x > mRight) {
+                mRight = x;
             }
-            if (y < top) {
-                top = y;
-            } else if (y > bottom) {
-                bottom = y;
+            if (y < mTop) {
+                mTop = y;
+            } else if (y > mBottom) {
+                mBottom = y;
             }
         } else {
             // still empty
-            left = right = x;
-            top = bottom = y;
+            mLeft = mRight = x;
+            mTop = mBottom = y;
         }
     }
 
@@ -754,15 +753,15 @@ public class RectF {
      * then nothing is done.
      */
     public final void sort() {
-        if (left > right) {
-            float temp = left;
-            left = right;
-            right = temp;
+        if (mLeft > mRight) {
+            float temp = mLeft;
+            mLeft = mRight;
+            mRight = temp;
         }
-        if (top > bottom) {
-            float temp = top;
-            top = bottom;
-            bottom = temp;
+        if (mTop > mBottom) {
+            float temp = mTop;
+            mTop = mBottom;
+            mBottom = temp;
         }
     }
 
@@ -770,22 +769,22 @@ public class RectF {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        RectF r = (RectF) o;
-        return left == r.left && top == r.top && right == r.right && bottom == r.bottom;
+        Rect2f r = (Rect2f) o;
+        return mLeft == r.mLeft && mTop == r.mTop && mRight == r.mRight && mBottom == r.mBottom;
     }
 
     @Override
     public int hashCode() {
-        int result = Float.floatToIntBits(left);
-        result = 31 * result + Float.floatToIntBits(top);
-        result = 31 * result + Float.floatToIntBits(right);
-        result = 31 * result + Float.floatToIntBits(bottom);
+        int result = Float.floatToIntBits(mLeft);
+        result = 31 * result + Float.floatToIntBits(mTop);
+        result = 31 * result + Float.floatToIntBits(mRight);
+        result = 31 * result + Float.floatToIntBits(mBottom);
         return result;
     }
 
     @Override
     public String toString() {
-        return "RectF(" + left + ", " + top + ", "
-                + right + ", " + bottom + ")";
+        return "Rect2f(" + mLeft + ", " + mTop + ", "
+                + mRight + ", " + mBottom + ")";
     }
 }

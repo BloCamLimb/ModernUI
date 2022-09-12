@@ -169,7 +169,7 @@ public final class GLCaps extends Caps {
         }
 
         mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);
-        mMaxVertexAttributes = glGetInteger(GL_MAX_VERTEX_ATTRIBS);
+        mMaxVertexAttributes = Math.min(32, glGetInteger(GL_MAX_VERTEX_ATTRIBS));
 
         mTransferPixelsToRowBytesSupport = true;
 

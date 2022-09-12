@@ -120,7 +120,7 @@ public class Canvas implements AutoCloseable {
 
     // keep track of the device clip bounds in the canvas' global space to reject draws before
     // invoking the top-level device.
-    private final RectF mQuickRejectBounds = new RectF();
+    private final Rect2f mQuickRejectBounds = new Rect2f();
 
     // the surface we are associated with, may be null
     Surface mSurface;
@@ -136,7 +136,7 @@ public class Canvas implements AutoCloseable {
     private final MarkerStack mMarkerStack = new MarkerStack();
 
     // a temp rect that used with arguments
-    private final RectF mTmpRect = new RectF();
+    private final Rect2f mTmpRect = new Rect2f();
     private final Matrix4 mTmpMatrix = new Matrix4();
     private final Paint mTmpPaint = new Paint();
 
@@ -208,7 +208,7 @@ public class Canvas implements AutoCloseable {
      */
     @Nullable
     public Surface makeSurface(ImageInfo info) {
-        return topDevice().makeSurface(info);
+        return getTopDevice().makeSurface(info);
     }
 
     /**
@@ -218,7 +218,7 @@ public class Canvas implements AutoCloseable {
      */
     @Nullable
     public RecordingContext getRecordingContext() {
-        return topDevice().getRecordingContext();
+        return getTopDevice().getRecordingContext();
     }
 
     /**
@@ -273,15 +273,15 @@ public class Canvas implements AutoCloseable {
      *               called, may be null
      * @return depth of saved stack to pass to restoreToCount() to balance this call
      */
-    public final int saveLayer(@Nullable RectF bounds, @Nullable Paint paint) {
+    public final int saveLayer(@Nullable Rect2f bounds, @Nullable Paint paint) {
         return saveLayer(bounds, paint, null, 0);
     }
 
     /**
-     * Convenience for {@link #saveLayer(RectF, Paint)} that takes the four float coordinates
+     * Convenience for {@link #saveLayer(Rect2f, Paint)} that takes the four float coordinates
      * of the bounds' rectangle.
      *
-     * @see #saveLayer(RectF, Paint)
+     * @see #saveLayer(Rect2f, Paint)
      */
     public final int saveLayer(float left, float top, float right, float bottom, @Nullable Paint paint) {
         mTmpRect.set(left, top, right, bottom);
@@ -309,7 +309,7 @@ public class Canvas implements AutoCloseable {
      * @param alpha  the alpha to apply to the offscreen when restore() is called
      * @return depth of saved stack to pass to restoreToCount() to balance this call
      */
-    public final int saveLayerAlpha(@Nullable RectF bounds, int alpha) {
+    public final int saveLayerAlpha(@Nullable Rect2f bounds, int alpha) {
         alpha = MathUtil.clamp(alpha, 0, 0xFF);
         if (alpha == 0xFF) {
             return saveLayer(bounds, null, null, 0);
@@ -322,10 +322,10 @@ public class Canvas implements AutoCloseable {
     }
 
     /**
-     * Convenience for {@link #saveLayerAlpha(RectF, int)} that takes the four float
+     * Convenience for {@link #saveLayerAlpha(Rect2f, int)} that takes the four float
      * coordinates of the bounds' rectangle.
      *
-     * @see #saveLayerAlpha(RectF, int)
+     * @see #saveLayerAlpha(Rect2f, int)
      */
     public final int saveLayerAlpha(float left, float top, float right, float bottom, int alpha) {
         mTmpRect.set(left, top, right, bottom);
@@ -364,7 +364,7 @@ public class Canvas implements AutoCloseable {
      * @param saveLayerFlags options to modify layer, may be zero
      * @return depth of saved stack to pass to restoreToCount() to balance this call
      */
-    public final int saveLayer(@Nullable RectF bounds, @Nullable Paint paint,
+    public final int saveLayer(@Nullable Rect2f bounds, @Nullable Paint paint,
                                @Nullable ImageFilter backdrop, @SaveLayerFlag int saveLayerFlags) {
         if (paint != null && paint.nothingToDraw()) {
             // no need for the layer (or any of the draws until the matching restore()
@@ -380,10 +380,10 @@ public class Canvas implements AutoCloseable {
     }
 
     /**
-     * Convenience for {@link #saveLayer(RectF, Paint, ImageFilter, int)} that takes the
+     * Convenience for {@link #saveLayer(Rect2f, Paint, ImageFilter, int)} that takes the
      * four float coordinates of the bounds' rectangle.
      *
-     * @see #saveLayer(RectF, Paint, ImageFilter, int)
+     * @see #saveLayer(Rect2f, Paint, ImageFilter, int)
      */
     public final int saveLayer(float left, float top, float right, float bottom, @Nullable Paint paint,
                                @Nullable ImageFilter backdrop, @SaveLayerFlag int saveLayerFlags) {
@@ -469,7 +469,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preTranslate(dx, dy);
-            topDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalTransform(transform);
             didTranslate(dx, dy);
         }
     }
@@ -489,7 +489,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preScale(sx, sy);
-            topDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalTransform(transform);
             didScale(sx, sy);
         }
     }
@@ -515,7 +515,7 @@ public class Canvas implements AutoCloseable {
             transform.preTranslate(px, py);
             transform.preScale(sx, sy);
             transform.preTranslate(-px, -py);
-            topDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalTransform(transform);
             didScale(sx, sy, px, py);
         }
     }
@@ -534,7 +534,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
-            topDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalTransform(transform);
             didRotate(degrees);
         }
     }
@@ -559,7 +559,7 @@ public class Canvas implements AutoCloseable {
             transform.preTranslate(px, py);
             transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
             transform.preTranslate(-px, -py);
-            topDevice().setGlobalTransform(transform);
+            getTopDevice().setGlobalTransform(transform);
             didRotate(degrees, px, py);
         }
     }
@@ -577,7 +577,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preMultiply(matrix);
-            topDevice().setGlobalTransform(matrix);
+            getTopDevice().setGlobalTransform(matrix);
             didConcat(matrix);
         }
     }
@@ -633,7 +633,7 @@ public class Canvas implements AutoCloseable {
      *
      * @param rect the rectangle to intersect with the current clip
      */
-    public final void clipRect(Rect rect) {
+    public final void clipRect(Rect2i rect) {
         mTmpRect.set(rect);
         clipRect(mTmpRect, false);
     }
@@ -665,7 +665,7 @@ public class Canvas implements AutoCloseable {
      *
      * @param rect the rectangle to intersect with the current clip
      */
-    public final void clipRect(RectF rect) {
+    public final void clipRect(Rect2f rect) {
         clipRect(rect, false);
     }
 
@@ -697,7 +697,7 @@ public class Canvas implements AutoCloseable {
      * @param rect the rectangle to intersect with the current clip
      * @param doAA true if clip is to be anti-aliased
      */
-    public final void clipRect(RectF rect, boolean doAA) {
+    public final void clipRect(Rect2f rect, boolean doAA) {
         if (rect.isFinite()) {
             checkForDeferredSave();
             rect.sort();
@@ -739,8 +739,8 @@ public class Canvas implements AutoCloseable {
      * @return true if the given rect (transformed by the canvas' matrix)
      * intersecting with the maximum rect representing the canvas' clip is empty
      */
-    public final boolean quickReject(RectF rect) {
-        return quickReject(rect.left, rect.top, rect.right, rect.bottom);
+    public final boolean quickReject(Rect2f rect) {
+        return quickReject(rect.mLeft, rect.mTop, rect.mRight, rect.mBottom);
     }
 
     /**
@@ -781,8 +781,8 @@ public class Canvas implements AutoCloseable {
      * @param bounds the bounds of clip in local coordinates
      * @return true if clip bounds is not empty
      */
-    public final boolean getLocalClipBounds(RectF bounds) {
-        BaseDevice device = topDevice();
+    public final boolean getLocalClipBounds(Rect2f bounds) {
+        BaseDevice device = getTopDevice();
         if (device.getClipType() == BaseDevice.CLIP_TYPE_EMPTY) {
             bounds.setEmpty();
             return false;
@@ -812,8 +812,8 @@ public class Canvas implements AutoCloseable {
      * @param bounds the bounds of clip in device coordinates
      * @return true if clip bounds is not empty
      */
-    public final boolean getDeviceClipBounds(Rect bounds) {
-        BaseDevice device = topDevice();
+    public final boolean getDeviceClipBounds(Rect2i bounds) {
+        BaseDevice device = getTopDevice();
         if (device.getClipType() == BaseDevice.CLIP_TYPE_EMPTY) {
             bounds.setEmpty();
             return false;
@@ -979,8 +979,8 @@ public class Canvas implements AutoCloseable {
      * @param r     the rectangle to be drawn.
      * @param paint the paint used to draw the rectangle
      */
-    public final void drawRect(RectF r, Paint paint) {
-        drawRect(r.left, r.top, r.right, r.bottom, paint);
+    public final void drawRect(Rect2f r, Paint paint) {
+        drawRect(r.mLeft, r.mTop, r.mRight, r.mBottom, paint);
     }
 
     /**
@@ -992,8 +992,8 @@ public class Canvas implements AutoCloseable {
      * @param r     the rectangle to be drawn.
      * @param paint the paint used to draw the rectangle
      */
-    public final void drawRect(Rect r, Paint paint) {
-        drawRect(r.left, r.top, r.right, r.bottom, paint);
+    public final void drawRect(Rect2i r, Paint paint) {
+        drawRect(r.mLeft, r.mTop, r.mRight, r.mBottom, paint);
     }
 
     /**
@@ -1020,8 +1020,8 @@ public class Canvas implements AutoCloseable {
      * @param radius the radius used to round the corners
      * @param paint  the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(RectF rect, float radius, Paint paint) {
-        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, radius, radius, radius, radius, paint);
+    public final void drawRoundRect(Rect2f rect, float radius, Paint paint) {
+        drawRoundRect(rect.mLeft, rect.mTop, rect.mRight, rect.mBottom, radius, radius, radius, radius, paint);
     }
 
     /**
@@ -1051,8 +1051,8 @@ public class Canvas implements AutoCloseable {
      * @param rLL   the radius used to round the lower left corner
      * @param paint the paint used to draw the round rectangle
      */
-    public final void drawRoundRect(RectF rect, float rUL, float rUR, float rLR, float rLL, Paint paint) {
-        drawRoundRect(rect.left, rect.top, rect.right, rect.bottom, rUL, rUR, rLR, rLL, paint);
+    public final void drawRoundRect(Rect2f rect, float rUL, float rUR, float rLR, float rLL, Paint paint) {
+        drawRoundRect(rect.mLeft, rect.mTop, rect.mRight, rect.mBottom, rUL, rUR, rLR, rLL, paint);
     }
 
     /**
@@ -1177,13 +1177,13 @@ public class Canvas implements AutoCloseable {
      * @param dst   the rectangle that the image will be scaled/translated to fit into
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public final void drawImage(Image image, @Nullable Rect src, RectF dst, @Nullable Paint paint) {
+    public final void drawImage(Image image, @Nullable Rect2i src, Rect2f dst, @Nullable Paint paint) {
         if (src == null) {
             drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
-                    dst.left, dst.top, dst.right, dst.bottom, paint);
+                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
         } else {
-            drawImage(image, src.left, src.top, src.right, src.bottom,
-                    dst.left, dst.top, dst.right, dst.bottom, paint);
+            drawImage(image, src.mLeft, src.mTop, src.mRight, src.mBottom,
+                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
         }
     }
 
@@ -1197,13 +1197,13 @@ public class Canvas implements AutoCloseable {
      * @param dst   the rectangle that the image will be scaled/translated to fit into
      * @param paint the paint used to draw the image, null meaning a default paint
      */
-    public final void drawImage(Image image, @Nullable Rect src, Rect dst, @Nullable Paint paint) {
+    public final void drawImage(Image image, @Nullable Rect2i src, Rect2i dst, @Nullable Paint paint) {
         if (src == null) {
             drawImage(image, 0, 0, image.getWidth(), image.getHeight(),
-                    dst.left, dst.top, dst.right, dst.bottom, paint);
+                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
         } else {
-            drawImage(image, src.left, src.top, src.right, src.bottom,
-                    dst.left, dst.top, dst.right, dst.bottom, paint);
+            drawImage(image, src.mLeft, src.mTop, src.mRight, src.mBottom,
+                    dst.mLeft, dst.mTop, dst.mRight, dst.mBottom, paint);
         }
     }
 
@@ -1245,7 +1245,7 @@ public class Canvas implements AutoCloseable {
      * @return true if clip is empty
      */
     public final boolean isClipEmpty() {
-        return topDevice().getClipType() == BaseDevice.CLIP_TYPE_EMPTY;
+        return getTopDevice().getClipType() == BaseDevice.CLIP_TYPE_EMPTY;
     }
 
     /**
@@ -1255,7 +1255,7 @@ public class Canvas implements AutoCloseable {
      * @return true if clip is a Rect and not empty
      */
     public final boolean isClipRect() {
-        return topDevice().getClipType() == BaseDevice.CLIP_TYPE_RECT;
+        return getTopDevice().getClipType() == BaseDevice.CLIP_TYPE_RECT;
     }
 
     /**
@@ -1274,12 +1274,15 @@ public class Canvas implements AutoCloseable {
      */
     @Override
     public void close() {
+        if (mSurface != null) {
+            throw new IllegalStateException("Surface-created canvas is owned by Surface, use Surface#close instead");
+        }
     }
 
     protected void willSave() {
     }
 
-    protected int getSaveLayerStrategy(@Nullable RectF bounds, @Nullable Paint paint,
+    protected int getSaveLayerStrategy(@Nullable Rect2f bounds, @Nullable Paint paint,
                                        @Nullable ImageFilter backdrop,
                                        @SaveLayerFlag int saveLayerFlags) {
         return FULL_LAYER_SAVE_LAYER_STRATEGY;
@@ -1315,8 +1318,8 @@ public class Canvas implements AutoCloseable {
     protected void didSetMatrix(Matrix4 matrix) {
     }
 
-    protected void onClipRect(RectF rect, boolean doAA) {
-        topDevice().clipRect(rect, ClipOp.CLIP_OP_INTERSECT, doAA);
+    protected void onClipRect(Rect2f rect, boolean doAA) {
+        getTopDevice().clipRect(rect, ClipOp.CLIP_OP_INTERSECT, doAA);
         computeQuickRejectBounds();
     }
 
@@ -1350,13 +1353,13 @@ public class Canvas implements AutoCloseable {
     // the top-most device in the stack, will change within saveLayer()'s. All drawing and clipping
     // operations should route to this device.
     @Nonnull
-    private BaseDevice topDevice() {
+    private BaseDevice getTopDevice() {
         return top().mDevice;
     }
 
     @Nullable
     private SurfaceDrawContext topDeviceSurfaceDrawContext() {
-        return topDevice().getSurfaceDrawContext();
+        return getTopDevice().getSurfaceDrawContext();
     }
 
     private void checkForDeferredSave() {
@@ -1376,7 +1379,7 @@ public class Canvas implements AutoCloseable {
         MCRec rec = top();
         push().set(rec);
 
-        topDevice().save();
+        getTopDevice().save();
     }
 
     private void internalRestore() {
@@ -1390,14 +1393,14 @@ public class Canvas implements AutoCloseable {
             return;
         }
 
-        topDevice().restore(top().mMatrix);
+        getTopDevice().restore(top().mMatrix);
 
         // Update the quick-reject bounds in case the restore changed the top device or the
         // removed save record had included modifications to the clip stack.
         computeQuickRejectBounds();
     }
 
-    private void internalSaveLayer(@Nullable RectF bounds, @Nullable Paint paint,
+    private void internalSaveLayer(@Nullable Rect2f bounds, @Nullable Paint paint,
                                    @Nullable ImageFilter backdrop,
                                    @SaveLayerFlag int saveLayerFlags,
                                    int saveLayerStrategy) {
@@ -1422,7 +1425,7 @@ public class Canvas implements AutoCloseable {
     private void internalSetMatrix(Matrix4 matrix) {
         Matrix4 transform = top().mMatrix;
         transform.set(matrix);
-        topDevice().setGlobalTransform(transform);
+        getTopDevice().setGlobalTransform(transform);
     }
 
     private void internalDrawPaint(Paint paint) {
@@ -1432,7 +1435,7 @@ public class Canvas implements AutoCloseable {
             return;
         }
 
-        topDevice().drawPaint(paint);
+        getTopDevice().drawPaint(paint);
     }
 
     /**
@@ -1440,7 +1443,7 @@ public class Canvas implements AutoCloseable {
      * into the canvas' global space.
      */
     private void computeQuickRejectBounds() {
-        BaseDevice device = topDevice();
+        BaseDevice device = getTopDevice();
         if (device.getClipType() == BaseDevice.CLIP_TYPE_EMPTY) {
             mQuickRejectBounds.setEmpty();
         } else {

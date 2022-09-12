@@ -52,7 +52,7 @@ public final class CpuBuffer extends RefCnt implements Buffer {
     }
 
     @Override
-    protected void onFree() {
+    protected void dispose() {
         MemoryUtil.nmemFree(mData);
     }
 }
