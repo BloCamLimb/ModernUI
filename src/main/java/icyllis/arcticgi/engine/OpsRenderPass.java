@@ -18,7 +18,8 @@
 
 package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.core.*;
+import icyllis.arcticgi.core.Rect2f;
+import icyllis.arcticgi.core.SharedPtr;
 import icyllis.arcticgi.engine.ops.Op;
 
 /**
@@ -33,13 +34,40 @@ public abstract class OpsRenderPass {
      * DrawPipelineStatus.
      */
     private static final int
-            DrawPipelineStatus_Ok = 0,
-            DrawPipelineStatus_NotConfigured = 1,
+            DrawPipelineStatus_NotConfigured = 0,
+            DrawPipelineStatus_Configured = 1,
             DrawPipelineStatus_FailedToBind = 2;
 
     private int mDrawPipelineStatus = DrawPipelineStatus_NotConfigured;
 
-    public abstract Server getServer();
+    protected RenderTarget mRenderTarget;
+    protected int mOrigin;
+
+    // Backends may defer binding of certain buffers if their draw API requires a buffer, or if
+    // their bind methods don't support base values.
+    @SharedPtr
+    protected GpuBuffer mActiveIndexBuffer;
+    @SharedPtr
+    protected GpuBuffer mActiveVertexBuffer;
+    @SharedPtr
+    protected GpuBuffer mActiveInstanceBuffer;
+
+    public OpsRenderPass() {
+        this(null, EngineTypes.SurfaceOrigin_TopLeft);
+    }
+
+    public OpsRenderPass(RenderTarget rt, int origin) {
+        mRenderTarget = rt;
+        mOrigin = origin;
+    }
+
+    public void begin() {
+        mDrawPipelineStatus = DrawPipelineStatus_NotConfigured;
+    }
+
+    public void end() {
+        resetActiveBuffers();
+    }
 
     /**
      * Updates the internal pipeline state for drawing with the provided {@link ProgramInfo}. Enters an
@@ -49,29 +77,31 @@ public abstract class OpsRenderPass {
      * @param drawBounds  the draw's sub-area of the render target
      */
     public void bindPipeline(ProgramInfo programInfo, Rect2f drawBounds) {
+        assert (programInfo.origin() == mOrigin);
 
-        mDrawPipelineStatus = DrawPipelineStatus_Ok;
+        resetActiveBuffers();
+
+        if (!onBindPipeline(programInfo, drawBounds)) {
+            mDrawPipelineStatus = DrawPipelineStatus_FailedToBind;
+            return;
+        }
+
+        mDrawPipelineStatus = DrawPipelineStatus_Configured;
     }
 
-    protected void set(@SharedPtr Surface colorAttachment,
-                       @SharedPtr Surface resolveAttachment,
-                       @SharedPtr Surface stencilAttachment,
-                       int origin,
-                       Rect2i bounds,
-                       int colorLoadOp,
-                       int colorStoreOp,
-                       float colorClearR,
-                       float colorClearG,
-                       float colorClearB,
-                       float colorClearA,
-                       int resolveLoadOp,
-                       int resolveStoreOp,
-                       float resolveClearR,
-                       float resolveClearG,
-                       float resolveClearB,
-                       float resolveClearA,
-                       int stencilLoadOp,
-                       int stencilStoreOp) {
+    protected void set(RenderTarget rt, int origin) {
+        assert (mRenderTarget == null);
+        mRenderTarget = rt;
+        mOrigin = origin;
+    }
 
+    protected abstract Server getServer();
+
+    protected abstract boolean onBindPipeline(ProgramInfo programInfo, Rect2f drawBounds);
+
+    private void resetActiveBuffers() {
+        mActiveIndexBuffer = GpuResource.reset(mActiveIndexBuffer);
+        mActiveVertexBuffer = GpuResource.reset(mActiveVertexBuffer);
+        mActiveInstanceBuffer = GpuResource.reset(mActiveInstanceBuffer);
     }
 }

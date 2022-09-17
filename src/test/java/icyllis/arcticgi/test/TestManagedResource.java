@@ -97,7 +97,7 @@ public class TestManagedResource {
 
         GLServer server = (GLServer) directContext.getServer();
         GLPipelineStateCache pipelineStateCache = (GLPipelineStateCache) server.getPipelineBuilder();
-        GLPipelineState pipelineState = pipelineStateCache.findOrCreatePipelineState(server,
+        GLPipelineState pipelineState = pipelineStateCache.findOrCreatePipelineState(
                 new ProgramInfo(new SurfaceProxyView(directContext.getProxyProvider().createRenderTextureProxy(
                         GLBackendFormat.make(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
                         800, 800, 4, false, CoreTypes.BackingFit_Exact,

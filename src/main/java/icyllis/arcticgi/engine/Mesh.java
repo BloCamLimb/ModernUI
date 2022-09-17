@@ -18,6 +18,8 @@
 
 package icyllis.arcticgi.engine;
 
+import icyllis.arcticgi.core.SharedPtr;
+
 /**
  * The interface used to receive geometry buffers from {@link MeshDrawTarget}
  * for mesh-drawing operations.
@@ -41,11 +43,11 @@ public interface Mesh {
     /**
      * The callback method for {@link MeshDrawTarget#makeVertexSpace(Mesh)} results.
      *
-     * @param buffer     the vertex buffer that will hold the vertices
+     * @param buffer     the vertex buffer that will hold the vertices, ref'ed
      * @param baseVertex the offset into buffer of the first vertex,
      *                   in units of the size of a vertex from layout param
      */
-    default void setVertexBuffer(GpuBuffer buffer, int baseVertex) {
+    default void setVertexBuffer(@SharedPtr GpuBuffer buffer, int baseVertex) {
         throw new IllegalStateException();
     }
 
@@ -66,11 +68,11 @@ public interface Mesh {
     /**
      * The callback method for {@link MeshDrawTarget#makeInstanceSpace(Mesh)} results.
      *
-     * @param buffer       the instance buffer that will hold the instances
+     * @param buffer       the instance buffer that will hold the instances, ref'ed
      * @param baseInstance the offset into buffer of the first instance,
      *                     in units of the size of an instance from layout param
      */
-    default void setInstanceBuffer(GpuBuffer buffer, int baseInstance) {
+    default void setInstanceBuffer(@SharedPtr GpuBuffer buffer, int baseInstance) {
         throw new IllegalStateException();
     }
 }

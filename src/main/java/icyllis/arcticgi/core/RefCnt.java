@@ -46,13 +46,14 @@ public abstract class RefCnt implements AutoCloseable {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
+        // better than HashMap and OpenHashMap since we do not care about the CPU overhead
         TRACKER = Object2BooleanMaps.synchronize(
                 new Object2BooleanAVLTreeMap<>(Comparator.comparingInt(System::identityHashCode)));
         try {
             assert false;
         } catch (AssertionError e) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                // Subclasses should override toString() for debug purposes
+                // subclasses should override toString() for debug purposes
                 TRACKER.forEach((o, __) -> System.err.printf("RefCnt %d: %s\n", o.mRefCnt, o));
                 assert TRACKER.isEmpty() : "Memory leaks in reference-counted objects";
             }, "RefCnt-Tracker"));
@@ -67,6 +68,44 @@ public abstract class RefCnt implements AutoCloseable {
      */
     public RefCnt() {
         assert !TRACKER.put(this, true);
+    }
+
+    /**
+     * Adopt the new bare pointer, and call {@link #unref()} on any previously held object (if not null).
+     * No call to {@link #ref()} will be made.
+     */
+    @SharedPtr
+    public static <T extends RefCnt> T reset(@SharedPtr T sp) {
+        if (sp != null)
+            sp.unref();
+        return null;
+    }
+
+    /**
+     * Adopt the new bare pointer, and call {@link #unref()} on any previously held object (if not null).
+     * No call to {@link #ref()} will be made.
+     */
+    @SharedPtr
+    public static <T extends RefCnt> T reset(@SharedPtr T sp, T ptr) {
+        if (sp != null)
+            sp.unref();
+        return ptr;
+    }
+
+    @SharedPtr
+    public static <T extends RefCnt> T create(@SharedPtr T that) {
+        if (that != null)
+            that.ref();
+        return that;
+    }
+
+    @SharedPtr
+    public static <T extends RefCnt> T assign(@SharedPtr T sp, @SharedPtr T that) {
+        if (sp != null)
+            sp.unref();
+        if (that != null)
+            that.ref();
+        return that;
     }
 
     /**
@@ -124,6 +163,28 @@ public abstract class RefCnt implements AutoCloseable {
     public final int getRefCnt() {
         // std::memory_order_relaxed
         return (int) REF_CNT.getOpaque(this);
+    }
+
+    /**
+     * Debug only. Returns the reference count, which has memory ordering effects compatible
+     * with {@code memory_order_acquire}.
+     *
+     * @return the reference count
+     */
+    public final int getRefCntAcquire() {
+        // std::memory_order_acquire
+        return (int) REF_CNT.getAcquire(this);
+    }
+
+    /**
+     * Debug only. Returns the reference count, which has memory ordering effects compatible
+     * with {@code memory_order_seq_cst}.
+     *
+     * @return the reference count
+     */
+    public final int getRefCntVolatile() {
+        // std::memory_order_seq_cst
+        return mRefCnt;
     }
 
     /**

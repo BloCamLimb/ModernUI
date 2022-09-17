@@ -31,7 +31,8 @@ public final class EngineTypes {
      */
     public static final int
             OpenGL = 0, // OpenGL 4.5 core profile
-            Vulkan = 1; // Vulkan 1.1
+            Vulkan = 1, // Vulkan 1.1
+            Mock = 2;   // Mock draws nothing. It is used for unit tests and to measure CPU overhead.
 
     /**
      * Used to say whether a texture has mip levels allocated or not.
@@ -49,7 +50,7 @@ public final class EngineTypes {
             SurfaceOrigin_BottomLeft = 1;
 
     /**
-     * @see icyllis.arcticgi.opengl.GLServer#markDirty(int)
+     * @see icyllis.arcticgi.opengl.GLServer#markContextDirty(int)
      */
     public static final int
             GLBackendState_RenderTarget = 1,

@@ -19,7 +19,7 @@
 package icyllis.arcticgi.engine;
 
 import icyllis.arcticgi.core.Image;
-import icyllis.arcticgi.opengl.*;
+import icyllis.arcticgi.opengl.GLTypes;
 import icyllis.arcticgi.vulkan.VkCore;
 import org.lwjgl.system.NativeType;
 
@@ -33,12 +33,16 @@ import javax.annotation.concurrent.Immutable;
 public abstract class BackendFormat {
 
     /**
-     * @return see EngineTypes
+     * @see EngineTypes#OpenGL
+     * @see EngineTypes#Vulkan
+     * @see EngineTypes#Mock
      */
     public abstract int backend();
 
     /**
-     * @return see TextureType
+     * @see EngineTypes#TextureType_None
+     * @see EngineTypes#TextureType_2D
+     * @see EngineTypes#TextureType_External
      */
     public abstract int textureType();
 

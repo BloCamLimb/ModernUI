@@ -18,6 +18,7 @@
 
 package icyllis.arcticgi.opengl;
 
+import icyllis.arcticgi.core.RefCnt;
 import icyllis.arcticgi.core.SharedPtr;
 import icyllis.arcticgi.engine.GeometryProcessor;
 import icyllis.arcticgi.engine.shading.UniformHandler;
@@ -31,7 +32,7 @@ import java.util.List;
  * This includes both allocating and freeing these objects, as well as updating their values.
  */
 //TODO set and bind UBO, VBO, IBO, textures
-public class GLPipelineState implements AutoCloseable {
+public class GLPipelineState {
 
     @SharedPtr
     private GLPipeline mPipeline;
@@ -54,23 +55,13 @@ public class GLPipelineState implements AutoCloseable {
         }
     }
 
-    @Override
-    public void close() {
-        if (mPipeline != null) {
-            mPipeline.close();
-            mPipeline = null;
-        }
-        if (mDataManager != null) {
-            mDataManager.close();
-            mDataManager = null;
-        }
+    public void abandon() {
+        mPipeline.abandon();
     }
 
-    public void drop() {
-        mPipeline.drop();
-    }
-
-    public void bind() {
+    public void reset() {
+        mPipeline = RefCnt.reset(mPipeline);
+        mDataManager = RefCnt.reset(mDataManager);
     }
 
     public GLPipeline getPipeline() {

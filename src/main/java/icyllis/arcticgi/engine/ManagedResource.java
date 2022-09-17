@@ -34,16 +34,6 @@ import icyllis.arcticgi.core.RefCnt;
  */
 public abstract class ManagedResource extends RefCnt {
 
-    private final Server mServer;
-
-    public ManagedResource(Server server) {
-        mServer = server;
-    }
-
-    /**
-     * @return the server
-     */
-    protected Server getServer() {
-        return mServer;
+    public ManagedResource() {
     }
 }

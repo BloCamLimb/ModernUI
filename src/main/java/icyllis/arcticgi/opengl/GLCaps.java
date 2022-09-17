@@ -117,6 +117,9 @@ public final class GLCaps extends Caps {
                 if (!caps.GL_ARB_get_program_binary) {
                     options.mMissingExtensions.add("ARB_get_program_binary");
                 }
+                if (!caps.GL_ARB_viewport_array) {
+                    options.mMissingExtensions.add("ARB_viewport_array");
+                }
             }
             if (!caps.OpenGL42) {
                 if (!caps.GL_ARB_base_instance) {
@@ -165,7 +168,7 @@ public final class GLCaps extends Caps {
             }
         }
         if (!options.mMissingExtensions.isEmpty()) {
-            throw new AssertionError("Missing required extensions: " + options.mMissingExtensions);
+            throw new UnsupportedOperationException("Missing required extensions: " + options.mMissingExtensions);
         }
 
         mMaxFragmentUniformVectors = glGetInteger(GL_MAX_FRAGMENT_UNIFORM_VECTORS);

@@ -153,6 +153,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
             }
 
             GpuBuffer buffer = mBuffers[mIndex];
+            buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, (int) (offset / vertexSize));
@@ -178,6 +179,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
             }
 
             GpuBuffer buffer = mBuffers[mIndex];
+            buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % vertexSize == 0);
             mesh.setVertexBuffer(buffer, (int) (offset / vertexSize));
@@ -220,6 +222,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
             }
 
             GpuBuffer buffer = mBuffers[mIndex];
+            buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, (int) (offset / instanceSize));
@@ -246,6 +249,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
             }
 
             GpuBuffer buffer = mBuffers[mIndex];
+            buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % instanceSize == 0);
             mesh.setInstanceBuffer(buffer, (int) (offset / instanceSize));

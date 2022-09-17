@@ -49,9 +49,12 @@ public class GLPipeline extends GLManagedResource {
     private final int mVertexStride;
     private final int mInstanceStride;
 
+    private int mIndexBufferID;
+    private int mVertexBufferID;
+    private int mInstanceBufferID;
+    private int mIndexBufferUniqueID;
     private int mVertexBufferUniqueID;
     private int mInstanceBufferUniqueID;
-    private int mIndexBufferUniqueID;
 
     private GLPipeline(@Nonnull GLServer server,
                        int program,
@@ -128,69 +131,79 @@ public class GLPipeline extends GLManagedResource {
      */
     private static int setVertexFormat(@Nonnull Iterator<GeometryProcessor.Attribute> attrs,
                                        int vertexArray,
-                                       int location,
+                                       int attribIndex,
                                        int binding) {
         while (attrs.hasNext()) {
             var attr = attrs.next();
             // may contain matrix that takes up multiple locations
-            int locationSize = attr.locationSize();
-            assert (locationSize > 0);
+            int count = attr.locationSize();
+            assert (count > 0);
             int offset = attr.offset();
-            for (int i = 0; i < locationSize; i++) {
-                glEnableVertexArrayAttrib(vertexArray, location);
-                glVertexArrayAttribBinding(vertexArray, location, binding);
-                setAttribFormat(attr.srcType(), vertexArray, location, offset);
-                location++;
+            for (int i = 0; i < count; i++) {
+                glEnableVertexArrayAttrib(vertexArray, attribIndex);
+                glVertexArrayAttribBinding(vertexArray, attribIndex, binding);
+                setAttribFormat(attr.srcType(), vertexArray, attribIndex, offset);
+                attribIndex++;
                 offset += attr.stepSize();
             }
         }
-        return location;
+        return attribIndex;
     }
 
-    private static void setAttribFormat(int attribType, int vertexArray, int location, int offset) {
+    private static void setAttribFormat(int attribType, int vertexArray, int attribIndex, int offset) {
         switch (attribType) {
             case Float_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 1, GL_FLOAT, /*normalized*/false, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 1, GL_FLOAT, /*normalized*/false, offset);
             case Float2_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 2, GL_FLOAT, /*normalized*/false, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 2, GL_FLOAT, /*normalized*/false, offset);
             case Float3_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 3, GL_FLOAT, /*normalized*/false, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 3, GL_FLOAT, /*normalized*/false, offset);
             case Float4_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 4, GL_FLOAT, /*normalized*/false, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 4, GL_FLOAT, /*normalized*/false, offset);
             case Half_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 1, GL_HALF_FLOAT, /*normalized*/false, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 1, GL_HALF_FLOAT, /*normalized*/false, offset);
             case Half2_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 2, GL_HALF_FLOAT, /*normalized*/false, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 2, GL_HALF_FLOAT, /*normalized*/false, offset);
             case Half4_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 4, GL_HALF_FLOAT, /*normalized*/false, offset);
-            case Int2_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 2, GL_INT, offset);
-            case Int3_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 3, GL_INT, offset);
-            case Int4_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 4, GL_INT, offset);
-            case Byte_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 1, GL_BYTE, offset);
-            case Byte2_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 2, GL_BYTE, offset);
-            case Byte4_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 4, GL_BYTE, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 4, GL_HALF_FLOAT, /*normalized*/false, offset);
+            case Int2_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_INT, offset);
+            case Int3_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 3, GL_INT, offset);
+            case Int4_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 4, GL_INT, offset);
+            case Byte_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 1, GL_BYTE, offset);
+            case Byte2_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_BYTE, offset);
+            case Byte4_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 4, GL_BYTE, offset);
             case UByte_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 1, GL_UNSIGNED_BYTE, offset);
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 1, GL_UNSIGNED_BYTE, offset);
             case UByte2_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 2, GL_UNSIGNED_BYTE, offset);
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_UNSIGNED_BYTE, offset);
             case UByte4_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 4, GL_UNSIGNED_BYTE, offset);
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 4, GL_UNSIGNED_BYTE, offset);
             case UByte_norm_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 1, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 1, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
             case UByte4_norm_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 4, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
-            case Short2_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 2, GL_SHORT, offset);
-            case Short4_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 4, GL_SHORT, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 4, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
+            case Short2_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_SHORT, offset);
+            case Short4_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 4, GL_SHORT, offset);
             case UShort2_VertexAttribType ->
-                    glVertexArrayAttribIFormat(vertexArray, location, 2, GL_UNSIGNED_SHORT, offset);
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_UNSIGNED_SHORT, offset);
             case UShort2_norm_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 2, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
-            case Int_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 1, GL_INT, offset);
-            case UInt_VertexAttribType -> glVertexArrayAttribIFormat(vertexArray, location, 1, GL_UNSIGNED_INT, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 2, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
+            case Int_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 1, GL_INT, offset);
+            case UInt_VertexAttribType ->
+                    glVertexArrayAttribIFormat(vertexArray, attribIndex, 1, GL_UNSIGNED_INT, offset);
             case UShort_norm_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 1, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 1, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
             case UShort4_norm_VertexAttribType ->
-                    glVertexArrayAttribFormat(vertexArray, location, 4, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
+                    glVertexArrayAttribFormat(vertexArray, attribIndex, 4, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
             default -> throw new IllegalStateException();
         }
     }
@@ -207,7 +220,7 @@ public class GLPipeline extends GLManagedResource {
         }
     }
 
-    public void drop() {
+    public void abandon() {
         mProgram = 0;
         mVertexArray = 0;
     }
@@ -221,6 +234,23 @@ public class GLPipeline extends GLManagedResource {
     }
 
     /**
+     * Set element buffer (index buffer).
+     *
+     * @param buffer the element buffer object, raw ptr
+     */
+    public void bindIndexBuffer(@Nonnull GLBuffer buffer) {
+        if (mVertexArray == 0) {
+            return;
+        }
+        if (mIndexBufferID != buffer.getBuffer() ||
+                mIndexBufferUniqueID != buffer.getUniqueID()) {
+            glVertexArrayElementBuffer(mVertexArray, buffer.getBuffer());
+            mIndexBufferID = buffer.getBuffer();
+            mIndexBufferUniqueID = buffer.getUniqueID();
+        }
+    }
+
+    /**
      * Set the buffer that stores the attribute data.
      * <p>
      * The stride, the distance to the next vertex data, in bytes, is determined in constructor.
@@ -229,12 +259,18 @@ public class GLPipeline extends GLManagedResource {
      * @param offset first vertex data to the head of the buffer, in bytes
      */
     public void bindVertexBuffer(@Nonnull GLBuffer buffer, long offset) {
-        if (mVertexArray == 0) {
+        if (mVertexArray == 0 || mVertexBinding == INVALID_BINDING) {
             return;
         }
-        assert (mVertexBinding != INVALID_BINDING && mVertexStride > 0);
-        if (mVertexBufferUniqueID != buffer.getUniqueID()) {
-            glVertexArrayVertexBuffer(mVertexArray, mVertexBinding, buffer.getBuffer(), offset, mVertexStride);
+        assert mVertexStride > 0;
+        if (mVertexBufferID != buffer.getBuffer() ||
+                mVertexBufferUniqueID != buffer.getUniqueID()) {
+            glVertexArrayVertexBuffer(mVertexArray,
+                    mVertexBinding,
+                    buffer.getBuffer(),
+                    offset,
+                    mVertexStride);
+            mVertexBufferID = buffer.getBuffer();
             mVertexBufferUniqueID = buffer.getUniqueID();
         }
     }
@@ -248,28 +284,19 @@ public class GLPipeline extends GLManagedResource {
      * @param offset first instance data to the head of the buffer, in bytes
      */
     public void bindInstanceBuffer(@Nonnull GLBuffer buffer, long offset) {
-        if (mVertexArray == 0) {
+        if (mVertexArray == 0 || mInstanceBinding == INVALID_BINDING) {
             return;
         }
-        assert (mInstanceBinding != INVALID_BINDING && mInstanceStride > 0);
-        if (mInstanceBufferUniqueID != buffer.getUniqueID()) {
-            glVertexArrayVertexBuffer(mVertexArray, mInstanceBinding, buffer.getBuffer(), offset, mInstanceStride);
+        assert mInstanceStride > 0;
+        if (mInstanceBufferID != buffer.getBuffer() ||
+                mInstanceBufferUniqueID != buffer.getUniqueID()) {
+            glVertexArrayVertexBuffer(mVertexArray,
+                    mInstanceBinding,
+                    buffer.getBuffer(),
+                    offset,
+                    mInstanceStride);
+            mInstanceBufferID = buffer.getBuffer();
             mInstanceBufferUniqueID = buffer.getUniqueID();
-        }
-    }
-
-    /**
-     * Set element buffer (index buffer).
-     *
-     * @param buffer the element buffer object, raw ptr
-     */
-    public void bindIndexBuffer(@Nonnull GLBuffer buffer) {
-        if (mVertexArray == 0) {
-            return;
-        }
-        if (mIndexBufferUniqueID != buffer.getUniqueID()) {
-            glVertexArrayElementBuffer(mVertexArray, buffer.getBuffer());
-            mIndexBufferUniqueID = buffer.getUniqueID();
         }
     }
 }

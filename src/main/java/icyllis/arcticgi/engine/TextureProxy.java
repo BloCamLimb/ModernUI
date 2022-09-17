@@ -240,7 +240,7 @@ public class TextureProxy extends SurfaceProxy {
         mWidth = texture.getWidth();
         mHeight = texture.getHeight();
         mMipmapped = texture.isMipmapped();
-        mMipmapsDirty = texture.areMipmapsDirty();
+        mMipmapsDirty = texture.isMipmapsDirty();
         mBackingFit = CoreTypes.BackingFit_Exact;
         mBudgeted = texture.getBudgetType() == EngineTypes.BudgetType_Budgeted;
         mSurfaceFlags = texture.getFlags();
@@ -306,10 +306,7 @@ public class TextureProxy extends SurfaceProxy {
     protected void dispose() {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
-        if (mTexture != null) {
-            mTexture.unref();
-        }
-        mTexture = null;
+        mTexture = GpuResource.reset(mTexture);
 
         // In DDL-mode, uniquely keyed proxies keep their key even after their originating
         // proxy provider has gone away. In that case there is no-one to send the invalid key

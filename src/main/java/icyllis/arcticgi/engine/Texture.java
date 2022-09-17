@@ -42,7 +42,11 @@ import static icyllis.arcticgi.engine.EngineTypes.*;
 public abstract class Texture extends Surface {
 
     private boolean mReadOnly;
-    private boolean mMipmapsDirty = true; // only valid if isMipmapped=true
+    /**
+     * Only valid when isMipmapped=true.
+     * By default, we can't say mipmaps dirty or not, since texel data is undefined.
+     */
+    private boolean mMipmapsDirty;
 
     @SharedPtr
     private ReleaseCallback mReleaseCallback;
@@ -86,25 +90,25 @@ public abstract class Texture extends Surface {
     @Override
     public abstract boolean isMipmapped();
 
-    public final boolean areMipmapsDirty() {
-        return mMipmapsDirty && isMipmapped();
+    /**
+     * Return <code>true</code> if mipmaps are dirty and need to regenerate before sampling.
+     * The value is valid only when {@link #isMipmapped()} returns <code>true</code>.
+     *
+     * @return whether mipmaps are dirty
+     */
+    public final boolean isMipmapsDirty() {
+        // we assume mipmaps are identity, so we name this method as *is*
+        return mMipmapsDirty;
     }
 
-    public final void markMipmapsDirty() {
+    /**
+     * Set whether mipmaps are dirty or not. Call only when {@link #isMipmapped()} returns <code>true</code>.
+     *
+     * @param mipmapsDirty whether mipmaps are dirty
+     */
+    public final void setMipmapsDirty(boolean mipmapsDirty) {
         assert isMipmapped();
-        mMipmapsDirty = true;
-    }
-
-    public final void markMipmapsClean() {
-        assert isMipmapped();
-        mMipmapsDirty = false;
-    }
-
-    public final int getMipmapStatus() {
-        if (isMipmapped()) {
-            return mMipmapsDirty ? MipmapStatus_Dirty : MipmapStatus_Valid;
-        }
-        return MipmapStatus_None;
+        mMipmapsDirty = mipmapsDirty;
     }
 
     public abstract int getMaxMipmapLevel();

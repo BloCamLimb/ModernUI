@@ -19,9 +19,9 @@
 package icyllis.arcticgi.engine;
 
 import icyllis.arcticgi.core.PriorityQueue;
+import icyllis.arcticgi.core.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.invoke.MethodHandles;
@@ -84,7 +84,7 @@ public abstract class GpuResource {
      * Generates a unique ID from the resource pool. 0 is reserved.
      */
     static int createUniqueID() {
-        for (;;) {
+        for (; ; ) {
             final int value = sNextID.get();
             final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
@@ -127,6 +127,15 @@ public abstract class GpuResource {
     public GpuResource(Server server) {
         mServer = server;
         mUniqueID = createUniqueID();
+    }
+
+    /**
+     * Adopt the null pointer, and call {@link #unref()} on any previously held object (if not null).
+     */
+    public static <T extends GpuResource> T reset(@SharedPtr T sp) {
+        if (sp != null)
+            sp.unref();
+        return null;
     }
 
     /**

@@ -19,23 +19,23 @@
 package icyllis.arcticgi.engine;
 
 import icyllis.arcticgi.opengl.GLRenderbuffer;
-import icyllis.arcticgi.opengl.GLServer;
 
 import javax.annotation.Nonnull;
 
 /**
- * RenderTarget is mostly GLFramebuffer or VkFramebuffer and VkRenderPass, which
- * contains a set of attachments. This is the place where the rendering pipeline will
- * eventually draw to, and associated with a Surface and a Layer.
+ * The {@link RenderTarget} manages framebuffers and render passes, which consisted
+ * of a set of attachments. This is the place where the rendering pipeline will
+ * eventually draw to, and may be associated with a {@link icyllis.arcticgi.core.Surface}.
  * <p>
- * This type of resource can be recycled by Server. When recycled, the texture can
- * be used alone, or retrieve this RenderTarget from Server. However, static MSAA
- * color buffer and stencil buffer cannot be recycled.
+ * This type of resource can be recycled by {@link Server}. When recycled, the texture
+ * may be used separately, or retrieve this {@link RenderTarget} from {@link Server}.
+ * However, static MSAA color buffer and stencil buffer cannot be recycled. This behavior
+ * is controlled by {@link ResourceAllocator}.
  * <p>
- * Using {@link ResourceProvider} to obtain RenderTarget directly, or
- * {@link TextureRenderTargetProxy} for deferred operations.
+ * Use {@link ResourceProvider} to obtain {@link RenderTarget RenderTargets} directly. Use
+ * {@link RenderTargetProxy} and {@link TextureRenderTargetProxy} for deferred operations.
  */
-public abstract class RenderTarget extends RecycledResource {
+public abstract class RenderTarget extends ManagedResource {
 
     private final int mWidth;
     private final int mHeight;
@@ -48,11 +48,13 @@ public abstract class RenderTarget extends RecycledResource {
     // determined by subclass constructors
     protected int mFlags;
 
-    public RenderTarget(Server server, int width, int height, int sampleCount) {
-        super(server);
+    private final int mUniqueID;
+
+    protected RenderTarget(int width, int height, int sampleCount) {
         mWidth = width;
         mHeight = height;
         mSampleCount = sampleCount;
+        mUniqueID = GpuResource.createUniqueID();
     }
 
     /**
@@ -62,17 +64,22 @@ public abstract class RenderTarget extends RecycledResource {
      *
      * @param stencilBuffer an intrinsic stencil buffer
      */
-    public RenderTarget(GLServer server, int width, int height, int sampleCount,
-                        GLRenderbuffer stencilBuffer) {
-        super(server);
-        mWidth = width;
-        mHeight = height;
-        mSampleCount = sampleCount;
+    protected RenderTarget(int width, int height, int sampleCount,
+                           GLRenderbuffer stencilBuffer) {
+        this(width, height, sampleCount);
         if (sampleCount > 1) {
             mMSAAStencilBuffer = stencilBuffer;
         } else {
             mStencilBuffer = stencilBuffer;
         }
+    }
+
+    /**
+     * Gets an id that is unique for this Resource object. It is static in that it does
+     * not change when the content of the Resource object changes. This will never return 0.
+     */
+    public final int getUniqueID() {
+        return mUniqueID;
     }
 
     /**
@@ -167,11 +174,13 @@ public abstract class RenderTarget extends RecycledResource {
     }
 
     /**
-     * Returns whether a stencil buffer <b>can</b> be attached to this render target.
-     * There may already be a stencil attachment.
+     * @return whether a stencil buffer can be attached to this render target.
      */
-    protected abstract boolean canAttachStencil(boolean useMSAA);
+    protected abstract boolean isStencilAttachable();
 
+    /**
+     * @see ResourceProvider
+     */
     protected final void attachStencilBuffer(Surface stencilBuffer, boolean useMSAA) {
         if (stencilBuffer == null && (useMSAA ? mMSAAStencilBuffer : mStencilBuffer) == null) {
             // No need to do any work since we currently don't have a stencil attachment,
@@ -179,7 +188,7 @@ public abstract class RenderTarget extends RecycledResource {
             return;
         }
 
-        if (!onAttachStencilBuffer(stencilBuffer, useMSAA)) {
+        if (!completeStencilBuffer(stencilBuffer, useMSAA)) {
             return;
         }
 
@@ -197,7 +206,7 @@ public abstract class RenderTarget extends RecycledResource {
      *
      * @return if false, the stencil attachment will not be set to this render target
      */
-    protected abstract boolean onAttachStencilBuffer(Surface stencilBuffer, boolean useMSAA);
+    protected abstract boolean completeStencilBuffer(Surface stencilBuffer, boolean useMSAA);
 
     /**
      * Compute a {@link RenderTarget} key. Parameters are the same as Surface key, just

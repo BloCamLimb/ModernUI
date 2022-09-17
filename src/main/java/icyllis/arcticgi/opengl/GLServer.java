@@ -42,7 +42,7 @@ public final class GLServer extends Server {
     // The texture is single sampled, the render targets may be multisampled.
     private final Object2ObjectOpenHashMap<GLTexture, RenderTarget[]> mRenderTargetMap;
 
-    private int mHWBoundRenderTargetUniqueID = 0;
+    private GLCommandBuffer mMainCmdBuffer = new GLCommandBuffer(this);
 
     private final RenderTargetObjects mTmpRTObjects = new RenderTargetObjects();
 
@@ -54,7 +54,7 @@ public final class GLServer extends Server {
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
-        mProgramCache = new GLPipelineStateCache(256);
+        mProgramCache = new GLPipelineStateCache(this, 256);
         mRenderTargetMap = new Object2ObjectOpenHashMap<>();
         mCpuBufferCache = new CpuBufferCache(6);
         mVertexPool = GLBufferAllocPool.makeVertex(this, mCpuBufferCache);
@@ -103,23 +103,12 @@ public final class GLServer extends Server {
         if (cleanup) {
             mProgramCache.reset();
         } else {
-            mProgramCache.discard();
+            mProgramCache.abandon();
         }
     }
 
-    public void bindFramebuffer(int target, int framebuffer) {
-        glBindFramebuffer(target, framebuffer);
-    }
-
-    public void deleteFramebuffer(int framebuffer) {
-        // We're relying on the GL state shadowing being correct in the workaround code below, so we
-        // need to handle a dirty context.
-        handleDirtyContext();
-        glDeleteFramebuffers(framebuffer);
-    }
-
     @Override
-    public ThreadSafePipelineBuilder getPipelineBuilder() {
+    public GLPipelineStateCache getPipelineBuilder() {
         return mProgramCache;
     }
 
@@ -133,9 +122,8 @@ public final class GLServer extends Server {
         return mInstancePool;
     }
 
-    @Override
-    public BufferAllocPool getIndexPool() {
-        return null;
+    public GLCommandBuffer currentCommandBuffer() {
+        return mMainCmdBuffer;
     }
 
     @Nullable
@@ -269,6 +257,29 @@ public final class GLServer extends Server {
         return null;
     }
 
+    @Override
+    protected void onResolveRenderTarget(RenderTarget renderTarget,
+                                         int resolveLeft, int resolveTop,
+                                         int resolveRight, int resolveBottom) {
+        GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
+        int framebuffer = glRenderTarget.getFramebuffer(false);
+        int msaaFramebuffer = glRenderTarget.getFramebuffer(true);
+
+        // If the multisample FBO is nonzero, it means we always have something to resolve (even if the
+        // single sample buffer is FBO 0). If it's zero, then there's nothing to resolve.
+        assert (msaaFramebuffer != 0);
+
+        // In the EXT_multisampled_render_to_texture case, we shouldn't be resolving anything.
+        assert (framebuffer == 0 || framebuffer != msaaFramebuffer);
+
+        // BlitFramebuffer respects the scissor, so disable it.
+        currentCommandBuffer().flushScissorTest(false);
+        glBlitNamedFramebuffer(msaaFramebuffer, framebuffer, // MSAA to single
+                resolveLeft, resolveTop, resolveRight, resolveBottom, // src rect
+                resolveLeft, resolveTop, resolveRight, resolveBottom, // dst rect
+                GL_COLOR_BUFFER_BIT, GL_NEAREST);
+    }
+
     private int createTextureObject(int width, int height, int format, int levels) {
         assert format != GLTypes.FORMAT_UNKNOWN;
         assert !glFormatIsCompressed(format);
@@ -316,9 +327,8 @@ public final class GLServer extends Server {
             return null;
         }
         // Below here we may bind the FBO.
-        mHWBoundRenderTargetUniqueID = 0;
         // Create the state vector of the framebuffer.
-        bindFramebuffer(GL_FRAMEBUFFER, framebuffer);
+        currentCommandBuffer().bindFramebuffer(framebuffer);
 
         final int msaaFramebuffer;
         final GLRenderbuffer msaaColorBuffer;
@@ -332,19 +342,19 @@ public final class GLServer extends Server {
         } else {
             msaaFramebuffer = glGenFramebuffers();
             if (msaaFramebuffer == 0) {
-                deleteFramebuffer(framebuffer);
+                glDeleteFramebuffers(framebuffer);
                 return null;
             }
             // Create the state vector of the framebuffer.
-            bindFramebuffer(GL_FRAMEBUFFER, msaaFramebuffer);
+            currentCommandBuffer().bindFramebuffer(msaaFramebuffer);
 
             msaaColorBuffer = GLRenderbuffer.makeMSAA(this,
                     width, height,
                     samples,
                     format);
             if (msaaColorBuffer == null) {
-                deleteFramebuffer(framebuffer);
-                deleteFramebuffer(msaaFramebuffer);
+                glDeleteFramebuffers(framebuffer);
+                glDeleteFramebuffers(msaaFramebuffer);
                 return null;
             }
 
@@ -355,8 +365,8 @@ public final class GLServer extends Server {
             if (!mCaps.skipErrorChecks()) {
                 int status = glCheckNamedFramebufferStatus(msaaFramebuffer, GL_FRAMEBUFFER);
                 if (status != GL_FRAMEBUFFER_COMPLETE) {
-                    deleteFramebuffer(framebuffer);
-                    deleteFramebuffer(msaaFramebuffer);
+                    glDeleteFramebuffers(framebuffer);
+                    glDeleteFramebuffers(msaaFramebuffer);
                     msaaColorBuffer.unref();
                     return null;
                 }
@@ -370,8 +380,8 @@ public final class GLServer extends Server {
         if (!mCaps.skipErrorChecks()) {
             int status = glCheckNamedFramebufferStatus(framebuffer, GL_FRAMEBUFFER);
             if (status != GL_FRAMEBUFFER_COMPLETE) {
-                deleteFramebuffer(framebuffer);
-                deleteFramebuffer(msaaFramebuffer);
+                glDeleteFramebuffers(framebuffer);
+                glDeleteFramebuffers(msaaFramebuffer);
                 if (msaaColorBuffer != null) {
                     msaaColorBuffer.unref();
                 }

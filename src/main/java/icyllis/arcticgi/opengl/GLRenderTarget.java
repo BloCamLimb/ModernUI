@@ -26,8 +26,13 @@ import javax.annotation.Nullable;
 
 import static icyllis.arcticgi.opengl.GLCore.*;
 
+/**
+ * The base class is only used to wrap an existing framebuffer, such as the default framebuffer.
+ */
 //TODO don't create new backend format
-public final class GLRenderTarget extends RenderTarget {
+public class GLRenderTarget extends RenderTarget {
+
+    private final GLServer mServer;
 
     // the render target format, same as main color buffer
     private final int mFormat;
@@ -64,10 +69,11 @@ public final class GLRenderTarget extends RenderTarget {
                           GLTexture colorBuffer,
                           @SharedPtr GLRenderbuffer msaaColorBuffer,
                           boolean ownership) {
-        super(server, width, height, sampleCount);
-        assert sampleCount > 0;
-        // we always resolve MSAA framebuffer manually
-        assert framebuffer == 0 || framebuffer != msaaFramebuffer;
+        super(width, height, sampleCount);
+        assert (sampleCount > 0);
+        // we always resolve MSAA framebuffer manually, no multisampled_render_to_texture
+        assert (framebuffer == 0 || framebuffer != msaaFramebuffer);
+        mServer = server;
         mFormat = format;
         mFramebuffer = framebuffer;
         mMSAAFramebuffer = msaaFramebuffer;
@@ -90,10 +96,11 @@ public final class GLRenderTarget extends RenderTarget {
                            @SharedPtr GLRenderbuffer msaaColorBuffer,
                            @SharedPtr GLRenderbuffer stencilBuffer,
                            boolean ownership) {
-        super(server, width, height, sampleCount, stencilBuffer);
-        assert sampleCount > 0;
-        // we always resolve MSAA framebuffer manually
-        assert framebuffer == 0 || framebuffer != msaaFramebuffer;
+        super(width, height, sampleCount, stencilBuffer);
+        assert (sampleCount > 0);
+        // we always resolve MSAA framebuffer manually, no multisampled_render_to_texture
+        assert (framebuffer == 0 || framebuffer != msaaFramebuffer);
+        mServer = server;
         mFormat = format;
         mFramebuffer = framebuffer;
         mMSAAFramebuffer = msaaFramebuffer;
@@ -147,6 +154,10 @@ public final class GLRenderTarget extends RenderTarget {
         return (useMSAA ? mMSAAFramebuffer : mFramebuffer) == 0;
     }
 
+    public int getFramebuffer(boolean useMSAA) {
+        return useMSAA ? mMSAAFramebuffer : mFramebuffer;
+    }
+
     /**
      * Binds the render target to GL_FRAMEBUFFER for rendering.
      *
@@ -168,51 +179,27 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     /**
-     * Binds the multisample framebuffer and the single sample framebuffer, one to GL_DRAW_FRAMEBUFFER
-     * and the other to GL_READ_FRAMEBUFFER, depending on ResolveDirection.
-     *
-     * @param downSample true for down-sampling (MSAA to single) or for up-sampling (single to MSAA)
-     */
-    public void bindForResolve(boolean downSample) {
-        // If the multisample FBO is nonzero, it means we always have something to resolve (even if the
-        // single sample buffer is FBO 0). If it's zero, then there's nothing to resolve.
-        assert mMSAAFramebuffer != 0;
-        if (downSample) {
-            bindInternal(GL_READ_FRAMEBUFFER, true);
-            bindInternal(GL_DRAW_FRAMEBUFFER, false);
-        } else {
-            // Core-profile allows up-sampling
-            bindInternal(GL_READ_FRAMEBUFFER, false);
-            bindInternal(GL_DRAW_FRAMEBUFFER, true);
-        }
-    }
-
-    /**
      * Binds the render target to the given target and ensures its stencil attachment is valid.
      */
     private void bindInternal(int target, boolean useMSAA) {
         final int framebuffer = useMSAA ? mMSAAFramebuffer : mFramebuffer;
-        getServer().bindFramebuffer(target, framebuffer);
-        // Make sure the stencil attachment is valid. Even though a color buffer op doesn't use stencil,
-        // our FBO still needs to be "framebuffer complete".
-        if ((useMSAA && mRebindMSAAStencilBuffer) || (!useMSAA && mRebindStencilBuffer)) {
-            bindStencilInternal(framebuffer, useMSAA);
-        }
+        glBindFramebuffer(target, framebuffer);
+        bindStencil(useMSAA);
     }
 
     /**
-     * If this render target is already bound, this method ensures the stencil attachment is valid
-     * (attached or detached), if stencil buffer is reset right before.
+     * Make sure the stencil attachment is valid. Even though a color buffer op doesn't use stencil,
+     * our FBO still needs to be "framebuffer complete". If this render target is already bound,
+     * this method ensures the stencil attachment is valid (attached or detached), if stencil buffers
+     * reset right before.
      */
     public void bindStencil(boolean useMSAA) {
-        if ((useMSAA && mRebindMSAAStencilBuffer) || (!useMSAA && mRebindStencilBuffer)) {
-            final int framebuffer = useMSAA ? mMSAAFramebuffer : mFramebuffer;
-            bindStencilInternal(framebuffer, useMSAA);
+        if (!(useMSAA ? mRebindMSAAStencilBuffer : mRebindStencilBuffer)) {
+            return;
         }
-    }
-
-    private void bindStencilInternal(int framebuffer, boolean useMSAA) {
-        if (getStencilBuffer(useMSAA) instanceof GLRenderbuffer stencilBuffer) {
+        int framebuffer = getFramebuffer(useMSAA);
+        GLRenderbuffer stencilBuffer = (GLRenderbuffer) getStencilBuffer(useMSAA);
+        if (stencilBuffer != null) {
             glNamedFramebufferRenderbuffer(framebuffer,
                     GL_STENCIL_ATTACHMENT,
                     GL_RENDERBUFFER,
@@ -273,17 +260,15 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     @Override
-    protected boolean canAttachStencil(boolean useMSAA) {
+    protected boolean isStencilAttachable() {
         // Only modify the framebuffer attachments if we have created it.
         // Public APIs do not currently allow for wrap-only ownership,
         // so we can safely assume that if an object is owner, we created it.
-        return mOwnership ||
-                // The dynamic msaa attachment is always owner and always supports adding stencil.
-                (useMSAA && getSampleCount() == 1);
+        return mOwnership;
     }
 
     @Override
-    protected boolean onAttachStencilBuffer(@Nullable Surface stencilBuffer, boolean useMSAA) {
+    protected boolean completeStencilBuffer(@Nullable Surface stencilBuffer, boolean useMSAA) {
         // We defer attaching the new stencil buffer until the next time our framebuffer is bound.
         if (getStencilBuffer(useMSAA) != stencilBuffer) {
             if (useMSAA) {
@@ -299,12 +284,11 @@ public final class GLRenderTarget extends RenderTarget {
     protected void dispose() {
         super.dispose();
         if (mOwnership) {
-            final GLServer server = getServer();
             if (mFramebuffer != 0) {
-                server.deleteFramebuffer(mFramebuffer);
+                glDeleteFramebuffers(mFramebuffer);
             }
             if (mMSAAFramebuffer != 0) {
-                server.deleteFramebuffer(mMSAAFramebuffer);
+                glDeleteFramebuffers(mMSAAFramebuffer);
             }
             if (mMSAAColorBuffer != null) {
                 mMSAAColorBuffer.unref();
@@ -313,18 +297,5 @@ public final class GLRenderTarget extends RenderTarget {
         mFramebuffer = 0;
         mMSAAFramebuffer = 0;
         mMSAAColorBuffer = null;
-    }
-
-    @Override
-    public void onRecycle() {
-        if (mColorBuffer != null) {
-            mColorBuffer.unref();
-        }
-        mColorBuffer = null;
-    }
-
-    @Override
-    protected GLServer getServer() {
-        return (GLServer) super.getServer();
     }
 }

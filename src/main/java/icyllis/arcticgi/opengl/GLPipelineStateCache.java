@@ -25,32 +25,33 @@ import javax.annotation.Nullable;
 
 public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
 
+    private final GLServer mServer;
     private final int mRuntimeProgramCacheSize;
     private final Object2ObjectLinkedOpenCustomHashMap<Object, GLPipelineState> mCache;
     private final ProgramDesc mLookupDesc = new ProgramDesc();
 
-    GLPipelineStateCache(int runtimeProgramCacheSize) {
+    GLPipelineStateCache(GLServer server, int runtimeProgramCacheSize) {
+        mServer = server;
         mRuntimeProgramCacheSize = runtimeProgramCacheSize;
         mCache = new Object2ObjectLinkedOpenCustomHashMap<>(runtimeProgramCacheSize, ProgramDesc.HASH_STRATEGY);
     }
 
-    public void discard() {
-        mCache.values().forEach(GLPipelineState::drop);
+    public void abandon() {
+        mCache.values().forEach(GLPipelineState::abandon);
         reset();
     }
 
     public void reset() {
-        mCache.values().forEach(GLPipelineState::close);
+        mCache.values().forEach(GLPipelineState::reset);
         mCache.clear();
     }
 
     @Nullable
-    public GLPipelineState findOrCreatePipelineState(GLServer server,
-                                                     final ProgramInfo programInfo) {
-        final Caps caps = server.getCaps();
+    public GLPipelineState findOrCreatePipelineState(final ProgramInfo programInfo) {
+        final Caps caps = mServer.getCaps();
         final ProgramDesc desc = caps.makeDesc(mLookupDesc, /*renderTarget*/null, programInfo);
         assert (!desc.isEmpty());
-        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(server, desc, programInfo);
+        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, programInfo);
         if (pipelineState == null) {
             mStats.incNumInlineCompilationFailures();
         }
@@ -58,11 +59,10 @@ public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
     }
 
     @Nullable
-    public GLPipelineState findOrCreatePipelineState(GLServer server,
-                                                     final ProgramDesc desc,
+    public GLPipelineState findOrCreatePipelineState(final ProgramDesc desc,
                                                      final ProgramInfo programInfo) {
         assert (!desc.isEmpty());
-        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(server, desc, programInfo);
+        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, programInfo);
         if (pipelineState == null) {
             mStats.incNumPreCompilationFailures();
         }
@@ -70,22 +70,21 @@ public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
     }
 
     @Nullable
-    private GLPipelineState findOrCreatePipelineStateImpl(GLServer server,
-                                                          final ProgramDesc desc,
+    private GLPipelineState findOrCreatePipelineStateImpl(final ProgramDesc desc,
                                                           final ProgramInfo programInfo) {
         GLPipelineState entry = mCache.get(desc);
         if (entry != null) {
             return entry;
         }
         // We have a cache miss
-        GLPipelineState pipelineState = GLPipelineStateBuilder.createPipelineState(server, desc, programInfo);
+        GLPipelineState pipelineState = GLPipelineStateBuilder.createPipelineState(mServer, desc, programInfo);
         if (pipelineState == null) {
             mStats.incNumCompilationFailures();
             return null;
         }
         mStats.incNumCompilationSuccesses();
         if (mCache.size() >= mRuntimeProgramCacheSize) {
-            mCache.removeFirst().close();
+            mCache.removeFirst().reset();
             assert (mCache.size() < mRuntimeProgramCacheSize);
         }
         if (mCache.put(desc.toKey(), pipelineState) != null) {

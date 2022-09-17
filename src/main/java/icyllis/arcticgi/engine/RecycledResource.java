@@ -23,8 +23,7 @@ package icyllis.arcticgi.engine;
  */
 public abstract class RecycledResource extends ManagedResource {
 
-    public RecycledResource(Server server) {
-        super(server);
+    public RecycledResource() {
     }
 
     /**

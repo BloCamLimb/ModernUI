@@ -16,15 +16,10 @@
  * License along with Arctic. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcticgi.opengl;
+package icyllis.arcticgi.engine.ops;
 
-import icyllis.arcticgi.engine.ManagedResource;
+import icyllis.arcticgi.engine.RenderTask;
 
-public abstract class GLManagedResource extends ManagedResource {
-
-    protected final GLServer mServer;
-
-    public GLManagedResource(GLServer server) {
-        mServer = server;
-    }
+//TODO
+public class OpsTask extends RenderTask {
 }

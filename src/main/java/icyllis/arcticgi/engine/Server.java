@@ -18,7 +18,9 @@
 
 package icyllis.arcticgi.engine;
 
+import icyllis.arcticgi.core.Rect2i;
 import icyllis.arcticgi.core.SharedPtr;
+import icyllis.arcticgi.engine.ops.OpsTask;
 import icyllis.arcticgi.sksl.Compiler;
 import org.jetbrains.annotations.VisibleForTesting;
 
@@ -45,7 +47,7 @@ public abstract class Server {
     protected final Stats mStats = new Stats();
 
     private final List<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
-    private int mDirtyFlags = ~0;
+    private int mResetBits = ~0;
 
     protected Server(DirectContext context, Caps caps) {
         assert context != null && caps != null;
@@ -95,14 +97,14 @@ public abstract class Server {
      * the server that the state was modified, and it shouldn't make assumptions
      * about the state.
      */
-    public final void markDirty(int dirtyFlags) {
-        mDirtyFlags |= dirtyFlags;
+    public final void markContextDirty(int state) {
+        mResetBits |= state;
     }
 
     protected final void handleDirtyContext() {
-        if (mDirtyFlags != 0) {
-            onDirtyContext(mDirtyFlags);
-            mDirtyFlags = 0;
+        if (mResetBits != 0) {
+            onResetContext(mResetBits);
+            mResetBits = 0;
         }
     }
 
@@ -110,14 +112,12 @@ public abstract class Server {
      * Called when the 3D context state is unknown. Subclass should emit any
      * assumed 3D context state and dirty any state cache.
      */
-    protected void onDirtyContext(int dirtyFlags) {
+    protected void onResetContext(int dirtyFlags) {
     }
 
     public abstract BufferAllocPool getVertexPool();
 
     public abstract BufferAllocPool getInstancePool();
-
-    public abstract BufferAllocPool getIndexPool();
 
     /**
      * Creates a texture object and allocates its server memory. In other words, the
@@ -273,6 +273,44 @@ public abstract class Server {
         //TODO
         return false;
     }
+
+    /**
+     * Returns a {@link OpsRenderPass} which {@link OpsTask OpsTasks} send draw commands to instead of directly
+     * to the {@link Server} object. The <code>bounds</code> rect is the content rect of the <code>renderTarget</code>.
+     * If a 'stencil' is provided it will be the one bound to 'renderTarget'. If one is not
+     * provided but 'renderTarget' has a stencil buffer then that is a signal that the
+     * render target's stencil buffer should be ignored.
+     *
+     * @param renderTarget
+     * @param withStencil
+     * @param origin
+     * @param bounds
+     * @return
+     */
+    public OpsRenderPass getOpsRenderPass(RenderTarget renderTarget,
+                                          boolean withStencil,
+                                          int origin,
+                                          Rect2i bounds) {
+        //TODO
+        mStats.incRenderPasses();
+        return null;
+    }
+
+    /**
+     * Resolves MSAA. The resolve rectangle must already be in the native destination space.
+     */
+    public void resolveRenderTarget(RenderTarget renderTarget,
+                                    int resolveLeft, int resolveTop,
+                                    int resolveRight, int resolveBottom) {
+        assert (renderTarget != null);
+        handleDirtyContext();
+        onResolveRenderTarget(renderTarget, resolveLeft, resolveTop, resolveRight, resolveBottom);
+    }
+
+    // overridden by backend-specific derived class to perform the resolve
+    protected abstract void onResolveRenderTarget(RenderTarget renderTarget,
+                                                  int resolveLeft, int resolveTop,
+                                                  int resolveRight, int resolveBottom);
 
     public static final class Stats {
 
