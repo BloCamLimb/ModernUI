@@ -371,7 +371,7 @@ public final class UIManager implements LifecycleOwner {
         String extensions = String.join(", ", GLCore.getUnsupportedList());
         return new ConfirmScreen(dontShow -> {
             if (dontShow) {
-                Config.CLIENT.showGLCapsError.set(false);
+                Config.CLIENT.mShowGLCapsError.set(false);
                 Config.CLIENT.saveAndReload();
             }
             minecraft.setScreen(null);
@@ -407,7 +407,7 @@ public final class UIManager implements LifecycleOwner {
                 OptiFineIntegration.setFastRender(false);
                 LOGGER.info(MARKER, "Disabled OptiFine Fast Render");
             }
-            if (ModernUIForge.hasGLCapsError() && Config.CLIENT.showGLCapsError.get()) {
+            if (ModernUIForge.hasGLCapsError() && Config.CLIENT.mShowGLCapsError.get()) {
                 event.setNewScreen(createCapsErrorScreen());
             }
             mFirstScreenOpened = true;

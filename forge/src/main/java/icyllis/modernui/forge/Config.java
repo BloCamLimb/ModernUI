@@ -18,7 +18,6 @@
 
 package icyllis.modernui.forge;
 
-import com.electronwill.nightconfig.core.file.CommentedFileConfig;
 import com.mojang.blaze3d.platform.Window;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.core.Core;
@@ -35,7 +34,8 @@ import net.minecraft.client.resources.language.I18n;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.config.*;
+import net.minecraftforge.fml.config.IConfigSpec;
+import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.config.ModConfigEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLEnvironment;
@@ -44,9 +44,7 @@ import org.jetbrains.annotations.ApiStatus;
 import org.lwjgl.glfw.GLFW;
 
 import javax.annotation.Nonnull;
-import java.nio.file.Path;
 import java.util.*;
-import java.util.function.Function;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -59,8 +57,8 @@ final class Config {
     static final Common COMMON;
     private static final ForgeConfigSpec COMMON_SPEC;
 
-    static final Server SERVER;
-    private static final ForgeConfigSpec SERVER_SPEC;
+    /*static final Server SERVER;
+    private static final ForgeConfigSpec SERVER_SPEC;*/
 
     static {
         ForgeConfigSpec.Builder builder;
@@ -75,21 +73,26 @@ final class Config {
         COMMON = new Common(builder);
         COMMON_SPEC = builder.build();
 
-        builder = new ForgeConfigSpec.Builder();
+        /*builder = new ForgeConfigSpec.Builder();
         SERVER = new Server(builder);
-        SERVER_SPEC = builder.build();
+        SERVER_SPEC = builder.build();*/
     }
 
     static void init() {
         FMLPaths.getOrCreateGameRelativePath(FMLPaths.CONFIGDIR.get().resolve(ModernUI.NAME_CPT), ModernUI.NAME_CPT);
-        ModContainer mod = ModLoadingContext.get().getActiveContainer();
+        ModContainer container = ModLoadingContext.get().getActiveContainer();
         if (FMLEnvironment.dist.isClient()) {
-            mod.addConfig(new C(ModConfig.Type.CLIENT, CLIENT_SPEC, mod, "client")); // client only
-            mod.addConfig(new C(ModConfig.Type.COMMON, COMMON_SPEC, mod, "common")); // client only, but server logic
-            mod.addConfig(new C(ModConfig.Type.SERVER, SERVER_SPEC, mod, "server")); // sync to client (local)
+            container.addConfig(new ModConfig(ModConfig.Type.CLIENT, CLIENT_SPEC, container,
+                    ModernUI.NAME_CPT + "/client.toml")); // client only
+            container.addConfig(new ModConfig(ModConfig.Type.COMMON, COMMON_SPEC, container,
+                    ModernUI.NAME_CPT + "/common.toml")); // client only, but server logic
+            /*container.addConfig(new ModConfig(ModConfig.Type.SERVER, SERVER_SPEC, container,
+                    ModernUI.NAME_CPT + "/server.toml")); // sync to client (local)*/
         } else {
-            mod.addConfig(new C(ModConfig.Type.COMMON, COMMON_SPEC, mod, "common")); // dedicated server only
-            mod.addConfig(new C(ModConfig.Type.SERVER, SERVER_SPEC, mod, "server")); // sync to client (network)
+            container.addConfig(new ModConfig(ModConfig.Type.COMMON, COMMON_SPEC, container,
+                    ModernUI.NAME_CPT + "/common.toml")); // dedicated server only
+            /*container.addConfig(new ModConfig(ModConfig.Type.SERVER, SERVER_SPEC, container,
+                    ModernUI.NAME_CPT + "/server.toml")); // sync to client (network)*/
         }
         FMLJavaModLoadingContext.get().getModEventBus().addListener(Config::reload);
     }
@@ -97,25 +100,18 @@ final class Config {
     static void reload(@Nonnull ModConfigEvent event) {
         final IConfigSpec<?> spec = event.getConfig().getSpec();
         if (spec == CLIENT_SPEC) {
-            /*try {
-                ((com.electronwill.nightconfig.core.Config) ObfuscationReflectionHelper.findField(ForgeConfigSpec
-                .class, "childConfig").get(CLIENT_SPEC)).set(Lists.newArrayList("tooltip", "frameColor"), "0xE8B4DF");
-            } catch (IllegalAccessException e) {
-                e.printStackTrace();
-            }
-            CLIENT_SPEC.save();*/
             CLIENT.reload();
             LOGGER.debug(MARKER, "Client config reloaded with {}", event.getClass().getSimpleName());
         } else if (spec == COMMON_SPEC) {
             COMMON.reload();
             LOGGER.debug(MARKER, "Common config reloaded with {}", event.getClass().getSimpleName());
-        } else if (spec == SERVER_SPEC) {
+        }/* else if (spec == SERVER_SPEC) {
             SERVER.reload();
             LOGGER.debug(MARKER, "Server config reloaded with {}", event.getClass().getSimpleName());
-        }
+        }*/
     }
 
-    private static class C extends ModConfig {
+    /*private static class C extends ModConfig {
 
         private static final Toml _TOML = new Toml();
 
@@ -153,7 +149,7 @@ final class Config {
         public void unload(Path configBasePath, ModConfig config) {
             super.unload(reroute(configBasePath), config);
         }
-    }
+    }*/
 
     public static class Client {
 
@@ -164,43 +160,44 @@ final class Config {
         public static final float FONT_SCALE_MIN = 0.5f;
         public static final float FONT_SCALE_MAX = 2.0f;
 
-        final ForgeConfigSpec.BooleanValue blurEffect;
-        final ForgeConfigSpec.IntValue backgroundDuration;
-        final ForgeConfigSpec.IntValue blurRadius;
-        final ForgeConfigSpec.ConfigValue<List<? extends String>> backgroundColor;
-        final ForgeConfigSpec.BooleanValue inventoryPause;
-        final ForgeConfigSpec.BooleanValue tooltip;
-        final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipFill;
-        final ForgeConfigSpec.ConfigValue<List<? extends String>> tooltipStroke;
-        final ForgeConfigSpec.IntValue tooltipDuration;
-        final ForgeConfigSpec.BooleanValue ding;
+        final ForgeConfigSpec.BooleanValue mBlurEffect;
+        final ForgeConfigSpec.IntValue mBackgroundDuration;
+        final ForgeConfigSpec.IntValue mBlurRadius;
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> mBackgroundColor;
+        final ForgeConfigSpec.BooleanValue mInventoryPause;
+        final ForgeConfigSpec.BooleanValue mTooltip;
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> mTooltipFill;
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> mTooltipStroke;
+        final ForgeConfigSpec.IntValue mTooltipDuration;
+        final ForgeConfigSpec.BooleanValue mDing;
         //private final ForgeConfigSpec.BooleanValue hudBars;
-        final ForgeConfigSpec.BooleanValue forceRtl;
-        final ForgeConfigSpec.DoubleValue fontScale;
-        final ForgeConfigSpec.EnumValue<WindowMode> windowMode;
-        final ForgeConfigSpec.BooleanValue removeSignature;
-        final ForgeConfigSpec.BooleanValue removeTelemetry;
-        final ForgeConfigSpec.BooleanValue securePublicKey;
+        final ForgeConfigSpec.BooleanValue mForceRtl;
+        final ForgeConfigSpec.DoubleValue mFontScale;
+        final ForgeConfigSpec.EnumValue<WindowMode> mWindowMode;
+        final ForgeConfigSpec.BooleanValue mUseNewGuiScale;
+        final ForgeConfigSpec.BooleanValue mRemoveSignature;
+        final ForgeConfigSpec.BooleanValue mRemoveTelemetry;
+        final ForgeConfigSpec.BooleanValue mSecurePublicKey;
 
-        final ForgeConfigSpec.IntValue scrollbarSize;
-        final ForgeConfigSpec.IntValue touchSlop;
-        final ForgeConfigSpec.IntValue minScrollbarTouchTarget;
-        final ForgeConfigSpec.IntValue minimumFlingVelocity;
-        final ForgeConfigSpec.IntValue maximumFlingVelocity;
-        final ForgeConfigSpec.IntValue overscrollDistance;
-        final ForgeConfigSpec.IntValue overflingDistance;
-        final ForgeConfigSpec.DoubleValue verticalScrollFactor;
-        final ForgeConfigSpec.DoubleValue horizontalScrollFactor;
+        final ForgeConfigSpec.IntValue mScrollbarSize;
+        final ForgeConfigSpec.IntValue mTouchSlop;
+        final ForgeConfigSpec.IntValue mMinScrollbarTouchTarget;
+        final ForgeConfigSpec.IntValue mMinimumFlingVelocity;
+        final ForgeConfigSpec.IntValue mMaximumFlingVelocity;
+        final ForgeConfigSpec.IntValue mOverscrollDistance;
+        final ForgeConfigSpec.IntValue mOverflingDistance;
+        final ForgeConfigSpec.DoubleValue mVerticalScrollFactor;
+        final ForgeConfigSpec.DoubleValue mHorizontalScrollFactor;
 
-        private final ForgeConfigSpec.ConfigValue<List<? extends String>> blurBlacklist;
+        private final ForgeConfigSpec.ConfigValue<List<? extends String>> mBlurBlacklist;
 
-        final ForgeConfigSpec.BooleanValue antiAliasing;
-        final ForgeConfigSpec.BooleanValue fractionalMetrics;
-        final ForgeConfigSpec.BooleanValue linearSampling;
-        final ForgeConfigSpec.ConfigValue<List<? extends String>> fontFamily;
+        final ForgeConfigSpec.BooleanValue mAntiAliasing;
+        final ForgeConfigSpec.BooleanValue mFractionalMetrics;
+        final ForgeConfigSpec.BooleanValue mLinearSampling;
+        final ForgeConfigSpec.ConfigValue<List<? extends String>> mFontFamily;
 
-        final ForgeConfigSpec.BooleanValue skipGLCapsError;
-        final ForgeConfigSpec.BooleanValue showGLCapsError;
+        final ForgeConfigSpec.BooleanValue mSkipGLCapsError;
+        final ForgeConfigSpec.BooleanValue mShowGLCapsError;
 
         private WindowMode mLastWindowMode;
 
@@ -208,10 +205,10 @@ final class Config {
             builder.comment("Screen Config")
                     .push("screen");
 
-            backgroundDuration = builder.comment(
+            mBackgroundDuration = builder.comment(
                             "The duration of GUI background color and blur radius animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 200, ANIM_DURATION_MIN, ANIM_DURATION_MAX);
-            backgroundColor = builder.comment(
+            mBackgroundColor = builder.comment(
                             "The GUI background color in #RRGGBB or #AARRGGBB format. Default value: #66000000",
                             "Can be one to four values representing top left, top right, bottom right and bottom left" +
                                     " color.",
@@ -224,21 +221,21 @@ final class Config {
                         return list;
                     }, o -> true);
 
-            blurEffect = builder.comment(
+            mBlurEffect = builder.comment(
                             "Add blur effect to GUI background when opened, it is incompatible with OptiFine's FXAA " +
                                     "shader and some mods.")
                     .define("blurEffect", true);
-            blurRadius = builder.comment(
+            mBlurRadius = builder.comment(
                             "The 4-pass blur effect radius, higher values result in a small loss of performance.")
                     .defineInRange("blurRadius", 9, BLUR_RADIUS_MIN, BLUR_RADIUS_MAX);
-            blurBlacklist = builder.comment(
+            mBlurBlacklist = builder.comment(
                             "A list of GUI screen superclasses that won't activate blur effect when opened.")
                     .defineList("blurBlacklist", () -> {
                         List<String> list = new ArrayList<>();
                         list.add(ChatScreen.class.getName());
                         return list;
                     }, o -> true);
-            inventoryPause = builder.comment(
+            mInventoryPause = builder.comment(
                             "(Beta) Pause the game when inventory (also includes creative mode) opened.")
                     .define("inventoryPause", false);
 
@@ -247,10 +244,10 @@ final class Config {
             builder.comment("Tooltip Config")
                     .push("tooltip");
 
-            tooltip = builder.comment(
+            mTooltip = builder.comment(
                             "Whether to enable Modern UI tooltip style, or back to vanilla style.")
                     .define("enable", true);
-            tooltipFill = builder.comment(
+            mTooltipFill = builder.comment(
                             "The tooltip FILL color in #RRGGBB or #AARRGGBB format. Default: #D4000000",
                             "Can be one to four values representing top left, top right, bottom right and bottom left" +
                                     " color.",
@@ -262,7 +259,7 @@ final class Config {
                         list.add("#D4000000");
                         return list;
                     }, $ -> true);
-            tooltipStroke = builder.comment(
+            mTooltipStroke = builder.comment(
                             "The tooltip STROKE color in #RRGGBB or #AARRGGBB format. Default: #F0AADCF0, #F0DAD0F4, " +
                                     "#F0FFC3F7 and #F0DAD0F4",
                             "Can be one to four values representing top left, top right, bottom right and bottom left" +
@@ -278,7 +275,7 @@ final class Config {
                         list.add("#F0DAD0F4");
                         return list;
                     }, $ -> true);
-            tooltipDuration = builder.comment(
+            mTooltipDuration = builder.comment(
                             "The duration of tooltip alpha animation in milliseconds. (0 = OFF)")
                     .defineInRange("animationDuration", 100, ANIM_DURATION_MIN, ANIM_DURATION_MAX);
 
@@ -287,27 +284,30 @@ final class Config {
             builder.comment("General Config")
                     .push("general");
 
-            ding = builder.comment("Play a sound effect when the game is loaded.")
+            mDing = builder.comment("Play a sound effect when the game is loaded.")
                     .define("ding", true);
 
             /*hudBars = builder.comment(
                     "Show additional HUD bars added by ModernUI on the bottom-left of the screen.")
                     .define("hudBars", false);*/
 
-            windowMode = builder.comment("Control the window mode, normal mode does nothing.")
+            mWindowMode = builder.comment("Control the window mode, normal mode does nothing.")
                     .defineEnum("windowMode", WindowMode.NORMAL);
+            mUseNewGuiScale = builder.comment("Whether to replace vanilla GUI scale button to slider with tips.")
+                    .define("useNewGuiScale", true);
 
-            skipGLCapsError = builder.comment("UI renderer is disabled when the OpenGL capability test fails.",
+            mSkipGLCapsError = builder.comment("UI renderer is disabled when the OpenGL capability test fails.",
                             "Sometimes the driver reports wrong values, you can enable this to ignore it.")
                     .define("skipGLCapsError", false);
-            showGLCapsError = builder.comment("A dialog popup is displayed when the OpenGL capability test fails.",
+            mShowGLCapsError = builder.comment("A dialog popup is displayed when the OpenGL capability test fails.",
                             "Set to false to not show it. This is ignored when skipGLCapsError=true")
                     .define("showGLCapsError", true);
-            removeSignature = builder.comment("Remove signature of chat messages and commands.")
+
+            mRemoveSignature = builder.comment("Remove signature of chat messages and commands.")
                     .define("removeSignature", false);
-            removeTelemetry = builder.comment("Remove telemetry event of client behaviors.")
+            mRemoveTelemetry = builder.comment("Remove telemetry event of client behaviors.")
                     .define("removeTelemetry", false);
-            securePublicKey = builder.comment("Don't report profile's public key to server.")
+            mSecurePublicKey = builder.comment("Don't report profile's public key to server.")
                     .define("securePublicKey", false);
 
             builder.pop();
@@ -315,28 +315,29 @@ final class Config {
             builder.comment("View system config, only applied to Modern UI Core.")
                     .push("view");
 
-            forceRtl = builder.comment("Force layout direction to RTL, otherwise, the current Locale setting.")
+            mForceRtl = builder.comment("Force layout direction to RTL, otherwise, the current Locale setting.")
                     .define("forceRtl", false);
-            fontScale = builder.comment("The global font scale used with sp units.")
+            mFontScale = builder.comment("The global font scale used with sp units.")
                     .defineInRange("fontScale", 1.0f, FONT_SCALE_MIN, FONT_SCALE_MAX);
-            scrollbarSize = builder.comment("Default scrollbar size in dips.")
+            mScrollbarSize = builder.comment("Default scrollbar size in dips.")
                     .defineInRange("scrollbarSize", ViewConfiguration.SCROLL_BAR_SIZE, 0, 1024);
-            touchSlop = builder.comment("Distance a touch can wander before we think the user is scrolling in dips.")
+            mTouchSlop = builder.comment("Distance a touch can wander before we think the user is scrolling in dips.")
                     .defineInRange("touchSlop", ViewConfiguration.TOUCH_SLOP, 0, 1024);
-            minScrollbarTouchTarget = builder.comment("Minimum size of the touch target for a scrollbar in dips.")
+            mMinScrollbarTouchTarget = builder.comment("Minimum size of the touch target for a scrollbar in dips.")
                     .defineInRange("minScrollbarTouchTarget", ViewConfiguration.MIN_SCROLLBAR_TOUCH_TARGET, 0, 1024);
-            minimumFlingVelocity = builder.comment("Minimum velocity to initiate a fling in dips per second.")
+            mMinimumFlingVelocity = builder.comment("Minimum velocity to initiate a fling in dips per second.")
                     .defineInRange("minimumFlingVelocity", ViewConfiguration.MINIMUM_FLING_VELOCITY, 0, 32767);
-            maximumFlingVelocity = builder.comment("Maximum velocity to initiate a fling in dips per second.")
+            mMaximumFlingVelocity = builder.comment("Maximum velocity to initiate a fling in dips per second.")
                     .defineInRange("maximumFlingVelocity", ViewConfiguration.MAXIMUM_FLING_VELOCITY, 0, 32767);
-            overscrollDistance = builder.comment("Max distance in dips to overscroll for edge effects.")
+            mOverscrollDistance = builder.comment("Max distance in dips to overscroll for edge effects.")
                     .defineInRange("overscrollDistance", ViewConfiguration.OVERSCROLL_DISTANCE, 0, 1024);
-            overflingDistance = builder.comment("Max distance in dips to overfling for edge effects.")
+            mOverflingDistance = builder.comment("Max distance in dips to overfling for edge effects.")
                     .defineInRange("overflingDistance", ViewConfiguration.OVERFLING_DISTANCE, 0, 1024);
-            verticalScrollFactor = builder.comment("Amount to scroll in response to a vertical scroll event, in dips " +
+            mVerticalScrollFactor = builder.comment("Amount to scroll in response to a vertical scroll event, in dips" +
+                            " " +
                             "per axis value.")
                     .defineInRange("verticalScrollFactor", ViewConfiguration.VERTICAL_SCROLL_FACTOR, 0, 1024);
-            horizontalScrollFactor = builder.comment("Amount to scroll in response to a horizontal scroll event, in " +
+            mHorizontalScrollFactor = builder.comment("Amount to scroll in response to a horizontal scroll event, in " +
                             "dips per axis value.")
                     .defineInRange("horizontalScrollFactor", ViewConfiguration.HORIZONTAL_SCROLL_FACTOR, 0, 1024);
 
@@ -346,20 +347,20 @@ final class Config {
             builder.comment("Font Config")
                     .push("font");
 
-            antiAliasing = builder.comment(
+            mAntiAliasing = builder.comment(
                             "Control the anti-aliasing of raw glyph rendering.")
                     .define("antiAliasing", true);
-            fractionalMetrics = builder.comment(
+            mFractionalMetrics = builder.comment(
                             "Control the fractional metrics of raw glyph rendering.",
                             "Disable for rougher fonts; Enable for smoother fonts.")
                     .define("fractionalMetrics", true);
-            linearSampling = builder.comment(
+            mLinearSampling = builder.comment(
                             "Enable linear sampling for font atlases with mipmaps, mag filter will be always NEAREST.",
                             "If your fonts are not bitmap fonts, then you should keep this setting true.")
                     .define("linearSampling", true);
             // Segoe UI, Source Han Sans CN Medium, Noto Sans, Open Sans, San Francisco, Calibri,
             // Microsoft YaHei UI, STHeiti, SimHei, SansSerif
-            fontFamily = builder.comment(
+            mFontFamily = builder.comment(
                             "A set of font families with fallbacks to determine the typeface to use.",
                             "TrueType & OpenTrue are supported. Each element can be one of the following three cases.",
                             "1) Font family root name for those installed on your PC, for instance: Segoe UI",
@@ -399,11 +400,11 @@ final class Config {
         }
 
         private void reload() {
-            BlurHandler.sBlurEffect = blurEffect.get();
-            BlurHandler.sAnimationDuration = backgroundDuration.get();
-            BlurHandler.sBlurRadius = blurRadius.get();
+            BlurHandler.sBlurEffect = mBlurEffect.get();
+            BlurHandler.sAnimationDuration = mBackgroundDuration.get();
+            BlurHandler.sBlurRadius = mBlurRadius.get();
 
-            List<? extends String> colors = backgroundColor.get();
+            List<? extends String> colors = mBackgroundColor.get();
             int color = 0x66000000;
             for (int i = 0; i < 4; i++) {
                 if (colors != null && i < colors.size()) {
@@ -417,16 +418,16 @@ final class Config {
                 BlurHandler.sBackgroundColor[i] = color;
             }
 
-            BlurHandler.INSTANCE.loadBlacklist(blurBlacklist.get());
+            BlurHandler.INSTANCE.loadBlacklist(mBlurBlacklist.get());
 
-            ModernUIForge.sInventoryScreenPausesGame = inventoryPause.get();
-            ModernUIForge.sRemoveMessageSignature = removeSignature.get();
-            ModernUIForge.sRemoveTelemetrySession = removeTelemetry.get();
-            ModernUIForge.sSecureProfilePublicKey = securePublicKey.get();
+            ModernUIForge.sInventoryScreenPausesGame = mInventoryPause.get();
+            ModernUIForge.sRemoveMessageSignature = mRemoveSignature.get();
+            ModernUIForge.sRemoveTelemetrySession = mRemoveTelemetry.get();
+            ModernUIForge.sSecureProfilePublicKey = mSecurePublicKey.get();
 
-            TooltipRenderer.sTooltip = !ModernUIForge.hasGLCapsError() && tooltip.get();
+            TooltipRenderer.sTooltip = !ModernUIForge.hasGLCapsError() && mTooltip.get();
 
-            colors = tooltipFill.get();
+            colors = mTooltipFill.get();
             color = 0xD4000000;
             for (int i = 0; i < 4; i++) {
                 if (colors != null && i < colors.size()) {
@@ -439,7 +440,7 @@ final class Config {
                 }
                 TooltipRenderer.sFillColor[i] = color;
             }
-            colors = tooltipStroke.get();
+            colors = mTooltipStroke.get();
             color = 0xF0AADCF0;
             for (int i = 0; i < 4; i++) {
                 if (colors != null && i < colors.size()) {
@@ -452,65 +453,15 @@ final class Config {
                 }
                 TooltipRenderer.sStrokeColor[i] = color;
             }
-            TooltipRenderer.sAnimationDuration = tooltipDuration.get();
+            TooltipRenderer.sAnimationDuration = mTooltipDuration.get();
 
-            UIManager.sPlaySoundOnLoaded = ding.get();
+            UIManager.sPlaySoundOnLoaded = mDing.get();
 
-            WindowMode newWindowMode = windowMode.get();
-            if (mLastWindowMode != newWindowMode) {
-                mLastWindowMode = newWindowMode;
-                if (newWindowMode != WindowMode.NORMAL) {
-                    Minecraft.getInstance().tell(() -> {
-                        Window winB3D = Minecraft.getInstance().getWindow();
-                        switch (newWindowMode) {
-                            case FULLSCREEN -> {
-                                if (!winB3D.isFullscreen()) {
-                                    winB3D.toggleFullScreen();
-                                }
-                            }
-                            case FULLSCREEN_BORDERLESS -> {
-                                if (winB3D.isFullscreen()) {
-                                    winB3D.toggleFullScreen();
-                                }
-                                GLFW.glfwRestoreWindow(winB3D.getWindow());
-                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                        GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                                GLFW.glfwMaximizeWindow(winB3D.getWindow());
-                            }
-                            case MAXIMIZED -> {
-                                if (winB3D.isFullscreen()) {
-                                    winB3D.toggleFullScreen();
-                                }
-                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                        GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                                GLFW.glfwMaximizeWindow(winB3D.getWindow());
-                            }
-                            case MINIMIZED -> {
-                                if (winB3D.isFullscreen()) {
-                                    winB3D.toggleFullScreen();
-                                }
-                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                        GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                                GLFW.glfwIconifyWindow(winB3D.getWindow());
-                            }
-                            case WINDOWED -> {
-                                if (winB3D.isFullscreen()) {
-                                    winB3D.toggleFullScreen();
-                                }
-                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                        GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
-                                GLFW.glfwRestoreWindow(winB3D.getWindow());
-                            }
-                            case WINDOWED_BORDERLESS -> {
-                                if (winB3D.isFullscreen()) {
-                                    winB3D.toggleFullScreen();
-                                }
-                                GLFW.glfwSetWindowAttrib(winB3D.getWindow(),
-                                        GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
-                                GLFW.glfwRestoreWindow(winB3D.getWindow());
-                            }
-                        }
-                    });
+            WindowMode windowMode = mWindowMode.get();
+            if (mLastWindowMode != windowMode) {
+                mLastWindowMode = windowMode;
+                if (windowMode != WindowMode.NORMAL) {
+                    Minecraft.getInstance().tell(windowMode::apply);
                 }
             }
 
@@ -518,31 +469,31 @@ final class Config {
             Handler handler = Core.getUiHandlerAsync();
             if (handler != null) {
                 handler.post(() -> {
-                    UIManager.getInstance().updateLayoutDir(forceRtl.get());
-                    ViewConfiguration.get().setFontScale(fontScale.get().floatValue());
-                    ViewConfiguration.get().setScrollbarSize(scrollbarSize.get());
-                    ViewConfiguration.get().setTouchSlop(touchSlop.get());
-                    ViewConfiguration.get().setMinScrollbarTouchTarget(minScrollbarTouchTarget.get());
-                    ViewConfiguration.get().setMinimumFlingVelocity(minimumFlingVelocity.get());
-                    ViewConfiguration.get().setMaximumFlingVelocity(maximumFlingVelocity.get());
-                    ViewConfiguration.get().setOverscrollDistance(overscrollDistance.get());
-                    ViewConfiguration.get().setOverflingDistance(overflingDistance.get());
-                    ViewConfiguration.get().setVerticalScrollFactor(verticalScrollFactor.get().floatValue());
-                    ViewConfiguration.get().setHorizontalScrollFactor(horizontalScrollFactor.get().floatValue());
+                    UIManager.getInstance().updateLayoutDir(mForceRtl.get());
+                    ViewConfiguration.get().setFontScale(mFontScale.get().floatValue());
+                    ViewConfiguration.get().setScrollbarSize(mScrollbarSize.get());
+                    ViewConfiguration.get().setTouchSlop(mTouchSlop.get());
+                    ViewConfiguration.get().setMinScrollbarTouchTarget(mMinScrollbarTouchTarget.get());
+                    ViewConfiguration.get().setMinimumFlingVelocity(mMinimumFlingVelocity.get());
+                    ViewConfiguration.get().setMaximumFlingVelocity(mMaximumFlingVelocity.get());
+                    ViewConfiguration.get().setOverscrollDistance(mOverscrollDistance.get());
+                    ViewConfiguration.get().setOverflingDistance(mOverflingDistance.get());
+                    ViewConfiguration.get().setVerticalScrollFactor(mVerticalScrollFactor.get().floatValue());
+                    ViewConfiguration.get().setHorizontalScrollFactor(mHorizontalScrollFactor.get().floatValue());
                 });
             }
 
             boolean reload = false;
-            if (GlyphManager.sAntiAliasing != antiAliasing.get()) {
-                GlyphManager.sAntiAliasing = antiAliasing.get();
+            if (GlyphManager.sAntiAliasing != mAntiAliasing.get()) {
+                GlyphManager.sAntiAliasing = mAntiAliasing.get();
                 reload = true;
             }
-            if (GlyphManager.sFractionalMetrics != fractionalMetrics.get()) {
-                GlyphManager.sFractionalMetrics = fractionalMetrics.get();
+            if (GlyphManager.sFractionalMetrics != mFractionalMetrics.get()) {
+                GlyphManager.sFractionalMetrics = mFractionalMetrics.get();
                 reload = true;
             }
-            if (GLFontAtlas.sLinearSampling != linearSampling.get()) {
-                GLFontAtlas.sLinearSampling = linearSampling.get();
+            if (GLFontAtlas.sLinearSampling != mLinearSampling.get()) {
+                GLFontAtlas.sLinearSampling = mLinearSampling.get();
                 reload = true;
             }
             if (reload) {
@@ -561,6 +512,58 @@ final class Config {
             WINDOWED,
             WINDOWED_BORDERLESS;
 
+            public void apply() {
+                Window window = Minecraft.getInstance().getWindow();
+                switch (this) {
+                    case FULLSCREEN -> {
+                        if (!window.isFullscreen()) {
+                            window.toggleFullScreen();
+                        }
+                    }
+                    case FULLSCREEN_BORDERLESS -> {
+                        if (window.isFullscreen()) {
+                            window.toggleFullScreen();
+                        }
+                        GLFW.glfwRestoreWindow(window.getWindow());
+                        GLFW.glfwSetWindowAttrib(window.getWindow(),
+                                GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
+                        GLFW.glfwMaximizeWindow(window.getWindow());
+                    }
+                    case MAXIMIZED -> {
+                        if (window.isFullscreen()) {
+                            window.toggleFullScreen();
+                        }
+                        GLFW.glfwSetWindowAttrib(window.getWindow(),
+                                GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
+                        GLFW.glfwMaximizeWindow(window.getWindow());
+                    }
+                    case MINIMIZED -> {
+                        if (window.isFullscreen()) {
+                            window.toggleFullScreen();
+                        }
+                        GLFW.glfwSetWindowAttrib(window.getWindow(),
+                                GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
+                        GLFW.glfwIconifyWindow(window.getWindow());
+                    }
+                    case WINDOWED -> {
+                        if (window.isFullscreen()) {
+                            window.toggleFullScreen();
+                        }
+                        GLFW.glfwSetWindowAttrib(window.getWindow(),
+                                GLFW.GLFW_DECORATED, GLFW.GLFW_TRUE);
+                        GLFW.glfwRestoreWindow(window.getWindow());
+                    }
+                    case WINDOWED_BORDERLESS -> {
+                        if (window.isFullscreen()) {
+                            window.toggleFullScreen();
+                        }
+                        GLFW.glfwSetWindowAttrib(window.getWindow(),
+                                GLFW.GLFW_DECORATED, GLFW.GLFW_FALSE);
+                        GLFW.glfwRestoreWindow(window.getWindow());
+                    }
+                }
+            }
+
             @Nonnull
             @Override
             public String toString() {
@@ -569,8 +572,10 @@ final class Config {
         }
     }
 
-    // common config exists on physical client and physical server once game loaded
-    // they are independent and do not sync with each other
+    /**
+     * Common config exists on physical client and physical server once game loaded.
+     * They are independent and do not sync with each other.
+     */
     public static class Common {
 
         private final ForgeConfigSpec.BooleanValue developerMode;
@@ -617,7 +622,7 @@ final class Config {
 
     // server config is available when integrated server or dedicated server started
     // if on dedicated server, all config data will sync to remote client via network
-    public static class Server {
+    /*public static class Server {
 
         private Server(@Nonnull ForgeConfigSpec.Builder builder) {
 
@@ -626,5 +631,5 @@ final class Config {
         private void reload() {
 
         }
-    }
+    }*/
 }

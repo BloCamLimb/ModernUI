@@ -188,7 +188,7 @@ final class Registration {
                 // FML may throw ex, so it can be null
                 if (handler != null) {
                     // Call in lambda, not in creating the lambda
-                    handler.post(() -> UIManager.getInstance().updateLayoutDir(Config.CLIENT.forceRtl.get()));
+                    handler.post(() -> UIManager.getInstance().updateLayoutDir(Config.CLIENT.mForceRtl.get()));
                 }
             });
 
@@ -228,29 +228,34 @@ final class Registration {
                             .guiScale))))
             );*/
 
-            final OptionInstance<Integer> newGuiScale = new OptionInstance<>("options.guiScale",
-                    OptionInstance.noTooltip(),
-                    (caption, value) -> {
-                        if (value == 0) {
-                            return Options.genericValueLabel(caption, Component.translatable("options.guiScale.auto")
-                                    .append(Component.literal(" (" + (MuiForgeApi.calcGuiScales() >> 4 & 0xf) + ")")));
-                        } else {
-                            MutableComponent valueComponent = Component.literal(value.toString());
-                            if (value < (MuiForgeApi.calcGuiScales() >> 8 & 0xf)) {
-                                valueComponent.withStyle(ChatFormatting.RED);
+            if (Config.CLIENT.mUseNewGuiScale.get()) {
+                final OptionInstance<Integer> newGuiScale = new OptionInstance<>("options.guiScale",
+                        OptionInstance.noTooltip(),
+                        (caption, value) -> {
+                            if (value == 0) { // auto (best)
+                                int best = (MuiForgeApi.calcGuiScales() >> 4 & 0xf);
+                                return Options.genericValueLabel(caption,
+                                        Component.translatable("options.guiScale.auto")
+                                                .append(Component.literal(" (" + best + ")")));
+                            } else {
+                                MutableComponent valueComponent = Component.literal(value.toString());
+                                if (value < (MuiForgeApi.calcGuiScales() >> 8 & 0xf)) {
+                                    valueComponent.withStyle(ChatFormatting.RED);
+                                }
+                                return Options.genericValueLabel(caption, valueComponent);
                             }
-                            return Options.genericValueLabel(caption, valueComponent);
-                        }
-                    },
-                    new GuiScaleValueSet(), 0, value -> {
-                if (value != Minecraft.getInstance().getWindow().getGuiScale()) {
-                    Minecraft.getInstance().resizeDisplay();
+                        },
+                        new GuiScaleValueSet(), 0, value -> {
+                    if (value != Minecraft.getInstance().getWindow().getGuiScale()) {
+                        Minecraft.getInstance().resizeDisplay();
+                    }
+                });
+                // no barrier
+                ((AccessOptions) Minecraft.getInstance().options).setGuiScale(newGuiScale);
+                if (ModernUIForge.isOptiFineLoaded()) {
+                    OptiFineIntegration.setGuiScale(newGuiScale);
+                    LOGGER.info(MARKER, "Replace OptiFine GUI Scale");
                 }
-            });
-            ((AccessOptions) Minecraft.getInstance().options).setGuiScale(newGuiScale);
-            if (ModernUIForge.isOptiFineLoaded()) {
-                OptiFineIntegration.setGuiScale(newGuiScale);
-                LOGGER.info(MARKER, "Set OptiFine GUI Scale");
             }
 
             /*Option[] settings = null;

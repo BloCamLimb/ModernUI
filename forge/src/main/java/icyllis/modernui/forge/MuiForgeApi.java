@@ -24,12 +24,12 @@ import icyllis.modernui.annotation.MainThread;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.math.FMath;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
@@ -213,11 +213,11 @@ public final class MuiForgeApi {
     }
 
     /**
-     * Returns whether the graphics engine is disabled due to GL caps error.
-     * Call this after COMMON_SETUP event on render thread.
+     * Returns whether the graphics engine failed to start, which means that UI will render nothing.
+     * Call this after {@link net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent} on render thread.
      */
     @RenderThread
-    public static boolean hasNoRenderer() {
+    public static boolean hasNoRender() {
         return ModernUIForge.hasGLCapsError();
     }
 
@@ -232,34 +232,23 @@ public final class MuiForgeApi {
     public static int calcGuiScales(int framebufferWidth, int framebufferHeight) {
         int w = framebufferWidth / 16;
         int h = framebufferHeight / 9;
-
-        if ((w & 1) == 1) {
-            w++;
-        }
-        if ((h & 1) == 1) {
-            h++;
-        }
-
-        double base = Math.min(w, h);
-        double high = Math.max(w, h);
+        int base = Math.min(w, h);
 
         int min;
-        int max = FMath.clamp((int) (base / 26), 1, 9);
+        int max = Mth.clamp(Math.min(framebufferWidth / 12, h) / 27, 1, 9);
         if (max > 1) {
-            int i = (int) (base / 64);
-            int j = (int) (high / 64);
-            min = FMath.clamp(j != i ? Math.min(i, j) + 1 : i, 2, 9);
+            min = Mth.clamp(base / 64, 2, 9);
         } else {
             min = 1;
         }
 
         int best;
         if (min > 1) {
-            double b = base > 150 ? 40 : base > 100 ? 36 : 32;
-            int i = (int) (base / b);
-            int j = (int) (high / b);
-            double v1 = base / (i * 32);
-            if (v1 > 1.25 || j > i) {
+            double step = base > 150 ? 40. : base > 100 ? 36. : 32.;
+            int i = (int) (base / step);
+            int j = (int) (Math.max(w, h) / step);
+            double v1 = base / (i * 32.);
+            if (v1 > 40 / 32. || j > i) {
                 best = Math.min(max, i + 1);
             } else {
                 best = Math.min(max, i);
