@@ -138,6 +138,7 @@ public final class ModernUIForge {
 
         if ((getBootstrapLevel() & BOOTSTRAP_ENABLE_DEBUG_INJECTORS) != 0) {
             MinecraftForge.EVENT_BUS.register(EventHandler.ClientDebug.class);
+            LOGGER.debug(MARKER, "Enable Modern UI debug injectors");
         }
 
         if (sDevelopment) {
@@ -289,7 +290,7 @@ public final class ModernUIForge {
     }
 
     public static boolean hasGLCapsError() {
-        return sGLCapsError && !Config.CLIENT.skipGLCapsError.get();
+        return sGLCapsError && !Config.CLIENT.mSkipGLCapsError.get();
     }
 
     @SuppressWarnings("UnusedReturnValue")
@@ -309,9 +310,7 @@ public final class ModernUIForge {
     public static class Client extends ModernUI {
 
         static {
-            if (FMLEnvironment.dist.isDedicatedServer()) {
-                throw new RuntimeException();
-            }
+            assert FMLEnvironment.dist.isClient();
         }
 
         private volatile Typeface mTypeface;
@@ -344,7 +343,7 @@ public final class ModernUIForge {
             synchronized (this) {
                 // should be a worker thread
                 if (mTypeface == null) {
-                    if (RenderSystem.isOnRenderThread()) {
+                    if (RenderSystem.isOnRenderThread() || Minecraft.getInstance().isSameThread()) {
                         LOGGER.error(MARKER,
                                 "Loading typeface on the render thread, but it should be on a worker thread.\n"
                                         + "Don't report to Modern UI, but to other mods as displayed in stack trace.",
@@ -352,12 +351,12 @@ public final class ModernUIForge {
                                         .fillInStackTrace());
                     }
                     Set<Font> set = new LinkedHashSet<>();
-                    List<? extends String> configs = Config.CLIENT.fontFamily.get();
+                    List<? extends String> configs = Config.CLIENT.mFontFamily.get();
                     if (configs != null) {
                         loadFonts(configs, set);
                     }
                     mTypeface = Typeface.createTypeface(set.toArray(new Font[0]));
-                    // do some warm-up
+                    // do some warm-up, but do not block ourselves
                     Minecraft.getInstance().tell(() -> LayoutCache.getOrCreate(ID, 0, 1, false,
                             new FontPaint(), false, false));
                     LOGGER.info(MARKER, "Loaded typeface: {}", mTypeface);
@@ -380,6 +379,7 @@ public final class ModernUIForge {
 
         @Override
         public ViewManager getViewManager() {
+            //TODO should use a window manager, because a single view tree can have only one focus
             return UIManager.getInstance().getDecorView();
         }
     }

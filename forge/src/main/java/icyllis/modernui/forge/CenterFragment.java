@@ -265,7 +265,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createInputOption("modernui.center.screen.backgroundDuration");
                 var input = option.<EditText>requireViewById(R.id.input);
-                input.setText(Config.CLIENT.backgroundDuration.get().toString());
+                input.setText(Config.CLIENT.mBackgroundDuration.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(3));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
@@ -273,8 +273,8 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                         int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
                                 Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
                         v.setText(Integer.toString(value));
-                        if (value != Config.CLIENT.backgroundDuration.get()) {
-                            Config.CLIENT.backgroundDuration.set(value);
+                        if (value != Config.CLIENT.mBackgroundDuration.get()) {
+                            Config.CLIENT.mBackgroundDuration.set(value);
                             Config.CLIENT.saveAndReload();
                         }
                     }
@@ -284,9 +284,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("modernui.center.screen.blurEffect");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.blurEffect.get());
+                button.setChecked(Config.CLIENT.mBlurEffect.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.blurEffect.set(checked);
+                    Config.CLIENT.mBlurEffect.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -294,7 +294,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createInputOption("modernui.center.screen.blurRadius");
                 var input = option.<EditText>requireViewById(R.id.input);
-                input.setText(Config.CLIENT.blurRadius.get().toString());
+                input.setText(Config.CLIENT.mBlurRadius.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(2));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
@@ -302,8 +302,8 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                         int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
                                 Client.BLUR_RADIUS_MIN, Client.BLUR_RADIUS_MAX);
                         v.setText(Integer.toString(value));
-                        if (value != Config.CLIENT.blurRadius.get()) {
-                            Config.CLIENT.blurRadius.set(value);
+                        if (value != Config.CLIENT.mBlurRadius.get()) {
+                            Config.CLIENT.mBlurRadius.set(value);
                             Config.CLIENT.saveAndReload();
                         }
                     }
@@ -313,9 +313,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("modernui.center.screen.inventoryPause");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.inventoryPause.get());
+                button.setChecked(Config.CLIENT.mInventoryPause.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.inventoryPause.set(checked);
+                    Config.CLIENT.mInventoryPause.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -340,13 +340,13 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                     var spinner = new Spinner();
                     spinner.setGravity(Gravity.END);
                     spinner.setAdapter(new ArrayAdapter<>(Client.WindowMode.values()));
-                    spinner.setSelection(Config.CLIENT.windowMode.get().ordinal());
+                    spinner.setSelection(Config.CLIENT.mWindowMode.get().ordinal());
                     spinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
                         @Override
                         public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
                             Client.WindowMode windowMode = Client.WindowMode.values()[position];
-                            if (Config.CLIENT.windowMode.get() != windowMode) {
-                                Config.CLIENT.windowMode.set(windowMode);
+                            if (Config.CLIENT.mWindowMode.get() != windowMode) {
+                                Config.CLIENT.mWindowMode.set(windowMode);
                                 Config.CLIENT.saveAndReload();
                             }
                         }
@@ -376,9 +376,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("modernui.center.extension.ding");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.ding.get());
+                button.setChecked(Config.CLIENT.mDing.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.ding.set(checked);
+                    Config.CLIENT.mDing.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -386,9 +386,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("modernui.center.extension.tooltip");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.tooltip.get());
+                button.setChecked(Config.CLIENT.mTooltip.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.tooltip.set(checked);
+                    Config.CLIENT.mTooltip.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -396,7 +396,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createInputOption("modernui.center.extension.tooltipDuration");
                 var input = option.<EditText>requireViewById(R.id.input);
-                input.setText(Config.CLIENT.tooltipDuration.get().toString());
+                input.setText(Config.CLIENT.mTooltipDuration.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale()), new InputFilter.LengthFilter(3));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
                     if (!hasFocus) {
@@ -404,8 +404,8 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                         int value = FMath.clamp(Integer.parseInt(v.getText().toString()),
                                 Client.ANIM_DURATION_MIN, Client.ANIM_DURATION_MAX);
                         v.setText(Integer.toString(value));
-                        if (value != Config.CLIENT.tooltipDuration.get()) {
-                            Config.CLIENT.tooltipDuration.set(value);
+                        if (value != Config.CLIENT.mTooltipDuration.get()) {
+                            Config.CLIENT.mTooltipDuration.set(value);
                             Config.CLIENT.saveAndReload();
                         }
                     }
@@ -747,9 +747,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("modernui.center.system.forceRtlLayout");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.forceRtl.get());
+                button.setChecked(Config.CLIENT.mForceRtl.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.forceRtl.set(checked);
+                    Config.CLIENT.mForceRtl.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -757,7 +757,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createInputOption("modernui.center.system.globalFontScale");
                 var input = option.<EditText>requireViewById(R.id.input);
-                input.setText(Config.CLIENT.fontScale.get().toString());
+                input.setText(Config.CLIENT.mFontScale.get().toString());
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
                         new InputFilter.LengthFilter(4));
                 input.setOnFocusChangeListener((view, hasFocus) -> {
@@ -766,8 +766,8 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                         double value = Math.max(Math.min(Double.parseDouble(v.getText().toString()),
                                 Client.FONT_SCALE_MAX), Client.FONT_SCALE_MIN);
                         v.setText(Double.toString(value));
-                        if (value != Config.CLIENT.fontScale.get()) {
-                            Config.CLIENT.fontScale.set(value);
+                        if (value != Config.CLIENT.mFontScale.get()) {
+                            Config.CLIENT.mFontScale.set(value);
                             Config.CLIENT.saveAndReload();
                         }
                     }
@@ -821,7 +821,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                     input.setTextSize(14);
                     input.setPadding(dp3, 0, dp3, 0);
 
-                    input.setText(String.join("\n", Config.CLIENT.fontFamily.get()));
+                    input.setText(String.join("\n", Config.CLIENT.mFontFamily.get()));
                     input.setOnFocusChangeListener((view, hasFocus) -> {
                         if (!hasFocus) {
                             EditText v = (EditText) view;
@@ -832,8 +832,8 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                                 }
                             }
                             v.setText(String.join("\n", list));
-                            if (!Config.CLIENT.fontFamily.get().equals(list)) {
-                                Config.CLIENT.fontFamily.set(list);
+                            if (!Config.CLIENT.mFontFamily.get().equals(list)) {
+                                Config.CLIENT.mFontFamily.set(list);
                                 Config.CLIENT.saveOnly();
                                 Toast.makeText(I18n.get("gui.modernui.restart_to_work"), Toast.LENGTH_SHORT)
                                         .show();
@@ -862,9 +862,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("modernui.center.font.antiAliasing");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.antiAliasing.get());
+                button.setChecked(Config.CLIENT.mAntiAliasing.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.antiAliasing.set(checked);
+                    Config.CLIENT.mAntiAliasing.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -872,9 +872,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("modernui.center.font.fractionalMetrics");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.fractionalMetrics.get());
+                button.setChecked(Config.CLIENT.mFractionalMetrics.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.fractionalMetrics.set(checked);
+                    Config.CLIENT.mFractionalMetrics.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -882,9 +882,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("modernui.center.font.linearSampling");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.linearSampling.get());
+                button.setChecked(Config.CLIENT.mLinearSampling.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.linearSampling.set(checked);
+                    Config.CLIENT.mLinearSampling.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -910,13 +910,13 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                 group.addView(title, params);
             }
 
-            addSystemSetting(20, "Scrollbar size", group, 1024, Config.CLIENT.scrollbarSize);
-            addSystemSetting(22, "Touch slop", group, 1024, Config.CLIENT.touchSlop);
-            addSystemSetting(24, "Min scrollbar touch target", group, 1024, Config.CLIENT.minScrollbarTouchTarget);
-            addSystemSetting(26, "Minimum fling velocity", group, 32767, Config.CLIENT.minimumFlingVelocity);
-            addSystemSetting(28, "Maximum fling velocity", group, 32767, Config.CLIENT.maximumFlingVelocity);
-            addSystemSetting(30, "Overscroll distance", group, 1024, Config.CLIENT.overscrollDistance);
-            addSystemSetting(32, "Overfling distance", group, 1024, Config.CLIENT.overflingDistance);
+            addSystemSetting(20, "Scrollbar size", group, 1024, Config.CLIENT.mScrollbarSize);
+            addSystemSetting(22, "Touch slop", group, 1024, Config.CLIENT.mTouchSlop);
+            addSystemSetting(24, "Min scrollbar touch target", group, 1024, Config.CLIENT.mMinScrollbarTouchTarget);
+            addSystemSetting(26, "Minimum fling velocity", group, 32767, Config.CLIENT.mMinimumFlingVelocity);
+            addSystemSetting(28, "Maximum fling velocity", group, 32767, Config.CLIENT.mMaximumFlingVelocity);
+            addSystemSetting(30, "Overscroll distance", group, 1024, Config.CLIENT.mOverscrollDistance);
+            addSystemSetting(32, "Overfling distance", group, 1024, Config.CLIENT.mOverflingDistance);
 
             {
                 var view = new TextView();
@@ -931,7 +931,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                 group.addView(view, params);
 
                 var input = new EditText();
-                input.setText(Config.CLIENT.verticalScrollFactor.get().toString());
+                input.setText(Config.CLIENT.mVerticalScrollFactor.get().toString());
                 input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
@@ -942,8 +942,8 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                         double radius = Double.parseDouble(input.getText().toString());
                         radius = Math.max(Math.min(radius, 1024), 0);
                         input.setText(Double.toString(radius));
-                        if (radius != Config.CLIENT.verticalScrollFactor.get()) {
-                            Config.CLIENT.verticalScrollFactor.set(radius);
+                        if (radius != Config.CLIENT.mVerticalScrollFactor.get()) {
+                            Config.CLIENT.mVerticalScrollFactor.set(radius);
                             Config.CLIENT.saveAndReload();
                         }
                     }
@@ -974,7 +974,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                 group.addView(view, params);
 
                 var input = new EditText();
-                input.setText(Config.CLIENT.horizontalScrollFactor.get().toString());
+                input.setText(Config.CLIENT.mHorizontalScrollFactor.get().toString());
                 input.setTextAlignment(View.TEXT_ALIGNMENT_VIEW_START);
                 input.setTextSize(14);
                 input.setFilters(DigitsInputFilter.getInstance(input.getTextLocale(), false, true),
@@ -985,8 +985,8 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                         double radius = Double.parseDouble(input.getText().toString());
                         radius = Math.max(Math.min(radius, 1024), 0);
                         input.setText(Double.toString(radius));
-                        if (radius != Config.CLIENT.horizontalScrollFactor.get()) {
-                            Config.CLIENT.horizontalScrollFactor.set(radius);
+                        if (radius != Config.CLIENT.mHorizontalScrollFactor.get()) {
+                            Config.CLIENT.mHorizontalScrollFactor.set(radius);
                             Config.CLIENT.saveAndReload();
                         }
                     }
@@ -1037,9 +1037,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("Remove Message Signature");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.removeSignature.get());
+                button.setChecked(Config.CLIENT.mRemoveSignature.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.removeSignature.set(checked);
+                    Config.CLIENT.mRemoveSignature.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -1047,9 +1047,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("Remove Telemetry Session");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.removeTelemetry.get());
+                button.setChecked(Config.CLIENT.mRemoveTelemetry.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.removeTelemetry.set(checked);
+                    Config.CLIENT.mRemoveTelemetry.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
@@ -1057,9 +1057,9 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             {
                 var option = createButtonOption("Secure Profile Public Key");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
-                button.setChecked(Config.CLIENT.securePublicKey.get());
+                button.setChecked(Config.CLIENT.mSecurePublicKey.get());
                 button.setOnCheckedChangeListener((__, checked) -> {
-                    Config.CLIENT.securePublicKey.set(checked);
+                    Config.CLIENT.mSecurePublicKey.set(checked);
                     Config.CLIENT.saveAndReload();
                 });
                 category.addView(option);
