@@ -113,11 +113,11 @@ public enum BlurHandler {
 
         GameRenderer gr = minecraft.gameRenderer;
         if (hasScreen && !mHasScreen) {
-            if (!blocked && sBlurEffect && !mBlurring && gr.currentEffect() == null && sBlurRadius > 1) {
+            if (!blocked && sBlurEffect && !mBlurring && gr.currentEffect() == null && sBlurRadius >= 1) {
                 gr.loadEffect(BLUR_POST_EFFECT);
                 mBlurring = true;
                 if (sAnimationDuration > 0) {
-                    updateRadius(0);
+                    updateRadius(1);
                 } else {
                     updateRadius(sBlurRadius);
                 }
@@ -187,7 +187,7 @@ public enum BlurHandler {
         if (mFadingIn) {
             float p = Math.min(timeMillis / sAnimationDuration, 1.0f);
             if (mBlurring) {
-                updateRadius(p * sBlurRadius);
+                updateRadius(Math.max(p * sBlurRadius, 1.0f));
             }
             for (int i = 0; i < 4; i++) {
                 mBackgroundColor[i] = ColorEvaluator.evaluate(p, 0, sBackgroundColor[i]);

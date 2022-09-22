@@ -99,7 +99,7 @@ public class TextRenderType extends RenderType {
         );
         GLOW_STATES = ImmutableList.of(
                 RENDERTYPE_MODERN_TEXT_GLOW,
-                TRANSLUCENT_TRANSPARENCY,
+                LIGHTNING_TRANSPARENCY,
                 LEQUAL_DEPTH_TEST,
                 CULL,
                 LIGHTMAP,
@@ -107,7 +107,7 @@ public class TextRenderType extends RenderType {
                 NO_LAYERING,
                 MAIN_TARGET,
                 DEFAULT_TEXTURING,
-                COLOR_WRITE, // no depth write, translucent objects will be clipped by Sign Block
+                COLOR_WRITE, // no depth write, translucent objects will be clipped
                 DEFAULT_LINE
         );
         SEE_THROUGH_STATES = ImmutableList.of(
