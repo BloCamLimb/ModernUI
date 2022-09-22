@@ -217,7 +217,7 @@ final class Config {
                                     "value.")
                     .defineList("backgroundColor", () -> {
                         List<String> list = new ArrayList<>();
-                        list.add("#66000000");
+                        list.add("#99000000");
                         return list;
                     }, o -> true);
 
@@ -226,8 +226,8 @@ final class Config {
                                     "shader and some mods.")
                     .define("blurEffect", true);
             mBlurRadius = builder.comment(
-                            "The 4-pass blur effect radius, higher values result in a small loss of performance.")
-                    .defineInRange("blurRadius", 9, BLUR_RADIUS_MIN, BLUR_RADIUS_MAX);
+                            "The strength for two-pass gaussian convolution blur effect, spp = (radius * 2) + 1.")
+                    .defineInRange("blurRadius", 5, BLUR_RADIUS_MIN, BLUR_RADIUS_MAX);
             mBlurBlacklist = builder.comment(
                             "A list of GUI screen superclasses that won't activate blur effect when opened.")
                     .defineList("blurBlacklist", () -> {

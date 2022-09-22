@@ -228,11 +228,11 @@ public final class ModernTextRenderer {
         }
 
         matrix = matrix.copy();
-        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, LightTexture.FULL_BRIGHT, scale, level);
-        matrix.translate(OUTLINE_OFFSET);
-
         node.drawText(matrix, source, null, x, y, r, g, b, a, false,
                 false, 0, LightTexture.FULL_BRIGHT, scale, level);
+        matrix.translate(OUTLINE_OFFSET);
+
+        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, LightTexture.FULL_BRIGHT, scale, level);
     }
 
     public static void drawText8xOutline(@Nonnull FormattedCharSequence text, float x, float y,
@@ -264,11 +264,11 @@ public final class ModernTextRenderer {
         }
 
         matrix = matrix.copy();
-        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, packedLight, scale, level);
-        matrix.translate(OUTLINE_OFFSET);
-
         node.drawText(matrix, source, null, x, y, r, g, b, a, false,
                 false, 0, packedLight, scale, level);
+        matrix.translate(OUTLINE_OFFSET);
+
+        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, packedLight, scale, level);
     }
 
     /*public static void change(boolean global, boolean shadow) {

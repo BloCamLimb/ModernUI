@@ -393,12 +393,10 @@ public final class UIManager implements LifecycleOwner {
     }
 
     @SubscribeEvent
-    void onGuiOpen(@Nonnull ScreenEvent.Opening event) {
-        final Screen next = event.getNewScreen();
-        // true if there will be no screen to open
-        boolean closeScreen = next == null;
+    void onScreenOpen(@Nonnull ScreenEvent.Opening event) {
+        final Screen newScreen = event.getNewScreen();
 
-        if (!mFirstScreenOpened && !(next instanceof LoadingErrorScreen)) {
+        if (!mFirstScreenOpened && !(newScreen instanceof LoadingErrorScreen)) {
             if (sPlaySoundOnLoaded) {
                 minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.EXPERIENCE_ORB_PICKUP, 1.0f));
             }
@@ -413,16 +411,17 @@ public final class UIManager implements LifecycleOwner {
             mFirstScreenOpened = true;
         }
 
-        if (closeScreen) {
+        // true if there will be no screen to open
+        if (newScreen == null) {
             removed();
             return;
         }
 
-        if (mScreen != next && next instanceof MuiScreen) {
+        if (mScreen != newScreen && newScreen instanceof MuiScreen) {
             //mTicks = 0;
             mElapsedTimeMillis = 0;
         }
-        if (mScreen != next && mScreen != null) {
+        if (mScreen != newScreen && mScreen != null) {
             onHoverMove(false);
         }
         // for non-mui screens
