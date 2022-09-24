@@ -112,7 +112,7 @@ public abstract class Server {
      * Called when the 3D context state is unknown. Subclass should emit any
      * assumed 3D context state and dirty any state cache.
      */
-    protected void onResetContext(int dirtyFlags) {
+    protected void onResetContext(int resetBits) {
     }
 
     public abstract BufferAllocPool getVertexPool();
@@ -287,14 +287,13 @@ public abstract class Server {
      * @param bounds
      * @return
      */
-    public OpsRenderPass getOpsRenderPass(RenderTarget renderTarget,
-                                          boolean withStencil,
-                                          int origin,
-                                          Rect2i bounds) {
-        //TODO
-        mStats.incRenderPasses();
-        return null;
-    }
+    public abstract OpsRenderPass getOpsRenderPass(RenderTarget renderTarget,
+                                                   boolean withStencil,
+                                                   int origin,
+                                                   Rect2i bounds,
+                                                   int colorLoadOp, int colorStoreOp,
+                                                   int stencilLoadOp, int stencilStoreOp,
+                                                   float[] clearColor);
 
     /**
      * Resolves MSAA. The resolve rectangle must already be in the native destination space.

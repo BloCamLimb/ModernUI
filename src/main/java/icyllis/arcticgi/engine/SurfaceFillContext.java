@@ -18,12 +18,36 @@
 
 package icyllis.arcticgi.engine;
 
+import icyllis.arcticgi.core.RefCnt;
+import icyllis.arcticgi.core.SharedPtr;
+import icyllis.arcticgi.engine.ops.OpsTask;
+
 public class SurfaceFillContext extends SurfaceContext {
+
+    @SharedPtr
+    private OpsTask mOpsTask;
+
+    private final SurfaceProxyView mWriteView;
 
     public SurfaceFillContext(RecordingContext context,
                               SurfaceProxyView readView,
                               SurfaceProxyView writeView,
                               int colorInfo) {
         super(context, readView, colorInfo);
+        mWriteView = writeView;
+    }
+
+    public OpsTask getOpsTask() {
+        assert mContext.isOnOwnerThread();
+        if (mOpsTask == null || mOpsTask.isClosed()) {
+            return nextOpsTask();
+        }
+        return mOpsTask;
+    }
+
+    public OpsTask nextOpsTask() {
+        OpsTask newOpsTask = mContext.getDrawingManager().newOpsTask(mWriteView);
+        mOpsTask = RefCnt.move(mOpsTask, newOpsTask);
+        return mOpsTask;
     }
 }

@@ -16,15 +16,11 @@
  * License along with Arctic. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcticgi.engine.ops;
-
-import icyllis.arcticgi.engine.Mesh;
+package icyllis.arcticgi.core;
 
 /**
- * Base class for mesh-drawing DrawOps.
+ * This class contains pre-processed graphics operations that can be replayed into
+ * a {@link Surface} via Surface::draw(DeferredDisplayList*).
  */
-public abstract class MeshDrawOp extends DrawOp implements Mesh {
-
-    public MeshDrawOp() {
-    }
+public class DeferredList {
 }

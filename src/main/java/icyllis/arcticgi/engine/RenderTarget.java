@@ -18,7 +18,7 @@
 
 package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.opengl.GLRenderbuffer;
+import icyllis.arcticgi.core.SharedPtr;
 
 import javax.annotation.Nonnull;
 
@@ -42,8 +42,13 @@ public abstract class RenderTarget extends ManagedResource {
 
     private final int mSampleCount;
 
-    private Surface mStencilBuffer;
-    private Surface mMSAAStencilBuffer;
+    /**
+     * The stencil buffer is set at first only with wrapped <code>GLRenderTarget</code>,
+     * the stencil attachment is fake and made beforehand (renderbuffer id 0). For example,
+     * wrapping OpenGL default framebuffer (framebuffer id 0).
+     */
+    @SharedPtr
+    protected Surface mStencilBuffer;
 
     // determined by subclass constructors
     protected int mFlags;
@@ -55,23 +60,6 @@ public abstract class RenderTarget extends ManagedResource {
         mHeight = height;
         mSampleCount = sampleCount;
         mUniqueID = GpuResource.createUniqueID();
-    }
-
-    /**
-     * This constructor is only used with wrapped <code>GLRenderTarget</code>, the stencil
-     * attachment is fake and made beforehand (renderbuffer id 0). For example, wrapping
-     * OpenGL default framebuffer (id 0).
-     *
-     * @param stencilBuffer an intrinsic stencil buffer
-     */
-    protected RenderTarget(int width, int height, int sampleCount,
-                           GLRenderbuffer stencilBuffer) {
-        this(width, height, sampleCount);
-        if (sampleCount > 1) {
-            mMSAAStencilBuffer = stencilBuffer;
-        } else {
-            mStencilBuffer = stencilBuffer;
-        }
     }
 
     /**
@@ -121,44 +109,22 @@ public abstract class RenderTarget extends ManagedResource {
     /**
      * May get the single sample texture, or null if wrapped.
      */
-    public abstract Texture getColorBuffer();
-
-    /**
-     * May get a dynamic stencil buffer, or null if no stencil.
-     */
-    public final Surface getStencilBuffer(boolean useMSAA) {
-        return useMSAA ? mMSAAStencilBuffer : mStencilBuffer;
+    public Texture getColorBuffer() {
+        return null;
     }
 
     /**
-     * May get an intrinsic stencil buffer, or null if no stencil.
+     * Get the dynamic or implicit stencil buffer, or null if no stencil.
      */
     public final Surface getStencilBuffer() {
-        return mSampleCount > 1 ? mMSAAStencilBuffer : mStencilBuffer;
+        return mStencilBuffer;
     }
 
     /**
-     * Get dynamic stencil bits, return 0 if stencil buffer is not set.
-     */
-    public final int getStencilBits(boolean useMSAA) {
-        final Surface stencilBuffer;
-        if ((stencilBuffer = getStencilBuffer(useMSAA)) != null) {
-            return stencilBuffer.getBackendFormat().getStencilBits();
-        } else {
-            return 0;
-        }
-    }
-
-    /**
-     * Get intrinsic stencil bits, return 0 if stencil buffer is not set.
+     * Get the number of dynamic or implicit stencil bits, or 0 if no stencil.
      */
     public final int getStencilBits() {
-        final Surface stencilBuffer;
-        if ((stencilBuffer = getStencilBuffer()) != null) {
-            return stencilBuffer.getBackendFormat().getStencilBits();
-        } else {
-            return 0;
-        }
+        return mStencilBuffer != null ? mStencilBuffer.getBackendFormat().getStencilBits() : 0;
     }
 
     @Override
@@ -166,47 +132,22 @@ public abstract class RenderTarget extends ManagedResource {
         if (mStencilBuffer != null) {
             mStencilBuffer.unref();
         }
-        if (mMSAAStencilBuffer != null) {
-            mMSAAStencilBuffer.unref();
-        }
         mStencilBuffer = null;
-        mMSAAStencilBuffer = null;
     }
 
     /**
      * @return whether a stencil buffer can be attached to this render target.
      */
-    protected abstract boolean isStencilAttachable();
-
-    /**
-     * @see ResourceProvider
-     */
-    protected final void attachStencilBuffer(Surface stencilBuffer, boolean useMSAA) {
-        if (stencilBuffer == null && (useMSAA ? mMSAAStencilBuffer : mStencilBuffer) == null) {
-            // No need to do any work since we currently don't have a stencil attachment,
-            // and we're not actually adding one.
-            return;
-        }
-
-        if (!completeStencilBuffer(stencilBuffer, useMSAA)) {
-            return;
-        }
-
-        if (useMSAA) {
-            mMSAAStencilBuffer = stencilBuffer;
-        } else {
-            mStencilBuffer = stencilBuffer;
-        }
-    }
+    protected abstract boolean canAttachStencil();
 
     /**
      * Allows the backends to perform any additional work that is required for attaching an
      * Attachment. When this is called, the Attachment has already been put onto the RenderTarget.
      * This method must return false if any failures occur when completing the stencil attachment.
      *
-     * @return if false, the stencil attachment will not be set to this render target
+     * @see ResourceProvider
      */
-    protected abstract boolean completeStencilBuffer(Surface stencilBuffer, boolean useMSAA);
+    protected abstract void attachStencilBuffer(@SharedPtr Surface stencilBuffer);
 
     /**
      * Compute a {@link RenderTarget} key. Parameters are the same as Surface key, just

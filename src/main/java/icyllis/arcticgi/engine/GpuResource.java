@@ -129,13 +129,34 @@ public abstract class GpuResource {
         mUniqueID = createUniqueID();
     }
 
-    /**
-     * Adopt the null pointer, and call {@link #unref()} on any previously held object (if not null).
-     */
-    public static <T extends GpuResource> T reset(@SharedPtr T sp) {
+    @SharedPtr
+    public static <T extends GpuResource> T move(@SharedPtr T sp) {
         if (sp != null)
             sp.unref();
         return null;
+    }
+
+    @SharedPtr
+    public static <T extends GpuResource> T move(@SharedPtr T sp, @SharedPtr T that) {
+        if (sp != null)
+            sp.unref();
+        return that;
+    }
+
+    @SharedPtr
+    public static <T extends GpuResource> T create(@SharedPtr T that) {
+        if (that != null)
+            that.ref();
+        return that;
+    }
+
+    @SharedPtr
+    public static <T extends GpuResource> T create(@SharedPtr T sp, @SharedPtr T that) {
+        if (sp != null)
+            sp.unref();
+        if (that != null)
+            that.ref();
+        return that;
     }
 
     /**
@@ -291,6 +312,18 @@ public abstract class GpuResource {
     @Nullable
     public final Object getUniqueKey() {
         return mUniqueKey;
+    }
+
+    @Override
+    public final int hashCode() {
+        // identity
+        return super.hashCode();
+    }
+
+    @Override
+    public final boolean equals(Object o) {
+        // identity
+        return super.equals(o);
     }
 
     /**

@@ -22,7 +22,7 @@ import icyllis.arcticgi.core.Color;
 import icyllis.arcticgi.core.ImageInfo;
 
 /**
- * Constants and utilities for Arctic Engine.
+ * Shared constants, enums and utilities for Arctic Engine.
  */
 public final class EngineTypes {
 
@@ -30,8 +30,8 @@ public final class EngineTypes {
      * Possible 3D APIs that may be used by Arctic.
      */
     public static final int
-            OpenGL = 0, // OpenGL 4.5 core profile
-            Vulkan = 1, // Vulkan 1.1
+            OpenGL = 0, // OpenGL 4.5 core profile (desktop)
+            Vulkan = 1, // Vulkan 1.1 (desktop and mobile)
             Mock = 2;   // Mock draws nothing. It is used for unit tests and to measure CPU overhead.
 
     /**
@@ -50,13 +50,21 @@ public final class EngineTypes {
             SurfaceOrigin_BottomLeft = 1;
 
     /**
+     * A Context's cache of backend context state can be partially invalidated.
+     * These enums are specific to the GL backend and we'd add a new set for an alternative backend.
+     *
      * @see icyllis.arcticgi.opengl.GLServer#markContextDirty(int)
      */
     public static final int
             GLBackendState_RenderTarget = 1,
-            GLBackendState_TextureBinding = 1 << 1, // Also includes samplers bound to texture units.
-            GLBackendState_View = 1 << 2,           // View state stands for scissor and viewport
-            GLBackendState_Blend = 1 << 3;
+            GLBackendState_PixelStore = 1 << 1,
+            GLBackendState_Pipeline = 1 << 2,   // Shader stages, vertex array and input buffers
+            GLBackendState_Texture = 1 << 3,    // Also includes samplers bound to texture units
+            GLBackendState_Stencil = 1 << 4,
+            GLBackendState_Raster = 1 << 5,     // Antialiasing and conservative raster
+            GLBackendState_Blend = 1 << 6,
+            GLBackendState_View = 1 << 7,       // View state stands for scissor and viewport
+            GLBackendState_Misc = 1 << 8;
 
     /**
      * Indicates the type of pending IO operations that can be recorded for GPU resources.
@@ -280,11 +288,11 @@ public final class EngineTypes {
      * sample from the same image we are drawing to.
      */
     public static final int
-            InternalSurfaceFlag_ReadOnly = 1,
-            InternalSurfaceFlag_Protected = 1 << 1,
-            InternalSurfaceFlag_RequiresManualMSAAResolve = 1 << 2,
-            InternalSurfaceFlag_GLWrapsDefaultFramebuffer = 1 << 3,
-            InternalSurfaceFlag_VkSupportsInputAttachment = 1 << 4;
+            SurfaceFlag_ReadOnly = 1,
+            SurfaceFlag_Protected = 1 << 1,
+            SurfaceFlag_RequireManualMSAAResolve = 1 << 2,
+            SurfaceFlag_GLWrapDefaultFramebuffer = 1 << 3,
+            SurfaceFlag_VkSupportInputAttachment = 1 << 4;
 
     /**
      * Used to describe the current state of Mips on a Texture

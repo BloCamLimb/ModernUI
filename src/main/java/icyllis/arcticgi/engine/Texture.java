@@ -130,10 +130,10 @@ public abstract class Texture extends Surface {
     public final int getFlags() {
         int flags = 0;
         if (isReadOnly()) {
-            flags |= InternalSurfaceFlag_ReadOnly;
+            flags |= SurfaceFlag_ReadOnly;
         }
         if (isProtected()) {
-            flags |= InternalSurfaceFlag_Protected;
+            flags |= SurfaceFlag_Protected;
         }
         return flags;
     }

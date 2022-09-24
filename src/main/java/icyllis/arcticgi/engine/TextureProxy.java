@@ -183,7 +183,7 @@ public class TextureProxy extends SurfaceProxy {
         mUseAllocator = useAllocator;
         mDeferredProvider = deferredProvider;
         if (format.textureType() == EngineTypes.TextureType_External) {
-            mSurfaceFlags |= EngineTypes.InternalSurfaceFlag_ReadOnly;
+            mSurfaceFlags |= EngineTypes.SurfaceFlag_ReadOnly;
         }
         mUniqueID = GpuResource.createUniqueID();
         assert (width > 0 && height > 0); // non-lazy
@@ -213,7 +213,7 @@ public class TextureProxy extends SurfaceProxy {
         mUseAllocator = useAllocator;
         mDeferredProvider = deferredProvider;
         if (format.textureType() == EngineTypes.TextureType_External) {
-            mSurfaceFlags |= EngineTypes.InternalSurfaceFlag_ReadOnly;
+            mSurfaceFlags |= EngineTypes.SurfaceFlag_ReadOnly;
         }
         mUniqueID = GpuResource.createUniqueID();
         mLazyInstantiateCallback = callback;
@@ -248,7 +248,7 @@ public class TextureProxy extends SurfaceProxy {
         mDeferredProvider = deferredProvider;
         assert (mFormat.textureType() == texture.getTextureType());
         if (mFormat.textureType() == EngineTypes.TextureType_External) {
-            mSurfaceFlags |= EngineTypes.InternalSurfaceFlag_ReadOnly;
+            mSurfaceFlags |= EngineTypes.SurfaceFlag_ReadOnly;
         }
         mTexture = texture; // std::move
         mUniqueID = texture.getUniqueID(); // converting from unique resource ID to a proxy ID
@@ -306,7 +306,7 @@ public class TextureProxy extends SurfaceProxy {
     protected void dispose() {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
-        mTexture = GpuResource.reset(mTexture);
+        mTexture = GpuResource.move(mTexture);
 
         // In DDL-mode, uniquely keyed proxies keep their key even after their originating
         // proxy provider has gone away. In that case there is no-one to send the invalid key
@@ -542,11 +542,11 @@ public class TextureProxy extends SurfaceProxy {
      * assignment in ResourceAllocator.
      */
     public final boolean isReadOnly() {
-        return (mSurfaceFlags & EngineTypes.InternalSurfaceFlag_ReadOnly) != 0;
+        return (mSurfaceFlags & EngineTypes.SurfaceFlag_ReadOnly) != 0;
     }
 
     public final boolean isProtected() {
-        return (mSurfaceFlags & EngineTypes.InternalSurfaceFlag_Protected) != 0;
+        return (mSurfaceFlags & EngineTypes.SurfaceFlag_Protected) != 0;
     }
 
     /**

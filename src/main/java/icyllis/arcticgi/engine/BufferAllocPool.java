@@ -106,7 +106,7 @@ public abstract class BufferAllocPool implements AutoCloseable {
                 // beyond it, then unlock it without flushing.
                 unlockBuffer(buffer);
                 assert (mIndex >= 0);
-                mBuffers[mIndex--] = GpuResource.reset(buffer);
+                mBuffers[mIndex--] = GpuResource.move(buffer);
                 mBufferPtr = NULL;
             } else {
                 mFreeBytes[mIndex] += bytes;
@@ -263,7 +263,7 @@ public abstract class BufferAllocPool implements AutoCloseable {
         }
         while (mIndex >= 0) {
             GpuBuffer buffer = mBuffers[mIndex];
-            mBuffers[mIndex--] = GpuResource.reset(buffer);
+            mBuffers[mIndex--] = GpuResource.move(buffer);
             mBufferPtr = NULL;
         }
         assert (mBufferPtr == NULL);

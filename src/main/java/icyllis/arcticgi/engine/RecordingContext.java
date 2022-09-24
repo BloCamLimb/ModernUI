@@ -124,18 +124,22 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
             return false;
         }
         mProxyProvider = new ProxyProvider(this);
-        //TODO init DrawingManager
+        mDrawingManager = new DrawingManager(this);
         return true;
     }
 
     protected void drop() {
         mThreadSafeProxy.drop();
-        //TODO destroy DrawingManager
+        mDrawingManager.destroy();
+        mDrawingManager = null;
     }
 
     @Override
-    public void close() {
-
+    protected void dispose() {
+        if (mDrawingManager != null) {
+            mDrawingManager.destroy();
+        }
+        mDrawingManager = null;
     }
 
     /**

@@ -23,7 +23,6 @@ import icyllis.arcticgi.engine.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Op is the base class for all deferred GPU operations. To facilitate reordering and to
@@ -48,10 +47,6 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public abstract class Op {
 
-    private static final int NULL_CLASS_ID = 0;
-
-    private static final AtomicInteger sNextClassID = new AtomicInteger(1);
-
     /**
      * The op that combineIfPossible was called on now represents its own work plus that of
      * the passed op. The passed op should be destroyed without being flushed. Currently it
@@ -75,18 +70,18 @@ public abstract class Op {
      * purpose of ensuring that the fragment shader runs on partially covered pixels for
      * non-MSAA antialiasing.
      */
-    private static final int BoundsFlag_AABloat = 0x1 << 16;
+    private static final int BoundsFlag_AABloat = 0x1;
     /**
      * Indicates that the geometry being drawn in a hairline stroke. A point that is drawn in device
      * space is also considered a hairline.
      */
-    private static final int BoundsFlag_ZeroArea = 0x2 << 16;
+    private static final int BoundsFlag_ZeroArea = 0x2;
 
-    // we uniquely own this
+    // we own this (uniquely)
     private Op mNextInChain;
-    // we are uniquely owned by this
+    // we are owned by this (uniquely)
     private Op mPrevInChain;
-    // lower 16 bits - class ID, higher 16 bits - bounds flags
+
     private int mFlags;
 
     private float mLeft;
@@ -94,29 +89,24 @@ public abstract class Op {
     private float mRight;
     private float mBottom;
 
-    protected Op(int classID) {
-        assert (classID != NULL_CLASS_ID && (classID & 0xFFFF) == classID);
-        mFlags = classID;
+    public Op() {
     }
 
-    protected static int genOpClassID() {
-        return sNextClassID.getAndIncrement();
+    public void visitTextures(VisitTextureFunc func) {
+        // This default implementation assumes the op has no proxies
     }
-
-    @Nonnull
-    public abstract String name();
 
     /**
      * @return CombineResult
      */
     public final int combineIfPossible(@Nonnull Op op, Caps caps) {
-        assert op != this;
-        if (classID() != op.classID()) {
+        assert (op != this);
+        if (getClass() != op.getClass()) {
             return CombineResult_CannotCombine;
         }
-        var result = onCombineIfPossible(op, caps);
+        int result = onCombineIfPossible(op, caps);
         if (result == CombineResult_Merged) {
-            mFlags |= op.mFlags & ~0xFFFF;
+            mFlags |= op.mFlags;
             mLeft = Math.min(mLeft, op.mLeft);
             mTop = Math.min(mTop, op.mTop);
             mRight = Math.max(mRight, op.mRight);
@@ -141,8 +131,7 @@ public abstract class Op {
         mTop = top;
         mRight = right;
         mBottom = bottom;
-        mFlags = (mFlags & 0xFFFF) |
-                (aaBloat ? BoundsFlag_AABloat : 0) |
+        mFlags = (aaBloat ? BoundsFlag_AABloat : 0) |
                 (zeroArea ? BoundsFlag_ZeroArea : 0);
     }
 
@@ -181,13 +170,6 @@ public abstract class Op {
     }
 
     /**
-     * @return unique ID to identify this class at runtime.
-     */
-    public final int classID() {
-        return mFlags & 0xFFFF;
-    }
-
-    /**
      * This can optionally be called before 'prepare' (but after sorting). Each op that overrides
      * onPrePrepare must be prepared to handle both cases (when onPrePrepare has been called
      * ahead of time and when it has not been called).
@@ -214,7 +196,7 @@ public abstract class Op {
      * must be of the same subclass.
      */
     public final void mergeChain(@Nonnull Op next) {
-        assert (classID() == next.classID());
+        assert (getClass() == next.getClass());
         assert (isChainTail());
         assert (next.isChainHead());
         mNextInChain = next; // transfer ownership
@@ -269,11 +251,10 @@ public abstract class Op {
      */
     public final boolean validateChain(Op expectedTail) {
         assert (isChainHead());
-        int classID = classID();
-        var op = this;
+        Op op = this;
         while (op != null) {
             assert (op == this || (op.prevInChain() != null && op.prevInChain().nextInChain() == op));
-            assert (classID == op.classID());
+            assert (getClass() == op.getClass());
             if (op.nextInChain() != null) {
                 assert (op.nextInChain().prevInChain() == op);
                 assert (op != expectedTail);

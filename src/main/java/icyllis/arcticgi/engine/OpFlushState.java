@@ -18,6 +18,8 @@
 
 package icyllis.arcticgi.engine;
 
+import icyllis.arcticgi.core.Rect2i;
+
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 
@@ -28,9 +30,15 @@ public class OpFlushState implements MeshDrawTarget {
 
     private final Server mServer;
 
+    private OpsRenderPass mOpsRenderPass;
+
     public OpFlushState(Server server,
                         ResourceProvider resourceProvider) {
         mServer = server;
+    }
+
+    public Server getServer() {
+        return mServer;
     }
 
     @Override
@@ -53,5 +61,27 @@ public class OpFlushState implements MeshDrawTarget {
     @Override
     public ByteBuffer makeInstanceWriter(Mesh mesh) {
         return mServer.getInstancePool().makeWriter(mesh);
+    }
+
+    public OpsRenderPass getOpsRenderPass() {
+        return mOpsRenderPass;
+    }
+
+    public OpsRenderPass beginOpsRenderPass(RenderTarget renderTarget,
+                                            boolean withStencil,
+                                            int origin,
+                                            Rect2i bounds,
+                                            int colorLoadOp, int colorStoreOp,
+                                            int stencilLoadOp, int stencilStoreOp,
+                                            float[] clearColor) {
+        assert (mOpsRenderPass == null);
+        OpsRenderPass opsRenderPass = mServer.getOpsRenderPass(renderTarget,
+                withStencil, origin, bounds, colorLoadOp, colorStoreOp, stencilLoadOp, stencilStoreOp, clearColor);
+        if (opsRenderPass == null) {
+            return null;
+        }
+        mOpsRenderPass = opsRenderPass;
+        opsRenderPass.begin();
+        return opsRenderPass;
     }
 }

@@ -29,16 +29,8 @@ import static icyllis.arcticgi.engine.EngineTypes.Float2_VertexAttribType;
 
 public final class CircularRRectOp extends MeshDrawOp {
 
-    public static final int sClassID = genOpClassID();
-
     public CircularRRectOp() {
-        super(sClassID);
-    }
-
-    @Nonnull
-    @Override
-    public String name() {
-        return "CircularRRectSDFOp";
+        super();
     }
 
     @Override

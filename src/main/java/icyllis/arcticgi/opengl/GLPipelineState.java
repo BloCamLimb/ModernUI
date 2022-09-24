@@ -60,8 +60,8 @@ public class GLPipelineState {
     }
 
     public void reset() {
-        mPipeline = RefCnt.reset(mPipeline);
-        mDataManager = RefCnt.reset(mDataManager);
+        mPipeline = RefCnt.move(mPipeline);
+        mDataManager = RefCnt.move(mDataManager);
     }
 
     public GLPipeline getPipeline() {

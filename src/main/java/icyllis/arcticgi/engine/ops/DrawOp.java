@@ -23,8 +23,7 @@ package icyllis.arcticgi.engine.ops;
  */
 public abstract class DrawOp extends Op {
 
-    protected DrawOp(int classID) {
-        super(classID);
+    public DrawOp() {
     }
 
     /**

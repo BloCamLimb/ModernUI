@@ -16,11 +16,14 @@
  * License along with Arctic. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcticgi.core;
+package icyllis.arcticgi.engine;
 
-/**
- * This class contains pre-processed graphics operations that can be replayed into
- * a {@link Surface} via Surface::draw(DeferredDisplayList*).
- */
-public class DeferredDisplayList {
+@FunctionalInterface
+public interface VisitTextureFunc {
+
+    /**
+     * @param proxy        raw ptr to texture proxy
+     * @param samplerState see {@link SamplerState}
+     */
+    void visit(TextureProxy proxy, int samplerState);
 }

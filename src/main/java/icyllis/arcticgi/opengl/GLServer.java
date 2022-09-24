@@ -18,16 +18,20 @@
 
 package icyllis.arcticgi.opengl;
 
+import icyllis.arcticgi.core.Rect2i;
 import icyllis.arcticgi.core.SharedPtr;
 import icyllis.arcticgi.engine.*;
 import it.unimi.dsi.fastutil.Function;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
+import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nullable;
 
+import static icyllis.arcticgi.engine.EngineTypes.*;
 import static icyllis.arcticgi.opengl.GLCore.*;
+import static org.lwjgl.system.MemoryUtil.memPutInt;
 
 public final class GLServer extends Server {
 
@@ -50,6 +54,9 @@ public final class GLServer extends Server {
 
     private final GLBufferAllocPool mVertexPool;
     private final GLBufferAllocPool mInstancePool;
+
+    // unique ptr
+    private GLOpsRenderPass mCachedOpsRenderPass;
 
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
@@ -126,6 +133,47 @@ public final class GLServer extends Server {
         return mMainCmdBuffer;
     }
 
+    @Override
+    protected void onResetContext(int resetBits) {
+        currentCommandBuffer().resetStates(resetBits);
+
+        // we assume these values
+        if ((resetBits & GLBackendState_PixelStore) != 0) {
+            glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
+            glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+        }
+
+        if ((resetBits & GLBackendState_Raster) != 0) {
+            glDisable(GL_LINE_SMOOTH);
+            glDisable(GL_POLYGON_SMOOTH);
+
+            glDisable(GL_DITHER);
+            glEnable(GL_MULTISAMPLE);
+        }
+
+        if ((resetBits & GLBackendState_Blend) != 0) {
+            glDisable(GL_COLOR_LOGIC_OP);
+        }
+
+        if ((resetBits & GLBackendState_Misc) != 0) {
+            // we don't use the z-buffer at all
+            glDisable(GL_DEPTH_TEST);
+            glDepthMask(false);
+            glDisable(GL_POLYGON_OFFSET_FILL);
+
+            // We don't use face culling.
+            glDisable(GL_CULL_FACE);
+            // We do use separate stencil. Our algorithms don't care which face is front vs. back so
+            // just set this to the default for self-consistency.
+            glFrontFace(GL_CCW);
+
+            // we only ever use lines in hairline mode
+            glLineWidth(1);
+            glPointSize(1);
+            glDisable(GL_PROGRAM_POINT_SIZE);
+        }
+    }
+
     @Nullable
     @Override
     protected Texture onCreateTexture(int width, int height,
@@ -139,10 +187,10 @@ public final class GLServer extends Server {
             return null;
         }
         // We only support TEXTURE_2D.
-        if (format.textureType() != EngineTypes.TextureType_2D) {
+        if (format.textureType() != TextureType_2D) {
             return null;
         }
-        int texture = createTextureObject(width, height, format.getGLFormat(), levelCount);
+        int texture = createTexture(width, height, format.getGLFormat(), levelCount);
         if (texture == 0) {
             return null;
         }
@@ -177,14 +225,13 @@ public final class GLServer extends Server {
                     glTexture.getFormat(),
                     sampleCount);
             if (objects != null) {
-                final RenderTarget renderTarget = new GLRenderTarget(this,
+                final RenderTarget renderTarget = new GLTextureRenderTarget(this,
                         glTexture.getWidth(), glTexture.getHeight(),
                         glTexture.getFormat(), sampleCount,
                         objects.mFramebuffer,
                         objects.mMSAAFramebuffer,
                         glTexture,
-                        objects.mMSAAColorBuffer,
-                        true);
+                        objects.mMSAAColorBuffer);
                 boolean inserted = false;
                 for (int i = 0; i < renderTargets.length; i++) {
                     if (renderTargets[i] == null) {
@@ -258,29 +305,102 @@ public final class GLServer extends Server {
     }
 
     @Override
+    public OpsRenderPass getOpsRenderPass(RenderTarget renderTarget,
+                                          boolean withStencil,
+                                          int origin,
+                                          Rect2i bounds,
+                                          int colorLoadOp, int colorStoreOp,
+                                          int stencilLoadOp, int stencilStoreOp,
+                                          float[] clearColor) {
+        mStats.incRenderPasses();
+        if (mCachedOpsRenderPass == null) {
+            mCachedOpsRenderPass = new GLOpsRenderPass(this);
+        }
+        return mCachedOpsRenderPass.set(renderTarget,
+                bounds,
+                origin,
+                colorLoadOp, colorStoreOp,
+                stencilLoadOp, stencilStoreOp,
+                clearColor);
+    }
+
+    public GLCommandBuffer beginRenderPass(GLRenderTarget renderTarget,
+                                           int colorLoadOp, int stencilLoadOp,
+                                           float[] clearColor) {
+        handleDirtyContext();
+
+        GLCommandBuffer cmdBuffer = currentCommandBuffer();
+
+        if (colorLoadOp == LoadOp_Clear || stencilLoadOp == LoadOp_Clear) {
+            int framebuffer = renderTarget.getFramebuffer();
+            cmdBuffer.flushScissorTest(false);
+            if (colorLoadOp == LoadOp_Clear) {
+                cmdBuffer.flushColorWrite(true);
+                glClearNamedFramebufferfv(framebuffer,
+                        GL_COLOR,
+                        0,
+                        clearColor);
+            }
+            if (stencilLoadOp == LoadOp_Clear) {
+                glStencilMask(0xFFFFFFFF); // stencil will be flushed later
+                glClearNamedFramebufferfi(framebuffer,
+                        GL_DEPTH_STENCIL,
+                        0,
+                        1.0f, 0);
+            }
+        }
+        return cmdBuffer;
+    }
+
+    public void endRenderPass(GLRenderTarget renderTarget,
+                              int colorStoreOp, int stencilStoreOp) {
+        handleDirtyContext();
+
+        if (colorStoreOp == StoreOp_Discard || stencilStoreOp == StoreOp_Discard) {
+            int framebuffer = renderTarget.getFramebuffer();
+            try (MemoryStack stack = MemoryStack.stackPush()) {
+                final long pAttachments = stack.nmalloc(4, 8);
+                int numAttachments = 0;
+                if (colorStoreOp == StoreOp_Discard) {
+                    int attachment = renderTarget.getFramebuffer() == 0
+                            ? GL_COLOR
+                            : GL_COLOR_ATTACHMENT0;
+                    memPutInt(pAttachments, attachment);
+                    numAttachments++;
+                }
+                if (stencilStoreOp == StoreOp_Discard) {
+                    int attachment = renderTarget.getFramebuffer() == 0
+                            ? GL_STENCIL
+                            : GL_STENCIL_ATTACHMENT;
+                    memPutInt(pAttachments + (numAttachments << 2), attachment);
+                    numAttachments++;
+                }
+                nglInvalidateNamedFramebufferData(framebuffer, numAttachments, pAttachments);
+            }
+        }
+    }
+
+    @Override
     protected void onResolveRenderTarget(RenderTarget renderTarget,
                                          int resolveLeft, int resolveTop,
                                          int resolveRight, int resolveBottom) {
         GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
-        int framebuffer = glRenderTarget.getFramebuffer(false);
-        int msaaFramebuffer = glRenderTarget.getFramebuffer(true);
 
-        // If the multisample FBO is nonzero, it means we always have something to resolve (even if the
-        // single sample buffer is FBO 0). If it's zero, then there's nothing to resolve.
-        assert (msaaFramebuffer != 0);
+        int framebuffer = glRenderTarget.getFramebuffer();
+        int resolveFramebuffer = glRenderTarget.getResolveFramebuffer();
 
-        // In the EXT_multisampled_render_to_texture case, we shouldn't be resolving anything.
-        assert (framebuffer == 0 || framebuffer != msaaFramebuffer);
+        // We should always have something to resolve
+        assert (framebuffer != 0 && framebuffer != resolveFramebuffer);
 
         // BlitFramebuffer respects the scissor, so disable it.
         currentCommandBuffer().flushScissorTest(false);
-        glBlitNamedFramebuffer(msaaFramebuffer, framebuffer, // MSAA to single
+        glBlitNamedFramebuffer(framebuffer, resolveFramebuffer, // MSAA to single
                 resolveLeft, resolveTop, resolveRight, resolveBottom, // src rect
                 resolveLeft, resolveTop, resolveRight, resolveBottom, // dst rect
                 GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
 
-    private int createTextureObject(int width, int height, int format, int levels) {
+    private int createTexture(int width, int height, int format, int levels) {
         assert format != GLTypes.FORMAT_UNKNOWN;
         assert !glFormatIsCompressed(format);
 

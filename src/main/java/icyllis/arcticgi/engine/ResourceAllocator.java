@@ -376,7 +376,7 @@ public class ResourceAllocator {
         public boolean reset() {
             if (mInit) {
                 mProxy = null;
-                mTexture = GpuResource.reset(mTexture);
+                mTexture = GpuResource.move(mTexture);
                 mInit = false;
                 return true;
             }

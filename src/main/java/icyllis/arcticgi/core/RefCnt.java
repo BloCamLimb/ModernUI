@@ -70,26 +70,18 @@ public abstract class RefCnt implements AutoCloseable {
         assert !TRACKER.put(this, true);
     }
 
-    /**
-     * Adopt the new bare pointer, and call {@link #unref()} on any previously held object (if not null).
-     * No call to {@link #ref()} will be made.
-     */
     @SharedPtr
-    public static <T extends RefCnt> T reset(@SharedPtr T sp) {
+    public static <T extends RefCnt> T move(@SharedPtr T sp) {
         if (sp != null)
             sp.unref();
         return null;
     }
 
-    /**
-     * Adopt the new bare pointer, and call {@link #unref()} on any previously held object (if not null).
-     * No call to {@link #ref()} will be made.
-     */
     @SharedPtr
-    public static <T extends RefCnt> T reset(@SharedPtr T sp, T ptr) {
+    public static <T extends RefCnt> T move(@SharedPtr T sp, @SharedPtr T that) {
         if (sp != null)
             sp.unref();
-        return ptr;
+        return that;
     }
 
     @SharedPtr
@@ -100,7 +92,7 @@ public abstract class RefCnt implements AutoCloseable {
     }
 
     @SharedPtr
-    public static <T extends RefCnt> T assign(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends RefCnt> T create(@SharedPtr T sp, @SharedPtr T that) {
         if (sp != null)
             sp.unref();
         if (that != null)

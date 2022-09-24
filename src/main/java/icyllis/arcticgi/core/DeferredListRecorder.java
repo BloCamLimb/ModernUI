@@ -24,9 +24,9 @@ import icyllis.arcticgi.engine.RecordingContext;
  * This class is intended to be used as:
  * <ul>
  *   <li>Get an {@link SurfaceCharacterization} representing the intended gpu-backed destination {@link Surface}</li>
- *   <li>Create a {@link DeferredDisplayListRecorder}</li>
+ *   <li>Create a {@link DeferredListRecorder}</li>
  *   <li>Get the canvas and render into it</li>
- *   <li>Snap off and hold on to an {@link DeferredDisplayList}</li>
+ *   <li>Snap off and hold on to an {@link DeferredList}</li>
  *   <li>Once your app actually needs the pixels, call Surface::draw(DeferredDisplayList*)</li>
  * </ul>
  * <p>
@@ -34,13 +34,13 @@ import icyllis.arcticgi.engine.RecordingContext;
  * is thread-safe (i.e., one can break a scene into tiles and perform their cpu-side
  * work in parallel ahead of time).
  */
-public final class DeferredDisplayListRecorder implements AutoCloseable {
+public final class DeferredListRecorder implements AutoCloseable {
 
     private final SurfaceCharacterization mCharacterization;
 
     private RecordingContext mContext;
 
-    public DeferredDisplayListRecorder(SurfaceCharacterization c) {
+    public DeferredListRecorder(SurfaceCharacterization c) {
         mCharacterization = c;
         if (c != null) {
             mContext = RecordingContext.makeDeferred(c.getContextInfo());

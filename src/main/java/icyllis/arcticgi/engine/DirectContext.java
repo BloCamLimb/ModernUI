@@ -154,8 +154,8 @@ public final class DirectContext extends RecordingContext {
     }
 
     @Override
-    public void close() {
-        super.close();
+    protected void dispose() {
+        super.dispose();
         if (mResourceCache != null) {
             mResourceCache.releaseAll();
         }

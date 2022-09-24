@@ -18,8 +18,16 @@
 
 package icyllis.arcticgi.engine.ops;
 
-import icyllis.arcticgi.engine.RenderTask;
+import icyllis.arcticgi.engine.*;
 
 //TODO
 public class OpsTask extends RenderTask {
+
+    public OpsTask(DrawingManager drawingManager, SurfaceProxyView targetView) {
+    }
+
+    @Override
+    public boolean execute(OpFlushState flushState) {
+        return false;
+    }
 }

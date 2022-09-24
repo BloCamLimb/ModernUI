@@ -70,6 +70,26 @@ public abstract class OpsRenderPass {
     }
 
     /**
+     * Clear the owned render target. Clears the full target if 'scissor' is disabled, otherwise it
+     * is restricted to 'scissor'. Must check caps.performPartialClearsAsDraws() before using an
+     * enabled scissor test; must check caps.performColorClearsAsDraws() before using this at all.
+     */
+    public void clearColor(int left, int top, int right, int bottom,
+                           float red, float green, float blue, float alpha) {
+        assert (mRenderTarget != null);
+        mDrawPipelineStatus = DrawPipelineStatus_NotConfigured;
+    }
+
+    /**
+     * Same as clear() but modifies the stencil; check caps.performStencilClearsAsDraws() and
+     * caps.performPartialClearsAsDraws().
+     */
+    public void clearStencil(int left, int top, int right, int bottom, boolean insideMask) {
+        assert (mRenderTarget != null);
+        mDrawPipelineStatus = DrawPipelineStatus_NotConfigured;
+    }
+
+    /**
      * Updates the internal pipeline state for drawing with the provided {@link ProgramInfo}. Enters an
      * internal "bad" state if the pipeline could not be set.
      *
@@ -100,8 +120,8 @@ public abstract class OpsRenderPass {
     protected abstract boolean onBindPipeline(ProgramInfo programInfo, Rect2f drawBounds);
 
     private void resetActiveBuffers() {
-        mActiveIndexBuffer = GpuResource.reset(mActiveIndexBuffer);
-        mActiveVertexBuffer = GpuResource.reset(mActiveVertexBuffer);
-        mActiveInstanceBuffer = GpuResource.reset(mActiveInstanceBuffer);
+        mActiveIndexBuffer = GpuResource.move(mActiveIndexBuffer);
+        mActiveVertexBuffer = GpuResource.move(mActiveVertexBuffer);
+        mActiveInstanceBuffer = GpuResource.move(mActiveInstanceBuffer);
     }
 }

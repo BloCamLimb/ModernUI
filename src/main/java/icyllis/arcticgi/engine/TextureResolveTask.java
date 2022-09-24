@@ -16,15 +16,12 @@
  * License along with Arctic. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcticgi.engine.ops;
+package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.engine.Mesh;
+public class TextureResolveTask extends RenderTask {
 
-/**
- * Base class for mesh-drawing DrawOps.
- */
-public abstract class MeshDrawOp extends DrawOp implements Mesh {
-
-    public MeshDrawOp() {
+    @Override
+    public boolean execute(OpFlushState flushState) {
+        return false;
     }
 }
