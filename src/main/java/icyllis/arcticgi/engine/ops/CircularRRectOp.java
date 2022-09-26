@@ -25,7 +25,7 @@ import icyllis.arcticgi.engine.shading.*;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arcticgi.engine.EngineTypes.Float2_VertexAttribType;
+import static icyllis.arcticgi.engine.Engine.Float2_VertexAttribType;
 
 public final class CircularRRectOp extends MeshDrawOp {
 
@@ -103,12 +103,12 @@ public final class CircularRRectOp extends MeshDrawOp {
 
                 String sizeUniformName = uniformHandler.getUniformName(
                         mSizeUniform = uniformHandler.addUniform(geomProc,
-                                EngineTypes.Fragment_ShaderFlag,
+                                Engine.Fragment_ShaderFlag,
                                 SLType.Vec2,
                                 "Size"));
                 String radiusUniformName = uniformHandler.getUniformName(
                         mRadiusUniform = uniformHandler.addUniform(geomProc,
-                                EngineTypes.Fragment_ShaderFlag,
+                                Engine.Fragment_ShaderFlag,
                                 SLType.Float,
                                 "Radius"));
                 fragBuilder.codeAppendf("""

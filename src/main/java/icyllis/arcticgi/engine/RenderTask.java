@@ -37,8 +37,11 @@ public abstract class RenderTask extends RefCnt {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
+    /**
+     * Generates a unique ID from the task pool. 0 is reserved.
+     */
     private static int createUniqueID() {
-        for (; ; ) {
+        for (;;) {
             final int value = sNextID.get();
             final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {

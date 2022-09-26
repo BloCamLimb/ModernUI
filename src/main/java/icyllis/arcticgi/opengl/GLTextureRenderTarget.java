@@ -29,7 +29,7 @@ public class GLTextureRenderTarget extends GLRenderTarget {
     // the renderbuffer used as MSAA color buffer
     // always null for wrapped render targets
     @SharedPtr
-    private GLRenderbuffer mMSAAColorBuffer;
+    private GLAttachment mMSAAColorBuffer;
 
     public GLTextureRenderTarget(GLServer server,
                                  int width, int height,
@@ -38,7 +38,7 @@ public class GLTextureRenderTarget extends GLRenderTarget {
                                  int framebuffer,
                                  int resolveFramebuffer,
                                  GLTexture colorBuffer,
-                                 GLRenderbuffer msaaColorBuffer) {
+                                 GLAttachment msaaColorBuffer) {
         super(server, width, height, format, sampleCount, framebuffer, resolveFramebuffer);
     }
 

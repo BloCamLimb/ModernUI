@@ -27,23 +27,22 @@ public class SurfaceDrawContext extends SurfaceFillContext {
                               SurfaceProxyView readView,
                               SurfaceProxyView writeView,
                               int colorType) {
-        super(context, readView, writeView, ImageInfo.makeColorInfo(colorType, ImageInfo.ALPHA_PREMULTIPLIED));
+        super(context, readView, writeView, ImageInfo.makeColorInfo(colorType, ImageInfo.ALPHA_TYPE_PREMUL));
     }
 
     public static SurfaceDrawContext make(
             RecordingContext context,
-            BackendFormat format,
+            int colorType,
             int width, int height,
             int sampleCount,
-            boolean mipmapped,
-            boolean backingFit,
-            boolean budgeted,
-            boolean isProtected,
             int surfaceFlags,
-            int origin,
-            short readSwizzle,
-            short writeSwizzle) {
-        if (context.isDropped()) {
+            int origin) {
+        if (context == null || context.isDiscarded()) {
+            return null;
+        }
+
+        BackendFormat format = context.getCaps().getDefaultBackendFormat(colorType, true);
+        if (format == null) {
             return null;
         }
 
@@ -53,21 +52,20 @@ public class SurfaceDrawContext extends SurfaceFillContext {
                 width,
                 height,
                 sampleCount,
-                mipmapped,
-                backingFit,
-                budgeted,
-                surfaceFlags,
-                true
+                surfaceFlags
         );
         if (proxy == null) {
             return null;
         }
+
+        short readSwizzle = context.getCaps().getReadSwizzle(format, colorType);
+        short writeSwizzle = context.getCaps().getWriteSwizzle(format, colorType);
 
         // two views, inc one more ref
         proxy.ref();
         SurfaceProxyView readView = new SurfaceProxyView(proxy, origin, readSwizzle);
         SurfaceProxyView writeView = new SurfaceProxyView(proxy, origin, writeSwizzle);
 
-        return new SurfaceDrawContext(context, readView, writeView, ImageInfo.COLOR_UNKNOWN);
+        return new SurfaceDrawContext(context, readView, writeView, colorType);
     }
 }

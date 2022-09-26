@@ -24,7 +24,7 @@ import icyllis.arcticgi.engine.shading.*;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 
 /**
  * Unlike {@link CircleProcessor}, this processor uses SDF and supports over-stroking.

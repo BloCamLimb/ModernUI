@@ -29,7 +29,7 @@ public abstract class ThreadSafePipelineBuilder {
 
     protected abstract void close();
 
-    public final Stats stats() {
+    public final Stats getStates() {
         return mStats;
     }
 
@@ -96,12 +96,12 @@ public abstract class ThreadSafePipelineBuilder {
         @Override
         public String toString() {
             return "Stats{" +
-                    "mShaderCompilations=" + mShaderCompilations +
-                    ", mNumInlineCompilationFailures=" + mNumInlineCompilationFailures +
-                    ", mNumPreCompilationFailures=" + mNumPreCompilationFailures +
-                    ", mNumCompilationFailures=" + mNumCompilationFailures +
-                    ", mNumPartialCompilationSuccesses=" + mNumPartialCompilationSuccesses +
-                    ", mNumCompilationSuccesses=" + mNumCompilationSuccesses +
+                    "shaderCompilations=" + mShaderCompilations +
+                    ", numInlineCompilationFailures=" + mNumInlineCompilationFailures +
+                    ", numPreCompilationFailures=" + mNumPreCompilationFailures +
+                    ", numCompilationFailures=" + mNumCompilationFailures +
+                    ", numPartialCompilationSuccesses=" + mNumPartialCompilationSuccesses +
+                    ", numCompilationSuccesses=" + mNumCompilationSuccesses +
                     '}';
         }
     }

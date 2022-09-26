@@ -26,7 +26,7 @@ import org.lwjgl.system.MemoryUtil;
  * <p>
  * The instances are atomic reference counted, and may be used as shared pointers.
  */
-public final class CpuBuffer extends RefCnt implements Buffer {
+public final class CpuBuffer extends RefCnt {
 
     private final int mSize;
     private final long mData;
@@ -37,18 +37,15 @@ public final class CpuBuffer extends RefCnt implements Buffer {
         mData = MemoryUtil.nmemAllocChecked(size);
     }
 
-    @Override
+    /**
+     * Size of the buffer in bytes.
+     */
     public int size() {
         return mSize;
     }
 
     public long data() {
         return mData;
-    }
-
-    @Override
-    public boolean isCpuBuffer() {
-        return true;
     }
 
     @Override

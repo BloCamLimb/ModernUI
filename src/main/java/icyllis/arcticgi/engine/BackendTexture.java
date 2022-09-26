@@ -57,7 +57,7 @@ public abstract class BackendTexture {
     }
 
     /**
-     * @return either {@link EngineTypes#TextureType_2D} or {@link EngineTypes#TextureType_External}
+     * @return either {@link Engine#TextureType_2D} or {@link Engine#TextureType_External}
      */
     public abstract int getTextureType();
 

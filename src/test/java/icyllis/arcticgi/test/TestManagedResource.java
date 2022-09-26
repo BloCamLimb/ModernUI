@@ -41,6 +41,7 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 
+import static icyllis.arcticgi.engine.Engine.*;
 import static org.lwjgl.system.MemoryUtil.memAddress;
 
 public class TestManagedResource {
@@ -54,14 +55,14 @@ public class TestManagedResource {
         Objects.requireNonNull(GL.getFunctionProvider());
         GLFW.glfwDefaultWindowHints();
         GLFW.glfwWindowHint(GLFW.GLFW_VISIBLE, GLFW.GLFW_FALSE);
-        long window = GLFW.glfwCreateWindow(1600, 900, "Test Window", 0, 0);
+        long window = GLFW.glfwCreateWindow(1, 1, "Test Window", 0, 0);
         if (window == 0) {
             throw new RuntimeException();
         }
         GLFW.glfwMakeContextCurrent(window);
 
-        DirectContext directContext = DirectContext.makeOpenGL();
-        if (directContext == null) {
+        DirectContext dContext = DirectContext.makeOpenGL();
+        if (dContext == null) {
             throw new RuntimeException();
         }
         String glVersion = GLCore.glGetString(GLCore.GL_VERSION);
@@ -74,17 +75,20 @@ public class TestManagedResource {
 
         pw.println("0f int bits: " + (-0.0f == 0.0f));
 
-        if (directContext.caps().isFormatTexturable(
+        if (dContext.getCaps().isFormatTexturable(
                 GLBackendFormat.make(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT,
-                        EngineTypes.TextureType_2D))) {
+                        TextureType_2D))) {
             pw.println("Compressed format: OK");
         }
         Swizzle.make("rgb1");
-        SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
+        int sampler = SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
 
-        TextureProxy proxy = directContext.getProxyProvider().createTextureProxy(
-                GLBackendFormat.make(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
-                1600, 900, EngineTypes.Mipmapped_Yes, CoreTypes.BackingFit_Exact, true, 0, false);
+        TextureProxy proxy = dContext.getProxyProvider().createTextureProxy(
+                GLBackendFormat.make(GLCore.GL_RGBA8, TextureType_2D),
+                1600, 900, SurfaceFlag_Mipmapped |
+                        SurfaceFlag_BackingFit |
+                        SurfaceFlag_Budgeted |
+                        SurfaceFlag_SkipAllocator);
         try (proxy) {
             pw.println(proxy);
         }
@@ -95,21 +99,25 @@ public class TestManagedResource {
         Matrix3 matrix3 = transform.toM33NoZ();
         pw.println(matrix3);
 
-        GLServer server = (GLServer) directContext.getServer();
-        GLPipelineStateCache pipelineStateCache = (GLPipelineStateCache) server.getPipelineBuilder();
+        GLServer server = (GLServer) dContext.getServer();
+        GLPipelineStateCache pipelineStateCache = server.getPipelineBuilder();
+        TextureProxy proxy2 = dContext.getProxyProvider().createRenderTextureProxy(
+                GLBackendFormat.make(GLCore.GL_RGBA8, TextureType_2D),
+                800, 800, 4, SurfaceFlag_BackingFit |
+                        SurfaceFlag_Budgeted | SurfaceFlag_Renderable
+        );
         GLPipelineState pipelineState = pipelineStateCache.findOrCreatePipelineState(
-                new ProgramInfo(new SurfaceProxyView(directContext.getProxyProvider().createRenderTextureProxy(
-                        GLBackendFormat.make(GLCore.GL_RGBA8, EngineTypes.TextureType_2D),
-                        800, 800, 4, false, CoreTypes.BackingFit_Exact,
-                        true, 0, true
-                )), new RoundRectProcessor(true),
+                new ProgramInfo(new SurfaceProxyView(proxy2), new RoundRectProcessor(true),
                         null, null, null, null,
-                        EngineTypes.PrimitiveType_Triangles,
+                        PrimitiveType_Triangles,
                         TransferProcessor.XferBarrierFlag_None,
-                        EngineTypes.LoadOp_Discard,
+                        LoadOp_Discard,
                         ProgramInfo.InputFlag_None));
+        try (proxy2) {
+            pw.println(proxy2);
+        }
 
-        pw.println(directContext.getServer().getPipelineBuilder().stats());
+        pw.println(dContext.getServer().getPipelineBuilder().getStates());
 
         testLexicon(pw);
 
@@ -127,14 +135,14 @@ public class TestManagedResource {
 
         testSimilarity(pw);
 
-        directContext.close();
+        dContext.close();
         GLFW.glfwDestroyWindow(window);
         GLFW.glfwTerminate();
 
         try {
             assert false;
         } catch (AssertionError e) {
-            System.out.println("Assertion works " + (System.nanoTime() - time) / 1000000);
+            System.out.println("Assert: " + (System.nanoTime() - time) / 1000000 + "ms");
         }
     }
 

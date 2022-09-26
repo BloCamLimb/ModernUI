@@ -18,7 +18,7 @@
 
 package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.core.Image.CompressionType;
+import icyllis.arcticgi.core.ImageInfo.CompressionType;
 import icyllis.arcticgi.core.*;
 import icyllis.arcticgi.core.Surface;
 import icyllis.arcticgi.core.ImageInfo.ColorType;
@@ -38,7 +38,7 @@ public abstract class Context extends RefCnt {
     /**
      * The 3D API backing this context.
      *
-     * @return see {@link EngineTypes}
+     * @return see {@link Engine}
      */
     public final int getBackend() {
         return mThreadSafeProxy.mBackend;
@@ -162,7 +162,7 @@ public abstract class Context extends RefCnt {
     }
 
     @ApiStatus.Internal
-    public final Caps caps() {
+    public final Caps getCaps() {
         return mThreadSafeProxy.mCaps;
     }
 

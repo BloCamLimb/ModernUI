@@ -20,10 +20,9 @@ package icyllis.arcticgi.opengl;
 
 import icyllis.arcticgi.core.RefCnt;
 import icyllis.arcticgi.core.SharedPtr;
-import icyllis.arcticgi.engine.EngineTypes;
-import icyllis.arcticgi.engine.ProgramInfo;
+import icyllis.arcticgi.engine.*;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 import static icyllis.arcticgi.opengl.GLCore.*;
 
 /**
@@ -53,8 +52,8 @@ public class GLCommandBuffer {
     private int mHWScissorWidth;
     private int mHWScissorHeight;
 
-    private int mHWFramebufferID;
-    private int mHWRenderTargetUniqueID;
+    private int mHWFramebuffer;
+    private GLRenderTarget mHWRenderTarget;
 
     @SharedPtr
     private GLPipeline mHWPipeline;
@@ -67,8 +66,8 @@ public class GLCommandBuffer {
 
     void resetStates(int states) {
         if ((states & GLBackendState_RenderTarget) != 0) {
-            mHWFramebufferID = 0;
-            mHWRenderTargetUniqueID = 0;
+            mHWFramebuffer = 0;
+            mHWRenderTarget = null;
         }
 
         if ((states & GLBackendState_Pipeline) != 0) {
@@ -114,8 +113,8 @@ public class GLCommandBuffer {
      * @param width  the effective width of color attachment
      * @param height the effective height of color attachment
      * @param origin the surface origin
-     * @see EngineTypes#SurfaceOrigin_TopLeft
-     * @see EngineTypes#SurfaceOrigin_BottomLeft
+     * @see Engine#SurfaceOrigin_UpperLeft
+     * @see Engine#SurfaceOrigin_LowerLeft
      */
     public void flushScissorRect(int width, int height, int origin,
                                  int scissorLeft, int scissorTop,
@@ -127,10 +126,10 @@ public class GLCommandBuffer {
                 scissorWidth >= 0 && scissorWidth <= width &&
                 scissorHeight >= 0 && scissorHeight <= height);
         final int scissorY;
-        if (origin == SurfaceOrigin_TopLeft) {
+        if (origin == SurfaceOrigin_UpperLeft) {
             scissorY = scissorTop;
         } else {
-            assert (origin == SurfaceOrigin_BottomLeft);
+            assert (origin == SurfaceOrigin_LowerLeft);
             scissorY = height - scissorBottom;
         }
         assert (scissorY >= 0);
@@ -190,7 +189,7 @@ public class GLCommandBuffer {
      */
     public void bindFramebuffer(int framebuffer) {
         glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-        mHWRenderTargetUniqueID = 0;
+        mHWRenderTarget = null;
     }
 
     /**
@@ -200,14 +199,14 @@ public class GLCommandBuffer {
      */
     public void flushRenderTarget(GLRenderTarget target) {
         if (target == null) {
-            mHWRenderTargetUniqueID = 0;
+            mHWRenderTarget = null;
         } else {
             int framebuffer = target.getFramebuffer();
-            if (mHWFramebufferID != framebuffer ||
-                    mHWRenderTargetUniqueID != target.getUniqueID()) {
+            if (mHWFramebuffer != framebuffer ||
+                    mHWRenderTarget != target) {
                 glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-                mHWFramebufferID = framebuffer;
-                mHWRenderTargetUniqueID = target.getUniqueID();
+                mHWFramebuffer = framebuffer;
+                mHWRenderTarget = target;
                 flushViewport(target.getWidth(), target.getHeight());
             }
             target.bindStencil();

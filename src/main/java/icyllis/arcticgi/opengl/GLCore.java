@@ -18,15 +18,13 @@
 
 package icyllis.arcticgi.opengl;
 
-import icyllis.arcticgi.core.Color;
-import icyllis.arcticgi.core.Image;
+import icyllis.arcticgi.core.*;
 import icyllis.arcticgi.engine.ShaderErrorHandler;
 import icyllis.arcticgi.engine.ThreadSafePipelineBuilder;
 import org.lwjgl.opengl.GL45C;
 import org.lwjgl.system.NativeType;
 
 import static org.lwjgl.opengl.EXTTextureCompressionS3TC.*;
-import static org.lwjgl.opengl.EXTTextureStorage.*;
 
 /**
  * Provides native interfaces of OpenGL 4.5 core and user-defined utilities.
@@ -55,15 +53,10 @@ public final class GLCore extends GL45C {
                     GLTypes.FORMAT_SRGB8_ALPHA8,
                     GLTypes.FORMAT_RGBA4,
                     GLTypes.FORMAT_RGB10_A2,
-                    GLTypes.FORMAT_RGBA16F,
-                    GLTypes.FORMAT_BGRA8 -> Color.RGBA_CHANNEL_FLAGS;
+                    GLTypes.FORMAT_RGBA16F -> Color.RGBA_CHANNEL_FLAGS;
             case GLTypes.FORMAT_R8,
                     GLTypes.FORMAT_R16,
                     GLTypes.FORMAT_R16F -> Color.RED_CHANNEL_FLAG;
-            case GLTypes.FORMAT_ALPHA8 -> Color.ALPHA_CHANNEL_FLAG;
-            case GLTypes.FORMAT_LUMINANCE8,
-                    GLTypes.FORMAT_LUMINANCE16F -> Color.GRAY_CHANNEL_FLAG;
-            case GLTypes.FORMAT_LUMINANCE8_ALPHA8 -> Color.GRAY_ALPHA_CHANNEL_FLAGS;
             case GLTypes.FORMAT_RGB565,
                     GLTypes.FORMAT_COMPRESSED_RGB8_BC1,
                     GLTypes.FORMAT_COMPRESSED_RGB8_ETC2,
@@ -83,13 +76,8 @@ public final class GLCore extends GL45C {
         return switch (glFormat) {
             case GL_RGBA8 -> GLTypes.FORMAT_RGBA8;
             case GL_R8 -> GLTypes.FORMAT_R8;
-            case GL_ALPHA8_EXT -> GLTypes.FORMAT_ALPHA8;
-            case GL_LUMINANCE8_EXT -> GLTypes.FORMAT_LUMINANCE8;
-            case GL_LUMINANCE8_ALPHA8_EXT -> GLTypes.FORMAT_LUMINANCE8_ALPHA8;
-            case GL_BGRA8_EXT -> GLTypes.FORMAT_BGRA8;
             case GL_RGB565 -> GLTypes.FORMAT_RGB565;
             case GL_RGBA16F -> GLTypes.FORMAT_RGBA16F;
-            case GL_LUMINANCE16F_EXT -> GLTypes.FORMAT_LUMINANCE16F;
             case GL_R16F -> GLTypes.FORMAT_R16F;
             case GL_RGB8 -> GLTypes.FORMAT_RGB8;
             case GL_RG8 -> GLTypes.FORMAT_RG8;
@@ -117,13 +105,8 @@ public final class GLCore extends GL45C {
         return switch (glFormat) {
             case GL_RGBA8,
                     GL_R8,
-                    GL_ALPHA8_EXT,
-                    GL_LUMINANCE8_EXT,
-                    GL_LUMINANCE8_ALPHA8_EXT,
-                    GL_BGRA8_EXT,
                     GL_RGB565,
                     GL_RGBA16F,
-                    GL_LUMINANCE16F_EXT,
                     GL_R16F,
                     GL_RGB8,
                     GL_RG8,
@@ -151,13 +134,8 @@ public final class GLCore extends GL45C {
         return switch (format) {
             case GLTypes.FORMAT_RGBA8 -> GL_RGBA8;
             case GLTypes.FORMAT_R8 -> GL_R8;
-            case GLTypes.FORMAT_ALPHA8 -> GL_ALPHA8_EXT;
-            case GLTypes.FORMAT_LUMINANCE8 -> GL_LUMINANCE8_EXT;
-            case GLTypes.FORMAT_LUMINANCE8_ALPHA8 -> GL_LUMINANCE8_ALPHA8_EXT;
-            case GLTypes.FORMAT_BGRA8 -> GL_BGRA8_EXT;
             case GLTypes.FORMAT_RGB565 -> GL_RGB565;
             case GLTypes.FORMAT_RGBA16F -> GL_RGBA16F;
-            case GLTypes.FORMAT_LUMINANCE16F -> GL_LUMINANCE16F_EXT;
             case GLTypes.FORMAT_R16F -> GL_R16F;
             case GLTypes.FORMAT_RGB8 -> GL_RGB8;
             case GLTypes.FORMAT_RG8 -> GL_RG8;
@@ -181,10 +159,10 @@ public final class GLCore extends GL45C {
 
     public static int glFormatCompressionType(int format) {
         return switch (format) {
-            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2 -> Image.COMPRESSION_ETC2_RGB8_UNORM;
-            case GLTypes.FORMAT_COMPRESSED_RGB8_BC1 -> Image.COMPRESSION_BC1_RGB8_UNORM;
-            case GLTypes.FORMAT_COMPRESSED_RGBA8_BC1 -> Image.COMPRESSION_BC1_RGBA8_UNORM;
-            default -> Image.COMPRESSION_NONE;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_ETC2 -> ImageInfo.COMPRESSION_TYPE_ETC2_RGB8_UNORM;
+            case GLTypes.FORMAT_COMPRESSED_RGB8_BC1 -> ImageInfo.COMPRESSION_TYPE_BC1_RGB8_UNORM;
+            case GLTypes.FORMAT_COMPRESSED_RGBA8_BC1 -> ImageInfo.COMPRESSION_TYPE_BC1_RGBA8_UNORM;
+            default -> ImageInfo.COMPRESSION_TYPE_NONE;
         };
     }
 
@@ -197,19 +175,14 @@ public final class GLCore extends GL45C {
                     GLTypes.FORMAT_SRGB8_ALPHA8,
                     GLTypes.FORMAT_RGB10_A2,
                     // We assume the GPU stores this format 4 byte aligned
-                    GLTypes.FORMAT_RGB8,
-                    GLTypes.FORMAT_BGRA8 -> 4;
+                    GLTypes.FORMAT_RGB8 -> 4;
             case GLTypes.FORMAT_R8,
-                    GLTypes.FORMAT_STENCIL_INDEX8,
-                    GLTypes.FORMAT_LUMINANCE8,
-                    GLTypes.FORMAT_ALPHA8 -> 1;
-            case GLTypes.FORMAT_LUMINANCE8_ALPHA8,
-                    GLTypes.FORMAT_STENCIL_INDEX16,
+                    GLTypes.FORMAT_STENCIL_INDEX8 -> 1;
+            case GLTypes.FORMAT_STENCIL_INDEX16,
                     GLTypes.FORMAT_R16,
                     GLTypes.FORMAT_RGBA4,
                     GLTypes.FORMAT_RG8,
                     GLTypes.FORMAT_R16F,
-                    GLTypes.FORMAT_LUMINANCE16F,
                     GLTypes.FORMAT_RGB565 -> 2;
             case GLTypes.FORMAT_RGBA16F,
                     GLTypes.FORMAT_RGBA16,
@@ -231,14 +204,9 @@ public final class GLCore extends GL45C {
                     GLTypes.FORMAT_COMPRESSED_RGBA8_BC1,
                     GLTypes.FORMAT_RGBA8,
                     GLTypes.FORMAT_R8,
-                    GLTypes.FORMAT_ALPHA8,
-                    GLTypes.FORMAT_LUMINANCE8,
-                    GLTypes.FORMAT_LUMINANCE8_ALPHA8,
-                    GLTypes.FORMAT_BGRA8,
                     GLTypes.FORMAT_RGB565,
                     GLTypes.FORMAT_RGBA16F,
                     GLTypes.FORMAT_R16F,
-                    GLTypes.FORMAT_LUMINANCE16F,
                     GLTypes.FORMAT_RGB8,
                     GLTypes.FORMAT_RG8,
                     GLTypes.FORMAT_RGB10_A2,
@@ -261,14 +229,9 @@ public final class GLCore extends GL45C {
                     GLTypes.FORMAT_COMPRESSED_RGBA8_BC1,
                     GLTypes.FORMAT_RGBA8,
                     GLTypes.FORMAT_R8,
-                    GLTypes.FORMAT_ALPHA8,
-                    GLTypes.FORMAT_LUMINANCE8,
-                    GLTypes.FORMAT_LUMINANCE8_ALPHA8,
-                    GLTypes.FORMAT_BGRA8,
                     GLTypes.FORMAT_RGB565,
                     GLTypes.FORMAT_RGBA16F,
                     GLTypes.FORMAT_R16F,
-                    GLTypes.FORMAT_LUMINANCE16F,
                     GLTypes.FORMAT_RGB8,
                     GLTypes.FORMAT_RG8,
                     GLTypes.FORMAT_RGB10_A2,
@@ -293,14 +256,9 @@ public final class GLCore extends GL45C {
                     GLTypes.FORMAT_COMPRESSED_RGBA8_BC1,
                     GLTypes.FORMAT_RGBA8,
                     GLTypes.FORMAT_R8,
-                    GLTypes.FORMAT_ALPHA8,
-                    GLTypes.FORMAT_LUMINANCE8,
-                    GLTypes.FORMAT_LUMINANCE8_ALPHA8,
-                    GLTypes.FORMAT_BGRA8,
                     GLTypes.FORMAT_RGB565,
                     GLTypes.FORMAT_RGBA16F,
                     GLTypes.FORMAT_R16F,
-                    GLTypes.FORMAT_LUMINANCE16F,
                     GLTypes.FORMAT_RGB8,
                     GLTypes.FORMAT_RG8,
                     GLTypes.FORMAT_RGB10_A2,
@@ -324,14 +282,9 @@ public final class GLCore extends GL45C {
                     GLTypes.FORMAT_COMPRESSED_RGBA8_BC1 -> true;
             case GLTypes.FORMAT_RGBA8,
                     GLTypes.FORMAT_R8,
-                    GLTypes.FORMAT_ALPHA8,
-                    GLTypes.FORMAT_LUMINANCE8,
-                    GLTypes.FORMAT_LUMINANCE8_ALPHA8,
-                    GLTypes.FORMAT_BGRA8,
                     GLTypes.FORMAT_RGB565,
                     GLTypes.FORMAT_RGBA16F,
                     GLTypes.FORMAT_R16F,
-                    GLTypes.FORMAT_LUMINANCE16F,
                     GLTypes.FORMAT_RGB8,
                     GLTypes.FORMAT_RG8,
                     GLTypes.FORMAT_RGB10_A2,
@@ -353,13 +306,8 @@ public final class GLCore extends GL45C {
         return switch (glFormat) {
             case GL_RGBA8 -> "RGBA8";
             case GL_R8 -> "R8";
-            case GL_ALPHA8_EXT -> "ALPHA8";
-            case GL_LUMINANCE8_EXT -> "LUMINANCE8";
-            case GL_LUMINANCE8_ALPHA8_EXT -> "LUMINANCE8_ALPHA8";
-            case GL_BGRA8_EXT -> "BGRA8";
             case GL_RGB565 -> "RGB565";
             case GL_RGBA16F -> "RGBA16F";
-            case GL_LUMINANCE16F_EXT -> "LUMINANCE16F";
             case GL_R16F -> "R16F";
             case GL_RGB8 -> "RGB8";
             case GL_RG8 -> "RG8";

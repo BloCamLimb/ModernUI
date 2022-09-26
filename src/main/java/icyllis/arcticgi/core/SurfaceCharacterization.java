@@ -90,9 +90,9 @@ public final class SurfaceCharacterization {
 
         assert !mMipmapped || mTexturable;
         assert !mTexturable || !mGLWrapDefaultFramebuffer;
-        int backend = mBackendFormat.backend();
-        assert !mGLWrapDefaultFramebuffer || backend == EngineTypes.OpenGL;
-        assert (!mVkSecondaryCommandBuffer && !mVkSupportInputAttachment) || backend == EngineTypes.Vulkan;
+        int backend = mBackendFormat.getBackend();
+        assert !mGLWrapDefaultFramebuffer || backend == Engine.OpenGL;
+        assert (!mVkSecondaryCommandBuffer && !mVkSupportInputAttachment) || backend == Engine.Vulkan;
         assert !mVkSecondaryCommandBuffer || !mVkSupportInputAttachment;
         assert !mTexturable || !mVkSecondaryCommandBuffer;
 
@@ -249,7 +249,7 @@ public final class SurfaceCharacterization {
         }
 
         if (mVkSupportInputAttachment) {
-            if (texture.getBackend() != EngineTypes.Vulkan) {
+            if (texture.getBackend() != Engine.Vulkan) {
                 return false;
             }
             VkImageInfo vkInfo = new VkImageInfo();

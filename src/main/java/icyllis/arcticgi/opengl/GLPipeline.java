@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Iterator;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 import static icyllis.arcticgi.opengl.GLCore.*;
 
 /**
@@ -49,12 +49,10 @@ public class GLPipeline extends GLManagedResource {
     private final int mVertexStride;
     private final int mInstanceStride;
 
-    private int mIndexBufferID;
-    private int mVertexBufferID;
-    private int mInstanceBufferID;
-    private int mIndexBufferUniqueID;
-    private int mVertexBufferUniqueID;
-    private int mInstanceBufferUniqueID;
+    // raw ptr as unique key
+    private GLBuffer mIndexBuffer;
+    private GLBuffer mVertexBuffer;
+    private GLBuffer mInstanceBuffer;
 
     private GLPipeline(@Nonnull GLServer server,
                        int program,
@@ -220,7 +218,7 @@ public class GLPipeline extends GLManagedResource {
         }
     }
 
-    public void abandon() {
+    public void discard() {
         mProgram = 0;
         mVertexArray = 0;
     }
@@ -242,11 +240,9 @@ public class GLPipeline extends GLManagedResource {
         if (mVertexArray == 0) {
             return;
         }
-        if (mIndexBufferID != buffer.getBuffer() ||
-                mIndexBufferUniqueID != buffer.getUniqueID()) {
+        if (mIndexBuffer != buffer) {
             glVertexArrayElementBuffer(mVertexArray, buffer.getBuffer());
-            mIndexBufferID = buffer.getBuffer();
-            mIndexBufferUniqueID = buffer.getUniqueID();
+            mIndexBuffer = buffer;
         }
     }
 
@@ -263,15 +259,13 @@ public class GLPipeline extends GLManagedResource {
             return;
         }
         assert mVertexStride > 0;
-        if (mVertexBufferID != buffer.getBuffer() ||
-                mVertexBufferUniqueID != buffer.getUniqueID()) {
+        if (mVertexBuffer != buffer) {
             glVertexArrayVertexBuffer(mVertexArray,
                     mVertexBinding,
                     buffer.getBuffer(),
                     offset,
                     mVertexStride);
-            mVertexBufferID = buffer.getBuffer();
-            mVertexBufferUniqueID = buffer.getUniqueID();
+            mVertexBuffer = buffer;
         }
     }
 
@@ -288,15 +282,13 @@ public class GLPipeline extends GLManagedResource {
             return;
         }
         assert mInstanceStride > 0;
-        if (mInstanceBufferID != buffer.getBuffer() ||
-                mInstanceBufferUniqueID != buffer.getUniqueID()) {
+        if (mInstanceBuffer != buffer) {
             glVertexArrayVertexBuffer(mVertexArray,
                     mInstanceBinding,
                     buffer.getBuffer(),
                     offset,
                     mInstanceStride);
-            mInstanceBufferID = buffer.getBuffer();
-            mInstanceBufferUniqueID = buffer.getUniqueID();
+            mInstanceBuffer = buffer;
         }
     }
 }

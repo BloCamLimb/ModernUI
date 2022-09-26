@@ -46,7 +46,7 @@ public class SurfaceFillContext extends SurfaceContext {
     }
 
     public OpsTask nextOpsTask() {
-        OpsTask newOpsTask = mContext.getDrawingManager().newOpsTask(mWriteView);
+        OpsTask newOpsTask = getDrawingManager().newOpsTask(mWriteView);
         mOpsTask = RefCnt.move(mOpsTask, newOpsTask);
         return mOpsTask;
     }

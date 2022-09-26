@@ -18,88 +18,14 @@
 
 package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.core.*;
+import icyllis.arcticgi.core.SharedPtr;
 import org.jetbrains.annotations.ApiStatus;
 
-import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-/**
- * <code>TextureProxy</code> targets a {@link Texture} with three instantiation
- * methods: Deferred, Lazy-callback and Wrapped.
- * <p>
- * Target: The backing texture that referenced by this proxy.
- * <p>
- * Instantiate: Create new textures or find textures in {@link ResourceCache}
- * when they are actually required on flush.
- * <p>
- * BackingFit: Indicates whether a backing store needs to be an exact match or can be
- * larger than is strictly necessary. True: Exact; False: Approx.
- * <p>
- * UseAllocator:
- * <ul>
- *     <li>False: This proxy will be instantiated outside the allocator (e.g.
- *     for proxies that are instantiated in on-flush callbacks).</li>
- *     <li>True: {@link ResourceAllocator} should instantiate this proxy.</li>
- * </ul>
- * LazyInstantiationKeyMode:
- * <ul>
- *     <li>False: Don't key the {@link Texture} with the proxy's key. The lazy
- *     instantiation callback is free to return a {@link Texture} that already
- *     has a unique key unrelated to the proxy's key.</li>
- *     <li>True: Keep the {@link Texture}'s unique key in sync with the proxy's
- *     unique key. The {@link Texture} returned from the lazy instantiation callback
- *     must not have a unique key or have the same same unique key as the proxy.
- *     If the proxy is later assigned a key it is in turn assigned to the
- *     {@link Texture}.</li>
- * </ul>
- * <p>
- * Use {@link ProxyProvider} to obtain {@link TextureProxy} objects.
- */
+import static icyllis.arcticgi.engine.Engine.*;
+
 public class TextureProxy extends SurfaceProxy {
-
-    /**
-     * For wrapped resources, 'mFormat' and 'mDimensions' will always be filled in from the
-     * wrapped resource.
-     */
-    final BackendFormat mFormat;
-    int mWidth;
-    int mHeight;
-
-    /**
-     * BackingFit: Indicates whether a backing store needs to be an exact match or can be
-     * larger than is strictly necessary. False: Approx; True: Exact.
-     * <p>
-     * Always Approx for lazy-callback resources;
-     * always Exact for wrapped resources.
-     *
-     * @see CoreTypes#BackingFit_Approx
-     * @see CoreTypes#BackingFit_Exact
-     */
-    boolean mBackingFit;
-    /**
-     * Always true for lazy-callback resources;
-     * set from the backing resource for wrapped resources;
-     * only meaningful if 'mLazyInstantiateCallback' is non-null.
-     *
-     * @see CoreTypes#Budgeted_No
-     * @see CoreTypes#Budgeted_Yes
-     */
-    boolean mBudgeted;
-    /**
-     * UseAllocator:
-     * <ul>
-     *     <li>False: This proxy will be instantiated outside the allocator (e.g.
-     *     for proxies that are instantiated in on-flush callbacks).</li>
-     *     <li>True: {@link ResourceAllocator} should instantiate this proxy.</li>
-     * </ul>
-     */
-    boolean mUseAllocator;
-
-    /**
-     * Set from the backing resource for wrapped resources.
-     */
-    final int mUniqueID;
 
     LazyInstantiateCallback mLazyInstantiateCallback;
 
@@ -116,22 +42,6 @@ public class TextureProxy extends SurfaceProxy {
     protected Texture mTexture;
 
     /**
-     * In many cases these flags aren't actually known until the proxy has been instantiated.
-     * However, Engine frequently needs to change its behavior based on these settings. For
-     * internally create proxies we will know these properties ahead of time. For wrapped
-     * proxies we will copy the properties off of the {@link Texture}. For lazy proxies we
-     * force the call sites to provide the required information ahead of time. At
-     * instantiation time we verify that the assumed properties match the actual properties.
-     */
-    protected int mSurfaceFlags;
-
-    /**
-     * @see EngineTypes#Mipmapped_No
-     * @see EngineTypes#Mipmapped_Yes
-     */
-    boolean mMipmapped;
-
-    /**
      * This tracks the mipmap status at the proxy level and is thus somewhat distinct from the
      * backing Texture's mipmap status. In particular, this status is used to determine when
      * mipmap levels need to be explicitly regenerated during the execution of a DAG of opsTasks.
@@ -145,14 +55,6 @@ public class TextureProxy extends SurfaceProxy {
      */
     boolean mSyncTargetKey = true;
 
-    /**
-     * For TextureProxies created in a DDL recording thread it is possible for the uniqueKey
-     * to be cleared on the backing Texture while the uniqueKey remains on the proxy.
-     * A 'mDeferredProvider' of TRUE loosens up asserts that the key of an instantiated
-     * uniquely-keyed textureProxy is also always set on the backing Texture.
-     */
-    boolean mDeferredProvider;
-
     Object mUniqueKey;
     /**
      * Only set when 'mUniqueKey' is non-null.
@@ -161,67 +63,28 @@ public class TextureProxy extends SurfaceProxy {
 
     /**
      * Deferred version - no data
-     *
-     * @param deferredProvider A DDL recorder has its own proxy provider and proxy cache.
      */
-    protected TextureProxy(BackendFormat format,
-                           int width, int height,
-                           boolean mipmapped,
-                           boolean backingFit,
-                           boolean budgeted,
-                           int surfaceFlags,
-                           boolean useAllocator,
-                           boolean deferredProvider) {
-        assert (format != null);
-        mFormat = format;
-        mWidth = width;
-        mHeight = height;
-        mMipmapped = mipmapped;
-        mBackingFit = backingFit;
-        mBudgeted = budgeted;
-        mSurfaceFlags = surfaceFlags;
-        mUseAllocator = useAllocator;
-        mDeferredProvider = deferredProvider;
-        if (format.textureType() == EngineTypes.TextureType_External) {
-            mSurfaceFlags |= EngineTypes.SurfaceFlag_ReadOnly;
-        }
-        mUniqueID = GpuResource.createUniqueID();
+    public TextureProxy(BackendFormat format,
+                        int width, int height,
+                        int surfaceFlags) {
+        super(format, width, height, surfaceFlags);
         assert (width > 0 && height > 0); // non-lazy
     }
 
     /**
      * Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
      */
-    protected TextureProxy(BackendFormat format,
-                           int width, int height,
-                           boolean mipmapped,
-                           boolean backingFit,
-                           boolean budgeted,
-                           int surfaceFlags,
-                           boolean useAllocator,
-                           boolean deferredProvider,
-                           LazyInstantiateCallback callback) {
-        assert (format != null);
-        assert (callback != null);
-        mFormat = format;
-        mWidth = width;
-        mHeight = height;
-        mMipmapped = mipmapped;
-        mBackingFit = backingFit;
-        mBudgeted = budgeted;
-        mSurfaceFlags = surfaceFlags;
-        mUseAllocator = useAllocator;
-        mDeferredProvider = deferredProvider;
-        if (format.textureType() == EngineTypes.TextureType_External) {
-            mSurfaceFlags |= EngineTypes.SurfaceFlag_ReadOnly;
-        }
-        mUniqueID = GpuResource.createUniqueID();
+    public TextureProxy(BackendFormat format,
+                        int width, int height,
+                        int surfaceFlags,
+                        LazyInstantiateCallback callback) {
+        super(format, width, height, surfaceFlags);
         mLazyInstantiateCallback = callback;
         // A "fully" lazy proxy's width and height are not known until instantiation time.
         // So fully lazy proxies are created with width and height < 0. Regular lazy proxies must be
         // created with positive widths and heights. The width and height are set to 0 only after a
         // failed instantiation. The former must be "approximate" fit while the latter can be either.
-        assert (width < 0 && height < 0 && backingFit == CoreTypes.BackingFit_Approx) ||
+        assert (width < 0 && height < 0 && (surfaceFlags & SurfaceFlag_BackingFit) == 0) ||
                 (width > 0 && height > 0);
     }
 
@@ -232,26 +95,16 @@ public class TextureProxy extends SurfaceProxy {
      * in allocation by having its backing resource recycled to other uninstantiated proxies or
      * not depending on UseAllocator.
      */
-    protected TextureProxy(Texture texture,
-                           boolean useAllocator,
-                           boolean deferredProvider) {
-        assert (texture != null);
-        mFormat = texture.getBackendFormat();
-        mWidth = texture.getWidth();
-        mHeight = texture.getHeight();
-        mMipmapped = texture.isMipmapped();
+    public TextureProxy(@SharedPtr Texture texture,
+                        int surfaceFlags) {
+        super(texture, surfaceFlags);
         mMipmapsDirty = texture.isMipmapsDirty();
-        mBackingFit = CoreTypes.BackingFit_Exact;
-        mBudgeted = texture.getBudgetType() == EngineTypes.BudgetType_Budgeted;
-        mSurfaceFlags = texture.getFlags();
-        mUseAllocator = useAllocator;
-        mDeferredProvider = deferredProvider;
-        assert (mFormat.textureType() == texture.getTextureType());
-        if (mFormat.textureType() == EngineTypes.TextureType_External) {
-            mSurfaceFlags |= EngineTypes.SurfaceFlag_ReadOnly;
-        }
+        assert (mSurfaceFlags & SurfaceFlag_BackingFit) != 0;
+        assert (mFormat.getTextureType() == texture.getTextureType());
+        assert (texture.isMipmapped()) == ((mSurfaceFlags & SurfaceFlag_Mipmapped) != 0);
+        assert (texture.getBudgetType() == BudgetType_Budgeted) == ((mSurfaceFlags & SurfaceFlag_Budgeted) != 0);
+        assert (texture.getTextureType() != TextureType_External) || ((mSurfaceFlags & SurfaceFlag_ReadOnly) != 0);
         mTexture = texture; // std::move
-        mUniqueID = texture.getUniqueID(); // converting from unique resource ID to a proxy ID
         if (texture.getUniqueKey() != null) {
             assert (texture.getContext() != null);
             mProxyProvider = texture.getContext().getProxyProvider();
@@ -306,7 +159,7 @@ public class TextureProxy extends SurfaceProxy {
     protected void dispose() {
         // Due to the order of cleanup the Texture this proxy may have wrapped may have gone away
         // at this point. Zero out the pointer so the cache invalidation code doesn't try to use it.
-        mTexture = GpuResource.move(mTexture);
+        mTexture = Resource.move(mTexture);
 
         // In DDL-mode, uniquely keyed proxies keep their key even after their originating
         // proxy provider has gone away. In that case there is no-one to send the invalid key
@@ -334,20 +187,12 @@ public class TextureProxy extends SurfaceProxy {
         return result;
     }
 
-    public final int getWidth() {
-        return mWidth;
-    }
-
-    public final int getHeight() {
-        return mHeight;
-    }
-
     public int getBackingWidth() {
         assert (!isLazyMost());
         if (mTexture != null) {
             return mTexture.getWidth();
         }
-        if (mBackingFit == CoreTypes.BackingFit_Exact) {
+        if ((mSurfaceFlags & SurfaceFlag_BackingFit) != 0) {
             return mWidth;
         }
         return ResourceProvider.makeApprox(mWidth);
@@ -358,7 +203,7 @@ public class TextureProxy extends SurfaceProxy {
         if (mTexture != null) {
             return mTexture.getHeight();
         }
-        if (mBackingFit == CoreTypes.BackingFit_Exact) {
+        if ((mSurfaceFlags & SurfaceFlag_BackingFit) != 0) {
             return mHeight;
         }
         return ResourceProvider.makeApprox(mHeight);
@@ -372,49 +217,16 @@ public class TextureProxy extends SurfaceProxy {
      */
     public final boolean isExact() {
         assert !isLazyMost();
-        if (mBackingFit == CoreTypes.BackingFit_Exact) {
+        if ((mSurfaceFlags & SurfaceFlag_BackingFit) != 0) {
             return true;
         }
         return mWidth == ResourceProvider.makeApprox(mWidth) &&
                 mHeight == ResourceProvider.makeApprox(mHeight);
     }
 
-    /**
-     * @return the backend format of this proxy
-     */
-    @Nonnull
-    public final BackendFormat getBackendFormat() {
-        return mFormat;
-    }
-
-    public final boolean isFormatCompressed() {
-        return mFormat.isCompressed();
-    }
-
-    /**
-     * The contract for the unique ID is:
-     * <ul>
-     * <li>For wrapped resources:
-     * the unique ID will match that of the wrapped resource</li>
-     * <li>For deferred resources:
-     *  <ul>
-     *  <li>The unique ID will be different from the real resource, when it is allocated</li>
-     *  <li>The proxy's unique ID will not change across the instantiates call</li>
-     *  </ul>
-     * </li>
-     * <li> The unique IDs of the proxies and the resources draw from the same pool</li>
-     * </ul>
-     * What this boils down to is that the unique ID of a proxy can be used to consistently
-     * track/identify a proxy but should never be used to distinguish between
-     * resources and proxies - <b>beware!</b>
-     */
-    public final int getUniqueID() {
-        return mUniqueID;
-    }
-
-    public int getBackingUniqueID() {
+    public Object getBackingUniqueID() {
         if (mTexture != null) {
-            return mTexture.getUniqueID();
+            return mTexture;
         }
         return mUniqueID;
     }
@@ -435,13 +247,14 @@ public class TextureProxy extends SurfaceProxy {
             return true;
         }
 
-        assert !mMipmapped || mBackingFit == CoreTypes.BackingFit_Exact;
+        assert ((mSurfaceFlags & SurfaceFlag_Mipmapped) == 0) ||
+                ((mSurfaceFlags & SurfaceFlag_BackingFit) != 0);
 
         final Texture texture;
-        if (mBackingFit == CoreTypes.BackingFit_Approx) {
+        if ((mSurfaceFlags & SurfaceFlag_BackingFit) == 0) {
             texture = provider.createApproxTexture(mWidth, mHeight, mFormat, isProtected());
         } else {
-            texture = provider.createTexture(mWidth, mHeight, mFormat, mMipmapped, mBudgeted, isProtected());
+            texture = provider.createTexture(mWidth, mHeight, mFormat, mSurfaceFlags);
         }
         if (texture == null) {
             return false;
@@ -474,7 +287,7 @@ public class TextureProxy extends SurfaceProxy {
      * instantiate other proxies do not need to be considered by {@link ResourceAllocator}.
      */
     public final boolean canSkipResourceAllocator() {
-        if (!mUseAllocator) {
+        if ((mSurfaceFlags & SurfaceFlag_SkipAllocator) != 0) {
             // Usually an atlas or onFlush proxy
             return true;
         }
@@ -518,6 +331,7 @@ public class TextureProxy extends SurfaceProxy {
      * if not, return null.
      */
     @Nullable
+    @Override
     public Texture peekTexture() {
         return mTexture;
     }
@@ -528,12 +342,9 @@ public class TextureProxy extends SurfaceProxy {
      * Always true for lazy-callback resources;
      * set from the backing resource for wrapped resources;
      * only meaningful if 'mLazyInstantiateCallback' is non-null.
-     *
-     * @see CoreTypes#Budgeted_No
-     * @see CoreTypes#Budgeted_Yes
      */
     public final boolean isBudgeted() {
-        return mBudgeted;
+        return (mSurfaceFlags & SurfaceFlag_Budgeted) != 0;
     }
 
     /**
@@ -542,11 +353,11 @@ public class TextureProxy extends SurfaceProxy {
      * assignment in ResourceAllocator.
      */
     public final boolean isReadOnly() {
-        return (mSurfaceFlags & EngineTypes.SurfaceFlag_ReadOnly) != 0;
+        return (mSurfaceFlags & SurfaceFlag_ReadOnly) != 0;
     }
 
     public final boolean isProtected() {
-        return (mSurfaceFlags & EngineTypes.SurfaceFlag_Protected) != 0;
+        return (mSurfaceFlags & SurfaceFlag_Protected) != 0;
     }
 
     /**
@@ -558,8 +369,9 @@ public class TextureProxy extends SurfaceProxy {
      */
     public long getMemorySize() {
         // use proxy params
-        return Texture.computeSize(mFormat, mWidth, mHeight,
-                1, mMipmapped, mBackingFit == CoreTypes.BackingFit_Approx);
+        return Texture.computeSize(mFormat, mWidth, mHeight, 1,
+                (mSurfaceFlags & SurfaceFlag_Mipmapped) != 0,
+                (mSurfaceFlags & SurfaceFlag_BackingFit) == 0);
     }
 
     public final boolean isDDLTarget() {
@@ -577,11 +389,12 @@ public class TextureProxy extends SurfaceProxy {
      * target. In that case we should use that for our benefit to avoid possible copies/mip
      * generation later.
      */
+    @Override
     public boolean isMipmapped() {
         if (mTexture != null) {
             return mTexture.isMipmapped();
         }
-        return mMipmapped;
+        return (mSurfaceFlags & SurfaceFlag_Mipmapped) != 0;
     }
 
     public final boolean areMipmapsDirty() {
@@ -603,49 +416,54 @@ public class TextureProxy extends SurfaceProxy {
      * been instantiated or not.
      */
     public final boolean isProxyMipmapped() {
-        return mMipmapped;
+        return (mSurfaceFlags & SurfaceFlag_Mipmapped) != 0;
     }
 
     public final int getTextureType() {
-        return mFormat.textureType();
+        return mFormat.getTextureType();
     }
 
     /**
      * If true then the texture does not support MIP maps and only supports clamp wrap mode.
      */
     public final boolean hasRestrictedSampling() {
-        return EngineTypes.textureTypeHasRestrictedSampling(mFormat.textureType());
+        return textureTypeHasRestrictedSampling(mFormat.getTextureType());
+    }
+
+    @Override
+    public final TextureProxy asTextureProxy() {
+        return this;
     }
 
     /**
-     * Same as {@link Surface.ScratchKey} for {@link ResourceAllocator}.
+     * Same as {@link Texture.ScratchKey} for {@link ResourceAllocator}.
      */
     @Override
     public int hashCode() {
         int result = getBackingWidth();
         result = 31 * result + getBackingHeight();
-        result = 31 * result + mFormat.getFormatKey();
+        result = 31 * result + mFormat.getKey();
         result = 31 * result + ((isMipmapped() ? 1 : 0) | (isProtected() ? 2 : 0) | (1 << 2));
         return result;
     }
 
     /**
-     * Same as {@link Surface.ScratchKey} for {@link ResourceAllocator}.
+     * Same as {@link Texture.ScratchKey} for {@link ResourceAllocator}.
      */
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o instanceof Surface.ScratchKey key) {
+        if (o instanceof Texture.ScratchKey key) {
             // ResourceCache
             return key.mWidth == getBackingWidth() &&
                     key.mHeight == getBackingHeight() &&
-                    key.mFormat == mFormat.getFormatKey() &&
+                    key.mFormat == mFormat.getKey() &&
                     key.mFlags == ((isMipmapped() ? 1 : 0) | (isProtected() ? 2 : 0) | (1 << 2));
         } else if (o instanceof TextureProxy proxy) {
             // ResourceAllocator
             return proxy.getBackingWidth() == getBackingWidth() &&
                     proxy.getBackingHeight() == getBackingHeight() &&
-                    proxy.mFormat.getFormatKey() == mFormat.getFormatKey() &&
+                    proxy.mFormat.getKey() == mFormat.getKey() &&
                     proxy.isMipmapped() == isMipmapped() &&
                     proxy.isProtected() == isProtected();
         }
@@ -655,14 +473,14 @@ public class TextureProxy extends SurfaceProxy {
     // DO NOT ABUSE!!
     @ApiStatus.Internal
     public final boolean isProxyExact() {
-        return mBackingFit == CoreTypes.BackingFit_Exact;
+        return (mSurfaceFlags & SurfaceFlag_BackingFit) != 0;
     }
 
     // DO NOT ABUSE!!
     @ApiStatus.Internal
     public final void makeProxyExact(boolean allocatedCaseOnly) {
         assert !isLazyMost();
-        if (mBackingFit == CoreTypes.BackingFit_Exact) {
+        if ((mSurfaceFlags & SurfaceFlag_BackingFit) != 0) {
             return;
         }
 
@@ -689,7 +507,7 @@ public class TextureProxy extends SurfaceProxy {
 
         // The Approx uninstantiated case. Making this proxy be exact should be okay.
         // It could mess things up if prior decisions were based on the approximate size.
-        mBackingFit = CoreTypes.BackingFit_Exact;
+        mSurfaceFlags |= SurfaceFlag_BackingFit;
         // If GpuMemorySize is used when caching specialImages for the image filter DAG. If it has
         // already been computed we want to leave it alone so that amount will be removed when
         // the special image goes away. If it hasn't been computed yet it might as well compute the

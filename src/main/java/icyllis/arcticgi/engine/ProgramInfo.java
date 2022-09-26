@@ -88,8 +88,8 @@ public class ProgramInfo {
                        byte inputFlags) {
         assert (writeView != null);
         assert (geomProc != null);
-        assert (primitiveType >= 0 && primitiveType <= EngineTypes.PrimitiveType_Last);
-        assert (colorLoadOp >= 0 && colorLoadOp <= EngineTypes.LoadOp_Last);
+        assert (primitiveType >= 0 && primitiveType <= Engine.PrimitiveType_Last);
+        assert (colorLoadOp >= 0 && colorLoadOp <= Engine.LoadOp_Last);
         mBackendFormat = writeView.getProxy().getBackendFormat();
         mOrigin = writeView.getOrigin();
         mWriteSwizzle = writeView.getSwizzle();

@@ -23,7 +23,7 @@ import icyllis.arcticgi.engine.*;
 
 import java.util.ArrayList;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 
 public class VaryingHandler {
 

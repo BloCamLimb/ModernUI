@@ -19,15 +19,15 @@
 package icyllis.arcticgi.engine;
 
 import icyllis.arcticgi.core.SharedPtr;
-import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayDeque;
 import java.util.Deque;
 
 /**
- * The ResourceAllocator explicitly distributes {@link GpuResource}s at flush time. It operates by
+ * The ResourceAllocator explicitly distributes {@link Resource}s at flush time. It operates by
  * being given the usage intervals of the various proxies. It keeps these intervals in a singly
  * linked list sorted by increasing start index. (It also maintains a hash table from proxyID
  * to interval to find proxy reuse). The ResourceAllocator uses Registers (in the sense of register
@@ -86,12 +86,12 @@ public class ResourceAllocator {
     private final DirectContext mContext;
 
     // Recently created/used textures
-    private final Object2ObjectOpenHashMap<TextureProxy, Deque<Register>> mFreePool =
+    private final Object2ObjectOpenHashMap<SurfaceProxy, Deque<Register>> mFreePool =
             new Object2ObjectOpenHashMap<>();
 
     // All the intervals, hashed by proxy ID
-    private final Int2ObjectOpenHashMap<Interval> mIntervalHash =
-            new Int2ObjectOpenHashMap<>();
+    private final Reference2ObjectOpenHashMap<Object, Interval> mIntervalHash =
+            new Reference2ObjectOpenHashMap<>();
 
     // All the intervals sorted by increasing start
     private final IntervalList mIntervalList = new IntervalList();
@@ -159,7 +159,7 @@ public class ResourceAllocator {
             }
             return;
         }
-        int proxyID = proxy.getUniqueID();
+        Object proxyID = proxy.getUniqueID();
         Interval interval = mIntervalHash.get(proxyID);
         if (interval != null) {
             // Revise the interval for an existing use
@@ -376,7 +376,7 @@ public class ResourceAllocator {
         public boolean reset() {
             if (mInit) {
                 mProxy = null;
-                mTexture = GpuResource.move(mTexture);
+                mTexture = Resource.move(mTexture);
                 mInit = false;
                 return true;
             }

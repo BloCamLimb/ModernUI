@@ -25,7 +25,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 import static icyllis.arcticgi.engine.shading.ProgramDataManager.UniformHandle;
 import static icyllis.arcticgi.engine.shading.UniformHandler.SamplerHandle;
 

@@ -78,7 +78,7 @@ public class GLRenderTarget extends RenderTarget {
                            int sampleCount,
                            int framebuffer,
                            boolean ownership,
-                           @SharedPtr GLRenderbuffer stencilBuffer) {
+                           @SharedPtr GLAttachment stencilBuffer) {
         super(width, height, sampleCount);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
@@ -89,7 +89,7 @@ public class GLRenderTarget extends RenderTarget {
         mOwnership = ownership;
         mStencilBuffer = stencilBuffer; // std::move
         if (framebuffer == 0) {
-            mFlags |= EngineTypes.SurfaceFlag_GLWrapDefaultFramebuffer;
+            mSurfaceFlags |= Engine.SurfaceFlag_GLWrapDefaultFramebuffer;
         }
     }
 
@@ -111,7 +111,7 @@ public class GLRenderTarget extends RenderTarget {
                                              boolean ownership) {
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
-        GLRenderbuffer stencilBuffer = null;
+        GLAttachment stencilBuffer = null;
         if (stencilBits > 0) {
             // We pick a "fake" actual format that matches the number of stencil bits. When wrapping
             // an FBO with some number of stencil bits all we care about in the future is that we have
@@ -130,7 +130,7 @@ public class GLRenderTarget extends RenderTarget {
             // We don't have the actual renderbufferID, but we need to make an attachment for the stencil,
             // so we just set it to an invalid value of 0 to make sure we don't explicitly use it or try
             // and delete it.
-            stencilBuffer = GLRenderbuffer.makeWrapped(server,
+            stencilBuffer = GLAttachment.makeWrapped(server,
                     width, height,
                     sampleCount,
                     stencilFormat,
@@ -173,7 +173,7 @@ public class GLRenderTarget extends RenderTarget {
             return;
         }
         int framebuffer = mFramebuffer;
-        GLRenderbuffer stencilBuffer = (GLRenderbuffer) mStencilBuffer;
+        GLAttachment stencilBuffer = (GLAttachment) mStencilBuffer;
         if (stencilBuffer != null) {
             glNamedFramebufferRenderbuffer(framebuffer,
                     GL_STENCIL_ATTACHMENT,
@@ -207,9 +207,19 @@ public class GLRenderTarget extends RenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = GLBackendFormat.make(glFormatToEnum(mFormat), EngineTypes.TextureType_2D);
+            mBackendFormat = GLBackendFormat.make(glFormatToEnum(mFormat), Engine.TextureType_2D);
         }
         return mBackendFormat;
+    }
+
+    @Override
+    public boolean isProtected() {
+        return false;
+    }
+
+    @Override
+    public int getFlags() {
+        return 0;
     }
 
     @Nonnull
@@ -234,7 +244,7 @@ public class GLRenderTarget extends RenderTarget {
     }
 
     @Override
-    protected void attachStencilBuffer(@SharedPtr Surface stencilBuffer) {
+    protected void attachStencilBuffer(@SharedPtr Attachment stencilBuffer) {
         if (stencilBuffer == null && mStencilBuffer == null) {
             // No need to do any work since we currently don't have a stencil attachment,
             // and we're not actually adding one.
@@ -246,7 +256,7 @@ public class GLRenderTarget extends RenderTarget {
             mRebindStencilBuffer = true;
         }
 
-        mStencilBuffer = GpuResource.move(mStencilBuffer, stencilBuffer);
+        mStencilBuffer = Resource.move(mStencilBuffer, stencilBuffer);
     }
 
     @Override

@@ -19,7 +19,7 @@
 package icyllis.arcticgi.engine.shading;
 
 import icyllis.arcticgi.core.SLType;
-import icyllis.arcticgi.engine.EngineTypes;
+import icyllis.arcticgi.engine.Engine;
 import icyllis.arcticgi.engine.ShaderVar;
 
 import javax.annotation.Nullable;
@@ -52,7 +52,7 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
 
     @Override
     protected void onFinish() {
-        mProgramBuilder.uniformHandler().appendUniformDecls(EngineTypes.Fragment_ShaderFlag, uniforms());
+        mProgramBuilder.uniformHandler().appendUniformDecls(Engine.Fragment_ShaderFlag, uniforms());
         mProgramBuilder.varyingHandler().getFragDecls(inputs());
 
         mPrimaryOutput.appendDecl(outputs());

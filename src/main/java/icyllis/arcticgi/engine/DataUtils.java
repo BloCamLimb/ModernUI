@@ -18,7 +18,7 @@
 
 package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.core.Image;
+import icyllis.arcticgi.core.ImageInfo;
 import org.lwjgl.system.MemoryUtil;
 import sun.misc.Unsafe;
 
@@ -40,10 +40,10 @@ public final class DataUtils {
 
     public static boolean compressionTypeIsOpaque(int compression) {
         return switch (compression) {
-            case Image.COMPRESSION_NONE,
-                    Image.COMPRESSION_BC1_RGB8_UNORM,
-                    Image.COMPRESSION_ETC2_RGB8_UNORM -> true;
-            case Image.COMPRESSION_BC1_RGBA8_UNORM -> false;
+            case ImageInfo.COMPRESSION_TYPE_NONE,
+                    ImageInfo.COMPRESSION_TYPE_BC1_RGB8_UNORM,
+                    ImageInfo.COMPRESSION_TYPE_ETC2_RGB8_UNORM -> true;
+            case ImageInfo.COMPRESSION_TYPE_BC1_RGBA8_UNORM -> false;
             default -> throw new IllegalArgumentException();
         };
     }
@@ -54,10 +54,10 @@ public final class DataUtils {
 
     public static long numBlocks(int compression, int width, int height) {
         return switch (compression) {
-            case Image.COMPRESSION_NONE -> (long) width * height;
-            case Image.COMPRESSION_ETC2_RGB8_UNORM,
-                    Image.COMPRESSION_BC1_RGB8_UNORM,
-                    Image.COMPRESSION_BC1_RGBA8_UNORM -> {
+            case ImageInfo.COMPRESSION_TYPE_NONE -> (long) width * height;
+            case ImageInfo.COMPRESSION_TYPE_ETC2_RGB8_UNORM,
+                    ImageInfo.COMPRESSION_TYPE_BC1_RGB8_UNORM,
+                    ImageInfo.COMPRESSION_TYPE_BC1_RGBA8_UNORM -> {
                 long numBlocksWidth = num4x4Blocks(width);
                 long numBlocksHeight = num4x4Blocks(height);
                 yield numBlocksWidth * numBlocksHeight;

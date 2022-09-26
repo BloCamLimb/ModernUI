@@ -24,7 +24,7 @@ import icyllis.arcticgi.engine.shading.*;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 
 /**
  * The output of this effect is a modulation of the input color and coverage for a circle. It

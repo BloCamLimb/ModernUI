@@ -18,10 +18,10 @@
 
 package icyllis.arcticgi.vulkan;
 
-import icyllis.arcticgi.engine.GpuBuffer;
+import icyllis.arcticgi.engine.Buffer;
 
 //TODO
-public final class VkBuffer extends GpuBuffer {
+public final class VkBuffer extends Buffer {
 
     public VkBuffer(VkServer server) {
         super(server, 0, 0, 0);

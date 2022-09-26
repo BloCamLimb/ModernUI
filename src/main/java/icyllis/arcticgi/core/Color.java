@@ -325,7 +325,6 @@ public final class Color {
 
     // Convenience values
     public static final int
-            GRAY_ALPHA_CHANNEL_FLAGS = GRAY_CHANNEL_FLAG | ALPHA_CHANNEL_FLAG,
             RG_CHANNEL_FLAGS = RED_CHANNEL_FLAG | GREEN_CHANNEL_FLAG,
             RGB_CHANNEL_FLAGS = RG_CHANNEL_FLAGS | BLUE_CHANNEL_FLAG,
             RGBA_CHANNEL_FLAGS = RGB_CHANNEL_FLAGS | ALPHA_CHANNEL_FLAG;

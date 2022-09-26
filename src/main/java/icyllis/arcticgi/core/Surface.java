@@ -72,14 +72,14 @@ public class Surface extends RefCnt {
                                                  int origin, int sampleCount,
                                                  int colorType,
                                                  Runnable releaseCallback) {
-        if (context == null || sampleCount < 1 || colorType == ImageInfo.COLOR_UNKNOWN) {
+        if (context == null || sampleCount < 1 || colorType == ImageInfo.ColorType_Unknown) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }
             return null;
         }
 
-        if (!validateBackendTexture(context.caps(), backendTexture, sampleCount, colorType, true)) {
+        if (!validateBackendTexture(context.getCaps(), backendTexture, sampleCount, colorType, true)) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }

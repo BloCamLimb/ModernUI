@@ -55,8 +55,8 @@ public class GLPipelineState {
         }
     }
 
-    public void abandon() {
-        mPipeline.abandon();
+    public void discard() {
+        mPipeline.discard();
     }
 
     public void reset() {

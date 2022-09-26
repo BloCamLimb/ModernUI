@@ -2254,7 +2254,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are dropped.
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
      * <pre>{@code
      * [ a b x c ]      [ a b c ]
      * [ d e x f ]  ->  [ d e f ]
@@ -2271,7 +2271,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are dropped.
+     * Converts this 4x4 matrix to 3x3 matrix, the third row and column are discarded.
      * <pre>{@code
      * [ a b x c ]      [ a b c ]
      * [ d e x f ]  ->  [ d e f ]
@@ -2289,7 +2289,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are dropped.
+     * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are discarded.
      * <pre>{@code
      * [ a b c x ]      [ a b c ]
      * [ d e f x ]  ->  [ d e f ]
@@ -2306,7 +2306,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are dropped.
+     * Converts this 4x4 matrix to 3x3 matrix, the fourth row and column are discarded.
      * <pre>{@code
      * [ a b c x ]      [ a b c ]
      * [ d e f x ]  ->  [ d e f ]

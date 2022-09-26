@@ -19,7 +19,7 @@
 package icyllis.arcticgi.vulkan;
 
 import icyllis.arcticgi.engine.BackendFormat;
-import icyllis.arcticgi.engine.EngineTypes;
+import icyllis.arcticgi.engine.Engine;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
@@ -40,7 +40,7 @@ public final class VkBackendFormat extends BackendFormat {
      */
     public VkBackendFormat(@NativeType("VkFormat") int format, boolean isExternal) {
         mFormat = format;
-        mTextureType = isExternal ? EngineTypes.TextureType_External : EngineTypes.TextureType_2D;
+        mTextureType = isExternal ? Engine.TextureType_External : Engine.TextureType_2D;
     }
 
     @Nonnull
@@ -62,12 +62,12 @@ public final class VkBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int backend() {
-        return EngineTypes.Vulkan;
+    public int getBackend() {
+        return Engine.Vulkan;
     }
 
     @Override
-    public int textureType() {
+    public int getTextureType() {
         return mTextureType;
     }
 
@@ -84,7 +84,7 @@ public final class VkBackendFormat extends BackendFormat {
     @Nonnull
     @Override
     public BackendFormat makeTexture2D() {
-        if (mTextureType == EngineTypes.TextureType_2D) {
+        if (mTextureType == Engine.TextureType_2D) {
             return this;
         }
         return make(mFormat, false);
@@ -111,7 +111,7 @@ public final class VkBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getFormatKey() {
+    public int getKey() {
         return mFormat;
     }
 

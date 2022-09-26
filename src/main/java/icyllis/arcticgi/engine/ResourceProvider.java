@@ -24,6 +24,8 @@ import org.lwjgl.system.MemoryUtil;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 
+import static icyllis.arcticgi.engine.Engine.*;
+
 /**
  * Provides common resources with cache, render thread only.
  */
@@ -36,7 +38,7 @@ public final class ResourceProvider {
     private final Server mServer;
     private final ResourceCache mCache;
 
-    private final Surface.ScratchKey mTmpSurfaceKey = new Surface.ScratchKey();
+    private final Texture.ScratchKey mTextureScratchKey = new Texture.ScratchKey();
 
     ResourceProvider(Server server, ResourceCache cache) {
         mServer = server;
@@ -73,13 +75,13 @@ public final class ResourceProvider {
     /**
      * Finds a resource in the cache, based on the specified key. Prior to calling this, the caller
      * must be sure that if a resource of exists in the cache with the given unique key then it is
-     * of type T. If the resource is no longer used, then {@link GpuResource#unref()} must be called.
+     * of type T. If the resource is no longer used, then {@link Resource#unref()} must be called.
      */
     @Nullable
     @SharedPtr
     @SuppressWarnings("unchecked")
-    public <T extends GpuResource> T findByUniqueKey(Object key) {
-        return mServer.getContext().isDropped() ? null : (T) mCache.findAndRefUniqueResource(key);
+    public <T extends Resource> T findByUniqueKey(Object key) {
+        return mServer.getContext().isDiscarded() ? null : (T) mCache.findAndRefUniqueResource(key);
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -101,7 +103,7 @@ public final class ResourceProvider {
                                        BackendFormat format,
                                        boolean isProtected) {
         assert mServer.getContext().isOnOwnerThread();
-        if (mServer.getContext().isDropped()) {
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
 
@@ -109,23 +111,22 @@ public final class ResourceProvider {
         // textures should be created through the createCompressedTexture function.
         assert !format.isCompressed();
 
-        if (!mServer.getCaps().validateTextureParams(width, height, format)) {
+        if (!mServer.getCaps().validateSurfaceParams(width, height, format, 1,
+                isProtected ? SurfaceFlag_Protected : SurfaceFlag_Default)) {
             return null;
         }
 
         width = makeApprox(width);
         height = makeApprox(height);
 
-        final Texture texture = findAndRefScratchTexture(width, height, format, EngineTypes.Mipmapped_No, isProtected);
+        final Texture texture = findAndRefScratchTexture(width, height, format,
+                isProtected ? SurfaceFlag_Protected : SurfaceFlag_Default);
         if (texture != null) {
             return texture;
         }
 
-        return mServer.createTexture(width, height,
-                format,
-                EngineTypes.Mipmapped_No,
-                true,
-                isProtected);
+        return mServer.createTexture(width, height, format,
+                (isProtected ? SurfaceFlag_Protected : SurfaceFlag_Default) | SurfaceFlag_Budgeted);
     }
 
     /**
@@ -159,14 +160,14 @@ public final class ResourceProvider {
                                        int srcColorType,
                                        long pixels) {
         assert mServer.getContext().isOnOwnerThread();
-        if (mServer.getContext().isDropped()) {
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
 
         if (alignment != 1 && alignment != 2 && alignment != 4 && alignment != 8) {
             return null;
         }
-        if (srcColorType == ImageInfo.COLOR_UNKNOWN) {
+        if (srcColorType == ImageInfo.ColorType_Unknown) {
             return null;
         }
         if (pixels == MemoryUtil.NULL) {
@@ -188,19 +189,14 @@ public final class ResourceProvider {
      * @param width       the width of the texture to be created
      * @param height      the height of the texture to be created
      * @param format      the backend format for the texture
-     * @param mipmapped   should the texture be allocated with mipmaps
-     * @param budgeted    should the texture count against the resource cache budget
-     * @param isProtected should the texture be created as protected
      */
     @Nullable
     @SharedPtr
     public Texture createTexture(int width, int height,
                                  BackendFormat format,
-                                 boolean mipmapped,
-                                 boolean budgeted,
-                                 boolean isProtected) {
+                                 int surfaceFlags) {
         assert mServer.getContext().isOnOwnerThread();
-        if (mServer.getContext().isDropped()) {
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
 
@@ -208,23 +204,19 @@ public final class ResourceProvider {
         // textures should be created through the createCompressedTexture function.
         assert !format.isCompressed();
 
-        if (!mServer.getCaps().validateTextureParams(width, height, format)) {
+        if (!mServer.getCaps().validateSurfaceParams(width, height, format, 1, surfaceFlags)) {
             return null;
         }
 
-        final Texture texture = findAndRefScratchTexture(width, height, format, mipmapped, isProtected);
+        final Texture texture = findAndRefScratchTexture(width, height, format, surfaceFlags);
         if (texture != null) {
-            if (!budgeted) {
+            if ((surfaceFlags & SurfaceFlag_Budgeted) == 0) {
                 texture.makeBudgeted(false);
             }
             return texture;
         }
 
-        return mServer.createTexture(width, height,
-                format,
-                mipmapped,
-                budgeted,
-                isProtected);
+        return mServer.createTexture(width, height, format, surfaceFlags);
     }
 
     /**
@@ -236,9 +228,6 @@ public final class ResourceProvider {
      * @param width        the width of the texture to be created
      * @param height       the height of the texture to be created
      * @param format       the backend format for the texture
-     * @param mipmapped    should the texture be allocated with mipmaps
-     * @param budgeted     should the texture count against the resource cache budget
-     * @param isProtected  should the texture be created as protected
      * @param rowLength    row length in pixels if data width is greater than texture width,
      *                     or 0
      * @param alignment    pixel row alignment in bytes, must be one of 1 (tightly packed),
@@ -252,30 +241,28 @@ public final class ResourceProvider {
     @SharedPtr
     public Texture createTexture(int width, int height,
                                  BackendFormat format,
-                                 boolean mipmapped,
-                                 boolean budgeted,
-                                 boolean isProtected,
+                                 int surfaceFlags,
                                  int rowLength,
                                  int alignment,
                                  int dstColorType,
                                  int srcColorType,
                                  long pixels) {
         assert mServer.getContext().isOnOwnerThread();
-        if (mServer.getContext().isDropped()) {
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
 
         if (alignment != 1 && alignment != 2 && alignment != 4 && alignment != 8) {
             return null;
         }
-        if (srcColorType == ImageInfo.COLOR_UNKNOWN) {
+        if (srcColorType == ImageInfo.ColorType_Unknown) {
             return null;
         }
         if (pixels == MemoryUtil.NULL) {
             return null;
         }
 
-        final Texture texture = createTexture(width, height, format, mipmapped, budgeted, isProtected);
+        final Texture texture = createTexture(width, height, format, surfaceFlags);
         if (texture == null) {
             return null;
         }
@@ -300,9 +287,9 @@ public final class ResourceProvider {
                                 int dstColorType,
                                 int srcColorType,
                                 long pixels) {
-        assert !mServer.getContext().isDropped();
+        assert !mServer.getContext().isDiscarded();
         assert texture != null;
-        assert srcColorType != ImageInfo.COLOR_UNKNOWN;
+        assert srcColorType != ImageInfo.ColorType_Unknown;
         assert pixels != MemoryUtil.NULL;
 
         // we request client to calculate bpp itself, because we don't support type conversion
@@ -334,10 +321,10 @@ public final class ResourceProvider {
     @SharedPtr
     public Texture findAndRefScratchTexture(Object key) {
         assert mServer.getContext().isOnOwnerThread();
-        assert !mServer.getContext().isDropped();
+        assert !mServer.getContext().isDiscarded();
         assert key != null;
 
-        GpuResource resource = mCache.findAndRefScratchResource(key);
+        Resource resource = mCache.findAndRefScratchResource(key);
         if (resource != null) {
             mServer.getStats().incNumScratchTexturesReused();
             return (Texture) resource;
@@ -353,19 +340,16 @@ public final class ResourceProvider {
     @SharedPtr
     public Texture findAndRefScratchTexture(int width, int height,
                                             BackendFormat format,
-                                            boolean mipmapped,
-                                            boolean isProtected) {
-        assert mServer.getContext().isOnOwnerThread();
-        assert !mServer.getContext().isDropped();
-        assert !format.isCompressed();
-        assert mServer.getCaps().validateTextureParams(width, height, format);
+                                            int surfaceFlags) {
+        assert (mServer.getContext().isOnOwnerThread());
+        assert (!mServer.getContext().isDiscarded());
+        assert (!format.isCompressed());
+        assert mServer.getCaps().validateSurfaceParams(width, height, format, 1, surfaceFlags);
 
-        return findAndRefScratchTexture(mTmpSurfaceKey.compute(
+        return findAndRefScratchTexture(mTextureScratchKey.compute(
                 format,
                 width, height,
-                1,
-                mipmapped,
-                isProtected));
+                surfaceFlags));
     }
 
     ///////////////////////////////////////////////////////////////////////////
@@ -382,9 +366,6 @@ public final class ResourceProvider {
      * @param height      the height of the render target to be created
      * @param format      the backend format for the render target
      * @param sampleCount the desired sample count of the render target
-     * @param mipmapped   should the render target be allocated with mipmaps
-     * @param budgeted    should the render target count against the resource cache budget
-     * @param isProtected should the render target be created as protected
      * @return a managed, recyclable render target, or null if failed
      */
     @Nullable
@@ -392,11 +373,9 @@ public final class ResourceProvider {
     public RenderTarget createRenderTarget(int width, int height,
                                            BackendFormat format,
                                            int sampleCount,
-                                           boolean mipmapped,
-                                           boolean budgeted,
-                                           boolean isProtected) {
+                                           int surfaceFlags) {
         assert mServer.getContext().isOnOwnerThread();
-        if (mServer.getContext().isDropped()) {
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
 
@@ -404,11 +383,11 @@ public final class ResourceProvider {
             return null;
         }
         // Compressed formats will not pass this validation.
-        if (!mServer.getCaps().validateRenderTargetParams(width, height, format, sampleCount)) {
+        if (!mServer.getCaps().validateSurfaceParams(width, height, format, sampleCount, surfaceFlags)) {
             return null;
         }
 
-        final Texture texture = createTexture(width, height, format, mipmapped, budgeted, isProtected);
+        final Texture texture = createTexture(width, height, format, surfaceFlags);
         if (texture == null) {
             return null;
         }
@@ -438,7 +417,7 @@ public final class ResourceProvider {
     public RenderTarget wrapRenderableBackendTexture(BackendTexture texture,
                                                      int sampleCount,
                                                      boolean ownership) {
-        if (mServer.getContext().isDropped()) {
+        if (mServer.getContext().isDiscarded()) {
             return null;
         }
         return mServer.wrapRenderableBackendTexture(texture, sampleCount, ownership);
@@ -454,13 +433,13 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public GpuBuffer createBuffer(int size, int intendedType, int accessPattern) {
+    public Buffer createBuffer(int size, int intendedType, int accessPattern) {
         return null;
     }
 
-    public void assignUniqueKeyToResource(Object key, GpuResource resource) {
+    public void assignUniqueKeyToResource(Object key, Resource resource) {
         assert mServer.getContext().isOnOwnerThread();
-        if (mServer.getContext().isDropped() || resource == null) {
+        if (mServer.getContext().isDiscarded() || resource == null) {
             return;
         }
         resource.setUniqueKey(key);

@@ -53,12 +53,12 @@ public final class ProxyProvider {
      */
     public boolean assignUniqueKeyToProxy(Object key, TextureProxy proxy) {
         assert key != null;
-        if (mContext.isDropped() || proxy == null) {
+        if (mContext.isDiscarded() || proxy == null) {
             return false;
         }
 
         // Only the proxyProvider that created a proxy should be assigning unique keys to it.
-        assert isDeferredProvider() == proxy.mDeferredProvider;
+        assert isDeferredProvider() == ((proxy.mSurfaceFlags & Engine.SurfaceFlag_DeferredProvider) != 0);
 
         // If there is already a Resource with this key then the caller has violated the
         // normal usage pattern of uniquely keyed resources (e.g., they have created one w/o
@@ -88,18 +88,19 @@ public final class ProxyProvider {
      * Create a {@link TextureProxy} without any data.
      *
      * @see TextureProxy
+     * @see Engine#SurfaceFlag_BackingFit
+     * @see Engine#SurfaceFlag_Budgeted
+     * @see Engine#SurfaceFlag_Mipmapped
+     * @see Engine#SurfaceFlag_Protected
+     * @see Engine#SurfaceFlag_SkipAllocator
      */
     @Nullable
     @SharedPtr
     public TextureProxy createTextureProxy(BackendFormat format,
                                            int width, int height,
-                                           boolean mipmapped,
-                                           boolean backingFit,
-                                           boolean budgeted,
-                                           int surfaceFlags,
-                                           boolean useAllocator) {
+                                           int surfaceFlags) {
         assert mContext.isOnOwnerThread();
-        if (mContext.isDropped()) {
+        if (mContext.isDiscarded()) {
             return null;
         }
 
@@ -108,26 +109,34 @@ public final class ProxyProvider {
             return null;
         }
 
-        if (!mContext.caps().validateTextureParams(width, height, format)) {
+        if (!mContext.getCaps().validateSurfaceParams(width, height, format, 1, surfaceFlags)) {
             return null;
         }
 
-        return new TextureProxy(format, width, height, mipmapped, backingFit, budgeted,
-                surfaceFlags, useAllocator, isDeferredProvider());
+        if (isDeferredProvider()) {
+            surfaceFlags |= Engine.SurfaceFlag_DeferredProvider;
+        } else {
+            assert (surfaceFlags & Engine.SurfaceFlag_DeferredProvider) == 0;
+        }
+
+        return new TextureProxy(format, width, height, surfaceFlags);
     }
 
+    /**
+     * @see Engine#SurfaceFlag_BackingFit
+     * @see Engine#SurfaceFlag_Budgeted
+     * @see Engine#SurfaceFlag_Mipmapped
+     * @see Engine#SurfaceFlag_Protected
+     * @see Engine#SurfaceFlag_SkipAllocator
+     */
     @Nullable
     @SharedPtr
-    public TextureRenderTargetProxy createRenderTextureProxy(BackendFormat format,
-                                                             int width, int height,
-                                                             int sampleCount,
-                                                             boolean mipmapped,
-                                                             boolean backingFit,
-                                                             boolean budgeted,
-                                                             int surfaceFlags,
-                                                             boolean useAllocator) {
+    public RenderTextureProxy createRenderTextureProxy(BackendFormat format,
+                                                       int width, int height,
+                                                       int sampleCount,
+                                                       int surfaceFlags) {
         assert mContext.isOnOwnerThread();
-        if (mContext.isDropped()) {
+        if (mContext.isDiscarded()) {
             return null;
         }
 
@@ -136,12 +145,17 @@ public final class ProxyProvider {
             return null;
         }
 
-        if (!mContext.caps().validateRenderTargetParams(width, height, format, sampleCount)) {
+        if (!mContext.getCaps().validateSurfaceParams(width, height, format, sampleCount, surfaceFlags)) {
             return null;
         }
 
-        return new TextureRenderTargetProxy(format, width, height, sampleCount, mipmapped, backingFit,
-                budgeted, surfaceFlags, useAllocator, isDeferredProvider());
+        if (isDeferredProvider()) {
+            surfaceFlags |= Engine.SurfaceFlag_DeferredProvider;
+        } else {
+            assert (surfaceFlags & Engine.SurfaceFlag_DeferredProvider) == 0;
+        }
+
+        return new RenderTextureProxy(format, width, height, sampleCount, surfaceFlags);
     }
 
     /**
@@ -153,12 +167,12 @@ public final class ProxyProvider {
      */
     @Nullable
     @SharedPtr
-    public TextureRenderTargetProxy wrapRenderableBackendTexture(BackendTexture texture,
-                                                                 int sampleCount,
-                                                                 boolean ownership,
-                                                                 boolean cacheable,
-                                                                 Runnable releaseCallback) {
-        if (mContext.isDropped()) {
+    public RenderTextureProxy wrapRenderableBackendTexture(BackendTexture texture,
+                                                           int sampleCount,
+                                                           boolean ownership,
+                                                           boolean cacheable,
+                                                           Runnable releaseCallback) {
+        if (mContext.isDiscarded()) {
             return null;
         }
 
@@ -167,7 +181,7 @@ public final class ProxyProvider {
             return null;
         }
 
-        sampleCount = mContext.caps().getRenderTargetSampleCount(sampleCount, texture.getBackendFormat());
+        sampleCount = mContext.getCaps().getRenderTargetSampleCount(sampleCount, texture.getBackendFormat());
         assert sampleCount > 0;
         //TODO
         return null;

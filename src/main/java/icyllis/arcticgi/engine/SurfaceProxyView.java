@@ -21,22 +21,22 @@ package icyllis.arcticgi.engine;
 import icyllis.arcticgi.core.SharedPtr;
 
 /**
- * Views a {@link SurfaceProxy} on client side.
+ * Views a {@link SurfaceProxy} in the pipeline.
  */
 public final class SurfaceProxyView implements AutoCloseable {
 
     @SharedPtr
-    TextureProxy mProxy;
+    SurfaceProxy mProxy;
     int mOrigin;
     short mSwizzle;
 
-    public SurfaceProxyView(@SharedPtr TextureProxy proxy) {
+    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy) {
         mProxy = proxy; // std::move()
-        mOrigin = EngineTypes.SurfaceOrigin_TopLeft;
+        mOrigin = Engine.SurfaceOrigin_UpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
 
-    public SurfaceProxyView(@SharedPtr TextureProxy proxy, int origin, short swizzle) {
+    public SurfaceProxyView(@SharedPtr SurfaceProxy proxy, int origin, short swizzle) {
         mProxy = proxy; // std::move()
         mOrigin = origin;
         mSwizzle = swizzle;
@@ -57,15 +57,19 @@ public final class SurfaceProxyView implements AutoCloseable {
     /**
      * Returns smart pointer value (raw ptr).
      */
-    public TextureProxy getProxy() {
+    public SurfaceProxy getProxy() {
         return mProxy;
+    }
+
+    public TextureProxy getTextureProxy() {
+        return mProxy.asTextureProxy();
     }
 
     /**
      * Returns a smart pointer (as if on the stack).
      */
     @SharedPtr
-    public TextureProxy refProxy() {
+    public SurfaceProxy refProxy() {
         mProxy.ref();
         return mProxy;
     }
@@ -75,16 +79,16 @@ public final class SurfaceProxyView implements AutoCloseable {
      * properties associated with the detached proxy.
      */
     @SharedPtr
-    public TextureProxy detachProxy() {
+    public SurfaceProxy detachProxy() {
         // just like std::move(), R-value reference
-        TextureProxy proxy = mProxy;
+        SurfaceProxy proxy = mProxy;
         mProxy = null;
         return proxy;
     }
 
     /**
-     * @see EngineTypes#SurfaceOrigin_TopLeft
-     * @see EngineTypes#SurfaceOrigin_BottomLeft
+     * @see Engine#SurfaceOrigin_UpperLeft
+     * @see Engine#SurfaceOrigin_LowerLeft
      */
     public int getOrigin() {
         return mOrigin;
@@ -112,7 +116,7 @@ public final class SurfaceProxyView implements AutoCloseable {
             mProxy.unref();
         }
         mProxy = null;
-        mOrigin = EngineTypes.SurfaceOrigin_TopLeft;
+        mOrigin = Engine.SurfaceOrigin_UpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
 

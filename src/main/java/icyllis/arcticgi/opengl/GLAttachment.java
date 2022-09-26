@@ -31,25 +31,22 @@ import static icyllis.arcticgi.opengl.GLCore.*;
  * Renderbuffer can neither be accessed by shaders nor have mipmaps, but can be
  * multisampled.
  */
-public final class GLRenderbuffer extends Surface {
+public final class GLAttachment extends Attachment {
 
     // may be zero for external stencil buffers associated with external render targets
     // (we don't require the client to give us the id, just tell us how many bits of stencil there are)
     private int mRenderbuffer;
 
-    private final int mSampleCount;
     private final int mFormat;
 
     private BackendFormat mBackendFormat;
 
     private final long mMemorySize;
 
-    private GLRenderbuffer(GLServer server, int width, int height,
-                           int renderbuffer, int sampleCount, int format) {
-        super(server, width, height);
-        assert sampleCount > 0;
+    private GLAttachment(GLServer server, int width, int height,
+                         int sampleCount, int format, int renderbuffer) {
+        super(server, width, height, sampleCount);
         mRenderbuffer = renderbuffer;
-        mSampleCount = sampleCount;
         mFormat = format;
 
         // color buffers may be compressed
@@ -61,10 +58,10 @@ public final class GLRenderbuffer extends Surface {
 
     @Nullable
     @SharedPtr
-    public static GLRenderbuffer makeStencil(GLServer server,
-                                             int width, int height,
-                                             int sampleCount,
-                                             int format) {
+    public static GLAttachment makeStencil(GLServer server,
+                                           int width, int height,
+                                           int sampleCount,
+                                           int format) {
         assert sampleCount > 0 && glFormatStencilBits(format) > 0;
         int renderbuffer = glCreateRenderbuffers();
         if (renderbuffer == 0) {
@@ -93,15 +90,15 @@ public final class GLRenderbuffer extends Surface {
             }
         }
 
-        return new GLRenderbuffer(server, width, height, renderbuffer, sampleCount, format);
+        return new GLAttachment(server, width, height, sampleCount, format, renderbuffer);
     }
 
     @Nullable
     @SharedPtr
-    public static GLRenderbuffer makeMSAA(GLServer server,
-                                          int width, int height,
-                                          int sampleCount,
-                                          int format) {
+    public static GLAttachment makeMSAA(GLServer server,
+                                        int width, int height,
+                                        int sampleCount,
+                                        int format) {
         assert sampleCount > 1;
         int renderbuffer = glCreateRenderbuffers();
         if (renderbuffer == 0) {
@@ -119,45 +116,25 @@ public final class GLRenderbuffer extends Surface {
             }
         }
 
-        return new GLRenderbuffer(server, width, height, renderbuffer, sampleCount, format);
+        return new GLAttachment(server, width, height, sampleCount, format, renderbuffer);
     }
 
     @Nonnull
     @SharedPtr
-    public static GLRenderbuffer makeWrapped(GLServer server,
-                                             int width, int height,
-                                             int sampleCount,
-                                             int format,
-                                             int renderbuffer) {
+    public static GLAttachment makeWrapped(GLServer server,
+                                           int width, int height,
+                                           int sampleCount,
+                                           int format,
+                                           int renderbuffer) {
         assert sampleCount > 0;
-        return new GLRenderbuffer(server, width, height, renderbuffer, sampleCount, format);
-    }
-
-    @Override
-    public int getSampleCount() {
-        return mSampleCount;
-    }
-
-    @Override
-    public boolean isMipmapped() {
-        return false;
-    }
-
-    @Override
-    public boolean isReadOnly() {
-        return false;
-    }
-
-    @Override
-    public boolean isProtected() {
-        return false;
+        return new GLAttachment(server, width, height, sampleCount, format, renderbuffer);
     }
 
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = GLBackendFormat.make(glFormatToEnum(mFormat), EngineTypes.TextureType_None);
+            mBackendFormat = GLBackendFormat.make(glFormatToEnum(mFormat), Engine.TextureType_None);
         }
         return mBackendFormat;
     }

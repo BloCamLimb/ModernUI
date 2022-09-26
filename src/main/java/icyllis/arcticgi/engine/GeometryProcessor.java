@@ -27,7 +27,7 @@ import javax.annotation.concurrent.Immutable;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 import static icyllis.arcticgi.engine.shading.ProgramDataManager.UniformHandle;
 import static icyllis.arcticgi.engine.shading.UniformHandler.SamplerHandle;
 
@@ -677,7 +677,7 @@ public abstract class GeometryProcessor extends Processor {
     public record TextureSampler(BackendFormat backendFormat, int samplerState, short swizzle) {
 
         public int textureType() {
-            return backendFormat.textureType();
+            return backendFormat.getTextureType();
         }
     }
 }

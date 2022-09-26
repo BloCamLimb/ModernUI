@@ -18,13 +18,12 @@
 
 package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.core.Color;
-import icyllis.arcticgi.core.ImageInfo;
+import icyllis.arcticgi.core.*;
 
 /**
  * Shared constants, enums and utilities for Arctic Engine.
  */
-public final class EngineTypes {
+public final class Engine {
 
     /**
      * Possible 3D APIs that may be used by Arctic.
@@ -46,8 +45,8 @@ public final class EngineTypes {
      * either the top-left or bottom-left content pixel.
      */
     public static final int
-            SurfaceOrigin_TopLeft = 0,
-            SurfaceOrigin_BottomLeft = 1;
+            SurfaceOrigin_UpperLeft = 0,
+            SurfaceOrigin_LowerLeft = 1;
 
     /**
      * A Context's cache of backend context state can be partially invalidated.
@@ -173,39 +172,39 @@ public final class EngineTypes {
             COLOR_ENCODING_SNORM = 2,
             COLOR_ENCODING_FLOAT = 3;
 
+    public static int colorTypeBytesPerPixel(int ct) {
+        return ImageInfo.bytesPerPixel(ct);
+    }
+
     public static int colorTypeChannelFlags(int ct) {
         return switch (ct) {
-            case ImageInfo.COLOR_UNKNOWN -> 0;
-            case ImageInfo.COLOR_ALPHA_8,
-                    ImageInfo.COLOR_ALPHA_16,
-                    ImageInfo.COLOR_ALPHA_F32XXX,
-                    ImageInfo.COLOR_ALPHA_8XXX,
-                    ImageInfo.COLOR_ALPHA_F16 -> Color.ALPHA_CHANNEL_FLAG;
-            case ImageInfo.COLOR_BGR_565,
-                    ImageInfo.COLOR_RGB_888,
-                    ImageInfo.COLOR_RGB_888X -> Color.RGB_CHANNEL_FLAGS;
-            case ImageInfo.COLOR_ABGR_4444,
-                    ImageInfo.COLOR_BGRA_4444,
-                    ImageInfo.COLOR_ARGB_4444,
-                    ImageInfo.COLOR_RGBA_16161616,
-                    ImageInfo.COLOR_RGBA_F32,
-                    ImageInfo.COLOR_RGBA_F16_CLAMPED,
-                    ImageInfo.COLOR_RGBA_F16,
-                    ImageInfo.COLOR_BGRA_1010102,
-                    ImageInfo.COLOR_RGBA_1010102,
-                    ImageInfo.COLOR_BGRA_8888,
-                    ImageInfo.COLOR_RGBA_8888_SRGB,
-                    ImageInfo.COLOR_RGBA_8888 -> Color.RGBA_CHANNEL_FLAGS;
-            case ImageInfo.COLOR_RG_88,
-                    ImageInfo.COLOR_RG_F16,
-                    ImageInfo.COLOR_RG_1616 -> Color.RG_CHANNEL_FLAGS;
-            case ImageInfo.COLOR_GRAY_8,
-                    ImageInfo.COLOR_GRAY_F16,
-                    ImageInfo.COLOR_GRAY_8XXX -> Color.GRAY_CHANNEL_FLAG;
-            case ImageInfo.COLOR_GRAY_ALPHA_88 -> Color.GRAY_ALPHA_CHANNEL_FLAGS;
-            case ImageInfo.COLOR_R_8,
-                    ImageInfo.COLOR_R_F16,
-                    ImageInfo.COLOR_R_16 -> Color.RED_CHANNEL_FLAG;
+            case ImageInfo.ColorType_Unknown -> 0;
+            case ImageInfo.ColorType_Alpha_8,
+                    ImageInfo.ColorType_Alpha_16,
+                    ImageInfo.ColorType_Alpha_F32xxx,
+                    ImageInfo.ColorType_Alpha_8xxx,
+                    ImageInfo.ColorType_Alpha_F16 -> Color.ALPHA_CHANNEL_FLAG;
+            case ImageInfo.ColorType_BGR_565,
+                    ImageInfo.ColorType_RGB_888,
+                    ImageInfo.ColorType_RGB_888x -> Color.RGB_CHANNEL_FLAGS;
+            case ImageInfo.ColorType_ABGR_4444,
+                    ImageInfo.ColorType_RGBA_16161616,
+                    ImageInfo.ColorType_RGBA_F32,
+                    ImageInfo.ColorType_RGBA_F16_Clamped,
+                    ImageInfo.ColorType_RGBA_F16,
+                    ImageInfo.ColorType_BGRA_1010102,
+                    ImageInfo.ColorType_RGBA_1010102,
+                    ImageInfo.ColorType_BGRA_8888,
+                    ImageInfo.ColorType_RGBA_8888_SRGB,
+                    ImageInfo.ColorType_RGBA_8888 -> Color.RGBA_CHANNEL_FLAGS;
+            case ImageInfo.ColorType_RG_88,
+                    ImageInfo.ColorType_RG_F16,
+                    ImageInfo.ColorType_RG_1616 -> Color.RG_CHANNEL_FLAGS;
+            case ImageInfo.ColorType_Gray_8,
+                    ImageInfo.ColorType_Gray_8xxx -> Color.GRAY_CHANNEL_FLAG;
+            case ImageInfo.ColorType_R_8,
+                    ImageInfo.ColorType_R_F16,
+                    ImageInfo.ColorType_R_16 -> Color.RED_CHANNEL_FLAG;
             default -> throw new IllegalArgumentException(String.valueOf(ct));
         };
     }
@@ -269,38 +268,86 @@ public final class EngineTypes {
             StoreOp_Discard = 1;
 
     /**
-     * Flags shared between the Surface & SurfaceProxy class hierarchies.
-     * <p>
-     * READ_ONLY: Means the pixels in the texture are read-only. Texture only.
-     * <p>
-     * PROTECTED: Means if we are working with protected content.
-     * <p>
-     * REQUIRE_MANUAL_MSAA_RESOLVE: This means the render target is multi-sampled, and internally
-     * holds a non-msaa texture for resolving into. The render target resolves itself by blit-ting
-     * into this internal texture. (asTexture() might or might not return the internal texture,
-     * but if it does, we always resolve the render target before accessing this texture's data.)
-     * <p>
-     * GL_WRAP_DEFAULT_FRAMEBUFFER: This is a OpenGL only flag. It tells us that the internal
-     * render target wraps the default framebuffer (on-screen) that preserved by window (id 0).
-     * <p>
-     * VK_SUPPORT_INPUT_ATTACHMENT: This is a Vulkan only flag. If set the surface can be used as
-     * an input attachment in a shader. This is used for doing in shader blending where we want to
-     * sample from the same image we are drawing to.
+     * Surface flags shared between the Surface & SurfaceProxy class hierarchies.
+     * <b>WARNING: Don't abuse the combination of flags or result in unexpected behaviors.</b>
+     *
+     * <ul>
+     * <li>{@link #SurfaceFlag_Budgeted} -
+     *  Indicates whether an allocation should count against a cache budget. Budgeted when
+     *  set, otherwise not budgeted. {@link Texture} and {@link TextureProxy} only.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_BackingFit} -
+     *  Indicates whether a backing store needs to be an exact match or can be larger than
+     *  is strictly necessary. Exact when set, otherwise approx. {@link SurfaceProxy} only.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_Mipmapped} -
+     *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
+     *  when set, otherwise mipmaps are not allocated. {@link Texture} and {@link TextureProxy} only.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_Renderable} -
+     *  Used to say whether a surface can be rendered to, whether a texture can be used as
+     *  color attachments. Renderable when set, otherwise not renderable.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_Protected} -
+     *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
+     *  not protected.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_ReadOnly} -
+     *  Means the pixels in the texture are read-only. {@link Texture} and {@link TextureProxy}
+     *  only.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_SkipAllocator} -
+     *  When set, the proxy will be instantiated outside the allocator (e.g. for proxies that are
+     *  instantiated in on-flush callbacks). Otherwise, {@link ResourceAllocator} should instantiate
+     *  the proxy. {@link SurfaceProxy} only.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_DeferredProvider} -
+     *  For TextureProxies created in a deferred list recording thread it is possible for the
+     *  unique key to be cleared on the backing {@link Texture} while the unique key remains on
+     *  the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
+     *  texture proxy is also always set on the backing {@link Texture}. {@link TextureProxy} only.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_GLWrapDefaultFramebuffer} -
+     *  This is a OpenGL only flag. It tells us that the internal render target wraps the default
+     *  framebuffer (on-screen) that preserved by window (id 0). {@link RenderTarget} only.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_RequireManualMSAAResolve} -
+     *  This means the render target is multi-sampled, and internally holds a non-msaa texture
+     *  for resolving into. The render target resolves itself by blit-ting into this internal
+     *  texture. (asTexture() might or might not return the internal texture, but if it does, we
+     *  always resolve the render target before accessing this texture's data.) {@link RenderTarget}
+     *  only.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_VkSupportInputAttachment} -
+     *  This is a Vulkan only flag. If set the surface can be used as an input attachment in a
+     *  shader. This is used for doing in shader blending where we want to sample from the same
+     *  image we are drawing to. {@link RenderTarget} only.
+     * </li>
+     * </ul>
      */
     public static final int
-            SurfaceFlag_ReadOnly = 1,
-            SurfaceFlag_Protected = 1 << 1,
-            SurfaceFlag_RequireManualMSAAResolve = 1 << 2,
-            SurfaceFlag_GLWrapDefaultFramebuffer = 1 << 3,
-            SurfaceFlag_VkSupportInputAttachment = 1 << 4;
-
-    /**
-     * Used to describe the current state of Mips on a Texture
-     */
-    public static final int
-            MipmapStatus_None = 0,     // Mips have not been allocated
-            MipmapStatus_Dirty = 1,    // Mips are allocated but the full mip tree does not have valid data
-            MipmapStatus_Valid = 2;    // All levels fully allocated and have valid data in them
+            SurfaceFlag_Default = Core.SurfaceFlag_Default,
+            SurfaceFlag_Budgeted = Core.SurfaceFlag_Budgeted,
+            SurfaceFlag_BackingFit = Core.SurfaceFlag_BackingFit,
+            SurfaceFlag_Mipmapped = Core.SurfaceFlag_Mipmapped,
+            SurfaceFlag_Renderable = Core.SurfaceFlag_Renderable,
+            SurfaceFlag_Protected = Core.SurfaceFlag_Protected,
+            SurfaceFlag_ReadOnly = Core.SurfaceFlag_Protected << 1,
+            SurfaceFlag_SkipAllocator = Core.SurfaceFlag_Protected << 2,
+            SurfaceFlag_DeferredProvider = Core.SurfaceFlag_Protected << 3,
+            SurfaceFlag_GLWrapDefaultFramebuffer = Core.SurfaceFlag_Protected << 4,
+            SurfaceFlag_RequireManualMSAAResolve = Core.SurfaceFlag_Protected << 5,
+            SurfaceFlag_VkSupportInputAttachment = Core.SurfaceFlag_Protected << 6;
 
     /**
      * DstSampleFlags
@@ -403,6 +450,6 @@ public final class EngineTypes {
      */
     public static final int INVALID_RESOURCE_HANDLE = -1;
 
-    private EngineTypes() {
+    private Engine() {
     }
 }

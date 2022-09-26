@@ -52,7 +52,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
 
     @Override
     public int getBackend() {
-        return EngineTypes.Vulkan;
+        return Engine.Vulkan;
     }
 
     @Override

@@ -18,7 +18,7 @@
 
 package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.core.Image.CompressionType;
+import icyllis.arcticgi.core.ImageInfo.CompressionType;
 import icyllis.arcticgi.core.*;
 import icyllis.arcticgi.core.Surface;
 import icyllis.arcticgi.core.ImageInfo.ColorType;
@@ -56,7 +56,7 @@ public final class ContextThreadSafeProxy {
     volatile ThreadSafeCache mThreadSafeCache;
     volatile ThreadSafePipelineBuilder mPipelineBuilder;
 
-    private final AtomicBoolean mDropped = new AtomicBoolean(false);
+    private final AtomicBoolean mDiscared = new AtomicBoolean(false);
 
     ContextThreadSafeProxy(int backend, ContextOptions options) {
         mBackend = backend;
@@ -124,16 +124,16 @@ public final class ContextThreadSafeProxy {
             return null;
         }
 
-        if (mBackend != backendFormat.backend()) {
+        if (mBackend != backendFormat.getBackend()) {
             return null;
         }
 
-        if (backendFormat.backend() != EngineTypes.OpenGL && glWrapDefaultFramebuffer) {
+        if (backendFormat.getBackend() != Engine.OpenGL && glWrapDefaultFramebuffer) {
             // The flag can only be used for a OpenGL backend.
             return null;
         }
 
-        if (backendFormat.backend() != EngineTypes.Vulkan &&
+        if (backendFormat.getBackend() != Engine.Vulkan &&
                 (vkSupportInputAttachment || vkSecondaryCommandBuffer)) {
             // The flags can only be used for a Vulkan backend.
             return null;
@@ -215,7 +215,7 @@ public final class ContextThreadSafeProxy {
         BackendFormat format = mCaps.getCompressedBackendFormat(compressionType);
 
         assert format == null ||
-                (format.textureType() == EngineTypes.TextureType_2D && mCaps.isFormatTexturable(format));
+                (format.getTextureType() == Engine.TextureType_2D && mCaps.isFormatTexturable(format));
         return format;
     }
 
@@ -256,14 +256,14 @@ public final class ContextThreadSafeProxy {
         mPipelineBuilder = pipelineBuilder;
     }
 
-    void drop() {
-        if (!mDropped.compareAndExchange(false, true)) {
+    void discard() {
+        if (!mDiscared.compareAndExchange(false, true)) {
             mTextBlobCache.freeAll();
         }
     }
 
-    boolean isDropped() {
-        return mDropped.get();
+    boolean isDiscarded() {
+        return mDiscared.get();
     }
 
     @Override

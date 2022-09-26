@@ -18,11 +18,13 @@
 
 package icyllis.arcticgi.engine;
 
+import icyllis.arcticgi.core.RefCnt;
 import icyllis.arcticgi.core.SharedPtr;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 
 /**
  * Represents 2D textures can be sampled by shaders, can also be used as attachments
@@ -37,11 +39,19 @@ import static icyllis.arcticgi.engine.EngineTypes.*;
  * is locked. Additionally, it may create more surfaces and attach them to it. These
  * surfaces are budgeted but cannot be reused. In most cases, we reuse textures, so
  * these surfaces are reused together. When renderable is not required, the cache
- * will give priority to the texture without promotion. See {@link TextureRenderTargetProxy}.
+ * will give priority to the texture without promotion. See {@link RenderTextureProxy}.
  */
-public abstract class Texture extends Surface {
+public abstract class Texture extends Resource implements Surface {
 
-    private boolean mReadOnly;
+    protected final int mWidth;
+    protected final int mHeight;
+
+    /**
+     * Note budgeted is a dynamic state, it can be returned by {@link #getFlags()}.
+     * This field is OR-ed only and immutable when created.
+     */
+    protected int mFlags = SurfaceFlag_BackingFit;
+
     /**
      * Only valid when isMipmapped=true.
      * By default, we can't say mipmaps dirty or not, since texel data is undefined.
@@ -52,29 +62,95 @@ public abstract class Texture extends Surface {
     private ReleaseCallback mReleaseCallback;
 
     protected Texture(Server server, int width, int height) {
-        super(server, width, height);
+        super(server);
+        assert width > 0 && height > 0;
+        mWidth = width;
+        mHeight = height;
     }
 
     /**
-     * The pixel values of this texture cannot be modified (e.g. doesn't support write pixels or
-     * mipmap regeneration). To be exact, only wrapped textures, external textures can be read only.
-     *
-     * @return true if pixels in this texture are read-only
+     * @return the width of the texture
      */
     @Override
-    public final boolean isReadOnly() {
-        return mReadOnly;
+    public final int getWidth() {
+        return mWidth;
     }
 
     /**
-     * Determined by subclass constructors.
+     * @return the height of the texture
      */
-    protected final void setReadOnly() {
-        mReadOnly = true;
+    @Override
+    public final int getHeight() {
+        return mHeight;
     }
 
     /**
-     * @return either {@link EngineTypes#TextureType_2D} or {@link EngineTypes#TextureType_External}
+     * @return true if this surface has mipmaps and have been allocated
+     */
+    public final boolean isMipmapped() {
+        return (mFlags & SurfaceFlag_Mipmapped) != 0;
+    }
+
+    /**
+     * The pixel values of this surface cannot be modified (e.g. doesn't support write pixels or
+     * mipmap regeneration). To be exact, only wrapped textures, external textures, stencil
+     * attachments and MSAA color attachments can be read only.
+     *
+     * @return true if pixels in this surface are read-only
+     */
+    public final boolean isReadOnly() {
+        return (mFlags & SurfaceFlag_ReadOnly) != 0;
+    }
+
+    /**
+     * @return true if we are working with protected content
+     */
+    @Override
+    public final boolean isProtected() {
+        return (mFlags & SurfaceFlag_Protected) != 0;
+    }
+
+    /**
+     * Surface flags, but no render target level flags.
+     *
+     * <ul>
+     * <li>{@link Engine#SurfaceFlag_Budgeted} -
+     *  Indicates whether an allocation should count against a cache budget. Budgeted when
+     *  set, otherwise not budgeted. {@link Texture} only.
+     * </li>
+     *
+     * <li>{@link Engine#SurfaceFlag_Mipmapped} -
+     *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
+     *  when set, otherwise mipmaps are not allocated. {@link Texture} only.
+     * </li>
+     *
+     * <li>{@link Engine#SurfaceFlag_Renderable} -
+     *  Used to say whether a surface can be rendered to, whether a texture can be used as
+     *  color attachments. Renderable when set, otherwise not renderable.
+     * </li>
+     *
+     * <li>{@link Engine#SurfaceFlag_Protected} -
+     *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
+     *  not protected.
+     * </li>
+     *
+     * <li>{@link Engine#SurfaceFlag_ReadOnly} -
+     *  Means the pixels in the texture are read-only. {@link Texture} only.
+     * </li>
+     *
+     * @return combination of the above flags, always has {@link Engine#SurfaceFlag_BackingFit}
+     */
+    @Override
+    public final int getFlags() {
+        int flags = mFlags;
+        if (getBudgetType() == BudgetType_Budgeted) {
+            flags |= SurfaceFlag_Budgeted;
+        }
+        return flags;
+    }
+
+    /**
+     * @return either {@link Engine#TextureType_2D} or {@link Engine#TextureType_External}
      */
     public abstract int getTextureType();
 
@@ -85,19 +161,13 @@ public abstract class Texture extends Surface {
     public abstract BackendTexture getBackendTexture();
 
     /**
-     * @return true if mipmaps have been allocated, or called has mipmaps
-     */
-    @Override
-    public abstract boolean isMipmapped();
-
-    /**
      * Return <code>true</code> if mipmaps are dirty and need to regenerate before sampling.
      * The value is valid only when {@link #isMipmapped()} returns <code>true</code>.
      *
      * @return whether mipmaps are dirty
      */
     public final boolean isMipmapsDirty() {
-        // we assume mipmaps are identity, so we name this method as *is*
+        assert isMipmapped();
         return mMipmapsDirty;
     }
 
@@ -118,24 +188,7 @@ public abstract class Texture extends Surface {
      * ensure it isn't called until GPU work related to the resource is completed.
      */
     public void setReleaseCallback(@SharedPtr ReleaseCallback callback) {
-        if (mReleaseCallback != null) {
-            mReleaseCallback.unref();
-        }
-        mReleaseCallback = callback;
-    }
-
-    /**
-     * @return surface flags, texture are color attachments so no framebuffer-related flags
-     */
-    public final int getFlags() {
-        int flags = 0;
-        if (isReadOnly()) {
-            flags |= SurfaceFlag_ReadOnly;
-        }
-        if (isProtected()) {
-            flags |= SurfaceFlag_Protected;
-        }
-        return flags;
+        mReleaseCallback = RefCnt.move(mReleaseCallback, callback);
     }
 
     @Override
@@ -154,6 +207,19 @@ public abstract class Texture extends Surface {
         mReleaseCallback = null;
     }
 
+    @Nullable
+    @Override
+    protected final ScratchKey computeScratchKey() {
+        BackendFormat format = getBackendFormat();
+        if (format.isCompressed()) {
+            return null;
+        }
+        return new ScratchKey().compute(
+                format,
+                mWidth, mHeight,
+                mFlags); // budgeted flag is not included, this method is called only when budgeted
+    }
+
     public static long computeSize(BackendFormat format,
                                    int width, int height,
                                    int sampleCount,
@@ -164,7 +230,7 @@ public abstract class Texture extends Surface {
         assert sampleCount == 1 || !mipmapped;
         // For external formats we do not actually know the real size of the resource, so we just return
         // 0 here to indicate this.
-        if (format.textureType() == TextureType_External) {
+        if (format.getTextureType() == TextureType_External) {
             return 0;
         }
         if (approx) {
@@ -200,7 +266,7 @@ public abstract class Texture extends Surface {
         assert sampleCount == 1 || levelCount == 1;
         // For external formats we do not actually know the real size of the resource, so we just return
         // 0 here to indicate this.
-        if (format.textureType() == TextureType_External) {
+        if (format.getTextureType() == TextureType_External) {
             return 0;
         }
         if (approx) {
@@ -218,5 +284,61 @@ public abstract class Texture extends Surface {
         }
         assert size > 0;
         return size;
+    }
+
+    /**
+     * Storage key of {@link Texture}, may be compared with {@link TextureProxy}.
+     */
+    public static final class ScratchKey {
+
+        public int mWidth;
+        public int mHeight;
+        public int mFormat;
+        public int mFlags;
+
+        /**
+         * Compute a {@link Texture} key, format can not be compressed.
+         *
+         * @return the scratch key
+         */
+        @Nonnull
+        public ScratchKey compute(BackendFormat format,
+                                  int width, int height,
+                                  int surfaceFlags) {
+            assert (width > 0 && height > 0);
+            assert (!format.isCompressed());
+            mWidth = width;
+            mHeight = height;
+            mFormat = format.getKey();
+            mFlags = surfaceFlags & (SurfaceFlag_Mipmapped |
+                    SurfaceFlag_Renderable |
+                    SurfaceFlag_Protected);
+            return this;
+        }
+
+        /**
+         * Keep {@link TextureProxy#hashCode()} sync with this.
+         */
+        @Override
+        public int hashCode() {
+            int result = mWidth;
+            result = 31 * result + mHeight;
+            result = 31 * result + mFormat;
+            result = 31 * result + mFlags;
+            return result;
+        }
+
+        /**
+         * Keep {@link TextureProxy#equals(Object)}} sync with this.
+         */
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            return o instanceof ScratchKey key &&
+                    mWidth == key.mWidth &&
+                    mHeight == key.mHeight &&
+                    mFormat == key.mFormat &&
+                    mFlags == key.mFlags;
+        }
     }
 }

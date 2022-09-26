@@ -68,14 +68,14 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         ShaderErrorHandler errorHandler = mServer.getContext().getShaderErrorHandler();
 
         int frag = glCompileAndAttachShader(program, GL_FRAGMENT_SHADER, fragSource,
-                mServer.getPipelineBuilder().stats(), errorHandler);
+                mServer.getPipelineBuilder().getStates(), errorHandler);
         if (frag == 0) {
             glDeleteProgram(program);
             return null;
         }
 
         int vert = glCompileAndAttachShader(program, GL_VERTEX_SHADER, vertSource,
-                mServer.getPipelineBuilder().stats(), errorHandler);
+                mServer.getPipelineBuilder().getStates(), errorHandler);
         if (vert == 0) {
             glDeleteProgram(program);
             glDeleteShader(frag);

@@ -82,7 +82,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
         // flush CPU staging buffer
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             int flushSize = buffer.size() - mFreeBytes[mIndex];
 
             assert (!buffer.isMapped());
@@ -104,7 +104,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
     }
 
     @Override
-    protected long lockBuffer(GpuBuffer buffer) {
+    protected long lockBuffer(Buffer buffer) {
         if (mCpuStagingBuffer != null) {
             if (buffer.size() <= mCpuStagingBuffer.size()) {
                 return mCpuStagingBuffer.data();
@@ -116,14 +116,14 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
     }
 
     @Override
-    protected void unlockBuffer(GpuBuffer buffer) {
+    protected void unlockBuffer(Buffer buffer) {
         // leave as is
     }
 
     private static class VertexPool extends GLBufferAllocPool {
 
         public VertexPool(GLServer server, CpuBufferCache cpuBufferCache) {
-            super(server, EngineTypes.GpuBufferType_Vertex, cpuBufferCache);
+            super(server, Engine.GpuBufferType_Vertex, cpuBufferCache);
         }
 
         /**
@@ -152,7 +152,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
                 return NULL;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % vertexSize == 0);
@@ -178,7 +178,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
                 return null;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % vertexSize == 0);
@@ -190,7 +190,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
     private static class InstancePool extends GLBufferAllocPool {
 
         public InstancePool(GLServer server, CpuBufferCache cpuBufferCache) {
-            super(server, EngineTypes.GpuBufferType_Vertex, cpuBufferCache);
+            super(server, Engine.GpuBufferType_Vertex, cpuBufferCache);
             // instance buffers are also vertex buffers, but we allocate them from a different pool
         }
 
@@ -221,7 +221,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
                 return NULL;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % instanceSize == 0);
@@ -248,7 +248,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
                 return null;
             }
 
-            GpuBuffer buffer = mBuffers[mIndex];
+            Buffer buffer = mBuffers[mIndex];
             buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % instanceSize == 0);

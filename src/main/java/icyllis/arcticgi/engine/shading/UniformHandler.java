@@ -146,7 +146,7 @@ public abstract class UniformHandler {
                                 byte type,
                                 String name) {
         assert (name != null && !name.isEmpty());
-        assert ((visibility & ~(EngineTypes.Vertex_ShaderFlag | EngineTypes.Fragment_ShaderFlag)) == 0);
+        assert ((visibility & ~(Engine.Vertex_ShaderFlag | Engine.Fragment_ShaderFlag)) == 0);
         assert (SLType.checkSLType(type));
         assert (!SLType.isCombinedSamplerType(type));
         return internalAddUniformArray(owner, visibility, type, name, ShaderVar.NonArray);
@@ -169,7 +169,7 @@ public abstract class UniformHandler {
                                      String name,
                                      int arrayCount) {
         assert (name != null && !name.isEmpty());
-        assert ((visibility & ~(EngineTypes.Vertex_ShaderFlag | EngineTypes.Fragment_ShaderFlag)) == 0);
+        assert ((visibility & ~(Engine.Vertex_ShaderFlag | Engine.Fragment_ShaderFlag)) == 0);
         assert (SLType.checkSLType(type));
         assert (!SLType.isCombinedSamplerType(type));
         assert (arrayCount >= 1);
@@ -214,7 +214,7 @@ public abstract class UniformHandler {
         for (int i = numUniforms() - 1; i >= 0; i--) {
             final UniformInfo u = uniform(i);
             if (u.mOwner == owner && u.mRawName.equals(rawName)) {
-                u.mVisibility |= EngineTypes.Vertex_ShaderFlag;
+                u.mVisibility |= Engine.Vertex_ShaderFlag;
                 return u.mVariable;
             }
         }

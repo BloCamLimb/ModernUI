@@ -16,25 +16,29 @@
  * License along with Arctic. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcticgi.core;
+package icyllis.arcticgi.engine;
+
+import javax.annotation.Nullable;
 
 /**
- * Constants and utilities for Core.
+ * Lazy-callback or wrapped a render target (no texture access).
  */
-public final class CoreTypes {
+//TODO
+public final class RenderSurfaceProxy extends SurfaceProxy {
 
-    /**
-     * Indicates whether an allocation should count against a cache budget.
-     */
-    public static final boolean
-            Budgeted_No = false,
-            Budgeted_Yes = true;
+    private RenderTarget mRenderTarget;
 
-    /**
-     * Indicates whether a backing store needs to be an exact match or can be
-     * larger than is strictly necessary. False: Approx; True: Exact.
-     */
-    public static final boolean
-            BackingFit_Approx = false,
-            BackingFit_Exact = true;
+    RenderSurfaceProxy(BackendFormat format, int width, int height, int surfaceFlags) {
+        super(format, width, height, surfaceFlags);
+    }
+
+    @Override
+    protected void dispose() {
+    }
+
+    @Nullable
+    @Override
+    public RenderTarget peekRenderTarget() {
+        return mRenderTarget;
+    }
 }

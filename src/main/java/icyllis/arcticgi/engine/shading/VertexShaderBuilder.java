@@ -52,7 +52,7 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeoB
             locationIndex += locationSize;
         }
 
-        mProgramBuilder.uniformHandler().appendUniformDecls(EngineTypes.Vertex_ShaderFlag, uniforms());
+        mProgramBuilder.uniformHandler().appendUniformDecls(Engine.Vertex_ShaderFlag, uniforms());
         mProgramBuilder.appendDecls(mInputs, inputs());
         mProgramBuilder.varyingHandler().getVertDecls(outputs());
     }

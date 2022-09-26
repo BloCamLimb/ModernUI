@@ -24,7 +24,7 @@ import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 import static icyllis.arcticgi.opengl.GLCore.*;
 
 public final class GLBackendFormat extends BackendFormat {
@@ -56,12 +56,12 @@ public final class GLBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int backend() {
+    public int getBackend() {
         return OpenGL;
     }
 
     @Override
-    public int textureType() {
+    public int getTextureType() {
         return mTextureType;
     }
 
@@ -110,9 +110,8 @@ public final class GLBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getFormatKey() {
-        // it's okay to use GLenum (not sequential indexing though)
-        return mFormat;
+    public int getKey() {
+        return glFormatFromEnum(mFormat);
     }
 
     @Override

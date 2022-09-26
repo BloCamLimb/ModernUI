@@ -29,7 +29,7 @@ import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nullable;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 import static icyllis.arcticgi.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.memPutInt;
 
@@ -110,7 +110,7 @@ public final class GLServer extends Server {
         if (cleanup) {
             mProgramCache.reset();
         } else {
-            mProgramCache.abandon();
+            mProgramCache.discard();
         }
     }
 
@@ -179,15 +179,14 @@ public final class GLServer extends Server {
     protected Texture onCreateTexture(int width, int height,
                                       BackendFormat format,
                                       int levelCount,
-                                      boolean budgeted,
-                                      boolean isProtected) {
+                                      int surfaceFlags) {
         assert levelCount > 0;
         // We don't support protected textures in OpenGL core profile.
-        if (isProtected) {
+        if ((surfaceFlags & SurfaceFlag_Protected) != 0) {
             return null;
         }
         // We only support TEXTURE_2D.
-        if (format.textureType() != TextureType_2D) {
+        if (format.getTextureType() != TextureType_2D) {
             return null;
         }
         int texture = createTexture(width, height, format.getGLFormat(), levelCount);
@@ -198,7 +197,12 @@ public final class GLServer extends Server {
         info.mTexture = texture;
         info.mFormat = format.getGLFormatEnum();
         info.mLevelCount = levelCount;
-        return new GLTexture(this, width, height, info, format, budgeted, true);
+        return new GLTexture(this,
+                width, height,
+                info,
+                format,
+                (surfaceFlags & SurfaceFlag_Budgeted) != 0,
+                true);
     }
 
     @Nullable
@@ -306,7 +310,7 @@ public final class GLServer extends Server {
 
     @Override
     public OpsRenderPass getOpsRenderPass(RenderTarget renderTarget,
-                                          boolean withStencil,
+                                          boolean useStencil,
                                           int origin,
                                           Rect2i bounds,
                                           int colorLoadOp, int colorStoreOp,
@@ -451,7 +455,7 @@ public final class GLServer extends Server {
         currentCommandBuffer().bindFramebuffer(framebuffer);
 
         final int msaaFramebuffer;
-        final GLRenderbuffer msaaColorBuffer;
+        final GLAttachment msaaColorBuffer;
         // If we are using multisampling we will create two FBOs. We render to one and then resolve to
         // the texture bound to the other. The exception is the IMG multisample extension. With this
         // extension the texture is multisampled when rendered to and then auto-resolves it when it is
@@ -468,7 +472,7 @@ public final class GLServer extends Server {
             // Create the state vector of the framebuffer.
             currentCommandBuffer().bindFramebuffer(msaaFramebuffer);
 
-            msaaColorBuffer = GLRenderbuffer.makeMSAA(this,
+            msaaColorBuffer = GLAttachment.makeMSAA(this,
                     width, height,
                     samples,
                     format);
@@ -516,9 +520,9 @@ public final class GLServer extends Server {
 
         int mFramebuffer;
         int mMSAAFramebuffer;
-        GLRenderbuffer mMSAAColorBuffer;
+        GLAttachment mMSAAColorBuffer;
 
-        RenderTargetObjects set(int framebuffer, int msaaFramebuffer, GLRenderbuffer msaaColorBuffer) {
+        RenderTargetObjects set(int framebuffer, int msaaFramebuffer, GLAttachment msaaColorBuffer) {
             mFramebuffer = framebuffer;
             mMSAAFramebuffer = msaaFramebuffer;
             mMSAAColorBuffer = msaaColorBuffer;

@@ -25,8 +25,47 @@ import icyllis.arcticgi.core.*;
  */
 public final class Device extends BaseDevice {
 
-    public Device(SurfaceDrawContext context, boolean initContents) {
-        super(new ImageInfo(context.getWidth(), context.getHeight(), context.getColorInfo()));
+    private Device(SurfaceDrawContext context, ImageInfo info, boolean clear) {
+        super(info);
+    }
+
+    @SharedPtr
+    private static Device make(SurfaceDrawContext sdc,
+                               int alphaType,
+                               boolean clear) {
+        if (sdc == null) {
+            return null;
+        }
+        if (alphaType != ImageInfo.ALPHA_TYPE_PREMUL && alphaType != ImageInfo.ALPHA_TYPE_OPAQUE) {
+            return null;
+        }
+        RecordingContext rContext = sdc.getContext();
+        if (rContext.isDiscarded()) {
+            return null;
+        }
+        int colorType = ImageInfo.screenColorType(sdc.getColorType());
+        if (rContext.isSurfaceCompatible(colorType)) {
+            ImageInfo info = new ImageInfo(sdc.getWidth(), sdc.getHeight(), colorType, alphaType);
+            return new Device(sdc, info, clear);
+        }
+        return null;
+    }
+
+    @SharedPtr
+    public static Device make(RecordingContext rContext,
+                              int colorType,
+                              int alphaType,
+                              int width, int height,
+                              int sampleCount,
+                              int surfaceFlags,
+                              int origin,
+                              boolean clear) {
+        if (rContext == null) {
+            return null;
+        }
+        SurfaceDrawContext sdc = SurfaceDrawContext.make(rContext,
+                colorType, width, height, sampleCount, surfaceFlags, origin);
+        return make(sdc, alphaType, clear);
     }
 
     @Override

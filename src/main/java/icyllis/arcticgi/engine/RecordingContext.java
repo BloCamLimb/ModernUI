@@ -52,18 +52,18 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
 
     /**
      * Reports whether the {@link DirectContext} associated with this {@link RecordingContext}
-     * is dropped. When called on a {@link DirectContext} it may actively check whether the
+     * is discarded. When called on a {@link DirectContext} it may actively check whether the
      * underlying 3D API device/context has been disconnected before reporting the status. If so,
-     * calling this method will transition the {@link DirectContext} to the dropped state.
+     * calling this method will transition the {@link DirectContext} to the discarded state.
      */
-    public boolean isDropped() {
-        return mThreadSafeProxy.isDropped();
+    public boolean isDiscarded() {
+        return mThreadSafeProxy.isDiscarded();
     }
 
     /**
      * Can a {@link icyllis.arcticgi.core.Image} be created with the given color type.
      */
-    public final boolean isImageCapable(@ColorType int colorType) {
+    public final boolean isImageCompatible(@ColorType int colorType) {
         return getDefaultBackendFormat(colorType, false) != null;
     }
 
@@ -71,13 +71,13 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
      * Can a {@link icyllis.arcticgi.core.Surface} be created with the given color type.
      * To check whether MSAA is supported use {@link #getMaxSurfaceSampleCount(int)}.
      */
-    public final boolean isSurfaceCapable(@ColorType int colorType) {
-        if (ImageInfo.COLOR_R16G16_UNORM == colorType ||
-                ImageInfo.COLOR_A16_UNORM == colorType ||
-                ImageInfo.COLOR_A16_FLOAT == colorType ||
-                ImageInfo.COLOR_R16G16_FLOAT == colorType ||
-                ImageInfo.COLOR_R16G16B16A16_UNORM == colorType ||
-                ImageInfo.COLOR_GRAY_8 == colorType) {
+    public final boolean isSurfaceCompatible(@ColorType int colorType) {
+        if (ImageInfo.ColorType_R16G16_unorm == colorType ||
+                ImageInfo.ColorType_A16_unorm == colorType ||
+                ImageInfo.ColorType_A16_float == colorType ||
+                ImageInfo.ColorType_R16G16_float == colorType ||
+                ImageInfo.ColorType_R16G16B16A16_unorm == colorType ||
+                ImageInfo.ColorType_Gray_8 == colorType) {
             return false;
         }
 
@@ -88,14 +88,14 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
      * Gets the maximum supported texture size.
      */
     public final int getMaxTextureSize() {
-        return caps().mMaxTextureSize;
+        return getCaps().mMaxTextureSize;
     }
 
     /**
      * Gets the maximum supported render target size.
      */
     public final int getMaxRenderTargetSize() {
-        return caps().mMaxRenderTargetSize;
+        return getCaps().mMaxRenderTargetSize;
     }
 
     @ApiStatus.Internal
@@ -129,7 +129,7 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
     }
 
     protected void drop() {
-        mThreadSafeProxy.drop();
+        mThreadSafeProxy.discard();
         mDrawingManager.destroy();
         mDrawingManager = null;
     }

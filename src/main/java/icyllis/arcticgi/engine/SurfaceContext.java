@@ -18,76 +18,114 @@
 
 package icyllis.arcticgi.engine;
 
+import icyllis.arcticgi.core.ImageInfo;
+import icyllis.arcticgi.core.ImageInfo.AlphaType;
+
 /**
- * A helper object to orchestrate commands for a particular surface.
+ * Helper to orchestrate commands for a particular surface.
+ * <p>
+ * The base class assumes the surface is not renderable, so you can only
+ * perform simple read and write operations.
  */
-public abstract class SurfaceContext implements AutoCloseable {
+public class SurfaceContext implements AutoCloseable {
 
     protected final RecordingContext mContext;
     protected final SurfaceProxyView mReadView;
-    protected final int mColorInfo;
 
-    protected SurfaceContext(RecordingContext context,
-                             SurfaceProxyView readView,
-                             int colorInfo) {
-        assert !context.isDropped();
+    private final int mColorInfo;
+
+    /**
+     * @param context   raw ptr to the context
+     * @param readView  raw ptr to the read view
+     * @param colorInfo see {@link ImageInfo#makeColorInfo(int, int)}
+     */
+    public SurfaceContext(RecordingContext context,
+                          SurfaceProxyView readView,
+                          int colorInfo) {
+        assert !context.isDiscarded();
         mContext = context;
         mReadView = readView;
         mColorInfo = colorInfo;
     }
 
     /**
-     * @return raw ptr to recording context
+     * @return raw ptr to the context
      */
     public final RecordingContext getContext() {
         return mContext;
     }
 
     /**
-     * @return raw ptr to read surface view
+     * @return raw ptr to the read view
      */
     public final SurfaceProxyView getReadView() {
         return mReadView;
     }
 
+    /**
+     * @see ImageInfo#makeColorInfo(int, int)
+     */
     public final int getColorInfo() {
         return mColorInfo;
     }
 
-    public final int getWidth() {
-        return mReadView.mProxy.getWidth();
-    }
-
-    public final int getHeight() {
-        return mReadView.mProxy.getHeight();
-    }
-
-    public final boolean isMipmapped() {
-        return mReadView.mProxy.isMipmapped();
+    /**
+     * @see ImageInfo#ColorType_Unknown
+     */
+    public final int getColorType() {
+        return ImageInfo.colorType(mColorInfo);
     }
 
     /**
-     * Boolean flag, true for BottomLeft, false for TopLeft.
-     * Read view and write view should have the same origin.
+     * @see ImageInfo#ALPHA_TYPE_UNKNOWN
+     */
+    @AlphaType
+    public final int getAlphaType() {
+        return ImageInfo.alphaType(mColorInfo);
+    }
+
+    public final int getWidth() {
+        return mReadView.getWidth();
+    }
+
+    public final int getHeight() {
+        return mReadView.getHeight();
+    }
+
+    public final boolean isMipmapped() {
+        return mReadView.isMipmapped();
+    }
+
+    /**
+     * Read view and write view have the same origin.
+     *
+     * @see Engine#SurfaceOrigin_UpperLeft
+     * @see Engine#SurfaceOrigin_LowerLeft
      */
     public final int getOrigin() {
         return mReadView.mOrigin;
     }
 
+    /**
+     * @see Swizzle
+     */
     public final short getReadSwizzle() {
         return mReadView.mSwizzle;
     }
 
     public final Caps getCaps() {
-        return mContext.caps();
+        return mContext.getCaps();
     }
 
     protected final DrawingManager getDrawingManager() {
         return mContext.getDrawingManager();
     }
 
+    /**
+     * Destructs this context.
+     */
     @Override
-    public void close() throws Exception {
+    public void close() {
         mReadView.close();
     }
 }

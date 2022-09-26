@@ -18,7 +18,7 @@
 
 package icyllis.arcticgi.engine;
 
-import icyllis.arcticgi.core.Image;
+import icyllis.arcticgi.core.ImageInfo;
 import icyllis.arcticgi.opengl.GLTypes;
 import icyllis.arcticgi.vulkan.VkCore;
 import org.lwjgl.system.NativeType;
@@ -33,18 +33,18 @@ import javax.annotation.concurrent.Immutable;
 public abstract class BackendFormat {
 
     /**
-     * @see EngineTypes#OpenGL
-     * @see EngineTypes#Vulkan
-     * @see EngineTypes#Mock
+     * @see Engine#OpenGL
+     * @see Engine#Vulkan
+     * @see Engine#Mock
      */
-    public abstract int backend();
+    public abstract int getBackend();
 
     /**
-     * @see EngineTypes#TextureType_None
-     * @see EngineTypes#TextureType_2D
-     * @see EngineTypes#TextureType_External
+     * @see Engine#TextureType_None
+     * @see Engine#TextureType_2D
+     * @see Engine#TextureType_External
      */
-    public abstract int textureType();
+    public abstract int getTextureType();
 
     /**
      * Gets the channels present in the format as a bitfield of ColorChannelFlag values.
@@ -88,12 +88,12 @@ public abstract class BackendFormat {
     public abstract boolean isSRGB();
 
     /**
-     * @see Image#COMPRESSION_NONE
+     * @see ImageInfo#COMPRESSION_TYPE_NONE
      */
     public abstract int getCompressionType();
 
     public final boolean isCompressed() {
-        return getCompressionType() != Image.COMPRESSION_NONE;
+        return getCompressionType() != ImageInfo.COMPRESSION_TYPE_NONE;
     }
 
     /**
@@ -106,5 +106,5 @@ public abstract class BackendFormat {
     /**
      * @return a key that is unique in the backend
      */
-    public abstract int getFormatKey();
+    public abstract int getKey();
 }

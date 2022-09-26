@@ -19,15 +19,15 @@
 package icyllis.arcticgi.opengl;
 
 import icyllis.arcticgi.core.SharedPtr;
-import icyllis.arcticgi.engine.GpuBuffer;
+import icyllis.arcticgi.engine.Buffer;
 
 import javax.annotation.Nullable;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 import static icyllis.arcticgi.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public final class GLBuffer extends GpuBuffer {
+public final class GLBuffer extends Buffer {
 
     private int mBuffer;
 

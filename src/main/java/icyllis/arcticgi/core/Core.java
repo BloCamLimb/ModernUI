@@ -16,65 +16,48 @@
  * License along with Arctic. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.arcticgi.engine;
-
-import javax.annotation.Nonnull;
+package icyllis.arcticgi.core;
 
 /**
- * Common interface between {@link Texture} and {@link RenderTarget}.
+ * Constants and utilities for Core.
  */
-public interface Surface {
+public final class Core {
 
     /**
-     * @return the width of the surface
-     */
-    int getWidth();
-
-    /**
-     * @return the height of the surface
-     */
-    int getHeight();
-
-    /**
-     * @return the backend format of this surface
-     */
-    @Nonnull
-    BackendFormat getBackendFormat();
-
-    /**
-     * @return true if we are working with protected content
-     */
-    boolean isProtected();
-
-    /**
-     * Surface flags, but no render target level flags.
+     * Surface flags.
      *
      * <ul>
-     * <li>{@link Engine#SurfaceFlag_Budgeted} -
+     * <li>{@link #SurfaceFlag_Budgeted} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted. {@link Texture} only.
+     *  set, otherwise not budgeted.
      * </li>
      *
-     * <li>{@link Engine#SurfaceFlag_Mipmapped} -
+     * <li>{@link #SurfaceFlag_BackingFit} -
+     *  Indicates whether a backing store needs to be an exact match or can be larger than
+     *  is strictly necessary. Exact when set, otherwise approx.
+     * </li>
+     *
+     * <li>{@link #SurfaceFlag_Mipmapped} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link Texture} only.
+     *  when set, otherwise mipmaps are not allocated.
      * </li>
      *
-     * <li>{@link Engine#SurfaceFlag_Renderable} -
+     * <li>{@link #SurfaceFlag_Renderable} -
      *  Used to say whether a surface can be rendered to, whether a texture can be used as
      *  color attachments. Renderable when set, otherwise not renderable.
      * </li>
      *
-     * <li>{@link Engine#SurfaceFlag_Protected} -
+     * <li>{@link #SurfaceFlag_Protected} -
      *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
      *  not protected.
      * </li>
-     *
-     * <li>{@link Engine#SurfaceFlag_ReadOnly} -
-     *  Means the pixels in the texture are read-only. {@link Texture} only.
-     * </li>
-     *
-     * @return combination of the above flags, always has {@link Engine#SurfaceFlag_BackingFit}
+     * </ul>
      */
-    int getFlags();
+    public static final int
+            SurfaceFlag_Default = 0,
+            SurfaceFlag_Budgeted = 1,
+            SurfaceFlag_BackingFit = 1 << 1,
+            SurfaceFlag_Mipmapped = 1 << 2,
+            SurfaceFlag_Renderable = 1 << 3,
+            SurfaceFlag_Protected = 1 << 4;
 }

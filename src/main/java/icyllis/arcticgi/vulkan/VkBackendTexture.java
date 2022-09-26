@@ -58,12 +58,12 @@ public final class VkBackendTexture extends BackendTexture {
 
     @Override
     public int getBackend() {
-        return EngineTypes.Vulkan;
+        return Engine.Vulkan;
     }
 
     @Override
     public int getTextureType() {
-        return mBackendFormat.textureType();
+        return mBackendFormat.getTextureType();
     }
 
     @Override

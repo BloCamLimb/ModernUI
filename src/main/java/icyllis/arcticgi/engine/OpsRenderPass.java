@@ -46,14 +46,14 @@ public abstract class OpsRenderPass {
     // Backends may defer binding of certain buffers if their draw API requires a buffer, or if
     // their bind methods don't support base values.
     @SharedPtr
-    protected GpuBuffer mActiveIndexBuffer;
+    protected Buffer mActiveIndexBuffer;
     @SharedPtr
-    protected GpuBuffer mActiveVertexBuffer;
+    protected Buffer mActiveVertexBuffer;
     @SharedPtr
-    protected GpuBuffer mActiveInstanceBuffer;
+    protected Buffer mActiveInstanceBuffer;
 
     public OpsRenderPass() {
-        this(null, EngineTypes.SurfaceOrigin_TopLeft);
+        this(null, Engine.SurfaceOrigin_UpperLeft);
     }
 
     public OpsRenderPass(RenderTarget rt, int origin) {
@@ -71,8 +71,7 @@ public abstract class OpsRenderPass {
 
     /**
      * Clear the owned render target. Clears the full target if 'scissor' is disabled, otherwise it
-     * is restricted to 'scissor'. Must check caps.performPartialClearsAsDraws() before using an
-     * enabled scissor test; must check caps.performColorClearsAsDraws() before using this at all.
+     * is restricted to 'scissor'.
      */
     public void clearColor(int left, int top, int right, int bottom,
                            float red, float green, float blue, float alpha) {
@@ -81,8 +80,7 @@ public abstract class OpsRenderPass {
     }
 
     /**
-     * Same as clear() but modifies the stencil; check caps.performStencilClearsAsDraws() and
-     * caps.performPartialClearsAsDraws().
+     * Same as {@link #clearColor} but modifies the stencil.
      */
     public void clearStencil(int left, int top, int right, int bottom, boolean insideMask) {
         assert (mRenderTarget != null);
@@ -120,8 +118,8 @@ public abstract class OpsRenderPass {
     protected abstract boolean onBindPipeline(ProgramInfo programInfo, Rect2f drawBounds);
 
     private void resetActiveBuffers() {
-        mActiveIndexBuffer = GpuResource.move(mActiveIndexBuffer);
-        mActiveVertexBuffer = GpuResource.move(mActiveVertexBuffer);
-        mActiveInstanceBuffer = GpuResource.move(mActiveInstanceBuffer);
+        mActiveIndexBuffer = Resource.move(mActiveIndexBuffer);
+        mActiveVertexBuffer = Resource.move(mActiveVertexBuffer);
+        mActiveInstanceBuffer = Resource.move(mActiveInstanceBuffer);
     }
 }

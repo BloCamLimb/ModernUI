@@ -28,6 +28,8 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static icyllis.arcticgi.engine.Engine.SurfaceFlag_Mipmapped;
+
 /**
  * Represents the client connection to the backend 3D API, holding a reference to
  * {@link DirectContext}. It is responsible for creating / deleting 3D API objects,
@@ -126,32 +128,31 @@ public abstract class Server {
      * NPoT (non-power-of-two) dimensions are always supported. Compressed format are
      * supported.
      *
-     * @param width       the width of the texture to be created
-     * @param height      the height of the texture to be created
-     * @param format      the backend format for the texture
-     * @param mipmapped   should the texture be allocated with mipmaps
-     * @param budgeted    should the texture count against the resource cache budget
-     * @param isProtected should the texture be created as protected
+     * @param width  the width of the texture to be created
+     * @param height the height of the texture to be created
+     * @param format the backend format for the texture
      * @return the texture object if successful, otherwise nullptr
+     * @see Engine#SurfaceFlag_Mipmapped
+     * @see Engine#SurfaceFlag_Budgeted
+     * @see Engine#SurfaceFlag_Protected
      */
     @Nullable
     @SharedPtr
-    @VisibleForTesting
     public final Texture createTexture(int width, int height,
                                        BackendFormat format,
-                                       boolean mipmapped,
-                                       boolean budgeted,
-                                       boolean isProtected) {
+                                       int surfaceFlags) {
         if (format.isCompressed()) {
             return null;
         }
-        if (!mCaps.validateTextureParams(width, height, format)) {
+        if (!mCaps.validateSurfaceParams(width, height, format, 1, surfaceFlags)) {
             return null;
         }
-        int levelCount = mipmapped ? 32 - Integer.numberOfLeadingZeros(Math.max(width, height)) : 1;
+        int levelCount = (surfaceFlags & SurfaceFlag_Mipmapped) != 0
+                ? 32 - Integer.numberOfLeadingZeros(Math.max(width, height))
+                : 1;
         handleDirtyContext();
         final Texture texture = onCreateTexture(width, height, format,
-                levelCount, budgeted, isProtected);
+                levelCount,surfaceFlags);
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
@@ -171,8 +172,7 @@ public abstract class Server {
     protected abstract Texture onCreateTexture(int width, int height,
                                                BackendFormat format,
                                                int levelCount,
-                                               boolean budgeted,
-                                               boolean isProtected);
+                                               int surfaceFlags);
 
     /**
      * Finds or creates a render target that promotes the texture to be renderable with the
@@ -192,10 +192,10 @@ public abstract class Server {
     public final RenderTarget findOrCreateRenderTarget(@SharedPtr Texture texture,
                                                        int sampleCount) {
         assert sampleCount > 0;
-        assert mCaps.validateRenderTargetParams(
+        assert mCaps.validateSurfaceParams(
                 texture.mWidth, texture.mHeight,
                 texture.getBackendFormat(),
-                sampleCount);
+                sampleCount, texture.getFlags());
         sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, texture.getBackendFormat());
         assert sampleCount > 0;
         handleDirtyContext();
@@ -282,13 +282,13 @@ public abstract class Server {
      * render target's stencil buffer should be ignored.
      *
      * @param renderTarget
-     * @param withStencil
+     * @param useStencil
      * @param origin
      * @param bounds
      * @return
      */
     public abstract OpsRenderPass getOpsRenderPass(RenderTarget renderTarget,
-                                                   boolean withStencil,
+                                                   boolean useStencil,
                                                    int origin,
                                                    Rect2i bounds,
                                                    int colorLoadOp, int colorStoreOp,

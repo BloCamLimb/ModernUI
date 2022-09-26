@@ -23,6 +23,8 @@ import icyllis.arcticgi.core.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import static icyllis.arcticgi.engine.Engine.SurfaceFlag_Renderable;
+
 /**
  * Represents the capabilities of a Context.
  * <p>
@@ -389,15 +391,15 @@ public abstract class Caps {
 
         // There are known problems with 24 vs 32 bit BPP with this color type. Just fail for now if
         // using a transfer buffer.
-        if (colorType == ImageInfo.COLOR_RGB_888X) {
+        if (colorType == ImageInfo.ColorType_RGB_888x) {
             transferOffsetAlignment = 0;
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
         // Make those aligned reads out of the buffer even if the underlying API doesn't require it.
-        int channelFlags = EngineTypes.colorTypeChannelFlags(colorType);
+        int channelFlags = Engine.colorTypeChannelFlags(colorType);
         if ((channelFlags == Color.RGBA_CHANNEL_FLAGS || channelFlags == Color.RGB_CHANNEL_FLAGS ||
                 channelFlags == Color.ALPHA_CHANNEL_FLAG || channelFlags == Color.GRAY_CHANNEL_FLAG) &&
-                ImageInfo.bytesPerPixel(colorType) == 4) {
+                Engine.colorTypeBytesPerPixel(colorType) == 4) {
             switch ((int) (transferOffsetAlignment & 0b11)) {
                 // offset alignment already a multiple of 4
                 case 0:
@@ -526,52 +528,42 @@ public abstract class Caps {
     }
 
     /**
-     * If a texture can be created with these params.
+     * If a texture or render target can be created with these params.
      */
-    public final boolean validateTextureParams(int width, int height, BackendFormat format) {
+    public final boolean validateSurfaceParams(int width, int height,
+                                               BackendFormat format,
+                                               int sampleCount,
+                                               int surfaceFlags) {
         if (width < 1 || height < 1) {
             return false;
         }
-        final int maxSize = maxTextureSize();
-        if (width > maxSize || height > maxSize) {
+        if (!isFormatTexturable(format)) {
             return false;
         }
-        if (format.textureType() != EngineTypes.TextureType_None) {
-            return isFormatTexturable(format);
-        } else {
-            return true;
-        }
-    }
-
-    /**
-     * If a render target can be created with these params. You should check if sampleCount > 0 first.
-     */
-    public final boolean validateRenderTargetParams(int width, int height, BackendFormat format,
-                                                    int sampleCount) {
-        if (width < 1 || height < 1) {
-            return false;
-        }
-        final int maxSize = maxRenderTargetSize();
-        if (width > maxSize || height > maxSize) {
-            return false;
-        }
-        if (format.textureType() != EngineTypes.TextureType_None) {
-            if (!isFormatTexturable(format)) {
+        if ((surfaceFlags & SurfaceFlag_Renderable) != 0) {
+            final int maxSize = maxRenderTargetSize();
+            if (width > maxSize || height > maxSize) {
                 return false;
             }
+            return isFormatRenderable(format, sampleCount);
+        } else {
+            final int maxSize = maxTextureSize();
+            if (width > maxSize || height > maxSize) {
+                return false;
+            }
+            return sampleCount == 1;
         }
-        return isFormatRenderable(format, sampleCount);
     }
 
     public final boolean isFormatCompatible(int colorType, BackendFormat format) {
-        if (colorType == ImageInfo.COLOR_UNKNOWN) {
+        if (colorType == ImageInfo.ColorType_Unknown) {
             return false;
         }
         int compression = format.getCompressionType();
-        if (compression != Image.COMPRESSION_NONE) {
+        if (compression != ImageInfo.COMPRESSION_TYPE_NONE) {
             return colorType == (DataUtils.compressionTypeIsOpaque(compression) ?
-                    ImageInfo.COLOR_RGB_888X :
-                    ImageInfo.COLOR_RGBA_8888);
+                    ImageInfo.ColorType_RGB_888x :
+                    ImageInfo.ColorType_RGBA_8888);
         }
         return onFormatCompatible(colorType, format);
     }
@@ -584,7 +576,7 @@ public abstract class Caps {
     @Nullable
     public final BackendFormat getDefaultBackendFormat(int colorType, boolean renderable) {
         // Unknown color types are always an invalid format, so early out before calling virtual.
-        if (colorType == ImageInfo.COLOR_UNKNOWN) {
+        if (colorType == ImageInfo.ColorType_Unknown) {
             return null;
         }
         BackendFormat format = onDefaultBackendFormat(colorType);
@@ -597,7 +589,7 @@ public abstract class Caps {
         // Currently, we require that it be possible to write pixels into the "default" format. Perhaps,
         // that could be a separate requirement from the caller. It seems less necessary if
         // renderability was requested.
-        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.COLOR_UNKNOWN) {
+        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.ColorType_Unknown) {
             return null;
         }
         if (renderable && !isFormatRenderable(colorType, format, 1)) {
@@ -616,6 +608,23 @@ public abstract class Caps {
     public abstract ProgramDesc makeDesc(ProgramDesc desc,
                                          RenderTarget renderTarget,
                                          final ProgramInfo programInfo);
+
+    public final short getReadSwizzle(BackendFormat format, int colorType) {
+        int compression = format.getCompressionType();
+        if (compression != ImageInfo.COMPRESSION_TYPE_NONE) {
+            if (colorType == ImageInfo.ColorType_RGB_888x || colorType == ImageInfo.ColorType_RGBA_8888) {
+                return Swizzle.RGBA;
+            }
+            assert false;
+            return Swizzle.RGBA;
+        }
+
+        return onGetReadSwizzle(format, colorType);
+    }
+
+    protected abstract short onGetReadSwizzle(BackendFormat format, int colorType);
+
+    public abstract short getWriteSwizzle(BackendFormat format, int colorType);
 
     protected final void finishInitialization(ContextOptions options) {
         mShaderCaps.applyOptionsOverrides(options);

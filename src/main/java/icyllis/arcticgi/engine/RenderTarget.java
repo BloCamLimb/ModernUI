@@ -19,6 +19,7 @@
 package icyllis.arcticgi.engine;
 
 import icyllis.arcticgi.core.SharedPtr;
+import icyllis.arcticgi.opengl.GLRenderTarget;
 
 import javax.annotation.Nonnull;
 
@@ -33,9 +34,9 @@ import javax.annotation.Nonnull;
  * is controlled by {@link ResourceAllocator}.
  * <p>
  * Use {@link ResourceProvider} to obtain {@link RenderTarget RenderTargets} directly. Use
- * {@link RenderTargetProxy} and {@link TextureRenderTargetProxy} for deferred operations.
+ * {@link RenderSurfaceProxy} and {@link RenderTextureProxy} for deferred operations.
  */
-public abstract class RenderTarget extends ManagedResource {
+public abstract class RenderTarget extends ManagedResource implements Surface {
 
     private final int mWidth;
     private final int mHeight;
@@ -48,26 +49,15 @@ public abstract class RenderTarget extends ManagedResource {
      * wrapping OpenGL default framebuffer (framebuffer id 0).
      */
     @SharedPtr
-    protected Surface mStencilBuffer;
+    protected Attachment mStencilBuffer;
 
     // determined by subclass constructors
-    protected int mFlags;
-
-    private final int mUniqueID;
+    protected int mSurfaceFlags;
 
     protected RenderTarget(int width, int height, int sampleCount) {
         mWidth = width;
         mHeight = height;
         mSampleCount = sampleCount;
-        mUniqueID = GpuResource.createUniqueID();
-    }
-
-    /**
-     * Gets an id that is unique for this Resource object. It is static in that it does
-     * not change when the content of the Resource object changes. This will never return 0.
-     */
-    public final int getUniqueID() {
-        return mUniqueID;
     }
 
     /**
@@ -85,7 +75,9 @@ public abstract class RenderTarget extends ManagedResource {
     }
 
     /**
-     * Returns the number of samples/pixel in color buffers (One if non-MSAA).
+     * Returns the number of samples per pixel in color buffers (One if non-MSAA).
+     *
+     * @return the number of samples, greater than (multisample) or equal to one
      */
     public final int getSampleCount() {
         return mSampleCount;
@@ -95,7 +87,7 @@ public abstract class RenderTarget extends ManagedResource {
      * Describes the backend format of color buffers.
      * <p>
      * Unlike {@link BackendRenderTarget#getBackendFormat()} which returns texture type of NONE.
-     * This method is always {@link EngineTypes#TextureType_2D}.
+     * This method is always {@link Engine#TextureType_2D}.
      */
     @Nonnull
     public abstract BackendFormat getBackendFormat();
@@ -116,7 +108,7 @@ public abstract class RenderTarget extends ManagedResource {
     /**
      * Get the dynamic or implicit stencil buffer, or null if no stencil.
      */
-    public final Surface getStencilBuffer() {
+    public final Attachment getStencilBuffer() {
         return mStencilBuffer;
     }
 
@@ -147,57 +139,5 @@ public abstract class RenderTarget extends ManagedResource {
      *
      * @see ResourceProvider
      */
-    protected abstract void attachStencilBuffer(@SharedPtr Surface stencilBuffer);
-
-    /**
-     * Compute a {@link RenderTarget} key. Parameters are the same as Surface key, just
-     * class types are different. RenderTarget key may be used in resource allocator.
-     *
-     * @return a new scratch key
-     * @see Surface#computeScratchKey()
-     */
-    @Nonnull
-    public static ResourceKey computeScratchKey(BackendFormat format,
-                                                int width, int height,
-                                                int sampleCount,
-                                                boolean mipmapped,
-                                                boolean isProtected,
-                                                Key key) {
-        assert width > 0 && height > 0;
-        assert sampleCount > 0;
-        // we can have both multisample and mipmapped as key for render targets
-        key.mWidth = width;
-        key.mHeight = height;
-        key.mFormat = format.getFormatKey();
-        key.mFlags = (mipmapped ? 1 : 0) | (isProtected ? 2 : 0) | (sampleCount << 2);
-        return key;
-    }
-
-    public static class Key extends ResourceKey {
-
-        int mWidth;
-        int mHeight;
-        int mFormat;
-        int mFlags;
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            Key key = (Key) o;
-            if (mWidth != key.mWidth) return false;
-            if (mHeight != key.mHeight) return false;
-            if (mFormat != key.mFormat) return false;
-            return mFlags == key.mFlags;
-        }
-
-        @Override
-        public int hashCode() {
-            int result = mWidth;
-            result = 31 * result + mHeight;
-            result = 31 * result + mFormat;
-            result = 31 * result + mFlags;
-            return result;
-        }
-    }
+    protected abstract void attachStencilBuffer(@SharedPtr Attachment stencilBuffer);
 }

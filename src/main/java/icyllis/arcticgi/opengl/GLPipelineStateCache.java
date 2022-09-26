@@ -36,8 +36,8 @@ public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
         mCache = new Object2ObjectLinkedOpenCustomHashMap<>(runtimeProgramCacheSize, ProgramDesc.HASH_STRATEGY);
     }
 
-    public void abandon() {
-        mCache.values().forEach(GLPipelineState::abandon);
+    public void discard() {
+        mCache.values().forEach(GLPipelineState::discard);
         reset();
     }
 

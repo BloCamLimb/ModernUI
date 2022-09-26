@@ -117,10 +117,10 @@ public abstract class RefCnt implements AutoCloseable {
      * already reached zero.
      */
     public final void ref() {
-        // std::memory_order_seq_cst, maybe relaxed?
-        assert mRefCnt > 0;
-        // no barrier required, stronger than std::memory_order_relaxed
-        REF_CNT.getAndAddRelease(this, 1);
+        // stronger than std::memory_order_relaxed
+        if ((int) REF_CNT.getAndAddAcquire(this, 1) < 1) {
+            throw new IllegalStateException("Reference count reached zero");
+        }
     }
 
     /**
@@ -129,8 +129,6 @@ public abstract class RefCnt implements AutoCloseable {
      * if the reference count has already reached zero.
      */
     public final void unref() {
-        // std::memory_order_seq_cst, maybe relaxed?
-        assert mRefCnt > 0;
         // stronger than std::memory_order_acq_rel
         if ((int) REF_CNT.getAndAdd(this, -1) == 1) {
             dispose();

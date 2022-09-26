@@ -104,7 +104,7 @@ public class GLUniformHandler extends UniformHandler {
     protected int addSampler(BackendFormat backendFormat, int samplerState, short swizzle, String name) {
         assert (name != null && !name.isEmpty());
         // currently we only support sampler2D
-        assert (backendFormat.textureType() == EngineTypes.TextureType_2D);
+        assert (backendFormat.getTextureType() == Engine.TextureType_2D);
 
         String resolvedName = mProgramBuilder.nameVariable('u', name);
 
@@ -120,7 +120,7 @@ public class GLUniformHandler extends UniformHandler {
                 ShaderVar.NonArray,
                 layoutQualifier,
                 "");
-        tempInfo.mVisibility = EngineTypes.Fragment_ShaderFlag;
+        tempInfo.mVisibility = Engine.Fragment_ShaderFlag;
         tempInfo.mOwner = null;
         tempInfo.mRawName = name;
 

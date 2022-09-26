@@ -25,9 +25,9 @@ import javax.annotation.Nonnull;
 /**
  * Represents Vulkan 2D images, can be used as textures and attachments.
  */
-public final class VkImage extends Texture {
+public final class VkTexture extends Texture {
 
-    public VkImage(VkServer server, int width, int height) {
+    public VkTexture(VkServer server, int width, int height) {
         super(server, width, height);
     }
 
@@ -53,16 +53,6 @@ public final class VkImage extends Texture {
     }
 
     @Override
-    public int getSampleCount() {
-        return 0;
-    }
-
-    @Override
-    public boolean isProtected() {
-        return false;
-    }
-
-    @Override
     public int getTextureType() {
         return 0;
     }
@@ -71,11 +61,6 @@ public final class VkImage extends Texture {
     @Override
     public BackendTexture getBackendTexture() {
         return null;
-    }
-
-    @Override
-    public boolean isMipmapped() {
-        return false;
     }
 
     @Override

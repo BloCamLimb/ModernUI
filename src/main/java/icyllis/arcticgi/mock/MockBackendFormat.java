@@ -18,13 +18,12 @@
 
 package icyllis.arcticgi.mock;
 
-import icyllis.arcticgi.core.Image;
 import icyllis.arcticgi.core.ImageInfo;
 import icyllis.arcticgi.engine.BackendFormat;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 
 public class MockBackendFormat extends BackendFormat {
 
@@ -52,12 +51,12 @@ public class MockBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int backend() {
+    public int getBackend() {
         return Mock;
     }
 
     @Override
-    public int textureType() {
+    public int getTextureType() {
         return TextureType_2D;
     }
 
@@ -74,7 +73,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public boolean isSRGB() {
-        return mCompressionType == Image.COMPRESSION_NONE && mColorType == ImageInfo.COLOR_RGBA_8888_SRGB;
+        return mCompressionType == ImageInfo.COMPRESSION_TYPE_NONE && mColorType == ImageInfo.ColorType_RGBA_8888_SRGB;
     }
 
     @Override
@@ -84,12 +83,12 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public int getBytesPerBlock() {
-        if (mCompressionType != Image.COMPRESSION_NONE) {
+        if (mCompressionType != ImageInfo.COMPRESSION_TYPE_NONE) {
             return 8; // 1 * ETC1Block or BC1Block
         } else if (mIsStencilFormat) {
             return 4;
         } else {
-            return ImageInfo.bytesPerPixel(mColorType);
+            return colorTypeBytesPerPixel(mColorType);
         }
     }
 
@@ -99,7 +98,7 @@ public class MockBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getFormatKey() {
+    public int getKey() {
         return mColorType;
     }
 }

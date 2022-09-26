@@ -26,39 +26,32 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
-import java.util.concurrent.atomic.AtomicInteger;
 
-import static icyllis.arcticgi.engine.EngineTypes.*;
+import static icyllis.arcticgi.engine.Engine.*;
 
 /**
  * Base class for operating server memory objects that can be kept in the
  * {@link ResourceCache}. Such resources will have a large memory allocation.
- * To be exact:
- * <ol>
- *   <li>OpenGL:
- *     <ul>
- *       <li>GLBuffer</li>
- *       <li>GLTexture</li>
- *       <li>GLRenderbuffer</li>
- *     </ul>
- *   </li>
- *   <li>Vulkan:
- *     <ul>
- *       <li>VkBuffer</li>
- *       <li>VkImage</li>
- *     </ul>
- *   </li>
- * </ol>
+ * Possible implementations:
+ * <ul>
+ *   <li>GLBuffer</li>
+ *   <li>GLTexture</li>
+ *   <li>GLRenderbuffer</li>
+ *   <li>VkBuffer</li>
+ *   <li>VkImage</li>
+ * </ul>
  * Register resources into the cache to track their GPU memory usage. Since all
- * instances will always be strong referenced, an explicit ref/unref is required
- * to determine whether to recycle/release them or not.
+ * Java objects will always be strong referenced, an explicit {@link #ref()} and
+ * {@link #unref()} is required to determine if they need to be recycled or not.
+ * When used as smart pointers, they need to be annotated as {@link SharedPtr},
+ * otherwise they tend to be used as raw pointers (no ref/unref calls should be
+ * made). Java object's reference, or identity, can be used as unique identifiers.
  * <p>
- * Each GpuResource object should have immutable memory allocation.
- * <p>
- * Use {@link ResourceProvider} to obtain <code>GpuResource</code> objects.
+ * Each {@link Resource} should be created with immutable GPU memory allocation.
+ * Use {@link ResourceProvider} to obtain {@link Resource} objects.
  */
 @NotThreadSafe
-public abstract class GpuResource {
+public abstract class Resource {
 
     private static final VarHandle REF_CNT;
     private static final VarHandle COMMAND_BUFFER_USAGE_CNT;
@@ -66,8 +59,8 @@ public abstract class GpuResource {
     static {
         MethodHandles.Lookup lookup = MethodHandles.lookup();
         try {
-            REF_CNT = lookup.findVarHandle(GpuResource.class, "mRefCnt", int.class);
-            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(GpuResource.class, "mCommandBufferUsageCnt", int.class);
+            REF_CNT = lookup.findVarHandle(Resource.class, "mRefCnt", int.class);
+            COMMAND_BUFFER_USAGE_CNT = lookup.findVarHandle(Resource.class, "mCommandBufferUsageCnt", int.class);
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -78,29 +71,14 @@ public abstract class GpuResource {
     @SuppressWarnings("FieldMayBeFinal")
     private volatile int mCommandBufferUsageCnt = 0;
 
-    private static final AtomicInteger sNextID = new AtomicInteger(1);
-
-    /**
-     * Generates a unique ID from the resource pool. 0 is reserved.
-     */
-    static int createUniqueID() {
-        for (; ; ) {
-            final int value = sNextID.get();
-            final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
-            if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
-                return value;
-            }
-        }
-    }
-
-    static final PriorityQueue.Accessor<GpuResource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
+    static final PriorityQueue.Accessor<Resource> QUEUE_ACCESSOR = new PriorityQueue.Accessor<>() {
         @Override
-        public void setIndex(GpuResource resource, int index) {
+        public void setIndex(Resource resource, int index) {
             resource.mCacheIndex = index;
         }
 
         @Override
-        public int getIndex(GpuResource resource) {
+        public int getIndex(Resource resource) {
             return resource.mCacheIndex;
         }
     };
@@ -122,36 +100,35 @@ public abstract class GpuResource {
 
     private byte mBudgetType = BudgetType_None;
     private boolean mWrapped = false;
-    private final int mUniqueID;
 
-    public GpuResource(Server server) {
+    public Resource(Server server) {
         mServer = server;
-        mUniqueID = createUniqueID();
+        assert hashCode() == System.identityHashCode(this);
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T move(@SharedPtr T sp) {
+    public static <T extends Resource> T move(@SharedPtr T sp) {
         if (sp != null)
             sp.unref();
         return null;
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T move(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends Resource> T move(@SharedPtr T sp, @SharedPtr T that) {
         if (sp != null)
             sp.unref();
         return that;
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T create(@SharedPtr T that) {
+    public static <T extends Resource> T create(@SharedPtr T that) {
         if (that != null)
             that.ref();
         return that;
     }
 
     @SharedPtr
-    public static <T extends GpuResource> T create(@SharedPtr T sp, @SharedPtr T that) {
+    public static <T extends Resource> T create(@SharedPtr T sp, @SharedPtr T that) {
         if (sp != null)
             sp.unref();
         if (that != null)
@@ -287,14 +264,6 @@ public abstract class GpuResource {
     }
 
     /**
-     * Gets an id that is unique for this Resource object. It is static in that it does
-     * not change when the content of the Resource object changes. This will never return 0.
-     */
-    public final int getUniqueID() {
-        return mUniqueID;
-    }
-
-    /**
      * Retrieves the amount of server memory used by this resource in bytes. It is
      * approximate since we aren't aware of additional padding or copies made
      * by the driver.
@@ -312,18 +281,6 @@ public abstract class GpuResource {
     @Nullable
     public final Object getUniqueKey() {
         return mUniqueKey;
-    }
-
-    @Override
-    public final int hashCode() {
-        // identity
-        return super.hashCode();
-    }
-
-    @Override
-    public final boolean equals(Object o) {
-        // identity
-        return super.equals(o);
     }
 
     /**

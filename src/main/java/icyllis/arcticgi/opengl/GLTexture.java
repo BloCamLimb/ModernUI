@@ -25,6 +25,7 @@ import org.lwjgl.system.Platform;
 
 import javax.annotation.Nonnull;
 
+import static icyllis.arcticgi.engine.Engine.*;
 import static icyllis.arcticgi.opengl.GLCore.*;
 
 /**
@@ -51,11 +52,15 @@ public final class GLTexture extends Texture {
         mBackendTexture = new GLBackendTexture(width, height, info, new GLTextureParameters(), format);
         mOwnership = ownership;
 
-        if (glFormatIsCompressed(format.getGLFormat()) || format.textureType() == EngineTypes.TextureType_External) {
-            setReadOnly();
+        if (glFormatIsCompressed(format.getGLFormat()) || format.getTextureType() == TextureType_External) {
+            mFlags |= SurfaceFlag_ReadOnly;
         }
+        if (mBackendTexture.isMipmapped()) {
+            mFlags |= SurfaceFlag_Mipmapped;
+        }
+        mFlags |= SurfaceFlag_Renderable;
 
-        mMemorySize = computeSize(format, width, height, getSampleCount(), info.mLevelCount);
+        mMemorySize = computeSize(format, width, height, 1, info.mLevelCount);
         registerWithCache(budgeted);
     }
 
@@ -76,37 +81,23 @@ public final class GLTexture extends Texture {
         mOwnership = ownership;
 
         // compressed formats always set 'ioType' to READ
-        assert ioType == EngineTypes.IOType_Read || glFormatIsCompressed(format.getGLFormat());
-        if (ioType == EngineTypes.IOType_Read || format.textureType() == EngineTypes.TextureType_External) {
-            setReadOnly();
+        assert (ioType == IOType_Read || glFormatIsCompressed(format.getGLFormat()));
+        if (ioType == IOType_Read || format.getTextureType() == TextureType_External) {
+            mFlags |= SurfaceFlag_ReadOnly;
         }
+        if (mBackendTexture.isMipmapped()) {
+            mFlags |= SurfaceFlag_Mipmapped;
+        }
+        mFlags |= SurfaceFlag_Renderable;
 
-        mMemorySize = computeSize(format, width, height, getSampleCount(), info.mLevelCount);
+        mMemorySize = computeSize(format, width, height, 1, info.mLevelCount);
         registerWithCacheWrapped(cacheable);
-    }
-
-    /**
-     * We have no multisample textures, but multisample renderbuffers.
-     */
-    @Override
-    public int getSampleCount() {
-        return 1;
-    }
-
-    @Override
-    public boolean isMipmapped() {
-        return mBackendTexture.isMipmapped();
     }
 
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
         return mBackendTexture.getBackendFormat();
-    }
-
-    @Override
-    public boolean isProtected() {
-        return mBackendTexture.isProtected();
     }
 
     public int getTexture() {
