@@ -7,8 +7,8 @@ plugins {
 apply plugin: 'java'
 
 version = "${core_version}" as String
-group = 'icyllis.arcticgi'
-archivesBaseName = 'ArcticGI'
+group = 'icyllis.akashigi'
+archivesBaseName = 'AkashiGI'
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
@@ -87,7 +87,7 @@ java {
 jar {
     manifest {
         attributes(
-                "Specification-Title": "ArcticGI",
+                "Specification-Title": "AkashiGI",
                 "Specification-Vendor": "BloCamLimb",
                 "Specification-Version": "1",
                 "Implementation-Title": project.name,
@@ -142,11 +142,11 @@ publishing {
                 name = rootProject.name
                 packaging = 'pom'
                 scm {
-                    url = 'https://github.com/BloCamLimb/ArcticGI.git'
+                    url = 'https://github.com/BloCamLimb/AkashiGI.git'
                 }
                 issueManagement {
                     system = 'github'
-                    url = 'https://github.com/BloCamLimb/ArcticGI/issues'
+                    url = 'https://github.com/BloCamLimb/AkashiGI/issues'
                 }
                 licenses {
                     license {
