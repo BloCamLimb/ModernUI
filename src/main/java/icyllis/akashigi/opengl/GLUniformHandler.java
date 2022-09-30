@@ -63,18 +63,16 @@ public class GLUniformHandler extends UniformHandler {
                                           String name,
                                           int arrayCount) {
         assert (SLType.canBeUniformValue(type));
-        if (name.startsWith(RENDER_PREFIX)) {
-            return super.internalAddUniformArray(owner,
-                    visibility,
-                    type,
-                    name,
-                    arrayCount);
-        }
-        // ensure no placeholder
         assert (visibility != 0);
 
-        assert (!name.startsWith(RENDER_PREFIX));
-        String resolvedName = mProgramBuilder.nameVariable('u', name);
+        assert (!name.contains("__"));
+        String resolvedName;
+        if (name.startsWith(NO_MANGLE_PREFIX)) {
+            resolvedName = name;
+        } else {
+            resolvedName = mProgramBuilder.nameVariable('u', name);
+        }
+        assert (!resolvedName.contains("__"));
 
         // we can only use std140 layout in OpenGL
         int offset = getAlignedOffset(mCurrentOffset, type, arrayCount, Std140Layout);
@@ -103,8 +101,6 @@ public class GLUniformHandler extends UniformHandler {
     @Override
     protected int addSampler(BackendFormat backendFormat, int samplerState, short swizzle, String name) {
         assert (name != null && !name.isEmpty());
-        // currently we only support sampler2D
-        assert (!backendFormat.isExternal());
 
         String resolvedName = mProgramBuilder.nameVariable('u', name);
 
@@ -145,26 +141,9 @@ public class GLUniformHandler extends UniformHandler {
     protected void appendUniformDecls(int visibility, StringBuilder out) {
         assert (visibility != 0);
 
-        appendBlockDecl(visibility, out, mRenderUniforms, RENDER_BINDING, RENDER_BLOCK_NAME);
-        appendBlockDecl(visibility, out, mUniforms, EFFECT_BINDING, EFFECT_BLOCK_NAME);
-
-        for (var sampler : mSamplers) {
-            assert (sampler.mVariable.getType() == SLType.Sampler2D);
-            if ((sampler.mVisibility & visibility) != 0) {
-                sampler.mVariable.appendDecl(out);
-                out.append(";\n");
-            }
-        }
-    }
-
-    private static void appendBlockDecl(int visibility,
-                                        StringBuilder out,
-                                        ArrayList<UniformInfo> uniforms,
-                                        int binding,
-                                        String blockName) {
         boolean firstMember = false;
         boolean firstVisible = false;
-        for (var uniform : uniforms) {
+        for (var uniform : mUniforms) {
             assert (SLType.canBeUniformValue(uniform.mVariable.getType()));
             if (!firstMember) {
                 // Check to make sure we are starting our offset at 0 so the offset qualifier we
@@ -175,9 +154,9 @@ public class GLUniformHandler extends UniformHandler {
             if ((uniform.mVisibility & visibility) != 0) {
                 if (!firstVisible) {
                     out.append("layout(std140, binding = ");
-                    out.append(binding);
+                    out.append(UNIFORM_BINDING);
                     out.append(") uniform ");
-                    out.append(blockName);
+                    out.append(UNIFORM_BLOCK_NAME);
                     out.append(" {\n");
                     firstVisible = true;
                 }
@@ -187,6 +166,14 @@ public class GLUniformHandler extends UniformHandler {
         }
         if (firstVisible) {
             out.append("};\n");
+        }
+
+        for (var sampler : mSamplers) {
+            assert (sampler.mVariable.getType() == SLType.Sampler2D);
+            if ((sampler.mVisibility & visibility) != 0) {
+                sampler.mVariable.appendDecl(out);
+                out.append(";\n");
+            }
         }
     }
 }

@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
 import java.util.ArrayList;
 
 import static icyllis.akashigi.engine.Engine.*;
-import static icyllis.akashigi.engine.shading.ProgramDataManager.UniformHandle;
+import static icyllis.akashigi.engine.shading.UniformHandler.UniformHandle;
 import static icyllis.akashigi.engine.shading.UniformHandler.SamplerHandle;
 
 public abstract class ProgramBuilder {
@@ -49,8 +49,8 @@ public abstract class ProgramBuilder {
     public final VertexShaderBuilder mVS;
     public final FragmentShaderBuilder mFS;
 
-    public final ProgramDesc mDesc;
-    public final ProgramInfo mProgramInfo;
+    public final PipelineDesc mDesc;
+    public final PipelineInfo mPipelineInfo;
 
     /**
      * Built-in uniform handles.
@@ -63,9 +63,9 @@ public abstract class ProgramBuilder {
     // This is used to check that we don't exceed the allowable number of resources in a shader.
     private int mNumFragmentSamplers;
 
-    public ProgramBuilder(ProgramDesc desc, ProgramInfo programInfo) {
+    public ProgramBuilder(PipelineDesc desc, PipelineInfo pipelineInfo) {
         mDesc = desc;
-        mProgramInfo = programInfo;
+        mPipelineInfo = pipelineInfo;
         mVS = new VertexShaderBuilder(this);
         mFS = new FragmentShaderBuilder(this);
     }
@@ -150,7 +150,7 @@ public abstract class ProgramBuilder {
     }
 
     private boolean emitAndInstallGeomProc(String[] output) {
-        final GeometryProcessor geomProc = mProgramInfo.geomProc();
+        final GeometryProcessor geomProc = mPipelineInfo.geomProc();
 
         // Program builders have a bit of state we need to clear with each effect
         advanceStage();
@@ -166,7 +166,7 @@ public abstract class ProgramBuilder {
                 null,
                 Vertex_ShaderFlag,
                 SLType.Vec4,
-                UniformHandler.ORTHO_PROJ_NAME);
+                UniformHandler.PROJECTION_NAME);
 
         mFS.codeAppendf("// Stage %d, %s\n", mStageIndex, geomProc.name());
         mVS.codeAppendf("// Geometry Processor %s\n", geomProc.name());
@@ -175,15 +175,14 @@ public abstract class ProgramBuilder {
         mGPImpl = geomProc.makeProgramImpl(shaderCaps());
 
         @SamplerHandle
-        int[] texSamplers = new int[geomProc.numTextureSamplers()];
-        for (int i = 0; i < geomProc.numTextureSamplers(); i++) {
-            String name = "TextureSampler_" + i;
-            final var sampler = geomProc.textureSampler(i);
-            texSamplers[i] = emitSampler(sampler.backendFormat(),
+        int texSampler = INVALID_RESOURCE_HANDLE;
+        var sampler = geomProc.textureSampler();
+        if (sampler != null) {
+            texSampler = emitSampler(sampler.backendFormat(),
                     sampler.samplerState(),
                     sampler.swizzle(),
-                    name);
-            if (texSamplers[i] == INVALID_RESOURCE_HANDLE) {
+                    "TextureSampler0");
+            if (texSampler == INVALID_RESOURCE_HANDLE) {
                 return false;
             }
         }
@@ -197,7 +196,7 @@ public abstract class ProgramBuilder {
                 geomProc,
                 output[0],
                 output[1],
-                texSamplers
+                texSampler
         );
 
         return true;

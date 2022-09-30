@@ -19,46 +19,60 @@
 package icyllis.akashigi.engine;
 
 import icyllis.akashigi.core.*;
-import icyllis.akashigi.engine.shading.ProgramDataManager;
+import icyllis.akashigi.engine.shading.UniformHandler.UniformHandle;
 
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
- * Subclass of {@link ProgramDataManager} used to store uniforms for a program in a CPU buffer that
+ * Manages the resources used by a shader program. The resources are objects the program uses
+ * to communicate with the application code.
+ * <p>
+ * The {@link UniformDataManager} is used to store uniforms for a program in a CPU buffer that
  * can be uploaded to a UBO. This currently assumes uniform layouts that are compatible with
  * OpenGL, Vulkan, and D3D12. It could be used more broadly if this aspect was made configurable.
  * <p>
- * The default implementation assumes uniforms are std140 layout. For vulkan, if push constants is
- * used, subclasses should be configured to std430 layout.
- * <p>
- * Uniforms here means that they can be uploaded to UBO, and does not include uniforms such as
- * samplers, which are uploaded separately from this class.
+ * The default implementation assumes the block uses std140 layout. For Vulkan, if push-constants
+ * is used, subclasses should be configured to std430 layout. Uniforms here means that they can
+ * be uploaded to UBO, and does not include opaque types such as samplers, which are updated
+ * separately from this class.
  *
  * @see icyllis.akashigi.engine.shading.UniformHandler
  */
-public abstract class UniformDataManager extends RefCnt implements ProgramDataManager {
+public abstract class UniformDataManager extends RefCnt {
 
-    // lower 24 bits: offset, higher 8 bits: SLType (debug)
+    // lower 24 bits: offset in bytes
+    // higher 8 bits: SLType (assert)
     protected final int[] mUniforms;
+
     protected final int mUniformSize;
     protected final long mUniformData;
+
     protected boolean mUniformsDirty;
 
     /**
+     * Constructor.
+     *
      * @param uniformCount the number of uniforms
      * @param uniformSize  the uniform block size in bytes
      */
     public UniformDataManager(int uniformCount, int uniformSize) {
-        assert (uniformCount >= 1 && uniformSize >= Float.BYTES);
+        assert (uniformCount >= 1 && uniformSize >= 4);
         mUniforms = new int[uniformCount];
         mUniformSize = uniformSize;
-        mUniformData = nmemAlignedAllocChecked(Float.BYTES, uniformSize);
+        mUniformData = nmemAlignedAllocChecked(4, uniformSize);
         mUniformsDirty = false;
         // subclasses fill in the uniforms in their constructor
     }
 
     @Override
-    public void set1i(int u, int v0) {
+    protected void dispose() {
+        nmemAlignedFree(mUniformData);
+    }
+
+    /**
+     * Specifies the value of an int, uint or bool uniform variable for the current program object.
+     */
+    public void set1i(@UniformHandle int u, int v0) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Int ||
                 (uni >> 24) == SLType.UInt ||
@@ -67,8 +81,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memPutInt(buffer, v0);
     }
 
-    @Override
-    public void set1iv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single int, uint or bool uniform variable or an int, uint or bool
+     * uniform variable array for the current program object.
+     *
+     * @param count the number of elements that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array, and 1 or more if it is an array
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void set1iv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Int ||
@@ -87,8 +109,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set1iv(int u, int offset, int count, int[] value) {
+    /**
+     * Array version of {@link #set1iv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void set1iv(@UniformHandle int u, int offset, int count, int[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Int ||
@@ -105,16 +131,26 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set1f(int u, float v0) {
+    /**
+     * Specifies the value of a float uniform variable for the current program object.
+     */
+    public void set1f(@UniformHandle int u, float v0) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Float);
         long buffer = getBufferPtrAndMarkDirty(uni);
         memPutFloat(buffer, v0);
     }
 
-    @Override
-    public void set1fv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single float uniform variable or a float uniform variable array
+     * for the current program object.
+     *
+     * @param count the number of elements that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array, and 1 or more if it is an array
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void set1fv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Float);
@@ -131,8 +167,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set1fv(int u, int offset, int count, float[] value) {
+    /**
+     * Array version of {@link #set1fv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void set1fv(@UniformHandle int u, int offset, int count, float[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Float);
@@ -147,8 +187,10 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set2i(int u, int v0, int v1) {
+    /**
+     * Specifies the value of an ivec2, uvec2 or bvec2 uniform variable for the current program object.
+     */
+    public void set2i(@UniformHandle int u, int v0, int v1) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.IVec2 ||
                 (uni >> 24) == SLType.UVec2 ||
@@ -158,8 +200,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memPutInt(buffer + Float.BYTES, v1);
     }
 
-    @Override
-    public void set2iv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single ivec2, uvec2 or bvec2  uniform variable or an ivec2, uvec2 or bvec2
+     * uniform variable array for the current program object.
+     *
+     * @param count the number of elements that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array, and 1 or more if it is an array
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void set2iv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.IVec2 ||
@@ -178,8 +228,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set2iv(int u, int offset, int count, int[] value) {
+    /**
+     * Array version of {@link #set2iv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void set2iv(@UniformHandle int u, int offset, int count, int[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.IVec2 ||
@@ -198,8 +252,10 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set2f(int u, float v0, float v1) {
+    /**
+     * Specifies the value of a vec2 uniform variable for the current program object.
+     */
+    public void set2f(@UniformHandle int u, float v0, float v1) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Vec2);
         long buffer = getBufferPtrAndMarkDirty(uni);
@@ -207,8 +263,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memPutFloat(buffer + Float.BYTES, v1);
     }
 
-    @Override
-    public void set2fv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single vec2 uniform variable or a vec2 uniform variable array
+     * for the current program object.
+     *
+     * @param count the number of elements that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array, and 1 or more if it is an array
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void set2fv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Vec2);
@@ -225,8 +289,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set2fv(int u, int offset, int count, float[] value) {
+    /**
+     * Array version of {@link #set2fv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void set2fv(@UniformHandle int u, int offset, int count, float[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Vec2);
@@ -243,8 +311,10 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set3i(int u, int v0, int v1, int v2) {
+    /**
+     * Specifies the value of an ivec3, uvec3 or bvec3 uniform variable for the current program object.
+     */
+    public void set3i(@UniformHandle int u, int v0, int v1, int v2) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.IVec3 ||
                 (uni >> 24) == SLType.UVec3 ||
@@ -255,8 +325,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memPutInt(buffer + 2 * Float.BYTES, v2);
     }
 
-    @Override
-    public void set3iv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single ivec3, uvec3 or bvec3 uniform variable or an ivec3, uvec3 or bvec3
+     * uniform variable array for the current program object.
+     *
+     * @param count the number of elements that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array, and 1 or more if it is an array
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void set3iv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.IVec3 ||
@@ -276,8 +354,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set3iv(int u, int offset, int count, int[] value) {
+    /**
+     * Array version of {@link #set3iv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void set3iv(@UniformHandle int u, int offset, int count, int[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.IVec3 ||
@@ -297,8 +379,10 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set3f(int u, float v0, float v1, float v2) {
+    /**
+     * Specifies the value of a vec3 uniform variable for the current program object.
+     */
+    public void set3f(@UniformHandle int u, float v0, float v1, float v2) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Vec3);
         long buffer = getBufferPtrAndMarkDirty(uni);
@@ -307,8 +391,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memPutFloat(buffer + 2 * Float.BYTES, v2);
     }
 
-    @Override
-    public void set3fv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single vec3 uniform variable or a vec3 uniform variable array
+     * for the current program object.
+     *
+     * @param count the number of elements that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array, and 1 or more if it is an array
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void set3fv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Vec3);
@@ -326,8 +418,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set3fv(int u, int offset, int count, float[] value) {
+    /**
+     * Array version of {@link #set3fv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void set3fv(@UniformHandle int u, int offset, int count, float[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Vec3);
@@ -345,8 +441,10 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set4i(int u, int v0, int v1, int v2, int v3) {
+    /**
+     * Specifies the value of an ivec4, uvec4 or bvec4 uniform variable for the current program object.
+     */
+    public void set4i(@UniformHandle int u, int v0, int v1, int v2, int v3) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.IVec4 ||
                 (uni >> 24) == SLType.UVec4 ||
@@ -358,8 +456,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memPutInt(buffer + 3 * Float.BYTES, v3);
     }
 
-    @Override
-    public void set4iv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single ivec4, uvec4 or bvec4 uniform variable or an ivec4, uvec4 or bvec4
+     * uniform variable array for the current program object.
+     *
+     * @param count the number of elements that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array, and 1 or more if it is an array
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void set4iv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.IVec4 ||
@@ -369,8 +475,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memCopy(value, buffer, count * 4L * Float.BYTES);
     }
 
-    @Override
-    public void set4iv(int u, int offset, int count, int[] value) {
+    /**
+     * Array version of {@link #set4iv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void set4iv(@UniformHandle int u, int offset, int count, int[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.IVec4 ||
@@ -383,8 +493,10 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void set4f(int u, float v0, float v1, float v2, float v3) {
+    /**
+     * Specifies the value of a vec4 uniform variable for the current program object.
+     */
+    public void set4f(@UniformHandle int u, float v0, float v1, float v2, float v3) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Vec4);
         long buffer = getBufferPtrAndMarkDirty(uni);
@@ -394,8 +506,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memPutFloat(buffer + 3 * Float.BYTES, v3);
     }
 
-    @Override
-    public void set4fv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single vec4 uniform variable or a vec4 uniform variable array
+     * for the current program object.
+     *
+     * @param count the number of elements that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array, and 1 or more if it is an array
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void set4fv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Vec4);
@@ -403,8 +523,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memCopy(value, buffer, count * 4L * Float.BYTES);
     }
 
-    @Override
-    public void set4fv(int u, int offset, int count, float[] value) {
+    /**
+     * Array version of {@link #set4fv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void set4fv(@UniformHandle int u, int offset, int count, float[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Vec4);
@@ -415,8 +539,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void setMatrix2fv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single mat2 uniform variable or a mat2 uniform variable array
+     * for the current program object. Matrices are column-major.
+     *
+     * @param count the number of matrices that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array of matrices, and 1 or more if it is an array of matrices.
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void setMatrix2fv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Mat2);
@@ -433,8 +565,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void setMatrix2fv(int u, int offset, int count, float[] value) {
+    /**
+     * Array version of {@link #setMatrix2fv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void setMatrix2fv(@UniformHandle int u, int offset, int count, float[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Mat2);
@@ -453,8 +589,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void setMatrix3fv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single mat3 uniform variable or a mat3 uniform variable array
+     * for the current program object. Matrices are column-major.
+     *
+     * @param count the number of matrices that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array of matrices, and 1 or more if it is an array of matrices.
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void setMatrix3fv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Mat3);
@@ -475,8 +619,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void setMatrix3fv(int u, int offset, int count, float[] value) {
+    /**
+     * Array version of {@link #setMatrix3fv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void setMatrix3fv(@UniformHandle int u, int offset, int count, float[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Mat3);
@@ -500,8 +648,16 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void setMatrix4fv(int u, int count, long value) {
+    /**
+     * Specifies the value of a single mat4 uniform variable or a mat4 uniform variable array
+     * for the current program object. Matrices are column-major.
+     *
+     * @param count the number of matrices that are to be modified. This should be 1 if the targeted uniform
+     *              variable is not an array of matrices, and 1 or more if it is an array of matrices.
+     * @param value a pointer to an array of {@code count} values that will be used to update the specified uniform
+     *              variable
+     */
+    public void setMatrix4fv(@UniformHandle int u, int count, long value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Mat4);
@@ -509,8 +665,12 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         memCopy(value, buffer, count * 4L * 4L * Float.BYTES);
     }
 
-    @Override
-    public void setMatrix4fv(int u, int offset, int count, float[] value) {
+    /**
+     * Array version of {@link #setMatrix4fv(int, int, long)}.
+     *
+     * @param offset the start index in the array
+     */
+    public void setMatrix4fv(@UniformHandle int u, int offset, int count, float[] value) {
         assert (count > 0);
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Mat4);
@@ -521,25 +681,24 @@ public abstract class UniformDataManager extends RefCnt implements ProgramDataMa
         }
     }
 
-    @Override
-    public void setMatrix3f(int u, Matrix3 matrix) {
+    /**
+     * Convenience method for uploading a Matrix3 to a 3x3 matrix uniform.
+     */
+    public void setMatrix3f(@UniformHandle int u, Matrix3 matrix) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Mat3);
         long buffer = getBufferPtrAndMarkDirty(uni);
         matrix.putAligned(buffer);
     }
 
-    @Override
-    public void setMatrix4f(int u, Matrix4 matrix) {
+    /**
+     * Convenience method for uploading a Matrix4 to a 4x4 matrix uniform.
+     */
+    public void setMatrix4f(@UniformHandle int u, Matrix4 matrix) {
         int uni = mUniforms[u];
         assert ((uni >> 24) == SLType.Mat4);
         long buffer = getBufferPtrAndMarkDirty(uni);
         matrix.store(buffer);
-    }
-
-    @Override
-    protected void dispose() {
-        nmemAlignedFree(mUniformData);
     }
 
     protected long getBufferPtrAndMarkDirty(int uni) {

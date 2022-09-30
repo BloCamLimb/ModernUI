@@ -34,9 +34,9 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
     private final GLUniformHandler mUniformHandler;
 
     private GLPipelineStateBuilder(GLServer server,
-                                   ProgramDesc desc,
-                                   ProgramInfo programInfo) {
-        super(desc, programInfo);
+                                   PipelineDesc desc,
+                                   PipelineInfo pipelineInfo) {
+        super(desc, pipelineInfo);
         mServer = server;
         mVaryingHandler = new VaryingHandler(this);
         mUniformHandler = new GLUniformHandler(this);
@@ -44,10 +44,10 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
 
     @Nullable
     public static GLPipelineState createPipelineState(GLServer server,
-                                                      final ProgramDesc desc,
-                                                      final ProgramInfo programInfo) {
+                                                      final PipelineDesc desc,
+                                                      final PipelineInfo pipelineInfo) {
 
-        GLPipelineStateBuilder builder = new GLPipelineStateBuilder(server, desc, programInfo);
+        GLPipelineStateBuilder builder = new GLPipelineStateBuilder(server, desc, pipelineInfo);
         if (!builder.emitAndInstallProcs()) {
             return null;
         }
@@ -119,7 +119,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
         System.out.println(allShaders);
 
         @SharedPtr
-        GLPipeline pipeline = GLPipeline.make(mServer, mProgramInfo.geomProc(), program);
+        GLPipeline pipeline = GLPipeline.make(mServer, mPipelineInfo.geomProc(), program);
         if (pipeline == null) {
             glDeleteProgram(program);
             return null;

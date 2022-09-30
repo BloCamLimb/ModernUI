@@ -22,7 +22,15 @@ import icyllis.akashigi.core.MathUtil;
 import icyllis.akashigi.core.SamplingOptions;
 
 /**
- * Represents the filtering and tile modes used to access a texture. It's represented as an int.
+ * Represents the filtering and tile modes used to access a texture. It's packed as an
+ * <code>int</code>.
+ * <ul>
+ * <li>0-4 bits: wrap mode (x direction)</li>
+ * <li>4-8 bits: wrap mode (y direction)</li>
+ * <li>8-12 bits: filter mode</li>
+ * <li>12-16 bits: mipmap mode</li>
+ * <li>16-32 bits: anisotropy filtering level</li>
+ * </ul>
  */
 public final class SamplerState {
 
@@ -47,10 +55,9 @@ public final class SamplerState {
      */
     public static final int
             WRAP_MODE_REPEAT = 0,
-            WRAP_MODE_MIRRORED_REPEAT = 1,
+            WRAP_MODE_MIRROR_REPEAT = 1,
             WRAP_MODE_CLAMP_TO_EDGE = 2,
-            WRAP_MODE_CLAMP_TO_BORDER = 3,
-            WRAP_MODE_MIRROR_CLAMP_TO_EDGE = 4;
+            WRAP_MODE_CLAMP_TO_BORDER = 3;
 
     // default value
     public static final int DEFAULT = 0x10022;
@@ -58,6 +65,8 @@ public final class SamplerState {
     static {
         // make them inline at compile-time
         assert make(FILTER_MODE_NEAREST) == DEFAULT;
+        assert make(FILTER_MODE_NEAREST, MIPMAP_MODE_NONE) == DEFAULT;
+        assert make(WRAP_MODE_CLAMP_TO_EDGE, FILTER_MODE_NEAREST, MIPMAP_MODE_NONE) == DEFAULT;
     }
 
     /**
@@ -66,7 +75,8 @@ public final class SamplerState {
      * @param filter the filter mode
      */
     public static int make(int filter) {
-        return make(WRAP_MODE_CLAMP_TO_EDGE, WRAP_MODE_CLAMP_TO_EDGE, filter, MIPMAP_MODE_NONE);
+        assert (filter == FILTER_MODE_NEAREST || filter == FILTER_MODE_LINEAR);
+        return 0x10022 | (filter << 8);
     }
 
     /**
@@ -76,13 +86,18 @@ public final class SamplerState {
      * @param mipmap the mipmap mode
      */
     public static int make(int filter, int mipmap) {
-        return make(WRAP_MODE_CLAMP_TO_EDGE, WRAP_MODE_CLAMP_TO_EDGE, filter, mipmap);
+        assert (filter == FILTER_MODE_NEAREST ||
+                filter == FILTER_MODE_LINEAR);
+        assert (mipmap == MIPMAP_MODE_NONE ||
+                mipmap == MIPMAP_MODE_NEAREST ||
+                mipmap == MIPMAP_MODE_LINEAR);
+        return 0x10022 | (filter << 8) | (mipmap << 12);
     }
 
     /**
      * Turn the sampler state into an integer for use as a key.
      *
-     * @param wrap   the wrap mode X and Y
+     * @param wrap   the wrap mode
      * @param filter the filter mode
      * @param mipmap the mipmap mode
      */
@@ -99,69 +114,97 @@ public final class SamplerState {
      * @param mipmap the mipmap mode
      */
     public static int make(int wrapX, int wrapY, int filter, int mipmap) {
-        assert wrapX == WRAP_MODE_REPEAT || wrapX == WRAP_MODE_MIRRORED_REPEAT ||
-                wrapX == WRAP_MODE_CLAMP_TO_EDGE || wrapX == WRAP_MODE_CLAMP_TO_BORDER ||
-                wrapX == WRAP_MODE_MIRROR_CLAMP_TO_EDGE;
-        assert wrapY == WRAP_MODE_REPEAT || wrapY == WRAP_MODE_MIRRORED_REPEAT ||
-                wrapY == WRAP_MODE_CLAMP_TO_EDGE || wrapY == WRAP_MODE_CLAMP_TO_BORDER ||
-                wrapY == WRAP_MODE_MIRROR_CLAMP_TO_EDGE;
-        assert filter == FILTER_MODE_NEAREST || filter == FILTER_MODE_LINEAR;
-        assert mipmap == MIPMAP_MODE_NONE || mipmap == MIPMAP_MODE_NEAREST || mipmap == MIPMAP_MODE_LINEAR;
-        return wrapX | (wrapY << 4) | (filter << 8) | (mipmap << 12) | (1 << 16);
+        assert (wrapX == WRAP_MODE_REPEAT ||
+                wrapX == WRAP_MODE_MIRROR_REPEAT ||
+                wrapX == WRAP_MODE_CLAMP_TO_EDGE ||
+                wrapX == WRAP_MODE_CLAMP_TO_BORDER);
+        assert (wrapY == WRAP_MODE_REPEAT ||
+                wrapY == WRAP_MODE_MIRROR_REPEAT ||
+                wrapY == WRAP_MODE_CLAMP_TO_EDGE ||
+                wrapY == WRAP_MODE_CLAMP_TO_BORDER);
+        assert (filter == FILTER_MODE_NEAREST ||
+                filter == FILTER_MODE_LINEAR);
+        assert (mipmap == MIPMAP_MODE_NONE ||
+                mipmap == MIPMAP_MODE_NEAREST ||
+                mipmap == MIPMAP_MODE_LINEAR);
+        return 0x10000 | wrapX | (wrapY << 4) | (filter << 8) | (mipmap << 12);
     }
 
     /**
      * Turn the sampler state into an integer for use as a key.
-     * We require 'viewIsMipmapped' for APIs that allow MIP filtering to be specified orthogonally to anisotropy.
+     * <p>
+     * We require 'isMipmapped' for APIs that allow MIP filtering to be specified orthogonally to anisotropy.
+     *
+     * @param wrapX         the wrap mode X
+     * @param wrapY         the wrap mode Y
+     * @param maxAnisotropy the max anisotropy filtering level
      */
-    public static int makeAnisotropy(int wrapX, int wrapY, int maxAnisotropy, boolean viewIsMipmapped) {
-        assert wrapX == WRAP_MODE_REPEAT || wrapX == WRAP_MODE_MIRRORED_REPEAT ||
-                wrapX == WRAP_MODE_CLAMP_TO_EDGE || wrapX == WRAP_MODE_CLAMP_TO_BORDER ||
-                wrapX == WRAP_MODE_MIRROR_CLAMP_TO_EDGE;
-        assert wrapY == WRAP_MODE_REPEAT || wrapY == WRAP_MODE_MIRRORED_REPEAT ||
-                wrapY == WRAP_MODE_CLAMP_TO_EDGE || wrapY == WRAP_MODE_CLAMP_TO_BORDER ||
-                wrapY == WRAP_MODE_MIRROR_CLAMP_TO_EDGE;
-        return wrapX | (wrapY << 4) |
-                (FILTER_MODE_LINEAR << 8) |
-                ((viewIsMipmapped ? MIPMAP_MODE_LINEAR : MIPMAP_MODE_NEAREST) << 12) |
+    public static int makeAnisotropy(int wrapX, int wrapY, int maxAnisotropy, boolean isMipmapped) {
+        assert (wrapX == WRAP_MODE_REPEAT ||
+                wrapX == WRAP_MODE_MIRROR_REPEAT ||
+                wrapX == WRAP_MODE_CLAMP_TO_EDGE ||
+                wrapX == WRAP_MODE_CLAMP_TO_BORDER);
+        assert (wrapY == WRAP_MODE_REPEAT ||
+                wrapY == WRAP_MODE_MIRROR_REPEAT ||
+                wrapY == WRAP_MODE_CLAMP_TO_EDGE ||
+                wrapY == WRAP_MODE_CLAMP_TO_BORDER);
+        // filter mode is always linear
+        return 0x100 | wrapX | (wrapY << 4) |
+                ((isMipmapped ? MIPMAP_MODE_LINEAR : MIPMAP_MODE_NONE) << 12) |
                 (MathUtil.clamp(maxAnisotropy, 1, 1024) << 16);
     }
 
-    public static int getWrapModeX(int key) {
-        return key & 0xF;
+    //////// Unpack Methods \\\\\\\\
+
+    public static int getWrapModeX(int samplerState) {
+        return samplerState & 0xF;
     }
 
-    public static int getWrapModeY(int key) {
-        return (key >> 4) & 0xF;
+    public static int getWrapModeY(int samplerState) {
+        return (samplerState >> 4) & 0xF;
     }
 
-    public static boolean isRepeatedX(int key) {
-        int wrapX = getWrapModeX(key);
-        return wrapX == WRAP_MODE_REPEAT || wrapX == WRAP_MODE_MIRRORED_REPEAT;
+    public static boolean isRepeatedX(int samplerState) {
+        int wrapX = getWrapModeX(samplerState);
+        return wrapX == WRAP_MODE_REPEAT || wrapX == WRAP_MODE_MIRROR_REPEAT;
     }
 
-    public static boolean isRepeatedY(int key) {
-        int wrapY = getWrapModeY(key);
-        return wrapY == WRAP_MODE_REPEAT || wrapY == WRAP_MODE_MIRRORED_REPEAT;
+    public static boolean isRepeatedY(int samplerState) {
+        int wrapY = getWrapModeY(samplerState);
+        return wrapY == WRAP_MODE_REPEAT || wrapY == WRAP_MODE_MIRROR_REPEAT;
     }
 
-    public static boolean isRepeated(int key) {
-        return isRepeatedX(key) || isRepeatedY(key);
+    public static boolean isRepeated(int samplerState) {
+        return isRepeatedX(samplerState) || isRepeatedY(samplerState);
     }
 
-    public static int getFilterMode(int key) {
-        return (key >> 8) & 0xF;
+    public static int getFilterMode(int samplerState) {
+        return (samplerState >> 8) & 0xF;
     }
 
-    public static int getMipmapMode(int key) {
-        return (key >> 12) & 0xF;
+    public static int getMipmapMode(int samplerState) {
+        return (samplerState >> 12) & 0xF;
     }
 
-    public static boolean isMipmapped(int key) {
-        return getMipmapMode(key) != MIPMAP_MODE_NONE;
+    public static boolean isMipmapped(int samplerState) {
+        return getMipmapMode(samplerState) != MIPMAP_MODE_NONE;
     }
 
-    public static int getMaxAnisotropy(int key) {
-        return key >>> 16;
+    public static int getMaxAnisotropy(int samplerState) {
+        return samplerState >>> 16;
+    }
+
+    public static boolean isAnisotropy(int samplerState) {
+        return getMaxAnisotropy(samplerState) > 1;
+    }
+
+    //////// Screen Methods \\\\\\\\
+
+    /**
+     * Clear mipmap mode to {@link #MIPMAP_MODE_NONE}.
+     * Return value is a valid sampler state.
+     */
+    public static int screenMipmapMode(int samplerState) {
+        return samplerState & ~0xF000;
     }
 }

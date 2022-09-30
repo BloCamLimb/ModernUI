@@ -21,21 +21,19 @@ package icyllis.akashigi.engine;
 import icyllis.akashigi.core.SharedPtr;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * The {@link RenderTarget} manages framebuffers and render passes, which consisted
  * of a set of attachments. This is the place where the rendering pipeline will
  * eventually draw to, and may be associated with a {@link icyllis.akashigi.core.Surface}.
  * <p>
- * This type of resource can be recycled by {@link Server}. When recycled, the texture
- * may be used separately, or retrieve this {@link RenderTarget} from {@link Server}.
- * However, static MSAA color buffer and stencil buffer cannot be recycled. This behavior
- * is controlled by {@link ResourceAllocator}.
- * <p>
- * Use {@link ResourceProvider} to obtain {@link RenderTarget RenderTargets} directly. Use
- * {@link RenderTargetProxy} and {@link RenderTextureProxy} for deferred operations.
+ * Note a {@link RenderTarget} is indirectly managed by a {@link Surface}, which
+ * can be either a renderable {@link Texture} or a wrapped {@link RenderSurface}.
+ * This class is used by the pipeline internally. Use {@link RenderTextureProxy}
+ * and {@link RenderSurfaceProxy} for deferred operations.
  */
-public abstract class RenderTarget extends ManagedResource implements Surface {
+public abstract class RenderTarget extends ManagedResource {
 
     private final int mWidth;
     private final int mHeight;
@@ -53,7 +51,10 @@ public abstract class RenderTarget extends ManagedResource implements Surface {
     // determined by subclass constructors
     protected int mSurfaceFlags;
 
-    protected RenderTarget(int width, int height, int sampleCount) {
+    protected RenderTarget(Server server,
+                           int width, int height,
+                           int sampleCount) {
+        super(server);
         mWidth = width;
         mHeight = height;
         mSampleCount = sampleCount;
@@ -94,6 +95,14 @@ public abstract class RenderTarget extends ManagedResource implements Surface {
     @Nonnull
     public abstract BackendRenderTarget getBackendRenderTarget();
 
+    //TODO can we remove texture access?
+    @Nullable
+    public abstract Texture getTexture();
+
+    public int getSurfaceFlags() {
+        return mSurfaceFlags;
+    }
+
     /**
      * Get the dynamic or implicit stencil buffer, or null if no stencil.
      */
@@ -106,11 +115,6 @@ public abstract class RenderTarget extends ManagedResource implements Surface {
      */
     public final int getStencilBits() {
         return mStencilBuffer != null ? mStencilBuffer.getBackendFormat().getStencilBits() : 0;
-    }
-
-    @Override
-    public RenderTarget getRenderTarget() {
-        return this;
     }
 
     @Override

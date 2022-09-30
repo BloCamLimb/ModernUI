@@ -46,7 +46,7 @@ public abstract class RefCnt implements AutoCloseable {
         } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
-        // better than HashMap and OpenHashMap since we do not care about the CPU overhead
+        // linked structure will not create large arrays and we don't care about the CPU overhead
         TRACKER = Object2BooleanMaps.synchronize(
                 new Object2BooleanAVLTreeMap<>(Comparator.comparingInt(System::identityHashCode)));
         try {
@@ -54,7 +54,7 @@ public abstract class RefCnt implements AutoCloseable {
         } catch (AssertionError e) {
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 // subclasses should override toString() for debug purposes
-                TRACKER.forEach((o, __) -> System.err.printf("RefCnt %d: %s\n", o.mRefCnt, o));
+                TRACKER.forEach((o, __) -> System.err.printf("RefCnt %d: %s\n", o.getRefCntVolatile(), o));
                 assert TRACKER.isEmpty() : "Memory leaks in reference-counted objects";
             }, "RefCnt-Tracker"));
         }
@@ -119,7 +119,7 @@ public abstract class RefCnt implements AutoCloseable {
     public final void ref() {
         // stronger than std::memory_order_relaxed
         if ((int) REF_CNT.getAndAddAcquire(this, 1) < 1) {
-            throw new IllegalStateException("Reference count reached zero");
+            throw new IllegalStateException("Reference count has reached zero");
         }
     }
 
@@ -156,8 +156,8 @@ public abstract class RefCnt implements AutoCloseable {
     }
 
     /**
-     * Debug only. Returns the reference count, which has memory ordering effects compatible
-     * with {@code memory_order_acquire}.
+     * Returns the reference count, which has memory ordering effects compatible with
+     * {@code memory_order_acquire}.
      *
      * @return the reference count
      */
@@ -167,30 +167,14 @@ public abstract class RefCnt implements AutoCloseable {
     }
 
     /**
-     * Debug only. Returns the reference count, which has memory ordering effects compatible
-     * with {@code memory_order_seq_cst}.
+     * Returns the reference count, which has memory ordering effects compatible with
+     * {@code memory_order_seq_cst}.
      *
      * @return the reference count
      */
     public final int getRefCntVolatile() {
         // std::memory_order_seq_cst
         return mRefCnt;
-    }
-
-    /**
-     * Internal only. This must be used with caution. It is only valid to call this when
-     * <code>threadIsolatedTestCnt</code> refs are known to be isolated to the current thread.
-     * That is, it is known that there are at least <code>threadIsolatedTestCnt</code> refs
-     * for which no other thread may make a balancing {@link #unref()} call. Assuming the
-     * contract is followed, if this returns false then no other thread has ownership of
-     * this. If it returns true then another thread <em>may</em> have ownership.
-     */
-    public final boolean refCntGreaterThan(int threadIsolatedTestCnt) {
-        // std::memory_order_acquire
-        int cnt = (int) REF_CNT.getAcquire(this);
-        // If this fails then the above contract has been violated.
-        assert (cnt >= threadIsolatedTestCnt);
-        return cnt > threadIsolatedTestCnt;
     }
 
     /**

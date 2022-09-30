@@ -16,65 +16,60 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.vulkan;
+package icyllis.akashigi.engine;
 
-import icyllis.akashigi.engine.*;
+import icyllis.akashigi.core.RefCnt;
+import icyllis.akashigi.core.SharedPtr;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 /**
- * Represents Vulkan 2D images, can be used as textures.
+ * Manages a wrapped {@link RenderTarget} on the client (no texture access).
  */
-public final class VkTexture extends Texture {
+public final class RenderSurface extends RefCnt implements Surface {
 
-    public VkTexture(VkServer server, int width, int height) {
-        super(server, width, height);
+    @SharedPtr
+    private RenderTarget mRenderTarget;
+
+    RenderSurface(@SharedPtr RenderTarget target) {
+        assert (target != null && target.getTexture() == null);
+        mRenderTarget = target;
     }
 
     @Override
-    public long getMemorySize() {
-        return 0;
+    protected void dispose() {
+        mRenderTarget = RefCnt.move(mRenderTarget);
     }
 
     @Override
-    protected void onRelease() {
-
+    public int getWidth() {
+        return mRenderTarget.getWidth();
     }
 
     @Override
-    protected void onDiscard() {
-
+    public int getHeight() {
+        return mRenderTarget.getHeight();
     }
 
     @Override
     public int getSampleCount() {
-        return 0;
+        return mRenderTarget.getSampleCount();
     }
 
     @Nonnull
     @Override
     public BackendFormat getBackendFormat() {
-        return null;
+        return mRenderTarget.getBackendFormat();
+    }
+
+    @Override
+    public int getSurfaceFlags() {
+        return mRenderTarget.getSurfaceFlags();
     }
 
     @Override
     public RenderTarget getRenderTarget() {
-        return null;
-    }
-
-    @Override
-    public boolean isExternal() {
-        return false;
-    }
-
-    @Nonnull
-    @Override
-    public BackendTexture getBackendTexture() {
-        return null;
-    }
-
-    @Override
-    public int getMaxMipmapLevel() {
-        return 0;
+        return Objects.requireNonNull(mRenderTarget, "Disposed");
     }
 }

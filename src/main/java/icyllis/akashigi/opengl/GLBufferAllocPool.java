@@ -82,7 +82,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
         // flush CPU staging buffer
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
-            Buffer buffer = mBuffers[mIndex];
+            GBuffer buffer = mBuffers[mIndex];
             int flushSize = buffer.size() - mFreeBytes[mIndex];
 
             assert (!buffer.isMapped());
@@ -104,7 +104,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
     }
 
     @Override
-    protected long lockBuffer(Buffer buffer) {
+    protected long lockBuffer(GBuffer buffer) {
         if (mCpuStagingBuffer != null) {
             if (buffer.size() <= mCpuStagingBuffer.size()) {
                 return mCpuStagingBuffer.data();
@@ -116,7 +116,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
     }
 
     @Override
-    protected void unlockBuffer(Buffer buffer) {
+    protected void unlockBuffer(GBuffer buffer) {
         // leave as is
     }
 
@@ -152,7 +152,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
                 return NULL;
             }
 
-            Buffer buffer = mBuffers[mIndex];
+            GBuffer buffer = mBuffers[mIndex];
             buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % vertexSize == 0);
@@ -178,7 +178,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
                 return null;
             }
 
-            Buffer buffer = mBuffers[mIndex];
+            GBuffer buffer = mBuffers[mIndex];
             buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % vertexSize == 0);
@@ -221,7 +221,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
                 return NULL;
             }
 
-            Buffer buffer = mBuffers[mIndex];
+            GBuffer buffer = mBuffers[mIndex];
             buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % instanceSize == 0);
@@ -248,7 +248,7 @@ public abstract class GLBufferAllocPool extends BufferAllocPool {
                 return null;
             }
 
-            Buffer buffer = mBuffers[mIndex];
+            GBuffer buffer = mBuffers[mIndex];
             buffer.ref();
             long offset = ptr - mBufferPtr;
             assert (offset % instanceSize == 0);

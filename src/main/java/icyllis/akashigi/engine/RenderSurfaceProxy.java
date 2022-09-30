@@ -20,6 +20,7 @@ package icyllis.akashigi.engine;
 
 import icyllis.akashigi.core.RefCnt;
 import icyllis.akashigi.core.SharedPtr;
+import org.jetbrains.annotations.VisibleForTesting;
 
 import javax.annotation.Nullable;
 
@@ -29,29 +30,32 @@ import static icyllis.akashigi.engine.Engine.*;
  * Lazy-callback or wrapped a render target (no texture access).
  */
 //TODO
-public final class RenderTargetProxy extends SurfaceProxy {
+@VisibleForTesting
+public final class RenderSurfaceProxy extends SurfaceProxy {
 
-    private RenderTarget mTarget;
+    @SharedPtr
+    private RenderSurface mSurface;
     private int mSampleCount;
 
-    RenderTargetProxy(BackendFormat format, int width, int height, int surfaceFlags) {
+    RenderSurfaceProxy(BackendFormat format, int width, int height, int surfaceFlags) {
         super(format, width, height, surfaceFlags);
     }
 
     @Override
     protected void dispose() {
+        mSurface = RefCnt.move(mSurface);
     }
 
     @Override
     public boolean isLazy() {
-        return mTarget == null && mLazyInstantiateCallback != null;
+        return mSurface == null && mLazyInstantiateCallback != null;
     }
 
     @Override
     public int getBackingWidth() {
         assert (!isLazyMost());
-        if (mTarget != null) {
-            return mTarget.getWidth();
+        if (mSurface != null) {
+            return mSurface.getWidth();
         }
         if ((mSurfaceFlags & SurfaceFlag_LooseFit) != 0) {
             return ResourceProvider.makeApprox(mWidth);
@@ -62,8 +66,8 @@ public final class RenderTargetProxy extends SurfaceProxy {
     @Override
     public int getBackingHeight() {
         assert (!isLazyMost());
-        if (mTarget != null) {
-            return mTarget.getHeight();
+        if (mSurface != null) {
+            return mSurface.getHeight();
         }
         if ((mSurfaceFlags & SurfaceFlag_LooseFit) != 0) {
             return ResourceProvider.makeApprox(mHeight);
@@ -78,15 +82,15 @@ public final class RenderTargetProxy extends SurfaceProxy {
 
     @Override
     public Object getBackingUniqueID() {
-        if (mTarget != null) {
-            return mTarget;
+        if (mSurface != null) {
+            return mSurface;
         }
         return mUniqueID;
     }
 
     @Override
     public boolean isInstantiated() {
-        return mTarget != null;
+        return mSurface != null;
     }
 
     @Override
@@ -94,14 +98,14 @@ public final class RenderTargetProxy extends SurfaceProxy {
         if (isLazy()) {
             return false;
         }
-        return mTarget != null;
+        return mSurface != null;
     }
 
     @Override
     public void clear() {
-        assert mTarget != null;
-        mTarget.unref();
-        mTarget = null;
+        assert mSurface != null;
+        mSurface.unref();
+        mSurface = null;
     }
 
     @Override
@@ -110,13 +114,13 @@ public final class RenderTargetProxy extends SurfaceProxy {
             // Usually an atlas or onFlush proxy
             return true;
         }
-        return mTarget != null;
+        return mSurface != null;
     }
 
     @Nullable
     @Override
     public RenderTarget peekRenderTarget() {
-        return mTarget;
+        return mSurface != null ? mSurface.getRenderTarget() : null;
     }
 
     @Override
@@ -124,7 +128,7 @@ public final class RenderTargetProxy extends SurfaceProxy {
         assert isLazy();
 
         @SharedPtr
-        RenderTarget target = null;
+        RenderSurface surface = null;
 
         boolean releaseCallback = false;
         int width = isLazyMost() ? -1 : getWidth();
@@ -136,27 +140,26 @@ public final class RenderTargetProxy extends SurfaceProxy {
                 mSurfaceFlags,
                 "");
         if (result != null) {
-            target = (RenderTarget) result.mSurface;
+            surface = (RenderSurface) result.mSurface;
             releaseCallback = result.mReleaseCallback;
         }
-        if (target == null) {
+        if (surface == null) {
             mWidth = mHeight = 0;
             return false;
         }
-        assert target.getTexture() == null;
 
         if (isLazyMost()) {
             // This was a lazy-most proxy. We need to fill in the width & height. For normal
             // lazy proxies we must preserve the original width & height since that indicates
             // the content area.
-            mWidth = target.getWidth();
-            mHeight = target.getHeight();
+            mWidth = surface.getWidth();
+            mHeight = surface.getHeight();
         }
 
-        assert getWidth() <= target.getWidth();
-        assert getHeight() <= target.getHeight();
+        assert getWidth() <= surface.getWidth();
+        assert getHeight() <= surface.getHeight();
 
-        mTarget = RefCnt.move(mTarget, target);
+        mSurface = RefCnt.move(mSurface, surface);
         if (releaseCallback) {
             mLazyInstantiateCallback = null;
         }

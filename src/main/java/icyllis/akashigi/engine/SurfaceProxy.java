@@ -28,9 +28,8 @@ import javax.annotation.Nullable;
 import static icyllis.akashigi.engine.Engine.*;
 
 /**
- * <code>SurfaceProxy</code> targets a Surface with three instantiation methods:
- * deferred, lazy-callback and wrapped. Note: the object itself is also used
- * as the scratch key, see {@link #hashCode()} and {@link #equals(Object)}
+ * The {@link SurfaceProxy} targets a {@link Surface} with three instantiation
+ * methods: deferred, lazy-callback and wrapped.
  * <p>
  * Target: The backing texture or render target that referenced by this proxy.
  * <p>
@@ -48,6 +47,9 @@ import static icyllis.akashigi.engine.Engine.*;
  * </ul>
  * <p>
  * Use {@link ProxyProvider} to obtain {@link SurfaceProxy} objects.
+ * <p>
+ * Note: the object itself is also used as the scratch key, see {@link #hashCode()}
+ * and {@link #equals(Object)}
  */
 public abstract class SurfaceProxy extends RefCnt {
 
@@ -75,9 +77,9 @@ public abstract class SurfaceProxy extends RefCnt {
      *     <li>True: {@link ResourceAllocator} should instantiate this proxy.</li>
      * </ul>
      * <p>
-     * DeferredProvider: For TextureProxies created in a DDL recording thread it is possible
-     * for the uniqueKey to be cleared on the backing Texture while the uniqueKey remains on
-     * the proxy. A 'mDeferredProvider' of 'true' loosens up asserts that the key of an
+     * DeferredProvider: For TextureProxies created in a deferred list recording thread it is
+     * possible for the uniqueKey to be cleared on the backing Texture while the uniqueKey
+     * remains on the proxy. A 'mDeferredProvider' of 'true' loosens up asserts that the key of an
      * instantiated uniquely-keyed textureProxy is also always set on the backing {@link Texture}.
      * <p>
      * In many cases these flags aren't actually known until the proxy has been instantiated.
@@ -125,11 +127,11 @@ public abstract class SurfaceProxy extends RefCnt {
         mFormat = texture.getBackendFormat();
         mWidth = texture.getWidth();
         mHeight = texture.getHeight();
-        mSurfaceFlags = texture.getFlags() | surfaceFlags;
+        mSurfaceFlags = texture.getSurfaceFlags() | surfaceFlags;
         assert (mSurfaceFlags & SurfaceFlag_LooseFit) == 0;
-        assert mFormat.isExternal() == texture.isExternal();
-        assert (texture.getBudgetType() == BudgetType_Budgeted) == ((mSurfaceFlags & SurfaceFlag_Budgeted) != 0);
-        assert (!texture.isExternal()) || ((mSurfaceFlags & SurfaceFlag_ReadOnly) != 0);
+        assert (mFormat.isExternal() == texture.isExternal());
+        assert (texture.getBudgetType() == BudgetType_Budgeted) == isBudgeted();
+        assert (!texture.isExternal() || isReadOnly());
         mUniqueID = texture; // converting from unique resource ID to a proxy ID
     }
 
@@ -138,18 +140,18 @@ public abstract class SurfaceProxy extends RefCnt {
         @SharedPtr
         public Surface mSurface;
         /**
-         * Some lazy proxy callbacks want to set their own (or no key) on the {@link Surface}
-         * they return. Others want the {@link Surface}'s key to be kept in sync with the proxy's
+         * Some lazy proxy callbacks want to set their own (or no key) on the {@link Texture}
+         * they return. Others want the {@link Texture}'s key to be kept in sync with the proxy's
          * key. This flag controls the key relationship between proxies and their targets.
          * <ul>
-         *     <li>False: Don't key the {@link Surface} with the proxy's key. The lazy
-         *     instantiation callback is free to return a {@link Surface} that already
+         *     <li>False: Don't key the {@link Texture} with the proxy's key. The lazy
+         *     instantiation callback is free to return a {@link Texture} that already
          *     has a unique key unrelated to the proxy's key.</li>
-         *     <li>True: Keep the {@link Surface}'s unique key in sync with the proxy's
-         *     unique key. The {@link Surface} returned from the lazy instantiation callback
+         *     <li>True: Keep the {@link Texture}'s unique key in sync with the proxy's
+         *     unique key. The {@link Texture} returned from the lazy instantiation callback
          *     must not have a unique key or have the same same unique key as the proxy.
          *     If the proxy is later assigned a key it is in turn assigned to the
-         *     {@link Surface}.</li>
+         *     {@link Texture}.</li>
          * </ul>
          */
         public boolean mSyncTargetKey = true;
@@ -260,14 +262,12 @@ public abstract class SurfaceProxy extends RefCnt {
     }
 
     /**
-     * Returns the number of samples per pixel in color buffers (One if non-MSAA).
-     * If the surface it not renderable, this method always returns one.
+     * Returns the number of samples per pixel in color buffers (one if non-MSAA).
+     * If this surface it non-renderable, this method always returns one.
      *
      * @return the number of samples, greater than (multisample) or equal to one
      */
-    public int getSampleCount() {
-        return 1;
-    }
+    public abstract int getSampleCount();
 
     /**
      * @return the backend format of the proxy
@@ -329,7 +329,7 @@ public abstract class SurfaceProxy extends RefCnt {
     /**
      * Called when this task becomes a target of a {@link RenderTask}.
      */
-    public final void incTaskTargetCount() {
+    public final void isUsedAsTaskTarget() {
         mTaskTargetCount++;
     }
 
@@ -350,7 +350,7 @@ public abstract class SurfaceProxy extends RefCnt {
     }
 
     /**
-     * If this is a render target proxy and the proxy is already instantiated, return its
+     * If this is a renderable proxy and the proxy is already instantiated, return its
      * backing {@link RenderTarget}; if not, return null.
      */
     @Nullable
@@ -396,6 +396,10 @@ public abstract class SurfaceProxy extends RefCnt {
         return (mSurfaceFlags & SurfaceFlag_LooseFit) == 0;
     }
 
+    public TextureProxy asTextureProxy() {
+        return null;
+    }
+
     /**
      * Retrieves the amount of server memory that will be or currently is used by this resource
      * in bytes. It is approximate since we aren't aware of additional padding or copies made
@@ -409,19 +413,18 @@ public abstract class SurfaceProxy extends RefCnt {
 
     @Override
     public int hashCode() {
+        // implemented by TextureProxy
         assert false;
         return super.hashCode();
     }
 
     @Override
     public boolean equals(Object o) {
+        // implemented by TextureProxy
         assert false;
         return super.equals(o);
     }
 
-    TextureProxy asTextureProxy() {
-        return null;
-    }
-
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     abstract boolean doLazyInstantiation(ResourceProvider resourceProvider);
 }

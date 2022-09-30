@@ -112,8 +112,7 @@ public class CircleProcessor extends GeometryProcessor {
     private static class Impl extends ProgramImpl {
 
         @Override
-        public void setData(ProgramDataManager pdm,
-                            ShaderCaps shaderCaps,
+        public void setData(UniformDataManager manager,
                             GeometryProcessor geomProc) {
         }
 
@@ -126,7 +125,7 @@ public class CircleProcessor extends GeometryProcessor {
                                   GeometryProcessor geomProc,
                                   String outputColor,
                                   String outputCoverage,
-                                  int[] texSamplers,
+                                  int texSampler,
                                   ShaderVar localPos,
                                   ShaderVar worldPos) {
             final int flags = ((CircleProcessor) geomProc).mFlags;

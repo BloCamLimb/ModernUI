@@ -18,13 +18,16 @@
 
 package icyllis.akashigi.engine;
 
+import org.jetbrains.annotations.VisibleForTesting;
+
 /**
  * Subclass of {@link TextureProxy} that also provides render target info.
  */
 //TODO
+@VisibleForTesting
 public final class RenderTextureProxy extends TextureProxy {
 
-    private int mSampleCount;
+    private final int mSampleCount;
 
     // Deferred version - no data
     RenderTextureProxy(BackendFormat format,
@@ -32,6 +35,7 @@ public final class RenderTextureProxy extends TextureProxy {
                        int sampleCount,
                        int surfaceFlags) {
         super(format, width, height, surfaceFlags);
+        mSampleCount = sampleCount;
     }
 
     // Lazy-callback version - takes a new UniqueID from the shared resource/proxy pool.
@@ -41,5 +45,11 @@ public final class RenderTextureProxy extends TextureProxy {
                        int surfaceFlags,
                        LazyInstantiateCallback callback) {
         super(format, width, height, surfaceFlags, callback);
+        mSampleCount = sampleCount;
+    }
+
+    @Override
+    public int getSampleCount() {
+        return mSampleCount;
     }
 }

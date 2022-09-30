@@ -34,6 +34,13 @@ import icyllis.akashigi.core.RefCnt;
  */
 public abstract class ManagedResource extends RefCnt {
 
-    public ManagedResource() {
+    private final Server mServer;
+
+    public ManagedResource(Server server) {
+        mServer = server;
+    }
+
+    protected Server getServer() {
+        return mServer;
     }
 }

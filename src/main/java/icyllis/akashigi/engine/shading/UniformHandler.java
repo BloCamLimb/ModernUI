@@ -20,12 +20,10 @@ package icyllis.akashigi.engine.shading;
 
 import icyllis.akashigi.core.SLType;
 import icyllis.akashigi.engine.*;
-import icyllis.akashigi.engine.shading.ProgramDataManager.UniformHandle;
 
 import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.ArrayList;
 
 /**
  * Abstract class that builds uniforms.
@@ -33,10 +31,8 @@ import java.util.ArrayList;
  * The uniform blocks are generally defined as:
  * <pre><code>
  * // Anonymous block
- * layout(std140, binding = 0) uniform RenderBlock {
- *     layout(offset = 0) vec4 u_OrthoProj;
- * }
- * layout(std140, binding = 1) uniform EffectBlock {
+ * layout(std140, binding = 0) uniform UniformBlock {
+ *     layout(offset = 0) vec4 u_Projection;
  *     // per-effect uniforms...
  * }</code></pre>
  * Per-effect uniforms are updated more frequently (generally, each draw op).
@@ -47,12 +43,12 @@ public abstract class UniformHandler {
     /**
      * The Render Block are shared across pipelines.
      */
-    public static final String RENDER_PREFIX = "u_";
+    public static final String NO_MANGLE_PREFIX = "u_";
 
     /**
-     * Builtin uniforms that are in Render Block.
+     * Common uniforms.
      */
-    public static final String ORTHO_PROJ_NAME = "u_OrthoProj";
+    public static final String PROJECTION_NAME = "u_Projection";
 
     public static class UniformInfo {
 
@@ -65,6 +61,13 @@ public abstract class UniformHandler {
          * The offset using std140 layout, only valid for non-samplers.
          */
         public int mOffset;
+    }
+
+    /**
+     * Marks an integer as an opaque handle to a uniform resource.
+     */
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface UniformHandle {
     }
 
     /**
@@ -94,27 +97,16 @@ public abstract class UniformHandler {
     /**
      * The bindings for the main descriptor set.
      */
-    public static final int RENDER_BINDING = 0;
-    public static final int EFFECT_BINDING = 1; // will use Push Constants if possible
+    public static final int UNIFORM_BINDING = 0; // will use Push Constants if possible
 
-    public static final String RENDER_BLOCK_NAME = "RenderBlock";
-    public static final String EFFECT_BLOCK_NAME = "EffectBlock";
+    public static final String UNIFORM_BLOCK_NAME = "UniformBlock";
 
     /**
      * The bindings for the input descriptor set.
      */
     public static final int INPUT_BINDING = 0;
 
-    /**
-     * The indices for input attachments.
-     */
-    public static final int DST_INPUT_ATTACHMENT_INDEX = 0;
-
     protected final ProgramBuilder mProgramBuilder;
-
-    // there are no getters for these uniforms, handled by implementations
-    protected final ArrayList<UniformInfo> mRenderUniforms = new ArrayList<>();
-    protected int mCurrentRenderOffset;
 
     protected UniformHandler(ProgramBuilder programBuilder) {
         mProgramBuilder = programBuilder;
@@ -129,7 +121,7 @@ public abstract class UniformHandler {
      * {@link #addUniformArray(Processor, int, byte, String, int)} variant to add an array of
      * uniforms.
      * <p>
-     * If the name starts with {@link #RENDER_PREFIX}, the uniform will be assigned to Render
+     * If the name starts with {@link #NO_MANGLE_PREFIX}, the uniform will be assigned to Render
      * Block rather than Effect Block, which may be shared across stages and pipelines. Also,
      * the UniformHandle and its data manager may be only visible and internally handled by
      * implementations.
@@ -225,41 +217,11 @@ public abstract class UniformHandler {
     }
 
     @UniformHandle
-    protected int internalAddUniformArray(Processor owner,
-                                          int visibility,
-                                          byte type,
-                                          String name,
-                                          int arrayCount) {
-        assert (SLType.canBeUniformValue(type));
-
-        // handled by implementations
-        assert (name.startsWith(RENDER_PREFIX));
-        // reserved name
-        assert (!name.contains("__"));
-
-        // use std140 layout for render UBO
-        int offset = getAlignedOffset(mCurrentRenderOffset, type, arrayCount, Std140Layout);
-        mCurrentRenderOffset += getAlignedStride(type, arrayCount, Std140Layout);
-
-        int handle = mRenderUniforms.size();
-
-        String layoutQualifier = "offset = " + offset;
-
-        var tempInfo = new UniformInfo();
-        tempInfo.mVariable = new ShaderVar(name,
-                type,
-                ShaderVar.TypeModifier_None,
-                arrayCount,
-                layoutQualifier,
-                "");
-        tempInfo.mVisibility = visibility;
-        tempInfo.mOwner = owner;
-        tempInfo.mRawName = name;
-        tempInfo.mOffset = offset;
-
-        mRenderUniforms.add(tempInfo);
-        return handle;
-    }
+    protected abstract int internalAddUniformArray(Processor owner,
+                                                   int visibility,
+                                                   byte type,
+                                                   String name,
+                                                   int arrayCount);
 
     @SamplerHandle
     protected abstract int addSampler(BackendFormat backendFormat,

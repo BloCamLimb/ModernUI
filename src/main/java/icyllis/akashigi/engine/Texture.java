@@ -47,7 +47,7 @@ public abstract class Texture extends Resource implements Surface {
     protected final int mHeight;
 
     /**
-     * Note: budgeted is a dynamic state, it can be returned by {@link #getFlags()}.
+     * Note: budgeted is a dynamic state, it can be returned by {@link #getSurfaceFlags()}.
      * This field is OR-ed only and immutable when created.
      */
     protected int mFlags;
@@ -105,7 +105,6 @@ public abstract class Texture extends Resource implements Surface {
     /**
      * @return true if we are working with protected content
      */
-    @Override
     public final boolean isProtected() {
         return (mFlags & SurfaceFlag_Protected) != 0;
     }
@@ -141,7 +140,7 @@ public abstract class Texture extends Resource implements Surface {
      * @return combination of the above flags
      */
     @Override
-    public final int getFlags() {
+    public final int getSurfaceFlags() {
         int flags = mFlags;
         if (getBudgetType() == BudgetType_Budgeted) {
             flags |= SurfaceFlag_Budgeted;
@@ -192,11 +191,6 @@ public abstract class Texture extends Resource implements Surface {
     }
 
     @Override
-    public Texture getTexture() {
-        return this;
-    }
-
-    @Override
     protected void onRelease() {
         if (mReleaseCallback != null) {
             mReleaseCallback.unref();
@@ -223,6 +217,7 @@ public abstract class Texture extends Resource implements Surface {
         return new ScratchKey().compute(
                 format,
                 mWidth, mHeight,
+                getSampleCount(),
                 mFlags); // budgeted flag is not included, this method is called only when budgeted
     }
 
@@ -310,15 +305,16 @@ public abstract class Texture extends Resource implements Surface {
         @Nonnull
         public ScratchKey compute(BackendFormat format,
                                   int width, int height,
+                                  int sampleCount,
                                   int surfaceFlags) {
             assert (width > 0 && height > 0);
             assert (!format.isCompressed());
             mWidth = width;
             mHeight = height;
             mFormat = format.getKey();
-            mFlags = surfaceFlags & (SurfaceFlag_Mipmapped |
+            mFlags = (surfaceFlags & (SurfaceFlag_Mipmapped |
                     SurfaceFlag_Renderable |
-                    SurfaceFlag_Protected);
+                    SurfaceFlag_Protected)) | (sampleCount << 16);
             return this;
         }
 

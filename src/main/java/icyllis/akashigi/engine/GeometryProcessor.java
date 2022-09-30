@@ -28,8 +28,7 @@ import java.util.Iterator;
 import java.util.NoSuchElementException;
 
 import static icyllis.akashigi.engine.Engine.*;
-import static icyllis.akashigi.engine.shading.ProgramDataManager.UniformHandle;
-import static icyllis.akashigi.engine.shading.UniformHandler.SamplerHandle;
+import static icyllis.akashigi.engine.shading.UniformHandler.*;
 
 /**
  * The GeometryProcessor represents some kind of geometric primitive. This includes the shape
@@ -368,13 +367,12 @@ public abstract class GeometryProcessor extends Processor {
         super(classID);
     }
 
-    public int numTextureSamplers() {
-        return 0;
-    }
-
-    @Nonnull
-    public TextureSampler textureSampler(int index) {
-        throw new UnsupportedOperationException();
+    /**
+     * @return the GP's texture sampler, or null
+     */
+    @Nullable
+    public TextureSampler textureSampler() {
+        return null;
     }
 
     /**
@@ -544,7 +542,7 @@ public abstract class GeometryProcessor extends Processor {
          * @return new state, eiter matrix or state
          */
         //TODO move to other places
-        protected static Matrix3 setTransform(@Nonnull ProgramDataManager pdm,
+        protected static Matrix3 setTransform(@Nonnull UniformDataManager pdm,
                                               @UniformHandle int uniform,
                                               @Nonnull Matrix3 matrix,
                                               @Nullable Matrix3 state) {
@@ -608,7 +606,7 @@ public abstract class GeometryProcessor extends Processor {
                                    GeometryProcessor geomProc,
                                    String outputColor,
                                    String outputCoverage,
-                                   @SamplerHandle int[] texSamplers) {
+                                   @SamplerHandle int texSampler) {
             final var localPos = new ShaderVar();
             final var worldPos = new ShaderVar();
             onEmitCode(vertBuilder,
@@ -619,7 +617,7 @@ public abstract class GeometryProcessor extends Processor {
                     geomProc,
                     outputColor,
                     outputCoverage,
-                    texSamplers,
+                    texSampler,
                     localPos,
                     worldPos);
 
@@ -639,8 +637,7 @@ public abstract class GeometryProcessor extends Processor {
          * guaranteed to be of the same type and to have an identical processor key as the
          * GeometryProcessor that created this ProgramImpl.
          */
-        public abstract void setData(ProgramDataManager pdm,
-                                     ShaderCaps shaderCaps,
+        public abstract void setData(UniformDataManager manager,
                                      GeometryProcessor geomProc);
 
         /**
@@ -660,7 +657,7 @@ public abstract class GeometryProcessor extends Processor {
                                            GeometryProcessor geomProc,
                                            String outputColor,
                                            String outputCoverage,
-                                           @SamplerHandle int[] texSamplers,
+                                           @SamplerHandle int texSampler,
                                            ShaderVar localPos,
                                            ShaderVar worldPos);
     }

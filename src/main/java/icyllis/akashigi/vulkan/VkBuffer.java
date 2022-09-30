@@ -18,10 +18,10 @@
 
 package icyllis.akashigi.vulkan;
 
-import icyllis.akashigi.engine.Buffer;
+import icyllis.akashigi.engine.GBuffer;
 
 //TODO
-public final class VkBuffer extends Buffer {
+public final class VkBuffer extends GBuffer {
 
     public VkBuffer(VkServer server) {
         super(server, 0, 0, 0);

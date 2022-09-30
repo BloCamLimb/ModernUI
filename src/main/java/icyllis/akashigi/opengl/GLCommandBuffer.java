@@ -20,7 +20,12 @@ package icyllis.akashigi.opengl;
 
 import icyllis.akashigi.core.RefCnt;
 import icyllis.akashigi.core.SharedPtr;
-import icyllis.akashigi.engine.*;
+import icyllis.akashigi.engine.Engine;
+import icyllis.akashigi.engine.SamplerState;
+import org.lwjgl.system.MemoryUtil;
+
+import javax.annotation.Nonnull;
+import java.util.Arrays;
 
 import static icyllis.akashigi.engine.Engine.*;
 import static icyllis.akashigi.opengl.GLCore.*;
@@ -32,12 +37,22 @@ import static icyllis.akashigi.opengl.GLCore.*;
  *
  * @see GLServer#beginRenderPass(GLRenderTarget, int, int, float[])
  */
-public class GLCommandBuffer {
+public final class GLCommandBuffer {
 
     private static final int
             TriState_Disabled = 0,
             TriState_Enabled = 1,
             TriState_Unknown = 2;
+
+    private static final long RGBA_SWIZZLE_MASK;
+
+    static {
+        RGBA_SWIZZLE_MASK = MemoryUtil.nmemAllocChecked(16);
+        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK, GL_RED);
+        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK + 4, GL_GREEN);
+        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK + 8, GL_BLUE);
+        MemoryUtil.memPutInt(RGBA_SWIZZLE_MASK + 12, GL_ALPHA);
+    }
 
     private final GLServer mServer;
 
@@ -53,6 +68,7 @@ public class GLCommandBuffer {
     private int mHWScissorHeight;
 
     private int mHWFramebuffer;
+    @SharedPtr
     private GLRenderTarget mHWRenderTarget;
 
     @SharedPtr
@@ -60,20 +76,34 @@ public class GLCommandBuffer {
     private int mHWProgram;
     private int mHWVertexArray;
 
+    // raw ptr since managed by ResourceCache
+    private final GLTexture[] mHWTextureBindings;
+    @SharedPtr
+    private final GLSampler[] mHWTextureSamplers;
+
     GLCommandBuffer(GLServer server) {
         mServer = server;
+        mHWTextureBindings = new GLTexture[mServer.getCaps().shaderCaps().mMaxFragmentSamplers];
+        mHWTextureSamplers = new GLSampler[mHWTextureBindings.length];
     }
 
     void resetStates(int states) {
         if ((states & GLBackendState_RenderTarget) != 0) {
             mHWFramebuffer = 0;
-            mHWRenderTarget = null;
+            mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         }
 
         if ((states & GLBackendState_Pipeline) != 0) {
             mHWPipeline = RefCnt.move(mHWPipeline);
             mHWProgram = 0;
             mHWVertexArray = 0;
+        }
+
+        if ((states & GLBackendState_Texture) != 0) {
+            Arrays.fill(mHWTextureBindings, null);
+            for (int i = 0; i < mHWTextureBindings.length; i++) {
+                mHWTextureSamplers[i] = RefCnt.move(mHWTextureSamplers[i]);
+            }
         }
 
         if ((states & GLBackendState_View) != 0) {
@@ -199,14 +229,14 @@ public class GLCommandBuffer {
      */
     public void flushRenderTarget(GLRenderTarget target) {
         if (target == null) {
-            mHWRenderTarget = null;
+            mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         } else {
             int framebuffer = target.getFramebuffer();
             if (mHWFramebuffer != framebuffer ||
                     mHWRenderTarget != target) {
                 glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
                 mHWFramebuffer = framebuffer;
-                mHWRenderTarget = target;
+                mHWRenderTarget = RefCnt.create(mHWRenderTarget, target);
                 flushViewport(target.getWidth(), target.getHeight());
             }
             target.bindStencil();
@@ -214,12 +244,8 @@ public class GLCommandBuffer {
     }
 
     @SuppressWarnings("AssertWithSideEffects")
-    public boolean flushPipeline(GLRenderTarget target, ProgramInfo programInfo) {
-        GLPipelineState pipelineState = mServer.getPipelineBuilder().findOrCreatePipelineState(programInfo);
-        if (pipelineState == null) {
-            return false;
-        }
-        GLPipeline pipeline = pipelineState.getPipeline();
+    public void bindPipeline(GLPipeline pipeline) {
+        assert (pipeline != null);
         if (mHWPipeline != pipeline) {
             // active program will not be deleted, so no collision
             assert (pipeline.getProgram() != mHWProgram);
@@ -230,8 +256,47 @@ public class GLCommandBuffer {
             assert ((mHWProgram = pipeline.getProgram()) != 0);
             assert ((mHWVertexArray = pipeline.getVertexArray()) != 0);
         }
+    }
 
-        flushRenderTarget(target);
+    public boolean bindTexture(GLTexture texture, int binding, int samplerState) {
+        assert (texture != null);
+        if (binding >= mHWTextureBindings.length) {
+            return false;
+        }
+        if (SamplerState.isMipmapped(samplerState)) {
+            if (!texture.isMipmapped()) {
+                assert (!SamplerState.isAnisotropy(samplerState));
+                samplerState = SamplerState.screenMipmapMode(samplerState);
+            } else {
+                assert (!texture.isMipmapsDirty());
+            }
+        }
+        GLSampler sampler = mServer.getResourceProvider().findOrCreateCompatibleSampler(samplerState);
+        if (sampler == null) {
+            return false;
+        }
+        if (mHWTextureBindings[binding] != texture) {
+            glBindTextureUnit(binding, texture.getTextureID());
+            mHWTextureBindings[binding] = texture;
+        }
+        if (mHWTextureSamplers[binding] != sampler) {
+            glBindSampler(binding, sampler.getSamplerID());
+            mHWTextureSamplers[binding] = RefCnt.create(mHWTextureSamplers[binding], sampler);
+        }
+        GLTextureParameters parameters = texture.getParameters();
+        if (parameters.mBaseMipMapLevel != 0) {
+            glTextureParameteri(texture.getTextureID(), GL_TEXTURE_BASE_LEVEL, 0);
+            parameters.mBaseMipMapLevel = 0;
+        }
+        int maxLevel = texture.getMaxMipmapLevel();
+        if (parameters.mMaxMipmapLevel != maxLevel) {
+            glTextureParameteri(texture.getTextureID(), GL_TEXTURE_MAX_LEVEL, maxLevel);
+            parameters.mMaxMipmapLevel = maxLevel;
+        }
+        if (!parameters.mSwizzleIsRGBA) {
+            nglTextureParameteriv(texture.getTextureID(), GL_TEXTURE_SWIZZLE_RGBA, RGBA_SWIZZLE_MASK);
+            parameters.mSwizzleIsRGBA = true;
+        }
         return true;
     }
 }

@@ -19,7 +19,7 @@
 package icyllis.akashigi.opengl;
 
 import icyllis.akashigi.core.SharedPtr;
-import icyllis.akashigi.engine.Buffer;
+import icyllis.akashigi.engine.GBuffer;
 
 import javax.annotation.Nullable;
 
@@ -27,7 +27,7 @@ import static icyllis.akashigi.engine.Engine.*;
 import static icyllis.akashigi.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public final class GLBuffer extends Buffer {
+public final class GLBuffer extends GBuffer {
 
     private int mBuffer;
 

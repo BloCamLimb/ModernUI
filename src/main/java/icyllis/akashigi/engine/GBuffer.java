@@ -23,9 +23,9 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
  * Represents a device memory block that <b>prefers</b> to allocate GPU memory.
- * Also known as geometric buffer, g-buffer. To be exact, GLBuffer or VkBuffer.
+ * Also known as geometric buffer. To be exact, GLBuffer or VkBuffer.
  */
-public abstract class Buffer extends Resource {
+public abstract class GBuffer extends Resource {
 
     /**
      * Maps for reading. The effect of writes is undefined.
@@ -44,10 +44,10 @@ public abstract class Buffer extends Resource {
 
     protected long mMapPtr = NULL;
 
-    protected Buffer(Server server,
-                     int size,
-                     int bufferType,
-                     int accessPattern) {
+    protected GBuffer(Server server,
+                      int size,
+                      int bufferType,
+                      int accessPattern) {
         super(server);
         mSize = size;
         mBufferType = bufferType;

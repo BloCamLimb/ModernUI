@@ -23,7 +23,8 @@ package icyllis.akashigi.engine;
  */
 public abstract class RecycledResource extends ManagedResource {
 
-    public RecycledResource() {
+    public RecycledResource(Server server) {
+        super(server);
     }
 
     /**

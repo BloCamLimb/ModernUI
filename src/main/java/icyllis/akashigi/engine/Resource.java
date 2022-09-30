@@ -173,20 +173,6 @@ public abstract class Resource {
     }
 
     /**
-     * Equivalent to {@link #ref()}.
-     */
-    public final void addRef() {
-        ref(); // inline
-    }
-
-    /**
-     * Equivalent to {@link #unref()}.
-     */
-    public final void removeRef() {
-        unref(); // inline
-    }
-
-    /**
      * Increases the usage count by 1 on the tracked server pipeline.
      * <p>
      * This is designed to be used by Resources that need to track when they are in use on

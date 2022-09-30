@@ -21,23 +21,33 @@ package icyllis.akashigi.engine;
 import javax.annotation.Nonnull;
 
 /**
- * Common interface between {@link Texture} and {@link RenderTarget}.
+ * Common interface between {@link Texture} and {@link RenderSurface}.
  */
 public interface Surface {
 
     /**
-     * @return the width of the surface
+     * Increases the reference count by 1 on the client.
+     */
+    void ref();
+
+    /**
+     * Decreases the reference count by 1 on the client.
+     */
+    void unref();
+
+    /**
+     * @return the width of the surface, greater than zero
      */
     int getWidth();
 
     /**
-     * @return the height of the surface
+     * @return the height of the surface, greater than zero
      */
     int getHeight();
 
     /**
-     * Returns the number of samples per pixel in color buffers (One if non-MSAA).
-     * If {@link #getRenderTarget()} returns null, this method always returns one.
+     * Returns the number of samples per pixel in color buffers (one if non-MSAA).
+     * This method always returns one if this surface is a non-renderable {@link Texture}.
      *
      * @return the number of samples, greater than (multisample) or equal to one
      */
@@ -48,11 +58,6 @@ public interface Surface {
      */
     @Nonnull
     BackendFormat getBackendFormat();
-
-    /**
-     * @return true if we are working with protected content
-     */
-    boolean isProtected();
 
     /**
      * Surface flags.
@@ -82,21 +87,14 @@ public interface Surface {
      *  Means the pixels in the texture are read-only. {@link Texture} only.
      * </li>
      *
-     * @return the combination of the above flags
+     * @return combination of the above flags
      */
-    int getFlags();
+    int getSurfaceFlags();
 
     /**
-     * @return the texture associated with the surface, may be null.
+     * Returns null when this surface is a non-renderable {@link Texture}.
+     *
+     * @return raw ptr to the render target associated with the surface, may be null
      */
-    default Texture getTexture() {
-        return null;
-    }
-
-    /**
-     * @return the render target associated with the surface, may be null.
-     */
-    default RenderTarget getRenderTarget() {
-        return null;
-    }
+    RenderTarget getRenderTarget();
 }

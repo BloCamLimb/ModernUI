@@ -88,8 +88,8 @@ public final class ProxyProvider {
      * Create a {@link TextureProxy} without any data.
      *
      * @see TextureProxy
-     * @see Engine#SurfaceFlag_BackingFit
      * @see Engine#SurfaceFlag_Budgeted
+     * @see Engine#SurfaceFlag_LooseFit
      * @see Engine#SurfaceFlag_Mipmapped
      * @see Engine#SurfaceFlag_Protected
      * @see Engine#SurfaceFlag_SkipAllocator
@@ -123,8 +123,8 @@ public final class ProxyProvider {
     }
 
     /**
-     * @see Engine#SurfaceFlag_BackingFit
      * @see Engine#SurfaceFlag_Budgeted
+     * @see Engine#SurfaceFlag_LooseFit
      * @see Engine#SurfaceFlag_Mipmapped
      * @see Engine#SurfaceFlag_Protected
      * @see Engine#SurfaceFlag_SkipAllocator

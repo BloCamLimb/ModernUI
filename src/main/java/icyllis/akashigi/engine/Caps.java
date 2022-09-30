@@ -622,9 +622,9 @@ public abstract class Caps {
     public abstract BackendFormat getCompressedBackendFormat(int compressionType);
 
     @Nonnull
-    public abstract ProgramDesc makeDesc(ProgramDesc desc,
-                                         RenderTarget renderTarget,
-                                         final ProgramInfo programInfo);
+    public abstract PipelineDesc makeDesc(PipelineDesc desc,
+                                          RenderTarget renderTarget,
+                                          final PipelineInfo pipelineInfo);
 
     public final short getReadSwizzle(BackendFormat format, int colorType) {
         int compression = format.getCompressionType();

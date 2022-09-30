@@ -30,8 +30,6 @@ import static icyllis.akashigi.opengl.GLCore.*;
  */
 public final class GLRenderTarget extends RenderTarget {
 
-    private final GLServer mServer;
-
     /**
      * The render target format for all color attachments.
      *
@@ -70,13 +68,12 @@ public final class GLRenderTarget extends RenderTarget {
                    int msaaFramebuffer,
                    GLTexture texture,
                    GLAttachment msaaColorBuffer) {
-        super(width, height, sampleCount);
+        super(server, width, height, sampleCount);
         assert (sampleCount > 0);
         int resolveFramebuffer = framebuffer;
         framebuffer = sampleCount > 1 ? msaaFramebuffer : framebuffer;
         assert sampleCount > 1 && framebuffer != resolveFramebuffer || sampleCount == 1;
         assert (framebuffer != 0 && resolveFramebuffer != 0);
-        mServer = server;
         mFormat = format;
         mFramebuffer = framebuffer;
         mResolveFramebuffer = resolveFramebuffer;
@@ -92,10 +89,9 @@ public final class GLRenderTarget extends RenderTarget {
                            int framebuffer,
                            boolean ownership,
                            @SharedPtr GLAttachment stencilBuffer) {
-        super(width, height, sampleCount);
+        super(server, width, height, sampleCount);
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
-        mServer = server;
         mFormat = format;
         mFramebuffer = framebuffer;
         mResolveFramebuffer = framebuffer;
@@ -226,12 +222,7 @@ public final class GLRenderTarget extends RenderTarget {
     }
 
     @Override
-    public boolean isProtected() {
-        return false;
-    }
-
-    @Override
-    public int getFlags() {
+    public int getSurfaceFlags() {
         return 0;
     }
 

@@ -50,7 +50,7 @@ public abstract class BufferAllocPool implements AutoCloseable {
 
     // blocks
     @SharedPtr
-    protected Buffer[] mBuffers = new Buffer[8];
+    protected GBuffer[] mBuffers = new GBuffer[8];
     protected int[] mFreeBytes = new int[8];
     protected int mIndex = -1;
 
@@ -97,7 +97,7 @@ public abstract class BufferAllocPool implements AutoCloseable {
         while (bytes > 0) {
             // caller shouldn't try to put back more than they've taken
             assert (mIndex >= 0);
-            Buffer buffer = mBuffers[mIndex];
+            GBuffer buffer = mBuffers[mIndex];
             int usedBytes = buffer.size() - mFreeBytes[mIndex];
             if (bytes >= usedBytes) {
                 bytes -= usedBytes;
@@ -170,7 +170,7 @@ public abstract class BufferAllocPool implements AutoCloseable {
 
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
-            Buffer buffer = mBuffers[mIndex];
+            GBuffer buffer = mBuffers[mIndex];
             int usedBytes = buffer.size() - mFreeBytes[mIndex];
             int padding = (alignment - usedBytes % alignment) % alignment;
             int alignedSize = size + padding;
@@ -206,7 +206,7 @@ public abstract class BufferAllocPool implements AutoCloseable {
 
     @Nullable
     @SharedPtr
-    protected Buffer createBuffer(int size) {
+    protected GBuffer createBuffer(int size) {
         // We use Stream for VBO and IBO because we are 2D rendering, there are few vertices and may
         // frequently change (in each frame).
         return mServer.getContext().getResourceProvider()
@@ -218,7 +218,7 @@ public abstract class BufferAllocPool implements AutoCloseable {
      *
      * @param buffer the top GPU buffer in the pool
      */
-    protected abstract long lockBuffer(Buffer buffer);
+    protected abstract long lockBuffer(GBuffer buffer);
 
     /**
      * Implements this to drop the staging buffer without flushing.
@@ -226,12 +226,12 @@ public abstract class BufferAllocPool implements AutoCloseable {
      * @param buffer the top GPU buffer in the pool
      */
     //TODO can we delete this even for vulkan?
-    protected abstract void unlockBuffer(Buffer buffer);
+    protected abstract void unlockBuffer(GBuffer buffer);
 
     private boolean createBlock(int size) {
         size = Math.max(size, DEFAULT_BUFFER_SIZE);
 
-        Buffer buffer = createBuffer(size);
+        GBuffer buffer = createBuffer(size);
         if (buffer == null) {
             return false;
         }
@@ -262,7 +262,7 @@ public abstract class BufferAllocPool implements AutoCloseable {
             unlockBuffer(mBuffers[mIndex]);
         }
         while (mIndex >= 0) {
-            Buffer buffer = mBuffers[mIndex];
+            GBuffer buffer = mBuffers[mIndex];
             mBuffers[mIndex--] = Resource.move(buffer);
             mBufferPtr = NULL;
         }

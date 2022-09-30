@@ -27,7 +27,6 @@ import static icyllis.akashigi.engine.Engine.*;
 
 public class TextureProxy extends SurfaceProxy {
 
-
     boolean mIsPromiseProxy = false;
 
     /**
@@ -151,6 +150,11 @@ public class TextureProxy extends SurfaceProxy {
             return ResourceProvider.makeApprox(mHeight);
         }
         return mHeight;
+    }
+
+    @Override
+    public int getSampleCount() {
+        return 1;
     }
 
     @Override
@@ -303,8 +307,8 @@ public class TextureProxy extends SurfaceProxy {
         int result = getBackingWidth();
         result = 31 * result + getBackingHeight();
         result = 31 * result + mFormat.getKey();
-        result = 31 * result + ((isMipmapped() ? SurfaceFlag_Mipmapped : 0) |
-                (isProtected() ? SurfaceFlag_Protected : 0));
+        result = 31 * result + ((mSurfaceFlags & (SurfaceFlag_Renderable | SurfaceFlag_Protected)) |
+                (isMipmapped() ? SurfaceFlag_Mipmapped : 0));
         return result;
     }
 
@@ -315,25 +319,26 @@ public class TextureProxy extends SurfaceProxy {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o instanceof Texture.ScratchKey key) {
-            // ResourceCache
+            // ResourceProvider
             return key.mWidth == getBackingWidth() &&
                     key.mHeight == getBackingHeight() &&
                     key.mFormat == mFormat.getKey() &&
-                    key.mFlags == ((isMipmapped() ? SurfaceFlag_Mipmapped : 0) |
-                            (isProtected() ? SurfaceFlag_Protected : 0));
+                    key.mFlags == ((mSurfaceFlags & (SurfaceFlag_Renderable | SurfaceFlag_Protected)) |
+                            (isMipmapped() ? SurfaceFlag_Mipmapped : 0));
         } else if (o instanceof TextureProxy proxy) {
             // ResourceAllocator
             return proxy.getBackingWidth() == getBackingWidth() &&
                     proxy.getBackingHeight() == getBackingHeight() &&
                     proxy.mFormat.getKey() == mFormat.getKey() &&
                     proxy.isMipmapped() == isMipmapped() &&
-                    proxy.isProtected() == isProtected();
+                    (proxy.mSurfaceFlags & (SurfaceFlag_Renderable | SurfaceFlag_Protected)) ==
+                            (mSurfaceFlags & (SurfaceFlag_Renderable | SurfaceFlag_Protected));
         }
         return false;
     }
 
     @Override
-    TextureProxy asTextureProxy() {
+    public TextureProxy asTextureProxy() {
         return this;
     }
 
@@ -431,7 +436,10 @@ public class TextureProxy extends SurfaceProxy {
             mWidth = mHeight = 0;
             return false;
         }
-        assert (mSurfaceFlags & SurfaceFlag_Renderable) == 0 || texture.getRenderTarget() != null;
+        if (((mSurfaceFlags & SurfaceFlag_Renderable) == 0) != (texture.getRenderTarget() == null) ||
+                (mSurfaceFlags & SurfaceFlag_Renderable) != 0 && (texture.getRenderTarget().getTexture() != texture)) {
+            throw new IllegalStateException("Unexpected render target access");
+        }
 
         if (isLazyMost()) {
             // This was a lazy-most proxy. We need to fill in the width & height. For normal

@@ -21,29 +21,29 @@ package icyllis.akashigi.engine;
 import javax.annotation.Nonnull;
 
 /**
- * This class is used to generate a generic program cache key. The OpenGL and Vulkan backends
+ * This class is used to generate a generic pipeline cache key. The OpenGL and Vulkan backends
  * derive backend-specific versions which add additional information.
  */
-public class ProgramDesc extends KeyBuilder {
+public class PipelineDesc extends KeyBuilder {
 
     /**
-     * Builds a program descriptor.
+     * Builds a pipeline descriptor.
      *
-     * @param desc        The built descriptor
-     * @param programInfo Program information need to build the key
-     * @param caps        the caps
+     * @param desc the built descriptor
+     * @param info the pipeline information need to build the key
+     * @param caps the caps
      */
     @Nonnull
-    public static ProgramDesc build(ProgramDesc desc, ProgramInfo programInfo, Caps caps) {
+    public static PipelineDesc build(PipelineDesc desc, PipelineInfo info, Caps caps) {
         desc.reset();
-        genKey(desc, programInfo, caps);
+        genKey(desc, info, caps);
         return desc;
     }
 
     static void genKey(KeyBuilder b,
-                       ProgramInfo programInfo,
+                       PipelineInfo info,
                        Caps caps) {
-        genGPKey(programInfo.geomProc(), b);
+        genGPKey(info.geomProc(), b);
 
         //TODO more keys
 
@@ -67,10 +67,9 @@ public class ProgramDesc extends KeyBuilder {
         geomProc.addToKey(b);
         geomProc.getAttributeKey(b);
 
-        int numTextureSamplers = geomProc.numTextureSamplers();
-        b.add32(numTextureSamplers, "gpNumSamplers");
-        for (int i = 0; i < numTextureSamplers; ++i) {
-            final var sampler = geomProc.textureSampler(i);
+        var sampler = geomProc.textureSampler();
+        b.addBool(sampler != null, "gpUseSampler");
+        if (sampler != null) {
             final var backendFormat = sampler.backendFormat();
 
             b.addBool(backendFormat.isExternal(), "external");

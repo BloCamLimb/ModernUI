@@ -30,8 +30,8 @@ public class CpuBufferCache implements AutoCloseable {
 
     private final CpuBuffer[] mBuffers;
 
-    public CpuBufferCache(int maxBuffersToCache) {
-        mBuffers = new CpuBuffer[maxBuffersToCache];
+    public CpuBufferCache(int cacheSize) {
+        mBuffers = new CpuBuffer[cacheSize];
     }
 
     @Override

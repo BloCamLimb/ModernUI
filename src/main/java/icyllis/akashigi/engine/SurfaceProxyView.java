@@ -102,7 +102,7 @@ public final class SurfaceProxyView implements AutoCloseable {
      * Merge swizzle.
      */
     public void merge(short swizzle) {
-        mSwizzle = Swizzle.merge(mSwizzle, swizzle);
+        mSwizzle = Swizzle.concat(mSwizzle, swizzle);
     }
 
     /**

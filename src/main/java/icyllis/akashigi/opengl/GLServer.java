@@ -37,7 +37,7 @@ public final class GLServer extends Server {
 
     private final GLPipelineStateCache mProgramCache;
 
-    private GLCommandBuffer mMainCmdBuffer = new GLCommandBuffer(this);
+    private GLCommandBuffer mMainCmdBuffer;
 
     private final CpuBufferCache mCpuBufferCache;
 
@@ -46,14 +46,17 @@ public final class GLServer extends Server {
 
     // unique ptr
     private GLOpsRenderPass mCachedOpsRenderPass;
+    private GLResourceProvider mResourceProvider;
 
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
+        mMainCmdBuffer = new GLCommandBuffer(this);
         mProgramCache = new GLPipelineStateCache(this, 256);
         mCpuBufferCache = new CpuBufferCache(6);
         mVertexPool = GLBufferAllocPool.makeVertex(this, mCpuBufferCache);
         mInstancePool = GLBufferAllocPool.makeInstance(this, mCpuBufferCache);
+        mResourceProvider = new GLResourceProvider(this);
     }
 
     /**
@@ -101,9 +104,11 @@ public final class GLServer extends Server {
         mCpuBufferCache.releaseAll();
 
         if (cleanup) {
-            mProgramCache.reset();
+            mProgramCache.destroy();
+            mResourceProvider.destroy();
         } else {
             mProgramCache.discard();
+            mResourceProvider.discard();
         }
     }
 
@@ -124,6 +129,10 @@ public final class GLServer extends Server {
 
     public GLCommandBuffer currentCommandBuffer() {
         return mMainCmdBuffer;
+    }
+
+    public GLResourceProvider getResourceProvider() {
+        return mResourceProvider;
     }
 
     @Override
@@ -355,6 +364,8 @@ public final class GLServer extends Server {
                         1.0f, 0);
             }
         }
+        cmdBuffer.flushRenderTarget(renderTarget);
+
         return cmdBuffer;
     }
 

@@ -39,11 +39,11 @@ public final class GLCaps extends Caps {
     final int[] mProgramBinaryFormats;
 
     final int mMaxFragmentUniformVectors;
-    float mMaxTextureMaxAnisotropy = 1.f;
+    private float mMaxTextureMaxAnisotropy = 1.f;
     final boolean mSupportsProtected = false;
     boolean mFBFetchRequiresEnablePerSample;
     private boolean mSkipErrorChecks = false;
-    private int mMaxLabelLength;
+    private final int mMaxLabelLength;
 
     // see GLTypes
     private final FormatInfo[] mFormatTable =
@@ -1330,10 +1330,10 @@ public final class GLCaps extends Caps {
 
     @Nonnull
     @Override
-    public ProgramDesc makeDesc(ProgramDesc desc,
-                                RenderTarget renderTarget,
-                                final ProgramInfo programInfo) {
-        return ProgramDesc.build(desc, programInfo, this);
+    public PipelineDesc makeDesc(PipelineDesc desc,
+                                 RenderTarget renderTarget,
+                                 final PipelineInfo pipelineInfo) {
+        return PipelineDesc.build(desc, pipelineInfo, this);
     }
 
     @Override
@@ -1497,7 +1497,7 @@ public final class GLCaps extends Caps {
     }
 
     public int getPixelsExternalFormat(int format, int dstColorType, int srcColorType, boolean write) {
-       return getFormatInfo(format).externalFormat(
+        return getFormatInfo(format).externalFormat(
                 dstColorType, srcColorType, write);
     }
 
@@ -1515,6 +1515,10 @@ public final class GLCaps extends Caps {
 
     public int maxLabelLength() {
         return mMaxLabelLength;
+    }
+
+    public float maxTextureMaxAnisotropy() {
+        return mMaxTextureMaxAnisotropy;
     }
 
     static class ExternalIOFormat {

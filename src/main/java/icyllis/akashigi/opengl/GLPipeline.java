@@ -20,6 +20,7 @@ package icyllis.akashigi.opengl;
 
 import icyllis.akashigi.core.SharedPtr;
 import icyllis.akashigi.engine.GeometryProcessor;
+import icyllis.akashigi.engine.ManagedResource;
 import icyllis.akashigi.engine.shading.VertexShaderBuilder;
 
 import javax.annotation.Nonnull;
@@ -36,7 +37,7 @@ import static icyllis.akashigi.opengl.GLCore.*;
  * This class represents an OpenGL vertex array object. It manages the lifetime of the vertex array
  * and is used to track the state of the vertex array to avoid redundant GL calls.
  */
-public class GLPipeline extends GLManagedResource {
+public class GLPipeline extends ManagedResource {
 
     private static final int INVALID_BINDING = -1;
 

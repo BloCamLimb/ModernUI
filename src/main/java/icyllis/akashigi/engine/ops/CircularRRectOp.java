@@ -79,8 +79,7 @@ public final class CircularRRectOp extends MeshDrawOp {
             private int mRadiusUniform;
 
             @Override
-            public void setData(ProgramDataManager pdm,
-                                ShaderCaps shaderCaps,
+            public void setData(UniformDataManager manager,
                                 GeometryProcessor geomProc) {
             }
 
@@ -93,7 +92,7 @@ public final class CircularRRectOp extends MeshDrawOp {
                                       GeometryProcessor geomProc,
                                       String outputColor,
                                       String outputCoverage,
-                                      int[] texSamplers,
+                                      int texSampler,
                                       ShaderVar localPos,
                                       ShaderVar worldPos) {
 

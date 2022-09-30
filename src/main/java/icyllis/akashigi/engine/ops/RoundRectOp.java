@@ -16,15 +16,26 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.opengl;
+package icyllis.akashigi.engine.ops;
 
-import icyllis.akashigi.engine.ManagedResource;
+import icyllis.akashigi.core.Rect2f;
+import icyllis.akashigi.engine.OpFlushState;
+import icyllis.akashigi.engine.RecordingContext;
 
-public abstract class GLManagedResource extends ManagedResource {
+public class RoundRectOp extends MeshDrawOp {
 
-    protected final GLServer mServer;
+    @Override
+    public void onPrePrepare(RecordingContext context) {
 
-    public GLManagedResource(GLServer server) {
-        mServer = server;
+    }
+
+    @Override
+    public void onPrepare(OpFlushState state) {
+
+    }
+
+    @Override
+    public void onExecute(OpFlushState state, Rect2f chainBounds) {
+
     }
 }

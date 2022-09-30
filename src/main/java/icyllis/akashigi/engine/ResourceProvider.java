@@ -288,6 +288,7 @@ public final class ResourceProvider {
         return findAndRefScratchTexture(mTextureScratchKey.compute(
                 format,
                 width, height,
+                sampleCount,
                 surfaceFlags), label);
     }
 
@@ -329,7 +330,7 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public Buffer createBuffer(int size, int intendedType, int accessPattern) {
+    public GBuffer createBuffer(int size, int intendedType, int accessPattern) {
         return null;
     }
 

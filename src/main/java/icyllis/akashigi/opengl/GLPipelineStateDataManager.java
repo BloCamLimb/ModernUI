@@ -30,19 +30,26 @@ import java.util.List;
 public class GLPipelineStateDataManager extends UniformDataManager {
 
     /**
-     * Created by {@link GLPipeline}.
+     * Created by {@link GLPipelineState}.
      *
      * @param uniforms    the uniforms
      * @param uniformSize the uniform block size in bytes
      */
     GLPipelineStateDataManager(List<UniformHandler.UniformInfo> uniforms, int uniformSize) {
         super(uniforms.size(), uniformSize);
-        assert !uniforms.isEmpty();
         for (int i = 0; i < uniforms.size(); i++) {
             UniformHandler.UniformInfo uniformInfo = uniforms.get(i);
             assert ((uniformInfo.mOffset & 0xFFFFFF) == uniformInfo.mOffset);
             assert (SLType.canBeUniformValue(uniformInfo.mVariable.getType()));
             mUniforms[i] = uniformInfo.mOffset | (uniformInfo.mVariable.getType() << 24);
+        }
+    }
+
+    public void setProjection(int u, int width, int height, boolean flip) {
+        if (flip) {
+            set4f(u, 2.0f / width, -1.0f, -2.0f / height, 1.0f);
+        } else {
+            set4f(u, 2.0f / width, -1.0f, 2.0f / height, -1.0f);
         }
     }
 

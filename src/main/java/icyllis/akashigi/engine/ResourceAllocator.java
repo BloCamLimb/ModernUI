@@ -28,12 +28,12 @@ import javax.annotation.Nonnull;
 import static icyllis.akashigi.engine.Engine.SurfaceFlag_Renderable;
 
 /**
- * The ResourceAllocator explicitly distributes {@link Resource}s at flush time. It operates by
- * being given the usage intervals of the various proxies. It keeps these intervals in a singly
- * linked list sorted by increasing start index. (It also maintains a hash table from proxyID
- * to interval to find proxy reuse). The ResourceAllocator uses Registers (in the sense of register
- * allocation) to represent a future surface that will be used for each proxy during
- * {@link #simulate()}, and then assigns actual surfaces during {@link #allocate()}.
+ * The ResourceAllocator explicitly distributes {@link Resource Resources} at flush time. It
+ * operates by being given the usage intervals of the various proxies. It keeps these intervals
+ * in a singly linked list sorted by increasing start index. (It also maintains a hash table
+ * from proxyID to interval to find proxy reuse). The ResourceAllocator uses Registers (in the
+ * sense of register allocation) to represent a future surface that will be used for each proxy
+ * during {@link #simulate()}, and then assigns actual surfaces during {@link #allocate()}.
  * <p>
  * Note: the op indices (used in the usage intervals) come from the order of the ops in
  * their opsTasks after the opsTask DAG has been linearized.
@@ -261,11 +261,10 @@ public final class ResourceAllocator {
      * Called after {@link #simulate()} or {@link #allocate()} on the end of flush.
      */
     public void reset() {
-        // NOTE: We do not reset the 'mInstantiationFailed' flag because we currently do not attempt
-        // to recover from failed instantiations. The user is responsible for checking this flag and
-        // bailing early.
+        mNumOps = 0;
         mSimulated = false;
         mAllocated = false;
+        mInstantiationFailed = false;
         assert (mLiveIntervals.isEmpty());
         mFinishedIntervals.clear();
         Interval cur;
@@ -342,13 +341,13 @@ public final class ResourceAllocator {
         private boolean mInit;
 
         public Register(TextureProxy proxy,
-                        ResourceProvider resourceProvider,
+                        ResourceProvider provider,
                         boolean scratch) {
-            init(proxy, resourceProvider, scratch);
+            init(proxy, provider, scratch);
         }
 
         public Register init(TextureProxy proxy,
-                             ResourceProvider resourceProvider,
+                             ResourceProvider provider,
                              boolean scratch) {
             assert (!mInit);
             assert (proxy != null);
@@ -356,11 +355,10 @@ public final class ResourceAllocator {
             assert (!proxy.isLazy());
             mProxy = proxy;
             if (scratch) {
-                mTexture = resourceProvider.findAndRefScratchTexture(proxy,
-                        "ResourceAllocatorRegister");
+                mTexture = provider.findAndRefScratchTexture(proxy, null);
             } else {
                 assert (proxy.getUniqueKey() != null);
-                mTexture = resourceProvider.findByUniqueKey(proxy.getUniqueKey());
+                mTexture = provider.findByUniqueKey(proxy.getUniqueKey());
             }
             mInit = true;
             return this;
@@ -371,9 +369,25 @@ public final class ResourceAllocator {
                 // rely on the resource cache to hold onto uniquely-keyed textures.
                 return false;
             }
+            assert (proxy.asTextureProxy() != null);
             // If all the refs on the proxy are known to the resource allocator then no one
             // should be holding onto it outside of engine.
-            return !proxy.refCntGreaterThan(knownUseCount);
+            return !refCntGreaterThan(proxy, knownUseCount);
+        }
+
+        /**
+         * Internal only. This must be used with caution. It is only valid to call this when
+         * <code>threadIsolatedTestCnt</code> refs are known to be isolated to the current thread.
+         * That is, it is known that there are at least <code>threadIsolatedTestCnt</code> refs
+         * for which no other thread may make a balancing {@link SurfaceProxy#unref()} call.
+         * Assuming the contract is followed, if this returns false then no other thread has
+         * ownership of this. If it returns true then another thread <em>may</em> have ownership.
+         */
+        public boolean refCntGreaterThan(SurfaceProxy proxy, int threadIsolatedTestCnt) {
+            int cnt = proxy.getRefCntAcquire();
+            // If this fails then the above contract has been violated.
+            assert (cnt >= threadIsolatedTestCnt);
+            return cnt > threadIsolatedTestCnt;
         }
 
         // Resolve the register allocation to an actual Texture. 'mProxy' is used
@@ -579,11 +593,11 @@ public final class ResourceAllocator {
     private int mIntervalPoolSize;
 
     private Register makeRegister(@Nonnull TextureProxy proxy,
-                                  ResourceProvider resourceProvider,
+                                  ResourceProvider provider,
                                   boolean scratch) {
         if (mRegisterPoolSize == 0)
-            return new Register(proxy, resourceProvider, scratch);
-        return mRegisterPool[--mRegisterPoolSize].init(proxy, resourceProvider, scratch);
+            return new Register(proxy, provider, scratch);
+        return mRegisterPool[--mRegisterPoolSize].init(proxy, provider, scratch);
     }
 
     public void freeRegister(@Nonnull Register register) {

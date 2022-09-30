@@ -25,7 +25,7 @@ import javax.annotation.concurrent.Immutable;
  */
 //TODO
 @Immutable
-public class ProgramInfo {
+public class PipelineInfo {
 
     // Pipeline options that the caller may enable.
     public static final byte InputFlag_None = 0;
@@ -76,16 +76,16 @@ public class ProgramInfo {
      * @param colorLoadOp            see LoadOp
      * @param inputFlags             additional flags, see this class
      */
-    public ProgramInfo(SurfaceProxyView writeView,
-                       GeometryProcessor geomProc,
-                       TransferProcessor xferProc,
-                       FragmentProcessor colorFP,
-                       FragmentProcessor coverageFP,
-                       UserStencilSettings userStencilSettings,
-                       byte primitiveType,
-                       int renderPassXferBarriers,
-                       int colorLoadOp,
-                       byte inputFlags) {
+    public PipelineInfo(SurfaceProxyView writeView,
+                        GeometryProcessor geomProc,
+                        TransferProcessor xferProc,
+                        FragmentProcessor colorFP,
+                        FragmentProcessor coverageFP,
+                        UserStencilSettings userStencilSettings,
+                        byte primitiveType,
+                        int renderPassXferBarriers,
+                        int colorLoadOp,
+                        byte inputFlags) {
         assert (writeView != null);
         assert (geomProc != null);
         assert (primitiveType >= 0 && primitiveType <= Engine.PrimitiveType_Last);

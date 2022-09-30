@@ -93,12 +93,12 @@ public class TestManagedResource {
                         SurfaceFlag_Renderable
         );
         GLPipelineState pipelineState = pipelineStateCache.findOrCreatePipelineState(
-                new ProgramInfo(new SurfaceProxyView(proxy2), new RoundRectProcessor(true),
+                new PipelineInfo(new SurfaceProxyView(proxy2), new RoundRectProcessor(true),
                         null, null, null, null,
                         PrimitiveType_Triangles,
                         TransferProcessor.XferBarrierFlag_None,
                         LoadOp_Discard,
-                        ProgramInfo.InputFlag_None));
+                        PipelineInfo.InputFlag_None));
         try (proxy2) {
             pw.println(proxy2);
         }

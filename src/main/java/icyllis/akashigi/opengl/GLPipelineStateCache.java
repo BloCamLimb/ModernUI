@@ -26,32 +26,34 @@ import javax.annotation.Nullable;
 public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
 
     private final GLServer mServer;
-    private final int mRuntimeProgramCacheSize;
-    private final Object2ObjectLinkedOpenCustomHashMap<Object, GLPipelineState> mCache;
-    private final ProgramDesc mLookupDesc = new ProgramDesc();
 
-    GLPipelineStateCache(GLServer server, int runtimeProgramCacheSize) {
+    private final int mCacheSize;
+    private final Object2ObjectLinkedOpenCustomHashMap<Object, GLPipelineState> mCache;
+
+    private final PipelineDesc mLookupDesc = new PipelineDesc();
+
+    GLPipelineStateCache(GLServer server, int cacheSize) {
         mServer = server;
-        mRuntimeProgramCacheSize = runtimeProgramCacheSize;
-        mCache = new Object2ObjectLinkedOpenCustomHashMap<>(runtimeProgramCacheSize, ProgramDesc.HASH_STRATEGY);
+        mCacheSize = cacheSize;
+        mCache = new Object2ObjectLinkedOpenCustomHashMap<>(cacheSize, PipelineDesc.HASH_STRATEGY);
     }
 
     public void discard() {
         mCache.values().forEach(GLPipelineState::discard);
-        reset();
+        destroy();
     }
 
-    public void reset() {
-        mCache.values().forEach(GLPipelineState::reset);
+    public void destroy() {
+        mCache.values().forEach(GLPipelineState::destroy);
         mCache.clear();
     }
 
     @Nullable
-    public GLPipelineState findOrCreatePipelineState(final ProgramInfo programInfo) {
+    public GLPipelineState findOrCreatePipelineState(final PipelineInfo pipelineInfo) {
         final Caps caps = mServer.getCaps();
-        final ProgramDesc desc = caps.makeDesc(mLookupDesc, /*renderTarget*/null, programInfo);
+        final PipelineDesc desc = caps.makeDesc(mLookupDesc, /*renderTarget*/null, pipelineInfo);
         assert (!desc.isEmpty());
-        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, programInfo);
+        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, pipelineInfo);
         if (pipelineState == null) {
             mStats.incNumInlineCompilationFailures();
         }
@@ -59,10 +61,10 @@ public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
     }
 
     @Nullable
-    public GLPipelineState findOrCreatePipelineState(final ProgramDesc desc,
-                                                     final ProgramInfo programInfo) {
+    public GLPipelineState findOrCreatePipelineState(final PipelineDesc desc,
+                                                     final PipelineInfo pipelineInfo) {
         assert (!desc.isEmpty());
-        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, programInfo);
+        GLPipelineState pipelineState = findOrCreatePipelineStateImpl(desc, pipelineInfo);
         if (pipelineState == null) {
             mStats.incNumPreCompilationFailures();
         }
@@ -70,22 +72,22 @@ public class GLPipelineStateCache extends ThreadSafePipelineBuilder {
     }
 
     @Nullable
-    private GLPipelineState findOrCreatePipelineStateImpl(final ProgramDesc desc,
-                                                          final ProgramInfo programInfo) {
+    private GLPipelineState findOrCreatePipelineStateImpl(final PipelineDesc desc,
+                                                          final PipelineInfo pipelineInfo) {
         GLPipelineState entry = mCache.get(desc);
         if (entry != null) {
             return entry;
         }
         // We have a cache miss
-        GLPipelineState pipelineState = GLPipelineStateBuilder.createPipelineState(mServer, desc, programInfo);
+        GLPipelineState pipelineState = GLPipelineStateBuilder.createPipelineState(mServer, desc, pipelineInfo);
         if (pipelineState == null) {
             mStats.incNumCompilationFailures();
             return null;
         }
         mStats.incNumCompilationSuccesses();
-        if (mCache.size() >= mRuntimeProgramCacheSize) {
-            mCache.removeFirst().reset();
-            assert (mCache.size() < mRuntimeProgramCacheSize);
+        if (mCache.size() >= mCacheSize) {
+            mCache.removeFirst().destroy();
+            assert (mCache.size() < mCacheSize);
         }
         if (mCache.put(desc.toKey(), pipelineState) != null) {
             throw new IllegalStateException();

@@ -47,7 +47,7 @@ public interface Mesh {
      * @param baseVertex the offset into buffer of the first vertex,
      *                   in units of the size of a vertex from layout param
      */
-    default void setVertexBuffer(@SharedPtr Buffer buffer, int baseVertex) {
+    default void setVertexBuffer(@SharedPtr GBuffer buffer, int baseVertex) {
         throw new IllegalStateException();
     }
 
@@ -72,7 +72,7 @@ public interface Mesh {
      * @param baseInstance the offset into buffer of the first instance,
      *                     in units of the size of an instance from layout param
      */
-    default void setInstanceBuffer(@SharedPtr Buffer buffer, int baseInstance) {
+    default void setInstanceBuffer(@SharedPtr GBuffer buffer, int baseInstance) {
         throw new IllegalStateException();
     }
 }
