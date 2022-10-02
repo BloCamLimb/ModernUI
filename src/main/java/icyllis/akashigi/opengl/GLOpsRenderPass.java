@@ -31,18 +31,16 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     private GLCommandBuffer mCmdBuffer;
     private GLPipelineState mPipelineState;
 
-    private int mColorLoadOp;
-    private int mColorStoreOp;
-    private int mStencilLoadOp;
-    private int mStencilStoreOp;
+    private byte mColorOps;
+    private byte mStencilOps;
     private float[] mClearColor;
 
     @SharedPtr
-    private GBuffer mActiveIndexBuffer;
+    private Buffer mActiveIndexBuffer;
     @SharedPtr
-    private GBuffer mActiveVertexBuffer;
+    private Buffer mActiveVertexBuffer;
     @SharedPtr
-    private GBuffer mActiveInstanceBuffer;
+    private Buffer mActiveInstanceBuffer;
 
     private int mPrimitiveType;
 
@@ -57,14 +55,12 @@ public final class GLOpsRenderPass extends OpsRenderPass {
 
     public GLOpsRenderPass set(RenderTarget rt,
                                Rect2i bounds, int origin,
-                               int colorLoadOp, int colorStoreOp,
-                               int stencilLoadOp, int stencilStoreOp,
+                               byte colorOps,
+                               byte stencilOps,
                                float[] clearColor) {
         set(rt, origin);
-        mColorLoadOp = colorLoadOp;
-        mColorStoreOp = colorStoreOp;
-        mStencilLoadOp = stencilLoadOp;
-        mStencilStoreOp = stencilStoreOp;
+        mColorOps = colorOps;
+        mStencilOps = stencilOps;
         mClearColor = clearColor;
         return this;
     }
@@ -73,7 +69,10 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     public void begin() {
         super.begin();
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
-        mCmdBuffer = mServer.beginRenderPass(glRenderTarget, mColorLoadOp, mStencilLoadOp, mClearColor);
+        mCmdBuffer = mServer.beginRenderPass(glRenderTarget,
+                mColorOps & LoadOpMask,
+                mStencilOps & LoadOpMask,
+                mClearColor);
     }
 
     @Override
@@ -82,7 +81,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         mActiveVertexBuffer = Resource.move(mActiveVertexBuffer);
         mActiveInstanceBuffer = Resource.move(mActiveInstanceBuffer);
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
-        mServer.endRenderPass(glRenderTarget, mColorStoreOp, mStencilStoreOp);
+        mServer.endRenderPass(glRenderTarget,
+                mColorOps >> StoreOpShift,
+                mStencilOps >> StoreOpShift);
         super.end();
     }
 
@@ -123,9 +124,9 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     }
 
     @Override
-    protected void onBindBuffers(@SharedPtr GBuffer indexBuffer,
-                                 @SharedPtr GBuffer vertexBuffer,
-                                 @SharedPtr GBuffer instanceBuffer) {
+    protected void onBindBuffers(@SharedPtr Buffer indexBuffer,
+                                 @SharedPtr Buffer vertexBuffer,
+                                 @SharedPtr Buffer instanceBuffer) {
         assert (mPipelineState != null);
         mPipelineState.bindBuffers(indexBuffer, vertexBuffer, instanceBuffer);
         mActiveIndexBuffer = Resource.move(mActiveIndexBuffer, indexBuffer);

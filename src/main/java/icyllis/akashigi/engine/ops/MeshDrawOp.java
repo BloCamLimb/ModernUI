@@ -18,13 +18,40 @@
 
 package icyllis.akashigi.engine.ops;
 
-import icyllis.akashigi.engine.Mesh;
+import icyllis.akashigi.engine.*;
 
 /**
- * Base class for mesh-drawing DrawOps.
+ * Base class for mesh-drawing {@link DrawOp DrawOps}.
  */
 public abstract class MeshDrawOp extends DrawOp implements Mesh {
 
+    private PipelineInfo mPipelineInfo;
+
     public MeshDrawOp() {
     }
+
+    public PipelineInfo getPipelineInfo() {
+        return mPipelineInfo;
+    }
+
+    @Override
+    public void onPrePrepare(RecordingContext context,
+                             SurfaceProxyView writeView,
+                             int pipelineFlags) {
+        assert (mPipelineInfo == null);
+        mPipelineInfo = onCreatePipelineInfo(writeView, pipelineFlags);
+    }
+
+    @Override
+    public final void onPrepare(OpFlushState state, SurfaceProxyView writeView, int pipelineFlags) {
+        if (mPipelineInfo == null) {
+            mPipelineInfo = onCreatePipelineInfo(writeView, pipelineFlags);
+        }
+        onPrepareDraws(state);
+    }
+
+    protected abstract PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
+                                                         int pipelineFlags);
+
+    protected abstract void onPrepareDraws(MeshDrawTarget target);
 }

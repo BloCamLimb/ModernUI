@@ -34,7 +34,7 @@ public final class DataUtils {
             unsafe.setAccessible(true);
             UNSAFE = (Unsafe) unsafe.get(null);
         } catch (Exception e) {
-            throw new UnsupportedOperationException("No UNSAFE", e);
+            throw new AssertionError(e);
         }
     }
 

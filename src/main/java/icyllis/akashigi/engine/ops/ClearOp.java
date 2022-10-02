@@ -19,8 +19,7 @@
 package icyllis.akashigi.engine.ops;
 
 import icyllis.akashigi.core.Rect2f;
-import icyllis.akashigi.engine.OpFlushState;
-import icyllis.akashigi.engine.RecordingContext;
+import icyllis.akashigi.engine.*;
 
 import javax.annotation.Nonnull;
 
@@ -62,11 +61,15 @@ public final class ClearOp extends Op {
     }
 
     @Override
-    public void onPrePrepare(RecordingContext context) {
+    public void onPrePrepare(RecordingContext context,
+                             SurfaceProxyView writeView,
+                             int pipelineFlags) {
     }
 
     @Override
-    public void onPrepare(OpFlushState state) {
+    public void onPrepare(OpFlushState state,
+                          SurfaceProxyView writeView,
+                          int pipelineFlags) {
     }
 
     @Override

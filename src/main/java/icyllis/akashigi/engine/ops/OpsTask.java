@@ -51,17 +51,14 @@ public class OpsTask extends RenderTask {
         private Op mHead;
         private Op mTail;
 
-        private final Rect2i mScissor = new Rect2i();
-
-        private boolean mStencil;
+        private AppliedClip mAppliedClip;
 
         private final Rect2f mBounds = new Rect2f();
 
-        public OpChain(Op op, Rect2i scissor, boolean stencil) {
+        public OpChain(Op op, AppliedClip appliedClip) {
             mHead = op;
             mTail = op;
-            mScissor.set(scissor);
-            mStencil = stencil;
+            mAppliedClip = appliedClip;
 
             mBounds.set(op.getLeft(), op.getTop(), op.getRight(), op.getBottom());
 

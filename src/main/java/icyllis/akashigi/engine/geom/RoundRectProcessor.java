@@ -75,6 +75,11 @@ public class RoundRectProcessor extends GeometryProcessor {
     }
 
     @Override
+    public byte primitiveType() {
+        return PrimitiveType_Triangles;
+    }
+
+    @Override
     public void addToKey(KeyBuilder b) {
         b.addBool(mStroke, "stroke");
     }

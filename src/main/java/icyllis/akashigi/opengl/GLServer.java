@@ -41,8 +41,8 @@ public final class GLServer extends Server {
 
     private final CpuBufferCache mCpuBufferCache;
 
-    private final GLBufferAllocPool mVertexPool;
-    private final GLBufferAllocPool mInstancePool;
+    private final BufferAllocPool mVertexPool;
+    private final BufferAllocPool mInstancePool;
 
     // unique ptr
     private GLOpsRenderPass mCachedOpsRenderPass;
@@ -54,8 +54,8 @@ public final class GLServer extends Server {
         mMainCmdBuffer = new GLCommandBuffer(this);
         mProgramCache = new GLPipelineStateCache(this, 256);
         mCpuBufferCache = new CpuBufferCache(6);
-        mVertexPool = GLBufferAllocPool.makeVertex(this, mCpuBufferCache);
-        mInstancePool = GLBufferAllocPool.makeInstance(this, mCpuBufferCache);
+        mVertexPool = BufferAllocPool.makeVertexPool(this);
+        mInstancePool = BufferAllocPool.makeInstancePool(this);
         mResourceProvider = new GLResourceProvider(this);
     }
 
@@ -133,6 +133,10 @@ public final class GLServer extends Server {
 
     public GLResourceProvider getResourceProvider() {
         return mResourceProvider;
+    }
+
+    public CpuBufferCache getCpuBufferCache() {
+        return mCpuBufferCache;
     }
 
     @Override
@@ -324,8 +328,8 @@ public final class GLServer extends Server {
                                           boolean useStencil,
                                           int origin,
                                           Rect2i bounds,
-                                          int colorLoadOp, int colorStoreOp,
-                                          int stencilLoadOp, int stencilStoreOp,
+                                          byte colorOps,
+                                          byte stencilOps,
                                           float[] clearColor) {
         mStats.incRenderPasses();
         if (mCachedOpsRenderPass == null) {
@@ -334,8 +338,8 @@ public final class GLServer extends Server {
         return mCachedOpsRenderPass.set(renderTarget,
                 bounds,
                 origin,
-                colorLoadOp, colorStoreOp,
-                stencilLoadOp, stencilStoreOp,
+                colorOps,
+                stencilOps,
                 clearColor);
     }
 

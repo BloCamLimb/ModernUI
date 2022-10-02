@@ -18,8 +18,6 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.core.SharedPtr;
-
 /**
  * The interface used to receive geometry buffers from {@link MeshDrawTarget}
  * for mesh-drawing operations.
@@ -43,11 +41,12 @@ public interface Mesh {
     /**
      * The callback method for {@link MeshDrawTarget#makeVertexSpace(Mesh)} results.
      *
-     * @param buffer     the vertex buffer that will hold the vertices, ref'ed
+     * @param buffer     the raw ptr to the vertex buffer that will hold the vertices,
+     *                   will be valid until draw
      * @param baseVertex the offset into buffer of the first vertex,
      *                   in units of the size of a vertex from layout param
      */
-    default void setVertexBuffer(@SharedPtr GBuffer buffer, int baseVertex) {
+    default void setVertexBuffer(Buffer buffer, int baseVertex) {
         throw new IllegalStateException();
     }
 
@@ -68,11 +67,12 @@ public interface Mesh {
     /**
      * The callback method for {@link MeshDrawTarget#makeInstanceSpace(Mesh)} results.
      *
-     * @param buffer       the instance buffer that will hold the instances, ref'ed
+     * @param buffer       the raw ptr to the instance buffer that will hold the instances,
+     *                     will be valid until draw
      * @param baseInstance the offset into buffer of the first instance,
      *                     in units of the size of an instance from layout param
      */
-    default void setInstanceBuffer(@SharedPtr GBuffer buffer, int baseInstance) {
+    default void setInstanceBuffer(Buffer buffer, int baseInstance) {
         throw new IllegalStateException();
     }
 }

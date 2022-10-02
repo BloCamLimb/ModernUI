@@ -34,12 +34,13 @@ public final class CircularRRectOp extends MeshDrawOp {
     }
 
     @Override
-    public void onPrePrepare(RecordingContext context) {
-
+    protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
+                                                int pipelineFlags) {
+        return null;
     }
 
     @Override
-    public void onPrepare(OpFlushState state) {
+    protected void onPrepareDraws(MeshDrawTarget target) {
 
     }
 
@@ -60,6 +61,11 @@ public final class CircularRRectOp extends MeshDrawOp {
         @Override
         public String name() {
             return "CircularRRect_GeometryProcessor";
+        }
+
+        @Override
+        public byte primitiveType() {
+            return 0;
         }
 
         @Override

@@ -120,9 +120,9 @@ public abstract class OpsRenderPass {
      * @param vertexBuffer   the vertex buffer, nonnull
      * @param instanceBuffer the instance buffer if using instanced rendering, or null
      */
-    public final void bindBuffers(@SharedPtr GBuffer indexBuffer,
-                                  @SharedPtr GBuffer vertexBuffer,
-                                  @SharedPtr GBuffer instanceBuffer) {
+    public final void bindBuffers(@SharedPtr Buffer indexBuffer,
+                                  @SharedPtr Buffer vertexBuffer,
+                                  @SharedPtr Buffer instanceBuffer) {
         if (vertexBuffer == null) {
             mDrawPipelineStatus = DrawPipelineStatus_FailedToBind;
             return;
@@ -218,9 +218,9 @@ public abstract class OpsRenderPass {
 
     protected abstract boolean onBindPipeline(PipelineInfo pipelineInfo, Rect2f drawBounds);
 
-    protected abstract void onBindBuffers(@SharedPtr GBuffer indexBuffer,
-                                          @SharedPtr GBuffer vertexBuffer,
-                                          @SharedPtr GBuffer instanceBuffer);
+    protected abstract void onBindBuffers(@SharedPtr Buffer indexBuffer,
+                                          @SharedPtr Buffer vertexBuffer,
+                                          @SharedPtr Buffer instanceBuffer);
 
     protected abstract void onDraw(int vertexCount, int baseVertex);
 

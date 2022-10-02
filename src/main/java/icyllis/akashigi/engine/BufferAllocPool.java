@@ -19,30 +19,34 @@
 package icyllis.akashigi.engine;
 
 import icyllis.akashigi.core.SharedPtr;
+import org.lwjgl.system.APIUtil;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
 import static icyllis.akashigi.engine.Engine.*;
-import static org.lwjgl.system.MemoryUtil.*;
+import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
- * A pool of geometry buffers tied to a {@link Server}. (Render thread only.)
+ * A pool of geometry buffers tied to a {@link Server}.
  * <p>
  * The pool allows a client to make space for geometry and then put back excess
  * space if it over allocated. When a client is ready to draw from the pool
- * it calls unmap on the pool ensure buffers are ready for drawing. The pool
- * can be reset after drawing is completed to recycle space.
+ * it calls {@link #flush()} on the pool ensure buffers are ready for drawing.
+ * The pool can be reset after drawing is completed to recycle space. After that,
+ * all GPU buffers can't be touched again (imagine we have triple buffering).
  * <p>
  * At creation time a minimum per-buffer size can be specified. Additionally,
- * a number of buffers to preallocate can be specified. These will
- * be allocated at the min size and kept around until the pool is destroyed.
- * <p>
- * <b>NOTE:</b> You must call {@link #reset()} to reset for next flush.
+ * a number of buffers to pre-allocate can be specified. These will be allocated
+ * at the minimum size and kept around until the pool is destroyed.
  */
-public abstract class BufferAllocPool implements AutoCloseable {
+public abstract class BufferAllocPool {
 
+    /**
+     * We expect buffers for meshes to be at least 64KB.
+     */
     public static final int DEFAULT_BUFFER_SIZE = 1 << 16;
 
     private final Server mServer;
@@ -50,13 +54,15 @@ public abstract class BufferAllocPool implements AutoCloseable {
 
     // blocks
     @SharedPtr
-    protected GBuffer[] mBuffers = new GBuffer[8];
+    protected Buffer[] mBuffers = new Buffer[8];
     protected int[] mFreeBytes = new int[8];
     protected int mIndex = -1;
 
     protected long mBufferPtr;
 
     private int mBytesInUse;
+
+    protected ByteBuffer mWriter;
 
     /**
      * Constructor.
@@ -65,29 +71,68 @@ public abstract class BufferAllocPool implements AutoCloseable {
      * @param bufferType the type of buffers to create.
      */
     protected BufferAllocPool(Server server, int bufferType) {
-        assert (bufferType == GpuBufferType_Vertex || bufferType == GpuBufferType_Index);
+        assert (bufferType == BufferType_Vertex || bufferType == BufferType_Index);
         mServer = server;
         mBufferType = bufferType;
     }
 
-    @Override
-    public void close() {
-        reset();
+    /**
+     * Constructor.
+     *
+     * @param server the server used to create the vertex buffers.
+     */
+    @Nonnull
+    public static BufferAllocPool makeVertexPool(Server server) {
+        return new VertexPool(server);
+    }
+
+    /**
+     * Constructor.
+     *
+     * @param server the server used to create the instance buffers.
+     */
+    @Nonnull
+    public static BufferAllocPool makeInstancePool(Server server) {
+        return new InstancePool(server);
     }
 
     /**
      * Ensures all buffers are unlocked and have all data written to them.
      * Call before drawing using buffers from the pool.
      */
-    public abstract void flush();
+    public void flush() {
+        if (mBufferPtr != NULL) {
+            assert (mIndex >= 0);
+            Buffer buffer = mBuffers[mIndex];
+            int flushSize = buffer.getSize() - mFreeBytes[mIndex];
+            assert (buffer.isLocked());
+            assert (buffer.getLockedBuffer() == mBufferPtr);
+            buffer.unlock(/*offset=*/0, flushSize);
+            mBufferPtr = NULL;
+        }
+    }
 
     /**
-     * Invalidates all the data in the pool, unrefs non-preallocated buffers.
+     * Invalidates all the data in the pool, unrefs non-pre-allocated buffers.
      * This should be called at the end of each frame and destructor.
      */
     public void reset() {
         mBytesInUse = 0;
-        deleteBlocks();
+        if (mIndex >= 0) {
+            assert (mBufferPtr != NULL);
+            Buffer buffer = mBuffers[mIndex];
+            assert (buffer.isLocked());
+            assert (buffer.getLockedBuffer() == mBufferPtr);
+            buffer.unlock();
+            mBufferPtr = NULL;
+        }
+        while (mIndex >= 0) {
+            Buffer buffer = mBuffers[mIndex];
+            assert (!buffer.isLocked());
+            mBuffers[mIndex--] = Resource.move(buffer);
+        }
+        assert (mIndex == -1);
+        assert (mBufferPtr == NULL);
     }
 
     /**
@@ -97,15 +142,16 @@ public abstract class BufferAllocPool implements AutoCloseable {
         while (bytes > 0) {
             // caller shouldn't try to put back more than they've taken
             assert (mIndex >= 0);
-            GBuffer buffer = mBuffers[mIndex];
-            int usedBytes = buffer.size() - mFreeBytes[mIndex];
+            Buffer buffer = mBuffers[mIndex];
+            int usedBytes = buffer.getSize() - mFreeBytes[mIndex];
             if (bytes >= usedBytes) {
                 bytes -= usedBytes;
                 mBytesInUse -= usedBytes;
-                // if we locked a vb to satisfy the make space and we're releasing
-                // beyond it, then unlock it without flushing.
-                unlockBuffer(buffer);
+                assert (buffer.isLocked());
+                assert (buffer.getLockedBuffer() == mBufferPtr);
+                buffer.unlock(/*offset=*/0, usedBytes);
                 assert (mIndex >= 0);
+                assert (!buffer.isLocked());
                 mBuffers[mIndex--] = Resource.move(buffer);
                 mBufferPtr = NULL;
             } else {
@@ -125,7 +171,6 @@ public abstract class BufferAllocPool implements AutoCloseable {
      *      <li>this method is called again.</li>
      *      <li>{@link #flush()} is called.</li>
      *      <li>{@link #reset()} is called.</li>
-     *      <li>{@link #close()} is called.</li>
      * </ul>
      * Once {@link #flush()} on the pool is called the vertices/instances/indices
      * are guaranteed to be in the buffer at the offset indicated by baseVertex/
@@ -154,7 +199,6 @@ public abstract class BufferAllocPool implements AutoCloseable {
      *      <li>this method is called again.</li>
      *      <li>{@link #flush()} is called.</li>
      *      <li>{@link #reset()} is called.</li>
-     *      <li>{@link #close()} is called.</li>
      * </ul>
      * Once unmap on the pool is called the data is guaranteed to be in the
      * buffer at the offset indicated by offset. Until that time it may be
@@ -170,70 +214,27 @@ public abstract class BufferAllocPool implements AutoCloseable {
 
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
-            GBuffer buffer = mBuffers[mIndex];
-            int usedBytes = buffer.size() - mFreeBytes[mIndex];
-            int padding = (alignment - usedBytes % alignment) % alignment;
+            Buffer buffer = mBuffers[mIndex];
+            int position = buffer.getSize() - mFreeBytes[mIndex];
+            int padding = (alignment - position % alignment) % alignment;
             int alignedSize = size + padding;
             if (alignedSize <= 0) {
-                return NULL;
+                return NULL; // overflow
             }
             if (alignedSize <= mFreeBytes[mIndex]) {
-                memSet(mBufferPtr + usedBytes, 0, padding);
-                usedBytes += padding;
                 mFreeBytes[mIndex] -= alignedSize;
                 mBytesInUse += alignedSize;
-                return mBufferPtr + usedBytes;
+                return mBufferPtr + position + padding;
             }
         }
 
-        // We could honor the space request using by a partial update of the current
-        // VB (if there is room). But we don't currently use draw calls to GL that
-        // allow the driver to know that previously issued draws won't read from
-        // the part of the buffer we update. Also, when this was written the GL
-        // buffer implementation was cheating on the actual buffer size by shrinking
-        // the buffer in updateData() if the amount of data passed was less than
-        // the full buffer size. This is old code and both concerns may be obsolete.
+        int blockSize = Math.max(size, DEFAULT_BUFFER_SIZE);
 
-        if (!createBlock(size)) {
-            return NULL;
-        }
-        assert (mBufferPtr != NULL);
-
-        mFreeBytes[mIndex] -= size;
-        mBytesInUse += size;
-        return mBufferPtr;
-    }
-
-    @Nullable
-    @SharedPtr
-    protected GBuffer createBuffer(int size) {
-        // We use Stream for VBO and IBO because we are 2D rendering, there are few vertices and may
-        // frequently change (in each frame).
-        return mServer.getContext().getResourceProvider()
-                .createBuffer(size, mBufferType, AccessPattern_Stream);
-    }
-
-    /**
-     * Implements this to create staging buffers.
-     *
-     * @param buffer the top GPU buffer in the pool
-     */
-    protected abstract long lockBuffer(GBuffer buffer);
-
-    /**
-     * Implements this to drop the staging buffer without flushing.
-     *
-     * @param buffer the top GPU buffer in the pool
-     */
-    //TODO can we delete this even for vulkan?
-    protected abstract void unlockBuffer(GBuffer buffer);
-
-    private boolean createBlock(int size) {
-        size = Math.max(size, DEFAULT_BUFFER_SIZE);
-
-        GBuffer buffer = createBuffer(size);
+        @SharedPtr
+        Buffer buffer = mServer.getContext().getResourceProvider()
+                .createBuffer(blockSize, mBufferType, AccessPattern_Dynamic);
         if (buffer == null) {
-            return false;
+            return NULL;
         }
 
         // we only lock one buffer at the same time, so unlock the previous buffer
@@ -246,26 +247,161 @@ public abstract class BufferAllocPool implements AutoCloseable {
             mFreeBytes = Arrays.copyOf(mFreeBytes, cap);
         }
         mBuffers[mIndex] = buffer;
-        mFreeBytes[mIndex] = buffer.size();
+        mFreeBytes[mIndex] = buffer.getSize() - size;
+        mBytesInUse += size;
 
-        // ensure we unlocked the previous buffer
         assert (mBufferPtr == NULL);
-        mBufferPtr = lockBuffer(buffer);
-        // ensure we locked the current buffer
+        mBufferPtr = buffer.lock();
         assert (mBufferPtr != NULL);
-
-        return true;
+        return mBufferPtr;
     }
 
-    private void deleteBlocks() {
-        if (mIndex >= 0) {
-            unlockBuffer(mBuffers[mIndex]);
+    private static class VertexPool extends BufferAllocPool {
+
+        public VertexPool(Server server) {
+            super(server, Engine.BufferType_Vertex);
         }
-        while (mIndex >= 0) {
-            GBuffer buffer = mBuffers[mIndex];
-            mBuffers[mIndex--] = Resource.move(buffer);
-            mBufferPtr = NULL;
+
+        /**
+         * Returns a block of memory to hold vertices. A buffer designated to hold
+         * the vertices given to the caller. The buffer may or may not be locked.
+         * The returned ptr remains valid until any of the following:
+         * <ul>
+         *      <li>this method is called again.</li>
+         *      <li>{@link #flush()} is called.</li>
+         *      <li>{@link #reset()} is called.</li>
+         * </ul>
+         * Once unmap on the pool is called the vertices are guaranteed to be in
+         * the buffer at the offset indicated by baseVertex. Until that time they
+         * may be in temporary storage and/or the buffer may be locked.
+         *
+         * @param mesh specifies the mesh to allocate space for
+         * @return pointer to first vertex, or NULL if failed
+         */
+        @Override
+        public long makeSpace(Mesh mesh) {
+            int vertexSize = mesh.getVertexSize();
+            int vertexCount = mesh.getVertexCount();
+            assert (vertexSize > 0 && vertexCount > 0);
+
+            int totalSize = vertexSize * vertexCount;
+            long ptr = makeSpace(totalSize, vertexSize);
+            if (ptr == NULL) {
+                return NULL;
+            }
+
+            Buffer buffer = mBuffers[mIndex];
+            int offset = (int) (ptr - mBufferPtr);
+            assert (offset % vertexSize == 0);
+            mesh.setVertexBuffer(buffer, offset / vertexSize);
+            return ptr;
         }
-        assert (mBufferPtr == NULL);
+
+        /**
+         * Similar to {@link #makeSpace(Mesh)}, but returns a wrapper instead.
+         *
+         * @param mesh specifies the mesh to allocate space for
+         * @return pointer to first vertex, or null if failed
+         */
+        @Nullable
+        @Override
+        public ByteBuffer makeWriter(Mesh mesh) {
+            int vertexSize = mesh.getVertexSize();
+            int vertexCount = mesh.getVertexCount();
+            assert (vertexSize > 0 && vertexCount > 0);
+
+            int totalSize = vertexSize * vertexCount;
+            long ptr = makeSpace(totalSize, vertexSize);
+            if (ptr == NULL) {
+                return null;
+            }
+
+            Buffer buffer = mBuffers[mIndex];
+            int offset = (int) (ptr - mBufferPtr);
+            assert (offset % vertexSize == 0);
+            mesh.setVertexBuffer(buffer, offset / vertexSize);
+
+            ByteBuffer writer = APIUtil.apiGetMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
+            assert (writer != null);
+            writer.position(offset);
+            writer.limit(offset + totalSize);
+            mWriter = writer;
+            return writer;
+        }
+    }
+
+    private static class InstancePool extends BufferAllocPool {
+
+        public InstancePool(Server server) {
+            super(server, Engine.BufferType_Vertex);
+            // instance buffers are also vertex buffers, but we allocate them from a different pool
+        }
+
+        /**
+         * Returns a block of memory to hold instances. A buffer designated to hold
+         * the instances given to the caller. The buffer may or may not be locked.
+         * The returned ptr remains valid until any of the following:
+         * <ul>
+         *      <li>this method is called again.</li>
+         *      <li>{@link #flush()} is called.</li>
+         *      <li>{@link #reset()} is called.</li>
+         * </ul>
+         * Once unmap on the pool is called the instances are guaranteed to be in
+         * the buffer at the offset indicated by baseInstance. Until that time they
+         * may be in temporary storage and/or the buffer may be locked.
+         *
+         * @param mesh specifies the mesh to allocate space for
+         * @return pointer to first instance, or NULL if failed
+         */
+        @Override
+        public long makeSpace(Mesh mesh) {
+            int instanceSize = mesh.getInstanceSize();
+            int instanceCount = mesh.getInstanceCount();
+            assert (instanceSize > 0 && instanceCount > 0);
+
+            int totalSize = instanceSize * instanceCount;
+            long ptr = makeSpace(totalSize, instanceSize);
+            if (ptr == NULL) {
+                return NULL;
+            }
+
+            Buffer buffer = mBuffers[mIndex];
+            int offset = (int) (ptr - mBufferPtr);
+            assert (offset % instanceSize == 0);
+            mesh.setInstanceBuffer(buffer, offset / instanceSize);
+            return ptr;
+        }
+
+        /**
+         * Similar to {@link #makeSpace(Mesh)}, but returns a wrapper instead.
+         *
+         * @param mesh specifies the mesh to allocate space for
+         * @return pointer to first instance, or null if failed
+         */
+        @Nullable
+        @Override
+        public ByteBuffer makeWriter(Mesh mesh) {
+            int instanceSize = mesh.getInstanceSize();
+            int instanceCount = mesh.getInstanceCount();
+            assert (instanceSize > 0 && instanceCount > 0);
+
+            int totalSize = instanceSize * instanceCount;
+            long ptr = makeSpace(totalSize, instanceSize);
+            if (ptr == NULL) {
+                return null;
+            }
+
+            Buffer buffer = mBuffers[mIndex];
+            int offset = (int) (ptr - mBufferPtr);
+            assert (offset % instanceSize == 0);
+            mesh.setInstanceBuffer(buffer, offset / instanceSize);
+
+            ByteBuffer writer = APIUtil.apiGetMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
+            assert (writer != null);
+            writer.position(offset);
+            writer.limit(offset + totalSize);
+            mWriter = writer;
+            return writer;
+        }
     }
 }

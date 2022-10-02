@@ -175,13 +175,17 @@ public abstract class Op {
      * ahead of time and when it has not been called).
      */
     //TODO more params
-    public abstract void onPrePrepare(RecordingContext context);
+    public abstract void onPrePrepare(RecordingContext context,
+                                      SurfaceProxyView writeView,
+                                      int pipelineFlags);
 
     /**
      * Called prior to executing. The op should perform any resource creation or data transfers
      * necessary before execute() is called.
      */
-    public abstract void onPrepare(OpFlushState state);
+    public abstract void onPrepare(OpFlushState state,
+                                   SurfaceProxyView writeView,
+                                   int pipelineFlags);
 
     /**
      * Issues the op's commands to {@link Server}.

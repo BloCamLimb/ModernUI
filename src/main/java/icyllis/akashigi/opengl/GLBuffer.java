@@ -18,8 +18,10 @@
 
 package icyllis.akashigi.opengl;
 
+import icyllis.akashigi.core.RefCnt;
 import icyllis.akashigi.core.SharedPtr;
-import icyllis.akashigi.engine.GBuffer;
+import icyllis.akashigi.engine.Buffer;
+import icyllis.akashigi.engine.CpuBuffer;
 
 import javax.annotation.Nullable;
 
@@ -27,19 +29,23 @@ import static icyllis.akashigi.engine.Engine.*;
 import static icyllis.akashigi.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
-public final class GLBuffer extends GBuffer {
+public final class GLBuffer extends Buffer {
 
     private int mBuffer;
 
-    public GLBuffer(GLServer server,
-                    int size,
-                    int bufferType,
-                    int accessPattern,
-                    int buffer,
-                    long mapPtr) {
+    private boolean mLocked;
+
+    private long mMappedBuffer;
+    @SharedPtr
+    private CpuBuffer mStagingBuffer;
+
+    private GLBuffer(GLServer server,
+                     int size,
+                     int bufferType,
+                     int accessPattern,
+                     int buffer) {
         super(server, size, bufferType, accessPattern);
         mBuffer = buffer;
-        mMapPtr = mapPtr;
 
         registerWithCache(true);
     }
@@ -51,30 +57,25 @@ public final class GLBuffer extends GBuffer {
                                 int bufferType,
                                 int accessPattern) {
         assert (size > 0);
-        assert (checkGpuBufferType(bufferType));
-        assert (checkAccessPattern(accessPattern));
 
-        int flags = 0;
+        int allocFlags = 0;
         switch (bufferType) {
-            case GpuBufferType_Vertex, GpuBufferType_Index -> {
+            case BufferType_Vertex, BufferType_Index -> {
                 assert (accessPattern == AccessPattern_Static
-                        || accessPattern == AccessPattern_Stream);
-                flags |= GL_DYNAMIC_STORAGE_BIT;
+                        || accessPattern == AccessPattern_Dynamic);
+                allocFlags |= GL_DYNAMIC_STORAGE_BIT;
             }
-            case GpuBufferType_Uniform -> {
+            case BufferType_Uniform -> {
                 assert (accessPattern == AccessPattern_Dynamic);
-                flags |= GL_DYNAMIC_STORAGE_BIT;
+                allocFlags |= GL_DYNAMIC_STORAGE_BIT;
             }
-            case GpuBufferType_XferSrcToDst -> {
+            case BufferType_XferSrcToDst -> {
                 assert (accessPattern == AccessPattern_Dynamic);
-                flags |= GL_MAP_WRITE_BIT
-                        | GL_MAP_PERSISTENT_BIT
-                        | GL_MAP_COHERENT_BIT;
+                allocFlags |= GL_MAP_WRITE_BIT;
             }
-            case GpuBufferType_XferDstToSrc -> {
-                assert (accessPattern == AccessPattern_Dynamic
-                        || accessPattern == AccessPattern_Stream);
-                flags |= GL_MAP_READ_BIT;
+            case BufferType_XferDstToSrc -> {
+                assert (accessPattern == AccessPattern_Dynamic);
+                allocFlags |= GL_MAP_READ_BIT;
             }
         }
 
@@ -83,27 +84,17 @@ public final class GLBuffer extends GBuffer {
             return null;
         }
         if (server.getCaps().skipErrorChecks()) {
-            glNamedBufferStorage(buffer, size, flags);
+            glNamedBufferStorage(buffer, size, allocFlags);
         } else {
             glClearErrors();
-            glNamedBufferStorage(buffer, size, flags);
+            glNamedBufferStorage(buffer, size, allocFlags);
             if (glGetError() != GL_NO_ERROR) {
                 glDeleteBuffers(buffer);
                 return null;
             }
         }
-        long mapPtr = NULL;
-        if ((flags & GL_MAP_PERSISTENT_BIT) != 0) {
-            mapPtr = nglMapNamedBufferRange(buffer, 0, size, GL_MAP_WRITE_BIT
-                    | GL_MAP_PERSISTENT_BIT
-                    | GL_MAP_COHERENT_BIT);
-            if (mapPtr == NULL) {
-                glDeleteBuffers(buffer);
-                return null;
-            }
-        }
 
-        return new GLBuffer(server, size, bufferType, accessPattern, buffer, mapPtr);
+        return new GLBuffer(server, size, bufferType, accessPattern, buffer);
     }
 
     public int getBufferID() {
@@ -116,48 +107,100 @@ public final class GLBuffer extends GBuffer {
             glDeleteBuffers(mBuffer);
             mBuffer = 0;
         }
-        mMapPtr = NULL;
+        mLocked = false;
+        mMappedBuffer = NULL;
+        mStagingBuffer = RefCnt.move(mStagingBuffer);
     }
 
     @Override
     protected void onDiscard() {
         mBuffer = 0;
-        mMapPtr = NULL;
+        mLocked = false;
+        mMappedBuffer = NULL;
+        mStagingBuffer = RefCnt.move(mStagingBuffer);
     }
 
     @Override
-    protected void onMap() {
+    protected GLServer getServer() {
+        return (GLServer) super.getServer();
+    }
+
+    @Override
+    protected long onLock(int mode, int offset, int size) {
+        assert (getServer().getContext().isOnOwnerThread());
+        assert (!mLocked);
         assert (mBuffer != 0);
-        assert (!isDestroyed());
-        assert (!isMapped());
 
-        assert (bufferType() == GpuBufferType_XferDstToSrc);
-        mMapPtr = nglMapNamedBufferRange(mBuffer, 0, size(), GL_MAP_READ_BIT);
+        mLocked = true;
+
+        if (mode == LockMode_Read) {
+            // prefer mapping, such as pixel buffer object
+            mMappedBuffer = nglMapNamedBufferRange(mBuffer, offset, size, GL_MAP_READ_BIT);
+            if (mMappedBuffer == NULL) {
+                throw new IllegalStateException();
+            }
+            return mMappedBuffer;
+        } else {
+            // prefer CPU staging buffer
+            assert (mode == LockMode_WriteDiscard);
+            mStagingBuffer = getServer().getCpuBufferCache().makeBuffer(size);
+            assert (mStagingBuffer != null);
+            return mStagingBuffer.data();
+        }
     }
 
     @Override
-    protected void onUnmap() {
-        assert (bufferType() == GpuBufferType_XferDstToSrc);
-        glUnmapNamedBuffer(mBuffer);
-        // read only, no flush
+    protected void onUnlock(int mode, int offset, int size) {
+        assert (getServer().getContext().isOnOwnerThread());
+        assert (mLocked);
+        assert (mBuffer != 0);
+
+        if (mode == LockMode_Read) {
+            assert (mMappedBuffer != NULL);
+            glUnmapNamedBuffer(mBuffer);
+            mMappedBuffer = NULL;
+        } else {
+            assert (mode == LockMode_WriteDiscard);
+            if (accessPattern() != AccessPattern_Static) {
+                glInvalidateBufferSubData(mBuffer, offset, size);
+            }
+            assert (mStagingBuffer != null);
+            doUploadData(mStagingBuffer.data(), offset, size);
+            mStagingBuffer = RefCnt.move(mStagingBuffer);
+        }
+        mLocked = false;
+    }
+
+    @Override
+    public boolean isLocked() {
+        return mLocked;
+    }
+
+    @Override
+    public long getLockedBuffer() {
+        assert (mLocked);
+        return mMappedBuffer != NULL ? mMappedBuffer : mStagingBuffer.data();
     }
 
     @Override
     protected boolean onUpdateData(long data, int offset, int size) {
-        final int buffer = mBuffer;
-        assert (buffer != 0);
+        assert (getServer().getContext().isOnOwnerThread());
+        assert (mBuffer != 0);
         if (accessPattern() != AccessPattern_Static) {
-            glInvalidateBufferSubData(buffer, offset, size);
+            glInvalidateBufferSubData(mBuffer, offset, size);
         }
-        while (size > 0) {
-            int bufferSize = Math.min(1 << 18, size);
-
-            nglNamedBufferSubData(buffer, offset, bufferSize, data);
-
-            data += bufferSize;
-            offset += bufferSize;
-            size -= bufferSize;
-        }
+        doUploadData(data, offset, size);
         return true;
+    }
+
+    private void doUploadData(long data, int offset, int totalSize) {
+        while (totalSize > 0) {
+            // restricted to 256KB per update
+            int size = Math.min(1 << 18, totalSize);
+            nglNamedBufferSubData(mBuffer, offset, size, data);
+            data += size;
+            offset += size;
+            totalSize -= size;
+        }
     }
 }

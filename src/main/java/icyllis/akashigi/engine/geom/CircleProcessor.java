@@ -99,6 +99,11 @@ public class CircleProcessor extends GeometryProcessor {
     }
 
     @Override
+    public byte primitiveType() {
+        return PrimitiveType_Triangles;
+    }
+
+    @Override
     public void addToKey(KeyBuilder b) {
         b.addBits(5, mFlags, "stroke|clipPlane|isectPlane|unionPlane|roundCaps");
     }

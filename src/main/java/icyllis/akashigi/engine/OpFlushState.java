@@ -71,12 +71,12 @@ public class OpFlushState implements MeshDrawTarget {
                                             boolean useStencil,
                                             int origin,
                                             Rect2i bounds,
-                                            int colorLoadOp, int colorStoreOp,
-                                            int stencilLoadOp, int stencilStoreOp,
+                                            byte colorOps,
+                                            byte stencilOps,
                                             float[] clearColor) {
         assert (mOpsRenderPass == null);
         OpsRenderPass opsRenderPass = mServer.getOpsRenderPass(renderTarget,
-                useStencil, origin, bounds, colorLoadOp, colorStoreOp, stencilLoadOp, stencilStoreOp, clearColor);
+                useStencil, origin, bounds, colorOps, stencilOps, clearColor);
         if (opsRenderPass == null) {
             return null;
         }

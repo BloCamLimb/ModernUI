@@ -368,6 +368,11 @@ public abstract class GeometryProcessor extends Processor {
     }
 
     /**
+     * @see Engine#PrimitiveType_Triangles
+     */
+    public abstract byte primitiveType();
+
+    /**
      * @return the GP's texture sampler, or null
      */
     @Nullable

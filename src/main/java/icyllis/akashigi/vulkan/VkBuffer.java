@@ -18,10 +18,10 @@
 
 package icyllis.akashigi.vulkan;
 
-import icyllis.akashigi.engine.GBuffer;
+import icyllis.akashigi.engine.Buffer;
 
 //TODO
-public final class VkBuffer extends GBuffer {
+public final class VkBuffer extends Buffer {
 
     public VkBuffer(VkServer server) {
         super(server, 0, 0, 0);
@@ -38,13 +38,23 @@ public final class VkBuffer extends GBuffer {
     }
 
     @Override
-    protected void onMap() {
+    protected long onLock(int mode, int offset, int size) {
+        return 0;
+    }
+
+    @Override
+    protected void onUnlock(int mode, int offset, int size) {
 
     }
 
     @Override
-    protected void onUnmap() {
+    public boolean isLocked() {
+        return false;
+    }
 
+    @Override
+    public long getLockedBuffer() {
+        return 0;
     }
 
     @Override

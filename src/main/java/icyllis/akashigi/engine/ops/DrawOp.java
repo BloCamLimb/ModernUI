@@ -18,8 +18,12 @@
 
 package icyllis.akashigi.engine.ops;
 
+import icyllis.akashigi.engine.OpsRenderPass;
+import icyllis.akashigi.engine.RenderTarget;
+
 /**
- * Base class for Ops that draw. These ops can draw into an op list's RenderTarget.
+ * Base class for {@link Op Ops} that draw. These ops can draw into an {@link OpsRenderPass}'s
+ * {@link RenderTarget}.
  */
 public abstract class DrawOp extends Op {
 
@@ -27,11 +31,9 @@ public abstract class DrawOp extends Op {
     }
 
     /**
-     * Called after finalize, at which point every op should know whether it will need stencil.
+     * Returns whether the op will draw stencil.
      */
     public boolean usesStencil() {
         return false;
     }
-
-    //TODO more methods
 }

@@ -101,9 +101,9 @@ public class GLPipelineState {
     /**
      * Binds all geometric buffers.
      */
-    public void bindBuffers(GBuffer indexBuffer,
-                            GBuffer vertexBuffer,
-                            GBuffer instanceBuffer) {
+    public void bindBuffers(Buffer indexBuffer,
+                            Buffer vertexBuffer,
+                            Buffer instanceBuffer) {
         if (indexBuffer instanceof GLBuffer glIndexBuffer) {
             mPipeline.bindIndexBuffer(glIndexBuffer);
         }

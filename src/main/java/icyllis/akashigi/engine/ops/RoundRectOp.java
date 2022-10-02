@@ -19,23 +19,74 @@
 package icyllis.akashigi.engine.ops;
 
 import icyllis.akashigi.core.Rect2f;
-import icyllis.akashigi.engine.OpFlushState;
-import icyllis.akashigi.engine.RecordingContext;
+import icyllis.akashigi.engine.*;
+import icyllis.akashigi.engine.geom.RoundRectProcessor;
 
+//TODO
 public class RoundRectOp extends MeshDrawOp {
 
-    @Override
-    public void onPrePrepare(RecordingContext context) {
+    private Buffer mVertexBuffer;
+    private int mBaseVertex;
 
-    }
-
-    @Override
-    public void onPrepare(OpFlushState state) {
-
-    }
+    private Buffer mInstanceBuffer;
+    private int mBaseInstance;
 
     @Override
     public void onExecute(OpFlushState state, Rect2f chainBounds) {
+        OpsRenderPass opsRenderPass = state.getOpsRenderPass();
+        opsRenderPass.bindPipeline(getPipelineInfo(), chainBounds);
+        opsRenderPass.bindTextures(null);
+        opsRenderPass.bindBuffers(null, mVertexBuffer, mInstanceBuffer);
+        opsRenderPass.drawInstanced(getInstanceCount(), mBaseInstance, getVertexCount(), mBaseVertex);
+    }
 
+    @Override
+    protected PipelineInfo onCreatePipelineInfo(SurfaceProxyView writeView,
+                                                int pipelineFlags) {
+        return new PipelineInfo(writeView,
+                new RoundRectProcessor(false),
+                null,
+                null,
+                null,
+                null,
+                pipelineFlags);
+    }
+
+    @Override
+    public int getVertexCount() {
+        return 4;
+    }
+
+    @Override
+    public int getVertexSize() {
+        return getPipelineInfo().geomProc().vertexStride();
+    }
+
+    @Override
+    public int getInstanceCount() {
+        return 1;
+    }
+
+    @Override
+    public int getInstanceSize() {
+        return getPipelineInfo().geomProc().instanceStride();
+    }
+
+    @Override
+    public void setVertexBuffer(Buffer buffer, int baseVertex) {
+        mVertexBuffer = buffer;
+        mBaseVertex = baseVertex;
+    }
+
+    @Override
+    public void setInstanceBuffer(Buffer buffer, int baseInstance) {
+        mInstanceBuffer = buffer;
+        mBaseInstance = baseInstance;
+    }
+
+    @Override
+    protected void onPrepareDraws(MeshDrawTarget target) {
+        long vertexData = target.makeVertexSpace(this);
+        long instanceData = target.makeInstanceSpace(this);
     }
 }

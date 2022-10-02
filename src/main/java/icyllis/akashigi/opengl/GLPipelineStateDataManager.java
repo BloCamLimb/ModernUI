@@ -29,6 +29,10 @@ import java.util.List;
  */
 public class GLPipelineStateDataManager extends UniformDataManager {
 
+    private int mRTWidth;
+    private int mRTHeight;
+    private boolean mRTFlipY;
+
     /**
      * Created by {@link GLPipelineState}.
      *
@@ -45,11 +49,19 @@ public class GLPipelineStateDataManager extends UniformDataManager {
         }
     }
 
-    public void setProjection(int u, int width, int height, boolean flip) {
-        if (flip) {
-            set4f(u, 2.0f / width, -1.0f, -2.0f / height, 1.0f);
-        } else {
-            set4f(u, 2.0f / width, -1.0f, 2.0f / height, -1.0f);
+    /**
+     * Set the orthographic projection vector.
+     */
+    public void setProjection(int u, int width, int height, boolean flipY) {
+        if (width != mRTWidth || height != mRTHeight || flipY != mRTFlipY) {
+            if (flipY) {
+                set4f(u, 2.0f / width, -1.0f, -2.0f / height, 1.0f);
+            } else {
+                set4f(u, 2.0f / width, -1.0f, 2.0f / height, -1.0f);
+            }
+            mRTWidth = width;
+            mRTHeight = height;
+            mRTFlipY = flipY;
         }
     }
 

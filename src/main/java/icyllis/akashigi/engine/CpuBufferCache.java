@@ -18,6 +18,7 @@
 
 package icyllis.akashigi.engine;
 
+import icyllis.akashigi.core.RefCnt;
 import icyllis.akashigi.core.SharedPtr;
 
 /**
@@ -26,7 +27,7 @@ import icyllis.akashigi.core.SharedPtr;
  * <p>
  * <b>NOTE:</b> You must call {@link #releaseAll()} when this cache is no longer used.
  */
-public class CpuBufferCache implements AutoCloseable {
+public class CpuBufferCache {
 
     private final CpuBuffer[] mBuffers;
 
@@ -34,16 +35,11 @@ public class CpuBufferCache implements AutoCloseable {
         mBuffers = new CpuBuffer[cacheSize];
     }
 
-    @Override
-    public void close() {
-        releaseAll();
-    }
-
     @SharedPtr
     public CpuBuffer makeBuffer(int size) {
         assert (size > 0);
         CpuBuffer result = null;
-        if (size == BufferAllocPool.DEFAULT_BUFFER_SIZE) {
+        if (size <= BufferAllocPool.DEFAULT_BUFFER_SIZE) {
             int i = 0;
             for (; i < mBuffers.length && mBuffers[i] != null; ++i) {
                 assert (mBuffers[i].size() == BufferAllocPool.DEFAULT_BUFFER_SIZE);
@@ -52,14 +48,13 @@ public class CpuBufferCache implements AutoCloseable {
                 }
             }
             if (result == null && i < mBuffers.length) {
-                mBuffers[i] = result = new CpuBuffer(size);
+                mBuffers[i] = result = new CpuBuffer(BufferAllocPool.DEFAULT_BUFFER_SIZE);
             }
         }
         if (result == null) {
             return new CpuBuffer(size);
         }
-        result.ref();
-        return result;
+        return RefCnt.create(result);
     }
 
     public void releaseAll() {

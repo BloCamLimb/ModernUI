@@ -27,77 +27,74 @@ import javax.annotation.concurrent.Immutable;
 @Immutable
 public class PipelineInfo {
 
-    // Pipeline options that the caller may enable.
-    public static final byte InputFlag_None = 0;
+    /**
+     * Pipeline flags.
+     */
+    public static final int FLAG_NONE = 0;
     /**
      * Cause every pixel to be rasterized that is touched by the triangle anywhere (not just at
      * pixel center). Additionally, if using MSAA, the sample mask will always have 100%
      * coverage.
      * NOTE: The primitive type must be a triangle type.
      */
-    public static final byte InputFlag_ConservativeRaster = 0x01;
+    public static final int FLAG_CONSERVATIVE_RASTER = 0x01;
     /**
      * Draws triangles as outlines.
      */
-    public static final byte InputFlag_Wireframe = 0x02;
+    public static final int FLAG_WIREFRAME = 0x02;
     /**
      * Modifies the vertex shader so that vertices will be positioned at pixel centers.
      */
-    public static final byte InputFlag_SnapVerticesToPixelCenters = 0x04;
+    public static final int FLAG_SNAP_TO_PIXELS = 0x04;
+    /**
+     * Scissor clip is applied.
+     */
+    public static final int FLAG_HAS_SCISSOR_CLIP = 0x08;
     /**
      * Stencil clip is applied.
      */
-    public static final byte InputFlag_HasStencilClip = 0x08;
+    public static final int FLAG_HAS_STENCIL_CLIP = 0x10;
+    /**
+     * Render pass requires a barrier for advanced blending.
+     */
+    public static final int FLAG_RENDER_PASS_BLEND_BARRIER = 0x20;
 
-    private int mNumSamples;
-    private boolean mNeedsStencil;
     private final BackendFormat mBackendFormat;
+    private final int mSampleCount;
     private final int mOrigin;
-    private boolean mTargetHasVkResolveAttachmentWithInput;
-    private int mTargetsNumSamples;
-    private final UserStencilSettings mUserStencilSettings;
-    private final GeometryProcessor mGeomProc;
-    private final byte mPrimitiveType;
-    private final int mRenderPassXferBarriers;
-    private final int mColorLoadOp;
     private final short mWriteSwizzle;
+    private final GeometryProcessor mGeomProc;
+    private final UserStencilSettings mUserStencilSettings;
+    private final int mFlags;
+    private boolean mNeedsStencil;
+    private boolean mTargetHasVkResolveAttachmentWithInput;
 
     /**
      * Note that the fields of all input objects MUST be immutable after constructor is called.
      *
-     * @param writeView              the main color render target to write, can NOT be null
-     * @param geomProc               the geometry processor, can NOT be null
-     * @param xferProc               the transfer processor, can NOT be null
-     * @param colorFP                the paint's color fragment processors, can be null
-     * @param coverageFP             the paint's coverage fragment processors, can be null
-     * @param userStencilSettings    the stencil settings for stencil clipping, can be null
-     * @param primitiveType          see PrimitiveType, triangles at most cases
-     * @param renderPassXferBarriers see XferBarrierFlags
-     * @param colorLoadOp            see LoadOp
-     * @param inputFlags             additional flags, see this class
+     * @param writeView           the main color render target to write, can NOT be null
+     * @param geomProc            the geometry processor, can NOT be null
+     * @param xferProc            the transfer processor, can NOT be null
+     * @param colorFragProc       the paint's color fragment processors, can be null
+     * @param coverageFragProc    the paint's coverage fragment processors, can be null
+     * @param userStencilSettings the stencil settings for stencil clipping, can be null
      */
     public PipelineInfo(SurfaceProxyView writeView,
                         GeometryProcessor geomProc,
                         TransferProcessor xferProc,
-                        FragmentProcessor colorFP,
-                        FragmentProcessor coverageFP,
+                        FragmentProcessor colorFragProc,
+                        FragmentProcessor coverageFragProc,
                         UserStencilSettings userStencilSettings,
-                        byte primitiveType,
-                        int renderPassXferBarriers,
-                        int colorLoadOp,
-                        byte inputFlags) {
+                        int pipelineFlags) {
         assert (writeView != null);
         assert (geomProc != null);
-        assert (primitiveType >= 0 && primitiveType <= Engine.PrimitiveType_Last);
-        assert (colorLoadOp >= 0 && colorLoadOp <= Engine.LoadOp_Last);
         mBackendFormat = writeView.getProxy().getBackendFormat();
+        mSampleCount = writeView.getProxy().getSampleCount();
         mOrigin = writeView.getOrigin();
         mWriteSwizzle = writeView.getSwizzle();
-        mUserStencilSettings = userStencilSettings;
         mGeomProc = geomProc;
-        mPrimitiveType = primitiveType;
-        mRenderPassXferBarriers = renderPassXferBarriers;
-        mColorLoadOp = colorLoadOp;
+        mUserStencilSettings = userStencilSettings;
+        mFlags = pipelineFlags;
     }
 
     public UserStencilSettings userStencilSettings() {
@@ -109,10 +106,22 @@ public class PipelineInfo {
     }
 
     /**
-     * @return see SurfaceOrigin
+     * @see Engine#SurfaceOrigin_UpperLeft
+     * @see Engine#SurfaceOrigin_LowerLeft
      */
     public int origin() {
         return mOrigin;
+    }
+
+    /**
+     * @see Swizzle
+     */
+    public short writeSwizzle() {
+        return mWriteSwizzle;
+    }
+
+    public int sampleCount() {
+        return mSampleCount;
     }
 
     public GeometryProcessor geomProc() {
@@ -123,20 +132,22 @@ public class PipelineInfo {
      * @return see PrimitiveType
      */
     public byte primitiveType() {
-        return mPrimitiveType;
+        return mGeomProc.primitiveType();
     }
 
-    /**
-     * @return XferBarrierFlags
-     */
-    public int renderPassBarriers() {
-        return mRenderPassXferBarriers;
+    public boolean hasScissorClip() {
+        return (mFlags & FLAG_HAS_SCISSOR_CLIP) != 0;
     }
 
-    /**
-     * @return see LoadOp
-     */
-    public int colorLoadOp() {
-        return mColorLoadOp;
+    public boolean hasStencilClip() {
+        return (mFlags & FLAG_HAS_STENCIL_CLIP) != 0;
+    }
+
+    public boolean isStencilEnabled() {
+        return mUserStencilSettings != null || hasStencilClip();
+    }
+
+    public boolean requireBlendBarrier() {
+        return (mFlags & FLAG_RENDER_PASS_BLEND_BARRIER) != 0;
     }
 }

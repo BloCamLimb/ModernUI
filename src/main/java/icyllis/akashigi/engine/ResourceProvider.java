@@ -330,7 +330,7 @@ public final class ResourceProvider {
      */
     @Nullable
     @SharedPtr
-    public GBuffer createBuffer(int size, int intendedType, int accessPattern) {
+    public Buffer createBuffer(int size, int intendedType, int accessPattern) {
         return null;
     }
 

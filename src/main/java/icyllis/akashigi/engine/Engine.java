@@ -86,39 +86,26 @@ public final class Engine {
      * </ul>
      */
     public static final int
-            GpuBufferType_Vertex = 0,       // vertex buffer
-            GpuBufferType_Index = 1,        // element buffer or index buffer
-            GpuBufferType_Uniform = 2,      // uniform buffer
-            GpuBufferType_XferSrcToDst = 3, // transfer src only
-            GpuBufferType_XferDstToSrc = 4; // transfer dst only
-    public static final int GpuBufferType_Last = GpuBufferType_XferDstToSrc;
-
-    // Debug tool.
-    public static boolean checkGpuBufferType(int bufferType) {
-        return bufferType >= 0 && bufferType <= GpuBufferType_Last;
-    }
+            BufferType_Vertex = 0,       // vertex buffer
+            BufferType_Index = 1,        // index buffer
+            BufferType_Uniform = 2,      // uniform buffer
+            BufferType_XferSrcToDst = 3, // transfer src only
+            BufferType_XferDstToSrc = 4; // transfer dst only
 
     /**
      * Provides a pattern regarding the frequency at which a data store will be accessed.
      * <ul>
      *     <li>Dynamic: Data store will be respecified randomly by Host and Device.
-     *     (Sparse read and writes, uniform buffer, staging buffer, etc.)</li>
+     *     (Sparse read and writes, uniform buffer, staging buffer, etc.)
+     *     For VBO, Data store will be respecified once by Host and used at most a frame.
+     *     Per-frame updates, VBO, etc.)</li>
      *     <li>Static: Data store will be specified by Host once and may be respecified
      *     repeatedly by Device. (Fixed index buffer, etc.)</li>
-     *     <li>Stream: Data store will be respecified once by Host and used at most a frame.
-     *     (Per-frame updates, VBO, etc.)</li>
      * </ul>
      */
     public static final int
             AccessPattern_Dynamic = 0,
-            AccessPattern_Static = 1,
-            AccessPattern_Stream = 2;
-    public static final int AccessPattern_Last = AccessPattern_Stream;
-
-    // Debug tool.
-    public static boolean checkAccessPattern(int accessPattern) {
-        return accessPattern >= 0 && accessPattern <= AccessPattern_Last;
-    }
+            AccessPattern_Static = 1;
 
     /**
      * Shader types. Geometry shader and tessellation shaders are removed.
@@ -228,8 +215,6 @@ public final class Engine {
             LoadOp_Load = 0,
             LoadOp_Clear = 1,
             LoadOp_Discard = 2;
-    public static final int LoadOp_Last = LoadOp_Discard;
-
     /**
      * Store ops. Used to specify the store operation to be used when an OpsTask/OpsRenderPass
      * ends execution.
@@ -237,6 +222,20 @@ public final class Engine {
     public static final int
             StoreOp_Store = 0,
             StoreOp_Discard = 1;
+    public static final int LoadOpMask = 0x3;
+    public static final int StoreOpShift = 2;
+    /**
+     * Combination of load ops and store ops.
+     * 0-2 bits: LoadOp
+     * 2-3 bits: StoreOp
+     */
+    public static final int
+            LoadStoreOps_LoadStore = LoadOp_Load | (StoreOp_Store << StoreOpShift),
+            LoadStoreOps_ClearStore = LoadOp_Clear | (StoreOp_Store << StoreOpShift),
+            LoadStoreOps_DiscardStore = LoadOp_Discard | (StoreOp_Store << StoreOpShift),
+            LoadStoreOps_LoadDiscard = LoadOp_Load | (StoreOp_Discard << StoreOpShift),
+            LoadStoreOps_ClearDiscard = LoadOp_Clear | (StoreOp_Discard << StoreOpShift),
+            LoadStoreOps_DiscardDiscard = LoadOp_Discard | (StoreOp_Discard << StoreOpShift);
 
     /**
      * Specifies if the holder owns the backend, OpenGL or Vulkan, object.
@@ -326,13 +325,6 @@ public final class Engine {
             SurfaceFlag_GLWrapDefaultFramebuffer = Core.SurfaceFlag_Protected << 4,
             SurfaceFlag_RequireManualMSAAResolve = Core.SurfaceFlag_Protected << 5,
             SurfaceFlag_VkSupportInputAttachment = Core.SurfaceFlag_Protected << 6;
-
-    /**
-     * DstSampleFlags
-     */
-    public static final int
-            DstSampleFlag_RequiresTextureBarrier = 1,
-            DstSampleFlag_AsInputAttachment = 1 << 1;
 
     /**
      * Types used to describe format of vertices in arrays.

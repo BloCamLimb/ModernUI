@@ -101,7 +101,7 @@ public final class GLCommandBuffer {
 
         if ((states & GLBackendState_Texture) != 0) {
             Arrays.fill(mHWTextureBindings, null);
-            for (int i = 0; i < mHWTextureBindings.length; i++) {
+            for (int i = 0, e = mHWTextureBindings.length; i < e; i++) {
                 mHWTextureSamplers[i] = RefCnt.move(mHWTextureSamplers[i]);
             }
         }

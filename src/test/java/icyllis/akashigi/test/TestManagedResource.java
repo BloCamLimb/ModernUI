@@ -95,10 +95,7 @@ public class TestManagedResource {
         GLPipelineState pipelineState = pipelineStateCache.findOrCreatePipelineState(
                 new PipelineInfo(new SurfaceProxyView(proxy2), new RoundRectProcessor(true),
                         null, null, null, null,
-                        PrimitiveType_Triangles,
-                        TransferProcessor.XferBarrierFlag_None,
-                        LoadOp_Discard,
-                        PipelineInfo.InputFlag_None));
+                        PipelineInfo.FLAG_NONE));
         try (proxy2) {
             pw.println(proxy2);
         }

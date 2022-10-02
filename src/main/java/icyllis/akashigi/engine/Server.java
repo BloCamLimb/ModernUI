@@ -302,14 +302,16 @@ public abstract class Server {
      * @param useStencil
      * @param origin
      * @param bounds
+     * @param colorOps
+     * @param stencilOps
      * @return
      */
     public abstract OpsRenderPass getOpsRenderPass(RenderTarget renderTarget,
                                                    boolean useStencil,
                                                    int origin,
                                                    Rect2i bounds,
-                                                   int colorLoadOp, int colorStoreOp,
-                                                   int stencilLoadOp, int stencilStoreOp,
+                                                   byte colorOps,
+                                                   byte stencilOps,
                                                    float[] clearColor);
 
     /**

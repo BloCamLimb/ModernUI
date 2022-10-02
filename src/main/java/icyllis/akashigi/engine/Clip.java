@@ -18,12 +18,11 @@
 
 package icyllis.akashigi.engine;
 
-import javax.annotation.concurrent.Immutable;
+import icyllis.akashigi.core.Rect2f;
 
-@Immutable
-public abstract class TransferProcessor extends Processor {
+public abstract class Clip {
 
-    protected TransferProcessor(int classID) {
-        super(classID);
-    }
+    public abstract int apply(SurfaceDrawContext sdc,
+                              AppliedClip out,
+                              Rect2f bounds);
 }
