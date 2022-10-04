@@ -118,12 +118,12 @@ public abstract class RenderTask extends RefCnt {
         return mTarget != null ? 1 : 0;
     }
 
-    public SurfaceProxy target(int index) {
+    public SurfaceProxy getTarget(int index) {
         assert index == 0 && numTargets() == 1;
         return mTarget;
     }
 
-    public final SurfaceProxy target() {
+    public final SurfaceProxy getTarget() {
         assert numTargets() == 1;
         return mTarget;
     }
@@ -143,6 +143,10 @@ public abstract class RenderTask extends RefCnt {
     protected void dispose() {
         assert (mFlags & Detached_Flag) != 0;
         mTarget = RefCnt.move(mTarget);
+    }
+
+    public void gatherProxyIntervals(ResourceAllocator allocator) {
+
     }
 
     /**
@@ -207,5 +211,43 @@ public abstract class RenderTask extends RefCnt {
 
     public final boolean isSkippable() {
         return (mFlags & Skippable_Flag) != 0;
+    }
+
+    public final boolean isInstantiated() {
+        for (int i = 0, e = numTargets(); i < e; i++) {
+            SurfaceProxy proxy = getTarget(i);
+            if (!proxy.isInstantiated()) {
+                return false;
+            }
+            Texture texture = proxy.peekTexture();
+            if (texture != null && texture.isDestroyed()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder out = new StringBuilder();
+        int numTargets = numTargets();
+        if (numTargets > 0) {
+            out.append("Targets: \n");
+            for (int i = 0; i < numTargets; i++) {
+                out.append(getTarget(i));
+                out.append("\n");
+            }
+        }
+        out.append("Dependencies (").append(mDependencies.size()).append("): ");
+        for (RenderTask task : mDependencies) {
+            out.append(task.mUniqueID).append(", ");
+        }
+        out.append("\n");
+        out.append("Dependents (").append(mDependents.size()).append("): ");
+        for (RenderTask task : mDependents) {
+            out.append(task.mUniqueID).append(", ");
+        }
+        out.append("\n");
+        return out.toString();
     }
 }

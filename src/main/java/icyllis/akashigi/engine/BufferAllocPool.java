@@ -18,6 +18,7 @@
 
 package icyllis.akashigi.engine;
 
+import icyllis.akashigi.core.MathUtil;
 import icyllis.akashigi.core.SharedPtr;
 import org.lwjgl.system.APIUtil;
 
@@ -104,10 +105,10 @@ public abstract class BufferAllocPool {
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
             Buffer buffer = mBuffers[mIndex];
-            int flushSize = buffer.getSize() - mFreeBytes[mIndex];
+            int usedBytes = buffer.getSize() - mFreeBytes[mIndex];
             assert (buffer.isLocked());
             assert (buffer.getLockedBuffer() == mBufferPtr);
-            buffer.unlock(/*offset=*/0, flushSize);
+            buffer.unlock(/*offset=*/0, usedBytes);
             mBufferPtr = NULL;
         }
     }
@@ -150,7 +151,6 @@ public abstract class BufferAllocPool {
                 assert (buffer.isLocked());
                 assert (buffer.getLockedBuffer() == mBufferPtr);
                 buffer.unlock(/*offset=*/0, usedBytes);
-                assert (mIndex >= 0);
                 assert (!buffer.isLocked());
                 mBuffers[mIndex--] = Resource.move(buffer);
                 mBufferPtr = NULL;
@@ -200,7 +200,7 @@ public abstract class BufferAllocPool {
      *      <li>{@link #flush()} is called.</li>
      *      <li>{@link #reset()} is called.</li>
      * </ul>
-     * Once unmap on the pool is called the data is guaranteed to be in the
+     * Once {@link #flush()} on the pool is called the data is guaranteed to be in the
      * buffer at the offset indicated by offset. Until that time it may be
      * in temporary storage and/or the buffer may be locked.
      *
@@ -215,16 +215,16 @@ public abstract class BufferAllocPool {
         if (mBufferPtr != NULL) {
             assert (mIndex >= 0);
             Buffer buffer = mBuffers[mIndex];
-            int position = buffer.getSize() - mFreeBytes[mIndex];
-            int padding = (alignment - position % alignment) % alignment;
-            int alignedSize = size + padding;
+            int pos = buffer.getSize() - mFreeBytes[mIndex];
+            int pad = MathUtil.alignUpPad(pos, alignment);
+            int alignedSize = size + pad;
             if (alignedSize <= 0) {
                 return NULL; // overflow
             }
             if (alignedSize <= mFreeBytes[mIndex]) {
                 mFreeBytes[mIndex] -= alignedSize;
                 mBytesInUse += alignedSize;
-                return mBufferPtr + position + padding;
+                return mBufferPtr + pos + pad;
             }
         }
 
@@ -253,6 +253,8 @@ public abstract class BufferAllocPool {
         assert (mBufferPtr == NULL);
         mBufferPtr = buffer.lock();
         assert (mBufferPtr != NULL);
+        assert (buffer.isLocked());
+        assert (buffer.getLockedBuffer() == mBufferPtr);
         return mBufferPtr;
     }
 
@@ -271,7 +273,7 @@ public abstract class BufferAllocPool {
          *      <li>{@link #flush()} is called.</li>
          *      <li>{@link #reset()} is called.</li>
          * </ul>
-         * Once unmap on the pool is called the vertices are guaranteed to be in
+         * Once {@link #flush()} on the pool is called the vertices are guaranteed to be in
          * the buffer at the offset indicated by baseVertex. Until that time they
          * may be in temporary storage and/or the buffer may be locked.
          *
@@ -293,7 +295,7 @@ public abstract class BufferAllocPool {
             Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
-            mesh.setVertexBuffer(buffer, offset / vertexSize);
+            mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
             return ptr;
         }
 
@@ -319,7 +321,7 @@ public abstract class BufferAllocPool {
             Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % vertexSize == 0);
-            mesh.setVertexBuffer(buffer, offset / vertexSize);
+            mesh.setVertexBuffer(buffer, offset / vertexSize, vertexCount);
 
             ByteBuffer writer = APIUtil.apiGetMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
             assert (writer != null);
@@ -346,7 +348,7 @@ public abstract class BufferAllocPool {
          *      <li>{@link #flush()} is called.</li>
          *      <li>{@link #reset()} is called.</li>
          * </ul>
-         * Once unmap on the pool is called the instances are guaranteed to be in
+         * Once {@link #flush()} on the pool is called the instances are guaranteed to be in
          * the buffer at the offset indicated by baseInstance. Until that time they
          * may be in temporary storage and/or the buffer may be locked.
          *
@@ -368,7 +370,7 @@ public abstract class BufferAllocPool {
             Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
-            mesh.setInstanceBuffer(buffer, offset / instanceSize);
+            mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
             return ptr;
         }
 
@@ -394,7 +396,7 @@ public abstract class BufferAllocPool {
             Buffer buffer = mBuffers[mIndex];
             int offset = (int) (ptr - mBufferPtr);
             assert (offset % instanceSize == 0);
-            mesh.setInstanceBuffer(buffer, offset / instanceSize);
+            mesh.setInstanceBuffer(buffer, offset / instanceSize, instanceCount);
 
             ByteBuffer writer = APIUtil.apiGetMappedBuffer(mWriter, mBufferPtr, buffer.getSize());
             assert (writer != null);

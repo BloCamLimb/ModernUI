@@ -59,14 +59,16 @@ public abstract class UniformDataManager extends RefCnt {
         assert (uniformCount >= 1 && uniformSize >= 4);
         mUniforms = new int[uniformCount];
         mUniformSize = uniformSize;
-        mUniformData = nmemAlignedAllocChecked(4, uniformSize);
+        mUniformData = nmemAllocChecked(uniformSize);
         mUniformsDirty = false;
+        assert (MathUtil.isAlign4(uniformSize));
+        assert (MathUtil.isAlign4(mUniformData));
         // subclasses fill in the uniforms in their constructor
     }
 
     @Override
     protected void dispose() {
-        nmemAlignedFree(mUniformData);
+        nmemFree(mUniformData);
     }
 
     /**

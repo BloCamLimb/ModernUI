@@ -60,7 +60,7 @@ import static icyllis.akashigi.engine.Engine.SurfaceFlag_Renderable;
  * How does instantiation failure handling work when explicitly allocating?
  * <p>
  * In the gather usage intervals pass all the SurfaceProxies used in the flush should be
- * gathered (i.e., in OpsTask::gatherProxyIntervals).
+ * gathered (i.e., in {@link RenderTask#gatherProxyIntervals(ResourceAllocator)}).
  * <p>
  * During addInterval, read-only lazy proxies are instantiated. If that fails, the resource
  * allocator will note the failure and ignore pretty much anything else until `reset`.

@@ -234,6 +234,12 @@ public class TextureProxy extends SurfaceProxy {
 
     @Nullable
     @Override
+    public Surface peekSurface() {
+        return mTexture;
+    }
+
+    @Nullable
+    @Override
     public Texture peekTexture() {
         return mTexture;
     }

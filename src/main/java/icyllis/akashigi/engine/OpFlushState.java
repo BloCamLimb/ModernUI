@@ -84,4 +84,7 @@ public class OpFlushState implements MeshDrawTarget {
         opsRenderPass.begin();
         return opsRenderPass;
     }
+
+    public void reset() {
+    }
 }

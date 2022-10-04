@@ -22,7 +22,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
 /**
- * Provides custom shader code to the Akashi shading pipeline. Processor objects <em>must</em> be
+ * Provides custom shader code to the Akashi GI shading pipeline. Processor objects <em>must</em> be
  * immutable: after being constructed, their fields may not change.
  */
 @Immutable

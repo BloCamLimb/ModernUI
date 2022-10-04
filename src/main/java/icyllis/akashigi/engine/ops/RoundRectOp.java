@@ -73,13 +73,13 @@ public class RoundRectOp extends MeshDrawOp {
     }
 
     @Override
-    public void setVertexBuffer(Buffer buffer, int baseVertex) {
+    public void setVertexBuffer(Buffer buffer, int baseVertex, int actualVertexCount) {
         mVertexBuffer = buffer;
         mBaseVertex = baseVertex;
     }
 
     @Override
-    public void setInstanceBuffer(Buffer buffer, int baseInstance) {
+    public void setInstanceBuffer(Buffer buffer, int baseInstance, int actualInstanceCount) {
         mInstanceBuffer = buffer;
         mBaseInstance = baseInstance;
     }

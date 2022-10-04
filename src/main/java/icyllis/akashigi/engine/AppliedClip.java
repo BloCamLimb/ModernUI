@@ -24,7 +24,7 @@ import icyllis.akashigi.core.Rect2f;
  * Produced by {@link Clip}. It provides a set of modifications to the drawing state that
  * implements the clip.
  */
-public class AppliedClip {
+public class AppliedClip implements Cloneable {
 
     private int mScreenWidth;
     private int mScreenHeight;
@@ -155,5 +155,14 @@ public class AppliedClip {
         if (mScissorRight != that.mScissorRight) return false;
         if (mScissorBottom != that.mScissorBottom) return false;
         return mStencilStackID == that.mStencilStackID;
+    }
+
+    @Override
+    public AppliedClip clone() {
+        try {
+            return (AppliedClip) super.clone();
+        } catch (CloneNotSupportedException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

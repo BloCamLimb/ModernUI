@@ -146,7 +146,7 @@ public final class MathUtil {
      * Aligns {@code x} up to 2 (half-word).
      */
     public static int align2(int x) {
-        assert x >= 0;
+        assert x >= 0 && x <= Integer.MAX_VALUE - 8;
         return (x + 1) & -2;
     }
 
@@ -154,7 +154,7 @@ public final class MathUtil {
      * Aligns {@code x} up to 4 (word).
      */
     public static int align4(int x) {
-        assert x >= 0;
+        assert x >= 0 && x <= Integer.MAX_VALUE - 8;
         return (x + 3) & -4;
     }
 
@@ -162,8 +162,86 @@ public final class MathUtil {
      * Aligns {@code x} up to 8 (double word).
      */
     public static int align8(int x) {
-        assert x >= 0;
+        assert x >= 0 && x <= Integer.MAX_VALUE - 8;
         return (x + 7) & -8;
+    }
+
+    /**
+     * Aligns {@code x} up to 2 (half-word).
+     */
+    public static long align2(long x) {
+        assert x >= 0 && x <= Long.MAX_VALUE - 16;
+        return (x + 1) & -2;
+    }
+
+    /**
+     * Aligns {@code x} up to 4 (word).
+     */
+    public static long align4(long x) {
+        assert x >= 0 && x <= Long.MAX_VALUE - 16;
+        return (x + 3) & -4;
+    }
+
+    /**
+     * Aligns {@code x} up to 8 (double word).
+     */
+    public static long align8(long x) {
+        assert x >= 0 && x <= Long.MAX_VALUE - 16;
+        return (x + 7) & -8;
+    }
+
+    public static boolean isAlign2(int x) {
+        assert x >= 0;
+        return (x & 1) == 0;
+    }
+
+    public static boolean isAlign4(int x) {
+        assert x >= 0;
+        return (x & 3) == 0;
+    }
+
+    public static boolean isAlign8(int x) {
+        assert x >= 0;
+        return (x & 7) == 0;
+    }
+
+    public static boolean isAlign2(long x) {
+        assert x >= 0;
+        return (x & 1) == 0;
+    }
+
+    public static boolean isAlign4(long x) {
+        assert x >= 0;
+        return (x & 3) == 0;
+    }
+
+    public static boolean isAlign8(long x) {
+        assert x >= 0;
+        return (x & 7) == 0;
+    }
+
+    /**
+     * Aligns {@code x} up to a power of two.
+     */
+    public static int alignTo(int x, int alignment) {
+        assert x >= 0 && alignment > 0 && (alignment & (alignment - 1)) == 0;
+        return (x + alignment - 1) & -alignment;
+    }
+
+    public static int alignUp(int x, int alignment) {
+        assert x >= 0 && alignment > 0;
+        int n = x % alignment;
+        return n == 0 ? x : x + alignment - n;
+    }
+
+    public static int alignUpPad(int x, int alignment) {
+        assert x >= 0 && alignment > 0;
+        return (alignment - x % alignment) % alignment;
+    }
+
+    public static int alignDown(int x, int alignment) {
+        assert x >= 0 && alignment > 0;
+        return (x / alignment) * alignment;
     }
 
     /**
@@ -188,6 +266,45 @@ public final class MathUtil {
     public static boolean isPow2(int x) {
         assert x > 0;
         return (x & (x - 1)) == 0;
+    }
+
+    public static int gcd(int a, int b) {
+        return b == 0 ? a : gcd(b, a % b);
+    }
+
+    public static int quickPow(int a, int x) {
+        int i = 1;
+        while (x != 0) {
+            if ((x & 1) == 1)
+                i *= a;
+            a *= a;
+            x >>= 1;
+        }
+        return i;
+    }
+
+    // a^x % mod
+    public static int quickModPow(int a, int x, int mod) {
+        int i = 1;
+        while (x != 0) {
+            if ((x & 1) == 1)
+                i = quickModMul(i, a, mod);
+            a = quickModMul(a, a, mod);
+            x >>= 1;
+        }
+        return i;
+    }
+
+    // a * b % mod
+    public static int quickModMul(int a, int b, int mod) {
+        int i = 0;
+        while (b != 0) {
+            if ((b & 1) == 1)
+                i = (i + a) % mod;
+            a = (a << 1) % mod;
+            b >>= 1;
+        }
+        return i;
     }
 
     private MathUtil() {

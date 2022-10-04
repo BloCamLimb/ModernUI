@@ -18,21 +18,42 @@
 
 package icyllis.akashigi.engine;
 
+import icyllis.akashigi.core.RefCnt;
 import icyllis.akashigi.core.SharedPtr;
 import icyllis.akashigi.engine.ops.OpsTask;
+import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
-import java.util.*;
+import java.util.ArrayList;
 
 public class DrawingManager {
 
     private final RecordingContext mContext;
+    private final DirectContext mDirect;
 
     @SharedPtr
-    private final List<RenderTask> mDAG = new ArrayList<>();
-    private final Map<SurfaceProxy, RenderTask> mLastRenderTasks = new IdentityHashMap<>();
+    private final ArrayList<RenderTask> mDAG = new ArrayList<>();
+
+    private final Reference2ObjectOpenHashMap<Object, RenderTask> mLastRenderTasks =
+            new Reference2ObjectOpenHashMap<>();
+    private OpsTask mActiveOpsTask = null;
+
+    private final OpFlushState mFlushState;
+    private final ResourceAllocator mResourceAllocator;
+
+    private boolean mFlushing;
 
     public DrawingManager(RecordingContext context) {
         mContext = context;
+        if (context instanceof DirectContext direct) {
+            mDirect = direct;
+            mFlushState = new OpFlushState(direct.getServer(), direct.getResourceProvider());
+            mResourceAllocator = new ResourceAllocator(direct);
+        } else {
+            // deferred
+            mDirect = null;
+            mFlushState = null;
+            mResourceAllocator = null;
+        }
     }
 
     void destroy() {
@@ -40,21 +61,61 @@ public class DrawingManager {
         clearTasks();
     }
 
-    public boolean flush() {
+    public boolean flush(FlushInfo info) {
+        if (mFlushing || mContext.isDiscarded()) {
+            if (info != null) {
+                if (info.mSubmittedCallback != null) {
+                    info.mSubmittedCallback.onSubmitted(info.mSubmittedContext, false);
+                }
+                if (info.mFinishedCallback != null) {
+                    info.mFinishedCallback.onFinished(info.mFinishedContext);
+                }
+            }
+            return false;
+        }
+        mFlushing = true;
+
+        final DirectContext context = mDirect;
+        assert (context != null);
+        final Server server = context.getServer();
+        assert (server != null);
+
         closeTasks();
+        mActiveOpsTask = null;
+
         TopologicalSort.topologicalSort(mDAG, RenderTask.SORT_ACCESSOR);
+
+        for (RenderTask task : mDAG) {
+            task.gatherProxyIntervals(mResourceAllocator);
+        }
+        mResourceAllocator.simulate();
+        mResourceAllocator.allocate();
+
+        boolean purge = false;
+        if (!mResourceAllocator.isInstantiationFailed()) {
+            purge = executeRenderTasks();
+        }
+
+        mResourceAllocator.reset();
+
         clearTasks();
-        return false;
+
+        if (purge) {
+            context.getResourceCache().clean();
+        }
+        mFlushing = false;
+
+        return true;
     }
 
     public void closeTasks() {
-        for (var task : mDAG) {
+        for (RenderTask task : mDAG) {
             task.makeClosed(mContext);
         }
     }
 
     public void clearTasks() {
-        for (var task : mDAG) {
+        for (RenderTask task : mDAG) {
             task.detach(this);
             task.unref();
         }
@@ -63,7 +124,7 @@ public class DrawingManager {
     }
 
     public RenderTask appendTask(@SharedPtr RenderTask task) {
-        mDAG.add(task);
+        mDAG.add(RefCnt.create(task));
         return task;
     }
 
@@ -80,14 +141,14 @@ public class DrawingManager {
 
     public void setLastRenderTask(SurfaceProxy proxy, RenderTask task) {
         if (task != null) {
-            mLastRenderTasks.put(proxy, task);
+            mLastRenderTasks.put(proxy.getUniqueID(), task);
         } else {
             mLastRenderTasks.remove(proxy);
         }
     }
 
     public RenderTask getLastRenderTask(SurfaceProxy proxy) {
-        return mLastRenderTasks.get(proxy);
+        return mLastRenderTasks.get(proxy.getUniqueID());
     }
 
     @SharedPtr
@@ -98,5 +159,27 @@ public class DrawingManager {
         appendTask(opsTask);
 
         return opsTask;
+    }
+
+    private boolean executeRenderTasks() {
+        boolean executed = false;
+
+        for (RenderTask task : mDAG) {
+            if (!task.isInstantiated()) {
+                continue;
+            }
+            task.prepare(mFlushState);
+        }
+
+        for (RenderTask task : mDAG) {
+            if (!task.isInstantiated()) {
+                continue;
+            }
+            executed |= task.execute(mFlushState);
+        }
+
+        mFlushState.reset();
+
+        return executed;
     }
 }

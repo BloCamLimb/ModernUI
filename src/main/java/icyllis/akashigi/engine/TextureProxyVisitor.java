@@ -19,7 +19,7 @@
 package icyllis.akashigi.engine;
 
 @FunctionalInterface
-public interface VisitTextureFunc {
+public interface TextureProxyVisitor {
 
     /**
      * @param proxy        raw ptr to texture proxy

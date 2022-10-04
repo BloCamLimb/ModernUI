@@ -340,6 +340,9 @@ public abstract class SurfaceProxy extends RefCnt {
         return mTaskTargetCount;
     }
 
+    @Nullable
+    public abstract Surface peekSurface();
+
     /**
      * If this is a texture proxy and the proxy is already instantiated, return its
      * backing {@link Texture}; if not, return null.

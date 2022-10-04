@@ -30,6 +30,7 @@ import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.*;
+import org.lwjgl.vulkan.VkShaderModuleCreateInfo;
 
 import java.io.IOException;
 import java.io.PrintWriter;

@@ -119,6 +119,12 @@ public final class RenderSurfaceProxy extends SurfaceProxy {
 
     @Nullable
     @Override
+    public Surface peekSurface() {
+        return mSurface;
+    }
+
+    @Nullable
+    @Override
     public RenderTarget peekRenderTarget() {
         return mSurface != null ? mSurface.getRenderTarget() : null;
     }

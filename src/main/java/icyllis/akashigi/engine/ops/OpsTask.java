@@ -22,68 +22,224 @@ import icyllis.akashigi.core.Rect2f;
 import icyllis.akashigi.core.Rect2i;
 import icyllis.akashigi.engine.*;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
+import java.util.Objects;
 
 //TODO
 public class OpsTask extends RenderTask {
 
-    private final ArrayList<Op> mOps = new ArrayList<>();
+    private final ArrayList<OpChain> mOpChains = new ArrayList<>();
+
+    private SurfaceProxyView mWriteView;
 
     public OpsTask(DrawingManager drawingManager, SurfaceProxyView targetView) {
+        mWriteView = targetView;
+    }
+
+    @Override
+    public void gatherProxyIntervals(ResourceAllocator alloc) {
+
+        if (!mOpChains.isEmpty()) {
+            int cur = alloc.curOp();
+            alloc.addInterval(getTarget(), cur, cur + mOpChains.size() - 1, true);
+
+            TextureProxyVisitor gather = (p, __) -> alloc.addInterval(p,
+                    alloc.curOp(),
+                    alloc.curOp(),
+                    true);
+            for (OpChain chain : mOpChains) {
+                chain.visitTextures(gather);
+                alloc.incOps();
+            }
+        } else {
+            alloc.addInterval(getTarget(), alloc.curOp(), alloc.curOp(), true);
+            alloc.incOps();
+        }
+    }
+
+    @Override
+    public void prepare(OpFlushState flushState) {
+        for (OpChain chain : mOpChains) {
+            if (chain.mHead != null) {
+                int pipelineFlags = 0;
+                if (chain.getAppliedClip() != null) {
+                    if (chain.getAppliedClip().hasScissorClip()) {
+                        pipelineFlags |= PipelineInfo.FLAG_HAS_SCISSOR_CLIP;
+                    }
+                    if (chain.getAppliedClip().hasStencilClip()) {
+                        pipelineFlags |= PipelineInfo.FLAG_HAS_STENCIL_CLIP;
+                    }
+                }
+                chain.mHead.onPrepare(flushState, mWriteView, pipelineFlags);
+            }
+        }
     }
 
     @Override
     public boolean execute(OpFlushState flushState) {
+        assert (numTargets() == 1);
+        SurfaceProxy target = getTarget();
+        assert (target != null);
+        RenderTarget renderTarget = target.peekRenderTarget();
+        assert (renderTarget != null);
 
-        for (Op op : mOps) {
-            op.onExecute(flushState, new Rect2f(op.getLeft(), op.getTop(), op.getRight(), op.getBottom()));
+        OpsRenderPass opsRenderPass = flushState.beginOpsRenderPass(renderTarget,
+                false,
+                mWriteView.getOrigin(),
+                new Rect2i(0, 0, renderTarget.getWidth(), renderTarget.getHeight()),
+                (byte) Engine.LoadStoreOps_ClearStore,
+                (byte) Engine.LoadStoreOps_DiscardStore,
+                new float[]{0, 0, 0, 0});
+
+        for (OpChain chain : mOpChains) {
+            if (chain.mHead != null) {
+                chain.mHead.onExecute(flushState,
+                        new Rect2f(chain.mLeft, chain.mTop, chain.mRight, chain.mBottom));
+            }
         }
 
-        return false;
+        opsRenderPass.end();
+
+        return true;
     }
 
-    public void addOp(Op op) {
-        mOps.add(op);
+    public void addOp(@Nonnull Op op) {
+        recordOp(op, null, false);
     }
 
-    public static class OpChain {
+    public void recordOp(@Nonnull Op op, @Nullable AppliedClip appliedClip, boolean nonOverlapping) {
+        int maxCandidates = Math.min(10, mOpChains.size());
+        if (maxCandidates > 0) {
+            int i = 0;
+            while (true) {
+                OpChain candidate = mOpChains.get(mOpChains.size() - 1 - i);
+                op = candidate.appendOp(op, appliedClip, nonOverlapping);
+                if (op == null) {
+                    return;
+                }
+                // Check overlaps for painter's algorithm
+                if (candidate.mRight > op.getLeft() &&
+                        candidate.mBottom > op.getTop() &&
+                        op.getRight() > candidate.mLeft &&
+                        op.getBottom() > candidate.mTop) {
+                    // Stop going backwards if we would cause a painter's order violation.
+                    break;
+                }
+                if (++i == maxCandidates) {
+                    // Reached max look-back
+                    break;
+                }
+            }
+        }
+        if (appliedClip != null) {
+            appliedClip = appliedClip.clone();
+        }
+        mOpChains.add(new OpChain(op, appliedClip, nonOverlapping));
+    }
+
+    private static class OpChain {
 
         private Op mHead;
         private Op mTail;
 
-        private AppliedClip mAppliedClip;
+        @Nullable
+        private final AppliedClip mAppliedClip;
+        private final boolean mNonOverlapping;
 
-        private final Rect2f mBounds = new Rect2f();
+        private float mLeft;
+        private float mTop;
+        private float mRight;
+        private float mBottom;
 
-        public OpChain(Op op, AppliedClip appliedClip) {
+        public OpChain(@Nonnull Op op, @Nullable AppliedClip appliedClip, boolean nonOverlapping) {
             mHead = op;
             mTail = op;
             mAppliedClip = appliedClip;
+            mNonOverlapping = nonOverlapping;
 
-            mBounds.set(op.getLeft(), op.getTop(), op.getRight(), op.getBottom());
+            mLeft = op.getLeft();
+            mTop = op.getTop();
+            mRight = op.getRight();
+            mBottom = op.getBottom();
 
-            assert invalidate();
+            assert validate();
         }
 
-        public boolean isEmpty() {
-            return mHead == null;
+        public void visitTextures(TextureProxyVisitor func) {
+            if (mHead == null) {
+                return;
+            }
+            for (Op op = mHead; op != null; op = op.nextInChain()) {
+                op.visitTextures(func);
+            }
         }
 
-        public Op appendOp(Op op, Rect2i scissor, boolean stencil) {
-            assert op.isChainHead() && op.isChainTail();
-            assert !isEmpty();
+        public Op getHead() {
+            return mHead;
+        }
 
-            if (mHead.getClass() != op.getClass()) {
+        @Nullable
+        public AppliedClip getAppliedClip() {
+            return mAppliedClip;
+        }
+
+        public void deleteOps() {
+            while (mHead != null) {
+                //TODO currently we assume there's no resource needs to clean in op instances
+                popHead();
+            }
+        }
+
+        public Op popHead() {
+            assert (mHead != null);
+            Op temp = mHead;
+            mHead = mHead.cutChain();
+            if (mHead == null) {
+                assert (mTail == temp);
+                mTail = null;
+            }
+            return temp;
+        }
+
+        public Op appendOp(@Nonnull Op op, @Nullable AppliedClip appliedClip, boolean nonOverlapping) {
+            assert (op.isChainHead() && op.isChainTail());
+            assert (op.validateChain(op));
+            assert (mHead != null);
+
+            if (mNonOverlapping != nonOverlapping ||
+                    (mNonOverlapping &&
+                            mRight >= op.getLeft() &&
+                            mBottom >= op.getTop() &&
+                            op.getRight() >= mLeft &&
+                            op.getBottom() >= mTop) ||
+                    !Objects.equals(mAppliedClip, appliedClip)) {
                 return op;
             }
 
+            if (mTail.combineIfPossible(op)) {
+                mTail.mergeChain(op);
+                mTail = mTail.nextInChain();
+            } else {
+                return op;
+            }
+            mLeft = Math.min(mLeft, op.getLeft());
+            mTop = Math.min(mTop, op.getTop());
+            mRight = Math.max(mRight, op.getRight());
+            mBottom = Math.max(mBottom, op.getBottom());
+            assert validate();
             return null;
         }
 
-        private boolean invalidate() {
+        private boolean validate() {
             if (mHead != null) {
                 assert mTail != null;
                 assert mHead.validateChain(mTail);
+            }
+            for (Op op = mHead; op != null; op = op.nextInChain()) {
+                assert (mLeft <= op.getLeft() && mTop <= op.getTop() &&
+                        mRight >= op.getRight() && mBottom >= op.getBottom());
             }
             return true;
         }

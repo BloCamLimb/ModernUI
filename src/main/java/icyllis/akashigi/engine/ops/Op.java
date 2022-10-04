@@ -48,24 +48,6 @@ import javax.annotation.Nullable;
 public abstract class Op {
 
     /**
-     * The op that combineIfPossible was called on now represents its own work plus that of
-     * the passed op. The passed op should be destroyed without being flushed. Currently it
-     * is not legal to merge an op passed to combineIfPossible() the passed op is already in a
-     * chain (though the op on which combineIfPossible() was called may be).
-     */
-    public static final int CombineResult_Merged = 0;
-    /**
-     * The caller *may* (but is not required) to chain these ops together. If they are chained
-     * then prepare() and execute() will be called on the head op but not the other ops in the
-     * chain. The head op will prepare and execute on behalf of all the ops in the chain.
-     */
-    public static final int CombineResult_MayChain = 1;
-    /**
-     * The ops cannot be combined.
-     */
-    public static final int CombineResult_CannotCombine = 2;
-
-    /**
      * Indicates that the op will produce geometry that extends beyond its bounds for the
      * purpose of ensuring that the fragment shader runs on partially covered pixels for
      * non-MSAA antialiasing.
@@ -92,20 +74,23 @@ public abstract class Op {
     public Op() {
     }
 
-    public void visitTextures(VisitTextureFunc func) {
+    public void visitTextures(TextureProxyVisitor func) {
         // This default implementation assumes the op has no proxies
     }
 
     /**
-     * @return CombineResult
+     * The op that combineIfPossible was called on now represents its own work plus that of
+     * the passed op. The passed op should be destroyed without being flushed. Currently it
+     * is not legal to merge an op passed to combineIfPossible() the passed op is already in a
+     * chain (though the op on which combineIfPossible() was called may be).
      */
-    public final int combineIfPossible(@Nonnull Op op, Caps caps) {
+    public final boolean combineIfPossible(@Nonnull Op op) {
         assert (op != this);
         if (getClass() != op.getClass()) {
-            return CombineResult_CannotCombine;
+            return false;
         }
-        int result = onCombineIfPossible(op, caps);
-        if (result == CombineResult_Merged) {
+        boolean result = onCombineIfPossible(op);
+        if (result) {
             mFlags |= op.mFlags;
             mLeft = Math.min(mLeft, op.mLeft);
             mTop = Math.min(mTop, op.mTop);
@@ -115,11 +100,8 @@ public abstract class Op {
         return result;
     }
 
-    /**
-     * @return CombineResult
-     */
-    protected int onCombineIfPossible(Op op, Caps caps) {
-        return CombineResult_CannotCombine;
+    protected boolean onCombineIfPossible(@Nonnull Op op) {
+        return false;
     }
 
     /**

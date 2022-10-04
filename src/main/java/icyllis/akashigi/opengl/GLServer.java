@@ -35,9 +35,10 @@ public final class GLServer extends Server {
 
     private final GLCaps mCaps;
 
-    private final GLPipelineStateCache mProgramCache;
+    private final GLCommandBuffer mMainCmdBuffer;
 
-    private GLCommandBuffer mMainCmdBuffer;
+    private final GLPipelineStateCache mProgramCache;
+    private final GLResourceProvider mResourceProvider;
 
     private final CpuBufferCache mCpuBufferCache;
 
@@ -46,17 +47,16 @@ public final class GLServer extends Server {
 
     // unique ptr
     private GLOpsRenderPass mCachedOpsRenderPass;
-    private GLResourceProvider mResourceProvider;
 
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
         mCaps = caps;
         mMainCmdBuffer = new GLCommandBuffer(this);
         mProgramCache = new GLPipelineStateCache(this, 256);
+        mResourceProvider = new GLResourceProvider(this);
         mCpuBufferCache = new CpuBufferCache(6);
         mVertexPool = BufferAllocPool.makeVertexPool(this);
         mInstancePool = BufferAllocPool.makeInstancePool(this);
-        mResourceProvider = new GLResourceProvider(this);
     }
 
     /**
@@ -112,9 +112,21 @@ public final class GLServer extends Server {
         }
     }
 
+    public GLCommandBuffer currentCommandBuffer() {
+        return mMainCmdBuffer;
+    }
+
     @Override
     public GLPipelineStateCache getPipelineBuilder() {
         return mProgramCache;
+    }
+
+    public GLResourceProvider getResourceProvider() {
+        return mResourceProvider;
+    }
+
+    public CpuBufferCache getCpuBufferCache() {
+        return mCpuBufferCache;
     }
 
     @Override
@@ -125,18 +137,6 @@ public final class GLServer extends Server {
     @Override
     public BufferAllocPool getInstancePool() {
         return mInstancePool;
-    }
-
-    public GLCommandBuffer currentCommandBuffer() {
-        return mMainCmdBuffer;
-    }
-
-    public GLResourceProvider getResourceProvider() {
-        return mResourceProvider;
-    }
-
-    public CpuBufferCache getCpuBufferCache() {
-        return mCpuBufferCache;
     }
 
     @Override
