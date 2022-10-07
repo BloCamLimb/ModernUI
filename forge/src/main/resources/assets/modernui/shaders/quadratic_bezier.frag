@@ -71,5 +71,5 @@ void main() {
     float v = distanceToBezier(u_Bezier0, u_Bezier1, u_Bezier2, f_Position) - u_StrokeRadius;
     // out of the curve, discard it
     if (v >= 0.0) discard;
-    fragColor = vec4(f_Color.rgb, f_Color.a*(1.0-smoothstep(-u_SmoothRadius, 0.0, v)));
+    fragColor = f_Color * (1.0 - smoothstep(-u_SmoothRadius, 0.0, v));
 }

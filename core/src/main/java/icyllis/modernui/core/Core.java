@@ -70,10 +70,12 @@ public final class Core {
         synchronized (Core.class) {
             if (sMainThread == null) {
                 LOGGER.info(MARKER, "Backend Library: LWJGL {}", Version.getVersion());
-                if (GLFW.glfwSetErrorCallback(Core::onError) != null || !GLFW.glfwInit()) {
-                    throw new IllegalStateException("Failed to initialize GLFW");
+                try (GLFWErrorCallback cb = GLFW.glfwSetErrorCallback(Core::onError)) {
+                    if (cb != null || !GLFW.glfwInit()) {
+                        throw new IllegalStateException("Failed to initialize GLFW");
+                    }
+                    sMainThread = Thread.currentThread();
                 }
-                sMainThread = Thread.currentThread();
             } else {
                 throw new IllegalStateException("Initialize twice");
             }
@@ -91,7 +93,7 @@ public final class Core {
     public static void terminate() {
         GLFWErrorCallback cb = GLFW.glfwSetErrorCallback(null);
         if (cb != null) {
-            cb.free();
+            cb.close();
         }
         GLFW.glfwTerminate();
         LOGGER.info(MARKER, "Terminated GLFW");

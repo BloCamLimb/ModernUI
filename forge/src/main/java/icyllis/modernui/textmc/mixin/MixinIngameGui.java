@@ -20,14 +20,15 @@ package icyllis.modernui.textmc.mixin;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.math.Matrix4f;
 import icyllis.modernui.textmc.ModernStringSplitter;
 import icyllis.modernui.textmc.ModernTextRenderer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.Gui;
 import net.minecraft.client.player.LocalPlayer;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.network.chat.Component;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.*;
@@ -51,23 +52,40 @@ public abstract class MixinIngameGui {
 
     @Redirect(
             method = "renderExperienceBar",
-            at = @At(value = "FIELD", target = "net/minecraft/client/player/LocalPlayer.experienceLevel:I", opcode =
-                    Opcodes.GETFIELD)
+            at = @At(value = "FIELD", target = "net/minecraft/client/player/LocalPlayer.experienceLevel:I",
+                    opcode = Opcodes.GETFIELD)
     )
     private int fakeExperience(LocalPlayer player) {
         return 0;
     }
 
     @Inject(method = "renderExperienceBar", at = @At("TAIL"))
-    private void drawExperience(PoseStack matrix, int i, CallbackInfo ci) {
+    private void drawExperience(PoseStack pStack, int i, CallbackInfo ci) {
         LocalPlayer player = minecraft.player;
         if (player != null && player.experienceLevel > 0) {
-            Component s = Component.literal(Integer.toString(player.experienceLevel));
+            String s = Integer.toString(player.experienceLevel);
             float w = ModernStringSplitter.measureText(s);
             float x = (screenWidth - w) / 2;
-            int y = screenHeight - 31 - 4;
-            MultiBufferSource.BufferSource source = MultiBufferSource.immediate(Tesselator.getInstance().getBuilder());
-            ModernTextRenderer.drawText8xOutline(s, x, y, 0xff80ff20, 0xff000000, matrix.last().pose(), source);
+            float y = screenHeight - 31 - 4;
+            float offset = ModernTextRenderer.sOutlineOffset;
+            Matrix4f matrix = pStack.last().pose();
+            // end batch for each draw to prevent transparency sorting
+            MultiBufferSource.BufferSource source = MultiBufferSource.immediate(
+                    Tesselator.getInstance().getBuilder());
+            ModernTextRenderer.drawText(s, x + offset, y, 0xff000000, false,
+                    matrix, source, false, 0, LightTexture.FULL_BRIGHT);
+            source.endBatch();
+            ModernTextRenderer.drawText(s, x - offset, y, 0xff000000, false,
+                    matrix, source, false, 0, LightTexture.FULL_BRIGHT);
+            source.endBatch();
+            ModernTextRenderer.drawText(s, x, y + offset, 0xff000000, false,
+                    matrix, source, false, 0, LightTexture.FULL_BRIGHT);
+            source.endBatch();
+            ModernTextRenderer.drawText(s, x, y - offset, 0xff000000, false,
+                    matrix, source, false, 0, LightTexture.FULL_BRIGHT);
+            source.endBatch();
+            ModernTextRenderer.drawText(s, x, y, 0xff80ff20, false,
+                    matrix, source, false, 0, LightTexture.FULL_BRIGHT);
             source.endBatch();
         }
     }

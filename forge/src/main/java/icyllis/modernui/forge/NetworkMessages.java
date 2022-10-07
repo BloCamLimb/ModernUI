@@ -72,6 +72,10 @@ public sealed class NetworkMessages extends NetworkHandler {
         return buf;
     }
 
+    static NetworkMessages client() {
+        return new Client();
+    }
+
     // this class doesn't load on dedicated server
     static final class Client extends NetworkMessages {
 
@@ -79,7 +83,7 @@ public sealed class NetworkMessages extends NetworkHandler {
             assert (FMLEnvironment.dist.isClient());
         }
 
-        Client() {
+        private Client() {
         }
 
         @Override

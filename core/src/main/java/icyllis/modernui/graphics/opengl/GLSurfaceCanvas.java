@@ -26,21 +26,21 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.math.*;
 import icyllis.modernui.text.TextPaint;
-import icyllis.modernui.util.Pool;
-import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
 import it.unimi.dsi.fastutil.ints.*;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.lang.annotation.Native;
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
+import java.nio.*;
 import java.util.*;
 
 import static icyllis.modernui.graphics.opengl.GLCore.*;
+import static org.lwjgl.opengl.GL32C.nglDrawElementsBaseVertex;
 import static org.lwjgl.system.MemoryUtil.*;
 
 /**
@@ -79,9 +79,6 @@ import static org.lwjgl.system.MemoryUtil.*;
 public final class GLSurfaceCanvas extends GLCanvas {
 
     private static volatile GLSurfaceCanvas sInstance;
-
-    // we have only one instance called on UI thread only
-    private static final Pool<DrawText> sDrawTextPool = Pools.simple(60);
 
     /**
      * Uniform block binding points (sequential)
@@ -122,6 +119,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final GLProgram BEZIER_CURVE = new GLProgram();
     public static final GLProgram ALPHA_TEX = new GLProgram();
     public static final GLProgram COLOR_TEX_MS = new GLProgram();
+    public static final GLProgram GLOW_WAVE = new GLProgram();
 
     /**
      * Recording draw operations (sequential)
@@ -146,6 +144,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     public static final byte DRAW_LAYER_PUSH = 17;
     public static final byte DRAW_LAYER_POP = 18;
     public static final byte DRAW_CUSTOM = 19;
+    public static final byte DRAW_GLOW_WAVE = 20;
 
     /**
      * Uniform block sizes (maximum), use std140 layout
@@ -185,9 +184,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private boolean mPosColorTexResized = true;
 
     // dynamic update on render thread
-    private final GLBuffer mPosTexVBO = new GLBuffer();
-    private ByteBuffer mPosTexMemory = memAlloc(4096);
-    private boolean mPosTexResized = true;
+    private final GLBuffer mGlyphVBO = new GLBuffer();
+    private ByteBuffer mGlyphMemory = memAlloc(4096);
+    private boolean mGlyphResized = true;
+
+    public static final int MAX_GLYPH_INDEX_COUNT = 3072;
+
+    private final GLBuffer mGlyphIBO = new GLBuffer();
 
     /*private int mModelViewVBO = INVALID_ID;
     private ByteBuffer mModelViewData = memAlloc(1024);
@@ -271,11 +274,31 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
         POS_COLOR.setVertexBuffer(GENERIC_BINDING, mPosColorVBO, 0);
         POS_COLOR_TEX.setVertexBuffer(GENERIC_BINDING, mPosColorTexVBO, 0);
-        POS_TEX.setVertexBuffer(GENERIC_BINDING, mPosTexVBO, 0);
+        POS_TEX.setVertexBuffer(GENERIC_BINDING, mGlyphVBO, 0);
+
+        {
+            ShortBuffer indices = MemoryUtil.memAllocShort(MAX_GLYPH_INDEX_COUNT);
+            int baseIndex = 0;
+            for (int i = 0; i < MAX_GLYPH_INDEX_COUNT / 6; i++) {
+                // CCW, bottom left (0), bottom right (1), top left (2), top right (3)
+                indices.put((short) (baseIndex));
+                indices.put((short) (baseIndex + 1));
+                indices.put((short) (baseIndex + 2));
+                indices.put((short) (baseIndex + 2));
+                indices.put((short) (baseIndex + 1));
+                indices.put((short) (baseIndex + 3));
+                baseIndex += 4;
+            }
+            indices.flip();
+            mGlyphIBO.allocate(MAX_GLYPH_INDEX_COUNT * Short.BYTES, MemoryUtil.memAddress(indices), 0);
+            MemoryUtil.memFree(indices);
+        }
+
+        POS_TEX.setElementBuffer(mGlyphIBO);
 
         ModernUI.LOGGER.debug(MARKER,
-                "Vertex buffers: PosColor {}, PosColorTex {}, PosTex(Glyph) {}",
-                mPosColorVBO.get(), mPosColorTexVBO.get(), mPosTexVBO.get());
+                "Vertex buffers: PC {}, PCT {}, Glyph {}, Index buffer: Glyph {}",
+                mPosColorVBO.get(), mPosColorTexVBO.get(), mGlyphVBO.get(), mGlyphIBO.get());
 
         mSaves.push(new Save());
 
@@ -319,6 +342,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         int quadBezier = manager.getShard(ModernUI.ID, "quadratic_bezier.frag");
         int alphaTex = manager.getShard(ModernUI.ID, "alpha_tex.frag");
         int colorTexMs = manager.getShard(ModernUI.ID, "color_tex_4x.frag");
+        int glowWave = manager.getShard(ModernUI.ID, "glow_wave.frag");
 
         manager.create(COLOR_FILL, posColor, colorFill);
         manager.create(COLOR_TEX, posColorTex, colorTex);
@@ -332,6 +356,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         manager.create(BEZIER_CURVE, posColor, quadBezier);
         manager.create(ALPHA_TEX, posTex, alphaTex);
         manager.create(COLOR_TEX_MS, posColorTex, colorTexMs);
+        manager.create(GLOW_WAVE, posColor, glowWave);
 
         ModernUI.LOGGER.info(MARKER, "Loaded OpenGL canvas shaders");
     }
@@ -579,24 +604,44 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     clipIndex++;
                 }
                 case DRAW_TEXT -> {
-                    bindVertexArray(POS_TEX.getVertexArray());
-                    useProgram(ALPHA_TEX.get());
-                    bindSampler(mFontSampler);
                     mMatrixUBO.upload(128, 16, uniformDataPtr);
                     uniformDataPtr += 16;
 
                     final GLBakedGlyph[] glyphs = mDrawTexts.get(textIndex++).build(this);
-
-                    if (mPosTexResized) {
-                        mPosTexVBO.allocateM(mPosTexMemory.capacity(), NULL, GL_DYNAMIC_DRAW);
-                        mPosTexResized = false;
+                    if (glyphs.length == 0) {
+                        // due to deferred plotting, this can be empty
+                        continue;
                     }
-                    mPosTexVBO.upload(0, mPosTexMemory.flip());
-                    mPosTexMemory.clear();
 
-                    for (int i = 0, e = glyphs.length; i < e; i++) {
-                        bindTexture(glyphs[i].texture);
-                        glDrawArrays(GL_TRIANGLE_STRIP, i << 2, 4);
+                    bindVertexArray(POS_TEX.getVertexArray());
+                    useProgram(ALPHA_TEX.get());
+                    bindSampler(mFontSampler);
+
+                    if (mGlyphResized) {
+                        mGlyphVBO.allocateM(mGlyphMemory.capacity(), NULL, GL_DYNAMIC_DRAW);
+                        mGlyphResized = false;
+                    }
+                    mGlyphVBO.upload(0, mGlyphMemory.flip());
+                    mGlyphMemory.clear();
+
+                    int limit = glyphs.length;
+                    int lastPos = 0;
+                    int lastTex = glyphs[0].texture;
+                    for (int i = 1; i < limit; i++) {
+                        int indexCount = (i - lastPos) * 6;
+                        if (glyphs[i].texture != lastTex || indexCount >= MAX_GLYPH_INDEX_COUNT) {
+                            bindTexture(lastTex);
+                            nglDrawElementsBaseVertex(GL_TRIANGLES, indexCount,
+                                    GL_UNSIGNED_SHORT, 0, lastPos << 2);
+                            lastPos = i;
+                            lastTex = glyphs[i].texture;
+                        }
+                    }
+                    if (lastPos < limit) {
+                        int indexCount = (limit - lastPos) * 6;
+                        bindTexture(lastTex);
+                        nglDrawElementsBaseVertex(GL_TRIANGLES, indexCount,
+                                GL_UNSIGNED_SHORT, 0, lastPos << 2);
                     }
                 }
                 case DRAW_MATRIX -> {
@@ -616,9 +661,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 }
                 case DRAW_LAYER_POP -> {
                     assert framebuffer != null;
-                    int alpha = mLayerStack.popInt();
+                    float alpha = mLayerStack.popInt() / 255f;
                     putRectColorUV(mLayerImageMemory, 0, 0, mWidth, mHeight,
-                            alpha << 24 | alpha << 16 | alpha << 8 | alpha,
+                            1, 1, 1, alpha,
                             0, 1, 1, 0);
                     mPosColorTexVBO.upload(0, mLayerImageMemory.flip());
                     mLayerImageMemory.clear();
@@ -628,11 +673,17 @@ public final class GLSurfaceCanvas extends GLCanvas {
                     bindSampler(0);
                     bindTexture(framebuffer.getAttachedTexture(colorBuffer).get());
                     framebuffer.setDrawBuffer(--colorBuffer);
-                    glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                     glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
-                    glBlendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                 }
                 case DRAW_CUSTOM -> mCustoms.remove().run();
+                case DRAW_GLOW_WAVE -> {
+                    bindVertexArray(POS_COLOR.getVertexArray());
+                    useProgram(GLOW_WAVE.get());
+                    mMatrixUBO.upload(128, 4, uniformDataPtr);
+                    uniformDataPtr += 4;
+                    glDrawArrays(GL_TRIANGLE_STRIP, posColorIndex, 4);
+                    posColorIndex += 4;
+                }
                 default -> throw new IllegalStateException("Unexpected draw op " + op);
             }
         }
@@ -717,13 +768,13 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     @RenderThread
     private ByteBuffer checkPosTexMemory() {
-        if (mPosTexMemory.remaining() < 64) {
-            int newCap = grow(mPosTexMemory.capacity());
-            mPosTexMemory = memRealloc(mPosTexMemory, newCap);
-            mPosTexResized = true;
+        if (mGlyphMemory.remaining() < 64) {
+            int newCap = grow(mGlyphMemory.capacity());
+            mGlyphMemory = memRealloc(mGlyphMemory, newCap);
+            mGlyphResized = true;
             ModernUI.LOGGER.debug(MARKER, "Grow pos tex buffer to {} bytes", newCap);
         }
-        return mPosTexMemory;
+        return mGlyphMemory;
     }
 
     private ByteBuffer checkUniformMemory() {
@@ -736,7 +787,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     public int getNativeMemoryUsage() {
-        return mPosColorMemory.capacity() + mPosColorTexMemory.capacity() + mPosTexMemory.capacity() + mUniformMemory.capacity();
+        return mPosColorMemory.capacity() + mPosColorTexMemory.capacity() + mGlyphMemory.capacity() + mUniformMemory.capacity();
     }
 
     private static int grow(int cap) {
@@ -909,7 +960,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         } else {
             drawMatrix(RESET_MATRIX);
             // must have a color
-            putRectColor(b.left, b.top, b.right, b.bottom, ~0);
+            putRectColor(b.left, b.top, b.right, b.bottom, 1, 1, 1, 1);
             mClipRefs.add(getSave().mClipRef);
         }
         mDrawOps.add(DRAW_CLIP_POP);
@@ -950,7 +1001,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (intersects) {
             drawMatrix();
             // updating stencil must have a color
-            putRectColor(left, top, right, bottom, ~0);
+            putRectColor(left, top, right, bottom, 1, 1, 1, 1);
             mClipRefs.add(save.mClipRef);
         } else {
             // empty
@@ -983,58 +1034,80 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     private void putRectColor(float left, float top, float right, float bottom, @Nonnull Paint paint) {
+        final ByteBuffer buffer = checkPosColorMemory();
         if (paint.isGradient()) {
-            final ByteBuffer buffer = checkPosColorMemory();
             final int[] colors = paint.getColors();
 
             // CCW
             int color = colors[3];
-            byte r = (byte) ((color >> 16) & 0xff);
-            byte g = (byte) ((color >> 8) & 0xff);
-            byte b = (byte) (color & 0xff);
-            byte a = (byte) (color >>> 24);
+            float alpha = (color >>> 24);
+            float red = ((color >> 16) & 0xff) / 255.0f;
+            float green = ((color >> 8) & 0xff) / 255.0f;
+            float blue = (color & 0xff) / 255.0f;
+            byte r = (byte) (red * alpha + 0.5f);
+            byte g = (byte) (green * alpha + 0.5f);
+            byte b = (byte) (blue * alpha + 0.5f);
+            byte a = (byte) (alpha + 0.5f);
             buffer.putFloat(left)
                     .putFloat(bottom)
                     .put(r).put(g).put(b).put(a);
 
             color = colors[2];
-            r = (byte) ((color >> 16) & 0xff);
-            g = (byte) ((color >> 8) & 0xff);
-            b = (byte) (color & 0xff);
-            a = (byte) (color >>> 24);
+            alpha = (color >>> 24);
+            red = ((color >> 16) & 0xff) / 255.0f;
+            green = ((color >> 8) & 0xff) / 255.0f;
+            blue = (color & 0xff) / 255.0f;
+            r = (byte) (red * alpha + 0.5f);
+            g = (byte) (green * alpha + 0.5f);
+            b = (byte) (blue * alpha + 0.5f);
+            a = (byte) (alpha + 0.5f);
             buffer.putFloat(right)
                     .putFloat(bottom)
                     .put(r).put(g).put(b).put(a);
 
             color = colors[0];
-            r = (byte) ((color >> 16) & 0xff);
-            g = (byte) ((color >> 8) & 0xff);
-            b = (byte) (color & 0xff);
-            a = (byte) (color >>> 24);
+            alpha = (color >>> 24);
+            red = ((color >> 16) & 0xff) / 255.0f;
+            green = ((color >> 8) & 0xff) / 255.0f;
+            blue = (color & 0xff) / 255.0f;
+            r = (byte) (red * alpha + 0.5f);
+            g = (byte) (green * alpha + 0.5f);
+            b = (byte) (blue * alpha + 0.5f);
+            a = (byte) (alpha + 0.5f);
             buffer.putFloat(left)
                     .putFloat(top)
                     .put(r).put(g).put(b).put(a);
 
             color = colors[1];
-            r = (byte) ((color >> 16) & 0xff);
-            g = (byte) ((color >> 8) & 0xff);
-            b = (byte) (color & 0xff);
-            a = (byte) (color >>> 24);
+            alpha = (color >>> 24);
+            red = ((color >> 16) & 0xff) / 255.0f;
+            green = ((color >> 8) & 0xff) / 255.0f;
+            blue = (color & 0xff) / 255.0f;
+            r = (byte) (red * alpha + 0.5f);
+            g = (byte) (green * alpha + 0.5f);
+            b = (byte) (blue * alpha + 0.5f);
+            a = (byte) (alpha + 0.5f);
             buffer.putFloat(right)
                     .putFloat(top)
                     .put(r).put(g).put(b).put(a);
         } else {
-            putRectColor(left, top, right, bottom, paint.getColor());
+            int color = paint.getColor();
+            float a = (color >>> 24) / 255.0f;
+            float r = ((color >> 16) & 0xff) / 255.0f;
+            float g = ((color >> 8) & 0xff) / 255.0f;
+            float b = (color & 0xff) / 255.0f;
+            putRectColor(left, top, right, bottom, r, g, b, a);
         }
     }
 
-    private void putRectColor(float left, float top, float right, float bottom, int color) {
+    private void putRectColor(float left, float top, float right, float bottom,
+                              float red, float green, float blue, float alpha) {
         ByteBuffer buffer = checkPosColorMemory();
-        byte r = (byte) ((color >> 16) & 0xff);
-        byte g = (byte) ((color >> 8) & 0xff);
-        byte b = (byte) (color & 0xff);
-        byte a = (byte) (color >>> 24);
-        // CCW
+        float factor = alpha * 255.0f;
+        byte r = (byte) (red * factor + 0.5f);
+        byte g = (byte) (green * factor + 0.5f);
+        byte b = (byte) (blue * factor + 0.5f);
+        byte a = (byte) (factor + 0.5f);
         buffer.putFloat(left)
                 .putFloat(bottom)
                 .put(r).put(g).put(b).put(a);
@@ -1051,69 +1124,87 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
     private void putRectColorUV(float left, float top, float right, float bottom, @Nullable Paint paint,
                                 float u1, float v1, float u2, float v2) {
+        final ByteBuffer buffer = checkPosColorTexMemory();
         if (paint == null) {
-            putRectColorUV(left, top, right, bottom, ~0, u1, v1, u2, v2);
+            putRectColorUV(buffer, left, top, right, bottom, 1, 1, 1, 1, u1, v1, u2, v2);
         } else if (paint.isGradient()) {
-            final ByteBuffer buffer = checkPosColorTexMemory();
             final int[] colors = paint.getColors();
 
             // CCW
             int color = colors[3];
-            byte r = (byte) ((color >> 16) & 0xff);
-            byte g = (byte) ((color >> 8) & 0xff);
-            byte b = (byte) (color & 0xff);
-            byte a = (byte) (color >>> 24);
+            float alpha = (color >>> 24);
+            float red = ((color >> 16) & 0xff) / 255.0f;
+            float green = ((color >> 8) & 0xff) / 255.0f;
+            float blue = (color & 0xff) / 255.0f;
+            byte r = (byte) (red * alpha + 0.5f);
+            byte g = (byte) (green * alpha + 0.5f);
+            byte b = (byte) (blue * alpha + 0.5f);
+            byte a = (byte) (alpha + 0.5f);
             buffer.putFloat(left)
                     .putFloat(bottom)
                     .put(r).put(g).put(b).put(a)
                     .putFloat(u1).putFloat(v2);
 
             color = colors[2];
-            r = (byte) ((color >> 16) & 0xff);
-            g = (byte) ((color >> 8) & 0xff);
-            b = (byte) (color & 0xff);
-            a = (byte) (color >>> 24);
+            alpha = (color >>> 24);
+            red = ((color >> 16) & 0xff) / 255.0f;
+            green = ((color >> 8) & 0xff) / 255.0f;
+            blue = (color & 0xff) / 255.0f;
+            r = (byte) (red * alpha + 0.5f);
+            g = (byte) (green * alpha + 0.5f);
+            b = (byte) (blue * alpha + 0.5f);
+            a = (byte) (alpha + 0.5f);
             buffer.putFloat(right)
                     .putFloat(bottom)
                     .put(r).put(g).put(b).put(a)
                     .putFloat(u2).putFloat(v2);
 
             color = colors[0];
-            r = (byte) ((color >> 16) & 0xff);
-            g = (byte) ((color >> 8) & 0xff);
-            b = (byte) (color & 0xff);
-            a = (byte) (color >>> 24);
+            alpha = (color >>> 24);
+            red = ((color >> 16) & 0xff) / 255.0f;
+            green = ((color >> 8) & 0xff) / 255.0f;
+            blue = (color & 0xff) / 255.0f;
+            r = (byte) (red * alpha + 0.5f);
+            g = (byte) (green * alpha + 0.5f);
+            b = (byte) (blue * alpha + 0.5f);
+            a = (byte) (alpha + 0.5f);
             buffer.putFloat(left)
                     .putFloat(top)
                     .put(r).put(g).put(b).put(a)
                     .putFloat(u1).putFloat(v1);
 
             color = colors[1];
-            r = (byte) ((color >> 16) & 0xff);
-            g = (byte) ((color >> 8) & 0xff);
-            b = (byte) (color & 0xff);
-            a = (byte) (color >>> 24);
+            alpha = (color >>> 24);
+            red = ((color >> 16) & 0xff) / 255.0f;
+            green = ((color >> 8) & 0xff) / 255.0f;
+            blue = (color & 0xff) / 255.0f;
+            r = (byte) (red * alpha + 0.5f);
+            g = (byte) (green * alpha + 0.5f);
+            b = (byte) (blue * alpha + 0.5f);
+            a = (byte) (alpha + 0.5f);
             buffer.putFloat(right)
                     .putFloat(top)
                     .put(r).put(g).put(b).put(a)
                     .putFloat(u2).putFloat(v1);
         } else {
-            putRectColorUV(left, top, right, bottom, paint.getColor(), u1, v1, u2, v2);
+            int color = paint.getColor();
+            float a = (color >>> 24) / 255.0f;
+            float r = ((color >> 16) & 0xff) / 255.0f;
+            float g = ((color >> 8) & 0xff) / 255.0f;
+            float b = (color & 0xff) / 255.0f;
+            putRectColorUV(buffer, left, top, right, bottom, r, g, b, a, u1, v1, u2, v2);
         }
     }
 
-    private void putRectColorUV(float left, float top, float right, float bottom, int color,
+    private void putRectColorUV(@Nonnull ByteBuffer buffer,
+                                float left, float top, float right, float bottom,
+                                float red, float green, float blue, float alpha,
                                 float u1, float v1, float u2, float v2) {
-        ByteBuffer buffer = checkPosColorTexMemory();
-        putRectColorUV(buffer, left, top, right, bottom, color, u1, v1, u2, v2);
-    }
-
-    private void putRectColorUV(@Nonnull ByteBuffer buffer, float left, float top, float right, float bottom,
-                                int color, float u1, float v1, float u2, float v2) {
-        byte r = (byte) ((color >> 16) & 0xff);
-        byte g = (byte) ((color >> 8) & 0xff);
-        byte b = (byte) (color & 0xff);
-        byte a = (byte) (color >>> 24);
+        float factor = alpha * 255.0f;
+        byte r = (byte) (red * factor + 0.5f);
+        byte g = (byte) (green * factor + 0.5f);
+        byte b = (byte) (blue * factor + 0.5f);
+        byte a = (byte) (factor + 0.5f);
         buffer.putFloat(left)
                 .putFloat(bottom)
                 .put(r).put(g).put(b).put(a)
@@ -1338,6 +1429,24 @@ public final class GLSurfaceCanvas extends GLCanvas {
         mDrawOps.add(DRAW_RECT);
     }
 
+    // test stuff :p
+    public void drawGlowWave(float left, float top, float right, float bottom) {
+        if (quickReject(left, top, right, bottom)) {
+            return;
+        }
+        save();
+        float aspect = (right - left) / (bottom - top);
+        scale((right - left) * 0.5f, (right - left) * 0.5f,
+                -1 - left / ((right - left) * 0.5f),
+                (-1 - top / ((bottom - top) * 0.5f)) / aspect);
+        drawMatrix();
+        putRectColor(-1, -1 / aspect, 1, 1 / aspect, 1, 1, 1, 1);
+        ByteBuffer buffer = checkUniformMemory();
+        buffer.putFloat((float) GLFW.glfwGetTime());
+        restore();
+        mDrawOps.add(DRAW_GLOW_WAVE);
+    }
+
     @Override
     public void drawImage(@Nonnull Image image, float left, float top, @Nullable Paint paint) {
         GLTexture texture = image.getTexture();
@@ -1353,11 +1462,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
     }
 
     // this is only used for offscreen
-    public void drawLayer(@Nonnull GLTexture texture, float w, float h, int color, boolean flipY) {
+    public void drawLayer(@Nonnull GLTexture texture, float w, float h, float alpha, boolean flipY) {
         int target = texture.getTarget();
         if (target == GL_TEXTURE_2D || target == GL_TEXTURE_2D_MULTISAMPLE) {
             drawMatrix();
-            putRectColorUV(0, 0, w, h, color,
+            putRectColorUV(checkPosColorTexMemory(), 0, 0, w, h, 1, 1, 1, alpha,
                     0, flipY ? h / texture.getHeight() : 0,
                     w / texture.getWidth(), flipY ? 0 : h / texture.getHeight());
             mTextures.add(texture);
@@ -1617,35 +1726,30 @@ public final class GLSurfaceCanvas extends GLCanvas {
                 x + piece.getAdvance(), y + piece.getDescent())) {
             return;
         }
-        DrawText t = sDrawTextPool.acquire();
-        if (t == null) {
-            t = new DrawText();
-        }
-        mDrawTexts.add(t.set(piece, x, y));
+        mDrawTexts.add(new DrawText(piece, x, y));
         drawMatrix();
+        float alpha = (color >>> 24) / 255.0f;
+        float red = ((color >> 16) & 0xff) / 255.0f;
+        float green = ((color >> 8) & 0xff) / 255.0f;
+        float blue = (color & 0xff) / 255.0f;
         checkUniformMemory()
-                .putFloat(((color >> 16) & 0xff) / 255f)
-                .putFloat(((color >> 8) & 0xff) / 255f)
-                .putFloat((color & 0xff) / 255f)
-                .putFloat((color >>> 24) / 255f);
+                .putFloat(red * alpha)
+                .putFloat(green * alpha)
+                .putFloat(blue * alpha)
+                .putFloat(alpha);
         mDrawOps.add(DRAW_TEXT);
     }
 
     private static class DrawText {
 
-        private LayoutPiece piece;
+        private final LayoutPiece piece;
         private float x;
-        private float y;
+        private final float y;
 
-        private DrawText() {
-        }
-
-        @Nonnull
-        private DrawText set(@Nonnull LayoutPiece piece, float x, float y) {
+        private DrawText(@Nonnull LayoutPiece piece, float x, float y) {
             this.piece = piece;
             this.x = x;
             this.y = y;
-            return this;
         }
 
         private void offsetX(float dx) {
@@ -1656,11 +1760,9 @@ public final class GLSurfaceCanvas extends GLCanvas {
         private GLBakedGlyph[] build(@Nonnull GLSurfaceCanvas canvas) {
             final GLBakedGlyph[] glyphs = piece.getGlyphs();
             final float[] positions = piece.getPositions();
-            piece = null;
             for (int i = 0, e = glyphs.length; i < e; i++) {
                 canvas.putGlyph(glyphs[i], x + positions[i * 2], y + positions[i * 2 + 1]);
             }
-            sDrawTextPool.release(this);
             return glyphs;
         }
     }
@@ -1668,10 +1770,10 @@ public final class GLSurfaceCanvas extends GLCanvas {
     /**
      * Draw something custom. Do not break any state of current OpenGL context or GLCanvas in the future.
      *
-     * @param custom the custom draw
+     * @param drawable the custom drawable
      */
-    public void drawCustom(@Nonnull Runnable custom) {
-        mCustoms.add(custom);
+    public void drawCustom(@Nonnull Runnable drawable) {
+        mCustoms.add(drawable);
         mDrawOps.add(DRAW_CUSTOM);
     }
 }

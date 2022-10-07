@@ -21,5 +21,5 @@ void main() {
 
     float a = 1.0 - smoothstep(0.0, u_Thickness, v);
 
-    fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
+    fragColor = f_Color * a;
 }
