@@ -1,5 +1,20 @@
 Changelogs
 ===
+### Modern UI 3.6.1.115 (2022-10-07)
+#### Forge Extension 1.19.2-43.1.2
+* Change the background blur from 4-pass box blur to 2-pass gaussian blur with lod and noise
+* Improve config reloading and action center UI
+* Fix crash on dedicated server (though you shouldn't install on server)
+* Add config to disable slider GUI scale
+* Update GUI scale algorithm
+#### Modern Text Engine 1.19.2
+* Add sharpen font atlases
+* Change blend mode for glowing text
+#### Core Framework 3.6
+* Use indexed rendering for glyph meshes
+* Add sharpen textures for all shaders
+* Always use premultiplied alpha for builtin renderer
+
 ### Modern UI 3.6.0.114 (2022-09-07)
 #### Forge Extension 1.19.2-43.1.2
 * Add I18n compat characters

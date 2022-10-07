@@ -40,5 +40,5 @@ void main() {
     // mix alpha value
     float a = (1.0 - a1) * a2;
 
-    fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
+    fragColor = f_Color * a;
 }

@@ -24,5 +24,5 @@ void main() {
 
     float a = 1.0 - smoothstep(-u_SmoothRadius, 0.0, abs(v) - u_StrokeRadius);
 
-    fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
+    fragColor = f_Color * a;
 }

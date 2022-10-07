@@ -25,6 +25,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.LayoutTransition;
+import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
@@ -863,7 +864,7 @@ public final class UIManager implements LifecycleOwner {
 
         // blend alpha correctly, since the Minecraft.mainRenderTarget has no alpha (always 1)
         // and our framebuffer is always a transparent layer
-        RenderSystem.blendFuncSeparate(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
+        RenderSystem.blendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         final int oldVertexArray = glGetInteger(GL_VERTEX_ARRAY_BINDING);
         final int oldProgram = glGetInteger(GL_CURRENT_PROGRAM);
@@ -1114,15 +1115,11 @@ public final class UIManager implements LifecycleOwner {
                 final GLTexture layer = framebuffer.getAttachedTexture(GL_COLOR_ATTACHMENT0);
                 if (blit && layer.getWidth() > 0) {
                     // draw MSAA off-screen target to Minecraft main target (not the default framebuffer)
-                    RenderSystem.blendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
                     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, minecraft.getMainRenderTarget().frameBufferId);
 
                     // do alpha fade in
-                    int alpha = (int) Math.min(0xff, mElapsedTimeMillis);
-                    alpha = alpha << 8 | alpha;
-                    alpha = alpha << 16 | alpha;
-                    // premultiplied alpha
-                    canvas.drawLayer(layer, width, height, alpha, true);
+                    //float alpha = (int) Math.min(300, mElapsedTimeMillis) / 300f;
+                    canvas.drawLayer(layer, width, height, 1, true);
                     canvas.draw(null);
                 }
             }

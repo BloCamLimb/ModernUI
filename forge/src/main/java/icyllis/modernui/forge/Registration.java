@@ -117,7 +117,7 @@ final class Registration {
             throw new IllegalStateException();
         }*/
         if (ModernUIForge.sDevelopment) {
-            NetworkMessages.sNetwork = DistExecutor.safeRunForDist(() -> NetworkMessages.Client::new,
+            NetworkMessages.sNetwork = DistExecutor.safeRunForDist(() -> NetworkMessages::client,
                     () -> NetworkMessages::new);
         }
 

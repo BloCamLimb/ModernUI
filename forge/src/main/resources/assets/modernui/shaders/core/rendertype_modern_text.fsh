@@ -16,7 +16,9 @@ in vec2 texCoord0;
 out vec4 fragColor;
 
 void main() {
-    vec4 color = texture(Sampler0, texCoord0) * vertexColor * ColorModulator;
+    // add bias to sharpen texture
+    // ideally bias is -0.5, but MC uses normalized GUI coordinates, so we half it
+    vec4 color = texture(Sampler0, texCoord0, -0.225) * vertexColor * ColorModulator;
     if (color.a < 0.01) discard;
     fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
 }

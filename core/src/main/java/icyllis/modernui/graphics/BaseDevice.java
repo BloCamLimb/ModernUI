@@ -50,7 +50,7 @@ public abstract class BaseDevice extends MatrixProvider {
 
     /**
      * Return ImageInfo for this device. If the canvas is not backed by GPU,
-     * then the info's ColorType will be {@link ImageInfo#COLOR_UNKNOWN}.
+     * then the info's ColorType will be {@link ImageInfo#ColorType_Unknown}.
      */
     @Nonnull
     public final ImageInfo imageInfo() {

@@ -8,5 +8,7 @@ smooth in vec2 f_TexCoord;
 layout(location = 0) out vec4 fragColor;
 
 void main() {
-    fragColor = vec4(f_Color.rgb, texture(u_Sampler, f_TexCoord).a * f_Color.a);
+    vec4 samp = texture(u_Sampler, f_TexCoord, -0.225);
+    samp.rgb *= samp.a; // premul for bitmap
+    fragColor = samp * f_Color; // modulate
 }

@@ -29,6 +29,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
 import icyllis.modernui.graphics.font.GlyphManager;
+import icyllis.modernui.graphics.opengl.GLSurfaceCanvas;
 import icyllis.modernui.material.MaterialDrawable;
 import icyllis.modernui.math.FMath;
 import icyllis.modernui.math.Rect;
@@ -1207,6 +1208,8 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             float inner = mStrokeWidth * 0.5f;
             canvas.drawRoundRect(bounds.left + inner, bounds.top + inner, bounds.right - inner,
                     bounds.bottom - inner, mRadius, paint);
+            ((GLSurfaceCanvas) canvas).drawGlowWave(bounds.left + inner * 1.5f, bounds.top + inner * 1.5f,
+                    bounds.right - inner, bounds.bottom - inner);
             paint.setStyle(Paint.STROKE);
             paint.setColors(THEME_COLOR, THEME_COLOR_2, THEME_COLOR, THEME_COLOR_2);
             paint.setStrokeWidth(mStrokeWidth);
@@ -1214,6 +1217,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             canvas.drawRoundRect(bounds.left + inner, bounds.top + inner, bounds.right - inner,
                     bounds.bottom - inner, mRadius, paint);
             paint.drop();
+            invalidateSelf();
         }
 
         @Override

@@ -3,6 +3,7 @@
 layout(std140, binding = 0) uniform MatrixBlock {
     mat4 u_Projection;
     mat4 u_ModelView;
+    vec4 u_Color;
 };
 
 layout(location = 0) in vec2 a_Pos;
