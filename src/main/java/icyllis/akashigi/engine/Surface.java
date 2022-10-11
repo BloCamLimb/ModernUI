@@ -63,27 +63,27 @@ public interface Surface {
      * Surface flags.
      *
      * <ul>
-     * <li>{@link Engine#SurfaceFlag_Budgeted} -
+     * <li>{@link Engine#SURFACE_FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
      *  set, otherwise not budgeted. {@link Texture} only.
      * </li>
      *
-     * <li>{@link Engine#SurfaceFlag_Mipmapped} -
+     * <li>{@link Engine#SURFACE_FLAG_MIPMAPPED} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
      *  when set, otherwise mipmaps are not allocated. {@link Texture} only.
      * </li>
      *
-     * <li>{@link Engine#SurfaceFlag_Renderable} -
+     * <li>{@link Engine#SURFACE_FLAG_RENDERABLE} -
      *  Used to say whether a surface can be rendered to, whether a texture can be used as
      *  color attachments. Renderable when set, otherwise not renderable.
      * </li>
      *
-     * <li>{@link Engine#SurfaceFlag_Protected} -
+     * <li>{@link Engine#SURFACE_FLAG_PROTECTED} -
      *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
      *  not protected.
      * </li>
      *
-     * <li>{@link Engine#SurfaceFlag_ReadOnly} -
+     * <li>{@link Engine#SURFACE_FLAG_READ_ONLY} -
      *  Means the pixels in the texture are read-only. {@link Texture} only.
      * </li>
      *

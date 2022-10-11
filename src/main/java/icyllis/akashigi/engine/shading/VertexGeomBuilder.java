@@ -16,23 +16,28 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.engine.ops;
+package icyllis.akashigi.engine.shading;
 
-import icyllis.akashigi.engine.*;
+import icyllis.akashigi.engine.GeometryProcessor;
+import icyllis.akashigi.engine.ShaderVar;
 
 /**
- * Base class for {@link Op Ops} that draw. These ops can draw into an {@link OpsRenderPass}'s
- * {@link RenderTarget}.
+ * Base class for vertex shader builder. This is the stage that computes input geometry for the
+ * rasterizer.
  */
-public abstract class DrawOp extends Op {
-
-    public DrawOp() {
-    }
+public interface VertexGeomBuilder extends ShaderBuilder {
 
     /**
-     * Returns whether the op will draw stencil.
+     * Emits per-vertex and per-instance attributes to vertex shader inputs.
+     *
+     * @param geomProc the geometry processor
      */
-    public boolean usesStencil() {
-        return false;
-    }
+    void emitAttributes(GeometryProcessor geomProc);
+
+    /**
+     * Emits world position and transforms it into the clip space.
+     *
+     * @param worldPos the world position
+     */
+    void emitNormalizedPosition(ShaderVar worldPos);
 }

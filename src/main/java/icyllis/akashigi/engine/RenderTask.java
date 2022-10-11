@@ -50,19 +50,27 @@ public abstract class RenderTask extends RefCnt {
         }
     }
 
+    /**
+     * Indicates "resolutions" that need to be done on a surface before its pixels can be accessed.
+     * If both types of resolve are requested, the MSAA resolve will happen first.
+     */
+    public static final int
+            RESOLVE_FLAG_MSAA = 0x1,    // Blit and resolve an internal MSAA render buffer into the texture.
+            RESOLVE_FLAG_MIPMAPS = 0x2; // Regenerate all mipmap levels.
+
     protected static final int
-            Closed_Flag = 0x01,     // This task can't accept any more dependencies.
-            Detached_Flag = 0x02,   // This task is detached from its creating DrawingManager.
-            Skippable_Flag = 0x04,  // This task can be skipped.
-            Atlas_Flag = 0x08,      // This task is texture atlas.
-            InResult_Flag = 0x10,   // Flag for topological sorting
-            TempMark_Flag = 0x20;   // Flag for topological sorting
+            CLOSED_FLAG = 0x01,     // This task can't accept any more dependencies.
+            DETACHED_FLAG = 0x02,   // This task is detached from its creating DrawingManager.
+            SKIPPABLE_FLAG = 0x04,  // This task can be skipped.
+            ATLAS_FLAG = 0x08,      // This task is texture atlas.
+            IN_RESULT_FLAG = 0x10,  // Flag for topological sorting
+            TEMP_MARK_FLAG = 0x20;  // Flag for topological sorting
 
     static final TopologicalSort.Accessor<RenderTask> SORT_ACCESSOR = new TopologicalSort.Accessor<>() {
         @Override
         public void setIndex(@Nonnull RenderTask node, int index) {
             node.setIndex(index);
-            node.mFlags |= InResult_Flag;
+            node.mFlags |= IN_RESULT_FLAG;
         }
 
         @Override
@@ -72,25 +80,25 @@ public abstract class RenderTask extends RefCnt {
 
         @Override
         public boolean isInResult(@Nonnull RenderTask node) {
-            return (node.mFlags & InResult_Flag) != 0;
+            return (node.mFlags & IN_RESULT_FLAG) != 0;
         }
 
         @Override
         public void setTempMarked(@Nonnull RenderTask node, boolean marked) {
             if (marked) {
-                node.mFlags |= TempMark_Flag;
+                node.mFlags |= TEMP_MARK_FLAG;
             } else {
-                node.mFlags &= ~TempMark_Flag;
+                node.mFlags &= ~TEMP_MARK_FLAG;
             }
         }
 
         @Override
         public boolean isTempMarked(@Nonnull RenderTask node) {
-            return (node.mFlags & TempMark_Flag) != 0;
+            return (node.mFlags & TEMP_MARK_FLAG) != 0;
         }
 
         @Override
-        public List<RenderTask> getEdges(@Nonnull RenderTask node) {
+        public List<RenderTask> getIncomingEdges(@Nonnull RenderTask node) {
             return node.mDependencies;
         }
     };
@@ -99,14 +107,22 @@ public abstract class RenderTask extends RefCnt {
     private int mFlags;
 
     // 'this' RenderTask relies on the output of the RenderTasks in 'mDependencies'
-    private final List<RenderTask> mDependencies = new ArrayList<>();
+    final List<RenderTask> mDependencies = new ArrayList<>(1);
     // 'this' RenderTask's output is relied on by the RenderTasks in 'mDependents'
-    private final List<RenderTask> mDependents = new ArrayList<>();
+    final List<RenderTask> mDependents = new ArrayList<>(1);
+    // for performance reasons, we reuse one single resolve task for each render task
+    private TextureResolveTask mTextureResolveTask;
 
+    // multiple targets for texture resolve task
     @SharedPtr
-    protected SurfaceProxy mTarget;
+    protected final List<SurfaceProxy> mTargets = new ArrayList<>(1);
+    protected DrawingManager mDrawingMgr;
 
-    public RenderTask() {
+    /**
+     * @param drawingMgr the creating drawing manager
+     */
+    protected RenderTask(@Nonnull DrawingManager drawingMgr) {
+        mDrawingMgr = drawingMgr;
         mUniqueID = createUniqueID();
     }
 
@@ -114,39 +130,47 @@ public abstract class RenderTask extends RefCnt {
         return mUniqueID;
     }
 
-    public int numTargets() {
-        return mTarget != null ? 1 : 0;
+    public final int getNumTargets() {
+        return mTargets.size();
     }
 
-    public SurfaceProxy getTarget(int index) {
-        assert index == 0 && numTargets() == 1;
-        return mTarget;
+    public final SurfaceProxy getTarget(int index) {
+        return mTargets.get(index);
     }
 
     public final SurfaceProxy getTarget() {
-        assert numTargets() == 1;
-        return mTarget;
+        assert getNumTargets() == 1;
+        return mTargets.get(0);
     }
 
-    protected void setIndex(int index) {
-        assert (mFlags & InResult_Flag) == 0;
+    private void setIndex(int index) {
+        assert (mFlags & IN_RESULT_FLAG) == 0;
         assert (index >= 0 && index < (1 << 26));
         mFlags |= index << 6;
     }
 
-    protected int getIndex() {
-        assert (mFlags & InResult_Flag) != 0;
+    private int getIndex() {
+        assert (mFlags & IN_RESULT_FLAG) != 0;
         return mFlags >>> 6;
+    }
+
+    protected final void addTarget(@SharedPtr SurfaceProxy proxy) {
+        assert (mDrawingMgr.getContext().isOnOwnerThread());
+        assert (!isClosed());
+        mDrawingMgr.setLastRenderTask(proxy, this);
+        proxy.isUsedAsTaskTarget();
+        mTargets.add(proxy);
     }
 
     @Override
     protected void dispose() {
-        assert (mFlags & Detached_Flag) != 0;
-        mTarget = RefCnt.move(mTarget);
+        mTargets.forEach(RefCnt::unref);
+        mTargets.clear();
+        assert (mFlags & DETACHED_FLAG) != 0;
     }
 
-    public void gatherProxyIntervals(ResourceAllocator allocator) {
-
+    public void gatherProxyIntervals(ResourceAllocator alloc) {
+        // Default implementation is no proxies
     }
 
     /**
@@ -170,29 +194,50 @@ public abstract class RenderTask extends RefCnt {
      */
     public abstract boolean execute(OpFlushState flushState);
 
-    public void makeClosed(RecordingContext context) {
+    public final void makeClosed(RecordingContext context) {
         if (isClosed()) {
             return;
         }
+        assert (mDrawingMgr.getContext().isOnOwnerThread());
 
-        mFlags |= Closed_Flag;
+        onMakeClosed(context);
+
+        if (mTextureResolveTask != null) {
+            addDependency(mTextureResolveTask);
+            mTextureResolveTask.makeClosed(context);
+            mTextureResolveTask = null;
+        }
+
+        mFlags |= CLOSED_FLAG;
+    }
+
+    protected void onMakeClosed(RecordingContext context) {
     }
 
     public final boolean isClosed() {
-        return (mFlags & Closed_Flag) != 0;
+        return (mFlags & CLOSED_FLAG) != 0;
     }
 
     /**
-     * This method "disowns" all the SurfaceProxies this RenderTask modifies. In
+     * This method "detaches" all the SurfaceProxies this RenderTask modifies. In
      * practice this just means telling the drawing manager to forget the relevant
      * mappings from surface proxy to last modifying render task.
      */
-    public void detach(DrawingManager drawingManager) {
-        assert isClosed();
-        if ((mFlags & Detached_Flag) != 0) {
+    public final void detach(DrawingManager drawingMgr) {
+        assert (isClosed());
+        assert (mDrawingMgr == drawingMgr);
+        if ((mFlags & DETACHED_FLAG) != 0) {
             return;
         }
-        mFlags |= Detached_Flag;
+        assert (drawingMgr.getContext().isOnOwnerThread());
+        mDrawingMgr = null;
+        mFlags |= DETACHED_FLAG;
+
+        for (SurfaceProxy target : mTargets) {
+            if (drawingMgr.getLastRenderTask(target) == this) {
+                drawingMgr.setLastRenderTask(target, null);
+            }
+        }
     }
 
     /**
@@ -205,17 +250,95 @@ public abstract class RenderTask extends RefCnt {
      * exported to the client in case the client is doing direct reads outside of Skia and thus
      * may require tasks targeting the proxy to execute even if our DAG contains no reads.
      */
-    public void makeSkippable() {
+    public final void makeSkippable() {
+        assert (isClosed());
+        if (!isSkippable()) {
+            assert (mDrawingMgr.getContext().isOnOwnerThread());
+            mFlags |= SKIPPABLE_FLAG;
+            onMakeSkippable();
+        }
+    }
 
+    protected void onMakeSkippable() {
     }
 
     public final boolean isSkippable() {
-        return (mFlags & Skippable_Flag) != 0;
+        return (mFlags & SKIPPABLE_FLAG) != 0;
+    }
+
+    public final void addDependency(TextureProxy dependency, int samplerState) {
+        assert (mDrawingMgr.getContext().isOnOwnerThread());
+        assert (!isClosed());
+
+        RenderTask dependencyTask = mDrawingMgr.getLastRenderTask(dependency);
+
+        if (dependencyTask == this) {
+            // no self dependency
+            return;
+        }
+
+        if (dependencyTask != null) {
+            if (dependsOn(dependencyTask) || mTextureResolveTask == dependencyTask) {
+                // don't add duplicate dependencies
+                return;
+            }
+
+            if ((dependencyTask.mFlags & ATLAS_FLAG) == 0) {
+                // We are closing 'dependencyTask' here bc the current contents of it are what 'this'
+                // renderTask depends on. We need a break in 'dependencyTask' so that the usage of
+                // that state has a chance to execute.
+                dependencyTask.makeClosed(mDrawingMgr.getContext());
+            }
+        }
+
+        int resolveFlags = 0;
+
+        if (dependency.isManualMSAAResolve() && dependency.isMSAADirty()) {
+            resolveFlags |= RESOLVE_FLAG_MSAA;
+        }
+
+        if (SamplerState.isMipmapped(samplerState) &&
+                dependency.isMipmapped() && dependency.isMipmapsDirty()) {
+            resolveFlags |= RESOLVE_FLAG_MIPMAPS;
+        }
+
+        if (resolveFlags != 0) {
+            if (mTextureResolveTask == null) {
+                mTextureResolveTask = new TextureResolveTask(mDrawingMgr);
+            }
+            mTextureResolveTask.addProxy(RefCnt.create(dependency), resolveFlags);
+
+            // addProxy() should have closed the texture proxy's previous task.
+            assert (dependencyTask == null ||
+                    dependencyTask.isClosed());
+            assert (mDrawingMgr.getLastRenderTask(dependency) == mTextureResolveTask);
+
+            assert (dependencyTask == null ||
+                    mTextureResolveTask.dependsOn(dependencyTask));
+
+            assert (!dependency.isManualMSAAResolve() ||
+                    !dependency.isMSAADirty());
+            assert (!dependency.isMipmapped() ||
+                    !dependency.isMipmapsDirty());
+            return;
+        }
+
+        if (dependencyTask != null) {
+            addDependency(dependencyTask);
+        }
+    }
+
+    public final boolean dependsOn(RenderTask dependency) {
+        for (RenderTask task : mDependencies) {
+            if (task == dependency) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public final boolean isInstantiated() {
-        for (int i = 0, e = numTargets(); i < e; i++) {
-            SurfaceProxy proxy = getTarget(i);
+        for (SurfaceProxy proxy : mTargets) {
             if (!proxy.isInstantiated()) {
                 return false;
             }
@@ -227,10 +350,22 @@ public abstract class RenderTask extends RefCnt {
         return true;
     }
 
+    void addDependency(RenderTask dependency) {
+        assert (!dependency.dependsOn(this));  // loops are bad
+        assert (!this.dependsOn(dependency));  // caller should weed out duplicates
+
+        mDependencies.add(dependency);
+        dependency.addDependent(this);
+    }
+
+    void addDependent(RenderTask dependent) {
+        mDependents.add(dependent);
+    }
+
     @Override
     public String toString() {
         StringBuilder out = new StringBuilder();
-        int numTargets = numTargets();
+        int numTargets = getNumTargets();
         if (numTargets > 0) {
             out.append("Targets: \n");
             for (int i = 0; i < numTargets; i++) {

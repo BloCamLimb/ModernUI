@@ -36,11 +36,12 @@ public final class VkCore extends VK11 {
      * Runtime assertion against a {@code VkResult} value, throws an exception
      * with a human-readable error message if failed.
      *
-     * @param result the {@code VkResult} value
-     * @throws AssertionError the VkResult is not VK_SUCCESS
+     * @param vkResult the {@code VkResult} value
+     * @throws IllegalStateException the VkResult is not VK_SUCCESS
      */
-    public static void CHECK(int result) {
-        if (result != VK_SUCCESS) throw new AssertionError(getResultMessage(result));
+    public static void _CHECK_(@NativeType("VkResult") int vkResult) {
+        if (vkResult != VK_SUCCESS)
+            throw new IllegalStateException(getResultMessage(vkResult));
     }
 
     /**
@@ -48,10 +49,11 @@ public final class VkCore extends VK11 {
      * with a human-readable error message if failed.
      *
      * @param vkResult the {@code VkResult} value
-     * @throws AssertionError the VkResult is negative (error)
+     * @throws IllegalStateException the VkResult is negative (error)
      */
-    public static void CHECK_ERROR(@NativeType("VkResult") int vkResult) {
-        if (vkResult < VK_SUCCESS) throw new AssertionError(getResultMessage(vkResult));
+    public static void _CHECK_ERROR_(@NativeType("VkResult") int vkResult) {
+        if (vkResult < VK_SUCCESS)
+            throw new IllegalStateException(getResultMessage(vkResult));
     }
 
     /**
@@ -124,17 +126,17 @@ public final class VkCore extends VK11 {
                     VK_FORMAT_A2R10G10B10_UNORM_PACK32,
                     VK_FORMAT_A2B10G10R10_UNORM_PACK32,
                     VK_FORMAT_R16G16B16A16_SFLOAT,
-                    VK_FORMAT_B8G8R8A8_UNORM -> Color.RGBA_CHANNEL_FLAGS;
+                    VK_FORMAT_B8G8R8A8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGBA;
             case VK_FORMAT_R8_UNORM,
                     VK_FORMAT_R16_UNORM,
-                    VK_FORMAT_R16_SFLOAT -> Color.RED_CHANNEL_FLAG;
+                    VK_FORMAT_R16_SFLOAT -> Color.COLOR_CHANNEL_FLAG_RED;
             case VK_FORMAT_R5G6B5_UNORM_PACK16,
                     VK_FORMAT_BC1_RGB_UNORM_BLOCK,
                     VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK,
-                    VK_FORMAT_R8G8B8_UNORM -> Color.RGB_CHANNEL_FLAGS;
+                    VK_FORMAT_R8G8B8_UNORM -> Color.COLOR_CHANNEL_FLAGS_RGB;
             case VK_FORMAT_R8G8_UNORM,
                     VK_FORMAT_R16G16_SFLOAT,
-                    VK_FORMAT_R16G16_UNORM -> Color.RG_CHANNEL_FLAGS;
+                    VK_FORMAT_R16G16_UNORM -> Color.COLOR_CHANNEL_FLAGS_RG;
             // either depth/stencil format or unsupported yet
             default -> 0;
         };
@@ -192,8 +194,8 @@ public final class VkCore extends VK11 {
         };
     }
 
-    public static int vkFormatStencilBits(@NativeType("VkFormat") int format) {
-        return switch (format) {
+    public static int vkFormatStencilBits(@NativeType("VkFormat") int vkFormat) {
+        return switch (vkFormat) {
             case VK_FORMAT_S8_UINT,
                     VK_FORMAT_D16_UNORM_S8_UINT,
                     VK_FORMAT_D24_UNORM_S8_UINT,

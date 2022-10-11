@@ -90,7 +90,7 @@ public final class CircularRRectOp extends MeshDrawOp {
             }
 
             @Override
-            protected void onEmitCode(VertexGeoBuilder vertBuilder,
+            protected void onEmitCode(VertexGeomBuilder vertBuilder,
                                       FPFragmentBuilder fragBuilder,
                                       VaryingHandler varyingHandler,
                                       UniformHandler uniformHandler,
@@ -98,7 +98,7 @@ public final class CircularRRectOp extends MeshDrawOp {
                                       GeometryProcessor geomProc,
                                       String outputColor,
                                       String outputCoverage,
-                                      int texSampler,
+                                      int[] texSamplers,
                                       ShaderVar localPos,
                                       ShaderVar worldPos) {
 

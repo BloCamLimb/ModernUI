@@ -74,7 +74,7 @@ public abstract class Op {
     public Op() {
     }
 
-    public void visitTextures(TextureProxyVisitor func) {
+    public void visitProxies(TextureProxyVisitor func) {
         // This default implementation assumes the op has no proxies
     }
 

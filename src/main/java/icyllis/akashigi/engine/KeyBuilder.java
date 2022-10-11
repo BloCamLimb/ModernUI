@@ -24,14 +24,14 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import java.util.Arrays;
 
 /**
- * Used to build packed storage key and lookup in HashMap.
+ * Used to build a packed array as the storage or lookup key of a hash map.
  * <p>
  * Note: A {@link #flush()} is expected at the end of key building.
  */
 public class KeyBuilder {
 
     /**
-     * The hash strategy for CustomHashMap.
+     * The hash strategy. Accepts <code>int[]</code> as storage key or <code>KeyBuilder</code> as lookup key.
      */
     public static final Hash.Strategy<Object> HASH_STRATEGY = new Hash.Strategy<>() {
         @Override
@@ -41,6 +41,7 @@ public class KeyBuilder {
 
         @Override
         public boolean equals(Object a, Object b) {
+            // 'b' should be always int[]
             return a instanceof int[] key ? Arrays.equals(key, (int[]) b) : a.equals(b);
         }
     };
@@ -82,8 +83,8 @@ public class KeyBuilder {
     }
 
     public void addBits(int numBits, int value, String label) {
-        assert numBits > 0 && numBits <= Integer.SIZE;
-        assert numBits == Integer.SIZE || (Integer.SIZE - Integer.numberOfLeadingZeros(value) <= numBits);
+        assert (numBits > 0 && numBits <= Integer.SIZE);
+        assert (numBits == Integer.SIZE || (Integer.SIZE - numBits <= Integer.numberOfLeadingZeros(value)));
 
         mCurValue |= (value << mBitsUsed);
         mBitsUsed += numBits;
@@ -96,18 +97,14 @@ public class KeyBuilder {
             mBitsUsed = excess;
         }
 
-        assert (Integer.SIZE - Integer.numberOfLeadingZeros(mCurValue) <= mBitsUsed);
+        assert (Integer.SIZE - mBitsUsed <= Integer.numberOfLeadingZeros(mCurValue));
     }
 
     public final void addBool(boolean b, String label) {
         addBits(1, b ? 1 : 0, label);
     }
 
-    public final void add32(int v) {
-        addBits(Integer.SIZE, v, "unknown");
-    }
-
-    public final void add32(int v, String label) {
+    public final void addInt32(int v, String label) {
         addBits(Integer.SIZE, v, label);
     }
 
@@ -127,9 +124,7 @@ public class KeyBuilder {
     }
 
     /**
-     * Trims this key builder so that the memory alloc is minimal.
-     * <p>
-     * This method can use this instance as a static key but preserve subclass features.
+     * Trims the backing store so that the capacity is equal to the size.
      */
     public final void trim() {
         assert (mCurValue == 0 && mBitsUsed == 0);
@@ -137,7 +132,7 @@ public class KeyBuilder {
     }
 
     /**
-     * @return a deep copy of packed int array as storage key
+     * @return a copy of packed int array as storage key
      */
     public final int[] toKey() {
         assert (mCurValue == 0 && mBitsUsed == 0);
@@ -149,7 +144,7 @@ public class KeyBuilder {
      */
     @Override
     public final int hashCode() {
-        assert (mCurValue == 0 && mBitsUsed == 0);
+        assert (mCurValue == 0 && mBitsUsed == 0); // ensure flushed
         int[] e = mData.elements();
         int h = 1, s = mData.size();
         for (int i = 0; i < s; i++)
@@ -158,16 +153,15 @@ public class KeyBuilder {
     }
 
     /**
-     * Compares with packed int array.
+     * Compares with packed int array (storage key).
      */
     @Override
     public final boolean equals(Object o) {
-        assert (mCurValue == 0 && mBitsUsed == 0);
-        return o instanceof int[] key &&
+        assert (mCurValue == 0 && mBitsUsed == 0); // ensure flushed
+        return o instanceof int[] key && // check for null
                 Arrays.equals(mData.elements(), 0, mData.size(), key, 0, key.length);
     }
 
-    // for debug purposes
     public static class StringKeyBuilder extends KeyBuilder {
 
         public final StringBuilder mStringBuilder = new StringBuilder();

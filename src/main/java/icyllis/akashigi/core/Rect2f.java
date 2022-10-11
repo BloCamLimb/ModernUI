@@ -119,6 +119,15 @@ public class Rect2f {
     }
 
     /**
+     * Returns true if all values in the rectangle are finite.
+     *
+     * @return true if no member is infinite or NaN
+     */
+    public static boolean isFinite(float left, float top, float right, float bottom) {
+        return Float.isFinite(left) && Float.isFinite(top) && Float.isFinite(right) && Float.isFinite(bottom);
+    }
+
+    /**
      * @return the rectangle's width. This does not check for a valid rectangle
      * (i.e. left <= right) so the result may be negative.
      */
@@ -571,6 +580,26 @@ public class Rect2f {
         float tmpR = Math.min(a.mRight, b.mRight);
         float tmpB = Math.min(a.mBottom, b.mBottom);
         return tmpR > tmpL && tmpB > tmpT;
+    }
+
+    /**
+     * Returns true if the rectangles have a nonzero area of overlap. It assumed that rects can be
+     * infinitely small but not "inverted".
+     */
+    public static boolean rectsOverlap(Rect2f a, float bLeft, float bTop, float bRight, float bBottom) {
+        assert (!a.isFinite() || (a.mLeft <= a.mRight && a.mTop <= a.mBottom));
+        assert (!isFinite(bLeft, bTop, bRight, bBottom) || (bLeft <= bRight && bTop <= bBottom));
+        return a.mRight > bLeft && a.mBottom > bTop && bRight > a.mLeft && bBottom > a.mTop;
+    }
+
+    /**
+     * Returns true if the rectangles overlap or share an edge or corner. It assumed that rects can be
+     * infinitely small but not "inverted".
+     */
+    public static boolean rectsTouchOrOverlap(Rect2f a, float bLeft, float bTop, float bRight, float bBottom) {
+        assert (!a.isFinite() || (a.mLeft <= a.mRight && a.mTop <= a.mBottom));
+        assert (!isFinite(bLeft, bTop, bRight, bBottom) || (bLeft <= bRight && bTop <= bBottom));
+        return a.mRight >= bLeft && a.mBottom >= bTop && bRight >= a.mLeft && bBottom >= a.mTop;
     }
 
     /**

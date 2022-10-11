@@ -99,7 +99,7 @@ public class GLUniformHandler extends UniformHandler {
     }
 
     @Override
-    protected int addSampler(BackendFormat backendFormat, int samplerState, short swizzle, String name) {
+    protected int addSampler(int samplerState, short swizzle, String name) {
         assert (name != null && !name.isEmpty());
 
         String resolvedName = mProgramBuilder.nameVariable('u', name);

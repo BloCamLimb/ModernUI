@@ -25,7 +25,7 @@ import javax.annotation.concurrent.Immutable;
  */
 //TODO
 @Immutable
-public class PipelineInfo {
+public final class PipelineInfo {
 
     /**
      * Pipeline flags.

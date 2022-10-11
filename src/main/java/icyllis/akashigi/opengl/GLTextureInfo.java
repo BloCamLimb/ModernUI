@@ -71,9 +71,9 @@ public final class GLTextureInfo {
 
     @Override
     public String toString() {
-        return "GLTextureInfo{" +
+        return "{" +
                 "mTexture=" + mTexture +
-                ", mFormat=" + mFormat +
+                ", mFormat=0x" + Integer.toHexString(mFormat) +
                 ", mLevelCount=" + mLevelCount +
                 ", mMemoryObject=" + mMemoryObject +
                 ", mMemoryHandle=" + mMemoryHandle +

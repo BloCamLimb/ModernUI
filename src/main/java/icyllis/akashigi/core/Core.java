@@ -27,37 +27,37 @@ public final class Core {
      * Surface flags.
      *
      * <ul>
-     * <li>{@link #SurfaceFlag_Budgeted} -
+     * <li>{@link #SURFACE_FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
      *  set, otherwise not budgeted.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_LooseFit} -
+     * <li>{@link #SURFACE_FLAG_LOOSE_FIT} -
      *  Indicates whether a backing store needs to be an exact match or can be larger than
      *  is strictly necessary. Loose fit when set, otherwise exact fit.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_Mipmapped} -
+     * <li>{@link #SURFACE_FLAG_MIPMAPPED} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
      *  when set, otherwise mipmaps are not allocated.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_Renderable} -
+     * <li>{@link #SURFACE_FLAG_RENDERABLE} -
      *  Used to say whether a surface can be rendered to, whether a texture can be used as
      *  color attachments. Renderable when set, otherwise not renderable.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_Protected} -
+     * <li>{@link #SURFACE_FLAG_PROTECTED} -
      *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
      *  not protected.
      * </li>
      * </ul>
      */
     public static final int
-            SurfaceFlag_None = 0,
-            SurfaceFlag_Budgeted = 1,
-            SurfaceFlag_LooseFit = 1 << 1,
-            SurfaceFlag_Mipmapped = 1 << 2,
-            SurfaceFlag_Renderable = 1 << 3,
-            SurfaceFlag_Protected = 1 << 4;
+            SURFACE_FLAG_NONE = 0,
+            SURFACE_FLAG_BUDGETED = 1,
+            SURFACE_FLAG_LOOSE_FIT = 1 << 1,
+            SURFACE_FLAG_MIPMAPPED = 1 << 2,
+            SURFACE_FLAG_RENDERABLE = 1 << 3,
+            SURFACE_FLAG_PROTECTED = 1 << 4;
 }

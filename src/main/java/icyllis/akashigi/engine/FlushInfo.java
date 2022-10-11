@@ -56,20 +56,18 @@ package icyllis.akashigi.engine;
 public final class FlushInfo {
 
     public BackendSemaphore[] mSignalSemaphores = null;
-    public Object mFinishedContext = null;
     public FinishedCallback mFinishedCallback = null;
-    public Object mSubmittedContext = null;
     public SubmittedCallback mSubmittedCallback = null;
 
     @FunctionalInterface
     public interface FinishedCallback {
 
-        void onFinished(Object context);
+        void onFinished();
     }
 
     @FunctionalInterface
     public interface SubmittedCallback {
 
-        void onSubmitted(Object context, boolean success);
+        void onSubmitted(boolean success);
     }
 }

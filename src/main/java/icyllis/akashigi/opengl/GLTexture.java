@@ -53,20 +53,20 @@ public final class GLTexture extends Texture {
               Function<GLTexture, GLRenderTarget> target) {
         super(server, width, height);
         assert info.mTexture != 0;
-        assert format.getGLFormat() != GLTypes.FORMAT_UNKNOWN;
+        assert glFormatIsSupported(format.getGLFormat());
         mInfo = info;
         mBackendTexture = new GLBackendTexture(width, height, info, new GLTextureParameters(), format);
         mOwnership = true;
 
         if (glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
-            mFlags |= SurfaceFlag_ReadOnly;
+            mFlags |= SURFACE_FLAG_READ_ONLY;
         }
         if (mBackendTexture.isMipmapped()) {
-            mFlags |= SurfaceFlag_Mipmapped;
+            mFlags |= SURFACE_FLAG_MIPMAPPED;
         }
         if (target != null) {
             mRenderTarget = target.apply(this);
-            mFlags |= SurfaceFlag_Renderable;
+            mFlags |= SURFACE_FLAG_RENDERABLE;
         }
 
         mMemorySize = computeSize(format, width, height, 1, info.mLevelCount);
@@ -84,18 +84,18 @@ public final class GLTexture extends Texture {
                      boolean ownership) {
         super(server, width, height);
         assert info.mTexture != 0;
-        assert format.getGLFormat() != GLTypes.FORMAT_UNKNOWN;
+        assert glFormatIsSupported(format.getGLFormat());
         mInfo = info;
         mBackendTexture = new GLBackendTexture(width, height, info, params, format);
         mOwnership = ownership;
 
         // compressed formats always set 'ioType' to READ
-        assert (ioType == IOType_Read || glFormatIsCompressed(format.getGLFormat()));
+        assert (ioType == IOType_Read || format.isCompressed());
         if (ioType == IOType_Read || format.isExternal()) {
-            mFlags |= SurfaceFlag_ReadOnly;
+            mFlags |= SURFACE_FLAG_READ_ONLY;
         }
         if (mBackendTexture.isMipmapped()) {
-            mFlags |= SurfaceFlag_Mipmapped;
+            mFlags |= SURFACE_FLAG_MIPMAPPED;
         }
 
         mMemorySize = computeSize(format, width, height, 1, info.mLevelCount);

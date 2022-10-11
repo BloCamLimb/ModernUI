@@ -25,7 +25,7 @@ import icyllis.akashigi.sksl.Compiler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 import static icyllis.akashigi.engine.Engine.*;
 
@@ -44,7 +44,7 @@ public abstract class Server {
 
     protected final Stats mStats = new Stats();
 
-    private final List<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
+    private final ArrayList<FlushInfo.SubmittedCallback> mSubmittedCallbacks = new ArrayList<>();
     private int mResetBits = ~0;
 
     protected Server(DirectContext context, Caps caps) {
@@ -128,10 +128,10 @@ public abstract class Server {
      * @param height the height of the texture to be created
      * @param format the backend format for the texture
      * @return the texture object if successful, otherwise nullptr
-     * @see Engine#SurfaceFlag_Budgeted
-     * @see Engine#SurfaceFlag_Mipmapped
-     * @see Engine#SurfaceFlag_Renderable
-     * @see Engine#SurfaceFlag_Protected
+     * @see Engine#SURFACE_FLAG_BUDGETED
+     * @see Engine#SURFACE_FLAG_MIPMAPPED
+     * @see Engine#SURFACE_FLAG_RENDERABLE
+     * @see Engine#SURFACE_FLAG_PROTECTED
      */
     @Nullable
     @SharedPtr
@@ -148,10 +148,10 @@ public abstract class Server {
                 sampleCount, surfaceFlags)) {
             return null;
         }
-        int levelCount = (surfaceFlags & SurfaceFlag_Mipmapped) != 0
+        int levelCount = (surfaceFlags & SURFACE_FLAG_MIPMAPPED) != 0
                 ? 32 - Integer.numberOfLeadingZeros(Math.max(width, height))
                 : 1;
-        if ((surfaceFlags & SurfaceFlag_Renderable) != 0) {
+        if ((surfaceFlags & SURFACE_FLAG_RENDERABLE) != 0) {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
         assert (sampleCount > 0 && sampleCount <= 64);
@@ -161,7 +161,7 @@ public abstract class Server {
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & SurfaceFlag_Renderable) == 0 || texture.getRenderTarget() != null;
+            assert (surfaceFlags & SURFACE_FLAG_RENDERABLE) == 0 || texture.getRenderTarget() != null;
             if (label != null) {
                 texture.setLabel(label);
             }
@@ -292,27 +292,38 @@ public abstract class Server {
                                              long pixels);
 
     /**
-     * Returns a {@link OpsRenderPass} which {@link OpsTask OpsTasks} send draw commands to instead of directly
-     * to the {@link Server} object. The <code>bounds</code> rect is the content rect of the <code>renderTarget</code>.
-     * If a 'stencil' is provided it will be the one bound to 'renderTarget'. If one is not
-     * provided but 'renderTarget' has a stencil buffer then that is a signal that the
-     * render target's stencil buffer should be ignored.
+     * Returns a {@link OpsRenderPass} which {@link OpsTask OpsTasks} record draw commands to.
      *
-     * @param renderTarget
-     * @param useStencil
-     * @param origin
-     * @param bounds
-     * @param colorOps
-     * @param stencilOps
-     * @return
+     * @param writeView       the render target to be rendered to
+     * @param contentBounds   the clipped content bounds of the render pass
+     * @param colorAction     the color load/store ops
+     * @param stencilAction   the stencil load/store ops
+     * @param clearColor      the color used to clear the color buffer
+     * @param sampledTextures list of all textures to be sampled in the render pass (no refs)
+     * @param pipelineFlags   combination of flags of all pipelines to be used in the render pass
+     * @return a render pass used to record draw commands, or null if failed
      */
-    public abstract OpsRenderPass getOpsRenderPass(RenderTarget renderTarget,
-                                                   boolean useStencil,
-                                                   int origin,
-                                                   Rect2i bounds,
-                                                   byte colorOps,
-                                                   byte stencilOps,
-                                                   float[] clearColor);
+    @Nullable
+    public final OpsRenderPass getOpsRenderPass(SurfaceProxyView writeView,
+                                                Rect2i contentBounds,
+                                                int colorAction,
+                                                int stencilAction,
+                                                float[] clearColor,
+                                                Set<TextureProxy> sampledTextures,
+                                                int pipelineFlags) {
+        mStats.incRenderPasses();
+        return onGetOpsRenderPass(writeView, contentBounds,
+                colorAction, stencilAction, clearColor,
+                sampledTextures, pipelineFlags);
+    }
+
+    protected abstract OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
+                                                        Rect2i contentBounds,
+                                                        int colorAction,
+                                                        int stencilAction,
+                                                        float[] clearColor,
+                                                        Set<TextureProxy> sampledTextures,
+                                                        int pipelineFlags);
 
     /**
      * Resolves MSAA. The resolve rectangle must already be in the native destination space.
@@ -329,6 +340,38 @@ public abstract class Server {
     protected abstract void onResolveRenderTarget(RenderTarget renderTarget,
                                                   int resolveLeft, int resolveTop,
                                                   int resolveRight, int resolveBottom);
+
+    /**
+     * Creates a new fence and inserts it into the graphics queue.
+     * Calls {@link #deleteFence(long)} if the fence is no longer used.
+     *
+     * @return the handle to the fence, or null if failed
+     */
+    public abstract long insertFence();
+
+    /**
+     * Checks a fence on client side to see if signalled. This method returns immediately.
+     *
+     * @param fence the handle to the fence
+     * @return true if signalled, false otherwise
+     */
+    public abstract boolean checkFence(long fence);
+
+    /**
+     * Deletes an existing fence that previously returned by {@link #insertFence()}.
+     *
+     * @param fence the handle to the fence, cannot be null
+     */
+    public abstract void deleteFence(long fence);
+
+    public abstract void addFinishedCallback(FlushInfo.FinishedCallback callback);
+
+    public abstract void checkFinishedCallbacks();
+
+    /**
+     * Blocks the current thread and waits for GPU to finish outstanding works.
+     */
+    public abstract void waitForQueue();
 
     public static final class Stats {
 

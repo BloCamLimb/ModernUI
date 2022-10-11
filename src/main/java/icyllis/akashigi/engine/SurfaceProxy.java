@@ -89,9 +89,9 @@ public abstract class SurfaceProxy extends RefCnt {
      * force the call sites to provide the required information ahead of time. At
      * instantiation time we verify that the assumed properties match the actual properties.
      *
-     * @see Engine#SurfaceFlag_Budgeted
-     * @see Engine#SurfaceFlag_LooseFit
-     * @see Engine#SurfaceFlag_SkipAllocator
+     * @see Engine#SURFACE_FLAG_BUDGETED
+     * @see Engine#SURFACE_FLAG_LOOSE_FIT
+     * @see Engine#SURFACE_FLAG_SKIP_ALLOCATOR
      */
     int mSurfaceFlags;
 
@@ -115,7 +115,7 @@ public abstract class SurfaceProxy extends RefCnt {
         mHeight = height;
         mSurfaceFlags = surfaceFlags;
         if (format.isExternal()) {
-            mSurfaceFlags |= Engine.SurfaceFlag_ReadOnly;
+            mSurfaceFlags |= Engine.SURFACE_FLAG_READ_ONLY;
         }
         mUniqueID = this;
     }
@@ -128,9 +128,9 @@ public abstract class SurfaceProxy extends RefCnt {
         mWidth = texture.getWidth();
         mHeight = texture.getHeight();
         mSurfaceFlags = texture.getSurfaceFlags() | surfaceFlags;
-        assert (mSurfaceFlags & SurfaceFlag_LooseFit) == 0;
+        assert (mSurfaceFlags & SURFACE_FLAG_LOOSE_FIT) == 0;
         assert (mFormat.isExternal() == texture.isExternal());
-        assert (texture.getBudgetType() == BudgetType_Budgeted) == isBudgeted();
+        assert (texture.getBudgetType() == BUDGET_TYPE_BUDGETED) == isBudgeted();
         assert (!texture.isExternal() || isReadOnly());
         mUniqueID = texture; // converting from unique resource ID to a proxy ID
     }
@@ -254,7 +254,7 @@ public abstract class SurfaceProxy extends RefCnt {
      */
     public final boolean isExact() {
         assert (!isLazyMost());
-        if ((mSurfaceFlags & SurfaceFlag_LooseFit) == 0) {
+        if ((mSurfaceFlags & SURFACE_FLAG_LOOSE_FIT) == 0) {
             return true;
         }
         return mWidth == ResourceProvider.makeApprox(mWidth) &&
@@ -327,6 +327,12 @@ public abstract class SurfaceProxy extends RefCnt {
     public abstract boolean shouldSkipAllocator();
 
     /**
+     * Returns whether the backing store references the wrapped object.
+     * Always false if not instantiated.
+     */
+    public abstract boolean isBackingWrapped();
+
+    /**
      * Called when this task becomes a target of a {@link RenderTask}.
      */
     public final void isUsedAsTaskTarget() {
@@ -369,7 +375,7 @@ public abstract class SurfaceProxy extends RefCnt {
      * only meaningful if 'mLazyInstantiateCallback' is non-null.
      */
     public final boolean isBudgeted() {
-        return (mSurfaceFlags & SurfaceFlag_Budgeted) != 0;
+        return (mSurfaceFlags & SURFACE_FLAG_BUDGETED) != 0;
     }
 
     /**
@@ -378,11 +384,23 @@ public abstract class SurfaceProxy extends RefCnt {
      * assignment in ResourceAllocator.
      */
     public final boolean isReadOnly() {
-        return (mSurfaceFlags & SurfaceFlag_ReadOnly) != 0;
+        return (mSurfaceFlags & SURFACE_FLAG_READ_ONLY) != 0;
     }
 
     public final boolean isProtected() {
-        return (mSurfaceFlags & SurfaceFlag_Protected) != 0;
+        return (mSurfaceFlags & SURFACE_FLAG_PROTECTED) != 0;
+    }
+
+    public final boolean isManualMSAAResolve() {
+        return (mSurfaceFlags & SURFACE_FLAG_MANUAL_MSAA_RESOLVE) != 0;
+    }
+
+    public final boolean wrapsGLDefaultFB() {
+        return (mSurfaceFlags & SURFACE_FLAG_GL_WRAP_DEFAULT_FB) != 0;
+    }
+
+    public final boolean wrapsVkSecondaryCB() {
+        return (mSurfaceFlags & SURFACE_FLAG_VK_WRAP_SECONDARY_CB) != 0;
     }
 
     public final boolean isDeferredListTarget() {
@@ -396,7 +414,7 @@ public abstract class SurfaceProxy extends RefCnt {
 
     @ApiStatus.Internal
     public final boolean isProxyExact() {
-        return (mSurfaceFlags & SurfaceFlag_LooseFit) == 0;
+        return (mSurfaceFlags & SURFACE_FLAG_LOOSE_FIT) == 0;
     }
 
     public TextureProxy asTextureProxy() {
@@ -412,20 +430,6 @@ public abstract class SurfaceProxy extends RefCnt {
      */
     public long getMemorySize() {
         return 0;
-    }
-
-    @Override
-    public int hashCode() {
-        // implemented by TextureProxy
-        assert false;
-        return super.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        // implemented by TextureProxy
-        assert false;
-        return super.equals(o);
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

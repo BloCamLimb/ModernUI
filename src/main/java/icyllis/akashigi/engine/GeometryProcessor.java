@@ -368,16 +368,36 @@ public abstract class GeometryProcessor extends Processor {
     }
 
     /**
-     * @see Engine#PrimitiveType_Triangles
+     * @see Engine#PRIMITIVE_TYPE_TRIANGLE_LIST
      */
     public abstract byte primitiveType();
 
     /**
-     * @return the GP's texture sampler, or null
+     * Currently, GP is limited to one texture sampler at most.
      */
-    @Nullable
-    public TextureSampler textureSampler() {
-        return null;
+    public int numTextureSamplers() {
+        return 0;
+    }
+
+    /**
+     * Used to capture the properties of the TextureProxies required/expected by a GeometryProcessor
+     * along with an associated SamplerState. The actual proxies used are stored in either the
+     * fixed or dynamic state arrays. TextureSamplers don't perform any coord manipulation to account
+     * for texture origin.
+     *
+     * @see SamplerState
+     */
+    public int textureSamplerState(int i) {
+        assert false;
+        return SamplerState.DEFAULT;
+    }
+
+    /**
+     * @see Swizzle
+     */
+    public short textureSamplerSwizzle(int i) {
+        assert false;
+        return Swizzle.RGBA;
     }
 
     /**
@@ -576,7 +596,7 @@ public abstract class GeometryProcessor extends Processor {
          *
          * @param inPos the local variable or the attribute, type must be either vec2 or vec3
          */
-        protected static void writeWorldPosition(VertexGeoBuilder vertBuilder,
+        protected static void writeWorldPosition(VertexGeomBuilder vertBuilder,
                                                  ShaderVar inPos,
                                                  String matrixName,
                                                  ShaderVar outPos) {
@@ -603,7 +623,7 @@ public abstract class GeometryProcessor extends Processor {
          * the returned map and should be used when the FP code is emitted. The FS variable containing
          * the GP's output local coords is also returned.
          */
-        public final void emitCode(VertexGeoBuilder vertBuilder,
+        public final void emitCode(VertexGeomBuilder vertBuilder,
                                    FPFragmentBuilder fragBuilder,
                                    VaryingHandler varyingHandler,
                                    UniformHandler uniformHandler,
@@ -611,7 +631,7 @@ public abstract class GeometryProcessor extends Processor {
                                    GeometryProcessor geomProc,
                                    String outputColor,
                                    String outputCoverage,
-                                   @SamplerHandle int texSampler) {
+                                   @SamplerHandle int[] texSamplers) {
             final var localPos = new ShaderVar();
             final var worldPos = new ShaderVar();
             onEmitCode(vertBuilder,
@@ -622,7 +642,7 @@ public abstract class GeometryProcessor extends Processor {
                     geomProc,
                     outputColor,
                     outputCoverage,
-                    texSampler,
+                    texSamplers,
                     localPos,
                     worldPos);
 
@@ -654,7 +674,7 @@ public abstract class GeometryProcessor extends Processor {
          * The world pos is used to specify the output variable storing its world (device) position.
          * It can either be a vec2 or a vec3 (in order to handle perspective).
          */
-        protected abstract void onEmitCode(VertexGeoBuilder vertBuilder,
+        protected abstract void onEmitCode(VertexGeomBuilder vertBuilder,
                                            FPFragmentBuilder fragBuilder,
                                            VaryingHandler varyingHandler,
                                            UniformHandler uniformHandler,
@@ -662,20 +682,8 @@ public abstract class GeometryProcessor extends Processor {
                                            GeometryProcessor geomProc,
                                            String outputColor,
                                            String outputCoverage,
-                                           @SamplerHandle int texSampler,
+                                           @SamplerHandle int[] texSamplers,
                                            ShaderVar localPos,
                                            ShaderVar worldPos);
-    }
-
-    /**
-     * Used to capture the properties of the TextureProxies required/expected by a GeometryProcessor
-     * along with an associated SamplerState. The actual proxies used are stored in either the
-     * fixed or dynamic state arrays. TextureSamplers don't perform any coord manipulation to account
-     * for texture origin.
-     *
-     * @param samplerState see {@link SamplerState}
-     * @param swizzle      see {@link Swizzle}
-     */
-    public record TextureSampler(BackendFormat backendFormat, int samplerState, short swizzle) {
     }
 }

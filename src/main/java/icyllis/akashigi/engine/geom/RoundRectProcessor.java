@@ -76,7 +76,7 @@ public class RoundRectProcessor extends GeometryProcessor {
 
     @Override
     public byte primitiveType() {
-        return PrimitiveType_Triangles;
+        return PRIMITIVE_TYPE_TRIANGLE_LIST;
     }
 
     @Override
@@ -98,7 +98,7 @@ public class RoundRectProcessor extends GeometryProcessor {
         }
 
         @Override
-        protected void onEmitCode(VertexGeoBuilder vertBuilder,
+        protected void onEmitCode(VertexGeomBuilder vertBuilder,
                                   FPFragmentBuilder fragBuilder,
                                   VaryingHandler varyingHandler,
                                   UniformHandler uniformHandler,
@@ -106,7 +106,7 @@ public class RoundRectProcessor extends GeometryProcessor {
                                   GeometryProcessor geomProc,
                                   String outputColor,
                                   String outputCoverage,
-                                  int texSampler,
+                                  int[] texSamplers,
                                   ShaderVar localPos,
                                   ShaderVar worldPos) {
             final boolean stroke = ((RoundRectProcessor) geomProc).mStroke;

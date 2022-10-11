@@ -19,46 +19,49 @@
 package icyllis.akashigi.sksl;
 
 import javax.annotation.Nonnull;
-import javax.annotation.concurrent.Immutable;
+import java.util.StringJoiner;
 
 /**
  * Represents a layout block appearing before a variable declaration, as in:
  * <p>
  * layout (location = 0) int x;
  *
- * @param location             (UBO or SSBO): individual variable;
- *                             (in or out): individual variable, block (struct), block member (struct field).
- * @param offset               (UBO or SSBO) atomic counter, block member (struct field)
- * @param binding              (UBO or SSBO) individual variable with opaque types, block (struct)
- * @param index                (fragment out) individual variable
- * @param set                  (UBO or SSBO) Vulkan only, individual variable with opaque types, block (struct);
- *                             descriptor set.
- * @param builtin              SPIR-V, identifies which particular builtin value this object represents
- *                             (includes SpvBuiltIn and custom values).
- * @param inputAttachmentIndex SPIR-V, Vulkan only, connect a shader variable to the corresponding attachment on the
- *                             subpass in which the shader is being used.
+ * @param location             (UBO / SSBO and subroutine variables) individual variable;
+ *                             (in / out, expect for compute) individual variable, interface block, block member
+ * @param component            (in / out, expect for compute) individual variable, block member
+ * @param index                (fragment out and subroutine functions) individual variable
+ * @param binding              (UBO / SSBO) individual variable (opaque types only), interface block
+ * @param offset               (UBO / SSBO) individual variable (atomic counters only), block member
+ * @param align                (UBO / SSBO) interface block, block member
+ * @param set                  (UBO / SSBO, Vulkan only) individual variable (opaque types only), interface block
+ * @param inputAttachmentIndex (UBO, Vulkan only) individual variable (subpass types only), connect a shader variable
+ *                             to the corresponding attachment on the subpass in which the shader is being used
+ * @param builtIn              (SpvBuiltIn) identify which particular built-in value this object represents
  */
-@Immutable
-public record Layout(int flags, int location, int offset, int binding, int index, int set, int builtin,
-                     int inputAttachmentIndex) {
+public record Layout(int flags, int location, int component, int index,
+                     int binding, int offset, int align, int set,
+                     int inputAttachmentIndex, int builtIn) {
 
-    private static final Layout EMPTY = builtin(-1);
+    private static final Layout EMPTY = new Layout(0, -1, -1, -1, -1, -1, -1, -1, -1, -1);
 
     // GLSL layout qualifiers, order-independent.
     public static final int
-            kOriginUpperLeft_Flag = 1,
-            kPushConstant_Flag = 1 << 1,
-            kBlendSupportAllEquations_Flag = 1 << 2,
-            kColor_Flag = 1 << 3;
+            ORIGIN_UPPER_LEFT_FLAG = 1,
+            PIXEL_CENTER_INTEGER_FLAG = 1 << 1,
+            EARLY_FRAGMENT_TESTS_FLAG = 1 << 2,
+            BLEND_SUPPORT_ALL_EQUATIONS_FLAG = 1 << 3,  // OpenGL only
+            PUSH_CONSTANT_FLAG = 1 << 4;                // Vulkan only
     // These flags indicate if the qualifier appeared, regardless of the accompanying value.
     public static final int
-            kLocation_Flag = 1 << 4,
-            kOffset_Flag = 1 << 5,
-            kBinding_Flag = 1 << 6,
-            kIndex_Flag = 1 << 7,
-            kSet_Flag = 1 << 8,
-            kBuiltin_Flag = 1 << 9,
-            kInputAttachmentIndex_Flag = 1 << 10;
+            LOCATION_FLAG = 1 << 5,
+            COMPONENT_FLAG = 1 << 6,
+            INDEX_FLAG = 1 << 7,
+            BINDING_FLAG = 1 << 8,
+            OFFSET_FLAG = 1 << 9,
+            ALIGN_FLAG = 1 << 10,
+            SET_FLAG = 1 << 11,
+            INPUT_ATTACHMENT_INDEX_FLAG = 1 << 12,
+            BUILT_IN_FLAG = 1 << 13;
 
     @Nonnull
     public static Layout empty() {
@@ -66,126 +69,51 @@ public record Layout(int flags, int location, int offset, int binding, int index
     }
 
     @Nonnull
-    public static Layout builtin(int builtin) {
-        return new Layout(0, -1, -1, -1, -1, -1, builtin, -1);
-    }
-
-    @Nonnull
-    public String description() {
-        return descriptionBuilder().toString();
-    }
-
-    @Nonnull
-    StringBuilder descriptionBuilder() {
-        final StringBuilder result = new StringBuilder();
-        boolean firstSeparator = true;
+    @Override
+    public String toString() {
+        StringJoiner joiner = new StringJoiner(", ", "layout (", ") ");
         if (location >= 0) {
-            firstSeparator = false;
-            result.append("location = ").append(location);
+            joiner.add("location = " + location);
         }
-        if (offset >= 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("offset = ").append(offset);
-        }
-        if (binding >= 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("binding = ").append(binding);
+        if (component >= 0) {
+            joiner.add("component = " + component);
         }
         if (index >= 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("index = ").append(index);
+            joiner.add("index = " + index);
+        }
+        if (binding >= 0) {
+            joiner.add("binding = " + binding);
+        }
+        if (offset >= 0) {
+            joiner.add("offset = " + offset);
+        }
+        if (align >= 0) {
+            joiner.add("align = " + align);
         }
         if (set >= 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("set = ").append(set);
-        }
-        if (builtin >= 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("builtin = ").append(builtin);
+            joiner.add("set = " + set);
         }
         if (inputAttachmentIndex >= 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("input_attachment_index = ").append(inputAttachmentIndex);
+            joiner.add("input_attachment_index = " + inputAttachmentIndex);
         }
-        if ((flags & kOriginUpperLeft_Flag) != 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("origin_upper_left");
+        if (builtIn >= 0) {
+            joiner.add("built_in = " + builtIn);
         }
-        if ((flags & kBlendSupportAllEquations_Flag) != 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("blend_support_all_equations");
+        if ((flags & ORIGIN_UPPER_LEFT_FLAG) != 0) {
+            joiner.add("origin_upper_left");
         }
-        if ((flags & kPushConstant_Flag) != 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("push_constant");
+        if ((flags & PIXEL_CENTER_INTEGER_FLAG) != 0) {
+            joiner.add("pixel_center_integer");
         }
-        if ((flags & kColor_Flag) != 0) {
-            if (firstSeparator)
-                firstSeparator = false;
-            else
-                result.append(", ");
-            result.append("color");
+        if ((flags & EARLY_FRAGMENT_TESTS_FLAG) != 0) {
+            joiner.add("early_fragment_tests");
         }
-        assert (!firstSeparator && !result.isEmpty()) || (firstSeparator && result.isEmpty());
-        if (!firstSeparator) {
-            result.insert(0, "layout (");
-            result.append(")");
+        if ((flags & BLEND_SUPPORT_ALL_EQUATIONS_FLAG) != 0) {
+            joiner.add("blend_support_all_equations");
         }
-        return result;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Layout layout = (Layout) o;
-        if (flags != layout.flags) return false;
-        if (location != layout.location) return false;
-        if (offset != layout.offset) return false;
-        if (binding != layout.binding) return false;
-        if (index != layout.index) return false;
-        if (set != layout.set) return false;
-        if (builtin != layout.builtin) return false;
-        return inputAttachmentIndex == layout.inputAttachmentIndex;
-    }
-
-    @Override
-    public int hashCode() {
-        int result = flags;
-        result = 31 * result + location;
-        result = 31 * result + offset;
-        result = 31 * result + binding;
-        result = 31 * result + index;
-        result = 31 * result + set;
-        result = 31 * result + builtin;
-        result = 31 * result + inputAttachmentIndex;
-        return result;
+        if ((flags & PUSH_CONSTANT_FLAG) != 0) {
+            joiner.add("push_constant");
+        }
+        return joiner.toString();
     }
 }

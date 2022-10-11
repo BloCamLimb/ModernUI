@@ -20,11 +20,14 @@ package icyllis.akashigi.opengl;
 
 import icyllis.akashigi.core.Rect2i;
 import icyllis.akashigi.engine.*;
+import it.unimi.dsi.fastutil.longs.LongArrayFIFOQueue;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nullable;
+import java.util.ArrayDeque;
+import java.util.Set;
 import java.util.function.Function;
 
 import static icyllis.akashigi.engine.Engine.*;
@@ -47,6 +50,11 @@ public final class GLServer extends Server {
 
     // unique ptr
     private GLOpsRenderPass mCachedOpsRenderPass;
+
+    private final ArrayDeque<FlushInfo.FinishedCallback> mFinishedCallbacks = new ArrayDeque<>();
+    private final LongArrayFIFOQueue mFinishedFences = new LongArrayFIFOQueue();
+
+    private boolean mNeedsFlush;
 
     private GLServer(DirectContext context, GLCaps caps) {
         super(context, caps);
@@ -110,6 +118,8 @@ public final class GLServer extends Server {
             mProgramCache.discard();
             mResourceProvider.discard();
         }
+
+        callAllFinishedCallbacks(cleanup);
     }
 
     public GLCommandBuffer currentCommandBuffer() {
@@ -189,7 +199,7 @@ public final class GLServer extends Server {
                                       int surfaceFlags) {
         assert (levelCount > 0 && sampleCount > 0);
         // We don't support protected textures in OpenGL.
-        if ((surfaceFlags & SurfaceFlag_Protected) != 0) {
+        if ((surfaceFlags & SURFACE_FLAG_PROTECTED) != 0) {
             return null;
         }
         if (format.isExternal()) {
@@ -201,7 +211,7 @@ public final class GLServer extends Server {
             return null;
         }
         Function<GLTexture, GLRenderTarget> target = null;
-        if ((surfaceFlags & SurfaceFlag_Renderable) != 0) {
+        if ((surfaceFlags & SURFACE_FLAG_RENDERABLE) != 0) {
             target = createRenderTargetObjects(
                     texture,
                     width, height,
@@ -214,13 +224,13 @@ public final class GLServer extends Server {
         }
         final GLTextureInfo info = new GLTextureInfo();
         info.mTexture = texture;
-        info.mFormat = format.getGLFormatEnum();
+        info.mFormat = format.getGLFormat();
         info.mLevelCount = levelCount;
         return new GLTexture(this,
                 width, height,
                 info,
                 format,
-                (surfaceFlags & SurfaceFlag_Budgeted) != 0,
+                (surfaceFlags & SURFACE_FLAG_BUDGETED) != 0,
                 target);
     }
 
@@ -240,8 +250,8 @@ public final class GLServer extends Server {
         /*if (info.mTarget != GL_TEXTURE_2D) {
             return null;
         }*/
-        int format = glFormatFromEnum(info.mFormat);
-        if (format == GLTypes.FORMAT_UNKNOWN) {
+        int format = info.mFormat;
+        if (!glFormatIsSupported(format)) {
             return null;
         }
         assert mCaps.isFormatRenderable(format, sampleCount);
@@ -324,43 +334,46 @@ public final class GLServer extends Server {
     }
 
     @Override
-    public OpsRenderPass getOpsRenderPass(RenderTarget renderTarget,
-                                          boolean useStencil,
-                                          int origin,
-                                          Rect2i bounds,
-                                          byte colorOps,
-                                          byte stencilOps,
-                                          float[] clearColor) {
+    protected OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
+                                               Rect2i contentBounds,
+                                               int colorAction,
+                                               int stencilAction,
+                                               float[] clearColor,
+                                               Set<TextureProxy> sampledTextures,
+                                               int pipelineFlags) {
         mStats.incRenderPasses();
         if (mCachedOpsRenderPass == null) {
             mCachedOpsRenderPass = new GLOpsRenderPass(this);
         }
-        return mCachedOpsRenderPass.set(renderTarget,
-                bounds,
-                origin,
-                colorOps,
-                stencilOps,
+        return mCachedOpsRenderPass.set(writeView.getProxy().peekRenderTarget(),
+                contentBounds,
+                writeView.getOrigin(),
+                colorAction,
+                stencilAction,
                 clearColor);
     }
 
     public GLCommandBuffer beginRenderPass(GLRenderTarget renderTarget,
-                                           int colorLoadOp, int stencilLoadOp,
+                                           int colorAction,
+                                           int stencilAction,
                                            float[] clearColor) {
         handleDirtyContext();
 
         GLCommandBuffer cmdBuffer = currentCommandBuffer();
 
-        if (colorLoadOp == LoadOp_Clear || stencilLoadOp == LoadOp_Clear) {
-            int framebuffer = renderTarget.getFramebuffer();
+        boolean colorLoadClear = Engine.loadOp(colorAction) == LOAD_OP_CLEAR;
+        boolean stencilLoadClear = Engine.loadOp(stencilAction) == LOAD_OP_CLEAR;
+        if (colorLoadClear || stencilLoadClear) {
+            int framebuffer = renderTarget.getRenderFramebuffer();
             cmdBuffer.flushScissorTest(false);
-            if (colorLoadOp == LoadOp_Clear) {
+            if (colorLoadClear) {
                 cmdBuffer.flushColorWrite(true);
                 glClearNamedFramebufferfv(framebuffer,
                         GL_COLOR,
                         0,
                         clearColor);
             }
-            if (stencilLoadOp == LoadOp_Clear) {
+            if (stencilLoadClear) {
                 glStencilMask(0xFFFFFFFF); // stencil will be flushed later
                 glClearNamedFramebufferfi(framebuffer,
                         GL_DEPTH_STENCIL,
@@ -374,23 +387,26 @@ public final class GLServer extends Server {
     }
 
     public void endRenderPass(GLRenderTarget renderTarget,
-                              int colorStoreOp, int stencilStoreOp) {
+                              int colorAction,
+                              int stencilAction) {
         handleDirtyContext();
 
-        if (colorStoreOp == StoreOp_Discard || stencilStoreOp == StoreOp_Discard) {
-            int framebuffer = renderTarget.getFramebuffer();
+        boolean colorStoreDiscard = Engine.storeOp(colorAction) == STORE_OP_DISCARD;
+        boolean stencilStoreDiscard = Engine.storeOp(stencilAction) == STORE_OP_DISCARD;
+        if (colorStoreDiscard || stencilStoreDiscard) {
+            int framebuffer = renderTarget.getRenderFramebuffer();
             try (MemoryStack stack = MemoryStack.stackPush()) {
                 final long pAttachments = stack.nmalloc(4, 8);
                 int numAttachments = 0;
-                if (colorStoreOp == StoreOp_Discard) {
-                    int attachment = renderTarget.getFramebuffer() == 0
+                if (colorStoreDiscard) {
+                    int attachment = renderTarget.getRenderFramebuffer() == 0
                             ? GL_COLOR
                             : GL_COLOR_ATTACHMENT0;
                     memPutInt(pAttachments, attachment);
                     numAttachments++;
                 }
-                if (stencilStoreOp == StoreOp_Discard) {
-                    int attachment = renderTarget.getFramebuffer() == 0
+                if (stencilStoreDiscard) {
+                    int attachment = renderTarget.getRenderFramebuffer() == 0
                             ? GL_STENCIL
                             : GL_STENCIL_ATTACHMENT;
                     memPutInt(pAttachments + (numAttachments << 2), attachment);
@@ -407,7 +423,7 @@ public final class GLServer extends Server {
                                          int resolveRight, int resolveBottom) {
         GLRenderTarget glRenderTarget = (GLRenderTarget) renderTarget;
 
-        int framebuffer = glRenderTarget.getFramebuffer();
+        int framebuffer = glRenderTarget.getRenderFramebuffer();
         int resolveFramebuffer = glRenderTarget.getResolveFramebuffer();
 
         // We should always have something to resolve
@@ -421,8 +437,77 @@ public final class GLServer extends Server {
                 GL_COLOR_BUFFER_BIT, GL_NEAREST);
     }
 
+    private void flush(boolean forceFlush) {
+        if (mNeedsFlush || forceFlush) {
+            glFlush();
+            mNeedsFlush = false;
+        }
+    }
+
+    @Override
+    public long insertFence() {
+        long fence = glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+        mNeedsFlush = true;
+        return fence;
+    }
+
+    @Override
+    public boolean checkFence(long fence) {
+        int result = glClientWaitSync(fence, 0, 0L);
+        return (result == GL_CONDITION_SATISFIED || result == GL_ALREADY_SIGNALED);
+    }
+
+    @Override
+    public void deleteFence(long fence) {
+        glDeleteSync(fence);
+    }
+
+    @Override
+    public void addFinishedCallback(FlushInfo.FinishedCallback callback) {
+        mFinishedCallbacks.addLast(callback);
+        mFinishedFences.enqueue(insertFence());
+        assert (mFinishedCallbacks.size() == mFinishedFences.size());
+    }
+
+    @Override
+    public void checkFinishedCallbacks() {
+        // Bail after the first unfinished sync since we expect they signal in the order inserted.
+        while (!mFinishedCallbacks.isEmpty() && checkFence(mFinishedFences.firstLong())) {
+            // While we are processing a proc we need to make sure to remove it from the callback list
+            // before calling it. This is because the client could trigger a call (e.g. calling
+            // flushAndSubmit(/*sync=*/true)) that has us process the finished callbacks. We also must
+            // process deleting the fence before a client may abandon the context.
+            deleteFence(mFinishedFences.dequeueLong());
+            mFinishedCallbacks.removeFirst().onFinished();
+        }
+        assert (mFinishedCallbacks.size() == mFinishedFences.size());
+    }
+
+    private void callAllFinishedCallbacks(boolean cleanup) {
+        while (!mFinishedCallbacks.isEmpty()) {
+            // While we are processing a proc we need to make sure to remove it from the callback list
+            // before calling it. This is because the client could trigger a call (e.g. calling
+            // flushAndSubmit(/*sync=*/true)) that has us process the finished callbacks. We also must
+            // process deleting the fence before a client may abandon the context.
+            if (cleanup) {
+                deleteFence(mFinishedFences.dequeueLong());
+            }
+            mFinishedCallbacks.removeFirst().onFinished();
+        }
+        if (!cleanup) {
+            mFinishedFences.clear();
+        } else {
+            assert (mFinishedFences.isEmpty());
+        }
+    }
+
+    @Override
+    public void waitForQueue() {
+        glFinish();
+    }
+
     private int createTexture(int width, int height, int format, int levels) {
-        assert (format != GLTypes.FORMAT_UNKNOWN);
+        assert (glFormatIsSupported(format));
         assert (!glFormatIsCompressed(format));
 
         int internalFormat = mCaps.getTextureInternalFormat(format);
@@ -457,7 +542,7 @@ public final class GLServer extends Server {
                                                                           int format,
                                                                           int samples) {
         assert texture != 0;
-        assert format != GLTypes.FORMAT_UNKNOWN;
+        assert glFormatIsSupported(format);
         assert !glFormatIsCompressed(format);
 
         // There's an NVIDIA driver bug that creating framebuffer via DSA with attachments of
@@ -502,7 +587,7 @@ public final class GLServer extends Server {
             glNamedFramebufferRenderbuffer(msaaFramebuffer,
                     GL_COLOR_ATTACHMENT0,
                     GL_RENDERBUFFER,
-                    msaaColorBuffer.getRenderbuffer());
+                    msaaColorBuffer.getRenderbufferID());
             if (!mCaps.skipErrorChecks()) {
                 int status = glCheckNamedFramebufferStatus(msaaFramebuffer, GL_FRAMEBUFFER);
                 if (status != GL_FRAMEBUFFER_COMPLETE) {

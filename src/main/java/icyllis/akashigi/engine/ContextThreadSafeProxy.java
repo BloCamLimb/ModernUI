@@ -128,12 +128,12 @@ public final class ContextThreadSafeProxy {
             return null;
         }
 
-        if (backendFormat.getBackend() != Engine.OpenGL && glWrapDefaultFramebuffer) {
+        if (backendFormat.getBackend() != Engine.OPENGL && glWrapDefaultFramebuffer) {
             // The flag can only be used for a OpenGL backend.
             return null;
         }
 
-        if (backendFormat.getBackend() != Engine.Vulkan &&
+        if (backendFormat.getBackend() != Engine.VULKAN &&
                 (vkSupportInputAttachment || vkSecondaryCommandBuffer)) {
             // The flags can only be used for a Vulkan backend.
             return null;

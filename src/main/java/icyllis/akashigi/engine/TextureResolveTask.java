@@ -18,7 +18,53 @@
 
 package icyllis.akashigi.engine;
 
-public class TextureResolveTask extends RenderTask {
+import icyllis.akashigi.core.Rect2i;
+import icyllis.akashigi.core.SharedPtr;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public final class TextureResolveTask extends RenderTask {
+
+    private record Resolve(int flags, int msaaLeft, int msaaTop, int msaaRight, int msaaBottom) {
+    }
+
+    private final List<Resolve> mResolves = new ArrayList<>(4);
+
+    public TextureResolveTask(DrawingManager drawingMgr) {
+        super(drawingMgr);
+    }
+
+    public void addProxy(@SharedPtr TextureProxy proxy, int resolveFlags) {
+        // Ensure the last render task that operated on the proxy is closed. That's where msaa and
+        // mipmaps should have been marked dirty.
+        assert (mDrawingMgr.getLastRenderTask(proxy) == null ||
+                mDrawingMgr.getLastRenderTask(proxy).isClosed());
+        assert (resolveFlags != 0);
+
+        Rect2i msaaRect = null;
+        if ((resolveFlags & RESOLVE_FLAG_MSAA) != 0) {
+            assert (proxy.isMSAADirty());
+            msaaRect = proxy.getMSAADirtyRect();
+            proxy.setMSAADirty(0, 0, 0, 0);
+        }
+
+        if ((resolveFlags & RESOLVE_FLAG_MIPMAPS) != 0) {
+            assert (proxy.isMipmapped() && proxy.isMipmapsDirty());
+            proxy.setMipmapsDirty(false);
+        }
+
+        mResolves.add(new Resolve(resolveFlags,
+                msaaRect != null ? msaaRect.mLeft : 0,
+                msaaRect != null ? msaaRect.mTop : 0,
+                msaaRect != null ? msaaRect.mRight : 0,
+                msaaRect != null ? msaaRect.mBottom : 0));
+
+        // Add the proxy as a dependency: We will read the existing contents of this texture while
+        // generating mipmap levels and/or resolving MSAA.
+        addDependency(proxy, SamplerState.DEFAULT);
+        addTarget(proxy);
+    }
 
     @Override
     public boolean execute(OpFlushState flushState) {

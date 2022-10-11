@@ -83,12 +83,12 @@ public class GLPipelineState {
      */
     public boolean bindTextures(GLCommandBuffer commandBuffer,
                                 PipelineInfo pipelineInfo,
-                                TextureProxy geomTexture) {
+                                TextureProxy[] geomTextures) {
         int nextTexSamplerIdx = 0;
-        var geomSampler = pipelineInfo.geomProc().textureSampler();
-        if (geomSampler != null) {
-            GLTexture texture = (GLTexture) geomTexture.peekTexture();
-            if (!commandBuffer.bindTexture(texture, nextTexSamplerIdx++, geomSampler.samplerState())) {
+        for (int i = 0, e = pipelineInfo.geomProc().numTextureSamplers(); i < e; i++) {
+            GLTexture texture = (GLTexture) geomTextures[i].peekTexture();
+            if (!commandBuffer.bindTexture(texture, nextTexSamplerIdx++,
+                    pipelineInfo.geomProc().textureSamplerState(i))) {
                 return false;
             }
         }

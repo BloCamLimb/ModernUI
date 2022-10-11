@@ -21,23 +21,42 @@ package icyllis.akashigi.engine;
 import javax.annotation.Nonnull;
 
 /**
- * This class is used to generate a generic pipeline cache key. The OpenGL and Vulkan backends
+ * This class is used to generate a generic pipeline cache key. The Vulkan backend
  * derive backend-specific versions which add additional information.
  */
-public class PipelineDesc extends KeyBuilder {
+public final class PipelineDesc extends KeyBuilder {
+
+    private int mBaseLength;
+
+    public PipelineDesc() {
+    }
 
     /**
-     * Builds a pipeline descriptor.
+     * @return the number of ints of the base key, without additional information
+     */
+    public int getBaseLength() {
+        return mBaseLength;
+    }
+
+    /**
+     * Builds a base pipeline descriptor, without additional information.
      *
-     * @param desc the built descriptor
-     * @param info the pipeline information need to build the key
-     * @param caps the caps
+     * @param desc the pipeline descriptor
+     * @param info the pipeline information
+     * @param caps the context capabilities
      */
     @Nonnull
     public static PipelineDesc build(PipelineDesc desc, PipelineInfo info, Caps caps) {
         desc.reset();
         genKey(desc, info, caps);
+        desc.mBaseLength = desc.length();
         return desc;
+    }
+
+    public static String describe(PipelineInfo info, Caps caps) {
+        StringKeyBuilder b = new StringKeyBuilder();
+        genKey(b, info, caps);
+        return b.toString();
     }
 
     static void genKey(KeyBuilder b,
@@ -46,6 +65,8 @@ public class PipelineDesc extends KeyBuilder {
         genGPKey(info.geomProc(), b);
 
         //TODO more keys
+
+        b.addBits(16, info.writeSwizzle(), "writeSwizzle");
 
         // Put a clean break between the "common" data written by this function, and any backend data
         // appended later. The initial key length will just be this portion (rounded to 4 bytes).
@@ -67,13 +88,10 @@ public class PipelineDesc extends KeyBuilder {
         geomProc.addToKey(b);
         geomProc.getAttributeKey(b);
 
-        var sampler = geomProc.textureSampler();
-        b.addBool(sampler != null, "gpUseSampler");
-        if (sampler != null) {
-            final var backendFormat = sampler.backendFormat();
-
-            b.addBool(backendFormat.isExternal(), "external");
-            b.addBits(16, sampler.swizzle(), "swizzle");
+        int numSamplers = geomProc.numTextureSamplers();
+        b.addBits(4, numSamplers, "gpNumSamplers");
+        for (int i = 0; i < numSamplers; i++) {
+            b.addBits(16, geomProc.textureSamplerSwizzle(i), "swizzle");
         }
     }
 }

@@ -77,7 +77,7 @@ public final class TopologicalSort {
             // There was a loop
             throw new IllegalStateException();
         }
-        final List<T> edges = accessor.getEdges(node);
+        final List<T> edges = accessor.getIncomingEdges(node);
         if (edges != null && !edges.isEmpty()) {
             // Temporarily mark the node
             accessor.setTempMarked(node, true);
@@ -168,6 +168,6 @@ public final class TopologicalSort {
          * @param node the node of the graph
          * @return a list containing any incoming edges, or null if there are none
          */
-        List<T> getEdges(T node);
+        List<T> getIncomingEdges(T node);
     }
 }

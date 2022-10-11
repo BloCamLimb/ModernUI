@@ -18,9 +18,38 @@
 
 package icyllis.akashigi.sksl.ir;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+
 /**
  * Maps identifiers to symbols. Functions, in particular, are mapped to either FunctionDeclaration
  * or UnresolvedFunction depending on whether they are overloaded or not.
  */
 public class SymbolTable {
+
+    private final Object2ObjectOpenHashMap<String, Symbol> mSymbols
+            = new Object2ObjectOpenHashMap<>();
+    private boolean mBuiltIn;
+
+    public SymbolTable mParent;
+
+    public Symbol lookup(String name) {
+        Symbol symbol = mSymbols.get(name);
+        if (symbol != null) {
+            return symbol;
+        }
+        // The symbol wasn't found; recurse into the parent symbol table.
+        return mParent != null ? mParent.lookup(name) : null;
+    }
+
+    public boolean isType(String name) {
+        Symbol symbol = lookup(name);
+        return symbol != null && symbol.kind() == Symbol.Kind_Type;
+    }
+
+    public boolean isBuiltInType(String name) {
+        if (mBuiltIn) {
+            return isType(name);
+        }
+        return mParent != null && mParent.isBuiltInType(name);
+    }
 }

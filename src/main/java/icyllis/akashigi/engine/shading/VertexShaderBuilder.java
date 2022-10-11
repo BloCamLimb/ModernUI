@@ -26,7 +26,7 @@ import java.util.ArrayList;
 /**
  * This class implements the various vertex builder interfaces.
  */
-public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeoBuilder {
+public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeomBuilder {
 
     // vertex shader inputs are vertex attributes
     private final ArrayList<ShaderVar> mInputs = new ArrayList<>();

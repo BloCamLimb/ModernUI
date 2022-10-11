@@ -56,7 +56,7 @@ public abstract class ProgramBuilder {
      * Built-in uniform handles.
      */
     @UniformHandle
-    public int mOrthoProjUniform = INVALID_RESOURCE_HANDLE;
+    public int mProjectionUniform = INVALID_RESOURCE_HANDLE;
 
     public GeometryProcessor.ProgramImpl mGPImpl;
 
@@ -161,8 +161,8 @@ public abstract class ProgramBuilder {
             output[1] = nameVariable('\0', "outputCoverage");
         }
 
-        assert (mOrthoProjUniform == INVALID_RESOURCE_HANDLE);
-        mOrthoProjUniform = uniformHandler().addUniform(
+        assert (mProjectionUniform == INVALID_RESOURCE_HANDLE);
+        mProjectionUniform = uniformHandler().addUniform(
                 null,
                 Vertex_ShaderFlag,
                 SLType.Vec4,
@@ -175,14 +175,14 @@ public abstract class ProgramBuilder {
         mGPImpl = geomProc.makeProgramImpl(shaderCaps());
 
         @SamplerHandle
-        int texSampler = INVALID_RESOURCE_HANDLE;
-        var sampler = geomProc.textureSampler();
-        if (sampler != null) {
-            texSampler = emitSampler(sampler.backendFormat(),
-                    sampler.samplerState(),
-                    sampler.swizzle(),
-                    "TextureSampler0");
-            if (texSampler == INVALID_RESOURCE_HANDLE) {
+        int[] texSamplers = new int[geomProc.numTextureSamplers()];
+        for (int i = 0; i < texSamplers.length; i++) {
+            String name = "TextureSampler" + i;
+            texSamplers[i] = emitSampler(
+                    geomProc.textureSamplerState(i),
+                    geomProc.textureSamplerSwizzle(i),
+                    name);
+            if (texSamplers[i] == INVALID_RESOURCE_HANDLE) {
                 return false;
             }
         }
@@ -196,7 +196,7 @@ public abstract class ProgramBuilder {
                 geomProc,
                 output[0],
                 output[1],
-                texSampler
+                texSamplers
         );
 
         return true;
@@ -208,9 +208,9 @@ public abstract class ProgramBuilder {
     }
 
     @SamplerHandle
-    private int emitSampler(BackendFormat backendFormat, int samplerState, short swizzle, String name) {
+    private int emitSampler(int samplerState, short swizzle, String name) {
         ++mNumFragmentSamplers;
-        return uniformHandler().addSampler(backendFormat, samplerState, swizzle, name);
+        return uniformHandler().addSampler(samplerState, swizzle, name);
     }
 
     void appendDecls(ArrayList<ShaderVar> vars, StringBuilder out) {

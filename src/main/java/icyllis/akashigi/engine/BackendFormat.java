@@ -18,9 +18,8 @@
 
 package icyllis.akashigi.engine;
 
+import icyllis.akashigi.core.Color;
 import icyllis.akashigi.core.ImageInfo;
-import icyllis.akashigi.opengl.GLTypes;
-import icyllis.akashigi.vulkan.VkCore;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -33,24 +32,40 @@ import javax.annotation.concurrent.Immutable;
 public abstract class BackendFormat {
 
     /**
-     * @see Engine#OpenGL
-     * @see Engine#Vulkan
-     * @see Engine#Mock
+     * @see Engine#OPENGL
+     * @see Engine#VULKAN
+     * @see Engine#MOCK
      */
     public abstract int getBackend();
 
     /**
-     * Gets the channels present in the format as a bitfield of ColorChannelFlag values.
-     * Luminance channels (compatibility mode) are reported as GRAY_CHANNEL_FLAG.
+     * If the backend API is Open GL this gets the format as a GLenum.
      */
-    public abstract int getChannelMask();
+    @NativeType("GLenum")
+    public int getGLFormat() {
+        throw new IllegalStateException();
+    }
+
+    /**
+     * If the backend API is Vulkan this gets the format as a VkFormat.
+     */
+    @NativeType("VkFormat")
+    public int getVkFormat() {
+        throw new IllegalStateException();
+    }
+
+    /**
+     * Gets the channels present in the format as a bitfield of ColorChannelFlag values.
+     *
+     * @see Color#COLOR_CHANNEL_FLAGS_RGBA
+     */
+    public abstract int getChannelFlags();
 
     public abstract boolean isSRGB();
 
     /**
-     * May be memory object, imports POSIX FD or Win32 NT handle (Windows 8+, KMT is not used).
-     * Currently, OpenGL texture wraps Vulkan image, Vulkan image wraps Vulkan image or Linux DRM.
-     * We assume external textures are read-only and don't track their memory usage.
+     * Hints that a texture comes from external resources, and our engine cannot create such a texture
+     * with this format. It will be read-only (can be read/sampled from but cannot be written/rendered to).
      */
     public abstract boolean isExternal();
 
@@ -64,35 +79,10 @@ public abstract class BackendFormat {
     }
 
     /**
-     * If the backend API is Open GL this gets the format as a GLFormat. Otherwise, returns
-     * {@link GLTypes#FORMAT_UNKNOWN}.
-     */
-    public int getGLFormat() {
-        return GLTypes.FORMAT_UNKNOWN;
-    }
-
-    /**
-     * If the backend API is Open GL this gets the format as a GLEnum. Otherwise, returns 0.
-     */
-    @NativeType("GLenum")
-    public int getGLFormatEnum() {
-        return 0;
-    }
-
-    /**
-     * If the backend API is Vulkan this gets the format as a VkFormat. Otherwise, returns
-     * {@link VkCore#VK_FORMAT_UNDEFINED}.
-     */
-    @NativeType("VkFormat")
-    public int getVkFormat() {
-        return VkCore.VK_FORMAT_UNDEFINED;
-    }
-
-    /**
-     * If possible, copies the BackendFormat and forces the texture type to be Texture2D.
+     * If possible, copies the BackendFormat and forces the isExternal to false.
      */
     @Nonnull
-    public abstract BackendFormat makeTexture2D();
+    public abstract BackendFormat makeInternal();
 
     /**
      * @return if compressed, bytes per block, otherwise bytes per pixel
@@ -104,5 +94,5 @@ public abstract class BackendFormat {
     /**
      * @return a key that is unique in the backend
      */
-    public abstract int getKey();
+    public abstract int getFormatKey();
 }

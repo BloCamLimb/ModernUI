@@ -31,8 +31,8 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     private GLCommandBuffer mCmdBuffer;
     private GLPipelineState mPipelineState;
 
-    private byte mColorOps;
-    private byte mStencilOps;
+    private int mColorAction;
+    private int mStencilAction;
     private float[] mClearColor;
 
     @SharedPtr
@@ -55,12 +55,12 @@ public final class GLOpsRenderPass extends OpsRenderPass {
 
     public GLOpsRenderPass set(RenderTarget rt,
                                Rect2i bounds, int origin,
-                               byte colorOps,
-                               byte stencilOps,
+                               int colorAction,
+                               int stencilAction,
                                float[] clearColor) {
         set(rt, origin);
-        mColorOps = colorOps;
-        mStencilOps = stencilOps;
+        mColorAction = colorAction;
+        mStencilAction = stencilAction;
         mClearColor = clearColor;
         return this;
     }
@@ -70,8 +70,8 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         super.begin();
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
         mCmdBuffer = mServer.beginRenderPass(glRenderTarget,
-                mColorOps & LoadOpMask,
-                mStencilOps & LoadOpMask,
+                mColorAction,
+                mStencilAction,
                 mClearColor);
     }
 
@@ -82,8 +82,8 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         mActiveInstanceBuffer = Resource.move(mActiveInstanceBuffer);
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
         mServer.endRenderPass(glRenderTarget,
-                mColorOps >> StoreOpShift,
-                mStencilOps >> StoreOpShift);
+                mColorAction,
+                mStencilAction);
         super.end();
     }
 
@@ -98,11 +98,11 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             return false;
         }
         mPrimitiveType = switch (pipelineInfo.primitiveType()) {
-            case PrimitiveType_Triangles -> GL_TRIANGLES;
-            case PrimitiveType_TriangleStrip -> GL_TRIANGLE_STRIP;
-            case PrimitiveType_Points -> GL_POINTS;
-            case PrimitiveType_Lines -> GL_LINES;
-            case PrimitiveType_LineStrip -> GL_LINE_STRIP;
+            case PRIMITIVE_TYPE_TRIANGLE_LIST -> GL_TRIANGLES;
+            case PRIMITIVE_TYPE_TRIANGLE_STRIP -> GL_TRIANGLE_STRIP;
+            case PRIMITIVE_TYPE_POINT_LIST -> GL_POINTS;
+            case PRIMITIVE_TYPE_LINE_LIST -> GL_LINES;
+            case PRIMITIVE_TYPE_LINE_STRIP -> GL_LINE_STRIP;
             default -> throw new IllegalStateException();
         };
 

@@ -43,6 +43,8 @@ public abstract class OpsRenderPass {
     protected RenderTarget mRenderTarget;
     protected int mOrigin;
 
+    private TextureProxy[] mGeomTextures = new TextureProxy[1];
+
     public OpsRenderPass() {
         this(null, Engine.SurfaceOrigin_UpperLeft);
     }
@@ -96,6 +98,17 @@ public abstract class OpsRenderPass {
     }
 
     /**
+     * Single texture version of {@link #bindTextures(TextureProxy[])}.
+     *
+     * @param geomTexture the raw ptr to textures at binding 0
+     */
+    public final void bindTexture(TextureProxy geomTexture) {
+        mGeomTextures[0] = geomTexture;
+        bindTextures(mGeomTextures);
+        mGeomTextures[0] = null;
+    }
+
+    /**
      * Binds textures for the geometry processor. Texture bindings are dynamic state and therefore
      * not set during {@link #bindPipeline(PipelineInfo, Rect2f)}. If the current program uses textures,
      * then the client must call this method before drawing. The geometry processor textures may also
@@ -104,13 +117,11 @@ public abstract class OpsRenderPass {
      * Note that this method is only used for GP using texture. If GP does not use texture but FP does,
      * they will be automatically set during {@link #bindPipeline(PipelineInfo, Rect2f)}, and this is
      * a no-op. Otherwise, this method must be called if the GP uses textures.
-     * <p>
-     * Currently, we do not use multitexturing on GP, but we may use multitexturing on FP.
      *
-     * @param geomTexture the raw ptr to texture at binding 0, nonnull
+     * @param geomTextures the raw ptr to textures starting from binding 0
      */
-    public final void bindTextures(TextureProxy geomTexture) {
-
+    public final void bindTextures(TextureProxy[] geomTextures) {
+        //TODO
     }
 
     /**

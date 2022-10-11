@@ -29,9 +29,9 @@ public final class Engine {
      * Possible 3D APIs that may be used by Akashi Engine.
      */
     public static final int
-            OpenGL = 0, // OpenGL 4.5 core profile (desktop)
-            Vulkan = 1, // Vulkan 1.1 (desktop and mobile)
-            Mock = 2;   // Mock draws nothing. It is used for unit tests and to measure CPU overhead.
+            OPENGL = 0, // OpenGL 4.5 core profile (desktop)
+            VULKAN = 1, // Vulkan 1.1 (desktop and mobile)
+            MOCK = 2;   // Mock draws nothing. It is used for unit tests and to measure CPU overhead.
 
     /**
      * Used to say whether a texture has mip levels allocated or not.
@@ -42,7 +42,7 @@ public final class Engine {
 
     /**
      * Image and Surfaces can be stored such that (0, 0) in texture space may correspond to
-     * either the top-left or bottom-left content pixel.
+     * either the upper-left or lower-left content pixel.
      */
     public static final int
             SurfaceOrigin_UpperLeft = 0,
@@ -121,48 +121,129 @@ public final class Engine {
             Vertex_ShaderFlag = 1,
             Fragment_ShaderFlag = 1 << 1;
 
-    /**
-     * Describes the encoding of channel data in a ColorType.
-     */
-    public static final int
-            COLOR_ENCODING_UNORM = 0,
-            COLOR_ENCODING_SRGB_UNORM = 1,
-            COLOR_ENCODING_SNORM = 2,
-            COLOR_ENCODING_FLOAT = 3;
-
     public static int colorTypeBytesPerPixel(int ct) {
         return ImageInfo.bytesPerPixel(ct);
     }
 
     public static int colorTypeChannelFlags(int ct) {
         return switch (ct) {
-            case ImageInfo.ColorType_Unknown -> 0;
-            case ImageInfo.ColorType_Alpha_8,
-                    ImageInfo.ColorType_Alpha_16,
-                    ImageInfo.ColorType_Alpha_F32xxx,
-                    ImageInfo.ColorType_Alpha_8xxx,
-                    ImageInfo.ColorType_Alpha_F16 -> Color.ALPHA_CHANNEL_FLAG;
-            case ImageInfo.ColorType_BGR_565,
-                    ImageInfo.ColorType_RGB_888,
-                    ImageInfo.ColorType_RGB_888x -> Color.RGB_CHANNEL_FLAGS;
-            case ImageInfo.ColorType_ABGR_4444,
-                    ImageInfo.ColorType_RGBA_16161616,
-                    ImageInfo.ColorType_RGBA_F32,
-                    ImageInfo.ColorType_RGBA_F16_Clamped,
-                    ImageInfo.ColorType_RGBA_F16,
-                    ImageInfo.ColorType_BGRA_1010102,
-                    ImageInfo.ColorType_RGBA_1010102,
-                    ImageInfo.ColorType_BGRA_8888,
-                    ImageInfo.ColorType_RGBA_8888_SRGB,
-                    ImageInfo.ColorType_RGBA_8888 -> Color.RGBA_CHANNEL_FLAGS;
-            case ImageInfo.ColorType_RG_88,
-                    ImageInfo.ColorType_RG_F16,
-                    ImageInfo.ColorType_RG_1616 -> Color.RG_CHANNEL_FLAGS;
-            case ImageInfo.ColorType_Gray_8,
-                    ImageInfo.ColorType_Gray_8xxx -> Color.GRAY_CHANNEL_FLAG;
-            case ImageInfo.ColorType_R_8,
-                    ImageInfo.ColorType_R_F16,
-                    ImageInfo.ColorType_R_16 -> Color.RED_CHANNEL_FLAG;
+            case ImageInfo.COLOR_TYPE_UNKNOWN -> 0;
+            case ImageInfo.COLOR_TYPE_ALPHA_8,
+                    ImageInfo.COLOR_TYPE_ALPHA_16,
+                    ImageInfo.COLOR_TYPE_ALPHA_F16,
+                    ImageInfo.COLOR_TYPE_ALPHA_8XXX,
+                    ImageInfo.COLOR_TYPE_ALPHA_F32XXX -> Color.COLOR_CHANNEL_FLAG_ALPHA;
+            case ImageInfo.COLOR_TYPE_BGR_565,
+                    ImageInfo.COLOR_TYPE_RGB_888,
+                    ImageInfo.COLOR_TYPE_RGB_888X -> Color.COLOR_CHANNEL_FLAGS_RGB;
+            case ImageInfo.COLOR_TYPE_ABGR_4444,
+                    ImageInfo.COLOR_TYPE_RGBA_16161616,
+                    ImageInfo.COLOR_TYPE_RGBA_F32,
+                    ImageInfo.COLOR_TYPE_RGBA_F16_CLAMPED,
+                    ImageInfo.COLOR_TYPE_RGBA_F16,
+                    ImageInfo.COLOR_TYPE_BGRA_1010102,
+                    ImageInfo.COLOR_TYPE_RGBA_1010102,
+                    ImageInfo.COLOR_TYPE_BGRA_8888,
+                    ImageInfo.COLOR_TYPE_RGBA_8888_SRGB,
+                    ImageInfo.COLOR_TYPE_RGBA_8888 -> Color.COLOR_CHANNEL_FLAGS_RGBA;
+            case ImageInfo.COLOR_TYPE_RG_88,
+                    ImageInfo.COLOR_TYPE_RG_1616,
+                    ImageInfo.COLOR_TYPE_RG_F16 -> Color.COLOR_CHANNEL_FLAGS_RG;
+            case ImageInfo.COLOR_TYPE_GRAY_8,
+                    ImageInfo.COLOR_TYPE_GRAY_8XXX -> Color.COLOR_CHANNEL_FLAG_GRAY;
+            case ImageInfo.COLOR_TYPE_R_8,
+                    ImageInfo.COLOR_TYPE_R_16,
+                    ImageInfo.COLOR_TYPE_R_F16,
+                    ImageInfo.COLOR_TYPE_R_8XXX -> Color.COLOR_CHANNEL_FLAG_RED;
+            default -> throw new IllegalArgumentException(String.valueOf(ct));
+        };
+    }
+
+    /**
+     * Describes the encoding of channel data in a ColorType.
+     *
+     * @see #colorTypeEncoding(int)
+     */
+    public static final int
+            COLOR_ENCODING_UNORM = 0,
+            COLOR_ENCODING_SRGB_UNORM = 1,
+            COLOR_ENCODING_FLOAT = 2;
+
+    public static int colorTypeEncoding(int ct) {
+        return switch (ct) {
+            case ImageInfo.COLOR_TYPE_UNKNOWN,
+                    ImageInfo.COLOR_TYPE_ALPHA_8,
+                    ImageInfo.COLOR_TYPE_BGR_565,
+                    ImageInfo.COLOR_TYPE_ABGR_4444,
+                    ImageInfo.COLOR_TYPE_RGBA_8888,
+                    ImageInfo.COLOR_TYPE_RGB_888X,
+                    ImageInfo.COLOR_TYPE_RG_88,
+                    ImageInfo.COLOR_TYPE_BGRA_8888,
+                    ImageInfo.COLOR_TYPE_RGBA_1010102,
+                    ImageInfo.COLOR_TYPE_BGRA_1010102,
+                    ImageInfo.COLOR_TYPE_GRAY_8,
+                    ImageInfo.COLOR_TYPE_ALPHA_8XXX,
+                    ImageInfo.COLOR_TYPE_GRAY_8XXX,
+                    ImageInfo.COLOR_TYPE_R_8XXX,
+                    ImageInfo.COLOR_TYPE_ALPHA_16,
+                    ImageInfo.COLOR_TYPE_RG_1616,
+                    ImageInfo.COLOR_TYPE_RGBA_16161616,
+                    ImageInfo.COLOR_TYPE_RGB_888,
+                    ImageInfo.COLOR_TYPE_R_8,
+                    ImageInfo.COLOR_TYPE_R_16 -> COLOR_ENCODING_UNORM;
+            case ImageInfo.COLOR_TYPE_RGBA_8888_SRGB -> COLOR_ENCODING_SRGB_UNORM;
+            case ImageInfo.COLOR_TYPE_ALPHA_F16,
+                    ImageInfo.COLOR_TYPE_RGBA_F16,
+                    ImageInfo.COLOR_TYPE_RGBA_F16_CLAMPED,
+                    ImageInfo.COLOR_TYPE_RGBA_F32,
+                    ImageInfo.COLOR_TYPE_ALPHA_F32XXX,
+                    ImageInfo.COLOR_TYPE_RG_F16,
+                    ImageInfo.COLOR_TYPE_R_F16 -> COLOR_ENCODING_FLOAT;
+            default -> throw new IllegalArgumentException(String.valueOf(ct));
+        };
+    }
+
+    /**
+     * Some pixel configs are inherently clamped to [0,1], some are allowed to go outside that range,
+     * and some are FP but manually clamped in the XP.
+     *
+     * @see #colorTypeClampType(int)
+     */
+    public static final int
+            CLAMP_TYPE_AUTO = 0,    // Normalized, fixed-point configs
+            CLAMP_TYPE_MANUAL = 1,  // Clamped FP configs
+            CLAMP_TYPE_NONE = 2;    // Normal (un-clamped) FP configs
+
+    public static int colorTypeClampType(int ct) {
+        return switch (ct) {
+            case ImageInfo.COLOR_TYPE_UNKNOWN,
+                    ImageInfo.COLOR_TYPE_ALPHA_8,
+                    ImageInfo.COLOR_TYPE_BGR_565,
+                    ImageInfo.COLOR_TYPE_ABGR_4444,
+                    ImageInfo.COLOR_TYPE_RGBA_8888,
+                    ImageInfo.COLOR_TYPE_RGBA_8888_SRGB,
+                    ImageInfo.COLOR_TYPE_RGB_888X,
+                    ImageInfo.COLOR_TYPE_RG_88,
+                    ImageInfo.COLOR_TYPE_BGRA_8888,
+                    ImageInfo.COLOR_TYPE_RGBA_1010102,
+                    ImageInfo.COLOR_TYPE_BGRA_1010102,
+                    ImageInfo.COLOR_TYPE_GRAY_8,
+                    ImageInfo.COLOR_TYPE_ALPHA_8XXX,
+                    ImageInfo.COLOR_TYPE_GRAY_8XXX,
+                    ImageInfo.COLOR_TYPE_R_8XXX,
+                    ImageInfo.COLOR_TYPE_ALPHA_16,
+                    ImageInfo.COLOR_TYPE_RG_1616,
+                    ImageInfo.COLOR_TYPE_RGBA_16161616,
+                    ImageInfo.COLOR_TYPE_RGB_888,
+                    ImageInfo.COLOR_TYPE_R_8,
+                    ImageInfo.COLOR_TYPE_R_16 -> CLAMP_TYPE_AUTO;
+            case ImageInfo.COLOR_TYPE_RGBA_F16_CLAMPED -> CLAMP_TYPE_MANUAL;
+            case ImageInfo.COLOR_TYPE_ALPHA_F16,
+                    ImageInfo.COLOR_TYPE_RGBA_F16,
+                    ImageInfo.COLOR_TYPE_RGBA_F32,
+                    ImageInfo.COLOR_TYPE_ALPHA_F32XXX,
+                    ImageInfo.COLOR_TYPE_RG_F16,
+                    ImageInfo.COLOR_TYPE_R_F16 -> CLAMP_TYPE_NONE;
             default -> throw new IllegalArgumentException(String.valueOf(ct));
         };
     }
@@ -174,68 +255,85 @@ public final class Engine {
      * the rasterization of one pixel in screen coordinates, may or may not anti-aliased.
      */
     public static final byte
-            PrimitiveType_Triangles = 0,        // separate triangle
-            PrimitiveType_TriangleStrip = 1,    // connected triangle
-            PrimitiveType_Points = 2,           // 1 px only
-            PrimitiveType_Lines = 3,            // 1 px wide only
-            PrimitiveType_LineStrip = 4;        // 1 px wide only
-    public static final byte PrimitiveType_Last = PrimitiveType_LineStrip;
+            PRIMITIVE_TYPE_TRIANGLE_LIST = 0,   // separate triangle
+            PRIMITIVE_TYPE_TRIANGLE_STRIP = 1,  // connected triangle
+            PRIMITIVE_TYPE_POINT_LIST = 2,      // 1 px only
+            PRIMITIVE_TYPE_LINE_LIST = 3,       // 1 px wide only
+            PRIMITIVE_TYPE_LINE_STRIP = 4;      // 1 px wide only
+    public static final byte LAST_PRIMITIVE_TYPE = PRIMITIVE_TYPE_LINE_STRIP;
 
     /**
-     * Mask formats. Used by the font cache. Important that these are 0-based.
+     * Mask formats. Used by the font atlas. Important that these are 0-based.
      * <p>
      * Using L-shift to get the number of bytes-per-pixel for the specified mask format.
      */
     public static final int
-            MaskFormat_A8 = 0,     // 1-byte per pixel
-            MaskFormat_A565 = 1,   // 2-bytes per pixel, RGB represent 3-channel LCD coverage
-            MaskFormat_ARGB = 2;   // 4-bytes per pixel, color format
+            MASK_FORMAT_A8 = 0,     // 1-byte per pixel
+            MASK_FORMAT_A565 = 1,   // 2-bytes per pixel, RGB represent 3-channel LCD coverage
+            MASK_FORMAT_ARGB = 2;   // 4-bytes per pixel, color format
 
     /**
      * Budget types. Used with resources with a large memory allocation, such as Buffers and Textures.
      * <p>
-     * NONE: The resource is not budgeted and is cleaned up as soon as it has no refs regardless of whether
-     * it has a unique or scratch key.
-     * <p>
      * BUDGETED: The resource is budgeted and is subject to cleaning up under budget pressure.
      * <p>
-     * CACHEABLE: The resource is not budgeted and is allowed to remain in the cache with no refs if it
-     * has a unique key. Scratch keys are ignored.
+     * NOT_BUDGETED: The resource is not budgeted and is cleaned up as soon as it has no refs regardless
+     * of whether it has a unique or scratch key.
+     * <p>
+     * WRAP_CACHEABLE: The resource is not budgeted and is allowed to remain in the cache with no refs
+     * if it has a unique key. Scratch keys are ignored.
      */
     public static final byte
-            BudgetType_None = 0,
-            BudgetType_Budgeted = 1,
-            BudgetType_Cacheable = 2;
+            BUDGET_TYPE_BUDGETED = 0,
+            BUDGET_TYPE_NOT_BUDGETED = 1,
+            BUDGET_TYPE_WRAP_CACHEABLE = 2;
 
     /**
      * Load ops. Used to specify the load operation to be used when an OpsTask/OpsRenderPass
      * begins execution.
      */
     public static final int
-            LoadOp_Load = 0,
-            LoadOp_Clear = 1,
-            LoadOp_Discard = 2;
+            LOAD_OP_LOAD = 0,
+            LOAD_OP_CLEAR = 1,
+            LOAD_OP_DISCARD = 2;
+
     /**
      * Store ops. Used to specify the store operation to be used when an OpsTask/OpsRenderPass
      * ends execution.
      */
     public static final int
-            StoreOp_Store = 0,
-            StoreOp_Discard = 1;
-    public static final int LoadOpMask = 0x3;
-    public static final int StoreOpShift = 2;
+            STORE_OP_STORE = 0,
+            STORE_OP_DISCARD = 1;
+
+    private static final int LOAD_OP_MASK = 0x3;
+    private static final int STORE_OP_SHIFT = 2;
+
     /**
      * Combination of load ops and store ops.
      * 0-2 bits: LoadOp
      * 2-3 bits: StoreOp
      */
     public static final int
-            LoadStoreOps_LoadStore = LoadOp_Load | (StoreOp_Store << StoreOpShift),
-            LoadStoreOps_ClearStore = LoadOp_Clear | (StoreOp_Store << StoreOpShift),
-            LoadStoreOps_DiscardStore = LoadOp_Discard | (StoreOp_Store << StoreOpShift),
-            LoadStoreOps_LoadDiscard = LoadOp_Load | (StoreOp_Discard << StoreOpShift),
-            LoadStoreOps_ClearDiscard = LoadOp_Clear | (StoreOp_Discard << StoreOpShift),
-            LoadStoreOps_DiscardDiscard = LoadOp_Discard | (StoreOp_Discard << StoreOpShift);
+            ACTION_LOAD_STORE = LOAD_OP_LOAD | (STORE_OP_STORE << STORE_OP_SHIFT),
+            ACTION_CLEAR_STORE = LOAD_OP_CLEAR | (STORE_OP_STORE << STORE_OP_SHIFT),
+            ACTION_DISCARD_STORE = LOAD_OP_DISCARD | (STORE_OP_STORE << STORE_OP_SHIFT),
+            ACTION_LOAD_DISCARD = LOAD_OP_LOAD | (STORE_OP_DISCARD << STORE_OP_SHIFT),
+            ACTION_CLEAR_DISCARD = LOAD_OP_CLEAR | (STORE_OP_DISCARD << STORE_OP_SHIFT),
+            ACTION_DISCARD_DISCARD = LOAD_OP_DISCARD | (STORE_OP_DISCARD << STORE_OP_SHIFT);
+
+    public static int makeAction(int loadOp, int storeOp) {
+        return (loadOp & LOAD_OP_MASK) | (storeOp << STORE_OP_SHIFT);
+    }
+
+    public static int loadOp(int action) {
+        assert ((action & ~0x7) == 0);
+        return action & LOAD_OP_MASK;
+    }
+
+    public static int storeOp(int action) {
+        assert ((action & ~0x7) == 0);
+        return action >> STORE_OP_SHIFT;
+    }
 
     /**
      * Specifies if the holder owns the backend, OpenGL or Vulkan, object.
@@ -246,85 +344,84 @@ public final class Engine {
 
     /**
      * Surface flags shared between the Surface & SurfaceProxy class hierarchies.
-     * <b>WARNING: Don't abuse the combination of flags or result in unexpected behaviors.</b>
+     * Don't abuse the combination of flags or result in unexpected behaviors.
      *
      * <ul>
-     * <li>{@link #SurfaceFlag_Budgeted} -
+     * <li>{@link #SURFACE_FLAG_BUDGETED} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
      *  set, otherwise not budgeted. {@link Texture} and {@link TextureProxy} only.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_LooseFit} -
+     * <li>{@link #SURFACE_FLAG_LOOSE_FIT} -
      *  Indicates whether a backing store needs to be an exact match or can be larger than
      *  is strictly necessary. Loose fit when set, otherwise exact fit.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_Mipmapped} -
+     * <li>{@link #SURFACE_FLAG_MIPMAPPED} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
      *  when set, otherwise mipmaps are not allocated. {@link Texture} and {@link TextureProxy} only.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_Renderable} -
+     * <li>{@link #SURFACE_FLAG_RENDERABLE} -
      *  Used to say whether a surface can be rendered to, whether a texture can be used as
      *  color attachments. Renderable when set, otherwise not renderable.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_Protected} -
+     * <li>{@link #SURFACE_FLAG_PROTECTED} -
      *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
      *  not protected.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_ReadOnly} -
+     * <li>{@link #SURFACE_FLAG_READ_ONLY} -
      *  Means the pixels in the texture are read-only. {@link Texture} and {@link TextureProxy}
      *  only.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_SkipAllocator} -
+     * <li>{@link #SURFACE_FLAG_SKIP_ALLOCATOR} -
      *  When set, the proxy will be instantiated outside the allocator (e.g. for proxies that are
      *  instantiated in on-flush callbacks). Otherwise, {@link ResourceAllocator} should instantiate
      *  the proxy. {@link SurfaceProxy} only.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_DeferredProvider} -
+     * <li>{@link #SURFACE_FLAG_DEFERRED_PROVIDER} -
      *  For TextureProxies created in a deferred list recording thread it is possible for the
      *  unique key to be cleared on the backing {@link Texture} while the unique key remains on
      *  the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
      *  texture proxy is also always set on the backing {@link Texture}. {@link TextureProxy} only.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_GLWrapDefaultFramebuffer} -
-     *  This is a OpenGL only flag. It tells us that the internal render target wraps the default
-     *  framebuffer (on-screen) that preserved by window (id 0). {@link RenderTarget} only.
+     * <li>{@link #SURFACE_FLAG_GL_WRAP_DEFAULT_FB} -
+     *  This is a OpenGL only flag. It tells us that the internal render target wraps the OpenGL
+     *  default framebuffer (id=0) that preserved by window. {@link RenderTarget} only.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_RequireManualMSAAResolve} -
+     * <li>{@link #SURFACE_FLAG_MANUAL_MSAA_RESOLVE} -
      *  This means the render target is multi-sampled, and internally holds a non-msaa texture
      *  for resolving into. The render target resolves itself by blit-ting into this internal
-     *  texture. (asTexture() might or might not return the internal texture, but if it does, we
+     *  texture. (It might or might not has the internal texture access, but if it does, we
      *  always resolve the render target before accessing this texture's data.) {@link RenderTarget}
      *  only.
      * </li>
      *
-     * <li>{@link #SurfaceFlag_VkSupportInputAttachment} -
-     *  This is a Vulkan only flag. If set the surface can be used as an input attachment in a
-     *  shader. This is used for doing in shader blending where we want to sample from the same
-     *  image we are drawing to. {@link RenderTarget} only.
+     * <li>{@link #SURFACE_FLAG_VK_WRAP_SECONDARY_CB} -
+     *  This is a Vulkan only flag. It tells us that the internal render target is wrapping a raw
+     *  Vulkan secondary command buffer. {@link RenderTarget} only.
      * </li>
      * </ul>
      */
     public static final int
-            SurfaceFlag_None = Core.SurfaceFlag_None,
-            SurfaceFlag_Budgeted = Core.SurfaceFlag_Budgeted,
-            SurfaceFlag_LooseFit = Core.SurfaceFlag_LooseFit,
-            SurfaceFlag_Mipmapped = Core.SurfaceFlag_Mipmapped,
-            SurfaceFlag_Renderable = Core.SurfaceFlag_Renderable,
-            SurfaceFlag_Protected = Core.SurfaceFlag_Protected,
-            SurfaceFlag_ReadOnly = Core.SurfaceFlag_Protected << 1,
-            SurfaceFlag_SkipAllocator = Core.SurfaceFlag_Protected << 2,
-            SurfaceFlag_DeferredProvider = Core.SurfaceFlag_Protected << 3,
-            SurfaceFlag_GLWrapDefaultFramebuffer = Core.SurfaceFlag_Protected << 4,
-            SurfaceFlag_RequireManualMSAAResolve = Core.SurfaceFlag_Protected << 5,
-            SurfaceFlag_VkSupportInputAttachment = Core.SurfaceFlag_Protected << 6;
+            SURFACE_FLAG_NONE = Core.SURFACE_FLAG_NONE,
+            SURFACE_FLAG_BUDGETED = Core.SURFACE_FLAG_BUDGETED,
+            SURFACE_FLAG_LOOSE_FIT = Core.SURFACE_FLAG_LOOSE_FIT,
+            SURFACE_FLAG_MIPMAPPED = Core.SURFACE_FLAG_MIPMAPPED,
+            SURFACE_FLAG_RENDERABLE = Core.SURFACE_FLAG_RENDERABLE,
+            SURFACE_FLAG_PROTECTED = Core.SURFACE_FLAG_PROTECTED,
+            SURFACE_FLAG_READ_ONLY = Core.SURFACE_FLAG_PROTECTED << 1,
+            SURFACE_FLAG_SKIP_ALLOCATOR = Core.SURFACE_FLAG_PROTECTED << 2,
+            SURFACE_FLAG_DEFERRED_PROVIDER = Core.SURFACE_FLAG_PROTECTED << 3,
+            SURFACE_FLAG_GL_WRAP_DEFAULT_FB = Core.SURFACE_FLAG_PROTECTED << 4,
+            SURFACE_FLAG_MANUAL_MSAA_RESOLVE = Core.SURFACE_FLAG_PROTECTED << 5,
+            SURFACE_FLAG_VK_WRAP_SECONDARY_CB = Core.SURFACE_FLAG_PROTECTED << 6;
 
     /**
      * Types used to describe format of vertices in arrays.

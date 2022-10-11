@@ -20,6 +20,7 @@ package icyllis.akashigi.vulkan;
 
 import icyllis.akashigi.engine.BackendFormat;
 import icyllis.akashigi.engine.Engine;
+import it.unimi.dsi.fastutil.HashCommon;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
@@ -62,7 +63,7 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Override
     public int getBackend() {
-        return Engine.Vulkan;
+        return Engine.VULKAN;
     }
 
     @Override
@@ -71,7 +72,7 @@ public final class VkBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getChannelMask() {
+    public int getChannelFlags() {
         return vkFormatChannels(mFormat);
     }
 
@@ -82,7 +83,7 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Nonnull
     @Override
-    public BackendFormat makeTexture2D() {
+    public BackendFormat makeInternal() {
         if (mIsExternal) {
             return make(mFormat, false);
         }
@@ -110,8 +111,13 @@ public final class VkBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getKey() {
+    public int getFormatKey() {
         return mFormat;
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCommon.mix(mFormat);
     }
 
     @Override
@@ -122,7 +128,10 @@ public final class VkBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int hashCode() {
-        return mFormat;
+    public String toString() {
+        return "{mBackend=Vulkan" +
+                ", mFormat=" + vkFormatName(mFormat) +
+                ", mIsExternal=" + mIsExternal +
+                '}';
     }
 }

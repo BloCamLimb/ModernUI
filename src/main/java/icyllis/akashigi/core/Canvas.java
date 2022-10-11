@@ -168,7 +168,7 @@ public class Canvas implements AutoCloseable {
 
     /**
      * Returns ImageInfo for Canvas. If Canvas is not associated with raster surface or
-     * GPU surface, returned ColorType is set to {@link ImageInfo#ColorType_Unknown}.
+     * GPU surface, returned ColorType is set to {@link ImageInfo#COLOR_TYPE_UNKNOWN}.
      *
      * @return dimensions and ColorType of Canvas
      */

@@ -18,7 +18,8 @@
 
 package icyllis.akashigi.sksl;
 
-import icyllis.akashigi.sksl.lex.*;
+import icyllis.akashigi.sksl.lex.Lexer;
+import icyllis.akashigi.sksl.lex.NFAtoDFA;
 
 import javax.annotation.Nonnull;
 
@@ -42,7 +43,6 @@ public class DSLParser {
 
     private final Compiler mCompiler;
     private final ProgramSettings mSettings;
-    private boolean mEncounteredFatalError;
     private final byte mKind;
     private final String mText;
 
@@ -73,8 +73,7 @@ public class DSLParser {
             mPushback = false;
         } else {
             // Fetch a token from the lexer.
-
-            // note that we cheat here: normally a lexer needs to worry about the case
+            // Note that we cheat here: normally a lexer needs to worry about the case
             // where a token has a prefix which is not itself a valid token - for instance,
             // maybe we have a valid token 'while', but 'w', 'wh', etc. are not valid
             // tokens. Our grammar doesn't have this property, so we can simplify the logic
@@ -82,15 +81,15 @@ public class DSLParser {
             int startOffset = mLexerOffset;
             int state = 1;
             boolean eof = false;
-            for (; ; ) {
+            for (;;) {
                 if (mLexerOffset >= mText.length()) {
-                    if (startOffset == mText.length() || Lexer.ACCEPTS[state] == DFA.INVALID) {
+                    if (startOffset == mText.length() || Lexer.ACCEPTS[state] == Lexer.TK_NONE) {
                         eof = true;
                     }
                     break;
                 }
                 int c = (mText.charAt(mLexerOffset) - NFAtoDFA.START_CHAR);
-                if (c >= NFAtoDFA.END_CHAR - NFAtoDFA.START_CHAR) {
+                if (c < 0 || c >= NFAtoDFA.END_CHAR - NFAtoDFA.START_CHAR) {
                     c = Lexer.INVALID_CHAR;
                 }
                 int newState = Lexer.getTransition(Lexer.MAPPINGS[c], state);
@@ -113,7 +112,7 @@ public class DSLParser {
             switch (token) {
                 case Lexer.TK_RESERVED -> {
                     error(startOffset, mLexerOffset,
-                            "'" + mText.substring(startOffset, mLexerOffset) + "' is a reserved word");
+                            "'" + mText.substring(startOffset, mLexerOffset) + "' is a reserved keyword");
                     token = Lexer.TK_IDENTIFIER;  // reduces additional follow-up errors
                 }
                 case Lexer.TK_BAD_OCTAL -> error(startOffset, mLexerOffset,
@@ -137,7 +136,7 @@ public class DSLParser {
      * Return the next non-whitespace token from the parse stream.
      */
     private int nextToken() {
-        for (; ; ) {
+        for (;;) {
             int token = nextRawToken();
             if (!isWhitespace(token)) {
                 return token;
@@ -151,7 +150,12 @@ public class DSLParser {
      * an intervening nextToken()).
      */
     private void pushback(int token) {
-        assert !mPushback && token == mLexerToken;
+        if (mPushback) {
+            throw new IllegalStateException();
+        }
+        if (token != mLexerToken) {
+            throw new IllegalStateException();
+        }
         mPushback = true;
     }
 
@@ -160,12 +164,31 @@ public class DSLParser {
      */
     private int peek() {
         if (!mPushback) {
+            int next = nextToken();
+            assert (next == mLexerToken);
             mPushback = true;
-            int token = nextToken();
-            assert token == mLexerToken;
-            return token;
+            return next;
         }
         return mLexerToken;
+    }
+
+    @Nonnull
+    private String text(int token) {
+        if (token != mLexerToken) {
+            throw new IllegalStateException();
+        }
+        return mText.substring(mLexerOffset - mLexerLength, mLexerOffset);
+    }
+
+    private void error(int token, String msg) {
+        if (token != mLexerToken) {
+            throw new IllegalStateException();
+        }
+        error(mLexerOffset - mLexerLength, mLexerOffset, msg);
+    }
+
+    private void error(int start, int end, String msg) {
+        ThreadContext.getErrorReporter().error(start, end, msg);
     }
 
     /**
@@ -178,30 +201,58 @@ public class DSLParser {
         }
         int next = nextToken();
         if (next == token) {
+            assert (next == mLexerToken);
             return true;
         }
-        pushback(token);
+        pushback(next);
         return false;
+    }
+
+    /**
+     * Behaves like checkNext(TK_IDENTIFIER), but also verifies that identifier is not a builtIn
+     * type. If the token was actually a builtIn type, false is returned (the next token is not
+     * considered to be an identifier).
+     */
+    private boolean checkIdentifier() {
+        if (!checkNext(Lexer.TK_IDENTIFIER)) {
+            return false;
+        }
+        int token = mLexerToken;
+        if (ThreadContext.getSymbolTable().isBuiltInType(text(token))) {
+            pushback(token);
+            return false;
+        }
+        return true;
     }
 
     /**
      * Reads the next non-whitespace token and generates an error if it is not the expected type.
      * The 'expected' string is part of the error message, which reads:
      * <p>
-     * "expected <expected>, but found '<actual text>'"
-     * <p>
-     * If 'result' is non-null, it is set to point to the token that was read.
-     * Returns true if the read token was as expected, false otherwise.
+     * "expected [expected], but found '[actual text]'"
      */
-    private boolean expect(int token, String expected) {
+    private int expect(int token, String expected) {
         int next = nextToken();
-        if (next == token) {
-            return true;
-        } else {
+        if (next != token) {
             error(next, "expected " + expected + ", but found '" + text(next) + "'");
-            mEncounteredFatalError = true;
-            return false;
+            throw new IllegalStateException();
         }
+        return next;
+    }
+
+    /**
+     * Behaves like expect(TK_IDENTIFIER), but also verifies that identifier is not a type.
+     * If the token was actually a type, generates an error message of the form:
+     * <p>
+     * "expected an identifier, but found type 'float2'"
+     */
+    private int expectIdentifier() {
+        int token = expect(Lexer.TK_IDENTIFIER, "an identifier");
+        if (ThreadContext.getSymbolTable().isBuiltInType(text(token))) {
+            error(token, "expected an identifier, but found type '" + text(token) + "'");
+            throw new IllegalStateException();
+        }
+        return token;
     }
 
     /**
@@ -223,18 +274,10 @@ public class DSLParser {
         return false;
     }
 
-    @Nonnull
-    private String text(int token) {
-        assert token == mLexerToken;
-        return mText.substring(mLexerOffset - mLexerLength, mLexerOffset);
-    }
-
-    private void error(int token, String msg) {
-        assert token == mLexerToken;
-        error(mLexerOffset - mLexerLength, mLexerOffset, msg);
-    }
-
-    private void error(int start, int end, String msg) {
-        //TODO
+    /**
+     * LAYOUT LPAREN IDENTIFIER (EQ INT_LITERAL)? (COMMA IDENTIFIER (EQ INT_LITERAL)?)* RPAREN
+     */
+    private Layout layout() {
+        return Layout.empty();
     }
 }

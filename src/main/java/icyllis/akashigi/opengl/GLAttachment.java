@@ -67,22 +67,21 @@ public final class GLAttachment extends Attachment {
         if (renderbuffer == 0) {
             return null;
         }
-        int internalFormat = glFormatToEnum(format);
         if (server.getCaps().skipErrorChecks()) {
             // GL has a concept of MSAA rasterization with a single sample, but we do not.
             if (sampleCount > 1) {
-                glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, internalFormat, width, height);
+                glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, format, width, height);
             } else {
                 // glNamedRenderbufferStorage is equivalent to calling glNamedRenderbufferStorageMultisample
                 // with the samples set to zero. But we don't think sampleCount=1 is multisampled.
-                glNamedRenderbufferStorage(renderbuffer, internalFormat, width, height);
+                glNamedRenderbufferStorage(renderbuffer, format, width, height);
             }
         } else {
             glClearErrors();
             if (sampleCount > 1) {
-                glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, internalFormat, width, height);
+                glNamedRenderbufferStorageMultisample(renderbuffer, sampleCount, format, width, height);
             } else {
-                glNamedRenderbufferStorage(renderbuffer, internalFormat, width, height);
+                glNamedRenderbufferStorage(renderbuffer, format, width, height);
             }
             if (glGetError() != GL_NO_ERROR) {
                 glDeleteRenderbuffers(renderbuffer);
@@ -134,12 +133,12 @@ public final class GLAttachment extends Attachment {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = GLBackendFormat.make(glFormatToEnum(mFormat));
+            mBackendFormat = GLBackendFormat.make(mFormat);
         }
         return mBackendFormat;
     }
 
-    public int getRenderbuffer() {
+    public int getRenderbufferID() {
         return mRenderbuffer;
     }
 

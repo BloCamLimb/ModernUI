@@ -19,19 +19,19 @@
 package icyllis.akashigi.opengl;
 
 import icyllis.akashigi.engine.BackendFormat;
+import it.unimi.dsi.fastutil.HashCommon;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
-import java.util.Objects;
 
-import static icyllis.akashigi.engine.Engine.OpenGL;
+import static icyllis.akashigi.engine.Engine.OPENGL;
 import static icyllis.akashigi.opengl.GLCore.*;
 
 public final class GLBackendFormat extends BackendFormat {
 
-    private static final Int2ObjectOpenHashMap<GLBackendFormat> sGLBackendFormats =
-            new Int2ObjectOpenHashMap<>(GLTypes.LAST_FORMAT + 1, 0.8f);
+    private static final Int2ObjectOpenHashMap<GLBackendFormat> FORMATS =
+            new Int2ObjectOpenHashMap<>(LAST_FORMAT_INDEX + 1, 0.8f);
 
     private final int mFormat;
     private final boolean mIsExternal;
@@ -51,23 +51,24 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Nonnull
     public static GLBackendFormat make(@NativeType("GLenum") int format, boolean isExternal) {
-        if (isKnownFormat(format)) {
-            Objects.checkIndex(format, Integer.MAX_VALUE);
-            int key = (format) | (isExternal ? Integer.MIN_VALUE : 0);
-            GLBackendFormat backendFormat = sGLBackendFormats.get(key);
-            if (backendFormat != null) {
-                return backendFormat;
+        if (glFormatIsSupported(format)) {
+            if (format < 0) {
+                throw new IllegalArgumentException();
             }
-            backendFormat = new GLBackendFormat(format, isExternal);
-            sGLBackendFormats.put(key, backendFormat);
-            return backendFormat;
+            return FORMATS.computeIfAbsent((format) | (isExternal ? Integer.MIN_VALUE : 0),
+                    k -> new GLBackendFormat(Math.abs(k), k < 0));
         }
         return new GLBackendFormat(format, isExternal);
     }
 
     @Override
     public int getBackend() {
-        return OpenGL;
+        return OPENGL;
+    }
+
+    @Override
+    public int getGLFormat() {
+        return mFormat;
     }
 
     @Override
@@ -76,23 +77,13 @@ public final class GLBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getChannelMask() {
-        return glFormatChannels(getGLFormat());
-    }
-
-    @Override
-    public int getGLFormat() {
-        return glFormatFromEnum(mFormat);
-    }
-
-    @Override
-    public int getGLFormatEnum() {
-        return mFormat;
+    public int getChannelFlags() {
+        return glFormatChannels(mFormat);
     }
 
     @Nonnull
     @Override
-    public BackendFormat makeTexture2D() {
+    public BackendFormat makeInternal() {
         if (mIsExternal) {
             return make(mFormat, false);
         }
@@ -101,27 +92,32 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public boolean isSRGB() {
-        return mFormat == GL_SRGB8_ALPHA8;
+        return glFormatIsSRGB(mFormat);
     }
 
     @Override
     public int getCompressionType() {
-        return glFormatCompressionType(getGLFormat());
+        return glFormatCompressionType(mFormat);
     }
 
     @Override
     public int getBytesPerBlock() {
-        return glFormatBytesPerBlock(getGLFormat());
+        return glFormatBytesPerBlock(mFormat);
     }
 
     @Override
     public int getStencilBits() {
-        return glFormatStencilBits(getGLFormat());
+        return glFormatStencilBits(mFormat);
     }
 
     @Override
-    public int getKey() {
-        return glFormatFromEnum(mFormat);
+    public int getFormatKey() {
+        return mFormat;
+    }
+
+    @Override
+    public int hashCode() {
+        return HashCommon.mix(mFormat);
     }
 
     @Override
@@ -132,14 +128,9 @@ public final class GLBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int hashCode() {
-        return mFormat;
-    }
-
-    @Override
     public String toString() {
-        return "GLBackendFormat{" +
-                "mFormat=" + glFormatName(mFormat) +
+        return "{mBackend=OpenGL" +
+                ", mFormat=" + glFormatName(mFormat) +
                 ", mIsExternal=" + mIsExternal +
                 '}';
     }

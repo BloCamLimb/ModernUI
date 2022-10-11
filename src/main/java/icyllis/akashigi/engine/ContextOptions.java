@@ -44,13 +44,6 @@ public final class ContextOptions {
     public int mMaxTextureSizeOverride = Integer.MAX_VALUE;
 
     /**
-     * the threshold in bytes above which we will use a buffer mapping API to map vertex and index
-     * buffers to CPU memory in order to update them.  A value of -1 means the GrContext should
-     * deduce the optimal value for this platform.
-     */
-    public int mBufferMapThreshold = -1;
-
-    /**
      * If true, texture fetches from mip-mapped textures will be biased to read larger MIP levels.
      * This has the effect of sharpening those textures, at the cost of some aliasing, and possible
      * performance impact.

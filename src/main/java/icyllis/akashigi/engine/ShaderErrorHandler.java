@@ -21,13 +21,13 @@ package icyllis.akashigi.engine;
 import java.util.Locale;
 
 /**
- * Abstract class to report errors when compiling shaders.
+ * Callback interface to report errors when compiling shaders.
  */
 @FunctionalInterface
 public interface ShaderErrorHandler {
 
     /**
-     * Used when no error handler is set. Will throw RuntimeException.
+     * Used when no error handler is set.
      */
     ShaderErrorHandler DEFAULT = (shader, errors) -> {
         System.err.println("Shader compilation error");
@@ -38,8 +38,8 @@ public interface ShaderErrorHandler {
         }
         System.err.println("Errors:");
         System.err.println(errors);
-        throw new RuntimeException("Shader compilation failed!");
+        assert false;
     };
 
-    void compileError(String shader, String errors);
+    void handleCompileError(String shader, String errors);
 }

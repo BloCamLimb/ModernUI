@@ -224,8 +224,7 @@ public abstract class UniformHandler {
                                                    int arrayCount);
 
     @SamplerHandle
-    protected abstract int addSampler(BackendFormat backendFormat,
-                                      int samplerState,
+    protected abstract int addSampler(int samplerState,
                                       short swizzle,
                                       String name);
 

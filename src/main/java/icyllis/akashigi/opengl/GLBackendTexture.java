@@ -49,7 +49,7 @@ public final class GLBackendTexture extends BackendTexture {
 
     @Override
     public int getBackend() {
-        return Engine.OpenGL;
+        return Engine.OPENGL;
     }
 
     @Override
@@ -94,8 +94,9 @@ public final class GLBackendTexture extends BackendTexture {
 
     @Override
     public String toString() {
-        return "GLBackendTexture{" +
-                "mInfo=" + mInfo +
+        return "{" +
+                "mBackend=OpenGL" +
+                ", mInfo=" + mInfo +
                 ", mParams=" + mParams +
                 ", mBackendFormat=" + mBackendFormat +
                 '}';

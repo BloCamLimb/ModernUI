@@ -24,7 +24,6 @@ import icyllis.akashigi.engine.Engine;
 import icyllis.akashigi.engine.SamplerState;
 import org.lwjgl.system.MemoryUtil;
 
-import javax.annotation.Nonnull;
 import java.util.Arrays;
 
 import static icyllis.akashigi.engine.Engine.*;
@@ -231,7 +230,7 @@ public final class GLCommandBuffer {
         if (target == null) {
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         } else {
-            int framebuffer = target.getFramebuffer();
+            int framebuffer = target.getRenderFramebuffer();
             if (mHWFramebuffer != framebuffer ||
                     mHWRenderTarget != target) {
                 glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);

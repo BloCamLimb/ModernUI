@@ -32,8 +32,6 @@ public final class GLRenderTarget extends RenderTarget {
 
     /**
      * The render target format for all color attachments.
-     *
-     * @see GLTypes#FORMAT_RGBA8
      */
     private final int mFormat;
 
@@ -46,8 +44,7 @@ public final class GLRenderTarget extends RenderTarget {
     @SharedPtr
     private GLAttachment mMSAAColorBuffer;
 
-    // single sample framebuffer, may be resolved by MSAA framebuffer
-    private int mFramebuffer;
+    private int mRenderFramebuffer;
     private int mResolveFramebuffer;
 
     // if we need bind stencil buffers on next framebuffer bind call
@@ -75,7 +72,7 @@ public final class GLRenderTarget extends RenderTarget {
         assert sampleCount > 1 && framebuffer != resolveFramebuffer || sampleCount == 1;
         assert (framebuffer != 0 && resolveFramebuffer != 0);
         mFormat = format;
-        mFramebuffer = framebuffer;
+        mRenderFramebuffer = framebuffer;
         mResolveFramebuffer = resolveFramebuffer;
         mOwnership = true;
         mTexture = texture;
@@ -93,12 +90,12 @@ public final class GLRenderTarget extends RenderTarget {
         assert (sampleCount > 0);
         assert (framebuffer != 0 || !ownership);
         mFormat = format;
-        mFramebuffer = framebuffer;
+        mRenderFramebuffer = framebuffer;
         mResolveFramebuffer = framebuffer;
         mOwnership = ownership;
         mStencilBuffer = stencilBuffer; // std::move
         if (framebuffer == 0) {
-            mSurfaceFlags |= Engine.SurfaceFlag_GLWrapDefaultFramebuffer;
+            mSurfaceFlags |= Engine.SURFACE_FLAG_GL_WRAP_DEFAULT_FB;
         }
     }
 
@@ -131,9 +128,9 @@ public final class GLRenderTarget extends RenderTarget {
                 // We pick the packed format here so when we query total size we are at least not
                 // underestimating the total size of the stencil buffer. However, in reality this
                 // rarely matters since we usually don't care about the size of wrapped objects.
-                case 8 -> GLTypes.FORMAT_DEPTH24_STENCIL8;
-                case 16 -> GLTypes.FORMAT_STENCIL_INDEX16;
-                default -> GLTypes.FORMAT_UNKNOWN;
+                case 8 -> GL_DEPTH24_STENCIL8;
+                case 16 -> GL_STENCIL_INDEX16;
+                default -> 0;
             };
 
             // We don't have the actual renderbufferID, but we need to make an attachment for the stencil,
@@ -156,15 +153,13 @@ public final class GLRenderTarget extends RenderTarget {
 
     /**
      * The render target format for all color attachments.
-     *
-     * @see GLTypes#FORMAT_RGBA8
      */
     public int getFormat() {
         return mFormat;
     }
 
-    public int getFramebuffer() {
-        return mFramebuffer;
+    public int getRenderFramebuffer() {
+        return mRenderFramebuffer;
     }
 
     public int getResolveFramebuffer() {
@@ -181,18 +176,18 @@ public final class GLRenderTarget extends RenderTarget {
         if (!mRebindStencilBuffer) {
             return;
         }
-        int framebuffer = mFramebuffer;
+        int framebuffer = mRenderFramebuffer;
         GLAttachment stencilBuffer = (GLAttachment) mStencilBuffer;
         if (stencilBuffer != null) {
             glNamedFramebufferRenderbuffer(framebuffer,
                     GL_STENCIL_ATTACHMENT,
                     GL_RENDERBUFFER,
-                    stencilBuffer.getRenderbuffer());
+                    stencilBuffer.getRenderbufferID());
             if (glFormatIsPackedDepthStencil(stencilBuffer.getFormat())) {
                 glNamedFramebufferRenderbuffer(framebuffer,
                         GL_DEPTH_ATTACHMENT,
                         GL_RENDERBUFFER,
-                        stencilBuffer.getRenderbuffer());
+                        stencilBuffer.getRenderbufferID());
             } else {
                 glNamedFramebufferRenderbuffer(framebuffer,
                         GL_DEPTH_ATTACHMENT,
@@ -216,7 +211,7 @@ public final class GLRenderTarget extends RenderTarget {
     @Override
     public BackendFormat getBackendFormat() {
         if (mBackendFormat == null) {
-            mBackendFormat = GLBackendFormat.make(glFormatToEnum(mFormat));
+            mBackendFormat = GLBackendFormat.make(mFormat);
         }
         return mBackendFormat;
     }
@@ -236,8 +231,8 @@ public final class GLRenderTarget extends RenderTarget {
     public BackendRenderTarget getBackendRenderTarget() {
         if (mBackendRenderTarget == null) {
             final GLFramebufferInfo info = new GLFramebufferInfo();
-            info.mFramebuffer = mFramebuffer;
-            info.mFormat = glFormatToEnum(mFormat);
+            info.mFramebuffer = mRenderFramebuffer;
+            info.mFormat = mFormat;
             mBackendRenderTarget = new GLBackendRenderTarget(
                     getWidth(), getHeight(), getSampleCount(), getStencilBits(), info);
         }
@@ -272,27 +267,27 @@ public final class GLRenderTarget extends RenderTarget {
     protected void dispose() {
         super.dispose();
         if (mOwnership) {
-            if (mFramebuffer != 0) {
-                glDeleteFramebuffers(mFramebuffer);
+            if (mRenderFramebuffer != 0) {
+                glDeleteFramebuffers(mRenderFramebuffer);
             }
-            if (mFramebuffer != mResolveFramebuffer) {
+            if (mRenderFramebuffer != mResolveFramebuffer) {
                 assert (mResolveFramebuffer != 0);
                 glDeleteFramebuffers(mResolveFramebuffer);
             }
         }
-        mFramebuffer = 0;
+        mRenderFramebuffer = 0;
         mResolveFramebuffer = 0;
     }
 
     @Override
     public String toString() {
         return "GLRenderTarget{" +
-                "mFormat=" + mFormat +
+                "mRenderFramebuffer=" + mRenderFramebuffer +
+                ", mResolveFramebuffer=" + mResolveFramebuffer +
+                ", mFormat=" + glFormatName(mFormat) +
                 ", mSampleCount=" + getSampleCount() +
                 ", mTexture=" + mTexture +
                 ", mMSAAColorBuffer=" + mMSAAColorBuffer +
-                ", mFramebuffer=" + mFramebuffer +
-                ", mResolveFramebuffer=" + mResolveFramebuffer +
                 ", mOwnership=" + mOwnership +
                 ", mBackendFormat=" + mBackendFormat +
                 '}';

@@ -52,7 +52,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public int getBackend() {
-        return Mock;
+        return MOCK;
     }
 
     @Override
@@ -61,19 +61,19 @@ public class MockBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getChannelMask() {
+    public int getChannelFlags() {
         return colorTypeChannelFlags(mColorType);
     }
 
     @Nonnull
     @Override
-    public BackendFormat makeTexture2D() {
+    public BackendFormat makeInternal() {
         return this;
     }
 
     @Override
     public boolean isSRGB() {
-        return mCompressionType == ImageInfo.COMPRESSION_TYPE_NONE && mColorType == ImageInfo.ColorType_RGBA_8888_SRGB;
+        return mCompressionType == ImageInfo.COMPRESSION_TYPE_NONE && mColorType == ImageInfo.COLOR_TYPE_RGBA_8888_SRGB;
     }
 
     @Override
@@ -98,7 +98,7 @@ public class MockBackendFormat extends BackendFormat {
     }
 
     @Override
-    public int getKey() {
+    public int getFormatKey() {
         return mColorType;
     }
 }

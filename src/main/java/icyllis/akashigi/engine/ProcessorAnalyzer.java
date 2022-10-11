@@ -16,28 +16,14 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.engine.shading;
+package icyllis.akashigi.engine;
 
-import icyllis.akashigi.engine.GeometryProcessor;
-import icyllis.akashigi.engine.ShaderVar;
+//TODO
+public class ProcessorAnalyzer {
 
-/**
- * Base class for vertex shader builder. This is the stage that computes input geometry for the
- * rasterizer.
- */
-public interface VertexGeoBuilder extends ShaderBuilder {
+    public static final int
+            NON_OVERLAPPING = 1 << 3,
+            NON_COHERENT_BLENDING = 1 << 7;
 
-    /**
-     * Emits per-vertex and per-instance attributes to vertex shader inputs.
-     *
-     * @param geomProc the geometry processor
-     */
-    void emitAttributes(GeometryProcessor geomProc);
-
-    /**
-     * Emits world position and transforms it into the clip space.
-     *
-     * @param worldPos the world position
-     */
-    void emitNormalizedPosition(ShaderVar worldPos);
+    public static final int EMPTY_ANALYSIS = 0;
 }

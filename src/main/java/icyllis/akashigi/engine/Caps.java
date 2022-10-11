@@ -24,7 +24,7 @@ import icyllis.akashigi.core.ImageInfo;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.akashigi.engine.Engine.SurfaceFlag_Renderable;
+import static icyllis.akashigi.engine.Engine.SURFACE_FLAG_RENDERABLE;
 
 /**
  * Represents the capabilities of a Context.
@@ -69,20 +69,17 @@ public abstract class Caps {
     protected BlendEquationSupport mBlendEquationSupport = BlendEquationSupport.BASIC;
 
     protected int mMapBufferFlags;
-    protected int mBufferMapThreshold;
 
     protected int mMaxRenderTargetSize = 1;
     protected int mMaxPreferredRenderTargetSize = 1;
     protected int mMaxVertexAttributes = 0;
     protected int mMaxTextureSize = 1;
-    protected int mMaxWindowRectangles = 0;
     protected int mInternalMultisampleCount = 0;
     protected int mMinPathVerbsForHwTessellation = 25;
     protected int mMinStrokeVerbsForHwTessellation = 50;
     protected int mMaxPushConstantsSize = 0;
 
     public Caps(ContextOptions options) {
-        mBufferMapThreshold = options.mBufferMapThreshold;
     }
 
     /**
@@ -297,10 +294,6 @@ public abstract class Caps {
         return mMaxTextureSize;
     }
 
-    public final int maxWindowRectangles() {
-        return mMaxWindowRectangles;
-    }
-
     /**
      * Hardware tessellation seems to have a fixed upfront cost. If there is a somewhat small number
      * of verbs, we seem to be faster emulating tessellation with instanced draws instead.
@@ -392,14 +385,14 @@ public abstract class Caps {
 
         // There are known problems with 24 vs 32 bit BPP with this color type. Just fail for now if
         // using a transfer buffer.
-        if (colorType == ImageInfo.ColorType_RGB_888x) {
+        if (colorType == ImageInfo.COLOR_TYPE_RGB_888X) {
             transferOffsetAlignment = 0;
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
         // Make those aligned reads out of the buffer even if the underlying API doesn't require it.
         int channelFlags = Engine.colorTypeChannelFlags(colorType);
-        if ((channelFlags == Color.RGBA_CHANNEL_FLAGS || channelFlags == Color.RGB_CHANNEL_FLAGS ||
-                channelFlags == Color.ALPHA_CHANNEL_FLAG || channelFlags == Color.GRAY_CHANNEL_FLAG) &&
+        if ((channelFlags == Color.COLOR_CHANNEL_FLAGS_RGBA || channelFlags == Color.COLOR_CHANNEL_FLAGS_RGB ||
+                channelFlags == Color.COLOR_CHANNEL_FLAG_ALPHA || channelFlags == Color.COLOR_CHANNEL_FLAG_GRAY) &&
                 Engine.colorTypeBytesPerPixel(colorType) == 4) {
             switch ((int) (transferOffsetAlignment & 0b11)) {
                 // offset alignment already a multiple of 4
@@ -450,11 +443,6 @@ public abstract class Caps {
 
     public final boolean transferFromBufferToTextureSupport() {
         return true;
-    }
-
-    public final int bufferMapThreshold() {
-        assert (mBufferMapThreshold >= 0);
-        return mBufferMapThreshold;
     }
 
     /**
@@ -541,7 +529,7 @@ public abstract class Caps {
         if (!isFormatTexturable(format)) {
             return false;
         }
-        if ((surfaceFlags & SurfaceFlag_Renderable) != 0) {
+        if ((surfaceFlags & SURFACE_FLAG_RENDERABLE) != 0) {
             final int maxSize = maxRenderTargetSize();
             if (width > maxSize || height > maxSize) {
                 return false;
@@ -573,14 +561,14 @@ public abstract class Caps {
     }
 
     public final boolean isFormatCompatible(int colorType, BackendFormat format) {
-        if (colorType == ImageInfo.ColorType_Unknown) {
+        if (colorType == ImageInfo.COLOR_TYPE_UNKNOWN) {
             return false;
         }
         int compression = format.getCompressionType();
         if (compression != ImageInfo.COMPRESSION_TYPE_NONE) {
             return colorType == (DataUtils.compressionTypeIsOpaque(compression) ?
-                    ImageInfo.ColorType_RGB_888x :
-                    ImageInfo.ColorType_RGBA_8888);
+                    ImageInfo.COLOR_TYPE_RGB_888X :
+                    ImageInfo.COLOR_TYPE_RGBA_8888);
         }
         return onFormatCompatible(colorType, format);
     }
@@ -591,12 +579,13 @@ public abstract class Caps {
      * These are used when creating a new texture internally.
      */
     @Nullable
-    public final BackendFormat getDefaultBackendFormat(int colorType, boolean renderable) {
-        // Unknown color types are always an invalid format, so early out before calling virtual.
-        if (colorType == ImageInfo.ColorType_Unknown) {
+    public final BackendFormat getDefaultBackendFormat(int colorType,
+                                                       boolean renderable) {
+        // Unknown color types are always an invalid format.
+        if (colorType == ImageInfo.COLOR_TYPE_UNKNOWN) {
             return null;
         }
-        BackendFormat format = onDefaultBackendFormat(colorType);
+        BackendFormat format = onGetDefaultBackendFormat(colorType);
         if (format == null || !isFormatTexturable(format)) {
             return null;
         }
@@ -606,7 +595,7 @@ public abstract class Caps {
         // Currently, we require that it be possible to write pixels into the "default" format. Perhaps,
         // that could be a separate requirement from the caller. It seems less necessary if
         // renderability was requested.
-        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.ColorType_Unknown) {
+        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.COLOR_TYPE_UNKNOWN) {
             return null;
         }
         if (renderable && !isFormatRenderable(colorType, format, 1)) {
@@ -616,7 +605,7 @@ public abstract class Caps {
     }
 
     @Nullable
-    protected abstract BackendFormat onDefaultBackendFormat(int colorType);
+    protected abstract BackendFormat onGetDefaultBackendFormat(int colorType);
 
     @Nullable
     public abstract BackendFormat getCompressedBackendFormat(int compressionType);
@@ -629,7 +618,7 @@ public abstract class Caps {
     public final short getReadSwizzle(BackendFormat format, int colorType) {
         int compression = format.getCompressionType();
         if (compression != ImageInfo.COMPRESSION_TYPE_NONE) {
-            if (colorType == ImageInfo.ColorType_RGB_888x || colorType == ImageInfo.ColorType_RGBA_8888) {
+            if (colorType == ImageInfo.COLOR_TYPE_RGB_888X || colorType == ImageInfo.COLOR_TYPE_RGBA_8888) {
                 return Swizzle.RGBA;
             }
             assert false;
@@ -647,7 +636,6 @@ public abstract class Caps {
         mShaderCaps.applyOptionsOverrides(options);
         onApplyOptionsOverrides(options);
 
-        mMaxWindowRectangles = Math.min(8, mMaxWindowRectangles);
         mInternalMultisampleCount = options.mInternalMultisampleCount;
 
         // Our render targets are always created with textures as the color attachment, hence this min:

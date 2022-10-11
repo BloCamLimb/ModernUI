@@ -72,12 +72,12 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
      * To check whether MSAA is supported use {@link #getMaxSurfaceSampleCount(int)}.
      */
     public final boolean isSurfaceCompatible(@ColorType int colorType) {
-        if (ImageInfo.ColorType_R16G16_unorm == colorType ||
-                ImageInfo.ColorType_A16_unorm == colorType ||
-                ImageInfo.ColorType_A16_float == colorType ||
-                ImageInfo.ColorType_R16G16_float == colorType ||
-                ImageInfo.ColorType_R16G16B16A16_unorm == colorType ||
-                ImageInfo.ColorType_Gray_8 == colorType) {
+        if (ImageInfo.COLOR_TYPE_R16G16_UNORM == colorType ||
+                ImageInfo.COLOR_TYPE_A16_UNORM == colorType ||
+                ImageInfo.COLOR_TYPE_A16_FLOAT == colorType ||
+                ImageInfo.COLOR_TYPE_R16G16_FLOAT == colorType ||
+                ImageInfo.COLOR_TYPE_R16G16B16A16_UNORM == colorType ||
+                ImageInfo.COLOR_TYPE_GRAY_8 == colorType) {
             return false;
         }
 

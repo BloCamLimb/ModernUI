@@ -61,14 +61,18 @@ public class DrawingManager {
         clearTasks();
     }
 
+    RecordingContext getContext() {
+        return mContext;
+    }
+
     public boolean flush(FlushInfo info) {
         if (mFlushing || mContext.isDiscarded()) {
             if (info != null) {
                 if (info.mSubmittedCallback != null) {
-                    info.mSubmittedCallback.onSubmitted(info.mSubmittedContext, false);
+                    info.mSubmittedCallback.onSubmitted(false);
                 }
                 if (info.mFinishedCallback != null) {
-                    info.mFinishedCallback.onFinished(info.mFinishedContext);
+                    info.mFinishedCallback.onFinished();
                 }
             }
             return false;

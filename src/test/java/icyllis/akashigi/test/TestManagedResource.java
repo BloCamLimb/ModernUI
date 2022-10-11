@@ -30,7 +30,6 @@ import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.*;
-import org.lwjgl.vulkan.VkShaderModuleCreateInfo;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -40,7 +39,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Objects;
+import java.util.*;
 
 import static icyllis.akashigi.engine.Engine.*;
 import static org.lwjgl.system.MemoryUtil.memAddress;
@@ -77,12 +76,17 @@ public class TestManagedResource {
 
         pw.println("0f int bits: " + (-0.0f == 0.0f));
 
+        pw.println("BinaryFormats: " + Arrays.toString(((GLCaps)dContext.getCaps()).mProgramBinaryFormats));
+
         if (dContext.getCaps().isFormatTexturable(
                 GLBackendFormat.make(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT))) {
             pw.println("Compressed format: OK");
         }
+
         Swizzle.make("rgb1");
         int sampler = SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
+
+        pw.println("Linear 0.5 to SRGB: " + 0f * Float.POSITIVE_INFINITY);
 
         testTexture(pw, dContext);
 
@@ -90,8 +94,8 @@ public class TestManagedResource {
         GLPipelineStateCache pipelineStateCache = server.getPipelineBuilder();
         TextureProxy proxy2 = dContext.getProxyProvider().createRenderTextureProxy(
                 GLBackendFormat.make(GLCore.GL_RGBA8),
-                800, 800, 4, SurfaceFlag_Budgeted |
-                        SurfaceFlag_Renderable
+                800, 800, 4, SURFACE_FLAG_BUDGETED |
+                        SURFACE_FLAG_RENDERABLE
         );
         GLPipelineState pipelineState = pipelineStateCache.findOrCreatePipelineState(
                 new PipelineInfo(new SurfaceProxyView(proxy2), new RoundRectProcessor(true),
@@ -115,7 +119,7 @@ public class TestManagedResource {
 
         //testRightHandedRotation(pw);
 
-        testKeyBuilder(pw);
+        //testKeyBuilder(pw);
 
         //testSimilarity(pw);
 
@@ -148,9 +152,9 @@ public class TestManagedResource {
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
                     1,
-                    SurfaceFlag_Mipmapped |
-                            SurfaceFlag_Budgeted |
-                            SurfaceFlag_Renderable,
+                    SURFACE_FLAG_MIPMAPPED |
+                            SURFACE_FLAG_BUDGETED |
+                            SURFACE_FLAG_RENDERABLE,
                     "MyTexture");
             if (texture != null) {
                 pw.println(texture);
@@ -160,11 +164,11 @@ public class TestManagedResource {
             texture = dContext.getResourceProvider().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, SurfaceFlag_Mipmapped |
-                            SurfaceFlag_Budgeted |
-                            SurfaceFlag_Renderable,
-                    ImageInfo.ColorType_RGBA_8888,
-                    ImageInfo.ColorType_RGBA_8888,
+                    1, SURFACE_FLAG_MIPMAPPED |
+                            SURFACE_FLAG_BUDGETED |
+                            SURFACE_FLAG_RENDERABLE,
+                    ImageInfo.COLOR_TYPE_RGBA_8888,
+                    ImageInfo.COLOR_TYPE_RGBA_8888,
                     0,
                     MemoryUtil.memAddress(pixels),
                     null);
@@ -204,8 +208,8 @@ public class TestManagedResource {
     public static void testKeyBuilder(PrintWriter pw) {
         IntArrayList intArrayList = new IntArrayList();
         KeyBuilder keyBuilder = new KeyBuilder.StringKeyBuilder(intArrayList);
-        keyBuilder.addBits(6, 0x2F, "");
-        keyBuilder.add32(0xC1111111);
+        keyBuilder.addBits(6, 0x2F, "A");
+        keyBuilder.addInt32(0xF111_1111, "B");
         keyBuilder.flush();
         pw.println(keyBuilder);
     }

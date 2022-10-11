@@ -62,6 +62,10 @@ public class ThreadContext {
         return getCompiler().getSymbolTable();
     }
 
+    public static ErrorReporter getErrorReporter() {
+        return getContext().mErrors;
+    }
+
     public static ThreadContext getInstance() {
         var instance = TLS.get();
         assert instance != null;

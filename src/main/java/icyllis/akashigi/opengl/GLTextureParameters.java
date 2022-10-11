@@ -43,7 +43,7 @@ public final class GLTextureParameters {
 
     @Override
     public String toString() {
-        return "GLTextureParameters{" +
+        return "{" +
                 "mBaseMipMapLevel=" + mBaseMipMapLevel +
                 ", mMaxMipmapLevel=" + mMaxMipmapLevel +
                 ", mSwizzleIsRGBA=" + mSwizzleIsRGBA +

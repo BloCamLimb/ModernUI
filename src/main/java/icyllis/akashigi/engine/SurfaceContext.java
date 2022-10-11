@@ -70,7 +70,7 @@ public class SurfaceContext implements AutoCloseable {
     }
 
     /**
-     * @see ImageInfo#ColorType_Unknown
+     * @see ImageInfo#COLOR_TYPE_UNKNOWN
      */
     public final int getColorType() {
         return ImageInfo.colorType(mColorInfo);

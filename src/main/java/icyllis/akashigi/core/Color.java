@@ -308,26 +308,26 @@ public final class Color {
      * Describes different color channels one can manipulate.
      */
     public static final int
-            R_CHANNEL = 0, // the red channel
-            G_CHANNEL = 1, // the green channel
-            B_CHANNEL = 2, // the blue channel
-            A_CHANNEL = 3; // the alpha channel
+            COLOR_CHANNEL_R = 0, // the red channel
+            COLOR_CHANNEL_G = 1, // the green channel
+            COLOR_CHANNEL_B = 2, // the blue channel
+            COLOR_CHANNEL_A = 3; // the alpha channel
 
     /**
      * Used to represent the channels available in a color type or texture format as a mask.
      */
     public static final int
-            RED_CHANNEL_FLAG = 1 << R_CHANNEL,
-            GREEN_CHANNEL_FLAG = 1 << G_CHANNEL,
-            BLUE_CHANNEL_FLAG = 1 << B_CHANNEL,
-            ALPHA_CHANNEL_FLAG = 1 << A_CHANNEL,
-            GRAY_CHANNEL_FLAG = 1 << 4; // deprecated by modern APIs
+            COLOR_CHANNEL_FLAG_RED = 1 << COLOR_CHANNEL_R,
+            COLOR_CHANNEL_FLAG_GREEN = 1 << COLOR_CHANNEL_G,
+            COLOR_CHANNEL_FLAG_BLUE = 1 << COLOR_CHANNEL_B,
+            COLOR_CHANNEL_FLAG_ALPHA = 1 << COLOR_CHANNEL_A,
+            COLOR_CHANNEL_FLAG_GRAY = 0x10;
 
     // Convenience values
     public static final int
-            RG_CHANNEL_FLAGS = RED_CHANNEL_FLAG | GREEN_CHANNEL_FLAG,
-            RGB_CHANNEL_FLAGS = RG_CHANNEL_FLAGS | BLUE_CHANNEL_FLAG,
-            RGBA_CHANNEL_FLAGS = RGB_CHANNEL_FLAGS | ALPHA_CHANNEL_FLAG;
+            COLOR_CHANNEL_FLAGS_RG = COLOR_CHANNEL_FLAG_RED | COLOR_CHANNEL_FLAG_GREEN,
+            COLOR_CHANNEL_FLAGS_RGB = COLOR_CHANNEL_FLAGS_RG | COLOR_CHANNEL_FLAG_BLUE,
+            COLOR_CHANNEL_FLAGS_RGBA = COLOR_CHANNEL_FLAGS_RGB | COLOR_CHANNEL_FLAG_ALPHA;
 
     @ApiStatus.Internal
     public float
@@ -751,6 +751,56 @@ public final class Color {
      */
     public static int hsvToRgb(float[] hsv) {
         return hsvToRgb(hsv[0], hsv[1], hsv[2]);
+    }
+
+    /**
+     * Converts a color component from the sRGB space to the linear sRGB space,
+     * using the sRGB transfer function.
+     *
+     * @param x a color component
+     * @return transformed color component
+     */
+    public static float srgbToLinear(float x) {
+        return x < 0.04045
+                ? x / 12.92f
+                : (float) Math.pow((x + 0.055) / 1.055, 2.4);
+    }
+
+    /**
+     * Converts a color component from the linear sRGB space to the sRGB space,
+     * using the inverse of sRGB transfer function.
+     *
+     * @param x a color component
+     * @return transformed color component
+     */
+    public static float linearToSrgb(float x) {
+        return x < 0.04045 / 12.92
+                ? x * 12.92f
+                : (float) Math.pow(x * 1.13711896582488, 1.0 / 2.4) - 0.055f;
+    }
+
+    /**
+     * Converts a color from the sRGB space to the linear sRGB space,
+     * using the sRGB transfer function.
+     *
+     * @param col the color components
+     */
+    public static void srgbToLinear(float[] col) {
+        col[0] = srgbToLinear(col[0]);
+        col[1] = srgbToLinear(col[1]);
+        col[2] = srgbToLinear(col[2]);
+    }
+
+    /**
+     * Converts a color from the linear sRGB space to the sRGB space,
+     * using the inverse of sRGB transfer function.
+     *
+     * @param col the color components
+     */
+    public static void linearToSrgb(float[] col) {
+        col[0] = linearToSrgb(col[0]);
+        col[1] = linearToSrgb(col[1]);
+        col[2] = linearToSrgb(col[2]);
     }
 
     /**

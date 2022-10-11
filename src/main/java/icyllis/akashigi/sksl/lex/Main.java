@@ -25,17 +25,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 /**
- * Generated SkSL lexicon.
+ * Generates {@link Lexer} class.
  */
 public class Main {
 
-    /**
-     * Modified SkSL lexicon.
-     * <p>
-     * Added: smooth
-     * <p>
-     * Removed: static if, static switch, highp, mediump, lowp, es3
-     */
     public static final String LEXICON = """
             FLOAT_LITERAL  = [0-9]*\\.[0-9]+([eE][+-]?[0-9]+)?|[0-9]+\\.[0-9]*([eE][+-]?[0-9]+)?|[0-9]+([eE][+-]?[0-9]+)
             INT_LITERAL    = ([1-9][0-9]*|0[0-7]*|0[xX][0-9a-fA-F]+)[uU]?
@@ -59,16 +52,18 @@ public class Main {
             INOUT          = "inout"
             UNIFORM        = "uniform"
             CONST          = "const"
-            SMOOTH         = "smooth"
             FLAT           = "flat"
             NOPERSPECTIVE  = "noperspective"
             INLINE         = "inline"
             NOINLINE       = "noinline"
-            HASSIDEEFFECTS = "sk_has_side_effects"
+            PURE           = "pure"
+            READONLY       = "readonly"
+            WRITEONLY      = "writeonly"
+            BUFFER         = "buffer"
             STRUCT         = "struct"
             LAYOUT         = "layout"
-            THREADGROUP    = "threadgroup"
-            RESERVED       = attribute|varying|precision|invariant|asm|class|union|enum|typedef|template|this|packed|goto|volatile|public|static|extern|external|interface|long|double|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|sampler[12]DShadow|sampler3DRect|sampler2DRectShadow|samplerCube|sizeof|cast|namespace|using|gl_[0-9a-zA-Z_]*
+            WORKGROUP      = "workgroup"
+            RESERVED       = attribute|varying|precision|invariant|asm|class|union|enum|typedef|template|this|packed|goto|volatile|public|static|extern|external|interface|long|double|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|sampler[13]D|sampler[12]DShadow|sampler3DRect|sampler2DRectShadow|samplerCube|sizeof|cast|namespace|using|gl_[0-9a-zA-Z_]*
             IDENTIFIER     = [a-zA-Z_$][0-9a-zA-Z_]*
             DIRECTIVE      = #[a-zA-Z_][0-9a-zA-Z_]*
             LPAREN         = "("

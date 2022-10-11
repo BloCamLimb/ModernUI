@@ -23,20 +23,20 @@ package icyllis.akashigi.sksl.ir;
  */
 public abstract class ProgramElement extends IRNode {
 
-    public static final int Kind_First = 0;
+    public static final int KIND_FIRST = 0;
     public static final int
-            Kind_Extension = Kind_First,
-            Kind_Function = Kind_First + 1,
-            Kind_FunctionPrototype = Kind_First + 2,
-            Kind_GlobalVar = Kind_First + 3,
-            Kind_InterfaceBlock = Kind_First + 4,
-            Kind_Modifiers = Kind_First + 5,
-            Kind_StructDefinition = Kind_First + 6;
-    public static final int Kind_Last = Kind_StructDefinition;
+            KIND_EXTENSION = KIND_FIRST,
+            KIND_FUNCTION = KIND_FIRST + 1,
+            KIND_FUNCTION_PROTOTYPE = KIND_FIRST + 2,
+            KIND_GLOBAL_VAR = KIND_FIRST + 3,
+            KIND_INTERFACE_BLOCK = KIND_FIRST + 4,
+            KIND_MODIFIERS = KIND_FIRST + 5,
+            KIND_STRUCT_DEFINITION = KIND_FIRST + 6;
+    public static final int Kind_Last = KIND_STRUCT_DEFINITION;
 
     protected ProgramElement(int start, int end, int kind) {
         super(start, end, kind);
-        assert (kind >= Kind_First && kind <= Kind_Last);
+        assert (kind >= KIND_FIRST && kind <= Kind_Last);
     }
 
     public final int kind() {

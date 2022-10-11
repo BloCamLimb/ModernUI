@@ -22,6 +22,8 @@ import icyllis.akashigi.core.Rect2i;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Tracks the state across all the GrOps (really just the GrDrawOps) in a OpsTask flush.
@@ -67,16 +69,17 @@ public class OpFlushState implements MeshDrawTarget {
         return mOpsRenderPass;
     }
 
-    public OpsRenderPass beginOpsRenderPass(RenderTarget renderTarget,
-                                            boolean useStencil,
-                                            int origin,
-                                            Rect2i bounds,
-                                            byte colorOps,
-                                            byte stencilOps,
-                                            float[] clearColor) {
+    public OpsRenderPass beginOpsRenderPass(SurfaceProxyView writeView,
+                                            Rect2i contentBounds,
+                                            int colorAction,
+                                            int stencilAction,
+                                            float[] clearColor,
+                                            Set<TextureProxy> sampledTextures,
+                                            int pipelineFlags) {
         assert (mOpsRenderPass == null);
-        OpsRenderPass opsRenderPass = mServer.getOpsRenderPass(renderTarget,
-                useStencil, origin, bounds, colorOps, stencilOps, clearColor);
+        OpsRenderPass opsRenderPass = mServer.getOpsRenderPass(writeView, contentBounds,
+                colorAction, stencilAction, clearColor,
+                sampledTextures, pipelineFlags);
         if (opsRenderPass == null) {
             return null;
         }

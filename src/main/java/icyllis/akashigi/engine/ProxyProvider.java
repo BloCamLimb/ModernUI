@@ -58,7 +58,7 @@ public final class ProxyProvider {
         }
 
         // Only the proxyProvider that created a proxy should be assigning unique keys to it.
-        assert isDeferredProvider() == ((proxy.mSurfaceFlags & Engine.SurfaceFlag_DeferredProvider) != 0);
+        assert isDeferredProvider() == ((proxy.mSurfaceFlags & Engine.SURFACE_FLAG_DEFERRED_PROVIDER) != 0);
 
         // If there is already a Resource with this key then the caller has violated the
         // normal usage pattern of uniquely keyed resources (e.g., they have created one w/o
@@ -88,11 +88,11 @@ public final class ProxyProvider {
      * Create a {@link TextureProxy} without any data.
      *
      * @see TextureProxy
-     * @see Engine#SurfaceFlag_Budgeted
-     * @see Engine#SurfaceFlag_LooseFit
-     * @see Engine#SurfaceFlag_Mipmapped
-     * @see Engine#SurfaceFlag_Protected
-     * @see Engine#SurfaceFlag_SkipAllocator
+     * @see Engine#SURFACE_FLAG_BUDGETED
+     * @see Engine#SURFACE_FLAG_LOOSE_FIT
+     * @see Engine#SURFACE_FLAG_MIPMAPPED
+     * @see Engine#SURFACE_FLAG_PROTECTED
+     * @see Engine#SURFACE_FLAG_SKIP_ALLOCATOR
      */
     @Nullable
     @SharedPtr
@@ -114,20 +114,20 @@ public final class ProxyProvider {
         }
 
         if (isDeferredProvider()) {
-            surfaceFlags |= Engine.SurfaceFlag_DeferredProvider;
+            surfaceFlags |= Engine.SURFACE_FLAG_DEFERRED_PROVIDER;
         } else {
-            assert (surfaceFlags & Engine.SurfaceFlag_DeferredProvider) == 0;
+            assert (surfaceFlags & Engine.SURFACE_FLAG_DEFERRED_PROVIDER) == 0;
         }
 
         return new TextureProxy(format, width, height, surfaceFlags);
     }
 
     /**
-     * @see Engine#SurfaceFlag_Budgeted
-     * @see Engine#SurfaceFlag_LooseFit
-     * @see Engine#SurfaceFlag_Mipmapped
-     * @see Engine#SurfaceFlag_Protected
-     * @see Engine#SurfaceFlag_SkipAllocator
+     * @see Engine#SURFACE_FLAG_BUDGETED
+     * @see Engine#SURFACE_FLAG_LOOSE_FIT
+     * @see Engine#SURFACE_FLAG_MIPMAPPED
+     * @see Engine#SURFACE_FLAG_PROTECTED
+     * @see Engine#SURFACE_FLAG_SKIP_ALLOCATOR
      */
     @Nullable
     @SharedPtr
@@ -150,9 +150,9 @@ public final class ProxyProvider {
         }
 
         if (isDeferredProvider()) {
-            surfaceFlags |= Engine.SurfaceFlag_DeferredProvider;
+            surfaceFlags |= Engine.SURFACE_FLAG_DEFERRED_PROVIDER;
         } else {
-            assert (surfaceFlags & Engine.SurfaceFlag_DeferredProvider) == 0;
+            assert (surfaceFlags & Engine.SURFACE_FLAG_DEFERRED_PROVIDER) == 0;
         }
 
         return new RenderTextureProxy(format, width, height, sampleCount, surfaceFlags);

@@ -43,7 +43,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
 
     @Override
     public int getBackend() {
-        return Engine.OpenGL;
+        return Engine.OPENGL;
     }
 
     @Override

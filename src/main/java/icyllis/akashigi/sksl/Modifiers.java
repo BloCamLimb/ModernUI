@@ -19,6 +19,7 @@
 package icyllis.akashigi.sksl;
 
 import javax.annotation.Nonnull;
+import java.util.StringJoiner;
 
 /**
  * A set of qualifier keywords (in, out, uniform, etc.) appearing before a declaration.
@@ -35,24 +36,28 @@ public record Modifiers(Layout layout, int flags) {
      */
     // GLSL interpolation qualifiers, only one qualifier can be used
     public static final int
-            kSmooth_Flag = 1,               // (default and can be explicitly declared)
-            kFlat_Flag = 1 << 1,            // no interpolation
-            kNoPerspective_Flag = 1 << 2;   // linear interpolation
+            FLAT_FLAG = 1,
+            NO_PERSPECTIVE_FLAG = 1 << 1;
     // GLSL storage qualifiers, only one qualifier can be used
     // GLSL parameter qualifiers, one of const, in, out, inout
     public static final int
-            kConst_Flag = 1 << 3,
-            kUniform_Flag = 1 << 4,
-            kIn_Flag = 1 << 5,
-            kOut_Flag = 1 << 6;
-    // We use the Metal name for this one (corresponds to the GLSL 'shared' modifier)
+            CONST_FLAG = 1 << 2,
+            UNIFORM_FLAG = 1 << 3,
+            IN_FLAG = 1 << 4,
+            OUT_FLAG = 1 << 5;
+    // GLSL memory qualifiers
     public static final int
-            kThreadgroup_Flag = 1 << 7;  // for compute shaders
+            READ_ONLY_FLAG = 1 << 6,
+            WRITE_ONLY_FLAG = 1 << 7;
+    // Other GLSL storage qualifiers
+    public static final int
+            BUFFER_FLAG = 1 << 8,
+            WORKGROUP_FLAG = 1 << 9;  // GLSL 'shared'
     // Extensions, not present in GLSL
     public static final int
-            kHasSideEffects_Flag = 1 << 8,
-            kInline_Flag = 1 << 9,
-            kNoInline_Flag = 1 << 10;
+            PURE_FLAG = 1 << 10,
+            INLINE_FLAG = 1 << 11,
+            NO_INLINE_FLAG = 1 << 12;
 
     @Nonnull
     public static Modifiers empty() {
@@ -60,62 +65,60 @@ public record Modifiers(Layout layout, int flags) {
     }
 
     @Nonnull
-    public String description() {
-        final StringBuilder result = layout.descriptionBuilder();
+    @Override
+    public String toString() {
+        return layout.toString() + describeFlags(flags) + " ";
+    }
+
+    public static String describeFlags(int flags) {
+        StringJoiner joiner = new StringJoiner(" ");
 
         // Extensions
-        if ((flags & kHasSideEffects_Flag) != 0) {
-            result.append("sk_has_side_effects ");
+        if ((flags & PURE_FLAG) != 0) {
+            joiner.add("pure");
         }
-        if ((flags & kInline_Flag) != 0) {
-            result.append("inline ");
+        if ((flags & INLINE_FLAG) != 0) {
+            joiner.add("inline");
         }
-        if ((flags & kNoInline_Flag) != 0) {
-            result.append("noinline ");
+        if ((flags & NO_INLINE_FLAG) != 0) {
+            joiner.add("noinline");
         }
 
-        // Real GLSL qualifiers (must be specified in order in GLSL 4.1 and below)
-        if ((flags & kSmooth_Flag) != 0) {
-            result.append("smooth ");
+        // Real GLSL qualifiers
+        if ((flags & FLAT_FLAG) != 0) {
+            joiner.add("flat");
         }
-        if ((flags & kFlat_Flag) != 0) {
-            result.append("flat ");
+        if ((flags & NO_PERSPECTIVE_FLAG) != 0) {
+            joiner.add("noperspective");
         }
-        if ((flags & kNoPerspective_Flag) != 0) {
-            result.append("noperspective ");
+        if ((flags & CONST_FLAG) != 0) {
+            joiner.add("const");
         }
-        if ((flags & kConst_Flag) != 0) {
-            result.append("const ");
+        if ((flags & UNIFORM_FLAG) != 0) {
+            joiner.add("uniform");
         }
-        if ((flags & kUniform_Flag) != 0) {
-            result.append("uniform ");
+        if ((flags & IN_FLAG) != 0 && (flags & OUT_FLAG) != 0) {
+            joiner.add("inout");
+        } else if ((flags & IN_FLAG) != 0) {
+            joiner.add("in");
+        } else if ((flags & OUT_FLAG) != 0) {
+            joiner.add("out");
         }
-        if ((flags & kIn_Flag) != 0 && (flags & kOut_Flag) != 0) {
-            result.append("inout ");
-        } else if ((flags & kIn_Flag) != 0) {
-            result.append("in ");
-        } else if ((flags & kOut_Flag) != 0) {
-            result.append("out ");
+        if ((flags & READ_ONLY_FLAG) != 0) {
+            joiner.add("readonly");
+        }
+        if ((flags & WRITE_ONLY_FLAG) != 0) {
+            joiner.add("writeonly");
+        }
+        if ((flags & BUFFER_FLAG) != 0) {
+            joiner.add("buffer");
         }
 
         // We're using a non-GLSL name for this one; the GLSL equivalent is "shared"
-        if ((flags & kThreadgroup_Flag) != 0) {
-            result.append("threadgroup ");
+        if ((flags & WORKGROUP_FLAG) != 0) {
+            joiner.add("workgroup");
         }
 
-        return result.toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Modifiers modifiers = (Modifiers) o;
-        return flags == modifiers.flags && layout.equals(modifiers.layout);
-    }
-
-    @Override
-    public int hashCode() {
-        return 31 * layout.hashCode() + flags;
+        return joiner.toString();
     }
 }

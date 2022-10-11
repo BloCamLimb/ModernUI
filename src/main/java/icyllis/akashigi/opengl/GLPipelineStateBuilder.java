@@ -21,8 +21,12 @@ package icyllis.akashigi.opengl;
 import icyllis.akashigi.core.SharedPtr;
 import icyllis.akashigi.engine.*;
 import icyllis.akashigi.engine.shading.*;
+import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nullable;
+
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 
 import static icyllis.akashigi.opengl.GLCore.*;
 
@@ -93,7 +97,7 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
                         %s
                         """, vertSource, fragSource);
                 String log = glGetProgramInfoLog(program).trim();
-                errorHandler.compileError(allShaders, log);
+                errorHandler.handleCompileError(allShaders, log);
                 return null;
             } finally {
                 glDeleteProgram(program);
@@ -117,6 +121,18 @@ public class GLPipelineStateBuilder extends ProgramBuilder {
                         %s
                         """, vertSource, fragSource);
         System.out.println(allShaders);
+
+        try (MemoryStack stack = MemoryStack.stackPush()) {
+            IntBuffer pLength = stack.mallocInt(1);
+            IntBuffer pBinaryFormat = stack.mallocInt(1);
+            glGetProgramiv(program, GL_PROGRAM_BINARY_LENGTH, pLength);
+            System.out.println(pLength.get(0));
+            if (pLength.get(0) > 0) {
+                ByteBuffer pBinary = stack.malloc(pLength.get(0));
+                glGetProgramBinary(program, pLength, pBinaryFormat, pBinary);
+                System.out.println(pBinaryFormat.get(0));
+            }
+        }
 
         @SharedPtr
         GLPipeline pipeline = GLPipeline.make(mServer, mPipelineInfo.geomProc(), program);

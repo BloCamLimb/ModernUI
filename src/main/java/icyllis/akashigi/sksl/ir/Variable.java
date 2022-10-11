@@ -70,6 +70,6 @@ public final class Variable extends Symbol {
     @Nonnull
     @Override
     public String description() {
-        return modifiers().description() + type().displayName() + " " + name();
+        return modifiers().toString() + type().displayName() + " " + name();
     }
 }
