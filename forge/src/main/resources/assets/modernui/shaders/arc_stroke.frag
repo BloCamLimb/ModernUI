@@ -11,10 +11,10 @@ layout(std140, binding = 2) uniform PaintBlock {
     float u_StrokeRadius;
 };
 
-smooth in vec2 f_Position;
-smooth in vec4 f_Color;
+layout(location = 0) smooth in vec2 f_Position;
+layout(location = 1) smooth in vec4 f_Color;
 
-layout(location = 0) out vec4 fragColor;
+layout(location = 0, index = 0) out vec4 fragColor;
 
 void main() {
     vec2 v = f_Position - u_CenterPos;

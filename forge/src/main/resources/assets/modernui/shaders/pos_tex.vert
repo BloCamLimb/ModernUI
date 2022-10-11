@@ -9,8 +9,8 @@ layout(std140, binding = 0) uniform MatrixBlock {
 layout(location = 0) in vec2 a_Pos;
 layout(location = 1) in vec2 a_UV;
 
-flat out vec4 f_Color;
-smooth out vec2 f_TexCoord;
+layout(location = 0) flat out vec4 f_Color;
+layout(location = 1) smooth out vec2 f_TexCoord;
 
 void main() {
     f_Color = u_Color;

@@ -8,13 +8,13 @@ layout(std140, binding = 5) uniform PaintBlock {
     float u_Radius;
 };
 
-layout(location = 0) uniform sampler2D u_Sampler;
+layout(binding = 0) uniform sampler2D u_Sampler;
 
-smooth in vec2 f_Position;
-smooth in vec4 f_Color;
-smooth in vec2 f_TexCoord;
+layout(location = 0) smooth in vec2 f_Position;
+layout(location = 1) smooth in vec4 f_Color;
+layout(location = 2) smooth in vec2 f_TexCoord;
 
-layout(location = 0) out vec4 fragColor;
+layout(location = 0, index = 0) out vec4 fragColor;
 
 void main() {
     vec2 tl = u_InnerRect.xy - f_Position;
