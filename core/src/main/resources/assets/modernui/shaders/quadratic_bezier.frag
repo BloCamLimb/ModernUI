@@ -10,10 +10,10 @@ layout(std140, binding = 3) uniform PaintBlock {
     float u_StrokeRadius;
 };
 
-smooth in vec2 f_Position;
-smooth in vec4 f_Color;
+layout(location = 0) smooth in vec2 f_Position;
+layout(location = 1) smooth in vec4 f_Color;
 
-layout(location = 0) out vec4 fragColor;
+layout(location = 0, index = 0) out vec4 fragColor;
 
 /*float det(vec2 a, vec2 b) {
     return a.x * b.y - b.x * a.y;
@@ -71,5 +71,5 @@ void main() {
     float v = distanceToBezier(u_Bezier0, u_Bezier1, u_Bezier2, f_Position) - u_StrokeRadius;
     // out of the curve, discard it
     if (v >= 0.0) discard;
-    fragColor = vec4(f_Color.rgb, f_Color.a*(1.0-smoothstep(-u_SmoothRadius, 0.0, v)));
+    fragColor = f_Color * (1.0 - smoothstep(-u_SmoothRadius, 0.0, v));
 }

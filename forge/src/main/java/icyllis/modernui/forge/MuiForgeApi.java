@@ -30,6 +30,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.util.Mth;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
@@ -63,6 +64,77 @@ public final class MuiForgeApi {
     }
 
     /**
+     * Start the lifecycle of user interface with the fragment and create views.
+     * This method must be called from client side main thread.
+     * <p>
+     * This is served as a local interaction model, the server will not intersect with this before.
+     * Otherwise, initiate this with a network model via
+     * {@link net.minecraftforge.network.NetworkHooks#openScreen(ServerPlayer, MenuProvider, Consumer)}.
+     * <p>
+     * Optionally, the main {@link Fragment} can implement {@link ScreenCallback}
+     * to describe the screen properties.
+     *
+     * @param fragment the main fragment
+     */
+    @MainThread
+    public static void openScreen(@Nonnull Fragment fragment) {
+        UIManager.getInstance().open(fragment);
+    }
+
+    /**
+     * Get the elapsed time since the current screen is set, updated every frame on Render thread.
+     * Ignoring game paused.
+     *
+     * @return elapsed time in milliseconds
+     */
+    @RenderThread
+    public static long getElapsedTime() {
+        return UIManager.getElapsedTime();
+    }
+
+    /**
+     * Get synced UI frame time, updated every frame on Render thread. Ignoring game paused.
+     *
+     * @return frame time in milliseconds
+     */
+    @RenderThread
+    public static long getFrameTime() {
+        return getFrameTimeNanos() / 1000000;
+    }
+
+    /**
+     * Get synced UI frame time, updated every frame on Render thread. Ignoring game paused.
+     *
+     * @return frame time in nanoseconds
+     */
+    @RenderThread
+    public static long getFrameTimeNanos() {
+        return UIManager.getFrameTimeNanos();
+    }
+
+    /**
+     * Post a runnable to be executed asynchronously (no barrier) on UI thread.
+     * This method is equivalent to calling {@link Core#getUiHandlerAsync()},
+     * but {@link Core} is not a public API.
+     *
+     * @param r the Runnable that will be executed
+     */
+    public static void postToUiThread(@Nonnull Runnable r) {
+        Core.getUiHandlerAsync().post(r);
+    }
+
+    /**
+     * Returns whether the graphics engine has failed to launch. False means that UI will render nothing.
+     * Call this after {@link net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent} on render thread.
+     */
+    @RenderThread
+    public static boolean hasNoRender() {
+        return ModernUIForge.hasGLCapsError();
+    }
+
+    /**
+     * <b>Debug only.</b>
+     * <p>
      * Get the lifecycle of current server. At most one server instance exists
      * at the same time, which may be integrated or dedicated.
      *
@@ -116,6 +188,8 @@ public final class MuiForgeApi {
     }
 
     /**
+     * <b>Debug only.</b>
+     * <p>
      * Open a container menu on server, generating a container id represents the next screen
      * (due to network latency). Then send a packet to the player to request the application
      * user interface on client. This method must be called from server thread, this client
@@ -151,74 +225,6 @@ public final class MuiForgeApi {
         p.initMenu(menu);
         p.containerMenu = menu;
         MinecraftForge.EVENT_BUS.post(new PlayerContainerEvent.Open(p, menu));
-    }
-
-    /**
-     * Start the lifecycle of user interface with the fragment and create views.
-     * This method must be called from client side main thread.
-     * <p>
-     * This is served as a local interaction model, the server will not intersect with this before.
-     * Otherwise, initiate this with a network model via {@link OpenMenuEvent#set(Fragment)})}.
-     * <p>
-     * Optionally, the main {@link Fragment} can implement {@link ScreenCallback}
-     * to describe the screen properties.
-     *
-     * @param fragment the fragment
-     */
-    @MainThread
-    public static void openScreen(@Nonnull Fragment fragment) {
-        UIManager.getInstance().open(fragment);
-    }
-
-    /**
-     * Get the elapsed time since the current screen is set, updated every frame on Render thread.
-     * Ignoring game paused.
-     *
-     * @return elapsed time in milliseconds
-     */
-    @RenderThread
-    public static long getElapsedTime() {
-        return UIManager.getElapsedTime();
-    }
-
-    /**
-     * Get synced UI frame time, updated every frame on Render thread. Ignoring game paused.
-     *
-     * @return frame time in milliseconds
-     */
-    @RenderThread
-    public static long getFrameTime() {
-        return getFrameTimeNanos() / 1000000;
-    }
-
-    /**
-     * Get synced UI frame time, updated every frame on Render thread. Ignoring game paused.
-     *
-     * @return frame time in nanoseconds
-     */
-    @RenderThread
-    public static long getFrameTimeNanos() {
-        return UIManager.getFrameTimeNanos();
-    }
-
-    /**
-     * Post a runnable to be executed asynchronously (no barrier) on UI thread.
-     * This method is equivalent to calling {@link Core#getUiHandlerAsync()},
-     * but {@link Core} is not a public API.
-     *
-     * @param r the Runnable that will be executed
-     */
-    public static void postToUiThread(@Nonnull Runnable r) {
-        Core.getUiHandlerAsync().post(r);
-    }
-
-    /**
-     * Returns whether the graphics engine failed to start, which means that UI will render nothing.
-     * Call this after {@link net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent} on render thread.
-     */
-    @RenderThread
-    public static boolean hasNoRender() {
-        return ModernUIForge.hasGLCapsError();
     }
 
     public static int calcGuiScales() {

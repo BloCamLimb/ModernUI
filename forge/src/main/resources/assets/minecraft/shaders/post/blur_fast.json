@@ -1,6 +1,7 @@
 {
   "targets": [
-    "swap"
+    "swap",
+    "temp"
   ],
   "passes": [
     {
@@ -20,7 +21,7 @@
     {
       "name": "blur_fast",
       "intarget": "swap",
-      "outtarget": "minecraft:main",
+      "outtarget": "temp",
       "uniforms": [
         {
           "name": "BlurDir",
@@ -30,6 +31,11 @@
           ]
         }
       ]
+    },
+    {
+      "name": "blit",
+      "intarget": "temp",
+      "outtarget": "minecraft:main"
     }
   ]
 }

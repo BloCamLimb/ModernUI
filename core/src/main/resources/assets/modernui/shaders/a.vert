@@ -30,11 +30,12 @@ void main() {
 }
 
 // glow wave
-float rand(vec2 n) {
+float rand(vec2 n)
+{
     return fract(sin(dot(n, vec2(12.9898,12.1414))) * 83758.5453);
 }
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
 {
     vec2 uv = fragCoord/iResolution.xy;
     vec2 pos = 2.0 * uv - 1.0;
@@ -51,4 +52,27 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec4 src = vec4(col);
 
     fragColor = src + dst * (1.0 - src.a);
+}
+
+// sweep gradient
+float rand(vec2 n)
+{
+    return fract(sin(dot(n, vec2(12.9898,12.1414))) * 83758.5453);
+}
+
+void mainImage(out vec4 fragColor, in vec2 fragCoord)
+{
+    vec2 uv = fragCoord/iResolution.xy;
+    vec2 pos = 2.0 * uv - 1.0;
+    pos.y /= iResolution.x/iResolution.y;
+
+    float t = 2.0 * abs(atan(-pos.y, -pos.x) * 0.1591549430918);
+
+    vec3 from = pow(vec3(0.2,0.85,0.95),vec3(2.2));
+    vec3 to = pow(vec3(0.85,0.5,0.75),vec3(2.2));
+    vec3 col = mix(from,to,t);
+    col = pow(col,vec3(1.0/2.2));
+    col += (rand(pos)-0.5) / 255.0;
+
+    fragColor = vec4(col,1.0);
 }

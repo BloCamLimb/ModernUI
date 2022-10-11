@@ -8,10 +8,10 @@ layout(std140, binding = 4) uniform PaintBlock {
     vec2 u_Radius;
 };
 
-smooth in vec2 f_Position;
-smooth in vec4 f_Color;
+layout(location = 0) smooth in vec2 f_Position;
+layout(location = 1) smooth in vec4 f_Color;
 
-layout(location = 0) out vec4 fragColor;
+layout(location = 0, index = 0) out vec4 fragColor;
 
 void main() {
     float v = length(f_Position - u_CenterPos);
@@ -20,5 +20,5 @@ void main() {
     float a2 = smoothstep(u_Radius.y - u_SmoothRadius, u_Radius.y, v);
     float a = a1 * (1.0 - a2);
 
-    fragColor = f_Color * vec4(1.0, 1.0, 1.0, a);
+    fragColor = f_Color * a;
 }
