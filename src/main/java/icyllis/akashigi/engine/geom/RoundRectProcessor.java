@@ -130,11 +130,11 @@ public class RoundRectProcessor extends GeometryProcessor {
                     vec4 %s;
                     """, outputColor);
             varyingHandler.addPassThroughAttribute(COLOR, outputColor,
-                    VaryingHandler.Interpolation_CanBeFlat);
+                    VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
 
             Varying sizeAndRadii = new Varying(SLType.Vec4);
             varyingHandler.addVarying("SizeAndRadii", sizeAndRadii,
-                    VaryingHandler.Interpolation_CanBeFlat);
+                    VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
             vertBuilder.codeAppendf("""
                     %s = vec4(%s.xz, %s);
                     """, sizeAndRadii.vsOut(), LOCAL_RECT.name(), RADII.name());

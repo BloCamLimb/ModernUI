@@ -21,7 +21,7 @@ package icyllis.akashigi.engine;
 import icyllis.akashigi.core.Rect2i;
 import icyllis.akashigi.core.SharedPtr;
 import icyllis.akashigi.engine.ops.OpsTask;
-import icyllis.akashigi.sksl.Compiler;
+import icyllis.akashigi.aksl.Compiler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -51,7 +51,7 @@ public abstract class Server {
         assert context != null && caps != null;
         mContext = context;
         mCaps = caps;
-        mCompiler = new Compiler(caps.mShaderCaps);
+        mCompiler = new Compiler();
     }
 
     public final DirectContext getContext() {
@@ -66,7 +66,7 @@ public abstract class Server {
     }
 
     /**
-     * Gets the compiler used for compiling SkSL into backend shader code.
+     * Gets the compiler used for compiling AkSL into backend shader code.
      */
     public final Compiler getShaderCompiler() {
         return mCompiler;

@@ -144,7 +144,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     }
 
     public final String build() {
-        extensions().append(mProgramBuilder.shaderCaps().mVersionDeclString);
+        extensions().append("#version 450\n");
         onFinish();
         // append the 'footer' to code
         code().append("}");

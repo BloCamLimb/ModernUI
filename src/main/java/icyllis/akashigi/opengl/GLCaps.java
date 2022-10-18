@@ -39,7 +39,6 @@ public final class GLCaps extends Caps {
     final int mMaxFragmentUniformVectors;
     private float mMaxTextureMaxAnisotropy = 1.f;
     final boolean mSupportsProtected = false;
-    boolean mFBFetchRequiresEnablePerSample;
     private boolean mSkipErrorChecks = false;
     private final int mMaxLabelLength;
 
@@ -186,21 +185,11 @@ public final class GLCaps extends Caps {
 
         // OpenGL 3.3
         shaderCaps.mDualSourceBlendingSupport = true;
-        // Desktop
-        shaderCaps.mShaderDerivativeSupport = true;
-        // OpenGL 3.0
-        shaderCaps.mIntegerSupport = true;
-        // GLSL 130
-        shaderCaps.mNonSquareMatrixSupport = true;
-        // GLSL 130
-        shaderCaps.mInverseHyperbolicSupport = true;
 
         if (caps.GL_NV_conservative_raster) {
             mConservativeRasterSupport = true;
         }
 
-        // GLSL 130
-        shaderCaps.mRewriteSwitchStatements = false;
         // Protect ourselves against tracking huge amounts of texture state.
         shaderCaps.mMaxFragmentSamplers = Math.min(32, glGetInteger(GL_MAX_TEXTURE_IMAGE_UNITS));
 
@@ -242,31 +231,14 @@ public final class GLCaps extends Caps {
         initFormatTable(caps);
 
         finishInitialization(options);
-
-        // For now these two are equivalent, but we could have dst read in shader via some other method.
-        mShaderCaps.mDstReadInShaderSupport = mShaderCaps.mFBFetchSupport;
     }
 
     private void initGLSL(GLCapabilities caps) {
         ShaderCaps shaderCaps = mShaderCaps;
-        if (caps.GL_EXT_shader_framebuffer_fetch) {
-            shaderCaps.mFBFetchNeedsCustomOutput = true;
-            shaderCaps.mFBFetchSupport = true;
-            shaderCaps.mFBFetchColorName = "gl_LastFragData[0]";
-            shaderCaps.mFBFetchExtensionString = "GL_EXT_shader_framebuffer_fetch";
-            mFBFetchRequiresEnablePerSample = false;
-        }
 
-        // GLSL 130
-        shaderCaps.mFlatInterpolationSupport = true;
         // Desktop
         shaderCaps.mPreferFlatInterpolation = true;
-        // GLSL 130
-        shaderCaps.mNoPerspectiveInterpolationSupport = true;
-        // GLSL 400
-        shaderCaps.mSampleMaskSupport = true;
 
-        shaderCaps.mVersionDeclString = "#version 450 core\n";
         // Desktop
         shaderCaps.mVertexIDSupport = true;
         // GLSL 330
@@ -278,22 +250,13 @@ public final class GLCaps extends Caps {
 
         try (MemoryStack stack = MemoryStack.stackPush()) {
             IntBuffer range = stack.mallocInt(2);
-            int bits = glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_HIGH_FLOAT, range);
-            shaderCaps.mFloatIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
-            bits = glGetShaderPrecisionFormat(GL_VERTEX_SHADER, GL_HIGH_FLOAT, range);
-            shaderCaps.mFloatIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
-
-            bits = glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_MEDIUM_FLOAT, range);
+            int bits = glGetShaderPrecisionFormat(GL_FRAGMENT_SHADER, GL_MEDIUM_FLOAT, range);
             shaderCaps.mHalfIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
             bits = glGetShaderPrecisionFormat(GL_VERTEX_SHADER, GL_MEDIUM_FLOAT, range);
             shaderCaps.mHalfIs32Bits &= range.get(0) >= 127 && range.get(1) >= 127 && bits >= 23;
         }
 
         shaderCaps.mHasLowFragmentPrecision = false;
-        // GLSL 400
-        shaderCaps.mBuiltinFMASupport = true;
-        // GLSL 150
-        shaderCaps.mBuiltinDeterminantSupport = true;
     }
 
     private void initFormatTable(GLCapabilities caps) {

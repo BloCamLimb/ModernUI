@@ -151,21 +151,21 @@ public class CircleProcessor extends GeometryProcessor {
                         vec3 clipPlane;
                         """);
                 varyingHandler.addPassThroughAttribute(CLIP_PLANE,
-                        "clipPlane", VaryingHandler.Interpolation_CanBeFlat);
+                        "clipPlane", VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
             }
             if (isectPlane) {
                 fragBuilder.codeAppend("""
                         vec3 isectPlane;
                         """);
                 varyingHandler.addPassThroughAttribute(ISECT_PLANE,
-                        "isectPlane", VaryingHandler.Interpolation_CanBeFlat);
+                        "isectPlane", VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
             }
             if (unionPlane) {
                 fragBuilder.codeAppend("""
                         vec3 unionPlane;
                         """);
                 varyingHandler.addPassThroughAttribute(UNION_PLANE,
-                        "unionPlane", VaryingHandler.Interpolation_CanBeFlat);
+                        "unionPlane", VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
             }
             Varying capRadius = new Varying(SLType.Float);
             if (roundCaps) {
@@ -173,9 +173,9 @@ public class CircleProcessor extends GeometryProcessor {
                         vec4 roundCapCenters;
                         """);
                 varyingHandler.addPassThroughAttribute(ROUND_CAP_CENTERS,
-                        "roundCapCenters", VaryingHandler.Interpolation_CanBeFlat);
+                        "roundCapCenters", VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
                 varyingHandler.addVarying("CapRadius", capRadius,
-                        VaryingHandler.Interpolation_CanBeFlat);
+                        VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
                 // This is the cap radius in normalized space where the outer radius is 1 and
                 // circledEdge.w is the normalized inner radius.
                 vertBuilder.codeAppendf("""
@@ -188,7 +188,7 @@ public class CircleProcessor extends GeometryProcessor {
                     vec4 %s;
                     """, outputColor);
             varyingHandler.addPassThroughAttribute(COLOR, outputColor,
-                    VaryingHandler.Interpolation_CanBeFlat);
+                    VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
 
             // setup position
             localPos.set(POSITION.name(), POSITION.dstType());

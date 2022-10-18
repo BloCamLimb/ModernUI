@@ -90,6 +90,12 @@ public class TestManagedResource {
 
         testTexture(pw, dContext);
 
+        try {
+            Integer.decode("0x806577445");
+        } catch (NumberFormatException e) {
+            pw.println(e.getMessage());
+        }
+
         GLServer server = (GLServer) dContext.getServer();
         GLPipelineStateCache pipelineStateCache = server.getPipelineBuilder();
         TextureProxy proxy2 = dContext.getProxyProvider().createRenderTextureProxy(

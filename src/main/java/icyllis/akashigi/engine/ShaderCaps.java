@@ -18,9 +18,17 @@
 
 package icyllis.akashigi.engine;
 
-public class ShaderCaps extends icyllis.akashigi.sksl.ShaderCaps {
+public class ShaderCaps {
 
-    public boolean mDstReadInShaderSupport = false;
+    /**
+     * Indicates how GLSL must interact with advanced blend equations. The KHR extension requires
+     * special layout qualifiers in the fragment shader.
+     */
+    public static final int
+            NotSupported_AdvBlendEqInteraction = 0,     // No _blend_equation_advanced extension
+            Automatic_AdvBlendEqInteraction = 1,        // No interaction required
+            GeneralEnable_AdvBlendEqInteraction = 2;    // layout(blend_support_all_equations) out
+
     public boolean mDualSourceBlendingSupport = false;
     public boolean mPreferFlatInterpolation = false;
     public boolean mVertexIDSupport = false;
@@ -55,29 +63,20 @@ public class ShaderCaps extends icyllis.akashigi.sksl.ShaderCaps {
     // source blending is supported.
     public String mSecondaryOutputExtensionString = null;
 
-    public String mNoPerspectiveInterpolationExtensionString = null;
-    public String mSampleVariablesExtensionString = null;
-
-    public String mFBFetchExtensionString = null;
+    public int mAdvBlendEqInteraction = NotSupported_AdvBlendEqInteraction;
 
     public int mMaxFragmentSamplers = 0;
 
     public ShaderCaps() {
     }
 
-    public String noPerspectiveInterpolationExtensionString() {
-        assert mNoPerspectiveInterpolationSupport;
-        return mNoPerspectiveInterpolationExtensionString;
-    }
-
-    public String sampleVariablesExtensionString() {
-        assert mSampleMaskSupport;
-        return mSampleVariablesExtensionString;
-    }
-
     public void applyOptionsOverrides(ContextOptions options) {
         if (options.mReducedShaderVariations) {
             mReducedShaderMode = true;
         }
+    }
+
+    public final boolean mustEnableAdvBlendEqs() {
+        return mAdvBlendEqInteraction >= GeneralEnable_AdvBlendEqInteraction;
     }
 }

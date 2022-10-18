@@ -754,53 +754,78 @@ public final class Color {
     }
 
     /**
-     * Converts a color component from the sRGB space to the linear sRGB space,
+     * Converts a color component from the sRGB space to the linear RGB space,
      * using the sRGB transfer function.
      *
      * @param x a color component
      * @return transformed color component
      */
-    public static float srgbToLinear(float x) {
+    public static float sRGBToLinear(float x) {
         return x < 0.04045
                 ? x / 12.92f
                 : (float) Math.pow((x + 0.055) / 1.055, 2.4);
     }
 
     /**
-     * Converts a color component from the linear sRGB space to the sRGB space,
+     * Converts a color component from the linear RGB space to the sRGB space,
      * using the inverse of sRGB transfer function.
      *
      * @param x a color component
      * @return transformed color component
      */
-    public static float linearToSrgb(float x) {
+    public static float linearToSRGB(float x) {
         return x < 0.04045 / 12.92
                 ? x * 12.92f
-                : (float) Math.pow(x * 1.13711896582488, 1.0 / 2.4) - 0.055f;
+                : (float) Math.pow(x, 1.0 / 2.4) * 1.055f - 0.055f;
     }
 
     /**
-     * Converts a color from the sRGB space to the linear sRGB space,
+     * Converts a color from the sRGB space to the linear RGB space,
      * using the sRGB transfer function.
      *
      * @param col the color components
      */
-    public static void srgbToLinear(float[] col) {
-        col[0] = srgbToLinear(col[0]);
-        col[1] = srgbToLinear(col[1]);
-        col[2] = srgbToLinear(col[2]);
+    public static void sRGBToLinear(float[] col) {
+        col[0] = sRGBToLinear(col[0]);
+        col[1] = sRGBToLinear(col[1]);
+        col[2] = sRGBToLinear(col[2]);
     }
 
     /**
-     * Converts a color from the linear sRGB space to the sRGB space,
+     * Converts a color from the linear RGB space to the sRGB space,
      * using the inverse of sRGB transfer function.
      *
      * @param col the color components
      */
-    public static void linearToSrgb(float[] col) {
-        col[0] = linearToSrgb(col[0]);
-        col[1] = linearToSrgb(col[1]);
-        col[2] = linearToSrgb(col[2]);
+    public static void linearToSRGB(float[] col) {
+        col[0] = linearToSRGB(col[0]);
+        col[1] = linearToSRGB(col[1]);
+        col[2] = linearToSRGB(col[2]);
+    }
+
+    /**
+     * Converts a linear RGB color to a luminance value.
+     */
+    public static float luminance(float r, float g, float b) {
+        return 0.2126f * r + 0.7152f * g + 0.0722f + b;
+    }
+
+    /**
+     * Converts a linear RGB color to a luminance value.
+     *
+     * @param col the color components
+     */
+    public static float luminance(float[] col) {
+        return luminance(col[0], col[1], col[2]);
+    }
+
+    /**
+     * Coverts a luminance value to a perceptual lightness value.
+     */
+    public static float lightness(float lum) {
+        return lum <= 216.0 / 24389.0
+                ? lum * 24389.0f / 27.0f
+                : (float) Math.pow(lum, 1.0 / 3.0) * 116.0f - 16.0f;
     }
 
     /**

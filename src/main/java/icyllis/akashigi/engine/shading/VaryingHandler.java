@@ -28,9 +28,9 @@ import static icyllis.akashigi.engine.Engine.*;
 public class VaryingHandler {
 
     public static final int
-            Interpolation_Interpolated = 0,
-            Interpolation_CanBeFlat = 1,  // Use "flat" if it will be faster.
-            Interpolation_MustBeFlat = 2; // Use "flat" even if it is known to be slow.
+            INTERPOLATION_SMOOTH = 0,
+            INTERPOLATION_CAN_BE_FLAT = 1,  // Use "flat" if it will be faster.
+            INTERPOLATION_MUST_BE_FLAT = 2; // Use "flat" even if it is known to be slow.
 
     protected static class VaryingInfo {
 
@@ -51,7 +51,7 @@ public class VaryingHandler {
     protected final ProgramBuilder mProgramBuilder;
 
     // the default interpolation qualifier is smooth (with perspective)
-    private String mDefaultInterpolationModifier = "smooth";
+    private String mDefaultInterpolationModifier = "";
 
     public VaryingHandler(ProgramBuilder programBuilder) {
         mProgramBuilder = programBuilder;
@@ -64,10 +64,6 @@ public class VaryingHandler {
      * interpolation.
      */
     public final void setNoPerspective() {
-        final ShaderCaps caps = mProgramBuilder.shaderCaps();
-        if (!caps.mNoPerspectiveInterpolationSupport) {
-            return;
-        }
         mDefaultInterpolationModifier = "noperspective";
     }
 
@@ -77,7 +73,7 @@ public class VaryingHandler {
      */
     public final void addVarying(String name,
                                  Varying varying) {
-        addVarying(name, varying, Interpolation_Interpolated);
+        addVarying(name, varying, INTERPOLATION_SMOOTH);
     }
 
     /**
@@ -91,7 +87,7 @@ public class VaryingHandler {
                                  Varying varying,
                                  int interpolation) {
         assert (varying.mType != SLType.Void);
-        assert (SLType.isFloatType(varying.mType) || interpolation == Interpolation_MustBeFlat);
+        assert (SLType.isFloatType(varying.mType) || interpolation == INTERPOLATION_MUST_BE_FLAT);
         var v = new VaryingInfo();
 
         v.mType = varying.mType;
@@ -115,7 +111,7 @@ public class VaryingHandler {
      */
     public final void addPassThroughAttribute(GeometryProcessor.Attribute attr,
                                               String output) {
-        addPassThroughAttribute(attr, output, Interpolation_Interpolated);
+        addPassThroughAttribute(attr, output, INTERPOLATION_SMOOTH);
     }
 
     /**
@@ -136,13 +132,11 @@ public class VaryingHandler {
 
     private static boolean useFlatInterpolation(int interpolation, ShaderCaps shaderCaps) {
         switch (interpolation) {
-            case Interpolation_Interpolated:
+            case INTERPOLATION_SMOOTH:
                 return false;
-            case Interpolation_CanBeFlat:
-                assert !shaderCaps.mPreferFlatInterpolation || shaderCaps.mFlatInterpolationSupport;
+            case INTERPOLATION_CAN_BE_FLAT:
                 return shaderCaps.mPreferFlatInterpolation;
-            case Interpolation_MustBeFlat:
-                assert shaderCaps.mFlatInterpolationSupport;
+            case INTERPOLATION_MUST_BE_FLAT:
                 return true;
         }
         throw new IllegalArgumentException(String.valueOf(interpolation));
