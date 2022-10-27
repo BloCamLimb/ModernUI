@@ -16,23 +16,27 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
 import javax.annotation.Nonnull;
 
-public final class MatrixType extends Type {
+public final class VectorType extends Type {
 
     private final ScalarType mComponentType;
-    private final int mColumns;
-    private final int mRows;
+    private final byte mVectorSize;
 
-    MatrixType(String name, String abbrev, Type componentType, int columns, int rows) {
-        super(name, abbrev, TYPE_KIND_MATRIX);
-        assert columns >= 2 && columns <= 4;
-        assert rows >= 2 && rows <= 4;
+    VectorType(String name, String abbrev, Type componentType, int vectorSize) {
+        super(name, abbrev, TYPE_KIND_VECTOR);
+        assert (vectorSize >= 2 && vectorSize <= 4);
+        assert (abbrev.equals(componentType.abbrev() + vectorSize));
+        assert (name.equals(componentType.name() + vectorSize));
         mComponentType = (ScalarType) componentType;
-        mColumns = columns;
-        mRows = rows;
+        mVectorSize = (byte) vectorSize;
+    }
+
+    @Override
+    public boolean isVector() {
+        return true;
     }
 
     @Nonnull
@@ -43,12 +47,12 @@ public final class MatrixType extends Type {
 
     @Override
     public int columns() {
-        return mColumns;
+        return 1;
     }
 
     @Override
     public int rows() {
-        return mRows;
+        return mVectorSize;
     }
 
     @Override
@@ -57,12 +61,7 @@ public final class MatrixType extends Type {
     }
 
     @Override
-    public boolean isMatrix() {
-        return true;
-    }
-
-    @Override
     public int slotCount() {
-        return mColumns * mRows;
+        return mVectorSize;
     }
 }

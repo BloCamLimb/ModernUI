@@ -16,36 +16,43 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
 import javax.annotation.Nonnull;
 
-public final class VectorType extends Type {
+public final class ArrayType extends Type {
 
-    private final ScalarType mComponentType;
-    private final int mColumns;
+    private final Type mComponentType;
+    private final int mArraySize;
 
-    VectorType(String name, String abbrev, Type componentType, int columns) {
-        super(name, abbrev, TYPE_KIND_VECTOR);
-        assert columns >= 2 && columns <= 4;
-        mComponentType = (ScalarType) componentType;
-        mColumns = columns;
+    ArrayType(String name, Type componentType, int arraySize) {
+        super(name, componentType.abbrev(), TYPE_KIND_ARRAY);
+        assert (arraySize == UNSIZED_ARRAY_SIZE || arraySize > 0);
+        // Disallow multi-dimensional arrays (Vulkan).
+        assert !(componentType instanceof ArrayType);
+        mComponentType = componentType;
+        mArraySize = arraySize;
+    }
+
+    @Override
+    public boolean isArray() {
+        return true;
+    }
+
+    @Override
+    public boolean isUnsizedArray() {
+        return mArraySize == UNSIZED_ARRAY_SIZE;
     }
 
     @Nonnull
     @Override
-    public ScalarType componentType() {
+    public Type componentType() {
         return mComponentType;
     }
 
     @Override
     public int columns() {
-        return mColumns;
-    }
-
-    @Override
-    public int rows() {
-        return 1;
+        return mArraySize;
     }
 
     @Override
@@ -54,12 +61,8 @@ public final class VectorType extends Type {
     }
 
     @Override
-    public boolean isVector() {
-        return true;
-    }
-
-    @Override
     public int slotCount() {
-        return mColumns;
+        assert (mArraySize != UNSIZED_ARRAY_SIZE && mArraySize > 0);
+        return mArraySize * mComponentType.slotCount();
     }
 }

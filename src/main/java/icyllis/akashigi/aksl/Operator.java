@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.aksl;
 
-import icyllis.akashigi.aksl.ast.Type;
+import icyllis.akashigi.aksl.ir.Type;
 
 /**
  * Operators.
@@ -339,7 +339,6 @@ public enum Operator {
                                        Type right,
                                        Type[] outTypes) {
         assert (outTypes.length >= 3);
-        final boolean allowNarrowing = context.getSettings().mAllowNarrowingConversions;
         switch (this) {
             case ASSIGN -> {  // left = right
                 if (left.isVoid()) {
@@ -348,24 +347,24 @@ public enum Operator {
                 outTypes[0] = left;
                 outTypes[1] = left;
                 outTypes[2] = left;
-                return right.canCoerceTo(left, allowNarrowing);
+                return right.canCoerceTo(left);
             }
             case EQ, // left == right
                     NE -> {  // left != right
                 if (left.isVoid() || left.isOpaque()) {
                     return false;
                 }
-                long rightToLeft = right.coercionCost(left),
+                int rightToLeft = right.coercionCost(left),
                         leftToRight = left.coercionCost(right);
                 if (Type.CoercionCost.compare(rightToLeft, leftToRight) < 0) {
-                    if (Type.CoercionCost.isPossible(rightToLeft, allowNarrowing)) {
+                    if (Type.CoercionCost.isPossible(rightToLeft)) {
                         outTypes[0] = left;
                         outTypes[1] = left;
                         outTypes[2] = context.getTypes().mBool;
                         return true;
                     }
                 } else {
-                    if (Type.CoercionCost.isPossible(leftToRight, allowNarrowing)) {
+                    if (Type.CoercionCost.isPossible(leftToRight)) {
                         outTypes[0] = right;
                         outTypes[1] = right;
                         outTypes[2] = context.getTypes().mBool;
@@ -380,8 +379,8 @@ public enum Operator {
                 outTypes[0] = context.getTypes().mBool;
                 outTypes[1] = context.getTypes().mBool;
                 outTypes[2] = context.getTypes().mBool;
-                return left.canCoerceTo(context.getTypes().mBool, allowNarrowing) &&
-                        right.canCoerceTo(context.getTypes().mBool, allowNarrowing);
+                return left.canCoerceTo(context.getTypes().mBool) &&
+                        right.canCoerceTo(context.getTypes().mBool);
             }
             case COMMA -> {  // left, right
                 if (left.isOpaque() || right.isOpaque()) {
@@ -467,8 +466,8 @@ public enum Operator {
             return true;
         }
 
-        long rightToLeftCost = right.coercionCost(left);
-        long leftToRightCost = isAssignment ? Type.CoercionCost.impossible()
+        int rightToLeftCost = right.coercionCost(left);
+        int leftToRightCost = isAssignment ? Type.CoercionCost.impossible()
                 : left.coercionCost(right);
 
         if ((left.isScalar() && right.isScalar()) || (leftIsVectorOrMatrix && validMatrixOrVectorOp)) {
@@ -477,13 +476,13 @@ public enum Operator {
                     return false;
                 }
             }
-            if (Type.CoercionCost.isPossible(rightToLeftCost, allowNarrowing) &&
+            if (Type.CoercionCost.isPossible(rightToLeftCost) &&
                     Type.CoercionCost.compare(rightToLeftCost, leftToRightCost) < 0) {
                 // Right-to-Left conversion is possible and cheaper
                 outTypes[0] = left;
                 outTypes[1] = left;
                 outTypes[2] = left;
-            } else if (Type.CoercionCost.isPossible(leftToRightCost, allowNarrowing)) {
+            } else if (Type.CoercionCost.isPossible(leftToRightCost)) {
                 // Left-to-Right conversion is possible (and at least as cheap as Right-to-Left)
                 outTypes[0] = right;
                 outTypes[1] = right;

@@ -16,13 +16,13 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl;
 
+import icyllis.akashigi.aksl.ir.Symbol;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 /**
- * Maps identifiers to symbols. Functions, in particular, are mapped to either FunctionDeclaration
- * or UnresolvedFunction depending on whether they are overloaded or not.
+ * Maps identifiers to symbols.
  */
 public class SymbolTable {
 

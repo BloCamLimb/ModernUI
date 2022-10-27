@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.aksl;
 
-import icyllis.akashigi.aksl.ast.Node;
+import icyllis.akashigi.aksl.ir.Node;
 
 /**
  * Class which is notified in the event of an error.

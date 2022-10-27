@@ -18,10 +18,18 @@
 
 package icyllis.akashigi.aksl;
 
-import icyllis.akashigi.aksl.ast.SymbolTable;
-
 public final class ParsedModule {
 
-    public SymbolTable mSymbols;
-    public ElementMap mElements;
+    public final SymbolTable mSymbols;
+    public final ElementMap mElements;
+
+    ParsedModule(SymbolTable symbols) {
+        mSymbols = symbols;
+        mElements = null;
+    }
+
+    ParsedModule(SymbolTable symbols, ElementMap elements) {
+        mSymbols = symbols;
+        mElements = elements;
+    }
 }

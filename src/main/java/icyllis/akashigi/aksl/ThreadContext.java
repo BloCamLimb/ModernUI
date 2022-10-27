@@ -18,8 +18,7 @@
 
 package icyllis.akashigi.aksl;
 
-import icyllis.akashigi.aksl.ast.ProgramElement;
-import icyllis.akashigi.aksl.ast.SymbolTable;
+import icyllis.akashigi.aksl.ir.ProgramElement;
 
 import java.util.*;
 
@@ -50,26 +49,23 @@ public final class ThreadContext {
     private ErrorHandler mErrors;
 
     /**
-     * @param isModule  true if we are processing include files
-     * @param isBuiltIn true if we are processing built-in include files
+     * @param isModule true if we are processing include files
      */
     ThreadContext(Compiler compiler,
                   ModuleKind kind,
                   ModuleSettings settings,
                   ParsedModule baseModule,
-                  boolean isModule,
-                  boolean isBuiltIn) {
+                  boolean isModule) {
         Objects.requireNonNull(compiler);
         Objects.requireNonNull(kind);
         Objects.requireNonNull(settings);
         Objects.requireNonNull(baseModule);
-        assert (!isBuiltIn || isModule);
         mCompiler = compiler;
         mKind = kind;
         mSettings = settings;
         mIsModule = isModule;
 
-        mSymbolTable = SymbolTable.push(baseModule.mSymbols, isBuiltIn);
+        mSymbolTable = SymbolTable.push(baseModule.mSymbols, isModule);
         mBaseElements = baseModule.mElements;
 
         mErrors = compiler.getErrorHandler();
@@ -91,10 +87,10 @@ public final class ThreadContext {
     /**
      * Returns the Context on the current thread.
      *
-     * @throws NullPointerException DSL is not active
+     * @throws NullPointerException DSL is not started
      */
     public static ThreadContext getInstance() {
-        return Objects.requireNonNull(TLS.get(), "DSL inactive");
+        return Objects.requireNonNull(TLS.get(), "DSL is not started");
     }
 
     /**

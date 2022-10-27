@@ -265,7 +265,7 @@ public final class GLCommandBuffer {
         if (SamplerState.isMipmapped(samplerState)) {
             if (!texture.isMipmapped()) {
                 assert (!SamplerState.isAnisotropy(samplerState));
-                samplerState = SamplerState.screenMipmapMode(samplerState);
+                samplerState = SamplerState.resetMipmapMode(samplerState);
             } else {
                 assert (!texture.isMipmapsDirty());
             }

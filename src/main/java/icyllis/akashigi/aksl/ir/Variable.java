@@ -16,7 +16,7 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
 import icyllis.akashigi.aksl.Qualifiers;
 

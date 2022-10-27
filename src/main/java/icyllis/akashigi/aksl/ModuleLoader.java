@@ -22,4 +22,14 @@ package icyllis.akashigi.aksl;
  * Thread-safe class that loads shader modules.
  */
 public class ModuleLoader {
+
+    private static final ModuleLoader sInstance = new ModuleLoader();
+
+    private final BuiltInTypes mBuiltInTypes = new BuiltInTypes();
+
+    private final ParsedModule mRootModule;
+
+    private ModuleLoader() {
+        mRootModule = new ParsedModule(new SymbolTable(true));
+    }
 }

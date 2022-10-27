@@ -91,7 +91,8 @@ public class TestManagedResource {
         testTexture(pw, dContext);
 
         try {
-            Integer.decode("0x806577445");
+            double v = -Double.MAX_VALUE;
+            pw.println("Float v: " + v);
         } catch (NumberFormatException e) {
             pw.println(e.getMessage());
         }

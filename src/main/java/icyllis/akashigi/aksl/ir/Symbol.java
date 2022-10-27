@@ -16,40 +16,45 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
+
+import javax.annotation.Nonnull;
 
 /**
- * Abstract supertype of all statements.
+ * Represents a symbol table entry.
  */
-public abstract class Statement extends Node {
+public abstract class Symbol extends Node {
 
-    public static final int KIND_FIRST = Symbol.KIND_LAST + 1;
+    public static final int KIND_FIRST = ProgramElement.KIND_LAST + 1;
     public static final int
-            KIND_BLOCK = KIND_FIRST,
-            KIND_BREAK = KIND_FIRST + 1,
-            KIND_CONTINUE = KIND_FIRST + 2,
-            KIND_DISCARD = KIND_FIRST + 3,
-            KIND_DO = KIND_FIRST + 4,
-            KIND_EXPRESSION = KIND_FIRST + 5,
-            KIND_FOR = KIND_FIRST + 6,
-            KIND_IF = KIND_FIRST + 7,
-            KIND_NOP = KIND_FIRST + 8,
-            KIND_RETURN = KIND_FIRST + 9,
-            KIND_SWITCH = KIND_FIRST + 10,
-            KIND_SWITCH_CASE = KIND_FIRST + 11,
-            KIND_VAR_DECLARATION = KIND_FIRST + 12;
-    public static final int KIND_LAST = KIND_VAR_DECLARATION;
+            KIND_TYPE = KIND_FIRST,
+            KIND_VARIABLE = KIND_FIRST + 1,
+            KIND_FIELD = KIND_FIRST + 2,
+            KIND_FUNCTION_DECLARATION = KIND_FIRST + 3;
+    public static final int KIND_LAST = KIND_FUNCTION_DECLARATION;
 
-    protected Statement(int position, int kind) {
+    private final String mName;
+    Type mType;
+
+    protected Symbol(int position, int kind, String name, Type type) {
         super(position, kind);
         assert (kind >= KIND_FIRST && kind <= KIND_LAST);
+        mName = name;
+        mType = type;
     }
 
     public final int kind() {
         return mKind;
     }
 
-    public boolean isEmpty() {
-        return false;
+    @Nonnull
+    public final String name() {
+        return mName;
+    }
+
+    @Nonnull
+    public final Type type() {
+        assert (mType != null);
+        return mType;
     }
 }

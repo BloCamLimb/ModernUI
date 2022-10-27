@@ -51,8 +51,8 @@ public final class GLSampler extends ManagedResource {
         int mipmapMode = SamplerState.getMipmapMode(samplerState);
         int magFilter = filterModeToMagFilter(filterMode);
         int minFilter = filterModeToMinFilter(filterMode, mipmapMode);
-        int wrapX = wrapModeToWrap(SamplerState.getWrapModeX(samplerState));
-        int wrapY = wrapModeToWrap(SamplerState.getWrapModeY(samplerState));
+        int wrapX = wrapModeToWrap(SamplerState.getAddressModeX(samplerState));
+        int wrapY = wrapModeToWrap(SamplerState.getAddressModeY(samplerState));
         glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, magFilter);
         glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, minFilter);
         glSamplerParameteri(sampler, GL_TEXTURE_WRAP_S, wrapX);
@@ -95,10 +95,10 @@ public final class GLSampler extends ManagedResource {
 
     private static int wrapModeToWrap(int wrapMode) {
         return switch (wrapMode) {
-            case SamplerState.WRAP_MODE_REPEAT -> GL_REPEAT;
-            case SamplerState.WRAP_MODE_MIRROR_REPEAT -> GL_MIRRORED_REPEAT;
-            case SamplerState.WRAP_MODE_CLAMP_TO_EDGE -> GL_CLAMP_TO_EDGE;
-            case SamplerState.WRAP_MODE_CLAMP_TO_BORDER -> GL_CLAMP_TO_BORDER;
+            case SamplerState.ADDRESS_MODE_REPEAT -> GL_REPEAT;
+            case SamplerState.ADDRESS_MODE_MIRROR_REPEAT -> GL_MIRRORED_REPEAT;
+            case SamplerState.ADDRESS_MODE_CLAMP_TO_EDGE -> GL_CLAMP_TO_EDGE;
+            case SamplerState.ADDRESS_MODE_CLAMP_TO_BORDER -> GL_CLAMP_TO_BORDER;
             default -> throw new IllegalArgumentException();
         };
     }

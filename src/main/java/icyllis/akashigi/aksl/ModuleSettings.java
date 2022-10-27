@@ -23,7 +23,5 @@ package icyllis.akashigi.aksl;
  */
 public class ModuleSettings {
 
-    // If true, implicit conversions to lower precision numeric types are allowed (e.g., float to
-    // half). These are always allowed when compiling Runtime Effects.
-    public boolean mAllowNarrowingConversions = false;
+
 }

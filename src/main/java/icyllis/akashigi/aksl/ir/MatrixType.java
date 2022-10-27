@@ -16,33 +16,35 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
 import javax.annotation.Nonnull;
 
-public final class ArrayType extends Type {
+public final class MatrixType extends Type {
 
-    private final Type mComponentType;
-    private final int mColumns;
+    private final ScalarType mComponentType;
+    private final byte mColumns;
+    private final byte mRows;
 
-    ArrayType(String name, Type componentType, int columns) {
-        super(name, componentType.abbreviatedName(), TYPE_KIND_ARRAY);
-        // Only allow explicitly-sized arrays.
-        assert columns > 0;
-        // Disallow multi-dimensional arrays.
-        assert !(componentType instanceof ArrayType);
-        mComponentType = componentType;
-        mColumns = columns;
+    MatrixType(String name, String abbrev, Type componentType, int columns, int rows) {
+        super(name, abbrev, TYPE_KIND_MATRIX);
+        assert (rows >= 2 && rows <= 4);
+        assert (columns >= 2 && columns <= 4);
+        assert (abbrev.equals(componentType.abbrev() + columns + "" + rows));
+        assert (name.equals(componentType.name() + columns + "x" + rows));
+        mComponentType = (ScalarType) componentType;
+        mColumns = (byte) columns;
+        mRows = (byte) rows;
     }
 
     @Override
-    public boolean isArray() {
+    public boolean isMatrix() {
         return true;
     }
 
     @Nonnull
     @Override
-    public Type componentType() {
+    public ScalarType componentType() {
         return mComponentType;
     }
 
@@ -52,17 +54,17 @@ public final class ArrayType extends Type {
     }
 
     @Override
+    public int rows() {
+        return mRows;
+    }
+
+    @Override
     public int bitWidth() {
         return mComponentType.bitWidth();
     }
 
     @Override
-    public boolean isPrivate() {
-        return mComponentType.isPrivate();
-    }
-
-    @Override
     public int slotCount() {
-        return mColumns * mComponentType.slotCount();
+        return mColumns * mRows;
     }
 }

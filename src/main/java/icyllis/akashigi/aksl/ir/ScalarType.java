@@ -16,19 +16,25 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
 public final class ScalarType extends Type {
 
     private final byte mScalarKind;
-    private final int mPriority;
-    private final int mBitWidth;
+    private final byte mPriority;
+    private final byte mBitWidth;
 
     ScalarType(String name, String abbrev, byte scalarKind, int priority, int bitWidth) {
         super(name, abbrev, TYPE_KIND_SCALAR);
+        assert (abbrev.length() == 1);
         mScalarKind = scalarKind;
-        mPriority = priority;
-        mBitWidth = bitWidth;
+        mPriority = (byte) priority;
+        mBitWidth = (byte) bitWidth;
+    }
+
+    @Override
+    public boolean isScalar() {
+        return true;
     }
 
     @Override
@@ -57,12 +63,30 @@ public final class ScalarType extends Type {
     }
 
     @Override
-    public boolean isScalar() {
-        return true;
+    public int slotCount() {
+        return 1;
     }
 
     @Override
-    public int slotCount() {
-        return 1;
+    public double minimumValue() {
+        return switch (mScalarKind) {
+            case SCALAR_KIND_SIGNED -> highPrecision() ? Integer.MIN_VALUE
+                    : Short.MIN_VALUE;
+            case SCALAR_KIND_UNSIGNED -> 0;
+            default -> doublePrecision() ? -Double.MAX_VALUE
+                    : -Float.MAX_VALUE;
+        };
+    }
+
+    @Override
+    public double maximumValue() {
+        return switch (mScalarKind) {
+            case SCALAR_KIND_SIGNED -> highPrecision() ? Integer.MAX_VALUE
+                    : Short.MAX_VALUE;
+            case SCALAR_KIND_UNSIGNED -> highPrecision() ? 0xFFFFFFFF
+                    : 0xFFFF;
+            default -> doublePrecision() ? Double.MAX_VALUE
+                    : Float.MAX_VALUE;
+        };
     }
 }

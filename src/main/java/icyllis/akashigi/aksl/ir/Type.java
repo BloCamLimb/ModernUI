@@ -16,26 +16,26 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
-import icyllis.akashigi.aksl.ThreadContext;
 import icyllis.akashigi.aksl.Qualifiers;
+import icyllis.akashigi.aksl.ThreadContext;
 import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
 
 /**
- * Represents a type symbol, such as int or vec4.
+ * Represents a type symbol, such as int or float4.
  */
 public class Type extends Symbol {
 
-    public static final int MAX_ABBREV_LENGTH = 3;
-    public static final int UNSIZED_ARRAY = -1;
+    // 0 represents non-array; -1 represents unspecified array dimensions, as in `int[]`.
+    public static final int UNSIZED_ARRAY_SIZE = -1;
 
     /**
      * Block member.
      *
-     * @param position see Node.mPosition
+     * @param position see {@link Node#range(int, int)}
      */
     public record Field(int position, Qualifiers qualifiers, String name, Type type) {
 
@@ -52,16 +52,13 @@ public class Type extends Symbol {
     public static final byte
             TYPE_KIND_ARRAY = 0,
             TYPE_KIND_GENERIC = 1,
-            TYPE_KIND_LITERAL = 2,
-            TYPE_KIND_MATRIX = 3,
+            TYPE_KIND_MATRIX = 2,
+            TYPE_KIND_OPAQUE = 3,
             TYPE_KIND_OTHER = 4,
-            TYPE_KIND_COMBINED_SAMPLER = 5,
-            TYPE_KIND_SEPARATE_SAMPLER = 6,
-            TYPE_KIND_SCALAR = 7,
-            TYPE_KIND_STRUCT = 8,
-            TYPE_KIND_TEXTURE = 9,
-            TYPE_KIND_VECTOR = 10,
-            TYPE_KIND_VOID = 11;
+            TYPE_KIND_SCALAR = 5,
+            TYPE_KIND_STRUCT = 6,
+            TYPE_KIND_VECTOR = 7,
+            TYPE_KIND_VOID = 8;
 
     /**
      * Kinds of ScalarType.
@@ -74,22 +71,26 @@ public class Type extends Symbol {
             SCALAR_KIND_NON_SCALAR = 4;
 
     /**
-     * Texture access levels.
+     * For compute API. (to be removed)
      */
     public static final byte
-            TEXTURE_ACCESS_SAMPLE = 0,      // allows both sampling and reading
-            TEXTURE_ACCESS_READ = 1,
-            TEXTURE_ACCESS_WRITE = 2,
-            TEXTURE_ACCESS_READ_WRITE = 3;
+            TEXTURE_ACCESS_SAMPLE = 0,      // texture2D (GLSL), Texture2D (HLSL), to be combined with sampler
+            TEXTURE_ACCESS_READ = 1,        // readonly image2D (GLSL), texture2d<access::read> (Metal)
+            TEXTURE_ACCESS_WRITE = 2,       // writeonly image2D (GLSL), texture2d<access::write> (Metal)
+            TEXTURE_ACCESS_READ_WRITE = 3;  // image2D (GLSL), RWTexture2D (HLSL), texture2d<access::read_write> (Metal)
 
-    private final String mAbbreviatedName;
+    private final String mAbbrev;
     private final byte mTypeKind;
 
     Type(String name, String abbrev, byte kind) {
-        super(-1, KIND_TYPE, name, null);
-        assert (abbrev.length() <= MAX_ABBREV_LENGTH);
-        mAbbreviatedName = abbrev;
+        this(name, abbrev, kind, -1);
+    }
+
+    Type(String name, String abbrev, byte kind, int position) {
+        super(position, KIND_TYPE, name, null);
+        mAbbrev = abbrev;
         mTypeKind = kind;
+        mType = this;
     }
 
     /**
@@ -104,8 +105,8 @@ public class Type extends Symbol {
      * Creates an array type.
      */
     @Nonnull
-    public static Type makeArrayType(String name, Type componentType, int columns) {
-        return new ArrayType(name, componentType, columns);
+    public static Type makeArrayType(String name, Type componentType, int arraySize) {
+        return new ArrayType(name, componentType, arraySize);
     }
 
     /**
@@ -118,14 +119,6 @@ public class Type extends Symbol {
     }
 
     /**
-     * Create a type for literal scalars.
-     */
-    @Nonnull
-    public static Type makeLiteralType(String name, Type scalarType, int priority) {
-        return new LiteralType(name, scalarType, priority);
-    }
-
-    /**
      * Create a matrix type.
      */
     @Nonnull
@@ -135,24 +128,39 @@ public class Type extends Symbol {
     }
 
     /**
-     * Create a sampler type.
+     * Create a texture/image/sampler type. Includes images, textures without sampler,
+     * textures with sampler and pure samplers.
+     * <ul>
+     * <li>isSampled=true,hasSampler=true: combined texture sampler (e.g. sampler2D)</li>
+     * <li>isSampled=true,hasSampler=false: pure texture (e.g. texture2D)</li>
+     * <li>isSampled=false,hasSampler=true: pure sampler (e.g. sampler)</li>
+     * <li>isSampled=false,hasSampler=false: image or subpass (e.g. image2D)</li>
+     * </ul>
+     * isShadow: True for samplers that sample a depth texture with comparison (e.g.
+     * samplerShadow, sampler2DShadow, HLSL's SamplerComparisonState).
+     *
+     * @param componentType e.g. texture2D has a type of float
+     * @param dimensions    SpvDim (e.g. {@link Spv#SpvDim1D})
      */
     @Nonnull
-    public static Type makeSamplerType(String name, Type textureType) {
-        return new SamplerType(name, textureType);
+    public static Type makeOpaqueType(String name, Type componentType, int dimensions,
+                                      boolean isShadow, boolean isArrayed,
+                                      boolean isMultisampled, boolean isSampled, boolean hasSampler) {
+        return new OpaqueType(name, componentType, dimensions, isShadow, isArrayed,
+                isMultisampled, isSampled, hasSampler);
     }
 
     /**
      * Create a scalar type.
      */
     @Nonnull
-    public static Type makeScalarType(String name, String abbrev, byte scalarKind, int priority,
-                                      int bitWidth) {
+    public static Type makeScalarType(String name, String abbrev, byte scalarKind,
+                                      int priority, int bitWidth) {
         return new ScalarType(name, abbrev, scalarKind, priority, bitWidth);
     }
 
     /**
-     * Create a "special" type with the given name, abbreviation, and TypeKind.
+     * Create a "special" type with the given name.
      */
     @Nonnull
     public static Type makeSpecialType(String name, String abbrev, byte typeKind) {
@@ -160,31 +168,12 @@ public class Type extends Symbol {
     }
 
     /**
-     * Create a texture type.
-     *
-     * @param dimensions SpvDim, for example, {@link Spv#SpvDim1D}
-     */
-    @Nonnull
-    public static Type makeTextureType(String name, int dimensions, boolean isDepth, boolean isArrayed,
-                                       boolean isMultisampled, boolean isSampled) {
-        return new TextureType(name, dimensions, isDepth, isArrayed, isMultisampled, isSampled);
-    }
-
-    /**
      * Create a vector type.
      */
     @Nonnull
-    public static Type makeVectorType(String name, String abbrev, Type componentType, int columns) {
-        return new VectorType(name, abbrev, componentType, columns);
-    }
-
-    /**
-     * Returns this.
-     */
-    @Nonnull
-    @Override
-    public final Type type() {
-        return this;
+    public static Type makeVectorType(String name, String abbrev, Type componentType,
+                                      int vectorSize) {
+        return new VectorType(name, abbrev, componentType, vectorSize);
     }
 
     /**
@@ -197,25 +186,12 @@ public class Type extends Symbol {
 
     /**
      * For matrices and vectors, returns the type of individual cells (e.g. mat2 has a component
-     * type of Float). For arrays, returns the base type. For all other types, returns the type
+     * type of Float). For arrays, returns the base type. For textures, returns the sampled type
+     * (e.g. texture2D has a component type of Float). For all other types, returns the type
      * itself.
      */
     @Nonnull
     public Type componentType() {
-        return this;
-    }
-
-    /**
-     * For texture samplers, returns the type of texture it samples (e.g., sampler2D has
-     * a texture type of texture2D).
-     */
-    @Nonnull
-    public Type textureType() {
-        throw new AssertionError();
-    }
-
-    @Nonnull
-    public Type scalarTypeForLiteral() {
         return this;
     }
 
@@ -230,8 +206,8 @@ public class Type extends Symbol {
      * Returns an abbreviated name of the type, meant for name-mangling. (e.g. float4x4 -> f44)
      */
     @Nonnull
-    public final String abbreviatedName() {
-        return mAbbreviatedName;
+    public final String abbrev() {
+        return mAbbrev;
     }
 
     /**
@@ -249,20 +225,25 @@ public class Type extends Symbol {
     }
 
     /**
-     * Converts a component type and a size (float, 10) into an array name ("float[10]").
+     * Converts a component type into an array name.
+     * <br>
+     * (float, 10) -> "float[10]"
+     * <br>
+     * (int, {@link #UNSIZED_ARRAY_SIZE}) -> "int[]"
      */
     @Nonnull
     public final String getArrayName(int arraySize) {
         String name = name();
-        if (arraySize == UNSIZED_ARRAY) {
+        if (arraySize == UNSIZED_ARRAY_SIZE) {
             return name + "[]";
         }
+        assert (arraySize > 0);
         return name + "[" + arraySize + "]";
     }
 
     @Nonnull
     public final String displayName() {
-        return scalarTypeForLiteral().name();
+        return name();
     }
 
     @Nonnull
@@ -341,12 +322,7 @@ public class Type extends Symbol {
      * some fashion). <a href="https://www.khronos.org/opengl/wiki/Data_Type_(GLSL)#Opaque_types">Link</a>
      */
     public final boolean isOpaque() {
-        return switch (mTypeKind) {
-            case TYPE_KIND_COMBINED_SAMPLER,
-                    TYPE_KIND_SEPARATE_SAMPLER,
-                    TYPE_KIND_TEXTURE -> true;
-            default -> false;
-        };
+        return mTypeKind == TYPE_KIND_OPAQUE;
     }
 
     /**
@@ -361,8 +337,8 @@ public class Type extends Symbol {
      * Returns true if an instance of this type can be freely coerced (implicitly converted) to
      * another type.
      */
-    public final boolean canCoerceTo(Type other, boolean allowNarrowing) {
-        return CoercionCost.isPossible(coercionCost(other), allowNarrowing);
+    public final boolean canCoerceTo(Type other) {
+        return CoercionCost.isPossible(coercionCost(other));
     }
 
     /**
@@ -372,7 +348,7 @@ public class Type extends Symbol {
      *
      * @see CoercionCost
      */
-    public final long coercionCost(Type other) {
+    public final int coercionCost(Type other) {
         if (matches(other)) {
             return CoercionCost.free();
         }
@@ -395,7 +371,7 @@ public class Type extends Symbol {
             } else if (other.priority() >= priority()) {
                 return CoercionCost.normal(other.priority() - priority());
             } else {
-                return CoercionCost.narrowing(priority() - other.priority());
+                return CoercionCost.impossible();
             }
         }
         if (mTypeKind == TYPE_KIND_GENERIC) {
@@ -418,25 +394,22 @@ public class Type extends Symbol {
     }
 
     /**
-     * For integer types, returns the minimum value that can fit in the type.
+     * Returns the minimum value that can fit in the type.
      */
-    public long minimumValue() {
-        assert isInteger();
-        return isUnsigned() ? 0 : -(1L << (bitWidth() - 1));
+    public double minimumValue() {
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * For integer types, returns the maximum value that can fit in the type.
+     * Returns the maximum value that can fit in the type.
      */
-    public long maximumValue() {
-        assert isInteger();
-        return (isUnsigned() ? (1L << bitWidth())
-                : (1L << (bitWidth() - 1))) - 1;
+    public double maximumValue() {
+        throw new UnsupportedOperationException();
     }
 
     /**
-     * For matrices and vectors, returns the number of columns (e.g. both mat3 and float3 return 3).
-     * For scalars, returns 1. For arrays, returns either the size of the array (if known) or -1.
+     * For matrices, returns the number of columns (e.g. mat2x4 returns 4). For vectors and scalars,
+     * returns 1. For arrays, returns either the size of the array (if known) or -1 (unsized).
      * For all other types, causes an assertion failure.
      */
     public int columns() {
@@ -444,8 +417,8 @@ public class Type extends Symbol {
     }
 
     /**
-     * For matrices, returns the number of rows (e.g. mat2x4 returns 4). For vectors and scalars,
-     * returns 1. For all other types, causes an assertion failure.
+     * For matrices and vectors, returns the number of rows (e.g. both mat3 and float3 return 3).
+     * For scalars, returns 1. For all other types, causes an assertion failure.
      */
     public int rows() {
         throw new AssertionError();
@@ -467,11 +440,15 @@ public class Type extends Symbol {
         throw new AssertionError();
     }
 
-    public boolean isDepthTexture() {
+    /**
+     * True for samplers that sample a depth texture with comparison (e.g., samplerShadow,
+     * sampler2DShadow, HLSL SamplerComparisonState).
+     */
+    public boolean isShadow() {
         throw new AssertionError();
     }
 
-    public boolean isArrayedTexture() {
+    public boolean isArrayed() {
         throw new AssertionError();
     }
 
@@ -499,6 +476,10 @@ public class Type extends Symbol {
         return false;
     }
 
+    public boolean isUnsizedArray() {
+        return false;
+    }
+
     public boolean isStruct() {
         return false;
     }
@@ -507,22 +488,37 @@ public class Type extends Symbol {
         return false;
     }
 
-    public boolean isMultisampledTexture() {
+    public boolean isMultisampled() {
         assert false;
         return false;
     }
 
-    public boolean isSampledTexture() {
+    public boolean isSampled() {
+        assert false;
+        return false;
+    }
+
+    public boolean isCombinedSampler() {
+        assert false;
+        return false;
+    }
+
+    public boolean isPureSampler() {
         assert false;
         return false;
     }
 
     public final boolean hasPrecision() {
-        return componentType().isNumber() || mTypeKind == TYPE_KIND_COMBINED_SAMPLER;
+        return componentType().isNumber() || isCombinedSampler();
     }
 
     public final boolean highPrecision() {
         return bitWidth() >= 32;
+    }
+
+    public final boolean doublePrecision() {
+        // we have no 64-bit integers, so only true for 'double' precision floating-point
+        return bitWidth() >= 64;
     }
 
     public int bitWidth() {
@@ -538,114 +534,137 @@ public class Type extends Symbol {
         if (columns == 1 && rows == 1) {
             return this;
         }
-        if (matches(context.getTypes().mFloat) || matches(context.getTypes().mFloatLiteral)) {
-            return switch (rows) {
-                case 1 -> switch (columns) {
+        if (matches(context.getTypes().mFloat)) {
+            return switch (columns) {
+                case 1 -> switch (rows) {
                     case 2 -> context.getTypes().mFloat2;
                     case 3 -> context.getTypes().mFloat3;
                     case 4 -> context.getTypes().mFloat4;
-                    default -> throw new IllegalStateException();
+                    default -> throw new IllegalArgumentException();
                 };
-                case 2 -> switch (columns) {
+                case 2 -> switch (rows) {
                     case 2 -> context.getTypes().mFloat2x2;
-                    case 3 -> context.getTypes().mFloat3x2;
-                    case 4 -> context.getTypes().mFloat4x2;
-                    default -> throw new IllegalStateException();
+                    case 3 -> context.getTypes().mFloat2x3;
+                    case 4 -> context.getTypes().mFloat2x4;
+                    default -> throw new IllegalArgumentException();
                 };
-                case 3 -> switch (columns) {
-                    case 2 -> context.getTypes().mFloat2x3;
+                case 3 -> switch (rows) {
+                    case 2 -> context.getTypes().mFloat3x2;
                     case 3 -> context.getTypes().mFloat3x3;
-                    case 4 -> context.getTypes().mFloat4x3;
-                    default -> throw new IllegalStateException();
+                    case 4 -> context.getTypes().mFloat3x4;
+                    default -> throw new IllegalArgumentException();
                 };
-                case 4 -> switch (columns) {
-                    case 2 -> context.getTypes().mFloat2x4;
-                    case 3 -> context.getTypes().mFloat3x4;
+                case 4 -> switch (rows) {
+                    case 2 -> context.getTypes().mFloat4x2;
+                    case 3 -> context.getTypes().mFloat4x3;
                     case 4 -> context.getTypes().mFloat4x4;
-                    default -> throw new IllegalStateException();
+                    default -> throw new IllegalArgumentException();
                 };
-                default -> throw new IllegalStateException();
+                default -> throw new IllegalArgumentException();
             };
         } else if (matches(context.getTypes().mHalf)) {
-            return switch (rows) {
-                case 1 -> switch (columns) {
+            return switch (columns) {
+                case 1 -> switch (rows) {
                     case 2 -> context.getTypes().mHalf2;
                     case 3 -> context.getTypes().mHalf3;
                     case 4 -> context.getTypes().mHalf4;
-                    default -> throw new IllegalStateException();
+                    default -> throw new IllegalArgumentException();
                 };
-                case 2 -> switch (columns) {
+                case 2 -> switch (rows) {
                     case 2 -> context.getTypes().mHalf2x2;
-                    case 3 -> context.getTypes().mHalf3x2;
-                    case 4 -> context.getTypes().mHalf4x2;
-                    default -> throw new IllegalStateException();
+                    case 3 -> context.getTypes().mHalf2x3;
+                    case 4 -> context.getTypes().mHalf2x4;
+                    default -> throw new IllegalArgumentException();
                 };
-                case 3 -> switch (columns) {
-                    case 2 -> context.getTypes().mHalf2x3;
+                case 3 -> switch (rows) {
+                    case 2 -> context.getTypes().mHalf3x2;
                     case 3 -> context.getTypes().mHalf3x3;
-                    case 4 -> context.getTypes().mHalf4x3;
-                    default -> throw new IllegalStateException();
+                    case 4 -> context.getTypes().mHalf3x4;
+                    default -> throw new IllegalArgumentException();
                 };
-                case 4 -> switch (columns) {
-                    case 2 -> context.getTypes().mHalf2x4;
-                    case 3 -> context.getTypes().mHalf3x4;
+                case 4 -> switch (rows) {
+                    case 2 -> context.getTypes().mHalf4x2;
+                    case 3 -> context.getTypes().mHalf4x3;
                     case 4 -> context.getTypes().mHalf4x4;
-                    default -> throw new IllegalStateException();
+                    default -> throw new IllegalArgumentException();
                 };
-                default -> throw new IllegalStateException();
+                default -> throw new IllegalArgumentException();
             };
-        } else if (matches(context.getTypes().mInt) || matches(context.getTypes().mIntLiteral)) {
-            if (rows == 1) {
-                return switch (columns) {
+        } else if (matches(context.getTypes().mDouble)) {
+            return switch (columns) {
+                case 1 -> switch (rows) {
+                    case 2 -> context.getTypes().mDouble2;
+                    case 3 -> context.getTypes().mDouble3;
+                    case 4 -> context.getTypes().mDouble4;
+                    default -> throw new IllegalArgumentException();
+                };
+                case 2 -> switch (rows) {
+                    case 2 -> context.getTypes().mDouble2x2;
+                    case 3 -> context.getTypes().mDouble2x3;
+                    case 4 -> context.getTypes().mDouble2x4;
+                    default -> throw new IllegalArgumentException();
+                };
+                case 3 -> switch (rows) {
+                    case 2 -> context.getTypes().mDouble3x2;
+                    case 3 -> context.getTypes().mDouble3x3;
+                    case 4 -> context.getTypes().mDouble3x4;
+                    default -> throw new IllegalArgumentException();
+                };
+                case 4 -> switch (rows) {
+                    case 2 -> context.getTypes().mDouble4x2;
+                    case 3 -> context.getTypes().mDouble4x3;
+                    case 4 -> context.getTypes().mDouble4x4;
+                    default -> throw new IllegalArgumentException();
+                };
+                default -> throw new IllegalArgumentException();
+            };
+        } else if (matches(context.getTypes().mInt)) {
+            if (columns == 1) {
+                return switch (rows) {
                     case 2 -> context.getTypes().mInt2;
                     case 3 -> context.getTypes().mInt3;
                     case 4 -> context.getTypes().mInt4;
-                    default -> throw new IllegalStateException();
+                    default -> throw new IllegalArgumentException();
                 };
             }
-            throw new IllegalStateException();
         } else if (matches(context.getTypes().mShort)) {
-            if (rows == 1) {
-                return switch (columns) {
+            if (columns == 1) {
+                return switch (rows) {
                     case 2 -> context.getTypes().mShort2;
                     case 3 -> context.getTypes().mShort3;
                     case 4 -> context.getTypes().mShort4;
-                    default -> throw new IllegalStateException();
+                    default -> throw new IllegalArgumentException();
                 };
             }
-            throw new IllegalStateException();
         } else if (matches(context.getTypes().mUInt)) {
-            if (rows == 1) {
-                return switch (columns) {
+            if (columns == 1) {
+                return switch (rows) {
                     case 2 -> context.getTypes().mUInt2;
                     case 3 -> context.getTypes().mUInt3;
                     case 4 -> context.getTypes().mUInt4;
-                    default -> throw new IllegalStateException();
+                    default -> throw new IllegalArgumentException();
                 };
             }
-            throw new IllegalStateException();
         } else if (matches(context.getTypes().mUShort)) {
-            if (rows == 1) {
-                return switch (columns) {
+            if (columns == 1) {
+                return switch (rows) {
                     case 2 -> context.getTypes().mUShort2;
                     case 3 -> context.getTypes().mUShort3;
                     case 4 -> context.getTypes().mUShort4;
-                    default -> throw new IllegalStateException();
+                    default -> throw new IllegalArgumentException();
                 };
             }
-            throw new IllegalStateException();
         } else if (matches(context.getTypes().mBool)) {
-            if (rows == 1) {
-                return switch (columns) {
+            if (columns == 1) {
+                return switch (rows) {
                     case 2 -> context.getTypes().mBool2;
                     case 3 -> context.getTypes().mBool3;
                     case 4 -> context.getTypes().mBool4;
-                    default -> throw new IllegalStateException();
+                    default -> throw new IllegalArgumentException();
                 };
             }
-            throw new IllegalStateException();
         }
-        throw new IllegalStateException();
+        throw new IllegalArgumentException();
     }
 
     /**
@@ -657,136 +676,45 @@ public class Type extends Symbol {
 
         ///// Pack
 
-        public static long free() {
+        public static int free() {
             return 0;
         }
 
-        public static long normal(int cost) {
+        public static int normal(int cost) {
             assert cost >= 0;
             return cost;
         }
 
-        public static long narrowing(int cost) {
-            assert cost >= 0;
-            return (long) cost << 32;
-        }
-
-        public static long impossible() {
+        public static int impossible() {
             // any negative value means impossible
-            return 0x80000000_80000000L;
-        }
-
-        private static long make(int normalCost, int narrowingCost) {
-            return normal(normalCost) | narrowing(narrowingCost);
-        }
-
-        ///// Unpack
-
-        public static int getNormalCost(long coercionCost) {
-            return (int) coercionCost;
-        }
-
-        public static int getNarrowingCost(long coercionCost) {
-            return (int) (coercionCost >> 32);
-        }
-
-        public static boolean isImpossible(long coercionCost) {
-            // any negative value means impossible
-            return (coercionCost & impossible()) != 0;
+            return Integer.MIN_VALUE;
         }
 
         ///// METHODS
 
-        public static boolean isPossible(long coercionCost, boolean allowNarrowing) {
-            return !isImpossible(coercionCost) && (allowNarrowing || getNarrowingCost(coercionCost) == 0);
+        public static boolean isPossible(int cost) {
+            return cost >= 0;
         }
 
         ///// OPERATORS
 
         // Addition of two costs. Saturates at IMPOSSIBLE.
-        public static long concat(long lhs, long rhs) {
-            if (isImpossible(lhs) || isImpossible(rhs)) {
+        public static long concat(int lhs, int rhs) {
+            // any negative value means impossible
+            if (lhs < 0 || rhs < 0) {
                 return impossible();
             }
             // overflow becomes impossible (should not happen)
-            return make(getNormalCost(lhs) + getNormalCost(rhs),
-                    getNarrowingCost(lhs) + getNarrowingCost(rhs));
+            return normal(lhs + rhs);
         }
 
-        public static int compare(long lhs, long rhs) {
-            // order is, impossible, then narrowing, then normal
-            int res = Boolean.compare(isImpossible(lhs), isImpossible(rhs));
+        public static int compare(int lhs, int rhs) {
+            // any negative value means impossible
+            int res = Boolean.compare(lhs < 0, rhs < 0);
             if (res != 0) {
                 return res;
             }
-            res = Integer.compare(getNarrowingCost(lhs), getNarrowingCost(rhs));
-            if (res != 0) {
-                return res;
-            }
-            return Integer.compare(getNormalCost(lhs), getNormalCost(rhs));
-        }
-    }
-
-    public static final class LiteralType extends Type {
-
-        private final Type mScalarType;
-        private final int mPriority;
-
-        LiteralType(String name, Type scalarType, int priority) {
-            super(name, "L", TYPE_KIND_LITERAL);
-            mScalarType = scalarType;
-            mPriority = priority;
-        }
-
-        @Nonnull
-        @Override
-        public Type scalarTypeForLiteral() {
-            return mScalarType;
-        }
-
-        @Override
-        public int priority() {
-            return mPriority;
-        }
-
-        @Override
-        public int columns() {
-            return 1;
-        }
-
-        @Override
-        public int rows() {
-            return 1;
-        }
-
-        @Override
-        public byte scalarKind() {
-            return mScalarType.scalarKind();
-        }
-
-        @Override
-        public int bitWidth() {
-            return mScalarType.bitWidth();
-        }
-
-        @Override
-        public boolean isScalar() {
-            return true;
-        }
-
-        @Override
-        public boolean isLiteral() {
-            return true;
-        }
-
-        @Override
-        public boolean isPrivate() {
-            return true;
-        }
-
-        @Override
-        public int slotCount() {
-            return 1;
+            return Integer.compare(lhs, rhs);
         }
     }
 
@@ -795,7 +723,7 @@ public class Type extends Symbol {
         private final Type mTargetType;
 
         AliasType(String name, Type targetType) {
-            super(name, targetType.abbreviatedName(), targetType.typeKind());
+            super(name, targetType.abbrev(), targetType.typeKind());
             mTargetType = targetType;
         }
 
@@ -847,13 +775,13 @@ public class Type extends Symbol {
         }
 
         @Override
-        public boolean isDepthTexture() {
-            return mTargetType.isDepthTexture();
+        public boolean isShadow() {
+            return mTargetType.isShadow();
         }
 
         @Override
-        public boolean isArrayedTexture() {
-            return mTargetType.isArrayedTexture();
+        public boolean isArrayed() {
+            return mTargetType.isArrayed();
         }
 
         @Override

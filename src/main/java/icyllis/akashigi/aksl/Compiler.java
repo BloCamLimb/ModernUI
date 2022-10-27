@@ -18,10 +18,8 @@
 
 package icyllis.akashigi.aksl;
 
-import icyllis.akashigi.aksl.ast.Node;
+import icyllis.akashigi.aksl.ir.Node;
 import icyllis.akashigi.aksl.codegen.CodeGenerator;
-import icyllis.akashigi.engine.ShaderCaps;
-import icyllis.akashigi.aksl.ast.SymbolTable;
 
 import javax.annotation.Nonnull;
 
@@ -33,8 +31,8 @@ import javax.annotation.Nonnull;
  */
 public class Compiler {
 
-    public static final String INVALID_TAG = "<INVALID>";
     public static final String POISON_TAG = "<POISON>"; // bad value
+    public static final String INVALID_TAG = "<INVALID>";
 
     private final CompilerErrorHandler mErrorHandler = new CompilerErrorHandler();
 

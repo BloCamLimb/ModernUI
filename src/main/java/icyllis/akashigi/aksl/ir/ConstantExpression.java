@@ -16,7 +16,7 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
 import icyllis.akashigi.aksl.ThreadContext;
 
@@ -36,7 +36,7 @@ public final class ConstantExpression extends Expression {
 
     @Nonnull
     public static ConstantExpression makeFloat(ThreadContext context, int position, float value) {
-        return new ConstantExpression(position, value, context.getTypes().mFloatLiteral);
+        return new ConstantExpression(position, value, context.getTypes().mFloat);
     }
 
     @Nonnull
@@ -49,7 +49,7 @@ public final class ConstantExpression extends Expression {
 
     @Nonnull
     public static ConstantExpression makeInt(ThreadContext context, int position, long value) {
-        return new ConstantExpression(position, value, context.getTypes().mIntLiteral);
+        return new ConstantExpression(position, value, context.getTypes().mInt);
     }
 
     @Nonnull

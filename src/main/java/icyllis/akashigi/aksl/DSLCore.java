@@ -28,7 +28,7 @@ public final class DSLCore {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
-        new ThreadContext(compiler, kind, settings, baseModule, false, false);
+        new ThreadContext(compiler, kind, settings, baseModule, false);
     }
 
     /**
@@ -36,16 +36,10 @@ public final class DSLCore {
      */
     public static void startModule(Compiler compiler, ModuleKind kind,
                                    ModuleSettings settings, ParsedModule baseModule) {
-        startModule(compiler, kind, settings, baseModule, false);
-    }
-
-    static void startModule(Compiler compiler, ModuleKind kind,
-                            ModuleSettings settings, ParsedModule baseModule,
-                            boolean isBuiltIn) {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
-        new ThreadContext(compiler, kind, settings, baseModule, true, isBuiltIn);
+        new ThreadContext(compiler, kind, settings, baseModule, true);
     }
 
     /**

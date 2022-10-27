@@ -18,7 +18,8 @@
 
 package icyllis.akashigi.aksl.codegen;
 
-import icyllis.akashigi.aksl.ast.Program;
+import icyllis.akashigi.aksl.ir.Program;
+import icyllis.akashigi.engine.Context;
 
 /**
  * Abstract superclass of all code generators, which take a Program as input and produce code as

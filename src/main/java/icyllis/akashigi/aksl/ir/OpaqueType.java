@@ -16,24 +16,37 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
-public final class TextureType extends Type {
+import javax.annotation.Nonnull;
 
+public final class OpaqueType extends Type {
+
+    private final ScalarType mComponentType;
     private final int mDimensions;
-    private final boolean mIsDepth;
+    private final boolean mIsShadow;
     private final boolean mIsArrayed;
     private final boolean mIsMultisampled;
     private final boolean mIsSampled;
+    private final boolean mHasSampler;
 
-    TextureType(String name, int dimensions, boolean isDepth, boolean isArrayed,
-                boolean isMultisampled, boolean isSampled) {
-        super(name, "T", TYPE_KIND_TEXTURE);
+    OpaqueType(String name, Type componentType, int dimensions, boolean isShadow,
+               boolean isArrayed, boolean isMultisampled, boolean isSampled,
+               boolean hasSampler) {
+        super(name, "T", TYPE_KIND_OPAQUE); //TODO detailed abbrev
+        mComponentType = (ScalarType) componentType;
         mDimensions = dimensions;
-        mIsDepth = isDepth;
         mIsArrayed = isArrayed;
         mIsMultisampled = isMultisampled;
         mIsSampled = isSampled;
+        mHasSampler = hasSampler;
+        mIsShadow = isShadow;
+    }
+
+    @Nonnull
+    @Override
+    public ScalarType componentType() {
+        return mComponentType;
     }
 
     @Override
@@ -42,22 +55,32 @@ public final class TextureType extends Type {
     }
 
     @Override
-    public boolean isDepthTexture() {
-        return mIsDepth;
+    public boolean isShadow() {
+        return mIsShadow;
     }
 
     @Override
-    public boolean isArrayedTexture() {
+    public boolean isArrayed() {
         return mIsArrayed;
     }
 
     @Override
-    public boolean isMultisampledTexture() {
+    public boolean isMultisampled() {
         return mIsMultisampled;
     }
 
     @Override
-    public boolean isSampledTexture() {
+    public boolean isSampled() {
         return mIsSampled;
+    }
+
+    @Override
+    public boolean isCombinedSampler() {
+        return mIsSampled && mHasSampler;
+    }
+
+    @Override
+    public boolean isPureSampler() {
+        return !mIsSampled && mHasSampler;
     }
 }

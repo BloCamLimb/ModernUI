@@ -16,7 +16,7 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
 import javax.annotation.Nonnull;
 
@@ -25,12 +25,12 @@ import javax.annotation.Nonnull;
  * whenever a bare reference to an identifier should refer to a struct field; in GLSL, this is the
  * result of declaring anonymous interface blocks.
  */
-public final class Field extends Symbol {
+public final class AnonField extends Symbol {
 
     private final Variable mOwner;
     private final int mFieldIndex;
 
-    public Field(int position, Variable owner, int fieldIndex) {
+    public AnonField(int position, Variable owner, int fieldIndex) {
         super(position, KIND_FIELD, owner.type().fields()[fieldIndex].name(),
                 owner.type().fields()[fieldIndex].type());
         mOwner = owner;

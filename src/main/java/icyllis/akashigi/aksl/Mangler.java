@@ -18,8 +18,6 @@
 
 package icyllis.akashigi.aksl;
 
-import icyllis.akashigi.aksl.ast.SymbolTable;
-
 //TODO
 public class Mangler {
 

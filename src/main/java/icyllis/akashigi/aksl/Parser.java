@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.aksl;
 
-import icyllis.akashigi.aksl.ast.*;
+import icyllis.akashigi.aksl.ir.*;
 import icyllis.akashigi.aksl.lex.Lexer;
 import icyllis.akashigi.aksl.lex.NFAtoDFA;
 
@@ -389,7 +389,7 @@ public class Parser {
         return text(token);
     }
 
-    private Expression nextPrimaryExpression() {
+    private Expression primaryExpression() {
         long t = peek();
         switch (kind(t)) {
             case Lexer.TK_IDENTIFIER ->{}

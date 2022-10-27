@@ -16,7 +16,7 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.aksl.ast;
+package icyllis.akashigi.aksl.ir;
 
 /**
  * Represents a top-level element (e.g. function or global variable) in a program.
