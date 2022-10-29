@@ -70,7 +70,7 @@ public final class BinaryExpression extends Expression {
         Type rightType = outTypes[1];
         Type resultType = outTypes[2];
 
-        if (isAssignment && leftType.componentType().isOpaque()) {
+        if (isAssignment && leftType.getComponentType().isOpaque()) {
             context.error(position, "assignments to opaque type '" + left.type().displayName() +
                     "' are not permitted");
             return null;

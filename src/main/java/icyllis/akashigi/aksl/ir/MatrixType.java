@@ -26,11 +26,11 @@ public final class MatrixType extends Type {
     private final byte mColumns;
     private final byte mRows;
 
-    MatrixType(String name, String abbrev, Type componentType, int columns, int rows) {
-        super(name, abbrev, TYPE_KIND_MATRIX);
+    MatrixType(String name, String desc, Type componentType, int columns, int rows) {
+        super(name, desc, TYPE_KIND_MATRIX);
         assert (rows >= 2 && rows <= 4);
         assert (columns >= 2 && columns <= 4);
-        assert (abbrev.equals(componentType.abbrev() + columns + "" + rows));
+        assert (desc.equals(componentType.desc() + columns + "" + rows));
         assert (name.equals(componentType.name() + columns + "x" + rows));
         mComponentType = (ScalarType) componentType;
         mColumns = (byte) columns;
@@ -44,7 +44,7 @@ public final class MatrixType extends Type {
 
     @Nonnull
     @Override
-    public ScalarType componentType() {
+    public ScalarType getComponentType() {
         return mComponentType;
     }
 

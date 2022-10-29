@@ -261,50 +261,66 @@ public final class MathUtil {
     }
 
     /**
-     * Returns {@code true} if {@code x} represents a power of two.
+     * Returns {@code true} if {@code x} is a power of 2. Asserts {@code x > 0}.
      */
     public static boolean isPow2(int x) {
         assert x > 0;
-        return (x & (x - 1)) == 0;
+        return (x & x - 1) == 0;
     }
 
+    /**
+     * Returns the greatest common divisor of {@code a, b}. Asserts {@code a >= 0 && b >= 0}.
+     * <p>
+     * See <a href="https://github.com/google/guava/blob/master/guava/src/com/google/common/math/IntMath.java">
+     * IntMath</a>.
+     */
     public static int gcd(int a, int b) {
-        return b == 0 ? a : gcd(b, a % b);
+        assert a >= 0 && b >= 0;
+        if (a == 0) return b;
+        if (b == 0) return a;
+        int aTwos = Integer.numberOfTrailingZeros(a);
+        a >>= aTwos;
+        int bTwos = Integer.numberOfTrailingZeros(b);
+        b >>= bTwos;
+        while (a != b) {
+            int delta = a - b;
+            int minDeltaOrZero = delta & (delta >> (Integer.SIZE - 1));
+            a = delta - minDeltaOrZero - minDeltaOrZero;
+            b += minDeltaOrZero;
+            a >>= Integer.numberOfTrailingZeros(a);
+        }
+        return a << Math.min(aTwos, bTwos);
     }
 
-    public static int quickPow(int a, int x) {
-        int i = 1;
-        while (x != 0) {
-            if ((x & 1) == 1)
-                i *= a;
+    /**
+     * Returns {@code a^b}.
+     */
+    public static int quickPow(int a, int b) {
+        int res = 1;
+        for (; b != 0; b >>= 1) {
+            if ((b & 1) != 0)
+                res *= a;
             a *= a;
-            x >>= 1;
         }
-        return i;
+        return res;
     }
 
-    // a^x % mod
-    public static int quickModPow(int a, int x, int mod) {
-        int i = 1;
-        while (x != 0) {
-            if ((x & 1) == 1)
-                i = quickModMul(i, a, mod);
-            a = quickModMul(a, a, mod);
-            x >>= 1;
-        }
-        return i;
+    /**
+     * Returns {@code a^b mod m}.
+     */
+    public static long quickModPow(long a, long b, int m) {
+        assert a > 0 && a <= Integer.MAX_VALUE;
+        assert b > 0 && b <= Integer.MAX_VALUE;
+        long res = 1;
+        for (; b != 0; b >>= 1, a = a * a % m)
+            if ((b & 1) != 0) res = res * a % m;
+        return res;
     }
 
-    // a * b % mod
-    public static int quickModMul(int a, int b, int mod) {
-        int i = 0;
-        while (b != 0) {
-            if ((b & 1) == 1)
-                i = (i + a) % mod;
-            a = (a << 1) % mod;
-            b >>= 1;
-        }
-        return i;
+    public static long quickModMul(long a, long b, int m) {
+        assert a > 0 && a <= Integer.MAX_VALUE;
+        assert b > 0 && b <= Integer.MAX_VALUE;
+        return a * b % m;
     }
 
     private MathUtil() {

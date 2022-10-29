@@ -79,16 +79,16 @@ public class Type extends Symbol {
             TEXTURE_ACCESS_WRITE = 2,       // writeonly image2D (GLSL), texture2d<access::write> (Metal)
             TEXTURE_ACCESS_READ_WRITE = 3;  // image2D (GLSL), RWTexture2D (HLSL), texture2d<access::read_write> (Metal)
 
-    private final String mAbbrev;
+    private final String mDesc;
     private final byte mTypeKind;
 
-    Type(String name, String abbrev, byte kind) {
-        this(name, abbrev, kind, -1);
+    Type(String name, String desc, byte kind) {
+        this(name, desc, kind, -1);
     }
 
-    Type(String name, String abbrev, byte kind, int position) {
+    Type(String name, String desc, byte kind, int position) {
         super(position, KIND_TYPE, name, null);
-        mAbbrev = abbrev;
+        mDesc = desc;
         mTypeKind = kind;
         mType = this;
     }
@@ -122,19 +122,19 @@ public class Type extends Symbol {
      * Create a matrix type.
      */
     @Nonnull
-    public static Type makeMatrixType(String name, String abbrev, Type componentType,
+    public static Type makeMatrixType(String name, String desc, Type componentType,
                                       int columns, int rows) {
-        return new MatrixType(name, abbrev, componentType, columns, rows);
+        return new MatrixType(name, desc, componentType, columns, rows);
     }
 
     /**
      * Create a texture/image/sampler type. Includes images, textures without sampler,
      * textures with sampler and pure samplers.
      * <ul>
-     * <li>isSampled=true,hasSampler=true: combined texture sampler (e.g. sampler2D)</li>
-     * <li>isSampled=true,hasSampler=false: pure texture (e.g. texture2D)</li>
-     * <li>isSampled=false,hasSampler=true: pure sampler (e.g. sampler)</li>
-     * <li>isSampled=false,hasSampler=false: image or subpass (e.g. image2D)</li>
+     * <li>isSampled=true,isSampler=true: combined texture sampler (e.g. sampler2D)</li>
+     * <li>isSampled=true,isSampler=false: pure texture (e.g. texture2D)</li>
+     * <li>isSampled=false,isSampler=true: pure sampler (e.g. sampler)</li>
+     * <li>isSampled=false,isSampler=false: image or subpass (e.g. image2D)</li>
      * </ul>
      * isShadow: True for samplers that sample a depth texture with comparison (e.g.
      * samplerShadow, sampler2DShadow, HLSL's SamplerComparisonState).
@@ -143,37 +143,80 @@ public class Type extends Symbol {
      * @param dimensions    SpvDim (e.g. {@link Spv#SpvDim1D})
      */
     @Nonnull
-    public static Type makeOpaqueType(String name, Type componentType, int dimensions,
-                                      boolean isShadow, boolean isArrayed,
-                                      boolean isMultisampled, boolean isSampled, boolean hasSampler) {
-        return new OpaqueType(name, componentType, dimensions, isShadow, isArrayed,
-                isMultisampled, isSampled, hasSampler);
+    public static Type makeOpaqueType(String name, String desc, Type componentType, int dimensions,
+                                      boolean isShadow, boolean isArrayed, boolean isMultisampled,
+                                      boolean isSampled, boolean isSampler) {
+        return new OpaqueType(name, desc, componentType, dimensions, isShadow, isArrayed,
+                isMultisampled, isSampled, isSampler);
+    }
+
+    /**
+     * Create an image or subpass type.
+     */
+    @Nonnull
+    public static Type makeImageType(String name, String desc, Type componentType, int dimensions,
+                                     boolean isArrayed, boolean isMultisampled) {
+        assert (componentType.isScalar());
+        return makeOpaqueType(name, desc, componentType, dimensions, /*isShadow=*/false, isArrayed,
+                isMultisampled, /*isSampled=*/false, /*isSampler*/false);
+    }
+
+    /**
+     * Create a pure texture type.
+     */
+    @Nonnull
+    public static Type makeTextureType(String name, String desc, Type componentType, int dimensions,
+                                       boolean isArrayed, boolean isMultisampled) {
+        assert (componentType.isScalar());
+        return makeOpaqueType(name, desc, componentType, dimensions, /*isShadow=*/false, isArrayed,
+                isMultisampled, /*isSampled=*/true, /*isSampler*/false);
+    }
+
+    /**
+     * Create a pure sampler type.
+     */
+    @Nonnull
+    public static Type makeSamplerType(String name, String desc, Type componentType, boolean isShadow) {
+        assert (componentType.isVoid());
+        return makeOpaqueType(name, desc, componentType, /*dimensions*/-1, isShadow, /*isArrayed*/false,
+                /*isMultisampled*/false, /*isSampled=*/false, /*isSampler*/true);
+    }
+
+    /**
+     * Create a combined texture sampler type.
+     */
+    @Nonnull
+    public static Type makeCombinedType(String name, String desc, Type componentType, int dimensions,
+                                        boolean isShadow, boolean isArrayed, boolean isMultisampled) {
+        assert (componentType.isScalar());
+        return makeOpaqueType(name, desc, componentType, dimensions, isShadow, isArrayed,
+                isMultisampled, /*isSampled=*/true, /*isSampler*/true);
     }
 
     /**
      * Create a scalar type.
      */
     @Nonnull
-    public static Type makeScalarType(String name, String abbrev, byte scalarKind,
+    public static Type makeScalarType(String name, String desc, byte scalarKind,
                                       int priority, int bitWidth) {
-        return new ScalarType(name, abbrev, scalarKind, priority, bitWidth);
+        return new ScalarType(name, desc, scalarKind, priority, bitWidth);
     }
 
     /**
      * Create a "special" type with the given name.
      */
     @Nonnull
-    public static Type makeSpecialType(String name, String abbrev, byte typeKind) {
-        return new Type(name, abbrev, typeKind);
+    public static Type makeSpecialType(String name, String desc, byte typeKind) {
+        return new Type(name, desc, typeKind);
     }
 
     /**
      * Create a vector type.
      */
     @Nonnull
-    public static Type makeVectorType(String name, String abbrev, Type componentType,
+    public static Type makeVectorType(String name, String desc, Type componentType,
                                       int vectorSize) {
-        return new VectorType(name, abbrev, componentType, vectorSize);
+        return new VectorType(name, desc, componentType, vectorSize);
     }
 
     /**
@@ -191,7 +234,7 @@ public class Type extends Symbol {
      * itself.
      */
     @Nonnull
-    public Type componentType() {
+    public Type getComponentType() {
         return this;
     }
 
@@ -203,11 +246,11 @@ public class Type extends Symbol {
     }
 
     /**
-     * Returns an abbreviated name of the type, meant for name-mangling. (e.g. float4x4 -> f44)
+     * Returns a descriptor of the type, meant for name-mangling. (e.g. float4x4 -> f44)
      */
     @Nonnull
-    public final String abbrev() {
-        return mAbbrev;
+    public final String desc() {
+        return mDesc;
     }
 
     /**
@@ -229,7 +272,7 @@ public class Type extends Symbol {
      * <br>
      * (float, 10) -> "float[10]"
      * <br>
-     * (int, {@link #UNSIZED_ARRAY_SIZE}) -> "int[]"
+     * (int4, {@link #UNSIZED_ARRAY_SIZE}) -> "int4[]"
      */
     @Nonnull
     public final String getArrayName(int arraySize) {
@@ -361,7 +404,7 @@ public class Type extends Symbol {
             if (columns() != other.columns()) {
                 return CoercionCost.impossible();
             }
-            return componentType().coercionCost(other.componentType());
+            return getComponentType().coercionCost(other.getComponentType());
         }
         if (isNumber() && other.isNumber()) {
             if (isLiteral() && isInteger()) {
@@ -509,7 +552,7 @@ public class Type extends Symbol {
     }
 
     public final boolean hasPrecision() {
-        return componentType().isNumber() || isCombinedSampler();
+        return getComponentType().isNumber() || isCombinedSampler();
     }
 
     public final boolean highPrecision() {
@@ -723,7 +766,7 @@ public class Type extends Symbol {
         private final Type mTargetType;
 
         AliasType(String name, Type targetType) {
-            super(name, targetType.abbrev(), targetType.typeKind());
+            super(name, targetType.desc(), targetType.typeKind());
             mTargetType = targetType;
         }
 
@@ -735,8 +778,8 @@ public class Type extends Symbol {
 
         @Nonnull
         @Override
-        public Type componentType() {
-            return mTargetType.componentType();
+        public Type getComponentType() {
+            return mTargetType.getComponentType();
         }
 
         @Override

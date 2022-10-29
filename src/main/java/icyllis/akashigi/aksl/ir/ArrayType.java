@@ -26,7 +26,7 @@ public final class ArrayType extends Type {
     private final int mArraySize;
 
     ArrayType(String name, Type componentType, int arraySize) {
-        super(name, componentType.abbrev(), TYPE_KIND_ARRAY);
+        super(name, componentType.desc(), TYPE_KIND_ARRAY);
         assert (arraySize == UNSIZED_ARRAY_SIZE || arraySize > 0);
         // Disallow multi-dimensional arrays (Vulkan).
         assert !(componentType instanceof ArrayType);
@@ -46,7 +46,7 @@ public final class ArrayType extends Type {
 
     @Nonnull
     @Override
-    public Type componentType() {
+    public Type getComponentType() {
         return mComponentType;
     }
 

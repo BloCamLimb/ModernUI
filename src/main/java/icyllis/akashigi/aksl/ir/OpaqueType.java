@@ -22,30 +22,30 @@ import javax.annotation.Nonnull;
 
 public final class OpaqueType extends Type {
 
-    private final ScalarType mComponentType;
+    private final Type mComponentType;
     private final int mDimensions;
     private final boolean mIsShadow;
     private final boolean mIsArrayed;
     private final boolean mIsMultisampled;
     private final boolean mIsSampled;
-    private final boolean mHasSampler;
+    private final boolean mIsSampler;
 
-    OpaqueType(String name, Type componentType, int dimensions, boolean isShadow,
-               boolean isArrayed, boolean isMultisampled, boolean isSampled,
-               boolean hasSampler) {
-        super(name, "T", TYPE_KIND_OPAQUE); //TODO detailed abbrev
-        mComponentType = (ScalarType) componentType;
+    OpaqueType(String name, String desc, Type componentType, int dimensions,
+               boolean isShadow, boolean isArrayed, boolean isMultisampled,
+               boolean isSampled, boolean isSampler) {
+        super(name, desc, TYPE_KIND_OPAQUE);
+        mComponentType = componentType;
         mDimensions = dimensions;
         mIsArrayed = isArrayed;
         mIsMultisampled = isMultisampled;
         mIsSampled = isSampled;
-        mHasSampler = hasSampler;
+        mIsSampler = isSampler;
         mIsShadow = isShadow;
     }
 
     @Nonnull
     @Override
-    public ScalarType componentType() {
+    public Type getComponentType() {
         return mComponentType;
     }
 
@@ -76,11 +76,11 @@ public final class OpaqueType extends Type {
 
     @Override
     public boolean isCombinedSampler() {
-        return mIsSampled && mHasSampler;
+        return mIsSampled && mIsSampler;
     }
 
     @Override
     public boolean isPureSampler() {
-        return !mIsSampled && mHasSampler;
+        return !mIsSampled && mIsSampler;
     }
 }

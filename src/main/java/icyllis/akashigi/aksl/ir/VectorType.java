@@ -25,10 +25,10 @@ public final class VectorType extends Type {
     private final ScalarType mComponentType;
     private final byte mVectorSize;
 
-    VectorType(String name, String abbrev, Type componentType, int vectorSize) {
-        super(name, abbrev, TYPE_KIND_VECTOR);
+    VectorType(String name, String desc, Type componentType, int vectorSize) {
+        super(name, desc, TYPE_KIND_VECTOR);
         assert (vectorSize >= 2 && vectorSize <= 4);
-        assert (abbrev.equals(componentType.abbrev() + vectorSize));
+        assert (desc.equals(componentType.desc() + vectorSize));
         assert (name.equals(componentType.name() + vectorSize));
         mComponentType = (ScalarType) componentType;
         mVectorSize = (byte) vectorSize;
@@ -41,7 +41,7 @@ public final class VectorType extends Type {
 
     @Nonnull
     @Override
-    public ScalarType componentType() {
+    public ScalarType getComponentType() {
         return mComponentType;
     }
 

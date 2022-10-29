@@ -31,8 +31,8 @@ import javax.annotation.Nonnull;
  */
 public class Compiler {
 
-    public static final String POISON_TAG = "<POISON>"; // bad value
     public static final String INVALID_TAG = "<INVALID>";
+    public static final String POISON_TAG = "<POISON>"; // bad value
 
     private final CompilerErrorHandler mErrorHandler = new CompilerErrorHandler();
 

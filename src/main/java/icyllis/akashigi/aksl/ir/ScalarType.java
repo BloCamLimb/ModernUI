@@ -24,9 +24,9 @@ public final class ScalarType extends Type {
     private final byte mPriority;
     private final byte mBitWidth;
 
-    ScalarType(String name, String abbrev, byte scalarKind, int priority, int bitWidth) {
-        super(name, abbrev, TYPE_KIND_SCALAR);
-        assert (abbrev.length() == 1);
+    ScalarType(String name, String desc, byte scalarKind, int priority, int bitWidth) {
+        super(name, desc, TYPE_KIND_SCALAR);
+        assert (desc.length() == 1);
         mScalarKind = scalarKind;
         mPriority = (byte) priority;
         mBitWidth = (byte) bitWidth;

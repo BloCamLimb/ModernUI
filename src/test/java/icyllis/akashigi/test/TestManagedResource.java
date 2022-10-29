@@ -74,7 +74,7 @@ public class TestManagedResource {
         pw.println("Max vertex stride: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
         pw.println("Max label length: " + GLCore.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
 
-        pw.println("0f int bits: " + (-0.0f == 0.0f));
+        pw.println("quickModPow: " + MathUtil.quickModPow(95959595, 87878787, 998244353));
 
         pw.println("BinaryFormats: " + Arrays.toString(((GLCaps)dContext.getCaps()).mProgramBinaryFormats));
 

@@ -395,8 +395,8 @@ public enum Operator {
 
         // Boolean types only support the operators listed above (, = == != || && ^^).
         // If we've gotten this far with a boolean, we have an unsupported operator.
-        final Type leftComponentType = left.componentType();
-        final Type rightComponentType = right.componentType();
+        final Type leftComponentType = left.getComponentType();
+        final Type rightComponentType = right.getComponentType();
         if (leftComponentType.isBoolean() || rightComponentType.isBoolean()) {
             return false;
         }
@@ -404,7 +404,7 @@ public enum Operator {
         boolean isAssignment = isAssignment();
         if (isMatrixMultiply(left, right)) {  // left * right
             // Determine final component type.
-            if (!determineBinaryType(context, left.componentType(), right.componentType(),
+            if (!determineBinaryType(context, left.getComponentType(), right.getComponentType(),
                     outTypes)) {
                 return false;
             }
@@ -438,7 +438,7 @@ public enum Operator {
 
         if (leftIsVectorOrMatrix && validMatrixOrVectorOp && right.isScalar()) {
             // Determine final component type.
-            if (!determineBinaryType(context, left.componentType(), right,
+            if (!determineBinaryType(context, left.getComponentType(), right,
                     outTypes)) {
                 return false;
             }
@@ -454,7 +454,7 @@ public enum Operator {
 
         if (!isAssignment && rightIsVectorOrMatrix && validMatrixOrVectorOp && left.isScalar()) {
             // Determine final component type.
-            if (!determineBinaryType(context, left, right.componentType(),
+            if (!determineBinaryType(context, left, right.getComponentType(),
                     outTypes)) {
                 return false;
             }
