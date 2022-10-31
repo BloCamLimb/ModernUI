@@ -256,7 +256,7 @@ public class TestManagedResource {
         pw.println(Arrays.toString(p4));
 
 
-        Camera.Camera3D camera3D = new Camera.Camera3D();
+        icyllis.akashigi.test.Camera.Camera3D camera3D = new icyllis.akashigi.test.Camera.Camera3D();
         Matrix4 transformMat = Matrix4.identity();
         transformMat.preRotateY(MathUtil.PI_O_3);
         Matrix3 outMatrix = new Matrix3();
