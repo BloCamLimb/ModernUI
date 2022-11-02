@@ -235,35 +235,36 @@ public final class MuiForgeApi {
         return calcGuiScales(window.getWidth(), window.getHeight());
     }
 
+    // V3
     public static int calcGuiScales(int framebufferWidth, int framebufferHeight) {
         int w = framebufferWidth / 16;
         int h = framebufferHeight / 9;
         int base = Math.min(w, h);
 
         int min;
-        int max = Mth.clamp(Math.min(framebufferWidth / 12, h) / 27, 1, 9);
+        int max = Mth.clamp(Math.min(framebufferWidth / 12, h) / 26, 1, 9);
         if (max > 1) {
             min = Mth.clamp(base / 64, 2, 9);
         } else {
             min = 1;
         }
 
-        int best;
+        int auto;
         if (min > 1) {
             double step = base > 150 ? 40. : base > 100 ? 36. : 32.;
             int i = (int) (base / step);
             int j = (int) (Math.max(w, h) / step);
             double v1 = base / (i * 32.);
             if (v1 > 40 / 32. || j > i) {
-                best = Math.min(max, i + 1);
+                auto = Mth.clamp(i + 1, min, max);
             } else {
-                best = Math.min(max, i);
+                auto = Mth.clamp(i, min, max);
             }
         } else {
-            best = 1;
+            auto = 1;
         }
-
-        return min << 8 | best << 4 | max;
+        assert min <= auto && auto <= max;
+        return min << 8 | auto << 4 | max;
     }
 
     /**
