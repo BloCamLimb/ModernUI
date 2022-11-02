@@ -143,42 +143,6 @@ public class TestMain {
         String name = Configuration.OPENGL_LIBRARY_NAME.get("null");
         LOGGER.info("{} {}", name, Paths.get(name).isAbsolute());
         */
-        int[] codePoints = {0x1f469, 0x1f3fc, 0x200d, 0x2764, 0xfe0f, 0x200d, 0x1f48b, 0x200d, 0x1f469, 0x1f3fd};
-        CharSequenceBuilder bufferBuilder = new CharSequenceBuilder();
-        for (int cp : codePoints) {
-            bufferBuilder.addCodePoint(cp);
-        }
-        for (int cp : codePoints) {
-            LOGGER.info(MARKER, "0x{}: Emoji:{}, EmojiModifier:{}, EmojiModifierBase:{}, Combining:{}, " +
-                            "VariationSelector:{}", Integer.toHexString(cp),
-                    Emoji.isEmoji(cp), Emoji.isEmojiModifier(cp), Emoji.isEmojiModifierBase(cp),
-                    FontCollection.isCombining(cp), FontCollection.isVariationSelector(cp));
-        }
-        String text = new String(codePoints, 0, codePoints.length);
-        GraphemeBreak.forTextRun(text.toCharArray(), Locale.getDefault(), 0, text.length(), (s, e) -> {
-            LOGGER.info(MARKER, "{}, {} to {}", text, s, e);
-        });
-        LOGGER.info(MARKER, "ZWSP Combining:{}", Emoji.isEmoji(0x1F918));
-        LOGGER.info(MARKER, "HashCodeEquals{}", bufferBuilder.hashCode() == text.hashCode());
-
-        breakGraphemes("\u2b1b\u200c");
-
-        Pattern pattern = Pattern.compile("(\\:(\\w|\\+|\\-)+\\:)(?=|[\\!\\.\\?]|$)");
-        String[] testStr = {
-                ":any-non-whitespace:",
-                ":kudos:",
-                ":text1:sample2:",
-                ":@(1@#\\$@SD: :s:",
-                ":nospace::inbetween: because there are 2 colons in the middle",
-                ":nospace:middle:nospace:`",
-        };
-        for (String test : testStr) {
-            Matcher matcher = pattern.matcher(test);
-            LOGGER.info("Test:{}", test);
-            while (matcher.find()) {
-                LOGGER.info("Index:{} to {}, Group:{}", matcher.start(), matcher.end(), matcher.group());
-            }
-        }
 
         testMarkdownParsing();
 
@@ -664,6 +628,45 @@ public class TestMain {
         s = "Info";
         textPaint.setFontSize(24);
         canvas.drawText(s, 0, s.length(), 1310, 56, textPaint);
+    }
+
+    private static void testChars() {
+        int[] codePoints = {0x1f469, 0x1f3fc, 0x200d, 0x2764, 0xfe0f, 0x200d, 0x1f48b, 0x200d, 0x1f469, 0x1f3fd};
+        CharSequenceBuilder bufferBuilder = new CharSequenceBuilder();
+        for (int cp : codePoints) {
+            bufferBuilder.addCodePoint(cp);
+        }
+        for (int cp : codePoints) {
+            LOGGER.info(MARKER, "0x{}: Emoji:{}, EmojiModifier:{}, EmojiModifierBase:{}, Combining:{}, " +
+                            "VariationSelector:{}", Integer.toHexString(cp),
+                    Emoji.isEmoji(cp), Emoji.isEmojiModifier(cp), Emoji.isEmojiModifierBase(cp),
+                    FontCollection.isCombining(cp), FontCollection.isVariationSelector(cp));
+        }
+        String text = new String(codePoints, 0, codePoints.length);
+        GraphemeBreak.forTextRun(text.toCharArray(), Locale.getDefault(), 0, text.length(), (s, e) -> {
+            LOGGER.info(MARKER, "{}, {} to {}", text, s, e);
+        });
+        LOGGER.info(MARKER, "ZWSP Combining:{}", Emoji.isEmoji(0x1F918));
+        LOGGER.info(MARKER, "HashCodeEquals{}", bufferBuilder.hashCode() == text.hashCode());
+
+        breakGraphemes("\u2b1b\u200c");
+
+        Pattern pattern = Pattern.compile("(\\:(\\w|\\+|\\-)+\\:)(?=|[\\!\\.\\?]|$)");
+        String[] testStr = {
+                ":any-non-whitespace:",
+                ":kudos:",
+                ":text1:sample2:",
+                ":@(1@#\\$@SD: :s:",
+                ":nospace::inbetween: because there are 2 colons in the middle",
+                ":nospace:middle:nospace:`",
+        };
+        for (String test : testStr) {
+            Matcher matcher = pattern.matcher(test);
+            LOGGER.info("Test:{}", test);
+            while (matcher.find()) {
+                LOGGER.info("Index:{} to {}, Group:{}", matcher.start(), matcher.end(), matcher.group());
+            }
+        }
     }
 
     private static int search(int[] a, int pos) {
