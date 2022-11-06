@@ -34,138 +34,129 @@ public final class TopologicalSort {
      * cycles. Otherwise, {@link IllegalStateException} will be thrown and the contents of
      * 'graph' will be in some arbitrary state.
      *
-     * @param graph    the directed acyclic graph to sort
-     * @param accessor the data accessor
-     * @param <T>      the node type of the graph
+     * @param graph   the directed acyclic graph to sort
+     * @param adapter the data adapter
+     * @param <T>     the node type of the graph
      * @throws IllegalStateException if the graph contains loops
      */
-    public static <T> void topologicalSort(@Nonnull List<T> graph, @Nonnull Accessor<T> accessor) {
-        assert checkAllUnmarked(graph, accessor);
+    public static <T> void topologicalSort(@Nonnull List<T> graph, @Nonnull Adapter<T> adapter) {
+        assert checkAllUnmarked(graph, adapter);
 
         int index = 0;
 
         // Start a DFS from each node in the graph.
         for (T node : graph) {
             // Output this node after all the nodes it depends on have been output.
-            index = dfsVisit(node, accessor, index);
+            index = dfsVisit(node, adapter, index);
         }
 
         assert index == graph.size();
 
         // Reorder the array given the output order.
         for (int i = 0, e = graph.size(); i < e; i++) {
-            for (int j = accessor.getIndex(graph.get(i)); j != i; ) {
+            for (int j = adapter.getIndex(graph.get(i)); j != i; ) {
                 T temp = graph.set(j, graph.get(i));
                 graph.set(i, temp);
-                j = accessor.getIndex(temp);
+                j = adapter.getIndex(temp);
             }
         }
 
-        assert cleanExit(graph, accessor);
+        assert cleanExit(graph, adapter);
     }
 
     /**
      * Recursively visit a node and all the other nodes it depends on.
      */
-    private static <T> int dfsVisit(final T node, @Nonnull Accessor<T> accessor, int index) {
-        if (accessor.isInResult(node)) {
+    private static <T> int dfsVisit(final T node, @Nonnull Adapter<T> adapter, int index) {
+        if (adapter.getIndex(node) != -1) {
             // If the node under consideration has been already been output it means it
             // (and all the nodes it depends on) are already in 'result'.
             return index;
         }
-        if (accessor.isTempMarked(node)) {
+        if (adapter.isTempMarked(node)) {
             // There was a loop
             throw new IllegalStateException();
         }
-        final List<T> edges = accessor.getIncomingEdges(node);
+        final List<T> edges = adapter.getIncomingEdges(node);
         if (edges != null && !edges.isEmpty()) {
             // Temporarily mark the node
-            accessor.setTempMarked(node, true);
+            adapter.setTempMarked(node, true);
             // Recursively dfs all the node's edges
             for (T edge : edges) {
-                index = dfsVisit(edge, accessor, index);
+                index = dfsVisit(edge, adapter, index);
             }
             // Unmark the node from the temporary list
-            accessor.setTempMarked(node, false);
+            adapter.setTempMarked(node, false);
         }
         // Mark this node as output
-        accessor.setIndex(node, index);
+        adapter.setIndex(node, index);
         return index + 1;
     }
 
-    private static <T> boolean checkAllUnmarked(@Nonnull List<T> graph, @Nonnull Accessor<T> accessor) {
+    private static <T> boolean checkAllUnmarked(@Nonnull List<T> graph, @Nonnull Adapter<T> adapter) {
         for (final T node : graph) {
-            assert !accessor.isInResult(node);
-            assert !accessor.isTempMarked(node);
+            assert adapter.getIndex(node) == -1;
+            assert !adapter.isTempMarked(node);
         }
         return true;
     }
 
-    private static <T> boolean cleanExit(@Nonnull List<T> graph, @Nonnull Accessor<T> accessor) {
+    private static <T> boolean cleanExit(@Nonnull List<T> graph, @Nonnull Adapter<T> adapter) {
         for (int i = 0, e = graph.size(); i < e; i++) {
             final T node = graph.get(i);
-            assert accessor.getIndex(node) == i;
-            assert accessor.isInResult(node);
-            assert !accessor.isTempMarked(node);
+            assert adapter.getIndex(node) == i;
+            assert !adapter.isTempMarked(node);
         }
         return true;
     }
 
     /**
-     * Direct access to node data. This removes the overhead of the iteration.
+     * The data adapter. This removes the overhead of creating new data structures and searching for elements.
      *
      * @param <T> the node type of the graph
      */
-    public interface Accessor<T> {
+    public interface Adapter<T> {
 
         /**
-         * Stores the index into the node and {@link #isInResult(Object)} will return true.
-         * The index may be retrieved by {@link #getIndex(Object)}.
+         * The sort has already seen and added the node to the result. The index may be retrieved
+         * by {@link #getIndex(Object)}.
          *
-         * @param node  the node of the graph
+         * @param node  a node of the graph
          * @param index the index of the node in the result
          */
         void setIndex(T node, int index);
 
         /**
          * Retrieves the index previously stored into the node by {@link #setIndex(Object, int)}.
+         * This method <em>must</em> return -1 initially, and return the actual index once
+         * {@link #setIndex(Object, int)} is called during the sort.
          *
-         * @param node the node of the graph
+         * @param node a node of the graph
          * @return the index of the node in the result
          */
         int getIndex(T node);
 
         /**
-         * Returns whether the sort has already seen and added the node to the result.
-         * This method should return false before each sort starts, and return true after
-         * {@link #setIndex(Object, int)} is called in the sort.
-         *
-         * @param node the node of the graph
-         * @return true if the node has result in the sort
-         */
-        boolean isInResult(T node);
-
-        /**
          * Sets a transient state to indicate that it is visited during sorting, used to check
          * cyclic dependencies. The state may be retrieved by {@link #isTempMarked(Object)}.
          *
-         * @param node   the node of the graph
-         * @param marked if the node is temporarily marked or not
+         * @param node   a node of the graph
+         * @param marked whether the node is temporarily marked or not
          */
         void setTempMarked(T node, boolean marked);
 
         /**
          * Retrieves the state previously set the node by {@link #setTempMarked(Object, boolean)}.
          *
-         * @param node the node of the graph
-         * @return if the node is temporarily marked or not
+         * @param node a node of the graph
+         * @return whether the node is temporarily marked or not
          */
         boolean isTempMarked(T node);
 
         /**
          * Returns any incoming edges (dependencies) from the given node.
          *
-         * @param node the node of the graph
+         * @param node a node of the graph
          * @return a list containing any incoming edges, or null if there are none
          */
         List<T> getIncomingEdges(T node);

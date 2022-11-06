@@ -270,9 +270,9 @@ public final class MathUtil {
 
     /**
      * Returns the greatest common divisor of {@code a, b}. Asserts {@code a >= 0 && b >= 0}.
-     * <p>
-     * See <a href="https://github.com/google/guava/blob/master/guava/src/com/google/common/math/IntMath.java">
-     * IntMath</a>.
+     *
+     * @see <a href="https://github.com/google/guava/blob/master/guava/src/com/google/common/math/IntMath.java">
+     * IntMath</a>
      */
     public static int gcd(int a, int b) {
         assert a >= 0 && b >= 0;
@@ -297,11 +297,8 @@ public final class MathUtil {
      */
     public static int quickPow(int a, int b) {
         int res = 1;
-        for (; b != 0; b >>= 1) {
-            if ((b & 1) != 0)
-                res *= a;
-            a *= a;
-        }
+        for (; b != 0; b >>= 1, a *= a)
+            if ((b & 1) != 0) res *= a;
         return res;
     }
 
@@ -321,6 +318,107 @@ public final class MathUtil {
         assert a > 0 && a <= Integer.MAX_VALUE;
         assert b > 0 && b <= Integer.MAX_VALUE;
         return a * b % m;
+    }
+
+    public static int upperBound(int[] a, int key) {
+        return upperBound(a, 0, a.length, key);
+    }
+
+    public static int upperBound(int[] a, int start, int end, int key) {
+        assert (start | end - start | a.length - end) >= 0;
+        int low = start, high = end - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (a[mid] > key) high = mid - 1;
+            else low = mid + 1;
+        }
+        return low;
+    }
+
+    public static int upperBound(long[] a, long key) {
+        return upperBound(a, 0, a.length, key);
+    }
+
+    public static int upperBound(long[] a, int start, int end, long key) {
+        assert (start | end - start | a.length - end) >= 0;
+        int low = start, high = end - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (a[mid] > key) high = mid - 1;
+            else low = mid + 1;
+        }
+        return low;
+    }
+
+    public static int lowerBound(int[] a, int key) {
+        return lowerBound(a, 0, a.length, key);
+    }
+
+    public static int lowerBound(int[] a, int start, int end, int key) {
+        assert (start | end - start | a.length - end) >= 0;
+        int low = start, high = end - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (a[mid] < key) low = mid + 1;
+            else high = mid - 1;
+        }
+        return low;
+    }
+
+    public static int lowerBound(long[] a, long key) {
+        return lowerBound(a, 0, a.length, key);
+    }
+
+    public static int lowerBound(long[] a, int start, int end, long key) {
+        assert (start | end - start | a.length - end) >= 0;
+        int low = start, high = end - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (a[mid] < key) low = mid + 1;
+            else high = mid - 1;
+        }
+        return low;
+    }
+
+    /**
+     * Returns the length of the longest increasing subsequence (non-strictly,
+     * also known as longest non-decreasing subsequence).
+     * This algorithm has a time complexity of O(n log(n)).
+     */
+    public static int lengthOfLIS(int[] a, int n) {
+        assert n <= a.length;
+        if (n <= 1) return n;
+        int[] tail = new int[n];
+        int length = 1;
+        tail[0] = a[0];
+        for (int i = 1; i < n; i++) {
+            int v = a[i], idx = upperBound(tail, 0, length, v);
+            if (idx == length) tail[length++] = v;
+            else tail[idx] = v;
+        }
+        return length;
+    }
+
+    /**
+     * Returns the length of the longest increasing subsequence.
+     * This algorithm has a time complexity of O(n log(n)).
+     *
+     * @param strict strictly increasing or not
+     */
+    public static int lengthOfLIS(int[] a, int n, boolean strict) {
+        if (!strict) return lengthOfLIS(a, n);
+        // strict version only changes 'upperBound' to 'lowerBound'
+        assert n <= a.length;
+        if (n <= 1) return n;
+        int[] tail = new int[n];
+        int length = 1;
+        tail[0] = a[0];
+        for (int i = 1; i < n; i++) {
+            int v = a[i], idx = lowerBound(tail, 0, length, v);
+            if (idx == length) tail[length++] = v;
+            else tail[idx] = v;
+        }
+        return length;
     }
 
     private MathUtil() {

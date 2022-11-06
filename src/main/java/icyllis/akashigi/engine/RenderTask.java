@@ -66,21 +66,15 @@ public abstract class RenderTask extends RefCnt {
             IN_RESULT_FLAG = 0x10,  // Flag for topological sorting
             TEMP_MARK_FLAG = 0x20;  // Flag for topological sorting
 
-    static final TopologicalSort.Accessor<RenderTask> SORT_ACCESSOR = new TopologicalSort.Accessor<>() {
+    static final TopologicalSort.Adapter<RenderTask> SORT_ADAPTER = new TopologicalSort.Adapter<>() {
         @Override
         public void setIndex(@Nonnull RenderTask node, int index) {
             node.setIndex(index);
-            node.mFlags |= IN_RESULT_FLAG;
         }
 
         @Override
         public int getIndex(@Nonnull RenderTask node) {
             return node.getIndex();
-        }
-
-        @Override
-        public boolean isInResult(@Nonnull RenderTask node) {
-            return (node.mFlags & IN_RESULT_FLAG) != 0;
         }
 
         @Override
@@ -146,12 +140,14 @@ public abstract class RenderTask extends RefCnt {
     private void setIndex(int index) {
         assert (mFlags & IN_RESULT_FLAG) == 0;
         assert (index >= 0 && index < (1 << 26));
-        mFlags |= index << 6;
+        mFlags |= (index << 6) | IN_RESULT_FLAG;
     }
 
     private int getIndex() {
-        assert (mFlags & IN_RESULT_FLAG) != 0;
-        return mFlags >>> 6;
+        if ((mFlags & IN_RESULT_FLAG) != 0) {
+            return mFlags >>> 6;
+        }
+        return -1;
     }
 
     protected final void addTarget(@SharedPtr SurfaceProxy proxy) {

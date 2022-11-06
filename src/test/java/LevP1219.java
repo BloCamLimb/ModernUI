@@ -2,20 +2,36 @@ import java.util.Scanner;
 
 public class LevP1219 {
 
-    //TODO
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        int n = scanner.nextInt(), top = 0, kick = 0;
-        int[] a = new int[1001], b = new int[1001];
+        int n = scanner.nextInt();
+        int[] a = new int[n];
         for (int i = 0; i < n; i++)
             a[i] = scanner.nextInt();
-        a[n] = Integer.MAX_VALUE;
-        b[0] = n;
-        for (int i = n - 1; i >= 0; i--) {
-            while (top >= 0 && a[b[top]] < a[i]) top--;
-            kick += b[top] - i - 1;
-            b[++top] = i;
+        System.out.println(n - lengthOfLIS(a, n));
+    }
+
+    // longest non-decreasing subsequence
+    static int lengthOfLIS(int[] a, int n) {
+        if (n <= 1) return n;
+        int[] tail = new int[n];
+        int length = 1;
+        tail[0] = a[0];
+        for (int i = 1; i < n; i++) {
+            int v = a[i], idx = upperBound(tail, length, v);
+            if (idx == length) tail[length++] = v;
+            else tail[idx] = v;
         }
-        System.out.println(kick);
+        return length;
+    }
+
+    static int upperBound(int[] a, int end, int key) {
+        int low = 0, high = end - 1;
+        while (low <= high) {
+            int mid = (low + high) >>> 1;
+            if (a[mid] > key) high = mid - 1;
+            else low = mid + 1;
+        }
+        return low;
     }
 }

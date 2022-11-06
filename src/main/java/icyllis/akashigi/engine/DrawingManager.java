@@ -87,7 +87,7 @@ public class DrawingManager {
         closeTasks();
         mActiveOpsTask = null;
 
-        TopologicalSort.topologicalSort(mDAG, RenderTask.SORT_ACCESSOR);
+        TopologicalSort.topologicalSort(mDAG, RenderTask.SORT_ADAPTER);
 
         for (RenderTask task : mDAG) {
             task.gatherProxyIntervals(mResourceAllocator);
