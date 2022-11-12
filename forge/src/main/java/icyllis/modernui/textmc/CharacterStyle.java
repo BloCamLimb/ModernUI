@@ -44,9 +44,9 @@ public class CharacterStyle {
      *      11    EFFECT_MASK
      *     1      OBFUSCATED
      *     11111  LAYOUT_MASK
-     *    1       FAST_DIGIT_REPLACEMENT
+     *    1       DIGIT_REPLACEMENT
      *   1        BITMAP_REPLACEMENT
-     *  1         USE_PARAM_COLOR
+     *  1         IMPLICIT_COLOR
      * |--------|
      */
     /**
@@ -55,21 +55,16 @@ public class CharacterStyle {
     public static final int NORMAL = 0;
 
     /**
-     * 0xRRGGBB color mask.
-     */
-    public static final int COLOR_MASK = 0xFFFFFF;
-
-    /**
      * Bit flag used with fontStyle to request the bold style
      */
-    public static final int BOLD = 0x1000000;
+    public static final int BOLD_MASK = 0x1000000;
 
     /**
      * Bit flag used with fontStyle to request the italic style
      */
-    public static final int ITALIC = 0x2000000;
+    public static final int ITALIC_MASK = 0x2000000;
 
-    public static final int FONT_STYLE_MASK = BOLD | ITALIC;
+    public static final int FONT_STYLE_MASK = BOLD_MASK | ITALIC_MASK;
 
     /**
      * Bit mask representing underline effect
@@ -86,14 +81,9 @@ public class CharacterStyle {
     /**
      * Bit mask representing obfuscated characters rendering
      */
-    public static final int OBFUSCATED = 0x10000000;
+    public static final int OBFUSCATED_MASK = 0x10000000;
 
-    public static final int LAYOUT_MASK = FONT_STYLE_MASK | EFFECT_MASK | OBFUSCATED;
-
-    /*
-     * Whether from formatting codes (non-printing chars), or a {@link Style} object.
-     */
-    //public static final int FORMATTING_CODE = 0x20000000;
+    public static final int LAYOUT_MASK = FONT_STYLE_MASK | EFFECT_MASK | OBFUSCATED_MASK;
 
     /**
      * Represent to use fast digit replacement. Then advances will not change, just
@@ -102,20 +92,25 @@ public class CharacterStyle {
     public static final int FAST_DIGIT_REPLACEMENT = 0x20000000;
 
     /**
-     * Represent to use a color emoji or a bitmap.
+     * Represent to use a color emoji or a bitmap glyph.
      */
     public static final int BITMAP_REPLACEMENT = 0x40000000;
 
     /**
-     * Bit mask representing to use param color, then lower 24 bits are ignored.
+     * 0xRRGGBB color mask.
      */
-    public static final int NO_COLOR_SPECIFIED = 0x80000000;
+    public static final int COLOR_MASK = 0xFFFFFF;
 
     /**
-     * Full color means RGB mask with {@link #NO_COLOR_SPECIFIED}.
-     * If it has {@link #NO_COLOR_SPECIFIED}, then lower 24 bits are ignored (and it should be 0x000000).
+     * Bit mask representing to use input color, then lower 24 bits are ignored.
      */
-    public static final int FULL_COLOR_MASK = COLOR_MASK | NO_COLOR_SPECIFIED;
+    public static final int IMPLICIT_COLOR_MASK = 0x80000000;
+
+    /**
+     * Full color means RGB mask with {@link #IMPLICIT_COLOR_MASK}.
+     * If it has {@link #IMPLICIT_COLOR_MASK}, then lower 24 bits are ignored (and it should be 0x000000).
+     */
+    public static final int FULL_COLOR_MASK = COLOR_MASK | IMPLICIT_COLOR_MASK;
 
     /**
      * The index into the original string (i.e. with formatting codes) for the location of this formatting.
@@ -123,48 +118,44 @@ public class CharacterStyle {
     public final int mStringIndex;
 
     /**
-     * The index into the stripped string (i.e. with no formatting codes) of where this formatting would have appeared
+     * The index into the stripped string (i.e. with no formatting codes) of where this formatting would have appeared.
      */
     public final int mStripIndex;
 
     /**
-     * The style flags. Combination of {@link #NORMAL}, {@link #BOLD}, {@link #ITALIC}, {@link #UNDERLINE_MASK},
-     * {@link #STRIKETHROUGH_MASK}, {@link #OBFUSCATED} and {@link #FULL_COLOR_MASK}.
+     * The style flags. Combination of {@link #NORMAL}, {@link #BOLD_MASK}, {@link #ITALIC_MASK},
+     * {@link #UNDERLINE_MASK}, {@link #STRIKETHROUGH_MASK}, {@link #OBFUSCATED_MASK} and {@link #FULL_COLOR_MASK}.
      */
     private final int mFlags;
 
     @Deprecated
-    public CharacterStyle(int stringIndex, int stripIndex, Style style, boolean formattingCode) {
+    public CharacterStyle(int stringIndex, int stripIndex, Style style) {
         mStringIndex = stringIndex;
         mStripIndex = stripIndex;
-        int flags = getAppearanceFlags(style);
-        if (formattingCode) {
-            //flags |= FORMATTING_CODE;
-        }
-        mFlags = flags;
+        mFlags = flatten(style);
     }
 
     /**
-     * Normalize the given style to an int value that can produce a visual change.
+     * Pack the given style to an int value that can produce a visual change.
      * That is, full color, bold, italic, underline, strikethrough and obfuscated.
      *
-     * @param style style to parse
-     * @return a compact integer
-     * @see #affectsAppearance(Style, Style)
+     * @param style style to flatten
+     * @return a packed integer
+     * @see #isAppearanceAffecting(Style, Style)
      */
-    public static int getAppearanceFlags(@Nonnull Style style) {
+    public static int flatten(@Nonnull Style style) {
         int v = NORMAL;
         if (style.getColor() == null) {
-            v |= NO_COLOR_SPECIFIED;
+            v |= IMPLICIT_COLOR_MASK;
         } else {
             // RGB - 24 bit
             v |= style.getColor().getValue() & COLOR_MASK;
         }
         if (style.isBold()) {
-            v |= BOLD;
+            v |= BOLD_MASK;
         }
         if (style.isItalic()) {
-            v |= ITALIC;
+            v |= ITALIC_MASK;
         }
         if (style.isUnderlined()) {
             v |= UNDERLINE_MASK;
@@ -173,45 +164,30 @@ public class CharacterStyle {
             v |= STRIKETHROUGH_MASK;
         }
         if (style.isObfuscated()) {
-            v |= OBFUSCATED;
+            v |= OBFUSCATED_MASK;
         }
         return v;
     }
 
     /**
-     * Returns if two styles can produce a visual change. That is, appearance flags are different.
+     * Returns if two styles can produce a visual change. That is, appearance flags
+     * or font collection are different.
      *
-     * @see #getAppearanceFlags(Style)
+     * @see #flatten(Style)
      */
-    public static boolean affectsAppearance(@Nonnull Style a, @Nonnull Style b) {
-        return a != b && (a.isBold() != b.isBold() ||
-                a.isItalic() != b.isItalic() ||
-                a.isUnderlined() != b.isUnderlined() ||
-                a.isStrikethrough() != b.isStrikethrough() ||
-                a.isObfuscated() != b.isObfuscated() ||
-                !Objects.equals(a.getColor(), b.getColor()));
-    }
-
-    /**
-     * Returns if two styles can produce any character effect. That is, exclude vanilla font setting.
-     * This will produce a new style run and break the grapheme cluster.
-     */
-    public static boolean affectsCharacter(@Nonnull Style a, @Nonnull Style b) {
-        // just exclude Style.getFont()
+    public static boolean isAppearanceAffecting(@Nonnull Style a, @Nonnull Style b) {
         return a != b && (a.isBold() != b.isBold() ||
                 a.isItalic() != b.isItalic() ||
                 a.isUnderlined() != b.isUnderlined() ||
                 a.isStrikethrough() != b.isStrikethrough() ||
                 a.isObfuscated() != b.isObfuscated() ||
                 !Objects.equals(a.getColor(), b.getColor()) ||
-                !Objects.equals(a.getClickEvent(), b.getClickEvent()) ||
-                !Objects.equals(a.getHoverEvent(), b.getHoverEvent()) ||
-                !Objects.equals(a.getInsertion(), b.getInsertion()));
+                !Objects.equals(a.getFont(), b.getFont()));
     }
 
     /**
-     * The color in 0xRRGGBB format; {@link #NO_COLOR_SPECIFIED} to use param color.
-     * If it has {@link #NO_COLOR_SPECIFIED}, then lower 24 bits are ignored (and it should be 0x000000).
+     * The color in 0xRRGGBB format; {@link #IMPLICIT_COLOR_MASK} to use param color.
+     * If it has {@link #IMPLICIT_COLOR_MASK}, then lower 24 bits are ignored (and it should be 0x000000).
      *
      * @return the color with additional flag
      */
@@ -220,15 +196,15 @@ public class CharacterStyle {
     }
 
     public boolean isBold() {
-        return (mFlags & BOLD) != 0;
+        return (mFlags & BOLD_MASK) != 0;
     }
 
     public boolean isItalic() {
-        return (mFlags & ITALIC) != 0;
+        return (mFlags & ITALIC_MASK) != 0;
     }
 
     /**
-     * Combination of {@link #NORMAL}, {@link #BOLD}, and {@link #ITALIC} specifying font specific styles.
+     * Combination of {@link #NORMAL}, {@link #BOLD_MASK}, and {@link #ITALIC_MASK} specifying font specific styles.
      *
      * @return font style
      */
@@ -269,7 +245,7 @@ public class CharacterStyle {
      * @return obfuscated
      */
     public boolean isObfuscated() {
-        return (mFlags & OBFUSCATED) != 0;
+        return (mFlags & OBFUSCATED_MASK) != 0;
     }
 
     /**
@@ -278,7 +254,7 @@ public class CharacterStyle {
      * @return formatting code
      */
     public boolean isFormattingCode() {
-        return false;//(mFlags & FORMATTING_CODE) != 0;
+        return false;
     }
 
     /**
@@ -287,7 +263,7 @@ public class CharacterStyle {
      * @param s obj
      * @return if font style not equals
      */
-    public boolean affectsMetrics(@Nonnull CharacterStyle s) {
+    public boolean isMetricAffecting(@Nonnull CharacterStyle s) {
         return (mFlags & FONT_STYLE_MASK) != (s.mFlags & FONT_STYLE_MASK);
     }
 
@@ -297,7 +273,7 @@ public class CharacterStyle {
      * @param s obj
      * @return if layout style not equals
      */
-    public boolean affectsLayout(@Nonnull CharacterStyle s) {
+    public boolean isLayoutAffecting(@Nonnull CharacterStyle s) {
         return (mFlags & LAYOUT_MASK) != (s.mFlags & LAYOUT_MASK);
     }
 

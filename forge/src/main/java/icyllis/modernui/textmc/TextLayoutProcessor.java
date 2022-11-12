@@ -50,8 +50,8 @@ import java.util.*;
  * @see MixinBidiReorder
  * @see MixinClientLanguage
  * @see MixinLanguage
- * @see VanillaTextKey#update(String, Style)
- * @see MultilayerTextKey.Lookup#update(FormattedCharSequence)
+ * @see VanillaLayoutKey#update(String, Style)
+ * @see CompoundLayoutKey.Lookup#update(FormattedCharSequence)
  * @see FormattedText
  * @see FormattedCharSequence
  * @see FormattedTextWrapper
@@ -102,13 +102,6 @@ public class TextLayoutProcessor {
      */
     private final List<GLBakedGlyph> mGlyphs = new ArrayList<>();
     /**
-     * Glyphs to relative char indices of the strip string (without formatting codes).
-     * For vanilla layout ({@link VanillaTextKey} and {@link TextLayoutEngine#lookupVanillaNode(String)}),
-     * these will be adjusted to string index (with formatting codes).
-     * Same indexing with {@link #mGlyphs}, in visual order.
-     */
-    private final IntArrayList mCharIndices = new IntArrayList();
-    /**
      * Position x1 y1 x2 y2... relative to the same point, for rendering glyphs.
      * These values are not offset to glyph additional baseline but aligned.
      * Same indexing with {@link #mGlyphs}, align to left, in visual order.
@@ -142,7 +135,14 @@ public class TextLayoutProcessor {
      *  1         USE_PARAM_COLOR
      * |--------|
      */
-    private final IntArrayList mFlags = new IntArrayList();
+    private final IntArrayList mCharFlags = new IntArrayList();
+    /**
+     * Glyphs to relative char indices of the strip string (without formatting codes).
+     * For vanilla layout ({@link VanillaLayoutKey} and {@link TextLayoutEngine#lookupVanillaNode(String)}),
+     * these will be adjusted to string index (with formatting codes).
+     * Same indexing with {@link #mGlyphs}, in visual order.
+     */
+    private final IntArrayList mCharIndices = new IntArrayList();
     /**
      * Strip indices that are boundaries for Unicode line breaking, this list will be
      * sorted into logical order. 0 is not included.
@@ -194,7 +194,7 @@ public class TextLayoutProcessor {
      * @see FormattedTextWrapper#accept(FormattedCharSink)
      */
     private final FormattedCharSink mSequenceBuilder = (index, style, codePoint) -> {
-        int flags = CharacterStyle.getAppearanceFlags(style);
+        int flags = CharacterStyle.flatten(style);
         mStyles.add(flags);
         if (mBuilder.addCodePoint(codePoint) > 1) {
             mStyles.add(flags);
@@ -338,7 +338,7 @@ public class TextLayoutProcessor {
             if (mBuilder.length() != mAdvances.size()) {
                 throw new IllegalStateException();
             }
-            if (mGlyphs.size() != mFlags.size()) {
+            if (mGlyphs.size() != mCharFlags.size()) {
                 throw new IllegalStateException();
             }
             if (!mBuilder.isEmpty() &&
@@ -355,7 +355,7 @@ public class TextLayoutProcessor {
         mCharIndices.clear();
         mPositions.clear();
         mAdvances.clear();
-        mFlags.clear();
+        mCharFlags.clear();
         mLineBoundaries.clear();
         mAdvance = 0;
         mHasEffect = false;
@@ -501,8 +501,8 @@ public class TextLayoutProcessor {
                 }
                 // Sort line boundaries to logical order, because runs are in visual order
                 mLineBoundaries.sort(IntComparators.NATURAL_COMPARATOR);
-                return new TextRenderNode(textBuf, mGlyphs.toArray(new GLBakedGlyph[0]), mCharIndices.toIntArray(),
-                        mPositions.toFloatArray(), mAdvances.toFloatArray(), mFlags.toIntArray(),
+                return new TextRenderNode(textBuf, mGlyphs.toArray(new GLBakedGlyph[0]), mPositions.toFloatArray(),
+                        mAdvances.toFloatArray(), mCharFlags.toIntArray(), mCharIndices.toIntArray(),
                         mLineBoundaries.toIntArray(), mAdvance, mHasEffect, mHasFastDigit, mHasColorEmoji);
             }
         }
@@ -727,14 +727,14 @@ public class TextLayoutProcessor {
         }
 
         int fontStyle = Font.PLAIN;
-        if ((styleFlags & CharacterStyle.BOLD) != 0) {
+        if ((styleFlags & CharacterStyle.BOLD_MASK) != 0) {
             fontStyle |= Font.BOLD;
         }
-        if ((styleFlags & CharacterStyle.ITALIC) != 0) {
+        if ((styleFlags & CharacterStyle.ITALIC_MASK) != 0) {
             fontStyle |= Font.ITALIC;
         }
         // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft by default
-        float fontSize = Math.min(sBaseFontSize * mEngine.getResolutionLevel(), 96);
+        float fontSize = Math.min(sBaseFontSize * mEngine.getResLevel(), 96);
 
         final var items = ModernUI.getSelectedTypeface().getFontCollection()
                 .itemize(text, start, limit);
@@ -770,9 +770,9 @@ public class TextLayoutProcessor {
                                 int styleFlags, @Nonnull Font font, @Nonnull ULocale locale) {
         final boolean hasEffect = (styleFlags & CharacterStyle.EFFECT_MASK) != 0;
         // Convert to float form for calculation, but actually an integer
-        final float scale = mEngine.getCoordinateScale();
+        final float scale = mEngine.getGuiScale();
 
-        if ((styleFlags & CharacterStyle.OBFUSCATED) != 0) {
+        if ((styleFlags & CharacterStyle.OBFUSCATED_MASK) != 0) {
             // obfuscated layout, all repl
             final TextLayoutEngine.FastCharSet fastChars = mEngine.lookupFastChars(font);
             final boolean alignPixels = sAlignPixels;
@@ -789,10 +789,10 @@ public class TextLayoutProcessor {
                 }
 
                 mGlyphs.add(fastChars);
-                mCharIndices.add(i + start);
                 mPositions.add(pos);
                 mPositions.add(0);
-                mFlags.add(styleFlags);
+                mCharFlags.add(styleFlags);
+                mCharIndices.add(i + start);
                 mHasEffect |= hasEffect;
 
                 offset += advance;
@@ -816,7 +816,7 @@ public class TextLayoutProcessor {
             }*/
         } else if (sColorEmoji) {
             // If we perform layout with bitmap replacement, we have more runs.
-            final float level = mEngine.getResolutionLevel();
+            final float level = mEngine.getResLevel();
             // HarfBuzz is introduced in Java 11 or higher, perform measure and layout below
             final GlyphManager glyphManager = mEngine.getGlyphManager();
 
@@ -867,10 +867,10 @@ public class TextLayoutProcessor {
                                         fastChars = mEngine.lookupFastChars(font);
                                     }
                                     mGlyphs.add(fastChars);
-                                    mCharIndices.add(charIndex);
                                     mPositions.add(posX);
                                     mPositions.add(posY);
-                                    mFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                                    mCharFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                                    mCharIndices.add(charIndex);
                                     mHasEffect |= hasEffect;
                                     mHasFastDigit = true;
                                 } else {
@@ -878,10 +878,10 @@ public class TextLayoutProcessor {
                                     GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
                                     if (glyph != null) {
                                         mGlyphs.add(glyph);
-                                        mCharIndices.add(charIndex);
                                         mPositions.add(posX);
                                         mPositions.add(posY);
-                                        mFlags.add(styleFlags);
+                                        mCharFlags.add(styleFlags);
+                                        mCharIndices.add(charIndex);
                                         mHasEffect |= hasEffect;
                                     }
                                 }
@@ -897,10 +897,10 @@ public class TextLayoutProcessor {
                         mAdvances.set(currPos, TextLayoutEngine.EMOJI_BASE_SIZE + 1);
 
                         mGlyphs.add(emoji);
-                        mCharIndices.add(currPos);
                         mPositions.add(alignPixels ? Math.round(mAdvance * scale) / scale : mAdvance);
                         mPositions.add(0);
-                        mFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
+                        mCharFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
+                        mCharIndices.add(currPos);
                         mHasColorEmoji = true;
 
                         mAdvance += TextLayoutEngine.EMOJI_BASE_SIZE + 1;
@@ -944,10 +944,10 @@ public class TextLayoutProcessor {
                                 fastChars = mEngine.lookupFastChars(font);
                             }
                             mGlyphs.add(fastChars);
-                            mCharIndices.add(charIndex);
                             mPositions.add(posX);
                             mPositions.add(posY);
-                            mFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                            mCharFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                            mCharIndices.add(charIndex);
                             mHasEffect |= hasEffect;
                             mHasFastDigit = true;
                         } else {
@@ -955,10 +955,10 @@ public class TextLayoutProcessor {
                             GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
                             if (glyph != null) {
                                 mGlyphs.add(glyph);
-                                mCharIndices.add(charIndex);
                                 mPositions.add(posX);
                                 mPositions.add(posY);
-                                mFlags.add(styleFlags);
+                                mCharFlags.add(styleFlags);
+                                mCharIndices.add(charIndex);
                                 mHasEffect |= hasEffect;
                             }
                         }
@@ -1005,10 +1005,10 @@ public class TextLayoutProcessor {
                                         fastChars = mEngine.lookupFastChars(font);
                                     }
                                     mGlyphs.add(fastChars);
-                                    mCharIndices.add(charIndex);
                                     mPositions.add(posX);
                                     mPositions.add(posY);
-                                    mFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                                    mCharFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                                    mCharIndices.add(charIndex);
                                     mHasEffect |= hasEffect;
                                     mHasFastDigit = true;
                                 } else {
@@ -1016,10 +1016,10 @@ public class TextLayoutProcessor {
                                     GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
                                     if (glyph != null) {
                                         mGlyphs.add(glyph);
-                                        mCharIndices.add(charIndex);
                                         mPositions.add(posX);
                                         mPositions.add(posY);
-                                        mFlags.add(styleFlags);
+                                        mCharFlags.add(styleFlags);
+                                        mCharIndices.add(charIndex);
                                         mHasEffect |= hasEffect;
                                     }
                                 }
@@ -1035,10 +1035,10 @@ public class TextLayoutProcessor {
                         mAdvances.set(prevPos, TextLayoutEngine.EMOJI_BASE_SIZE + 1);
 
                         mGlyphs.add(emoji);
-                        mCharIndices.add(prevPos);
                         mPositions.add(alignPixels ? Math.round(mAdvance * scale) / scale : mAdvance);
                         mPositions.add(0);
-                        mFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
+                        mCharFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
+                        mCharIndices.add(prevPos);
                         mHasColorEmoji = true;
 
                         mAdvance += TextLayoutEngine.EMOJI_BASE_SIZE + 1;
@@ -1082,10 +1082,10 @@ public class TextLayoutProcessor {
                                 fastChars = mEngine.lookupFastChars(font);
                             }
                             mGlyphs.add(fastChars);
-                            mCharIndices.add(charIndex);
                             mPositions.add(posX);
                             mPositions.add(posY);
-                            mFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                            mCharFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                            mCharIndices.add(charIndex);
                             mHasEffect |= hasEffect;
                             mHasFastDigit = true;
                         } else {
@@ -1093,10 +1093,10 @@ public class TextLayoutProcessor {
                             GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
                             if (glyph != null) {
                                 mGlyphs.add(glyph);
-                                mCharIndices.add(charIndex);
                                 mPositions.add(posX);
                                 mPositions.add(posY);
-                                mFlags.add(styleFlags);
+                                mCharFlags.add(styleFlags);
+                                mCharIndices.add(charIndex);
                                 mHasEffect |= hasEffect;
                             }
                         }
@@ -1119,7 +1119,7 @@ public class TextLayoutProcessor {
             }
 
         } else {
-            final float level = mEngine.getResolutionLevel();
+            final float level = mEngine.getResLevel();
             // HarfBuzz is introduced in Java 11 or higher, perform measure and layout below
             final GlyphManager glyphManager = mEngine.getGlyphManager();
 
@@ -1183,10 +1183,10 @@ public class TextLayoutProcessor {
                         fastChars = mEngine.lookupFastChars(font);
                     }
                     mGlyphs.add(fastChars);
-                    mCharIndices.add(charIndex);
                     mPositions.add(posX);
                     mPositions.add(posY);
-                    mFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                    mCharFlags.add(styleFlags | CharacterStyle.FAST_DIGIT_REPLACEMENT);
+                    mCharIndices.add(charIndex);
                     mHasEffect |= hasEffect;
                     mHasFastDigit = true;
                 } else {
@@ -1194,10 +1194,10 @@ public class TextLayoutProcessor {
                     GLBakedGlyph glyph = glyphManager.lookupGlyph(font, glyphCode);
                     if (glyph != null) {
                         mGlyphs.add(glyph);
-                        mCharIndices.add(charIndex);
                         mPositions.add(posX);
                         mPositions.add(posY);
-                        mFlags.add(styleFlags);
+                        mCharFlags.add(styleFlags);
+                        mCharIndices.add(charIndex);
                         mHasEffect |= hasEffect;
                     }
                 }
@@ -1236,7 +1236,7 @@ public class TextLayoutProcessor {
         }
         if (DEBUG) {
             for (int i = 0; i < mCharIndices.size(); i++) {
-                if ((mFlags.getInt(i) & CharacterStyle.FAST_DIGIT_REPLACEMENT) != 0) {
+                if ((mCharFlags.getInt(i) & CharacterStyle.FAST_DIGIT_REPLACEMENT) != 0) {
                     char c = raw.charAt(mCharIndices.getInt(i));
                     if (c > '9' || c < '0') {
                         ModernUI.LOGGER.error("Fast Indexing Error: {} {} {} {}", i, c, mCharIndices, raw);

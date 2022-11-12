@@ -249,4 +249,28 @@ public final class FMath {
             r++;
         return r;
     }
+
+    /**
+     * Aligns {@code x} up to 2 (half-word).
+     */
+    public static int align2(int x) {
+        assert x >= 0 && x <= Integer.MAX_VALUE - 8;
+        return (x + 1) & -2;
+    }
+
+    /**
+     * Aligns {@code x} up to 4 (word).
+     */
+    public static int align4(int x) {
+        assert x >= 0 && x <= Integer.MAX_VALUE - 8;
+        return (x + 3) & -4;
+    }
+
+    /**
+     * Aligns {@code x} up to 8 (double word).
+     */
+    public static int align8(int x) {
+        assert x >= 0 && x <= Integer.MAX_VALUE - 8;
+        return (x + 7) & -8;
+    }
 }

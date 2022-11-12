@@ -39,7 +39,7 @@ import java.util.Optional;
  * @see MixinBidiReorder
  * @see MixinClientLanguage
  * @see MixinLanguage
- * @see MultilayerTextKey.Lookup#update(FormattedCharSequence)
+ * @see CompoundLayoutKey.Lookup#update(FormattedCharSequence)
  * @see TextLayoutProcessor#performSequenceLayout(FormattedCharSequence)
  * @see net.minecraft.network.chat.SubStringSource
  * @see net.minecraft.client.resources.language.FormattedBidiReorder

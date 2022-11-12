@@ -137,8 +137,8 @@ public class TextLayoutEngine {
      * overhead of allocating new objects in the critical rendering path. Of course, new Key objects are always created
      * when adding a mapping to stringCache.
      */
-    private final VanillaTextKey mVanillaLookupKey = new VanillaTextKey();
-    private Map<VanillaTextKey, TextRenderNode> mVanillaCache = new HashMap<>();
+    private final VanillaLayoutKey mVanillaLookupKey = new VanillaLayoutKey();
+    private Map<VanillaLayoutKey, TextRenderNode> mVanillaCache = new HashMap<>();
 
     /**
      * For styled texts.
@@ -148,8 +148,8 @@ public class TextLayoutEngine {
     /**
      * For deeply-processed texts.
      */
-    private final MultilayerTextKey.Lookup mMultilayerLookupKey = new MultilayerTextKey.Lookup();
-    private Map<MultilayerTextKey, TextRenderNode> mMultilayerCache = new HashMap<>();
+    private final CompoundLayoutKey.Lookup mCompoundLookupKey = new CompoundLayoutKey.Lookup();
+    private Map<CompoundLayoutKey, TextRenderNode> mCompoundCache = new HashMap<>();
 
     /**
      * Shared layout engine.
@@ -228,7 +228,7 @@ public class TextLayoutEngine {
                 glyphs = Arrays.copyOf(glyphs, n);
                 offsets = Arrays.copyOf(offsets, n);
             }
-            float level = getResolutionLevel();
+            float level = getResLevel();
             // the cache will be reset when resolution level changed
             for (int i = 0; i < n; i++) {
                 offsets[i] /= level;
@@ -276,11 +276,11 @@ public class TextLayoutEngine {
     /**
      * Determine font size. Integer.
      */
-    private float mCoordinateScale;
+    private float mGuiScale;
     /**
      * Determine font size. Integer.
      */
-    private float mResolutionLevel;
+    private float mResLevel;
     /**
      * Text direction.
      */
@@ -345,14 +345,14 @@ public class TextLayoutEngine {
         int size = getCacheCount();
         mVanillaCache.clear();
         mComponentCache.clear();
-        mMultilayerCache.clear();
+        mCompoundCache.clear();
         mFastCharMap.clear();
         boolean rehash = size >= sRehashThreshold;
         if (rehash) {
             // Create new HashMap so that the internal hashtable of old maps are released as well
             mVanillaCache = new HashMap<>();
             mComponentCache = new HashMap<>();
-            mMultilayerCache = new HashMap<>();
+            mCompoundCache = new HashMap<>();
             //mDigitMap = new HashMap<>();
         }
         // Clear TextRenderType instances, but font textures are not released
@@ -370,23 +370,23 @@ public class TextLayoutEngine {
         cleanup();
 
         final int scale = Math.round(ViewConfiguration.get().getViewScale() * 2);
-        final float oldLevel = mResolutionLevel;
+        final float oldLevel = mResLevel;
         if (sFixedResolution) {
             // make font size to 16 (8 * 2)
-            mResolutionLevel = 2;
+            mResLevel = 2;
         } else {
             // Note max font size is 96, see FontPaint, font size will be (8 * resolution) in Minecraft
             if (!sSuperSampling || !GLFontAtlas.sLinearSampling) {
-                mResolutionLevel = Math.min(scale, 9);
+                mResLevel = Math.min(scale, 9);
             } else if (scale > 2) {
                 // super sampling, give it a bit larger, so looks smoother
-                mResolutionLevel = Math.min((int) Math.ceil(scale * 4 / 3f), 12);
+                mResLevel = Math.min((int) Math.ceil(scale * 4 / 3f), 12);
             } else {
                 // 1 or 2
-                mResolutionLevel = scale;
+                mResLevel = scale;
             }
         }
-        mCoordinateScale = scale;
+        mGuiScale = scale;
 
         Locale locale = ModernUI.getSelectedLocale();
         boolean layoutRtl = TextUtils.getLayoutDirectionFromLocale(locale) == View.LAYOUT_DIRECTION_RTL;
@@ -402,11 +402,11 @@ public class TextLayoutEngine {
         };
 
         if (oldLevel == 0) {
-            LOGGER.info(MARKER, "Loaded text layout engine, resolution level: {}, locale: {}, layout RTL: {}",
-                    mResolutionLevel, locale, layoutRtl);
+            LOGGER.info(MARKER, "Loaded text layout engine, res level: {}, locale: {}, layout RTL: {}",
+                    mResLevel, locale, layoutRtl);
         } else {
-            LOGGER.info(MARKER, "Reloaded text layout engine, resolution level: {} to {}, locale: {}, layout RTL: {}",
-                    oldLevel, mResolutionLevel, locale, layoutRtl);
+            LOGGER.info(MARKER, "Reloaded text layout engine, res level: {} to {}, locale: {}, layout RTL: {}",
+                    oldLevel, mResLevel, locale, layoutRtl);
         }
     }
 
@@ -540,10 +540,10 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Lookup cached render node for vanilla text or create the layout.
+     * Find or create a full text layout for the given text, fast digit replacement is applicable.
      *
-     * @param text input text
-     * @return the full layout
+     * @param text the source text, may contain formatting codes
+     * @return the full layout for the text
      */
     @Nonnull
     public TextRenderNode lookupVanillaNode(@Nonnull String text) {
@@ -551,9 +551,8 @@ public class TextLayoutEngine {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
-            // block
-            return Minecraft.getInstance()
-                    .submit(() -> lookupVanillaNode(text))
+            // block here
+            return Minecraft.getInstance().submit(() -> lookupVanillaNode(text))
                     .join();
         }
         TextRenderNode node = mVanillaCache.get(mVanillaLookupKey.update(text, Style.EMPTY));
@@ -566,11 +565,11 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Lookup cached render node for vanilla text or create the layout.
+     * Find or create a full text layout for the given text, fast digit replacement is applicable.
      *
-     * @param text  input text
-     * @param style base style
-     * @return the full layout
+     * @param text  the source text, may contain formatting codes
+     * @param style the base style
+     * @return the full layout for the text
      */
     @Nonnull
     public TextRenderNode lookupVanillaNode(@Nonnull String text, @Nonnull Style style) {
@@ -578,9 +577,8 @@ public class TextLayoutEngine {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
-            // block
-            return Minecraft.getInstance()
-                    .submit(() -> lookupVanillaNode(text, style))
+            // block here
+            return Minecraft.getInstance().submit(() -> lookupVanillaNode(text, style))
                     .join();
         }
         TextRenderNode node = mVanillaCache.get(mVanillaLookupKey.update(text, style));
@@ -593,11 +591,11 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Lookup cached render node for multilayer text or create the layout.
-     * To perform bidi analysis, we must have the full text of all layers.
+     * Find or create a full text layout for the given formatted text, fast digit replacement
+     * is not applicable. To perform bidi analysis, we must have the full text of all contents.
      *
-     * @param text root node
-     * @return the full layout
+     * @param text the text ancestor
+     * @return the full layout for the text
      * @see FormattedTextWrapper
      */
     public TextRenderNode lookupComplexNode(@Nonnull FormattedText text) {
@@ -605,9 +603,8 @@ public class TextLayoutEngine {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
-            // block
-            return Minecraft.getInstance()
-                    .submit(() -> lookupComplexNode(text))
+            // block here
+            return Minecraft.getInstance().submit(() -> lookupComplexNode(text))
                     .join();
         }
         TextRenderNode node;
@@ -619,10 +616,10 @@ public class TextLayoutEngine {
                 return node;
             }
         } else {
-            node = mMultilayerCache.get(mMultilayerLookupKey.update(text, Style.EMPTY));
+            node = mCompoundCache.get(mCompoundLookupKey.update(text, Style.EMPTY));
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, Style.EMPTY);
-                mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
+                mCompoundCache.put(mCompoundLookupKey.copy(), node);
                 return node;
             }
         }
@@ -630,12 +627,12 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Lookup cached render node for multilayer text or create the layout.
-     * To perform bidi analysis, we must have the full text of all layers.
+     * Find or create a full text layout for the given formatted text, fast digit replacement
+     * is not applicable. To perform bidi analysis, we must have the full text of all contents.
      *
-     * @param text  root node
-     * @param style base style
-     * @return the full layout
+     * @param text  the text ancestor
+     * @param style the base style
+     * @return the full layout for the text
      * @see FormattedTextWrapper
      */
     public TextRenderNode lookupComplexNode(@Nonnull FormattedText text, @Nonnull Style style) {
@@ -643,24 +640,23 @@ public class TextLayoutEngine {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
-            // block
-            return Minecraft.getInstance()
-                    .submit(() -> lookupComplexNode(text, style))
+            // block here
+            return Minecraft.getInstance().submit(() -> lookupComplexNode(text, style))
                     .join();
         }
         TextRenderNode node;
-        if (text instanceof MutableComponent component) {
+        if (style.isEmpty() && text instanceof MutableComponent component) {
             node = mComponentCache.get(component);
             if (node == null) {
-                node = mProcessor.performComplexLayout(text, style);
+                node = mProcessor.performComplexLayout(text, Style.EMPTY);
                 mComponentCache.put(component, node);
                 return node;
             }
         } else {
-            node = mMultilayerCache.get(mMultilayerLookupKey.update(text, style));
+            node = mCompoundCache.get(mCompoundLookupKey.update(text, style));
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, style);
-                mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
+                mCompoundCache.put(mCompoundLookupKey.copy(), node);
                 return node;
             }
         }
@@ -668,13 +664,13 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Lookup cached render node for multilayer text or create the layout.
-     * To perform bidi analysis, we must have the full text of all layers.
-     * Modern UI removed vanilla's BiDi reordering.
+     * Find or create a full text layout for the given formatted text, fast digit replacement
+     * is not applicable. To perform bidi analysis, we must have the full text of all contents.
+     * Note: Modern UI removes Minecraft vanilla's BiDi reordering.
      * <p>
-     * This method should only be used when FormattedText cannot be obtained.
+     * This method should only be used when the text is not originated from FormattedText.
      *
-     * @param sequence deeply-processed sequence
+     * @param sequence the deeply-processed sequence
      * @return the full layout
      * @see FormattedTextWrapper
      */
@@ -684,12 +680,11 @@ public class TextLayoutEngine {
             return TextRenderNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
-            // block
-            return Minecraft.getInstance()
-                    .submit(() -> lookupSequenceNode(sequence))
+            // block here
+            return Minecraft.getInstance().submit(() -> lookupSequenceNode(sequence))
                     .join();
         }
-        // check if we intercepted it by Language.getVisualOrder()
+        // check if it's intercepted by Language.getVisualOrder()
         if (sequence instanceof FormattedTextWrapper) {
             FormattedText text = ((FormattedTextWrapper) sequence).mText;
             if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
@@ -704,19 +699,19 @@ public class TextLayoutEngine {
                     return node;
                 }
             } else {
-                node = mMultilayerCache.get(mMultilayerLookupKey.update(text, Style.EMPTY));
+                node = mCompoundCache.get(mCompoundLookupKey.update(text, Style.EMPTY));
                 if (node == null) {
                     node = mProcessor.performComplexLayout(text, Style.EMPTY);
-                    mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
+                    mCompoundCache.put(mCompoundLookupKey.copy(), node);
                     return node;
                 }
             }
             return node.get();
         } else {
-            TextRenderNode node = mMultilayerCache.get(mMultilayerLookupKey.update(sequence));
+            TextRenderNode node = mCompoundCache.get(mCompoundLookupKey.update(sequence));
             if (node == null) {
                 node = mProcessor.performSequenceLayout(sequence);
-                mMultilayerCache.put(mMultilayerLookupKey.copy(), node);
+                mCompoundCache.put(mCompoundLookupKey.copy(), node);
                 return node;
             }
             return node.get();
@@ -724,7 +719,7 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Minecraft gives us a deeply processed sequence, so we have to make the
+     * Minecraft gives us a deeply processed sequence, so we have to make
      * it not a reordered text, see {@link MixinClientLanguage}.
      * So actually it's a copy of original text, then we can use our layout engine later
      *
@@ -742,14 +737,14 @@ public class TextLayoutEngine {
      * return its cache entry. The entry stores the texture with the pre-rendered emoji image,
      * as well as the position and size of that image within the texture.
      *
-     * @param text  the text buffer
+     * @param buf   the text buffer
      * @param start the cluster start index (inclusive)
      * @param end   the cluster end index (exclusive)
      * @return the cached emoji sprite or null
      */
     @Nullable
-    public GLBakedGlyph lookupEmoji(@Nonnull char[] text, int start, int end) {
-        final EmojiEntry entry = mEmojiMap.get(mEmojiLookupKey.updateCharArray(text, start, end));
+    public GLBakedGlyph lookupEmoji(@Nonnull char[] buf, int start, int end) {
+        final EmojiEntry entry = mEmojiMap.get(mEmojiLookupKey.updateChars(buf, start, end));
         if (entry == null) {
             return null;
         }
@@ -841,19 +836,19 @@ public class TextLayoutEngine {
      * Ticks the caches and clear unused entries.
      */
     @SubscribeEvent
-    void tick(@Nonnull TickEvent.ClientTickEvent event) {
+    void onTick(@Nonnull TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
             if (mTimer == 0) {
                 int oldCount = getCacheCount();
                 mVanillaCache.values().removeIf(mTicker);
                 mComponentCache.values().removeIf(mTicker);
-                mMultilayerCache.values().removeIf(mTicker);
+                mCompoundCache.values().removeIf(mTicker);
                 if (oldCount >= sRehashThreshold) {
                     int newCount = getCacheCount();
                     if (newCount < sRehashThreshold) {
                         mVanillaCache = new HashMap<>(mVanillaCache);
                         mComponentCache = new HashMap<>(mComponentCache);
-                        mMultilayerCache = new HashMap<>(mMultilayerCache);
+                        mCompoundCache = new HashMap<>(mCompoundCache);
                     }
                 }
             }
@@ -866,7 +861,7 @@ public class TextLayoutEngine {
      * @return the number of layout entries
      */
     public int getCacheCount() {
-        return mVanillaCache.size() + mComponentCache.size() + mMultilayerCache.size();
+        return mVanillaCache.size() + mComponentCache.size() + mCompoundCache.size();
     }
 
     /**
@@ -880,7 +875,7 @@ public class TextLayoutEngine {
         for (var n : mComponentCache.values()) {
             size += n.getMemorySize();
         }
-        for (var e : mMultilayerCache.entrySet()) {
+        for (var e : mCompoundCache.entrySet()) {
             size += e.getKey().getMemorySize();
             size += e.getValue().getMemorySize();
         }
@@ -908,8 +903,8 @@ public class TextLayoutEngine {
      *
      * @return scale factor, should be an integer that converted to float
      */
-    public float getCoordinateScale() {
-        return mCoordinateScale;
+    public float getGuiScale() {
+        return mGuiScale;
     }
 
     /**
@@ -917,8 +912,8 @@ public class TextLayoutEngine {
      *
      * @return resolution level, should be an integer that converted to float
      */
-    public float getResolutionLevel() {
-        return mResolutionLevel;
+    public float getResLevel() {
+        return mResLevel;
     }
 
     /**
@@ -992,7 +987,7 @@ public class TextLayoutEngine {
 
     @Nullable
     @Deprecated
-    private TextRenderNode generateAndCache(VanillaTextKey key, @Nonnull CharSequence string,
+    private TextRenderNode generateAndCache(VanillaLayoutKey key, @Nonnull CharSequence string,
                                             @Nonnull final Style style) {
         /*final int length = string.length();
         final TextProcessRegister register = this.register;
