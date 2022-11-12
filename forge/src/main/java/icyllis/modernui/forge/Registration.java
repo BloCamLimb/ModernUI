@@ -232,29 +232,31 @@ final class Registration {
                 final OptionInstance<Integer> newGuiScale = new OptionInstance<>("options.guiScale",
                         OptionInstance.noTooltip(),
                         (caption, value) -> {
-                            if (value == 0) { // auto (best)
-                                int best = (MuiForgeApi.calcGuiScales() >> 4 & 0xf);
+                            if (value == 0) { // auto
+                                int auto = MuiForgeApi.calcGuiScales() >> 4 & 0xf;
                                 return Options.genericValueLabel(caption,
                                         Component.translatable("options.guiScale.auto")
-                                                .append(Component.literal(" (" + best + ")")));
+                                                .append(Component.literal(" (" + auto + ")")));
                             } else {
                                 MutableComponent valueComponent = Component.literal(value.toString());
-                                if (value < (MuiForgeApi.calcGuiScales() >> 8 & 0xf)) {
+                                if (value < (MuiForgeApi.calcGuiScales() >> 8 & 0xf)) { // < min
                                     valueComponent.withStyle(ChatFormatting.RED);
                                 }
                                 return Options.genericValueLabel(caption, valueComponent);
                             }
                         },
-                        new GuiScaleValueSet(), 0, value -> {
+                        new GuiScaleValueSet(), /*initialValue*/ 0, /*onValueUpdate*/ value -> {
                     if (value != Minecraft.getInstance().getWindow().getGuiScale()) {
                         Minecraft.getInstance().resizeDisplay();
                     }
                 });
                 // no barrier
-                ((AccessOptions) Minecraft.getInstance().options).setGuiScale(newGuiScale);
+                Options options = Minecraft.getInstance().options;
+                newGuiScale.set(options.guiScale().get());
+                ((AccessOptions) options).setGuiScale(newGuiScale);
                 if (ModernUIForge.isOptiFineLoaded()) {
                     OptiFineIntegration.setGuiScale(newGuiScale);
-                    LOGGER.info(MARKER, "Replace OptiFine GUI Scale");
+                    LOGGER.info(MARKER, "Override OptiFine Gui Scale");
                 }
             }
 
@@ -305,10 +307,6 @@ final class Registration {
 
         static class GuiScaleValueSet implements OptionInstance.IntRangeBase,
                 OptionInstance.SliderableOrCyclableValueSet<Integer> {
-
-            static {
-                assert (FMLEnvironment.dist.isClient());
-            }
 
             @Override
             public int minInclusive() {
