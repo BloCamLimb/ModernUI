@@ -33,49 +33,53 @@ import java.util.Random;
  */
 public class TextRenderNode {
 
+    /**
+     * For obfuscated characters.
+     */
     private static final Random RANDOM = new Random();
 
     /**
      * Sometimes naive, too simple.
      * <p>
-     * This singleton cannot be placed in the cache!
+     * This singleton cannot be inserted into the cache!
      */
-    public static final TextRenderNode EMPTY = new TextRenderNode(new char[0], new GLBakedGlyph[0], new int[0],
-            new float[0], new float[0], new int[0], new int[0], 0, false, false, false) {
+    public static final TextRenderNode EMPTY = new TextRenderNode(new char[0], new GLBakedGlyph[0], new float[0],
+            new float[0], new int[0], new int[0],
+            new int[0], 0, false, false, false) {
         @Nonnull
         @Override
-        public TextRenderNode get() {
-            throw new UnsupportedOperationException("Singleton!");
+        TextRenderNode get() {
+            throw new UnsupportedOperationException();
         }
 
         @Override
-        public boolean tick(int lifespan) {
-            throw new UnsupportedOperationException("Singleton!");
+        boolean tick(int threshold) {
+            throw new UnsupportedOperationException();
         }
 
         @Override
         public float drawText(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable String raw,
                               float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough,
-                              int background, int packedLight, float scale, float level) {
+                              int background, int packedLight, float guiScale, float resLevel) {
             return 0;
         }
 
         @Override
         public void drawTextGlow(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, float x, float y,
-                                 int r, int g, int b, int a, int packedLight, float scale, float level) {
+                                 int r, int g, int b, int a, int packedLight, float guiScale, float resLevel) {
             // noop
         }
     };
 
     /**
-     * Vertical adjustment to string position.
+     * Default vertical adjustment to string position.
      */
     public static final int BASELINE_OFFSET = 7;
 
     /**
-     * Vertical adjustment to string position.
+     * Config vertical adjustment to string position.
      */
-    public static volatile float sBaselineOffset = BASELINE_OFFSET;
+    public static float sBaselineOffset = BASELINE_OFFSET;
 
     /**
      * The copied text buffer without formatting codes in logical order.
@@ -88,14 +92,6 @@ public class TextRenderNode {
      * obfuscated chars are {@link icyllis.modernui.textmc.TextLayoutEngine.FastCharSet}.
      */
     private final GLBakedGlyph[] mGlyphs;
-
-    /**
-     * Glyphs to relative char indices of the strip string (without formatting codes).
-     * For vanilla layout ({@link VanillaTextKey} and {@link TextLayoutEngine#lookupVanillaNode(String)}),
-     * these will be adjusted to string index (with formatting codes).
-     * Same indexing with {@link #mGlyphs}, in visual order.
-     */
-    private final int[] mCharIndices;
 
     /**
      * Position x1 y1 x2 y2... relative to the same point, for rendering glyphs.
@@ -133,7 +129,15 @@ public class TextRenderNode {
     /**
      * Glyph rendering flags. Same indexing with {@link #mGlyphs}, in visual order.
      */
-    private final int[] mFlags;
+    private final int[] mCharFlags;
+
+    /**
+     * Glyphs to relative char indices of the strip string (without formatting codes).
+     * For vanilla layout ({@link VanillaLayoutKey} and {@link TextLayoutEngine#lookupVanillaNode(String)}),
+     * these will be adjusted to string index (with formatting codes).
+     * Same indexing with {@link #mGlyphs}, in visual order.
+     */
+    private final int[] mCharIndices;
 
     /**
      * Strip indices that are boundaries for Unicode line breaking, in logical order.
@@ -146,14 +150,14 @@ public class TextRenderNode {
      * <p>
      * Note the values are scaled to Minecraft GUI coordinates.
      */
-    private final float mAdvance;
+    private final float mTotalAdvance;
 
     /**
      * Precomputed value that indicates whether flags array contains any text effect flag.
      */
     private final boolean mHasEffect;
     private final boolean mHasFastDigit;
-    private final boolean mHasColorEmoji;
+    private final boolean mHasColorBitmap;
 
     /**
      * Elapsed time in seconds since last use.
@@ -163,36 +167,36 @@ public class TextRenderNode {
     private TextRenderNode(@Nonnull TextRenderNode node) {
         mTextBuf = node.mTextBuf;
         mGlyphs = node.mGlyphs;
-        mCharIndices = node.mCharIndices;
         mPositions = node.mPositions;
         mAdvances = node.mAdvances;
-        mFlags = node.mFlags;
+        mCharFlags = node.mCharFlags;
+        mCharIndices = node.mCharIndices;
         mLineBoundaries = node.mLineBoundaries;
-        mAdvance = node.mAdvance;
+        mTotalAdvance = node.mTotalAdvance;
         mHasEffect = node.mHasEffect;
         mHasFastDigit = node.mHasFastDigit;
-        mHasColorEmoji = node.mHasColorEmoji;
+        mHasColorBitmap = node.mHasColorBitmap;
     }
 
-    public TextRenderNode(@Nonnull char[] textBuf, @Nonnull GLBakedGlyph[] glyphs, @Nonnull int[] charIndices,
-                          @Nonnull float[] positions, @Nonnull float[] advances, @Nonnull int[] flags,
-                          @Nonnull int[] lineBoundaries, float advance, boolean hasEffect, boolean hasFastDigit,
-                          boolean hasColorEmoji) {
+    TextRenderNode(@Nonnull char[] textBuf, @Nonnull GLBakedGlyph[] glyphs, @Nonnull float[] positions,
+                   @Nonnull float[] advances, @Nonnull int[] charFlags, @Nonnull int[] charIndices,
+                   @Nonnull int[] lineBoundaries, float totalAdvance, boolean hasEffect,
+                   boolean hasFastDigit, boolean hasColorBitmap) {
         mTextBuf = textBuf;
         mGlyphs = glyphs;
-        mCharIndices = charIndices;
         mPositions = positions;
         mAdvances = advances;
-        mFlags = flags;
+        mCharFlags = charFlags;
+        mCharIndices = charIndices;
         mLineBoundaries = lineBoundaries;
-        mAdvance = advance;
+        mTotalAdvance = totalAdvance;
         mHasEffect = hasEffect;
         mHasFastDigit = hasFastDigit;
-        mHasColorEmoji = hasColorEmoji;
+        mHasColorBitmap = hasColorBitmap;
         assert mTextBuf.length == mAdvances.length;
-        assert mGlyphs.length == mCharIndices.length;
         assert mGlyphs.length * 2 == mPositions.length;
-        assert mGlyphs.length == mFlags.length;
+        assert mGlyphs.length == mCharFlags.length;
+        assert mGlyphs.length == mCharIndices.length;
     }
 
     /**
@@ -211,24 +215,24 @@ public class TextRenderNode {
      * @return this with timer reset
      */
     @Nonnull
-    public TextRenderNode get() {
+    TextRenderNode get() {
         mTimer = 0;
         return this;
     }
 
     /**
-     * Cache access. Increment internal timer by one second.
+     * Cache access. Increment internal timer by one (second).
      *
      * @return true to recycle
      */
-    public boolean tick(int lifespan) {
-        return ++mTimer > lifespan;
+    boolean tick(int threshold) {
+        return ++mTimer > threshold;
     }
 
     /**
-     * Render this text line in Minecraft render system.
+     * Render this text in Minecraft render system.
      *
-     * @param matrix      the position transformation
+     * @param matrix      the transform matrix
      * @param source      the vertex buffer source
      * @param raw         the raw string of vanilla layout for fast digit replacement
      * @param x           the left pos of the text line to render
@@ -239,25 +243,26 @@ public class TextRenderNode {
      * @param a           the alpha value (0...255)
      * @param isShadow    whether to use a darker color to draw?
      * @param seeThrough  whether this text visible behind a wall?
-     * @param background  the background color of the text line in 0xAARRGGBB format
+     * @param background  the background color of the text in 0xAARRGGBB format
      * @param packedLight see {@link net.minecraft.client.renderer.LightTexture}
-     * @param scale       the gui scale factor
-     * @param level       the resolution level used to create this node
+     * @param guiScale    the gui scale factor
+     * @param resLevel    the resolution level used to create this node
      * @return the total advance, always positive
      */
     public float drawText(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, @Nullable String raw,
                           float x, float y, int r, int g, int b, int a, boolean isShadow, boolean seeThrough,
-                          int background, int packedLight, float scale, float level) {
+                          int background, int packedLight, float guiScale, float resLevel) {
         if (mGlyphs.length == 0) {
-            return mAdvance;
+            // e.g. text contains only spaces
+            return mTotalAdvance;
         }
         final int startR = r;
         final int startG = g;
         final int startB = b;
 
-        final GLBakedGlyph[] glyphs = mGlyphs;
-        final float[] positions = mPositions;
-        final int[] flags = mFlags;
+        final var glyphs = mGlyphs;
+        final var positions = mPositions;
+        final var flags = mCharFlags;
         //final boolean alignPixels = TextLayoutProcessor.sAlignPixels;
 
         y += sBaselineOffset;
@@ -266,7 +271,7 @@ public class TextRenderNode {
         VertexConsumer builder = null;
 
         for (int i = 0, e = glyphs.length; i < e; i++) {
-            GLBakedGlyph glyph = glyphs[i];
+            var glyph = glyphs[i];
             final int flag = flags[i];
             final float rx;
             final float ry;
@@ -277,7 +282,7 @@ public class TextRenderNode {
                     continue;
                 }
                 rx = x + positions[i << 1] + 0.5f;
-                ry = y + positions[(i << 1) + 1] - BASELINE_OFFSET;
+                ry = y + positions[(i << 1) + 1] - sBaselineOffset;
                 w = TextLayoutEngine.EMOJI_BASE_SIZE;
                 h = TextLayoutEngine.EMOJI_BASE_SIZE;
             } else {
@@ -289,34 +294,34 @@ public class TextRenderNode {
                     }
                     glyph = chars.glyphs[fastIndex];
                     if (fastIndex != 0) {
-                        rx = x + positions[i << 1] + glyph.x / level + chars.offsets[fastIndex];
+                        rx = x + positions[i << 1] + glyph.x / resLevel + chars.offsets[fastIndex];
                     } else {
                         // 0 is standard, no additional offset
-                        rx = x + positions[i << 1] + glyph.x / level;
+                        rx = x + positions[i << 1] + glyph.x / resLevel;
                     }
-                } else if ((flag & CharacterStyle.OBFUSCATED) != 0) {
+                } else if ((flag & CharacterStyle.OBFUSCATED_MASK) != 0) {
                     var chars = (TextLayoutEngine.FastCharSet) glyph;
                     int fastIndex = RANDOM.nextInt(chars.glyphs.length);
                     glyph = chars.glyphs[fastIndex];
                     if (fastIndex != 0) {
-                        rx = x + positions[i << 1] + glyph.x / level + chars.offsets[fastIndex];
+                        rx = x + positions[i << 1] + glyph.x / resLevel + chars.offsets[fastIndex];
                     } else {
                         // 0 is standard, no additional offset
-                        rx = x + positions[i << 1] + glyph.x / level;
+                        rx = x + positions[i << 1] + glyph.x / resLevel;
                     }
                 } else {
-                    rx = x + positions[i << 1] + glyph.x / level;
+                    rx = x + positions[i << 1] + glyph.x / resLevel;
                 }
-                ry = y + positions[(i << 1) + 1] + glyph.y / level;
+                ry = y + positions[(i << 1) + 1] + glyph.y / resLevel;
 
-                w = glyph.width / level;
-                h = glyph.height / level;
+                w = glyph.width / resLevel;
+                h = glyph.height / resLevel;
             }
             /*if (alignPixels) {
                 rx = Math.round(rx * scale) / scale;
                 ry = Math.round(ry * scale) / scale;
             }*/
-            if ((flag & CharacterStyle.NO_COLOR_SPECIFIED) != 0) {
+            if ((flag & CharacterStyle.IMPLICIT_COLOR_MASK) != 0) {
                 r = startR;
                 g = startG;
                 b = startB;
@@ -330,11 +335,10 @@ public class TextRenderNode {
                     b >>= 2;
                 }
             }
-            if (texture != glyph.texture) {
+            if (builder == null || texture != glyph.texture) {
                 texture = glyph.texture;
                 builder = source.getBuffer(TextRenderType.getOrCreate(texture, seeThrough));
             }
-            assert builder != null;
             builder.vertex(matrix, rx, ry, 0)
                     .color(r, g, b, a)
                     .uv(glyph.u1, glyph.v1)
@@ -366,7 +370,7 @@ public class TextRenderNode {
                 if ((flag & CharacterStyle.EFFECT_MASK) == 0) {
                     continue;
                 }
-                if ((flag & CharacterStyle.NO_COLOR_SPECIFIED) != 0) {
+                if ((flag & CharacterStyle.IMPLICIT_COLOR_MASK) != 0) {
                     r = startR;
                     g = startG;
                     b = startB;
@@ -380,13 +384,16 @@ public class TextRenderNode {
                         b >>= 2;
                     }
                 }
+                //TODO wrong in RTL direction
                 final float rx1 = x + positions[i << 1];
-                final float rx2 = x + ((i + 1 == e) ? mAdvance : positions[(i + 1) << 1]);
+                final float rx2 = x + ((i + 1 == e) ? mTotalAdvance : positions[(i + 1) << 1]);
                 if ((flag & CharacterStyle.STRIKETHROUGH_MASK) != 0) {
-                    TextRenderEffect.drawStrikethrough(matrix, builder, rx1, rx2, y, r, g, b, a, packedLight);
+                    TextRenderEffect.drawStrikethrough(matrix, builder, rx1, rx2, y,
+                            r, g, b, a, packedLight);
                 }
                 if ((flag & CharacterStyle.UNDERLINE_MASK) != 0) {
-                    TextRenderEffect.drawUnderline(matrix, builder, rx1, rx2, y, r, g, b, a, packedLight);
+                    TextRenderEffect.drawUnderline(matrix, builder, rx1, rx2, y,
+                            r, g, b, a, packedLight);
                 }
             }
         }
@@ -402,15 +409,15 @@ public class TextRenderNode {
             }
             builder.vertex(matrix, x - 1, y + 9, TextRenderEffect.EFFECT_DEPTH)
                     .color(r, g, b, a).uv(0, 1).uv2(packedLight).endVertex();
-            builder.vertex(matrix, x + mAdvance + 1, y + 9, TextRenderEffect.EFFECT_DEPTH)
+            builder.vertex(matrix, x + mTotalAdvance + 1, y + 9, TextRenderEffect.EFFECT_DEPTH)
                     .color(r, g, b, a).uv(1, 1).uv2(packedLight).endVertex();
-            builder.vertex(matrix, x + mAdvance + 1, y - 1, TextRenderEffect.EFFECT_DEPTH)
+            builder.vertex(matrix, x + mTotalAdvance + 1, y - 1, TextRenderEffect.EFFECT_DEPTH)
                     .color(r, g, b, a).uv(1, 0).uv2(packedLight).endVertex();
             builder.vertex(matrix, x - 1, y - 1, TextRenderEffect.EFFECT_DEPTH)
                     .color(r, g, b, a).uv(0, 0).uv2(packedLight).endVertex();
         }
 
-        return mAdvance;
+        return mTotalAdvance;
     }
 
     /**
@@ -427,20 +434,20 @@ public class TextRenderNode {
      * @param b           the default outline blue value (0...255)
      * @param a           the alpha value (0...255)
      * @param packedLight see {@link net.minecraft.client.renderer.LightTexture}
-     * @param scale       the gui scale factor
-     * @param level       the resolution level used to create this node
+     * @param guiScale    the gui scale factor
+     * @param resLevel    the resolution level used to create this node
      */
     @SuppressWarnings("UnnecessaryLocalVariable")
     public void drawTextGlow(@Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source,
                              float x, float y, int r, int g, int b, int a, int packedLight,
-                             float scale, float level) {
+                             float guiScale, float resLevel) {
         if (mGlyphs.length == 0) {
             return;
         }
 
-        final GLBakedGlyph[] glyphs = mGlyphs;
-        final float[] positions = mPositions;
-        final int[] flags = mFlags;
+        final var glyphs = mGlyphs;
+        final var positions = mPositions;
+        final var flags = mCharFlags;
         //final boolean alignPixels = TextLayoutProcessor.sAlignPixels;
 
         y += sBaselineOffset;
@@ -448,9 +455,9 @@ public class TextRenderNode {
         int texture = -1;
         VertexConsumer builder = null;
 
-        final float sBloat = Math.min(1.0f, 3.0f / level);
+        final float sBloat = Math.min(1.0f, 3.0f / resLevel);
         for (int i = 0, e = glyphs.length; i < e; i++) {
-            GLBakedGlyph glyph = glyphs[i];
+            var glyph = glyphs[i];
             final int flag = flags[i];
             final float rx;
             final float ry;
@@ -459,33 +466,32 @@ public class TextRenderNode {
             if ((flag & CharacterStyle.BITMAP_REPLACEMENT) != 0) {
                 continue;
             } else {
-                if ((flag & CharacterStyle.OBFUSCATED) != 0) {
+                if ((flag & CharacterStyle.OBFUSCATED_MASK) != 0) {
                     var chars = (TextLayoutEngine.FastCharSet) glyph;
                     int fastIndex = RANDOM.nextInt(chars.glyphs.length);
                     glyph = chars.glyphs[fastIndex];
                     if (fastIndex != 0) {
-                        rx = x + positions[i << 1] + glyph.x / level + chars.offsets[fastIndex];
+                        rx = x + positions[i << 1] + glyph.x / resLevel + chars.offsets[fastIndex];
                     } else {
                         // 0 is standard, no additional offset
-                        rx = x + positions[i << 1] + glyph.x / level;
+                        rx = x + positions[i << 1] + glyph.x / resLevel;
                     }
                 } else {
-                    rx = x + positions[i << 1] + glyph.x / level;
+                    rx = x + positions[i << 1] + glyph.x / resLevel;
                 }
-                ry = y + positions[(i << 1) + 1] + glyph.y / level;
+                ry = y + positions[(i << 1) + 1] + glyph.y / resLevel;
 
-                w = glyph.width / level;
-                h = glyph.height / level;
+                w = glyph.width / resLevel;
+                h = glyph.height / resLevel;
             }
             /*if (alignPixels) {
                 rx = Math.round(rx * scale) / scale;
                 ry = Math.round(ry * scale) / scale;
             }*/
-            if (texture != glyph.texture) {
+            if (builder == null || texture != glyph.texture) {
                 texture = glyph.texture;
                 builder = source.getBuffer(TextRenderType.getOrCreateGlow(texture));
             }
-            assert builder != null;
             float uBloat = 1.5f * (glyph.u2 - glyph.u1) / glyph.width;
             float vBloat = 1.5f * (glyph.v2 - glyph.v1) / glyph.height;
             builder.vertex(matrix, rx - sBloat, ry - sBloat, 0.0001f)
@@ -527,17 +533,6 @@ public class TextRenderNode {
     @Nonnull
     public GLBakedGlyph[] getGlyphs() {
         return mGlyphs;
-    }
-
-    /**
-     * Glyphs to relative char indices of the strip string (without formatting codes). However,
-     * for vanilla layout {@link VanillaTextKey} and {@link TextLayoutEngine#lookupVanillaNode(String)},
-     * these will be adjusted to string index (with formatting codes).
-     * Same indexing with {@link #getGlyphs()}, in visual order.
-     */
-    @Nonnull
-    public int[] getCharIndices() {
-        return mCharIndices;
     }
 
     /**
@@ -594,8 +589,19 @@ public class TextRenderNode {
      * Glyph rendering flags. Same indexing with {@link #getGlyphs()}, in visual order.
      */
     @Nonnull
-    public int[] getFlags() {
-        return mFlags;
+    public int[] getCharFlags() {
+        return mCharFlags;
+    }
+
+    /**
+     * Glyphs to relative char indices of the strip string (without formatting codes). However,
+     * for vanilla layout {@link VanillaLayoutKey} and {@link TextLayoutEngine#lookupVanillaNode(String)},
+     * these will be adjusted to string index (with formatting codes).
+     * Same indexing with {@link #getGlyphs()}, in visual order.
+     */
+    @Nonnull
+    public int[] getCharIndices() {
+        return mCharIndices;
     }
 
     /**
@@ -612,8 +618,8 @@ public class TextRenderNode {
      * <p>
      * Note the values are scaled to Minecraft GUI coordinates.
      */
-    public float getAdvance() {
-        return mAdvance;
+    public float getTotalAdvance() {
+        return mTotalAdvance;
     }
 
     /**
@@ -626,15 +632,15 @@ public class TextRenderNode {
     /**
      * Precomputed value that indicates whether flags array contains any fast digit replacement flag.
      */
-    public boolean isHasFastDigit() {
+    public boolean hasFastDigit() {
         return mHasFastDigit;
     }
 
     /**
      * Precomputed value that indicates whether flags array contains any bitmap replacement flag.
      */
-    public boolean hasColorEmoji() {
-        return mHasColorEmoji;
+    public boolean hasColorBitmap() {
+        return mHasColorBitmap;
     }
 
     /**
@@ -658,15 +664,15 @@ public class TextRenderNode {
                 "text=" + toEscapeChars(mTextBuf) +
                 ",glyphs=" + mGlyphs.length +
                 ",length=" + mTextBuf.length +
-                ",charIndices=" + Arrays.toString(mCharIndices) +
-                ",positions=" + toPosString(mPositions) +
+                ",positions=" + toPositionString(mPositions) +
                 ",advances=" + Arrays.toString(mAdvances) +
-                ",flags=" + toFlagString(mFlags) +
+                ",charFlags=" + toFlagString(mCharFlags) +
+                ",charIndices=" + Arrays.toString(mCharIndices) +
                 ",lineBoundaries" + Arrays.toString(mLineBoundaries) +
-                ",advance=" + mAdvance +
+                ",totalAdvance=" + mTotalAdvance +
                 ",hasEffect=" + mHasEffect +
                 ",hasFastDigit=" + mHasFastDigit +
-                ",hasColorEmoji=" + mHasColorEmoji +
+                ",hasColorBitmap=" + mHasColorBitmap +
                 '}';
     }
 
@@ -687,7 +693,7 @@ public class TextRenderNode {
     }
 
     @Nonnull
-    private static String toPosString(@Nonnull float[] a) {
+    private static String toPositionString(@Nonnull float[] a) {
         int iMax = a.length - 1;
         if (iMax == -1)
             return "[]";

@@ -68,7 +68,7 @@ public final class ModernStringSplitter {
         if (text == null) {
             return 0;
         }
-        return TextLayoutEngine.getInstance().lookupVanillaNode(text).getAdvance();
+        return TextLayoutEngine.getInstance().lookupVanillaNode(text).getTotalAdvance();
     }
 
     /**
@@ -79,7 +79,7 @@ public final class ModernStringSplitter {
      * @return text advance in GUI scaled pixels
      */
     public static float measureText(@Nonnull FormattedText text) {
-        return TextLayoutEngine.getInstance().lookupComplexNode(text).getAdvance();
+        return TextLayoutEngine.getInstance().lookupComplexNode(text).getTotalAdvance();
     }
 
     /**
@@ -89,7 +89,7 @@ public final class ModernStringSplitter {
      * @return text advance in GUI scaled pixels
      */
     public static float measureText(@Nonnull FormattedCharSequence text) {
-        return TextLayoutEngine.getInstance().lookupSequenceNode(text).getAdvance();
+        return TextLayoutEngine.getInstance().lookupSequenceNode(text).getTotalAdvance();
     }
 
     /**
@@ -152,7 +152,7 @@ public final class ModernStringSplitter {
         }
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
-        if (width >= node.getAdvance()) {
+        if (width >= node.getTotalAdvance()) {
             return forwards ? text.length() : 0;
         }
 
@@ -231,7 +231,7 @@ public final class ModernStringSplitter {
         }
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text);
-        if (width >= node.getAdvance()) {
+        if (width >= node.getTotalAdvance()) {
             return null;
         }
 
@@ -279,7 +279,7 @@ public final class ModernStringSplitter {
         }
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupSequenceNode(text);
-        if (width >= node.getAdvance()) {
+        if (width >= node.getTotalAdvance()) {
             return null;
         }
 
@@ -317,7 +317,7 @@ public final class ModernStringSplitter {
         }
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, style);
-        if (width >= node.getAdvance()) {
+        if (width >= node.getTotalAdvance()) {
             return text;
         }
 
@@ -376,7 +376,7 @@ public final class ModernStringSplitter {
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, base);
         final char[] buf = node.getTextBuf();
-        if (width >= node.getAdvance()) {
+        if (width >= node.getTotalAdvance()) {
             boolean hasLineFeed = false;
             for (int i = 0, e = node.getLength(); i < e; i++) {
                 if (buf[i] == '\n') {
@@ -467,7 +467,7 @@ public final class ModernStringSplitter {
 
         final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, base);
         final char[] buf = node.getTextBuf();
-        if (width >= node.getAdvance()) {
+        if (width >= node.getTotalAdvance()) {
             boolean hasLineFeed = false;
             for (int i = 0, e = node.getLength(); i < e; i++) {
                 if (buf[i] == '\n') {

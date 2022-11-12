@@ -38,8 +38,11 @@ import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.textmc.CharSequenceBuilder;
+import icyllis.modernui.textmc.VanillaLayoutKey;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.ints.IntList;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Style;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
@@ -145,11 +148,6 @@ public class TestMain {
         */
 
         testMarkdownParsing();
-
-        int cOut = icyllis.modernui.graphics.Color.blend(BlendMode.SRC_OVER,
-                icyllis.modernui.graphics.Color.argb(0.4f, 0.6f, 0.2f, 0.8f),
-                icyllis.modernui.graphics.Color.argb(1.0f, 0.4f, 0.3f, 0.2f));
-        LOGGER.info("Color Blend: {}", Integer.toHexString(cOut));
 
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())

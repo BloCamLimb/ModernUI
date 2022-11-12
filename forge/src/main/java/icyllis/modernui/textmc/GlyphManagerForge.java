@@ -27,9 +27,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.*;
 import net.minecraft.client.renderer.MultiBufferSource;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.Marker;
@@ -46,12 +44,9 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
+import java.util.*;
 
-import static icyllis.modernui.graphics.opengl.GLCore.GL_ALPHA;
-import static icyllis.modernui.graphics.opengl.GLCore.GL_UNSIGNED_BYTE;
-import static org.lwjgl.opengl.GL11C.*;
+import static icyllis.modernui.graphics.opengl.GLCore.*;
 
 /**
  * Find matching fonts and glyphs, measure glyph metrics and draw them of
@@ -128,8 +123,6 @@ public class GlyphManagerForge {
 
     /**
      * For drawing, due to {@link #GLYPH_BORDER}, we need an offset for drawing glyphs
-     *
-     * @see TextRenderNode#drawText(com.mojang.blaze3d.vertex.BufferBuilder, String, float, float, int, int, int, int, float)
      */
     public static final float GLYPH_OFFSET = GLYPH_BORDER / 2.0f;
 
@@ -216,7 +209,7 @@ public class GlyphManagerForge {
 
     /**
      * Font ID {@link #mFontKeyMap} to an array of length 10 represent 0-9 digits (in that order)
-     * These glyph advance are equal for fast rendering. For example {@link VanillaTextKey#hashCode()} did.
+     * These glyph advance are equal for fast rendering. For example {@link VanillaLayoutKey#hashCode()} did.
      */
     private final Int2ObjectMap<VanillaGlyph[]> mDigitsMap = new Int2ObjectArrayMap<>(4);
 
@@ -274,7 +267,7 @@ public class GlyphManagerForge {
 
     @Deprecated
     public static GlyphManagerForge getInstance() {
-        throw new UnsupportedOperationException();
+        return instance;
     }
 
     /**

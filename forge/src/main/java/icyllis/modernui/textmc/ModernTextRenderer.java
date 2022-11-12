@@ -100,22 +100,22 @@ public final class ModernTextRenderer {
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupVanillaNode(text);
-        float scale = layoutEngine.getCoordinateScale();
-        float level = layoutEngine.getResolutionLevel();
-        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
+        float guiScale = layoutEngine.getGuiScale();
+        float resLevel = layoutEngine.getResLevel();
+        if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
             float offset = sShadowOffset;
             node.drawText(matrix, source, text, x + offset, y + offset, r >> 2, g >> 2, b >> 2, a, true,
-                    seeThrough, colorBackground, packedLight, scale, level);
+                    seeThrough, colorBackground, packedLight, guiScale, resLevel);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(SHADOW_OFFSET);
         }
 
         x += node.drawText(matrix, source, text, x, y, r, g, b, a, false,
-                seeThrough, colorBackground, packedLight, scale, level);
+                seeThrough, colorBackground, packedLight, guiScale, resLevel);
         return x;
     }
 
@@ -140,22 +140,22 @@ public final class ModernTextRenderer {
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupComplexNode(text);
-        float scale = layoutEngine.getCoordinateScale();
-        float level = layoutEngine.getResolutionLevel();
-        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
+        float guiScale = layoutEngine.getGuiScale();
+        float resLevel = layoutEngine.getResLevel();
+        if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
             float offset = sShadowOffset;
             node.drawText(matrix, source, null, x + offset, y + offset, r >> 2, g >> 2, b >> 2, a, true,
-                    seeThrough, colorBackground, packedLight, scale, level);
+                    seeThrough, colorBackground, packedLight, guiScale, resLevel);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(SHADOW_OFFSET);
         }
 
         x += node.drawText(matrix, source, null, x, y, r, g, b, a, false,
-                seeThrough, colorBackground, packedLight, scale, level);
+                seeThrough, colorBackground, packedLight, guiScale, resLevel);
         return x;
     }
 
@@ -180,22 +180,22 @@ public final class ModernTextRenderer {
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupSequenceNode(text);
-        float scale = layoutEngine.getCoordinateScale();
-        float level = layoutEngine.getResolutionLevel();
-        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
+        float guiScale = layoutEngine.getGuiScale();
+        float resLevel = layoutEngine.getResLevel();
+        if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
         if (dropShadow && sAllowShadow) {
             float offset = sShadowOffset;
             node.drawText(matrix, source, null, x + offset, y + offset, r >> 2, g >> 2, b >> 2, a, true,
-                    seeThrough, colorBackground, packedLight, scale, level);
+                    seeThrough, colorBackground, packedLight, guiScale, resLevel);
             matrix = matrix.copy(); // if not drop shadow, we don't need to copy the matrix
             matrix.translate(SHADOW_OFFSET);
         }
 
         x += node.drawText(matrix, source, null, x, y, r, g, b, a, false,
-                seeThrough, colorBackground, packedLight, scale, level);
+                seeThrough, colorBackground, packedLight, guiScale, resLevel);
         return x;
     }
 
@@ -220,19 +220,19 @@ public final class ModernTextRenderer {
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupComplexNode(text);
-        float scale = layoutEngine.getCoordinateScale();
-        float level = layoutEngine.getResolutionLevel();
-        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
+        float guiScale = layoutEngine.getGuiScale();
+        float resLevel = layoutEngine.getResLevel();
+        if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
 
         matrix = matrix.copy();
         node.drawText(matrix, source, null, x, y, r, g, b, a, false,
-                false, 0, LightTexture.FULL_BRIGHT, scale, level);
+                false, 0, LightTexture.FULL_BRIGHT, guiScale, resLevel);
         matrix.translate(OUTLINE_OFFSET);
 
-        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, LightTexture.FULL_BRIGHT, scale, level);
+        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, LightTexture.FULL_BRIGHT, guiScale, resLevel);
     }
 
     public static void drawText8xOutline(@Nonnull FormattedCharSequence text, float x, float y,
@@ -256,19 +256,19 @@ public final class ModernTextRenderer {
 
         TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
         TextRenderNode node = layoutEngine.lookupSequenceNode(text);
-        float scale = layoutEngine.getCoordinateScale();
-        float level = layoutEngine.getResolutionLevel();
-        if (node.hasColorEmoji() && source instanceof MultiBufferSource.BufferSource) {
+        float guiScale = layoutEngine.getGuiScale();
+        float resLevel = layoutEngine.getResLevel();
+        if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
         }
 
         matrix = matrix.copy();
         node.drawText(matrix, source, null, x, y, r, g, b, a, false,
-                false, 0, packedLight, scale, level);
+                false, 0, packedLight, guiScale, resLevel);
         matrix.translate(OUTLINE_OFFSET);
 
-        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, packedLight, scale, level);
+        node.drawTextGlow(matrix, source, x, y, or, og, ob, oa, packedLight, guiScale, resLevel);
     }
 
     /*public static void change(boolean global, boolean shadow) {

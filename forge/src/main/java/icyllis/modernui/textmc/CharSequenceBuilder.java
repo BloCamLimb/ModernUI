@@ -24,83 +24,73 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 /**
- * Used for comparing with char sequences, or build char sequences (string) or char arrays.
+ * Fast approach to compare with CharSequences or build CharSequences that match
+ * {@link String}'s hashCode() and equals().
  *
  * @author BloCamLimb
  */
-public class CharSequenceBuilder implements CharSequence {
-
-    public final CharArrayList mChars = new CharArrayList();
+public class CharSequenceBuilder extends CharArrayList implements CharSequence {
 
     public CharSequenceBuilder() {
     }
 
-    public void addChar(char c) {
-        mChars.add(c);
-    }
-
-    public void addCharArray(@Nonnull char[] chars, int start, int end) {
-        Objects.checkFromToIndex(start, end, chars.length);
-        int offset = mChars.size();
-        mChars.size(offset + end - start);
-        System.arraycopy(chars, start, mChars.elements(), offset, end - start);
+    public void addChars(@Nonnull char[] buf, int start, int end) {
+        Objects.checkFromToIndex(start, end, buf.length);
+        int offset = size;
+        int length = end - start;
+        size(offset + length);
+        System.arraycopy(buf, start, a, offset, length);
     }
 
     /**
-     * @param codePoint unicode code point
+     * @param codePoint a code point
      * @return char count
      */
     public int addCodePoint(int codePoint) {
         if (Character.isBmpCodePoint(codePoint)) {
-            mChars.add((char) codePoint);
+            add((char) codePoint);
             return 1;
         } else {
-            mChars.add(Character.highSurrogate(codePoint));
-            mChars.add(Character.lowSurrogate(codePoint));
+            add(Character.highSurrogate(codePoint));
+            add(Character.lowSurrogate(codePoint));
             return 2;
         }
     }
 
-    public void addString(@Nonnull String str) {
-        int offset = mChars.size();
-        mChars.size(offset + str.length());
-        str.getChars(0, str.length(), mChars.elements(), offset);
+    public void addString(@Nonnull String s) {
+        int offset = size;
+        int length = s.length();
+        size(offset + length);
+        s.getChars(0, length, a, offset);
     }
 
-    public void addCharSequence(@Nonnull CharSequence seq) {
-        int offset = mChars.size();
-        int length = seq.length();
-        mChars.size(offset + length);
-        char[] buf = mChars.elements();
+    public void addCharSequence(@Nonnull CharSequence s) {
+        int offset = size;
+        int length = s.length();
+        size(offset + length);
+        char[] buf = a;
         for (int i = 0; i < length; i++) {
-            buf[offset + i] = seq.charAt(i);
+            buf[offset + i] = s.charAt(i);
         }
     }
 
     @Nonnull
-    public CharSequenceBuilder updateCharArray(@Nonnull char[] chars, int start, int end) {
-        Objects.checkFromToIndex(start, end, chars.length);
-        mChars.size(end - start);
-        System.arraycopy(chars, start, mChars.elements(), 0, end - start);
+    public CharSequenceBuilder updateChars(@Nonnull char[] buf, int start, int end) {
+        Objects.checkFromToIndex(start, end, buf.length);
+        int length = end - start;
+        size(length);
+        System.arraycopy(buf, start, a, 0, length);
         return this;
-    }
-
-    public void clear() {
-        mChars.clear();
     }
 
     @Override
     public int length() {
-        return mChars.size();
+        return size;
     }
 
     @Override
     public char charAt(int index) {
-        return mChars.getChar(index);
-    }
-
-    public boolean isEmpty() {
-        return mChars.isEmpty();
+        return getChar(index);
     }
 
     @Override
@@ -109,34 +99,12 @@ public class CharSequenceBuilder implements CharSequence {
     }
 
     /**
-     * @return new string
+     * @return a new string
      */
     @Nonnull
     @Override
     public String toString() {
-        return new String(mChars.elements(), 0, mChars.size());
-    }
-
-    /**
-     * @return new char array
-     */
-    @Nonnull
-    public char[] toCharArray() {
-        return mChars.toCharArray();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (o instanceof CharSequence seq) {
-            int s = mChars.size();
-            if (s != seq.length()) return false;
-            char[] buf = mChars.elements();
-            for (int i = 0; i < s; i++)
-                if (buf[i] != seq.charAt(i))
-                    return false;
-            return true;
-        }
-        return false;
+        return new String(a, 0, size);
     }
 
     /**
@@ -146,10 +114,24 @@ public class CharSequenceBuilder implements CharSequence {
      */
     @Override
     public int hashCode() {
-        char[] buf = mChars.elements();
-        int h = 0, s = mChars.size();
+        char[] buf = a;
+        int h = 0, s = size();
         for (int i = 0; i < s; i++)
             h = 31 * h + buf[i];
         return h;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o instanceof CharSequence seq) {
+            int s = size();
+            if (s != seq.length()) return false;
+            char[] buf = a;
+            for (int i = 0; i < s; i++)
+                if (buf[i] != seq.charAt(i))
+                    return false;
+            return true;
+        }
+        return false;
     }
 }

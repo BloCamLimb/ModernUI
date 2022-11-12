@@ -23,8 +23,6 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import icyllis.modernui.annotation.RenderThread;
-import icyllis.modernui.core.NativeImage;
-import icyllis.modernui.graphics.opengl.GLCore;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -34,35 +32,29 @@ import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteBuffer;
-import java.util.Objects;
 
-import static org.lwjgl.opengl.GL11C.*;
+import static icyllis.modernui.graphics.opengl.GLCore.*;
 
 @RenderThread
 public class EffectRenderType extends RenderType {
 
-    private static final GLTexture WHITE = new GLTexture(GLCore.GL_TEXTURE_2D);
+    private static final GLTexture WHITE = new GLTexture(GL_TEXTURE_2D);
 
-    private static final EffectRenderType GENERAL = new EffectRenderType();
-    private static final EffectRenderType SEE_THROUGH = new EffectRenderType("modern_text_effect_see_through");
-    private static final EffectRenderType POLYGON_OFFSET = new EffectRenderType(false);
-
-    private static final ImmutableList<RenderStateShard> GENERAL_STATES;
+    private static final ImmutableList<RenderStateShard> STATES;
     private static final ImmutableList<RenderStateShard> SEE_THROUGH_STATES;
-    private static final ImmutableList<RenderStateShard> POLYGON_OFFSET_STATES;
+
+    private static final EffectRenderType TYPE;
+    private static final EffectRenderType SEE_THROUGH_TYPE;
 
     static {
-        WHITE.allocate2DCompat(NativeImage.Format.RED.internalGlFormat, 2, 2, 0);
+        WHITE.allocate2DCompat(GL_R8, 2, 2, 0);
         try (MemoryStack stack = MemoryStack.stackPush()) {
-            ByteBuffer pixels = stack.malloc(4);
-            for (int i = 0; i < 4; i++) {
-                pixels.put((byte) 0xff);
-            }
+            ByteBuffer pixels = stack.bytes((byte) 0xff, (byte) 0xff, (byte) 0xff, (byte) 0xff);
             WHITE.uploadCompat(0, 0, 0, 2, 2, 0, 0, 0, 1,
-                    NativeImage.Format.RED.glFormat, GLCore.GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels.flip()));
+                    GL_RED, GL_UNSIGNED_BYTE, MemoryUtil.memAddress(pixels));
         }
-        WHITE.setSwizzleCompat(GL_ONE, GL_ONE, GL_ONE, GL_RED);
-        GENERAL_STATES = ImmutableList.of(
+        WHITE.setSwizzleCompat(GL_ONE, GL_ONE, GL_ONE, GL_ONE);
+        STATES = ImmutableList.of(
                 TextRenderType.RENDERTYPE_MODERN_TEXT,
                 TRANSLUCENT_TRANSPARENCY,
                 LEQUAL_DEPTH_TEST,
@@ -88,86 +80,30 @@ public class EffectRenderType extends RenderType {
                 COLOR_WRITE,
                 DEFAULT_LINE
         );
-        POLYGON_OFFSET_STATES = ImmutableList.of(
-                TextRenderType.RENDERTYPE_MODERN_TEXT,
-                TRANSLUCENT_TRANSPARENCY,
-                LEQUAL_DEPTH_TEST,
-                CULL,
-                LIGHTMAP,
-                NO_OVERLAY,
-                POLYGON_OFFSET_LAYERING,
-                MAIN_TARGET,
-                DEFAULT_TEXTURING,
-                COLOR_DEPTH_WRITE,
-                DEFAULT_LINE
-        );
+        TYPE = new EffectRenderType("modern_text_effect", 256, () -> {
+            STATES.forEach(RenderStateShard::setupRenderState);
+            RenderSystem.enableTexture();
+            RenderSystem.setShaderTexture(0, WHITE.get());
+        }, () -> STATES.forEach(RenderStateShard::clearRenderState));
+        SEE_THROUGH_TYPE = new EffectRenderType("modern_text_effect_see_through", 256, () -> {
+            SEE_THROUGH_STATES.forEach(RenderStateShard::setupRenderState);
+            RenderSystem.enableTexture();
+            RenderSystem.setShaderTexture(0, WHITE.get());
+        }, () -> SEE_THROUGH_STATES.forEach(RenderStateShard::clearRenderState));
     }
 
-    private final int hashCode;
-
-    private EffectRenderType() {
-        super("modern_text_effect",
-                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
-                VertexFormat.Mode.QUADS, 256, false, true,
-                () -> {
-                    GENERAL_STATES.forEach(RenderStateShard::setupRenderState);
-                    RenderSystem.enableTexture();
-                    RenderSystem.setShaderTexture(0, WHITE.get());
-                },
-                () -> GENERAL_STATES.forEach(RenderStateShard::clearRenderState));
-        this.hashCode = Objects.hash(super.hashCode(), GENERAL_STATES);
-    }
-
-    private EffectRenderType(String t) {
-        super(t,
-                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
-                VertexFormat.Mode.QUADS, 256, false, true,
-                () -> {
-                    SEE_THROUGH_STATES.forEach(RenderStateShard::setupRenderState);
-                    RenderSystem.enableTexture();
-                    RenderSystem.setShaderTexture(0, WHITE.get());
-                },
-                () -> SEE_THROUGH_STATES.forEach(RenderStateShard::clearRenderState));
-        this.hashCode = Objects.hash(super.hashCode(), SEE_THROUGH_STATES);
-    }
-
-    private EffectRenderType(boolean ignored) {
-        super("modern_text_effect",
-                DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP,
-                VertexFormat.Mode.QUADS, 256, false, true,
-                () -> {
-                    POLYGON_OFFSET_STATES.forEach(RenderStateShard::setupRenderState);
-                    RenderSystem.enableTexture();
-                    RenderSystem.setShaderTexture(0, WHITE.get());
-                },
-                () -> POLYGON_OFFSET_STATES.forEach(RenderStateShard::clearRenderState));
-        this.hashCode = Objects.hash(super.hashCode(), POLYGON_OFFSET_STATES);
+    private EffectRenderType(String name, int bufferSize, Runnable setupState, Runnable clearState) {
+        super(name, DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS,
+                bufferSize, false, true, setupState, clearState);
     }
 
     @Nonnull
     public static EffectRenderType getRenderType(boolean seeThrough) {
-        return seeThrough ? SEE_THROUGH : GENERAL;
+        return seeThrough ? SEE_THROUGH_TYPE : TYPE;
     }
 
     @Nonnull
     public static EffectRenderType getRenderType(Font.DisplayMode mode) {
-        return switch (mode) {
-            case NORMAL -> GENERAL;
-            case SEE_THROUGH -> SEE_THROUGH;
-            case POLYGON_OFFSET -> POLYGON_OFFSET;
-        };
-    }
-
-    @Override
-    public int hashCode() {
-        return hashCode;
-    }
-
-    /**
-     * Singleton, the constructor is private
-     */
-    @Override
-    public boolean equals(Object o) {
-        return this == o;
+        throw new IllegalStateException();
     }
 }

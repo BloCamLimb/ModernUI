@@ -29,15 +29,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.PackType;
-import net.minecraft.server.packs.VanillaPackResources;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Optional;
 
 import static icyllis.modernui.ModernUI.*;
@@ -64,10 +61,10 @@ public class TextRenderType extends RenderType {
     /**
      * Texture id to render type map
      */
-    private static final Int2ObjectMap<TextRenderType> TYPES = new Int2ObjectOpenHashMap<>();
-    private static final Int2ObjectMap<TextRenderType> GLOW_TYPES = new Int2ObjectOpenHashMap<>();
-    private static final Int2ObjectMap<TextRenderType> SEE_THROUGH_TYPES = new Int2ObjectOpenHashMap<>();
-    //private static final Int2ObjectMap<TextRenderType> POLYGON_OFFSET_TYPES = new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<TextRenderType> sTypes = new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<TextRenderType> sGlowTypes = new Int2ObjectOpenHashMap<>();
+    private static final Int2ObjectMap<TextRenderType> sSeeThroughTypes = new Int2ObjectOpenHashMap<>();
+    //private static final Int2ObjectMap<TextRenderType> sPolygonOffsetTypes = new Int2ObjectOpenHashMap<>();
 
     /**
      * Only the texture id is different, the rest state are same
@@ -145,13 +142,13 @@ public class TextRenderType extends RenderType {
 
     @Nonnull
     public static TextRenderType getOrCreate(int texture, boolean seeThrough) {
-        return seeThrough ? SEE_THROUGH_TYPES.computeIfAbsent(texture, TextRenderType::makeSeeThroughType)
-                : TYPES.computeIfAbsent(texture, TextRenderType::makeType);
+        return seeThrough ? sSeeThroughTypes.computeIfAbsent(texture, TextRenderType::makeSeeThroughType)
+                : sTypes.computeIfAbsent(texture, TextRenderType::makeType);
     }
 
     @Nonnull
     public static TextRenderType getOrCreateGlow(int texture) {
-        return GLOW_TYPES.computeIfAbsent(texture, TextRenderType::makeGlowType);
+        return sGlowTypes.computeIfAbsent(texture, TextRenderType::makeGlowType);
     }
 
     @Nonnull
@@ -162,7 +159,7 @@ public class TextRenderType extends RenderType {
             RenderSystem.setShaderTexture(0, texture);
         }, () -> STATES.forEach(RenderStateShard::clearRenderState));
         if (sFirstType == null) {
-            assert (TYPES.isEmpty());
+            assert (sTypes.isEmpty());
             sFirstType = renderType;
             ((AccessRenderBuffers) Minecraft.getInstance().renderBuffers()).getFixedBuffers()
                     .put(renderType, sFirstBufferBuilder);
@@ -178,7 +175,7 @@ public class TextRenderType extends RenderType {
             RenderSystem.setShaderTexture(0, texture);
         }, () -> GLOW_STATES.forEach(RenderStateShard::clearRenderState));
         if (sFirstGlowType == null) {
-            assert (GLOW_TYPES.isEmpty());
+            assert (sGlowTypes.isEmpty());
             sFirstGlowType = renderType;
             ((AccessRenderBuffers) Minecraft.getInstance().renderBuffers()).getFixedBuffers()
                     .put(renderType, sFirstGlowBufferBuilder);
@@ -203,9 +200,8 @@ public class TextRenderType extends RenderType {
     /**
      * Deferred rendering.
      * <p>
-     * There may be some issues here. We want to use a general atlas for Minecraft text rendering
-     * which uses deferred rendering to improve performance, but if the first glyph is a color Emoji,
-     * this goes against.
+     * There may be some unexpected behaviors. We want a general atlas for deferred rendering to
+     * improve performance, but this goes against the expectation if a color glyph appears at first.
      */
     @Nullable
     public static TextRenderType firstType() {
@@ -213,7 +209,9 @@ public class TextRenderType extends RenderType {
     }
 
     /**
-     * Deferred rendering.
+     * Similarly, but for glowing signs.
+     *
+     * @see #firstType()
      */
     @Nullable
     public static TextRenderType firstGlowType() {
@@ -222,7 +220,7 @@ public class TextRenderType extends RenderType {
 
     public static void clear() {
         if (sFirstType != null) {
-            assert (!TYPES.isEmpty());
+            assert (!sTypes.isEmpty());
             if (!((AccessRenderBuffers) Minecraft.getInstance().renderBuffers()).getFixedBuffers()
                     .remove(sFirstType, sFirstBufferBuilder)) {
                 throw new IllegalStateException();
@@ -230,16 +228,16 @@ public class TextRenderType extends RenderType {
             sFirstType = null;
         }
         if (sFirstGlowType != null) {
-            assert (!GLOW_TYPES.isEmpty());
+            assert (!sGlowTypes.isEmpty());
             if (!((AccessRenderBuffers) Minecraft.getInstance().renderBuffers()).getFixedBuffers()
                     .remove(sFirstGlowType, sFirstGlowBufferBuilder)) {
                 throw new IllegalStateException();
             }
             sFirstGlowType = null;
         }
-        TYPES.clear();
-        GLOW_TYPES.clear();
-        SEE_THROUGH_TYPES.clear();
+        sTypes.clear();
+        sGlowTypes.clear();
+        sSeeThroughTypes.clear();
         sFirstBufferBuilder.clear();
         sFirstGlowBufferBuilder.clear();
     }
@@ -257,22 +255,21 @@ public class TextRenderType extends RenderType {
     }
 
     /**
-     * Load Modern UI text shaders for early text rendering. These shaders are loaded only once,
-     * and cannot be overridden by other resource packs or reloaded. They will not be closed
-     * unless Minecraft is quited.
+     * Preload Modern UI text shaders for early text rendering. These shaders are loaded only once
+     * and cannot be overridden by other resource packs or reloaded.
      */
     public static synchronized void preloadShaders() {
         if (sShader != null) {
             return;
         }
-        final VanillaPackResources resources = Minecraft.getInstance().getClientPackSource().getVanillaPack();
-        final ResourceProvider provider = location -> {
-            // don't worry
-            @SuppressWarnings("resource") final InputStream stream = ModernUITextMC.class
+        final var fallback = Minecraft.getInstance().getClientPackSource().getVanillaPack().asProvider();
+        final var provider = (ResourceProvider) location -> {
+            // don't worry, ShaderInstance ctor will close it
+            @SuppressWarnings("resource") final var stream = ModernUITextMC.class
                     .getResourceAsStream("/assets/" + location.getNamespace() + "/" + location.getPath());
             if (stream == null) {
-                return Optional.of(new Resource(resources.getName(),
-                        () -> resources.getResource(PackType.CLIENT_RESOURCES, location)));
+                // fallback to vanilla
+                return fallback.getResource(location);
             }
             return Optional.of(new Resource(ModernUI.ID, () -> stream));
         };
