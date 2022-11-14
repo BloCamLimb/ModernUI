@@ -13,6 +13,7 @@
     "MixinClientLanguage",
     "MixinCommandSuggestions",
     "MixinEditBox",
+    "MixinFontManager",
     "MixinFontRenderer",
     "MixinIngameGui",
     "MixinLanguage",
