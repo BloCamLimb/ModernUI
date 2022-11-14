@@ -26,8 +26,6 @@ import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.view.View;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
-import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
@@ -51,9 +49,7 @@ import static icyllis.modernui.ModernUI.*;
 public final class ModernUITextMC {
 
     static {
-        if (FMLEnvironment.dist.isDedicatedServer()) {
-            throw new RuntimeException();
-        }
+        assert FMLEnvironment.dist.isClient();
     }
 
     public static Config CONFIG;
@@ -78,12 +74,12 @@ public final class ModernUITextMC {
         FMLJavaModLoadingContext.get().getModEventBus().addListener(CONFIG::onReload);
     }
 
-    @SubscribeEvent
+    /*@SubscribeEvent
     static void registerResourceListener(@Nonnull RegisterClientReloadListenersEvent event) {
         // language may reload, cause TranslatableComponent changed, so clear layout cache
-        event.registerReloadListener((ResourceManagerReloadListener) manager -> TextLayoutEngine.getInstance().reloadResources());
+        event.registerReloadListener(TextLayoutEngine.getInstance()::reload);
         LOGGER.debug(MARKER, "Registered language reload listener");
-    }
+    }*/
 
     @SubscribeEvent
     static void setupClient(@Nonnull FMLClientSetupEvent event) {
@@ -106,13 +102,13 @@ public final class ModernUITextMC {
         });
         {
             int[] codePoints = {0x1f469, 0x1f3fc, 0x200d, 0x2764, 0xfe0f, 0x200d, 0x1f48b, 0x200d, 0x1f469, 0x1f3fd};
-            CharSequenceBuilder builder = new CharSequenceBuilder();
+            var builder = new CharSequenceBuilder();
             for (int cp : codePoints) {
                 builder.addCodePoint(cp);
             }
             String string = new String(codePoints, 0, codePoints.length);
             if (builder.hashCode() != string.hashCode() || builder.hashCode() != builder.toString().hashCode()) {
-                throw new RuntimeException("String.hashCode() is not identical to the specs");
+                throw new RuntimeException("Bad String.hashCode() implementation");
             }
         }
         //MinecraftForge.EVENT_BUS.register(EventHandler.class);
@@ -308,11 +304,10 @@ public final class ModernUITextMC {
 
         void onReload(@Nonnull ModConfigEvent event) {
             final IConfigSpec<?> spec = event.getConfig().getSpec();
-            if (spec != CONFIG_SPEC) {
-                return;
+            if (spec == CONFIG_SPEC) {
+                reload();
+                LOGGER.debug(MARKER, "Text config reloaded with {}", event.getClass().getSimpleName());
             }
-            reload();
-            LOGGER.debug(MARKER, "Text config reloaded with {}", event.getClass().getSimpleName());
         }
 
         void reload() {
