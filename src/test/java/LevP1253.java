@@ -24,6 +24,7 @@ public class LevP1253 {
                 Student stu = students.get(i);
                 System.out.printf("%s %d %d\n", stu.name(), stu.number(), stu.total());
             }
+            students.clear();
         }
     }
 }

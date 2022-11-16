@@ -31,7 +31,7 @@ public final class GenericType extends Type {
 
     @Nonnull
     @Override
-    public Type[] coercibleTypes() {
+    public Type[] getCoercibleTypes() {
         return mCoercibleTypes;
     }
 }

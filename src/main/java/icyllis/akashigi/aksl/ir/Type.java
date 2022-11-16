@@ -29,8 +29,7 @@ import javax.annotation.Nonnull;
  */
 public class Type extends Symbol {
 
-    // 0 represents non-array; -1 represents unspecified array dimensions, as in `int[]`.
-    public static final int UNSIZED_ARRAY_SIZE = -1;
+    public static final int UNSIZED_ARRAY_SIZE = 0;
 
     /**
      * Block member.
@@ -97,25 +96,25 @@ public class Type extends Symbol {
      * Creates an alias which maps to another type.
      */
     @Nonnull
-    public static Type makeAliasType(String name, Type targetType) {
-        return new AliasType(name, targetType);
+    public static Type makeAliasType(String name, Type underlyingType) {
+        return new AliasType(name, underlyingType);
     }
 
     /**
      * Creates an array type.
      */
     @Nonnull
-    public static Type makeArrayType(String name, Type componentType, int arraySize) {
-        return new ArrayType(name, componentType, arraySize);
+    public static Type makeArrayType(Type componentType, int arraySize) {
+        return new ArrayType(componentType, arraySize);
     }
 
     /**
-     * Create a generic type which maps to the listed types--e.g. $genType is a generic type which
+     * Create a generic type which maps to the listed types--e.g. __genFType is a generic type which
      * can match float, float2, float3 or float4.
      */
     @Nonnull
-    public static Type makeGenericType(String name, Type... types) {
-        return new GenericType(name, types);
+    public static Type makeGenericType(String name, Type... coercibleTypes) {
+        return new GenericType(name, coercibleTypes);
     }
 
     /**
@@ -267,23 +266,6 @@ public class Type extends Symbol {
         return SCALAR_KIND_NON_SCALAR;
     }
 
-    /**
-     * Converts a component type into an array name.
-     * <br>
-     * (float, 10) -> "float[10]"
-     * <br>
-     * (int4, {@link #UNSIZED_ARRAY_SIZE}) -> "int4[]"
-     */
-    @Nonnull
-    public final String getArrayName(int arraySize) {
-        String name = name();
-        if (arraySize == UNSIZED_ARRAY_SIZE) {
-            return name + "[]";
-        }
-        assert (arraySize > 0);
-        return name + "[" + arraySize + "]";
-    }
-
     @Nonnull
     public final String displayName() {
         return name();
@@ -407,9 +389,7 @@ public class Type extends Symbol {
             return getComponentType().coercionCost(other.getComponentType());
         }
         if (isNumber() && other.isNumber()) {
-            if (isLiteral() && isInteger()) {
-                return CoercionCost.free();
-            } else if (scalarKind() != other.scalarKind()) {
+            if (scalarKind() != other.scalarKind()) {
                 return CoercionCost.impossible();
             } else if (other.priority() >= priority()) {
                 return CoercionCost.normal(other.priority() - priority());
@@ -418,7 +398,7 @@ public class Type extends Symbol {
             }
         }
         if (mTypeKind == TYPE_KIND_GENERIC) {
-            final Type[] types = coercibleTypes();
+            final Type[] types = getCoercibleTypes();
             for (int i = 0; i < types.length; i++) {
                 if (types[i].matches(other)) {
                     return CoercionCost.normal(i + 1);
@@ -432,7 +412,7 @@ public class Type extends Symbol {
      * For generic types, returns the types that this generic type can substitute for.
      */
     @Nonnull
-    public Type[] coercibleTypes() {
+    public Type[] getCoercibleTypes() {
         throw new AssertionError();
     }
 
@@ -452,7 +432,7 @@ public class Type extends Symbol {
 
     /**
      * For matrices, returns the number of columns (e.g. mat2x4 returns 4). For vectors and scalars,
-     * returns 1. For arrays, returns either the size of the array (if known) or -1 (unsized).
+     * returns 1. For arrays, returns either the size of the array (if known) or 0 (unsized).
      * For all other types, causes an assertion failure.
      */
     public int columns() {
@@ -500,10 +480,6 @@ public class Type extends Symbol {
     }
 
     public boolean isScalar() {
-        return false;
-    }
-
-    public boolean isLiteral() {
         return false;
     }
 
@@ -763,109 +739,104 @@ public class Type extends Symbol {
 
     public static final class AliasType extends Type {
 
-        private final Type mTargetType;
+        private final Type mUnderlyingType;
 
-        AliasType(String name, Type targetType) {
-            super(name, targetType.desc(), targetType.typeKind());
-            mTargetType = targetType;
+        AliasType(String name, Type underlyingType) {
+            super(name, underlyingType.desc(), underlyingType.typeKind());
+            mUnderlyingType = underlyingType;
         }
 
         @Nonnull
         @Override
         public Type resolve() {
-            return mTargetType;
+            return mUnderlyingType;
         }
 
         @Nonnull
         @Override
         public Type getComponentType() {
-            return mTargetType.getComponentType();
+            return mUnderlyingType.getComponentType();
         }
 
         @Override
         public byte scalarKind() {
-            return mTargetType.scalarKind();
+            return mUnderlyingType.scalarKind();
         }
 
         @Override
         public int priority() {
-            return mTargetType.priority();
+            return mUnderlyingType.priority();
         }
 
         @Override
         public int columns() {
-            return mTargetType.columns();
+            return mUnderlyingType.columns();
         }
 
         @Override
         public int rows() {
-            return mTargetType.rows();
+            return mUnderlyingType.rows();
         }
 
         @Override
         public int bitWidth() {
-            return mTargetType.bitWidth();
+            return mUnderlyingType.bitWidth();
         }
 
         @Override
         public boolean isPrivate() {
-            return mTargetType.isPrivate();
+            return mUnderlyingType.isPrivate();
         }
 
         @Override
         public int slotCount() {
-            return mTargetType.slotCount();
+            return mUnderlyingType.slotCount();
         }
 
         @Override
         public boolean isShadow() {
-            return mTargetType.isShadow();
+            return mUnderlyingType.isShadow();
         }
 
         @Override
         public boolean isArrayed() {
-            return mTargetType.isArrayed();
+            return mUnderlyingType.isArrayed();
         }
 
         @Override
         public boolean isScalar() {
-            return mTargetType.isScalar();
-        }
-
-        @Override
-        public boolean isLiteral() {
-            return mTargetType.isLiteral();
+            return mUnderlyingType.isScalar();
         }
 
         @Override
         public boolean isVector() {
-            return mTargetType.isVector();
+            return mUnderlyingType.isVector();
         }
 
         @Override
         public boolean isMatrix() {
-            return mTargetType.isMatrix();
+            return mUnderlyingType.isMatrix();
         }
 
         @Override
         public boolean isArray() {
-            return mTargetType.isArray();
+            return mUnderlyingType.isArray();
         }
 
         @Override
         public boolean isStruct() {
-            return mTargetType.isStruct();
+            return mUnderlyingType.isStruct();
         }
 
         @Override
         public boolean isInterfaceBlock() {
-            return mTargetType.isInterfaceBlock();
+            return mUnderlyingType.isInterfaceBlock();
         }
 
         @Nonnull
         @Override
-        public Type[] coercibleTypes() {
-            return mTargetType.coercibleTypes();
+        public Type[] getCoercibleTypes() {
+            return mUnderlyingType.getCoercibleTypes();
         }
     }
 }

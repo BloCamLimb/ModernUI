@@ -108,6 +108,10 @@ public final class BuiltInTypes {
     public final Type mVec3;
     public final Type mVec4;
 
+    public final Type mDVec2;
+    public final Type mDVec3;
+    public final Type mDVec4;
+
     public final Type mBVec2;
     public final Type mBVec3;
     public final Type mBVec4;
@@ -119,14 +123,6 @@ public final class BuiltInTypes {
     public final Type mUVec2;
     public final Type mUVec3;
     public final Type mUVec4;
-
-    public final Type mHVec2;
-    public final Type mHVec3;
-    public final Type mHVec4;
-
-    public final Type mDVec2;
-    public final Type mDVec3;
-    public final Type mDVec4;
 
     public final Type mMin16Int;
     public final Type mMin16Int2;
@@ -178,22 +174,6 @@ public final class BuiltInTypes {
     public final Type mMat4x2;
     public final Type mMat4x3;
     public final Type mMat4x4;
-
-    public final Type mHMat2;
-    public final Type mHMat3;
-    public final Type mHMat4;
-
-    public final Type mHMat2x2;
-    public final Type mHMat2x3;
-    public final Type mHMat2x4;
-
-    public final Type mHMat3x2;
-    public final Type mHMat3x3;
-    public final Type mHMat3x4;
-
-    public final Type mHMat4x2;
-    public final Type mHMat4x3;
-    public final Type mHMat4x4;
 
     public final Type mDMat2;
     public final Type mDMat3;
@@ -292,6 +272,7 @@ public final class BuiltInTypes {
     public final Type mInvalid;
 
     public final Type mGenFType;
+    public final Type mGenIType;
 
     public final Type mPoison;
 
@@ -300,6 +281,8 @@ public final class BuiltInTypes {
      */
     public BuiltInTypes() {
         mVoid = Type.makeSpecialType("void", "v", Type.TYPE_KIND_VOID);
+
+        // scalar and vector types
 
         mBool = Type.makeScalarType(
                 "bool", "b", Type.SCALAR_KIND_BOOLEAN, /*priority=*/0, /*bitWidth=*/1);
@@ -332,22 +315,24 @@ public final class BuiltInTypes {
         mUInt4 = Type.makeVectorType("uint4", "I4", mUInt, /*vectorSize*/4);
 
         mHalf = Type.makeScalarType(
-                "half", "h", Type.SCALAR_KIND_FLOAT, /*priority=*/9, /*bitWidth=*/16);
+                "half", "h", Type.SCALAR_KIND_FLOAT, /*priority=*/12, /*bitWidth=*/16);
         mHalf2 = Type.makeVectorType("half2", "h2", mHalf, /*vectorSize*/2);
         mHalf3 = Type.makeVectorType("half3", "h3", mHalf, /*vectorSize*/3);
         mHalf4 = Type.makeVectorType("half4", "h4", mHalf, /*vectorSize*/4);
 
         mFloat = Type.makeScalarType(
-                "float", "f", Type.SCALAR_KIND_FLOAT, /*priority=*/10, /*bitWidth=*/32);
+                "float", "f", Type.SCALAR_KIND_FLOAT, /*priority=*/13, /*bitWidth=*/32);
         mFloat2 = Type.makeVectorType("float2", "f2", mFloat, /*vectorSize*/2);
         mFloat3 = Type.makeVectorType("float3", "f3", mFloat, /*vectorSize*/3);
         mFloat4 = Type.makeVectorType("float4", "f4", mFloat, /*vectorSize*/4);
 
         mDouble = Type.makeScalarType(
-                "double", "d", Type.SCALAR_KIND_FLOAT, /*priority=*/12, /*bitWidth=*/64);
+                "double", "d", Type.SCALAR_KIND_FLOAT, /*priority=*/15, /*bitWidth=*/64);
         mDouble2 = Type.makeVectorType("double2", "d2", mDouble, /*vectorSize*/2);
         mDouble3 = Type.makeVectorType("double3", "d3", mDouble, /*vectorSize*/3);
         mDouble4 = Type.makeVectorType("double4", "d4", mDouble, /*vectorSize*/4);
+
+        // matrix types
 
         mHalf2x2 = Type.makeMatrixType("half2x2", "h22", mHalf, /*columns=*/2, /*rows=*/2);
         mHalf2x3 = Type.makeMatrixType("half2x3", "h23", mHalf, /*columns=*/2, /*rows=*/3);
@@ -385,9 +370,15 @@ public final class BuiltInTypes {
         mDouble4x3 = Type.makeMatrixType("double4x3", "d43", mDouble, /*columns=*/4, /*rows=*/3);
         mDouble4x4 = Type.makeMatrixType("double4x4", "d44", mDouble, /*columns=*/4, /*rows=*/4);
 
+        // GLSL vector aliases
+
         mVec2 = Type.makeAliasType("vec2", mFloat2);
         mVec3 = Type.makeAliasType("vec3", mFloat3);
         mVec4 = Type.makeAliasType("vec4", mFloat4);
+
+        mDVec2 = Type.makeAliasType("dvec2", mDouble2);
+        mDVec3 = Type.makeAliasType("dvec3", mDouble3);
+        mDVec4 = Type.makeAliasType("dvec4", mDouble4);
 
         mBVec2 = Type.makeAliasType("bvec2", mBool2);
         mBVec3 = Type.makeAliasType("bvec3", mBool3);
@@ -401,13 +392,7 @@ public final class BuiltInTypes {
         mUVec3 = Type.makeAliasType("uvec3", mUInt3);
         mUVec4 = Type.makeAliasType("uvec4", mUInt4);
 
-        mHVec2 = Type.makeAliasType("hvec2", mHalf2);
-        mHVec3 = Type.makeAliasType("hvec3", mHalf3);
-        mHVec4 = Type.makeAliasType("hvec4", mHalf4);
-
-        mDVec2 = Type.makeAliasType("dvec2", mDouble2);
-        mDVec3 = Type.makeAliasType("dvec3", mDouble3);
-        mDVec4 = Type.makeAliasType("dvec4", mDouble4);
+        // HLSL minimum aliases
 
         mMin16Int = Type.makeAliasType("min16int", mShort);
         mMin16Int2 = Type.makeAliasType("min16int2", mShort2);
@@ -423,6 +408,8 @@ public final class BuiltInTypes {
         mMin16Float2 = Type.makeAliasType("min16float2", mHalf2);
         mMin16Float3 = Type.makeAliasType("min16float3", mHalf3);
         mMin16Float4 = Type.makeAliasType("min16float4", mHalf4);
+
+        // GLSL extension scalar and vector aliases
 
         mInt32 = Type.makeAliasType("int32_t", mInt);
         mI32Vec2 = Type.makeAliasType("i32vec2", mInt2);
@@ -444,6 +431,8 @@ public final class BuiltInTypes {
         mF64Vec3 = Type.makeAliasType("f64vec3", mDouble3);
         mF64Vec4 = Type.makeAliasType("f64vec4", mDouble4);
 
+        // GLSL matrix aliases
+
         mMat2 = Type.makeAliasType("mat2", mFloat2x2);
         mMat3 = Type.makeAliasType("mat3", mFloat3x3);
         mMat4 = Type.makeAliasType("mat4", mFloat4x4);
@@ -460,22 +449,6 @@ public final class BuiltInTypes {
         mMat4x3 = Type.makeAliasType("mat4x3", mFloat4x3);
         mMat4x4 = Type.makeAliasType("mat4x4", mFloat4x4);
 
-        mHMat2 = Type.makeAliasType("hmat2", mHalf2x2);
-        mHMat3 = Type.makeAliasType("hmat3", mHalf3x3);
-        mHMat4 = Type.makeAliasType("hmat4", mHalf4x4);
-
-        mHMat2x2 = Type.makeAliasType("hmat2x2", mHalf2x2);
-        mHMat2x3 = Type.makeAliasType("hmat2x3", mHalf2x3);
-        mHMat2x4 = Type.makeAliasType("hmat2x4", mHalf2x4);
-
-        mHMat3x2 = Type.makeAliasType("hmat3x2", mHalf3x2);
-        mHMat3x3 = Type.makeAliasType("hmat3x3", mHalf3x3);
-        mHMat3x4 = Type.makeAliasType("hmat3x4", mHalf3x4);
-
-        mHMat4x2 = Type.makeAliasType("hmat4x2", mHalf4x2);
-        mHMat4x3 = Type.makeAliasType("hmat4x3", mHalf4x3);
-        mHMat4x4 = Type.makeAliasType("hmat4x4", mHalf4x4);
-
         mDMat2 = Type.makeAliasType("dmat2", mDouble2x2);
         mDMat3 = Type.makeAliasType("dmat3", mDouble3x3);
         mDMat4 = Type.makeAliasType("dmat4", mDouble4x4);
@@ -491,6 +464,8 @@ public final class BuiltInTypes {
         mDMat4x2 = Type.makeAliasType("dmat4x2", mDouble4x2);
         mDMat4x3 = Type.makeAliasType("dmat4x3", mDouble4x3);
         mDMat4x4 = Type.makeAliasType("dmat4x4", mDouble4x4);
+
+        // GLSL extension matrix aliases
 
         mF32Mat2 = Type.makeAliasType("f32mat2", mFloat2x2);
         mF32Mat3 = Type.makeAliasType("f32mat3", mFloat3x3);
@@ -523,6 +498,8 @@ public final class BuiltInTypes {
         mF64Mat4x2 = Type.makeAliasType("f64mat4x2", mDouble4x2);
         mF64Mat4x3 = Type.makeAliasType("f64mat4x3", mDouble4x3);
         mF64Mat4x4 = Type.makeAliasType("f64mat4x4", mDouble4x4);
+
+        // opaque types (image, texture, sampler, combined sampler)
 
         mImage1D = Type.makeImageType("image1D", "M1", mFloat,
                 Spv.SpvDim1D, /*isArrayed=*/false, /*isMultisampled=*/false);
@@ -610,7 +587,8 @@ public final class BuiltInTypes {
 
         mInvalid = Type.makeSpecialType(Compiler.INVALID_TAG, "O", Type.TYPE_KIND_OTHER);
 
-        mGenFType = Type.makeGenericType("genFType", mFloat, mFloat2, mFloat3, mFloat4);
+        mGenFType = Type.makeGenericType("__genFType", mFloat, mFloat2, mFloat3, mFloat4);
+        mGenIType = Type.makeGenericType("__genIType", mInt, mInt2, mInt3, mInt4);
 
         mPoison = Type.makeSpecialType(Compiler.POISON_TAG, "P", Type.TYPE_KIND_OTHER);
     }

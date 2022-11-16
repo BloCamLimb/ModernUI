@@ -25,13 +25,26 @@ public final class ArrayType extends Type {
     private final Type mComponentType;
     private final int mArraySize;
 
-    ArrayType(String name, Type componentType, int arraySize) {
-        super(name, componentType.desc(), TYPE_KIND_ARRAY);
+    ArrayType(Type componentType, int arraySize) {
+        super(convertNameOrDesc(componentType.name(), arraySize),
+                convertNameOrDesc(componentType.desc(), arraySize),
+                TYPE_KIND_ARRAY);
         assert (arraySize == UNSIZED_ARRAY_SIZE || arraySize > 0);
         // Disallow multi-dimensional arrays (Vulkan).
-        assert !(componentType instanceof ArrayType);
+        if (componentType instanceof ArrayType) {
+            throw new IllegalArgumentException("Multi-dimensional arrays are not supported");
+        }
         mComponentType = componentType;
         mArraySize = arraySize;
+    }
+
+    @Nonnull
+    public static String convertNameOrDesc(String nameOrDesc, int arraySize) {
+        if (arraySize == UNSIZED_ARRAY_SIZE) {
+            return nameOrDesc + "[]";
+        }
+        assert (arraySize > 0);
+        return nameOrDesc + "[" + arraySize + "]";
     }
 
     @Override
