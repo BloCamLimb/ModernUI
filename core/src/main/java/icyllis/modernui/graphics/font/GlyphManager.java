@@ -202,16 +202,16 @@ public class GlyphManager {
     }
 
     public void dumpInfo(PrintWriter pw) {
-        int glyphSize = 0;
+        int glyphCount = 0;
         long memorySize = 0;
         for (var atlas : mAtlases.values()) {
-            glyphSize += atlas.getGlyphCount();
+            glyphCount += atlas.getGlyphCount();
             memorySize += atlas.getMemorySize();
         }
         pw.print("GlyphManager: ");
         pw.print("Atlases=" + mAtlases.size());
-        pw.print(", Glyphs=" + glyphSize);
-        pw.println(", MemorySize=" + TextUtils.binaryCompact(memorySize) + " (" + memorySize + " bytes)");
+        pw.print(", Glyphs=" + glyphCount);
+        pw.println(", GPUMemorySize=" + TextUtils.binaryCompact(memorySize) + " (" + memorySize + " bytes)");
     }
 
     @Nullable
@@ -226,7 +226,7 @@ public class GlyphManager {
         Rectangle bounds = vector.getPixelBounds(null, 0, 0);
 
         if (bounds.width == 0 || bounds.height == 0) {
-            atlas.setNull(key);
+            atlas.setWhitespace(key);
             return null;
         }
 

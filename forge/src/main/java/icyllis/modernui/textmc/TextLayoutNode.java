@@ -29,9 +29,9 @@ import java.util.Arrays;
 import java.util.Random;
 
 /**
- * The render node contains all glyph layout information and rendering information.
+ * The layout node contains all glyph layout information and rendering information.
  */
-public class TextRenderNode {
+public class TextLayoutNode {
 
     /**
      * For obfuscated characters.
@@ -43,12 +43,11 @@ public class TextRenderNode {
      * <p>
      * This singleton cannot be inserted into the cache!
      */
-    public static final TextRenderNode EMPTY = new TextRenderNode(new char[0], new GLBakedGlyph[0], new float[0],
-            new float[0], new int[0], new int[0],
-            new int[0], 0, false, false, false) {
+    public static final TextLayoutNode EMPTY = new TextLayoutNode(new char[0], new GLBakedGlyph[0], new float[0],
+            new float[0], new int[0], new int[0], new int[0], 0, false, false, false) {
         @Nonnull
         @Override
-        TextRenderNode get() {
+        TextLayoutNode get() {
             throw new UnsupportedOperationException();
         }
 
@@ -123,7 +122,7 @@ public class TextRenderNode {
      *     1      OBFUSCATED
      *    1       FAST_DIGIT_REPLACEMENT
      *   1        BITMAP_REPLACEMENT
-     *  1         USE_PARAM_COLOR
+     *  1         IMPLICIT_COLOR
      * |--------|
      */
     /**
@@ -164,7 +163,7 @@ public class TextRenderNode {
      */
     private transient int mTimer = 0;
 
-    private TextRenderNode(@Nonnull TextRenderNode node) {
+    private TextLayoutNode(@Nonnull TextLayoutNode node) {
         mTextBuf = node.mTextBuf;
         mGlyphs = node.mGlyphs;
         mPositions = node.mPositions;
@@ -178,7 +177,7 @@ public class TextRenderNode {
         mHasColorBitmap = node.mHasColorBitmap;
     }
 
-    TextRenderNode(@Nonnull char[] textBuf, @Nonnull GLBakedGlyph[] glyphs, @Nonnull float[] positions,
+    TextLayoutNode(@Nonnull char[] textBuf, @Nonnull GLBakedGlyph[] glyphs, @Nonnull float[] positions,
                    @Nonnull float[] advances, @Nonnull int[] charFlags, @Nonnull int[] charIndices,
                    @Nonnull int[] lineBoundaries, float totalAdvance, boolean hasEffect,
                    boolean hasFastDigit, boolean hasColorBitmap) {
@@ -205,8 +204,8 @@ public class TextRenderNode {
      * @return a new empty node as fallback
      */
     @Nonnull
-    public static TextRenderNode makeEmpty() {
-        return new TextRenderNode(EMPTY);
+    public static TextLayoutNode makeEmpty() {
+        return new TextLayoutNode(EMPTY);
     }
 
     /**
@@ -215,7 +214,7 @@ public class TextRenderNode {
      * @return this with timer reset
      */
     @Nonnull
-    TextRenderNode get() {
+    TextLayoutNode get() {
         mTimer = 0;
         return this;
     }
@@ -570,23 +569,10 @@ public class TextRenderNode {
         return mTextBuf.length;
     }
 
-    /*
-     * lower 24 bits - 0xRRGGBB color
-     * higher 8 bits
-     * |--------|
-     *         1  BOLD
-     *        1   ITALIC
-     *       1    UNDERLINE
-     *      1     STRIKETHROUGH
-     *     1      OBFUSCATED
-     *    1       FAST_DIGIT_REPLACEMENT
-     *   1        BITMAP_REPLACEMENT
-     *  1         USE_PARAM_COLOR
-     * |--------|
-     */
-
     /**
      * Glyph rendering flags. Same indexing with {@link #getGlyphs()}, in visual order.
+     *
+     * @see CharacterStyle
      */
     @Nonnull
     public int[] getCharFlags() {
@@ -660,7 +646,7 @@ public class TextRenderNode {
 
     @Override
     public String toString() {
-        return "TextRenderNode{" +
+        return "TextLayoutNode{" +
                 "text=" + toEscapeChars(mTextBuf) +
                 ",glyphs=" + mGlyphs.length +
                 ",length=" + mTextBuf.length +

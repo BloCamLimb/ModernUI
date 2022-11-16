@@ -98,10 +98,10 @@ public final class ModernTextRenderer {
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
 
-        TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        TextRenderNode node = layoutEngine.lookupVanillaNode(text);
-        float guiScale = layoutEngine.getGuiScale();
-        float resLevel = layoutEngine.getResLevel();
+        TextLayoutEngine engine = TextLayoutEngine.getInstance();
+        TextLayoutNode node = engine.lookupVanillaNode(text);
+        float guiScale = engine.getGuiScale();
+        float resLevel = engine.getResLevel();
         if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
@@ -138,10 +138,10 @@ public final class ModernTextRenderer {
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
 
-        TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        TextRenderNode node = layoutEngine.lookupComplexNode(text);
-        float guiScale = layoutEngine.getGuiScale();
-        float resLevel = layoutEngine.getResLevel();
+        TextLayoutEngine engine = TextLayoutEngine.getInstance();
+        TextLayoutNode node = engine.lookupComplexNode(text);
+        float guiScale = engine.getGuiScale();
+        float resLevel = engine.getResLevel();
         if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
@@ -178,10 +178,10 @@ public final class ModernTextRenderer {
         int g = color >> 8 & 0xff;
         int b = color & 0xff;
 
-        TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        TextRenderNode node = layoutEngine.lookupSequenceNode(text);
-        float guiScale = layoutEngine.getGuiScale();
-        float resLevel = layoutEngine.getResLevel();
+        TextLayoutEngine engine = TextLayoutEngine.getInstance();
+        TextLayoutNode node = engine.lookupSequenceNode(text);
+        float guiScale = engine.getGuiScale();
+        float resLevel = engine.getResLevel();
         if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
@@ -218,10 +218,10 @@ public final class ModernTextRenderer {
         int og = outlineColor >> 8 & 0xff;
         int ob = outlineColor & 0xff;
 
-        TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        TextRenderNode node = layoutEngine.lookupComplexNode(text);
-        float guiScale = layoutEngine.getGuiScale();
-        float resLevel = layoutEngine.getResLevel();
+        TextLayoutEngine engine = TextLayoutEngine.getInstance();
+        TextLayoutNode node = engine.lookupComplexNode(text);
+        float guiScale = engine.getGuiScale();
+        float resLevel = engine.getResLevel();
         if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());
@@ -254,10 +254,10 @@ public final class ModernTextRenderer {
         int og = outlineColor >> 8 & 0xff;
         int ob = outlineColor & 0xff;
 
-        TextLayoutEngine layoutEngine = TextLayoutEngine.getInstance();
-        TextRenderNode node = layoutEngine.lookupSequenceNode(text);
-        float guiScale = layoutEngine.getGuiScale();
-        float resLevel = layoutEngine.getResLevel();
+        TextLayoutEngine engine = TextLayoutEngine.getInstance();
+        TextLayoutNode node = engine.lookupSequenceNode(text);
+        float guiScale = engine.getGuiScale();
+        float resLevel = engine.getResLevel();
         if (node.hasColorBitmap() && source instanceof MultiBufferSource.BufferSource) {
             // performance impact
             ((MultiBufferSource.BufferSource) source).endBatch(Sheets.signSheet());

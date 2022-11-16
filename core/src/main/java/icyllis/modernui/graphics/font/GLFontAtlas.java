@@ -96,14 +96,21 @@ public class GLFontAtlas implements AutoCloseable {
         mColored = colored;
     }
 
+    /**
+     * When the key is absent, this method computes a new instance and returns it.
+     * When the key is present but was called {@link #setWhitespace(long)} with it,
+     * then this method returns null, which means there's nothing to render.
+     *
+     * @param key a key
+     * @return the baked glyph or null if no pixels
+     */
     @Nullable
     public GLBakedGlyph getGlyph(long key) {
-        // cached factory
+        // static factory
         return mGlyphs.computeIfAbsent(key, __ -> new GLBakedGlyph());
     }
 
-    // needed when the glyph has nothing to render
-    public void setNull(long key) {
+    public void setWhitespace(long key) {
         mGlyphs.put(key, null);
     }
 

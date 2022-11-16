@@ -321,7 +321,7 @@ public final class ModernUITextMC {
                 TextLayoutProcessor.sBaseFontSize = mBaseFontSize.get().floatValue();
                 reload = true;
             }
-            TextRenderNode.sBaselineOffset = mBaselineShift.get().floatValue();
+            TextLayoutNode.sBaselineOffset = mBaselineShift.get().floatValue();
             ModernTextRenderer.sShadowOffset = mShadowOffset.get().floatValue();
             ModernTextRenderer.sOutlineOffset = mOutlineOffset.get().floatValue();
             if (TextLayoutEngine.sSuperSampling != mSuperSampling.get()) {

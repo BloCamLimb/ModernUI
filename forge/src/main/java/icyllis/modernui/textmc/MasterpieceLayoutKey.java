@@ -44,12 +44,12 @@ import java.util.Optional;
  * @see CharacterStyle
  * @see VanillaLayoutKey
  */
-public class CompoundLayoutKey {
+public class MasterpieceLayoutKey {
 
     /**
-     * Blobs use String as their backing store, none of them contains {@link ChatFormatting} codes.
+     * Texts use String as their backing store, none of them contains {@link ChatFormatting} codes.
      */
-    private CharSequence[] mBlobs;
+    private CharSequence[] mTexts;
 
     /**
      * References to the font set which layers are decorated.
@@ -69,13 +69,13 @@ public class CompoundLayoutKey {
      */
     int mHash;
 
-    private CompoundLayoutKey() {
+    private MasterpieceLayoutKey() {
     }
 
-    private CompoundLayoutKey(CharSequence[] blobs,
-                              ResourceLocation[] fonts,
-                              int[] codes, int hash) {
-        mBlobs = blobs;
+    private MasterpieceLayoutKey(CharSequence[] texts,
+                                 ResourceLocation[] fonts,
+                                 int[] codes, int hash) {
+        mTexts = texts;
         mFonts = fonts;
         mCodes = codes;
         mHash = hash;
@@ -87,12 +87,10 @@ public class CompoundLayoutKey {
 
         if (h == 0) {
             h = 1;
-            var blobs = mBlobs;
-            var fonts = mFonts;
             var codes = mCodes;
-            for (int i = 0, e = blobs.length; i < e; i++) {
-                h = 31 * h + blobs[i].hashCode();
-                h = 31 * h + fonts[i].hashCode();
+            for (int i = 0, e = codes.length; i < e; i++) {
+                h = 31 * h + mTexts[i].hashCode();
+                h = 31 * h + mFonts[i].hashCode();
                 h = 31 * h + codes[i];
             }
             mHash = h;
@@ -103,19 +101,19 @@ public class CompoundLayoutKey {
 
     @Override
     public boolean equals(Object o) {
-        if (o.getClass() != CompoundLayoutKey.class) {
+        if (o.getClass() != MasterpieceLayoutKey.class) {
             return false;
         }
-        CompoundLayoutKey key = (CompoundLayoutKey) o;
+        MasterpieceLayoutKey key = (MasterpieceLayoutKey) o;
         return Arrays.equals(mCodes, key.mCodes) &&
                 Arrays.equals(mFonts, key.mFonts) &&
-                Arrays.equals(mBlobs, key.mBlobs);
+                Arrays.equals(mTexts, key.mTexts);
     }
 
     @Override
     public String toString() {
-        return "CompoundLayoutKey{" +
-                "mBlobs=" + Arrays.toString(mBlobs) +
+        return "MasterpieceLayoutKey{" +
+                "mTexts=" + Arrays.toString(mTexts) +
                 ", mFonts=" + Arrays.toString(mFonts) +
                 ", mCodes=" + Arrays.toString(mCodes) +
                 ", mHash=" + mHash +
@@ -127,10 +125,10 @@ public class CompoundLayoutKey {
      */
     public int getMemorySize() {
         int size = 0;
-        for (CharSequence s : mBlobs) {
+        for (CharSequence s : mTexts) {
             size += FMath.align4(s.length()) << 1;
         }
-        size += (16 + (FMath.align2(mBlobs.length) << 2)) * 3;
+        size += (16 + (FMath.align2(mTexts.length) << 2)) * 3;
         return size + 32;
     }
 
@@ -138,9 +136,9 @@ public class CompoundLayoutKey {
      * Designed for performance, this also ensures hashCode() and equals() of Key
      * strictly matched in various cases.
      */
-    public static class Lookup extends CompoundLayoutKey {
+    public static class Lookup extends MasterpieceLayoutKey {
 
-        private final ObjectArrayList<CharSequence> mBlobs = new ObjectArrayList<>();
+        private final ObjectArrayList<CharSequence> mTexts = new ObjectArrayList<>();
         private final ObjectArrayList<ResourceLocation> mFonts = new ObjectArrayList<>();
         private final IntArrayList mCodes = new IntArrayList();
 
@@ -154,7 +152,7 @@ public class CompoundLayoutKey {
             @Nonnull
             @Override
             public Optional<Object> accept(@Nonnull Style style, @Nonnull String content) {
-                mBlobs.add(content);
+                mTexts.add(content);
                 mFonts.add(style.getFont());
                 mCodes.add(CharacterStyle.flatten(style));
                 return Optional.empty(); // continue
@@ -192,7 +190,7 @@ public class CompoundLayoutKey {
                 } else if (CharacterStyle.isAppearanceAffecting(mStyle, style)) {
                     // append last component
                     if (!mBuilder.isEmpty()) {
-                        mBlobs.add(mBuilder);
+                        mTexts.add(mBuilder);
                         mFonts.add(mStyle.getFont());
                         mCodes.add(CharacterStyle.flatten(mStyle));
                         allocate();
@@ -206,13 +204,13 @@ public class CompoundLayoutKey {
             private void end() {
                 // append last component
                 if (mBuilder != null && !mBuilder.isEmpty()) {
-                    mBlobs.add(mBuilder);
+                    mTexts.add(mBuilder);
                     mFonts.add(mStyle.getFont());
                     mCodes.add(CharacterStyle.flatten(mStyle));
                 }
                 // we later make copies to generate a Key, so we can release these builders
                 // back into the pool now
-                for (CharSequence s : mBlobs) {
+                for (CharSequence s : mTexts) {
                     mPool.release((CharSequenceBuilder) s);
                 }
                 mBuilder = null;
@@ -221,7 +219,8 @@ public class CompoundLayoutKey {
         }
 
         private void reset() {
-            mBlobs.clear();
+            assert mTexts.size() == mFonts.size() && mTexts.size() == mCodes.size();
+            mTexts.clear();
             mFonts.clear();
             mCodes.clear();
             mHash = 0;
@@ -231,7 +230,7 @@ public class CompoundLayoutKey {
          * Update this key.
          */
         @Nonnull
-        public CompoundLayoutKey update(@Nonnull FormattedText text, @Nonnull Style style) {
+        public MasterpieceLayoutKey update(@Nonnull FormattedText text, @Nonnull Style style) {
             reset();
             text.visit(mContentBuilder, style);
             return this;
@@ -241,26 +240,25 @@ public class CompoundLayoutKey {
          * Update this key.
          */
         @Nonnull
-        public CompoundLayoutKey update(@Nonnull FormattedCharSequence sequence) {
+        public MasterpieceLayoutKey update(@Nonnull FormattedCharSequence sequence) {
             reset();
             sequence.accept(mSequenceBuilder);
             mSequenceBuilder.end();
             return this;
         }
 
+        @SuppressWarnings("UnnecessaryLocalVariable")
         @Override
         public int hashCode() {
             int h = mHash;
 
             if (h == 0) {
                 h = 1;
-                var blobs = mBlobs;
-                @SuppressWarnings("UnnecessaryLocalVariable")
+                var texts = mTexts;
                 var fonts = mFonts;
-                @SuppressWarnings("UnnecessaryLocalVariable")
                 var codes = mCodes;
-                for (int i = 0, e = blobs.size(); i < e; i++) {
-                    h = 31 * h + blobs.get(i).hashCode();
+                for (int i = 0, e = codes.size(); i < e; i++) {
+                    h = 31 * h + texts.get(i).hashCode();
                     h = 31 * h + fonts.get(i).hashCode();
                     h = 31 * h + codes.getInt(i);
                 }
@@ -272,21 +270,21 @@ public class CompoundLayoutKey {
 
         @Override
         public boolean equals(Object o) {
-            if (o.getClass() != CompoundLayoutKey.class) {
+            if (o.getClass() != MasterpieceLayoutKey.class) {
                 return false;
             }
-            CompoundLayoutKey key = (CompoundLayoutKey) o;
-            final int length = mBlobs.size();
-            return length == key.mBlobs.length &&
+            MasterpieceLayoutKey key = (MasterpieceLayoutKey) o;
+            final int length = mTexts.size();
+            return length == key.mTexts.length &&
                     Arrays.equals(mCodes.elements(), 0, length, key.mCodes, 0, length) &&
                     Arrays.equals(mFonts.elements(), 0, length, key.mFonts, 0, length) &&
-                    Arrays.equals(mBlobs.elements(), 0, length, key.mBlobs, 0, length);
+                    Arrays.equals(mTexts.elements(), 0, length, key.mTexts, 0, length);
         }
 
         @Override
         public String toString() {
             return "Lookup{" +
-                    "mBlobs=" + mBlobs +
+                    "mTexts=" + mTexts +
                     ", mFonts=" + mFonts +
                     ", mCodes=" + mCodes +
                     ", mHash=" + mHash +
@@ -299,14 +297,14 @@ public class CompoundLayoutKey {
          * @return a storage key
          */
         @Nonnull
-        public CompoundLayoutKey copy() {
-            final int length = mBlobs.size();
-            CharSequence[] blobs = new CharSequence[length];
+        public MasterpieceLayoutKey copy() {
+            final int length = mTexts.size();
+            CharSequence[] texts = new CharSequence[length];
             for (int i = 0; i < length; i++) {
                 // String returns self, CharSequenceBuilder returns a new String
-                blobs[i] = mBlobs.get(i).toString();
+                texts[i] = mTexts.get(i).toString();
             }
-            return new CompoundLayoutKey(blobs, mFonts.toArray(new ResourceLocation[0]),
+            return new MasterpieceLayoutKey(texts, mFonts.toArray(new ResourceLocation[0]),
                     mCodes.toIntArray(), mHash);
         }
     }

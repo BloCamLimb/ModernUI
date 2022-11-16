@@ -64,11 +64,14 @@ import java.util.regex.Pattern;
 import static icyllis.modernui.ModernUI.*;
 
 /**
- * Modern Text Engine for Minecraft. Layout text component and extract style info and generate
- * or cache render information for Minecraft text system.
+ * Modern UI text engine for Minecraft. This class performs Unicode text layout (and measurement),
+ * and manage several caches for the layout results. They also provide rendering information and
+ * additional information to support several Unicode text algorithms for Minecraft text system.
  * <p>
- * This is a streaming layout engine which differs from Modern UI core.
+ * Minecraft's coordinate system, representation of styled texts, and rendering systems are
+ * very different from those of the Modern UI core, so this becomes an independent part.
  *
+ * @author BloCamLimb
  * @since 2.0
  */
 public class TextLayoutEngine {
@@ -79,9 +82,7 @@ public class TextLayoutEngine {
     private static volatile TextLayoutEngine sInstance;
 
     static {
-        if (FMLEnvironment.dist.isDedicatedServer()) {
-            throw new RuntimeException();
-        }
+        assert FMLEnvironment.dist.isClient();
     }
 
     /**
@@ -104,47 +105,14 @@ public class TextLayoutEngine {
             Pattern.compile("(\\:(\\w|\\+|\\-)+\\:)(?=|[\\!\\.\\?]|$)");
 
     /**
-     * Maps ASCII to ChatFormatting, including capitals.
+     * Maps ASCII to ChatFormatting, including all cases.
      */
     private static final ChatFormatting[] FORMATTING_TABLE = new ChatFormatting[128];
 
     static {
-        FORMATTING_TABLE['0'] = ChatFormatting.BLACK;
-        FORMATTING_TABLE['1'] = ChatFormatting.DARK_BLUE;
-        FORMATTING_TABLE['2'] = ChatFormatting.DARK_GREEN;
-        FORMATTING_TABLE['3'] = ChatFormatting.DARK_AQUA;
-        FORMATTING_TABLE['4'] = ChatFormatting.DARK_RED;
-        FORMATTING_TABLE['5'] = ChatFormatting.DARK_PURPLE;
-        FORMATTING_TABLE['6'] = ChatFormatting.GOLD;
-        FORMATTING_TABLE['7'] = ChatFormatting.GRAY;
-        FORMATTING_TABLE['8'] = ChatFormatting.DARK_GRAY;
-        FORMATTING_TABLE['9'] = ChatFormatting.BLUE;
-        FORMATTING_TABLE['a'] = ChatFormatting.GREEN;
-        FORMATTING_TABLE['b'] = ChatFormatting.AQUA;
-        FORMATTING_TABLE['c'] = ChatFormatting.RED;
-        FORMATTING_TABLE['d'] = ChatFormatting.LIGHT_PURPLE;
-        FORMATTING_TABLE['e'] = ChatFormatting.YELLOW;
-        FORMATTING_TABLE['f'] = ChatFormatting.WHITE;
-        FORMATTING_TABLE['k'] = ChatFormatting.OBFUSCATED;
-        FORMATTING_TABLE['l'] = ChatFormatting.BOLD;
-        FORMATTING_TABLE['m'] = ChatFormatting.STRIKETHROUGH;
-        FORMATTING_TABLE['n'] = ChatFormatting.UNDERLINE;
-        FORMATTING_TABLE['o'] = ChatFormatting.ITALIC;
-        FORMATTING_TABLE['r'] = ChatFormatting.RESET;
-        FORMATTING_TABLE['A'] = ChatFormatting.GREEN;
-        FORMATTING_TABLE['B'] = ChatFormatting.AQUA;
-        FORMATTING_TABLE['C'] = ChatFormatting.RED;
-        FORMATTING_TABLE['D'] = ChatFormatting.LIGHT_PURPLE;
-        FORMATTING_TABLE['E'] = ChatFormatting.YELLOW;
-        FORMATTING_TABLE['F'] = ChatFormatting.WHITE;
-        FORMATTING_TABLE['K'] = ChatFormatting.OBFUSCATED;
-        FORMATTING_TABLE['L'] = ChatFormatting.BOLD;
-        FORMATTING_TABLE['M'] = ChatFormatting.STRIKETHROUGH;
-        FORMATTING_TABLE['N'] = ChatFormatting.UNDERLINE;
-        FORMATTING_TABLE['O'] = ChatFormatting.ITALIC;
-        FORMATTING_TABLE['R'] = ChatFormatting.RESET;
-        for (int i = 1; i < 128; i++) {
-            assert (FORMATTING_TABLE[i] == null || FORMATTING_TABLE[i].getChar() == Character.toLowerCase(i));
+        for (ChatFormatting f : ChatFormatting.values()) {
+            FORMATTING_TABLE[f.getChar()] = f;
+            FORMATTING_TABLE[Character.toUpperCase(f.getChar())] = f;
         }
     }
 
@@ -177,8 +145,7 @@ public class TextLayoutEngine {
             .expireAfterAccess(20, TimeUnit.SECONDS)
             .build();*/
 
-    // init first
-    private final GlyphManager mGlyphManager = GlyphManager.getInstance();
+    private final GlyphManager mGlyphManager;
 
     /**
      * Temporary Key object re-used for lookups with stringCache.get(). Using a temporary object like this avoids the
@@ -186,18 +153,18 @@ public class TextLayoutEngine {
      * when adding a mapping to stringCache.
      */
     private final VanillaLayoutKey mVanillaLookupKey = new VanillaLayoutKey();
-    private Map<VanillaLayoutKey, TextRenderNode> mVanillaCache = new HashMap<>();
+    private Map<VanillaLayoutKey, TextLayoutNode> mVanillaCache = new HashMap<>();
 
     /**
      * For styled texts.
      */
-    private Map<MutableComponent, TextRenderNode> mComponentCache = new HashMap<>();
+    private Map<MutableComponent, TextLayoutNode> mComponentCache = new HashMap<>();
 
     /**
      * For deeply-processed texts.
      */
-    private final CompoundLayoutKey.Lookup mCompoundLookupKey = new CompoundLayoutKey.Lookup();
-    private Map<CompoundLayoutKey, TextRenderNode> mCompoundCache = new HashMap<>();
+    private final MasterpieceLayoutKey.Lookup mMasterpieceLookupKey = new MasterpieceLayoutKey.Lookup();
+    private Map<MasterpieceLayoutKey, TextLayoutNode> mMasterpieceCache = new HashMap<>();
 
     /**
      * Shared layout engine.
@@ -219,10 +186,10 @@ public class TextLayoutEngine {
             float[] offsets = new float[glyphs.length];
             char[] chars = new char[1];
             int n = 0;
-            // 48 to 57, always cache all digits
+            // 48 to 57, always cache all digits for fast digit replacement
             for (int i = 0; i < 10; i++) {
                 chars[0] = (char) ('0' + i);
-                // no shaping
+                // no text shaping
                 GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
                 float advance = (float) vector.getGlyphPosition(1).getX();
                 GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
@@ -238,10 +205,10 @@ public class TextLayoutEngine {
                 }
                 n++;
             }
-            // 33 to 47
+            // 33 to 47, cache only narrow chars
             for (int i = 0; i < 15; i++) {
                 chars[0] = (char) (33 + i);
-                // no shaping
+                // no text shaping
                 GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
                 float advance = (float) vector.getGlyphPosition(1).getX();
                 // too wide
@@ -249,16 +216,17 @@ public class TextLayoutEngine {
                     continue;
                 }
                 GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+                // allow empty
                 if (glyph != null) {
                     glyphs[n] = glyph;
                     offsets[n] = (offsets[0] - advance) / 2f;
                     n++;
                 }
             }
-            // 58 to 126
+            // 58 to 126, cache only narrow chars
             for (int i = 0; i < 69; i++) {
                 chars[0] = (char) (58 + i);
-                // no shaping
+                // no text shaping
                 GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
                 float advance = (float) vector.getGlyphPosition(1).getX();
                 // too wide
@@ -266,6 +234,7 @@ public class TextLayoutEngine {
                     continue;
                 }
                 GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+                // allow empty
                 if (glyph != null) {
                     glyphs[n] = glyph;
                     offsets[n] = (offsets[0] - advance) / 2f;
@@ -304,6 +273,7 @@ public class TextLayoutEngine {
      * Shortcodes to Emoji char sequences.
      */
     private final HashMap<String, String> mEmojiShortcodes = new HashMap<>();
+
     /**
      * The emoji texture atlas.
      */
@@ -319,7 +289,7 @@ public class TextLayoutEngine {
     private record EmojiEntry(int index, ResourceLocation location, String sequence) {
     }
 
-    private final Predicate<TextRenderNode> mTicker = node -> node.tick(sCacheLifespan);
+    private final Predicate<TextLayoutNode> mTicker = n -> n.tick(sCacheLifespan);
 
     /**
      * Determine font size. Integer.
@@ -353,12 +323,15 @@ public class TextLayoutEngine {
         /* Pre-cache the ASCII digits to allow for fast glyph substitution */
         //cacheDigitGlyphs();
 
+        // init first
+        mGlyphManager = GlyphManager.getInstance();
+        // When OpenGL texture ID changed (atlas resized), we want to use the new first atlas
+        // for deferred rendering, we need to clear any existing TextRenderType instances
+        mGlyphManager.addAtlasResizeCallback(TextRenderType::clear);
         // init
         reload();
         // events
         MinecraftForge.EVENT_BUS.register(this);
-        // OpenGL texture ID changed
-        mGlyphManager.addAtlasResizeCallback(TextRenderType::clear);
     }
 
     /**
@@ -393,17 +366,17 @@ public class TextLayoutEngine {
         int size = getCacheCount();
         mVanillaCache.clear();
         mComponentCache.clear();
-        mCompoundCache.clear();
+        mMasterpieceCache.clear();
         mFastCharMap.clear();
         boolean rehash = size >= sRehashThreshold;
         if (rehash) {
             // Create new HashMap so that the internal hashtable of old maps are released as well
             mVanillaCache = new HashMap<>();
             mComponentCache = new HashMap<>();
-            mCompoundCache = new HashMap<>();
-            //mDigitMap = new HashMap<>();
+            mMasterpieceCache = new HashMap<>();
+            //mFastCharMap = new HashMap<>();
         }
-        // Clear TextRenderType instances, but font textures are not released
+        // Just clear TextRenderType instances, font textures are remained
         TextRenderType.clear();
         if (size > 0) {
             LOGGER.info(MARKER, "Cleanup {} text layout entries, rehash: {}", size, rehash);
@@ -627,16 +600,16 @@ public class TextLayoutEngine {
      * @return the full layout for the text
      */
     @Nonnull
-    public TextRenderNode lookupVanillaNode(@Nonnull String text) {
+    public TextLayoutNode lookupVanillaNode(@Nonnull String text) {
         if (text.isEmpty()) {
-            return TextRenderNode.EMPTY;
+            return TextLayoutNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
             // block here
             return Minecraft.getInstance().submit(() -> lookupVanillaNode(text))
                     .join();
         }
-        TextRenderNode node = mVanillaCache.get(mVanillaLookupKey.update(text, Style.EMPTY));
+        TextLayoutNode node = mVanillaCache.get(mVanillaLookupKey.update(text, Style.EMPTY));
         if (node == null) {
             node = mProcessor.performVanillaLayout(text, Style.EMPTY);
             mVanillaCache.put(mVanillaLookupKey.copy(), node);
@@ -653,16 +626,16 @@ public class TextLayoutEngine {
      * @return the full layout for the text
      */
     @Nonnull
-    public TextRenderNode lookupVanillaNode(@Nonnull String text, @Nonnull Style style) {
+    public TextLayoutNode lookupVanillaNode(@Nonnull String text, @Nonnull Style style) {
         if (text.isEmpty()) {
-            return TextRenderNode.EMPTY;
+            return TextLayoutNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
             // block here
             return Minecraft.getInstance().submit(() -> lookupVanillaNode(text, style))
                     .join();
         }
-        TextRenderNode node = mVanillaCache.get(mVanillaLookupKey.update(text, style));
+        TextLayoutNode node = mVanillaCache.get(mVanillaLookupKey.update(text, style));
         if (node == null) {
             node = mProcessor.performVanillaLayout(text, style);
             mVanillaCache.put(mVanillaLookupKey.copy(), node);
@@ -679,16 +652,16 @@ public class TextLayoutEngine {
      * @return the full layout for the text
      * @see FormattedTextWrapper
      */
-    public TextRenderNode lookupComplexNode(@Nonnull FormattedText text) {
+    public TextLayoutNode lookupComplexNode(@Nonnull FormattedText text) {
         if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
-            return TextRenderNode.EMPTY;
+            return TextLayoutNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
             // block here
             return Minecraft.getInstance().submit(() -> lookupComplexNode(text))
                     .join();
         }
-        TextRenderNode node;
+        TextLayoutNode node;
         if (text instanceof MutableComponent component) {
             node = mComponentCache.get(component);
             if (node == null) {
@@ -697,10 +670,10 @@ public class TextLayoutEngine {
                 return node;
             }
         } else {
-            node = mCompoundCache.get(mCompoundLookupKey.update(text, Style.EMPTY));
+            node = mMasterpieceCache.get(mMasterpieceLookupKey.update(text, Style.EMPTY));
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, Style.EMPTY);
-                mCompoundCache.put(mCompoundLookupKey.copy(), node);
+                mMasterpieceCache.put(mMasterpieceLookupKey.copy(), node);
                 return node;
             }
         }
@@ -716,16 +689,16 @@ public class TextLayoutEngine {
      * @return the full layout for the text
      * @see FormattedTextWrapper
      */
-    public TextRenderNode lookupComplexNode(@Nonnull FormattedText text, @Nonnull Style style) {
+    public TextLayoutNode lookupComplexNode(@Nonnull FormattedText text, @Nonnull Style style) {
         if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
-            return TextRenderNode.EMPTY;
+            return TextLayoutNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
             // block here
             return Minecraft.getInstance().submit(() -> lookupComplexNode(text, style))
                     .join();
         }
-        TextRenderNode node;
+        TextLayoutNode node;
         if (style.isEmpty() && text instanceof MutableComponent component) {
             node = mComponentCache.get(component);
             if (node == null) {
@@ -734,10 +707,10 @@ public class TextLayoutEngine {
                 return node;
             }
         } else {
-            node = mCompoundCache.get(mCompoundLookupKey.update(text, style));
+            node = mMasterpieceCache.get(mMasterpieceLookupKey.update(text, style));
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, style);
-                mCompoundCache.put(mCompoundLookupKey.copy(), node);
+                mMasterpieceCache.put(mMasterpieceLookupKey.copy(), node);
                 return node;
             }
         }
@@ -756,9 +729,9 @@ public class TextLayoutEngine {
      * @see FormattedTextWrapper
      */
     @Nonnull
-    public TextRenderNode lookupSequenceNode(@Nonnull FormattedCharSequence sequence) {
+    public TextLayoutNode lookupSequenceNode(@Nonnull FormattedCharSequence sequence) {
         if (sequence == FormattedCharSequence.EMPTY) {
-            return TextRenderNode.EMPTY;
+            return TextLayoutNode.EMPTY;
         }
         if (!RenderSystem.isOnRenderThread()) {
             // block here
@@ -769,9 +742,9 @@ public class TextLayoutEngine {
         if (sequence instanceof FormattedTextWrapper) {
             FormattedText text = ((FormattedTextWrapper) sequence).mText;
             if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
-                return TextRenderNode.EMPTY;
+                return TextLayoutNode.EMPTY;
             }
-            TextRenderNode node;
+            TextLayoutNode node;
             if (text instanceof MutableComponent component) {
                 node = mComponentCache.get(component);
                 if (node == null) {
@@ -780,19 +753,19 @@ public class TextLayoutEngine {
                     return node;
                 }
             } else {
-                node = mCompoundCache.get(mCompoundLookupKey.update(text, Style.EMPTY));
+                node = mMasterpieceCache.get(mMasterpieceLookupKey.update(text, Style.EMPTY));
                 if (node == null) {
                     node = mProcessor.performComplexLayout(text, Style.EMPTY);
-                    mCompoundCache.put(mCompoundLookupKey.copy(), node);
+                    mMasterpieceCache.put(mMasterpieceLookupKey.copy(), node);
                     return node;
                 }
             }
             return node.get();
         } else {
-            TextRenderNode node = mCompoundCache.get(mCompoundLookupKey.update(sequence));
+            TextLayoutNode node = mMasterpieceCache.get(mMasterpieceLookupKey.update(sequence));
             if (node == null) {
                 node = mProcessor.performSequenceLayout(sequence);
-                mCompoundCache.put(mCompoundLookupKey.copy(), node);
+                mMasterpieceCache.put(mMasterpieceLookupKey.copy(), node);
                 return node;
             }
             return node.get();
@@ -869,6 +842,7 @@ public class TextLayoutEngine {
         return 0;
     }
 
+    // bake emoji sprites
     @Nullable
     private GLBakedGlyph cacheEmoji(int index, @Nonnull ResourceLocation location,
                                     @Nonnull GLFontAtlas atlas, @Nonnull GLBakedGlyph glyph) {
@@ -877,23 +851,22 @@ public class TextLayoutEngine {
             if ((image.getWidth() == EMOJI_SIZE && image.getHeight() == EMOJI_SIZE) ||
                     (image.getWidth() == EMOJI_SIZE * 2 && image.getHeight() == EMOJI_SIZE * 2)) {
                 long dst = MemoryUtil.memAddress(mEmojiBuffer);
-                {
-                    NativeImage downSample = null;
-                    if (image.getWidth() == EMOJI_SIZE * 2) {
-                        // Down-sampling
-                        downSample = MipmapGenerator.generateMipLevels(image, 1)[1];
-                    }
-                    long src = UIManager.IMAGE_PIXELS.getLong(downSample != null ? downSample : image);
-                    // Add 1 pixel transparent border to prevent texture bleeding
-                    // RGBA is 4 bytes per pixel
-                    long dstOff = (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2 + GlyphManager.GLYPH_BORDER) * 4;
-                    for (int i = 0; i < EMOJI_SIZE; i++) {
-                        MemoryUtil.memCopy(src + (i * EMOJI_SIZE * 4), dst + dstOff, EMOJI_SIZE * 4);
-                        dstOff += (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2) * 4;
-                    }
-                    if (downSample != null) {
-                        downSample.close();
-                    }
+                NativeImage subImage = null;
+                if (image.getWidth() == EMOJI_SIZE * 2) {
+                    // Down-sampling
+                    subImage = MipmapGenerator.generateMipLevels(image, 1)[1];
+                }
+                long src = UIManager.IMAGE_PIXELS.getLong(subImage != null ? subImage : image);
+                // Add 1 pixel transparent border to prevent texture bleeding
+                // RGBA is 4 bytes per pixel
+                long dstOff = (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2 + GlyphManager.GLYPH_BORDER) * 4;
+                for (int i = 0; i < EMOJI_SIZE; i++) {
+                    long srcOff = (i * EMOJI_SIZE * 4);
+                    MemoryUtil.memCopy(src + srcOff, dst + dstOff, EMOJI_SIZE * 4);
+                    dstOff += (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2) * 4;
+                }
+                if (subImage != null) {
+                    subImage.close();
                 }
                 glyph.x = 0;
                 glyph.y = 0; // x and y baseline is hardcoded in TextRenderNode
@@ -902,13 +875,13 @@ public class TextLayoutEngine {
                 atlas.stitch(glyph, dst);
                 return glyph;
             } else {
-                atlas.setNull(index);
-                LOGGER.warn(MARKER, "Emoji is not {}x or {}x, setting empty: {}", EMOJI_SIZE, EMOJI_SIZE * 2, location);
+                atlas.setWhitespace(index);
+                LOGGER.warn(MARKER, "Emoji is not {}x or {}x: {}", EMOJI_SIZE, EMOJI_SIZE * 2, location);
                 return null;
             }
         } catch (Exception e) {
-            atlas.setNull(index);
-            LOGGER.warn(MARKER, "Failed to load emoji, setting empty: {}", location, e);
+            atlas.setWhitespace(index);
+            LOGGER.warn(MARKER, "Failed to load emoji: {}", location, e);
             return null;
         }
     }
@@ -923,13 +896,13 @@ public class TextLayoutEngine {
                 int oldCount = getCacheCount();
                 mVanillaCache.values().removeIf(mTicker);
                 mComponentCache.values().removeIf(mTicker);
-                mCompoundCache.values().removeIf(mTicker);
+                mMasterpieceCache.values().removeIf(mTicker);
                 if (oldCount >= sRehashThreshold) {
                     int newCount = getCacheCount();
                     if (newCount < sRehashThreshold) {
                         mVanillaCache = new HashMap<>(mVanillaCache);
                         mComponentCache = new HashMap<>(mComponentCache);
-                        mCompoundCache = new HashMap<>(mCompoundCache);
+                        mMasterpieceCache = new HashMap<>(mMasterpieceCache);
                     }
                 }
             }
@@ -942,7 +915,7 @@ public class TextLayoutEngine {
      * @return the number of layout entries
      */
     public int getCacheCount() {
-        return mVanillaCache.size() + mComponentCache.size() + mCompoundCache.size();
+        return mVanillaCache.size() + mComponentCache.size() + mMasterpieceCache.size();
     }
 
     /**
@@ -951,12 +924,15 @@ public class TextLayoutEngine {
     public int getCacheMemorySize() {
         int size = 0;
         for (var n : mVanillaCache.values()) {
+            // key is a view, memory-less
             size += n.getMemorySize();
         }
         for (var n : mComponentCache.values()) {
+            // key is a view, memory-less
             size += n.getMemorySize();
         }
-        for (var e : mCompoundCache.entrySet()) {
+        for (var e : mMasterpieceCache.entrySet()) {
+            // key is backed ourselves
             size += e.getKey().getMemorySize();
             size += e.getValue().getMemorySize();
         }
@@ -964,7 +940,12 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Get ChatFormatting from the given formatting code, faster than Minecraft vanilla.
+     * Get the {@link ChatFormatting} by the given formatting code. Vanilla's method is
+     * overwritten by this, see {@link icyllis.modernui.textmc.mixin.MixinChatFormatting}.
+     * <p>
+     * Vanilla would create a new String from the char, call String.toLowerCase() and
+     * String.charAt(0), search this char with a clone of ChatFormatting values. However,
+     * it is unnecessary to consider non-ASCII compatibility, so we simplify it to a LUT.
      *
      * @param code c, case-insensitive
      * @return chat formatting, {@code null} if nothing
@@ -1064,7 +1045,7 @@ public class TextLayoutEngine {
 
     @Nullable
     @Deprecated
-    private TextRenderNode generateAndCache(VanillaLayoutKey key, @Nonnull CharSequence string,
+    private TextLayoutNode generateAndCache(VanillaLayoutKey key, @Nonnull CharSequence string,
                                             @Nonnull final Style style) {
         /*final int length = string.length();
         final TextProcessRegister register = this.register;

@@ -31,22 +31,22 @@ public class TextRenderEffect {
     /**
      * Offset from the string's baseline as which to draw the underline
      */
-    private static final float UNDERLINE_OFFSET = 0.5f;
+    private static final float UNDERLINE_OFFSET = 2f / 3f;
 
     /**
      * Offset from the string's baseline as which to draw the strikethrough line
      */
-    private static final float STRIKETHROUGH_OFFSET = -3.5f;
+    private static final float STRIKETHROUGH_OFFSET = -7f / 2f;
 
     /**
      * Thickness of the underline
      */
-    private static final float UNDERLINE_THICKNESS = 1.0f;
+    private static final float UNDERLINE_THICKNESS = 9f / 12f;
 
     /**
      * Thickness of the strikethrough line
      */
-    private static final float STRIKETHROUGH_THICKNESS = 1.0f;
+    private static final float STRIKETHROUGH_THICKNESS = 9f / 12f;
 
     /**
      * Offset Z to ensure that effects render over characters in 3D world
