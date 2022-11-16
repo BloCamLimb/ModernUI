@@ -28,7 +28,6 @@ import icyllis.modernui.text.TextDirectionHeuristics;
 import icyllis.modernui.textmc.mixin.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.ints.IntComparators;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
@@ -51,7 +50,7 @@ import java.util.*;
  * @see MixinClientLanguage
  * @see MixinLanguage
  * @see VanillaLayoutKey#update(String, Style)
- * @see CompoundLayoutKey.Lookup#update(FormattedCharSequence)
+ * @see MasterpieceLayoutKey.Lookup#update(FormattedCharSequence)
  * @see FormattedText
  * @see FormattedCharSequence
  * @see FormattedTextWrapper
@@ -132,7 +131,7 @@ public class TextLayoutProcessor {
      *     1      OBFUSCATED
      *    1       FAST_DIGIT_REPLACEMENT
      *   1        BITMAP_REPLACEMENT
-     *  1         USE_PARAM_COLOR
+     *  1         IMPLICIT_COLOR
      * |--------|
      */
     private final IntArrayList mCharFlags = new IntArrayList();
@@ -174,7 +173,7 @@ public class TextLayoutProcessor {
     /**
      * The total advance (horizontal width) of the processing text
      */
-    private float mAdvance;
+    private float mTotalAdvance;
 
     /*
      * Needed in RTL layout
@@ -186,7 +185,7 @@ public class TextLayoutProcessor {
      */
     private boolean mHasEffect;
     private boolean mHasFastDigit;
-    private boolean mHasColorEmoji;
+    private boolean mHasColorBitmap;
 
     /**
      * Always LTR.
@@ -194,10 +193,10 @@ public class TextLayoutProcessor {
      * @see FormattedTextWrapper#accept(FormattedCharSink)
      */
     private final FormattedCharSink mSequenceBuilder = (index, style, codePoint) -> {
-        int flags = CharacterStyle.flatten(style);
-        mStyles.add(flags);
+        int flag = CharacterStyle.flatten(style);
+        mStyles.add(flag);
         if (mBuilder.addCodePoint(codePoint) > 1) {
-            mStyles.add(flags);
+            mStyles.add(flag);
         }
         return true;
     };
@@ -345,7 +344,7 @@ public class TextLayoutProcessor {
                     mBuilder.length() != mLineBoundaries.getInt(mLineBoundaries.size() - 1)) {
                 ModernUI.LOGGER.error("Last char cannot break line?");
             }
-            if (Math.abs(mAdvances.doubleStream().sum() - mAdvance) > 1) {
+            if (Math.abs(mAdvances.doubleStream().sum() - mTotalAdvance) > 1) {
                 ModernUI.LOGGER.error("Advance error is too large?");
             }
         }
@@ -357,16 +356,16 @@ public class TextLayoutProcessor {
         mAdvances.clear();
         mCharFlags.clear();
         mLineBoundaries.clear();
-        mAdvance = 0;
+        mTotalAdvance = 0;
         mHasEffect = false;
         mHasFastDigit = false;
-        mHasColorEmoji = false;
+        mHasColorBitmap = false;
     }
 
     @Nonnull
-    public TextRenderNode performVanillaLayout(@Nonnull String text, @Nonnull Style style) {
+    public TextLayoutNode performVanillaLayout(@Nonnull String text, @Nonnull Style style) {
         StringDecomposer.iterateFormatted(text, style, mSequenceBuilder);
-        TextRenderNode node = performFullLayout(text);
+        TextLayoutNode node = performFullLayout(text); // do fast digit replacement
         if (DEBUG) {
             ModernUI.LOGGER.info("Performed Vanilla Layout: {}, {}, {}", mBuilder.toString(), text, node);
         }
@@ -375,9 +374,9 @@ public class TextLayoutProcessor {
     }
 
     @Nonnull
-    public TextRenderNode performComplexLayout(@Nonnull FormattedText text, @Nonnull Style style) {
+    public TextLayoutNode performComplexLayout(@Nonnull FormattedText text, @Nonnull Style style) {
         text.visit(mContentBuilder, style);
-        TextRenderNode node = performFullLayout(null);
+        TextLayoutNode node = performFullLayout(null);
         if (DEBUG) {
             ModernUI.LOGGER.info("Performed Complex Layout: {}, {}, {}", mBuilder.toString(), text, node);
         }
@@ -386,9 +385,9 @@ public class TextLayoutProcessor {
     }
 
     @Nonnull
-    public TextRenderNode performSequenceLayout(@Nonnull FormattedCharSequence sequence) {
+    public TextLayoutNode performSequenceLayout(@Nonnull FormattedCharSequence sequence) {
         sequence.accept(mSequenceBuilder);
-        TextRenderNode node = performFullLayout(null);
+        TextLayoutNode node = performFullLayout(null);
         if (DEBUG) {
             ModernUI.LOGGER.info("Performed Sequence Layout: {}, {}, {}", mBuilder.toString(), sequence, node);
         }
@@ -484,29 +483,31 @@ public class TextLayoutProcessor {
     /**
      * Perform text layout after building stripped characters.
      *
+     * @param raw the raw string with formatting codes for fast digit replacement
      * @return the full layout result
      */
     @Nonnull
-    private TextRenderNode performFullLayout(@Nullable String raw) {
+    private TextLayoutNode performFullLayout(@Nullable String raw) {
         if (!mBuilder.isEmpty()) {
-            final boolean fastDigit = raw != null;
-            // locale for GCB
+            // locale for GCB (grapheme cluster break)
             final ULocale locale = ULocale.forLocale(ModernUI.getSelectedLocale());
             mAdvances.size(mBuilder.length());
             final char[] textBuf = mBuilder.toCharArray();
-            performBidiAnalysis(textBuf, fastDigit, locale);
-            if (mAdvance > 0) {
-                if (fastDigit) {
+            // steps 2-5
+            performBidiAnalysis(textBuf, /*fastDigit*/ raw != null, locale);
+            if (mTotalAdvance > 0) {
+                if (raw != null) {
                     adjustForFastDigit(raw);
                 }
-                // Sort line boundaries to logical order, because runs are in visual order
-                mLineBoundaries.sort(IntComparators.NATURAL_COMPARATOR);
-                return new TextRenderNode(textBuf, mGlyphs.toArray(new GLBakedGlyph[0]), mPositions.toFloatArray(),
+                // sort line boundaries to logical order, because runs are in visual order
+                mLineBoundaries.sort(null);
+                return new TextLayoutNode(textBuf, mGlyphs.toArray(new GLBakedGlyph[0]), mPositions.toFloatArray(),
                         mAdvances.toFloatArray(), mCharFlags.toIntArray(), mCharIndices.toIntArray(),
-                        mLineBoundaries.toIntArray(), mAdvance, mHasEffect, mHasFastDigit, mHasColorEmoji);
+                        mLineBoundaries.toIntArray(), mTotalAdvance, mHasEffect, mHasFastDigit, mHasColorBitmap);
             }
         }
-        return TextRenderNode.makeEmpty();
+        // all invisible and no measure info
+        return TextLayoutNode.makeEmpty();
     }
 
     /**
@@ -778,7 +779,7 @@ public class TextLayoutProcessor {
             final boolean alignPixels = sAlignPixels;
             final float advance = fastChars.offsets[0];
 
-            float offset = mAdvance;
+            float offset = mTotalAdvance;
             // Process code point in visual order
             for (int i = start; i < limit; i++) {
                 mAdvances.set(i, advance);
@@ -806,7 +807,7 @@ public class TextLayoutProcessor {
                 }
             }
 
-            mAdvance = offset;
+            mTotalAdvance = offset;
 
             /*if (isRtl) {
                 finishFontRun(-offset);
@@ -846,7 +847,7 @@ public class TextLayoutProcessor {
                                     font, text, prevPos, prevTextPos, true);
                             final int num = vector.getNumGlyphs();
 
-                            final float offsetX = mAdvance;
+                            final float offsetX = mTotalAdvance;
 
                             Point2D position = vector.getGlyphPosition(0);
                             Point2D nextPosition = position;
@@ -889,7 +890,7 @@ public class TextLayoutProcessor {
                                 nextPosition = vector.getGlyphPosition(i + 1);
                             }
 
-                            mAdvance += (float) nextPosition.getX() / level;
+                            mTotalAdvance += (float) nextPosition.getX() / level;
                         }
 
                         // Normalization factor is constant, add additional 1 scaled advance,
@@ -897,13 +898,13 @@ public class TextLayoutProcessor {
                         mAdvances.set(currPos, TextLayoutEngine.EMOJI_BASE_SIZE + 1);
 
                         mGlyphs.add(emoji);
-                        mPositions.add(alignPixels ? Math.round(mAdvance * scale) / scale : mAdvance);
+                        mPositions.add(alignPixels ? Math.round(mTotalAdvance * scale) / scale : mTotalAdvance);
                         mPositions.add(0);
                         mCharFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
                         mCharIndices.add(currPos);
-                        mHasColorEmoji = true;
+                        mHasColorBitmap = true;
 
-                        mAdvance += TextLayoutEngine.EMOJI_BASE_SIZE + 1;
+                        mTotalAdvance += TextLayoutEngine.EMOJI_BASE_SIZE + 1;
 
                         prevTextPos = currPos;
                     } else {
@@ -923,7 +924,7 @@ public class TextLayoutProcessor {
                             font, text, prevPos, prevTextPos, true);
                     final int num = vector.getNumGlyphs();
 
-                    final float offsetX = mAdvance;
+                    final float offsetX = mTotalAdvance;
 
                     Point2D position = vector.getGlyphPosition(0);
                     Point2D nextPosition = position;
@@ -966,7 +967,7 @@ public class TextLayoutProcessor {
                         nextPosition = vector.getGlyphPosition(i + 1);
                     }
 
-                    mAdvance += (float) nextPosition.getX() / level;
+                    mTotalAdvance += (float) nextPosition.getX() / level;
                 }
             } else {
                 prevPos = start;
@@ -984,7 +985,7 @@ public class TextLayoutProcessor {
                                     font, text, prevTextPos, prevPos, false);
                             final int num = vector.getNumGlyphs();
 
-                            final float offsetX = mAdvance;
+                            final float offsetX = mTotalAdvance;
 
                             Point2D position = vector.getGlyphPosition(0);
                             Point2D nextPosition = position;
@@ -1027,7 +1028,7 @@ public class TextLayoutProcessor {
                                 nextPosition = vector.getGlyphPosition(i + 1);
                             }
 
-                            mAdvance += (float) nextPosition.getX() / level;
+                            mTotalAdvance += (float) nextPosition.getX() / level;
                         }
 
                         // Normalization factor is constant, add additional 1 scaled advance,
@@ -1035,13 +1036,13 @@ public class TextLayoutProcessor {
                         mAdvances.set(prevPos, TextLayoutEngine.EMOJI_BASE_SIZE + 1);
 
                         mGlyphs.add(emoji);
-                        mPositions.add(alignPixels ? Math.round(mAdvance * scale) / scale : mAdvance);
+                        mPositions.add(alignPixels ? Math.round(mTotalAdvance * scale) / scale : mTotalAdvance);
                         mPositions.add(0);
                         mCharFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
                         mCharIndices.add(prevPos);
-                        mHasColorEmoji = true;
+                        mHasColorBitmap = true;
 
-                        mAdvance += TextLayoutEngine.EMOJI_BASE_SIZE + 1;
+                        mTotalAdvance += TextLayoutEngine.EMOJI_BASE_SIZE + 1;
 
                         prevTextPos = currPos;
                     } else {
@@ -1061,7 +1062,7 @@ public class TextLayoutProcessor {
                             font, text, prevTextPos, prevPos, false);
                     final int num = vector.getNumGlyphs();
 
-                    final float offsetX = mAdvance;
+                    final float offsetX = mTotalAdvance;
 
                     Point2D position = vector.getGlyphPosition(0);
                     Point2D nextPosition = position;
@@ -1104,7 +1105,7 @@ public class TextLayoutProcessor {
                         nextPosition = vector.getGlyphPosition(i + 1);
                     }
 
-                    mAdvance += (float) nextPosition.getX() / level;
+                    mTotalAdvance += (float) nextPosition.getX() / level;
                 }
             }
 
@@ -1152,7 +1153,7 @@ public class TextLayoutProcessor {
             final int num = vector.getNumGlyphs();
 
             TextLayoutEngine.FastCharSet fastChars = null;
-            final float offsetX = mAdvance;
+            final float offsetX = mTotalAdvance;
             final boolean alignPixels = sAlignPixels;
 
             Point2D position = vector.getGlyphPosition(0);
@@ -1205,7 +1206,7 @@ public class TextLayoutProcessor {
                 nextPosition = vector.getGlyphPosition(i + 1);
             }
 
-            mAdvance += (float) nextPosition.getX() / level;
+            mTotalAdvance += (float) nextPosition.getX() / level;
 
             /*if (isRtl) {
                 finishFontRun(-nextOffset);
@@ -1223,8 +1224,10 @@ public class TextLayoutProcessor {
         if (!mHasFastDigit) {
             return;
         }
+        // logical order
         for (int i = 0; i < raw.length(); i++) {
             if (raw.charAt(i) == ChatFormatting.PREFIX_CODE) {
+                // visual order
                 for (int j = 0; j < mCharIndices.size(); j++) {
                     int value = mCharIndices.getInt(j);
                     if (value >= i) {

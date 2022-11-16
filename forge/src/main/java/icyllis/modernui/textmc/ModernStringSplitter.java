@@ -104,7 +104,7 @@ public final class ModernStringSplitter {
      * @param width    the max width in GUI scaled pixels
      * @return break index (without formatting codes)
      */
-    public static int breakText(@Nonnull TextRenderNode node, boolean forwards, float width) {
+    public static int breakText(@Nonnull TextLayoutNode node, boolean forwards, float width) {
         final int limit = node.getLength();
         if (forwards) {
             // TruncateAt.END
@@ -151,7 +151,7 @@ public final class ModernStringSplitter {
             return 0;
         }
 
-        final TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
+        final TextLayoutNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, style);
         if (width >= node.getTotalAdvance()) {
             return forwards ? text.length() : 0;
         }
@@ -230,7 +230,7 @@ public final class ModernStringSplitter {
             return null;
         }
 
-        final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text);
+        final TextLayoutNode node = TextLayoutEngine.getInstance().lookupComplexNode(text);
         if (width >= node.getTotalAdvance()) {
             return null;
         }
@@ -278,7 +278,7 @@ public final class ModernStringSplitter {
             return styleAtWidth(((FormattedTextWrapper) text).mText, width);
         }
 
-        final TextRenderNode node = TextLayoutEngine.getInstance().lookupSequenceNode(text);
+        final TextLayoutNode node = TextLayoutEngine.getInstance().lookupSequenceNode(text);
         if (width >= node.getTotalAdvance()) {
             return null;
         }
@@ -316,7 +316,7 @@ public final class ModernStringSplitter {
             return FormattedText.EMPTY;
         }
 
-        final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, style);
+        final TextLayoutNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, style);
         if (width >= node.getTotalAdvance()) {
             return text;
         }
@@ -374,7 +374,7 @@ public final class ModernStringSplitter {
             return;
         }
 
-        final TextRenderNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, base);
+        final TextLayoutNode node = TextLayoutEngine.getInstance().lookupVanillaNode(text, base);
         final char[] buf = node.getTextBuf();
         if (width >= node.getTotalAdvance()) {
             boolean hasLineFeed = false;
@@ -465,7 +465,7 @@ public final class ModernStringSplitter {
             return;
         }
 
-        final TextRenderNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, base);
+        final TextLayoutNode node = TextLayoutEngine.getInstance().lookupComplexNode(text, base);
         final char[] buf = node.getTextBuf();
         if (width >= node.getTotalAdvance()) {
             boolean hasLineFeed = false;
@@ -574,7 +574,7 @@ public final class ModernStringSplitter {
             mLineWidthLimit = lineWidthLimit;
         }
 
-        public int process(@Nonnull TextRenderNode node, @Nonnull char[] buf,
+        public int process(@Nonnull TextLayoutNode node, @Nonnull char[] buf,
                            int start, int end, int nextBoundaryIndex) {
             mLineWidth = 0;
             mCharsAdvance = 0;
@@ -606,7 +606,7 @@ public final class ModernStringSplitter {
             return nextBoundaryIndex;
         }
 
-        private void processLineBreak(@Nonnull TextRenderNode node, int offset) {
+        private void processLineBreak(@Nonnull TextLayoutNode node, int offset) {
             while (mLineWidth > mLineWidthLimit) {
                 int start = getPrevLineBreakOffset();
                 // The word in the new line may still be too long for the line limit.
@@ -632,7 +632,7 @@ public final class ModernStringSplitter {
             return true;
         }
 
-        private boolean doLineBreakWithGraphemeBounds(@Nonnull TextRenderNode node, int start, int end) {
+        private boolean doLineBreakWithGraphemeBounds(@Nonnull TextLayoutNode node, int start, int end) {
             float width = node.getAdvances()[start];
 
             // Starting from + 1 since at least one character needs to be assigned to a line.
