@@ -381,8 +381,8 @@ final class Registration {
 
         @SubscribeEvent
         static void onRegistryModel(@Nonnull ModelEvent.RegisterAdditional event) {
-            event.register(new ResourceLocation(ModernUI.ID, "item/project_builder_main"));
-            event.register(new ResourceLocation(ModernUI.ID, "item/project_builder_cube"));
+            event.register(ModernUIForge.location("item/project_builder_main"));
+            event.register(ModernUIForge.location("item/project_builder_cube"));
         }
 
         @SubscribeEvent

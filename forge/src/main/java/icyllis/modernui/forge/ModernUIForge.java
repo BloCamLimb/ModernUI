@@ -52,7 +52,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.*;
-import java.util.stream.Collectors;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -231,11 +230,16 @@ public final class ModernUIForge {
         }
     }
 
+    @Nonnull
+    public static ResourceLocation location(String path) {
+        return new ResourceLocation(ID, path);
+    }
+
     /*public static void warnSetup(String key, Object... args) {
         ModLoader.get().addWarning(new ModLoadingWarning(null, ModLoadingStage.SIDED_SETUP, key, args));
     }*/
 
-    private static void loadFonts(@Nonnull List<? extends String> configs, @Nonnull Set<Font> selected) {
+    private static void loadFonts(@Nonnull List<? extends String> configs, @Nonnull Set<FontFamily> selected) {
         boolean hasFail = false;
         for (String cfg : configs) {
             if (StringUtils.isEmpty(cfg)) {
@@ -245,7 +249,7 @@ public final class ModernUIForge {
                 try (InputStream inputStream = Minecraft.getInstance().getResourceManager()
                         .open(new ResourceLocation(cfg))) {
                     Font f = Font.createFont(Font.TRUETYPE_FONT, inputStream);
-                    selected.add(f);
+                    selected.add(new FontFamily(f));
                     LOGGER.debug(MARKER, "Font '{}' was loaded with config value '{}' as RESOURCE PACK",
                             f.getFamily(Locale.ROOT), cfg);
                     continue;
@@ -255,29 +259,28 @@ public final class ModernUIForge {
             try {
                 Font f = Font.createFont(Font.TRUETYPE_FONT, new File(
                         cfg.replaceAll("\\\\", "/")));
-                selected.add(f);
+                selected.add(new FontFamily(f));
                 LOGGER.debug(MARKER, "Font '{}' was loaded with config value '{}' as LOCAL FILE",
                         f.getFamily(Locale.ROOT), cfg);
                 continue;
             } catch (Exception ignored) {
             }
-            Optional<Font> font = FontCollection.sAllFontFamilies.stream()
-                    .filter(f -> f.getFamily(Locale.ROOT).equalsIgnoreCase(cfg))
+            Optional<FontFamily> family = FontFamily.getSystemFontMap().values().stream()
+                    .filter(f -> f.getFamilyName().equalsIgnoreCase(cfg))
                     .findFirst();
-            if (font.isPresent()) {
-                Font f = font.get();
+            if (family.isPresent()) {
+                FontFamily f = family.get();
                 selected.add(f);
                 LOGGER.debug(MARKER, "Font '{}' was loaded with config value '{}' as SYSTEM FONT",
-                        f.getFamily(Locale.ROOT), cfg);
+                        f.getFamilyName(), cfg);
                 continue;
             }
             hasFail = true;
             LOGGER.info(MARKER, "Font '{}' failed to load or invalid", cfg);
         }
         if (hasFail && isDeveloperMode()) {
-            LOGGER.debug(MARKER, "Available system font names: {}",
-                    FontCollection.sAllFontFamilies.stream().map(f -> f.getFamily(Locale.ROOT))
-                            .collect(Collectors.joining(",")));
+            LOGGER.debug(MARKER, "Available system font families: {}",
+                    String.join(",", FontFamily.getSystemFontMap().keySet()));
         }
     }
 
@@ -350,12 +353,12 @@ public final class ModernUIForge {
                                 new Exception("Loading typeface at the wrong mod loading stage")
                                         .fillInStackTrace());
                     }
-                    Set<Font> set = new LinkedHashSet<>();
+                    Set<FontFamily> set = new LinkedHashSet<>();
                     List<? extends String> configs = Config.CLIENT.mFontFamily.get();
                     if (configs != null) {
                         loadFonts(configs, set);
                     }
-                    mTypeface = Typeface.createTypeface(set.toArray(new Font[0]));
+                    mTypeface = Typeface.createTypeface(set.toArray(new FontFamily[0]));
                     // do some warm-up, but do not block ourselves
                     Minecraft.getInstance().tell(() -> LayoutCache.getOrCreate(ID, 0, 1, false,
                             new FontPaint(), false, false));
@@ -379,7 +382,8 @@ public final class ModernUIForge {
 
         @Override
         public ViewManager getViewManager() {
-            //TODO should use a window manager, because a single view tree can have only one focus
+            //TODO use a window manager, since a single view tree can have only one focus
+            // we want multiple focuses, e.g., for a popup window
             return UIManager.getInstance().getDecorView();
         }
     }

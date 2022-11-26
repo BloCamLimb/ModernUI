@@ -25,8 +25,7 @@ import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
-import icyllis.modernui.graphics.font.FontCollection;
-import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
@@ -260,7 +259,7 @@ public class TestLinearLayout extends LinearLayout {
             } else if (i == 7) {
                 Spinner spinner = new Spinner();
                 v = spinner;
-                spinner.setAdapter(new ArrayAdapter<>(new ArrayList<>(FontCollection.getFontFamilyNames())));
+                spinner.setAdapter(new ArrayAdapter<>(new ArrayList<>(FontFamily.getSystemFontMap().keySet())));
                 p = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
                         ViewGroup.LayoutParams.WRAP_CONTENT);
                 spinner.setMinimumWidth(dp(240));

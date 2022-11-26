@@ -33,6 +33,6 @@ public class MixinFontManager {
      */
     @Overwrite
     public PreparableReloadListener getReloadListener() {
-        return TextLayoutEngine.getInstance()::reload;
+        return TextLayoutEngine.getInstance();
     }
 }

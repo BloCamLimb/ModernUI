@@ -73,12 +73,12 @@ public class TextLayoutNode {
     /**
      * Default vertical adjustment to string position.
      */
-    public static final int BASELINE_OFFSET = 7;
+    public static final int DEFAULT_BASELINE_OFFSET = 7;
 
     /**
      * Config vertical adjustment to string position.
      */
-    public static float sBaselineOffset = BASELINE_OFFSET;
+    public static float sBaselineOffset = DEFAULT_BASELINE_OFFSET;
 
     /**
      * The copied text buffer without formatting codes in logical order.

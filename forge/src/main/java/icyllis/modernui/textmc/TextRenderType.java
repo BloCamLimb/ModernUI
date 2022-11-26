@@ -22,13 +22,13 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.*;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.textmc.mixin.AccessRenderBuffers;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.*;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 
@@ -43,11 +43,6 @@ import static icyllis.modernui.ModernUI.*;
  * Fast and modern text render type.
  */
 public class TextRenderType extends RenderType {
-
-    private static final ResourceLocation
-            SHADER_RL = new ResourceLocation(ModernUI.ID, "rendertype_modern_text"),
-            SHADER_GLOW_RL = new ResourceLocation(ModernUI.ID, "rendertype_modern_text_glow"),
-            SHADER_SEE_THROUGH_RL = new ResourceLocation(ModernUI.ID, "rendertype_modern_text_see_through");
 
     static final ShaderStateShard
             RENDERTYPE_MODERN_TEXT = new ShaderStateShard(TextRenderType::getShader),
@@ -221,16 +216,16 @@ public class TextRenderType extends RenderType {
     public static void clear() {
         if (sFirstType != null) {
             assert (!sTypes.isEmpty());
-            if (!((AccessRenderBuffers) Minecraft.getInstance().renderBuffers()).getFixedBuffers()
-                    .remove(sFirstType, sFirstBufferBuilder)) {
+            var access = (AccessRenderBuffers) Minecraft.getInstance().renderBuffers();
+            if (!access.getFixedBuffers().remove(sFirstType, sFirstBufferBuilder)) {
                 throw new IllegalStateException();
             }
             sFirstType = null;
         }
         if (sFirstGlowType != null) {
             assert (!sGlowTypes.isEmpty());
-            if (!((AccessRenderBuffers) Minecraft.getInstance().renderBuffers()).getFixedBuffers()
-                    .remove(sFirstGlowType, sFirstGlowBufferBuilder)) {
+            var access = (AccessRenderBuffers) Minecraft.getInstance().renderBuffers();
+            if (!access.getFixedBuffers().remove(sFirstGlowType, sFirstGlowBufferBuilder)) {
                 throw new IllegalStateException();
             }
             sFirstGlowType = null;
@@ -274,11 +269,14 @@ public class TextRenderType extends RenderType {
             return Optional.of(new Resource(ModernUI.ID, () -> stream));
         };
         try {
-            sShader = new ShaderInstance(provider, SHADER_RL,
+            sShader = new ShaderInstance(provider,
+                    ModernUIForge.location("rendertype_modern_text"),
                     DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
-            sShaderGlow = new ShaderInstance(provider, SHADER_GLOW_RL,
+            sShaderGlow = new ShaderInstance(provider,
+                    ModernUIForge.location("rendertype_modern_text_glow"),
                     DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
-            sShaderSeeThrough = new ShaderInstance(provider, SHADER_SEE_THROUGH_RL,
+            sShaderSeeThrough = new ShaderInstance(provider,
+                    ModernUIForge.location("rendertype_modern_text_see_through"),
                     DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP);
         } catch (IOException e) {
             throw new IllegalStateException("Bad text shaders", e);

@@ -53,6 +53,7 @@ import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -148,6 +149,16 @@ public class TestMain {
         */
 
         testMarkdownParsing();
+
+        GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
+        final Font[] fonts = GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts();
+        for (Font f : fonts) {
+            if (f.getFamily().equals("Rockwell")) {
+                System.out.println("f=" + f + "/" + f.getPSName() + "/" + f.getName() + "/" + f.getFontName() + "/"
+                        + f.getFamily());
+            }
+        }
+        FontFamily.getSystemFontMap();
 
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())

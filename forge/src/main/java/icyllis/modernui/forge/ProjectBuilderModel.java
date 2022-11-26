@@ -19,10 +19,8 @@
 package icyllis.modernui.forge;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import icyllis.modernui.ModernUI;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.*;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -40,9 +38,8 @@ final class ProjectBuilderModel extends BakedModelWrapper<BakedModel> {
         cube = bakeCustomModel(bakery, "item/project_builder_cube");
     }
 
-    private static BakedModel bakeCustomModel(@Nonnull ModelBakery bakery, String name) {
-        ResourceLocation location = new ResourceLocation(ModernUI.ID, name);
-        return bakery.bake(location, BlockModelRotation.X0_Y0, Material::sprite);
+    private static BakedModel bakeCustomModel(@Nonnull ModelBakery bakery, String path) {
+        return bakery.bake(ModernUIForge.location(path), BlockModelRotation.X0_Y0, Material::sprite);
     }
 
     @Nonnull

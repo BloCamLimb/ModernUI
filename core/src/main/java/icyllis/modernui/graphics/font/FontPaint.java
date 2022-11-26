@@ -88,7 +88,7 @@ public class FontPaint {
      * <p>
      * A Locale may affect word break, line break, grapheme cluster break, etc.
      * The locale should match the language of the text to be drawn or user preference,
-     * by default, the selected locale should be used {@link ModernUI#onGetSelectedLocale()}.
+     * by default, the selected locale should be used {@link ModernUI#getSelectedLocale()}.
      *
      * @param locale the paint's locale value for drawing text, must not be null.
      */

@@ -18,7 +18,6 @@
 
 package icyllis.modernui.forge;
 
-import icyllis.modernui.ModernUI;
 import icyllis.modernui.fragment.Fragment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -49,7 +48,7 @@ public sealed class NetworkMessages extends NetworkHandler {
     static NetworkHandler sNetwork;
 
     NetworkMessages() {
-        super(new ResourceLocation(ModernUI.ID, "network"), "360", true);
+        super(ModernUIForge.location("network"), "360", true);
     }
 
     /*@Deprecated

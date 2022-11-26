@@ -26,6 +26,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.ImageDrawable;
+import icyllis.modernui.graphics.font.FontFamily;
 import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.lifecycle.*;
 import icyllis.modernui.math.Matrix4;
@@ -49,7 +50,7 @@ import java.lang.ref.Cleaner.Cleanable;
 import java.nio.channels.*;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Locale;
+import java.util.*;
 
 import static icyllis.modernui.graphics.opengl.GLCore.*;
 import static org.lwjgl.glfw.GLFW.*;
@@ -90,6 +91,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
 
     private ViewModelStore mViewModelStore;
     private FragmentController mFragmentController;
+
+    private Typeface mDefaultTypeface;
 
     private volatile Looper mUiLooper;
     private volatile Thread mUiThread;
@@ -162,6 +165,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             mWindow.center(monitor);
         }
 
+        loadDefaultTypeface();
+
         LOGGER.info(MARKER, "Preparing threads");
         Looper.prepare(mWindow);
 
@@ -219,7 +224,8 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             glDisable(GL_CULL_FACE);
             resetFrame(window);
             if (mRoot != null) {
-                canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW * 2 + 1, true));
+                canvas.setProjection(projection.setOrthographic(width, height, 0, Window.LAST_SYSTEM_WINDOW * 2 + 1,
+                        true));
                 mRoot.flushDrawCommands(canvas, framebuffer);
             }
             if (framebuffer.getAttachment(GL_COLOR_ATTACHMENT0).getWidth() > 0) {
@@ -313,6 +319,31 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
         LOGGER.info(MARKER, "Quited UI thread");
     }
 
+    private void loadDefaultTypeface() {
+        Set<FontFamily> set = new LinkedHashSet<>();
+
+        try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
+            Font f = Font.createFont(Font.TRUETYPE_FONT, stream);
+            set.add(new FontFamily(f));
+        } catch (FontFormatException | IOException ignored) {
+        }
+
+        for (FontFamily family : FontFamily.getSystemFontMap().values()) {
+            String name = family.getFamilyName();
+            if (name.startsWith("Calibri") ||
+                    name.startsWith("Microsoft YaHei UI") ||
+                    name.startsWith("STHeiti") ||
+                    name.startsWith("Segoe UI") ||
+                    name.startsWith("SimHei")) {
+                set.add(family);
+            }
+        }
+
+        set.add(Objects.requireNonNull(FontFamily.getSystemFontMap().get(Font.SANS_SERIF)));
+
+        mDefaultTypeface = Typeface.createTypeface(set.toArray(new FontFamily[0]));
+    }
+
     @Nonnull
     @Override
     public Lifecycle getLifecycle() {
@@ -345,7 +376,7 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      */
     @Nonnull
     protected Typeface onGetSelectedTypeface() {
-        return Typeface.DEFAULT;
+        return Objects.requireNonNullElse(mDefaultTypeface, Typeface.SANS_SERIF);
     }
 
     /**
@@ -355,8 +386,6 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
      */
     @Nonnull
     public static Typeface getSelectedTypeface() {
-        // Typeface.DEFAULT is designed for Modern UI default instance
-        // for case instance is not available, use sans serif
         return sInstance == null ? Typeface.SANS_SERIF : sInstance.onGetSelectedTypeface();
     }
 

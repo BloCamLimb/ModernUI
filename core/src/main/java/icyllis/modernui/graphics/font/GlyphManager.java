@@ -257,9 +257,7 @@ public class GlyphManager {
 
         boolean resized = atlas.stitch(glyph, MemoryUtil.memAddress(mImageBuffer));
         if (resized) {
-            for (var r : mAtlasResizeCallbacks) {
-                r.run();
-            }
+            mAtlasResizeCallbacks.forEach(Runnable::run);
         }
 
         mGraphics.clearRect(0, 0, mImage.getWidth(), mImage.getHeight());
@@ -311,11 +309,11 @@ public class GlyphManager {
      * Re-calculate font metrics in pixels, the higher 32 bits are ascent and
      * lower 32 bits are descent.
      */
-    @SuppressWarnings("MagicConstant")
     public int getFontMetrics(@Nonnull FontPaint paint, @Nullable FontMetricsInt fm) {
         int ascent = 0, descent = 0, height = 0;
-        for (Font f : paint.mFontCollection.getFonts()) {
-            FontMetrics metrics = mGraphics.getFontMetrics(f.deriveFont(paint.getFontStyle(), paint.mFontSize));
+        for (FontFamily family : paint.mFontCollection.getFamilies()) {
+            Font font = family.getClosestMatch(paint.getFontStyle()).deriveFont((float) paint.mFontSize);
+            FontMetrics metrics = mGraphics.getFontMetrics(font);
             ascent = Math.max(ascent, metrics.getAscent()); // positive
             descent = Math.max(descent, metrics.getDescent()); // positive
             height = Math.max(height, metrics.getHeight());
@@ -332,9 +330,8 @@ public class GlyphManager {
      *
      * @see LayoutPiece#LayoutPiece(char[], int, int, boolean, FontPaint, boolean, boolean, LayoutPiece)
      */
-    @SuppressWarnings("MagicConstant")
-    public Font getFontMetrics(@Nonnull Font font, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
-        font = font.deriveFont(paint.getFontStyle(), paint.mFontSize);
+    public Font getFontMetrics(@Nonnull FontFamily family, @Nonnull FontPaint paint, @Nonnull FontMetricsInt fm) {
+        Font font = family.getClosestMatch(paint.getFontStyle()).deriveFont((float) paint.mFontSize);
         fm.extendBy(mGraphics.getFontMetrics(font));
         return font;
     }

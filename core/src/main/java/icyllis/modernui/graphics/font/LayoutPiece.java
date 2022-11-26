@@ -128,12 +128,12 @@ public class LayoutPiece {
              isRtl ? runIndex >= 0 : runIndex < items.size(); ) {
             Run run = items.get(runIndex);
 
-            Font derived = engine.getFontMetrics(run.mFont, paint, extent);
-            GlyphVector vector = engine.layoutGlyphVector(derived, buf, run.mStart, run.mEnd, isRtl);
+            Font derived = engine.getFontMetrics(run.family(), paint, extent);
+            GlyphVector vector = engine.layoutGlyphVector(derived, buf, run.start(), run.end(), isRtl);
 
             if (measure) {
                 ClusterWork clusterWork = new ClusterWork(derived, buf, isRtl, mAdvances, start);
-                GraphemeBreak.forTextRun(buf, paint.mLocale, run.mStart, run.mEnd, clusterWork);
+                GraphemeBreak.forTextRun(buf, paint.mLocale, run.start(), run.end(), clusterWork);
             }
 
             if (layout) {

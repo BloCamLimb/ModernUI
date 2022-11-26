@@ -219,7 +219,7 @@ public class LayoutCache {
         }
 
         private int getMemoryUsage() {
-            return FMath.roundUp(12 + 16 + 8 + 8 + 4 + 4 + 8 + 1 + (mChars.length << 1), 8);
+            return FMath.align8(12 + 16 + 8 + 8 + 4 + 4 + 8 + 1 + (mChars.length << 1));
         }
     }
 
