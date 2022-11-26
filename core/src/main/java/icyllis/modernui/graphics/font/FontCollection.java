@@ -19,101 +19,13 @@
 package icyllis.modernui.graphics.font;
 
 import com.ibm.icu.impl.UCharacterProperty;
-import com.ibm.icu.lang.UCharacter;
-import com.ibm.icu.lang.UCharacterCategory;
-import com.ibm.icu.lang.UProperty;
+import com.ibm.icu.lang.*;
 import icyllis.modernui.text.Emoji;
-import org.jetbrains.annotations.Unmodifiable;
 
 import javax.annotation.Nonnull;
-import java.awt.*;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.List;
 import java.util.*;
 
 public class FontCollection {
-
-    public static final FontCollection SANS_SERIF;
-    public static final FontCollection SERIF;
-    public static final FontCollection MONOSPACED;
-    public static final FontCollection DEFAULT;
-
-    private static final List<String> sFontFamilyNames;
-
-    // internal use
-    public static final List<Font> sAllFontFamilies = new ArrayList<>();
-    public static final Map<String, FontCollection> sSystemFontMap = new HashMap<>();
-
-    static {
-        // Use Java's logical font as the default initial font if user does not override it in some configuration file
-        GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
-
-        List<Font> fonts = new ArrayList<>();
-
-        try (InputStream stream = new FileInputStream("F:/Torus Regular.otf")) {
-            Font font = Font.createFont(Font.TRUETYPE_FONT, stream);
-            fonts.add(font);
-        } catch (FontFormatException | IOException ignored) {
-        }
-
-        String[] families = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames(Locale.ROOT);
-        Font sansSerif = null;
-        for (String family : families) {
-            Font font = new Font(family, Font.PLAIN, 1);
-            sAllFontFamilies.add(font);
-            if (family.equals(Font.SANS_SERIF)) {
-                sansSerif = font;
-            } else if (family.startsWith("Calibri") ||
-                    family.startsWith("Microsoft YaHei UI") ||
-                    family.startsWith("STHeiti") ||
-                    family.startsWith("Segoe UI") ||
-                    family.startsWith("SimHei")) {
-                fonts.add(font);
-            }
-        }
-        if (sansSerif == null) {
-            sansSerif = new Font(Font.SANS_SERIF, Font.PLAIN, 1);
-        }
-
-        fonts.add(sansSerif);
-
-        DEFAULT = new FontCollection(fonts.toArray(new Font[0]));
-
-        sFontFamilyNames = List.of(families);
-
-        for (Font font : sAllFontFamilies) {
-            String family = font.getFamily(Locale.ROOT);
-            if (family.equals(Font.SANS_SERIF)) {
-                continue;
-            }
-            sSystemFontMap.putIfAbsent(family, new FontCollection(new Font[]{font, sansSerif}));
-        }
-
-        // no backup strategy
-        SANS_SERIF = new FontCollection(new Font[]{sansSerif});
-        sSystemFontMap.put(Font.SANS_SERIF, SANS_SERIF);
-
-        FontCollection serif = sSystemFontMap.get(Font.SERIF);
-        if (serif == null) {
-            serif = new FontCollection(new Font[]{new Font(Font.SERIF, Font.PLAIN, 1)});
-            sSystemFontMap.put(Font.SERIF, serif);
-        }
-        SERIF = serif;
-
-        FontCollection monospaced = sSystemFontMap.get(Font.MONOSPACED);
-        if (monospaced == null) {
-            monospaced = new FontCollection(new Font[]{new Font(Font.MONOSPACED, Font.PLAIN, 1)});
-            sSystemFontMap.put(Font.MONOSPACED, monospaced);
-        }
-        MONOSPACED = monospaced;
-    }
-
-    @Unmodifiable
-    public static List<String> getFontFamilyNames() {
-        return sFontFamilyNames;
-    }
 
     // 0b0000 0000 0000 0000 0000 0001 1100 0000
     public static final int GC_M_MASK =
@@ -137,6 +49,8 @@ public class FontCollection {
     }
 
     public static final int REPLACEMENT_CHARACTER = 0xFFFD;
+
+    public static final int TEXT_STYLE_VS = 0xFE0E;
 
     // Characters where we want to continue using existing font run instead of
     // recomputing the best match in the fallback list.
@@ -169,18 +83,27 @@ public class FontCollection {
 
     // an array of base fonts
     @Nonnull
-    private final List<Font> mFonts;
+    private final List<FontFamily> mFamilies;
 
-    public FontCollection(@Nonnull Font[] fonts) {
-        if (fonts.length == 0) {
+    public FontCollection(@Nonnull FontFamily... families) {
+        if (families.length == 0) {
             throw new IllegalArgumentException("Font set cannot be empty");
         }
-        mFonts = List.of(fonts);
+        mFamilies = List.of(families);
     }
 
-    // calculate font runs
-    public List<Run> itemize(@Nonnull final char[] text, final int offset, final int limit) {
-        if (offset < 0 || offset > limit || limit > text.length) {
+    /**
+     * Perform the itemization.
+     */
+    public List<Run> itemize(@Nonnull char[] text, int offset, int limit) {
+        return itemize(text, offset, limit, limit - offset);
+    }
+
+    /**
+     * Perform the itemization.
+     */
+    public List<Run> itemize(@Nonnull char[] text, int offset, int limit, int runLimit) {
+        if (offset < 0 || offset > limit || limit > text.length || runLimit < 0) {
             throw new IllegalArgumentException();
         }
         if (offset == limit) {
@@ -190,7 +113,7 @@ public class FontCollection {
         final List<Run> result = new ArrayList<>();
 
         Run lastRun = null;
-        Font lastFamily = null;
+        FontFamily lastFamily = null;
 
         int nextCh;
         int prevCh = 0;
@@ -250,11 +173,11 @@ public class FontCollection {
                 shouldContinueRun = true;
             } else if (lastFamily != null && (isStickyWhitelisted(ch) || isCombining(ch))) {
                 // Continue using existing font as long as it has coverage and is whitelisted.
-                shouldContinueRun = lastFamily.canDisplay(ch);
+                shouldContinueRun = lastFamily.hasGlyph(ch);
             }
 
             if (!shouldContinueRun) {
-                Font family = getFamilyForChar(ch);
+                FontFamily family = getFamilyForChar(ch, 0);
                 if (pos == 0 || family != lastFamily) {
                     int start = pos;
                     // Workaround for combining marks and emoji modifiers until we implement
@@ -266,8 +189,8 @@ public class FontCollection {
                             (isCombining(ch) || (Emoji.isEmojiModifier(ch) && Emoji.isEmojiModifierBase(prevCh)))) {
                         int prevLength = Character.charCount(prevCh);
                         if (lastRun != null) {
-                            lastRun.mEnd -= prevLength;
-                            if (lastRun.mStart == lastRun.mEnd) {
+                            lastRun.end -= prevLength;
+                            if (lastRun.start == lastRun.end) {
                                 result.remove(lastRun);
                             }
                         }
@@ -288,7 +211,7 @@ public class FontCollection {
             }
             prevCh = ch;
             if (lastRun != null) {
-                lastRun.mEnd = next;
+                lastRun.end = next;
             }
 
         } while (running);
@@ -296,30 +219,47 @@ public class FontCollection {
         if (lastFamily == null) {
             // No character needed any font support, so it doesn't really matter which font they end up
             // getting displayed in. We put the whole string in one run, using the first font.
-            result.add(new Run(mFonts.get(0), offset, limit));
+            result.add(new Run(mFamilies.get(0), offset, limit));
         }
         return result;
     }
 
     // base fonts
     @Nonnull
-    public List<Font> getFonts() {
-        return mFonts;
+    public List<FontFamily> getFamilies() {
+        return mFamilies;
     }
 
-    // no scores
-    private Font getFamilyForChar(int ch) {
-        for (Font font : mFonts) {
-            if (font.canDisplay(ch)) {
-                return font;
+    private int calcCoverageScore(int ch, int vs, FontFamily family) {
+        boolean hasVSGlyph = (vs != 0) && family.hasGlyph(ch, vs);
+        if (!hasVSGlyph && !family.hasGlyph(ch)) {
+            return 0;
+        }
+        if ((vs == 0 || hasVSGlyph) && mFamilies.get(0) == family) {
+            return Integer.MAX_VALUE;
+        }
+        if (vs != 0 && hasVSGlyph) {
+            return 3;
+        }
+        if (vs == TEXT_STYLE_VS) {
+            return 2;
+        } else {
+            return 1;
+        }
+    }
+
+    private FontFamily getFamilyForChar(int ch, int vs) {
+        for (FontFamily family : mFamilies) {
+            if (family.hasGlyph(ch, vs)) {
+                return family;
             }
         }
-        for (Font font : sAllFontFamilies) {
-            if (font.canDisplay(ch)) {
-                return font;
+        for (FontFamily family : FontFamily.getSystemFontMap().values()) {
+            if (family.hasGlyph(ch, vs)) {
+                return family;
             }
         }
-        return mFonts.get(0);
+        return mFamilies.get(0);
     }
 
     @Override
@@ -329,52 +269,52 @@ public class FontCollection {
 
         FontCollection that = (FontCollection) o;
 
-        return mFonts.equals(that.mFonts);
+        return mFamilies.equals(that.mFamilies);
     }
 
     @Override
     public int hashCode() {
-        return mFonts.hashCode();
+        return mFamilies.hashCode();
     }
 
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder();
         s.append('{');
-        for (int i = 0, e = mFonts.size(); i < e; i++) {
+        for (int i = 0, e = mFamilies.size(); i < e; i++) {
             if (i > 0) {
                 s.append(',');
             }
-            s.append(mFonts.get(i).getFamily(Locale.ROOT));
+            s.append(mFamilies.get(i).getFamilyName());
         }
         return s.append('}').toString();
     }
 
-    public static class Run {
+    public static final class Run {
 
-        final Font mFont;
-        final int mStart;
-        int mEnd;
+        private final FontFamily family;
+        private final int start;
+        private int end;
 
-        public Run(Font font, int start, int end) {
-            mFont = font;
-            mStart = start;
-            mEnd = end;
+        Run(FontFamily family, int start, int end) {
+            this.family = family;
+            this.start = start;
+            this.end = end;
         }
 
         // base font without style and size
-        public Font getFont() {
-            return mFont;
+        public FontFamily family() {
+            return family;
         }
 
         // start index (inclusive)
-        public int getStart() {
-            return mStart;
+        public int start() {
+            return start;
         }
 
         // end index (exclusive)
-        public int getEnd() {
-            return mEnd;
+        public int end() {
+            return end;
         }
     }
 }

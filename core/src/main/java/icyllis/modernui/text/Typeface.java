@@ -19,12 +19,12 @@
 package icyllis.modernui.text;
 
 import icyllis.modernui.graphics.font.FontCollection;
+import icyllis.modernui.graphics.font.FontFamily;
 
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 import java.awt.*;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * The Typeface specifies a set of font families that can be used
@@ -36,19 +36,23 @@ public class Typeface {
     public static final Typeface SANS_SERIF;
     public static final Typeface SERIF;
     public static final Typeface MONOSPACED;
-    public static final Typeface DEFAULT;
 
     private static final Map<String, Typeface> sSystemFontMap = new HashMap<>();
 
     static {
-        //checkJava();
-        DEFAULT = new Typeface(FontCollection.DEFAULT);
-        for (var e : FontCollection.sSystemFontMap.entrySet()) {
-            sSystemFontMap.putIfAbsent(e.getKey(), new Typeface(e.getValue()));
+        FontFamily sansSerif = Objects.requireNonNull(FontFamily.getSystemFontMap().get(Font.SANS_SERIF));
+
+        for (var e : FontFamily.getSystemFontMap().entrySet()) {
+            if (e.getKey().equals(Font.SANS_SERIF)) {
+                sSystemFontMap.putIfAbsent(e.getKey(), createTypeface(e.getValue()));
+            } else {
+                sSystemFontMap.putIfAbsent(e.getKey(), createTypeface(e.getValue(), sansSerif));
+            }
         }
-        SANS_SERIF = sSystemFontMap.get(Font.SANS_SERIF);
-        SERIF = sSystemFontMap.get(Font.SERIF);
-        MONOSPACED = sSystemFontMap.get(Font.MONOSPACED);
+
+        SANS_SERIF = Objects.requireNonNull(sSystemFontMap.get(Font.SANS_SERIF));
+        SERIF = Objects.requireNonNull(sSystemFontMap.get(Font.SERIF));
+        MONOSPACED = Objects.requireNonNull(sSystemFontMap.get(Font.MONOSPACED));
     }
 
     /*@Deprecated
@@ -81,11 +85,11 @@ public class Typeface {
     }*/
 
     @Nonnull
-    public static Typeface createTypeface(@Nonnull Font[] fonts) {
-        if (fonts.length == 0) {
+    public static Typeface createTypeface(@Nonnull FontFamily... families) {
+        if (families.length == 0) {
             return SANS_SERIF;
         }
-        return new Typeface(new FontCollection(fonts));
+        return new Typeface(new FontCollection(families));
     }
 
     @Nonnull

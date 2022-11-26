@@ -119,7 +119,7 @@ public final class ModernUITextMC {
     static void onParallelDispatch(@Nonnull ParallelDispatchEvent event) {
         // since Forge EVENT_BUS is not started yet, we should manually maintain that
         // in case of some mods render texts before entering main menu
-        event.enqueueWork(() -> TextLayoutEngine.getInstance().cleanup());
+        event.enqueueWork(() -> TextLayoutEngine.getInstance().clear());
     }
 
     /*@OnlyIn(Dist.CLIENT)
@@ -230,11 +230,13 @@ public final class ModernUITextMC {
             mBaseFontSize = builder.comment(
                             "Control base font size, in GUI scaled pixels. The default and vanilla value is 8.",
                             "For bitmap fonts, 8 represents a glyph size of 8x or 16x if fixed resolution.")
-                    .defineInRange("baseFontSize", 8.0, BASE_FONT_SIZE_MIN, BASE_FONT_SIZE_MAX);
+                    .defineInRange("baseFontSize", TextLayoutProcessor.DEFAULT_BASE_FONT_SIZE,
+                            BASE_FONT_SIZE_MIN, BASE_FONT_SIZE_MAX);
             mBaselineShift = builder.comment(
                             "Control vertical baseline for vanilla text layout, in GUI scaled pixels.",
                             "For smaller font, 6 is recommended. The default value is 7.")
-                    .defineInRange("baselineShift", 7.0, BASELINE_MIN, BASELINE_MAX);
+                    .defineInRange("baselineShift", TextLayoutNode.DEFAULT_BASELINE_OFFSET,
+                            BASELINE_MIN, BASELINE_MAX);
             mShadowOffset = builder.comment(
                             "Control the text shadow offset for vanilla text rendering, in GUI scaled pixels.")
                     .defineInRange("shadowOffset", 0.8, SHADOW_OFFSET_MIN, SHADOW_OFFSET_MAX);

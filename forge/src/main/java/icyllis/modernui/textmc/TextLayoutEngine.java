@@ -18,12 +18,12 @@
 
 package icyllis.modernui.textmc;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 import com.ibm.icu.text.Bidi;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.blaze3d.systems.RenderSystem;
 import icyllis.modernui.ModernUI;
+import icyllis.modernui.forge.ModernUIForge;
 import icyllis.modernui.forge.UIManager;
 import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.text.*;
@@ -37,7 +37,8 @@ import net.minecraft.network.chat.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.PreparableReloadListener;
 import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.util.*;
+import net.minecraft.util.FormattedCharSequence;
+import net.minecraft.util.GsonHelper;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -74,7 +75,7 @@ import static icyllis.modernui.ModernUI.*;
  * @author BloCamLimb
  * @since 2.0
  */
-public class TextLayoutEngine {
+public class TextLayoutEngine implements PreparableReloadListener {
 
     /**
      * Instance on main/render thread
@@ -176,83 +177,8 @@ public class TextLayoutEngine {
      * Map from 'derived font' to 'ASCII 33(!) to 126(~) characters with their standard advances and relative advances'.
      */
     private final Map<Font, FastCharSet> mFastCharMap = new HashMap<>();
-    private final Function<Font, FastCharSet> mFastCharFunc = new Function<>() {
-        @Nonnull
-        @Override
-        public FastCharSet apply(Font font) {
-            // initial table
-            GLBakedGlyph[] glyphs = new GLBakedGlyph[94]; // 126 - 33 + 1
-            // normalized offsets
-            float[] offsets = new float[glyphs.length];
-            char[] chars = new char[1];
-            int n = 0;
-            // 48 to 57, always cache all digits for fast digit replacement
-            for (int i = 0; i < 10; i++) {
-                chars[0] = (char) ('0' + i);
-                // no text shaping
-                GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
-                float advance = (float) vector.getGlyphPosition(1).getX();
-                GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
-                Objects.requireNonNull(glyph, font + " does not support ASCII digits");
-                glyphs[i] = glyph;
-                // '0' is standard, because it's wider than other digits in general
-                if (i == 0) {
-                    // 0 is standard advance
-                    offsets[n] = advance;
-                } else {
-                    // relative offset to standard advance, to center the glyph
-                    offsets[n] = (offsets[0] - advance) / 2f;
-                }
-                n++;
-            }
-            // 33 to 47, cache only narrow chars
-            for (int i = 0; i < 15; i++) {
-                chars[0] = (char) (33 + i);
-                // no text shaping
-                GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
-                float advance = (float) vector.getGlyphPosition(1).getX();
-                // too wide
-                if (advance + 0.5f > offsets[0]) {
-                    continue;
-                }
-                GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
-                // allow empty
-                if (glyph != null) {
-                    glyphs[n] = glyph;
-                    offsets[n] = (offsets[0] - advance) / 2f;
-                    n++;
-                }
-            }
-            // 58 to 126, cache only narrow chars
-            for (int i = 0; i < 69; i++) {
-                chars[0] = (char) (58 + i);
-                // no text shaping
-                GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
-                float advance = (float) vector.getGlyphPosition(1).getX();
-                // too wide
-                if (advance + 0.5f > offsets[0]) {
-                    continue;
-                }
-                GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
-                // allow empty
-                if (glyph != null) {
-                    glyphs[n] = glyph;
-                    offsets[n] = (offsets[0] - advance) / 2f;
-                    n++;
-                }
-            }
-            if (n < glyphs.length) {
-                glyphs = Arrays.copyOf(glyphs, n);
-                offsets = Arrays.copyOf(offsets, n);
-            }
-            float level = getResLevel();
-            // the cache will be reset when resolution level changed
-            for (int i = 0; i < n; i++) {
-                offsets[i] /= level;
-            }
-            return new FastCharSet(glyphs, offsets);
-        }
-    };
+    // it's necessary to cache the lambda
+    private final Function<Font, FastCharSet> mFastCharFunc = this::cacheFastChars;
 
     /**
      * Gui scale = 4.
@@ -260,6 +186,7 @@ public class TextLayoutEngine {
     public static final int EMOJI_SCALE = 4;
     public static final int EMOJI_BASE_SIZE = 9;
     public static final int EMOJI_SIZE = EMOJI_BASE_SIZE * EMOJI_SCALE;
+    public static final int EMOJI_SIZE_LARGE = EMOJI_SIZE * 2;
 
     /**
      * Emoji sequence to sprite index (used as glyph code in emoji atlas).
@@ -279,7 +206,6 @@ public class TextLayoutEngine {
      */
     private GLFontAtlas mEmojiAtlas;
     private ByteBuffer mEmojiBuffer;
-    private volatile boolean mEmojiScanned = false;
 
     /**
      * @param index    used as glyph code
@@ -362,33 +288,33 @@ public class TextLayoutEngine {
     /**
      * Cleanup layout cache.
      */
-    public void cleanup() {
-        int size = getCacheCount();
+    public void clear() {
+        int count = getCacheCount();
         mVanillaCache.clear();
         mComponentCache.clear();
         mMasterpieceCache.clear();
-        mFastCharMap.clear();
-        boolean rehash = size >= sRehashThreshold;
+        boolean rehash = count >= sRehashThreshold;
         if (rehash) {
             // Create new HashMap so that the internal hashtable of old maps are released as well
             mVanillaCache = new HashMap<>();
             mComponentCache = new HashMap<>();
             mMasterpieceCache = new HashMap<>();
-            //mFastCharMap = new HashMap<>();
         }
+        // Metrics change with resolution level
+        mFastCharMap.clear();
         // Just clear TextRenderType instances, font textures are remained
         TextRenderType.clear();
-        if (size > 0) {
-            LOGGER.info(MARKER, "Cleanup {} text layout entries, rehash: {}", size, rehash);
+        if (count > 0) {
+            LOGGER.info(MARKER, "Cleanup {} text layout entries, rehash: {}", count, rehash);
         }
     }
 
     /**
      * Reload layout engine.
-     * Called when resolution level or language changed. This will call {@link #cleanup()}.
+     * Called when resolution level or language changed. This will call {@link #clear()}.
      */
     public void reload() {
-        cleanup();
+        clear();
 
         final int scale = Math.round(ViewConfiguration.get().getViewScale() * 2);
         final float oldLevel = mResLevel;
@@ -432,154 +358,8 @@ public class TextLayoutEngine {
     }
 
     /**
-     * Called when resources reloaded (languages changed).
-     */
-    @Nonnull
-    public CompletableFuture<Void> reload(PreparableReloadListener.PreparationBarrier preparationBarrier,
-                                          ResourceManager resourceManager,
-                                          ProfilerFiller preparationProfiler, ProfilerFiller reloadProfiler,
-                                          Executor preparationExecutor, Executor reloadExecutor) {
-        if (!mEmojiScanned) {
-            mEmojiScanned = true;
-            return CompletableFuture.supplyAsync(() -> {
-                        preparationProfiler.startTick();
-                        preparationProfiler.push("emojis");
-                        final var emojis = scanEmojis(resourceManager);
-                        preparationProfiler.popPush("shortcodes");
-                        final var shortcodes = scanShortcodes(resourceManager, emojis);
-                        preparationProfiler.pop();
-                        preparationProfiler.endTick();
-                        return Pair.of(emojis, shortcodes);
-                    }, preparationExecutor)
-                    .thenCompose(preparationBarrier::wait)
-                    .thenAcceptAsync(result -> {
-                        reloadProfiler.startTick();
-                        reloadProfiler.push("reload");
-                        mEmojiMap.putAll(result.getLeft());
-                        mEmojiShortcodes.putAll(result.getRight());
-                        reload();
-                        reloadProfiler.pop();
-                        reloadProfiler.endTick();
-                    }, reloadExecutor);
-        }
-        return preparationBarrier.wait(Unit.INSTANCE)
-                .thenRunAsync(() -> {
-                    reloadProfiler.startTick();
-                    reloadProfiler.push("reload");
-                    reload();
-                    reloadProfiler.pop();
-                    reloadProfiler.endTick();
-                }, reloadExecutor);
-    }
-
-    @Nonnull
-    private Map<? extends CharSequence, EmojiEntry> scanEmojis(ResourceManager manager) {
-        final var map = new HashMap<String, EmojiEntry>();
-        CYCLE:
-        for (var location : manager.listResources("emoji",
-                location -> location.getPath().length() <= 64 && location.getPath().endsWith(".png")).keySet()) {
-            var paths = location.getPath().split("/");
-            if (paths.length == 0) {
-                continue;
-            }
-            var name = paths[paths.length - 1];
-            var parts = name.substring(0, name.length() - 4).split("-");
-            if (parts.length == 0) {
-                continue;
-            }
-            var codePoints = new int[parts.length];
-            for (int i = 0; i < parts.length; i++) {
-                try {
-                    int codePoint = Integer.parseInt(parts[i], 16);
-                    if (!Character.isValidCodePoint(codePoint)) {
-                        continue CYCLE;
-                    }
-                    if (i == 0 && !Emoji.isEmoji(codePoint)) {
-                        continue CYCLE;
-                    }
-                    codePoints[i] = codePoint;
-                } catch (NumberFormatException e) {
-                    continue CYCLE;
-                }
-            }
-            map.computeIfAbsent(new String(codePoints, 0, codePoints.length),
-                    sequence -> new EmojiEntry(/*index*/ map.size(), location, sequence));
-        }
-        LOGGER.info("Scanned emoji map size: {}", map.size());
-        return map;
-    }
-
-    @Nonnull
-    private Map<String, String> scanShortcodes(ResourceManager manager,
-                                               Map<? extends CharSequence, EmojiEntry> emojiMap) {
-        final var map = new HashMap<String, String>();
-        final var lookupKey = new CharSequenceBuilder();
-        int mismatched = 0;
-        try (var reader = manager.openAsReader(new ResourceLocation(ID, "emoji_data.json"))) {
-            var object = GsonHelper.fromJson(new Gson(), reader, JsonObject.class);
-            if (object != null) {
-                CYCLE:
-                for (var entry : object.entrySet()) {
-                    var shortcodes = entry.getValue().getAsJsonArray()
-                            .get(3).getAsJsonArray();
-                    var parts = entry.getKey().split("-");
-                    if (parts.length == 0) {
-                        continue;
-                    }
-                    lookupKey.clear();
-                    for (var part : parts) {
-                        try {
-                            int codePoint = Integer.parseInt(part, 16);
-                            lookupKey.addCodePoint(codePoint);
-                        } catch (NumberFormatException e) {
-                            continue CYCLE;
-                        }
-                    }
-                    final String sequence;
-                    var cachedEntry = emojiMap.get(lookupKey);
-                    // try with existing sequence
-                    if (cachedEntry != null) {
-                        sequence = cachedEntry.sequence;
-                    } else {
-                        // try with variation selector-16 removed
-                        lookupKey.clear();
-                        for (var part : parts) {
-                            try {
-                                int codePoint = Integer.parseInt(part, 16);
-                                if (codePoint == 0xfe0f) {
-                                    continue;
-                                }
-                                lookupKey.addCodePoint(codePoint);
-                            } catch (NumberFormatException e) {
-                                continue CYCLE;
-                            }
-                        }
-                        cachedEntry = emojiMap.get(lookupKey);
-                        if (cachedEntry != null) {
-                            sequence = cachedEntry.sequence;
-                        } else {
-                            sequence = null;
-                        }
-                    }
-                    if (sequence != null) {
-                        shortcodes.forEach(e -> map.putIfAbsent(e.getAsString(), sequence));
-                    } else {
-                        mismatched++;
-                    }
-                }
-            } else {
-                LOGGER.info(MARKER, "Failed to parse emoji data");
-            }
-        } catch (Exception e) {
-            LOGGER.info(MARKER, "Failed to load emoji data", e);
-        }
-        LOGGER.info("Scanned emoji shortcodes: {}, mismatched: {}",
-                map.size(), mismatched);
-        return map;
-    }
-
-    /**
      * Reload both glyph manager and layout engine.
+     * Called when any resource changed. This will call {@link #reload()}.
      */
     public void reloadAll() {
         mGlyphManager.reload();
@@ -591,6 +371,164 @@ public class TextLayoutEngine {
         }
         LayoutCache.clear();
         reload();
+    }
+
+    /**
+     * Called when resources reloaded.
+     */
+    @Nonnull
+    @Override
+    public CompletableFuture<Void> reload(@Nonnull PreparationBarrier preparationBarrier,
+                                          @Nonnull ResourceManager resourceManager,
+                                          @Nonnull ProfilerFiller preparationProfiler,
+                                          @Nonnull ProfilerFiller reloadProfiler,
+                                          @Nonnull Executor preparationExecutor,
+                                          @Nonnull Executor reloadExecutor) {
+        return CompletableFuture.supplyAsync(() -> {
+                    preparationProfiler.startTick();
+                    preparationProfiler.push("emojis");
+                    final var emojis = scanEmojis(resourceManager);
+                    preparationProfiler.popPush("shortcodes");
+                    final var shortcodes = scanShortcodes(resourceManager, emojis);
+                    preparationProfiler.pop();
+                    preparationProfiler.endTick();
+                    return Pair.of(emojis, shortcodes);
+                }, preparationExecutor)
+                .thenCompose(preparationBarrier::wait)
+                .thenAcceptAsync(result -> {
+                    reloadProfiler.startTick();
+                    reloadProfiler.push("reload");
+                    mEmojiMap.clear();
+                    mEmojiShortcodes.clear();
+                    mEmojiMap.putAll(result.getLeft());
+                    mEmojiShortcodes.putAll(result.getRight());
+                    reloadAll();
+                    reloadProfiler.pop();
+                    reloadProfiler.endTick();
+                }, reloadExecutor);
+    }
+
+    private void scanFonts(ResourceManager manager) {
+        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+        for (var entry : manager.listResourceStacks("font",
+                location -> location.getPath().endsWith(".json")).entrySet()) {
+            ResourceLocation location = entry.getKey();
+            String path = location.getPath();
+            // XXX: remove prefix 'font/' and suffix '.json' to get the typeface name
+            ResourceLocation name = new ResourceLocation(location.getNamespace(),
+                    path.substring(5, path.length() - 5));
+            if (name.equals(Minecraft.DEFAULT_FONT) ||
+                    name.equals(Minecraft.UNIFORM_FONT)) {
+                continue;
+            }
+        }
+        //TODO
+    }
+
+    @Nonnull
+    private Map<? extends CharSequence, EmojiEntry> scanEmojis(ResourceManager manager) {
+        final var map = new HashMap<String, EmojiEntry>();
+        CYCLE:
+        for (var location : manager.listResources("emoji",
+                location -> location.getPath().endsWith(".png")).keySet()) {
+            var path = location.getPath().split("/");
+            if (path.length == 0) {
+                continue;
+            }
+            var name = path[path.length - 1];
+            var codes = name.substring(0, name.length() - 4).split("-");
+            int length = codes.length;
+            if (length == 0) {
+                continue;
+            }
+            var codePoints = new int[length];
+            for (int i = 0; i < length; i++) {
+                try {
+                    int codePoint = Integer.parseInt(codes[i], 16);
+                    if (!Character.isValidCodePoint(codePoint)) {
+                        continue CYCLE;
+                    }
+                    if (i == 0 && !Emoji.isEmoji(codePoint)) {
+                        continue CYCLE;
+                    }
+                    codePoints[i] = codePoint;
+                } catch (NumberFormatException e) {
+                    continue CYCLE;
+                }
+            }
+            map.computeIfAbsent(new String(codePoints, 0, length),
+                    sequence -> new EmojiEntry(/*index*/ map.size(), location, sequence));
+        } // CYCLE end
+        LOGGER.info("Scanned emoji map size: {}",
+                map.size());
+        return map;
+    }
+
+    @Nonnull
+    private Map<String, String> scanShortcodes(ResourceManager manager,
+                                               Map<? extends CharSequence, EmojiEntry> emojiMap) {
+        final var map = new HashMap<String, String>();
+        final var lookup = new CharSequenceBuilder();
+        int mismatched = 0;
+        try (var reader = manager.openAsReader(ModernUIForge.location("emoji_data.json"))) {
+            CYCLE:
+            for (var entry : Objects.requireNonNull(
+                    GsonHelper.fromJson(new Gson(), reader, JsonObject.class)).entrySet()) {
+                var codes = entry.getKey().split("-");
+                if (codes.length == 0) {
+                    continue;
+                }
+                var shortcodes = entry.getValue().getAsJsonArray()
+                        .get(3).getAsJsonArray();
+                String sequence = null;
+                {
+                    lookup.clear();
+                    for (var code : codes) {
+                        try {
+                            int codePoint = Integer.parseInt(code, 16);
+                            lookup.addCodePoint(codePoint);
+                        } catch (NumberFormatException e) {
+                            continue CYCLE;
+                        }
+                    }
+                    EmojiEntry existing = emojiMap.get(lookup);
+                    if (existing != null) {
+                        sequence = existing.sequence;
+                    }
+                }
+                if (sequence == null) {
+                    // try with 'variation selector-16' removed
+                    lookup.clear();
+                    for (var code : codes) {
+                        try {
+                            int codePoint = Integer.parseInt(code, 16);
+                            if (codePoint != Emoji.VARIATION_SELECTOR_16) {
+                                lookup.addCodePoint(codePoint);
+                            }
+                        } catch (NumberFormatException e) {
+                            continue CYCLE;
+                        }
+                    }
+                    EmojiEntry existing = emojiMap.get(lookup);
+                    if (existing != null) {
+                        sequence = existing.sequence;
+                    }
+                }
+                if (sequence != null) {
+                    // map shortcode to emoji sequence
+                    for (var e : shortcodes) {
+                        map.putIfAbsent(e.getAsString(), sequence);
+                    }
+                } else {
+                    mismatched++;
+                }
+            } // CYCLE end
+        } catch (Exception e) {
+            LOGGER.info(MARKER, "Failed to load emoji data", e);
+        }
+        LOGGER.info("Scanned emoji shortcodes: {}, mismatched: {}",
+                map.size(), mismatched);
+        return map;
     }
 
     /**
@@ -652,6 +590,7 @@ public class TextLayoutEngine {
      * @return the full layout for the text
      * @see FormattedTextWrapper
      */
+    @Nonnull
     public TextLayoutNode lookupComplexNode(@Nonnull FormattedText text) {
         if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
             return TextLayoutNode.EMPTY;
@@ -689,6 +628,7 @@ public class TextLayoutEngine {
      * @return the full layout for the text
      * @see FormattedTextWrapper
      */
+    @Nonnull
     public TextLayoutNode lookupComplexNode(@Nonnull FormattedText text, @Nonnull Style style) {
         if (text == CommonComponents.EMPTY || text == FormattedText.EMPTY) {
             return TextLayoutNode.EMPTY;
@@ -707,6 +647,7 @@ public class TextLayoutEngine {
                 return node;
             }
         } else {
+            // the more complex case (masterpiece)
             node = mMasterpieceCache.get(mMasterpieceLookupKey.update(text, style));
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, style);
@@ -753,6 +694,7 @@ public class TextLayoutEngine {
                     return node;
                 }
             } else {
+                // the more complex case (masterpiece)
                 node = mMasterpieceCache.get(mMasterpieceLookupKey.update(text, Style.EMPTY));
                 if (node == null) {
                     node = mProcessor.performComplexLayout(text, Style.EMPTY);
@@ -762,6 +704,7 @@ public class TextLayoutEngine {
             }
             return node.get();
         } else {
+            // the most complex case (masterpiece)
             TextLayoutNode node = mMasterpieceCache.get(mMasterpieceLookupKey.update(sequence));
             if (node == null) {
                 node = mProcessor.performSequenceLayout(sequence);
@@ -804,9 +747,9 @@ public class TextLayoutEngine {
         }
         if (mEmojiAtlas == null) {
             mEmojiAtlas = new GLFontAtlas(true);
-            int s = (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2);
+            int size = (EMOJI_SIZE + GlyphManager.GLYPH_BORDER * 2);
             // RGBA, 4 bytes per pixel
-            mEmojiBuffer = MemoryUtil.memCalloc(1, s * s * 4);
+            mEmojiBuffer = MemoryUtil.memCalloc(1, size * size * 4);
         }
         GLBakedGlyph glyph = mEmojiAtlas.getGlyph(entry.index);
         if (glyph != null && glyph.texture == 0) {
@@ -819,7 +762,7 @@ public class TextLayoutEngine {
      * Lookup Emoji char sequence from shortcode.
      *
      * @param shortcode the shortcode, e.g. cheese
-     * @return compiled Emoji code points
+     * @return the Emoji sequence
      */
     @Nullable
     public String lookupEmojiShortcode(@Nonnull String shortcode) {
@@ -828,9 +771,8 @@ public class TextLayoutEngine {
 
     public void dumpEmojiAtlas() {
         if (mEmojiAtlas != null) {
-            String basePath =
-                    icyllis.modernui.core.NativeImage.saveDialogGet(icyllis.modernui.core.NativeImage.SaveFormat.PNG,
-                            "EmojiAtlas");
+            String basePath = icyllis.modernui.core.NativeImage.saveDialogGet(
+                    icyllis.modernui.core.NativeImage.SaveFormat.PNG, "EmojiAtlas");
             mEmojiAtlas.debug(basePath);
         }
     }
@@ -849,10 +791,10 @@ public class TextLayoutEngine {
         try (InputStream inputStream = Minecraft.getInstance().getResourceManager().open(location);
              NativeImage image = NativeImage.read(inputStream)) {
             if ((image.getWidth() == EMOJI_SIZE && image.getHeight() == EMOJI_SIZE) ||
-                    (image.getWidth() == EMOJI_SIZE * 2 && image.getHeight() == EMOJI_SIZE * 2)) {
+                    (image.getWidth() == EMOJI_SIZE_LARGE && image.getHeight() == EMOJI_SIZE_LARGE)) {
                 long dst = MemoryUtil.memAddress(mEmojiBuffer);
                 NativeImage subImage = null;
-                if (image.getWidth() == EMOJI_SIZE * 2) {
+                if (image.getWidth() == EMOJI_SIZE_LARGE) {
                     // Down-sampling
                     subImage = MipmapGenerator.generateMipLevels(image, 1)[1];
                 }
@@ -876,7 +818,7 @@ public class TextLayoutEngine {
                 return glyph;
             } else {
                 atlas.setWhitespace(index);
-                LOGGER.warn(MARKER, "Emoji is not {}x or {}x: {}", EMOJI_SIZE, EMOJI_SIZE * 2, location);
+                LOGGER.warn(MARKER, "Emoji is not {}x or {}x: {}", EMOJI_SIZE, EMOJI_SIZE_LARGE, location);
                 return null;
             }
         } catch (Exception e) {
@@ -995,6 +937,85 @@ public class TextLayoutEngine {
     @Nonnull
     public FastCharSet lookupFastChars(@Nonnull Font font) {
         return mFastCharMap.computeIfAbsent(font, mFastCharFunc);
+    }
+
+    @Nonnull
+    private FastCharSet cacheFastChars(@Nonnull Font font) {
+        // initial table
+        GLBakedGlyph[] glyphs = new GLBakedGlyph[94]; // 126 - 33 + 1
+        // normalized offsets
+        float[] offsets = new float[glyphs.length];
+
+        char[] chars = new char[1];
+        int n = 0;
+
+        // 48 to 57, always cache all digits for fast digit replacement
+        for (int i = 0; i < 10; i++) {
+            chars[0] = (char) ('0' + i);
+            // no text shaping
+            GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
+            float advance = (float) vector.getGlyphPosition(1).getX();
+            GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+            Objects.requireNonNull(glyph, font + " does not support ASCII digits");
+            glyphs[i] = glyph;
+            // '0' is standard, because it's wider than other digits in general
+            if (i == 0) {
+                // 0 is standard advance
+                offsets[n] = advance;
+            } else {
+                // relative offset to standard advance, to center the glyph
+                offsets[n] = (offsets[0] - advance) / 2f;
+            }
+            n++;
+        }
+
+        // 33 to 47, cache only narrow chars
+        for (int i = 0; i < 15; i++) {
+            chars[0] = (char) (33 + i);
+            // no text shaping
+            GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
+            float advance = (float) vector.getGlyphPosition(1).getX();
+            // too wide
+            if (advance + 0.5f > offsets[0]) {
+                continue;
+            }
+            GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+            // allow empty
+            if (glyph != null) {
+                glyphs[n] = glyph;
+                offsets[n] = (offsets[0] - advance) / 2f;
+                n++;
+            }
+        }
+
+        // 58 to 126, cache only narrow chars
+        for (int i = 0; i < 69; i++) {
+            chars[0] = (char) (58 + i);
+            // no text shaping
+            GlyphVector vector = mGlyphManager.createGlyphVector(font, chars);
+            float advance = (float) vector.getGlyphPosition(1).getX();
+            // too wide
+            if (advance + 0.5f > offsets[0]) {
+                continue;
+            }
+            GLBakedGlyph glyph = mGlyphManager.lookupGlyph(font, vector.getGlyphCode(0));
+            // allow empty
+            if (glyph != null) {
+                glyphs[n] = glyph;
+                offsets[n] = (offsets[0] - advance) / 2f;
+                n++;
+            }
+        }
+        if (n < glyphs.length) {
+            glyphs = Arrays.copyOf(glyphs, n);
+            offsets = Arrays.copyOf(offsets, n);
+        }
+        // the cache will be reset when resolution level changed
+        float level = getResLevel();
+        for (int i = 0; i < n; i++) {
+            offsets[i] /= level;
+        }
+        return new FastCharSet(glyphs, offsets);
     }
 
     /**

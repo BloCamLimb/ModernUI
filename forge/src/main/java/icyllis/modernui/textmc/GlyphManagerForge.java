@@ -21,7 +21,6 @@ package icyllis.modernui.textmc;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Matrix4f;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.font.FontCollection;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import it.unimi.dsi.fastutil.ints.Int2ObjectArrayMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
@@ -44,7 +43,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.List;
-import java.util.*;
+import java.util.Locale;
 
 import static icyllis.modernui.graphics.opengl.GLCore.*;
 
@@ -54,6 +53,8 @@ import static icyllis.modernui.graphics.opengl.GLCore.*;
  * <p>
  * RAM usage: &lt; 10MB
  * GPU memory usage: &lt; 22MB
+ *
+ * @deprecated see GlyphManager
  */
 @Deprecated
 public class GlyphManagerForge {
@@ -319,16 +320,17 @@ public class GlyphManagerForge {
                 } else {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} is invalid", cfgFont);
                 }
-            } else {
+            }/* else {
                 Optional<Font> font =
-                        FontCollection.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)).findFirst();
+                        FontCollection.sAllFontFamilies.stream().filter(f -> f.getFamily(Locale.ROOT).equals(cfgFont)
+                        ).findFirst();
                 if (font.isPresent()) {
                     mSelectedFonts.add(font.get());
                     ModernUI.LOGGER.debug(MARKER, "Preferred font {} was loaded", cfgFont);
                 } else {
                     ModernUI.LOGGER.warn(MARKER, "Preferred font {} cannot found or invalid", cfgFont);
                 }
-            }
+            }*/
         }
 
         /*if (Typeface.sBuiltInFont != null) {
@@ -356,15 +358,15 @@ public class GlyphManagerForge {
 
         /* If still not found, try searching through all fonts installed on the system for the first that can layout
         this string */
-        for (Font font : FontCollection.sAllFontFamilies) {
-            /* Only use the font if it can layout at least the first character of the requested string range */
+        /*for (Font font : FontCollection.sAllFontFamilies) {
+         *//* Only use the font if it can layout at least the first character of the requested string range *//*
             if (font.canDisplay(codePoint)) {
-                /* If found, add this font to the selectedFonts list so it can be looked up faster next time */
+                *//* If found, add this font to the selectedFonts list so it can be looked up faster next time *//*
                 mSelectedFonts.add(font);
                 ModernUI.LOGGER.debug(MARKER, "Extra font {} was loaded", font.getFamily(Locale.ROOT));
                 return font;
             }
-        }
+        }*/
 
         /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown
         character glyphs */
@@ -447,18 +449,18 @@ public class GlyphManagerForge {
 
         /* If still not found, try searching through all fonts installed on the system for the first that can layout
         this string */
-        for (Font font : FontCollection.sAllFontFamilies) {
-            /* Only use the font if it can layout at least the first character of the requested string range */
+        /*for (Font font : FontCollection.sAllFontFamilies) {
+         *//* Only use the font if it can layout at least the first character of the requested string range *//*
             if (font.canDisplay(codePoint)) {
-                /* If found, add this font to the selectedFonts list so it can be looked up faster next time */
+                *//* If found, add this font to the selectedFonts list so it can be looked up faster next time *//*
                 mSelectedFonts.add(font);
                 ModernUI.LOGGER.debug(MARKER, "Extra font {} was loaded", font.getName());
 
-                /* Return a font instance of the proper point size and style; allFonts has only 1pt sized plain style
-                 fonts */
+                *//* Return a font instance of the proper point size and style; allFonts has only 1pt sized plain style
+                 fonts *//*
                 return font.deriveFont(fontStyle, fontSize);
             }
-        }
+        }*/
 
         /* If no supported fonts found, use the default one (first in selectedFonts) so it can draw its unknown
         character glyphs */

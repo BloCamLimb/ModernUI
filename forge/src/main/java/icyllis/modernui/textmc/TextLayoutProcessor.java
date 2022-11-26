@@ -70,12 +70,16 @@ public class TextLayoutProcessor {
      * Compile-time only.
      */
     public static final boolean DEBUG = false;
-    //public static final char REPLACEMENT_CHAR = '\uFFFD';
+
+    /**
+     * Vanilla font size is 8x or 16x.
+     */
+    public static final int DEFAULT_BASE_FONT_SIZE = 8;
 
     /**
      * Config values.
      */
-    public static volatile float sBaseFontSize = 8;
+    public static volatile float sBaseFontSize = DEFAULT_BASE_FONT_SIZE;
     public static volatile boolean sAlignPixels = false;
     public static volatile boolean sColorEmoji = true;
 
@@ -737,14 +741,14 @@ public class TextLayoutProcessor {
         // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft by default
         float fontSize = Math.min(sBaseFontSize * mEngine.getResLevel(), 96);
 
-        final var items = ModernUI.getSelectedTypeface().getFontCollection()
+        final List<FontCollection.Run> items = ModernUI.getSelectedTypeface().getFontCollection()
                 .itemize(text, start, limit);
         // Font runs are in visual order
         for (int runIndex = isRtl ? items.size() - 1 : 0; isRtl ? runIndex >= 0 : runIndex < items.size(); ) {
-            var run = items.get(runIndex);
+            FontCollection.Run run = items.get(runIndex);
 
-            Font derived = run.getFont().deriveFont(fontStyle, fontSize);
-            performFontRun(text, run.getStart(), run.getEnd(), isRtl, fastDigit, styleFlags, derived, locale);
+            Font derived = run.family().getClosestMatch(fontStyle).deriveFont(fontSize);
+            performFontRun(text, run.start(), run.end(), isRtl, fastDigit, styleFlags, derived, locale);
 
             if (isRtl) {
                 runIndex--;

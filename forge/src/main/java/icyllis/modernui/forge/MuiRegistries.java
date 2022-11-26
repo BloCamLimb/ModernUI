@@ -33,14 +33,14 @@ public final class MuiRegistries {
     /**
      * Sounds (Client only, no registration)
      */
-    public static final SoundEvent BUTTON_CLICK_1 = new SoundEvent(new ResourceLocation(ModernUI.ID, "button1"));
-    public static final SoundEvent BUTTON_CLICK_2 = new SoundEvent(new ResourceLocation(ModernUI.ID, "button2"));
+    public static final SoundEvent BUTTON_CLICK_1 = new SoundEvent(ModernUIForge.location("button1"));
+    public static final SoundEvent BUTTON_CLICK_2 = new SoundEvent(ModernUIForge.location("button2"));
 
     /**
      * Container Menus (Development only)
      */
     public static final ResourceLocation
-            TEST_MENU_KEY = new ResourceLocation(ModernUI.ID, "test");
+            TEST_MENU_KEY = ModernUIForge.location("test");
     public static final RegistryObject<MenuType<TestContainerMenu>> TEST_MENU = RegistryObject.createOptional(
             TEST_MENU_KEY, ForgeRegistries.MENU_TYPES.getRegistryKey(), ModernUI.ID);
 
@@ -48,7 +48,7 @@ public final class MuiRegistries {
      * Items (Development only)
      */
     public static final ResourceLocation
-            PROJECT_BUILDER_ITEM_KEY = new ResourceLocation(ModernUI.ID, "project_builder");
+            PROJECT_BUILDER_ITEM_KEY = ModernUIForge.location("project_builder");
     public static final RegistryObject<Item> PROJECT_BUILDER_ITEM = RegistryObject.createOptional(
             PROJECT_BUILDER_ITEM_KEY, ForgeRegistries.ITEMS.getRegistryKey(), ModernUI.ID);
 }
