@@ -31,6 +31,7 @@ import it.unimi.dsi.fastutil.ints.IntArrayList;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.FormattedText;
 import net.minecraft.network.chat.Style;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.*;
 
 import javax.annotation.Nonnull;
@@ -93,6 +94,10 @@ public class TextLayoutProcessor {
      * Style appearance flags in logical order. Same indexing with {@link #mBuilder}.
      */
     private final IntArrayList mStyles = new IntArrayList();
+    /**
+     * Font names to use in logical order. Same indexing with {@link #mStyles}.
+     */
+    private final List<ResourceLocation> mFonts = new ArrayList<>();
 
     /*
      * Array of temporary style carriers.
@@ -198,9 +203,10 @@ public class TextLayoutProcessor {
      */
     private final FormattedCharSink mSequenceBuilder = (index, style, codePoint) -> {
         int flag = CharacterStyle.flatten(style);
-        mStyles.add(flag);
-        if (mBuilder.addCodePoint(codePoint) > 1) {
+        int n = mBuilder.addCodePoint(codePoint);
+        while (n-- > 0) {
             mStyles.add(flag);
+            mFonts.add(style.getFont());
         }
         return true;
     };
@@ -330,19 +336,22 @@ public class TextLayoutProcessor {
     private void reset() {
         if (DEBUG) {
             if (mBuilder.length() != mStyles.size()) {
-                throw new IllegalStateException();
+                throw new AssertionError();
+            }
+            if (mStyles.size() != mFonts.size()) {
+                throw new AssertionError();
             }
             if (mGlyphs.size() != mCharIndices.size()) {
-                throw new IllegalStateException();
+                throw new AssertionError();
             }
             if (mGlyphs.size() * 2 != mPositions.size()) {
-                throw new IllegalStateException();
+                throw new AssertionError();
             }
             if (mBuilder.length() != mAdvances.size()) {
-                throw new IllegalStateException();
+                throw new AssertionError();
             }
             if (mGlyphs.size() != mCharFlags.size()) {
-                throw new IllegalStateException();
+                throw new AssertionError();
             }
             if (!mBuilder.isEmpty() &&
                     mBuilder.length() != mLineBoundaries.getInt(mLineBoundaries.size() - 1)) {
@@ -354,6 +363,7 @@ public class TextLayoutProcessor {
         }
         mBuilder.clear();
         mStyles.clear();
+        mFonts.clear();
         mGlyphs.clear();
         mCharIndices.clear();
         mPositions.clear();
@@ -609,44 +619,58 @@ public class TextLayoutProcessor {
      * @param isRtl     layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      * @param fastDigit whether to use fast digit replacement
      * @param locale    the ICU locale for grapheme cluster break
-     * @see #performStyleRun(char[], int, int, boolean, boolean, int, ULocale)
+     * @see #performStyleRun(char[], int, int, boolean, boolean, int, ResourceLocation, ULocale)
      */
     private void performBidiRun(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
                                 @Nonnull ULocale locale) {
         final IntArrayList styles = mStyles;
+        final List<ResourceLocation> fonts = mFonts;
         int lastPos, currPos;
         int lastStyle, currStyle;
+        ResourceLocation lastFont, currFont;
         // Style runs are in visual order
         if (isRtl) {
             lastPos = limit;
             currPos = limit - 1;
             lastStyle = styles.getInt(currPos);
+            lastFont = fonts.get(currPos);
             currStyle = lastStyle;
+            currFont = lastFont;
             while (currPos > start) {
-                if ((currStyle = styles.getInt(currPos - 1)) != lastStyle) {
-                    performStyleRun(text, currPos, lastPos, true, fastDigit, lastStyle, locale);
+                if ((currStyle = styles.getInt(currPos - 1)) != lastStyle ||
+                        (currFont = fonts.get(currPos - 1)) != lastFont) {
+                    performStyleRun(text, currPos, lastPos, true, fastDigit,
+                            lastStyle, lastFont, locale);
                     lastPos = currPos;
                     lastStyle = currStyle;
+                    lastFont = currFont;
                 }
                 currPos--;
             }
             assert currPos == start;
-            performStyleRun(text, currPos, lastPos, true, fastDigit, currStyle, locale);
+            performStyleRun(text, currPos, lastPos, true, fastDigit,
+                    currStyle, currFont, locale);
         } else {
             lastPos = start;
             currPos = start;
             lastStyle = styles.getInt(currPos);
+            lastFont = fonts.get(currPos);
             currStyle = lastStyle;
+            currFont = lastFont;
             while (currPos + 1 < limit) {
                 currPos++;
-                if ((currStyle = styles.getInt(currPos)) != lastStyle) {
-                    performStyleRun(text, lastPos, currPos, false, fastDigit, lastStyle, locale);
+                if ((currStyle = styles.getInt(currPos)) != lastStyle ||
+                        (currFont = fonts.get(currPos)) != lastFont) {
+                    performStyleRun(text, lastPos, currPos, false, fastDigit,
+                            lastStyle, lastFont, locale);
                     lastPos = currPos;
                     lastStyle = currStyle;
+                    lastFont = currFont;
                 }
             }
             assert currPos + 1 == limit;
-            performStyleRun(text, lastPos, currPos + 1, false, fastDigit, currStyle, locale);
+            performStyleRun(text, lastPos, currPos + 1, false, fastDigit,
+                    currStyle, currFont, locale);
         }
 
         /*float lastAdvance = mAdvance;
@@ -710,12 +734,13 @@ public class TextLayoutProcessor {
      * @param isRtl      layout direction, either {@link Font#LAYOUT_LEFT_TO_RIGHT} or {@link Font#LAYOUT_RIGHT_TO_LEFT}
      * @param fastDigit  whether to use fast digit replacement
      * @param styleFlags the style to lay out the text
+     * @param fontName   the font name to lay out the text
      * @param locale     the ICU locale for grapheme cluster break
      * @see FontCollection#itemize(char[], int, int)
      * @see #performFontRun(char[], int, int, boolean, boolean, int, Font, ULocale)
      */
     private void performStyleRun(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
-                                 int styleFlags, @Nonnull ULocale locale) {
+                                 int styleFlags, ResourceLocation fontName, @Nonnull ULocale locale) {
         /*
          * Convert all digits in the string to a '0' before layout to ensure that any glyphs replaced on the fly will
          * all have the same positions. Under Windows, Java's "SansSerif" logical font uses the "Arial" font for
@@ -741,14 +766,19 @@ public class TextLayoutProcessor {
         // Note max font size is 96, see FontPaint, font size will be (8 * res) in Minecraft by default
         float fontSize = Math.min(sBaseFontSize * mEngine.getResLevel(), 96);
 
-        final List<FontCollection.Run> items = ModernUI.getSelectedTypeface().getFontCollection()
+        final List<FontCollection.Run> items = mEngine.getFontCollection(fontName)
                 .itemize(text, start, limit);
         // Font runs are in visual order
         for (int runIndex = isRtl ? items.size() - 1 : 0; isRtl ? runIndex >= 0 : runIndex < items.size(); ) {
             FontCollection.Run run = items.get(runIndex);
 
-            Font derived = run.family().getClosestMatch(fontStyle).deriveFont(fontSize);
-            performFontRun(text, run.start(), run.end(), isRtl, fastDigit, styleFlags, derived, locale);
+            FontFamily family = run.family();
+            if (family instanceof BitmapFont bitmapFont) {
+                performBitmapRun(text, run.start(), run.end(), styleFlags, bitmapFont);
+            } else {
+                Font deriveFont = family.getClosestMatch(fontStyle).deriveFont(fontSize);
+                performFontRun(text, run.start(), run.end(), isRtl, fastDigit, styleFlags, deriveFont, locale);
+            }
 
             if (isRtl) {
                 runIndex--;
@@ -775,10 +805,10 @@ public class TextLayoutProcessor {
                                 int styleFlags, @Nonnull Font font, @Nonnull ULocale locale) {
         final boolean hasEffect = (styleFlags & CharacterStyle.EFFECT_MASK) != 0;
         // Convert to float form for calculation, but actually an integer
-        final float scale = mEngine.getGuiScale();
+        final float guiScale = mEngine.getGuiScale();
 
         if ((styleFlags & CharacterStyle.OBFUSCATED_MASK) != 0) {
-            // obfuscated layout, all repl
+            // obfuscated layout, all replacement
             final TextLayoutEngine.FastCharSet fastChars = mEngine.lookupFastChars(font);
             final boolean alignPixels = sAlignPixels;
             final float advance = fastChars.offsets[0];
@@ -790,14 +820,14 @@ public class TextLayoutProcessor {
 
                 float pos = offset;
                 if (alignPixels) {
-                    pos = Math.round(pos * scale) / scale;
+                    pos = Math.round(pos * guiScale) / guiScale;
                 }
 
                 mGlyphs.add(fastChars);
                 mPositions.add(pos);
                 mPositions.add(0);
                 mCharFlags.add(styleFlags);
-                mCharIndices.add(i + start);
+                mCharIndices.add(i);
                 mHasEffect |= hasEffect;
 
                 offset += advance;
@@ -809,6 +839,8 @@ public class TextLayoutProcessor {
                         ++i;
                     }
                 }
+
+                mLineBoundaries.add(i + 1);
             }
 
             mTotalAdvance = offset;
@@ -821,7 +853,7 @@ public class TextLayoutProcessor {
             }*/
         } else if (sColorEmoji) {
             // If we perform layout with bitmap replacement, we have more runs.
-            final float level = mEngine.getResLevel();
+            final float resLevel = mEngine.getResLevel();
             // HarfBuzz is introduced in Java 11 or higher, perform measure and layout below
             final GlyphManager glyphManager = mEngine.getGlyphManager();
 
@@ -858,12 +890,12 @@ public class TextLayoutProcessor {
                             for (int i = 0; i < num; i++, position = nextPosition) {
                                 int charIndex = vector.getGlyphCharIndex(i) + prevPos;
 
-                                float posX = (float) position.getX() / level + offsetX;
-                                float posY = (float) position.getY() / level;
+                                float posX = (float) position.getX() / resLevel + offsetX;
+                                float posY = (float) position.getY() / resLevel;
                                 // Align with a full pixel
                                 if (alignPixels) {
-                                    posX = Math.round(posX * scale) / scale;
-                                    posY = Math.round(posY * scale) / scale;
+                                    posX = Math.round(posX * guiScale) / guiScale;
+                                    posY = Math.round(posY * guiScale) / guiScale;
                                 }
 
                                 // ASCII digits are not on SMP
@@ -894,7 +926,7 @@ public class TextLayoutProcessor {
                                 nextPosition = vector.getGlyphPosition(i + 1);
                             }
 
-                            mTotalAdvance += (float) nextPosition.getX() / level;
+                            mTotalAdvance += (float) nextPosition.getX() / resLevel;
                         }
 
                         // Normalization factor is constant, add additional 1 scaled advance,
@@ -902,7 +934,7 @@ public class TextLayoutProcessor {
                         mAdvances.set(currPos, TextLayoutEngine.EMOJI_BASE_SIZE + 1);
 
                         mGlyphs.add(emoji);
-                        mPositions.add(alignPixels ? Math.round(mTotalAdvance * scale) / scale : mTotalAdvance);
+                        mPositions.add(alignPixels ? Math.round(mTotalAdvance * guiScale) / guiScale : mTotalAdvance);
                         mPositions.add(0);
                         mCharFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
                         mCharIndices.add(currPos);
@@ -914,7 +946,8 @@ public class TextLayoutProcessor {
                     } else {
                         GlyphVector vector = glyphManager.layoutGlyphVector(font, text, currPos, prevPos, true);
                         // Don't forget to normalize it
-                        mAdvances.set(currPos, (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / level);
+                        mAdvances.set(currPos,
+                                (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / resLevel);
                     }
 
                     prevPos = currPos;
@@ -935,12 +968,12 @@ public class TextLayoutProcessor {
                     for (int i = 0; i < num; i++, position = nextPosition) {
                         int charIndex = vector.getGlyphCharIndex(i) + prevPos;
 
-                        float posX = (float) position.getX() / level + offsetX;
-                        float posY = (float) position.getY() / level;
+                        float posX = (float) position.getX() / resLevel + offsetX;
+                        float posY = (float) position.getY() / resLevel;
                         // Align with a full pixel
                         if (alignPixels) {
-                            posX = Math.round(posX * scale) / scale;
-                            posY = Math.round(posY * scale) / scale;
+                            posX = Math.round(posX * guiScale) / guiScale;
+                            posY = Math.round(posY * guiScale) / guiScale;
                         }
 
                         // ASCII digits are not on SMP
@@ -971,7 +1004,7 @@ public class TextLayoutProcessor {
                         nextPosition = vector.getGlyphPosition(i + 1);
                     }
 
-                    mTotalAdvance += (float) nextPosition.getX() / level;
+                    mTotalAdvance += (float) nextPosition.getX() / resLevel;
                 }
             } else {
                 prevPos = start;
@@ -996,12 +1029,12 @@ public class TextLayoutProcessor {
                             for (int i = 0; i < num; i++, position = nextPosition) {
                                 int charIndex = vector.getGlyphCharIndex(i) + prevTextPos;
 
-                                float posX = (float) position.getX() / level + offsetX;
-                                float posY = (float) position.getY() / level;
+                                float posX = (float) position.getX() / resLevel + offsetX;
+                                float posY = (float) position.getY() / resLevel;
                                 // Align with a full pixel
                                 if (alignPixels) {
-                                    posX = Math.round(posX * scale) / scale;
-                                    posY = Math.round(posY * scale) / scale;
+                                    posX = Math.round(posX * guiScale) / guiScale;
+                                    posY = Math.round(posY * guiScale) / guiScale;
                                 }
 
                                 // ASCII digits are not on SMP
@@ -1032,7 +1065,7 @@ public class TextLayoutProcessor {
                                 nextPosition = vector.getGlyphPosition(i + 1);
                             }
 
-                            mTotalAdvance += (float) nextPosition.getX() / level;
+                            mTotalAdvance += (float) nextPosition.getX() / resLevel;
                         }
 
                         // Normalization factor is constant, add additional 1 scaled advance,
@@ -1040,7 +1073,7 @@ public class TextLayoutProcessor {
                         mAdvances.set(prevPos, TextLayoutEngine.EMOJI_BASE_SIZE + 1);
 
                         mGlyphs.add(emoji);
-                        mPositions.add(alignPixels ? Math.round(mTotalAdvance * scale) / scale : mTotalAdvance);
+                        mPositions.add(alignPixels ? Math.round(mTotalAdvance * guiScale) / guiScale : mTotalAdvance);
                         mPositions.add(0);
                         mCharFlags.add(0xFFFFFF | CharacterStyle.BITMAP_REPLACEMENT);
                         mCharIndices.add(prevPos);
@@ -1052,7 +1085,8 @@ public class TextLayoutProcessor {
                     } else {
                         GlyphVector vector = glyphManager.layoutGlyphVector(font, text, prevPos, currPos, false);
                         // Don't forget to normalize it
-                        mAdvances.set(prevPos, (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / level);
+                        mAdvances.set(prevPos,
+                                (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / resLevel);
                     }
 
                     prevPos = currPos;
@@ -1073,12 +1107,12 @@ public class TextLayoutProcessor {
                     for (int i = 0; i < num; i++, position = nextPosition) {
                         int charIndex = vector.getGlyphCharIndex(i) + prevTextPos;
 
-                        float posX = (float) position.getX() / level + offsetX;
-                        float posY = (float) position.getY() / level;
+                        float posX = (float) position.getX() / resLevel + offsetX;
+                        float posY = (float) position.getY() / resLevel;
                         // Align with a full pixel
                         if (alignPixels) {
-                            posX = Math.round(posX * scale) / scale;
-                            posY = Math.round(posY * scale) / scale;
+                            posX = Math.round(posX * guiScale) / guiScale;
+                            posY = Math.round(posY * guiScale) / guiScale;
                         }
 
                         // ASCII digits are not on SMP
@@ -1109,7 +1143,7 @@ public class TextLayoutProcessor {
                         nextPosition = vector.getGlyphPosition(i + 1);
                     }
 
-                    mTotalAdvance += (float) nextPosition.getX() / level;
+                    mTotalAdvance += (float) nextPosition.getX() / resLevel;
                 }
             }
 
@@ -1124,7 +1158,7 @@ public class TextLayoutProcessor {
             }
 
         } else {
-            final float level = mEngine.getResLevel();
+            final float resLevel = mEngine.getResLevel();
             // HarfBuzz is introduced in Java 11 or higher, perform measure and layout below
             final GlyphManager glyphManager = mEngine.getGlyphManager();
 
@@ -1137,7 +1171,7 @@ public class TextLayoutProcessor {
             while ((currPos = breaker.following(prevPos)) != BreakIterator.DONE) {
                 GlyphVector vector = glyphManager.layoutGlyphVector(font, text, prevPos, currPos, isRtl);
                 // Don't forget to normalize it
-                mAdvances.set(prevPos, (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / level);
+                mAdvances.set(prevPos, (float) vector.getGlyphPosition(vector.getNumGlyphs()).getX() / resLevel);
 
                 prevPos = currPos;
             }
@@ -1174,12 +1208,12 @@ public class TextLayoutProcessor {
 
                 int charIndex = vector.getGlyphCharIndex(i) + start;
 
-                float posX = (float) position.getX() / level + offsetX;
-                float posY = (float) position.getY() / level;
+                float posX = (float) position.getX() / resLevel + offsetX;
+                float posY = (float) position.getY() / resLevel;
                 // Align with a full pixel
                 if (alignPixels) {
-                    posX = Math.round(posX * scale) / scale;
-                    posY = Math.round(posY * scale) / scale;
+                    posX = Math.round(posX * guiScale) / guiScale;
+                    posY = Math.round(posY * guiScale) / guiScale;
                 }
 
                 // ASCII digits are not on SMP
@@ -1210,7 +1244,7 @@ public class TextLayoutProcessor {
                 nextPosition = vector.getGlyphPosition(i + 1);
             }
 
-            mTotalAdvance += (float) nextPosition.getX() / level;
+            mTotalAdvance += (float) nextPosition.getX() / resLevel;
 
             /*if (isRtl) {
                 finishFontRun(-nextOffset);
@@ -1219,6 +1253,58 @@ public class TextLayoutProcessor {
                 finishFontRun(0);
             }*/
         }
+    }
+
+    /**
+     * Special case of {@link #performFontRun(char[], int, int, boolean, boolean, int, Font, ULocale)}
+     * which only performs bitmap replacement without any text shaping or any special effects.
+     */
+    private void performBitmapRun(@Nonnull char[] text, int start, int limit,
+                                  int styleFlags, @Nonnull BitmapFont font) {
+        final boolean hasEffect = (styleFlags & CharacterStyle.EFFECT_MASK) != 0;
+        // obfuscated layout is not supported
+        styleFlags &= ~CharacterStyle.OBFUSCATED_MASK;
+
+        char _c1, _c2;
+        float offset = mTotalAdvance;
+        // Process code point in visual order
+        for (int index = start; index < limit; index++) {
+            int ch, i = index;
+            _c1 = text[index];
+            if (Character.isHighSurrogate(_c1) && index + 1 < limit) {
+                _c2 = text[index + 1];
+                if (Character.isLowSurrogate(_c2)) {
+                    ch = Character.toCodePoint(_c1, _c2);
+                    ++index;
+                } else {
+                    ch = _c1;
+                }
+            } else {
+                ch = _c1;
+            }
+
+            BitmapFont.Glyph glyph = font.getGlyph(ch);
+            if (glyph == null) {
+                continue;
+            }
+
+            mAdvances.set(i, glyph.advance);
+
+            mGlyphs.add(glyph);
+            mPositions.add(offset);
+            mPositions.add(0);
+            mCharFlags.add(styleFlags | CharacterStyle.BITMAP_REPLACEMENT);
+            mCharIndices.add(i);
+            mHasEffect |= hasEffect;
+            // no information indicating whether there is a line boundary
+            mLineBoundaries.add(index + 1);
+
+            offset += glyph.advance;
+        }
+        // no information indicating whether it's colored
+        mHasColorBitmap = true;
+
+        mTotalAdvance = offset;
     }
 
     /**

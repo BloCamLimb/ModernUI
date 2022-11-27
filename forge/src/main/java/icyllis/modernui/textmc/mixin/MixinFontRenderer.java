@@ -19,19 +19,15 @@
 package icyllis.modernui.textmc.mixin;
 
 import com.mojang.math.Matrix4f;
-import icyllis.modernui.textmc.FormattedTextWrapper;
 import icyllis.modernui.textmc.ModernTextRenderer;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.network.chat.*;
+import net.minecraft.network.chat.Component;
 import net.minecraft.util.FormattedCharSequence;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.gen.Invoker;
 
 import javax.annotation.Nonnull;
-import java.util.Optional;
 
 @Mixin(Font.class)
 public abstract class MixinFontRenderer {
@@ -68,20 +64,21 @@ public abstract class MixinFontRenderer {
     public int drawInBatch(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
                            @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
                            int colorBackground, int packedLight) {
-        if (text instanceof FormattedTextWrapper)
+        /*if (text instanceof FormattedTextWrapper)
             // Handle Enchantment Table
-            if (((FormattedTextWrapper) text).mText.visit((style, string) -> style.getFont().equals(Minecraft.ALT_FONT) ?
+            if (((FormattedTextWrapper) text).mText.visit((style, string) -> style.getFont().equals(Minecraft
+            .ALT_FONT) ?
                     FormattedText.STOP_ITERATION : Optional.empty(), Style.EMPTY).isPresent())
                 return callDrawInternal(text, x, y, color, dropShadow, matrix, source, seeThrough, colorBackground,
-                        packedLight);
+                        packedLight);*/
         return (int) ModernTextRenderer.drawText(text, x, y, color, dropShadow, matrix, source, seeThrough,
                 colorBackground, packedLight) + (dropShadow ? 1 : 0);
     }
 
-    @Invoker
+    /*@Invoker
     abstract int callDrawInternal(@Nonnull FormattedCharSequence text, float x, float y, int color, boolean dropShadow,
                                   @Nonnull Matrix4f matrix, @Nonnull MultiBufferSource source, boolean seeThrough,
-                                  int colorBackground, int packedLight);
+                                  int colorBackground, int packedLight);*/
 
     /**
      * Bidi and shaping always works no matter what language is in.

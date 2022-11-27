@@ -670,7 +670,10 @@ public final class UIManager implements LifecycleOwner {
                         ModernUI.LOGGER.info(MARKER, "Locale {} RTL {}", l.getCode(), ULocale.forLocale(l
                         .getJavaLocale()).isRightToLeft()));*/
                         GlyphManager.getInstance().debug();
-                case GLFW_KEY_V -> TextLayoutEngine.getInstance().dumpEmojiAtlas();
+                case GLFW_KEY_V -> {
+                    TextLayoutEngine.getInstance().dumpEmojiAtlas();
+                    TextLayoutEngine.getInstance().dumpBitmapFonts();
+                }
                 case GLFW_KEY_F -> System.gc();
             }
         }

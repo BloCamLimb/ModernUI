@@ -986,6 +986,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         RectF temp = mTmpRectF;
         temp.set(left, top, right, bottom);
+        temp.inset(-1, -1);
         getMatrix().mapRect(temp);
 
         Rect test = mTmpRect;
@@ -1001,7 +1002,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         if (intersects) {
             drawMatrix();
             // updating stencil must have a color
-            putRectColor(left, top, right, bottom, 1, 1, 1, 1);
+            putRectColor(left - 1, top - 1, right + 1, bottom + 1, 1.0f, 1.0f, 1.0f, 1.0f);
             mClipRefs.add(save.mClipRef);
         } else {
             // empty
@@ -1362,7 +1363,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         drawMatrix();
         drawSmooth(Math.min(radius, paint.getSmoothRadius()));
-        putRectColor(cx - radius, cy - radius, cx + radius, cy + radius, paint);
+        putRectColor(cx - radius - 1, cy - radius - 1, cx + radius + 1, cy + radius + 1, paint);
         checkUniformMemory()
                 .putFloat(cx)
                 .putFloat(cy)
@@ -1381,7 +1382,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         drawMatrix();
         drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
-        putRectColor(cx - maxRadius, cy - maxRadius, cx + maxRadius, cy + maxRadius, paint);
+        putRectColor(cx - maxRadius - 1, cy - maxRadius - 1, cx + maxRadius + 1, cy + maxRadius + 1, paint);
         checkUniformMemory()
                 .putFloat(cx)
                 .putFloat(cy)
@@ -1581,7 +1582,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         drawMatrix();
         drawSmooth(Math.min(radius, paint.getSmoothRadius()));
-        putRectColor(left, top, right, bottom, paint);
+        putRectColor(left - 1, top - 1, right + 1, bottom + 1, paint);
         ByteBuffer buffer = checkUniformMemory();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
             buffer.putFloat(left);
@@ -1618,7 +1619,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         drawMatrix();
         drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
-        putRectColor(left - strokeRadius, top - strokeRadius, right + strokeRadius, bottom + strokeRadius, paint);
+        putRectColor(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1, bottom + strokeRadius + 1, paint);
         ByteBuffer buffer = checkUniformMemory();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
             buffer.putFloat(left);
@@ -1661,10 +1662,10 @@ public final class GLSurfaceCanvas extends GLCanvas {
         putRectColorUV(left, top, right, bottom, paint,
                 0, 0, 1, 1);
         checkUniformMemory()
-                .putFloat(left + radius)
-                .putFloat(top + radius)
-                .putFloat(right - radius)
-                .putFloat(bottom - radius)
+                .putFloat(left + radius - 1)
+                .putFloat(top + radius - 1)
+                .putFloat(right - radius + 1)
+                .putFloat(bottom - radius + 1)
                 .putFloat(radius);
         mTextures.add(texture);
         mDrawOps.add(DRAW_ROUND_IMAGE);

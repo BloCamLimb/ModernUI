@@ -24,9 +24,11 @@ void main() {
 
     float v = length(max(vec2(0.0), dis)) - u_Radius;
 
-    float a = 1.0 - smoothstep(-u_SmoothRadius, 0.0, v);
+    float a = u_SmoothRadius > 0.0
+            ? 1.0 - smoothstep(-u_SmoothRadius, 0.0, v)
+            : 1.0 - clamp(v / fwidth(v), 0.0, 1.0);
 
-    vec4 samp = texture(u_Sampler, f_TexCoord, -0.475);
-    samp.rgb *= samp.a;
-    fragColor = samp * f_Color * a;
+    vec4 texColor = texture(u_Sampler, f_TexCoord, -0.475);
+    texColor.rgb *= texColor.a;
+    fragColor = texColor * f_Color * a;
 }

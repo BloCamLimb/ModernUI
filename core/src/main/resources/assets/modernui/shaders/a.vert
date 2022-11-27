@@ -192,6 +192,12 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 const vec3 col1 = vec3(239.,202.,195.)/255.;
 const vec3 col2 = vec3(240.,227.,225.)/255.;
 
+vec2 rotate2D(vec2 p, float a)
+{
+    float s=sin(a),c=cos(a);
+    return mat2(c,s,-s,c)*p;
+}
+
 float sdBox( in vec2 p, in vec2 b )
 {
     vec2 d = abs(p)-b;

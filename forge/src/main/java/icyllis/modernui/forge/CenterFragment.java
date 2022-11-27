@@ -91,7 +91,8 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             var content = new LinearLayout();
             content.setOrientation(LinearLayout.HORIZONTAL);
 
-            boolean firstDown = Math.random() < 0.5;
+            boolean xor1 = Math.random() < 0.5;
+            boolean xor2 = Math.random() < 0.5;
 
             {
                 ScrollView left = new ScrollView();
@@ -100,9 +101,10 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                 params.setMargins(dp6, dp6, dp6, dp6);
                 content.addView(left, params);
 
-                ObjectAnimator animator = ObjectAnimator.ofFloat(left, View.TRANSLATION_Y,
-                        dp(firstDown ? -200 : 200), 0);
-                animator.setInterpolator(TimeInterpolator.DECELERATE_CUBIC);
+                ObjectAnimator animator = ObjectAnimator.ofFloat(left,
+                        xor2 ? View.ROTATION_Y : View.ROTATION_X,
+                        !xor1 && xor2 ? -80 : 80, 0);
+                animator.setInterpolator(TimeInterpolator.DECELERATE);
                 left.addOnLayoutChangeListener(new OnLayoutChangeListener() {
                     @Override
                     public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft,
@@ -121,9 +123,10 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                 params.setMargins(dp6, dp6, dp6, dp6);
                 content.addView(right, params);
 
-                ObjectAnimator animator = ObjectAnimator.ofFloat(right, View.TRANSLATION_Y,
-                        dp(firstDown ? 200 : -200), 0);
-                animator.setInterpolator(TimeInterpolator.DECELERATE_CUBIC);
+                ObjectAnimator animator = ObjectAnimator.ofFloat(right,
+                        xor2 ? View.ROTATION_X : View.ROTATION_Y,
+                        xor1 && !xor2 ? -80 : 80, 0);
+                animator.setInterpolator(TimeInterpolator.DECELERATE);
                 right.addOnLayoutChangeListener(new OnLayoutChangeListener() {
                     @Override
                     public void onLayoutChange(View v, int left, int top, int right, int bottom, int oldLeft,
@@ -463,7 +466,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                 });
                 category.addView(option);
             }
-            {
+            /*{
                 var option = createButtonOption("modernui.center.text.bitmapRepl");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mBitmapReplacement.get());
@@ -474,7 +477,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                             .show();
                 });
                 category.addView(option);
-            }
+            }*/
             {
                 var option = createButtonOption("modernui.center.text.emojiShortcodes");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
@@ -1213,7 +1216,7 @@ public class CenterFragment extends Fragment implements ScreenCallback {
             paint.setStyle(Paint.STROKE);
             paint.setColors(THEME_COLOR, THEME_COLOR_2, THEME_COLOR, THEME_COLOR_2);
             paint.setStrokeWidth(mStrokeWidth);
-            paint.setSmoothRadius(inner);
+            //paint.setSmoothRadius(inner);
             canvas.drawRoundRect(bounds.left + inner, bounds.top + inner, bounds.right - inner,
                     bounds.bottom - inner, mRadius, paint);
             paint.drop();

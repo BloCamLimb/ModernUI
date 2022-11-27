@@ -47,7 +47,7 @@ public class SwitchButton extends CompoundButton {
     public SwitchButton() {
         mCheckedColor = 0xFF51D367;
         mUncheckedColor = 0xFFDDDDDD;
-        mBorderWidth = 4;
+        mBorderWidth = 2;
 
         mInsideColor = mUncheckedColor;
 
@@ -145,7 +145,7 @@ public class SwitchButton extends CompoundButton {
         canvas.drawCircle(thumbX, thumbY, buttonRadius, paint);
 
         paint.setStyle(Paint.STROKE);
-        paint.setStrokeWidth(4f);
+        paint.setStrokeWidth(2f);
         paint.setColor(0xFFDDDDDD);
         canvas.drawCircle(thumbX, thumbY, buttonRadius - 1f, paint);
     }
