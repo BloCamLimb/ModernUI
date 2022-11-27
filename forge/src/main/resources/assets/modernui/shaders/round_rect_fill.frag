@@ -21,7 +21,9 @@ void main() {
 
     float v = length(max(vec2(0.0), dis)) - u_Radius;
 
-    float a = 1.0 - smoothstep(-u_SmoothRadius, 0.0, v);
+    float a = u_SmoothRadius > 0.0
+            ? 1.0 - smoothstep(-u_SmoothRadius, 0.0, v)
+            : 1.0 - clamp(v / fwidth(v), 0.0, 1.0);
 
     fragColor = f_Color * a;
 }

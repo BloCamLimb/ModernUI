@@ -21,7 +21,10 @@ package icyllis.modernui.textmc;
 import com.google.gson.*;
 import com.mojang.blaze3d.platform.NativeImage;
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.graphics.font.FontFamily;
+import icyllis.modernui.core.Core;
+import icyllis.modernui.forge.UIManager;
+import icyllis.modernui.graphics.font.*;
+import icyllis.modernui.graphics.opengl.GLTexture;
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.resources.ResourceLocation;
@@ -29,8 +32,12 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+
+import static icyllis.modernui.graphics.opengl.GLCore.*;
 
 /**
  * Behaves like FontFamily, but directly provides a bitmap (which maybe colored) to replace
@@ -45,29 +52,59 @@ import java.io.InputStream;
  */
 public class BitmapFont extends FontFamily {
 
-    private final NativeImage mImage;
-    private final Int2ObjectMap<Glyph> mGlyphs;
+    private final ResourceLocation mLocation;
+
+    private NativeImage mImage;
+    private final Int2ObjectMap<Glyph> mGlyphs = new Int2ObjectOpenHashMap<>();
+
+    private final GLTexture mTexture = new GLTexture(GL_TEXTURE_2D);
+
+    private final int mAscent;  // positive
+    private final int mDescent; // positive
 
     private final int mSpriteWidth;
     private final int mSpriteHeight;
+    private final float mScaleFactor;
 
-    private final int mAscent;
-    private final float mScale;
-
-    private BitmapFont(NativeImage image, Int2ObjectMap<Glyph> glyphs,
-                       int spriteWidth, int spriteHeight,
-                       int ascent, float scale) {
+    private BitmapFont(ResourceLocation location, NativeImage image,
+                       int[][] map, int rows, int cols,
+                       int height, int ascent) {
         super(null);
+        mLocation = location;
         mImage = image;
-        mGlyphs = glyphs;
-        mSpriteWidth = spriteWidth;
-        mSpriteHeight = spriteHeight;
         mAscent = ascent;
-        mScale = scale;
+        mDescent = height - ascent;
+        mSpriteWidth = image.getWidth() / cols;
+        mSpriteHeight = image.getHeight() / rows;
+        mScaleFactor = (float) height / mSpriteHeight;
+
+        for (int i = 0; i < rows; i++) {
+            int[] data = map[i];
+            for (int j = 0; j < cols; j++) {
+                int ch = data[j];
+                if (ch == '\u0000') {
+                    continue; // padding
+                }
+                int actualWidth = getActualGlyphWidth(image, mSpriteWidth, mSpriteHeight, j, i);
+                Glyph glyph = new Glyph(Math.round(actualWidth * mScaleFactor) + 1);
+                glyph.x = 0;
+                glyph.y = -mAscent * TextLayoutEngine.BITMAP_SCALE;
+                glyph.width = Math.round(mSpriteWidth * mScaleFactor * TextLayoutEngine.BITMAP_SCALE);
+                glyph.height = Math.round(mSpriteHeight * mScaleFactor * TextLayoutEngine.BITMAP_SCALE);
+                glyph.u1 = (float) (j * mSpriteWidth) / image.getWidth();
+                glyph.v1 = (float) (i * mSpriteHeight) / image.getHeight();
+                glyph.u2 = (float) (j * mSpriteWidth + mSpriteWidth) / image.getWidth();
+                glyph.v2 = (float) (i * mSpriteHeight + mSpriteHeight) / image.getHeight();
+                if (mGlyphs.put(ch, glyph) != null) {
+                    ModernUI.LOGGER.warn("Codepoint '{}' declared multiple times in {}",
+                            Integer.toHexString(ch), mLocation);
+                }
+            }
+        }
     }
 
     @Nonnull
-    public static BitmapFont create(ResourceManager manager, JsonObject metadata) {
+    public static BitmapFont create(JsonObject metadata, ResourceManager manager) {
         int height = GsonHelper.getAsInt(metadata, "height", TextLayoutProcessor.DEFAULT_BASE_FONT_SIZE);
         int ascent = GsonHelper.getAsInt(metadata, "ascent");
         if (ascent > height) {
@@ -90,36 +127,15 @@ public class BitmapFont extends FontFamily {
         if (map.length == 0 || map[0].length == 0) {
             throw new JsonParseException("Expected to find data in chars, found none.");
         }
-        int numRows = map.length;
-        int numCols = map[0].length;
-        ResourceLocation file = new ResourceLocation(GsonHelper.getAsString(metadata, "file"));
-        ResourceLocation location = new ResourceLocation(file.getNamespace(), "textures/" + file.getPath());
+        int rows = map.length;
+        int cols = map[0].length;
+        var file = new ResourceLocation(GsonHelper.getAsString(metadata, "file"));
+        var location = new ResourceLocation(file.getNamespace(), "textures/" + file.getPath());
         try (InputStream stream = manager.open(location)) {
+            // Minecraft doesn't use texture views, read swizzles may not work, so we always use RGBA (colored)
             NativeImage image = NativeImage.read(NativeImage.Format.RGBA, stream);
-            int spriteWidth = image.getWidth() / numCols;
-            int spriteHeight = image.getHeight() / numRows;
-            float scale = (float) height / spriteHeight;
-
-            Int2ObjectMap<Glyph> glyphs = new Int2ObjectOpenHashMap<>();
-            for (int row = 0; row < numRows; row++) {
-                int[] data = map[row];
-                for (int col = 0; col < numCols; col++) {
-                    int ch = data[col];
-                    if (ch == '\u0000') {
-                        continue; // padding
-                    }
-                    int actualWidth = getActualGlyphWidth(image, spriteWidth, spriteHeight, col, row);
-                    Glyph glyph = new Glyph(col * spriteWidth, row * spriteHeight,
-                            Math.round(actualWidth * scale) + 1);
-                    if (glyphs.put(ch, glyph) != null) {
-                        ModernUI.LOGGER.warn("Codepoint '{}' declared multiple times in {}",
-                                Integer.toHexString(ch), location);
-                    }
-                }
-            }
-
-            return new BitmapFont(image, glyphs, spriteWidth, spriteHeight, ascent, scale);
-        } catch (IOException e) {
+            return new BitmapFont(location, image, map, rows, cols, height, ascent);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -139,12 +155,61 @@ public class BitmapFont extends FontFamily {
         return i + 1;
     }
 
-    public NativeImage getImage() {
-        return mImage;
+    private void bakeAtlas() {
+        mTexture.allocate2DCompat(GL_RGBA8, mImage.getWidth(), mImage.getHeight(), 0);
+        try {
+            long pixels = UIManager.IMAGE_PIXELS.getLong(mImage);
+            mTexture.uploadCompat(0, 0, 0,
+                    mImage.getWidth(), mImage.getHeight(),
+                    0, 0, 0, 1,
+                    GL_RGBA, GL_UNSIGNED_BYTE, pixels);
+            mTexture.setFilterCompat(GL_NEAREST, GL_NEAREST);
+            for (Glyph glyph : mGlyphs.values()) {
+                glyph.texture = mTexture.get();
+            }
+        } catch (IllegalAccessException e) {
+            throw new RuntimeException(e);
+        } finally {
+            mImage.close();
+            mImage = null;
+        }
     }
 
+    public void dumpAtlas(String path) {
+        if (path != null && mImage == null && Core.isOnRenderThread()) {
+            ModernUI.LOGGER.info(GlyphManager.MARKER, "Glyphs: {}", mGlyphs.size());
+            try (var image = icyllis.modernui.core.NativeImage.download(
+                    icyllis.modernui.core.NativeImage.Format.RGBA,
+                    mTexture, false)) {
+                image.saveToPath(Path.of(path), icyllis.modernui.core.NativeImage.SaveFormat.PNG, 0);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    public void ensureClose() {
+        if (mImage != null) {
+            mImage.close();
+            mImage = null;
+        }
+        // no worry about GLTexture
+    }
+
+    @Nullable
     public Glyph getGlyph(int ch) {
+        if (mImage != null) {
+            bakeAtlas();
+        }
         return mGlyphs.get(ch);
+    }
+
+    public int getAscent() {
+        return mAscent;
+    }
+
+    public int getDescent() {
+        return mDescent;
     }
 
     public int getSpriteWidth() {
@@ -155,12 +220,8 @@ public class BitmapFont extends FontFamily {
         return mSpriteHeight;
     }
 
-    public int getAscent() {
-        return mAscent;
-    }
-
-    public float getScale() {
-        return mScale;
+    public float getScaleFactor() {
+        return mScaleFactor;
     }
 
     @Override
@@ -170,9 +231,41 @@ public class BitmapFont extends FontFamily {
 
     @Override
     public String getFamilyName() {
-        return "Bitmap"; // TODO use a MC font name
+        // the bitmap name
+        return mLocation.toString();
     }
 
-    public record Glyph(int offsetX, int offsetY, int advance) {
+    @Override
+    public int hashCode() {
+        int result = 0;
+        result = 31 * result + mLocation.hashCode();
+        result = 31 * result + mAscent;
+        result = 31 * result + mDescent;
+        result = 31 * result + mSpriteWidth;
+        result = 31 * result + mSpriteHeight;
+        result = 31 * result + Float.hashCode(mScaleFactor);
+        return result;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BitmapFont that = (BitmapFont) o;
+        if (mAscent != that.mAscent) return false;
+        if (mDescent != that.mDescent) return false;
+        if (mSpriteWidth != that.mSpriteWidth) return false;
+        if (mSpriteHeight != that.mSpriteHeight) return false;
+        if (mScaleFactor != that.mScaleFactor) return false;
+        return mLocation.equals(that.mLocation);
+    }
+
+    public static class Glyph extends GLBakedGlyph {
+
+        public final float advance;
+
+        public Glyph(int advance) {
+            this.advance = advance;
+        }
     }
 }

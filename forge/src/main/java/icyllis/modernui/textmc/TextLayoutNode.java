@@ -280,10 +280,10 @@ public class TextLayoutNode {
                 if (isShadow) {
                     continue;
                 }
-                rx = x + positions[i << 1] + 0.5f;
-                ry = y + positions[(i << 1) + 1] - sBaselineOffset;
-                w = TextLayoutEngine.EMOJI_BASE_SIZE;
-                h = TextLayoutEngine.EMOJI_BASE_SIZE;
+                rx = x + positions[i << 1] + (float) glyph.x / TextLayoutEngine.BITMAP_SCALE;
+                ry = y + positions[(i << 1) + 1] + (float) glyph.y / TextLayoutEngine.BITMAP_SCALE;
+                w = (float) glyph.width / TextLayoutEngine.BITMAP_SCALE;
+                h = (float) glyph.height / TextLayoutEngine.BITMAP_SCALE;
             } else {
                 if (raw != null && (flag & CharacterStyle.FAST_DIGIT_REPLACEMENT) != 0) {
                     var chars = (TextLayoutEngine.FastCharSet) glyph;
@@ -686,9 +686,11 @@ public class TextLayoutNode {
         StringBuilder b = new StringBuilder();
         b.append('[');
         for (int i = 0; ; i++) {
+            b.append('(');
             b.append(a[i++]);
-            b.append('-');
+            b.append(',');
             b.append(a[i]);
+            b.append(')');
             if (i == iMax)
                 return b.append(']').toString();
             b.append(", ");

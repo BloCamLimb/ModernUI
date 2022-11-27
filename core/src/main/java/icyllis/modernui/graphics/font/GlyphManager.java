@@ -193,7 +193,7 @@ public class GlyphManager {
         int index = 0;
         for (var atlas : mAtlases.values()) {
             if (basePath != null) {
-                atlas.debug(basePath + "_" + index);
+                atlas.debug(basePath + "_" + index + ".png");
                 index++;
             } else {
                 atlas.debug(null);

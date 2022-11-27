@@ -343,7 +343,7 @@ public final class TooltipRenderer {
         // for compatibility reasons, we keep this enabled, and it doesn't seem to be a big problem
         RenderSystem.enableDepthTest();
         RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
+        RenderSystem.blendFuncSeparate(GL_ONE, GL_ONE_MINUS_SRC_ALPHA, GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
 
         poseStack.pushPose();
         // because of the order of draw calls, we actually don't need z-shifting
@@ -376,8 +376,6 @@ public final class TooltipRenderer {
 
         Paint paint = Paint.get();
 
-        paint.setSmoothRadius(0.5f);
-
         for (int i = 0; i < 4; i++) {
             int color = sFillColor[i];
             int alpha = (int) ((color >>> 24) * sAlpha);
@@ -396,7 +394,7 @@ public final class TooltipRenderer {
         }
         paint.setColors(sUseStrokeColor);
         paint.setStyle(Paint.STROKE);
-        paint.setStrokeWidth(1.5f);
+        paint.setStrokeWidth(1.0f);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER,
                 tooltipY + tooltipHeight + V_BORDER, 3, paint);
@@ -412,6 +410,7 @@ public final class TooltipRenderer {
 
         RenderSystem.enableDepthTest();
         RenderSystem.disableBlend();
+        RenderSystem.defaultBlendFunc();
         RenderSystem.enableTexture();
 
         final MultiBufferSource.BufferSource source =

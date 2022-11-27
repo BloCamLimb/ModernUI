@@ -44,7 +44,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.loading.FMLEnvironment;
-import org.apache.commons.lang3.tuple.Pair;
+import org.apache.commons.lang3.tuple.Triple;
 import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
@@ -58,9 +58,9 @@ import java.util.List;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
-import java.util.function.Function;
-import java.util.function.Predicate;
+import java.util.function.*;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static icyllis.modernui.ModernUI.*;
 
@@ -181,11 +181,16 @@ public class TextLayoutEngine implements PreparableReloadListener {
     private final Function<Font, FastCharSet> mFastCharFunc = this::cacheFastChars;
 
     /**
+     * All the fonts to use. Maps typeface name to FontCollection.
+     */
+    private final HashMap<ResourceLocation, Supplier<FontCollection>> mFontCollections = new HashMap<>();
+
+    /**
      * Gui scale = 4.
      */
-    public static final int EMOJI_SCALE = 4;
+    public static final int BITMAP_SCALE = 4;
     public static final int EMOJI_BASE_SIZE = 9;
-    public static final int EMOJI_SIZE = EMOJI_BASE_SIZE * EMOJI_SCALE;
+    public static final int EMOJI_SIZE = EMOJI_BASE_SIZE * BITMAP_SCALE;
     public static final int EMOJI_SIZE_LARGE = EMOJI_SIZE * 2;
 
     /**
@@ -386,47 +391,114 @@ public class TextLayoutEngine implements PreparableReloadListener {
                                           @Nonnull Executor reloadExecutor) {
         return CompletableFuture.supplyAsync(() -> {
                     preparationProfiler.startTick();
-                    preparationProfiler.push("emojis");
-                    final var emojis = scanEmojis(resourceManager);
+                    preparationProfiler.push("fonts");
+                    final var fonts = loadFonts(resourceManager);
+                    preparationProfiler.popPush("emojis");
+                    final var emojis = loadEmojis(resourceManager);
                     preparationProfiler.popPush("shortcodes");
-                    final var shortcodes = scanShortcodes(resourceManager, emojis);
+                    final var shortcodes = loadShortcodes(resourceManager, emojis);
                     preparationProfiler.pop();
                     preparationProfiler.endTick();
-                    return Pair.of(emojis, shortcodes);
+                    return Triple.of(fonts, emojis, shortcodes);
                 }, preparationExecutor)
                 .thenCompose(preparationBarrier::wait)
                 .thenAcceptAsync(result -> {
                     reloadProfiler.startTick();
                     reloadProfiler.push("reload");
+                    // close bitmaps if never baked
+                    for (var supplier : mFontCollections.values()) {
+                        for (var family : supplier.get().getFamilies()) {
+                            if (family instanceof BitmapFont bitmapFont) {
+                                bitmapFont.ensureClose();
+                            }
+                        }
+                    }
+                    // reload fonts
+                    mFontCollections.clear();
+                    mFontCollections.putAll(result.getLeft());
+                    // reload emojis
                     mEmojiMap.clear();
                     mEmojiShortcodes.clear();
-                    mEmojiMap.putAll(result.getLeft());
+                    mEmojiMap.putAll(result.getMiddle());
                     mEmojiShortcodes.putAll(result.getRight());
+                    // reload the whole engine
                     reloadAll();
                     reloadProfiler.pop();
                     reloadProfiler.endTick();
                 }, reloadExecutor);
     }
 
-    private void scanFonts(ResourceManager manager) {
-        Gson gson = new GsonBuilder().setPrettyPrinting().disableHtmlEscaping().create();
+    @Nonnull
+    private Map<ResourceLocation, Supplier<FontCollection>> loadFonts(ResourceManager manager) {
+        final var gson = new GsonBuilder()
+                .setPrettyPrinting()
+                .disableHtmlEscaping()
+                .create();
+        final var map = new HashMap<ResourceLocation, Set<FontFamily>>();
         for (var entry : manager.listResourceStacks("font",
                 location -> location.getPath().endsWith(".json")).entrySet()) {
-            ResourceLocation location = entry.getKey();
-            String path = location.getPath();
+            var location = entry.getKey();
+            var path = location.getPath();
             // XXX: remove prefix 'font/' and suffix '.json' to get the typeface name
-            ResourceLocation name = new ResourceLocation(location.getNamespace(),
+            var name = new ResourceLocation(location.getNamespace(),
                     path.substring(5, path.length() - 5));
             if (name.equals(Minecraft.DEFAULT_FONT) ||
                     name.equals(Minecraft.UNIFORM_FONT)) {
-                continue;
+                continue; // remapping
+            }
+            var set = map.computeIfAbsent(name, n -> new LinkedHashSet<>());
+            for (var resource : entry.getValue()) {
+                try (var reader = resource.openAsReader()) {
+                    var providers = GsonHelper.getAsJsonArray(Objects.requireNonNull(
+                            GsonHelper.fromJson(gson, reader, JsonObject.class)), "providers");
+                    for (int i = 0; i < providers.size(); i++) {
+                        var metadata = GsonHelper.convertToJsonObject(
+                                providers.get(i), "providers[" + i + "]");
+                        var type = GsonHelper.getAsString(metadata, "type");
+                        switch (type) {
+                            case "bitmap" -> set.add(BitmapFont.create(metadata, manager));
+                            case "ttf" -> {
+                                if (metadata.has("shift")) {
+                                    LOGGER.warn("Ignore 'shift' of providers[{}] in font '{}' in pack: '{}'",
+                                            i, name, resource.sourcePackId());
+                                }
+                                if (metadata.has("skip")) {
+                                    LOGGER.warn("Ignore 'skip' of providers[{}] in font '{}' in pack: '{}'",
+                                            i, name, resource.sourcePackId());
+                                }
+                                set.add(createTTF(metadata, manager));
+                            }
+                            // ignore others
+                        }
+                    }
+                } catch (Exception e) {
+                    LOGGER.warn("Failed to load font '{}' in pack: '{}'", name, resource.sourcePackId(), e);
+                }
             }
         }
-        //TODO
+        for (var set : map.values()) {
+            set.add(Objects.requireNonNull(FontFamily.getSystemFontMap().get(Font.SANS_SERIF)));
+        }
+        return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> {
+            final var stable = new FontCollection(e.getValue().toArray(new FontFamily[0]));
+            return () -> stable;
+        }));
     }
 
     @Nonnull
-    private Map<? extends CharSequence, EmojiEntry> scanEmojis(ResourceManager manager) {
+    private FontFamily createTTF(JsonObject metadata, ResourceManager manager) {
+        var file = new ResourceLocation(GsonHelper.getAsString(metadata, "file"));
+        var location = new ResourceLocation(file.getNamespace(), "textures/" + file.getPath());
+        try (var stream = manager.open(location)) {
+            var f = Font.createFont(Font.TRUETYPE_FONT, stream);
+            return new FontFamily(f);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Nonnull
+    private Map<? extends CharSequence, EmojiEntry> loadEmojis(ResourceManager manager) {
         final var map = new HashMap<String, EmojiEntry>();
         CYCLE:
         for (var location : manager.listResources("emoji",
@@ -465,7 +537,7 @@ public class TextLayoutEngine implements PreparableReloadListener {
     }
 
     @Nonnull
-    private Map<String, String> scanShortcodes(ResourceManager manager,
+    private Map<String, String> loadShortcodes(ResourceManager manager,
                                                Map<? extends CharSequence, EmojiEntry> emojiMap) {
         final var map = new HashMap<String, String>();
         final var lookup = new CharSequenceBuilder();
@@ -730,6 +802,43 @@ public class TextLayoutEngine implements PreparableReloadListener {
     }
 
     /**
+     * Given a font name, returns the loaded font collection. Specially, {@link Minecraft#DEFAULT_FONT}
+     * and {@link Minecraft#UNIFORM_FONT} will always return the user preference.
+     * <p>
+     * Currently, the supplier will return the same font collection, so cache will not be invalidated
+     * until resource reloading.
+     *
+     * @param fontName a font name
+     * @return the font collection
+     */
+    @Nonnull
+    public FontCollection getFontCollection(@Nonnull ResourceLocation fontName) {
+        return mFontCollections.getOrDefault(fontName, () -> ModernUI.getSelectedTypeface().getFontCollection()).get();
+    }
+
+    public void dumpBitmapFonts() {
+        String basePath = icyllis.modernui.core.NativeImage.saveDialogGet(
+                icyllis.modernui.core.NativeImage.SaveFormat.PNG, "BitmapFont");
+        if (basePath != null) {
+            // XXX: remove extension name
+            basePath = basePath.substring(0, basePath.length() - 4);
+        }
+        int index = 0;
+        for (var supplier : mFontCollections.values()) {
+            for (var family : supplier.get().getFamilies()) {
+                if (family instanceof BitmapFont bitmapFont) {
+                    if (basePath != null) {
+                        bitmapFont.dumpAtlas(basePath + "_" + index + ".png");
+                        index++;
+                    } else {
+                        bitmapFont.dumpAtlas(null);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Given a grapheme cluster, locate the color emoji's pre-rendered image in the emoji atlas and
      * return its cache entry. The entry stores the texture with the pre-rendered emoji image,
      * as well as the position and size of that image within the texture.
@@ -810,8 +919,8 @@ public class TextLayoutEngine implements PreparableReloadListener {
                 if (subImage != null) {
                     subImage.close();
                 }
-                glyph.x = 0;
-                glyph.y = 0; // x and y baseline is hardcoded in TextRenderNode
+                glyph.x = (int) (0.5 * BITMAP_SCALE);
+                glyph.y = -TextLayoutNode.DEFAULT_BASELINE_OFFSET * BITMAP_SCALE;
                 glyph.width = EMOJI_SIZE;
                 glyph.height = EMOJI_SIZE;
                 atlas.stitch(glyph, dst);

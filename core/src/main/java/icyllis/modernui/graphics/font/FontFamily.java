@@ -87,4 +87,17 @@ public class FontFamily {
     public String getFamilyName() {
         return mPlain.getFamily(Locale.ROOT);
     }
+
+    @Override
+    public int hashCode() {
+        return mPlain != null ? mPlain.hashCode() : 0;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        FontFamily that = (FontFamily) o;
+        return Objects.equals(mPlain, that.mPlain);
+    }
 }

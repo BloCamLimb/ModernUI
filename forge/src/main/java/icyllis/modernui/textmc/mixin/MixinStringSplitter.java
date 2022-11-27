@@ -19,15 +19,12 @@
 package icyllis.modernui.textmc.mixin;
 
 import icyllis.modernui.textmc.ModernStringSplitter;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.StringSplitter;
-import net.minecraft.network.chat.*;
-import net.minecraft.network.chat.contents.LiteralContents;
+import net.minecraft.network.chat.FormattedText;
+import net.minecraft.network.chat.Style;
 import net.minecraft.util.FormattedCharSequence;
-import net.minecraft.util.StringDecomposer;
-import org.apache.commons.lang3.mutable.MutableFloat;
-import org.apache.commons.lang3.mutable.MutableInt;
-import org.spongepowered.asm.mixin.*;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -36,9 +33,9 @@ import java.util.function.BiConsumer;
 @Mixin(StringSplitter.class)
 public class MixinStringSplitter {
 
-    @Shadow
+    /*@Shadow
     @Final
-    private StringSplitter.WidthProvider widthProvider;
+    private StringSplitter.WidthProvider widthProvider;*/
 
     /**
      * @author BloCamLimb
@@ -139,7 +136,7 @@ public class MixinStringSplitter {
     @Overwrite
     public FormattedText headByWidth(@Nonnull FormattedText text, int width, @Nonnull Style style) {
         // Handle Enchantment Table
-        if (text instanceof Component component &&
+        /*if (text instanceof Component component &&
                 component.getSiblings().isEmpty() &&
                 component.getStyle().getFont().equals(Minecraft.ALT_FONT) &&
                 component.getContents() instanceof LiteralContents literal) {
@@ -164,7 +161,7 @@ public class MixinStringSplitter {
                 }
             }
             return FormattedText.EMPTY;
-        }
+        }*/
         return ModernStringSplitter.headByWidth(text, width, style);
     }
 

@@ -201,7 +201,7 @@ public final class ModernUITextMC {
         public final ForgeConfigSpec.IntValue mRehashThreshold;
         public final ForgeConfigSpec.IntValue mTextDirection;
         public final ForgeConfigSpec.BooleanValue mColorEmoji;
-        public final ForgeConfigSpec.BooleanValue mBitmapReplacement;
+        //public final ForgeConfigSpec.BooleanValue mBitmapReplacement;
         public final ForgeConfigSpec.BooleanValue mEmojiShortcodes;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
@@ -263,9 +263,9 @@ public final class ModernUITextMC {
             mColorEmoji = builder.comment(
                             "Whether to render colored emoji or just grayscale emoji.")
                     .define("colorEmoji", true);
-            mBitmapReplacement = builder.comment(
+            /*mBitmapReplacement = builder.comment(
                             "Whether to use bitmap replacement for non-Emoji character sequences. Restart is required.")
-                    .define("bitmapReplacement", false);
+                    .define("bitmapReplacement", false);*/
             mEmojiShortcodes = builder.comment(
                             "Allow to use Slack or Discord shortcodes to replace Emoji character sequences in chat.")
                     .define("emojiShortcodes", true);

@@ -419,7 +419,7 @@ public class TestLinearLayout extends LinearLayout {
         paint.setStyle(Paint.FILL);
         canvas.drawCircle(80, 700, 60, paint);
 
-        paint.setSmoothRadius(2.0f);
+        paint.setSmoothRadius(0.0f);
 
         paint.setStyle(Paint.FILL);
         paint.setAlpha((int) (roundRectAlpha * 192));

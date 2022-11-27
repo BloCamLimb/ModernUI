@@ -260,7 +260,7 @@ public class Paint {
         mColor = ~0;
         mFlags = DEFAULT_FLAGS;
         mStrokeWidth = 2;
-        mSmoothRadius = 2;
+        mSmoothRadius = 0;
     }
 
     /**
@@ -528,7 +528,7 @@ public class Paint {
     }
 
     /**
-     * Return the current smooth (feather) radius. The default value is 2.0 px.
+     * Return the current smooth (feather) radius. The default value is 0.0 px.
      * <p>
      * Feather effect is used to smooth or blur the edge of primitives by SDF.
      * It can be used as the softness (inverse of hardness) of the brush.
@@ -542,7 +542,7 @@ public class Paint {
     }
 
     /**
-     * Set the smooth (feather) radius in pixels for this paint. The default value is 2.0 px.
+     * Set the smooth (feather) radius in pixels for this paint. The default value is 0.0 px.
      * <p>
      * Feather effect is used to smooth or blur the edge of primitives by SDF.
      * It can be used as the softness (inverse of hardness) of the brush.
