@@ -2251,7 +2251,7 @@ public class TextView extends View implements ViewTreeObserver.OnPreDrawListener
         if (mMovement != null && (isFocused() || isPressed()) && selStart >= 0) {
             final int selEnd = getSelectionEnd();
             Paint paint = Paint.get();
-            paint.setStrokeWidth(dp(1));
+            paint.setStrokeWidth(Math.max(1, dp(0.75f)));
             if (selStart == selEnd) {
                 if (mEditor != null && mEditor.shouldRenderCursor()) {
                     if (mHighlightPathBogus) {

@@ -164,8 +164,8 @@ public class TextLayoutEngine implements PreparableReloadListener {
     /**
      * For deeply-processed texts.
      */
-    private final MasterpieceLayoutKey.Lookup mMasterpieceLookupKey = new MasterpieceLayoutKey.Lookup();
-    private Map<MasterpieceLayoutKey, TextLayoutNode> mMasterpieceCache = new HashMap<>();
+    private final FormattedLayoutKey.Lookup mFormattedLayoutKey = new FormattedLayoutKey.Lookup();
+    private Map<FormattedLayoutKey, TextLayoutNode> mFormattedCache = new HashMap<>();
 
     /**
      * Shared layout engine.
@@ -297,13 +297,13 @@ public class TextLayoutEngine implements PreparableReloadListener {
         int count = getCacheCount();
         mVanillaCache.clear();
         mComponentCache.clear();
-        mMasterpieceCache.clear();
+        mFormattedCache.clear();
         boolean rehash = count >= sRehashThreshold;
         if (rehash) {
             // Create new HashMap so that the internal hashtable of old maps are released as well
             mVanillaCache = new HashMap<>();
             mComponentCache = new HashMap<>();
-            mMasterpieceCache = new HashMap<>();
+            mFormattedCache = new HashMap<>();
         }
         // Metrics change with resolution level
         mFastCharMap.clear();
@@ -681,10 +681,10 @@ public class TextLayoutEngine implements PreparableReloadListener {
                 return node;
             }
         } else {
-            node = mMasterpieceCache.get(mMasterpieceLookupKey.update(text, Style.EMPTY));
+            node = mFormattedCache.get(mFormattedLayoutKey.update(text, Style.EMPTY));
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, Style.EMPTY);
-                mMasterpieceCache.put(mMasterpieceLookupKey.copy(), node);
+                mFormattedCache.put(mFormattedLayoutKey.copy(), node);
                 return node;
             }
         }
@@ -719,11 +719,11 @@ public class TextLayoutEngine implements PreparableReloadListener {
                 return node;
             }
         } else {
-            // the more complex case (masterpiece)
-            node = mMasterpieceCache.get(mMasterpieceLookupKey.update(text, style));
+            // the more complex case (multi-component)
+            node = mFormattedCache.get(mFormattedLayoutKey.update(text, style));
             if (node == null) {
                 node = mProcessor.performComplexLayout(text, style);
-                mMasterpieceCache.put(mMasterpieceLookupKey.copy(), node);
+                mFormattedCache.put(mFormattedLayoutKey.copy(), node);
                 return node;
             }
         }
@@ -766,21 +766,21 @@ public class TextLayoutEngine implements PreparableReloadListener {
                     return node;
                 }
             } else {
-                // the more complex case (masterpiece)
-                node = mMasterpieceCache.get(mMasterpieceLookupKey.update(text, Style.EMPTY));
+                // the more complex case (multi-component)
+                node = mFormattedCache.get(mFormattedLayoutKey.update(text, Style.EMPTY));
                 if (node == null) {
                     node = mProcessor.performComplexLayout(text, Style.EMPTY);
-                    mMasterpieceCache.put(mMasterpieceLookupKey.copy(), node);
+                    mFormattedCache.put(mFormattedLayoutKey.copy(), node);
                     return node;
                 }
             }
             return node.get();
         } else {
-            // the most complex case (masterpiece)
-            TextLayoutNode node = mMasterpieceCache.get(mMasterpieceLookupKey.update(sequence));
+            // the most complex case (multi-component)
+            TextLayoutNode node = mFormattedCache.get(mFormattedLayoutKey.update(sequence));
             if (node == null) {
                 node = mProcessor.performSequenceLayout(sequence);
-                mMasterpieceCache.put(mMasterpieceLookupKey.copy(), node);
+                mFormattedCache.put(mFormattedLayoutKey.copy(), node);
                 return node;
             }
             return node.get();
@@ -947,13 +947,13 @@ public class TextLayoutEngine implements PreparableReloadListener {
                 int oldCount = getCacheCount();
                 mVanillaCache.values().removeIf(mTicker);
                 mComponentCache.values().removeIf(mTicker);
-                mMasterpieceCache.values().removeIf(mTicker);
+                mFormattedCache.values().removeIf(mTicker);
                 if (oldCount >= sRehashThreshold) {
                     int newCount = getCacheCount();
                     if (newCount < sRehashThreshold) {
                         mVanillaCache = new HashMap<>(mVanillaCache);
                         mComponentCache = new HashMap<>(mComponentCache);
-                        mMasterpieceCache = new HashMap<>(mMasterpieceCache);
+                        mFormattedCache = new HashMap<>(mFormattedCache);
                     }
                 }
             }
@@ -966,7 +966,7 @@ public class TextLayoutEngine implements PreparableReloadListener {
      * @return the number of layout entries
      */
     public int getCacheCount() {
-        return mVanillaCache.size() + mComponentCache.size() + mMasterpieceCache.size();
+        return mVanillaCache.size() + mComponentCache.size() + mFormattedCache.size();
     }
 
     /**
@@ -982,7 +982,7 @@ public class TextLayoutEngine implements PreparableReloadListener {
             // key is a view, memory-less
             size += n.getMemorySize();
         }
-        for (var e : mMasterpieceCache.entrySet()) {
+        for (var e : mFormattedCache.entrySet()) {
             // key is backed ourselves
             size += e.getKey().getMemorySize();
             size += e.getValue().getMemorySize();

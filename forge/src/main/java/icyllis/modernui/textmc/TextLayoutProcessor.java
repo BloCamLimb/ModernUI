@@ -23,8 +23,7 @@ import com.ibm.icu.util.ULocale;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.font.*;
-import icyllis.modernui.text.TextDirectionHeuristic;
-import icyllis.modernui.text.TextDirectionHeuristics;
+import icyllis.modernui.text.*;
 import icyllis.modernui.textmc.mixin.*;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
@@ -51,7 +50,7 @@ import java.util.*;
  * @see MixinClientLanguage
  * @see MixinLanguage
  * @see VanillaLayoutKey#update(String, Style)
- * @see MasterpieceLayoutKey.Lookup#update(FormattedCharSequence)
+ * @see FormattedLayoutKey.Lookup#update(FormattedCharSequence)
  * @see FormattedText
  * @see FormattedCharSequence
  * @see FormattedTextWrapper
@@ -741,16 +740,16 @@ public class TextLayoutProcessor {
      */
     private void performStyleRun(@Nonnull char[] text, int start, int limit, boolean isRtl, boolean fastDigit,
                                  int styleFlags, ResourceLocation fontName, @Nonnull ULocale locale) {
-        /*
-         * Convert all digits in the string to a '0' before layout to ensure that any glyphs replaced on the fly will
-         * all have the same positions. Under Windows, Java's "SansSerif" logical font uses the "Arial" font for
-         * digits, in which the "1" digit is slightly narrower than all other digits. Digits are not on SMP.
-         */
         if (fastDigit) {
+            /*
+             * Convert all digits in the string to a '0' before layout to ensure that any glyphs replaced on the fly
+             * will all have the same positions. Under Windows, Java's "SansSerif" logical font uses the "Arial" font
+             * for digits, in which the "1" digit is slightly narrower than all other digits. Digits are not on SMP.
+             */
             for (int i = start; i < limit; i++) {
                 if (text[i] <= '9' && text[i] >= '0' &&
                         // also check COMBINING ENCLOSING KEYCAP, don't break GCB
-                        (i + 1 >= limit || text[i + 1] != '\u20E3')) {
+                        (i + 1 >= limit || text[i + 1] != Emoji.COMBINING_ENCLOSING_KEYCAP)) {
                     text[i] = '0';
                 }
             }

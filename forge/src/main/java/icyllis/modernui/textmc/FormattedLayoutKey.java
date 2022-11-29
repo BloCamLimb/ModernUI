@@ -44,7 +44,7 @@ import java.util.Optional;
  * @see CharacterStyle
  * @see VanillaLayoutKey
  */
-public class MasterpieceLayoutKey {
+public class FormattedLayoutKey {
 
     /**
      * Texts use String as their backing store, none of them contains {@link ChatFormatting} codes.
@@ -69,12 +69,12 @@ public class MasterpieceLayoutKey {
      */
     int mHash;
 
-    private MasterpieceLayoutKey() {
+    private FormattedLayoutKey() {
     }
 
-    private MasterpieceLayoutKey(CharSequence[] texts,
-                                 ResourceLocation[] fonts,
-                                 int[] codes, int hash) {
+    private FormattedLayoutKey(CharSequence[] texts,
+                               ResourceLocation[] fonts,
+                               int[] codes, int hash) {
         mTexts = texts;
         mFonts = fonts;
         mCodes = codes;
@@ -101,10 +101,10 @@ public class MasterpieceLayoutKey {
 
     @Override
     public boolean equals(Object o) {
-        if (o.getClass() != MasterpieceLayoutKey.class) {
+        if (o.getClass() != FormattedLayoutKey.class) {
             return false;
         }
-        MasterpieceLayoutKey key = (MasterpieceLayoutKey) o;
+        FormattedLayoutKey key = (FormattedLayoutKey) o;
         return Arrays.equals(mCodes, key.mCodes) &&
                 Arrays.equals(mFonts, key.mFonts) &&
                 Arrays.equals(mTexts, key.mTexts);
@@ -112,7 +112,7 @@ public class MasterpieceLayoutKey {
 
     @Override
     public String toString() {
-        return "MasterpieceLayoutKey{" +
+        return "FormattedLayoutKey{" +
                 "mTexts=" + Arrays.toString(mTexts) +
                 ", mFonts=" + Arrays.toString(mFonts) +
                 ", mCodes=" + Arrays.toString(mCodes) +
@@ -136,7 +136,7 @@ public class MasterpieceLayoutKey {
      * Designed for performance, this also ensures hashCode() and equals() of Key
      * strictly matched in various cases.
      */
-    public static class Lookup extends MasterpieceLayoutKey {
+    public static class Lookup extends FormattedLayoutKey {
 
         private final ObjectArrayList<CharSequence> mTexts = new ObjectArrayList<>();
         private final ObjectArrayList<ResourceLocation> mFonts = new ObjectArrayList<>();
@@ -230,7 +230,7 @@ public class MasterpieceLayoutKey {
          * Update this key.
          */
         @Nonnull
-        public MasterpieceLayoutKey update(@Nonnull FormattedText text, @Nonnull Style style) {
+        public FormattedLayoutKey update(@Nonnull FormattedText text, @Nonnull Style style) {
             reset();
             text.visit(mContentBuilder, style);
             return this;
@@ -240,7 +240,7 @@ public class MasterpieceLayoutKey {
          * Update this key.
          */
         @Nonnull
-        public MasterpieceLayoutKey update(@Nonnull FormattedCharSequence sequence) {
+        public FormattedLayoutKey update(@Nonnull FormattedCharSequence sequence) {
             reset();
             sequence.accept(mSequenceBuilder);
             mSequenceBuilder.end();
@@ -270,10 +270,10 @@ public class MasterpieceLayoutKey {
 
         @Override
         public boolean equals(Object o) {
-            if (o.getClass() != MasterpieceLayoutKey.class) {
+            if (o.getClass() != FormattedLayoutKey.class) {
                 return false;
             }
-            MasterpieceLayoutKey key = (MasterpieceLayoutKey) o;
+            FormattedLayoutKey key = (FormattedLayoutKey) o;
             final int length = mTexts.size();
             return length == key.mTexts.length &&
                     Arrays.equals(mCodes.elements(), 0, length, key.mCodes, 0, length) &&
@@ -297,14 +297,14 @@ public class MasterpieceLayoutKey {
          * @return a storage key
          */
         @Nonnull
-        public MasterpieceLayoutKey copy() {
+        public FormattedLayoutKey copy() {
             final int length = mTexts.size();
             CharSequence[] texts = new CharSequence[length];
             for (int i = 0; i < length; i++) {
                 // String returns self, CharSequenceBuilder returns a new String
                 texts[i] = mTexts.get(i).toString();
             }
-            return new MasterpieceLayoutKey(texts, mFonts.toArray(new ResourceLocation[0]),
+            return new FormattedLayoutKey(texts, mFonts.toArray(new ResourceLocation[0]),
                     mCodes.toIntArray(), mHash);
         }
     }

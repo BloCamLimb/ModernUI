@@ -54,22 +54,19 @@ public class FontCollection {
 
     // Characters where we want to continue using existing font run instead of
     // recomputing the best match in the fallback list.
-    private static final int[] sStickyWhitelist = {
-            '!', ',', '-', '.', ':', ';', '?',
-            0x00A0,  // NBSP
-            0x2010,  // HYPHEN
-            0x2011,  // NB_HYPHEN
-            0x202F,  // NNBSP
-            0x2640,  // FEMALE_SIGN,
-            0x2642,  // MALE_SIGN,
-            0x2695,  // STAFF_OF_AESCULAPIUS
-    };
-
     public static boolean isStickyWhitelisted(int c) {
-        for (int value : sStickyWhitelist)
-            if (value == c)
-                return true;
-        return false;
+        return switch (c) {
+            case '!', ',', '-', '.', ':', ';', '?',
+                    0x00A0,  // NBSP
+                    0x2010,  // HYPHEN
+                    0x2011,  // NB_HYPHEN
+                    0x202F,  // NNBSP
+                    0x2640,  // FEMALE_SIGN,
+                    0x2642,  // MALE_SIGN,
+                    0x2695   // STAFF_OF_AESCULAPIUS
+                    -> true;
+            default -> false;
+        };
     }
 
     public static boolean isCombining(int c) {
@@ -177,7 +174,7 @@ public class FontCollection {
             }
 
             if (!shouldContinueRun) {
-                FontFamily family = getFamilyForChar(ch, 0);
+                FontFamily family = getFamilyForChar(ch, isVariationSelector(nextCh) ? nextCh : 0);
                 if (pos == 0 || family != lastFamily) {
                     int start = pos;
                     // Workaround for combining marks and emoji modifiers until we implement
@@ -214,6 +211,14 @@ public class FontCollection {
                 lastRun.end = next;
             }
 
+            // Stop searching the remaining characters if the result length gets runMax + 2.
+            // When result.size gets runMax + 2 here, the run between [0, runMax) was finalized.
+            // If the result.size() equals to runMax, the run may be still expanding.
+            // if the result.size() equals to runMax + 2, the last run may be removed and the last run
+            // may be extended the previous run with above workaround.
+            if (result.size() >= 2 && runLimit == result.size() - 2) {
+                break;
+            }
         } while (running);
 
         if (lastFamily == null) {

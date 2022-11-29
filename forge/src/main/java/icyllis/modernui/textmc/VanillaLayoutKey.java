@@ -33,7 +33,7 @@ import javax.annotation.Nonnull;
  *
  * @author BloCamLimb
  * @see CharacterStyle
- * @see MasterpieceLayoutKey
+ * @see FormattedLayoutKey
  * @since 2.0
  */
 public class VanillaLayoutKey {
