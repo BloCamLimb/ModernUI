@@ -22,9 +22,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.fragment.Fragment;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -45,12 +49,14 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
     private final UIManager mHost;
     private final Fragment mFragment;
     private final ScreenCallback mCallback;
+    private final ICapabilityProvider mProvider;
 
-    MenuScreen(UIManager host, Fragment fragment, @Nonnull T menu, Inventory inventory, Component title) {
+    MenuScreen(UIManager host, Fragment fragment, T menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         mHost = host;
         mFragment = fragment;
-        mCallback = fragment instanceof ScreenCallback __ ? __ : null;
+        mCallback = fragment instanceof ScreenCallback callback ? callback : null;
+        mProvider = fragment instanceof ICapabilityProvider provider ? provider : null;
     }
 
     /*@Override
@@ -82,7 +88,8 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Override
     public void render(@Nonnull PoseStack poseStack, int mouseX, int mouseY, float deltaTick) {
-        if (mCallback == null || mCallback.hasDefaultBackground()) {
+        ScreenCallback callback = getCallback();
+        if (callback == null || callback.hasDefaultBackground()) {
             renderBackground(poseStack);
         }
         mHost.render();
@@ -106,8 +113,15 @@ final class MenuScreen<T extends AbstractContainerMenu> extends AbstractContaine
 
     @Nullable
     @Override
+    @SuppressWarnings("ConstantConditions")
     public ScreenCallback getCallback() {
-        return mCallback;
+        return mCallback != null ? mCallback : getCapability(SCREEN_CALLBACK).orElse(null);
+    }
+
+    @Nonnull
+    @Override
+    public <C> LazyOptional<C> getCapability(@Nonnull Capability<C> cap, @Nullable Direction side) {
+        return mProvider != null ? mProvider.getCapability(cap, side) : LazyOptional.empty();
     }
 
     // IMPL - GuiEventListener

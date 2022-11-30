@@ -23,16 +23,20 @@ import icyllis.modernui.annotation.*;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.view.KeyEvent;
 import net.minecraft.client.Minecraft;
+import net.minecraftforge.common.capabilities.AutoRegisterCapability;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 
 import javax.annotation.Nonnull;
 
 /**
  * Callback of a screen. Methods will be invoked from different threads.
- * Make your main {@link Fragment} implements this interface, or to use default values.
+ * Make your main {@link Fragment} subclass implement this interface,
+ * or provide via {@link ICapabilityProvider}, or to use defaults.
  *
  * @see MenuScreenFactory
  * @see MuiForgeApi#openScreen(Fragment)
  */
+@AutoRegisterCapability
 public interface ScreenCallback {
 
     /**

@@ -1,5 +1,29 @@
 Changelogs
 ===
+### Modern UI 3.6.2.116 (2022-11-30)
+#### Forge Extension 1.19.2-43.1.2
+* Support capability for fragments and screens
+* Fix incorrect color blending for tooltip
+* Fix GUI scale is always auto after restart
+* Fix black screen with blur effect
+* Add glow wave effect
+#### Modern Text Engine 1.19.2
+* Fix line breaking for obfuscated chars
+* Remove enchantment font hack
+* Support vanilla bitmap font in replacement run
+* Support vanilla bitmap font as font family
+* Support vanilla font declaration
+* Adjust text decoration thickness
+* Reduce unnecessary native memory usage in vanilla
+* Make font resource reloading work async
+* Optimize ChatFormatting.getByCode to O(1)
+* Optimize layout caching strategy
+* Add font set to layout key
+#### Core Framework 3.6
+* Adjust analytic anti-alias to screen-space
+* Improve font collection itemization
+* Update shaders to a modern version
+
 ### Modern UI 3.6.1.115 (2022-10-07)
 #### Forge Extension 1.19.2-43.1.2
 * Change the background blur from 4-pass box blur to 2-pass gaussian blur with lod and noise

@@ -19,14 +19,23 @@
 package icyllis.modernui.forge;
 
 import icyllis.modernui.fragment.Fragment;
+import net.minecraftforge.common.capabilities.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A convenient way to check instanceof MenuScreen or SimpleScreen
+ * Common interface between MenuScreen and SimpleScreen
  */
-public sealed interface MuiScreen permits MenuScreen, SimpleScreen {
+public sealed interface MuiScreen
+        extends ICapabilityProvider
+        permits MenuScreen, SimpleScreen {
+
+    /**
+     * Built-in capability, DO NOT USE.
+     */
+    Capability<ScreenCallback> SCREEN_CALLBACK = CapabilityManager.get(new CapabilityToken<>() {
+    });
 
     /**
      * @return the main fragment
