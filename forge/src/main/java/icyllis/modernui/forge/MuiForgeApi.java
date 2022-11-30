@@ -35,6 +35,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuConstructor;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.event.entity.player.PlayerContainerEvent;
 import org.jetbrains.annotations.ApiStatus;
 
@@ -71,8 +72,9 @@ public final class MuiForgeApi {
      * Otherwise, initiate this with a network model via
      * {@link net.minecraftforge.network.NetworkHooks#openScreen(ServerPlayer, MenuProvider, Consumer)}.
      * <p>
-     * Optionally, the main {@link Fragment} can implement {@link ScreenCallback}
-     * to describe the screen properties.
+     * Specially, the main {@link Fragment} subclass can implement {@link ICapabilityProvider}
+     * to provide capabilities, some of which may be internally handled by the framework.
+     * For example, {@link ScreenCallback} to describe the screen properties.
      *
      * @param fragment the main fragment
      */
