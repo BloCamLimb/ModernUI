@@ -18,10 +18,12 @@
 
 package icyllis.akashigi.vulkan;
 
-import icyllis.akashigi.engine.*;
+import icyllis.akashigi.engine.BackendFormat;
+import icyllis.akashigi.engine.BackendTexture;
 
 import javax.annotation.Nonnull;
 
+import static icyllis.akashigi.engine.Engine.BackendApi;
 import static icyllis.akashigi.vulkan.VkCore.*;
 import static org.lwjgl.vulkan.EXTImageDrmFormatModifier.VK_IMAGE_TILING_DRM_FORMAT_MODIFIER_EXT;
 
@@ -58,7 +60,7 @@ public final class VkBackendTexture extends BackendTexture {
 
     @Override
     public int getBackend() {
-        return Engine.VULKAN;
+        return BackendApi.kVulkan;
     }
 
     @Override

@@ -320,7 +320,7 @@ public class Parser {
      * INT_LITERAL
      */
     @Nullable
-    private ConstantExpression intLiteral() {
+    private Literal intLiteral() {
         long token = expect(Lexer.TK_INT_LITERAL, "integer literal");
         String s = text(token);
         if (s.endsWith("u") || s.endsWith("U")) {
@@ -328,7 +328,7 @@ public class Parser {
         }
         try {
             int value = Integer.decode(s);
-            return ConstantExpression.makeInt(
+            return Literal.makeInt(
                     ThreadContext.getInstance(),
                     position(token),
                     value);
@@ -342,12 +342,12 @@ public class Parser {
      * FLOAT_LITERAL
      */
     @Nullable
-    private ConstantExpression floatLiteral() {
+    private Literal floatLiteral() {
         long token = expect(Lexer.TK_FLOAT_LITERAL, "float literal");
         String s = text(token);
         try {
             float value = Float.parseFloat(s);
-            return ConstantExpression.makeFloat(
+            return Literal.makeFloat(
                     ThreadContext.getInstance(),
                     position(token),
                     value);
@@ -361,14 +361,14 @@ public class Parser {
      * TRUE_LITERAL | FALSE_LITERAL
      */
     @Nullable
-    private ConstantExpression boolLiteral() {
+    private Literal boolLiteral() {
         long token = nextToken();
         return switch (kind(token)) {
-            case Lexer.TK_TRUE_LITERAL -> ConstantExpression.makeBoolean(
+            case Lexer.TK_TRUE_LITERAL -> Literal.makeBoolean(
                     ThreadContext.getInstance(),
                     position(token),
                     true);
-            case Lexer.TK_FALSE_LITERAL -> ConstantExpression.makeBoolean(
+            case Lexer.TK_FALSE_LITERAL -> Literal.makeBoolean(
                     ThreadContext.getInstance(),
                     position(token),
                     false);

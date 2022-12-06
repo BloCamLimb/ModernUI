@@ -24,7 +24,7 @@ import icyllis.akashigi.core.ImageInfo;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.akashigi.engine.Engine.SURFACE_FLAG_RENDERABLE;
+import static icyllis.akashigi.engine.Engine.SurfaceFlags.kRenderable;
 
 /**
  * Represents the capabilities of a Context.
@@ -529,7 +529,7 @@ public abstract class Caps {
         if (!isFormatTexturable(format)) {
             return false;
         }
-        if ((surfaceFlags & SURFACE_FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & kRenderable) != 0) {
             final int maxSize = maxRenderTargetSize();
             if (width > maxSize || height > maxSize) {
                 return false;

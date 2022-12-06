@@ -25,56 +25,56 @@ import javax.annotation.Nonnull;
 /**
  * A constant value. These can contain ints, floats, or booleans.
  */
-public final class ConstantExpression extends Expression {
+public final class Literal extends Expression {
 
     private final double mValue;
 
-    private ConstantExpression(int position, double value, Type type) {
+    private Literal(int position, double value, Type type) {
         super(position, KIND_CONSTANT, type);
         mValue = value;
     }
 
     @Nonnull
-    public static ConstantExpression makeFloat(ThreadContext context, int position, float value) {
-        return new ConstantExpression(position, value, context.getTypes().mFloat);
+    public static Literal makeFloat(ThreadContext context, int position, float value) {
+        return new Literal(position, value, context.getTypes().mFloat);
     }
 
     @Nonnull
-    public static ConstantExpression makeFloat(int position, float value, Type type) {
+    public static Literal makeFloat(int position, float value, Type type) {
         if (type.isFloat()) {
-            return new ConstantExpression(position, value, type);
+            return new Literal(position, value, type);
         }
         throw new IllegalArgumentException();
     }
 
     @Nonnull
-    public static ConstantExpression makeInt(ThreadContext context, int position, long value) {
-        return new ConstantExpression(position, value, context.getTypes().mInt);
+    public static Literal makeInt(ThreadContext context, int position, long value) {
+        return new Literal(position, value, context.getTypes().mInt);
     }
 
     @Nonnull
-    public static ConstantExpression makeInt(int position, long value, Type type) {
-        if (type.isInteger() && value >= type.minimumValue() && value <= type.maximumValue()) {
-            return new ConstantExpression(position, value, type);
+    public static Literal makeInt(int position, long value, Type type) {
+        if (type.isInteger() && value >= type.getMinValue() && value <= type.getMaxValue()) {
+            return new Literal(position, value, type);
         }
         throw new IllegalArgumentException();
     }
 
     @Nonnull
-    public static ConstantExpression makeBoolean(ThreadContext context, int position, boolean value) {
-        return new ConstantExpression(position, value ? 1 : 0, context.getTypes().mBool);
+    public static Literal makeBoolean(ThreadContext context, int position, boolean value) {
+        return new Literal(position, value ? 1 : 0, context.getTypes().mBool);
     }
 
     @Nonnull
-    public static ConstantExpression makeBoolean(int position, boolean value, Type type) {
+    public static Literal makeBoolean(int position, boolean value, Type type) {
         if (type.isBoolean()) {
-            return new ConstantExpression(position, value ? 1 : 0, type);
+            return new Literal(position, value ? 1 : 0, type);
         }
         throw new IllegalArgumentException();
     }
 
     @Nonnull
-    public static ConstantExpression make(int position, double value, Type type) {
+    public static Literal make(int position, double value, Type type) {
         if (type.isFloat()) {
             return makeFloat(position, (float) value, type);
         }

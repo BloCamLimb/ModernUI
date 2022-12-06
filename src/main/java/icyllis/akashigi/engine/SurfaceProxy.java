@@ -89,9 +89,9 @@ public abstract class SurfaceProxy extends RefCnt {
      * force the call sites to provide the required information ahead of time. At
      * instantiation time we verify that the assumed properties match the actual properties.
      *
-     * @see Engine#SURFACE_FLAG_BUDGETED
-     * @see Engine#SURFACE_FLAG_LOOSE_FIT
-     * @see Engine#SURFACE_FLAG_SKIP_ALLOCATOR
+     * @see SurfaceFlags#kBudgeted
+     * @see SurfaceFlags#kLooseFit
+     * @see SurfaceFlags#kSkipAllocator
      */
     int mSurfaceFlags;
 
@@ -115,7 +115,7 @@ public abstract class SurfaceProxy extends RefCnt {
         mHeight = height;
         mSurfaceFlags = surfaceFlags;
         if (format.isExternal()) {
-            mSurfaceFlags |= Engine.SURFACE_FLAG_READ_ONLY;
+            mSurfaceFlags |= SurfaceFlags.kReadOnly;
         }
         mUniqueID = this;
     }
@@ -128,7 +128,7 @@ public abstract class SurfaceProxy extends RefCnt {
         mWidth = texture.getWidth();
         mHeight = texture.getHeight();
         mSurfaceFlags = texture.getSurfaceFlags() | surfaceFlags;
-        assert (mSurfaceFlags & SURFACE_FLAG_LOOSE_FIT) == 0;
+        assert (mSurfaceFlags & SurfaceFlags.kLooseFit) == 0;
         assert (mFormat.isExternal() == texture.isExternal());
         assert (texture.getBudgetType() == BUDGET_TYPE_BUDGETED) == isBudgeted();
         assert (!texture.isExternal() || isReadOnly());
@@ -254,7 +254,7 @@ public abstract class SurfaceProxy extends RefCnt {
      */
     public final boolean isExact() {
         assert (!isLazyMost());
-        if ((mSurfaceFlags & SURFACE_FLAG_LOOSE_FIT) == 0) {
+        if ((mSurfaceFlags & SurfaceFlags.kLooseFit) == 0) {
             return true;
         }
         return mWidth == ResourceProvider.makeApprox(mWidth) &&
@@ -375,7 +375,7 @@ public abstract class SurfaceProxy extends RefCnt {
      * only meaningful if 'mLazyInstantiateCallback' is non-null.
      */
     public final boolean isBudgeted() {
-        return (mSurfaceFlags & SURFACE_FLAG_BUDGETED) != 0;
+        return (mSurfaceFlags & SurfaceFlags.kBudgeted) != 0;
     }
 
     /**
@@ -384,23 +384,23 @@ public abstract class SurfaceProxy extends RefCnt {
      * assignment in ResourceAllocator.
      */
     public final boolean isReadOnly() {
-        return (mSurfaceFlags & SURFACE_FLAG_READ_ONLY) != 0;
+        return (mSurfaceFlags & SurfaceFlags.kReadOnly) != 0;
     }
 
     public final boolean isProtected() {
-        return (mSurfaceFlags & SURFACE_FLAG_PROTECTED) != 0;
+        return (mSurfaceFlags & SurfaceFlags.kProtected) != 0;
     }
 
     public final boolean isManualMSAAResolve() {
-        return (mSurfaceFlags & SURFACE_FLAG_MANUAL_MSAA_RESOLVE) != 0;
+        return (mSurfaceFlags & SurfaceFlags.kManualMSAAResolve) != 0;
     }
 
     public final boolean wrapsGLDefaultFB() {
-        return (mSurfaceFlags & SURFACE_FLAG_GL_WRAP_DEFAULT_FB) != 0;
+        return (mSurfaceFlags & SurfaceFlags.kGLWrapDefaultFB) != 0;
     }
 
     public final boolean wrapsVkSecondaryCB() {
-        return (mSurfaceFlags & SURFACE_FLAG_VK_WRAP_SECONDARY_CB) != 0;
+        return (mSurfaceFlags & SurfaceFlags.kVkWrapSecondaryCB) != 0;
     }
 
     public final boolean isDeferredListTarget() {
@@ -414,7 +414,7 @@ public abstract class SurfaceProxy extends RefCnt {
 
     @ApiStatus.Internal
     public final boolean isProxyExact() {
-        return (mSurfaceFlags & SURFACE_FLAG_LOOSE_FIT) == 0;
+        return (mSurfaceFlags & SurfaceFlags.kLooseFit) == 0;
     }
 
     public TextureProxy asTextureProxy() {

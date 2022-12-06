@@ -52,25 +52,25 @@ public class CircleProcessor extends GeometryProcessor {
      * Per-vertex attributes.
      */
     public static final Attribute
-            POSITION = new Attribute("Position", Float2_VertexAttribType, SLType.Vec2);
+            POSITION = new Attribute("Position", VertexAttribType.kFloat2, SLType.kFloat2);
     // edge x, edge y, outer radius, inner radius (stroke)
     public static final Attribute
-            CIRCLE_EDGE = new Attribute("CircleEdge", Float4_VertexAttribType, SLType.Vec4);
+            CIRCLE_EDGE = new Attribute("CircleEdge", VertexAttribType.kFloat4, SLType.kFloat4);
     /**
      * Per-instance attributes.
      */
     public static final Attribute
-            COLOR = new Attribute("Color", Float4_VertexAttribType, SLType.Vec4);
+            COLOR = new Attribute("Color", VertexAttribType.kFloat4, SLType.kFloat4);
     /**
      * Per-instance attributes (optional).
      */
     public static final Attribute
-            CLIP_PLANE = new Attribute("ClipPlane", Float3_VertexAttribType, SLType.Vec3),
-            ISECT_PLANE = new Attribute("IsectPlane", Float3_VertexAttribType, SLType.Vec3),
-            UNION_PLANE = new Attribute("UnionPlane", Float3_VertexAttribType, SLType.Vec3),
-            ROUND_CAP_CENTERS = new Attribute("RoundCapCenters", Float4_VertexAttribType, SLType.Vec4);
+            CLIP_PLANE = new Attribute("ClipPlane", VertexAttribType.kFloat3, SLType.kFloat3),
+            ISECT_PLANE = new Attribute("IsectPlane", VertexAttribType.kFloat3, SLType.kFloat3),
+            UNION_PLANE = new Attribute("UnionPlane", VertexAttribType.kFloat3, SLType.kFloat3),
+            ROUND_CAP_CENTERS = new Attribute("RoundCapCenters", VertexAttribType.kFloat4, SLType.kFloat4);
     public static final Attribute
-            MODEL_VIEW = new Attribute("ModelView", Float3_VertexAttribType, SLType.Mat3);
+            MODEL_VIEW = new Attribute("ModelView", VertexAttribType.kFloat3, SLType.kFloat3x3);
 
     public static final AttributeSet VERTEX_FORMAT = AttributeSet.makeImplicit(
             POSITION, CIRCLE_EDGE);
@@ -100,7 +100,7 @@ public class CircleProcessor extends GeometryProcessor {
 
     @Override
     public byte primitiveType() {
-        return PRIMITIVE_TYPE_TRIANGLE_LIST;
+        return PrimitiveType.kTriangleList;
     }
 
     @Override
@@ -167,7 +167,7 @@ public class CircleProcessor extends GeometryProcessor {
                 varyingHandler.addPassThroughAttribute(UNION_PLANE,
                         "unionPlane", VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
             }
-            Varying capRadius = new Varying(SLType.Float);
+            Varying capRadius = new Varying(SLType.kFloat);
             if (roundCaps) {
                 fragBuilder.codeAppend("""
                         vec4 roundCapCenters;

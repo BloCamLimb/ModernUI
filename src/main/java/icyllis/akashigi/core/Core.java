@@ -25,39 +25,37 @@ public final class Core {
 
     /**
      * Surface flags.
-     *
-     * <ul>
-     * <li>{@link #SURFACE_FLAG_BUDGETED} -
-     *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_LOOSE_FIT} -
-     *  Indicates whether a backing store needs to be an exact match or can be larger than
-     *  is strictly necessary. Loose fit when set, otherwise exact fit.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_MIPMAPPED} -
-     *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_RENDERABLE} -
-     *  Used to say whether a surface can be rendered to, whether a texture can be used as
-     *  color attachments. Renderable when set, otherwise not renderable.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_PROTECTED} -
-     *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
-     *  not protected.
-     * </li>
-     * </ul>
      */
-    public static final int
-            SURFACE_FLAG_NONE = 0,
-            SURFACE_FLAG_BUDGETED = 1,
-            SURFACE_FLAG_LOOSE_FIT = 1 << 1,
-            SURFACE_FLAG_MIPMAPPED = 1 << 2,
-            SURFACE_FLAG_RENDERABLE = 1 << 3,
-            SURFACE_FLAG_PROTECTED = 1 << 4;
+    public static class SurfaceFlags {
+
+        public static final int kNone = 0;
+        /**
+         * Indicates whether an allocation should count against a cache budget. Budgeted when
+         * set, otherwise not budgeted.
+         */
+        public static final int kBudgeted = 1;
+        /**
+         * Indicates whether a backing store needs to be an exact match or can be larger than
+         * is strictly necessary. Loose fit when set, otherwise exact fit.
+         */
+        public static final int kLooseFit = 1 << 1;
+        /**
+         * Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
+         * when set, otherwise mipmaps are not allocated.
+         */
+        public static final int kMipmapped = 1 << 2;
+        /**
+         * Used to say whether a surface can be rendered to, whether a texture can be used as
+         * color attachments. Renderable when set, otherwise not renderable.
+         */
+        public static final int kRenderable = 1 << 3;
+        /**
+         * Used to say whether texture is backed by protected memory. Protected when set, otherwise
+         * not protected.
+         */
+        public static final int kProtected = 1 << 4;
+
+        protected SurfaceFlags() {
+        }
+    }
 }

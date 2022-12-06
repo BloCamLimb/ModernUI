@@ -19,9 +19,12 @@
 package icyllis.akashigi.engine.shading;
 
 import icyllis.akashigi.core.SLType;
-import icyllis.akashigi.engine.*;
+import icyllis.akashigi.engine.GeometryProcessor;
+import icyllis.akashigi.engine.ShaderVar;
 
 import java.util.ArrayList;
+
+import static icyllis.akashigi.engine.Engine.ShaderFlags;
 
 /**
  * This class implements the various vertex builder interfaces.
@@ -52,7 +55,7 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
             locationIndex += locationSize;
         }
 
-        mProgramBuilder.uniformHandler().appendUniformDecls(Engine.Vertex_ShaderFlag, uniforms());
+        mProgramBuilder.uniformHandler().appendUniformDecls(ShaderFlags.kVertex, uniforms());
         mProgramBuilder.appendDecls(mInputs, inputs());
         mProgramBuilder.varyingHandler().getVertDecls(outputs());
     }
@@ -73,12 +76,12 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
 
     @Override
     public void emitNormalizedPosition(ShaderVar worldPos) {
-        if (worldPos.getType() == SLType.Vec3) {
+        if (worldPos.getType() == SLType.kFloat3) {
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %1$s.zz * %2$s.yw, 0.0, %1$s.z);
                     """, worldPos.getName(), UniformHandler.PROJECTION_NAME);
         } else {
-            assert (worldPos.getType() == SLType.Vec2);
+            assert (worldPos.getType() == SLType.kFloat2);
             codeAppendf("""
                     gl_Position = vec4(%1$s.xy * %2$s.xz + %2$s.yw, 0.0, 1.0);
                     """, worldPos.getName(), UniformHandler.PROJECTION_NAME);

@@ -21,32 +21,44 @@ package icyllis.akashigi.engine;
 import icyllis.akashigi.core.*;
 
 /**
- * Shared constants, enums and utilities for Akashi Engine.
+ * Shared constants, enums and utilities for Engine.
  */
 public final class Engine {
 
     /**
-     * Possible 3D APIs that may be used by Akashi Engine.
+     * Possible 3D APIs that may be used by Engine.
      */
-    public static final int
-            OPENGL = 0, // OpenGL 4.5 core profile (desktop)
-            VULKAN = 1, // Vulkan 1.1 (desktop and mobile)
-            MOCK = 2;   // Mock draws nothing. It is used for unit tests and to measure CPU overhead.
+    public static final class BackendApi {
 
-    /**
-     * Used to say whether a texture has mip levels allocated or not.
-     */
-    public static final boolean
-            Mipmapped_No = false,
-            Mipmapped_Yes = true;
+        /**
+         * OpenGL 4.5 core profile (desktop)
+         */
+        public static final int kOpenGL = 0;
+        /**
+         * Vulkan 1.1 (desktop and mobile)
+         */
+        public static final int kVulkan = 1;
+        /**
+         * Mock draws nothing. It is used for unit tests and to measure CPU overhead.
+         */
+        public static final int kMock = 2;
+
+        private BackendApi() {
+        }
+    }
 
     /**
      * Image and Surfaces can be stored such that (0, 0) in texture space may correspond to
      * either the upper-left or lower-left content pixel.
      */
-    public static final int
-            SurfaceOrigin_UpperLeft = 0,
-            SurfaceOrigin_LowerLeft = 1;
+    public static final class SurfaceOrigin {
+
+        public static final int kUpperLeft = 0;
+        public static final int kLowerLeft = 1;
+
+        private SurfaceOrigin() {
+        }
+    }
 
     /**
      * A Context's cache of backend context state can be partially invalidated.
@@ -54,72 +66,99 @@ public final class Engine {
      *
      * @see icyllis.akashigi.opengl.GLServer#markContextDirty(int)
      */
-    public static final int
-            GLBackendState_RenderTarget = 1,
-            GLBackendState_PixelStore = 1 << 1,
-            GLBackendState_Pipeline = 1 << 2,   // Shader stages, vertex array and input buffers
-            GLBackendState_Texture = 1 << 3,    // Also includes samplers bound to texture units
-            GLBackendState_Stencil = 1 << 4,
-            GLBackendState_Raster = 1 << 5,     // Antialiasing and conservative raster
-            GLBackendState_Blend = 1 << 6,
-            GLBackendState_View = 1 << 7,       // View state stands for scissor and viewport
-            GLBackendState_Misc = 1 << 8;
+    public static final class GLBackendState {
+
+        public static final int kRenderTarget = 1;
+        public static final int kPixelStore = 1 << 1;
+        /**
+         * Shader stages, vertex array and input buffers
+         */
+        public static final int kPipeline = 1 << 2;
+        /**
+         * Also includes samplers bound to texture units
+         */
+        public static final int kTexture = 1 << 3;
+        public static final int kStencil = 1 << 4;
+        /**
+         * Antialiasing and conservative raster
+         */
+        public static final int kRaster = 1 << 5;
+        public static final int kBlend = 1 << 6;
+        /**
+         * View state stands for scissor and viewport
+         */
+        public static final int kView = 1 << 7;
+        public static final int kMisc = 1 << 8;
+
+        private GLBackendState() {
+        }
+    }
 
     /**
      * Indicates the type of pending IO operations that can be recorded for GPU resources.
      */
-    public static final int
-            IOType_Read = 0,
-            IOType_Write = 1,
-            IOType_RW = 2;
+    public static final class IOType {
+
+        public static final int kRead = 0;
+        public static final int kWrite = 1;
+        public static final int kRW = 2;
+
+        private IOType() {
+        }
+    }
 
     /**
-     * Describes the intended usage or the purpose of a GPU buffer.
-     * This will affect memory allocation, etc.
-     * <ul>
-     *     <li>Vertex: Vertex buffer and instance buffer. Per-vertex attributes and
-     *     per-instance attributes.</li>
-     *     <li>Index: Index buffer (element buffer).</li>
-     *     <li>Uniform: Uniform block storage.</li>
-     *     <li>XferSrcToDst: Transfer buffer, used for uploading data.</li>
-     *     <li>XferDstToSrc: Transfer buffer, used for downloading data.</li>
-     * </ul>
+     * Describes the intended usage a GPU buffer.
      */
-    public static final int
-            BufferType_Vertex = 0,       // vertex buffer
-            BufferType_Index = 1,        // index buffer
-            BufferType_Uniform = 2,      // uniform buffer
-            BufferType_XferSrcToDst = 3, // transfer src only
-            BufferType_XferDstToSrc = 4; // transfer dst only
+    public static final class BufferUsageFlags {
+
+        /**
+         * Vertex buffer (also includes instance buffer).
+         */
+        public static final int kVertex = 1;
+        /**
+         * Index buffer, also known as element buffer.
+         */
+        public static final int kIndex = 1 << 1;
+        /**
+         * Indirect buffer, also known as argument buffer.
+         */
+        public static final int kDrawIndirect = 1 << 2;
+
+        public static final int kXferCpuToGpu = 1 << 3; // transfer src only
+        public static final int kXferGpuToCpu = 1 << 4; // transfer dst only
+
+        /**
+         * Data store will be respecified randomly by Host and Device.
+         * (Sparse read and writes, uniform buffer, staging buffer, etc.)
+         * For VBO, Data store will be respecified once by Host and used at most a frame.
+         * Per-frame updates, VBO, etc.)
+         */
+        public static final int kDynamic = 1 << 5;
+        /**
+         * Data store will be specified by Host once and may be respecified
+         * repeatedly by Device. (Fixed index buffer, etc.)
+         */
+        public static final int kStatic = 1 << 6;
+        public static final int kStream = 1 << 7;
+
+        public static final int kUniform = 1 << 8; // TODO remove, UBO is special buffers
+
+        private BufferUsageFlags() {
+        }
+    }
 
     /**
-     * Provides a pattern regarding the frequency at which a data store will be accessed.
-     * <ul>
-     *     <li>Dynamic: Data store will be respecified randomly by Host and Device.
-     *     (Sparse read and writes, uniform buffer, staging buffer, etc.)
-     *     For VBO, Data store will be respecified once by Host and used at most a frame.
-     *     Per-frame updates, VBO, etc.)</li>
-     *     <li>Static: Data store will be specified by Host once and may be respecified
-     *     repeatedly by Device. (Fixed index buffer, etc.)</li>
-     * </ul>
+     * Shader flags.
      */
-    public static final int
-            AccessPattern_Dynamic = 0,
-            AccessPattern_Static = 1;
+    public static final class ShaderFlags {
 
-    /**
-     * Shader types. Geometry shader and tessellation shaders are removed.
-     */
-    public static final int
-            Vertex_ShaderType = 0,
-            Fragment_ShaderType = 1;
+        public static final int kVertex = 1;
+        public static final int kFragment = 1 << 1;
 
-    /**
-     * Shader flags. Tessellation shaders are removed.
-     */
-    public static final int
-            Vertex_ShaderFlag = 1,
-            Fragment_ShaderFlag = 1 << 1;
+        private ShaderFlags() {
+        }
+    }
 
     public static int colorTypeBytesPerPixel(int ct) {
         return ImageInfo.bytesPerPixel(ct);
@@ -155,7 +194,7 @@ public final class Engine {
                     ImageInfo.COLOR_TYPE_R_16,
                     ImageInfo.COLOR_TYPE_R_F16,
                     ImageInfo.COLOR_TYPE_R_8XXX -> Color.COLOR_CHANNEL_FLAG_RED;
-            default -> throw new IllegalArgumentException(String.valueOf(ct));
+            default -> throw new AssertionError(ct);
         };
     }
 
@@ -199,7 +238,7 @@ public final class Engine {
                     ImageInfo.COLOR_TYPE_ALPHA_F32XXX,
                     ImageInfo.COLOR_TYPE_RG_F16,
                     ImageInfo.COLOR_TYPE_R_F16 -> COLOR_ENCODING_FLOAT;
-            default -> throw new IllegalArgumentException(String.valueOf(ct));
+            default -> throw new AssertionError(ct);
         };
     }
 
@@ -244,7 +283,7 @@ public final class Engine {
                     ImageInfo.COLOR_TYPE_ALPHA_F32XXX,
                     ImageInfo.COLOR_TYPE_RG_F16,
                     ImageInfo.COLOR_TYPE_R_F16 -> CLAMP_TYPE_NONE;
-            default -> throw new IllegalArgumentException(String.valueOf(ct));
+            default -> throw new AssertionError(ct);
         };
     }
 
@@ -254,13 +293,17 @@ public final class Engine {
      * We can't simply use POINTS or LINES, because both OpenGL and Vulkan can only guarantee
      * the rasterization of one pixel in screen coordinates, may or may not anti-aliased.
      */
-    public static final byte
-            PRIMITIVE_TYPE_TRIANGLE_LIST = 0,   // separate triangle
-            PRIMITIVE_TYPE_TRIANGLE_STRIP = 1,  // connected triangle
-            PRIMITIVE_TYPE_POINT_LIST = 2,      // 1 px only
-            PRIMITIVE_TYPE_LINE_LIST = 3,       // 1 px wide only
-            PRIMITIVE_TYPE_LINE_STRIP = 4;      // 1 px wide only
-    public static final byte LAST_PRIMITIVE_TYPE = PRIMITIVE_TYPE_LINE_STRIP;
+    public static final class PrimitiveType {
+
+        public static final byte kTriangleList = 0;     // separate triangle
+        public static final byte kTriangleStrip = 1;    // connected triangle
+        public static final byte kPointList = 2;        // 1 px only
+        public static final byte kLineList = 3;         // 1 px wide only
+        public static final byte kLineStrip = 4;        // 1 px wide only
+
+        private PrimitiveType() {
+        }
+    }
 
     /**
      * Mask formats. Used by the font atlas. Important that these are 0-based.
@@ -344,176 +387,148 @@ public final class Engine {
 
     /**
      * Surface flags shared between the Surface & SurfaceProxy class hierarchies.
-     * Don't abuse the combination of flags or result in unexpected behaviors.
-     *
-     * <ul>
-     * <li>{@link #SURFACE_FLAG_BUDGETED} -
-     *  Indicates whether an allocation should count against a cache budget. Budgeted when
-     *  set, otherwise not budgeted. {@link Texture} and {@link TextureProxy} only.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_LOOSE_FIT} -
-     *  Indicates whether a backing store needs to be an exact match or can be larger than
-     *  is strictly necessary. Loose fit when set, otherwise exact fit.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_MIPMAPPED} -
-     *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
-     *  when set, otherwise mipmaps are not allocated. {@link Texture} and {@link TextureProxy} only.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_RENDERABLE} -
-     *  Used to say whether a surface can be rendered to, whether a texture can be used as
-     *  color attachments. Renderable when set, otherwise not renderable.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_PROTECTED} -
-     *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
-     *  not protected.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_READ_ONLY} -
-     *  Means the pixels in the texture are read-only. {@link Texture} and {@link TextureProxy}
-     *  only.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_SKIP_ALLOCATOR} -
-     *  When set, the proxy will be instantiated outside the allocator (e.g. for proxies that are
-     *  instantiated in on-flush callbacks). Otherwise, {@link ResourceAllocator} should instantiate
-     *  the proxy. {@link SurfaceProxy} only.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_DEFERRED_PROVIDER} -
-     *  For TextureProxies created in a deferred list recording thread it is possible for the
-     *  unique key to be cleared on the backing {@link Texture} while the unique key remains on
-     *  the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
-     *  texture proxy is also always set on the backing {@link Texture}. {@link TextureProxy} only.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_GL_WRAP_DEFAULT_FB} -
-     *  This is a OpenGL only flag. It tells us that the internal render target wraps the OpenGL
-     *  default framebuffer (id=0) that preserved by window. {@link RenderTarget} only.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_MANUAL_MSAA_RESOLVE} -
-     *  This means the render target is multi-sampled, and internally holds a non-msaa texture
-     *  for resolving into. The render target resolves itself by blit-ting into this internal
-     *  texture. (It might or might not has the internal texture access, but if it does, we
-     *  always resolve the render target before accessing this texture's data.) {@link RenderTarget}
-     *  only.
-     * </li>
-     *
-     * <li>{@link #SURFACE_FLAG_VK_WRAP_SECONDARY_CB} -
-     *  This is a Vulkan only flag. It tells us that the internal render target is wrapping a raw
-     *  Vulkan secondary command buffer. {@link RenderTarget} only.
-     * </li>
-     * </ul>
+     * An arbitrary combination of flags may result in unexpected behaviors.
      */
-    public static final int
-            SURFACE_FLAG_NONE = Core.SURFACE_FLAG_NONE,
-            SURFACE_FLAG_BUDGETED = Core.SURFACE_FLAG_BUDGETED,
-            SURFACE_FLAG_LOOSE_FIT = Core.SURFACE_FLAG_LOOSE_FIT,
-            SURFACE_FLAG_MIPMAPPED = Core.SURFACE_FLAG_MIPMAPPED,
-            SURFACE_FLAG_RENDERABLE = Core.SURFACE_FLAG_RENDERABLE,
-            SURFACE_FLAG_PROTECTED = Core.SURFACE_FLAG_PROTECTED,
-            SURFACE_FLAG_READ_ONLY = Core.SURFACE_FLAG_PROTECTED << 1,
-            SURFACE_FLAG_SKIP_ALLOCATOR = Core.SURFACE_FLAG_PROTECTED << 2,
-            SURFACE_FLAG_DEFERRED_PROVIDER = Core.SURFACE_FLAG_PROTECTED << 3,
-            SURFACE_FLAG_GL_WRAP_DEFAULT_FB = Core.SURFACE_FLAG_PROTECTED << 4,
-            SURFACE_FLAG_MANUAL_MSAA_RESOLVE = Core.SURFACE_FLAG_PROTECTED << 5,
-            SURFACE_FLAG_VK_WRAP_SECONDARY_CB = Core.SURFACE_FLAG_PROTECTED << 6;
+    public static final class SurfaceFlags extends Core.SurfaceFlags {
+
+        /**
+         * Means the pixels in the texture are read-only. {@link Texture} and {@link TextureProxy}
+         * only.
+         */
+        public static final int kReadOnly = kProtected << 1;
+        /**
+         * When set, the proxy will be instantiated outside the allocator (e.g. for proxies that are
+         * instantiated in on-flush callbacks). Otherwise, {@link ResourceAllocator} should instantiate
+         * the proxy. {@link SurfaceProxy} only.
+         */
+        public static final int kSkipAllocator = kProtected << 2;
+        /**
+         * For TextureProxies created in a deferred list recording thread it is possible for the
+         * unique key to be cleared on the backing {@link Texture} while the unique key remains on
+         * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
+         * texture proxy is also always set on the backing {@link Texture}. {@link TextureProxy} only.
+         */
+        public static final int kDeferredProvider = kProtected << 3;
+        /**
+         * This is a OpenGL only flag. It tells us that the internal render target wraps the OpenGL
+         * default framebuffer (id=0) that preserved by window. {@link RenderTarget} only.
+         */
+        public static final int kGLWrapDefaultFB = kProtected << 4;
+        /**
+         * This means the render target is multi-sampled, and internally holds a non-msaa texture
+         * for resolving into. The render target resolves itself by blit-ting into this internal
+         * texture. (It might or might not have the internal texture access, but if it does, we
+         * always resolve the render target before accessing this texture's data.) {@link RenderTarget}
+         * only.
+         */
+        public static final int kManualMSAAResolve = kProtected << 5;
+        /**
+         * This is a Vulkan only flag. It tells us that the internal render target is wrapping a raw
+         * Vulkan secondary command buffer. {@link RenderTarget} only.
+         */
+        public static final int kVkWrapSecondaryCB = kProtected << 6;
+
+        private SurfaceFlags() {
+        }
+    }
 
     /**
      * Types used to describe format of vertices in arrays.
      */
-    public static final byte
-            Float_VertexAttribType = 0,
-            Float2_VertexAttribType = 1,
-            Float3_VertexAttribType = 2,
-            Float4_VertexAttribType = 3,
-            Half_VertexAttribType = 4,
-            Half2_VertexAttribType = 5,
-            Half4_VertexAttribType = 6;
-    public static final byte
-            Int2_VertexAttribType = 7,   // vector of 2 32-bit ints
-            Int3_VertexAttribType = 8,   // vector of 3 32-bit ints
-            Int4_VertexAttribType = 9;   // vector of 4 32-bit ints
-    public static final byte
-            Byte_VertexAttribType = 10,   // signed byte
-            Byte2_VertexAttribType = 11,  // vector of 2 8-bit signed bytes
-            Byte4_VertexAttribType = 12,  // vector of 4 8-bit signed bytes
-            UByte_VertexAttribType = 13,  // unsigned byte
-            UByte2_VertexAttribType = 14, // vector of 2 8-bit unsigned bytes
-            UByte4_VertexAttribType = 15; // vector of 4 8-bit unsigned bytes
-    public static final byte
-            UByte_norm_VertexAttribType = 16,  // unsigned byte, e.g. coverage, 0 -> 0.0f, 255 -> 1.0f.
-            UByte4_norm_VertexAttribType = 17; // vector of 4 unsigned bytes, e.g. colors, 0 -> 0.0f, 255 -> 1.0f.
-    public static final byte
-            Short2_VertexAttribType = 18,       // vector of 2 16-bit shorts.
-            Short4_VertexAttribType = 19;       // vector of 4 16-bit shorts.
-    public static final byte
-            UShort2_VertexAttribType = 20,      // vector of 2 unsigned shorts. 0 -> 0, 65535 -> 65535.
-            UShort2_norm_VertexAttribType = 21; // vector of 2 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
-    public static final byte
-            Int_VertexAttribType = 22,
-            UInt_VertexAttribType = 23;
-    public static final byte
-            UShort_norm_VertexAttribType = 24;
-    public static final byte
-            UShort4_norm_VertexAttribType = 25; // vector of 4 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
-    public static final byte Last_VertexAttribType = UShort4_norm_VertexAttribType;
+    public static final class VertexAttribType {
 
-    /**
-     * @return size in bytes
-     */
-    public static int vertexAttribTypeSize(byte type) {
-        switch (type) {
-            case Float_VertexAttribType:
-                return Float.BYTES;
-            case Float2_VertexAttribType:
-                return 2 * Float.BYTES;
-            case Float3_VertexAttribType:
-                return 3 * Float.BYTES;
-            case Float4_VertexAttribType:
-                return 4 * Float.BYTES;
-            case Half_VertexAttribType:
-            case UShort_norm_VertexAttribType:
-                return Short.BYTES;
-            case Half2_VertexAttribType:
-            case Short2_VertexAttribType:
-            case UShort2_VertexAttribType:
-            case UShort2_norm_VertexAttribType:
-                return 2 * Short.BYTES;
-            case Half4_VertexAttribType:
-            case Short4_VertexAttribType:
-            case UShort4_norm_VertexAttribType:
-                return 4 * Short.BYTES;
-            case Int2_VertexAttribType:
-                return 2 * Integer.BYTES;
-            case Int3_VertexAttribType:
-                return 3 * Integer.BYTES;
-            case Int4_VertexAttribType:
-                return 4 * Integer.BYTES;
-            case Byte_VertexAttribType:
-            case UByte_VertexAttribType:
-            case UByte_norm_VertexAttribType:
-                return Byte.BYTES;
-            case Byte2_VertexAttribType:
-            case UByte2_VertexAttribType:
-                return 2 * Byte.BYTES;
-            case Byte4_VertexAttribType:
-            case UByte4_VertexAttribType:
-            case UByte4_norm_VertexAttribType:
-                return 4 * Byte.BYTES;
-            case Int_VertexAttribType:
-            case UInt_VertexAttribType:
-                return Integer.BYTES;
+        public static final byte
+                kFloat = 0,
+                kFloat2 = 1,
+                kFloat3 = 2,
+                kFloat4 = 3,
+                kHalf = 4,
+                kHalf2 = 5,
+                kHalf4 = 6;
+        public static final byte
+                kInt2 = 7,   // vector of 2 32-bit ints
+                kInt3 = 8,   // vector of 3 32-bit ints
+                kInt4 = 9;   // vector of 4 32-bit ints
+        public static final byte
+                kByte = 10,   // signed byte
+                kByte2 = 11,  // vector of 2 8-bit signed bytes
+                kByte4 = 12,  // vector of 4 8-bit signed bytes
+                kUByte = 13,  // unsigned byte
+                kUByte2 = 14, // vector of 2 8-bit unsigned bytes
+                kUByte4 = 15; // vector of 4 8-bit unsigned bytes
+        public static final byte
+                kUByte_norm = 16,  // unsigned byte, e.g. coverage, 0 -> 0.0f, 255 -> 1.0f.
+                kUByte4_norm = 17; // vector of 4 unsigned bytes, e.g. colors, 0 -> 0.0f, 255 -> 1.0f.
+        public static final byte
+                kShort2 = 18,       // vector of 2 16-bit shorts.
+                kShort4 = 19;       // vector of 4 16-bit shorts.
+        public static final byte
+                kUShort2 = 20,      // vector of 2 unsigned shorts. 0 -> 0, 65535 -> 65535.
+                kUShort2_norm = 21; // vector of 2 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
+        public static final byte
+                kInt = 22,
+                kUInt = 23;
+        public static final byte
+                kUShort_norm = 24;
+        public static final byte
+                kUShort4_norm = 25; // vector of 4 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
+        public static final byte kLast = kUShort4_norm;
+
+        private VertexAttribType() {
         }
-        throw new IllegalArgumentException(String.valueOf(type));
+
+        /**
+         * @return size in bytes
+         */
+        public static int size(byte type) {
+            switch (type) {
+                case kFloat:
+                    return Float.BYTES;
+                case kFloat2:
+                    return 2 * Float.BYTES;
+                case kFloat3:
+                    return 3 * Float.BYTES;
+                case kFloat4:
+                    return 4 * Float.BYTES;
+                case kHalf:
+                case kUShort_norm:
+                    return Short.BYTES;
+                case kHalf2:
+                case kShort2:
+                case kUShort2:
+                case kUShort2_norm:
+                    return 2 * Short.BYTES;
+                case kHalf4:
+                case kShort4:
+                case kUShort4_norm:
+                    return 4 * Short.BYTES;
+                case kInt2:
+                    return 2 * Integer.BYTES;
+                case kInt3:
+                    return 3 * Integer.BYTES;
+                case kInt4:
+                    return 4 * Integer.BYTES;
+                case kByte:
+                case kUByte:
+                case kUByte_norm:
+                    return Byte.BYTES;
+                case kByte2:
+                case kUByte2:
+                    return 2 * Byte.BYTES;
+                case kByte4:
+                case kUByte4:
+                case kUByte4_norm:
+                    return 4 * Byte.BYTES;
+                case kInt:
+                case kUInt:
+                    return Integer.BYTES;
+            }
+            throw new AssertionError(type);
+        }
     }
 
     /**
-     * ResourceHandle is an opaque handle to a resource. It's actually a table index.
+     * ResourceHandle is an opaque handle to a resource, actually a table index.
      */
     public static final int INVALID_RESOURCE_HANDLE = -1;
 

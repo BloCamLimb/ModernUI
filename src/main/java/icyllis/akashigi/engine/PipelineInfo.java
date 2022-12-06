@@ -20,6 +20,8 @@ package icyllis.akashigi.engine;
 
 import javax.annotation.concurrent.Immutable;
 
+import static icyllis.akashigi.engine.Engine.SurfaceOrigin;
+
 /**
  * This immutable object contains all information needed to build a pipeline.
  */
@@ -30,34 +32,34 @@ public final class PipelineInfo {
     /**
      * Pipeline flags.
      */
-    public static final int FLAG_NONE = 0;
+    public static final int kNone_Flag = 0;
     /**
      * Cause every pixel to be rasterized that is touched by the triangle anywhere (not just at
      * pixel center). Additionally, if using MSAA, the sample mask will always have 100%
      * coverage.
      * NOTE: The primitive type must be a triangle type.
      */
-    public static final int FLAG_CONSERVATIVE_RASTER = 0x01;
+    public static final int kConservativeRaster_Flag = 0x01;
     /**
      * Draws triangles as outlines.
      */
-    public static final int FLAG_WIREFRAME = 0x02;
+    public static final int kWireframe_Flag = 0x02;
     /**
      * Modifies the vertex shader so that vertices will be positioned at pixel centers.
      */
-    public static final int FLAG_SNAP_TO_PIXELS = 0x04;
+    public static final int kSnapToPixels_Flag = 0x04;
     /**
      * Scissor clip is applied.
      */
-    public static final int FLAG_HAS_SCISSOR_CLIP = 0x08;
+    public static final int kHasScissorClip_Flag = 0x08;
     /**
      * Stencil clip is applied.
      */
-    public static final int FLAG_HAS_STENCIL_CLIP = 0x10;
+    public static final int kHasStencilClip_Flag = 0x10;
     /**
      * Render pass requires a barrier for advanced blending.
      */
-    public static final int FLAG_RENDER_PASS_BLEND_BARRIER = 0x20;
+    public static final int kRenderPassBlendBarrier_Flag = 0x20;
 
     private final BackendFormat mBackendFormat;
     private final int mSampleCount;
@@ -106,8 +108,7 @@ public final class PipelineInfo {
     }
 
     /**
-     * @see Engine#SurfaceOrigin_UpperLeft
-     * @see Engine#SurfaceOrigin_LowerLeft
+     * @see SurfaceOrigin
      */
     public int origin() {
         return mOrigin;
@@ -136,11 +137,11 @@ public final class PipelineInfo {
     }
 
     public boolean hasScissorClip() {
-        return (mFlags & FLAG_HAS_SCISSOR_CLIP) != 0;
+        return (mFlags & kHasScissorClip_Flag) != 0;
     }
 
     public boolean hasStencilClip() {
-        return (mFlags & FLAG_HAS_STENCIL_CLIP) != 0;
+        return (mFlags & kHasStencilClip_Flag) != 0;
     }
 
     public boolean isStencilEnabled() {
@@ -148,6 +149,6 @@ public final class PipelineInfo {
     }
 
     public boolean requireBlendBarrier() {
-        return (mFlags & FLAG_RENDER_PASS_BLEND_BARRIER) != 0;
+        return (mFlags & kRenderPassBlendBarrier_Flag) != 0;
     }
 }

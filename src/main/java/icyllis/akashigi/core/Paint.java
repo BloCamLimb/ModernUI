@@ -23,29 +23,30 @@ import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.GuardedBy;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.util.Objects;
 
 /**
- * A Paint collects all options outside the Canvas clip and Canvas matrix,
- * such as style and color information, applied when drawing geometries and
- * images.
+ * {@code Paint} controls options applied when drawing. {@code Paint} collects
+ * all options outside the {@code Canvas} clip and {@code Canvas} matrix.
+ * such as style and color information, applied to geometries and images.
  * <p>
- * A Paint also collects effects and filters that describe single-pass and
+ * {@code Paint} collects effects and filters that describe single-pass and
  * multiple-pass algorithms that alter the drawing geometry, color, and
- * transparency. For instance, Paint does not directly implement dashing or
- * blur, but contains the objects that do so.
- * <p>
- * Note that multisampling anti-aliasing (MSAA) is always enabled. A Paint
- * object takes up approximately 64 bytes in the heap memory.
+ * transparency. For instance, {@code Paint} does not directly implement
+ * dashing or blur, but contains the objects that do so.
  */
-@SuppressWarnings("unused")
+@SuppressWarnings({"MagicConstant", "unused"})
 public class Paint {
 
     /**
-     * The Style specifies if the primitive being drawn is filled, stroked, or
-     * both (in the same color). The default is FILL.
+     * Set {@code Style} to fill, stroke, or both fill and stroke geometry.
+     * <p>
+     * The stroke and fill share all paint attributes; for instance, they are drawn with the same color.
+     * Use {@link #STROKE_AND_FILL} to avoid hitting the same pixels twice with a stroke draw and
+     * a fill draw. The default is {@link #FILL}.
      */
     @MagicConstant(intValues = {FILL, STROKE, STROKE_AND_FILL, FILL_AND_STROKE})
     @Retention(RetentionPolicy.SOURCE)
@@ -65,11 +66,9 @@ public class Paint {
     public static final int STROKE = 0x01;
 
     /**
-     * Geometry (path) drawn with this style will be both filled and stroked
-     * at the same time, respecting the stroke-related fields on the paint.
-     * This share all paint attributes; for instance, they are drawn
-     * with the same color. Use this to avoid hitting the same pixels twice
-     * with a stroke draw and a fill draw.
+     * Geometry (path) drawn with this style will be both filled and
+     * stroked at the same time, respecting the stroke-related fields on
+     * the paint.
      */
     public static final int STROKE_AND_FILL = 0x02;
     public static final int FILL_AND_STROKE = 0x02; // alias
@@ -77,10 +76,10 @@ public class Paint {
     private static final int STYLE_MASK = 0x03;
 
     /**
-     * The <code>Cap</code> specifies the treatment for the beginning and ending of
-     * stroked lines and paths. The default is ROUND.
+     * The {@code Cap} specifies the treatment for the beginning and ending of
+     * stroked lines and paths. The default is {@link #CAP_ROUND}.
      */
-    @MagicConstant(intValues = {CAP_ROUND, CAP_BUTT, CAP_SQUARE})
+    @MagicConstant(intValues = {CAP_ROUND, CAP_SQUARE, CAP_BUTT})
     @Retention(RetentionPolicy.SOURCE)
     public @interface Cap {
     }
@@ -92,24 +91,24 @@ public class Paint {
     public static final int CAP_ROUND = 0x00;
 
     /**
-     * The stroke ends with the path, and does not project beyond it.
-     */
-    public static final int CAP_BUTT = 0x04;
-
-    /**
      * The stroke projects out as a square, with the center at the end
      * of the path.
      */
-    public static final int CAP_SQUARE = 0x08;
+    public static final int CAP_SQUARE = 0x04;
+
+    /**
+     * The stroke ends with the path, and does not project beyond it.
+     */
+    public static final int CAP_BUTT = 0x08;
 
     private static final int CAP_MASK = 0x0C;
 
     /**
-     * The <code>Join</code> specifies the treatment where lines and curve segments
-     * join on a stroked path. The default is ROUND.
+     * The {@code Join} specifies the treatment where lines and curve segments
+     * join on a stroked path. The default is {@link #JOIN_ROUND}.
      * <p>
-     * Join affects the four corners of a stroked rectangle, and the connected segments in a
-     * stroked path.
+     * {@code Join} affects the four corners of a stroked rectangle, and the connected segments
+     * in a stroked path.
      * <p>
      * Choose miter join to draw sharp corners. Choose round join to draw a circle with a
      * radius equal to the stroke width on top of the corner. Choose bevel join to minimally
@@ -142,8 +141,8 @@ public class Paint {
     private static final int JOIN_MASK = 0x30;
 
     /**
-     * The <code>Align</code> specifies the treatment where the stroke is placed in relation
-     * to the object edge. The default is CENTER.
+     * The {@code Align} specifies the treatment where the stroke is placed in relation
+     * to the object edge. The default is {@link #ALIGN_CENTER}.
      */
     @MagicConstant(intValues = {ALIGN_CENTER, ALIGN_INSIDE, ALIGN_OUTSIDE})
     @Retention(RetentionPolicy.SOURCE)
@@ -167,35 +166,55 @@ public class Paint {
 
     private static final int ALIGN_MASK = 0xC0;
 
-    private static final int BLEND_MODE_SHIFT = 8;
-    private static final int BLEND_MODE_MASK = 0xFF << BLEND_MODE_SHIFT;
-
-    private static final int DEFAULT_FLAGS = FILL | CAP_ROUND | JOIN_ROUND | ALIGN_CENTER |
-            BlendMode.toValue(BlendMode.SRC_OVER) << BLEND_MODE_SHIFT;
+    private static final int ANTI_ALIAS_MASK = 0x100;
+    private static final int DITHER_MASK = 0x200;
 
     // the recycle bin, see take()
-    private static final Paint[] sBag = new Paint[4];
+    private static final Paint[] sBag = new Paint[8];
+    @GuardedBy("sBag")
     private static int sBagSize;
 
-    private float mR;
-    private float mG;
-    private float mB;
-    private float mA;
+    // color components using straight alpha
+    private float mR; // may out of range
+    private float mG; // may out of range
+    private float mB; // may out of range
+    private float mA; // 0..1
 
     private float mWidth;
-    private float mMiter;
-    private float mFeather;
+    private float mMiterLimit;
+    private float mSmoothWidth;
 
+    // optional objects
     private Shader mShader;
+    private Blender mBlender;
     private MaskFilter mMaskFilter;
     private ColorFilter mColorFilter;
     private ImageFilter mImageFilter;
 
-    // bitfield
+    /*
+     * bitfield
+     * |--------|--------|
+     *                 00  FILL
+     *                 01  STROKE
+     *                 10  STROKE_AND_FILL
+     *               00    CAP_ROUND
+     *               01    CAP_SQUARE
+     *               10    CAP_BUTT
+     *             00      JOIN_ROUND
+     *             01      JOIN_BEVEL
+     *             10      JOIN_MITER
+     *           00        ALIGN_CENTER
+     *           01        ALIGN_INSIDE
+     *           10        ALIGN_OUTSET
+     * |--------|--------|
+     *         1           ANTI_ALIAS
+     *        1            DITHER
+     * |--------|--------|
+     */
     private int mFlags;
 
     /**
-     * Creates a new Paint with defaults.
+     * Creates a new Paint with default values.
      *
      * @see #take()
      */
@@ -204,37 +223,34 @@ public class Paint {
     }
 
     /**
-     * Create a new paint, initialized with the attributes in the specified
+     * Create a new Paint, initialized with the contents in the specified
      * paint parameter.
      *
-     * @param paint an existing paint used to initialize the attributes of the
+     * @param paint an existing paint used to initialize the contents of the
      *              new paint
      */
-    public Paint(@Nonnull Paint paint) {
+    public Paint(Paint paint) {
         set(paint);
     }
 
     /**
-     * Returns a reset paint from the shared pool.
-     * <p>
-     * This method is motivated by the restriction on stack-allocated objects in Java.
-     * A {@link #drop()} is expected (not strictly necessary) before a pop operation.
+     * Returns a reset {@code Paint} from the globally shared pool. A {@link #drop()}
+     * is expected (but not strictly necessary) before scope exit.
      * <p>
      * For example:
      * <pre>{@code
-     * @Override
-     * protected void onDraw(Canvas canvas) {
-     *     var paint = Paint.take();
-     *     paint.setColor(mColorA);
-     *     canvas.drawRect(mRectA, paint);
+     * void draw(Canvas canvas) {
+     *     var p = Paint.take();
+     *     p.setColor(mColorA);
+     *     canvas.drawRect(mRectA, p);
      *     // ...
-     *     paint.setColor(mColorB);
-     *     canvas.drawRect(mRectB, paint);
-     *     paint.drop(); // recycle it before method return
+     *     p.setColor(mColorB);
+     *     canvas.drawRect(mRectB, p);
+     *     p.drop();
      * }
      * }</pre>
      *
-     * @return a shared paint object
+     * @return a shared paint
      * @see #drop()
      */
     @Nonnull
@@ -251,89 +267,66 @@ public class Paint {
     }
 
     /**
-     * Release this paint object to the shared pool. Then you may never touch this paint anymore.
+     * Recycles this {@code Paint} to the shared pool.
      *
      * @see #take()
      */
     public final void drop() {
         synchronized (sBag) {
-            if (sBagSize == sBag.length)
-                return;
-            sBag[sBagSize++] = this;
+            if (sBagSize != sBag.length) {
+                sBag[sBagSize++] = this;
+            }
         }
     }
 
     /**
-     * Set all attributes of this paint to their initial values.
+     * Set all contents of this paint to their initial values.
      */
     public final void reset() {
         mR = 0;
         mG = 0;
         mB = 0;
-        mA = 1;
-        mWidth = 4;
-        mMiter = 4;
-        mFeather = 2;
+        mA = 1; // opaque black
+        mWidth = 1;
+        mMiterLimit = 4;
+        mSmoothWidth = 0;
         mShader = null;
+        mBlender = null;
         mMaskFilter = null;
         mColorFilter = null;
         mImageFilter = null;
-        mFlags = DEFAULT_FLAGS;
+        mFlags = ANTI_ALIAS_MASK; // others are implicitly set
     }
 
     /**
-     * Set all attributes of this paint from the specified paint.
+     * Set all contents of this paint from the specified paint.
      *
      * @param paint the paint to set this paint from
      */
     public final void set(Paint paint) {
-        mR = paint.mR;
-        mG = paint.mG;
-        mB = paint.mB;
-        mA = paint.mA;
-        mWidth = paint.mWidth;
-        mMiter = paint.mMiter;
-        mFeather = paint.mFeather;
-        mShader = paint.mShader;
-        mMaskFilter = paint.mMaskFilter;
-        mColorFilter = paint.mColorFilter;
-        mImageFilter = paint.mImageFilter;
-        mFlags = paint.mFlags;
+        if (paint == null) {
+            reset();
+        } else {
+            mR = paint.mR;
+            mG = paint.mG;
+            mB = paint.mB;
+            mA = paint.mA;
+            mWidth = paint.mWidth;
+            mMiterLimit = paint.mMiterLimit;
+            mSmoothWidth = paint.mSmoothWidth;
+            mShader = paint.mShader;
+            mBlender = paint.mBlender;
+            mMaskFilter = paint.mMaskFilter;
+            mColorFilter = paint.mColorFilter;
+            mImageFilter = paint.mImageFilter;
+            mFlags = paint.mFlags;
+        }
     }
 
     /**
-     * Set the paint's solid color. Note that the color is an int containing alpha
-     * as well as r,g,b. This 32bit value is not premultiplied, meaning that
-     * its alpha can be any value, regardless of the values of r,g,b.
-     * See the Color class for more details.
-     *
-     * @param color the new straight color (including alpha) to set in the paint.
-     */
-    public final void setColor(@ColorInt int color) {
-        mR = ((color >> 16) & 0xff) / 255.0f;
-        mG = ((color >> 8) & 0xff) / 255.0f;
-        mB = (color & 0xff) / 255.0f;
-        mA = (color >>> 24) / 255.0f;
-    }
-
-    /**
-     * Sets alpha and RGB used when stroking and filling. The color is four floating
-     * point values, un-premultiplied, in the sRGB color space.
-     *
-     * @param color un-premultiplied RGBA
-     */
-    public final void setColor(Color color) {
-        mR = color.mR;
-        mG = color.mG;
-        mB = color.mB;
-        mA = color.mA;
-    }
-
-    /**
-     * Return the paint's color in sRGB. Note that the color is a 32bit value
-     * containing alpha as well as r,g,b. This 32bit value is not premultiplied,
-     * meaning that its alpha can be any value, regardless of the values of
-     * r,g,b. See the Color class for more details.
+     * Return the paint's solid color in sRGB. Note that the color is a 32-bit value
+     * containing alpha as well as r,g,b. This 32-bit value is not premultiplied,
+     * meaning that its alpha can be any value, regardless of the values of r,g,b.
      *
      * @return the paint's color (and alpha).
      */
@@ -346,36 +339,26 @@ public class Paint {
     }
 
     /**
-     * Retrieves alpha and RGB, un-premultiplied, as four floating point values. RGB are
-     * extended sRGB values (sRGB gamut, and encoded with the sRGB transfer function).
+     * Set the paint's solid color in sRGB. Note that the color is a 32-bit value
+     * containing alpha as well as r,g,b. This 32-bit value is not premultiplied,
+     * meaning that its alpha can be any value, regardless of the values of r,g,b.
      *
-     * @param color un-premultiplied RGBA
+     * @param color the new color (including alpha) to set in the paint.
      */
-    public final void getColor(Color color) {
-        color.set(mR, mG, mB, mA);
+    public final void setColor(@ColorInt int color) {
+        mR = ((color >> 16) & 0xff) / 255.0f;
+        mG = ((color >> 8) & 0xff) / 255.0f;
+        mB = (color & 0xff) / 255.0f;
+        mA = (color >>> 24) / 255.0f;
     }
 
     /**
-     * Helper to setColor(), that only assigns the color's alpha value,
-     * leaving its r,g,b values unchanged. Results are undefined if the alpha
-     * value is outside the range [0..255].
+     * Retrieves alpha/opacity from the color used when stroking and filling.
      *
-     * @param a set the alpha component [0..255] of the paint's color.
+     * @return alpha ranging from zero, fully transparent, to one, fully opaque
      */
-    public final void setAlpha(int a) {
-        mA = a / 255.0f;
-    }
-
-    /**
-     * Replaces alpha, leaving RGB unchanged. <code>a</code> is a value from 0.0 to 1.0,
-     * results are undefined if the <code>a</code> is outside the range [0..1].
-     * <code>a</code> set to zero makes color fully transparent;
-     * <code>a</code> set to 1.0 makes color fully opaque.
-     *
-     * @param a alpha component [0..1] of color
-     */
-    public final void setAlpha(float a) {
-        mA = a;
+    public final float getAlphaf() {
+        return mA;
     }
 
     /**
@@ -390,16 +373,29 @@ public class Paint {
     }
 
     /**
-     * Retrieves alpha/opacity from the color used when stroking and filling.
+     * Replaces alpha, leaving RGB unchanged.
+     * <code>a</code> is a value from 0.0 to 1.0.
+     * <code>a</code> set to 0.0 makes color fully transparent;
+     * <code>a</code> set to 1.0 makes color fully opaque.
      *
-     * @return alpha ranging from zero, fully transparent, to one, fully opaque
+     * @param a the alpha component [0..1] of the paint's color
      */
-    public final float alpha() {
-        return mA;
+    public final void setAlphaf(float a) {
+        mA = MathUtil.clamp(a, 0.0f, 1.0f);
     }
 
     /**
-     * Returns the value of the red component in the range \([0..1]\).
+     * Helper to setColor(), that only assigns the color's alpha value,
+     * leaving its r,g,b values unchanged.
+     *
+     * @param a the alpha component [0..255] of the paint's color
+     */
+    public final void setAlpha(int a) {
+        mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
+    }
+
+    /**
+     * Returns the value of the red component.
      *
      * @see #alpha()
      * @see #green()
@@ -410,7 +406,7 @@ public class Paint {
     }
 
     /**
-     * Returns the value of the green component in the range \([0..1]\).
+     * Returns the value of the green component.
      *
      * @see #alpha()
      * @see #red()
@@ -421,7 +417,7 @@ public class Paint {
     }
 
     /**
-     * Returns the value of the blue component in the range \([0..1]\).
+     * Returns the value of the blue component.
      *
      * @see #alpha()
      * @see #red()
@@ -432,38 +428,46 @@ public class Paint {
     }
 
     /**
+     * Returns the value of the alpha component.
+     *
+     * @see #alpha()
+     * @see #red()
+     * @see #green()
+     */
+    public final float alpha() {
+        return mA;
+    }
+
+    /**
      * Helper to setColor(), that only assigns the color's <code>r,g,b</code> values,
-     * leaving its alpha value unchanged. Results are undefined if the any component
-     * value is outside the range [0..255].
+     * leaving its alpha value unchanged.
      *
      * @param r the new red component (0..255) of the paint's color.
      * @param g the new green component (0..255) of the paint's color.
      * @param b the new blue component (0..255) of the paint's color.
      */
     public final void setRGB(int r, int g, int b) {
-        mR = r / 255.0f;
-        mG = g / 255.0f;
-        mB = b / 255.0f;
+        mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
+        mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
+        mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
     }
 
     /**
      * Helper to setColor(), that only assigns the color's <code>r,g,b</code> values,
-     * leaving its alpha value unchanged. Results are undefined if the any component
-     * value is outside the range [0..1].
+     * leaving its alpha value unchanged.
      *
      * @param r the new red component (0..1) of the paint's color.
      * @param g the new green component (0..1) of the paint's color.
      * @param b the new blue component (0..1) of the paint's color.
      */
     public final void setRGB(float r, float g, float b) {
-        mR = r;
-        mG = g;
-        mB = b;
+        mR = MathUtil.clamp(r, 0.0f, 1.0f);
+        mG = MathUtil.clamp(g, 0.0f, 1.0f);
+        mB = MathUtil.clamp(b, 0.0f, 1.0f);
     }
 
     /**
      * Helper to setColor(), that takes <code>r,g,b,a</code> and constructs the color int.
-     * Results are undefined if the any component value is outside the range [0..255].
      *
      * @param r the new red component (0..255) of the paint's color.
      * @param g the new green component (0..255) of the paint's color.
@@ -471,15 +475,14 @@ public class Paint {
      * @param a the new alpha component (0..255) of the paint's color.
      */
     public final void setRGBA(int r, int g, int b, int a) {
-        mR = r / 255.0f;
-        mG = g / 255.0f;
-        mB = b / 255.0f;
-        mA = a / 255.0f;
+        mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
+        mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
+        mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
+        mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
     }
 
     /**
      * Helper to setColor(), that takes floating point <code>r,g,b,a</code> values.
-     * Results are undefined if the any component value is outside the range [0..1].
      *
      * @param r the new red component (0..1) of the paint's color.
      * @param g the new green component (0..1) of the paint's color.
@@ -487,10 +490,10 @@ public class Paint {
      * @param a the new alpha component (0..1) of the paint's color.
      */
     public final void setRGBA(float r, float g, float b, float a) {
-        mR = r;
-        mG = g;
-        mB = b;
-        mA = a;
+        mR = MathUtil.clamp(r, 0.0f, 1.0f);
+        mG = MathUtil.clamp(g, 0.0f, 1.0f);
+        mB = MathUtil.clamp(b, 0.0f, 1.0f);
+        mA = MathUtil.clamp(a, 0.0f, 1.0f);
     }
 
     /**
@@ -502,10 +505,10 @@ public class Paint {
      * @param b the new blue component (0..255) of the paint's color.
      */
     public final void setARGB(int a, int r, int g, int b) {
-        mR = r / 255.0f;
-        mG = g / 255.0f;
-        mB = b / 255.0f;
-        mA = a / 255.0f;
+        mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
+        mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
+        mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
+        mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
     }
 
     /**
@@ -517,25 +520,80 @@ public class Paint {
      * @param a the new alpha component (0..1) of the paint's color.
      */
     public final void setARGB(float a, float r, float g, float b) {
-        mR = r;
-        mG = g;
-        mB = b;
-        mA = a;
+        mR = MathUtil.clamp(r, 0.0f, 1.0f);
+        mG = MathUtil.clamp(g, 0.0f, 1.0f);
+        mB = MathUtil.clamp(b, 0.0f, 1.0f);
+        mA = MathUtil.clamp(a, 0.0f, 1.0f);
     }
 
     /**
-     * Return the paint's style, used for controlling how primitives' geometries
-     * are interpreted, except where noted.
+     * Returns true if distance-to-edge anti-aliasing should be used.
+     * If true, the AA step is calculated in screen space.
+     * The default value is true.
+     *
+     * @return anti-aliasing state
+     * @see #setAntiAlias(boolean)
+     */
+    public final boolean isAntiAlias() {
+        return (mFlags & ANTI_ALIAS_MASK) != 0;
+    }
+
+    /**
+     * Sets a hint that indicates if distance-to-edge anti-aliasing should be used.
+     * If true, the AA step is calculated in screen space.
+     * The default value is true.
+     *
+     * @param aa setting for anti-aliasing
+     * @see #setSmoothWidth(float)
+     */
+    public final void setAntiAlias(boolean aa) {
+        if (aa) {
+            mFlags |= ANTI_ALIAS_MASK;
+        } else {
+            mFlags &= ~ANTI_ALIAS_MASK;
+        }
+    }
+
+    /**
+     * Returns true if color error may be distributed to smooth color transition.
+     * An implementation may use a look-up table to do dithering. The default value is false.
+     *
+     * @return dithering state
+     * @see #setDither(boolean)
+     */
+    public final boolean isDither() {
+        return (mFlags & DITHER_MASK) != 0;
+    }
+
+    /**
+     * Sets a hint that indicates if color error may be distributed to smooth color transition.
+     * An implementation may use a look-up table to do dithering. The default value is false.
+     *
+     * @param dither setting for dithering
+     */
+    public final void setDither(boolean dither) {
+        if (dither) {
+            mFlags |= DITHER_MASK;
+        } else {
+            mFlags &= ~DITHER_MASK;
+        }
+    }
+
+    /**
+     * Returns the paint's style, used for controlling how primitives' geometries
+     * are interpreted, except where noted. The default is {@link #FILL}.
      *
      * @return the paint's style setting (fill, stroke or both)
+     * @see #setStyle(int)
      */
+    @Style
     public final int getStyle() {
         return mFlags & STYLE_MASK;
     }
 
     /**
-     * Set the paint's style, used for controlling how primitives' geometries
-     * are interpreted, except where noted.
+     * Sets the paint's style, used for controlling how primitives' geometries
+     * are interpreted, except where noted. The default is {@link #FILL}.
      *
      * @param style the new style to set in the paint
      */
@@ -544,7 +602,7 @@ public class Paint {
     }
 
     /**
-     * Set paint's style to STROKE if true, or FILL if false.
+     * Sets paint's style to STROKE if true, or FILL if false.
      *
      * @param stroke true to stroke shapes, false to fill shapes
      */
@@ -553,18 +611,22 @@ public class Paint {
     }
 
     /**
-     * Return the paint's Cap, controlling how the start and end of stroked
+     * Returns the paint's cap type, controlling how the start and end of stroked
      * lines and paths are treated, except where noted.
+     * The default is {@link #CAP_ROUND}.
      *
      * @return the line cap style for the paint
+     * @see #setStrokeCap(int)
      */
+    @Cap
     public final int getStrokeCap() {
         return mFlags & CAP_MASK;
     }
 
     /**
-     * Set the paint's Cap, controlling how the start and end of stroked
+     * Sets the paint's cap type, controlling how the start and end of stroked
      * lines and paths are treated, except where noted.
+     * The default is {@link #CAP_ROUND}.
      *
      * @param cap set the paint's line cap style
      */
@@ -573,16 +635,18 @@ public class Paint {
     }
 
     /**
-     * Return the paint's stroke join type.
+     * Returns the paint's stroke join type. The default is {@link #JOIN_ROUND}.
      *
      * @return the paint's Join
+     * @see #setStrokeJoin(int)
      */
+    @Join
     public final int getStrokeJoin() {
         return mFlags & JOIN_MASK;
     }
 
     /**
-     * Set the paint's Join.
+     * Sets the paint's stroke join type. The default is {@link #JOIN_ROUND}.
      *
      * @param join set the paint's Join
      */
@@ -591,16 +655,18 @@ public class Paint {
     }
 
     /**
-     * Return the paint's stroke align type.
+     * Returns the paint's stroke align type. The default is {@link #ALIGN_CENTER}.
      *
      * @return the paint's Align
+     * @see #setStrokeAlign(int)
      */
+    @Align
     public final int getStrokeAlign() {
         return mFlags & ALIGN_MASK;
     }
 
     /**
-     * Set the paint's Align.
+     * Sets the paint's stroke align type. The default is {@link #ALIGN_CENTER}.
      *
      * @param align set the paint's Align
      */
@@ -609,24 +675,21 @@ public class Paint {
     }
 
     /**
-     * Return the brush width/thickness/weight/size for stroking. The default value is 4.0 px.
-     * The half of the stroke width will be used as the stroke radius by analytic geometry.
-     * <p>
-     * A value of 0 will draw nothing.
+     * Returns the thickness of the pen for stroking shapes. The default value is 1.0 px.
      *
-     * @return the paint's stroke width
+     * @return the paint's stroke width; zero for hairline, greater than zero for pen thickness
+     * @see #setStrokeWidth(float)
      */
     public final float getStrokeWidth() {
         return mWidth;
     }
 
     /**
-     * Set the brush width/thickness/weight/size for stroking. The default value is 4.0 px.
-     * The half of the stroke width will be used as the stroke radius by analytic geometry.
-     * <p>
-     * Negative values are treated as 0, and a value of 0 will draw nothing.
+     * Sets the thickness of the pen for stroking shapes. The default value is 1.0 px.
+     * A stroke width of zero is treated as "hairline" width. Hairlines are always exactly one
+     * pixel wide in screen space (their thickness does not change as the canvas is scaled).
      *
-     * @param width set the paint's stroke width
+     * @param width set the paint's stroke width; zero for hairline, greater than zero for pen thickness
      */
     public final void setStrokeWidth(float width) {
         mWidth = Math.max(width, 0);
@@ -637,56 +700,45 @@ public class Paint {
      * The default value is 4.0 px.
      *
      * @return zero and greater miter limit
+     * @see #setStrokeMiter(float)
      */
     public final float getStrokeMiter() {
-        return mMiter;
+        return mMiterLimit;
     }
 
     /**
      * Sets the miter limit at which a sharp corner is drawn beveled.
      * The default value is 4.0 px.
-     * <p>
-     * Valid values are zero and greater, negative values are treated as 0.
      *
      * @param miter zero and greater miter limit
      */
     public final void setStrokeMiter(float miter) {
-        mMiter = Math.max(miter, 0);
+        mMiterLimit = Math.max(miter, 0);
     }
 
     /**
-     * Return the current feather radius. The default value is 2.0 px.
-     * <p>
-     * Feather effect is used to smooth or blur the edge of primitives by analytic geometry.
-     * You can also think of it as the softness (100% minus hardness) of the brush. Where
-     * setting feather to the half of the stroke width is seen as hardness=0%. For example,
-     * the default stroke width is 4.0 px, feather radius is 2.0 px and line cap is ROUND,
-     * this will be equal to Photoshop's soft round brush whose hardness=0%. This will not
-     * affect the anti-aliasing. Note that there is no limit to the feather radius.
+     * Returns the current smooth width. The default value is 0.0 px.
      *
-     * @return the paint's feather radius, zero or greater
-     * @see #setFeather(float)
+     * @return the paint's smooth width, zero or greater
+     * @see #setSmoothWidth(float)
      */
-    public final float getFeather() {
-        return mFeather;
+    public final float getSmoothWidth() {
+        return mSmoothWidth;
     }
 
     /**
-     * Set the feather radius in pixels for this paint. The default value is 2.0 px.
+     * Sets the smooth width in pixels for this paint. The default value is 0.0 px.
      * <p>
-     * Feather effect is used to smooth or blur the edge of primitives by analytic geometry.
-     * You can also think of it as the softness (100% minus hardness) of the brush. Where
-     * setting feather to the half of the stroke width is seen as hardness=0%. For example,
-     * the default stroke width is 4.0 px, feather radius is 2.0 px and line cap is ROUND,
-     * this will be equal to Photoshop's soft round brush whose hardness=0%. This will not
-     * affect the anti-aliasing. Note that there is no limit to the feather radius.
-     * <p>
-     * Negative values are treated as 0.
+     * A non-zero smooth width applies to Hermite interpolation of geometries' edges
+     * in local space. Otherwise, if anti-aliasing is requested, the width will be
+     * resulted from the L2-norm of derivatives in screen space. Thus, the
+     * anti-aliasing will be ignored when smooth width is greater than zero.
      *
-     * @param feather the paint's feather radius, zero or greater
+     * @param smooth the paint's smooth width, zero or greater
+     * @see #setAntiAlias(boolean)
      */
-    public final void setFeather(float feather) {
-        mFeather = Math.max(feather, 0);
+    public final void setSmoothWidth(float smooth) {
+        mSmoothWidth = Math.max(smooth, 0);
     }
 
     /**
@@ -738,12 +790,7 @@ public class Paint {
      * @see BlendMode
      */
     public final void setBlendMode(@Nullable BlendMode blendMode) {
-        if (blendMode != null) {
-            int value = BlendMode.toValue(blendMode) << BLEND_MODE_SHIFT;
-            mFlags = (mFlags & ~BLEND_MODE_MASK) | value;
-        } else {
-            mFlags = (mFlags & ~BLEND_MODE_MASK) | (DEFAULT_FLAGS | BLEND_MODE_MASK);
-        }
+        //TODO
     }
 
     /**
@@ -753,7 +800,7 @@ public class Paint {
      */
     @Nonnull
     public final BlendMode getBlendMode() {
-        return BlendMode.fromValue((mFlags & BLEND_MODE_MASK) >> BLEND_MODE_SHIFT);
+        return BlendMode.SRC_OVER;
     }
 
     /**
@@ -762,7 +809,7 @@ public class Paint {
      * @return true if BlendMode is SRC_OVER
      */
     public final boolean isSrcOver() {
-        return (mFlags & BLEND_MODE_MASK) == DEFAULT_FLAGS;
+        return mBlender == null;
     }
 
     /**
@@ -870,10 +917,10 @@ public class Paint {
             // since we're stroked, outset the rect by the radius (and join type, caps)
             float multiplier = 1;
             if (getStrokeJoin() == JOIN_MITER) {
-                multiplier = Math.max(multiplier, mMiter);
+                multiplier = Math.max(multiplier, mMiterLimit);
             }
             if (getStrokeCap() == CAP_SQUARE) {
-                multiplier = Math.max(multiplier, MathUtil.SQRT_OF_TWO);
+                multiplier = Math.max(multiplier, MathUtil.SQRT2);
             }
             // width or radius
             float stroke = mWidth * multiplier;
@@ -895,43 +942,44 @@ public class Paint {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        Paint paint = (Paint) o;
-        if (mFlags != paint.mFlags) return false;
-        if (Float.floatToIntBits(paint.mR) != Float.floatToIntBits(mR)) return false;
-        if (Float.floatToIntBits(paint.mG) != Float.floatToIntBits(mG)) return false;
-        if (Float.floatToIntBits(paint.mB) != Float.floatToIntBits(mB)) return false;
-        if (Float.floatToIntBits(paint.mA) != Float.floatToIntBits(mA)) return false;
-        if (Float.floatToIntBits(paint.mWidth) != Float.floatToIntBits(mWidth)) return false;
-        if (Float.floatToIntBits(paint.mMiter) != Float.floatToIntBits(mMiter)) return false;
-        if (Float.floatToIntBits(paint.mFeather) != Float.floatToIntBits(mFeather)) return false;
-        if (!Objects.equals(mShader, paint.mShader)) return false;
-        if (!Objects.equals(mMaskFilter, paint.mMaskFilter)) return false;
-        if (!Objects.equals(mColorFilter, paint.mColorFilter)) return false;
-        return Objects.equals(mImageFilter, paint.mImageFilter);
+        if (!(o instanceof Paint paint)) return false;
+        return mFlags == paint.mFlags &&
+                mR == paint.mR &&
+                mG == paint.mG &&
+                mB == paint.mB &&
+                mA == paint.mA &&
+                mWidth == paint.mWidth &&
+                mMiterLimit == paint.mMiterLimit &&
+                mSmoothWidth == paint.mSmoothWidth &&
+                Objects.equals(mShader, paint.mShader) &&
+                Objects.equals(mBlender, paint.mBlender) &&
+                Objects.equals(mMaskFilter, paint.mMaskFilter) &&
+                Objects.equals(mColorFilter, paint.mColorFilter) &&
+                Objects.equals(mImageFilter, paint.mImageFilter);
     }
 
     @Override
     public int hashCode() {
-        int result = Float.floatToIntBits(mR);
-        result = 31 * result + Float.floatToIntBits(mG);
-        result = 31 * result + Float.floatToIntBits(mB);
-        result = 31 * result + Float.floatToIntBits(mA);
-        result = 31 * result + Float.floatToIntBits(mWidth);
-        result = 31 * result + Float.floatToIntBits(mMiter);
-        result = 31 * result + Float.floatToIntBits(mFeather);
-        result = 31 * result + (mShader != null ? mShader.hashCode() : 0);
-        result = 31 * result + (mMaskFilter != null ? mMaskFilter.hashCode() : 0);
-        result = 31 * result + (mColorFilter != null ? mColorFilter.hashCode() : 0);
-        result = 31 * result + (mImageFilter != null ? mImageFilter.hashCode() : 0);
-        result = 31 * result + mFlags;
+        int result = mFlags;
+        result = 31 * result + Float.hashCode(mR);
+        result = 31 * result + Float.hashCode(mG);
+        result = 31 * result + Float.hashCode(mB);
+        result = 31 * result + Float.hashCode(mA);
+        result = 31 * result + Float.hashCode(mWidth);
+        result = 31 * result + Float.hashCode(mMiterLimit);
+        result = 31 * result + Float.hashCode(mSmoothWidth);
+        result = 31 * result + Objects.hashCode(mShader);
+        result = 31 * result + Objects.hashCode(mBlender);
+        result = 31 * result + Objects.hashCode(mMaskFilter);
+        result = 31 * result + Objects.hashCode(mColorFilter);
+        result = 31 * result + Objects.hashCode(mImageFilter);
         return result;
     }
 
     @Override
     public String toString() {
         StringBuilder s = new StringBuilder("Paint{");
-        s.append("mColor=(");
+        s.append("mColor4f=(");
         s.append(mR);
         s.append(", ");
         s.append(mG);
@@ -952,10 +1000,10 @@ public class Paint {
         s.append(", mCap=");
         if (cap == CAP_ROUND) {
             s.append("ROUND");
-        } else if (cap == CAP_BUTT) {
-            s.append("BUTT");
-        } else {
+        } else if (cap == CAP_SQUARE) {
             s.append("SQUARE");
+        } else {
+            s.append("BUTT");
         }
         int join = getStrokeJoin();
         s.append(", mJoin=");
@@ -975,20 +1023,24 @@ public class Paint {
         } else {
             s.append("OUTSIDE");
         }
+        s.append(", mAntiAlias=");
+        s.append(isAntiAlias());
+        s.append(", mDither=");
+        s.append(isDither());
         s.append(", mStrokeWidth=");
         s.append(mWidth);
         s.append(", mStrokeMiter=");
-        s.append(mMiter);
-        s.append(", mFeather=");
-        s.append(mFeather);
+        s.append(mMiterLimit);
+        s.append(", mSmoothWidth=");
+        s.append(mSmoothWidth);
         s.append(", mShader=");
         s.append(mShader);
-        s.append(", mColorFilter=");
-        s.append(mColorFilter);
-        s.append(", mBlendMode=");
-        s.append(getBlendMode());
+        s.append(", mBlender=");
+        s.append(mBlender);
         s.append(", mMaskFilter=");
         s.append(mMaskFilter);
+        s.append(", mColorFilter=");
+        s.append(mColorFilter);
         s.append(", mImageFilter=");
         s.append(mImageFilter);
         s.append('}');

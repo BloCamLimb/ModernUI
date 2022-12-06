@@ -88,7 +88,7 @@ public abstract class Texture extends Resource implements Surface {
      * @return true if this surface has mipmaps and have been allocated
      */
     public final boolean isMipmapped() {
-        return (mFlags & SURFACE_FLAG_MIPMAPPED) != 0;
+        return (mFlags & SurfaceFlags.kMipmapped) != 0;
     }
 
     /**
@@ -99,41 +99,41 @@ public abstract class Texture extends Resource implements Surface {
      * @return true if pixels in this surface are read-only
      */
     public final boolean isReadOnly() {
-        return (mFlags & SURFACE_FLAG_READ_ONLY) != 0;
+        return (mFlags & SurfaceFlags.kReadOnly) != 0;
     }
 
     /**
      * @return true if we are working with protected content
      */
     public final boolean isProtected() {
-        return (mFlags & SURFACE_FLAG_PROTECTED) != 0;
+        return (mFlags & SurfaceFlags.kProtected) != 0;
     }
 
     /**
      * Surface flags, but no render target level flags.
      *
      * <ul>
-     * <li>{@link Engine#SURFACE_FLAG_BUDGETED} -
+     * <li>{@link SurfaceFlags#kBudgeted} -
      *  Indicates whether an allocation should count against a cache budget. Budgeted when
      *  set, otherwise not budgeted. {@link Texture} only.
      * </li>
      *
-     * <li>{@link Engine#SURFACE_FLAG_MIPMAPPED} -
+     * <li>{@link SurfaceFlags#kMipmapped} -
      *  Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
      *  when set, otherwise mipmaps are not allocated. {@link Texture} only.
      * </li>
      *
-     * <li>{@link Engine#SURFACE_FLAG_RENDERABLE} -
+     * <li>{@link SurfaceFlags#kRenderable} -
      *  Used to say whether a surface can be rendered to, whether a texture can be used as
      *  color attachments. Renderable when set, otherwise not renderable.
      * </li>
      *
-     * <li>{@link Engine#SURFACE_FLAG_PROTECTED} -
+     * <li>{@link SurfaceFlags#kProtected} -
      *  Used to say whether texture is backed by protected memory. Protected when set, otherwise
      *  not protected.
      * </li>
      *
-     * <li>{@link Engine#SURFACE_FLAG_READ_ONLY} -
+     * <li>{@link SurfaceFlags#kReadOnly} -
      *  Means the pixels in the texture are read-only. {@link Texture} only.
      * </li>
      *
@@ -143,7 +143,7 @@ public abstract class Texture extends Resource implements Surface {
     public final int getSurfaceFlags() {
         int flags = mFlags;
         if (getBudgetType() == BUDGET_TYPE_BUDGETED) {
-            flags |= SURFACE_FLAG_BUDGETED;
+            flags |= SurfaceFlags.kBudgeted;
         }
         return flags;
     }
@@ -312,9 +312,9 @@ public abstract class Texture extends Resource implements Surface {
             mWidth = width;
             mHeight = height;
             mFormat = format.getFormatKey();
-            mFlags = (surfaceFlags & (SURFACE_FLAG_MIPMAPPED |
-                    SURFACE_FLAG_RENDERABLE |
-                    SURFACE_FLAG_PROTECTED)) | (sampleCount << 16);
+            mFlags = (surfaceFlags & (SurfaceFlags.kMipmapped |
+                    SurfaceFlags.kRenderable |
+                    SurfaceFlags.kProtected)) | (sampleCount << 16);
             return this;
         }
 

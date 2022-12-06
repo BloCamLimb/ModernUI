@@ -25,7 +25,7 @@ import icyllis.akashigi.engine.CpuBuffer;
 
 import javax.annotation.Nullable;
 
-import static icyllis.akashigi.engine.Engine.*;
+import static icyllis.akashigi.engine.Engine.BufferUsageFlags;
 import static icyllis.akashigi.opengl.GLCore.*;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -41,10 +41,9 @@ public final class GLBuffer extends Buffer {
 
     private GLBuffer(GLServer server,
                      int size,
-                     int bufferType,
-                     int accessPattern,
+                     int usage,
                      int buffer) {
-        super(server, size, bufferType, accessPattern);
+        super(server, size, usage);
         mBuffer = buffer;
 
         registerWithCache(true);
@@ -54,29 +53,18 @@ public final class GLBuffer extends Buffer {
     @SharedPtr
     public static GLBuffer make(GLServer server,
                                 int size,
-                                int bufferType,
-                                int accessPattern) {
+                                int usage) {
         assert (size > 0);
 
         int allocFlags = 0;
-        switch (bufferType) {
-            case BufferType_Vertex, BufferType_Index -> {
-                assert (accessPattern == AccessPattern_Static
-                        || accessPattern == AccessPattern_Dynamic);
-                allocFlags |= GL_DYNAMIC_STORAGE_BIT;
-            }
-            case BufferType_Uniform -> {
-                assert (accessPattern == AccessPattern_Dynamic);
-                allocFlags |= GL_DYNAMIC_STORAGE_BIT;
-            }
-            case BufferType_XferSrcToDst -> {
-                assert (accessPattern == AccessPattern_Dynamic);
-                allocFlags |= GL_MAP_WRITE_BIT;
-            }
-            case BufferType_XferDstToSrc -> {
-                assert (accessPattern == AccessPattern_Dynamic);
-                allocFlags |= GL_MAP_READ_BIT;
-            }
+        if ((usage & (BufferUsageFlags.kVertex | BufferUsageFlags.kIndex | BufferUsageFlags.kUniform)) != 0) {
+            allocFlags |= GL_DYNAMIC_STORAGE_BIT;
+        }
+        if ((usage & BufferUsageFlags.kXferCpuToGpu) != 0) {
+            allocFlags |= GL_MAP_WRITE_BIT;
+        }
+        if ((usage & BufferUsageFlags.kXferGpuToCpu) != 0) {
+            allocFlags |= GL_MAP_READ_BIT;
         }
 
         int buffer = glCreateBuffers();
@@ -94,7 +82,7 @@ public final class GLBuffer extends Buffer {
             }
         }
 
-        return new GLBuffer(server, size, bufferType, accessPattern, buffer);
+        return new GLBuffer(server, size, usage, buffer);
     }
 
     public int getBufferID() {
@@ -161,7 +149,7 @@ public final class GLBuffer extends Buffer {
             mMappedBuffer = NULL;
         } else {
             assert (mode == LockMode_WriteDiscard);
-            if (accessPattern() != AccessPattern_Static) {
+            if ((mUsage & BufferUsageFlags.kStatic) != 0) {
                 glInvalidateBufferSubData(mBuffer, offset, size);
             }
             assert (mStagingBuffer != null);
@@ -186,7 +174,7 @@ public final class GLBuffer extends Buffer {
     protected boolean onUpdateData(long data, int offset, int size) {
         assert (getServer().getContext().isOnOwnerThread());
         assert (mBuffer != 0);
-        if (accessPattern() != AccessPattern_Static) {
+        if ((mUsage & BufferUsageFlags.kStatic) != 0) {
             glInvalidateBufferSubData(mBuffer, offset, size);
         }
         doUploadData(data, offset, size);

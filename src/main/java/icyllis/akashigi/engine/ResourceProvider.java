@@ -91,23 +91,23 @@ public final class ResourceProvider {
      * Finds or creates a texture that matches the descriptor. The texture's format will always
      * match the request. The contents of the texture are undefined.
      * <p>
-     * When {@link Engine#SURFACE_FLAG_BUDGETED} is set, the texture will count against the resource
-     * cache budget. If {@link Engine#SURFACE_FLAG_LOOSE_FIT} is also set, it's always budgeted.
+     * When {@link SurfaceFlags#kBudgeted} is set, the texture will count against the resource
+     * cache budget. If {@link SurfaceFlags#kLooseFit} is also set, it's always budgeted.
      * <p>
-     * When {@link Engine#SURFACE_FLAG_LOOSE_FIT} is set, the method returns a potentially loose fit
+     * When {@link SurfaceFlags#kLooseFit} is set, the method returns a potentially loose fit
      * texture that approximately matches the descriptor. Will be at least as large in width and
-     * height as desc specifies. In this case, {@link Engine#SURFACE_FLAG_MIPMAPPED} and
-     * {@link Engine#SURFACE_FLAG_BUDGETED} are ignored. Otherwise, the method returns an exact fit
+     * height as desc specifies. In this case, {@link SurfaceFlags#kMipmapped} and
+     * {@link SurfaceFlags#kBudgeted} are ignored. Otherwise, the method returns an exact fit
      * texture.
      * <p>
-     * When {@link Engine#SURFACE_FLAG_MIPMAPPED} is set, the texture will be allocated with mipmaps.
-     * If {@link Engine#SURFACE_FLAG_LOOSE_FIT} is also set, it always has no mipmaps.
+     * When {@link SurfaceFlags#kMipmapped} is set, the texture will be allocated with mipmaps.
+     * If {@link SurfaceFlags#kLooseFit} is also set, it always has no mipmaps.
      * <p>
-     * When {@link Engine#SURFACE_FLAG_RENDERABLE} is set, the texture can be rendered to and
+     * When {@link SurfaceFlags#kRenderable} is set, the texture can be rendered to and
      * {@link Texture#getRenderTarget()} will return nonnull. The <code>sampleCount</code> specifies
      * the number of samples to use for rendering.
      * <p>
-     * When {@link Engine#SURFACE_FLAG_PROTECTED} is set, the texture will be created as protected.
+     * When {@link SurfaceFlags#kProtected} is set, the texture will be created as protected.
      *
      * @param width        the desired width of the texture to be created
      * @param height       the desired height of the texture to be created
@@ -117,11 +117,11 @@ public final class ResourceProvider {
      * @param surfaceFlags the combination of the above flags
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see Engine#SURFACE_FLAG_BUDGETED
-     * @see Engine#SURFACE_FLAG_LOOSE_FIT
-     * @see Engine#SURFACE_FLAG_MIPMAPPED
-     * @see Engine#SURFACE_FLAG_RENDERABLE
-     * @see Engine#SURFACE_FLAG_PROTECTED
+     * @see SurfaceFlags#kBudgeted
+     * @see SurfaceFlags#kLooseFit
+     * @see SurfaceFlags#kMipmapped
+     * @see SurfaceFlags#kRenderable
+     * @see SurfaceFlags#kProtected
      */
     @Nullable
     @SharedPtr
@@ -144,17 +144,17 @@ public final class ResourceProvider {
             return null;
         }
 
-        if ((surfaceFlags & SURFACE_FLAG_LOOSE_FIT) != 0) {
+        if ((surfaceFlags & SurfaceFlags.kLooseFit) != 0) {
             width = makeApprox(width);
             height = makeApprox(height);
-            surfaceFlags &= SURFACE_FLAG_RENDERABLE | SURFACE_FLAG_PROTECTED;
-            surfaceFlags |= SURFACE_FLAG_BUDGETED;
+            surfaceFlags &= SurfaceFlags.kRenderable | SurfaceFlags.kProtected;
+            surfaceFlags |= SurfaceFlags.kBudgeted;
         }
 
         final Texture texture = findAndRefScratchTexture(width, height, format,
                 sampleCount, surfaceFlags, label);
         if (texture != null) {
-            if ((surfaceFlags & SURFACE_FLAG_BUDGETED) == 0) {
+            if ((surfaceFlags & SurfaceFlags.kBudgeted) == 0) {
                 texture.makeBudgeted(false);
             }
             return texture;
@@ -182,11 +182,11 @@ public final class ResourceProvider {
      * @param pixels       the pointer to the texel data for base level image
      * @param label        the label for debugging purposes, can be empty to clear the label,
      *                     or null to leave the label unchanged
-     * @see Engine#SURFACE_FLAG_BUDGETED
-     * @see Engine#SURFACE_FLAG_LOOSE_FIT
-     * @see Engine#SURFACE_FLAG_MIPMAPPED
-     * @see Engine#SURFACE_FLAG_RENDERABLE
-     * @see Engine#SURFACE_FLAG_PROTECTED
+     * @see SurfaceFlags#kBudgeted
+     * @see SurfaceFlags#kLooseFit
+     * @see SurfaceFlags#kMipmapped
+     * @see SurfaceFlags#kRenderable
+     * @see SurfaceFlags#kProtected
      */
     @Nullable
     @SharedPtr
@@ -268,9 +268,9 @@ public final class ResourceProvider {
      *
      * @param label the label for debugging purposes, can be empty to clear the label,
      *              or null to leave the label unchanged
-     * @see Engine#SURFACE_FLAG_MIPMAPPED
-     * @see Engine#SURFACE_FLAG_RENDERABLE
-     * @see Engine#SURFACE_FLAG_PROTECTED
+     * @see SurfaceFlags#kMipmapped
+     * @see SurfaceFlags#kRenderable
+     * @see SurfaceFlags#kProtected
      */
     @Nullable
     @SharedPtr
@@ -323,14 +323,14 @@ public final class ResourceProvider {
     /**
      * Returns a buffer.
      *
-     * @param size          minimum size of buffer to return.
-     * @param intendedType  hint to the graphics subsystem about what the buffer will be used for.
-     * @param accessPattern hint to the graphics subsystem about how the data will be accessed.
+     * @param size  minimum size of buffer to return.
+     * @param usage hint to the graphics subsystem about what the buffer will be used for.
      * @return the buffer if successful, otherwise nullptr.
+     * @see BufferUsageFlags
      */
     @Nullable
     @SharedPtr
-    public Buffer createBuffer(int size, int intendedType, int accessPattern) {
+    public Buffer createBuffer(int size, int usage) {
         return null;
     }
 

@@ -23,17 +23,17 @@ import javax.annotation.Nonnull;
 public final class MatrixType extends Type {
 
     private final ScalarType mComponentType;
-    private final byte mColumns;
+    private final byte mCols;
     private final byte mRows;
 
-    MatrixType(String name, String desc, Type componentType, int columns, int rows) {
+    MatrixType(String name, String desc, Type componentType, int cols, int rows) {
         super(name, desc, TYPE_KIND_MATRIX);
         assert (rows >= 2 && rows <= 4);
-        assert (columns >= 2 && columns <= 4);
-        assert (desc.equals(componentType.desc() + columns + "" + rows));
-        assert (name.equals(componentType.name() + columns + "x" + rows));
+        assert (cols >= 2 && cols <= 4);
+        assert (desc.equals(componentType.desc() + cols + "" + rows));
+        assert (name.equals(componentType.name() + cols + "x" + rows));
         mComponentType = (ScalarType) componentType;
-        mColumns = (byte) columns;
+        mCols = (byte) cols;
         mRows = (byte) rows;
     }
 
@@ -49,8 +49,8 @@ public final class MatrixType extends Type {
     }
 
     @Override
-    public int columns() {
-        return mColumns;
+    public int cols() {
+        return mCols;
     }
 
     @Override
@@ -59,12 +59,7 @@ public final class MatrixType extends Type {
     }
 
     @Override
-    public int bitWidth() {
-        return mComponentType.bitWidth();
-    }
-
-    @Override
-    public int slotCount() {
-        return mColumns * mRows;
+    public int getBitWidth() {
+        return mComponentType.getBitWidth();
     }
 }

@@ -23,7 +23,7 @@ import icyllis.akashigi.engine.*;
 
 import java.util.ArrayList;
 
-import static icyllis.akashigi.engine.Engine.*;
+import static icyllis.akashigi.engine.Engine.ShaderFlags;
 
 public class VaryingHandler {
 
@@ -86,7 +86,7 @@ public class VaryingHandler {
     public final void addVarying(String name,
                                  Varying varying,
                                  int interpolation) {
-        assert (varying.mType != SLType.Void);
+        assert (varying.mType != SLType.kVoid);
         assert (SLType.isFloatType(varying.mType) || interpolation == INTERPOLATION_MUST_BE_FLAT);
         var v = new VaryingInfo();
 
@@ -96,11 +96,11 @@ public class VaryingHandler {
         v.mVisibility = 0;
         if (varying.isInVertexShader()) {
             varying.mVsOut = v.mVsOut;
-            v.mVisibility |= Vertex_ShaderFlag;
+            v.mVisibility |= ShaderFlags.kVertex;
         }
         if (varying.isInFragmentShader()) {
             varying.mFsIn = v.mVsOut;
-            v.mVisibility |= Fragment_ShaderFlag;
+            v.mVisibility |= ShaderFlags.kFragment;
         }
         mVaryings.add(v);
     }
@@ -122,7 +122,7 @@ public class VaryingHandler {
     public final void addPassThroughAttribute(GeometryProcessor.Attribute attr,
                                               String output,
                                               int interpolation) {
-        assert (attr.dstType() != SLType.Void);
+        assert (attr.dstType() != SLType.kVoid);
         assert (!output.isEmpty());
         Varying v = new Varying(attr.dstType());
         addVarying(attr.name(), v, interpolation);
@@ -149,11 +149,11 @@ public class VaryingHandler {
         for (var v : mVaryings) {
             String layoutQualifier = "location = " + locationIndex;
             String modifier = v.mIsFlat ? "flat" : mDefaultInterpolationModifier;
-            if ((v.mVisibility & Vertex_ShaderFlag) != 0) {
+            if ((v.mVisibility & ShaderFlags.kVertex) != 0) {
                 mVertexOutputs.add(new ShaderVar(v.mVsOut, v.mType, ShaderVar.TypeModifier_Out,
                         ShaderVar.NonArray, layoutQualifier, modifier));
             }
-            if ((v.mVisibility & Fragment_ShaderFlag) != 0) {
+            if ((v.mVisibility & ShaderFlags.kFragment) != 0) {
                 String fsIn = v.mVsOut;
                 mFragInputs.add(new ShaderVar(fsIn, v.mType, ShaderVar.TypeModifier_In,
                         ShaderVar.NonArray, layoutQualifier, modifier));

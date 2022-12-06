@@ -21,7 +21,7 @@ package icyllis.akashigi.opengl;
 import icyllis.akashigi.core.*;
 import icyllis.akashigi.engine.*;
 
-import static icyllis.akashigi.engine.Engine.*;
+import static icyllis.akashigi.engine.Engine.PrimitiveType;
 import static icyllis.akashigi.opengl.GLCore.*;
 
 public final class GLOpsRenderPass extends OpsRenderPass {
@@ -98,11 +98,11 @@ public final class GLOpsRenderPass extends OpsRenderPass {
             return false;
         }
         mPrimitiveType = switch (pipelineInfo.primitiveType()) {
-            case PRIMITIVE_TYPE_TRIANGLE_LIST -> GL_TRIANGLES;
-            case PRIMITIVE_TYPE_TRIANGLE_STRIP -> GL_TRIANGLE_STRIP;
-            case PRIMITIVE_TYPE_POINT_LIST -> GL_POINTS;
-            case PRIMITIVE_TYPE_LINE_LIST -> GL_LINES;
-            case PRIMITIVE_TYPE_LINE_STRIP -> GL_LINE_STRIP;
+            case PrimitiveType.kTriangleList -> GL_TRIANGLES;
+            case PrimitiveType.kTriangleStrip -> GL_TRIANGLE_STRIP;
+            case PrimitiveType.kPointList -> GL_POINTS;
+            case PrimitiveType.kLineList -> GL_LINES;
+            case PrimitiveType.kLineStrip -> GL_LINE_STRIP;
             default -> throw new IllegalStateException();
         };
 

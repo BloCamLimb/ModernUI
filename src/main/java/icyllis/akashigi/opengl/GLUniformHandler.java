@@ -111,12 +111,12 @@ public class GLUniformHandler extends UniformHandler {
 
         var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,
-                SLType.Sampler2D,
+                SLType.kSampler2D,
                 ShaderVar.TypeModifier_Uniform,
                 ShaderVar.NonArray,
                 layoutQualifier,
                 "");
-        tempInfo.mVisibility = Engine.Fragment_ShaderFlag;
+        tempInfo.mVisibility = Engine.ShaderFlags.kFragment;
         tempInfo.mOwner = null;
         tempInfo.mRawName = name;
 
@@ -169,7 +169,7 @@ public class GLUniformHandler extends UniformHandler {
         }
 
         for (var sampler : mSamplers) {
-            assert (sampler.mVariable.getType() == SLType.Sampler2D);
+            assert (sampler.mVariable.getType() == SLType.kSampler2D);
             if ((sampler.mVisibility & visibility) != 0) {
                 sampler.mVariable.appendDecl(out);
                 out.append(";\n");

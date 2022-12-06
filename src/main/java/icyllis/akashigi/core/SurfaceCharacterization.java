@@ -25,6 +25,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
+import static icyllis.akashigi.engine.Engine.BackendApi;
+
 /**
  * A surface characterization contains all the information Engine requires to make its internal
  * rendering decisions. When passed into a {@link DeferredListRecorder} it will copy the
@@ -91,8 +93,8 @@ public final class SurfaceCharacterization {
         assert !mMipmapped || mTexturable;
         assert !mTexturable || !mGLWrapDefaultFramebuffer;
         int backend = mBackendFormat.getBackend();
-        assert !mGLWrapDefaultFramebuffer || backend == Engine.OPENGL;
-        assert (!mVkSecondaryCommandBuffer && !mVkSupportInputAttachment) || backend == Engine.VULKAN;
+        assert !mGLWrapDefaultFramebuffer || backend == BackendApi.kOpenGL;
+        assert (!mVkSecondaryCommandBuffer && !mVkSupportInputAttachment) || backend == BackendApi.kVulkan;
         assert !mVkSecondaryCommandBuffer || !mVkSupportInputAttachment;
         assert !mTexturable || !mVkSecondaryCommandBuffer;
 
@@ -249,7 +251,7 @@ public final class SurfaceCharacterization {
         }
 
         if (mVkSupportInputAttachment) {
-            if (texture.getBackend() != Engine.VULKAN) {
+            if (texture.getBackend() != BackendApi.kVulkan) {
                 return false;
             }
             VkImageInfo vkInfo = new VkImageInfo();

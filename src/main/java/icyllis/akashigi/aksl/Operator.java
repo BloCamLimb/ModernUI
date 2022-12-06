@@ -409,10 +409,10 @@ public enum Operator {
                 return false;
             }
             // Convert component type to compound.
-            outTypes[0] = outTypes[0].toCompound(context, left.columns(), left.rows());
-            outTypes[1] = outTypes[1].toCompound(context, right.columns(), right.rows());
-            int leftColumns = left.columns(), leftRows = left.rows();
-            int rightColumns = right.columns(), rightRows = right.rows();
+            outTypes[0] = outTypes[0].toCompound(context, left.cols(), left.rows());
+            outTypes[1] = outTypes[1].toCompound(context, right.cols(), right.rows());
+            int leftColumns = left.cols(), leftRows = left.rows();
+            int rightColumns = right.cols(), rightRows = right.rows();
             if (right.isVector()) {
                 // `matrix * vector` treats the vector as a column vector; we need to transpose it.
                 int t = leftColumns;
@@ -426,7 +426,7 @@ public enum Operator {
                 // The result was a column vector. Transpose it back to a row.
                 outTypes[2] = outTypes[2].toCompound(context, leftRows, rightColumns);
             }
-            if (isAssignment && (outTypes[2].columns() != leftColumns ||
+            if (isAssignment && (outTypes[2].cols() != leftColumns ||
                     outTypes[2].rows() != leftRows)) {
                 return false;
             }
@@ -443,9 +443,9 @@ public enum Operator {
                 return false;
             }
             // Convert component type to compound.
-            outTypes[0] = outTypes[0].toCompound(context, left.columns(), left.rows());
+            outTypes[0] = outTypes[0].toCompound(context, left.cols(), left.rows());
             if (!isRelational()) {
-                outTypes[2] = outTypes[2].toCompound(context, left.columns(), left.rows());
+                outTypes[2] = outTypes[2].toCompound(context, left.cols(), left.rows());
             }
             return true;
         }
@@ -459,9 +459,9 @@ public enum Operator {
                 return false;
             }
             // Convert component type to compound.
-            outTypes[1] = outTypes[1].toCompound(context, right.columns(), right.rows());
+            outTypes[1] = outTypes[1].toCompound(context, right.cols(), right.rows());
             if (!isRelational()) {
-                outTypes[2] = outTypes[2].toCompound(context, right.columns(), right.rows());
+                outTypes[2] = outTypes[2].toCompound(context, right.cols(), right.rows());
             }
             return true;
         }

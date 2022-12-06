@@ -39,10 +39,11 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Objects;
 
-import static icyllis.akashigi.engine.Engine.*;
-import static org.lwjgl.system.MemoryUtil.memAddress;
+import static icyllis.akashigi.engine.Engine.SurfaceFlags;
+import static org.lwjgl.system.MemoryUtil.*;
 
 public class TestManagedResource {
 
@@ -76,7 +77,7 @@ public class TestManagedResource {
 
         pw.println("quickModPow: " + MathUtil.quickModPow(95959595, 87878787, 998244353));
 
-        pw.println("BinaryFormats: " + Arrays.toString(((GLCaps)dContext.getCaps()).mProgramBinaryFormats));
+        pw.println("BinaryFormats: " + Arrays.toString(((GLCaps) dContext.getCaps()).mProgramBinaryFormats));
 
         if (dContext.getCaps().isFormatTexturable(
                 GLBackendFormat.make(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT))) {
@@ -84,9 +85,8 @@ public class TestManagedResource {
         }
 
         Swizzle.make("rgb1");
+        //noinspection unused
         int sampler = SamplerState.make(SamplerState.FILTER_MODE_NEAREST, SamplerState.MIPMAP_MODE_NONE);
-
-        pw.println("Linear 0.5 to SRGB: " + 0f * Float.POSITIVE_INFINITY);
 
         testTexture(pw, dContext);
 
@@ -99,15 +99,16 @@ public class TestManagedResource {
 
         GLServer server = (GLServer) dContext.getServer();
         GLPipelineStateCache pipelineStateCache = server.getPipelineBuilder();
+        @SharedPtr
         TextureProxy proxy2 = dContext.getProxyProvider().createRenderTextureProxy(
                 GLBackendFormat.make(GLCore.GL_RGBA8),
-                800, 800, 4, SURFACE_FLAG_BUDGETED |
-                        SURFACE_FLAG_RENDERABLE
+                800, 800, 4,
+                SurfaceFlags.kBudgeted | SurfaceFlags.kRenderable
         );
         GLPipelineState pipelineState = pipelineStateCache.findOrCreatePipelineState(
                 new PipelineInfo(new SurfaceProxyView(proxy2), new RoundRectProcessor(true),
                         null, null, null, null,
-                        PipelineInfo.FLAG_NONE));
+                        PipelineInfo.kNone_Flag));
         try (proxy2) {
             pw.println(proxy2);
         }
@@ -158,10 +159,9 @@ public class TestManagedResource {
             Texture texture = dContext.getServer().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1,
-                    SURFACE_FLAG_MIPMAPPED |
-                            SURFACE_FLAG_BUDGETED |
-                            SURFACE_FLAG_RENDERABLE,
+                    1, SurfaceFlags.kMipmapped |
+                            SurfaceFlags.kBudgeted |
+                            SurfaceFlags.kRenderable,
                     "MyTexture");
             if (texture != null) {
                 pw.println(texture);
@@ -171,19 +171,18 @@ public class TestManagedResource {
             texture = dContext.getResourceProvider().createTexture(
                     x[0], y[0],
                     GLBackendFormat.make(GLCore.GL_RGBA8),
-                    1, SURFACE_FLAG_MIPMAPPED |
-                            SURFACE_FLAG_BUDGETED |
-                            SURFACE_FLAG_RENDERABLE,
+                    1, SurfaceFlags.kMipmapped |
+                            SurfaceFlags.kBudgeted |
+                            SurfaceFlags.kRenderable,
                     ImageInfo.COLOR_TYPE_RGBA_8888,
                     ImageInfo.COLOR_TYPE_RGBA_8888,
                     0,
-                    MemoryUtil.memAddress(pixels),
+                    memAddress(pixels),
                     null);
             if (texture != null) {
                 pw.println(texture); // same texture
                 texture.unref();
             }
-
         } catch (IOException e) {
             e.printStackTrace();
         } finally {
@@ -322,7 +321,7 @@ public class TestManagedResource {
             if (image != 0) {
                 STBImage.nstbi_image_free(image);
             }
-            MemoryUtil.memFree(buffer);
+            memFree(buffer);
         }
     }
 }

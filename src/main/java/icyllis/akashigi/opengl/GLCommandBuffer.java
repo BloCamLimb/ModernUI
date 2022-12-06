@@ -20,7 +20,6 @@ package icyllis.akashigi.opengl;
 
 import icyllis.akashigi.core.RefCnt;
 import icyllis.akashigi.core.SharedPtr;
-import icyllis.akashigi.engine.Engine;
 import icyllis.akashigi.engine.SamplerState;
 import org.lwjgl.system.MemoryUtil;
 
@@ -87,25 +86,25 @@ public final class GLCommandBuffer {
     }
 
     void resetStates(int states) {
-        if ((states & GLBackendState_RenderTarget) != 0) {
+        if ((states & GLBackendState.kRenderTarget) != 0) {
             mHWFramebuffer = 0;
             mHWRenderTarget = RefCnt.move(mHWRenderTarget);
         }
 
-        if ((states & GLBackendState_Pipeline) != 0) {
+        if ((states & GLBackendState.kPipeline) != 0) {
             mHWPipeline = RefCnt.move(mHWPipeline);
             mHWProgram = 0;
             mHWVertexArray = 0;
         }
 
-        if ((states & GLBackendState_Texture) != 0) {
+        if ((states & GLBackendState.kTexture) != 0) {
             Arrays.fill(mHWTextureBindings, null);
             for (int i = 0, e = mHWTextureBindings.length; i < e; i++) {
                 mHWTextureSamplers[i] = RefCnt.move(mHWTextureSamplers[i]);
             }
         }
 
-        if ((states & GLBackendState_View) != 0) {
+        if ((states & GLBackendState.kView) != 0) {
             mHWScissorTest = TriState_Unknown;
             mHWScissorX = -1;
             mHWScissorY = -1;
@@ -115,7 +114,7 @@ public final class GLCommandBuffer {
             mHWViewportHeight = -1;
         }
 
-        if ((states & GLBackendState_Misc) != 0) {
+        if ((states & GLBackendState.kMisc) != 0) {
             mHWColorWrite = TriState_Unknown;
         }
     }
@@ -142,8 +141,7 @@ public final class GLCommandBuffer {
      * @param width  the effective width of color attachment
      * @param height the effective height of color attachment
      * @param origin the surface origin
-     * @see Engine#SurfaceOrigin_UpperLeft
-     * @see Engine#SurfaceOrigin_LowerLeft
+     * @see SurfaceOrigin
      */
     public void flushScissorRect(int width, int height, int origin,
                                  int scissorLeft, int scissorTop,
@@ -155,10 +153,10 @@ public final class GLCommandBuffer {
                 scissorWidth >= 0 && scissorWidth <= width &&
                 scissorHeight >= 0 && scissorHeight <= height);
         final int scissorY;
-        if (origin == SurfaceOrigin_UpperLeft) {
+        if (origin == SurfaceOrigin.kUpperLeft) {
             scissorY = scissorTop;
         } else {
-            assert (origin == SurfaceOrigin_LowerLeft);
+            assert (origin == SurfaceOrigin.kLowerLeft);
             scissorY = height - scissorBottom;
         }
         assert (scissorY >= 0);

@@ -807,7 +807,7 @@ public final class Color {
      * Converts a linear RGB color to a luminance value.
      */
     public static float luminance(float r, float g, float b) {
-        return 0.2126f * r + 0.7152f * g + 0.0722f + b;
+        return 0.2126f * r + 0.7152f * g + 0.0722f * b;
     }
 
     /**

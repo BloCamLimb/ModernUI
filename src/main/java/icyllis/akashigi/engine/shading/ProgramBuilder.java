@@ -164,8 +164,8 @@ public abstract class ProgramBuilder {
         assert (mProjectionUniform == INVALID_RESOURCE_HANDLE);
         mProjectionUniform = uniformHandler().addUniform(
                 null,
-                Vertex_ShaderFlag,
-                SLType.Vec4,
+                ShaderFlags.kVertex,
+                SLType.kFloat4,
                 UniformHandler.PROJECTION_NAME);
 
         mFS.codeAppendf("// Stage %d, %s\n", mStageIndex, geomProc.name());

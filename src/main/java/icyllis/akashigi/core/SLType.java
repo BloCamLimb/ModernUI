@@ -21,73 +21,90 @@ package icyllis.akashigi.core;
 import javax.annotation.Nonnull;
 
 /**
- * Types of shader-language-specific boxed variables we can create. Shared constants.
+ * Types of shader-language-specific boxed variables we can create, shared constants.
  */
 public final class SLType {
 
     public static final byte
-            Void            = 0,
-            Bool            = 1,
-            BVec2           = 2,
-            BVec3           = 3,
-            BVec4           = 4,
-            Int             = 5,
-            IVec2           = 6,
-            IVec3           = 7,
-            IVec4           = 8,
-            UInt            = 9,
-            UVec2           = 10,
-            UVec3           = 11,
-            UVec4           = 12,
-            Float           = 13,
-            Vec2            = 14,
-            Vec3            = 15,
-            Vec4            = 16,
-            Mat2            = 17,
-            Mat3            = 18,
-            Mat4            = 19,
-            Sampler2D       = 20,
-            Texture2D       = 21,
-            Sampler         = 22,
-            SubpassInput    = 23;
-    public static final byte Last = SubpassInput;
+            kVoid = 0,
+            kBool = 1,
+            kBool2 = 2,
+            kBool3 = 3,
+            kBool4 = 4,
+            kShort = 5,
+            kShort2 = 6,
+            kShort3 = 7,
+            kShort4 = 8,
+            kUShort = 9,
+            kUShort2 = 10,
+            kUShort3 = 11,
+            kUShort4 = 12,
+            kFloat = 13,
+            kFloat2 = 14,
+            kFloat3 = 15,
+            kFloat4 = 16,
+            kFloat2x2 = 17,
+            kFloat3x3 = 18,
+            kFloat4x4 = 19,
+            kHalf = 20,
+            kHalf2 = 21,
+            kHalf3 = 22,
+            kHalf4 = 23,
+            kHalf2x2 = 24,
+            kHalf3x3 = 25,
+            kHalf4x4 = 26,
+            kInt = 27,
+            kInt2 = 28,
+            kInt3 = 29,
+            kInt4 = 30,
+            kUInt = 31,
+            kUInt2 = 32,
+            kUInt3 = 33,
+            kUInt4 = 34,
+            kSampler2D = 35,
+            kTexture2D = 36,
+            kSampler = 37,
+            kSubpassInput = 38;
+    public static final byte kLast = kSubpassInput;
 
     // Debug tool.
     public static boolean checkSLType(byte type) {
-        return type >= 0 && type <= Last;
+        return type >= 0 && type <= kLast;
     }
+
+    //TODO update all methods to new version
 
     /**
      * Is the shading language type float (including vectors/matrices)?
      */
     public static boolean isFloatType(byte type) {
         switch (type) {
-            case Float:
-            case Vec2:
-            case Vec3:
-            case Vec4:
-            case Mat2:
-            case Mat3:
-            case Mat4:
+            case kFloat:
+            case kFloat2:
+            case kFloat3:
+            case kFloat4:
+            case kFloat2x2:
+            case kFloat3x3:
+            case kFloat4x4:
                 return true;
 
-            case Void:
-            case Sampler2D:
-            case Bool:
-            case BVec2:
-            case BVec3:
-            case BVec4:
-            case Int:
-            case IVec2:
-            case IVec3:
-            case IVec4:
-            case UInt:
-            case UVec2:
-            case UVec3:
-            case UVec4:
-            case Texture2D:
-            case Sampler:
-            case SubpassInput:
+            case kVoid:
+            case kSampler2D:
+            case kBool:
+            case kBool2:
+            case kBool3:
+            case kBool4:
+            case kInt:
+            case kInt2:
+            case kInt3:
+            case kInt4:
+            case kUInt:
+            case kUInt2:
+            case kUInt3:
+            case kUInt4:
+            case kTexture2D:
+            case kSampler:
+            case kSubpassInput:
                 return false;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -98,32 +115,32 @@ public final class SLType {
      */
     public static boolean isIntegralType(byte type) {
         switch (type) {
-            case Int:
-            case IVec2:
-            case IVec3:
-            case IVec4:
-            case UInt:
-            case UVec2:
-            case UVec3:
-            case UVec4:
+            case kInt:
+            case kInt2:
+            case kInt3:
+            case kInt4:
+            case kUInt:
+            case kUInt2:
+            case kUInt3:
+            case kUInt4:
                 return true;
 
-            case Float:
-            case Vec2:
-            case Vec3:
-            case Vec4:
-            case Mat2:
-            case Mat3:
-            case Mat4:
-            case Void:
-            case Sampler2D:
-            case Bool:
-            case BVec2:
-            case BVec3:
-            case BVec4:
-            case Texture2D:
-            case Sampler:
-            case SubpassInput:
+            case kFloat:
+            case kFloat2:
+            case kFloat3:
+            case kFloat4:
+            case kFloat2x2:
+            case kFloat3x3:
+            case kFloat4x4:
+            case kVoid:
+            case kSampler2D:
+            case kBool:
+            case kBool2:
+            case kBool3:
+            case kBool4:
+            case kTexture2D:
+            case kSampler:
+            case kSubpassInput:
                 return false;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -134,32 +151,32 @@ public final class SLType {
      */
     public static boolean isBooleanType(byte type) {
         switch (type) {
-            case Bool:
-            case BVec2:
-            case BVec3:
-            case BVec4:
+            case kBool:
+            case kBool2:
+            case kBool3:
+            case kBool4:
                 return true;
 
-            case Float:
-            case Vec2:
-            case Vec3:
-            case Vec4:
-            case Mat2:
-            case Mat3:
-            case Mat4:
-            case Void:
-            case Sampler2D:
-            case Int:
-            case IVec2:
-            case IVec3:
-            case IVec4:
-            case UInt:
-            case UVec2:
-            case UVec3:
-            case UVec4:
-            case Texture2D:
-            case Sampler:
-            case SubpassInput:
+            case kFloat:
+            case kFloat2:
+            case kFloat3:
+            case kFloat4:
+            case kFloat2x2:
+            case kFloat3x3:
+            case kFloat4x4:
+            case kVoid:
+            case kSampler2D:
+            case kInt:
+            case kInt2:
+            case kInt3:
+            case kInt4:
+            case kUInt:
+            case kUInt2:
+            case kUInt3:
+            case kUInt4:
+            case kTexture2D:
+            case kSampler:
+            case kSubpassInput:
                 return false;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -177,38 +194,38 @@ public final class SLType {
      */
     public static int vectorDim(byte type) {
         switch (type) {
-            case Bool:
-            case Int:
-            case UInt:
-            case Float:
+            case kBool:
+            case kInt:
+            case kUInt:
+            case kFloat:
                 return 1;
 
-            case BVec2:
-            case IVec2:
-            case UVec2:
-            case Vec2:
+            case kBool2:
+            case kInt2:
+            case kUInt2:
+            case kFloat2:
                 return 2;
 
-            case BVec3:
-            case IVec3:
-            case UVec3:
-            case Vec3:
+            case kBool3:
+            case kInt3:
+            case kUInt3:
+            case kFloat3:
                 return 3;
 
-            case BVec4:
-            case IVec4:
-            case UVec4:
-            case Vec4:
+            case kBool4:
+            case kInt4:
+            case kUInt4:
+            case kFloat4:
                 return 4;
 
-            case Mat2:
-            case Mat3:
-            case Mat4:
-            case Void:
-            case Sampler2D:
-            case Texture2D:
-            case Sampler:
-            case SubpassInput:
+            case kFloat2x2:
+            case kFloat3x3:
+            case kFloat4x4:
+            case kVoid:
+            case kSampler2D:
+            case kTexture2D:
+            case kSampler:
+            case kSubpassInput:
                 return -1;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -219,36 +236,36 @@ public final class SLType {
      */
     public static int matrixOrder(byte type) {
         switch (type) {
-            case Mat2:
+            case kFloat2x2:
                 return 2;
 
-            case Mat3:
+            case kFloat3x3:
                 return 3;
 
-            case Mat4:
+            case kFloat4x4:
                 return 4;
 
-            case Void:
-            case Bool:
-            case BVec2:
-            case BVec3:
-            case BVec4:
-            case Int:
-            case IVec2:
-            case IVec3:
-            case IVec4:
-            case UInt:
-            case UVec2:
-            case UVec3:
-            case UVec4:
-            case Float:
-            case Vec2:
-            case Vec3:
-            case Vec4:
-            case Sampler2D:
-            case Texture2D:
-            case Sampler:
-            case SubpassInput:
+            case kVoid:
+            case kBool:
+            case kBool2:
+            case kBool3:
+            case kBool4:
+            case kInt:
+            case kInt2:
+            case kInt3:
+            case kInt4:
+            case kUInt:
+            case kUInt2:
+            case kUInt3:
+            case kUInt4:
+            case kFloat:
+            case kFloat2:
+            case kFloat3:
+            case kFloat4:
+            case kSampler2D:
+            case kTexture2D:
+            case kSampler:
+            case kSubpassInput:
                 return -1;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -256,32 +273,32 @@ public final class SLType {
 
     public static boolean isCombinedSamplerType(byte type) {
         switch (type) {
-            case Sampler2D:
+            case kSampler2D:
                 return true;
 
-            case Void:
-            case Float:
-            case Vec2:
-            case Vec3:
-            case Vec4:
-            case Mat2:
-            case Mat3:
-            case Mat4:
-            case Int:
-            case IVec2:
-            case IVec3:
-            case IVec4:
-            case UInt:
-            case UVec2:
-            case UVec3:
-            case UVec4:
-            case Bool:
-            case BVec2:
-            case BVec3:
-            case BVec4:
-            case Texture2D:
-            case Sampler:
-            case SubpassInput:
+            case kVoid:
+            case kFloat:
+            case kFloat2:
+            case kFloat3:
+            case kFloat4:
+            case kFloat2x2:
+            case kFloat3x3:
+            case kFloat4x4:
+            case kInt:
+            case kInt2:
+            case kInt3:
+            case kInt4:
+            case kUInt:
+            case kUInt2:
+            case kUInt3:
+            case kUInt4:
+            case kBool:
+            case kBool2:
+            case kBool3:
+            case kBool4:
+            case kTexture2D:
+            case kSampler:
+            case kSubpassInput:
                 return false;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -289,32 +306,32 @@ public final class SLType {
 
     public static boolean isMatrixType(byte type) {
         switch (type) {
-            case Mat2:
-            case Mat3:
-            case Mat4:
+            case kFloat2x2:
+            case kFloat3x3:
+            case kFloat4x4:
                 return true;
 
-            case Void:
-            case Bool:
-            case BVec2:
-            case BVec3:
-            case BVec4:
-            case Float:
-            case Vec2:
-            case Vec3:
-            case Vec4:
-            case Int:
-            case IVec2:
-            case IVec3:
-            case IVec4:
-            case UInt:
-            case UVec2:
-            case UVec3:
-            case UVec4:
-            case Sampler2D:
-            case Texture2D:
-            case Sampler:
-            case SubpassInput:
+            case kVoid:
+            case kBool:
+            case kBool2:
+            case kBool3:
+            case kBool4:
+            case kFloat:
+            case kFloat2:
+            case kFloat3:
+            case kFloat4:
+            case kInt:
+            case kInt2:
+            case kInt3:
+            case kInt4:
+            case kUInt:
+            case kUInt2:
+            case kUInt3:
+            case kUInt4:
+            case kSampler2D:
+            case kTexture2D:
+            case kSampler:
+            case kSubpassInput:
                 return false;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -326,34 +343,34 @@ public final class SLType {
      */
     public static int locationSize(byte type) {
         switch (type) {
-            case Bool:
-            case BVec2:
-            case BVec3:
-            case BVec4:
-            case Int:
-            case IVec2:
-            case IVec3:
-            case IVec4:
-            case UInt:
-            case UVec2:
-            case UVec3:
-            case UVec4:
-            case Float:
-            case Vec2:
-            case Vec3:
-            case Vec4:
+            case kBool:
+            case kBool2:
+            case kBool3:
+            case kBool4:
+            case kInt:
+            case kInt2:
+            case kInt3:
+            case kInt4:
+            case kUInt:
+            case kUInt2:
+            case kUInt3:
+            case kUInt4:
+            case kFloat:
+            case kFloat2:
+            case kFloat3:
+            case kFloat4:
                 return 1;
-            case Mat2:
+            case kFloat2x2:
                 return 2;
-            case Mat3:
+            case kFloat3x3:
                 return 3;
-            case Mat4:
+            case kFloat4x4:
                 return 4;
-            case Void:
-            case Sampler2D:
-            case Texture2D:
-            case Sampler:
-            case SubpassInput:
+            case kVoid:
+            case kSampler2D:
+            case kTexture2D:
+            case kSampler:
+            case kSubpassInput:
                 return 0;
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -362,30 +379,54 @@ public final class SLType {
     @Nonnull
     public static String typeString(byte type) {
         switch (type) {
-            case Void:          return "void";
-            case Bool:          return "bool";
-            case BVec2:         return "bvec2";
-            case BVec3:         return "bvec3";
-            case BVec4:         return "bvec4";
-            case Int:           return "int";
-            case IVec2:         return "ivec2";
-            case IVec3:         return "ivec3";
-            case IVec4:         return "ivec4";
-            case UInt:          return "uint";
-            case UVec2:         return "uvec2";
-            case UVec3:         return "uvec3";
-            case UVec4:         return "uvec4";
-            case Float:         return "float";
-            case Vec2:          return "vec2";
-            case Vec3:          return "vec3";
-            case Vec4:          return "vec4";
-            case Mat2:          return "mat2";
-            case Mat3:          return "mat3";
-            case Mat4:          return "mat4";
-            case Sampler2D:     return "sampler2D";
-            case Texture2D:     return "texture2D";
-            case Sampler:       return "sampler";
-            case SubpassInput:  return "subpassInput";
+            case kVoid:
+                return "void";
+            case kBool:
+                return "bool";
+            case kBool2:
+                return "bvec2";
+            case kBool3:
+                return "bvec3";
+            case kBool4:
+                return "bvec4";
+            case kInt:
+                return "int";
+            case kInt2:
+                return "ivec2";
+            case kInt3:
+                return "ivec3";
+            case kInt4:
+                return "ivec4";
+            case kUInt:
+                return "uint";
+            case kUInt2:
+                return "uvec2";
+            case kUInt3:
+                return "uvec3";
+            case kUInt4:
+                return "uvec4";
+            case kFloat:
+                return "float";
+            case kFloat2:
+                return "vec2";
+            case kFloat3:
+                return "vec3";
+            case kFloat4:
+                return "vec4";
+            case kFloat2x2:
+                return "mat2";
+            case kFloat3x3:
+                return "mat3";
+            case kFloat4x4:
+                return "mat4";
+            case kSampler2D:
+                return "sampler2D";
+            case kTexture2D:
+                return "texture2D";
+            case kSampler:
+                return "sampler";
+            case kSubpassInput:
+                return "subpassInput";
         }
         throw new IllegalArgumentException(String.valueOf(type));
     }

@@ -29,7 +29,7 @@ import javax.annotation.Nonnull;
  */
 public class Type extends Symbol {
 
-    public static final int UNSIZED_ARRAY_SIZE = 0;
+    public static final int UNSIZED_ARRAY = -1;
 
     /**
      * Block member.
@@ -97,15 +97,8 @@ public class Type extends Symbol {
      */
     @Nonnull
     public static Type makeAliasType(String name, Type underlyingType) {
+        assert (underlyingType == underlyingType.resolve());
         return new AliasType(name, underlyingType);
-    }
-
-    /**
-     * Creates an array type.
-     */
-    @Nonnull
-    public static Type makeArrayType(Type componentType, int arraySize) {
-        return new ArrayType(componentType, arraySize);
     }
 
     /**
@@ -118,12 +111,30 @@ public class Type extends Symbol {
     }
 
     /**
+     * Create a scalar type.
+     */
+    @Nonnull
+    public static Type makeScalarType(String name, String desc, byte scalarKind,
+                                      int priority, int bitWidth) {
+        return new ScalarType(name, desc, scalarKind, priority, bitWidth);
+    }
+
+    /**
+     * Create a vector type.
+     */
+    @Nonnull
+    public static Type makeVectorType(String name, String desc, Type componentType,
+                                      int length) {
+        return new VectorType(name, desc, componentType, length);
+    }
+
+    /**
      * Create a matrix type.
      */
     @Nonnull
     public static Type makeMatrixType(String name, String desc, Type componentType,
-                                      int columns, int rows) {
-        return new MatrixType(name, desc, componentType, columns, rows);
+                                      int cols, int rows) {
+        return new MatrixType(name, desc, componentType, cols, rows);
     }
 
     /**
@@ -193,12 +204,11 @@ public class Type extends Symbol {
     }
 
     /**
-     * Create a scalar type.
+     * Creates an array type.
      */
     @Nonnull
-    public static Type makeScalarType(String name, String desc, byte scalarKind,
-                                      int priority, int bitWidth) {
-        return new ScalarType(name, desc, scalarKind, priority, bitWidth);
+    public static Type makeArrayType(Type elementType, int length) {
+        return new ArrayType(elementType, length);
     }
 
     /**
@@ -210,15 +220,6 @@ public class Type extends Symbol {
     }
 
     /**
-     * Create a vector type.
-     */
-    @Nonnull
-    public static Type makeVectorType(String name, String desc, Type componentType,
-                                      int vectorSize) {
-        return new VectorType(name, desc, componentType, vectorSize);
-    }
-
-    /**
      * If this is an alias, returns the underlying type, otherwise returns this.
      */
     @Nonnull
@@ -227,10 +228,17 @@ public class Type extends Symbol {
     }
 
     /**
+     * For arrays, returns the base type. For all other types, returns the type itself.
+     */
+    @Nonnull
+    public Type getElementType() {
+        return this;
+    }
+
+    /**
      * For matrices and vectors, returns the type of individual cells (e.g. mat2 has a component
-     * type of Float). For arrays, returns the base type. For textures, returns the sampled type
-     * (e.g. texture2D has a component type of Float). For all other types, returns the type
-     * itself.
+     * type of Float). For textures, returns the sampled type (e.g. texture2D has a component type
+     * of Float). For all other types, returns the type itself.
      */
     @Nonnull
     public Type getComponentType() {
@@ -288,13 +296,6 @@ public class Type extends Symbol {
     }
 
     /**
-     * Returns true if this type is either private, or contains a private field (recursively).
-     */
-    public boolean isPrivate() {
-        return name().startsWith("$");
-    }
-
-    /**
      * Returns true if this type is a bool.
      */
     public final boolean isBoolean() {
@@ -304,7 +305,7 @@ public class Type extends Symbol {
     /**
      * Returns true if this is a numeric scalar type.
      */
-    public final boolean isNumber() {
+    public final boolean isNumeric() {
         return switch (scalarKind()) {
             case SCALAR_KIND_FLOAT, SCALAR_KIND_SIGNED, SCALAR_KIND_UNSIGNED -> true;
             default -> false;
@@ -380,15 +381,15 @@ public class Type extends Symbol {
         if (typeKind() == other.typeKind() &&
                 (isVector() || isMatrix() || isArray())) {
             // Vectors/matrices/arrays of the same size can be coerced if their component type can be.
-            if (isMatrix() && (rows() != other.rows())) {
+            if (isMatrix() && (rows() != other.rows() || cols() != other.cols())) {
                 return CoercionCost.impossible();
             }
-            if (columns() != other.columns()) {
+            if (length() != other.length()) {
                 return CoercionCost.impossible();
             }
             return getComponentType().coercionCost(other.getComponentType());
         }
-        if (isNumber() && other.isNumber()) {
+        if (isNumeric() && other.isNumeric()) {
             if (scalarKind() != other.scalarKind()) {
                 return CoercionCost.impossible();
             } else if (other.priority() >= priority()) {
@@ -419,28 +420,27 @@ public class Type extends Symbol {
     /**
      * Returns the minimum value that can fit in the type.
      */
-    public double minimumValue() {
+    public double getMinValue() {
         throw new UnsupportedOperationException();
     }
 
     /**
      * Returns the maximum value that can fit in the type.
      */
-    public double maximumValue() {
+    public double getMaxValue() {
         throw new UnsupportedOperationException();
     }
 
     /**
-     * For matrices, returns the number of columns (e.g. mat2x4 returns 4). For vectors and scalars,
-     * returns 1. For arrays, returns either the size of the array (if known) or 0 (unsized).
-     * For all other types, causes an assertion failure.
+     * For matrices, returns the number of columns (e.g. mat3x4 returns 3).
+     * For scalars, returns 1. For all other types, causes an assertion failure.
      */
-    public int columns() {
+    public int cols() {
         throw new AssertionError();
     }
 
     /**
-     * For matrices and vectors, returns the number of rows (e.g. both mat3 and float3 return 3).
+     * For matrices, returns the number of rows (e.g. mat3x4 return 4).
      * For scalars, returns 1. For all other types, causes an assertion failure.
      */
     public int rows() {
@@ -448,10 +448,12 @@ public class Type extends Symbol {
     }
 
     /**
-     * Returns the number of scalars needed to hold this type.
+     * For arrays, returns either the size of the array (if known) or -1 (unsized).
+     * For vectors, returns the number of components (e.g. float3 return 3).
+     * For all other types, causes an assertion failure.
      */
-    public int slotCount() {
-        return 0;
+    public int length() {
+        throw new AssertionError();
     }
 
     @Nonnull
@@ -528,19 +530,17 @@ public class Type extends Symbol {
     }
 
     public final boolean hasPrecision() {
-        return getComponentType().isNumber() || isCombinedSampler();
+        return getComponentType().isNumeric() || isCombinedSampler();
     }
 
     public final boolean highPrecision() {
-        return bitWidth() >= 32;
+        return getBitWidth() >= 32;
     }
 
-    public final boolean doublePrecision() {
-        // we have no 64-bit integers, so only true for 'double' precision floating-point
-        return bitWidth() >= 64;
-    }
-
-    public int bitWidth() {
+    /**
+     * Returns the minimum size in bits of the type.
+     */
+    public int getBitWidth() {
         return 0;
     }
 
@@ -548,13 +548,15 @@ public class Type extends Symbol {
      * Returns the corresponding vector or matrix type with the specified number of columns and
      * rows.
      */
-    public final Type toCompound(ThreadContext context, int columns, int rows) {
-        assert (isScalar());
-        if (columns == 1 && rows == 1) {
+    public final Type toCompound(ThreadContext context, int cols, int rows) {
+        if (!isScalar()) {
+            throw new IllegalArgumentException();
+        }
+        if (cols == 1 && rows == 1) {
             return this;
         }
         if (matches(context.getTypes().mFloat)) {
-            return switch (columns) {
+            return switch (cols) {
                 case 1 -> switch (rows) {
                     case 2 -> context.getTypes().mFloat2;
                     case 3 -> context.getTypes().mFloat3;
@@ -582,7 +584,7 @@ public class Type extends Symbol {
                 default -> throw new IllegalArgumentException();
             };
         } else if (matches(context.getTypes().mHalf)) {
-            return switch (columns) {
+            return switch (cols) {
                 case 1 -> switch (rows) {
                     case 2 -> context.getTypes().mHalf2;
                     case 3 -> context.getTypes().mHalf3;
@@ -610,7 +612,7 @@ public class Type extends Symbol {
                 default -> throw new IllegalArgumentException();
             };
         } else if (matches(context.getTypes().mDouble)) {
-            return switch (columns) {
+            return switch (cols) {
                 case 1 -> switch (rows) {
                     case 2 -> context.getTypes().mDouble2;
                     case 3 -> context.getTypes().mDouble3;
@@ -638,7 +640,7 @@ public class Type extends Symbol {
                 default -> throw new IllegalArgumentException();
             };
         } else if (matches(context.getTypes().mInt)) {
-            if (columns == 1) {
+            if (cols == 1) {
                 return switch (rows) {
                     case 2 -> context.getTypes().mInt2;
                     case 3 -> context.getTypes().mInt3;
@@ -647,7 +649,7 @@ public class Type extends Symbol {
                 };
             }
         } else if (matches(context.getTypes().mShort)) {
-            if (columns == 1) {
+            if (cols == 1) {
                 return switch (rows) {
                     case 2 -> context.getTypes().mShort2;
                     case 3 -> context.getTypes().mShort3;
@@ -656,7 +658,7 @@ public class Type extends Symbol {
                 };
             }
         } else if (matches(context.getTypes().mUInt)) {
-            if (columns == 1) {
+            if (cols == 1) {
                 return switch (rows) {
                     case 2 -> context.getTypes().mUInt2;
                     case 3 -> context.getTypes().mUInt3;
@@ -665,7 +667,7 @@ public class Type extends Symbol {
                 };
             }
         } else if (matches(context.getTypes().mUShort)) {
-            if (columns == 1) {
+            if (cols == 1) {
                 return switch (rows) {
                     case 2 -> context.getTypes().mUShort2;
                     case 3 -> context.getTypes().mUShort3;
@@ -674,7 +676,7 @@ public class Type extends Symbol {
                 };
             }
         } else if (matches(context.getTypes().mBool)) {
-            if (columns == 1) {
+            if (cols == 1) {
                 return switch (rows) {
                     case 2 -> context.getTypes().mBool2;
                     case 3 -> context.getTypes().mBool3;
@@ -769,8 +771,8 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int columns() {
-            return mUnderlyingType.columns();
+        public int cols() {
+            return mUnderlyingType.cols();
         }
 
         @Override
@@ -779,18 +781,8 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int bitWidth() {
-            return mUnderlyingType.bitWidth();
-        }
-
-        @Override
-        public boolean isPrivate() {
-            return mUnderlyingType.isPrivate();
-        }
-
-        @Override
-        public int slotCount() {
-            return mUnderlyingType.slotCount();
+        public int getBitWidth() {
+            return mUnderlyingType.getBitWidth();
         }
 
         @Override
@@ -837,6 +829,66 @@ public class Type extends Symbol {
         @Override
         public Type[] getCoercibleTypes() {
             return mUnderlyingType.getCoercibleTypes();
+        }
+    }
+
+    public static final class ArrayType extends Type {
+
+        private final Type mElementType;
+        private final int mLength;
+
+        ArrayType(Type elementType, int length) {
+            super(convert(elementType.name(), length),
+                    convert(elementType.desc(), length),
+                    TYPE_KIND_ARRAY);
+            assert (length == UNSIZED_ARRAY || length > 0);
+            // Vulkan: disallow multi-dimensional arrays
+            if (elementType instanceof ArrayType) {
+                throw new IllegalArgumentException("multi-dimensional arrays");
+            }
+            mElementType = elementType;
+            mLength = length;
+        }
+
+        @Nonnull
+        public static String convert(String s, int length) {
+            if (length == UNSIZED_ARRAY) {
+                return s + "[]";
+            }
+            assert (length > 0);
+            return s + "[" + length + "]";
+        }
+
+        @Override
+        public boolean isArray() {
+            return true;
+        }
+
+        @Override
+        public boolean isUnsizedArray() {
+            return mLength == UNSIZED_ARRAY;
+        }
+
+        @Override
+        public int length() {
+            return mLength;
+        }
+
+        @Nonnull
+        @Override
+        public Type getElementType() {
+            return mElementType;
+        }
+
+        @Nonnull
+        @Override
+        public Type getComponentType() {
+            return mElementType.getComponentType();
+        }
+
+        @Override
+        public int getBitWidth() {
+            return mElementType.getBitWidth();
         }
     }
 }

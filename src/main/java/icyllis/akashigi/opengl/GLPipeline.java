@@ -27,7 +27,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Iterator;
 
-import static icyllis.akashigi.engine.Engine.*;
+import static icyllis.akashigi.engine.Engine.VertexAttribType;
 import static icyllis.akashigi.opengl.GLCore.*;
 
 /**
@@ -87,28 +87,28 @@ public class GLPipeline extends ManagedResource {
         int vertexBinding = INVALID_BINDING;
         int instanceBinding = INVALID_BINDING;
 
-        int bindingIndex = 0;
         int attribIndex = 0;
+        int bindingIndex = 0;
         if (geomProc.hasVertexAttributes()) {
-            vertexBinding = bindingIndex++;
             attribIndex = setVertexFormat(geomProc.vertexAttributes(),
                     vertexArray,
                     attribIndex,
-                    vertexBinding);
+                    bindingIndex);
             glVertexArrayBindingDivisor(vertexArray,
-                    vertexBinding,
+                    bindingIndex,
                     0); // per-vertex
+            vertexBinding = bindingIndex++;
         }
 
         if (geomProc.hasInstanceAttributes()) {
-            instanceBinding = bindingIndex;
             attribIndex = setVertexFormat(geomProc.instanceAttributes(),
                     vertexArray,
                     attribIndex,
-                    instanceBinding);
+                    bindingIndex);
             glVertexArrayBindingDivisor(vertexArray,
-                    instanceBinding,
+                    bindingIndex,
                     1); // per-instance
+            instanceBinding = bindingIndex;
         }
 
         if (attribIndex > server.getCaps().maxVertexAttributes()) {
@@ -135,22 +135,22 @@ public class GLPipeline extends ManagedResource {
     /**
      * See {@link VertexShaderBuilder} to see how we bind these on server side.
      */
-    private static int setVertexFormat(@Nonnull Iterator<GeometryProcessor.Attribute> attrs,
+    private static int setVertexFormat(@Nonnull Iterator<GeometryProcessor.Attribute> attribs,
                                        int vertexArray,
                                        int attribIndex,
-                                       int binding) {
-        while (attrs.hasNext()) {
-            var attr = attrs.next();
-            // may contain matrix that takes up multiple locations
-            int count = attr.locationSize();
-            assert (count > 0);
-            int offset = attr.offset();
-            for (int i = 0; i < count; i++) {
+                                       int bindingIndex) {
+        while (attribs.hasNext()) {
+            GeometryProcessor.Attribute attrib = attribs.next();
+            // a matrix can take up multiple locations
+            int locations = attrib.locationSize();
+            assert (locations > 0);
+            int offset = attrib.offset();
+            while (locations-- > 0) {
                 glEnableVertexArrayAttrib(vertexArray, attribIndex);
-                glVertexArrayAttribBinding(vertexArray, attribIndex, binding);
-                setAttribFormat(attr.srcType(), vertexArray, attribIndex, offset);
+                glVertexArrayAttribBinding(vertexArray, attribIndex, bindingIndex);
+                setAttribFormat(attrib.srcType(), vertexArray, attribIndex, offset);
                 attribIndex++;
-                offset += attr.stepSize();
+                offset += attrib.stepSize();
             }
         }
         return attribIndex;
@@ -158,57 +158,57 @@ public class GLPipeline extends ManagedResource {
 
     private static void setAttribFormat(int attribType, int vertexArray, int attribIndex, int offset) {
         switch (attribType) {
-            case Float_VertexAttribType ->
+            case VertexAttribType.kFloat ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 1, GL_FLOAT, /*normalized*/false, offset);
-            case Float2_VertexAttribType ->
+            case VertexAttribType.kFloat2 ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 2, GL_FLOAT, /*normalized*/false, offset);
-            case Float3_VertexAttribType ->
+            case VertexAttribType.kFloat3 ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 3, GL_FLOAT, /*normalized*/false, offset);
-            case Float4_VertexAttribType ->
+            case VertexAttribType.kFloat4 ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 4, GL_FLOAT, /*normalized*/false, offset);
-            case Half_VertexAttribType ->
+            case VertexAttribType.kHalf ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 1, GL_HALF_FLOAT, /*normalized*/false, offset);
-            case Half2_VertexAttribType ->
+            case VertexAttribType.kHalf2 ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 2, GL_HALF_FLOAT, /*normalized*/false, offset);
-            case Half4_VertexAttribType ->
+            case VertexAttribType.kHalf4 ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 4, GL_HALF_FLOAT, /*normalized*/false, offset);
-            case Int2_VertexAttribType ->
+            case VertexAttribType.kInt2 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_INT, offset);
-            case Int3_VertexAttribType ->
+            case VertexAttribType.kInt3 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 3, GL_INT, offset);
-            case Int4_VertexAttribType ->
+            case VertexAttribType.kInt4 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 4, GL_INT, offset);
-            case Byte_VertexAttribType ->
+            case VertexAttribType.kByte ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 1, GL_BYTE, offset);
-            case Byte2_VertexAttribType ->
+            case VertexAttribType.kByte2 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_BYTE, offset);
-            case Byte4_VertexAttribType ->
+            case VertexAttribType.kByte4 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 4, GL_BYTE, offset);
-            case UByte_VertexAttribType ->
+            case VertexAttribType.kUByte ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 1, GL_UNSIGNED_BYTE, offset);
-            case UByte2_VertexAttribType ->
+            case VertexAttribType.kUByte2 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_UNSIGNED_BYTE, offset);
-            case UByte4_VertexAttribType ->
+            case VertexAttribType.kUByte4 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 4, GL_UNSIGNED_BYTE, offset);
-            case UByte_norm_VertexAttribType ->
+            case VertexAttribType.kUByte_norm ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 1, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
-            case UByte4_norm_VertexAttribType ->
+            case VertexAttribType.kUByte4_norm ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 4, GL_UNSIGNED_BYTE, /*normalized*/true, offset);
-            case Short2_VertexAttribType ->
+            case VertexAttribType.kShort2 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_SHORT, offset);
-            case Short4_VertexAttribType ->
+            case VertexAttribType.kShort4 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 4, GL_SHORT, offset);
-            case UShort2_VertexAttribType ->
+            case VertexAttribType.kUShort2 ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 2, GL_UNSIGNED_SHORT, offset);
-            case UShort2_norm_VertexAttribType ->
+            case VertexAttribType.kUShort2_norm ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 2, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
-            case Int_VertexAttribType ->
+            case VertexAttribType.kInt ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 1, GL_INT, offset);
-            case UInt_VertexAttribType ->
+            case VertexAttribType.kUInt ->
                     glVertexArrayAttribIFormat(vertexArray, attribIndex, 1, GL_UNSIGNED_INT, offset);
-            case UShort_norm_VertexAttribType ->
+            case VertexAttribType.kUShort_norm ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 1, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
-            case UShort4_norm_VertexAttribType ->
+            case VertexAttribType.kUShort4_norm ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 4, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
             default -> throw new IllegalStateException();
         }

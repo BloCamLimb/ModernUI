@@ -25,7 +25,7 @@ import icyllis.akashigi.engine.shading.*;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.akashigi.engine.Engine.Float2_VertexAttribType;
+import static icyllis.akashigi.engine.Engine.VertexAttribType;
 
 public final class CircularRRectOp extends MeshDrawOp {
 
@@ -51,7 +51,7 @@ public final class CircularRRectOp extends MeshDrawOp {
 
     private static class Processor extends GeometryProcessor {
 
-        private static final Attribute POS = new Attribute("Pos", Float2_VertexAttribType, SLType.Vec2);
+        private static final Attribute POS = new Attribute("Pos", VertexAttribType.kFloat2, SLType.kFloat2);
 
         public Processor() {
             super(CircularRRect_Geom_ClassID);
@@ -108,13 +108,13 @@ public final class CircularRRectOp extends MeshDrawOp {
 
                 String sizeUniformName = uniformHandler.getUniformName(
                         mSizeUniform = uniformHandler.addUniform(geomProc,
-                                Engine.Fragment_ShaderFlag,
-                                SLType.Vec2,
+                                Engine.ShaderFlags.kFragment,
+                                SLType.kFloat2,
                                 "Size"));
                 String radiusUniformName = uniformHandler.getUniformName(
                         mRadiusUniform = uniformHandler.addUniform(geomProc,
-                                Engine.Fragment_ShaderFlag,
-                                SLType.Float,
+                                Engine.ShaderFlags.kFragment,
+                                SLType.kFloat,
                                 "Radius"));
                 fragBuilder.codeAppendf("""
                                 vec2 q = abs(p) - %1$s + %2$s;

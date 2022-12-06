@@ -52,7 +52,7 @@ public class ShaderVar {
      * Defaults to a void with no type modifier or layout qualifier.
      */
     public ShaderVar() {
-        this("", SLType.Void, TypeModifier_None, NonArray, "", "");
+        this("", SLType.kVoid, TypeModifier_None, NonArray, "", "");
     }
 
     public ShaderVar(String name, byte type) {
@@ -90,7 +90,7 @@ public class ShaderVar {
      * Sets as a non-array. Internally used with the default constructor.
      */
     public void set(String name, byte type) {
-        assert (type != SLType.Void);
+        assert (type != SLType.kVoid);
         mType = type;
         mName = name;
     }

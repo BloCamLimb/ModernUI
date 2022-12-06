@@ -32,7 +32,7 @@ public final class Varying {
      */
     public Varying(byte type) {
         // Metal doesn't support varying matrices, so we disallow them everywhere for consistency
-        assert (type != SLType.Void && !SLType.isMatrixType(type));
+        assert (type != SLType.kVoid && !SLType.isMatrixType(type));
         mType = type;
     }
 
@@ -41,7 +41,7 @@ public final class Varying {
      */
     public void reset(byte type) {
         // Metal doesn't support varying matrices, so we disallow them everywhere for consistency
-        assert (type != SLType.Void && !SLType.isMatrixType(type));
+        assert (type != SLType.kVoid && !SLType.isMatrixType(type));
         mType = type;
         mVsOut = null;
         mFsIn = null;

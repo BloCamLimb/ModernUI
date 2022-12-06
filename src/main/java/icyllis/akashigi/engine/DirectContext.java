@@ -24,6 +24,8 @@ import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
+import static icyllis.akashigi.engine.Engine.BackendApi;
+
 /**
  * Represents a backend context of 3D graphics API (OpenGL or Vulkan) on the render thread.
  */
@@ -83,7 +85,7 @@ public final class DirectContext extends RecordingContext {
      */
     @Nullable
     public static DirectContext makeOpenGL(ContextOptions options) {
-        var context = new DirectContext(Engine.OPENGL, options);
+        var context = new DirectContext(BackendApi.kOpenGL, options);
         context.mServer = GLServer.make(context, options);
         if (context.init()) {
             return context;

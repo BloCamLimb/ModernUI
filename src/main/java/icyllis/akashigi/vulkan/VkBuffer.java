@@ -24,7 +24,7 @@ import icyllis.akashigi.engine.Buffer;
 public final class VkBuffer extends Buffer {
 
     public VkBuffer(VkServer server) {
-        super(server, 0, 0, 0);
+        super(server, 0, 0);
     }
 
     @Override

@@ -20,7 +20,7 @@ package icyllis.akashigi.engine;
 
 import java.util.Objects;
 
-import static icyllis.akashigi.engine.Engine.BufferType_XferDstToSrc;
+import static icyllis.akashigi.engine.Engine.BufferUsageFlags;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
 /**
@@ -42,20 +42,17 @@ public abstract class Buffer extends Resource {
     protected static final int LockMode_WriteDiscard = 1;
 
     protected final int mSize;
-    protected final int mBufferType;
-    protected final int mAccessPattern;
+    protected final int mUsage;
 
     private int mLockOffset;
     private int mLockSize;
 
     protected Buffer(Server server,
                      int size,
-                     int bufferType,
-                     int accessPattern) {
+                     int usage) {
         super(server);
         mSize = size;
-        mBufferType = bufferType;
-        mAccessPattern = accessPattern;
+        mUsage = usage;
     }
 
     /**
@@ -65,12 +62,8 @@ public abstract class Buffer extends Resource {
         return mSize;
     }
 
-    public int bufferType() {
-        return mBufferType;
-    }
-
-    public int accessPattern() {
-        return mAccessPattern;
+    public final int getUsage() {
+        return mUsage;
     }
 
     @Override
@@ -84,7 +77,7 @@ public abstract class Buffer extends Resource {
      * It is an error to draw from the buffer while it is locked or transfer to/from the buffer.
      * Once a buffer is locked, subsequent calls to this method will throw an exception.
      * <p>
-     * If the buffer is of type {@link Engine#BufferType_XferDstToSrc} then it is locked for
+     * If the buffer is of type {@link BufferUsageFlags#kXferGpuToCpu} then it is locked for
      * reading only. Otherwise it is locked writing only. Writing to a buffer that is locked for
      * reading or vice versa produces undefined results. If the buffer is locked for writing
      * then the buffer's previous contents are invalidated.
@@ -97,7 +90,7 @@ public abstract class Buffer extends Resource {
         }
         mLockOffset = 0;
         mLockSize = mSize;
-        return onLock(mBufferType == BufferType_XferDstToSrc
+        return onLock((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0
                         ? LockMode_Read
                         : LockMode_WriteDiscard,
                 0, mSize);
@@ -109,7 +102,7 @@ public abstract class Buffer extends Resource {
      * It is an error to draw from the buffer while it is locked or transfer to/from the buffer.
      * Once a buffer is locked, subsequent calls to this method will throw an exception.
      * <p>
-     * If the buffer is of type {@link Engine#BufferType_XferDstToSrc} then it is locked for
+     * If the buffer is of type {@link BufferUsageFlags#kXferGpuToCpu} then it is locked for
      * reading only. Otherwise it is locked writing only. Writing to a buffer that is locked for
      * reading or vice versa produces undefined results. If the buffer is locked for writing
      * then the buffer's previous contents are invalidated.
@@ -123,7 +116,7 @@ public abstract class Buffer extends Resource {
         Objects.checkFromIndexSize(offset, size, mSize);
         mLockOffset = offset;
         mLockSize = size;
-        return onLock(mBufferType == BufferType_XferDstToSrc
+        return onLock((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0
                         ? LockMode_Read
                         : LockMode_WriteDiscard,
                 offset, size);
@@ -139,7 +132,7 @@ public abstract class Buffer extends Resource {
             return;
         }
         if (isLocked()) {
-            onUnlock(mBufferType == BufferType_XferDstToSrc
+            onUnlock((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0
                             ? LockMode_Read
                             : LockMode_WriteDiscard,
                     mLockOffset, mLockSize);
@@ -158,7 +151,7 @@ public abstract class Buffer extends Resource {
         if (isLocked()) {
             Objects.checkIndex(offset, mLockOffset);
             Objects.checkIndex(size, mLockSize);
-            onUnlock(mBufferType == BufferType_XferDstToSrc
+            onUnlock((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0
                             ? LockMode_Read
                             : LockMode_WriteDiscard,
                     offset, size);
@@ -193,7 +186,7 @@ public abstract class Buffer extends Resource {
      * <p>
      * The buffer must not be locked.
      * <p>
-     * Fails for {@link Engine#BufferType_XferDstToSrc}.
+     * Fails for {@link BufferUsageFlags#kXferGpuToCpu}.
      * <p>
      * Note that buffer updates do not go through Context and therefore are
      * not serialized with other operations.
@@ -208,7 +201,7 @@ public abstract class Buffer extends Resource {
         }
         assert (size > 0 && offset + size <= mSize);
 
-        if (mBufferType == BufferType_XferDstToSrc) {
+        if ((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0) {
             return false;
         }
 

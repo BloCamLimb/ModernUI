@@ -81,12 +81,12 @@ public abstract class GeometryProcessor extends Processor {
          * of an array attributes.
          *
          * @param name    the attrib name, cannot be null or empty
-         * @param srcType the data type in vertex buffer, see VertexAttribType
+         * @param srcType the data type in vertex buffer, see {@link VertexAttribType}
          * @param dstType the data type in vertex shader, see {@link SLType}
          */
         public Attribute(String name, byte srcType, byte dstType) {
-            assert (name != null && dstType != SLType.Void);
-            assert (srcType >= 0 && srcType <= Last_VertexAttribType);
+            assert (name != null && dstType != SLType.kVoid);
+            assert (srcType >= 0 && srcType <= VertexAttribType.kLast);
             assert (SLType.checkSLType(dstType));
             assert (!name.isEmpty() && !name.startsWith("_"));
             assert (SLType.locationSize(dstType) > 0);
@@ -100,13 +100,13 @@ public abstract class GeometryProcessor extends Processor {
          * Makes an attribute with an explicit offset.
          *
          * @param name    the attrib name, UpperCamelCase, cannot be null or empty
-         * @param srcType the data type in vertex buffer, see VertexAttribType
+         * @param srcType the data type in vertex buffer, see {@link VertexAttribType}
          * @param dstType the data type in vertex shader, see {@link SLType}
          * @param offset  N-aligned offset
          */
         public Attribute(String name, byte srcType, byte dstType, int offset) {
-            assert (name != null && dstType != SLType.Void);
-            assert (srcType >= 0 && srcType <= Last_VertexAttribType);
+            assert (name != null && dstType != SLType.kVoid);
+            assert (srcType >= 0 && srcType <= VertexAttribType.kLast);
             assert (SLType.checkSLType(dstType));
             assert (!name.isEmpty() && !name.startsWith("_"));
             assert (SLType.locationSize(dstType) > 0);
@@ -122,7 +122,7 @@ public abstract class GeometryProcessor extends Processor {
         }
 
         /**
-         * @return the data type in vertex buffer, see VertexAttribType
+         * @return the data type in vertex buffer, see {@link VertexAttribType}
          */
         public final byte srcType() {
             return mSrcType;
@@ -148,7 +148,7 @@ public abstract class GeometryProcessor extends Processor {
          * @return the size of the source data in bytes
          */
         public final int stepSize() {
-            return vertexAttribTypeSize(mSrcType);
+            return VertexAttribType.size(mSrcType);
         }
 
         /**
@@ -355,7 +355,8 @@ public abstract class GeometryProcessor extends Processor {
      */
     @Nonnull
     protected static Attribute makeColorAttribute(String name, boolean wideColor) {
-        return new Attribute(name, wideColor ? Float4_VertexAttribType : UByte4_norm_VertexAttribType, SLType.Vec4);
+        return new Attribute(name, wideColor ? VertexAttribType.kFloat4 : VertexAttribType.kUByte4_norm,
+                SLType.kFloat4);
     }
 
     private AttributeSet mVertexAttributes;      // binding = 0, divisor = 0
@@ -368,7 +369,7 @@ public abstract class GeometryProcessor extends Processor {
     }
 
     /**
-     * @see Engine#PRIMITIVE_TYPE_TRIANGLE_LIST
+     * @see PrimitiveType
      */
     public abstract byte primitiveType();
 
@@ -600,20 +601,20 @@ public abstract class GeometryProcessor extends Processor {
                                                  ShaderVar inPos,
                                                  String matrixName,
                                                  ShaderVar outPos) {
-            assert (inPos.getType() == SLType.Vec2 || inPos.getType() == SLType.Vec3);
+            assert (inPos.getType() == SLType.kFloat2 || inPos.getType() == SLType.kFloat3);
 
-            if (inPos.getType() == SLType.Vec3) {
+            if (inPos.getType() == SLType.kFloat3) {
                 // A float3 stays a float3 whether the matrix adds perspective
                 vertBuilder.codeAppendf("vec3 _worldPos = %s * %s;\n",
                         matrixName,
                         inPos.getName());
-                outPos.set("_worldPos", SLType.Vec3);
+                outPos.set("_worldPos", SLType.kFloat3);
             } else {
                 // A float2 is promoted to a float3 if we add perspective via the matrix
                 vertBuilder.codeAppendf("vec3 _worldPos = %s * vec3(%s, 1.0);\n",
                         matrixName,
                         inPos.getName());
-                outPos.set("_worldPos", SLType.Vec3);
+                outPos.set("_worldPos", SLType.kFloat3);
             }
         }
 
@@ -647,10 +648,10 @@ public abstract class GeometryProcessor extends Processor {
                     worldPos);
 
             // Emit the vertex position to the hardware in the normalized device coordinates it expects.
-            assert (worldPos.getType() == SLType.Vec2 ||
-                    worldPos.getType() == SLType.Vec3);
+            assert (worldPos.getType() == SLType.kFloat2 ||
+                    worldPos.getType() == SLType.kFloat3);
             vertBuilder.emitNormalizedPosition(worldPos);
-            if (worldPos.getType() == SLType.Vec2) {
+            if (worldPos.getType() == SLType.kFloat2) {
                 varyingHandler.setNoPerspective();
             }
         }

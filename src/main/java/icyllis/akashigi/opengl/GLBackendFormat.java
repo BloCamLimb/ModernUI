@@ -25,7 +25,7 @@ import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.akashigi.engine.Engine.OPENGL;
+import static icyllis.akashigi.engine.Engine.BackendApi;
 import static icyllis.akashigi.opengl.GLCore.*;
 
 public final class GLBackendFormat extends BackendFormat {
@@ -63,7 +63,7 @@ public final class GLBackendFormat extends BackendFormat {
 
     @Override
     public int getBackend() {
-        return OPENGL;
+        return BackendApi.kOpenGL;
     }
 
     @Override

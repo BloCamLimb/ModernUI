@@ -23,15 +23,15 @@ import javax.annotation.Nonnull;
 public final class VectorType extends Type {
 
     private final ScalarType mComponentType;
-    private final byte mVectorSize;
+    private final byte mLength;
 
-    VectorType(String name, String desc, Type componentType, int vectorSize) {
+    VectorType(String name, String desc, Type componentType, int length) {
         super(name, desc, TYPE_KIND_VECTOR);
-        assert (vectorSize >= 2 && vectorSize <= 4);
-        assert (desc.equals(componentType.desc() + vectorSize));
-        assert (name.equals(componentType.name() + vectorSize));
+        assert (length >= 2 && length <= 4);
+        assert (desc.equals(componentType.desc() + length));
+        assert (name.equals(componentType.name() + length));
         mComponentType = (ScalarType) componentType;
-        mVectorSize = (byte) vectorSize;
+        mLength = (byte) length;
     }
 
     @Override
@@ -46,22 +46,22 @@ public final class VectorType extends Type {
     }
 
     @Override
-    public int columns() {
+    public int cols() {
         return 1;
     }
 
     @Override
     public int rows() {
-        return mVectorSize;
+        return mLength;
     }
 
     @Override
-    public int bitWidth() {
-        return mComponentType.bitWidth();
+    public int length() {
+        return mLength;
     }
 
     @Override
-    public int slotCount() {
-        return mVectorSize;
+    public int getBitWidth() {
+        return mComponentType.getBitWidth();
     }
 }

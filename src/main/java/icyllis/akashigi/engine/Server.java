@@ -128,10 +128,10 @@ public abstract class Server {
      * @param height the height of the texture to be created
      * @param format the backend format for the texture
      * @return the texture object if successful, otherwise nullptr
-     * @see Engine#SURFACE_FLAG_BUDGETED
-     * @see Engine#SURFACE_FLAG_MIPMAPPED
-     * @see Engine#SURFACE_FLAG_RENDERABLE
-     * @see Engine#SURFACE_FLAG_PROTECTED
+     * @see SurfaceFlags#kBudgeted
+     * @see SurfaceFlags#kMipmapped
+     * @see SurfaceFlags#kRenderable
+     * @see SurfaceFlags#kProtected
      */
     @Nullable
     @SharedPtr
@@ -148,10 +148,10 @@ public abstract class Server {
                 sampleCount, surfaceFlags)) {
             return null;
         }
-        int levelCount = (surfaceFlags & SURFACE_FLAG_MIPMAPPED) != 0
+        int levelCount = (surfaceFlags & SurfaceFlags.kMipmapped) != 0
                 ? 32 - Integer.numberOfLeadingZeros(Math.max(width, height))
                 : 1;
-        if ((surfaceFlags & SURFACE_FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & SurfaceFlags.kRenderable) != 0) {
             sampleCount = mCaps.getRenderTargetSampleCount(sampleCount, format);
         }
         assert (sampleCount > 0 && sampleCount <= 64);
@@ -161,7 +161,7 @@ public abstract class Server {
         if (texture != null) {
             // we don't copy the backend format object, use identity rather than equals()
             assert texture.getBackendFormat() == format;
-            assert (surfaceFlags & SURFACE_FLAG_RENDERABLE) == 0 || texture.getRenderTarget() != null;
+            assert (surfaceFlags & SurfaceFlags.kRenderable) == 0 || texture.getRenderTarget() != null;
             if (label != null) {
                 texture.setLabel(label);
             }

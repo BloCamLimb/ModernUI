@@ -154,12 +154,12 @@ public final class GLServer extends Server {
         currentCommandBuffer().resetStates(resetBits);
 
         // we assume these values
-        if ((resetBits & GLBackendState_PixelStore) != 0) {
+        if ((resetBits & GLBackendState.kPixelStore) != 0) {
             glPixelStorei(GL_UNPACK_ROW_LENGTH, 0);
             glPixelStorei(GL_PACK_ROW_LENGTH, 0);
         }
 
-        if ((resetBits & GLBackendState_Raster) != 0) {
+        if ((resetBits & GLBackendState.kRaster) != 0) {
             glDisable(GL_LINE_SMOOTH);
             glDisable(GL_POLYGON_SMOOTH);
 
@@ -167,11 +167,11 @@ public final class GLServer extends Server {
             glEnable(GL_MULTISAMPLE);
         }
 
-        if ((resetBits & GLBackendState_Blend) != 0) {
+        if ((resetBits & GLBackendState.kBlend) != 0) {
             glDisable(GL_COLOR_LOGIC_OP);
         }
 
-        if ((resetBits & GLBackendState_Misc) != 0) {
+        if ((resetBits & GLBackendState.kMisc) != 0) {
             // we don't use the z-buffer at all
             glDisable(GL_DEPTH_TEST);
             glDepthMask(false);
@@ -199,7 +199,7 @@ public final class GLServer extends Server {
                                       int surfaceFlags) {
         assert (levelCount > 0 && sampleCount > 0);
         // We don't support protected textures in OpenGL.
-        if ((surfaceFlags & SURFACE_FLAG_PROTECTED) != 0) {
+        if ((surfaceFlags & SurfaceFlags.kProtected) != 0) {
             return null;
         }
         if (format.isExternal()) {
@@ -211,7 +211,7 @@ public final class GLServer extends Server {
             return null;
         }
         Function<GLTexture, GLRenderTarget> target = null;
-        if ((surfaceFlags & SURFACE_FLAG_RENDERABLE) != 0) {
+        if ((surfaceFlags & SurfaceFlags.kRenderable) != 0) {
             target = createRenderTargetObjects(
                     texture,
                     width, height,
@@ -230,7 +230,7 @@ public final class GLServer extends Server {
                 width, height,
                 info,
                 format,
-                (surfaceFlags & SURFACE_FLAG_BUDGETED) != 0,
+                (surfaceFlags & SurfaceFlags.kBudgeted) != 0,
                 target);
     }
 

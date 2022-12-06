@@ -19,7 +19,6 @@
 package icyllis.akashigi.vulkan;
 
 import icyllis.akashigi.engine.BackendFormat;
-import icyllis.akashigi.engine.Engine;
 import it.unimi.dsi.fastutil.HashCommon;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import org.lwjgl.system.NativeType;
@@ -27,6 +26,7 @@ import org.lwjgl.system.NativeType;
 import javax.annotation.Nonnull;
 import java.util.Objects;
 
+import static icyllis.akashigi.engine.Engine.BackendApi;
 import static icyllis.akashigi.vulkan.VkCore.*;
 
 public final class VkBackendFormat extends BackendFormat {
@@ -63,7 +63,7 @@ public final class VkBackendFormat extends BackendFormat {
 
     @Override
     public int getBackend() {
-        return Engine.VULKAN;
+        return BackendApi.kVulkan;
     }
 
     @Override

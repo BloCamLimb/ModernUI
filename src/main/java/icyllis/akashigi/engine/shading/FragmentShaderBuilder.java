@@ -45,14 +45,14 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
         super(programBuilder);
 
         String layoutQualifier = "location = " + MAIN_DRAW_BUFFER_INDEX;
-        mPrimaryOutput = new ShaderVar(PRIMARY_COLOR_OUTPUT_NAME, SLType.Vec4, ShaderVar.TypeModifier_Out,
+        mPrimaryOutput = new ShaderVar(PRIMARY_COLOR_OUTPUT_NAME, SLType.kFloat4, ShaderVar.TypeModifier_Out,
                 ShaderVar.NonArray, layoutQualifier, "");
         mPrimaryOutput.addLayoutQualifier("index = " + PRIMARY_COLOR_OUTPUT_INDEX);
     }
 
     @Override
     protected void onFinish() {
-        mProgramBuilder.uniformHandler().appendUniformDecls(Engine.Fragment_ShaderFlag, uniforms());
+        mProgramBuilder.uniformHandler().appendUniformDecls(Engine.ShaderFlags.kFragment, uniforms());
         mProgramBuilder.varyingHandler().getFragDecls(inputs());
 
         mPrimaryOutput.appendDecl(outputs());
@@ -66,7 +66,7 @@ public class FragmentShaderBuilder extends ShaderBuilderBase implements FPFragme
     public void enableSecondaryOutput() {
         assert (mSecondaryOutput == null);
         String layoutQualifier = "location = " + MAIN_DRAW_BUFFER_INDEX;
-        mSecondaryOutput = new ShaderVar(SECONDARY_COLOR_OUTPUT_NAME, SLType.Vec4, ShaderVar.TypeModifier_Out,
+        mSecondaryOutput = new ShaderVar(SECONDARY_COLOR_OUTPUT_NAME, SLType.kFloat4, ShaderVar.TypeModifier_Out,
                 ShaderVar.NonArray, layoutQualifier, "");
         mSecondaryOutput.addLayoutQualifier("index = " + SECONDARY_COLOR_OUTPUT_INDEX);
     }

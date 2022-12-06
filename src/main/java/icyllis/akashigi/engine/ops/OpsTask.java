@@ -28,6 +28,8 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Objects;
 
+import static icyllis.akashigi.engine.Engine.*;
+
 //TODO
 public class OpsTask extends RenderTask {
 
@@ -46,7 +48,7 @@ public class OpsTask extends RenderTask {
     private final Rect2f mTotalBounds = new Rect2f();
     private final Rect2i mContentBounds = new Rect2i();
 
-    private int mColorLoadOp = Engine.LOAD_OP_LOAD;
+    private int mColorLoadOp = LOAD_OP_LOAD;
     private int mInitialStencilContent = STENCIL_CONTENT_DONT_CARE;
     private final float[] mLoadClearColor = new float[4];
 
@@ -67,7 +69,7 @@ public class OpsTask extends RenderTask {
         mLoadClearColor[2] = blue;
         mLoadClearColor[3] = alpha;
         Swizzle.apply(mWriteView.getSwizzle(), mLoadClearColor);
-        if (loadOp == Engine.LOAD_OP_CLEAR) {
+        if (loadOp == LOAD_OP_CLEAR) {
             SurfaceProxy target = getTarget();
             mTotalBounds.set(0, 0,
                     target.getBackingWidth(), target.getBackingHeight());
@@ -105,10 +107,10 @@ public class OpsTask extends RenderTask {
                 int pipelineFlags = mPipelineFlags;
                 if (chain.getAppliedClip() != null) {
                     if (chain.getAppliedClip().hasScissorClip()) {
-                        pipelineFlags |= PipelineInfo.FLAG_HAS_SCISSOR_CLIP;
+                        pipelineFlags |= PipelineInfo.kHasScissorClip_Flag;
                     }
                     if (chain.getAppliedClip().hasStencilClip()) {
-                        pipelineFlags |= PipelineInfo.FLAG_HAS_STENCIL_CLIP;
+                        pipelineFlags |= PipelineInfo.kHasStencilClip_Flag;
                     }
                 }
                 chain.mHead.onPrepare(flushState, mWriteView, pipelineFlags);
@@ -124,8 +126,8 @@ public class OpsTask extends RenderTask {
 
         OpsRenderPass opsRenderPass = flushState.beginOpsRenderPass(mWriteView,
                 mContentBounds,
-                Engine.makeAction(mColorLoadOp, Engine.STORE_OP_STORE),
-                Engine.ACTION_DISCARD_STORE,
+                makeAction(mColorLoadOp, STORE_OP_STORE),
+                ACTION_DISCARD_STORE,
                 mLoadClearColor,
                 mSampledTextures,
                 mPipelineFlags);
@@ -144,7 +146,7 @@ public class OpsTask extends RenderTask {
 
     @Override
     protected void onMakeClosed(RecordingContext context) {
-        if (mOpChains.isEmpty() && mColorLoadOp == Engine.LOAD_OP_LOAD) {
+        if (mOpChains.isEmpty() && mColorLoadOp == LOAD_OP_LOAD) {
             return;
         }
         SurfaceProxy target = getTarget();
@@ -158,7 +160,7 @@ public class OpsTask extends RenderTask {
             if (textureProxy.isManualMSAAResolve()) {
                 int msaaTop;
                 int msaaBottom;
-                if (mWriteView.getOrigin() == Engine.SurfaceOrigin_LowerLeft) {
+                if (mWriteView.getOrigin() == SurfaceOrigin.kLowerLeft) {
                     msaaTop = rtHeight - mContentBounds.mBottom;
                     msaaBottom = rtHeight - mContentBounds.mTop;
                 } else {
@@ -187,7 +189,7 @@ public class OpsTask extends RenderTask {
         op.visitProxies(addDependency);
 
         if ((processorAnalysis & ProcessorAnalyzer.NON_COHERENT_BLENDING) != 0) {
-            mPipelineFlags |= PipelineInfo.FLAG_RENDER_PASS_BLEND_BARRIER;
+            mPipelineFlags |= PipelineInfo.kRenderPassBlendBarrier_Flag;
         }
 
         recordOp(op, clip != null && clip.hasClip() ? clip : null, processorAnalysis);

@@ -18,9 +18,12 @@
 
 package icyllis.akashigi.opengl;
 
-import icyllis.akashigi.engine.*;
+import icyllis.akashigi.engine.BackendFormat;
+import icyllis.akashigi.engine.BackendTexture;
 
 import javax.annotation.Nonnull;
+
+import static icyllis.akashigi.engine.Engine.BackendApi;
 
 public final class GLBackendTexture extends BackendTexture {
 
@@ -49,7 +52,7 @@ public final class GLBackendTexture extends BackendTexture {
 
     @Override
     public int getBackend() {
-        return Engine.OPENGL;
+        return BackendApi.kOpenGL;
     }
 
     @Override

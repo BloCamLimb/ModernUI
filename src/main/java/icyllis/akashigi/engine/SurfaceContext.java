@@ -21,6 +21,8 @@ package icyllis.akashigi.engine;
 import icyllis.akashigi.core.ImageInfo;
 import icyllis.akashigi.core.ImageInfo.AlphaType;
 
+import static icyllis.akashigi.engine.Engine.SurfaceOrigin;
+
 /**
  * Helper to orchestrate commands for a particular surface.
  * <p>
@@ -99,8 +101,7 @@ public class SurfaceContext implements AutoCloseable {
     /**
      * Read view and write view have the same origin.
      *
-     * @see Engine#SurfaceOrigin_UpperLeft
-     * @see Engine#SurfaceOrigin_LowerLeft
+     * @see SurfaceOrigin
      */
     public final int getOrigin() {
         return mReadView.mOrigin;

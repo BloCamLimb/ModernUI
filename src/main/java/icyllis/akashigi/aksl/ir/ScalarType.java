@@ -48,12 +48,12 @@ public final class ScalarType extends Type {
     }
 
     @Override
-    public int bitWidth() {
+    public int getBitWidth() {
         return mBitWidth;
     }
 
     @Override
-    public int columns() {
+    public int cols() {
         return 1;
     }
 
@@ -63,29 +63,29 @@ public final class ScalarType extends Type {
     }
 
     @Override
-    public int slotCount() {
-        return 1;
-    }
-
-    @Override
-    public double minimumValue() {
+    public double getMinValue() {
         return switch (mScalarKind) {
-            case SCALAR_KIND_SIGNED -> highPrecision() ? Integer.MIN_VALUE
-                    : Short.MIN_VALUE;
+            case SCALAR_KIND_SIGNED -> mBitWidth == 32
+                    ? 0x8000_0000
+                    : 0xFFFF_8000;
             case SCALAR_KIND_UNSIGNED -> 0;
-            default -> doublePrecision() ? -Double.MAX_VALUE
+            default -> mBitWidth == 64
+                    ? -Double.MAX_VALUE
                     : -Float.MAX_VALUE;
         };
     }
 
     @Override
-    public double maximumValue() {
+    public double getMaxValue() {
         return switch (mScalarKind) {
-            case SCALAR_KIND_SIGNED -> highPrecision() ? Integer.MAX_VALUE
-                    : Short.MAX_VALUE;
-            case SCALAR_KIND_UNSIGNED -> highPrecision() ? 0xFFFFFFFF
-                    : 0xFFFF;
-            default -> doublePrecision() ? Double.MAX_VALUE
+            case SCALAR_KIND_SIGNED -> mBitWidth == 32
+                    ? 0x7FFF_FFFF
+                    : 0x7FFF;
+            case SCALAR_KIND_UNSIGNED -> mBitWidth == 32
+                    ? 0xFFFF_FFFFL
+                    : 0xFFFFL;
+            default -> mBitWidth == 64
+                    ? Double.MAX_VALUE
                     : Float.MAX_VALUE;
         };
     }

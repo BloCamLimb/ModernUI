@@ -18,9 +18,11 @@
 
 package icyllis.akashigi.opengl;
 
-import icyllis.akashigi.engine.*;
+import icyllis.akashigi.engine.BackendRenderTarget;
 
 import javax.annotation.Nonnull;
+
+import static icyllis.akashigi.engine.Engine.BackendApi;
 
 public final class GLBackendRenderTarget extends BackendRenderTarget {
 
@@ -43,7 +45,7 @@ public final class GLBackendRenderTarget extends BackendRenderTarget {
 
     @Override
     public int getBackend() {
-        return Engine.OPENGL;
+        return BackendApi.kOpenGL;
     }
 
     @Override

@@ -18,10 +18,12 @@
 
 package icyllis.akashigi.vulkan;
 
-import icyllis.akashigi.engine.*;
+import icyllis.akashigi.engine.BackendFormat;
+import icyllis.akashigi.engine.BackendRenderTarget;
 
 import javax.annotation.Nonnull;
 
+import static icyllis.akashigi.engine.Engine.BackendApi;
 import static icyllis.akashigi.vulkan.VkCore.*;
 
 public final class VkBackendRenderTarget extends BackendRenderTarget {
@@ -52,7 +54,7 @@ public final class VkBackendRenderTarget extends BackendRenderTarget {
 
     @Override
     public int getBackend() {
-        return Engine.VULKAN;
+        return BackendApi.kVulkan;
     }
 
     @Override

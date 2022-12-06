@@ -18,16 +18,18 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.core.ImageInfo.CompressionType;
 import icyllis.akashigi.core.*;
-import icyllis.akashigi.core.Surface;
 import icyllis.akashigi.core.ImageInfo.ColorType;
+import icyllis.akashigi.core.Surface;
+import icyllis.akashigi.core.ImageInfo.CompressionType;
 import icyllis.akashigi.text.TextBlobCache;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+
+import static icyllis.akashigi.engine.Engine.BackendApi;
 
 /**
  * Can be used to perform actions related to the generating Context in a thread safe manner. The
@@ -38,7 +40,7 @@ public final class ContextThreadSafeProxy {
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
     private static int createUniqueID() {
-        for (;;) {
+        for (; ; ) {
             final int value = sNextID.get();
             final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
@@ -128,12 +130,12 @@ public final class ContextThreadSafeProxy {
             return null;
         }
 
-        if (backendFormat.getBackend() != Engine.OPENGL && glWrapDefaultFramebuffer) {
+        if (backendFormat.getBackend() != BackendApi.kOpenGL && glWrapDefaultFramebuffer) {
             // The flag can only be used for a OpenGL backend.
             return null;
         }
 
-        if (backendFormat.getBackend() != Engine.VULKAN &&
+        if (backendFormat.getBackend() != BackendApi.kVulkan &&
                 (vkSupportInputAttachment || vkSecondaryCommandBuffer)) {
             // The flags can only be used for a Vulkan backend.
             return null;

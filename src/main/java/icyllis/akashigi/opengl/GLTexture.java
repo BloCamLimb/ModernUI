@@ -59,14 +59,14 @@ public final class GLTexture extends Texture {
         mOwnership = true;
 
         if (glFormatIsCompressed(format.getGLFormat()) || format.isExternal()) {
-            mFlags |= SURFACE_FLAG_READ_ONLY;
+            mFlags |= SurfaceFlags.kReadOnly;
         }
         if (mBackendTexture.isMipmapped()) {
-            mFlags |= SURFACE_FLAG_MIPMAPPED;
+            mFlags |= SurfaceFlags.kMipmapped;
         }
         if (target != null) {
             mRenderTarget = target.apply(this);
-            mFlags |= SURFACE_FLAG_RENDERABLE;
+            mFlags |= SurfaceFlags.kRenderable;
         }
 
         mMemorySize = computeSize(format, width, height, 1, info.mLevelCount);
@@ -90,12 +90,12 @@ public final class GLTexture extends Texture {
         mOwnership = ownership;
 
         // compressed formats always set 'ioType' to READ
-        assert (ioType == IOType_Read || format.isCompressed());
-        if (ioType == IOType_Read || format.isExternal()) {
-            mFlags |= SURFACE_FLAG_READ_ONLY;
+        assert (ioType == IOType.kRead || format.isCompressed());
+        if (ioType == IOType.kRead || format.isExternal()) {
+            mFlags |= SurfaceFlags.kReadOnly;
         }
         if (mBackendTexture.isMipmapped()) {
-            mFlags |= SURFACE_FLAG_MIPMAPPED;
+            mFlags |= SurfaceFlags.kMipmapped;
         }
 
         mMemorySize = computeSize(format, width, height, 1, info.mLevelCount);

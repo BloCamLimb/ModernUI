@@ -911,7 +911,7 @@ public class Canvas implements AutoCloseable {
      */
     public final void drawColor(Color color, BlendMode mode) {
         Paint paint = mTmpPaint;
-        paint.setColor(color);
+        paint.setRGBA(color.mR, color.mG, color.mB, color.mA);
         paint.setBlendMode(mode);
         drawPaint(paint);
         paint.reset();

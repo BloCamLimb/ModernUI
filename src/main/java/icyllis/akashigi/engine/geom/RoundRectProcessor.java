@@ -38,21 +38,21 @@ public class RoundRectProcessor extends GeometryProcessor {
      */
     // {(-1,-1), (-1, 1), (1, -1), (1, 1)}
     public static final Attribute
-            POSITION = new Attribute("Position", Float2_VertexAttribType, SLType.Vec2);
+            POSITION = new Attribute("Position", VertexAttribType.kFloat2, SLType.kFloat2);
     /**
      * Per-instance attributes.
      */
     // per-multiplied color
     public static final Attribute
-            COLOR = new Attribute("Color", Float4_VertexAttribType, SLType.Vec4);
+            COLOR = new Attribute("Color", VertexAttribType.kFloat4, SLType.kFloat4);
     // scale x, translate x, scale y, translate y
     public static final Attribute
-            LOCAL_RECT = new Attribute("LocalRect", Float4_VertexAttribType, SLType.Vec4);
+            LOCAL_RECT = new Attribute("LocalRect", VertexAttribType.kFloat4, SLType.kFloat4);
     // radius, stroke radius (if stroke, or 0)
     public static final Attribute
-            RADII = new Attribute("Radii", Float2_VertexAttribType, SLType.Vec2);
+            RADII = new Attribute("Radii", VertexAttribType.kFloat2, SLType.kFloat2);
     public static final Attribute
-            MODEL_VIEW = new Attribute("ModelView", Float3_VertexAttribType, SLType.Mat3);
+            MODEL_VIEW = new Attribute("ModelView", VertexAttribType.kFloat3, SLType.kFloat3x3);
 
     public static final AttributeSet VERTEX_ATTRIBS = AttributeSet.makeImplicit(
             POSITION);
@@ -76,7 +76,7 @@ public class RoundRectProcessor extends GeometryProcessor {
 
     @Override
     public byte primitiveType() {
-        return PRIMITIVE_TYPE_TRIANGLE_LIST;
+        return PrimitiveType.kTriangleList;
     }
 
     @Override
@@ -114,7 +114,7 @@ public class RoundRectProcessor extends GeometryProcessor {
             // emit attributes
             vertBuilder.emitAttributes(geomProc);
 
-            Varying rectEdge = new Varying(SLType.Vec2);
+            Varying rectEdge = new Varying(SLType.kFloat2);
             varyingHandler.addVarying("RectEdge", rectEdge);
             // add stroke radius and a full pixel bloat
             vertBuilder.codeAppendf("""
@@ -132,7 +132,7 @@ public class RoundRectProcessor extends GeometryProcessor {
             varyingHandler.addPassThroughAttribute(COLOR, outputColor,
                     VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
 
-            Varying sizeAndRadii = new Varying(SLType.Vec4);
+            Varying sizeAndRadii = new Varying(SLType.kFloat4);
             varyingHandler.addVarying("SizeAndRadii", sizeAndRadii,
                     VaryingHandler.INTERPOLATION_CAN_BE_FLAT);
             vertBuilder.codeAppendf("""
@@ -146,7 +146,7 @@ public class RoundRectProcessor extends GeometryProcessor {
             vertBuilder.codeAppendf("""
                     vec2 localPos = rectEdge + %s.yw;
                     """, LOCAL_RECT.name());
-            localPos.set("localPos", SLType.Vec2);
+            localPos.set("localPos", SLType.kFloat2);
             writeWorldPosition(vertBuilder, localPos, MODEL_VIEW.name(), worldPos);
 
             if (stroke) {

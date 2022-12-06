@@ -5,39 +5,40 @@ public class LevP1221 {
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        int[] root = new int[30000], rank = new int[30000];
+        int[] parent = new int[30000], rank = new int[30000];
         while (scanner.hasNext()) {
             int n = scanner.nextInt(), m = scanner.nextInt();
             if ((n | m) == 0) break;
             for (int i = 0; i < n; i++) {
-                root[i] = i;
+                parent[i] = i;
                 rank[i] = 1;
             }
             while (m-- > 0) {
                 int k = scanner.nextInt();
                 int first = scanner.nextInt();
                 for (int i = 1; i < k; i++)
-                    union(root, rank, first, scanner.nextInt());
+                    union(parent, rank, first, scanner.nextInt());
             }
-            int ans = 1, victim = find(root, 0);
+            int ans = 1, victim = find(parent, 0);
             for (int i = 1; i < n; i++)
-                if (find(root, i) == victim) ans++;
+                if (find(parent, i) == victim) ans++;
             System.out.println(ans);
         }
     }
 
-    static int find(int[] root, int i) {
-        return root[i] != i ? root[i] = find(root, root[i]) : i;
+    static int find(int[] parent, int i) {
+        return parent[i] != i ? parent[i] = find(parent, parent[i]) : i;
     }
 
-    static void union(int[] root, int[] rank, int x, int y) {
-        int rootX = find(root, x), rootY = find(root, y);
-        if (rootX == rootY) return; // connected
-        int rankX = rank[rootX], rankY = rank[rootY];
-        if (rankX > rankY) root[rootY] = rootX;
+    static void union(int[] parent, int[] rank, int x, int y) {
+        x = find(parent, x);
+        y = find(parent, y);
+        if (x == y) return; // connected
+        int rx = rank[x], ry = rank[y];
+        if (rx > ry) parent[y] = x;
         else {
-            root[rootX] = rootY;
-            if (rankX == rankY) rank[rootY]++;
+            parent[x] = y;
+            if (rx == ry) rank[y]++;
         }
     }
 }

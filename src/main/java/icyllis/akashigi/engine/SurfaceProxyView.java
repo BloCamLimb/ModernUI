@@ -20,6 +20,8 @@ package icyllis.akashigi.engine;
 
 import icyllis.akashigi.core.SharedPtr;
 
+import static icyllis.akashigi.engine.Engine.SurfaceOrigin;
+
 /**
  * Views a {@link SurfaceProxy} in the pipeline.
  */
@@ -32,7 +34,7 @@ public final class SurfaceProxyView implements AutoCloseable {
 
     public SurfaceProxyView(@SharedPtr SurfaceProxy proxy) {
         mProxy = proxy; // std::move()
-        mOrigin = Engine.SurfaceOrigin_UpperLeft;
+        mOrigin = SurfaceOrigin.kUpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
 
@@ -84,8 +86,7 @@ public final class SurfaceProxyView implements AutoCloseable {
     }
 
     /**
-     * @see Engine#SurfaceOrigin_UpperLeft
-     * @see Engine#SurfaceOrigin_LowerLeft
+     * @see SurfaceOrigin
      */
     public int getOrigin() {
         return mOrigin;
@@ -113,7 +114,7 @@ public final class SurfaceProxyView implements AutoCloseable {
             mProxy.unref();
         }
         mProxy = null;
-        mOrigin = Engine.SurfaceOrigin_UpperLeft;
+        mOrigin = SurfaceOrigin.kUpperLeft;
         mSwizzle = Swizzle.RGBA;
     }
 

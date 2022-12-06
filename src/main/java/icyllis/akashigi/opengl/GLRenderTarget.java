@@ -95,7 +95,7 @@ public final class GLRenderTarget extends RenderTarget {
         mOwnership = ownership;
         mStencilBuffer = stencilBuffer; // std::move
         if (framebuffer == 0) {
-            mSurfaceFlags |= Engine.SURFACE_FLAG_GL_WRAP_DEFAULT_FB;
+            mSurfaceFlags |= Engine.SurfaceFlags.kGLWrapDefaultFB;
         }
     }
 

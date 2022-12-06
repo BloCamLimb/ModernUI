@@ -23,6 +23,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nullable;
 
+import static icyllis.akashigi.engine.Engine.SurfaceFlags;
+
 /**
  * A factory for creating {@link TextureProxy}-derived objects. This class may be used on
  * the creating thread of {@link RecordingContext}.
@@ -58,7 +60,7 @@ public final class ProxyProvider {
         }
 
         // Only the proxyProvider that created a proxy should be assigning unique keys to it.
-        assert isDeferredProvider() == ((proxy.mSurfaceFlags & Engine.SURFACE_FLAG_DEFERRED_PROVIDER) != 0);
+        assert isDeferredProvider() == ((proxy.mSurfaceFlags & SurfaceFlags.kDeferredProvider) != 0);
 
         // If there is already a Resource with this key then the caller has violated the
         // normal usage pattern of uniquely keyed resources (e.g., they have created one w/o
@@ -88,11 +90,11 @@ public final class ProxyProvider {
      * Create a {@link TextureProxy} without any data.
      *
      * @see TextureProxy
-     * @see Engine#SURFACE_FLAG_BUDGETED
-     * @see Engine#SURFACE_FLAG_LOOSE_FIT
-     * @see Engine#SURFACE_FLAG_MIPMAPPED
-     * @see Engine#SURFACE_FLAG_PROTECTED
-     * @see Engine#SURFACE_FLAG_SKIP_ALLOCATOR
+     * @see SurfaceFlags#kBudgeted
+     * @see SurfaceFlags#kLooseFit
+     * @see SurfaceFlags#kMipmapped
+     * @see SurfaceFlags#kProtected
+     * @see SurfaceFlags#kSkipAllocator
      */
     @Nullable
     @SharedPtr
@@ -114,20 +116,20 @@ public final class ProxyProvider {
         }
 
         if (isDeferredProvider()) {
-            surfaceFlags |= Engine.SURFACE_FLAG_DEFERRED_PROVIDER;
+            surfaceFlags |= SurfaceFlags.kDeferredProvider;
         } else {
-            assert (surfaceFlags & Engine.SURFACE_FLAG_DEFERRED_PROVIDER) == 0;
+            assert (surfaceFlags & SurfaceFlags.kDeferredProvider) == 0;
         }
 
         return new TextureProxy(format, width, height, surfaceFlags);
     }
 
     /**
-     * @see Engine#SURFACE_FLAG_BUDGETED
-     * @see Engine#SURFACE_FLAG_LOOSE_FIT
-     * @see Engine#SURFACE_FLAG_MIPMAPPED
-     * @see Engine#SURFACE_FLAG_PROTECTED
-     * @see Engine#SURFACE_FLAG_SKIP_ALLOCATOR
+     * @see SurfaceFlags#kBudgeted
+     * @see SurfaceFlags#kLooseFit
+     * @see SurfaceFlags#kMipmapped
+     * @see SurfaceFlags#kProtected
+     * @see SurfaceFlags#kSkipAllocator
      */
     @Nullable
     @SharedPtr
@@ -150,9 +152,9 @@ public final class ProxyProvider {
         }
 
         if (isDeferredProvider()) {
-            surfaceFlags |= Engine.SURFACE_FLAG_DEFERRED_PROVIDER;
+            surfaceFlags |= SurfaceFlags.kDeferredProvider;
         } else {
-            assert (surfaceFlags & Engine.SURFACE_FLAG_DEFERRED_PROVIDER) == 0;
+            assert (surfaceFlags & SurfaceFlags.kDeferredProvider) == 0;
         }
 
         return new RenderTextureProxy(format, width, height, sampleCount, surfaceFlags);

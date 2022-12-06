@@ -22,10 +22,11 @@ import icyllis.akashigi.core.Rect2f;
 import icyllis.akashigi.core.SharedPtr;
 import icyllis.akashigi.engine.ops.Op;
 
+import static icyllis.akashigi.engine.Engine.SurfaceOrigin;
+
 /**
- * The {@link OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the
- * same render target. It is possible that these commands execute immediately (OpenGL), or get buffered
- * up for later execution (Vulkan). {@link Op Ops} execute into a {@link OpsRenderPass}.
+ * The {@code OpsRenderPass} is a series of commands (draws, clears, and discards), which all target the
+ * same render target. {@link Op Ops} execute into a {@code OpsRenderPass}.
  */
 //TODO
 public abstract class OpsRenderPass {
@@ -34,8 +35,8 @@ public abstract class OpsRenderPass {
      * DrawPipelineStatus.
      */
     private static final int
-            DrawPipelineStatus_NotConfigured = 0,
-            DrawPipelineStatus_Configured = 1,
+            DrawPipelineStatus_Ok = 0,
+            DrawPipelineStatus_NotConfigured = 1,
             DrawPipelineStatus_FailedToBind = 2;
 
     private int mDrawPipelineStatus = DrawPipelineStatus_NotConfigured;
@@ -46,7 +47,7 @@ public abstract class OpsRenderPass {
     private TextureProxy[] mGeomTextures = new TextureProxy[1];
 
     public OpsRenderPass() {
-        this(null, Engine.SurfaceOrigin_UpperLeft);
+        this(null, SurfaceOrigin.kUpperLeft);
     }
 
     public OpsRenderPass(RenderTarget rt, int origin) {
@@ -94,7 +95,7 @@ public abstract class OpsRenderPass {
             return;
         }
 
-        mDrawPipelineStatus = DrawPipelineStatus_Configured;
+        mDrawPipelineStatus = DrawPipelineStatus_Ok;
     }
 
     /**
@@ -138,7 +139,7 @@ public abstract class OpsRenderPass {
             mDrawPipelineStatus = DrawPipelineStatus_FailedToBind;
             return;
         }
-        if (mDrawPipelineStatus == DrawPipelineStatus_Configured) {
+        if (mDrawPipelineStatus == DrawPipelineStatus_Ok) {
             onBindBuffers(indexBuffer, vertexBuffer, instanceBuffer);
         } else {
             assert (mDrawPipelineStatus == DrawPipelineStatus_FailedToBind);
@@ -152,7 +153,7 @@ public abstract class OpsRenderPass {
      * @param baseVertex  the index of the first vertex to draw
      */
     public final void draw(int vertexCount, int baseVertex) {
-        if (mDrawPipelineStatus == DrawPipelineStatus_Configured) {
+        if (mDrawPipelineStatus == DrawPipelineStatus_Ok) {
             onDraw(vertexCount, baseVertex);
             getServer().getStats().incNumDraws();
         } else {
@@ -170,7 +171,7 @@ public abstract class OpsRenderPass {
      */
     public final void drawIndexed(int indexCount, int baseIndex,
                                   int baseVertex) {
-        if (mDrawPipelineStatus == DrawPipelineStatus_Configured) {
+        if (mDrawPipelineStatus == DrawPipelineStatus_Ok) {
             onDrawIndexed(indexCount, baseIndex, baseVertex);
             getServer().getStats().incNumDraws();
         } else {
@@ -189,7 +190,7 @@ public abstract class OpsRenderPass {
      */
     public final void drawInstanced(int instanceCount, int baseInstance,
                                     int vertexCount, int baseVertex) {
-        if (mDrawPipelineStatus == DrawPipelineStatus_Configured) {
+        if (mDrawPipelineStatus == DrawPipelineStatus_Ok) {
             onDrawInstanced(instanceCount, baseInstance, vertexCount, baseVertex);
             getServer().getStats().incNumDraws();
         } else {
@@ -210,7 +211,7 @@ public abstract class OpsRenderPass {
     public final void drawIndexedInstanced(int indexCount, int baseIndex,
                                            int instanceCount, int baseInstance,
                                            int baseVertex) {
-        if (mDrawPipelineStatus == DrawPipelineStatus_Configured) {
+        if (mDrawPipelineStatus == DrawPipelineStatus_Ok) {
             onDrawIndexedInstanced(indexCount, baseIndex, instanceCount, baseInstance, baseVertex);
             getServer().getStats().incNumDraws();
         } else {

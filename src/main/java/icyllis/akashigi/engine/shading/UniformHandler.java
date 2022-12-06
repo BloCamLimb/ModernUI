@@ -25,6 +25,8 @@ import javax.annotation.Nullable;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 
+import static icyllis.akashigi.engine.Engine.ShaderFlags;
+
 /**
  * Abstract class that builds uniforms.
  * <p>
@@ -138,7 +140,7 @@ public abstract class UniformHandler {
                                 byte type,
                                 String name) {
         assert (name != null && !name.isEmpty());
-        assert ((visibility & ~(Engine.Vertex_ShaderFlag | Engine.Fragment_ShaderFlag)) == 0);
+        assert ((visibility & ~(ShaderFlags.kVertex | ShaderFlags.kFragment)) == 0);
         assert (SLType.checkSLType(type));
         assert (!SLType.isCombinedSamplerType(type));
         return internalAddUniformArray(owner, visibility, type, name, ShaderVar.NonArray);
@@ -161,7 +163,7 @@ public abstract class UniformHandler {
                                      String name,
                                      int arrayCount) {
         assert (name != null && !name.isEmpty());
-        assert ((visibility & ~(Engine.Vertex_ShaderFlag | Engine.Fragment_ShaderFlag)) == 0);
+        assert ((visibility & ~(ShaderFlags.kVertex | ShaderFlags.kFragment)) == 0);
         assert (SLType.checkSLType(type));
         assert (!SLType.isCombinedSamplerType(type));
         assert (arrayCount >= 1);
@@ -206,7 +208,7 @@ public abstract class UniformHandler {
         for (int i = numUniforms() - 1; i >= 0; i--) {
             final UniformInfo u = uniform(i);
             if (u.mOwner == owner && u.mRawName.equals(rawName)) {
-                u.mVisibility |= Engine.Vertex_ShaderFlag;
+                u.mVisibility |= ShaderFlags.kVertex;
                 return u.mVariable;
             }
         }
@@ -263,36 +265,36 @@ public abstract class UniformHandler {
      */
     public static int getAlignmentMask(byte type, boolean nonArray, boolean layout) {
         switch (type) {
-            case SLType.Bool:   // fall through
-            case SLType.Int:    // fall through
-            case SLType.UInt:   // fall through
-            case SLType.Float:  // fall through
+            case SLType.kBool:   // fall through
+            case SLType.kInt:    // fall through
+            case SLType.kUInt:   // fall through
+            case SLType.kFloat:  // fall through
                 return layout == Std430Layout || nonArray ? 0x3 : 0xF; // N - 1
-            case SLType.BVec2:  // fall through
-            case SLType.IVec2:  // fall through
-            case SLType.UVec2:  // fall through
-            case SLType.Vec2:   // fall through
+            case SLType.kBool2:  // fall through
+            case SLType.kInt2:  // fall through
+            case SLType.kUInt2:  // fall through
+            case SLType.kFloat2:   // fall through
                 return layout == Std430Layout || nonArray ? 0x7 : 0xF; // 2N - 1
-            case SLType.BVec3:  // fall through
-            case SLType.BVec4:  // fall through
-            case SLType.IVec3:  // fall through
-            case SLType.IVec4:  // fall through
-            case SLType.UVec3:  // fall through
-            case SLType.UVec4:  // fall through
-            case SLType.Vec3:   // fall through
-            case SLType.Vec4:   // fall through
-            case SLType.Mat3:   // fall through
-            case SLType.Mat4:   // fall through
+            case SLType.kBool3:  // fall through
+            case SLType.kBool4:  // fall through
+            case SLType.kInt3:  // fall through
+            case SLType.kInt4:  // fall through
+            case SLType.kUInt3:  // fall through
+            case SLType.kUInt4:  // fall through
+            case SLType.kFloat3:   // fall through
+            case SLType.kFloat4:   // fall through
+            case SLType.kFloat3x3:   // fall through
+            case SLType.kFloat4x4:   // fall through
                 return 0xF; // 4N - 1
-            case SLType.Mat2:
+            case SLType.kFloat2x2:
                 return layout == Std430Layout ? 0x7 : 0xF; // as an array of Vec2
 
             // This query is only valid for certain types.
-            case SLType.Void:
-            case SLType.Sampler2D:
-            case SLType.Texture2D:
-            case SLType.Sampler:
-            case SLType.SubpassInput:
+            case SLType.kVoid:
+            case SLType.kSampler2D:
+            case SLType.kTexture2D:
+            case SLType.kSampler:
+            case SLType.kSubpassInput:
                 throw new IllegalStateException(String.valueOf(type));
         }
         throw new IllegalArgumentException(String.valueOf(type));
@@ -309,43 +311,43 @@ public abstract class UniformHandler {
      */
     public static int getSize(byte type, boolean layout) {
         switch (type) {
-            case SLType.Float:
+            case SLType.kFloat:
                 return Float.BYTES;
-            case SLType.Vec2:
+            case SLType.kFloat2:
                 return 2 * Float.BYTES;
-            case SLType.Vec3:
+            case SLType.kFloat3:
                 return 3 * Float.BYTES;
-            case SLType.Vec4:
+            case SLType.kFloat4:
                 return 4 * Float.BYTES;
-            case SLType.Bool:   // fall through
-            case SLType.Int:    // fall through
-            case SLType.UInt:
+            case SLType.kBool:   // fall through
+            case SLType.kInt:    // fall through
+            case SLType.kUInt:
                 return Integer.BYTES;
-            case SLType.BVec2:  // fall through
-            case SLType.IVec2:  // fall through
-            case SLType.UVec2:
+            case SLType.kBool2:  // fall through
+            case SLType.kInt2:  // fall through
+            case SLType.kUInt2:
                 return 2 * Integer.BYTES;
-            case SLType.BVec3:  // fall through
-            case SLType.IVec3:  // fall through
-            case SLType.UVec3:
+            case SLType.kBool3:  // fall through
+            case SLType.kInt3:  // fall through
+            case SLType.kUInt3:
                 return 3 * Integer.BYTES;
-            case SLType.BVec4:  // fall through
-            case SLType.IVec4:  // fall through
-            case SLType.UVec4:
+            case SLType.kBool4:  // fall through
+            case SLType.kInt4:  // fall through
+            case SLType.kUInt4:
                 return 4 * Integer.BYTES;
-            case SLType.Mat2:
+            case SLType.kFloat2x2:
                 return layout == Std430Layout ? 2 * 2 * Float.BYTES : 2 * 4 * Float.BYTES;
-            case SLType.Mat3:
+            case SLType.kFloat3x3:
                 return 3 * 4 * Float.BYTES;
-            case SLType.Mat4:
+            case SLType.kFloat4x4:
                 return 4 * 4 * Float.BYTES;
 
             // This query is only valid for certain types.
-            case SLType.Void:
-            case SLType.Sampler2D:
-            case SLType.Texture2D:
-            case SLType.Sampler:
-            case SLType.SubpassInput:
+            case SLType.kVoid:
+            case SLType.kSampler2D:
+            case SLType.kTexture2D:
+            case SLType.kSampler:
+            case SLType.kSubpassInput:
                 throw new IllegalStateException(String.valueOf(type));
         }
         throw new IllegalArgumentException(String.valueOf(type));

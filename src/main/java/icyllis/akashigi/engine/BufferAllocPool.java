@@ -72,7 +72,7 @@ public abstract class BufferAllocPool {
      * @param bufferType the type of buffers to create.
      */
     protected BufferAllocPool(Server server, int bufferType) {
-        assert (bufferType == BufferType_Vertex || bufferType == BufferType_Index);
+        assert (bufferType == BufferUsageFlags.kVertex || bufferType == BufferUsageFlags.kIndex);
         mServer = server;
         mBufferType = bufferType;
     }
@@ -232,7 +232,7 @@ public abstract class BufferAllocPool {
 
         @SharedPtr
         Buffer buffer = mServer.getContext().getResourceProvider()
-                .createBuffer(blockSize, mBufferType, AccessPattern_Dynamic);
+                .createBuffer(blockSize, mBufferType | BufferUsageFlags.kDynamic);
         if (buffer == null) {
             return NULL;
         }
@@ -261,7 +261,7 @@ public abstract class BufferAllocPool {
     private static class VertexPool extends BufferAllocPool {
 
         public VertexPool(Server server) {
-            super(server, Engine.BufferType_Vertex);
+            super(server, BufferUsageFlags.kVertex);
         }
 
         /**
@@ -335,7 +335,7 @@ public abstract class BufferAllocPool {
     private static class InstancePool extends BufferAllocPool {
 
         public InstancePool(Server server) {
-            super(server, Engine.BufferType_Vertex);
+            super(server, BufferUsageFlags.kVertex);
             // instance buffers are also vertex buffers, but we allocate them from a different pool
         }
 

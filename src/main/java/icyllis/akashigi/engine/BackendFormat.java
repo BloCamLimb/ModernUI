@@ -25,6 +25,8 @@ import org.lwjgl.system.NativeType;
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.Immutable;
 
+import static icyllis.akashigi.engine.Engine.BackendApi;
+
 /**
  * Describes the backend texture format, immutable.
  */
@@ -32,9 +34,9 @@ import javax.annotation.concurrent.Immutable;
 public abstract class BackendFormat {
 
     /**
-     * @see Engine#OPENGL
-     * @see Engine#VULKAN
-     * @see Engine#MOCK
+     * @see BackendApi#kOpenGL
+     * @see BackendApi#kVulkan
+     * @see BackendApi#kMock
      */
     public abstract int getBackend();
 

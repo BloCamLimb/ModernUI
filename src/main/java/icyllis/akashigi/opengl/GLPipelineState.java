@@ -73,7 +73,7 @@ public class GLPipelineState {
                              PipelineInfo pipelineInfo,
                              int width, int height) {
         mDataManager.setProjection(0, width, height,
-                pipelineInfo.origin() == Engine.SurfaceOrigin_LowerLeft);
+                pipelineInfo.origin() == Engine.SurfaceOrigin.kLowerLeft);
         mGPImpl.setData(mDataManager, pipelineInfo.geomProc());
         //TODO FP and upload
     }

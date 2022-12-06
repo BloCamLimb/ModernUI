@@ -52,7 +52,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public int getBackend() {
-        return MOCK;
+        return BackendApi.kMock;
     }
 
     @Override
