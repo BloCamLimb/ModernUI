@@ -49,9 +49,6 @@ public final class DeferredListRecorder implements AutoCloseable {
 
     @Override
     public void close() {
-        if (mContext != null) {
-            mContext.close();
-        }
-        mContext = null;
+        mContext = RefCnt.move(mContext);
     }
 }

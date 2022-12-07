@@ -19,12 +19,12 @@
 package icyllis.akashigi.engine;
 
 import icyllis.akashigi.core.Color;
-import icyllis.akashigi.core.ImageInfo;
+import icyllis.akashigi.core.Core;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import static icyllis.akashigi.engine.Engine.SurfaceFlags.kRenderable;
+import static icyllis.akashigi.engine.Engine.*;
 
 /**
  * Represents the capabilities of a Context.
@@ -385,15 +385,15 @@ public abstract class Caps {
 
         // There are known problems with 24 vs 32 bit BPP with this color type. Just fail for now if
         // using a transfer buffer.
-        if (colorType == ImageInfo.COLOR_TYPE_RGB_888X) {
+        if (colorType == ColorType.kRGB_888x) {
             transferOffsetAlignment = 0;
         }
         // It's very convenient to access 1 byte-per-channel 32-bit color types as uint32_t on the CPU.
         // Make those aligned reads out of the buffer even if the underlying API doesn't require it.
-        int channelFlags = Engine.colorTypeChannelFlags(colorType);
+        int channelFlags = ColorType.channelFlags(colorType);
         if ((channelFlags == Color.COLOR_CHANNEL_FLAGS_RGBA || channelFlags == Color.COLOR_CHANNEL_FLAGS_RGB ||
                 channelFlags == Color.COLOR_CHANNEL_FLAG_ALPHA || channelFlags == Color.COLOR_CHANNEL_FLAG_GRAY) &&
-                Engine.colorTypeBytesPerPixel(colorType) == 4) {
+                ColorType.bytesPerPixel(colorType) == 4) {
             switch ((int) (transferOffsetAlignment & 0b11)) {
                 // offset alignment already a multiple of 4
                 case 0:
@@ -529,7 +529,7 @@ public abstract class Caps {
         if (!isFormatTexturable(format)) {
             return false;
         }
-        if ((surfaceFlags & kRenderable) != 0) {
+        if ((surfaceFlags & SurfaceFlags.kRenderable) != 0) {
             final int maxSize = maxRenderTargetSize();
             if (width > maxSize || height > maxSize) {
                 return false;
@@ -561,14 +561,14 @@ public abstract class Caps {
     }
 
     public final boolean isFormatCompatible(int colorType, BackendFormat format) {
-        if (colorType == ImageInfo.COLOR_TYPE_UNKNOWN) {
+        if (colorType == ColorType.kUnknown) {
             return false;
         }
         int compression = format.getCompressionType();
-        if (compression != ImageInfo.COMPRESSION_TYPE_NONE) {
+        if (compression != Core.CompressionType.kNone) {
             return colorType == (DataUtils.compressionTypeIsOpaque(compression) ?
-                    ImageInfo.COLOR_TYPE_RGB_888X :
-                    ImageInfo.COLOR_TYPE_RGBA_8888);
+                    ColorType.kRGB_888x :
+                    ColorType.kRGBA_8888);
         }
         return onFormatCompatible(colorType, format);
     }
@@ -582,7 +582,7 @@ public abstract class Caps {
     public final BackendFormat getDefaultBackendFormat(int colorType,
                                                        boolean renderable) {
         // Unknown color types are always an invalid format.
-        if (colorType == ImageInfo.COLOR_TYPE_UNKNOWN) {
+        if (colorType == ColorType.kUnknown) {
             return null;
         }
         BackendFormat format = onGetDefaultBackendFormat(colorType);
@@ -595,7 +595,7 @@ public abstract class Caps {
         // Currently, we require that it be possible to write pixels into the "default" format. Perhaps,
         // that could be a separate requirement from the caller. It seems less necessary if
         // renderability was requested.
-        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ImageInfo.COLOR_TYPE_UNKNOWN) {
+        if ((getSupportedWriteColorType(colorType, format, colorType) & 0xFFFFFFFFL) == ColorType.kUnknown) {
             return null;
         }
         if (renderable && !isFormatRenderable(colorType, format, 1)) {
@@ -617,8 +617,8 @@ public abstract class Caps {
 
     public final short getReadSwizzle(BackendFormat format, int colorType) {
         int compression = format.getCompressionType();
-        if (compression != ImageInfo.COMPRESSION_TYPE_NONE) {
-            if (colorType == ImageInfo.COLOR_TYPE_RGB_888X || colorType == ImageInfo.COLOR_TYPE_RGBA_8888) {
+        if (compression != Core.CompressionType.kNone) {
+            if (colorType == ColorType.kRGB_888x || colorType == ColorType.kRGBA_8888) {
                 return Swizzle.RGBA;
             }
             assert false;

@@ -38,7 +38,7 @@ public class SurfaceFillContext extends SurfaceContext {
     }
 
     public OpsTask getOpsTask() {
-        assert mContext.isOnOwnerThread();
+        assert mContext.isOwnerThread();
         if (mOpsTask == null || mOpsTask.isClosed()) {
             return nextOpsTask();
         }

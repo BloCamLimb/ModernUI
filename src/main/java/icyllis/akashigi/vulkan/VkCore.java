@@ -144,10 +144,10 @@ public final class VkCore extends VK11 {
 
     public static int vkFormatCompressionType(@NativeType("VkFormat") int vkFormat) {
         return switch (vkFormat) {
-            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> ImageInfo.COMPRESSION_TYPE_ETC2_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> ImageInfo.COMPRESSION_TYPE_BC1_RGB8_UNORM;
-            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> ImageInfo.COMPRESSION_TYPE_BC1_RGBA8_UNORM;
-            default -> ImageInfo.COMPRESSION_TYPE_NONE;
+            case VK_FORMAT_ETC2_R8G8B8_UNORM_BLOCK -> Core.CompressionType.kETC2_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGB_UNORM_BLOCK -> Core.CompressionType.kBC1_RGB8_UNORM;
+            case VK_FORMAT_BC1_RGBA_UNORM_BLOCK -> Core.CompressionType.kBC1_RGBA8_UNORM;
+            default -> Core.CompressionType.kNone;
         };
     }
 

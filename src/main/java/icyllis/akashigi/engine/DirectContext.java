@@ -73,9 +73,9 @@ public final class DirectContext extends RecordingContext {
      *          throw new IllegalStateException();
      *      }
      *      ...
-     *      // destroy and close operations
-     *      direct.drop();
-     *      direct.close();
+     *      // destroy and close
+     *      direct.discard();
+     *      direct.unref();
      *      glfwDestroyWindow(window);
      *      glfwTerminate();
      *  }
@@ -85,12 +85,12 @@ public final class DirectContext extends RecordingContext {
      */
     @Nullable
     public static DirectContext makeOpenGL(ContextOptions options) {
-        var context = new DirectContext(BackendApi.kOpenGL, options);
+        DirectContext context = new DirectContext(BackendApi.kOpenGL, options);
         context.mServer = GLServer.make(context, options);
         if (context.init()) {
             return context;
         }
-        context.close();
+        context.unref();
         return null;
     }
 
@@ -138,16 +138,16 @@ public final class DirectContext extends RecordingContext {
 
     @Override
     protected boolean init() {
+        assert isOwnerThread();
         if (mServer == null) {
             return false;
         }
 
-        mThreadSafeProxy.init(mServer.mCaps, mServer.getPipelineBuilder());
+        mThreadSafeProxy.init(mServer.getCaps());
         if (!super.init()) {
             return false;
         }
 
-        assert getTextBlobCache() != null;
         assert getThreadSafeCache() != null;
 
         mResourceCache = new ResourceCache(getContextID());

@@ -80,7 +80,7 @@ public final class ResourceProvider {
     @SharedPtr
     @SuppressWarnings("unchecked")
     public <T extends Resource> T findByUniqueKey(Object key) {
-        assert mServer.getContext().isOnOwnerThread();
+        assert mServer.getContext().isOwnerThread();
         return mServer.getContext().isDiscarded() ? null : (T) mCache.findAndRefUniqueResource(key);
     }
 
@@ -130,7 +130,7 @@ public final class ResourceProvider {
                                  int sampleCount,
                                  int surfaceFlags,
                                  String label) {
-        assert mServer.getContext().isOnOwnerThread();
+        assert mServer.getContext().isOwnerThread();
         if (mServer.getContext().isDiscarded()) {
             return null;
         }
@@ -199,17 +199,17 @@ public final class ResourceProvider {
                                  int rowBytes,
                                  long pixels,
                                  String label) {
-        assert mServer.getContext().isOnOwnerThread();
+        assert mServer.getContext().isOwnerThread();
         if (mServer.getContext().isDiscarded()) {
             return null;
         }
 
-        if (srcColorType == ImageInfo.COLOR_TYPE_UNKNOWN ||
-                dstColorType == ImageInfo.COLOR_TYPE_UNKNOWN) {
+        if (srcColorType == ColorType.kUnknown ||
+                dstColorType == ColorType.kUnknown) {
             return null;
         }
 
-        int minRowBytes = width * colorTypeBytesPerPixel(srcColorType);
+        int minRowBytes = width * ColorType.bytesPerPixel(srcColorType);
         int actualRowBytes = rowBytes > 0 ? rowBytes : minRowBytes;
         if (actualRowBytes < minRowBytes) {
             return null;
@@ -247,7 +247,7 @@ public final class ResourceProvider {
     @Nullable
     @SharedPtr
     public Texture findAndRefScratchTexture(Object key, String label) {
-        assert mServer.getContext().isOnOwnerThread();
+        assert mServer.getContext().isOwnerThread();
         assert !mServer.getContext().isDiscarded();
         assert key != null;
 
@@ -279,7 +279,7 @@ public final class ResourceProvider {
                                             int sampleCount,
                                             int surfaceFlags,
                                             String label) {
-        assert mServer.getContext().isOnOwnerThread();
+        assert mServer.getContext().isOwnerThread();
         assert !mServer.getContext().isDiscarded();
         assert !format.isCompressed();
         assert mServer.getCaps().validateSurfaceParams(width, height, format,
@@ -335,7 +335,7 @@ public final class ResourceProvider {
     }
 
     public void assignUniqueKeyToResource(Object key, Resource resource) {
-        assert mServer.getContext().isOnOwnerThread();
+        assert mServer.getContext().isOwnerThread();
         if (mServer.getContext().isDiscarded() || resource == null) {
             return;
         }

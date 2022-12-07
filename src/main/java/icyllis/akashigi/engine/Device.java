@@ -20,6 +20,8 @@ package icyllis.akashigi.engine;
 
 import icyllis.akashigi.core.*;
 
+import static icyllis.akashigi.engine.Engine.*;
+
 /**
  * The drawing device is backed by GPU.
  */
@@ -36,14 +38,14 @@ public final class Device extends BaseDevice {
         if (sdc == null) {
             return null;
         }
-        if (alphaType != ImageInfo.ALPHA_TYPE_PREMUL && alphaType != ImageInfo.ALPHA_TYPE_OPAQUE) {
+        if (alphaType != Core.AlphaType.kPremul && alphaType != Core.AlphaType.kOpaque) {
             return null;
         }
         RecordingContext rContext = sdc.getContext();
         if (rContext.isDiscarded()) {
             return null;
         }
-        int colorType = ImageInfo.screenColorType(sdc.getColorType());
+        int colorType = ColorType.toPublic(sdc.getColorType());
         if (rContext.isSurfaceCompatible(colorType)) {
             ImageInfo info = new ImageInfo(sdc.getWidth(), sdc.getHeight(), colorType, alphaType);
             return new Device(sdc, info, clear);

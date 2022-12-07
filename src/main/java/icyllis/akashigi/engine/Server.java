@@ -18,10 +18,10 @@
 
 package icyllis.akashigi.engine;
 
+import icyllis.akashigi.aksl.Compiler;
 import icyllis.akashigi.core.Rect2i;
 import icyllis.akashigi.core.SharedPtr;
 import icyllis.akashigi.engine.ops.OpsTask;
-import icyllis.akashigi.aksl.Compiler;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -256,7 +256,7 @@ public abstract class Server {
         if (x + width > texture.getWidth() || y + height > texture.getHeight()) {
             return false;
         }
-        int bpp = colorTypeBytesPerPixel(srcColorType);
+        int bpp = ColorType.bytesPerPixel(srcColorType);
         int minRowBytes = width * bpp;
         if (rowBytes < minRowBytes) {
             return false;
@@ -296,8 +296,8 @@ public abstract class Server {
      *
      * @param writeView       the render target to be rendered to
      * @param contentBounds   the clipped content bounds of the render pass
-     * @param colorAction     the color load/store ops
-     * @param stencilAction   the stencil load/store ops
+     * @param colorOps        the color load/store ops
+     * @param stencilOps      the stencil load/store ops
      * @param clearColor      the color used to clear the color buffer
      * @param sampledTextures list of all textures to be sampled in the render pass (no refs)
      * @param pipelineFlags   combination of flags of all pipelines to be used in the render pass
@@ -306,21 +306,21 @@ public abstract class Server {
     @Nullable
     public final OpsRenderPass getOpsRenderPass(SurfaceProxyView writeView,
                                                 Rect2i contentBounds,
-                                                int colorAction,
-                                                int stencilAction,
+                                                byte colorOps,
+                                                byte stencilOps,
                                                 float[] clearColor,
                                                 Set<TextureProxy> sampledTextures,
                                                 int pipelineFlags) {
         mStats.incRenderPasses();
         return onGetOpsRenderPass(writeView, contentBounds,
-                colorAction, stencilAction, clearColor,
+                colorOps, stencilOps, clearColor,
                 sampledTextures, pipelineFlags);
     }
 
     protected abstract OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
                                                         Rect2i contentBounds,
-                                                        int colorAction,
-                                                        int stencilAction,
+                                                        byte colorOps,
+                                                        byte stencilOps,
                                                         float[] clearColor,
                                                         Set<TextureProxy> sampledTextures,
                                                         int pipelineFlags);

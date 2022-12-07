@@ -18,10 +18,10 @@
 
 package icyllis.akashigi.engine;
 
+import icyllis.akashigi.core.Core;
 import icyllis.akashigi.core.ImageInfo;
-import icyllis.akashigi.core.ImageInfo.AlphaType;
 
-import static icyllis.akashigi.engine.Engine.SurfaceOrigin;
+import static icyllis.akashigi.engine.Engine.*;
 
 /**
  * Helper to orchestrate commands for a particular surface.
@@ -72,16 +72,15 @@ public class SurfaceContext implements AutoCloseable {
     }
 
     /**
-     * @see ImageInfo#COLOR_TYPE_UNKNOWN
+     * @see ColorType
      */
     public final int getColorType() {
         return ImageInfo.colorType(mColorInfo);
     }
 
     /**
-     * @see ImageInfo#ALPHA_TYPE_UNKNOWN
+     * @see Core.AlphaType
      */
-    @AlphaType
     public final int getAlphaType() {
         return ImageInfo.alphaType(mColorInfo);
     }

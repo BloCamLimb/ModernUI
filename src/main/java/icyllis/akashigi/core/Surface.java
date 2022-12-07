@@ -72,7 +72,7 @@ public class Surface extends RefCnt {
                                                  int origin, int sampleCount,
                                                  int colorType,
                                                  Runnable releaseCallback) {
-        if (context == null || sampleCount < 1 || colorType == ImageInfo.COLOR_TYPE_UNKNOWN) {
+        if (context == null || sampleCount < 1 || colorType == Core.ColorType.kUnknown) {
             if (releaseCallback != null) {
                 releaseCallback.run();
             }
@@ -148,7 +148,7 @@ public class Surface extends RefCnt {
 
     @Override
     protected void dispose() {
-        mDevice.close();
+        mDevice.unref();
         mDevice = null;
         if (mCachedCanvas != null) {
             mCachedCanvas.mSurface = null;

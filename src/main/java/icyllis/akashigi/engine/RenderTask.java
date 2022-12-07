@@ -151,7 +151,7 @@ public abstract class RenderTask extends RefCnt {
     }
 
     protected final void addTarget(@SharedPtr SurfaceProxy proxy) {
-        assert (mDrawingMgr.getContext().isOnOwnerThread());
+        assert (mDrawingMgr.getContext().isOwnerThread());
         assert (!isClosed());
         mDrawingMgr.setLastRenderTask(proxy, this);
         proxy.isUsedAsTaskTarget();
@@ -194,7 +194,7 @@ public abstract class RenderTask extends RefCnt {
         if (isClosed()) {
             return;
         }
-        assert (mDrawingMgr.getContext().isOnOwnerThread());
+        assert (mDrawingMgr.getContext().isOwnerThread());
 
         onMakeClosed(context);
 
@@ -225,7 +225,7 @@ public abstract class RenderTask extends RefCnt {
         if ((mFlags & DETACHED_FLAG) != 0) {
             return;
         }
-        assert (drawingMgr.getContext().isOnOwnerThread());
+        assert (drawingMgr.getContext().isOwnerThread());
         mDrawingMgr = null;
         mFlags |= DETACHED_FLAG;
 
@@ -249,7 +249,7 @@ public abstract class RenderTask extends RefCnt {
     public final void makeSkippable() {
         assert (isClosed());
         if (!isSkippable()) {
-            assert (mDrawingMgr.getContext().isOnOwnerThread());
+            assert (mDrawingMgr.getContext().isOwnerThread());
             mFlags |= SKIPPABLE_FLAG;
             onMakeSkippable();
         }
@@ -263,7 +263,7 @@ public abstract class RenderTask extends RefCnt {
     }
 
     public final void addDependency(TextureProxy dependency, int samplerState) {
-        assert (mDrawingMgr.getContext().isOnOwnerThread());
+        assert (mDrawingMgr.getContext().isOwnerThread());
         assert (!isClosed());
 
         RenderTask dependencyTask = mDrawingMgr.getLastRenderTask(dependency);

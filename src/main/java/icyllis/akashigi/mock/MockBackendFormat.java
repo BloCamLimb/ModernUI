@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.mock;
 
-import icyllis.akashigi.core.ImageInfo;
+import icyllis.akashigi.core.Core;
 import icyllis.akashigi.engine.BackendFormat;
 
 import javax.annotation.Nonnull;
@@ -62,7 +62,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public int getChannelFlags() {
-        return colorTypeChannelFlags(mColorType);
+        return ColorType.channelFlags(mColorType);
     }
 
     @Nonnull
@@ -73,7 +73,7 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public boolean isSRGB() {
-        return mCompressionType == ImageInfo.COMPRESSION_TYPE_NONE && mColorType == ImageInfo.COLOR_TYPE_RGBA_8888_SRGB;
+        return mCompressionType == Core.CompressionType.kNone && mColorType == ColorType.kRGBA_8888_SRGB;
     }
 
     @Override
@@ -83,12 +83,12 @@ public class MockBackendFormat extends BackendFormat {
 
     @Override
     public int getBytesPerBlock() {
-        if (mCompressionType != ImageInfo.COMPRESSION_TYPE_NONE) {
+        if (mCompressionType != Core.CompressionType.kNone) {
             return 8; // 1 * ETC1Block or BC1Block
         } else if (mIsStencilFormat) {
             return 4;
         } else {
-            return colorTypeBytesPerPixel(mColorType);
+            return ColorType.bytesPerPixel(mColorType);
         }
     }
 

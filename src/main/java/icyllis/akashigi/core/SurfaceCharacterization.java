@@ -51,8 +51,7 @@ public final class SurfaceCharacterization {
     private final boolean mIsProtected;
 
     /**
-     * Create via {@link Context#createCharacterization(long, ImageInfo, BackendFormat, int, int, boolean, boolean,
-     * boolean, boolean, boolean, boolean)}.
+     * Create via {@link ContextThreadSafeProxy#createCharacterization}.
      */
     @ApiStatus.Internal
     public SurfaceCharacterization(ContextThreadSafeProxy contextInfo,

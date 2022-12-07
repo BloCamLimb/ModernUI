@@ -130,7 +130,7 @@ public abstract class SurfaceProxy extends RefCnt {
         mSurfaceFlags = texture.getSurfaceFlags() | surfaceFlags;
         assert (mSurfaceFlags & SurfaceFlags.kLooseFit) == 0;
         assert (mFormat.isExternal() == texture.isExternal());
-        assert (texture.getBudgetType() == BUDGET_TYPE_BUDGETED) == isBudgeted();
+        assert (texture.getBudgetType() == BudgetType.kBudgeted) == isBudgeted();
         assert (!texture.isExternal() || isReadOnly());
         mUniqueID = texture; // converting from unique resource ID to a proxy ID
     }

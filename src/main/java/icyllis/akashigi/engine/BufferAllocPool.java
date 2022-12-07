@@ -232,7 +232,7 @@ public abstract class BufferAllocPool {
 
         @SharedPtr
         Buffer buffer = mServer.getContext().getResourceProvider()
-                .createBuffer(blockSize, mBufferType | BufferUsageFlags.kDynamic);
+                .createBuffer(blockSize, mBufferType | BufferUsageFlags.kStream);
         if (buffer == null) {
             return NULL;
         }

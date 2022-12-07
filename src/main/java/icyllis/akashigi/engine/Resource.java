@@ -99,7 +99,7 @@ public abstract class Resource {
     // set once in constructor, clear to null after being destroyed
     Server mServer;
 
-    private byte mBudgetType = BUDGET_TYPE_NOT_BUDGETED;
+    private byte mBudgetType = BudgetType.kNotBudgeted;
     private boolean mWrapped = false;
 
     @Nonnull
@@ -309,7 +309,7 @@ public abstract class Resource {
         // resources are a special case: the unique keys give us a weak ref so that we can reuse the
         // same resource (rather than re-wrapping). When a wrapped resource is no longer referenced,
         // it will always be released - it is never converted to a scratch resource.
-        if (mBudgetType != BUDGET_TYPE_BUDGETED && !mWrapped) {
+        if (mBudgetType != BudgetType.kBudgeted && !mWrapped) {
             return;
         }
 
@@ -347,15 +347,15 @@ public abstract class Resource {
             // We should never make a wrapped resource budgeted.
             assert !mWrapped;
             // Only wrapped resources can be in the cacheable budgeted state.
-            assert mBudgetType != BUDGET_TYPE_WRAP_CACHEABLE;
-            if (mServer != null && mBudgetType == BUDGET_TYPE_NOT_BUDGETED) {
+            assert mBudgetType != BudgetType.kWrapCacheable;
+            if (mServer != null && mBudgetType == BudgetType.kNotBudgeted) {
                 // Currently, resources referencing wrapped objects are not budgeted.
-                mBudgetType = BUDGET_TYPE_BUDGETED;
+                mBudgetType = BudgetType.kBudgeted;
                 mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         } else {
-            if (mServer != null && mBudgetType == BUDGET_TYPE_BUDGETED && mUniqueKey == null) {
-                mBudgetType = BUDGET_TYPE_NOT_BUDGETED;
+            if (mServer != null && mBudgetType == BudgetType.kBudgeted && mUniqueKey == null) {
+                mBudgetType = BudgetType.kNotBudgeted;
                 mServer.getContext().getResourceCache().didChangeBudgetStatus(this);
             }
         }
@@ -367,7 +367,7 @@ public abstract class Resource {
      */
     @ApiStatus.Internal
     public final int getBudgetType() {
-        assert mBudgetType == BUDGET_TYPE_BUDGETED || mWrapped || mUniqueKey == null;
+        assert mBudgetType == BudgetType.kBudgeted || mWrapped || mUniqueKey == null;
         return mBudgetType;
     }
 
@@ -407,7 +407,7 @@ public abstract class Resource {
         // Resources in the cacheable budgeted state are never cleanable when they have a unique
         // key. The key must be removed/invalidated to make them cleanable.
         return !hasRef() && !hasCommandBufferUsage() &&
-                !(mBudgetType == BUDGET_TYPE_WRAP_CACHEABLE && mUniqueKey != null);
+                !(mBudgetType == BudgetType.kWrapCacheable && mUniqueKey != null);
     }
 
     @ApiStatus.Internal
@@ -422,8 +422,8 @@ public abstract class Resource {
      * @param budgeted budgeted or not
      */
     protected final void registerWithCache(boolean budgeted) {
-        assert mBudgetType == BUDGET_TYPE_NOT_BUDGETED;
-        mBudgetType = budgeted ? BUDGET_TYPE_BUDGETED : BUDGET_TYPE_NOT_BUDGETED;
+        assert mBudgetType == BudgetType.kNotBudgeted;
+        mBudgetType = budgeted ? BudgetType.kBudgeted : BudgetType.kNotBudgeted;
         mScratchKey = computeScratchKey();
         mServer.getContext().getResourceCache().insertResource(this);
     }
@@ -436,9 +436,9 @@ public abstract class Resource {
      * @param cacheable cacheable or not
      */
     protected final void registerWithCacheWrapped(boolean cacheable) {
-        assert mBudgetType == BUDGET_TYPE_NOT_BUDGETED;
+        assert mBudgetType == BudgetType.kNotBudgeted;
         // Resources referencing wrapped objects are never budgeted. They may be cached or uncached.
-        mBudgetType = cacheable ? BUDGET_TYPE_WRAP_CACHEABLE : BUDGET_TYPE_NOT_BUDGETED;
+        mBudgetType = cacheable ? BudgetType.kWrapCacheable : BudgetType.kNotBudgeted;
         mWrapped = true;
         mServer.getContext().getResourceCache().insertResource(this);
     }
@@ -481,7 +481,7 @@ public abstract class Resource {
      * key, and does not have a unique key.
      */
     final boolean isScratch() {
-        return mBudgetType == BUDGET_TYPE_BUDGETED && mScratchKey != null && mUniqueKey == null;
+        return mBudgetType == BudgetType.kBudgeted && mScratchKey != null && mUniqueKey == null;
     }
 
     final boolean isUsableAsScratch() {

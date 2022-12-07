@@ -162,15 +162,15 @@ public class RoundRectProcessor extends GeometryProcessor {
                         """);
             }
             if (stroke) {
-                // outer bloat 0.5, inner bloat 1.0
                 fragBuilder.codeAppend("""
-                        float edgeAlpha = 1.0 - smoothstep(-1.0, 0.5, abs(d) - sizeAndRadii.w);
-                        """);
-            } else {
-                fragBuilder.codeAppend("""
-                        float edgeAlpha = 1.0 - smoothstep(-1.0, 0.5, d);
+                        d = abs(d) - sizeAndRadii.w;
                         """);
             }
+            // use L2-norm of grad SDF
+            fragBuilder.codeAppend("""
+                        float afwidth = length(vec2(dFdx(d),dFdy(d)))*0.7;
+                        float edgeAlpha = 1.0 - smoothstep(-afwidth,afwidth,d);
+                        """);
             fragBuilder.codeAppendf("""
                     vec4 %s = vec4(edgeAlpha);
                     """, outputCoverage);

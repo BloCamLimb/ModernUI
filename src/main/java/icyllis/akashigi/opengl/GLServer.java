@@ -26,8 +26,7 @@ import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryStack;
 
 import javax.annotation.Nullable;
-import java.util.ArrayDeque;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Function;
 
 import static icyllis.akashigi.engine.Engine.*;
@@ -79,12 +78,9 @@ public final class GLServer extends Server {
     public static GLServer make(DirectContext context, ContextOptions options) {
         GLCapabilities capabilities;
         try {
-            capabilities = GL.getCapabilities();
-            if (capabilities == null) {
-                // checks may be disabled
-                capabilities = GL.createCapabilities();
-            }
-        } catch (IllegalStateException e) {
+            // checks may be disabled
+            capabilities = Objects.requireNonNullElseGet(GL.getCapabilities(), GL::createCapabilities);
+        } catch (Exception e) {
             // checks may be enabled
             capabilities = GL.createCapabilities();
         }
@@ -310,7 +306,7 @@ public final class GLServer extends Server {
 
         assert (x >= 0 && y >= 0 && width > 0 && height > 0);
         assert (pixels != 0);
-        int bpp = colorTypeBytesPerPixel(srcColorType);
+        int bpp = ColorType.bytesPerPixel(srcColorType);
 
         glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
@@ -336,8 +332,8 @@ public final class GLServer extends Server {
     @Override
     protected OpsRenderPass onGetOpsRenderPass(SurfaceProxyView writeView,
                                                Rect2i contentBounds,
-                                               int colorAction,
-                                               int stencilAction,
+                                               byte colorOps,
+                                               byte stencilOps,
                                                float[] clearColor,
                                                Set<TextureProxy> sampledTextures,
                                                int pipelineFlags) {
@@ -348,21 +344,21 @@ public final class GLServer extends Server {
         return mCachedOpsRenderPass.set(writeView.getProxy().peekRenderTarget(),
                 contentBounds,
                 writeView.getOrigin(),
-                colorAction,
-                stencilAction,
+                colorOps,
+                stencilOps,
                 clearColor);
     }
 
     public GLCommandBuffer beginRenderPass(GLRenderTarget renderTarget,
-                                           int colorAction,
-                                           int stencilAction,
+                                           byte colorOps,
+                                           byte stencilOps,
                                            float[] clearColor) {
         handleDirtyContext();
 
         GLCommandBuffer cmdBuffer = currentCommandBuffer();
 
-        boolean colorLoadClear = Engine.loadOp(colorAction) == LOAD_OP_CLEAR;
-        boolean stencilLoadClear = Engine.loadOp(stencilAction) == LOAD_OP_CLEAR;
+        boolean colorLoadClear = LoadStoreOps.loadOp(colorOps) == LoadOp.kClear;
+        boolean stencilLoadClear = LoadStoreOps.loadOp(stencilOps) == LoadOp.kClear;
         if (colorLoadClear || stencilLoadClear) {
             int framebuffer = renderTarget.getRenderFramebuffer();
             cmdBuffer.flushScissorTest(false);
@@ -387,12 +383,12 @@ public final class GLServer extends Server {
     }
 
     public void endRenderPass(GLRenderTarget renderTarget,
-                              int colorAction,
-                              int stencilAction) {
+                              byte colorOps,
+                              byte stencilOps) {
         handleDirtyContext();
 
-        boolean colorStoreDiscard = Engine.storeOp(colorAction) == STORE_OP_DISCARD;
-        boolean stencilStoreDiscard = Engine.storeOp(stencilAction) == STORE_OP_DISCARD;
+        boolean colorStoreDiscard = LoadStoreOps.storeOp(colorOps) == StoreOp.kDontCare;
+        boolean stencilStoreDiscard = LoadStoreOps.storeOp(stencilOps) == StoreOp.kDontCare;
         if (colorStoreDiscard || stencilStoreDiscard) {
             int framebuffer = renderTarget.getRenderFramebuffer();
             try (MemoryStack stack = MemoryStack.stackPush()) {

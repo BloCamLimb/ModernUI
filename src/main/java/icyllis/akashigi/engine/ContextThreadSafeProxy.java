@@ -18,11 +18,8 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.core.*;
-import icyllis.akashigi.core.ImageInfo.ColorType;
 import icyllis.akashigi.core.Surface;
-import icyllis.akashigi.core.ImageInfo.CompressionType;
-import icyllis.akashigi.text.TextBlobCache;
+import icyllis.akashigi.core.*;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
@@ -32,15 +29,17 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static icyllis.akashigi.engine.Engine.BackendApi;
 
 /**
- * Can be used to perform actions related to the generating Context in a thread safe manner. The
- * proxy does not access the 3D API (e.g. OpenGL) that backs the generating Context.
+ * Can be used to perform actions related to the generating {@link Context} in a thread safe manner. The
+ * proxy does not access the 3D API (e.g. OpenGL) that backs the generating {@link Context}.
+ * <p>
+ * This class is a public API, except where noted.
  */
 public final class ContextThreadSafeProxy {
 
     private static final AtomicInteger sNextID = new AtomicInteger(1);
 
     private static int createUniqueID() {
-        for (; ; ) {
+        for (;;) {
             final int value = sNextID.get();
             final int newValue = value == -1 ? 1 : value + 1; // 0 is reserved
             if (sNextID.weakCompareAndSetVolatile(value, newValue)) {
@@ -49,16 +48,14 @@ public final class ContextThreadSafeProxy {
         }
     }
 
-    final int mBackend;
-    final ContextOptions mOptions;
-    final int mContextID;
+    private final int mBackend;
+    private final ContextOptions mOptions;
+    private final int mContextID;
 
-    volatile Caps mCaps;
-    volatile TextBlobCache mTextBlobCache;
-    volatile ThreadSafeCache mThreadSafeCache;
-    volatile ThreadSafePipelineBuilder mPipelineBuilder;
+    private volatile Caps mCaps;
+    private volatile ThreadSafeCache mThreadSafeCache;
 
-    private final AtomicBoolean mDiscared = new AtomicBoolean(false);
+    private final AtomicBoolean mDiscarded = new AtomicBoolean(false);
 
     ContextThreadSafeProxy(int backend, ContextOptions options) {
         mBackend = backend;
@@ -181,42 +178,45 @@ public final class ContextThreadSafeProxy {
     }
 
     /**
-     * Retrieve the default {@link BackendFormat} for a given ColorType and renderability.
+     * Retrieve the default {@link BackendFormat} for a given {@link Core.ColorType} and renderability.
      * It is guaranteed that this backend format will be the one used by the following
-     * ColorType and {@link SurfaceCharacterization#createBackendFormat(int, BackendFormat)}.
+     * {@link Core.ColorType} and {@link SurfaceCharacterization#createBackendFormat(int, BackendFormat)}.
      * <p>
      * The caller should check that the returned format is valid (nullability).
      *
+     * @param colorType  see {@link Core.ColorType}
      * @param renderable true if the format will be used as color attachments
      */
     @Nullable
-    public BackendFormat getDefaultBackendFormat(@ColorType int colorType, boolean renderable) {
-        assert mCaps != null;
+    public BackendFormat getDefaultBackendFormat(int colorType, boolean renderable) {
+        assert (mCaps != null);
 
+        colorType = Engine.ColorType.toPublic(colorType);
         BackendFormat format = mCaps.getDefaultBackendFormat(colorType, renderable);
         if (format == null) {
             return null;
         }
-
-        assert !renderable || mCaps.isFormatRenderable(colorType, format, 1);
-
+        assert (!renderable ||
+                mCaps.isFormatRenderable(colorType, format, 1));
         return format;
     }
 
     /**
-     * Retrieve the {@link BackendFormat} for a given CompressionType. This is
+     * Retrieve the {@link BackendFormat} for a given {@link Core.CompressionType}. This is
      * guaranteed to match the backend format used by the following
-     * createCompressedBackendTexture methods that take a CompressionType.
+     * createCompressedBackendTexture methods that take a {@link Core.CompressionType}.
      * <p>
      * The caller should check that the returned format is valid (nullability).
+     *
+     * @param compressionType see {@link Core.CompressionType}
      */
     @Nullable
-    public BackendFormat getCompressedBackendFormat(@CompressionType int compressionType) {
-        assert mCaps != null;
+    public BackendFormat getCompressedBackendFormat(int compressionType) {
+        assert (mCaps != null);
 
         BackendFormat format = mCaps.getCompressedBackendFormat(compressionType);
-
-        assert format == null || (!format.isExternal() && mCaps.isFormatTexturable(format));
+        assert (format == null) ||
+                (!format.isExternal() && mCaps.isFormatTexturable(format));
         return format;
     }
 
@@ -224,11 +224,17 @@ public final class ContextThreadSafeProxy {
      * Gets the maximum supported sample count for a color type. 1 is returned if only non-MSAA
      * rendering is supported for the color type. 0 is returned if rendering to this color type
      * is not supported at all.
+     *
+     * @param colorType see {@link Core.ColorType}
      */
-    public int getMaxSurfaceSampleCount(@ColorType int colorType) {
-        assert mCaps != null;
+    public int getMaxSurfaceSampleCount(int colorType) {
+        assert (mCaps != null);
 
+        colorType = Engine.ColorType.toPublic(colorType);
         BackendFormat format = mCaps.getDefaultBackendFormat(colorType, true);
+        if (format == null) {
+            return 0;
+        }
         return mCaps.getMaxRenderTargetSampleCount(format);
     }
 
@@ -241,7 +247,22 @@ public final class ContextThreadSafeProxy {
 
     @ApiStatus.Internal
     public boolean matches(Context c) {
-        return this == c.mThreadSafeProxy;
+        return c != null && this == c.mThreadSafeProxy;
+    }
+
+    @ApiStatus.Internal
+    public int getBackend() {
+        return mBackend;
+    }
+
+    @ApiStatus.Internal
+    public ContextOptions getOptions() {
+        return mOptions;
+    }
+
+    @ApiStatus.Internal
+    public int getContextID() {
+        return mContextID;
     }
 
     @ApiStatus.Internal
@@ -249,31 +270,32 @@ public final class ContextThreadSafeProxy {
         return mCaps;
     }
 
-    void init(Caps caps, ThreadSafePipelineBuilder pipelineBuilder) {
-        assert caps != null && pipelineBuilder != null;
-        mCaps = caps;
-        mTextBlobCache = new TextBlobCache(mContextID);
-        mThreadSafeCache = new ThreadSafeCache();
-        mPipelineBuilder = pipelineBuilder;
+    @ApiStatus.Internal
+    public ThreadSafeCache getThreadSafeCache() {
+        return mThreadSafeCache;
     }
 
-    void discard() {
-        if (!mDiscared.compareAndExchange(false, true)) {
-            mTextBlobCache.freeAll();
-        }
+    void init(Caps caps) {
+        assert (caps != null);
+        mCaps = caps;
+        mThreadSafeCache = new ThreadSafeCache();
+    }
+
+    boolean discard() {
+        return !mDiscarded.compareAndExchange(false, true);
     }
 
     boolean isDiscarded() {
-        return mDiscared.get();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return this == o;
+        return mDiscarded.get();
     }
 
     @Override
     public int hashCode() {
         return mContextID;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        return this == o;
     }
 }

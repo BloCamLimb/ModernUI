@@ -18,8 +18,7 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.core.Color;
-import icyllis.akashigi.core.ImageInfo;
+import icyllis.akashigi.core.*;
 import org.lwjgl.system.NativeType;
 
 import javax.annotation.Nonnull;
@@ -72,12 +71,12 @@ public abstract class BackendFormat {
     public abstract boolean isExternal();
 
     /**
-     * @see ImageInfo#COMPRESSION_TYPE_NONE
+     * @see Core.CompressionType#kNone
      */
     public abstract int getCompressionType();
 
     public final boolean isCompressed() {
-        return getCompressionType() != ImageInfo.COMPRESSION_TYPE_NONE;
+        return getCompressionType() != Core.CompressionType.kNone;
     }
 
     /**

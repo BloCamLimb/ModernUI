@@ -25,7 +25,7 @@ import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.akashigi.engine.Engine.SurfaceFlags.kRenderable;
+import static icyllis.akashigi.engine.Engine.*;
 
 /**
  * The ResourceAllocator explicitly distributes {@link Resource Resources} at flush time. It
@@ -409,10 +409,10 @@ public final class ResourceAllocator {
                 texture = Resource.create(mTexture);
             }
             assert (texture != null);
-            assert (proxy.mSurfaceFlags & kRenderable) == 0 || texture.getRenderTarget() != null;
+            assert (proxy.mSurfaceFlags & SurfaceFlags.kRenderable) == 0 || texture.getRenderTarget() != null;
 
             // Make texture budgeted if this proxy is budgeted.
-            if (proxy.isBudgeted() && texture.getBudgetType() != Engine.BUDGET_TYPE_BUDGETED) {
+            if (proxy.isBudgeted() && texture.getBudgetType() != BudgetType.kBudgeted) {
                 texture.makeBudgeted(true);
             }
 

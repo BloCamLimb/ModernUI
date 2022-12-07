@@ -48,8 +48,8 @@ import static org.lwjgl.system.MemoryUtil.*;
 public class TestManagedResource {
 
     public static void main(String[] args) {
-        long time = System.nanoTime();
         PrintWriter pw = new PrintWriter(System.out, true, StandardCharsets.UTF_8);
+        long time = System.nanoTime();
 
         GLFW.glfwInit();
         // load first
@@ -100,17 +100,19 @@ public class TestManagedResource {
         GLServer server = (GLServer) dContext.getServer();
         GLPipelineStateCache pipelineStateCache = server.getPipelineBuilder();
         @SharedPtr
-        TextureProxy proxy2 = dContext.getProxyProvider().createRenderTextureProxy(
+        TextureProxy target = dContext.getProxyProvider().createRenderTextureProxy(
                 GLBackendFormat.make(GLCore.GL_RGBA8),
                 800, 800, 4,
                 SurfaceFlags.kBudgeted | SurfaceFlags.kRenderable
         );
-        GLPipelineState pipelineState = pipelineStateCache.findOrCreatePipelineState(
-                new PipelineInfo(new SurfaceProxyView(proxy2), new RoundRectProcessor(true),
+        Objects.requireNonNull(target);
+        GLPipelineState pso = pipelineStateCache.findOrCreatePipelineState(
+                new PipelineInfo(new SurfaceProxyView(target), new RoundRectProcessor(true),
                         null, null, null, null,
                         PipelineInfo.kNone_Flag));
-        try (proxy2) {
-            pw.println(proxy2);
+        {
+            pw.println(target);
+            target.unref();
         }
 
         pw.println(dContext.getServer().getPipelineBuilder().getStates());
@@ -131,14 +133,14 @@ public class TestManagedResource {
 
         //testSimilarity(pw);
 
-        dContext.close();
+        dContext.unref();
         GLFW.glfwDestroyWindow(window);
         GLFW.glfwTerminate();
 
         try {
             assert false;
         } catch (AssertionError e) {
-            System.out.println("Assert: " + (System.nanoTime() - time) / 1000000 + "ms");
+            pw.println("Assert: " + (System.nanoTime() - time) / 1000000 + "ms");
         }
     }
 
@@ -174,8 +176,8 @@ public class TestManagedResource {
                     1, SurfaceFlags.kMipmapped |
                             SurfaceFlags.kBudgeted |
                             SurfaceFlags.kRenderable,
-                    ImageInfo.COLOR_TYPE_RGBA_8888,
-                    ImageInfo.COLOR_TYPE_RGBA_8888,
+                    Core.ColorType.kRGBA_8888,
+                    Core.ColorType.kRGBA_8888,
                     0,
                     memAddress(pixels),
                     null);

@@ -18,8 +18,7 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.core.ImageInfo;
-import icyllis.akashigi.core.SharedPtr;
+import icyllis.akashigi.core.*;
 
 public class SurfaceDrawContext extends SurfaceFillContext {
 
@@ -27,7 +26,7 @@ public class SurfaceDrawContext extends SurfaceFillContext {
                               SurfaceProxyView readView,
                               SurfaceProxyView writeView,
                               int colorType) {
-        super(context, readView, writeView, ImageInfo.makeColorInfo(colorType, ImageInfo.ALPHA_TYPE_PREMUL));
+        super(context, readView, writeView, ImageInfo.makeColorInfo(colorType, Core.AlphaType.kPremul));
     }
 
     public static SurfaceDrawContext make(

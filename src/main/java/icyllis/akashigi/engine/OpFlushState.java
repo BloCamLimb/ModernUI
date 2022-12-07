@@ -71,14 +71,14 @@ public class OpFlushState implements MeshDrawTarget {
 
     public OpsRenderPass beginOpsRenderPass(SurfaceProxyView writeView,
                                             Rect2i contentBounds,
-                                            int colorAction,
-                                            int stencilAction,
+                                            byte colorOps,
+                                            byte stencilOps,
                                             float[] clearColor,
                                             Set<TextureProxy> sampledTextures,
                                             int pipelineFlags) {
         assert (mOpsRenderPass == null);
         OpsRenderPass opsRenderPass = mServer.getOpsRenderPass(writeView, contentBounds,
-                colorAction, stencilAction, clearColor,
+                colorOps, stencilOps, clearColor,
                 sampledTextures, pipelineFlags);
         if (opsRenderPass == null) {
             return null;

@@ -18,8 +18,7 @@
 
 package icyllis.akashigi.opengl;
 
-import icyllis.akashigi.core.Color;
-import icyllis.akashigi.core.ImageInfo;
+import icyllis.akashigi.core.*;
 import icyllis.akashigi.engine.ShaderErrorHandler;
 import icyllis.akashigi.engine.ThreadSafePipelineBuilder;
 import org.lwjgl.opengl.GL45C;
@@ -163,14 +162,14 @@ public final class GLCore extends GL45C {
     }
 
     /**
-     * @see ImageInfo#COMPRESSION_TYPE_NONE
+     * @see Core.CompressionType#kNone
      */
     public static int glFormatCompressionType(@NativeType("GLenum") int format) {
         return switch (format) {
-            case GL_COMPRESSED_RGB8_ETC2 -> ImageInfo.COMPRESSION_TYPE_ETC2_RGB8_UNORM;
-            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT -> ImageInfo.COMPRESSION_TYPE_BC1_RGB8_UNORM;
-            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT -> ImageInfo.COMPRESSION_TYPE_BC1_RGBA8_UNORM;
-            default -> ImageInfo.COMPRESSION_TYPE_NONE;
+            case GL_COMPRESSED_RGB8_ETC2 -> Core.CompressionType.kETC2_RGB8_UNORM;
+            case GL_COMPRESSED_RGB_S3TC_DXT1_EXT -> Core.CompressionType.kBC1_RGB8_UNORM;
+            case GL_COMPRESSED_RGBA_S3TC_DXT1_EXT -> Core.CompressionType.kBC1_RGBA8_UNORM;
+            default -> Core.CompressionType.kNone;
         };
     }
 

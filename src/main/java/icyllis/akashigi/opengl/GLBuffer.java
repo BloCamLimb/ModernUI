@@ -60,10 +60,10 @@ public final class GLBuffer extends Buffer {
         if ((usage & (BufferUsageFlags.kVertex | BufferUsageFlags.kIndex | BufferUsageFlags.kUniform)) != 0) {
             allocFlags |= GL_DYNAMIC_STORAGE_BIT;
         }
-        if ((usage & BufferUsageFlags.kXferCpuToGpu) != 0) {
+        if ((usage & BufferUsageFlags.kTransferSrc) != 0) {
             allocFlags |= GL_MAP_WRITE_BIT;
         }
-        if ((usage & BufferUsageFlags.kXferGpuToCpu) != 0) {
+        if ((usage & BufferUsageFlags.kTransferDst) != 0) {
             allocFlags |= GL_MAP_READ_BIT;
         }
 
@@ -115,13 +115,13 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected long onLock(int mode, int offset, int size) {
-        assert (getServer().getContext().isOnOwnerThread());
+        assert (getServer().getContext().isOwnerThread());
         assert (!mLocked);
         assert (mBuffer != 0);
 
         mLocked = true;
 
-        if (mode == LockMode_Read) {
+        if (mode == kRead_LockMode) {
             // prefer mapping, such as pixel buffer object
             mMappedBuffer = nglMapNamedBufferRange(mBuffer, offset, size, GL_MAP_READ_BIT);
             if (mMappedBuffer == NULL) {
@@ -130,7 +130,7 @@ public final class GLBuffer extends Buffer {
             return mMappedBuffer;
         } else {
             // prefer CPU staging buffer
-            assert (mode == LockMode_WriteDiscard);
+            assert (mode == kWriteDiscard_LockMode);
             mStagingBuffer = getServer().getCpuBufferCache().makeBuffer(size);
             assert (mStagingBuffer != null);
             return mStagingBuffer.data();
@@ -139,17 +139,17 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected void onUnlock(int mode, int offset, int size) {
-        assert (getServer().getContext().isOnOwnerThread());
+        assert (getServer().getContext().isOwnerThread());
         assert (mLocked);
         assert (mBuffer != 0);
 
-        if (mode == LockMode_Read) {
+        if (mode == kRead_LockMode) {
             assert (mMappedBuffer != NULL);
             glUnmapNamedBuffer(mBuffer);
             mMappedBuffer = NULL;
         } else {
-            assert (mode == LockMode_WriteDiscard);
-            if ((mUsage & BufferUsageFlags.kStatic) != 0) {
+            assert (mode == kWriteDiscard_LockMode);
+            if ((mUsage & BufferUsageFlags.kStatic) == 0) {
                 glInvalidateBufferSubData(mBuffer, offset, size);
             }
             assert (mStagingBuffer != null);
@@ -172,9 +172,9 @@ public final class GLBuffer extends Buffer {
 
     @Override
     protected boolean onUpdateData(long data, int offset, int size) {
-        assert (getServer().getContext().isOnOwnerThread());
+        assert (getServer().getContext().isOwnerThread());
         assert (mBuffer != 0);
-        if ((mUsage & BufferUsageFlags.kStatic) != 0) {
+        if ((mUsage & BufferUsageFlags.kStatic) == 0) {
             glInvalidateBufferSubData(mBuffer, offset, size);
         }
         doUploadData(data, offset, size);

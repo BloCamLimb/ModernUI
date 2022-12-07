@@ -18,26 +18,26 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.core.ImageInfo;
-import icyllis.akashigi.core.ImageInfo.ColorType;
-import icyllis.akashigi.text.TextBlobCache;
+import icyllis.akashigi.core.Core;
 import org.jetbrains.annotations.ApiStatus;
 
 import javax.annotation.Nullable;
 
 /**
- * Base context class that can add draw ops.
+ * This class is a public API, except where noted.
  */
-public abstract sealed class RecordingContext extends Context permits DeferredContext, DirectContext {
+public abstract sealed class RecordingContext extends Context
+        permits DeferredContext, DirectContext {
 
     private final Thread mOwnerThread;
 
-    private ProxyProvider mProxyProvider;
+    private final ProxyProvider mProxyProvider;
     private DrawingManager mDrawingManager;
 
     protected RecordingContext(ContextThreadSafeProxy proxy) {
         super(proxy);
         mOwnerThread = Thread.currentThread();
+        mProxyProvider = new ProxyProvider(this);
     }
 
     @Nullable
@@ -46,7 +46,7 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
         if (context.init()) {
             return context;
         }
-        context.close();
+        context.unref();
         return null;
     }
 
@@ -62,22 +62,27 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
 
     /**
      * Can a {@link icyllis.akashigi.core.Image} be created with the given color type.
+     *
+     * @param colorType see {@link Core.ColorType}
      */
-    public final boolean isImageCompatible(@ColorType int colorType) {
+    public final boolean isImageCompatible(int colorType) {
         return getDefaultBackendFormat(colorType, false) != null;
     }
 
     /**
      * Can a {@link icyllis.akashigi.core.Surface} be created with the given color type.
      * To check whether MSAA is supported use {@link #getMaxSurfaceSampleCount(int)}.
+     *
+     * @param colorType see {@link Core.ColorType}
      */
-    public final boolean isSurfaceCompatible(@ColorType int colorType) {
-        if (ImageInfo.COLOR_TYPE_R16G16_UNORM == colorType ||
-                ImageInfo.COLOR_TYPE_A16_UNORM == colorType ||
-                ImageInfo.COLOR_TYPE_A16_FLOAT == colorType ||
-                ImageInfo.COLOR_TYPE_R16G16_FLOAT == colorType ||
-                ImageInfo.COLOR_TYPE_R16G16B16A16_UNORM == colorType ||
-                ImageInfo.COLOR_TYPE_GRAY_8 == colorType) {
+    public final boolean isSurfaceCompatible(int colorType) {
+        colorType = Engine.ColorType.toPublic(colorType);
+        if (Core.ColorType.kR16G16_unorm == colorType ||
+                Core.ColorType.kA16_unorm == colorType ||
+                Core.ColorType.kA16_float == colorType ||
+                Core.ColorType.kR16G16_float == colorType ||
+                Core.ColorType.kR16G16B16A16_unorm == colorType ||
+                Core.ColorType.kGray_8 == colorType) {
             return false;
         }
 
@@ -109,13 +114,8 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
     }
 
     @ApiStatus.Internal
-    public final TextBlobCache getTextBlobCache() {
-        return mThreadSafeProxy.mTextBlobCache;
-    }
-
-    @ApiStatus.Internal
     public final ThreadSafeCache getThreadSafeCache() {
-        return mThreadSafeProxy.mThreadSafeCache;
+        return mThreadSafeProxy.getThreadSafeCache();
     }
 
     @Override
@@ -123,14 +123,20 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
         if (!super.init()) {
             return false;
         }
-        mProxyProvider = new ProxyProvider(this);
+        if (mDrawingManager != null) {
+            mDrawingManager.destroy();
+        }
         mDrawingManager = new DrawingManager(this);
         return true;
     }
 
     protected void discard() {
-        mThreadSafeProxy.discard();
-        mDrawingManager.destroy();
+        if (mThreadSafeProxy.discard() && mDrawingManager != null) {
+            throw new AssertionError();
+        }
+        if (mDrawingManager != null) {
+            mDrawingManager.destroy();
+        }
         mDrawingManager = null;
     }
 
@@ -152,7 +158,7 @@ public abstract sealed class RecordingContext extends Context permits DeferredCo
     /**
      * @return true if calling from the context-creating thread
      */
-    public final boolean isOnOwnerThread() {
+    public final boolean isOwnerThread() {
         return Thread.currentThread() == mOwnerThread;
     }
 }

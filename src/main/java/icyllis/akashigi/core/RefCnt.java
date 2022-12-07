@@ -34,7 +34,7 @@ import java.util.Comparator;
  * going out of scope on the stack or calling {@link #dispose()}) if
  * {@link #getRefCnt()} > 1.
  */
-public abstract class RefCnt implements AutoCloseable {
+public abstract class RefCnt {
 
     private static final VarHandle REF_CNT;
     private static final Object2BooleanMap<RefCnt> TRACKER;
@@ -134,14 +134,6 @@ public abstract class RefCnt implements AutoCloseable {
             dispose();
             assert TRACKER.removeBoolean(this);
         }
-    }
-
-    /**
-     * Calls {@link #unref()}. May be used with try-with-resources statement.
-     */
-    @Override
-    public final void close() {
-        unref();
     }
 
     /**

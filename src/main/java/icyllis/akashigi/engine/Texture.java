@@ -142,7 +142,7 @@ public abstract class Texture extends Resource implements Surface {
     @Override
     public final int getSurfaceFlags() {
         int flags = mFlags;
-        if (getBudgetType() == BUDGET_TYPE_BUDGETED) {
+        if (getBudgetType() == BudgetType.kBudgeted) {
             flags |= SurfaceFlags.kBudgeted;
         }
         return flags;
@@ -213,7 +213,7 @@ public abstract class Texture extends Resource implements Surface {
         if (format.isCompressed()) {
             return null;
         }
-        assert (getBudgetType() == BUDGET_TYPE_BUDGETED);
+        assert (getBudgetType() == BudgetType.kBudgeted);
         return new ScratchKey().compute(
                 format,
                 mWidth, mHeight,

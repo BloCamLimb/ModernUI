@@ -31,8 +31,8 @@ public final class GLOpsRenderPass extends OpsRenderPass {
     private GLCommandBuffer mCmdBuffer;
     private GLPipelineState mPipelineState;
 
-    private int mColorAction;
-    private int mStencilAction;
+    private byte mColorOps;
+    private byte mStencilOps;
     private float[] mClearColor;
 
     @SharedPtr
@@ -55,12 +55,12 @@ public final class GLOpsRenderPass extends OpsRenderPass {
 
     public GLOpsRenderPass set(RenderTarget rt,
                                Rect2i bounds, int origin,
-                               int colorAction,
-                               int stencilAction,
+                               byte colorOps,
+                               byte stencilOps,
                                float[] clearColor) {
         set(rt, origin);
-        mColorAction = colorAction;
-        mStencilAction = stencilAction;
+        mColorOps = colorOps;
+        mStencilOps = stencilOps;
         mClearColor = clearColor;
         return this;
     }
@@ -70,8 +70,8 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         super.begin();
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
         mCmdBuffer = mServer.beginRenderPass(glRenderTarget,
-                mColorAction,
-                mStencilAction,
+                mColorOps,
+                mStencilOps,
                 mClearColor);
     }
 
@@ -82,8 +82,8 @@ public final class GLOpsRenderPass extends OpsRenderPass {
         mActiveInstanceBuffer = Resource.move(mActiveInstanceBuffer);
         GLRenderTarget glRenderTarget = (GLRenderTarget) mRenderTarget;
         mServer.endRenderPass(glRenderTarget,
-                mColorAction,
-                mStencilAction);
+                mColorOps,
+                mStencilOps);
         super.end();
     }
 

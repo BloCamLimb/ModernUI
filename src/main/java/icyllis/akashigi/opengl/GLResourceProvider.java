@@ -45,7 +45,7 @@ public final class GLResourceProvider {
     }
 
     void destroy() {
-        mSamplerCache.values().forEach(GLSampler::close);
+        mSamplerCache.values().forEach(GLSampler::unref);
         mSamplerCache.clear();
     }
 
@@ -66,7 +66,7 @@ public final class GLResourceProvider {
             return null;
         }
         if (mSamplerCache.size() >= SAMPLER_CACHE_SIZE) {
-            mSamplerCache.removeFirst().close();
+            mSamplerCache.removeFirst().unref();
             assert (mSamplerCache.size() < SAMPLER_CACHE_SIZE);
         }
         if (mSamplerCache.put(samplerState, sampler) != null) {

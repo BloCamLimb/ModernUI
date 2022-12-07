@@ -18,7 +18,8 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.core.*;
+import icyllis.akashigi.core.Color;
+import icyllis.akashigi.core.Core;
 
 /**
  * Shared constants, enums and utilities for Engine.
@@ -53,8 +54,8 @@ public final class Engine {
      */
     public static final class SurfaceOrigin {
 
-        public static final int kUpperLeft = 0;
-        public static final int kLowerLeft = 1;
+        public static final int kUpperLeft = 0; // top left, Vulkan
+        public static final int kLowerLeft = 1; // bottom left, OpenGL
 
         private SurfaceOrigin() {
         }
@@ -125,22 +126,24 @@ public final class Engine {
          */
         public static final int kDrawIndirect = 1 << 2;
 
-        public static final int kXferCpuToGpu = 1 << 3; // transfer src only
-        public static final int kXferGpuToCpu = 1 << 4; // transfer dst only
+        public static final int kTransferSrc = 1 << 3; // transfer src only
+        public static final int kTransferDst = 1 << 4; // transfer dst only
 
         /**
-         * Data store will be respecified randomly by Host and Device.
-         * (Sparse read and writes, uniform buffer, staging buffer, etc.)
          * For VBO, Data store will be respecified once by Host and used at most a frame.
-         * Per-frame updates, VBO, etc.)
+         * (Per-frame updates, VBO, IBO, etc.)
          */
-        public static final int kDynamic = 1 << 5;
+        public static final int kStream = 1 << 5;
         /**
          * Data store will be specified by Host once and may be respecified
          * repeatedly by Device. (Fixed index buffer, etc.)
          */
         public static final int kStatic = 1 << 6;
-        public static final int kStream = 1 << 7;
+        /**
+         * Data store will be respecified randomly by Host and Device.
+         * (Uniform buffer, staging buffer, etc.)
+         */
+        public static final int kDynamic = 1 << 7;
 
         public static final int kUniform = 1 << 8; // TODO remove, UBO is special buffers
 
@@ -160,42 +163,142 @@ public final class Engine {
         }
     }
 
-    public static int colorTypeBytesPerPixel(int ct) {
-        return ImageInfo.bytesPerPixel(ct);
-    }
+    public static final class ColorType extends Core.ColorType {
 
-    public static int colorTypeChannelFlags(int ct) {
-        return switch (ct) {
-            case ImageInfo.COLOR_TYPE_UNKNOWN -> 0;
-            case ImageInfo.COLOR_TYPE_ALPHA_8,
-                    ImageInfo.COLOR_TYPE_ALPHA_16,
-                    ImageInfo.COLOR_TYPE_ALPHA_F16,
-                    ImageInfo.COLOR_TYPE_ALPHA_8XXX,
-                    ImageInfo.COLOR_TYPE_ALPHA_F32XXX -> Color.COLOR_CHANNEL_FLAG_ALPHA;
-            case ImageInfo.COLOR_TYPE_BGR_565,
-                    ImageInfo.COLOR_TYPE_RGB_888,
-                    ImageInfo.COLOR_TYPE_RGB_888X -> Color.COLOR_CHANNEL_FLAGS_RGB;
-            case ImageInfo.COLOR_TYPE_ABGR_4444,
-                    ImageInfo.COLOR_TYPE_RGBA_16161616,
-                    ImageInfo.COLOR_TYPE_RGBA_F32,
-                    ImageInfo.COLOR_TYPE_RGBA_F16_CLAMPED,
-                    ImageInfo.COLOR_TYPE_RGBA_F16,
-                    ImageInfo.COLOR_TYPE_BGRA_1010102,
-                    ImageInfo.COLOR_TYPE_RGBA_1010102,
-                    ImageInfo.COLOR_TYPE_BGRA_8888,
-                    ImageInfo.COLOR_TYPE_RGBA_8888_SRGB,
-                    ImageInfo.COLOR_TYPE_RGBA_8888 -> Color.COLOR_CHANNEL_FLAGS_RGBA;
-            case ImageInfo.COLOR_TYPE_RG_88,
-                    ImageInfo.COLOR_TYPE_RG_1616,
-                    ImageInfo.COLOR_TYPE_RG_F16 -> Color.COLOR_CHANNEL_FLAGS_RG;
-            case ImageInfo.COLOR_TYPE_GRAY_8,
-                    ImageInfo.COLOR_TYPE_GRAY_8XXX -> Color.COLOR_CHANNEL_FLAG_GRAY;
-            case ImageInfo.COLOR_TYPE_R_8,
-                    ImageInfo.COLOR_TYPE_R_16,
-                    ImageInfo.COLOR_TYPE_R_F16,
-                    ImageInfo.COLOR_TYPE_R_8XXX -> Color.COLOR_CHANNEL_FLAG_RED;
-            default -> throw new AssertionError(ct);
-        };
+        /**
+         * Engine values.
+         * <p>
+         * Unusual types that come up after reading back in cases where we are reassigning the meaning
+         * of a texture format's channels to use for a particular color format but have to read back the
+         * data to a full RGBA quadruple. (e.g. using a R8 texture format as A8 color type but the API
+         * only supports reading to RGBA8.)
+         */
+        public static final int
+                kAlpha_8xxx = 21,
+                kAlpha_F32xxx = 22,
+                kGray_8xxx = 23,
+                kR_8xxx = 24;
+        /**
+         * Engine values.
+         * <p>
+         * Types used to initialize backend textures.
+         */
+        public static final int
+                kRGB_888 = 25,
+                kR_16 = 26,
+                kR_F16 = 27;
+        public static final int kLast = kR_F16;
+
+        private ColorType() {
+        }
+
+        /**
+         * @return bpp
+         */
+        public static int bytesPerPixel(int colorType) {
+            return switch (colorType) {
+                case kUnknown -> 0;
+                case kAlpha_8,
+                        kR_8,
+                        kGray_8 -> 1;
+                case kBGR_565,
+                        kABGR_4444,
+                        kR_F16,
+                        kR_16,
+                        kAlpha_16,
+                        kAlpha_F16,
+                        kRG_88 -> 2;
+                case kRGB_888 -> 3;
+                case kRGBA_8888,
+                        kRG_F16,
+                        kRG_1616,
+                        kR_8xxx,
+                        kGray_8xxx,
+                        kAlpha_8xxx,
+                        kBGRA_1010102,
+                        kRGBA_1010102,
+                        kBGRA_8888,
+                        kRGB_888x,
+                        kRGBA_8888_SRGB -> 4;
+                case kRGBA_F16,
+                        kRGBA_16161616,
+                        kRGBA_F16_Clamped -> 8;
+                case kRGBA_F32,
+                        kAlpha_F32xxx -> 16;
+                default -> throw new AssertionError(colorType);
+            };
+        }
+
+        public static int channelFlags(int colorType) {
+            return switch (colorType) {
+                case kUnknown -> 0;
+                case kAlpha_8,
+                        kAlpha_16,
+                        kAlpha_F16,
+                        kAlpha_8xxx,
+                        kAlpha_F32xxx -> Color.COLOR_CHANNEL_FLAG_ALPHA;
+                case kBGR_565,
+                        kRGB_888,
+                        kRGB_888x -> Color.COLOR_CHANNEL_FLAGS_RGB;
+                case kABGR_4444,
+                        kRGBA_16161616,
+                        kRGBA_F32,
+                        kRGBA_F16_Clamped,
+                        kRGBA_F16,
+                        kBGRA_1010102,
+                        kRGBA_1010102,
+                        kBGRA_8888,
+                        kRGBA_8888_SRGB,
+                        kRGBA_8888 -> Color.COLOR_CHANNEL_FLAGS_RGBA;
+                case kRG_88,
+                        kRG_1616,
+                        kRG_F16 -> Color.COLOR_CHANNEL_FLAGS_RG;
+                case kGray_8,
+                        kGray_8xxx -> Color.COLOR_CHANNEL_FLAG_GRAY;
+                case kR_8,
+                        kR_16,
+                        kR_F16,
+                        kR_8xxx -> Color.COLOR_CHANNEL_FLAG_RED;
+                default -> throw new AssertionError(colorType);
+            };
+        }
+
+        /**
+         * Block engine-private values.
+         */
+        public static int toPublic(int colorType) {
+            return switch (colorType) {
+                case kUnknown,
+                        kAlpha_8,
+                        kBGR_565,
+                        kABGR_4444,
+                        kRGBA_8888,
+                        kRGBA_8888_SRGB,
+                        kRGB_888x,
+                        kRG_88,
+                        kBGRA_8888,
+                        kRGBA_1010102,
+                        kBGRA_1010102,
+                        kGray_8,
+                        kAlpha_F16,
+                        kRGBA_F16,
+                        kRGBA_F16_Clamped,
+                        kRGBA_F32,
+                        kAlpha_16,
+                        kRG_1616,
+                        kRG_F16,
+                        kRGBA_16161616,
+                        kR_8 -> colorType;
+                case kAlpha_8xxx,
+                        kAlpha_F32xxx,
+                        kGray_8xxx,
+                        kR_8xxx,
+                        kRGB_888,
+                        kR_16,
+                        kR_F16 -> kUnknown;
+                default -> throw new AssertionError(colorType);
+            };
+        }
     }
 
     /**
@@ -210,34 +313,34 @@ public final class Engine {
 
     public static int colorTypeEncoding(int ct) {
         return switch (ct) {
-            case ImageInfo.COLOR_TYPE_UNKNOWN,
-                    ImageInfo.COLOR_TYPE_ALPHA_8,
-                    ImageInfo.COLOR_TYPE_BGR_565,
-                    ImageInfo.COLOR_TYPE_ABGR_4444,
-                    ImageInfo.COLOR_TYPE_RGBA_8888,
-                    ImageInfo.COLOR_TYPE_RGB_888X,
-                    ImageInfo.COLOR_TYPE_RG_88,
-                    ImageInfo.COLOR_TYPE_BGRA_8888,
-                    ImageInfo.COLOR_TYPE_RGBA_1010102,
-                    ImageInfo.COLOR_TYPE_BGRA_1010102,
-                    ImageInfo.COLOR_TYPE_GRAY_8,
-                    ImageInfo.COLOR_TYPE_ALPHA_8XXX,
-                    ImageInfo.COLOR_TYPE_GRAY_8XXX,
-                    ImageInfo.COLOR_TYPE_R_8XXX,
-                    ImageInfo.COLOR_TYPE_ALPHA_16,
-                    ImageInfo.COLOR_TYPE_RG_1616,
-                    ImageInfo.COLOR_TYPE_RGBA_16161616,
-                    ImageInfo.COLOR_TYPE_RGB_888,
-                    ImageInfo.COLOR_TYPE_R_8,
-                    ImageInfo.COLOR_TYPE_R_16 -> COLOR_ENCODING_UNORM;
-            case ImageInfo.COLOR_TYPE_RGBA_8888_SRGB -> COLOR_ENCODING_SRGB_UNORM;
-            case ImageInfo.COLOR_TYPE_ALPHA_F16,
-                    ImageInfo.COLOR_TYPE_RGBA_F16,
-                    ImageInfo.COLOR_TYPE_RGBA_F16_CLAMPED,
-                    ImageInfo.COLOR_TYPE_RGBA_F32,
-                    ImageInfo.COLOR_TYPE_ALPHA_F32XXX,
-                    ImageInfo.COLOR_TYPE_RG_F16,
-                    ImageInfo.COLOR_TYPE_R_F16 -> COLOR_ENCODING_FLOAT;
+            case ColorType.kUnknown,
+                    ColorType.kAlpha_8,
+                    ColorType.kBGR_565,
+                    ColorType.kABGR_4444,
+                    ColorType.kRGBA_8888,
+                    ColorType.kRGB_888x,
+                    ColorType.kRG_88,
+                    ColorType.kBGRA_8888,
+                    ColorType.kRGBA_1010102,
+                    ColorType.kBGRA_1010102,
+                    ColorType.kGray_8,
+                    ColorType.kAlpha_8xxx,
+                    ColorType.kGray_8xxx,
+                    ColorType.kR_8xxx,
+                    ColorType.kAlpha_16,
+                    ColorType.kRG_1616,
+                    ColorType.kRGBA_16161616,
+                    ColorType.kRGB_888,
+                    ColorType.kR_8,
+                    ColorType.kR_16 -> COLOR_ENCODING_UNORM;
+            case ColorType.kRGBA_8888_SRGB -> COLOR_ENCODING_SRGB_UNORM;
+            case ColorType.kAlpha_F16,
+                    ColorType.kRGBA_F16,
+                    ColorType.kRGBA_F16_Clamped,
+                    ColorType.kRGBA_F32,
+                    ColorType.kAlpha_F32xxx,
+                    ColorType.kRG_F16,
+                    ColorType.kR_F16 -> COLOR_ENCODING_FLOAT;
             default -> throw new AssertionError(ct);
         };
     }
@@ -255,34 +358,34 @@ public final class Engine {
 
     public static int colorTypeClampType(int ct) {
         return switch (ct) {
-            case ImageInfo.COLOR_TYPE_UNKNOWN,
-                    ImageInfo.COLOR_TYPE_ALPHA_8,
-                    ImageInfo.COLOR_TYPE_BGR_565,
-                    ImageInfo.COLOR_TYPE_ABGR_4444,
-                    ImageInfo.COLOR_TYPE_RGBA_8888,
-                    ImageInfo.COLOR_TYPE_RGBA_8888_SRGB,
-                    ImageInfo.COLOR_TYPE_RGB_888X,
-                    ImageInfo.COLOR_TYPE_RG_88,
-                    ImageInfo.COLOR_TYPE_BGRA_8888,
-                    ImageInfo.COLOR_TYPE_RGBA_1010102,
-                    ImageInfo.COLOR_TYPE_BGRA_1010102,
-                    ImageInfo.COLOR_TYPE_GRAY_8,
-                    ImageInfo.COLOR_TYPE_ALPHA_8XXX,
-                    ImageInfo.COLOR_TYPE_GRAY_8XXX,
-                    ImageInfo.COLOR_TYPE_R_8XXX,
-                    ImageInfo.COLOR_TYPE_ALPHA_16,
-                    ImageInfo.COLOR_TYPE_RG_1616,
-                    ImageInfo.COLOR_TYPE_RGBA_16161616,
-                    ImageInfo.COLOR_TYPE_RGB_888,
-                    ImageInfo.COLOR_TYPE_R_8,
-                    ImageInfo.COLOR_TYPE_R_16 -> CLAMP_TYPE_AUTO;
-            case ImageInfo.COLOR_TYPE_RGBA_F16_CLAMPED -> CLAMP_TYPE_MANUAL;
-            case ImageInfo.COLOR_TYPE_ALPHA_F16,
-                    ImageInfo.COLOR_TYPE_RGBA_F16,
-                    ImageInfo.COLOR_TYPE_RGBA_F32,
-                    ImageInfo.COLOR_TYPE_ALPHA_F32XXX,
-                    ImageInfo.COLOR_TYPE_RG_F16,
-                    ImageInfo.COLOR_TYPE_R_F16 -> CLAMP_TYPE_NONE;
+            case ColorType.kUnknown,
+                    ColorType.kAlpha_8,
+                    ColorType.kBGR_565,
+                    ColorType.kABGR_4444,
+                    ColorType.kRGBA_8888,
+                    ColorType.kRGBA_8888_SRGB,
+                    ColorType.kRGB_888x,
+                    ColorType.kRG_88,
+                    ColorType.kBGRA_8888,
+                    ColorType.kRGBA_1010102,
+                    ColorType.kBGRA_1010102,
+                    ColorType.kGray_8,
+                    ColorType.kAlpha_8xxx,
+                    ColorType.kGray_8xxx,
+                    ColorType.kR_8xxx,
+                    ColorType.kAlpha_16,
+                    ColorType.kRG_1616,
+                    ColorType.kRGBA_16161616,
+                    ColorType.kRGB_888,
+                    ColorType.kR_8,
+                    ColorType.kR_16 -> CLAMP_TYPE_AUTO;
+            case ColorType.kRGBA_F16_Clamped -> CLAMP_TYPE_MANUAL;
+            case ColorType.kAlpha_F16,
+                    ColorType.kRGBA_F16,
+                    ColorType.kRGBA_F32,
+                    ColorType.kAlpha_F32xxx,
+                    ColorType.kRG_F16,
+                    ColorType.kR_F16 -> CLAMP_TYPE_NONE;
             default -> throw new AssertionError(ct);
         };
     }
@@ -316,66 +419,93 @@ public final class Engine {
             MASK_FORMAT_ARGB = 2;   // 4-bytes per pixel, color format
 
     /**
-     * Budget types. Used with resources with a large memory allocation, such as Buffers and Textures.
-     * <p>
-     * BUDGETED: The resource is budgeted and is subject to cleaning up under budget pressure.
-     * <p>
-     * NOT_BUDGETED: The resource is not budgeted and is cleaned up as soon as it has no refs regardless
-     * of whether it has a unique or scratch key.
-     * <p>
-     * WRAP_CACHEABLE: The resource is not budgeted and is allowed to remain in the cache with no refs
-     * if it has a unique key. Scratch keys are ignored.
+     * Budget types. Used with resources with a large memory allocation.
+     *
+     * @see Resource
      */
-    public static final byte
-            BUDGET_TYPE_BUDGETED = 0,
-            BUDGET_TYPE_NOT_BUDGETED = 1,
-            BUDGET_TYPE_WRAP_CACHEABLE = 2;
+    public static final class BudgetType {
+
+        /**
+         * The resource is budgeted and is subject to cleaning up under budget pressure.
+         */
+        public static final byte kBudgeted = 0;
+        /**
+         * The resource is not budgeted and is cleaned up as soon as it has no refs regardless
+         * of whether it has a unique or scratch key.
+         */
+        public static final byte kNotBudgeted = 1;
+        /**
+         * The resource is not budgeted and is allowed to remain in the cache with no refs
+         * if it has a unique key. Scratch keys are ignored.
+         */
+        public static final byte kWrapCacheable = 2;
+
+        private BudgetType() {
+        }
+    }
 
     /**
      * Load ops. Used to specify the load operation to be used when an OpsTask/OpsRenderPass
      * begins execution.
      */
-    public static final int
-            LOAD_OP_LOAD = 0,
-            LOAD_OP_CLEAR = 1,
-            LOAD_OP_DISCARD = 2;
+    public static final class LoadOp {
+
+        public static final byte kLoad = 0;
+        public static final byte kClear = 1;
+        public static final byte kDontCare = 2;
+
+        private LoadOp() {
+        }
+    }
 
     /**
      * Store ops. Used to specify the store operation to be used when an OpsTask/OpsRenderPass
      * ends execution.
      */
-    public static final int
-            STORE_OP_STORE = 0,
-            STORE_OP_DISCARD = 1;
+    public static final class StoreOp {
 
-    private static final int LOAD_OP_MASK = 0x3;
-    private static final int STORE_OP_SHIFT = 2;
+        public static final byte kStore = 0;
+        public static final byte kDontCare = 1;
+
+        private StoreOp() {
+        }
+    }
 
     /**
      * Combination of load ops and store ops.
-     * 0-2 bits: LoadOp
-     * 2-3 bits: StoreOp
      */
-    public static final int
-            ACTION_LOAD_STORE = LOAD_OP_LOAD | (STORE_OP_STORE << STORE_OP_SHIFT),
-            ACTION_CLEAR_STORE = LOAD_OP_CLEAR | (STORE_OP_STORE << STORE_OP_SHIFT),
-            ACTION_DISCARD_STORE = LOAD_OP_DISCARD | (STORE_OP_STORE << STORE_OP_SHIFT),
-            ACTION_LOAD_DISCARD = LOAD_OP_LOAD | (STORE_OP_DISCARD << STORE_OP_SHIFT),
-            ACTION_CLEAR_DISCARD = LOAD_OP_CLEAR | (STORE_OP_DISCARD << STORE_OP_SHIFT),
-            ACTION_DISCARD_DISCARD = LOAD_OP_DISCARD | (STORE_OP_DISCARD << STORE_OP_SHIFT);
+    public static final class LoadStoreOps {
 
-    public static int makeAction(int loadOp, int storeOp) {
-        return (loadOp & LOAD_OP_MASK) | (storeOp << STORE_OP_SHIFT);
-    }
+        // ensure LoadOp.kLast < (1 << kLoadOpShift)
+        private static final int kLoadOpShift = 2;
 
-    public static int loadOp(int action) {
-        assert ((action & ~0x7) == 0);
-        return action & LOAD_OP_MASK;
-    }
+        /**
+         * Combination of load ops and store ops.
+         * 0-2 bits: LoadOp
+         * 2-3 bits: StoreOp
+         */
+        public static final byte
+                kLoad_Store = (LoadOp.kLoad << kLoadOpShift) | StoreOp.kStore,
+                kClear_Store = (LoadOp.kClear << kLoadOpShift) | StoreOp.kStore,
+                kDontLoad_Store = (LoadOp.kDontCare << kLoadOpShift) | StoreOp.kStore,
+                kLoad_DontStore = (LoadOp.kLoad << kLoadOpShift) | StoreOp.kDontCare,
+                kClear_DontStore = (LoadOp.kClear << kLoadOpShift) | StoreOp.kDontCare,
+                kDontLoad_DontStore = (LoadOp.kDontCare << kLoadOpShift) | StoreOp.kDontCare;
 
-    public static int storeOp(int action) {
-        assert ((action & ~0x7) == 0);
-        return action >> STORE_OP_SHIFT;
+        private LoadStoreOps() {
+        }
+
+        public static byte make(byte load, byte store) {
+            return (byte) ((load << kLoadOpShift) | store);
+        }
+
+        public static byte loadOp(byte ops) {
+            return (byte) (ops >>> kLoadOpShift);
+        }
+
+        public static byte storeOp(byte ops) {
+            return (byte) (ops & ((1 << kLoadOpShift) - 1));
+        }
     }
 
     /**

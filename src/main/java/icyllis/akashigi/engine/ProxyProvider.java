@@ -23,7 +23,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 
 import javax.annotation.Nullable;
 
-import static icyllis.akashigi.engine.Engine.SurfaceFlags;
+import static icyllis.akashigi.engine.Engine.*;
 
 /**
  * A factory for creating {@link TextureProxy}-derived objects. This class may be used on
@@ -101,7 +101,7 @@ public final class ProxyProvider {
     public TextureProxy createTextureProxy(BackendFormat format,
                                            int width, int height,
                                            int surfaceFlags) {
-        assert mContext.isOnOwnerThread();
+        assert mContext.isOwnerThread();
         if (mContext.isDiscarded()) {
             return null;
         }
@@ -137,7 +137,7 @@ public final class ProxyProvider {
                                                        int width, int height,
                                                        int sampleCount,
                                                        int surfaceFlags) {
-        assert mContext.isOnOwnerThread();
+        assert mContext.isOwnerThread();
         if (mContext.isDiscarded()) {
             return null;
         }

@@ -33,13 +33,13 @@ public abstract class Buffer extends Resource {
     /**
      * Locks for reading. The effect of writes is undefined.
      */
-    protected static final int LockMode_Read = 0;
+    protected static final int kRead_LockMode = 0;
     /**
      * Locks for writing. The existing contents are discarded and the initial contents of the
      * buffer. Reads (even after overwriting initial contents) should be avoided for performance
      * reasons as the memory may not be cached.
      */
-    protected static final int LockMode_WriteDiscard = 1;
+    protected static final int kWriteDiscard_LockMode = 1;
 
     protected final int mSize;
     protected final int mUsage;
@@ -77,7 +77,7 @@ public abstract class Buffer extends Resource {
      * It is an error to draw from the buffer while it is locked or transfer to/from the buffer.
      * Once a buffer is locked, subsequent calls to this method will throw an exception.
      * <p>
-     * If the buffer is of type {@link BufferUsageFlags#kXferGpuToCpu} then it is locked for
+     * If the buffer is of type {@link BufferUsageFlags#kTransferDst} then it is locked for
      * reading only. Otherwise it is locked writing only. Writing to a buffer that is locked for
      * reading or vice versa produces undefined results. If the buffer is locked for writing
      * then the buffer's previous contents are invalidated.
@@ -90,9 +90,9 @@ public abstract class Buffer extends Resource {
         }
         mLockOffset = 0;
         mLockSize = mSize;
-        return onLock((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0
-                        ? LockMode_Read
-                        : LockMode_WriteDiscard,
+        return onLock((mUsage & BufferUsageFlags.kTransferDst) != 0
+                        ? kRead_LockMode
+                        : kWriteDiscard_LockMode,
                 0, mSize);
     }
 
@@ -102,7 +102,7 @@ public abstract class Buffer extends Resource {
      * It is an error to draw from the buffer while it is locked or transfer to/from the buffer.
      * Once a buffer is locked, subsequent calls to this method will throw an exception.
      * <p>
-     * If the buffer is of type {@link BufferUsageFlags#kXferGpuToCpu} then it is locked for
+     * If the buffer is of type {@link BufferUsageFlags#kTransferDst} then it is locked for
      * reading only. Otherwise it is locked writing only. Writing to a buffer that is locked for
      * reading or vice versa produces undefined results. If the buffer is locked for writing
      * then the buffer's previous contents are invalidated.
@@ -116,9 +116,9 @@ public abstract class Buffer extends Resource {
         Objects.checkFromIndexSize(offset, size, mSize);
         mLockOffset = offset;
         mLockSize = size;
-        return onLock((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0
-                        ? LockMode_Read
-                        : LockMode_WriteDiscard,
+        return onLock((mUsage & BufferUsageFlags.kTransferDst) != 0
+                        ? kRead_LockMode
+                        : kWriteDiscard_LockMode,
                 offset, size);
     }
 
@@ -132,9 +132,9 @@ public abstract class Buffer extends Resource {
             return;
         }
         if (isLocked()) {
-            onUnlock((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0
-                            ? LockMode_Read
-                            : LockMode_WriteDiscard,
+            onUnlock((mUsage & BufferUsageFlags.kTransferDst) != 0
+                            ? kRead_LockMode
+                            : kWriteDiscard_LockMode,
                     mLockOffset, mLockSize);
         }
     }
@@ -151,9 +151,9 @@ public abstract class Buffer extends Resource {
         if (isLocked()) {
             Objects.checkIndex(offset, mLockOffset);
             Objects.checkIndex(size, mLockSize);
-            onUnlock((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0
-                            ? LockMode_Read
-                            : LockMode_WriteDiscard,
+            onUnlock((mUsage & BufferUsageFlags.kTransferDst) != 0
+                            ? kRead_LockMode
+                            : kWriteDiscard_LockMode,
                     offset, size);
         }
     }
@@ -186,7 +186,7 @@ public abstract class Buffer extends Resource {
      * <p>
      * The buffer must not be locked.
      * <p>
-     * Fails for {@link BufferUsageFlags#kXferGpuToCpu}.
+     * Fails for {@link BufferUsageFlags#kTransferDst}.
      * <p>
      * Note that buffer updates do not go through Context and therefore are
      * not serialized with other operations.
@@ -201,7 +201,7 @@ public abstract class Buffer extends Resource {
         }
         assert (size > 0 && offset + size <= mSize);
 
-        if ((mUsage & BufferUsageFlags.kXferGpuToCpu) != 0) {
+        if ((mUsage & BufferUsageFlags.kTransferDst) != 0) {
             return false;
         }
 
