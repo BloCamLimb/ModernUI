@@ -105,7 +105,7 @@ public class DrawingManager {
         clearTasks();
 
         if (purge) {
-            context.getResourceCache().clean();
+            context.getResourceCache().purge();
         }
         mFlushing = false;
 

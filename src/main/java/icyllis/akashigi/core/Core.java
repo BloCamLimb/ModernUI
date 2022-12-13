@@ -19,7 +19,7 @@
 package icyllis.akashigi.core;
 
 /**
- * Shared constants, enums and utilities for Core.
+ * Shared constants, enums and utilities for Akashi Core.
  */
 public final class Core {
 
@@ -114,6 +114,9 @@ public final class Core {
      */
     public static class ColorType {
 
+        /**
+         * Public values.
+         */
         public static final int
                 kUnknown = 0,           // uninitialized
                 kAlpha_8 = 1,           // pixel with alpha in 8-bit byte
@@ -194,6 +197,9 @@ public final class Core {
      */
     public static class SurfaceFlags {
 
+        /**
+         * Public values.
+         */
         public static final int kNone = 0;
         /**
          * Indicates whether an allocation should count against a cache budget. Budgeted when
@@ -218,6 +224,9 @@ public final class Core {
         /**
          * Used to say whether texture is backed by protected memory. Protected when set, otherwise
          * not protected.
+         *
+         * @see <a href="https://github.com/KhronosGroup/Vulkan-Guide/blob/master/chapters/protected.adoc">
+         * Protected Memory</a>
          */
         public static final int kProtected = 1 << 4;
 
@@ -225,6 +234,6 @@ public final class Core {
         }
     }
 
-    protected Core() {
+    private Core() {
     }
 }

@@ -20,14 +20,15 @@ package icyllis.akashigi.engine;
 
 import icyllis.akashigi.core.Color;
 import icyllis.akashigi.core.Core;
+import org.jetbrains.annotations.ApiStatus;
 
 /**
- * Shared constants, enums and utilities for Engine.
+ * Shared constants, enums and utilities for Akashi Engine.
  */
 public final class Engine {
 
     /**
-     * Possible 3D APIs that may be used by Engine.
+     * Possible 3D APIs that may be used by Akashi Engine.
      */
     public static final class BackendApi {
 
@@ -130,13 +131,13 @@ public final class Engine {
         public static final int kTransferDst = 1 << 4; // transfer dst only
 
         /**
-         * For VBO, Data store will be respecified once by Host and used at most a frame.
+         * For VBO, data store will be respecified once by Host and used at most a frame.
          * (Per-frame updates, VBO, IBO, etc.)
          */
         public static final int kStream = 1 << 5;
         /**
          * Data store will be specified by Host once and may be respecified
-         * repeatedly by Device. (Fixed index buffer, etc.)
+         * repeatedly by Device. (Fixed vertex/index buffer, etc.)
          */
         public static final int kStatic = 1 << 6;
         /**
@@ -163,6 +164,7 @@ public final class Engine {
         }
     }
 
+    @ApiStatus.Internal
     public static final class ColorType extends Core.ColorType {
 
         /**
@@ -477,12 +479,12 @@ public final class Engine {
     public static final class LoadStoreOps {
 
         // ensure LoadOp.kLast < (1 << kLoadOpShift)
-        private static final int kLoadOpShift = 2;
+        private static final byte kLoadOpShift = 2;
 
         /**
          * Combination of load ops and store ops.
-         * 0-2 bits: LoadOp
-         * 2-3 bits: StoreOp
+         * 0-2 bits: StoreOp
+         * 2-4 bits: LoadOp
          */
         public static final byte
                 kLoad_Store = (LoadOp.kLoad << kLoadOpShift) | StoreOp.kStore,
@@ -491,6 +493,15 @@ public final class Engine {
                 kLoad_DontStore = (LoadOp.kLoad << kLoadOpShift) | StoreOp.kDontCare,
                 kClear_DontStore = (LoadOp.kClear << kLoadOpShift) | StoreOp.kDontCare,
                 kDontLoad_DontStore = (LoadOp.kDontCare << kLoadOpShift) | StoreOp.kDontCare;
+
+        static {
+            assert (kLoad_Store == make(LoadOp.kLoad, StoreOp.kStore));
+            assert (kClear_Store == make(LoadOp.kClear, StoreOp.kStore));
+            assert (kDontLoad_Store == make(LoadOp.kDontCare, StoreOp.kStore));
+            assert (kLoad_DontStore == make(LoadOp.kLoad, StoreOp.kDontCare));
+            assert (kClear_DontStore == make(LoadOp.kClear, StoreOp.kDontCare));
+            assert (kDontLoad_DontStore == make(LoadOp.kDontCare, StoreOp.kDontCare));
+        }
 
         private LoadStoreOps() {
         }
@@ -519,6 +530,7 @@ public final class Engine {
      * Surface flags shared between the Surface & SurfaceProxy class hierarchies.
      * An arbitrary combination of flags may result in unexpected behaviors.
      */
+    @ApiStatus.Internal
     public static final class SurfaceFlags extends Core.SurfaceFlags {
 
         /**

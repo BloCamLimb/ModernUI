@@ -17,7 +17,7 @@
  */
 
 /**
- * Engine package, also known as Hardware Graphics Interface (HGI).
- * It provides the common part of the rendering pipeline and the abstraction layer of different 3D graphics APIs.
+ * Engine package provides the common part of Akashi rendering pipeline and
+ * the abstraction layer for different 3D graphics APIs.
  */
 package icyllis.akashigi.engine;

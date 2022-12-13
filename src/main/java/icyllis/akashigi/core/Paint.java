@@ -287,7 +287,7 @@ public class Paint {
         mG = 0;
         mB = 0;
         mA = 1; // opaque black
-        mWidth = 1;
+        mWidth = 2;
         mMiterLimit = 4;
         mSmoothWidth = 0;
         mShader = null;
@@ -675,7 +675,7 @@ public class Paint {
     }
 
     /**
-     * Returns the thickness of the pen for stroking shapes. The default value is 1.0 px.
+     * Returns the thickness of the pen for stroking shapes. The default value is 2.0 px.
      *
      * @return the paint's stroke width; zero for hairline, greater than zero for pen thickness
      * @see #setStrokeWidth(float)
@@ -685,7 +685,7 @@ public class Paint {
     }
 
     /**
-     * Sets the thickness of the pen for stroking shapes. The default value is 1.0 px.
+     * Sets the thickness of the pen for stroking shapes. The default value is 2.0 px.
      * A stroke width of zero is treated as "hairline" width. Hairlines are always exactly one
      * pixel wide in screen space (their thickness does not change as the canvas is scaled).
      *

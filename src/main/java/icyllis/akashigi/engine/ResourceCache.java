@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.util.*;
 
-import static icyllis.akashigi.engine.Engine.*;
+import static icyllis.akashigi.engine.Engine.BudgetType;
 
 /**
  * Manages the lifetime of all {@link Resource} instances.
@@ -156,12 +156,12 @@ public final class ResourceCache implements AutoCloseable {
 
     /**
      * Sets the max server memory byte size of the cache.
-     * A {@link #clean()} is followed by this method call.
+     * A {@link #purge()} is followed by this method call.
      * The passed value can be retrieved by {@link #getMaxResourceBytes()}.
      */
     public void setCacheLimit(long bytes) {
         mMaxBytes = bytes;
-        clean();
+        purge();
     }
 
     /**
@@ -313,69 +313,96 @@ public final class ResourceCache implements AutoCloseable {
     }
 
     /**
-     * Clean up resources to become under budget and processes resources with invalidated unique
+     * Purges resources to become under budget and processes resources with invalidated unique
      * keys.
      */
-    public void clean() {
+    public void purge() {
         //this->processFreedGpuResources();
 
-        boolean stillOverrun = isOverrun();
-        while (stillOverrun && mCleanableQueue.size() > 0) {
+        boolean stillOverBudget = isOverBudget();
+        while (stillOverBudget && !mCleanableQueue.isEmpty()) {
             Resource resource = mCleanableQueue.peek();
-            assert resource.isCleanable();
+            assert (resource.isCleanable());
             resource.release();
-            stillOverrun = isOverrun();
+            stillOverBudget = isOverBudget();
         }
 
-        if (stillOverrun) {
-            //fThreadSafeCache -> dropUniqueRefs(this);
+        if (stillOverBudget) {
+            mThreadSafeCache.dropUniqueRefs(this);
 
-            stillOverrun = isOverrun();
-            while (stillOverrun && mCleanableQueue.size() > 0) {
+            stillOverBudget = isOverBudget();
+            while (stillOverBudget && !mCleanableQueue.isEmpty()) {
                 Resource resource = mCleanableQueue.peek();
-                assert resource.isCleanable();
+                assert (resource.isCleanable());
                 resource.release();
-                stillOverrun = isOverrun();
+                stillOverBudget = isOverBudget();
             }
         }
     }
 
     /**
-     * Clean up unlocked resources as much as possible. If <code>scratchOnly</code> is true,
+     * Purge unlocked resources as much as possible. If <code>scratchOnly</code> is true,
      * the cleanable resources containing persistent data are skipped. Otherwise, all cleanable
      * resources will be deleted.
      *
-     * @param scratchOnly if true, only shared resources will be cleaned up
+     * @param scratchOnly if true, only shared resources will be purged
      */
-    public void cleanUp(boolean scratchOnly) {
-        cleanUpTime(-1, scratchOnly);
+    public void purgeUnlocked(boolean scratchOnly) {
+        purgeUnlockedSince(0, scratchOnly);
     }
 
     /**
-     * Clean up unlocked resources not used since the passed point in time. <b>The time-base is
-     * {@link System#currentTimeMillis()}.</b> There is an error of about tens of milliseconds.
-     * If <code>scratchOnly</code> is true, the cleanable resources containing persistent
-     * data are skipped. Otherwise, all cleanable resources older than <code>cleanUpTime</code>
-     * will be deleted.
+     * Purge unlocked resources not used since the passed point in time. The time-base is
+     * {@link System#nanoTime()}. If <code>scratchOnly</code> is true, the cleanable resources
+     * containing persistent data are skipped. Otherwise, all cleanable resources older than
+     * <code>purgeTime</code> will be deleted.
      *
-     * @param cleanUpTime the resources older than this time will be cleaned up
-     * @param scratchOnly if true, only shared resources will be cleaned up
+     * @param purgeTime   the resources older than this time will be purged
+     * @param scratchOnly if true, only shared resources will be purged
      */
-    public void cleanUpTime(long cleanUpTime, boolean scratchOnly) {
-        if (!scratchOnly) {
-            if (cleanUpTime > 0) {
-                //fThreadSafeCache->dropUniqueRefsOlderThan(*purgeTime);
+    public void purgeUnlockedSince(long purgeTime, boolean scratchOnly) {
+        if (scratchOnly) {
+            // Early out if the very first item is too new to purge to avoid sorting the queue when
+            // nothing will be deleted.
+            if (purgeTime > 0 && !mCleanableQueue.isEmpty() &&
+                    mCleanableQueue.peek().getCleanUpTime() >= purgeTime) {
+                return;
+            }
+
+            // Sort the queue
+            mCleanableQueue.sort();
+
+            // Make a list of the scratch resources to delete
+            List<Resource> scratchResources = new ArrayList<>();
+            for (int i = 0; i < mCleanableQueue.size(); i++) {
+                Resource resource = mCleanableQueue.elementAt(i);
+
+                if (purgeTime > 0 && resource.getCleanUpTime() >= purgeTime) {
+                    // scratch or not, all later iterations will be too recently used to purge.
+                    break;
+                }
+                assert (resource.isCleanable());
+                if (resource.mUniqueKey == null) {
+                    scratchResources.add(resource);
+                }
+            }
+
+            // Delete the scratch resources. This must be done as a separate pass
+            // to avoid messing up the sorted order of the queue
+            scratchResources.forEach(Resource::release);
+        } else {
+            if (purgeTime > 0) {
+                mThreadSafeCache.dropUniqueRefsSince(purgeTime);
             } else {
-                //fThreadSafeCache->dropUniqueRefs(nullptr);
+                mThreadSafeCache.dropUniqueRefs(null);
             }
 
             // We could disable maintaining the heap property here, but it would add a lot of
             // complexity. Moreover, this is rarely called.
-            while (mCleanableQueue.size() > 0) {
+            while (!mCleanableQueue.isEmpty()) {
                 Resource resource = mCleanableQueue.peek();
 
-                final long resourceTime = resource.getCleanUpTime();
-                if (cleanUpTime > 0 && resourceTime >= cleanUpTime) {
+                if (purgeTime > 0 && resource.getCleanUpTime() >= purgeTime) {
                     // Resources were given both LRU timestamps and tagged with a frame number when
                     // they first became cleanable. The LRU timestamp won't change again until the
                     // resource is made non-cleanable again. So, at this point all the remaining
@@ -384,37 +411,8 @@ public final class ResourceCache implements AutoCloseable {
                     break;
                 }
 
-                assert resource.isCleanable();
+                assert (resource.isCleanable());
                 resource.release();
-            }
-        } else {
-            // Early out if the very first item is too new to purge to avoid sorting the queue when
-            // nothing will be deleted.
-            if (cleanUpTime > 0 && mCleanableQueue.size() > 0 &&
-                    mCleanableQueue.peek().getCleanUpTime() >= cleanUpTime) {
-                return;
-            }
-
-            // Make a list of the scratch resources to delete
-            ArrayList<Resource> scratchResources = new ArrayList<>();
-            for (int i = 0; i < mCleanableQueue.size(); i++) {
-                Resource resource = mCleanableQueue.get(i);
-
-                final long resourceTime = resource.getCleanUpTime();
-                if (cleanUpTime > 0 && resourceTime >= cleanUpTime) {
-                    // scratch or not, all later iterations will be too recently used to purge.
-                    break;
-                }
-                assert resource.isCleanable();
-                if (resource.mUniqueKey == null) {
-                    scratchResources.add(resource);
-                }
-            }
-
-            // Delete the scratch resources. This must be done as a separate pass
-            // to avoid messing up the sorted order of the queue
-            for (Resource scratchResource : scratchResources) {
-                scratchResource.release();
             }
         }
 
@@ -424,30 +422,30 @@ public final class ResourceCache implements AutoCloseable {
     }
 
     /**
-     * Clean up unlocked resources from the cache until the provided byte count has been reached,
-     * or we have cleaned up all unlocked resources. The default policy is to purge in LRU order,
-     * but can be overridden to prefer cleaning up scratch resources (in LRU order) prior to
-     * cleaning up other resource types.
+     * Purge unlocked resources from the cache until the provided byte count has been reached,
+     * or we have purged all unlocked resources. The default policy is to purge in LRU order,
+     * but can be overridden to prefer purging scratch resources (in LRU order) prior to
+     * purging other resource types.
      *
-     * @param cleanUpBytes  the desired number of bytes to be purged
-     * @param preferScratch uf true, scratch resources will be cleaned up prior to other resource types
+     * @param bytesToPurge  the desired number of bytes to be purged
+     * @param preferScratch if true, scratch resources will be purged prior to other resource types
      */
-    public void cleanUpBytes(long cleanUpBytes, boolean preferScratch) {
-
+    public void purgeUnlockedAtMost(long bytesToPurge, boolean preferScratch) {
+        //TODO
     }
 
     /**
      * If it's possible to clean up enough resources to get the provided amount of budget
      * headroom, do so and return true. If it's not possible, do nothing and return false.
      */
-    public boolean makeRoom(long bytes) {
+    public boolean purgeUnlockedAtLeast(long bytesToMake) {
         return false;
     }
 
     /**
      * Returns true if {@link #getBudgetedResourceBytes()} is greater than {@link #getMaxResourceBytes()}.
      */
-    public boolean isOverrun() {
+    public boolean isOverBudget() {
         return mBudgetedBytes > mMaxBytes;
     }
 
@@ -456,7 +454,7 @@ public final class ResourceCache implements AutoCloseable {
      * cleanable.
      */
     public boolean isFlushNeeded() {
-        return isOverrun() && mCleanableQueue.isEmpty() && mFlushableCount > 0;
+        return isOverBudget() && mCleanableQueue.isEmpty() && mFlushableCount > 0;
     }
 
     void notifyACntReachedZero(Resource resource, boolean commandBufferUsage) {
@@ -500,7 +498,7 @@ public final class ResourceCache implements AutoCloseable {
             // Purge the resource immediately if we're over budget
             // Also purge if the resource has neither a valid scratch key nor a unique key.
             boolean hasKey = hasUniqueKey || resource.mScratchKey != null;
-            if (!isOverrun() && hasKey) {
+            if (!isOverBudget() && hasKey) {
                 return;
             }
         } else {
@@ -545,7 +543,7 @@ public final class ResourceCache implements AutoCloseable {
         }
 
         assert !resource.isUsableAsScratch();
-        clean();
+        purge();
     }
 
     void removeResource(Resource resource) {
@@ -653,7 +651,7 @@ public final class ResourceCache implements AutoCloseable {
             if (resource.isUsableAsScratch()) {
                 mScratchMap.addFirstEntry(resource.mScratchKey, resource);
             }
-            clean();
+            purge();
         } else {
             assert resource.getBudgetType() == BudgetType.kWrapCacheable;
             mBudgetedCount--;
@@ -735,12 +733,12 @@ public final class ResourceCache implements AutoCloseable {
                 int currNP = 0;
                 while (currP < mCleanableQueue.size() &&
                         currNP < mNonCleanableSize) {
-                    int tsP = mCleanableQueue.get(currP).mTimestamp;
+                    int tsP = mCleanableQueue.elementAt(currP).mTimestamp;
                     int tsNP = mNonCleanableList[currNP].mTimestamp;
                     // They never conflicts.
                     assert tsP != tsNP;
                     if (tsP < tsNP) {
-                        mCleanableQueue.get(currP++).mTimestamp = mTimestamp++;
+                        mCleanableQueue.elementAt(currP++).mTimestamp = mTimestamp++;
                     } else {
                         // Correct the index in the non-cleanable array stored on the resource post-sort.
                         mNonCleanableList[currNP].mCacheIndex = currNP;
@@ -750,7 +748,7 @@ public final class ResourceCache implements AutoCloseable {
 
                 // The above loop ended when we hit the end of one array. Finish the other one.
                 while (currP < mCleanableQueue.size()) {
-                    mCleanableQueue.get(currP++).mTimestamp = mTimestamp++;
+                    mCleanableQueue.elementAt(currP++).mTimestamp = mTimestamp++;
                 }
                 while (currNP < mNonCleanableSize) {
                     mNonCleanableList[currNP].mCacheIndex = currNP;
@@ -772,7 +770,7 @@ public final class ResourceCache implements AutoCloseable {
         if (index < 0) {
             return false;
         }
-        if (index < mCleanableQueue.size() && mCleanableQueue.get(index) == resource) {
+        if (index < mCleanableQueue.size() && mCleanableQueue.elementAt(index) == resource) {
             return true;
         }
         if (index < mNonCleanableSize && mNonCleanableList[index] == resource) {

@@ -512,7 +512,7 @@ public abstract class Resource {
 
     final void setCleanUpTime() {
         assert isCleanable();
-        mCleanUpTime = System.currentTimeMillis();
+        mCleanUpTime = System.nanoTime();
     }
 
     /**

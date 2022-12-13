@@ -42,7 +42,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static icyllis.akashigi.engine.Engine.SurfaceFlags;
+import static icyllis.akashigi.core.Core.*;
 import static org.lwjgl.system.MemoryUtil.*;
 
 public class TestManagedResource {
@@ -154,7 +154,7 @@ public class TestManagedResource {
             int[] channels = {0};
             pixels = STBImage.stbi_load_from_memory(byteBuffer, x, y, channels, 4);
             pw.println("Channels: " + channels[0]);
-            pw.println("W H: " + x[0] + " " + y[0]);
+            pw.println("WxH: " + x[0] + "x" + y[0]);
             assert pixels != null;
             pw.println("Image Bytes: " + pixels.remaining());
 
@@ -176,8 +176,8 @@ public class TestManagedResource {
                     1, SurfaceFlags.kMipmapped |
                             SurfaceFlags.kBudgeted |
                             SurfaceFlags.kRenderable,
-                    Core.ColorType.kRGBA_8888,
-                    Core.ColorType.kRGBA_8888,
+                    ColorType.kRGBA_8888,
+                    ColorType.kRGBA_8888,
                     0,
                     memAddress(pixels),
                     null);
