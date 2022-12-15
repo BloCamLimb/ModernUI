@@ -10,8 +10,7 @@ in vec2 texCoord0;
 out vec4 fragColor;
 
 void main() {
-    // add bias to sharpen texture
-    vec4 color = texture(Sampler0, texCoord0, -0.225) * vertexColor;
+    vec4 color = texture(Sampler0, texCoord0) * vertexColor;
     if (color.a < 0.01) discard;
     fragColor = color * ColorModulator;
 }

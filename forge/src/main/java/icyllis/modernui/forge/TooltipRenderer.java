@@ -69,8 +69,8 @@ public final class TooltipRenderer {
     private static final FloatBuffer sMatBuf = BufferUtils.createFloatBuffer(16);
     private static final Matrix4 sMyMat = new Matrix4();
 
-    private static final int[] sUseFillColor = new int[4];
-    private static final int[] sUseStrokeColor = new int[4];
+    private static final int[] sActiveFillColor = new int[4];
+    private static final int[] sActiveStrokeColor = new int[4];
     static volatile float sAnimationDuration; // milliseconds
 
     static volatile boolean sLayoutRTL;
@@ -379,9 +379,9 @@ public final class TooltipRenderer {
         for (int i = 0; i < 4; i++) {
             int color = sFillColor[i];
             int alpha = (int) ((color >>> 24) * sAlpha);
-            sUseFillColor[i] = (color & 0xFFFFFF) | (alpha << 24);
+            sActiveFillColor[i] = (color & 0xFFFFFF) | (alpha << 24);
         }
-        paint.setColors(sUseFillColor);
+        paint.setColors(sActiveFillColor);
         paint.setStyle(Paint.FILL);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER,
@@ -390,11 +390,11 @@ public final class TooltipRenderer {
         for (int i = 0; i < 4; i++) {
             int color = sStrokeColor[i];
             int alpha = (int) ((color >>> 24) * sAlpha);
-            sUseStrokeColor[i] = (color & 0xFFFFFF) | (alpha << 24);
+            sActiveStrokeColor[i] = (color & 0xFFFFFF) | (alpha << 24);
         }
-        paint.setColors(sUseStrokeColor);
+        paint.setColors(sActiveStrokeColor);
         paint.setStyle(Paint.STROKE);
-        paint.setStrokeWidth(1.0f);
+        paint.setStrokeWidth(4 / 3f);
         canvas.drawRoundRect(tooltipX - H_BORDER, tooltipY - V_BORDER,
                 tooltipX + tooltipWidth + H_BORDER,
                 tooltipY + tooltipHeight + V_BORDER, 3, paint);
@@ -409,7 +409,7 @@ public final class TooltipRenderer {
         int drawY = (int) tooltipY;
 
         RenderSystem.enableDepthTest();
-        RenderSystem.disableBlend();
+        RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.enableTexture();
 

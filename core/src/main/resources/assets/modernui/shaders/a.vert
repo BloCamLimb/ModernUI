@@ -189,8 +189,8 @@ void mainImage(out vec4 fragColor, in vec2 fragCoord)
 
 
 // test SDF with anti-alias
-const vec3 col1 = vec3(239.,202.,195.)/255.;
-const vec3 col2 = vec3(240.,227.,225.)/255.;
+const vec3 col1 = vec3(239,202,195)/255.;
+const vec3 col2 = vec3(240,227,225)/255.;
 
 vec2 rotate2D(vec2 p, float a)
 {
@@ -208,14 +208,58 @@ float sdBox( in vec2 p, in vec2 b )
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     vec2 uv = fragCoord/iResolution.xy;
-    vec2 pos = 2.0 * uv - 1.0;
-    pos.y /= iResolution.x/iResolution.y;
+    vec2 pos = 2.0*uv-1.0;
+    pos.y *= iResolution.y/iResolution.x;
+
+    pos = rotate2D(pos,0.17453292519943295);
 
     //float dis = length(pos)-0.4;
     //float dis = dot(abs(pos),vec2(1.0))-0.4;
     float dis = sdBox(pos,vec2(0.4));
 
-    vec3 col = mix(col1,col2,1.-clamp(dis/fwidth(dis),0.,1.));
+    //vec3 col = mix(col1,col2,1.-clamp(dis/fwidth(dis),0.,1.));
+    float edge = uv.x>.5?clamp(1.3*dis/fwidth(dis)+0.65,0.,1.):step(0.,dis);
+
+    //fragColor = vec4(col,1.0);
+    fragColor = vec4(1.0,edge,edge,1.0);
+}
+
+// final AA rectangle
+const vec3 col1 = vec3(239,202,195)/255.;
+
+vec2 rotate2D(vec2 p, float a)
+{
+    float s=sin(a),c=cos(a);
+    return mat2(c,s,-s,c)*p;
+}
+
+float sdBox(vec2 p, vec2 b)
+{
+    p = abs(p)-b;
+    return max(p.x,p.y);
+}
+
+float aastep(float f)
+{
+    vec2 grad = vec2(dFdx(f), dFdy(f));
+    float afwidth = 0.7 * length(grad); // SK_DistanceFieldAAFactor
+    return smoothstep(-afwidth, afwidth, f);
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+    vec2 uv = fragCoord/iResolution.xy;
+    vec2 pos = 2.0*uv-1.0;
+    pos.y *= iResolution.y/iResolution.x;
+
+    pos = rotate2D(pos,sin(iTime*2.0)*3.1415926535);
+
+    float dis = sdBox(pos,vec2(0.2));
+    vec3 col = vec3(1.0,0.9,1.0) + sign(dis)*vec3(-0.3,0.4,0.3);
+    col *= 1.0 - exp(-6.0*abs(dis));
+    col *= 0.8 + 0.2*cos(300.0*dis);
+    dis = abs(dis)-0.025;
+    col = mix( col, col1, 1.0-(uv.x>0.5?aastep(dis):step(0.0,dis)));
 
     fragColor = vec4(col,1.0);
 }

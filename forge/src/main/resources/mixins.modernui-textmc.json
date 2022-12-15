@@ -15,6 +15,7 @@
     "MixinEditBox",
     "MixinFontManager",
     "MixinFontRenderer",
+    "MixinGameRenderer",
     "MixinIngameGui",
     "MixinLanguage",
     "MixinLevelRenderer",

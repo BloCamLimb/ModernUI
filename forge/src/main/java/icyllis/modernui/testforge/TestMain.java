@@ -29,7 +29,6 @@ import icyllis.modernui.core.*;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.font.*;
 import icyllis.modernui.graphics.opengl.*;
 import icyllis.modernui.math.*;
@@ -38,22 +37,20 @@ import icyllis.modernui.test.TestFragment;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.style.*;
 import icyllis.modernui.textmc.CharSequenceBuilder;
-import icyllis.modernui.textmc.VanillaLayoutKey;
 import icyllis.modernui.view.Gravity;
 import it.unimi.dsi.fastutil.ints.IntList;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Style;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.lwjgl.system.Callback;
 
 import javax.annotation.Nonnull;
+import javax.imageio.ImageIO;
 import java.awt.Color;
 import java.awt.*;
 import java.awt.font.GlyphVector;
 import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.Method;
 import java.nio.channels.FileChannel;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
@@ -112,6 +109,8 @@ public class TestMain {
     public static Track sTrack;
 
     static {
+        System.setProperty("java.awt.headless", "true");
+
         GraphicsEnvironment.getLocalGraphicsEnvironment().preferLocaleFonts();
         ALL_FONTS = List.of(GraphicsEnvironment.getLocalGraphicsEnvironment().getAllFonts());
         IMAGE = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
@@ -119,7 +118,7 @@ public class TestMain {
         GRAPHICS.setColor(Color.BLACK);
         GRAPHICS.fillRect(0, 0, 1024, 1024);
         GRAPHICS.setColor(Color.WHITE);
-        GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        GRAPHICS.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         GRAPHICS.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         if (CREATE_WINDOW) {
@@ -134,7 +133,6 @@ public class TestMain {
     }
 
     public static void main(String[] args) {
-        //System.setProperty("java.awt.headless", Boolean.TRUE.toString());
        /* Matrix4 baseMat = Matrix4.identity();
         baseMat.preScale(2, 4, 5);
         Matrix4 baseMat2 = baseMat.copy();
@@ -159,6 +157,8 @@ public class TestMain {
             }
         }
         FontFamily.getSystemFontMap();
+
+        //drawText();
 
         if (!CREATE_WINDOW) {
             System.LoggerFinder.getLoggerFinder().getLogger("ModernUI", TestMain.class.getModule())
@@ -833,22 +833,44 @@ public class TestMain {
     }
 
     private static void drawText() {
-        /*BufferedImage image = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
+        LOGGER.info("AWT Headless: {}", GraphicsEnvironment.isHeadless());
+        BufferedImage image = new BufferedImage(1024, 1024, BufferedImage.TYPE_INT_ARGB);
         Graphics2D graphics2D = image.createGraphics();
-        Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 32);
+        Font font = new Font("Segoe UI", Font.PLAIN, 16);
         graphics2D.setFont(font);
-        graphics2D.setColor(Color.BLACK);
-        graphics2D.fillRect(0, 0, 1024, 1024);
+        graphics2D.setBackground(new Color(0, 0, 0, 0));
+        graphics2D.clearRect(0, 0, 1024, 1024);
         graphics2D.setColor(Color.WHITE);
-        graphics2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        graphics2D.setComposite(AlphaComposite.Src);
+        graphics2D.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
+        graphics2D.setRenderingHint(RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_QUALITY);
+        graphics2D.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
         graphics2D.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
         String s = "\u0e01\u0e25\u0e31\u0e1a\u0e40\u0e02\u0e49\u0e32\u0e2a\u0e39\u0e48\u0e40\u0e01\u0e21";
-        s = "\u0e23\u0e32\u0e22\u0e07\u0e32\u0e19\u0e1a\u0e31\u0e4a\u0e01";
+        //s = "\u0e23\u0e32\u0e22\u0e07\u0e32\u0e19\u0e1a\u0e31\u0e4a\u0e01";
         //s = "\u090f\u0915\u0932\u0916\u093f\u0932\u093e\u0921\u093c\u0940";
-        GlyphVector vector = font.layoutGlyphVector(graphics2D.getFontRenderContext(), s.toCharArray(),
-                0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
-        graphics2D.drawGlyphVector(vector, 20, 50);
-        for (int i = 0; i < s.length(); i++) {
+        s = "AaAaA";
+        {
+            graphics2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+            GlyphVector vector = font.layoutGlyphVector(graphics2D.getFontRenderContext(), s.toCharArray(),
+                    0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
+            graphics2D.drawGlyphVector(vector, 20, 50);
+        }
+        {
+            graphics2D.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING,
+                    RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_VRGB);
+            GlyphVector vector = font.layoutGlyphVector(graphics2D.getFontRenderContext(), s.toCharArray(),
+                    0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
+            graphics2D.drawGlyphVector(vector, 20, 90);
+        }
+        {
+            graphics2D.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS,
+                    RenderingHints.VALUE_FRACTIONALMETRICS_OFF);
+            GlyphVector vector = font.layoutGlyphVector(graphics2D.getFontRenderContext(), s.toCharArray(),
+                    0, s.length(), Font.LAYOUT_LEFT_TO_RIGHT);
+            graphics2D.drawGlyphVector(vector, 20, 130);
+        }
+        /*for (int i = 0; i < s.length(); i++) {
             System.out.println(vector.getGlyphMetrics(i).isCombining());
         }
         System.out.println();
@@ -874,10 +896,12 @@ public class TestMain {
         System.out.println();
         for (int i = 0; i < s.length(); i++) {
             System.out.println(vector.getGlyphMetrics(i).getBounds2D());
+        }*/
+        try {
+            ImageIO.write(image, "png", new File("F:/a.png"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-
-
-        ImageIO.write(image, "png", new File("F:/a.png"));*/
     }
 
     /*GL11.glMatrixMode(GL11.GL_PROJECTION);

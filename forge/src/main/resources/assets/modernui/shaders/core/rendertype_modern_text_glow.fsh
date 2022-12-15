@@ -29,8 +29,8 @@ void main() {
     color += textureLod(Sampler0, texCoord0 + oneTexel * vec2(0.0, 1.0),  1.0) * 0.36787944117; // e^(-1)
     color += textureLod(Sampler0, texCoord0 + oneTexel, 1.0) * 0.13533528323; // e^(-2)
     color /= 3.0128588976; // 4 * (e^(-1) + e^(-2)) + 1
+
     color = color * color * (3.0 - 2.0 * color); // smoothstep
     color *= vertexColor * ColorModulator; // multiply
-    if (color.a < 0.01) discard;
     fragColor = linear_fog(color, vertexDistance, FogStart, FogEnd, FogColor);
 }

@@ -25,7 +25,6 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.LayoutTransition;
-import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.annotation.*;
 import icyllis.modernui.core.*;
 import icyllis.modernui.fragment.*;
@@ -694,8 +693,14 @@ public final class UIManager implements LifecycleOwner {
 
     void changeRadialBlur() {
         if (minecraft.gameRenderer.currentEffect() == null) {
-            LOGGER.info(MARKER, "Load radial blur effect");
-            minecraft.gameRenderer.loadEffect(new ResourceLocation("shaders/post/radial_blur.json"));
+            LOGGER.info(MARKER, "Load post-processing effect");
+            final ResourceLocation effect;
+            if (InputConstants.isKeyDown(mWindow.getWindow(), GLFW_KEY_RIGHT_SHIFT)) {
+                effect = new ResourceLocation("shaders/post/grayscale.json");
+            } else {
+                effect = new ResourceLocation("shaders/post/radial_blur.json");
+            }
+            minecraft.gameRenderer.loadEffect(effect);
         } else {
             LOGGER.info(MARKER, "Stop post-processing effect");
             minecraft.gameRenderer.shutdownEffect();

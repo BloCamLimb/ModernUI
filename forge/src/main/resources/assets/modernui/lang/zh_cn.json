@@ -54,6 +54,7 @@
   "modernui.center.text.colorEmoji": "彩色表情符号",
   "modernui.center.text.bitmapRepl": "位图替换",
   "modernui.center.text.emojiShortcodes": "表情符号短代码",
+  "modernui.center.text.distanceField": "使用距离场",
   "modernui.center.text.allowShadow": "允许阴影",
   "modernui.center.text.fixedResolution": "固定分辨率",
   "modernui.center.text.baseFontSize": "字体大小基值",
