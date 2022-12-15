@@ -54,6 +54,7 @@
   "modernui.center.text.colorEmoji": "Color Emoji",
   "modernui.center.text.bitmapRepl": "Bitmap Replacement",
   "modernui.center.text.emojiShortcodes": "Emoji Shortcodes",
+  "modernui.center.text.distanceField": "Use Distance Field",
   "modernui.center.text.allowShadow": "Allow Shadow",
   "modernui.center.text.fixedResolution": "Fixed Resolution",
   "modernui.center.text.baseFontSize": "Base Font Size",

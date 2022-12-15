@@ -208,7 +208,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
     private final GLBuffer mRoundRectUBO = new GLBuffer();
 
     // mag filter = linear
-    private final int mFontSampler;
+    private final int mLinearFontSampler;
 
     private final long mUniformBuffers = nmemAlloc(24);
 
@@ -265,12 +265,11 @@ public final class GLSurfaceCanvas extends GLCanvas {
         memPutInt(mUniformBuffers + 16, mCircleUBO.get());
         memPutInt(mUniformBuffers + 20, mRoundRectUBO.get());
 
-        mFontSampler = glCreateSamplers();
-        glSamplerParameteri(mFontSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        // FontAtlas MAG_FILTER is NEAREST, but it's not smooth in UI animations
-        glSamplerParameteri(mFontSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glSamplerParameteri(mFontSampler, GL_TEXTURE_MIN_LOD, 0);
-        glSamplerParameteri(mFontSampler, GL_TEXTURE_MAX_LOD, GLFontAtlas.MIPMAP_LEVEL);
+        mLinearFontSampler = glCreateSamplers();
+        glSamplerParameteri(mLinearFontSampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glSamplerParameteri(mLinearFontSampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glSamplerParameteri(mLinearFontSampler, GL_TEXTURE_MIN_LOD, 0);
+        glSamplerParameteri(mLinearFontSampler, GL_TEXTURE_MAX_LOD, GLFontAtlas.MIPMAP_LEVEL);
 
         POS_COLOR.setVertexBuffer(GENERIC_BINDING, mPosColorVBO, 0);
         POS_COLOR_TEX.setVertexBuffer(GENERIC_BINDING, mPosColorTexVBO, 0);
@@ -615,7 +614,7 @@ public final class GLSurfaceCanvas extends GLCanvas {
 
                     bindVertexArray(POS_TEX.getVertexArray());
                     useProgram(ALPHA_TEX.get());
-                    bindSampler(mFontSampler);
+                    bindSampler(mLinearFontSampler);
 
                     if (mGlyphResized) {
                         mGlyphVBO.allocateM(mGlyphMemory.capacity(), NULL, GL_DYNAMIC_DRAW);
@@ -1619,7 +1618,8 @@ public final class GLSurfaceCanvas extends GLCanvas {
         }
         drawMatrix();
         drawSmooth(Math.min(strokeRadius, paint.getSmoothRadius()));
-        putRectColor(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1, bottom + strokeRadius + 1, paint);
+        putRectColor(left - strokeRadius - 1, top - strokeRadius - 1, right + strokeRadius + 1,
+                bottom + strokeRadius + 1, paint);
         ByteBuffer buffer = checkUniformMemory();
         if ((sides & Gravity.RIGHT) == Gravity.RIGHT) {
             buffer.putFloat(left);

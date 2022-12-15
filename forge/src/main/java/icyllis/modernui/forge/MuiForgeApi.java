@@ -253,11 +253,11 @@ public final class MuiForgeApi {
 
         int auto;
         if (min > 1) {
-            double step = base > 150 ? 40. : base > 100 ? 36. : 32.;
+            double step = base > 216 ? 42. : base > 120 ? 36. : 30.;
             int i = (int) (base / step);
             int j = (int) (Math.max(w, h) / step);
-            double v1 = base / (i * 32.);
-            if (v1 > 40 / 32. || j > i) {
+            double v1 = base / (i * 30.);
+            if (v1 > 42 / 30. || j > i) {
                 auto = Mth.clamp(i + 1, min, max);
             } else {
                 auto = Mth.clamp(i, min, max);

@@ -1,5 +1,17 @@
 Changelogs
 ===
+### Modern UI 3.6.3.117 (2022-12-15)
+#### Forge Extension 1.19.2-43.1.2
+* Adjust GUI scale algorithm
+* Adjust tooltip border width
+#### Modern Text Engine 1.19.2
+* Add distance field text to 3D world
+* Fix total advance of layout is never pixel-aligned
+* Fix TTF loading in vanilla resource packs
+* Adjust texture sharpening factor
+#### Core Framework 3.6
+* Fix distance-to-edge anti-aliasing is gamma correct
+
 ### Modern UI 3.6.2.116 (2022-11-30)
 #### Forge Extension 1.19.2-43.1.2
 * Support capability for fragments and screens
@@ -20,7 +32,7 @@ Changelogs
 * Optimize layout caching strategy
 * Add font set to layout key
 #### Core Framework 3.6
-* Adjust analytic anti-alias to screen-space
+* Adjust analytic anti-aliasing to screen-space
 * Improve font collection itemization
 * Update shaders to a modern version
 

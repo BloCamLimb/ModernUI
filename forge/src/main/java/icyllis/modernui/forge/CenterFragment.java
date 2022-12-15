@@ -489,6 +489,16 @@ public class CenterFragment extends Fragment implements ScreenCallback {
                 category.addView(option);
             }
             {
+                var option = createButtonOption("modernui.center.text.distanceField");
+                var button = option.<SwitchButton>requireViewById(R.id.button1);
+                button.setChecked(ModernUITextMC.CONFIG.mUseDistanceField.get());
+                button.setOnCheckedChangeListener((__, checked) -> {
+                    ModernUITextMC.CONFIG.mUseDistanceField.set(checked);
+                    ModernUITextMC.CONFIG.saveAndReload();
+                });
+                category.addView(option);
+            }
+            {
                 var option = createButtonOption("modernui.center.text.allowShadow");
                 var button = option.<SwitchButton>requireViewById(R.id.button1);
                 button.setChecked(ModernUITextMC.CONFIG.mAllowShadow.get());

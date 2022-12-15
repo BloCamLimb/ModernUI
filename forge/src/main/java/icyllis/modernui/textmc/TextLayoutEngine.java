@@ -98,12 +98,16 @@ public class TextLayoutEngine implements PreparableReloadListener {
      */
     public static volatile int sCacheLifespan = 12;
     public static volatile int sRehashThreshold = 100;
+    /**
+     * Config value to use distance field text in 3D world.
+     */
+    public static volatile boolean sUseDistanceField;
 
     /**
      * Matches Slack emoji shortcode.
      */
     public static final Pattern EMOJI_SHORTCODE_PATTERN =
-            Pattern.compile("(\\:(\\w|\\+|\\-)+\\:)(?=|[\\!\\.\\?]|$)");
+            Pattern.compile("(:(\\w|\\+|-)+:)(?=|[!.?]|$)");
 
     /**
      * Maps ASCII to ChatFormatting, including all cases.
@@ -327,11 +331,11 @@ public class TextLayoutEngine implements PreparableReloadListener {
             // make font size to 16 (8 * 2)
             mResLevel = 2;
         } else {
-            // Note max font size is 96, see FontPaint, font size will be (8 * resolution) in Minecraft
+            // Note max font size is 96, see FontPaint, font size will be (base_font_size * res_level) in Minecraft
             if (!sSuperSampling || !GLFontAtlas.sLinearSampling) {
                 mResLevel = Math.min(scale, 9);
             } else if (scale > 2) {
-                // super sampling, give it a bit larger, so looks smoother
+                // super sampling
                 mResLevel = Math.min((int) Math.ceil(scale * 4 / 3f), 12);
             } else {
                 // 1 or 2
@@ -477,6 +481,7 @@ public class TextLayoutEngine implements PreparableReloadListener {
             }
         }
         for (var set : map.values()) {
+            // add fallback
             set.add(Objects.requireNonNull(FontFamily.getSystemFontMap().get(Font.SANS_SERIF)));
         }
         return map.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> {
@@ -488,7 +493,7 @@ public class TextLayoutEngine implements PreparableReloadListener {
     @Nonnull
     private FontFamily createTTF(JsonObject metadata, ResourceManager manager) {
         var file = new ResourceLocation(GsonHelper.getAsString(metadata, "file"));
-        var location = new ResourceLocation(file.getNamespace(), "textures/" + file.getPath());
+        var location = new ResourceLocation(file.getNamespace(), "font/" + file.getPath());
         try (var stream = manager.open(location)) {
             var f = Font.createFont(Font.TRUETYPE_FONT, stream);
             return new FontFamily(f);

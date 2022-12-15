@@ -514,6 +514,10 @@ public class TextLayoutProcessor {
                 }
                 // sort line boundaries to logical order, because runs are in visual order
                 mLineBoundaries.sort(null);
+                if (sAlignPixels) {
+                    float guiScale = mEngine.getGuiScale();
+                    mTotalAdvance = Math.round(mTotalAdvance * guiScale) / guiScale;
+                }
                 return new TextLayoutNode(textBuf, mGlyphs.toArray(new GLBakedGlyph[0]), mPositions.toFloatArray(),
                         mAdvances.toFloatArray(), mCharFlags.toIntArray(), mCharIndices.toIntArray(),
                         mLineBoundaries.toIntArray(), mTotalAdvance, mHasEffect, mHasFastDigit, mHasColorBitmap);

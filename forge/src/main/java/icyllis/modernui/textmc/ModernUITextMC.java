@@ -203,6 +203,7 @@ public final class ModernUITextMC {
         public final ForgeConfigSpec.BooleanValue mColorEmoji;
         //public final ForgeConfigSpec.BooleanValue mBitmapReplacement;
         public final ForgeConfigSpec.BooleanValue mEmojiShortcodes;
+        public final ForgeConfigSpec.BooleanValue mUseDistanceField;
 
         //private final ForgeConfigSpec.BooleanValue antiAliasing;
         //private final ForgeConfigSpec.BooleanValue highPrecision;
@@ -212,7 +213,7 @@ public final class ModernUITextMC {
         //private final ForgeConfigSpec.IntValue defaultFontSize;
 
         private Config(@Nonnull ForgeConfigSpec.Builder builder) {
-            builder.comment("Text Config")
+            builder.comment("Text Engine Config")
                     .push("text");
 
             /*globalRenderer = builder.comment(
@@ -244,13 +245,13 @@ public final class ModernUITextMC {
                             "Control the text outline offset for vanilla text rendering, in GUI scaled pixels.")
                     .defineInRange("outlineOffset", 0.5, OUTLINE_OFFSET_MIN, OUTLINE_OFFSET_MAX);
             mSuperSampling = builder.comment(
-                            "Super sampling can make the text more sharper with large font size or in the 3D world.",
-                            "But perhaps it makes the path edge too blurry and difficult to read.")
+                            "Super sampling can make the text more smooth with large font size or in the 3D world.",
+                            "But it makes the glyph edge too blurry and difficult to read.")
                     .define("superSampling", false);
             mAlignPixels = builder.comment(
-                            "Enable to make each glyph pixel-aligned in text layout in screen space.",
-                            "Text rendering may be better with bitmap fonts or fixed resolution or linear sampling.")
-                    .define("alignPixels", false);
+                            "Enable to make each glyph pixel-aligned in text layout in screen-space.",
+                            "Text rendering may be better with bitmap fonts / fixed resolution / linear sampling.")
+                    .define("alignPixels", true);
             mCacheLifespan = builder.comment(
                             "Set the recycle time of layout cache in seconds, using least recently used algorithm.")
                     .defineInRange("cacheLifespan", 12, LIFESPAN_MIN, LIFESPAN_MAX);
@@ -261,14 +262,18 @@ public final class ModernUITextMC {
                     .defineInRange("textDirection", View.TEXT_DIRECTION_FIRST_STRONG,
                             View.TEXT_DIRECTION_FIRST_STRONG, View.TEXT_DIRECTION_FIRST_STRONG_RTL);
             mColorEmoji = builder.comment(
-                            "Whether to render colored emoji or just grayscale emoji.")
+                            "Enable to use colored emoji, otherwise grayscale emoji.")
                     .define("colorEmoji", true);
             /*mBitmapReplacement = builder.comment(
                             "Whether to use bitmap replacement for non-Emoji character sequences. Restart is required.")
                     .define("bitmapReplacement", false);*/
             mEmojiShortcodes = builder.comment(
-                            "Allow to use Slack or Discord shortcodes to replace Emoji character sequences in chat.")
+                            "Allow Slack or Discord shortcodes to replace Unicode Emoji Sequences in chat.")
                     .define("emojiShortcodes", true);
+            mUseDistanceField = builder.comment(
+                            "Enable to use distance field for text rendering in 3D world.",
+                            "It improves performance with deferred rendering and sharpens when doing 3D transform.")
+                    .define("useDistanceField", true);
             /*antiAliasing = builder.comment(
                     "Enable font anti-aliasing.")
                     .define("antiAliasing", true);
@@ -342,6 +347,10 @@ public final class ModernUITextMC {
             }
             if (TextLayoutProcessor.sColorEmoji != mColorEmoji.get()) {
                 TextLayoutProcessor.sColorEmoji = mColorEmoji.get();
+                reload = true;
+            }
+            if (TextLayoutEngine.sUseDistanceField != mUseDistanceField.get()) {
+                TextLayoutEngine.sUseDistanceField = mUseDistanceField.get();
                 reload = true;
             }
             if (reload) {

@@ -191,12 +191,12 @@ public class GlyphManager {
             basePath = basePath.substring(0, basePath.length() - 4);
         }
         int index = 0;
-        for (var atlas : mAtlases.values()) {
+        for (var e : mAtlases.int2ObjectEntrySet()) {
             if (basePath != null) {
-                atlas.debug(basePath + "_" + index + ".png");
+                e.getValue().debug(basePath + "_" + e.getIntKey() + "_" + index + ".png");
                 index++;
             } else {
-                atlas.debug(null);
+                e.getValue().debug(null);
             }
         }
     }
