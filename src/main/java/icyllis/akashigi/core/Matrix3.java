@@ -23,15 +23,16 @@ import sun.misc.Unsafe;
 
 import javax.annotation.Nonnull;
 
-import static icyllis.akashigi.core.MathUtil.*;
+import static icyllis.akashigi.core.FMath.*;
 
 /**
  * Represents a 3x3 row-major matrix.
  */
 //TODO type mask and others are WIP
-@SuppressWarnings({"unused", "deprecation"})
+@SuppressWarnings("unused")
 public class Matrix3 implements Cloneable {
 
+    @Deprecated
     public static final long OFFSET;
 
     static {
@@ -302,20 +303,20 @@ public class Matrix3 implements Cloneable {
         float my = m22;
         // if no shear, can just compare scale factors
         if ((mask & Affine_Mask) == 0) {
-            return !MathUtil.approxZero(mx) && MathUtil.approxEqual(Math.abs(mx), Math.abs(my));
+            return !FMath.isNearlyZero(mx) && FMath.isNearlyEqual(Math.abs(mx), Math.abs(my));
         }
         float sx = m21;
         float sy = m12;
 
         // check if upper-left 2x2 of matrix is degenerate
-        if (MathUtil.approxZero(mx * my - sx * sy)) {
+        if (FMath.isNearlyZero(mx * my - sx * sy)) {
             return false;
         }
 
         // upper 2x2 is rotation/reflection + uniform scale if basis vectors
         // are 90 degree rotations of each other
-        return (MathUtil.approxEqual(mx, my) && MathUtil.approxEqual(sx, -sy))
-                || (MathUtil.approxEqual(mx, -my) && MathUtil.approxEqual(sx, sy));
+        return (FMath.isNearlyEqual(mx, my) && FMath.isNearlyEqual(sx, -sy))
+                || (FMath.isNearlyEqual(mx, -my) && FMath.isNearlyEqual(sx, sy));
     }
 
     /**
@@ -520,7 +521,7 @@ public class Matrix3 implements Cloneable {
         float c = m12 * m23 - m13 * m22;
         // calc the determinant
         float det = a * m33 + b * m32 + c * m31;
-        if (approxZero(det)) {
+        if (isNearlyZero(det)) {
             return false;
         }
         // calc algebraic cofactor and transpose

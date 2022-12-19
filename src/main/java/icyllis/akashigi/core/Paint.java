@@ -381,7 +381,7 @@ public class Paint {
      * @param a the alpha component [0..1] of the paint's color
      */
     public final void setAlphaf(float a) {
-        mA = MathUtil.clamp(a, 0.0f, 1.0f);
+        mA = FMath.clamp(a, 0.0f, 1.0f);
     }
 
     /**
@@ -391,7 +391,7 @@ public class Paint {
      * @param a the alpha component [0..255] of the paint's color
      */
     public final void setAlpha(int a) {
-        mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
+        mA = FMath.clamp(a / 255.0f, 0.0f, 1.0f);
     }
 
     /**
@@ -447,9 +447,9 @@ public class Paint {
      * @param b the new blue component (0..255) of the paint's color.
      */
     public final void setRGB(int r, int g, int b) {
-        mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
+        mR = FMath.clamp(r / 255.0f, 0.0f, 1.0f);
+        mG = FMath.clamp(g / 255.0f, 0.0f, 1.0f);
+        mB = FMath.clamp(b / 255.0f, 0.0f, 1.0f);
     }
 
     /**
@@ -461,9 +461,9 @@ public class Paint {
      * @param b the new blue component (0..1) of the paint's color.
      */
     public final void setRGB(float r, float g, float b) {
-        mR = MathUtil.clamp(r, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b, 0.0f, 1.0f);
+        mR = FMath.clamp(r, 0.0f, 1.0f);
+        mG = FMath.clamp(g, 0.0f, 1.0f);
+        mB = FMath.clamp(b, 0.0f, 1.0f);
     }
 
     /**
@@ -475,10 +475,10 @@ public class Paint {
      * @param a the new alpha component (0..255) of the paint's color.
      */
     public final void setRGBA(int r, int g, int b, int a) {
-        mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
-        mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
+        mR = FMath.clamp(r / 255.0f, 0.0f, 1.0f);
+        mG = FMath.clamp(g / 255.0f, 0.0f, 1.0f);
+        mB = FMath.clamp(b / 255.0f, 0.0f, 1.0f);
+        mA = FMath.clamp(a / 255.0f, 0.0f, 1.0f);
     }
 
     /**
@@ -490,10 +490,10 @@ public class Paint {
      * @param a the new alpha component (0..1) of the paint's color.
      */
     public final void setRGBA(float r, float g, float b, float a) {
-        mR = MathUtil.clamp(r, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b, 0.0f, 1.0f);
-        mA = MathUtil.clamp(a, 0.0f, 1.0f);
+        mR = FMath.clamp(r, 0.0f, 1.0f);
+        mG = FMath.clamp(g, 0.0f, 1.0f);
+        mB = FMath.clamp(b, 0.0f, 1.0f);
+        mA = FMath.clamp(a, 0.0f, 1.0f);
     }
 
     /**
@@ -505,10 +505,10 @@ public class Paint {
      * @param b the new blue component (0..255) of the paint's color.
      */
     public final void setARGB(int a, int r, int g, int b) {
-        mR = MathUtil.clamp(r / 255.0f, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g / 255.0f, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b / 255.0f, 0.0f, 1.0f);
-        mA = MathUtil.clamp(a / 255.0f, 0.0f, 1.0f);
+        mR = FMath.clamp(r / 255.0f, 0.0f, 1.0f);
+        mG = FMath.clamp(g / 255.0f, 0.0f, 1.0f);
+        mB = FMath.clamp(b / 255.0f, 0.0f, 1.0f);
+        mA = FMath.clamp(a / 255.0f, 0.0f, 1.0f);
     }
 
     /**
@@ -520,10 +520,10 @@ public class Paint {
      * @param a the new alpha component (0..1) of the paint's color.
      */
     public final void setARGB(float a, float r, float g, float b) {
-        mR = MathUtil.clamp(r, 0.0f, 1.0f);
-        mG = MathUtil.clamp(g, 0.0f, 1.0f);
-        mB = MathUtil.clamp(b, 0.0f, 1.0f);
-        mA = MathUtil.clamp(a, 0.0f, 1.0f);
+        mR = FMath.clamp(r, 0.0f, 1.0f);
+        mG = FMath.clamp(g, 0.0f, 1.0f);
+        mB = FMath.clamp(b, 0.0f, 1.0f);
+        mA = FMath.clamp(a, 0.0f, 1.0f);
     }
 
     /**
@@ -920,7 +920,7 @@ public class Paint {
                 multiplier = Math.max(multiplier, mMiterLimit);
             }
             if (getStrokeCap() == CAP_SQUARE) {
-                multiplier = Math.max(multiplier, MathUtil.SQRT2);
+                multiplier = Math.max(multiplier, FMath.SQRT2);
             }
             // width or radius
             float stroke = mWidth * multiplier;

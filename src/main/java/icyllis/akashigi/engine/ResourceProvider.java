@@ -51,11 +51,11 @@ public final class ResourceProvider {
     public static int makeApprox(int size) {
         size = Math.max(MIN_SCRATCH_TEXTURE_SIZE, size);
 
-        if (MathUtil.isPow2(size)) {
+        if (FMath.isPow2(size)) {
             return size;
         }
 
-        int ceilPow2 = MathUtil.nextPow2(size);
+        int ceilPow2 = FMath.ceilPow2(size);
         if (size <= (1 << 10)) {
             return ceilPow2;
         }

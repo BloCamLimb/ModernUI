@@ -19,7 +19,7 @@
 package icyllis.akashigi.engine;
 
 import icyllis.akashigi.core.Core;
-import icyllis.akashigi.core.MathUtil;
+import icyllis.akashigi.core.FMath;
 import org.lwjgl.system.MemoryUtil;
 
 import java.lang.reflect.Field;
@@ -49,7 +49,7 @@ public final class DataUtils {
     }
 
     public static int num4x4Blocks(int size) {
-        return MathUtil.align4(size) >> 2;
+        return FMath.align4(size) >> 2;
     }
 
     public static long numBlocks(int compression, int width, int height) {

@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.test;
 
-import icyllis.akashigi.core.MathUtil;
+import icyllis.akashigi.core.FMath;
 import icyllis.akashigi.core.*;
 import icyllis.akashigi.engine.*;
 import icyllis.akashigi.engine.geom.RoundRectProcessor;
@@ -31,16 +31,14 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.*;
 
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
 
 import static icyllis.akashigi.core.Core.*;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -75,9 +73,25 @@ public class TestManagedResource {
         pw.println("Max vertex stride: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
         pw.println("Max label length: " + GLCore.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
 
-        pw.println("quickModPow: " + MathUtil.quickModPow(95959595, 87878787, 998244353));
+        pw.println("quickModPow: " + FMath.quickModPow(95959595, 87878787, 998244353));
 
         pw.println("BinaryFormats: " + Arrays.toString(((GLCaps) dContext.getCaps()).mProgramBinaryFormats));
+        try {
+            Process process = new ProcessBuilder("ipconfig", "/all").start();
+            process.onExit().thenAccept(p -> {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                try {
+                    for (;;) {
+                        String line = reader.readLine();
+                        if (line == null)
+                            break;
+                        System.out.println(line);
+                    }
+                } catch (Exception ignored) {
+                }
+            });
+        } catch (Exception ignored) {
+        }
 
         if (dContext.getCaps().isFormatTexturable(
                 GLBackendFormat.make(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT))) {
@@ -196,7 +210,7 @@ public class TestManagedResource {
 
     public static void testRightHandedRotation(PrintWriter pw) {
         Matrix4 mat = Matrix4.identity();
-        mat.preRotateZ(MathUtil.PI_O_3);
+        mat.preRotateZ(FMath.PI_O_3);
         pw.println("preRotateX " + mat);
 
         Matrix4 mat2 = Matrix4.identity();
@@ -225,12 +239,12 @@ public class TestManagedResource {
     public static void testSimilarity(PrintWriter pw) {
         Matrix4 transform = Matrix4.identity();
         transform.m34 = 1 / 4096f;
-        transform.preRotateX(MathUtil.PI_O_3);
+        transform.preRotateX(FMath.PI_O_3);
         Matrix3 matrix3 = transform.toM33NoZ();
         pw.println(matrix3);
 
         Matrix4 mat = Matrix4.identity();
-        mat.preRotateZ(MathUtil.PI_O_2 * 29);
+        mat.preRotateZ(FMath.PI_O_2 * 29);
         Matrix3 m3 = mat.toM33NoZ();
         pw.println(m3);
         pw.println(m3.getType());

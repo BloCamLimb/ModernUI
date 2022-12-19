@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.test;
 
-import icyllis.akashigi.core.MathUtil;
+import icyllis.akashigi.core.FMath;
 import icyllis.akashigi.core.Matrix4;
 import org.lwjgl.system.MemoryUtil;
 import org.openjdk.jmh.annotations.*;
@@ -44,7 +44,7 @@ public class TestBenchmark {
 
     private final Matrix4 mMatrix = Matrix4.identity();
     {
-        mMatrix.preRotate(MathUtil.PI_O_3, MathUtil.PI_O_6, MathUtil.PI_O_4);
+        mMatrix.preRotate(FMath.PI_O_3, FMath.PI_O_6, FMath.PI_O_4);
     }
     private final long mData = MemoryUtil.nmemAlignedAllocChecked(8, 64);
 

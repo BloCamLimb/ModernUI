@@ -154,7 +154,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
         // To get the transform from this space to the other device's, transform from our space to
         // global and then from global to the other device.
         dest.set(mDeviceToGlobal);
-        dest.postMultiply(device.mGlobalToDevice);
+        dest.postConcat(device.mGlobalToDevice);
     }
 
     public final void save() {
@@ -193,7 +193,7 @@ public abstract class BaseDevice extends RefCnt implements MatrixProvider {
             mLocalToDevice.normalizePerspective();
         }
         // Map from the global transform state to this device's coordinate system.
-        mLocalToDevice.postMultiply(mGlobalToDevice);
+        mLocalToDevice.postConcat(mGlobalToDevice);
     }
 
     public final void setLocalToDevice(@Nullable Matrix4 localToDevice) {

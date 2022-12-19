@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.core.MathUtil;
+import icyllis.akashigi.core.FMath;
 import icyllis.akashigi.core.SharedPtr;
 import org.lwjgl.system.APIUtil;
 
@@ -216,7 +216,7 @@ public abstract class BufferAllocPool {
             assert (mIndex >= 0);
             Buffer buffer = mBuffers[mIndex];
             int pos = buffer.getSize() - mFreeBytes[mIndex];
-            int pad = MathUtil.alignUpPad(pos, alignment);
+            int pad = FMath.alignUpPad(pos, alignment);
             int alignedSize = size + pad;
             if (alignedSize <= 0) {
                 return NULL; // overflow

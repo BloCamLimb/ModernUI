@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.core.MathUtil;
+import icyllis.akashigi.core.FMath;
 import icyllis.akashigi.core.SamplingOptions;
 
 /**
@@ -151,7 +151,7 @@ public final class SamplerState {
         // filter mode is always linear
         return 0x100 | addressX | (addressY << 4) |
                 ((isMipmapped ? MIPMAP_MODE_LINEAR : MIPMAP_MODE_NONE) << 12) |
-                (MathUtil.clamp(maxAnisotropy, 1, 1024) << 16);
+                (FMath.clamp(maxAnisotropy, 1, 1024) << 16);
     }
 
     //////// Unpack Methods \\\\\\\\

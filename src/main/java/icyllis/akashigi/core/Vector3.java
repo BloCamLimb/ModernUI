@@ -215,7 +215,7 @@ public class Vector3 {
      */
     public void normalize() {
         final float sq = lengthSquared();
-        if (sq < MathUtil.EPS) {
+        if (sq < FMath.EPS) {
             x = 1.0f;
             y = 0.0f;
             z = 0.0f;

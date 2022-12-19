@@ -68,7 +68,7 @@ public abstract class GeometryProcessor extends Processor {
          * It must be N-aligned for all types, where N is sizeof(float).
          */
         public static int alignOffset(int offset) {
-            return MathUtil.align4(offset);
+            return FMath.align4(offset);
         }
 
         private final String mName;

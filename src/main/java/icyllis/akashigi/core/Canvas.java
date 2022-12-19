@@ -310,7 +310,7 @@ public class Canvas implements AutoCloseable {
      * @return depth of saved stack to pass to restoreToCount() to balance this call
      */
     public final int saveLayerAlpha(@Nullable Rect2f bounds, int alpha) {
-        alpha = MathUtil.clamp(alpha, 0, 0xFF);
+        alpha = FMath.clamp(alpha, 0, 0xFF);
         if (alpha == 0xFF) {
             return saveLayer(bounds, null, null, 0);
         } else {
@@ -533,7 +533,7 @@ public class Canvas implements AutoCloseable {
         if (degrees != 0.0f) {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
-            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
+            transform.preRotateZ(degrees * FMath.DEG_TO_RAD);
             getTopDevice().setGlobalTransform(transform);
             didRotate(degrees);
         }
@@ -557,7 +557,7 @@ public class Canvas implements AutoCloseable {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
             transform.preTranslate(px, py);
-            transform.preRotateZ(degrees * MathUtil.DEG_TO_RAD);
+            transform.preRotateZ(degrees * FMath.DEG_TO_RAD);
             transform.preTranslate(-px, -py);
             getTopDevice().setGlobalTransform(transform);
             didRotate(degrees, px, py);
@@ -576,7 +576,7 @@ public class Canvas implements AutoCloseable {
         if (!matrix.isIdentity()) {
             checkForDeferredSave();
             Matrix4 transform = top().mMatrix;
-            transform.preMultiply(matrix);
+            transform.preConcat(matrix);
             getTopDevice().setGlobalTransform(matrix);
             didConcat(matrix);
         }

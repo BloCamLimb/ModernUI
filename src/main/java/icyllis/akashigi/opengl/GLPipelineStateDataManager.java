@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.opengl;
 
-import icyllis.akashigi.core.MathUtil;
+import icyllis.akashigi.core.FMath;
 import icyllis.akashigi.core.SLType;
 import icyllis.akashigi.engine.UniformDataManager;
 import icyllis.akashigi.engine.shading.UniformHandler;
@@ -45,7 +45,7 @@ public class GLPipelineStateDataManager extends UniformDataManager {
         for (int i = 0, e = uniforms.size(); i < e; i++) {
             UniformHandler.UniformInfo uniformInfo = uniforms.get(i);
             assert ((uniformInfo.mOffset & 0xFFFFFF) == uniformInfo.mOffset);
-            assert (MathUtil.isAlign4(uniformInfo.mOffset));
+            assert (FMath.isAlign4(uniformInfo.mOffset));
             assert (SLType.canBeUniformValue(uniformInfo.mVariable.getType()));
             mUniforms[i] = uniformInfo.mOffset | (uniformInfo.mVariable.getType() << 24);
         }

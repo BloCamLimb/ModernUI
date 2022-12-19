@@ -26,15 +26,15 @@ import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 
-import static icyllis.akashigi.core.MathUtil.*;
-
 /**
  * Represents a 4x4 row-major matrix using the right-hand rule.
+ * The memory layout matches GLSL's column major and HLSL's row major.
  */
-@SuppressWarnings({"unused", "deprecation"})
+@SuppressWarnings("unused")
 public class Matrix4 implements Cloneable {
 
-    public static final long OFFSET;
+    @Deprecated
+    public static final long OFFSET; // object header is 12 or 16
 
     static {
         try {
@@ -221,32 +221,33 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Pre-multiply this matrix by the given <code>right</code> matrix.
+     * Pre-multiply this matrix by the given <code>lhs</code> matrix.
      * <p>
-     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>right</code>
-     * matrix, then the new matrix will be <code>R * M</code> (row-major). So when transforming
-     * a vector <code>v</code> with the new matrix by using <code>v * R * M</code>, the
-     * transformation of the right matrix will be applied first.
+     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>lhs</code>
+     * matrix, then the new matrix will be <code>L * M</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * L * M</code>, the
+     * transformation of the left-hand side matrix will be applied first.
      *
-     * @param right the right matrix to multiply
+     * @param lhs the left-hand side matrix to multiply
      */
-    public void preMultiply(@Nonnull Matrix4 right) {
-        final float f11 = m11 * right.m11 + m21 * right.m12 + m31 * right.m13 + m41 * right.m14;
-        final float f12 = m12 * right.m11 + m22 * right.m12 + m32 * right.m13 + m42 * right.m14;
-        final float f13 = m13 * right.m11 + m23 * right.m12 + m33 * right.m13 + m43 * right.m14;
-        final float f14 = m14 * right.m11 + m24 * right.m12 + m34 * right.m13 + m44 * right.m14;
-        final float f21 = m11 * right.m21 + m21 * right.m22 + m31 * right.m23 + m41 * right.m24;
-        final float f22 = m12 * right.m21 + m22 * right.m22 + m32 * right.m23 + m42 * right.m24;
-        final float f23 = m13 * right.m21 + m23 * right.m22 + m33 * right.m23 + m43 * right.m24;
-        final float f24 = m14 * right.m21 + m24 * right.m22 + m34 * right.m23 + m44 * right.m24;
-        final float f31 = m11 * right.m31 + m21 * right.m32 + m31 * right.m33 + m41 * right.m34;
-        final float f32 = m12 * right.m31 + m22 * right.m32 + m32 * right.m33 + m42 * right.m34;
-        final float f33 = m13 * right.m31 + m23 * right.m32 + m33 * right.m33 + m43 * right.m34;
-        final float f34 = m14 * right.m31 + m24 * right.m32 + m34 * right.m33 + m44 * right.m34;
-        final float f41 = m11 * right.m41 + m21 * right.m42 + m31 * right.m43 + m41 * right.m44;
-        final float f42 = m12 * right.m41 + m22 * right.m42 + m32 * right.m43 + m42 * right.m44;
-        final float f43 = m13 * right.m41 + m23 * right.m42 + m33 * right.m43 + m43 * right.m44;
-        final float f44 = m14 * right.m41 + m24 * right.m42 + m34 * right.m43 + m44 * right.m44;
+    public void preConcat(@Nonnull Matrix4 lhs) {
+        // 64 multiplications
+        final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m13 * m31 + lhs.m14 * m41;
+        final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m13 * m32 + lhs.m14 * m42;
+        final float f13 = lhs.m11 * m13 + lhs.m12 * m23 + lhs.m13 * m33 + lhs.m14 * m43;
+        final float f14 = lhs.m11 * m14 + lhs.m12 * m24 + lhs.m13 * m34 + lhs.m14 * m44;
+        final float f21 = lhs.m21 * m11 + lhs.m22 * m21 + lhs.m23 * m31 + lhs.m24 * m41;
+        final float f22 = lhs.m21 * m12 + lhs.m22 * m22 + lhs.m23 * m32 + lhs.m24 * m42;
+        final float f23 = lhs.m21 * m13 + lhs.m22 * m23 + lhs.m23 * m33 + lhs.m24 * m43;
+        final float f24 = lhs.m21 * m14 + lhs.m22 * m24 + lhs.m23 * m34 + lhs.m24 * m44;
+        final float f31 = lhs.m31 * m11 + lhs.m32 * m21 + lhs.m33 * m31 + lhs.m34 * m41;
+        final float f32 = lhs.m31 * m12 + lhs.m32 * m22 + lhs.m33 * m32 + lhs.m34 * m42;
+        final float f33 = lhs.m31 * m13 + lhs.m32 * m23 + lhs.m33 * m33 + lhs.m34 * m43;
+        final float f34 = lhs.m31 * m14 + lhs.m32 * m24 + lhs.m33 * m34 + lhs.m34 * m44;
+        final float f41 = lhs.m41 * m11 + lhs.m42 * m21 + lhs.m43 * m31 + lhs.m44 * m41;
+        final float f42 = lhs.m41 * m12 + lhs.m42 * m22 + lhs.m43 * m32 + lhs.m44 * m42;
+        final float f43 = lhs.m41 * m13 + lhs.m42 * m23 + lhs.m43 * m33 + lhs.m44 * m43;
+        final float f44 = lhs.m41 * m14 + lhs.m42 * m24 + lhs.m43 * m34 + lhs.m44 * m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -266,50 +267,51 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Pre-multiply this matrix by the given <code>right</code> matrix.
+     * Pre-multiply this matrix by the given <code>lhs</code> matrix.
      * <p>
-     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>right</code>
-     * matrix, then the new matrix will be <code>R * M</code> (row-major). So when transforming
-     * a vector <code>v</code> with the new matrix by using <code>v * R * M</code>, the
-     * transformation of the right matrix will be applied first.
+     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>lhs</code>
+     * matrix, then the new matrix will be <code>L * M</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * L * M</code>, the
+     * transformation of the left-hand side matrix will be applied first.
      *
-     * @param r11 the m11 element of the right matrix
-     * @param r12 the m12 element of the right matrix
-     * @param r13 the m13 element of the right matrix
-     * @param r14 the m14 element of the right matrix
-     * @param r21 the m21 element of the right matrix
-     * @param r22 the m22 element of the right matrix
-     * @param r23 the m23 element of the right matrix
-     * @param r24 the m24 element of the right matrix
-     * @param r31 the m31 element of the right matrix
-     * @param r32 the m32 element of the right matrix
-     * @param r33 the m33 element of the right matrix
-     * @param r34 the m34 element of the right matrix
-     * @param r41 the m41 element of the right matrix
-     * @param r42 the m42 element of the right matrix
-     * @param r43 the m43 element of the right matrix
-     * @param r44 the m44 element of the right matrix
+     * @param l11 the m11 element of the left-hand side matrix
+     * @param l12 the m12 element of the left-hand side matrix
+     * @param l13 the m13 element of the left-hand side matrix
+     * @param l14 the m14 element of the left-hand side matrix
+     * @param l21 the m21 element of the left-hand side matrix
+     * @param l22 the m22 element of the left-hand side matrix
+     * @param l23 the m23 element of the left-hand side matrix
+     * @param l24 the m24 element of the left-hand side matrix
+     * @param l31 the m31 element of the left-hand side matrix
+     * @param l32 the m32 element of the left-hand side matrix
+     * @param l33 the m33 element of the left-hand side matrix
+     * @param l34 the m34 element of the left-hand side matrix
+     * @param l41 the m41 element of the left-hand side matrix
+     * @param l42 the m42 element of the left-hand side matrix
+     * @param l43 the m43 element of the left-hand side matrix
+     * @param l44 the m44 element of the left-hand side matrix
      */
-    public void preMultiply(float r11, float r12, float r13, float r14,
-                            float r21, float r22, float r23, float r24,
-                            float r31, float r32, float r33, float r34,
-                            float r41, float r42, float r43, float r44) {
-        final float f11 = m11 * r11 + m21 * r12 + m31 * r13 + m41 * r14;
-        final float f12 = m12 * r11 + m22 * r12 + m32 * r13 + m42 * r14;
-        final float f13 = m13 * r11 + m23 * r12 + m33 * r13 + m43 * r14;
-        final float f14 = m14 * r11 + m24 * r12 + m34 * r13 + m44 * r14;
-        final float f21 = m11 * r21 + m21 * r22 + m31 * r23 + m41 * r24;
-        final float f22 = m12 * r21 + m22 * r22 + m32 * r23 + m42 * r24;
-        final float f23 = m13 * r21 + m23 * r22 + m33 * r23 + m43 * r24;
-        final float f24 = m14 * r21 + m24 * r22 + m34 * r23 + m44 * r24;
-        final float f31 = m11 * r31 + m21 * r32 + m31 * r33 + m41 * r34;
-        final float f32 = m12 * r31 + m22 * r32 + m32 * r33 + m42 * r34;
-        final float f33 = m13 * r31 + m23 * r32 + m33 * r33 + m43 * r34;
-        final float f34 = m14 * r31 + m24 * r32 + m34 * r33 + m44 * r34;
-        final float f41 = m11 * r41 + m21 * r42 + m31 * r43 + m41 * r44;
-        final float f42 = m12 * r41 + m22 * r42 + m32 * r43 + m42 * r44;
-        final float f43 = m13 * r41 + m23 * r42 + m33 * r43 + m43 * r44;
-        final float f44 = m14 * r41 + m24 * r42 + m34 * r43 + m44 * r44;
+    public void preConcat(float l11, float l12, float l13, float l14,
+                          float l21, float l22, float l23, float l24,
+                          float l31, float l32, float l33, float l34,
+                          float l41, float l42, float l43, float l44) {
+        // 64 multiplications
+        final float f11 = l11 * m11 + l12 * m21 + l13 * m31 + l14 * m41;
+        final float f12 = l11 * m12 + l12 * m22 + l13 * m32 + l14 * m42;
+        final float f13 = l11 * m13 + l12 * m23 + l13 * m33 + l14 * m43;
+        final float f14 = l11 * m14 + l12 * m24 + l13 * m34 + l14 * m44;
+        final float f21 = l21 * m11 + l22 * m21 + l23 * m31 + l24 * m41;
+        final float f22 = l21 * m12 + l22 * m22 + l23 * m32 + l24 * m42;
+        final float f23 = l21 * m13 + l22 * m23 + l23 * m33 + l24 * m43;
+        final float f24 = l21 * m14 + l22 * m24 + l23 * m34 + l24 * m44;
+        final float f31 = l31 * m11 + l32 * m21 + l33 * m31 + l34 * m41;
+        final float f32 = l31 * m12 + l32 * m22 + l33 * m32 + l34 * m42;
+        final float f33 = l31 * m13 + l32 * m23 + l33 * m33 + l34 * m43;
+        final float f34 = l31 * m14 + l32 * m24 + l33 * m34 + l34 * m44;
+        final float f41 = l41 * m11 + l42 * m21 + l43 * m31 + l44 * m41;
+        final float f42 = l41 * m12 + l42 * m22 + l43 * m32 + l44 * m42;
+        final float f43 = l41 * m13 + l42 * m23 + l43 * m33 + l44 * m43;
+        final float f44 = l41 * m14 + l42 * m24 + l43 * m34 + l44 * m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -329,32 +331,33 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-multiply this matrix by the given <code>left</code> matrix.
+     * Post-multiply this matrix by the given <code>rhs</code> matrix.
      * <p>
-     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>left</code>
-     * matrix, then the new matrix will be <code>M * L</code> (row-major). So when transforming
-     * a vector <code>v</code> with the new matrix by using <code>v * M * L</code>, the
+     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>rhs</code>
+     * matrix, then the new matrix will be <code>M * R</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * M * R</code>, the
      * transformation of <code>this</code> matrix will be applied first.
      *
-     * @param left the left matrix to multiply
+     * @param rhs the right-hand side matrix to multiply
      */
-    public void postMultiply(@Nonnull Matrix4 left) {
-        final float f11 = left.m11 * m11 + left.m21 * m12 + left.m31 * m13 + left.m41 * m14;
-        final float f12 = left.m12 * m11 + left.m22 * m12 + left.m32 * m13 + left.m42 * m14;
-        final float f13 = left.m13 * m11 + left.m23 * m12 + left.m33 * m13 + left.m43 * m14;
-        final float f14 = left.m14 * m11 + left.m24 * m12 + left.m34 * m13 + left.m44 * m14;
-        final float f21 = left.m11 * m21 + left.m21 * m22 + left.m31 * m23 + left.m41 * m24;
-        final float f22 = left.m12 * m21 + left.m22 * m22 + left.m32 * m23 + left.m42 * m24;
-        final float f23 = left.m13 * m21 + left.m23 * m22 + left.m33 * m23 + left.m43 * m24;
-        final float f24 = left.m14 * m21 + left.m24 * m22 + left.m34 * m23 + left.m44 * m24;
-        final float f31 = left.m11 * m31 + left.m21 * m32 + left.m31 * m33 + left.m41 * m34;
-        final float f32 = left.m12 * m31 + left.m22 * m32 + left.m32 * m33 + left.m42 * m34;
-        final float f33 = left.m13 * m31 + left.m23 * m32 + left.m33 * m33 + left.m43 * m34;
-        final float f34 = left.m14 * m31 + left.m24 * m32 + left.m34 * m33 + left.m44 * m34;
-        final float f41 = left.m11 * m41 + left.m21 * m42 + left.m31 * m43 + left.m41 * m44;
-        final float f42 = left.m12 * m41 + left.m22 * m42 + left.m32 * m43 + left.m42 * m44;
-        final float f43 = left.m13 * m41 + left.m23 * m42 + left.m33 * m43 + left.m43 * m44;
-        final float f44 = left.m14 * m41 + left.m24 * m42 + left.m34 * m43 + left.m44 * m44;
+    public void postConcat(@Nonnull Matrix4 rhs) {
+        // 64 multiplications
+        final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m13 * rhs.m31 + m14 * rhs.m41;
+        final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m13 * rhs.m32 + m14 * rhs.m42;
+        final float f13 = m11 * rhs.m13 + m12 * rhs.m23 + m13 * rhs.m33 + m14 * rhs.m43;
+        final float f14 = m11 * rhs.m14 + m12 * rhs.m24 + m13 * rhs.m34 + m14 * rhs.m44;
+        final float f21 = m21 * rhs.m11 + m22 * rhs.m21 + m23 * rhs.m31 + m24 * rhs.m41;
+        final float f22 = m21 * rhs.m12 + m22 * rhs.m22 + m23 * rhs.m32 + m24 * rhs.m42;
+        final float f23 = m21 * rhs.m13 + m22 * rhs.m23 + m23 * rhs.m33 + m24 * rhs.m43;
+        final float f24 = m21 * rhs.m14 + m22 * rhs.m24 + m23 * rhs.m34 + m24 * rhs.m44;
+        final float f31 = m31 * rhs.m11 + m32 * rhs.m21 + m33 * rhs.m31 + m34 * rhs.m41;
+        final float f32 = m31 * rhs.m12 + m32 * rhs.m22 + m33 * rhs.m32 + m34 * rhs.m42;
+        final float f33 = m31 * rhs.m13 + m32 * rhs.m23 + m33 * rhs.m33 + m34 * rhs.m43;
+        final float f34 = m31 * rhs.m14 + m32 * rhs.m24 + m33 * rhs.m34 + m34 * rhs.m44;
+        final float f41 = m41 * rhs.m11 + m42 * rhs.m21 + m43 * rhs.m31 + m44 * rhs.m41;
+        final float f42 = m41 * rhs.m12 + m42 * rhs.m22 + m43 * rhs.m32 + m44 * rhs.m42;
+        final float f43 = m41 * rhs.m13 + m42 * rhs.m23 + m43 * rhs.m33 + m44 * rhs.m43;
+        final float f44 = m41 * rhs.m14 + m42 * rhs.m24 + m43 * rhs.m34 + m44 * rhs.m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -374,50 +377,51 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-multiply this matrix by the given <code>left</code> matrix.
+     * Post-multiply this matrix by the given <code>rhs</code> matrix.
      * <p>
-     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>left</code>
-     * matrix, then the new matrix will be <code>M * L</code> (row-major). So when transforming
-     * a vector <code>v</code> with the new matrix by using <code>v * M * L</code>, the
+     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>rhs</code>
+     * matrix, then the new matrix will be <code>M * R</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * M * R</code>, the
      * transformation of <code>this</code> matrix will be applied first.
      *
-     * @param l11 the m11 element of the left matrix
-     * @param l12 the m12 element of the left matrix
-     * @param l13 the m13 element of the left matrix
-     * @param l14 the m14 element of the left matrix
-     * @param l21 the m21 element of the left matrix
-     * @param l22 the m22 element of the left matrix
-     * @param l23 the m23 element of the left matrix
-     * @param l24 the m24 element of the left matrix
-     * @param l31 the m31 element of the left matrix
-     * @param l32 the m32 element of the left matrix
-     * @param l33 the m33 element of the left matrix
-     * @param l34 the m34 element of the left matrix
-     * @param l41 the m41 element of the left matrix
-     * @param l42 the m42 element of the left matrix
-     * @param l43 the m43 element of the left matrix
-     * @param l44 the m44 element of the left matrix
+     * @param r11 the m11 element of the right-hand side matrix
+     * @param r12 the m12 element of the right-hand side matrix
+     * @param r13 the m13 element of the right-hand side matrix
+     * @param r14 the m14 element of the right-hand side matrix
+     * @param r21 the m21 element of the right-hand side matrix
+     * @param r22 the m22 element of the right-hand side matrix
+     * @param r23 the m23 element of the right-hand side matrix
+     * @param r24 the m24 element of the right-hand side matrix
+     * @param r31 the m31 element of the right-hand side matrix
+     * @param r32 the m32 element of the right-hand side matrix
+     * @param r33 the m33 element of the right-hand side matrix
+     * @param r34 the m34 element of the right-hand side matrix
+     * @param r41 the m41 element of the right-hand side matrix
+     * @param r42 the m42 element of the right-hand side matrix
+     * @param r43 the m43 element of the right-hand side matrix
+     * @param r44 the m44 element of the right-hand side matrix
      */
-    public void postMultiply(float l11, float l12, float l13, float l14,
-                             float l21, float l22, float l23, float l24,
-                             float l31, float l32, float l33, float l34,
-                             float l41, float l42, float l43, float l44) {
-        final float f11 = l11 * m11 + l21 * m12 + l31 * m13 + l41 * m14;
-        final float f12 = l12 * m11 + l22 * m12 + l32 * m13 + l42 * m14;
-        final float f13 = l13 * m11 + l23 * m12 + l33 * m13 + l43 * m14;
-        final float f14 = l14 * m11 + l24 * m12 + l34 * m13 + l44 * m14;
-        final float f21 = l11 * m21 + l21 * m22 + l31 * m23 + l41 * m24;
-        final float f22 = l12 * m21 + l22 * m22 + l32 * m23 + l42 * m24;
-        final float f23 = l13 * m21 + l23 * m22 + l33 * m23 + l43 * m24;
-        final float f24 = l14 * m21 + l24 * m22 + l34 * m23 + l44 * m24;
-        final float f31 = l11 * m31 + l21 * m32 + l31 * m33 + l41 * m34;
-        final float f32 = l12 * m31 + l22 * m32 + l32 * m33 + l42 * m34;
-        final float f33 = l13 * m31 + l23 * m32 + l33 * m33 + l43 * m34;
-        final float f34 = l14 * m31 + l24 * m32 + l34 * m33 + l44 * m34;
-        final float f41 = l11 * m41 + l21 * m42 + l31 * m43 + l41 * m44;
-        final float f42 = l12 * m41 + l22 * m42 + l32 * m43 + l42 * m44;
-        final float f43 = l13 * m41 + l23 * m42 + l33 * m43 + l43 * m44;
-        final float f44 = l14 * m41 + l24 * m42 + l34 * m43 + l44 * m44;
+    public void postConcat(float r11, float r12, float r13, float r14,
+                           float r21, float r22, float r23, float r24,
+                           float r31, float r32, float r33, float r34,
+                           float r41, float r42, float r43, float r44) {
+        // 64 multiplications
+        final float f11 = m11 * r11 + m12 * r21 + m13 * r31 + m14 * r41;
+        final float f12 = m11 * r12 + m12 * r22 + m13 * r32 + m14 * r42;
+        final float f13 = m11 * r13 + m12 * r23 + m13 * r33 + m14 * r43;
+        final float f14 = m11 * r14 + m12 * r24 + m13 * r34 + m14 * r44;
+        final float f21 = m21 * r11 + m22 * r21 + m23 * r31 + m24 * r41;
+        final float f22 = m21 * r12 + m22 * r22 + m23 * r32 + m24 * r42;
+        final float f23 = m21 * r13 + m22 * r23 + m23 * r33 + m24 * r43;
+        final float f24 = m21 * r14 + m22 * r24 + m23 * r34 + m24 * r44;
+        final float f31 = m31 * r11 + m32 * r21 + m33 * r31 + m34 * r41;
+        final float f32 = m31 * r12 + m32 * r22 + m33 * r32 + m34 * r42;
+        final float f33 = m31 * r13 + m32 * r23 + m33 * r33 + m34 * r43;
+        final float f34 = m31 * r14 + m32 * r24 + m33 * r34 + m34 * r44;
+        final float f41 = m41 * r11 + m42 * r21 + m43 * r31 + m44 * r41;
+        final float f42 = m41 * r12 + m42 * r22 + m43 * r32 + m44 * r42;
+        final float f43 = m41 * r13 + m42 * r23 + m43 * r33 + m44 * r43;
+        final float f44 = m41 * r14 + m42 * r24 + m43 * r34 + m44 * r44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -437,7 +441,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Pre-multiply this matrix by the given <code>right</code> matrix. The matrix will be
+     * Pre-multiply this matrix by the given <code>lhs</code> matrix. The matrix will be
      * expanded to a 4x4 matrix.
      * <pre>{@code
      * [ a b c ]      [ a b 0 c ]
@@ -445,26 +449,27 @@ public class Matrix4 implements Cloneable {
      * [ g h i ]      [ 0 0 1 0 ]
      *                [ g h 0 i ]
      * }</pre>
-     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>right</code>
-     * matrix, then the new matrix will be <code>R * M</code> (row-major). So when transforming
-     * a vector <code>v</code> with the new matrix by using <code>v * R * M</code>, the
-     * transformation of the right matrix will be applied first.
+     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>lhs</code>
+     * matrix, then the new matrix will be <code>L * M</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * L * M</code>, the
+     * transformation of the left-hand side matrix will be applied first.
      *
-     * @param right the right matrix to multiply
+     * @param lhs the left-hand side matrix to multiply
      */
-    public void preMultiplyNoZ(@Nonnull Matrix3 right) {
-        final float f11 = m11 * right.m11 + m21 * right.m12 + m41 * right.m13;
-        final float f12 = m12 * right.m11 + m22 * right.m12 + m42 * right.m13;
-        final float f13 = m13 * right.m11 + m23 * right.m12 + m43 * right.m13;
-        final float f14 = m14 * right.m11 + m24 * right.m12 + m44 * right.m13;
-        final float f21 = m11 * right.m21 + m21 * right.m22 + m41 * right.m23;
-        final float f22 = m12 * right.m21 + m22 * right.m22 + m42 * right.m23;
-        final float f23 = m13 * right.m21 + m23 * right.m22 + m43 * right.m23;
-        final float f24 = m14 * right.m21 + m24 * right.m22 + m44 * right.m23;
-        final float f41 = m11 * right.m31 + m21 * right.m32 + m41 * right.m33;
-        final float f42 = m12 * right.m31 + m22 * right.m32 + m42 * right.m33;
-        final float f43 = m13 * right.m31 + m23 * right.m32 + m43 * right.m33;
-        final float f44 = m14 * right.m31 + m24 * right.m32 + m44 * right.m33;
+    public void preConcatZ(@Nonnull Matrix3 lhs) {
+        // 36 multiplications
+        final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m13 * m41;
+        final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m13 * m42;
+        final float f13 = lhs.m11 * m13 + lhs.m12 * m23 + lhs.m13 * m43;
+        final float f14 = lhs.m11 * m14 + lhs.m12 * m24 + lhs.m13 * m44;
+        final float f21 = lhs.m21 * m11 + lhs.m22 * m21 + lhs.m23 * m41;
+        final float f22 = lhs.m21 * m12 + lhs.m22 * m22 + lhs.m23 * m42;
+        final float f23 = lhs.m21 * m13 + lhs.m22 * m23 + lhs.m23 * m43;
+        final float f24 = lhs.m21 * m14 + lhs.m22 * m24 + lhs.m23 * m44;
+        final float f41 = lhs.m31 * m11 + lhs.m32 * m21 + lhs.m33 * m41;
+        final float f42 = lhs.m31 * m12 + lhs.m32 * m22 + lhs.m33 * m42;
+        final float f43 = lhs.m31 * m13 + lhs.m32 * m23 + lhs.m33 * m43;
+        final float f44 = lhs.m31 * m14 + lhs.m32 * m24 + lhs.m33 * m44;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -480,7 +485,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-multiply this matrix by the given <code>left</code> matrix. The matrix will be
+     * Post-multiply this matrix by the given <code>rhs</code> matrix. The matrix will be
      * expanded to a 4x4 matrix.
      * <pre>{@code
      * [ a b c ]      [ a b 0 c ]
@@ -488,26 +493,27 @@ public class Matrix4 implements Cloneable {
      * [ g h i ]      [ 0 0 1 0 ]
      *                [ g h 0 i ]
      * }</pre>
-     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>left</code>
-     * matrix, then the new matrix will be <code>M * L</code> (row-major). So when transforming
-     * a vector <code>v</code> with the new matrix by using <code>v * M * L</code>, the
+     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>rhs</code>
+     * matrix, then the new matrix will be <code>M * R</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * M * R</code>, the
      * transformation of <code>this</code> matrix will be applied first.
      *
-     * @param left the left matrix to multiply
+     * @param rhs the right-hand side matrix to multiply
      */
-    public void postMultiplyNoZ(@Nonnull Matrix3 left) {
-        final float f11 = left.m11 * m11 + left.m21 * m12 + left.m31 * m14;
-        final float f12 = left.m12 * m11 + left.m22 * m12 + left.m32 * m14;
-        final float f14 = left.m13 * m11 + left.m23 * m12 + left.m33 * m14;
-        final float f21 = left.m11 * m21 + left.m21 * m22 + left.m31 * m24;
-        final float f22 = left.m12 * m21 + left.m22 * m22 + left.m32 * m24;
-        final float f24 = left.m13 * m21 + left.m23 * m22 + left.m33 * m24;
-        final float f31 = left.m11 * m31 + left.m21 * m32 + left.m31 * m34;
-        final float f32 = left.m12 * m31 + left.m22 * m32 + left.m32 * m34;
-        final float f34 = left.m13 * m31 + left.m23 * m32 + left.m33 * m34;
-        final float f41 = left.m11 * m41 + left.m21 * m42 + left.m31 * m44;
-        final float f42 = left.m12 * m41 + left.m22 * m42 + left.m32 * m44;
-        final float f44 = left.m13 * m41 + left.m23 * m42 + left.m33 * m44;
+    public void postConcatZ(@Nonnull Matrix3 rhs) {
+        // 36 multiplications
+        final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m14 * rhs.m31;
+        final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m14 * rhs.m32;
+        final float f14 = m11 * rhs.m13 + m12 * rhs.m23 + m14 * rhs.m33;
+        final float f21 = m21 * rhs.m11 + m22 * rhs.m21 + m24 * rhs.m31;
+        final float f22 = m21 * rhs.m12 + m22 * rhs.m22 + m24 * rhs.m32;
+        final float f24 = m21 * rhs.m13 + m22 * rhs.m23 + m24 * rhs.m33;
+        final float f31 = m31 * rhs.m11 + m32 * rhs.m21 + m34 * rhs.m31;
+        final float f32 = m31 * rhs.m12 + m32 * rhs.m22 + m34 * rhs.m32;
+        final float f34 = m31 * rhs.m13 + m32 * rhs.m23 + m34 * rhs.m33;
+        final float f41 = m41 * rhs.m11 + m42 * rhs.m21 + m44 * rhs.m31;
+        final float f42 = m41 * rhs.m12 + m42 * rhs.m22 + m44 * rhs.m32;
+        final float f44 = m41 * rhs.m13 + m42 * rhs.m23 + m44 * rhs.m33;
         m11 = f11;
         m12 = f12;
         m14 = f14;
@@ -523,7 +529,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Pre-multiply this matrix by the given <code>right</code> matrix. The matrix will be
+     * Pre-multiply this matrix by the given <code>lhs</code> matrix. The matrix will be
      * expanded to a 4x4 matrix.
      * <pre>{@code
      * [ a b c ]      [ a b c 0 ]
@@ -531,26 +537,27 @@ public class Matrix4 implements Cloneable {
      * [ g h i ]      [ g h i 0 ]
      *                [ 0 0 0 1 ]
      * }</pre>
-     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>right</code>
-     * matrix, then the new matrix will be <code>R * M</code> (row-major). So when transforming
-     * a vector <code>v</code> with the new matrix by using <code>v * R * M</code>, the
-     * transformation of the right matrix will be applied first.
+     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>lhs</code>
+     * matrix, then the new matrix will be <code>L * M</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * L * M</code>, the
+     * transformation of the left-hand side matrix will be applied first.
      *
-     * @param right the right matrix to multiply
+     * @param lhs the left-hand side matrix to multiply
      */
-    public void preMultiplyNoW(@Nonnull Matrix3 right) {
-        final float f11 = m11 * right.m11 + m21 * right.m12 + m31 * right.m13;
-        final float f12 = m12 * right.m11 + m22 * right.m12 + m32 * right.m13;
-        final float f13 = m13 * right.m11 + m23 * right.m12 + m33 * right.m13;
-        final float f14 = m14 * right.m11 + m24 * right.m12 + m34 * right.m13;
-        final float f21 = m11 * right.m21 + m21 * right.m22 + m31 * right.m23;
-        final float f22 = m12 * right.m21 + m22 * right.m22 + m32 * right.m23;
-        final float f23 = m13 * right.m21 + m23 * right.m22 + m33 * right.m23;
-        final float f24 = m14 * right.m21 + m24 * right.m22 + m34 * right.m23;
-        final float f31 = m11 * right.m31 + m21 * right.m32 + m31 * right.m33;
-        final float f32 = m12 * right.m31 + m22 * right.m32 + m32 * right.m33;
-        final float f33 = m13 * right.m31 + m23 * right.m32 + m33 * right.m33;
-        final float f34 = m14 * right.m31 + m24 * right.m32 + m34 * right.m33;
+    public void preConcat(@Nonnull Matrix3 lhs) {
+        // 36 multiplications
+        final float f11 = lhs.m11 * m11 + lhs.m12 * m21 + lhs.m13 * m31;
+        final float f12 = lhs.m11 * m12 + lhs.m12 * m22 + lhs.m13 * m32;
+        final float f13 = lhs.m11 * m13 + lhs.m12 * m23 + lhs.m13 * m33;
+        final float f14 = lhs.m11 * m14 + lhs.m12 * m24 + lhs.m13 * m34;
+        final float f21 = lhs.m21 * m11 + lhs.m22 * m21 + lhs.m23 * m31;
+        final float f22 = lhs.m21 * m12 + lhs.m22 * m22 + lhs.m23 * m32;
+        final float f23 = lhs.m21 * m13 + lhs.m22 * m23 + lhs.m23 * m33;
+        final float f24 = lhs.m21 * m14 + lhs.m22 * m24 + lhs.m23 * m34;
+        final float f31 = lhs.m31 * m11 + lhs.m32 * m21 + lhs.m33 * m31;
+        final float f32 = lhs.m31 * m12 + lhs.m32 * m22 + lhs.m33 * m32;
+        final float f33 = lhs.m31 * m13 + lhs.m32 * m23 + lhs.m33 * m33;
+        final float f34 = lhs.m31 * m14 + lhs.m32 * m24 + lhs.m33 * m34;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -566,7 +573,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Post-multiply this matrix by the given <code>left</code> matrix. The matrix will be
+     * Post-multiply this matrix by the given <code>rhs</code> matrix. The matrix will be
      * expanded to a 4x4 matrix.
      * <pre>{@code
      * [ a b c ]      [ a b c 0 ]
@@ -574,26 +581,27 @@ public class Matrix4 implements Cloneable {
      * [ g h i ]      [ g h i 0 ]
      *                [ 0 0 0 1 ]
      * }</pre>
-     * If <code>M</code> is <code>this</code> matrix and <code>L</code> the <code>left</code>
-     * matrix, then the new matrix will be <code>M * L</code> (row-major). So when transforming
-     * a vector <code>v</code> with the new matrix by using <code>v * M * L</code>, the
+     * If <code>M</code> is <code>this</code> matrix and <code>R</code> the <code>rhs</code>
+     * matrix, then the new matrix will be <code>M * R</code> (row-major). So when transforming
+     * a vector <code>v</code> with the new matrix by using <code>v * M * R</code>, the
      * transformation of <code>this</code> matrix will be applied first.
      *
-     * @param left the left matrix to multiply
+     * @param rhs the right-hand side matrix to multiply
      */
-    public void postMultiplyNoW(@Nonnull Matrix3 left) {
-        final float f11 = left.m11 * m11 + left.m21 * m12 + left.m31 * m13;
-        final float f12 = left.m12 * m11 + left.m22 * m12 + left.m32 * m13;
-        final float f13 = left.m13 * m11 + left.m23 * m12 + left.m33 * m13;
-        final float f21 = left.m11 * m21 + left.m21 * m22 + left.m31 * m23;
-        final float f22 = left.m12 * m21 + left.m22 * m22 + left.m32 * m23;
-        final float f23 = left.m13 * m21 + left.m23 * m22 + left.m33 * m23;
-        final float f31 = left.m11 * m31 + left.m21 * m32 + left.m31 * m33;
-        final float f32 = left.m12 * m31 + left.m22 * m32 + left.m32 * m33;
-        final float f33 = left.m13 * m31 + left.m23 * m32 + left.m33 * m33;
-        final float f41 = left.m11 * m41 + left.m21 * m42 + left.m31 * m43;
-        final float f42 = left.m12 * m41 + left.m22 * m42 + left.m32 * m43;
-        final float f43 = left.m13 * m41 + left.m23 * m42 + left.m33 * m43;
+    public void postConcat(@Nonnull Matrix3 rhs) {
+        // 36 multiplications
+        final float f11 = m11 * rhs.m11 + m12 * rhs.m21 + m13 * rhs.m31;
+        final float f12 = m11 * rhs.m12 + m12 * rhs.m22 + m13 * rhs.m32;
+        final float f13 = m11 * rhs.m13 + m12 * rhs.m23 + m13 * rhs.m33;
+        final float f21 = m21 * rhs.m11 + m22 * rhs.m21 + m23 * rhs.m31;
+        final float f22 = m21 * rhs.m12 + m22 * rhs.m22 + m23 * rhs.m32;
+        final float f23 = m21 * rhs.m13 + m22 * rhs.m23 + m23 * rhs.m33;
+        final float f31 = m31 * rhs.m11 + m32 * rhs.m21 + m33 * rhs.m31;
+        final float f32 = m31 * rhs.m12 + m32 * rhs.m22 + m33 * rhs.m32;
+        final float f33 = m31 * rhs.m13 + m32 * rhs.m23 + m33 * rhs.m33;
+        final float f41 = m41 * rhs.m11 + m42 * rhs.m21 + m43 * rhs.m31;
+        final float f42 = m41 * rhs.m12 + m42 * rhs.m22 + m43 * rhs.m32;
+        final float f43 = m41 * rhs.m13 + m42 * rhs.m23 + m43 * rhs.m33;
         m11 = f11;
         m12 = f12;
         m13 = f13;
@@ -1033,7 +1041,7 @@ public class Matrix4 implements Cloneable {
         float b11 = m33 * m44 - m34 * m43;
         // calc the determinant
         float det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06;
-        if (approxZero(det)) {
+        if (FMath.isNearlyZero(det)) {
             return false;
         }
         // calc algebraic cofactor and transpose
@@ -1166,11 +1174,11 @@ public class Matrix4 implements Cloneable {
         m31 = 0.0f;
         m32 = 0.0f;
         if (far == Float.POSITIVE_INFINITY) {
-            m33 = MathUtil.EPS - 1.0f;
-            m43 = (MathUtil.EPS - (zeroToOne ? 1.0f : 2.0f)) * near;
+            m33 = FMath.EPS - 1.0f;
+            m43 = (FMath.EPS - (zeroToOne ? 1.0f : 2.0f)) * near;
         } else if (near == Float.POSITIVE_INFINITY) {
-            m33 = (zeroToOne ? 0.0f : 1.0f) - MathUtil.EPS;
-            m43 = ((zeroToOne ? 1.0f : 2.0f) - MathUtil.EPS) * far;
+            m33 = (zeroToOne ? 0.0f : 1.0f) - FMath.EPS;
+            m43 = ((zeroToOne ? 1.0f : 2.0f) - FMath.EPS) * far;
         } else {
             m33 = (zeroToOne ? far : (far + near)) / (near - far);
             m43 = (zeroToOne ? far : (far + far)) * near / (near - far);
@@ -1206,11 +1214,11 @@ public class Matrix4 implements Cloneable {
         m31 = 0.0f;
         m32 = 0.0f;
         if (far == Float.POSITIVE_INFINITY) {
-            m33 = MathUtil.EPS - 1.0f;
-            m43 = (MathUtil.EPS - (zeroToOne ? 1.0f : 2.0f)) * near;
+            m33 = FMath.EPS - 1.0f;
+            m43 = (FMath.EPS - (zeroToOne ? 1.0f : 2.0f)) * near;
         } else if (near == Float.POSITIVE_INFINITY) {
-            m33 = (zeroToOne ? 0.0f : 1.0f) - MathUtil.EPS;
-            m43 = ((zeroToOne ? 1.0f : 2.0f) - MathUtil.EPS) * far;
+            m33 = (zeroToOne ? 0.0f : 1.0f) - FMath.EPS;
+            m43 = ((zeroToOne ? 1.0f : 2.0f) - FMath.EPS) * far;
         } else {
             m33 = (zeroToOne ? far : (far + near)) / (far - near);
             m43 = (zeroToOne ? far : (far + far)) * near / (near - far);
@@ -2019,10 +2027,10 @@ public class Matrix4 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        dest.mLeft = min(x1, x2, x3, x4);
-        dest.mTop = min(y1, y2, y3, y4);
-        dest.mRight = max(x1, x2, x3, x4);
-        dest.mBottom = max(y1, y2, y3, y4);
+        dest.mLeft = FMath.min(x1, x2, x3, x4);
+        dest.mTop = FMath.min(y1, y2, y3, y4);
+        dest.mRight = FMath.max(x1, x2, x3, x4);
+        dest.mBottom = FMath.max(y1, y2, y3, y4);
     }
 
     /**
@@ -2073,10 +2081,10 @@ public class Matrix4 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        dest.mLeft = Math.round(min(x1, x2, x3, x4));
-        dest.mTop = Math.round(min(y1, y2, y3, y4));
-        dest.mRight = Math.round(max(x1, x2, x3, x4));
-        dest.mBottom = Math.round(max(y1, y2, y3, y4));
+        dest.mLeft = Math.round(FMath.min(x1, x2, x3, x4));
+        dest.mTop = Math.round(FMath.min(y1, y2, y3, y4));
+        dest.mRight = Math.round(FMath.max(x1, x2, x3, x4));
+        dest.mBottom = Math.round(FMath.max(y1, y2, y3, y4));
     }
 
     /**
@@ -2127,10 +2135,10 @@ public class Matrix4 implements Cloneable {
             x4 *= w;
             y4 *= w;
         }
-        dest.mLeft = (int) Math.floor(min(x1, x2, x3, x4));
-        dest.mTop = (int) Math.floor(min(y1, y2, y3, y4));
-        dest.mRight = (int) Math.ceil(max(x1, x2, x3, x4));
-        dest.mBottom = (int) Math.ceil(max(y1, y2, y3, y4));
+        dest.mLeft = (int) Math.floor(FMath.min(x1, x2, x3, x4));
+        dest.mTop = (int) Math.floor(FMath.min(y1, y2, y3, y4));
+        dest.mRight = (int) Math.ceil(FMath.max(x1, x2, x3, x4));
+        dest.mBottom = (int) Math.ceil(FMath.max(y1, y2, y3, y4));
     }
 
     /**
@@ -2169,7 +2177,7 @@ public class Matrix4 implements Cloneable {
      * @return {@code true} if this matrix is affine.
      */
     public boolean isAffine() {
-        return approxZero(m14, m24, m34) && approxEqual(m44, 1.0f);
+        return FMath.isNearlyZero(m14, m24, m34) && FMath.isNearlyEqual(m44, 1.0f);
     }
 
     /**
@@ -2179,8 +2187,8 @@ public class Matrix4 implements Cloneable {
      */
     public boolean isScaleTranslate() {
         return isAffine() &&
-                approxZero(m12, m13, m21) &&
-                approxZero(m23, m31, m32);
+                FMath.isNearlyZero(m12, m13, m21) &&
+                FMath.isNearlyZero(m23, m31, m32);
     }
 
     /**
@@ -2202,8 +2210,8 @@ public class Matrix4 implements Cloneable {
      */
     public boolean isAxisAligned() {
         return isAffine() && (
-                (approxZero(m11) && approxZero(m22) && !approxZero(m12) && !approxZero(m21)) ||
-                        (approxZero(m12) && approxZero(m21) && !approxZero(m11) && !approxZero(m22))
+                (FMath.isNearlyZero(m11, m22) && !FMath.isNearlyZero(m12) && !FMath.isNearlyZero(m21)) ||
+                        (FMath.isNearlyZero(m12, m21) && !FMath.isNearlyZero(m11) && !FMath.isNearlyZero(m22))
         );
     }
 
@@ -2237,20 +2245,20 @@ public class Matrix4 implements Cloneable {
     }
 
     public boolean hasTranslation() {
-        return !(approxZero(m41, m42, m43) && approxEqual(m44, 1.0f));
+        return !(FMath.isNearlyZero(m41, m42, m43) && FMath.isNearlyEqual(m44, 1.0f));
     }
 
     /**
-     * Returns whether this matrix is approximately equivalent to an identity matrix.
+     * Returns whether this matrix is approximately equal to an identity matrix.
      *
      * @return {@code true} if this matrix is identity.
      */
     public boolean isIdentity() {
-        return approxZero(m12, m13, m14) &&
-                approxZero(m21, m23, m24) &&
-                approxZero(m31, m32, m34) &&
-                approxZero(m41, m42, m43) &&
-                approxEqual(m11, m22, m33, m44, 1.0f);
+        return FMath.isNearlyZero(m12, m13, m14) &&
+                FMath.isNearlyZero(m21, m23, m24) &&
+                FMath.isNearlyZero(m31, m32, m34) &&
+                FMath.isNearlyZero(m41, m42, m43) &&
+                FMath.isNearlyEqual(m11, m22, m33, m44, 1.0f);
     }
 
     /**
@@ -2323,114 +2331,89 @@ public class Matrix4 implements Cloneable {
         );
     }
 
-    public boolean equal(@Nonnull Matrix4 mat) {
-        return m11 == mat.m11 &&
-                m12 == mat.m12 &&
-                m13 == mat.m13 &&
-                m14 == mat.m14 &&
-                m21 == mat.m21 &&
-                m22 == mat.m22 &&
-                m23 == mat.m23 &&
-                m24 == mat.m24 &&
-                m31 == mat.m31 &&
-                m32 == mat.m32 &&
-                m33 == mat.m33 &&
-                m34 == mat.m34 &&
-                m41 == mat.m41 &&
-                m42 == mat.m42 &&
-                m43 == mat.m43 &&
-                m44 == mat.m44;
-    }
-
     /**
-     * Returns whether this matrix is equivalent to given matrix.
+     * Returns whether this matrix is approximately equal to given matrix.
      *
-     * @param mat the matrix to compare.
+     * @param m the matrix to compare.
      * @return {@code true} if this matrix is equivalent to other matrix.
      */
-    public boolean equivalent(@Nullable Matrix4 mat) {
-        if (mat == this)
-            return true;
-        if (mat == null)
-            return false;
-        return approxEqual(m11, mat.m11) &&
-                approxEqual(m12, mat.m12) &&
-                approxEqual(m13, mat.m13) &&
-                approxEqual(m14, mat.m14) &&
-                approxEqual(m21, mat.m21) &&
-                approxEqual(m22, mat.m22) &&
-                approxEqual(m23, mat.m23) &&
-                approxEqual(m24, mat.m24) &&
-                approxEqual(m31, mat.m31) &&
-                approxEqual(m32, mat.m32) &&
-                approxEqual(m33, mat.m33) &&
-                approxEqual(m34, mat.m34) &&
-                approxEqual(m41, mat.m41) &&
-                approxEqual(m42, mat.m42) &&
-                approxEqual(m43, mat.m43) &&
-                approxEqual(m44, mat.m44);
-    }
-
-    /**
-     * Returns whether this matrix is exactly equal to some other object.
-     *
-     * @param o the reference object with which to compare.
-     * @return {@code true} if this object is the same as the obj values.
-     */
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        Matrix4 mat = (Matrix4) o;
-
-        if (Float.floatToIntBits(mat.m11) != Float.floatToIntBits(m11)) return false;
-        if (Float.floatToIntBits(mat.m12) != Float.floatToIntBits(m12)) return false;
-        if (Float.floatToIntBits(mat.m13) != Float.floatToIntBits(m13)) return false;
-        if (Float.floatToIntBits(mat.m14) != Float.floatToIntBits(m14)) return false;
-        if (Float.floatToIntBits(mat.m21) != Float.floatToIntBits(m21)) return false;
-        if (Float.floatToIntBits(mat.m22) != Float.floatToIntBits(m22)) return false;
-        if (Float.floatToIntBits(mat.m23) != Float.floatToIntBits(m23)) return false;
-        if (Float.floatToIntBits(mat.m24) != Float.floatToIntBits(m24)) return false;
-        if (Float.floatToIntBits(mat.m31) != Float.floatToIntBits(m31)) return false;
-        if (Float.floatToIntBits(mat.m32) != Float.floatToIntBits(m32)) return false;
-        if (Float.floatToIntBits(mat.m33) != Float.floatToIntBits(m33)) return false;
-        if (Float.floatToIntBits(mat.m34) != Float.floatToIntBits(m34)) return false;
-        if (Float.floatToIntBits(mat.m41) != Float.floatToIntBits(m41)) return false;
-        if (Float.floatToIntBits(mat.m42) != Float.floatToIntBits(m42)) return false;
-        if (Float.floatToIntBits(mat.m43) != Float.floatToIntBits(m43)) return false;
-        return Float.floatToIntBits(mat.m44) == Float.floatToIntBits(m44);
+    public boolean isNearlyEqual(@Nonnull Matrix4 m) {
+        return FMath.isNearlyEqual(m11, m.m11) &&
+                FMath.isNearlyEqual(m12, m.m12) &&
+                FMath.isNearlyEqual(m13, m.m13) &&
+                FMath.isNearlyEqual(m14, m.m14) &&
+                FMath.isNearlyEqual(m21, m.m21) &&
+                FMath.isNearlyEqual(m22, m.m22) &&
+                FMath.isNearlyEqual(m23, m.m23) &&
+                FMath.isNearlyEqual(m24, m.m24) &&
+                FMath.isNearlyEqual(m31, m.m31) &&
+                FMath.isNearlyEqual(m32, m.m32) &&
+                FMath.isNearlyEqual(m33, m.m33) &&
+                FMath.isNearlyEqual(m34, m.m34) &&
+                FMath.isNearlyEqual(m41, m.m41) &&
+                FMath.isNearlyEqual(m42, m.m42) &&
+                FMath.isNearlyEqual(m43, m.m43) &&
+                FMath.isNearlyEqual(m44, m.m44);
     }
 
     @Override
     public int hashCode() {
-        int result = Float.floatToIntBits(m11);
-        result = 31 * result + Float.floatToIntBits(m12);
-        result = 31 * result + Float.floatToIntBits(m13);
-        result = 31 * result + Float.floatToIntBits(m14);
-        result = 31 * result + Float.floatToIntBits(m21);
-        result = 31 * result + Float.floatToIntBits(m22);
-        result = 31 * result + Float.floatToIntBits(m23);
-        result = 31 * result + Float.floatToIntBits(m24);
-        result = 31 * result + Float.floatToIntBits(m31);
-        result = 31 * result + Float.floatToIntBits(m32);
-        result = 31 * result + Float.floatToIntBits(m33);
-        result = 31 * result + Float.floatToIntBits(m34);
-        result = 31 * result + Float.floatToIntBits(m41);
-        result = 31 * result + Float.floatToIntBits(m42);
-        result = 31 * result + Float.floatToIntBits(m43);
-        result = 31 * result + Float.floatToIntBits(m44);
+        int result = Float.hashCode(m11);
+        result = 31 * result + Float.hashCode(m12);
+        result = 31 * result + Float.hashCode(m13);
+        result = 31 * result + Float.hashCode(m14);
+        result = 31 * result + Float.hashCode(m21);
+        result = 31 * result + Float.hashCode(m22);
+        result = 31 * result + Float.hashCode(m23);
+        result = 31 * result + Float.hashCode(m24);
+        result = 31 * result + Float.hashCode(m31);
+        result = 31 * result + Float.hashCode(m32);
+        result = 31 * result + Float.hashCode(m33);
+        result = 31 * result + Float.hashCode(m34);
+        result = 31 * result + Float.hashCode(m41);
+        result = 31 * result + Float.hashCode(m42);
+        result = 31 * result + Float.hashCode(m43);
+        result = 31 * result + Float.hashCode(m44);
         return result;
+    }
+
+    /**
+     * Returns whether this matrix is exactly equal to another matrix.
+     *
+     * @param o the reference object with which to compare.
+     * @return {@code true} if this object is the same as the o values.
+     */
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Matrix4 m)) {
+            return false;
+        }
+        return m11 == m.m11 &&
+                m12 == m.m12 &&
+                m13 == m.m13 &&
+                m14 == m.m14 &&
+                m21 == m.m21 &&
+                m22 == m.m22 &&
+                m23 == m.m23 &&
+                m24 == m.m24 &&
+                m31 == m.m31 &&
+                m32 == m.m32 &&
+                m33 == m.m33 &&
+                m34 == m.m34 &&
+                m41 == m.m41 &&
+                m42 == m.m42 &&
+                m43 == m.m43 &&
+                m44 == m.m44;
     }
 
     @Override
     public String toString() {
         return String.format("""
                         Matrix4:
-                        %10.6f %10.6f %10.6f %10.6f
-                        %10.6f %10.6f %10.6f %10.6f
-                        %10.6f %10.6f %10.6f %10.6f
-                        %10.6f %10.6f %10.6f %10.6f
+                        %10.5f %10.5f %10.5f %10.5f
+                        %10.5f %10.5f %10.5f %10.5f
+                        %10.5f %10.5f %10.5f %10.5f
+                        %10.5f %10.5f %10.5f %10.5f
                         """,
                 m11, m12, m13, m14,
                 m21, m22, m23, m24,
@@ -2439,7 +2422,7 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * @return a deep copy of this matrix
+     * @return a copy of this matrix
      */
     @Nonnull
     @Override

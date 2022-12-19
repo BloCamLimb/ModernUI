@@ -683,8 +683,8 @@ public final class Color {
      * @return RGB equivalent to HSV, without alpha
      */
     public static int hsvToRgb(float h, float s, float v) {
-        s = MathUtil.clamp(s, 0.0f, 1.0f);
-        v = MathUtil.clamp(v, 0.0f, 1.0f);
+        s = FMath.clamp(s, 0.0f, 1.0f);
+        v = FMath.clamp(v, 0.0f, 1.0f);
 
         if (s <= 1.0f / 1024.0f) {
             int i = (int) (v * 255.0f + 0.5f);
