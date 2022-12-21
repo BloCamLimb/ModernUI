@@ -1,21 +1,10 @@
 pluginManagement {
     repositories {
-        maven {
-            url 'https://maven.minecraftforge.net/'
-        }
-        maven {
-            url 'https://maven.fabricmc.net/'
-        }
-        maven {
-            url 'https://maven.architectury.dev/'
-        }
         gradlePluginPortal()
     }
 }
 
 rootProject.name = 'ModernUI'
 
-include 'core', 'forge'//, 'forgeserver'
+include 'core'
 project(':core').name = "ModernUI-Core"
-project(':forge').name = "ModernUI-Forge"
-//project(':forgeserver').name = "ModernUI-ForgeServer"
