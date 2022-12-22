@@ -20,23 +20,8 @@ package icyllis.akashigi.engine;
 
 import icyllis.akashigi.core.Core;
 import icyllis.akashigi.core.FMath;
-import org.lwjgl.system.MemoryUtil;
-
-import java.lang.reflect.Field;
 
 public final class DataUtils {
-
-    public static final sun.misc.Unsafe UNSAFE;
-
-    static {
-        try {
-            Field unsafe = MemoryUtil.class.getDeclaredField("UNSAFE");
-            unsafe.setAccessible(true);
-            UNSAFE = (sun.misc.Unsafe) unsafe.get(null);
-        } catch (Exception e) {
-            throw new AssertionError(e);
-        }
-    }
 
     public static boolean compressionTypeIsOpaque(int compression) {
         return switch (compression) {

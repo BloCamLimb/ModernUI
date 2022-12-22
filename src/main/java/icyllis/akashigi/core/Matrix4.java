@@ -18,8 +18,7 @@
 
 package icyllis.akashigi.core;
 
-import icyllis.akashigi.engine.DataUtils;
-import sun.misc.Unsafe;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,17 +31,6 @@ import java.nio.FloatBuffer;
  */
 @SuppressWarnings("unused")
 public class Matrix4 implements Cloneable {
-
-    @Deprecated
-    public static final long OFFSET; // object header is 12 or 16
-
-    static {
-        try {
-            OFFSET = DataUtils.UNSAFE.objectFieldOffset(Matrix4.class.getDeclaredField("m11"));
-        } catch (Exception e) {
-            throw new UnsupportedOperationException("No OFFSET", e);
-        }
-    }
 
     // sequential matrix elements, m(ij) (row, column)
     // directly using primitives will be faster than array in Java
@@ -836,16 +824,22 @@ public class Matrix4 implements Cloneable {
      * @param p the pointer of the array to copy from
      */
     public void set(long p) {
-        final Unsafe unsafe = DataUtils.UNSAFE;
-        final long offset = OFFSET;
-        unsafe.putLong(this, offset, unsafe.getLong(p));
-        unsafe.putLong(this, offset + 8, unsafe.getLong(p + 8));
-        unsafe.putLong(this, offset + 16, unsafe.getLong(p + 16));
-        unsafe.putLong(this, offset + 24, unsafe.getLong(p + 24));
-        unsafe.putLong(this, offset + 32, unsafe.getLong(p + 32));
-        unsafe.putLong(this, offset + 40, unsafe.getLong(p + 40));
-        unsafe.putLong(this, offset + 48, unsafe.getLong(p + 48));
-        unsafe.putLong(this, offset + 56, unsafe.getLong(p + 56));
+        m11 = MemoryUtil.memGetFloat(p);
+        m12 = MemoryUtil.memGetFloat(p + 4);
+        m13 = MemoryUtil.memGetFloat(p + 8);
+        m14 = MemoryUtil.memGetFloat(p + 12);
+        m21 = MemoryUtil.memGetFloat(p + 16);
+        m22 = MemoryUtil.memGetFloat(p + 20);
+        m23 = MemoryUtil.memGetFloat(p + 24);
+        m24 = MemoryUtil.memGetFloat(p + 28);
+        m31 = MemoryUtil.memGetFloat(p + 32);
+        m32 = MemoryUtil.memGetFloat(p + 36);
+        m33 = MemoryUtil.memGetFloat(p + 40);
+        m34 = MemoryUtil.memGetFloat(p + 44);
+        m41 = MemoryUtil.memGetFloat(p + 48);
+        m42 = MemoryUtil.memGetFloat(p + 52);
+        m43 = MemoryUtil.memGetFloat(p + 56);
+        m44 = MemoryUtil.memGetFloat(p + 60);
     }
 
     /**
@@ -948,21 +942,28 @@ public class Matrix4 implements Cloneable {
     }
 
     /**
-     * Store this matrix into the given address in row-major order (UNSAFE).
+     * Store this matrix into the given address in GLSL column-major or
+     * HLSL row-major order.
      *
      * @param p the pointer of the array to store
      */
     public void store(long p) {
-        final Unsafe unsafe = DataUtils.UNSAFE;
-        final long offset = OFFSET;
-        unsafe.putLong(p, unsafe.getLong(this, offset));
-        unsafe.putLong(p + 8, unsafe.getLong(this, offset + 8));
-        unsafe.putLong(p + 16, unsafe.getLong(this, offset + 16));
-        unsafe.putLong(p + 24, unsafe.getLong(this, offset + 24));
-        unsafe.putLong(p + 32, unsafe.getLong(this, offset + 32));
-        unsafe.putLong(p + 40, unsafe.getLong(this, offset + 40));
-        unsafe.putLong(p + 48, unsafe.getLong(this, offset + 48));
-        unsafe.putLong(p + 56, unsafe.getLong(this, offset + 56));
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 1, m12);
+        MemoryUtil.memPutFloat(p + 2, m13);
+        MemoryUtil.memPutFloat(p + 3, m14);
+        MemoryUtil.memPutFloat(p + 4, m21);
+        MemoryUtil.memPutFloat(p + 5, m22);
+        MemoryUtil.memPutFloat(p + 6, m23);
+        MemoryUtil.memPutFloat(p + 7, m24);
+        MemoryUtil.memPutFloat(p + 8, m31);
+        MemoryUtil.memPutFloat(p + 9, m32);
+        MemoryUtil.memPutFloat(p + 10, m33);
+        MemoryUtil.memPutFloat(p + 11, m34);
+        MemoryUtil.memPutFloat(p + 12, m41);
+        MemoryUtil.memPutFloat(p + 13, m42);
+        MemoryUtil.memPutFloat(p + 14, m43);
+        MemoryUtil.memPutFloat(p + 15, m44);
     }
 
     /**

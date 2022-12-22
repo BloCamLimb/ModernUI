@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.engine;
 
-import icyllis.akashigi.aksl.Compiler;
+import icyllis.akashigi.slang.Compiler;
 import icyllis.akashigi.core.Rect2i;
 import icyllis.akashigi.core.SharedPtr;
 import icyllis.akashigi.engine.ops.OpsTask;

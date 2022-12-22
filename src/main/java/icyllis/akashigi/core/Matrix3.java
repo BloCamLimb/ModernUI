@@ -18,8 +18,7 @@
 
 package icyllis.akashigi.core;
 
-import icyllis.akashigi.engine.DataUtils;
-import sun.misc.Unsafe;
+import org.lwjgl.system.MemoryUtil;
 
 import javax.annotation.Nonnull;
 
@@ -31,17 +30,6 @@ import static icyllis.akashigi.core.FMath.*;
 //TODO type mask and others are WIP
 @SuppressWarnings("unused")
 public class Matrix3 implements Cloneable {
-
-    @Deprecated
-    public static final long OFFSET;
-
-    static {
-        try {
-            OFFSET = DataUtils.UNSAFE.objectFieldOffset(Matrix3.class.getDeclaredField("m11"));
-        } catch (Exception e) {
-            throw new UnsupportedOperationException("No OFFSET", e);
-        }
-    }
 
     /**
      * TypeMask
@@ -442,13 +430,15 @@ public class Matrix3 implements Cloneable {
      * @param p the pointer of the array to store
      */
     public void put(long p) {
-        final Unsafe unsafe = DataUtils.UNSAFE;
-        final long offset = OFFSET;
-        unsafe.putLong(null, p, unsafe.getLong(this, offset));
-        unsafe.putLong(null, p + 8, unsafe.getLong(this, offset + 8));
-        unsafe.putLong(null, p + 16, unsafe.getLong(this, offset + 16));
-        unsafe.putLong(null, p + 24, unsafe.getLong(this, offset + 24));
-        unsafe.putFloat(null, p + 32, m33);
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 12, m21);
+        MemoryUtil.memPutFloat(p + 16, m22);
+        MemoryUtil.memPutFloat(p + 20, m23);
+        MemoryUtil.memPutFloat(p + 24, m31);
+        MemoryUtil.memPutFloat(p + 28, m32);
+        MemoryUtil.memPutFloat(p + 32, m33);
     }
 
     /**
@@ -459,14 +449,15 @@ public class Matrix3 implements Cloneable {
      * @param p the pointer of the array to store, must be aligned
      */
     public void putAligned(long p) {
-        final Unsafe unsafe = DataUtils.UNSAFE;
-        final long offset = OFFSET;
-        unsafe.putLong(null, p, unsafe.getLong(this, offset));
-        unsafe.putFloat(null, p + 8, m13);
-        unsafe.putLong(null, p + 16, unsafe.getLong(this, offset + 12)); // 4N
-        unsafe.putFloat(null, p + 24, m23);
-        unsafe.putLong(null, p + 32, unsafe.getLong(this, offset + 24)); // 4N
-        unsafe.putFloat(null, p + 40, m33);
+        MemoryUtil.memPutFloat(p, m11);
+        MemoryUtil.memPutFloat(p + 4, m12);
+        MemoryUtil.memPutFloat(p + 8, m13);
+        MemoryUtil.memPutFloat(p + 16, m21);
+        MemoryUtil.memPutFloat(p + 20, m22);
+        MemoryUtil.memPutFloat(p + 24, m23);
+        MemoryUtil.memPutFloat(p + 32, m31);
+        MemoryUtil.memPutFloat(p + 36, m32);
+        MemoryUtil.memPutFloat(p + 40, m33);
     }
 
     /**
