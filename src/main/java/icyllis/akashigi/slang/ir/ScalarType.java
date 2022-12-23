@@ -38,12 +38,12 @@ public final class ScalarType extends Type {
     }
 
     @Override
-    public byte scalarKind() {
+    public byte getScalarKind() {
         return mScalarKind;
     }
 
     @Override
-    public int priority() {
+    public int getPriority() {
         return mPriority;
     }
 
@@ -59,6 +59,11 @@ public final class ScalarType extends Type {
 
     @Override
     public int rows() {
+        return 1;
+    }
+
+    @Override
+    public int components() {
         return 1;
     }
 

@@ -18,8 +18,7 @@
 
 package icyllis.akashigi.slang.ir;
 
-import icyllis.akashigi.slang.Modifier;
-import icyllis.akashigi.slang.ThreadContext;
+import icyllis.akashigi.slang.*;
 import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
@@ -34,14 +33,15 @@ public class Type extends Symbol {
     /**
      * Block member.
      *
-     * @param position see {@link Node#makeRange(int, int)}
+     * @param position  see {@link Node#makeRange(int, int)}
+     * @param modifiers see {@link Modifier}
      */
-    public record Field(int position, Modifier qualifiers, String name, Type type) {
+    public record Field(int position, Layout layout, int modifiers, String name, Type type) {
 
         @Nonnull
         @Override
         public String toString() {
-            return type.displayName() + " " + name + ";";
+            return type.getName() + " " + name + ";";
         }
     }
 
@@ -220,7 +220,7 @@ public class Type extends Symbol {
 
     @Nonnull
     @Override
-    public Type getType() {
+    public final Type getType() {
         return this;
     }
 
@@ -261,33 +261,28 @@ public class Type extends Symbol {
      * Returns a descriptor of the type, meant for name-mangling. (e.g. float4x4 -> f44)
      */
     @Nonnull
-    public final String getDescriptor() {
+    public final String getDesc() {
         return mDesc;
     }
 
     /**
      * Returns the category (scalar, vector, matrix, etc.) of this type.
      */
-    public final byte typeKind() {
+    public final byte getTypeKind() {
         return mTypeKind;
     }
 
     /**
      * Returns the ScalarKind of this type (always NonScalar for non-scalar values).
      */
-    public byte scalarKind() {
+    public byte getScalarKind() {
         return SCALAR_KIND_NON_SCALAR;
-    }
-
-    @Nonnull
-    public final String displayName() {
-        return getName();
     }
 
     @Nonnull
     @Override
     public final String toString() {
-        return displayName();
+        return getName();
     }
 
     /**
@@ -304,14 +299,14 @@ public class Type extends Symbol {
      * Returns true if this type is a bool.
      */
     public final boolean isBoolean() {
-        return scalarKind() == SCALAR_KIND_BOOLEAN;
+        return getScalarKind() == SCALAR_KIND_BOOLEAN;
     }
 
     /**
      * Returns true if this is a numeric scalar type.
      */
     public final boolean isNumeric() {
-        return switch (scalarKind()) {
+        return switch (getScalarKind()) {
             case SCALAR_KIND_FLOAT, SCALAR_KIND_SIGNED, SCALAR_KIND_UNSIGNED -> true;
             default -> false;
         };
@@ -321,28 +316,28 @@ public class Type extends Symbol {
      * Returns true if this is a floating-point scalar type (float or half).
      */
     public final boolean isFloat() {
-        return scalarKind() == SCALAR_KIND_FLOAT;
+        return getScalarKind() == SCALAR_KIND_FLOAT;
     }
 
     /**
      * Returns true if this is a signed scalar type (int or short).
      */
     public final boolean isSigned() {
-        return scalarKind() == SCALAR_KIND_SIGNED;
+        return getScalarKind() == SCALAR_KIND_SIGNED;
     }
 
     /**
      * Returns true if this is an unsigned scalar type (uint or ushort).
      */
     public final boolean isUnsigned() {
-        return scalarKind() == SCALAR_KIND_UNSIGNED;
+        return getScalarKind() == SCALAR_KIND_UNSIGNED;
     }
 
     /**
      * Returns true if this is a signed or unsigned integer.
      */
     public final boolean isInteger() {
-        return switch (scalarKind()) {
+        return switch (getScalarKind()) {
             case SCALAR_KIND_SIGNED, SCALAR_KIND_UNSIGNED -> true;
             default -> false;
         };
@@ -356,11 +351,15 @@ public class Type extends Symbol {
         return mTypeKind == TYPE_KIND_OPAQUE;
     }
 
+    public final boolean isGeneric() {
+        return mTypeKind == TYPE_KIND_GENERIC;
+    }
+
     /**
      * Returns the "priority" of a number type, in order of float > half > int > short.
      * When operating on two number types, the result is the higher-priority type.
      */
-    public int priority() {
+    public int getPriority() {
         throw new AssertionError();
     }
 
@@ -383,7 +382,7 @@ public class Type extends Symbol {
         if (matches(other)) {
             return CoercionCost.free();
         }
-        if (typeKind() == other.typeKind() &&
+        if (getTypeKind() == other.getTypeKind() &&
                 (isVector() || isMatrix() || isArray())) {
             // Vectors/matrices/arrays of the same size can be coerced if their component type can be.
             if (isMatrix() && (rows() != other.rows() || cols() != other.cols())) {
@@ -395,10 +394,10 @@ public class Type extends Symbol {
             return getComponentType().coercionCost(other.getComponentType());
         }
         if (isNumeric() && other.isNumeric()) {
-            if (scalarKind() != other.scalarKind()) {
+            if (getScalarKind() != other.getScalarKind()) {
                 return CoercionCost.impossible();
-            } else if (other.priority() >= priority()) {
-                return CoercionCost.normal(other.priority() - priority());
+            } else if (other.getPriority() >= getPriority()) {
+                return CoercionCost.normal(other.getPriority() - getPriority());
             } else {
                 return CoercionCost.impossible();
             }
@@ -436,12 +435,12 @@ public class Type extends Symbol {
 
         if (!CoercionCost.isPossible(expr.coercionCost(this))) {
             ThreadContext.getInstance().error(expr.mPosition,
-                    "expected '" + displayName() + "', but found '" +
-                            expr.getType().displayName() + "'");
+                    "expected '" + getName() + "', but found '" +
+                            expr.getType().getName() + "'");
             return null;
         }
 
-        ThreadContext.getInstance().error(expr.mPosition, "cannot construct '" + displayName() + "'");
+        ThreadContext.getInstance().error(expr.mPosition, "cannot construct '" + getName() + "'");
         return null;
     }
 
@@ -477,19 +476,25 @@ public class Type extends Symbol {
 
     /**
      * For arrays, returns either the size of the array (if known) or -1 (unsized).
-     * For vectors, returns the number of components (e.g. float3 return 3).
      * For all other types, causes an assertion failure.
      */
     public int length() {
         throw new AssertionError();
     }
 
-    @Nonnull
-    public Field[] fields() {
-        throw new AssertionError();
+    /**
+     * Return the number of scalars.
+     */
+    public int components() {
+        return cols() * rows();
     }
 
     public int dimensions() {
+        throw new AssertionError();
+    }
+
+    @Nonnull
+    public Field[] getFields() {
         throw new AssertionError();
     }
 
@@ -559,10 +564,6 @@ public class Type extends Symbol {
 
     public final boolean hasPrecision() {
         return getComponentType().isNumeric() || isCombinedSampler();
-    }
-
-    public final boolean highPrecision() {
-        return getBitWidth() >= 32;
     }
 
     /**
@@ -772,7 +773,7 @@ public class Type extends Symbol {
         private final Type mUnderlyingType;
 
         AliasType(String name, Type underlyingType) {
-            super(name, underlyingType.getDescriptor(), underlyingType.typeKind());
+            super(name, underlyingType.getDesc(), underlyingType.getTypeKind());
             mUnderlyingType = underlyingType;
         }
 
@@ -789,13 +790,13 @@ public class Type extends Symbol {
         }
 
         @Override
-        public byte scalarKind() {
-            return mUnderlyingType.scalarKind();
+        public byte getScalarKind() {
+            return mUnderlyingType.getScalarKind();
         }
 
         @Override
-        public int priority() {
-            return mUnderlyingType.priority();
+        public int getPriority() {
+            return mUnderlyingType.getPriority();
         }
 
         @Override
@@ -867,7 +868,7 @@ public class Type extends Symbol {
 
         ArrayType(Type elementType, int length) {
             super(convert(elementType.getName(), length),
-                    convert(elementType.getDescriptor(), length),
+                    convert(elementType.getDesc(), length),
                     TYPE_KIND_ARRAY);
             assert (length == UNSIZED_ARRAY || length > 0);
             // Vulkan: disallow multi-dimensional arrays
@@ -900,6 +901,11 @@ public class Type extends Symbol {
         @Override
         public int length() {
             return mLength;
+        }
+
+        @Override
+        public int components() {
+            return super.components() * mLength;
         }
 
         @Nonnull

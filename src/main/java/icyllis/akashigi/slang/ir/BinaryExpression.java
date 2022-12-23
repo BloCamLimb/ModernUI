@@ -45,11 +45,11 @@ public final class BinaryExpression extends Expression {
      * Creates a potentially-simplified form of the expression. Determines the result type
      * programmatically.
      */
-    public static Expression convert(ThreadContext context,
-                                     int position,
+    public static Expression convert(int position,
                                      Expression left,
                                      Operator op,
                                      Expression right) {
+        ThreadContext context = ThreadContext.getInstance();
         Type rawLeftType = (left.isIntLiteral() && right.getType().isInteger())
                 ? right.getType()
                 : left.getType();
@@ -62,8 +62,8 @@ public final class BinaryExpression extends Expression {
         Type[] outTypes = new Type[3];
         if (!op.determineBinaryType(context, rawLeftType, rawRightType, outTypes)) {
             context.error(position, "type mismatch: '" + op.tightOperatorName() +
-                    "' cannot operate on '" + left.getType().displayName() + "', '" +
-                    right.getType().displayName() + "'");
+                    "' cannot operate on '" + left.getType().getName() + "', '" +
+                    right.getType().getName() + "'");
             return null;
         }
         Type leftType = outTypes[0];
@@ -71,7 +71,7 @@ public final class BinaryExpression extends Expression {
         Type resultType = outTypes[2];
 
         if (isAssignment && leftType.getComponentType().isOpaque()) {
-            context.error(position, "assignments to opaque type '" + left.getType().displayName() +
+            context.error(position, "assignments to opaque type '" + left.getType().getName() +
                     "' are not permitted");
             return null;
         }
@@ -86,23 +86,33 @@ public final class BinaryExpression extends Expression {
         return mLeft;
     }
 
+    public Operator getOperator() {
+        return mOperator;
+    }
+
     public Expression getRight() {
         return mRight;
     }
 
-    public Operator getOperator() {
-        return mOperator;
+    @Nonnull
+    @Override
+    public Expression clone(int position) {
+        return new BinaryExpression(position,
+                mLeft.clone(),
+                mOperator,
+                mRight.clone(),
+                getType());
     }
 
     @Nonnull
     @Override
     public String toString(int parentPrecedence) {
-        int operatorPrecedence = getOperator().getBinaryPrecedence();
+        int operatorPrecedence = mOperator.getBinaryPrecedence();
         boolean needsParens = (operatorPrecedence >= parentPrecedence);
         return (needsParens ? "(" : "") +
-                getLeft().toString(operatorPrecedence) +
-                getOperator().operatorName() +
-                getRight().toString(operatorPrecedence) +
+                mLeft.toString(operatorPrecedence) +
+                mOperator.operatorName() +
+                mRight.toString(operatorPrecedence) +
                 (needsParens ? ")" : "");
     }
 }

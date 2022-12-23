@@ -21,11 +21,11 @@ package icyllis.akashigi.slang.ir;
 /**
  * Represents a top-level element (e.g. function or global variable) in a program.
  */
-public abstract class Element extends Node {
+public abstract class ProgramElement extends Node {
 
-    protected Element(int position, int kind) {
+    protected ProgramElement(int position, int kind) {
         super(position, kind);
-        assert (kind >= ElementKind.kFirst && kind <= ElementKind.kLast);
+        assert (kind >= ProgramElementKind.kFirst && kind <= ProgramElementKind.kLast);
     }
 
     public final int kind() {

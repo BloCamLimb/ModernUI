@@ -18,8 +18,9 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.Element;
+import icyllis.akashigi.slang.ir.*;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 /**
@@ -40,10 +41,10 @@ public final class ThreadContext {
     // compilation
     private final SymbolTable mSymbolTable;
     // The element map from the base module
-    private final List<Element> mBaseElements;
+    private final List<ProgramElement> mBaseElements;
 
-    private final List<Element> mUniqueElements = new ArrayList<>();
-    private final List<Element> mSharedElements = new ArrayList<>();
+    private final List<ProgramElement> mUniqueElements = new ArrayList<>();
+    private final List<ProgramElement> mSharedElements = new ArrayList<>();
 
     // The Context holds a pointer to our error handler.
     private ErrorHandler mErrors;
@@ -129,21 +130,21 @@ public final class ThreadContext {
     /**
      * Returns the elements of the base module.
      */
-    public List<Element> getBaseElements() {
+    public List<ProgramElement> getBaseElements() {
         return mBaseElements;
     }
 
     /**
      * Returns a list for adding owned elements in the target module.
      */
-    public List<Element> getUniqueElements() {
+    public List<ProgramElement> getUniqueElements() {
         return mUniqueElements;
     }
 
     /**
      * Returns a list for adding used elements in the target module shared from {@link #getBaseElements()}.
      */
-    public List<Element> getSharedElements() {
+    public List<ProgramElement> getSharedElements() {
         return mSharedElements;
     }
 
@@ -161,5 +162,41 @@ public final class ThreadContext {
 
     public void setErrorHandler(ErrorHandler errors) {
         mErrors = Objects.requireNonNull(errors);
+    }
+
+    @Nullable
+    public Expression convertIdentifier(int position, String name) {
+        Symbol result = mSymbolTable.find(name);
+        if (result == null) {
+            error(position, "unknown identifier '" + name + "'");
+            return null;
+        }
+        return switch (result.kind()) {
+            case Node.SymbolKind.kFunctionDeclaration -> {
+                FunctionDeclaration overloadChain = (FunctionDeclaration) result;
+                yield FunctionReference.make(position, overloadChain);
+            }
+            case Node.SymbolKind.kVariable -> {
+                Variable variable = (Variable) result;
+                yield VariableReference.make(position, variable,
+                        VariableReference.kRead_ReferenceKind);
+            }
+            case Node.SymbolKind.kAnonymousField -> {
+                AnonymousField field = (AnonymousField) result;
+                Expression base = VariableReference.make(position, field.getContainer(),
+                        VariableReference.kRead_ReferenceKind);
+                yield FieldExpression.make(position, base, field.getFieldIndex(),
+                        FieldExpression.kAnonymousInterfaceBlock_ContainerKind);
+            }
+            case Node.SymbolKind.kType -> {
+                Type type = (Type) result;
+                if (!mIsModule && type.isGeneric()) {
+                    error(position, "type '" + type.getName() + "' is generic");
+                    type = getTypes().mPoison;
+                }
+                yield TypeReference.make(position, type);
+            }
+            default -> throw new AssertionError(result.kind());
+        };
     }
 }

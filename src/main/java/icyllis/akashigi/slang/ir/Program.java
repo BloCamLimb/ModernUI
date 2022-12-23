@@ -18,8 +18,47 @@
 
 package icyllis.akashigi.slang.ir;
 
+import javax.annotation.Nonnull;
+import java.util.Iterator;
+import java.util.List;
+
 /**
- * Represents a fully-digested program, ready for code generation.
+ * A fully-resolved intermediate representation of a program (shader stage), ready for code generation.
  */
-public class Program {
+public class Program implements Iterable<ProgramElement> {
+
+    private List<ProgramElement> mOwnedElements;
+    private List<ProgramElement> mSharedElements;
+
+    @Nonnull
+    @Override
+    public Iterator<ProgramElement> iterator() {
+        return new ElementIterator();
+    }
+
+    // shared first, owned last
+    private class ElementIterator implements Iterator<ProgramElement> {
+
+        private Iterator<ProgramElement> mCurrIter = mSharedElements.iterator();
+        private boolean mSharedEnded;
+
+        @Override
+        public boolean hasNext() {
+            forward();
+            return mCurrIter.hasNext();
+        }
+
+        @Override
+        public ProgramElement next() {
+            forward();
+            return mCurrIter.next();
+        }
+
+        private void forward() {
+            while (!mCurrIter.hasNext() && !mSharedEnded) {
+                mCurrIter = mOwnedElements.iterator();
+                mSharedEnded = true;
+            }
+        }
+    }
 }

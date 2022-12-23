@@ -30,7 +30,7 @@ public final class MatrixType extends Type {
         super(name, desc, TYPE_KIND_MATRIX);
         assert (rows >= 2 && rows <= 4);
         assert (cols >= 2 && cols <= 4);
-        assert (desc.equals(componentType.getDescriptor() + cols + "" + rows));
+        assert (desc.equals(componentType.getDesc() + cols + "" + rows));
         assert (name.equals(componentType.getName() + cols + "x" + rows));
         mComponentType = (ScalarType) componentType;
         mCols = (byte) cols;

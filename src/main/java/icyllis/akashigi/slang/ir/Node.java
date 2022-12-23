@@ -26,7 +26,7 @@ import javax.annotation.Nonnull;
  */
 public abstract class Node {
 
-    public static final class ElementKind {
+    public static final class ProgramElementKind {
 
         public static final int kFirst = 0;
         public static final int
@@ -39,13 +39,13 @@ public abstract class Node {
                 kStructDeclaration = kFirst + 6;
         public static final int kLast = kStructDeclaration;
 
-        private ElementKind() {
+        private ProgramElementKind() {
         }
     }
 
     public static final class SymbolKind {
 
-        public static final int kFirst = ElementKind.kLast + 1;
+        public static final int kFirst = ProgramElementKind.kLast + 1;
         public static final int
                 kAnonymousField = kFirst,
                 kFunctionDeclaration = kFirst + 1,
@@ -84,29 +84,29 @@ public abstract class Node {
 
         public static final int kFirst = StatementKind.kLast + 1;
         public static final int
-                kArrayAccess = kFirst,
-                kBinary = kFirst + 1,
-                kConditional = kFirst + 2,
-                kConstructorArray = kFirst + 3,
-                kConstructorArrayCast = kFirst + 4,
-                kConstructorCompound = kFirst + 5,
-                kConstructorCompoundCast = kFirst + 6,
-                kConstructorMatrixDiag = kFirst + 7,
-                kConstructorMatrixResize = kFirst + 8,
-                kConstructorScalarCast = kFirst + 9,
-                kConstructorStruct = kFirst + 10,
-                kConstructorVectorSplat = kFirst + 11,
-                kFieldAccess = kFirst + 12,
-                kFunctionCall = kFirst + 13,
-                kFunctionReference = kFirst + 14,
+                kBinary = kFirst,
+                kConditional = kFirst + 1,
+                kConstructorArray = kFirst + 2,
+                kConstructorArrayCast = kFirst + 3,
+                kConstructorCompound = kFirst + 4,
+                kConstructorCompoundCast = kFirst + 5,
+                kConstructorMatrixMatrix = kFirst + 6,
+                kConstructorMatrixScalar = kFirst + 7,
+                kConstructorScalarCast = kFirst + 8,
+                kConstructorStruct = kFirst + 9,
+                kConstructorVectorScalar = kFirst + 10,
+                kFieldAccess = kFirst + 11,
+                kFunctionCall = kFirst + 12,
+                kFunctionReference = kFirst + 13,
+                kIndex = kFirst + 14,
                 kLiteral = kFirst + 15,
                 kPoison = kFirst + 16,
                 kPostfix = kFirst + 17,
                 kPrefix = kFirst + 18,
                 kSwizzle = kFirst + 19,
                 kTypeReference = kFirst + 20,
-                kVarReference = kFirst + 21;
-        public static final int kLast = kVarReference;
+                kVariableReference = kFirst + 21;
+        public static final int kLast = kVariableReference;
 
         private ExpressionKind() {
         }

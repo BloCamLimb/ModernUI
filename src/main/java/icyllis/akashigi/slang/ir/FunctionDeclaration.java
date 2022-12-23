@@ -21,20 +21,23 @@ package icyllis.akashigi.slang.ir;
 import icyllis.akashigi.slang.Modifier;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.List;
 import java.util.StringJoiner;
 
 /**
- * A function declaration.
+ * A function declaration (function symbol).
  */
-public final class Function extends Symbol {
+public final class FunctionDeclaration extends Symbol {
 
     private final int mModifiers;
     private final List<Variable> mParameters;
     private final Type mReturnType;
     private final String mMangledName;
 
-    public Function(int position, int modifiers, String name, List<Variable> parameters, Type returnType) {
+    private FunctionDeclaration mNextOverload;
+
+    public FunctionDeclaration(int position, int modifiers, String name, List<Variable> parameters, Type returnType) {
         super(position, SymbolKind.kFunctionDeclaration, name);
         mModifiers = modifiers;
         mParameters = parameters;
@@ -42,7 +45,7 @@ public final class Function extends Symbol {
         StringBuilder mangledName = new StringBuilder(name);
         mangledName.append('(');
         for (Variable p : parameters) {
-            mangledName.append(p.getType().getDescriptor()).append(';');
+            mangledName.append(p.getType().getDesc()).append(';');
         }
         mMangledName = mangledName.toString();
     }
@@ -54,9 +57,18 @@ public final class Function extends Symbol {
     }
 
     @Nonnull
-    @Override
     public String getMangledName() {
         return mMangledName;
+    }
+
+    @Nullable
+    public FunctionDeclaration getNextOverload() {
+        return mNextOverload;
+    }
+
+    public void setNextOverload(FunctionDeclaration overload) {
+        assert (overload == null || overload.getName().equals(getName()));
+        mNextOverload = overload;
     }
 
     @Nonnull
@@ -64,14 +76,14 @@ public final class Function extends Symbol {
     public String toString() {
         String result =
                 (mModifiers != 0 ? Modifier.describeFlags(mModifiers) + " " : "") +
-                        mReturnType.displayName() + " " + getName() + "(";
+                        mReturnType.getName() + " " + getName() + "(";
         StringJoiner joiner = new StringJoiner(", ");
         for (Variable p : mParameters) {
             String s = "";
             if (p.getModifiers() != 0) {
                 s += Modifier.describeFlags(p.getModifiers()) + " ";
             }
-            s += p.getType().displayName();
+            s += p.getType().getName();
             s += " ";
             s += p.getName();
             joiner.add(s);

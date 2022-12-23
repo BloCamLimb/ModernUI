@@ -25,35 +25,35 @@ import javax.annotation.Nonnull;
  * whenever a bare reference to an identifier should refer to a struct field; in GLSL, this is the
  * result of declaring anonymous interface blocks.
  */
-public final class AnonField extends Symbol {
+public final class AnonymousField extends Symbol {
 
-    private final Variable mOwner;
+    private final Variable mContainer;
     private final int mFieldIndex;
 
-    public AnonField(int position, Variable owner, int fieldIndex) {
+    public AnonymousField(int position, Variable container, int fieldIndex) {
         super(position, SymbolKind.kAnonymousField,
-                owner.getType().fields()[fieldIndex].name());
-        mOwner = owner;
+                container.getType().getFields()[fieldIndex].name());
+        mContainer = container;
         mFieldIndex = fieldIndex;
     }
 
     @Nonnull
     @Override
     public Type getType() {
-        return mOwner.getType().fields()[mFieldIndex].type();
+        return mContainer.getType().getFields()[mFieldIndex].type();
     }
 
-    public int fieldIndex() {
+    public int getFieldIndex() {
         return mFieldIndex;
     }
 
-    public Variable owner() {
-        return mOwner;
+    public Variable getContainer() {
+        return mContainer;
     }
 
     @Nonnull
     @Override
     public String toString() {
-        return owner().toString() + "." + getName();
+        return mContainer.toString() + "." + getName();
     }
 }

@@ -84,9 +84,13 @@ public final class Variable extends Symbol {
         return mStorage;
     }
 
+    public Expression initialValue() {
+        return null;
+    }
+
     @Nonnull
     @Override
     public String toString() {
-        return mLayout.toString() + Modifier.describeFlags(mModifiers) + " " + getType().displayName() + " " + getName();
+        return mLayout.toString() + Modifier.describeFlags(mModifiers) + " " + getType().getName() + " " + getName();
     }
 }

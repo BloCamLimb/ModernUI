@@ -28,7 +28,7 @@ public final class VectorType extends Type {
     VectorType(String name, String desc, Type componentType, int length) {
         super(name, desc, TYPE_KIND_VECTOR);
         assert (length >= 2 && length <= 4);
-        assert (desc.equals(componentType.getDescriptor() + length));
+        assert (desc.equals(componentType.getDesc() + length));
         assert (name.equals(componentType.getName() + length));
         mComponentType = (ScalarType) componentType;
         mLength = (byte) length;
@@ -52,11 +52,6 @@ public final class VectorType extends Type {
 
     @Override
     public int rows() {
-        return mLength;
-    }
-
-    @Override
-    public int length() {
         return mLength;
     }
 

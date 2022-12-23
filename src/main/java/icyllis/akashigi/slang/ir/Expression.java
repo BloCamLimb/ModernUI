@@ -22,6 +22,7 @@ import icyllis.akashigi.slang.Operator;
 import icyllis.akashigi.slang.ThreadContext;
 
 import javax.annotation.Nonnull;
+import java.util.OptionalDouble;
 
 /**
  * Abstract superclass of all expressions.
@@ -46,20 +47,24 @@ public abstract class Expression extends Node {
         return mType;
     }
 
-    public final boolean isAnyConstructor() {
-        return kind() >= ExpressionKind.kConstructorArray && kind() <= ExpressionKind.kConstructorStruct;
+    public boolean isAnyConstructor() {
+        return false;
+    }
+
+    public boolean isLiteral() {
+        return false;
     }
 
     public final boolean isIntLiteral() {
-        return kind() == ExpressionKind.kLiteral && getType().isInteger();
+        return isLiteral() && getType().isInteger();
     }
 
     public final boolean isFloatLiteral() {
-        return kind() == ExpressionKind.kLiteral && getType().isFloat();
+        return isLiteral() && getType().isFloat();
     }
 
-    public final boolean isBooleanLiteral() {
-        return kind() == ExpressionKind.kLiteral && getType().isBoolean();
+    public final boolean isBoolLiteral() {
+        return isLiteral() && getType().isBoolean();
     }
 
     /**
@@ -92,6 +97,32 @@ public abstract class Expression extends Node {
         };
     }
 
+    /**
+     * Returns the i'th compile-time constant value within a literal or constructor.
+     * Indices which do not contain compile-time constant values will return empty.
+     * `vec4(1, vec2(2), 3)` contains four compile-time constants: (1, 2, 2, 3)
+     * `mat2(f)` contains four slots, and two are constant: (empty, 0, 0, empty)
+     */
+    public OptionalDouble getConstantValue(int i) {
+        return OptionalDouble.empty();
+    }
+
+    /**
+     * Returns a clone at the same position.
+     */
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
+    @Nonnull
+    @Override
+    public final Expression clone() {
+        return clone(mPosition);
+    }
+
+    @Nonnull
+    public abstract Expression clone(int position);
+
+    /**
+     * Returns a description of the expression.
+     */
     @Nonnull
     @Override
     public final String toString() {

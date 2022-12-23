@@ -18,8 +18,7 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.Node;
-import icyllis.akashigi.slang.ir.Symbol;
+import icyllis.akashigi.slang.ir.*;
 
 import java.util.NavigableMap;
 import java.util.TreeMap;
@@ -43,6 +42,10 @@ public class SymbolTable {
         mParent = parent;
     }
 
+    public static SymbolTable push(SymbolTable table) {
+        return push(table, table.isBuiltin());
+    }
+
     public static SymbolTable push(SymbolTable table, boolean isBuiltin) {
         return new SymbolTable(table, isBuiltin);
     }
@@ -51,20 +54,49 @@ public class SymbolTable {
         return table.mParent;
     }
 
-    public Symbol lookup(String name) {
+    public static SymbolTable pushIfBuiltin(SymbolTable table) {
+        if (!table.isBuiltin()) {
+            return table;
+        }
+        return push(table, false);
+    }
+
+    public boolean isBuiltin() {
+        return mBuiltin;
+    }
+
+    /**
+     * Looks up the requested symbol and returns a const pointer.
+     */
+    public Symbol find(String name) {
         Symbol symbol = mTable.get(name);
         if (symbol != null) {
             return symbol;
         }
-        // The symbol wasn't found; recurse into the parent symbol table.
-        return mParent != null ? mParent.lookup(name) : null;
+        return mParent != null ? mParent.find(name) : null;
     }
 
+    /**
+     * Looks up the requested symbol, only searching the built-in symbol tables. Always const.
+     */
+    public Symbol findBuiltinSymbol(String name) {
+        if (mBuiltin) {
+            return find(name);
+        }
+        return mParent != null ? mParent.findBuiltinSymbol(name) : null;
+    }
+
+    /**
+     * Returns true if the name refers to a type (user or built-in) in the current symbol table.
+     */
     public boolean isType(String name) {
-        Symbol symbol = lookup(name);
+        Symbol symbol = find(name);
         return symbol != null && symbol.kind() == Node.SymbolKind.kType;
     }
 
+    /**
+     * Returns true if the name refers to a builtin type.
+     */
     public boolean isBuiltinType(String name) {
         if (mBuiltin) {
             return isType(name);
@@ -76,30 +108,26 @@ public class SymbolTable {
      * Inserts a symbol into the symbol table, reports errors if there was a name collision.
      */
     public void insert(Symbol symbol) {
-        if (symbol.kind() == Node.SymbolKind.kFunctionDeclaration || !hasFunctionName(symbol.getName())) {
-            String insertName = symbol.getMangledName();
-            if (symbol.kind() == Node.SymbolKind.kFunctionDeclaration) {
-                // make sure there isn't a variable of this name
-                if (!mTable.containsKey(symbol.getName())) {
-                    mTable.put(insertName, symbol);
-                    return;
-                }
-            } else {
-                if (mTable.putIfAbsent(insertName, symbol) == null) {
-                    return;
-                }
+        String key = symbol.getName();
+
+        // If this is a function declaration, we need to keep the overload chain in sync.
+        if (symbol.kind() == Node.SymbolKind.kFunctionDeclaration) {
+            // If we have a function with the same name...
+            Symbol existingSymbol = find(key);
+            if (existingSymbol != null && existingSymbol.kind() == Node.SymbolKind.kFunctionDeclaration) {
+                ((FunctionDeclaration) symbol).setNextOverload((FunctionDeclaration) existingSymbol);
+                mTable.put(key, symbol);
+                return;
             }
         }
-        ThreadContext.getInstance().error(symbol.mPosition,
-                "symbol '" + symbol.getName() + "' is already defined");
-    }
 
-    public boolean hasFunctionName(String name) {
-        String candidate = mTable.ceilingKey(name);
-        if (candidate != null) {
-            int parenAt = candidate.indexOf('(');
-            return parenAt != -1 && candidate.substring(0, parenAt).equals(name);
+        if (mParent == null || mParent.find(key) == null) {
+            if (mTable.putIfAbsent(key, symbol) == null) {
+                return;
+            }
         }
-        return false;
+
+        ThreadContext.getInstance().error(symbol.mPosition,
+                "symbol '" + key + "' is already defined");
     }
 }

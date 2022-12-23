@@ -20,38 +20,59 @@ package icyllis.akashigi.slang.ir;
 
 import javax.annotation.Nonnull;
 
+/**
+ * A reference to a variable, through which it can be read or written.
+ */
 public final class VariableReference extends Expression {
 
+    /**
+     * ReferenceKinds.
+     */
     public static final int
-            REF_KIND_READ = 0,          // init once, read at least once
-            REF_KIND_WRITE = 1,         // init once, written at least once
-            REF_KIND_READ_WRITE = 2,    // init once, read and written at least once
-            REF_KIND_POINTER = 3;       // no init, written or read at least once
+            kRead_ReferenceKind = 0,        // init once, read at least once
+            kWrite_ReferenceKind = 1,       // init once, written at least once
+            kReadWrite_ReferenceKind = 2,   // init once, read and written at least once
+            kPointer_ReferenceKind = 3;     // no init, written or read at least once
 
-    private final Variable mVariable;
-    private int mRefKind;
+    private Variable mVariable;
+    private int mReferenceKind;
 
-    public VariableReference(int position, Variable variable, int refKind) {
-        super(position, ExpressionKind.kVarReference, variable.getType());
+    private VariableReference(int position, Variable variable, int referenceKind) {
+        super(position, ExpressionKind.kVariableReference, variable.getType());
         mVariable = variable;
-        mRefKind = refKind;
+        mReferenceKind = referenceKind;
+    }
+
+    @Nonnull
+    public static Expression make(int position, Variable variable, int referenceKind) {
+        return new VariableReference(position, variable, referenceKind);
     }
 
     public Variable getVariable() {
         return mVariable;
     }
 
-    public int getRefKind() {
-        return mRefKind;
+    public void setVariable(Variable variable) {
+        mVariable = variable;
     }
 
-    public void setRefKind(int refKind) {
-        mRefKind = refKind;
+    public int getReferenceKind() {
+        return mReferenceKind;
+    }
+
+    public void setReferenceKind(int referenceKind) {
+        mReferenceKind = referenceKind;
+    }
+
+    @Nonnull
+    @Override
+    public Expression clone(int position) {
+        return new VariableReference(position, mVariable, mReferenceKind);
     }
 
     @Nonnull
     @Override
     public String toString(int parentPrecedence) {
-        return mVariable.toString();
+        return mVariable.getName();
     }
 }

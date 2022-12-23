@@ -18,8 +18,8 @@
 
 package icyllis.akashigi.slang.ir;
 
-import icyllis.akashigi.slang.ThreadContext;
 import icyllis.akashigi.slang.Operator;
+import icyllis.akashigi.slang.ThreadContext;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,52 +30,60 @@ import java.util.Objects;
  */
 public final class FieldExpression extends Expression {
 
+    /**
+     * ContainerKinds.
+     */
+    public static final int
+            kDefault_ContainerKind = 0,
+            kAnonymousInterfaceBlock_ContainerKind = 1; // for AnonField
+
     private final Expression mBase;
     private final int mFieldIndex;
+    private final int mContainerKind;
 
-    private FieldExpression(int position, Expression base, int fieldIndex) {
-        super(position, ExpressionKind.kFieldAccess, base.getType().fields()[fieldIndex].type());
+    private FieldExpression(int position, Expression base, int fieldIndex, int containerKind) {
+        super(position, ExpressionKind.kFieldAccess, base.getType().getFields()[fieldIndex].type());
         mBase = base;
         mFieldIndex = fieldIndex;
+        mContainerKind = containerKind;
     }
 
     /**
-     * Returns a field-access expression; reports errors via the ErrorHandler.
+     * Returns a field-access expression.
      */
     @Nullable
-    public static Expression convert(ThreadContext context,
-                                     int position,
+    public static Expression convert(int position,
                                      Expression base,
                                      String fieldName) {
         Type baseType = base.getType();
         if (baseType.isStruct()) {
-            final Type.Field[] fields = baseType.fields();
-            for (int i = 0, e = fields.length; i < e; i++) {
+            final Type.Field[] fields = baseType.getFields();
+            for (int i = 0; i < fields.length; i++) {
                 if (fields[i].name().equals(fieldName)) {
-                    return make(context, position, base, i);
+                    return make(position, base, i, kDefault_ContainerKind);
                 }
             }
         }
-        context.error(position, "type '" + baseType.displayName() +
+        ThreadContext.getInstance().error(position, "type '" + baseType.getName() +
                 "' does not have a field named '" + fieldName + "'");
         return null;
     }
 
     /**
-     * Returns a field-access expression; reports errors via RuntimeException.
+     * Returns a field-access expression.
      */
     @Nonnull
-    public static Expression make(ThreadContext context,
-                                  int position,
+    public static Expression make(int position,
                                   Expression base,
-                                  int fieldIndex) {
+                                  int fieldIndex,
+                                  int containerKind) {
         Type baseType = base.getType();
         if (!baseType.isStruct()) {
-            throw new IllegalArgumentException();
+            throw new AssertionError();
         }
-        Objects.checkIndex(fieldIndex, baseType.fields().length);
+        Objects.checkIndex(fieldIndex, baseType.getFields().length);
 
-        return new FieldExpression(position, base, fieldIndex);
+        return new FieldExpression(position, base, fieldIndex, containerKind);
     }
 
     public Expression getBase() {
@@ -86,10 +94,26 @@ public final class FieldExpression extends Expression {
         return mFieldIndex;
     }
 
+    public int getContainerKind() {
+        return mContainerKind;
+    }
+
+    @Nonnull
+    @Override
+    public Expression clone(int position) {
+        return new FieldExpression(position,
+                mBase.clone(),
+                mFieldIndex,
+                mContainerKind);
+    }
+
     @Nonnull
     @Override
     public String toString(int parentPrecedence) {
-        return mBase.toString(Operator.PRECEDENCE_POSTFIX) + "." +
-                mBase.getType().fields()[mFieldIndex].name();
+        String s = mBase.toString(Operator.PRECEDENCE_POSTFIX);
+        if (!s.isEmpty()) {
+            s += ".";
+        }
+        return s + mBase.getType().getFields()[mFieldIndex].name();
     }
 }

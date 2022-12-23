@@ -55,7 +55,7 @@ public final class ConditionalExpression extends Expression {
 
         if (trueExpr.getType().getComponentType().isOpaque()) {
             context.error(position, "ternary expression of opaque type '" +
-                    trueExpr.getType().displayName() + "' not allowed");
+                    trueExpr.getType().getName() + "' not allowed");
             return null;
         }
 
@@ -63,8 +63,8 @@ public final class ConditionalExpression extends Expression {
         if (!Operator.EQ.determineBinaryType(context, trueExpr.getType(), falseExpr.getType(), outTypes) ||
                 !outTypes[0].matches(outTypes[1])) {
             context.error(Node.makeRange(trueExpr.getStartOffset(), falseExpr.getEndOffset()),
-                    "conditional operator result mismatch: '" + trueExpr.getType().displayName() + "', '" +
-                            falseExpr.getType().displayName() + "'");
+                    "conditional operator result mismatch: '" + trueExpr.getType().getName() + "', '" +
+                            falseExpr.getType().getName() + "'");
             return null;
         }
         trueExpr = outTypes[0].coerceExpression(trueExpr);
@@ -83,12 +83,21 @@ public final class ConditionalExpression extends Expression {
         return mCondition;
     }
 
-    public Expression getTrueExpression() {
+    public Expression getTrue() {
         return mTrueExpr;
     }
 
-    public Expression getFalseExpression() {
+    public Expression getFalse() {
         return mFalseExpr;
+    }
+
+    @Nonnull
+    @Override
+    public Expression clone(int position) {
+        return new ConditionalExpression(position,
+                mCondition.clone(),
+                mTrueExpr.clone(),
+                mFalseExpr.clone());
     }
 
     @Nonnull

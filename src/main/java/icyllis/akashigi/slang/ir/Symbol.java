@@ -53,10 +53,5 @@ public abstract class Symbol extends Node {
     }
 
     @Nonnull
-    public String getMangledName() {
-        return mName;
-    }
-
-    @Nonnull
     public abstract Type getType();
 }

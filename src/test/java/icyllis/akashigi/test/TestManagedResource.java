@@ -131,8 +131,6 @@ public class TestManagedResource {
 
         pw.println(dContext.getServer().getPipelineBuilder().getStates());
 
-        testLexicon(pw);
-
         if (Platform.get() == Platform.WINDOWS) {
             if (!Kernel32.CloseHandle(959595595959595959L)) {
                 pw.println("Failed to close handle");
@@ -221,10 +219,6 @@ public class TestManagedResource {
         final double y = mat2.m12 * 2 + mat2.m22 * 2 + mat2.m32 * 2 + mat2.m42;
         final double z = mat2.m13 * 2 + mat2.m23 * 2 + mat2.m33 * 2 + mat2.m43;
         pw.println("Point: " + x + ", " + y + ", " + z);
-    }
-
-    public static void testLexicon(PrintWriter pw) {
-        pw.println("Matrix3 offset: " + Matrix3.OFFSET);
     }
 
     public static void testKeyBuilder(PrintWriter pw) {

@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.Element;
+import icyllis.akashigi.slang.ir.ProgramElement;
 
 import java.util.List;
 
@@ -29,7 +29,7 @@ public final class Module {
 
     public Module mParent;
     public SymbolTable mSymbols;
-    public List<Element> mElements;
+    public List<ProgramElement> mElements;
 
     public Module() {
     }

@@ -34,9 +34,14 @@ public final class Literal extends Expression {
         mValue = value;
     }
 
+    @Override
+    public boolean isLiteral() {
+        return true;
+    }
+
     @Nonnull
-    public static Literal makeFloat(ThreadContext context, int position, float value) {
-        return new Literal(position, value, context.getTypes().mFloat);
+    public static Literal makeFloat(int position, float value) {
+        return new Literal(position, value, ThreadContext.getInstance().getTypes().mFloat);
     }
 
     @Nonnull
@@ -48,8 +53,8 @@ public final class Literal extends Expression {
     }
 
     @Nonnull
-    public static Literal makeInt(ThreadContext context, int position, long value) {
-        return new Literal(position, value, context.getTypes().mInt);
+    public static Literal makeInt(int position, long value) {
+        return new Literal(position, value, ThreadContext.getInstance().getTypes().mInt);
     }
 
     @Nonnull
@@ -61,8 +66,8 @@ public final class Literal extends Expression {
     }
 
     @Nonnull
-    public static Literal makeBoolean(ThreadContext context, int position, boolean value) {
-        return new Literal(position, value ? 1 : 0, context.getTypes().mBool);
+    public static Literal makeBoolean(int position, boolean value) {
+        return new Literal(position, value ? 1 : 0, ThreadContext.getInstance().getTypes().mBool);
     }
 
     @Nonnull
@@ -97,9 +102,19 @@ public final class Literal extends Expression {
         return (int) mValue;
     }
 
-    public boolean booleanValue() {
+    public boolean boolValue() {
         assert (getType().isBoolean());
         return mValue != 0;
+    }
+
+    public double getValue() {
+        return mValue;
+    }
+
+    @Nonnull
+    @Override
+    public Expression clone(int position) {
+        return new Literal(position, mValue, getType());
     }
 
     @Nonnull
@@ -112,6 +127,6 @@ public final class Literal extends Expression {
             return Integer.toString(intValue());
         }
         assert (getType().isBoolean());
-        return Boolean.toString(booleanValue());
+        return Boolean.toString(boolValue());
     }
 }

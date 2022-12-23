@@ -23,37 +23,37 @@ import icyllis.akashigi.slang.ThreadContext;
 import javax.annotation.Nonnull;
 
 /**
- * Represents an identifier referring to a type. This is an intermediate value: TypeReferences are
- * always eventually replaced by Constructors in valid programs.
+ * An identifier referring to a function name. This is an intermediate value: FunctionReferences are
+ * always eventually replaced by FunctionCalls in valid programs.
  */
-public final class TypeReference extends Expression {
+public final class FunctionReference extends Expression {
 
-    private final Type mValue;
+    private final FunctionDeclaration mOverloadChain;
 
-    private TypeReference(int position, Type value, Type type) {
-        super(position, ExpressionKind.kTypeReference, type);
-        mValue = value;
+    private FunctionReference(int position, FunctionDeclaration overloadChain, Type type) {
+        super(position, ExpressionKind.kFunctionReference, type);
+        mOverloadChain = overloadChain;
     }
 
     @Nonnull
-    public static Expression make(int position, Type value) {
+    public static Expression make(int position, FunctionDeclaration overloadChain) {
         ThreadContext context = ThreadContext.getInstance();
-        return new TypeReference(position, value, context.getTypes().mInvalid);
+        return new FunctionReference(position, overloadChain, context.getTypes().mInvalid);
     }
 
-    public Type getValue() {
-        return mValue;
+    public FunctionDeclaration getOverloadChain() {
+        return mOverloadChain;
     }
 
     @Nonnull
     @Override
     public Expression clone(int position) {
-        return new TypeReference(position, mValue, getType());
+        return new FunctionReference(position, mOverloadChain, getType());
     }
 
     @Nonnull
     @Override
     public String toString(int parentPrecedence) {
-        return mValue.getName();
+        return "<function>";
     }
 }

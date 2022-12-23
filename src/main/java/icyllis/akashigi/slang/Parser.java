@@ -329,88 +329,6 @@ public class Parser {
     }
 
     /**
-     * INT_LITERAL
-     */
-    @Nullable
-    private Literal intLiteral() {
-        long token = expect(Lexer.TK_INT_LITERAL, "integer literal");
-        String s = text(token);
-        if (s.endsWith("u") || s.endsWith("U")) {
-            s = s.substring(0, s.length() - 1);
-        }
-        try {
-            int value = Integer.decode(s);
-            return Literal.makeInt(
-                    ThreadContext.getInstance(),
-                    position(token),
-                    value);
-        } catch (NumberFormatException e) {
-            error(token, "invalid integer value: " + e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * FLOAT_LITERAL
-     */
-    @Nullable
-    private Literal floatLiteral() {
-        long token = expect(Lexer.TK_FLOAT_LITERAL, "float literal");
-        String s = text(token);
-        try {
-            float value = Float.parseFloat(s);
-            return Literal.makeFloat(
-                    ThreadContext.getInstance(),
-                    position(token),
-                    value);
-        } catch (NumberFormatException e) {
-            error(token, "invalid floating-point value: " + e.getMessage());
-            return null;
-        }
-    }
-
-    /**
-     * TRUE_LITERAL | FALSE_LITERAL
-     */
-    @Nullable
-    private Literal boolLiteral() {
-        long token = nextToken();
-        return switch (kind(token)) {
-            case Lexer.TK_TRUE_LITERAL -> Literal.makeBoolean(
-                    ThreadContext.getInstance(),
-                    position(token),
-                    true);
-            case Lexer.TK_FALSE_LITERAL -> Literal.makeBoolean(
-                    ThreadContext.getInstance(),
-                    position(token),
-                    false);
-            default -> {
-                error(token, "expected 'true' or 'false', but found '" +
-                        text(token) + "'");
-                yield null;
-            }
-        };
-    }
-
-    /**
-     * IDENTIFIER
-     */
-    @Nonnull
-    private String identifier() {
-        long token = expect(Lexer.TK_IDENTIFIER, "identifier");
-        return text(token);
-    }
-
-    private Expression primaryExpression() {
-        long t = peek();
-        switch (kind(t)) {
-            case Lexer.TK_IDENTIFIER -> {
-            }
-        }
-        return null;
-    }
-
-    /**
      * LAYOUT LPAREN IDENTIFIER (EQ INT_LITERAL)? (COMMA IDENTIFIER (EQ INT_LITERAL)?)* RPAREN
      */
     private Layout layout() {
@@ -456,7 +374,7 @@ public class Parser {
             return null;
         }
         int pos = Node.makeRange(left.getStartOffset(), right.getEndOffset());
-        return BinaryExpression.convert(ThreadContext.getInstance(), pos, left, op, right);
+        return BinaryExpression.convert(pos, left, op, right);
     }
 
     /**
@@ -769,7 +687,136 @@ public class Parser {
         return null;
     }
 
+    @Nullable
     private Expression postfixExpression() {
+        Expression result = primaryExpression();
+        if (result == null) {
+            return null;
+        }
+        for (;;) {
+            long t = peek();
+            switch (kind(t)) {
+                case Lexer.TK_FLOAT_LITERAL:
+                    if (!text(t).startsWith(".")) {
+                        return result;
+                    }
+                case Lexer.TK_LBRACKET:
+                case Lexer.TK_DOT:
+                case Lexer.TK_LPAREN:
+                case Lexer.TK_PLUSPLUS:
+                case Lexer.TK_MINUSMINUS:
+                    // ..
+                    break;
+                default:
+                    return result;
+            }
+        }
+    }
+
+    /**
+     * IDENTIFIER | INTCONSTANT | UINTCONSTANT | FLOATCONSTANT | BOOLCONSTANT | '(' expression ')'
+     */
+    @Nullable
+    private Expression primaryExpression() {
+        long t = peek();
+        switch (kind(t)) {
+            case Lexer.TK_IDENTIFIER -> {
+                String ident = identifier();
+                return ThreadContext.getInstance().convertIdentifier(position(t), ident);
+            }
+            case Lexer.TK_INT_LITERAL -> {
+                return intLiteral();
+            }
+            case Lexer.TK_FLOAT_LITERAL -> {
+                return floatLiteral();
+            }
+            case Lexer.TK_TRUE_LITERAL, Lexer.TK_FALSE_LITERAL -> {
+                return boolLiteral();
+            }
+            case Lexer.TK_LPAREN -> {
+                nextToken();
+                Expression result = expression();
+                if (result != null) {
+                    expect(Lexer.TK_RPAREN, "')' to complete expression");
+                    result.mPosition = Node.makeRange(result.getStartOffset(), mScanOffset);
+                    return result;
+                }
+            }
+            default -> {
+                nextToken();
+                error(t, "expected expression, but found '" + text(t) + "'");
+                throw new RuntimeException();
+            }
+        }
         return null;
+    }
+
+    /**
+     * IDENTIFIER
+     */
+    @Nonnull
+    private String identifier() {
+        long token = expect(Lexer.TK_IDENTIFIER, "identifier");
+        return text(token);
+    }
+
+    /**
+     * INT_LITERAL
+     */
+    @Nullable
+    private Literal intLiteral() {
+        long token = expect(Lexer.TK_INT_LITERAL, "integer literal");
+        String s = text(token);
+        if (s.endsWith("u") || s.endsWith("U")) {
+            s = s.substring(0, s.length() - 1);
+        }
+        try {
+            int value = Integer.decode(s);
+            return Literal.makeInt(
+                    position(token),
+                    value);
+        } catch (NumberFormatException e) {
+            error(token, "invalid integer value: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * FLOAT_LITERAL
+     */
+    @Nullable
+    private Literal floatLiteral() {
+        long token = expect(Lexer.TK_FLOAT_LITERAL, "float literal");
+        String s = text(token);
+        try {
+            float value = Float.parseFloat(s);
+            return Literal.makeFloat(
+                    position(token),
+                    value);
+        } catch (NumberFormatException e) {
+            error(token, "invalid floating-point value: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * TRUE_LITERAL | FALSE_LITERAL
+     */
+    @Nullable
+    private Literal boolLiteral() {
+        long token = nextToken();
+        return switch (kind(token)) {
+            case Lexer.TK_TRUE_LITERAL -> Literal.makeBoolean(
+                    position(token),
+                    true);
+            case Lexer.TK_FALSE_LITERAL -> Literal.makeBoolean(
+                    position(token),
+                    false);
+            default -> {
+                error(token, "expected 'true' or 'false', but found '" +
+                        text(token) + "'");
+                yield null;
+            }
+        };
     }
 }
