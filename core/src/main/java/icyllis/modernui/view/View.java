@@ -24,15 +24,8 @@ import icyllis.modernui.animation.StateListAnimator;
 import icyllis.modernui.annotation.CallSuper;
 import icyllis.modernui.annotation.UiThread;
 import icyllis.modernui.core.*;
-import icyllis.modernui.core.Core;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.graphics.RenderNode;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Point;
-import icyllis.modernui.math.Rect;
-import icyllis.modernui.math.RectF;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.transition.Fade;
 import icyllis.modernui.transition.Transition;
@@ -4057,7 +4050,7 @@ public class View implements Drawable.Callback {
      * Adds any keyboard navigation cluster roots that are descendants of this view (possibly
      * including this view if it is a cluster root itself) to views.
      *
-     * @param views Keyboard navigation cluster roots found so far
+     * @param views     Keyboard navigation cluster roots found so far
      * @param direction Direction to look
      */
     public void addKeyboardNavigationClusters(@Nonnull Collection<View> views, int direction) {
@@ -7912,16 +7905,16 @@ public class View implements Drawable.Callback {
                                 TEXT_DIRECTION_FIRST_STRONG_RTL -> mPrivateFlags2 |=
                                 (parentResolvedDirection << PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT);
                         default ->
-                                // Default resolved direction is "first strong" heuristic
+                            // Default resolved direction is "first strong" heuristic
                                 mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
                     }
                 }
                 case TEXT_DIRECTION_FIRST_STRONG, TEXT_DIRECTION_ANY_RTL, TEXT_DIRECTION_LTR, TEXT_DIRECTION_RTL,
                         TEXT_DIRECTION_LOCALE, TEXT_DIRECTION_FIRST_STRONG_LTR, TEXT_DIRECTION_FIRST_STRONG_RTL ->
-                        // Resolved direction is the same as text direction
+                    // Resolved direction is the same as text direction
                         mPrivateFlags2 |= (textDirection << PFLAG2_TEXT_DIRECTION_RESOLVED_MASK_SHIFT);
                 default ->
-                        // Default resolved direction is "first strong" heuristic
+                    // Default resolved direction is "first strong" heuristic
                         mPrivateFlags2 |= PFLAG2_TEXT_DIRECTION_RESOLVED_DEFAULT;
             }
         } else {
@@ -8103,21 +8096,21 @@ public class View implements Drawable.Callback {
                     switch (parentResolvedTextAlignment) {
                         case TEXT_ALIGNMENT_GRAVITY, TEXT_ALIGNMENT_TEXT_START, TEXT_ALIGNMENT_TEXT_END,
                                 TEXT_ALIGNMENT_CENTER, TEXT_ALIGNMENT_VIEW_START, TEXT_ALIGNMENT_VIEW_END ->
-                                // Resolved text alignment is the same as the parent resolved
-                                // text alignment
+                            // Resolved text alignment is the same as the parent resolved
+                            // text alignment
                                 mPrivateFlags2 |=
                                         (parentResolvedTextAlignment << PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT);
                         default ->
-                                // Use default resolved text alignment
+                            // Use default resolved text alignment
                                 mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
                     }
                 }
                 case TEXT_ALIGNMENT_GRAVITY, TEXT_ALIGNMENT_TEXT_START, TEXT_ALIGNMENT_TEXT_END,
                         TEXT_ALIGNMENT_CENTER, TEXT_ALIGNMENT_VIEW_START, TEXT_ALIGNMENT_VIEW_END ->
-                        // Resolved text alignment is the same as text alignment
+                    // Resolved text alignment is the same as text alignment
                         mPrivateFlags2 |= (textAlignment << PFLAG2_TEXT_ALIGNMENT_RESOLVED_MASK_SHIFT);
                 default ->
-                        // Use default resolved text alignment
+                    // Use default resolved text alignment
                         mPrivateFlags2 |= PFLAG2_TEXT_ALIGNMENT_RESOLVED_DEFAULT;
             }
         } else {
@@ -9195,7 +9188,7 @@ public class View implements Drawable.Callback {
         matrix.preTranslate(mLeft, mTop);
 
         if (!hasIdentityMatrix()) {
-            matrix.preMul(getMatrix());
+            matrix.preConcat(getMatrix());
         }
     }
 
@@ -9215,7 +9208,7 @@ public class View implements Drawable.Callback {
         matrix.postTranslate(-mLeft, -mTop);
 
         if (!hasIdentityMatrix()) {
-            matrix.postMul(getInverseMatrix());
+            matrix.postConcat(getInverseMatrix());
         }
     }
 
@@ -11844,15 +11837,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>alpha</code> functionality handled by the
      * {@link View#setAlpha(float)} and {@link View#getAlpha()} methods.
      */
-    public static final FloatProperty<View> ALPHA = new FloatProperty<>() {
+    public static final FloatProperty<View> ALPHA = new FloatProperty<>("alpha") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setAlpha(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getAlpha();
         }
     };
@@ -11861,32 +11853,31 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>translationX</code> functionality handled by the
      * {@link View#setTranslationX(float)} and {@link View#getTranslationX()} methods.
      */
-    public static final FloatProperty<View> TRANSLATION_X = new FloatProperty<>() {
+    public static final FloatProperty<View> TRANSLATION_X = new FloatProperty<>("translationX") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setTranslationX(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getTranslationX();
         }
     };
+
 
     /**
      * A Property wrapper around the <code>translationY</code> functionality handled by the
      * {@link View#setTranslationY(float)} and {@link View#getTranslationY()} methods.
      */
-    public static final FloatProperty<View> TRANSLATION_Y = new FloatProperty<>() {
+    public static final FloatProperty<View> TRANSLATION_Y = new FloatProperty<>("translationY") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setTranslationY(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getTranslationY();
         }
     };
@@ -11895,15 +11886,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>translationZ</code> functionality handled by the
      * {@link View#setTranslationZ(float)} and {@link View#getTranslationZ()} methods.
      */
-    public static final FloatProperty<View> TRANSLATION_Z = new FloatProperty<>() {
+    public static final FloatProperty<View> TRANSLATION_Z = new FloatProperty<>("translationZ") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setTranslationZ(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getTranslationZ();
         }
     };
@@ -11912,15 +11902,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>x</code> functionality handled by the
      * {@link View#setX(float)} and {@link View#getX()} methods.
      */
-    public static final FloatProperty<View> X = new FloatProperty<>() {
+    public static final FloatProperty<View> X = new FloatProperty<>("x") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setX(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getX();
         }
     };
@@ -11929,15 +11918,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>y</code> functionality handled by the
      * {@link View#setY(float)} and {@link View#getY()} methods.
      */
-    public static final FloatProperty<View> Y = new FloatProperty<>() {
+    public static final FloatProperty<View> Y = new FloatProperty<>("y") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setY(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getY();
         }
     };
@@ -11946,15 +11934,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>z</code> functionality handled by the
      * {@link View#setZ(float)} and {@link View#getZ()} methods.
      */
-    public static final FloatProperty<View> Z = new FloatProperty<>() {
+    public static final FloatProperty<View> Z = new FloatProperty<>("z") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setZ(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getZ();
         }
     };
@@ -11963,15 +11950,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>rotation</code> functionality handled by the
      * {@link View#setRotation(float)} and {@link View#getRotation()} methods.
      */
-    public static final FloatProperty<View> ROTATION = new FloatProperty<>() {
+    public static final FloatProperty<View> ROTATION = new FloatProperty<>("rotation") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setRotation(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getRotation();
         }
     };
@@ -11980,15 +11966,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>rotationX</code> functionality handled by the
      * {@link View#setRotationX(float)} and {@link View#getRotationX()} methods.
      */
-    public static final FloatProperty<View> ROTATION_X = new FloatProperty<>() {
+    public static final FloatProperty<View> ROTATION_X = new FloatProperty<>("rotationX") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setRotationX(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getRotationX();
         }
     };
@@ -11997,15 +11982,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>rotationY</code> functionality handled by the
      * {@link View#setRotationY(float)} and {@link View#getRotationY()} methods.
      */
-    public static final FloatProperty<View> ROTATION_Y = new FloatProperty<>() {
+    public static final FloatProperty<View> ROTATION_Y = new FloatProperty<>("rotationY") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setRotationY(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getRotationY();
         }
     };
@@ -12014,15 +11998,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>scaleX</code> functionality handled by the
      * {@link View#setScaleX(float)} and {@link View#getScaleX()} methods.
      */
-    public static final FloatProperty<View> SCALE_X = new FloatProperty<>() {
+    public static final FloatProperty<View> SCALE_X = new FloatProperty<>("scaleX") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setScaleX(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getScaleX();
         }
     };
@@ -12031,15 +12014,14 @@ public class View implements Drawable.Callback {
      * A Property wrapper around the <code>scaleY</code> functionality handled by the
      * {@link View#setScaleY(float)} and {@link View#getScaleY()} methods.
      */
-    public static final FloatProperty<View> SCALE_Y = new FloatProperty<>() {
+    public static final FloatProperty<View> SCALE_Y = new FloatProperty<>("scaleY") {
         @Override
-        public void setValue(@Nonnull View object, float value) {
+        public void setValue(View object, float value) {
             object.setScaleY(value);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View object) {
+        public Float get(View object) {
             return object.getScaleY();
         }
     };
@@ -12047,18 +12029,15 @@ public class View implements Drawable.Callback {
     /**
      * A Property wrapper around the <code>left</code> functionality handled by the
      * {@link View#setLeft(int)} and {@link View#getLeft()} methods.
-     * <p>
-     * This is not encouraged and should be regarded as internal use only.
      */
-    public static final IntProperty<View> LEFT = new IntProperty<>() {
+    public static final IntProperty<View> LEFT = new IntProperty<>("left") {
         @Override
-        public void setValue(@Nonnull View object, int value) {
+        public void setValue(View object, int value) {
             object.setLeft(value);
         }
 
-        @Nonnull
         @Override
-        public Integer get(@Nonnull View object) {
+        public Integer get(View object) {
             return object.getLeft();
         }
     };
@@ -12066,18 +12045,15 @@ public class View implements Drawable.Callback {
     /**
      * A Property wrapper around the <code>top</code> functionality handled by the
      * {@link View#setTop(int)} and {@link View#getTop()} methods.
-     * <p>
-     * This is not encouraged and should be regarded as internal use only.
      */
-    public static final IntProperty<View> TOP = new IntProperty<>() {
+    public static final IntProperty<View> TOP = new IntProperty<>("top") {
         @Override
-        public void setValue(@Nonnull View object, int value) {
+        public void setValue(View object, int value) {
             object.setTop(value);
         }
 
-        @Nonnull
         @Override
-        public Integer get(@Nonnull View object) {
+        public Integer get(View object) {
             return object.getTop();
         }
     };
@@ -12085,18 +12061,15 @@ public class View implements Drawable.Callback {
     /**
      * A Property wrapper around the <code>right</code> functionality handled by the
      * {@link View#setRight(int)} and {@link View#getRight()} methods.
-     * <p>
-     * This is not encouraged and should be regarded as internal use only.
      */
-    public static final IntProperty<View> RIGHT = new IntProperty<>() {
+    public static final IntProperty<View> RIGHT = new IntProperty<>("right") {
         @Override
-        public void setValue(@Nonnull View object, int value) {
+        public void setValue(View object, int value) {
             object.setRight(value);
         }
 
-        @Nonnull
         @Override
-        public Integer get(@Nonnull View object) {
+        public Integer get(View object) {
             return object.getRight();
         }
     };
@@ -12104,18 +12077,15 @@ public class View implements Drawable.Callback {
     /**
      * A Property wrapper around the <code>bottom</code> functionality handled by the
      * {@link View#setBottom(int)} and {@link View#getBottom()} methods.
-     * <p>
-     * This is not encouraged and should be regarded as internal use only.
      */
-    public static final IntProperty<View> BOTTOM = new IntProperty<>() {
+    public static final IntProperty<View> BOTTOM = new IntProperty<>("bottom") {
         @Override
-        public void setValue(@Nonnull View object, int value) {
+        public void setValue(View object, int value) {
             object.setBottom(value);
         }
 
-        @Nonnull
         @Override
-        public Integer get(@Nonnull View object) {
+        public Integer get(View object) {
             return object.getBottom();
         }
     };
@@ -12123,18 +12093,15 @@ public class View implements Drawable.Callback {
     /**
      * A Property wrapper around the <code>scrollX</code> functionality handled by the
      * {@link View#setScrollX(int)} and {@link View#getScrollX()} methods.
-     * <p>
-     * This is not encouraged and should be regarded as internal use only.
      */
-    public static final IntProperty<View> SCROLL_X = new IntProperty<>() {
+    public static final IntProperty<View> SCROLL_X = new IntProperty<>("scrollX") {
         @Override
-        public void setValue(@Nonnull View object, int value) {
+        public void setValue(View object, int value) {
             object.setScrollX(value);
         }
 
-        @Nonnull
         @Override
-        public Integer get(@Nonnull View object) {
+        public Integer get(View object) {
             return object.getScrollX();
         }
     };
@@ -12142,18 +12109,15 @@ public class View implements Drawable.Callback {
     /**
      * A Property wrapper around the <code>scrollY</code> functionality handled by the
      * {@link View#setScrollY(int)} and {@link View#getScrollY()} methods.
-     * <p>
-     * This is not encouraged and should be regarded as internal use only.
      */
-    public static final IntProperty<View> SCROLL_Y = new IntProperty<>() {
+    public static final IntProperty<View> SCROLL_Y = new IntProperty<>("scrollY") {
         @Override
-        public void setValue(@Nonnull View object, int value) {
+        public void setValue(View object, int value) {
             object.setScrollY(value);
         }
 
-        @Nonnull
         @Override
-        public Integer get(@Nonnull View object) {
+        public Integer get(View object) {
             return object.getScrollY();
         }
     };

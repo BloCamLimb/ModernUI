@@ -22,7 +22,7 @@ import com.ibm.icu.text.Bidi;
 import icyllis.modernui.graphics.font.FontMetricsInt;
 import icyllis.modernui.graphics.font.FontPaint;
 import icyllis.modernui.graphics.font.MeasuredText;
-import icyllis.modernui.math.FMath;
+import icyllis.modernui.graphics.FMath;
 import icyllis.modernui.text.style.CharacterStyle;
 import icyllis.modernui.text.style.MetricAffectingSpan;
 import icyllis.modernui.text.style.ReplacementSpan;

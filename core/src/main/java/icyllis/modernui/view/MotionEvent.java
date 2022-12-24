@@ -19,7 +19,7 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.core.Core;
-import icyllis.modernui.math.Matrix4;
+import icyllis.modernui.graphics.Matrix4;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import org.lwjgl.glfw.GLFW;
@@ -1032,7 +1032,7 @@ public final class MotionEvent extends InputEvent {
      * @param matrix The transformation matrix to apply.
      */
     public void transform(@Nonnull Matrix4 matrix) {
-        mTransform.preMul(matrix);
+        mTransform.preConcat(matrix);
     }
 
     /**

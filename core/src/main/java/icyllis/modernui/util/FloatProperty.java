@@ -18,8 +18,6 @@
 
 package icyllis.modernui.util;
 
-import javax.annotation.Nonnull;
-
 /**
  * An implementation of {@link Property} to be used specifically with fields of type
  * <code>float</code>. This type-specific subclass enables performance benefit by allowing
@@ -29,17 +27,21 @@ import javax.annotation.Nonnull;
  *
  * @param <T> The class on which the Property is declared.
  */
-public abstract class FloatProperty<T> implements Property<T, Float> {
+public abstract class FloatProperty<T> extends Property<T, Float> {
+
+    public FloatProperty(String name) {
+        super(Float.class, name);
+    }
 
     /**
      * A type-specific variant of {@link #set(Object, Float)} that is faster when dealing
      * with fields of type <code>float</code>.
      */
-    public abstract void setValue(@Nonnull T object, float value);
+    public abstract void setValue(T object, float value);
 
     @Deprecated
     @Override
-    public final void set(@Nonnull T object, @Nonnull Float value) {
+    public final void set(T object, Float value) {
         setValue(object, value);
     }
 }

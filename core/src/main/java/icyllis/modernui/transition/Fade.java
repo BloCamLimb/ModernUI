@@ -18,9 +18,7 @@
 
 package icyllis.modernui.transition;
 
-import icyllis.modernui.animation.Animator;
-import icyllis.modernui.animation.AnimatorListener;
-import icyllis.modernui.animation.ObjectAnimator;
+import icyllis.modernui.animation.*;
 import icyllis.modernui.util.FloatProperty;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
@@ -70,15 +68,14 @@ public class Fade extends Visibility {
     /**
      * A {@link FloatProperty} for animating transitionAlpha value of a View.
      */
-    private static final FloatProperty<View> TRANSITION_ALPHA = new FloatProperty<>() {
+    private static final FloatProperty<View> TRANSITION_ALPHA = new FloatProperty<>("transitionAlpha") {
         @Override
-        public void setValue(@Nonnull View view, float alpha) {
+        public void setValue(View view, float alpha) {
             view.setTransitionAlpha(alpha);
         }
 
-        @Nonnull
         @Override
-        public Float get(@Nonnull View view) {
+        public Float get(View view) {
             return view.getTransitionAlpha();
         }
     };

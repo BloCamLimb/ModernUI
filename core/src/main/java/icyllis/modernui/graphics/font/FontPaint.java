@@ -19,7 +19,7 @@
 package icyllis.modernui.graphics.font;
 
 import icyllis.modernui.ModernUI;
-import icyllis.modernui.math.FMath;
+import icyllis.modernui.graphics.FMath;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

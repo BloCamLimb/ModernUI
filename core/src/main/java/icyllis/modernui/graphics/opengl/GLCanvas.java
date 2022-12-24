@@ -20,9 +20,9 @@ package icyllis.modernui.graphics.opengl;
 
 import icyllis.modernui.core.Window;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Rect;
-import icyllis.modernui.math.RectF;
+import icyllis.modernui.graphics.Matrix4;
+import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.RectF;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 

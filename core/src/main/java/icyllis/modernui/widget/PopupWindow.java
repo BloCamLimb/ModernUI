@@ -23,7 +23,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.core.Window;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.transition.TransitionListener;
 import icyllis.modernui.transition.TransitionManager;

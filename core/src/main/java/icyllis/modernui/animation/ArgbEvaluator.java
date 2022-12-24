@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.math.FMath;
+import icyllis.modernui.graphics.FMath;
 
 import javax.annotation.Nonnull;
 
@@ -26,22 +26,22 @@ import javax.annotation.Nonnull;
  * This evaluator can be used to perform type interpolation between integer
  * values that represent ARGB colors.
  */
-public class ColorEvaluator implements TypeEvaluator<Integer> {
+public final class ArgbEvaluator implements TypeEvaluator<Integer> {
 
-    private static final ColorEvaluator sInstance = new ColorEvaluator();
+    private static final ArgbEvaluator sInstance = new ArgbEvaluator();
 
-    private ColorEvaluator() {
+    private ArgbEvaluator() {
     }
 
     /**
-     * Returns an instance of <code>ColorEvaluator</code> that may be used in
+     * Returns an instance of <code>ArgbEvaluator</code> that may be used in
      * {@link PropertyValuesHolder#setEvaluator(TypeEvaluator)}. The same instance may
      * be used in multiple <code>Animator</code>s because it holds no state.
-     * Or directly use {@link #evaluate(float, int, int)} for the algorithm.
      *
-     * @return An instance of <code>ColorEvaluator</code>.
+     * @return An instance of <code>ArgbEvaluator</code>.
      */
-    public static ColorEvaluator getInstance() {
+    @Nonnull
+    public static ArgbEvaluator getInstance() {
         return sInstance;
     }
 
@@ -62,12 +62,12 @@ public class ColorEvaluator implements TypeEvaluator<Integer> {
      * resulting values in the same way.
      */
     public static int evaluate(float fraction, int startValue, int endValue) {
-        float startA = ((startValue >> 24) & 0xff) / 255.0f;
+        float startA = (startValue >>> 24) / 255.0f;
         float startR = ((startValue >> 16) & 0xff) / 255.0f;
         float startG = ((startValue >> 8) & 0xff) / 255.0f;
         float startB = (startValue & 0xff) / 255.0f;
 
-        float endA = ((endValue >> 24) & 0xff) / 255.0f;
+        float endA = (endValue >>> 24) / 255.0f;
         float endR = ((endValue >> 16) & 0xff) / 255.0f;
         float endG = ((endValue >> 8) & 0xff) / 255.0f;
         float endB = (endValue & 0xff) / 255.0f;
@@ -99,8 +99,9 @@ public class ColorEvaluator implements TypeEvaluator<Integer> {
     /**
      * @see #evaluate(float, int, int)
      */
+    @Nonnull
     @Override
-    public Integer evaluate(float fraction, @Nonnull Integer startValue, @Nonnull Integer endValue) {
+    public Integer evaluate(float fraction, Integer startValue, Integer endValue) {
         return evaluate(fraction, startValue.intValue(), endValue.intValue());
     }
 }

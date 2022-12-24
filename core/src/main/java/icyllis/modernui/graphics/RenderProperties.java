@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Rect;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
@@ -102,7 +100,7 @@ public class RenderProperties {
                     (float) Math.toRadians(mRotationZ));
             matrix2.preTranslate(-mPivotX, -mPivotY);
             matrix2.postTranslate(mPivotX + mTranslationX, mPivotY + mTranslationY);
-            matrix.postMul(matrix2);
+            matrix.postConcat(matrix2);
             return matrix;
         }
         return mMatrix;

@@ -23,7 +23,7 @@ import com.ibm.icu.text.SimpleDateFormat;
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.annotation.RenderThread;
 import icyllis.modernui.graphics.Image;
-import icyllis.modernui.math.FMath;
+import icyllis.modernui.graphics.FMath;
 import icyllis.modernui.graphics.opengl.GLFramebuffer;
 import icyllis.modernui.graphics.opengl.GLTexture;
 import org.lwjgl.PointerBuffer;

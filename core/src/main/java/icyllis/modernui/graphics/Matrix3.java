@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,7 +16,7 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.math;
+package icyllis.modernui.graphics;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -84,7 +84,7 @@ public final class Matrix3 implements Cloneable {
      *
      * @param mat the matrix to multiply
      */
-    public void preMul(@Nonnull Matrix3 mat) {
+    public void preConcat(@Nonnull Matrix3 mat) {
         final float f11 = mat.m11 * m11 + mat.m12 * m21 + mat.m13 * m31;
         final float f12 = mat.m11 * m12 + mat.m12 * m22 + mat.m13 * m32;
         final float f13 = mat.m11 * m13 + mat.m12 * m23 + mat.m13 * m33;
@@ -111,7 +111,7 @@ public final class Matrix3 implements Cloneable {
      *
      * @param mat the matrix to multiply
      */
-    public void postMul(@Nonnull Matrix3 mat) {
+    public void postConcat(@Nonnull Matrix3 mat) {
         final float f11 = m11 * mat.m11 + m12 * mat.m21 + m13 * mat.m31;
         final float f12 = m11 * mat.m12 + m12 * mat.m22 + m13 * mat.m32;
         final float f13 = m11 * mat.m13 + m12 * mat.m23 + m13 * mat.m33;

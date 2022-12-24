@@ -26,7 +26,7 @@ import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.graphics.font.FontMetricsInt;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.text.*;
 import icyllis.modernui.text.method.*;
 import icyllis.modernui.text.style.CharacterStyle;

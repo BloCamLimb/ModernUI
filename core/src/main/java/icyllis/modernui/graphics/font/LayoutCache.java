@@ -20,7 +20,7 @@ package icyllis.modernui.graphics.font;
 
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import icyllis.modernui.math.FMath;
+import icyllis.modernui.graphics.FMath;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;

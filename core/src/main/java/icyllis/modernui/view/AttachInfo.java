@@ -19,10 +19,10 @@
 package icyllis.modernui.view;
 
 import icyllis.modernui.core.Handler;
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Point;
-import icyllis.modernui.math.Rect;
-import icyllis.modernui.math.RectF;
+import icyllis.modernui.graphics.Matrix4;
+import icyllis.modernui.graphics.Point;
+import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.RectF;
 
 /**
  * A set of information given to a view when it is attached to its parent

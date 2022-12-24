@@ -18,9 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Rect;
-
 /**
  * GPU hierarchical clipping using stencil test.
  */

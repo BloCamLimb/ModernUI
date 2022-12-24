@@ -22,8 +22,8 @@ import icyllis.modernui.animation.AnimationUtils;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.FMath;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.*;
 
 import javax.annotation.Nonnull;

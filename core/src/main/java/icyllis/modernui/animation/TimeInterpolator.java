@@ -18,7 +18,7 @@
 
 package icyllis.modernui.animation;
 
-import icyllis.modernui.math.FMath;
+import icyllis.modernui.graphics.FMath;
 
 import javax.annotation.Nonnull;
 

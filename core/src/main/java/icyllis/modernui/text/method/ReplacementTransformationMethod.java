@@ -18,7 +18,7 @@
 
 package icyllis.modernui.text.method;
 
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.text.*;
 import icyllis.modernui.view.View;
 

@@ -23,7 +23,7 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.text.TextUtils;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.ViewGroup;

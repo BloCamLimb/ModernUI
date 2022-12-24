@@ -23,7 +23,7 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.audio.FFT;
-import icyllis.modernui.math.FMath;
+import icyllis.modernui.graphics.FMath;
 
 import javax.annotation.Nonnull;
 

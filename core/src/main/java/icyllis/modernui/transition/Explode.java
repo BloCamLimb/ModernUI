@@ -21,7 +21,7 @@ package icyllis.modernui.transition;
 import icyllis.modernui.R;
 import icyllis.modernui.animation.Animator;
 import icyllis.modernui.animation.TimeInterpolator;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewGroup;
 

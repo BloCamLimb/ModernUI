@@ -20,8 +20,8 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.FMath;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.*;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;

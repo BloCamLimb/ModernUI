@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ArrayMap;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 

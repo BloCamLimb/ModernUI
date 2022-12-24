@@ -1,6 +1,6 @@
 /*
  * Modern UI.
- * Copyright (C) 2019-2021 BloCamLimb. All rights reserved.
+ * Copyright (C) 2019-2022 BloCamLimb. All rights reserved.
  *
  * Modern UI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,33 +16,38 @@
  * License along with Modern UI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.modernui.math;
+package icyllis.modernui.graphics;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * Represents a point holding two integer values.
+ * Represents a point holding two float values.
  */
-public class Point {
+public class PointF {
 
-    public int x;
-    public int y;
+    public float x;
+    public float y;
 
-    public Point() {
+    public PointF() {
     }
 
-    public Point(int x, int y) {
+    public PointF(float x, float y) {
         this.x = x;
         this.y = y;
     }
 
-    @Nonnull
-    public static Point copy(@Nullable Point p) {
-        return p == null ? new Point() : p.copy();
+    public PointF(@Nonnull Point p) {
+        x = p.x;
+        y = p.y;
     }
 
-    public void set(int x, int y) {
+    @Nonnull
+    public static PointF copy(@Nullable PointF p) {
+        return p == null ? new PointF() : p.copy();
+    }
+
+    public void set(float x, float y) {
         this.x = x;
         this.y = y;
     }
@@ -52,14 +57,30 @@ public class Point {
         y = p.y;
     }
 
+    public void set(@Nonnull PointF p) {
+        x = p.x;
+        y = p.y;
+    }
+
     public void negate() {
         x = -x;
         y = -y;
     }
 
-    public void offset(int dx, int dy) {
+    public void offset(float dx, float dy) {
         x += dx;
         y += dy;
+    }
+
+    /**
+     * Return the euclidean distance from (0,0) to the point
+     */
+    public float length() {
+        return FMath.hypot(x, y);
+    }
+
+    public void round(@Nonnull Point dst) {
+        dst.set(Math.round(x), Math.round(y));
     }
 
     @Override
@@ -67,28 +88,28 @@ public class Point {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Point point = (Point) o;
+        PointF pointF = (PointF) o;
 
-        if (x != point.x) return false;
-        return y == point.y;
+        if (Float.compare(pointF.x, x) != 0) return false;
+        return Float.compare(pointF.y, y) == 0;
     }
 
     @Override
     public int hashCode() {
-        int result = x;
-        result = 31 * result + y;
+        int result = (x != +0.0f ? Float.floatToIntBits(x) : 0);
+        result = 31 * result + (y != +0.0f ? Float.floatToIntBits(y) : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "Point(" +
+        return "PointF(" +
                 x + ", " + y +
                 ')';
     }
 
     @Nonnull
-    public Point copy() {
-        return new Point(x, y);
+    public PointF copy() {
+        return new PointF(x, y);
     }
 }

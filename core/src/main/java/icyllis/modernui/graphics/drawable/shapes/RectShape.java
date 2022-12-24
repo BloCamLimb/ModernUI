@@ -20,7 +20,7 @@ package icyllis.modernui.graphics.drawable.shapes;
 
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.math.RectF;
+import icyllis.modernui.graphics.RectF;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;

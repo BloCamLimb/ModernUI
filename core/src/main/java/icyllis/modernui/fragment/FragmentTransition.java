@@ -19,7 +19,7 @@
 package icyllis.modernui.fragment;
 
 import icyllis.modernui.core.CancellationSignal;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.transition.TransitionListener;
 import icyllis.modernui.transition.TransitionSet;

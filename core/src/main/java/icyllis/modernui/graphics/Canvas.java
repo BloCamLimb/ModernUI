@@ -21,7 +21,6 @@ package icyllis.modernui.graphics;
 import icyllis.modernui.annotation.ColorInt;
 import icyllis.modernui.graphics.font.LayoutPiece;
 import icyllis.modernui.graphics.font.MeasuredText;
-import icyllis.modernui.math.*;
 import icyllis.modernui.text.TextPaint;
 import icyllis.modernui.view.Gravity;
 import org.apache.logging.log4j.Marker;
@@ -249,7 +248,7 @@ public abstract class Canvas {
      */
     public final void concat(Matrix4 matrix) {
         if (!matrix.isIdentity()) {
-            getMatrix().preMul(matrix);
+            getMatrix().preConcat(matrix);
         }
     }
 
