@@ -74,8 +74,8 @@ public class ProgramVisitor {
             case ExpressionKind.kConditional -> {
                 var t = (ConditionalExpression) expr;
                 yield visitExpressionChild(t.getCondition()) ||
-                        (t.getTrue() != null && visitExpressionChild(t.getTrue())) ||
-                        (t.getFalse() != null && visitExpressionChild(t.getFalse()));
+                        (t.getTrueExpr() != null && visitExpressionChild(t.getTrueExpr())) ||
+                        (t.getFalseExpr() != null && visitExpressionChild(t.getFalseExpr()));
             }
             default -> true;
         };

@@ -44,10 +44,10 @@ public final class ConstructorCompound extends AnyConstructor {
             Type argType = arg.getType();
             assert (argType.isScalar() || argType.isVector() || argType.isMatrix()) &&
                     (argType.getComponentType().matches(type.getComponentType()));
-            n += argType.components();
+            n += argType.getComponents();
         }
         // The scalar count of the combined argument list must match the composite type's scalar count.
-        assert type.components() == n;
+        assert type.getComponents() == n;
 
         // No-op compound constructors (containing a single argument of the same type) are eliminated.
         // (Even though this is a "compound constructor," we let scalars pass through here; it's

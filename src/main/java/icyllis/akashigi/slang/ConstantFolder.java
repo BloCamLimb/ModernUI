@@ -25,9 +25,9 @@ import javax.annotation.Nullable;
 
 public class ConstantFolder {
 
-    public static Expression makeConstantValueForVariable(int position, Expression inExpr) {
-        Expression expr = getConstantValueOrNullForVariable(inExpr);
-        return expr != null ? expr.clone(position) : inExpr;
+    public static Expression makeConstantValueForVariable(int position, Expression expr) {
+        Expression constexpr = getConstantValueOrNullForVariable(expr);
+        return constexpr != null ? constexpr.clone(position) : expr;
     }
 
     @Nullable

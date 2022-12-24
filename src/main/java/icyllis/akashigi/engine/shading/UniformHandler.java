@@ -143,7 +143,7 @@ public abstract class UniformHandler {
         assert ((visibility & ~(ShaderFlags.kVertex | ShaderFlags.kFragment)) == 0);
         assert (SLType.checkSLType(type));
         assert (!SLType.isCombinedSamplerType(type));
-        return internalAddUniformArray(owner, visibility, type, name, ShaderVar.NonArray);
+        return internalAddUniformArray(owner, visibility, type, name, ShaderVar.kNonArray);
     }
 
     /**
@@ -369,8 +369,8 @@ public abstract class UniformHandler {
                                        int arrayCount,
                                        boolean layout) {
         assert (SLType.checkSLType(type));
-        assert (arrayCount == ShaderVar.NonArray) || (arrayCount >= 1);
-        int alignmentMask = getAlignmentMask(type, arrayCount == ShaderVar.NonArray, layout);
+        assert (arrayCount == ShaderVar.kNonArray) || (arrayCount >= 1);
+        int alignmentMask = getAlignmentMask(type, arrayCount == ShaderVar.kNonArray, layout);
         return (offset + alignmentMask) & ~alignmentMask;
     }
 
@@ -381,8 +381,8 @@ public abstract class UniformHandler {
                                        int arrayCount,
                                        boolean layout) {
         assert (SLType.checkSLType(type));
-        assert (arrayCount == ShaderVar.NonArray) || (arrayCount >= 1);
-        if (arrayCount == ShaderVar.NonArray) {
+        assert (arrayCount == ShaderVar.kNonArray) || (arrayCount >= 1);
+        if (arrayCount == ShaderVar.kNonArray) {
             return getSize(type, layout);
         } else {
             final int elementSize;

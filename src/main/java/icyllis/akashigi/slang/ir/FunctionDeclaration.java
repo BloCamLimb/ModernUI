@@ -45,7 +45,7 @@ public final class FunctionDeclaration extends Symbol {
         StringBuilder mangledName = new StringBuilder(name);
         mangledName.append('(');
         for (Variable p : parameters) {
-            mangledName.append(p.getType().getDesc()).append(';');
+            mangledName.append(p.getType().getAbbr()).append(';');
         }
         mMangledName = mangledName.toString();
     }

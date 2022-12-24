@@ -53,9 +53,9 @@ public abstract class AnyConstructor extends Expression {
 
     @Override
     public OptionalDouble getConstantValue(int i) {
-        assert (i >= 0 && i < getType().components());
+        assert (i >= 0 && i < getType().getComponents());
         for (Expression arg : mArguments) {
-            int components = arg.getType().components();
+            int components = arg.getType().getComponents();
             if (i < components) {
                 return arg.getConstantValue(i);
             }

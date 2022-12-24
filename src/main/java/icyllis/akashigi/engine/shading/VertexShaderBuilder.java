@@ -62,14 +62,14 @@ public class VertexShaderBuilder extends ShaderBuilderBase implements VertexGeom
 
     @Override
     public void emitAttributes(GeometryProcessor geomProc) {
-        for (var it = geomProc.vertexAttributes(); it.hasNext(); ) {
-            var var = it.next().asShaderVar();
-            assert (var.getTypeModifier() == ShaderVar.TypeModifier_In);
+        for (var attr : geomProc.getVertexAttributes()) {
+            ShaderVar var = attr.asShaderVar();
+            assert (var.getTypeModifier() == ShaderVar.kIn_TypeModifier);
             mInputs.add(var);
         }
-        for (var it = geomProc.instanceAttributes(); it.hasNext(); ) {
-            var var = it.next().asShaderVar();
-            assert (var.getTypeModifier() == ShaderVar.TypeModifier_In);
+        for (var attr : geomProc.getInstanceAttributes()) {
+            ShaderVar var = attr.asShaderVar();
+            assert (var.getTypeModifier() == ShaderVar.kIn_TypeModifier);
             mInputs.add(var);
         }
     }

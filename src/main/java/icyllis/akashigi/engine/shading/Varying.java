@@ -76,11 +76,11 @@ public final class Varying {
 
     public ShaderVar vsOutVar() {
         assert isInVertexShader();
-        return new ShaderVar(mVsOut, mType, ShaderVar.TypeModifier_Out);
+        return new ShaderVar(mVsOut, mType, ShaderVar.kOut_TypeModifier);
     }
 
     public ShaderVar fsInVar() {
         assert isInFragmentShader();
-        return new ShaderVar(mFsIn, mType, ShaderVar.TypeModifier_In);
+        return new ShaderVar(mFsIn, mType, ShaderVar.kIn_TypeModifier);
     }
 }

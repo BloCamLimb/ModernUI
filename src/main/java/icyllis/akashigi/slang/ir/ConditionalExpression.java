@@ -25,7 +25,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 /**
- * A conditional expression (condition ? trueExpression : falseExpression).
+ * A conditional expression (condition ? trueExpr : falseExpr).
  */
 public final class ConditionalExpression extends Expression {
 
@@ -59,19 +59,19 @@ public final class ConditionalExpression extends Expression {
             return null;
         }
 
-        Type[] outTypes = new Type[3];
-        if (!Operator.EQ.determineBinaryType(context, trueExpr.getType(), falseExpr.getType(), outTypes) ||
-                !outTypes[0].matches(outTypes[1])) {
+        Type[] types = new Type[3];
+        if (!Operator.EQ.determineBinaryType(trueExpr.getType(), falseExpr.getType(), types) ||
+                !types[0].matches(types[1])) {
             context.error(Node.makeRange(trueExpr.getStartOffset(), falseExpr.getEndOffset()),
                     "conditional operator result mismatch: '" + trueExpr.getType().getName() + "', '" +
                             falseExpr.getType().getName() + "'");
             return null;
         }
-        trueExpr = outTypes[0].coerceExpression(trueExpr);
+        trueExpr = types[0].coerceExpression(trueExpr);
         if (trueExpr == null) {
             return null;
         }
-        falseExpr = outTypes[1].coerceExpression(falseExpr);
+        falseExpr = types[1].coerceExpression(falseExpr);
         if (falseExpr == null) {
             return null;
         }
@@ -83,11 +83,11 @@ public final class ConditionalExpression extends Expression {
         return mCondition;
     }
 
-    public Expression getTrue() {
+    public Expression getTrueExpr() {
         return mTrueExpr;
     }
 
-    public Expression getFalse() {
+    public Expression getFalseExpr() {
         return mFalseExpr;
     }
 

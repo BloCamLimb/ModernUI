@@ -150,13 +150,13 @@ public class VaryingHandler {
             String layoutQualifier = "location = " + locationIndex;
             String modifier = v.mIsFlat ? "flat" : mDefaultInterpolationModifier;
             if ((v.mVisibility & ShaderFlags.kVertex) != 0) {
-                mVertexOutputs.add(new ShaderVar(v.mVsOut, v.mType, ShaderVar.TypeModifier_Out,
-                        ShaderVar.NonArray, layoutQualifier, modifier));
+                mVertexOutputs.add(new ShaderVar(v.mVsOut, v.mType, ShaderVar.kOut_TypeModifier,
+                        ShaderVar.kNonArray, layoutQualifier, modifier));
             }
             if ((v.mVisibility & ShaderFlags.kFragment) != 0) {
                 String fsIn = v.mVsOut;
-                mFragInputs.add(new ShaderVar(fsIn, v.mType, ShaderVar.TypeModifier_In,
-                        ShaderVar.NonArray, layoutQualifier, modifier));
+                mFragInputs.add(new ShaderVar(fsIn, v.mType, ShaderVar.kIn_TypeModifier,
+                        ShaderVar.kNonArray, layoutQualifier, modifier));
             }
             int locationSize = SLType.locationSize(v.mType);
             assert (locationSize > 0);

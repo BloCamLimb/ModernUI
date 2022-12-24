@@ -24,8 +24,7 @@ import icyllis.akashigi.engine.shading.*;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.annotation.concurrent.Immutable;
-import java.util.Iterator;
-import java.util.NoSuchElementException;
+import java.util.*;
 
 import static icyllis.akashigi.engine.Engine.*;
 import static icyllis.akashigi.engine.shading.UniformHandler.*;
@@ -170,7 +169,7 @@ public abstract class GeometryProcessor extends Processor {
 
         @Nonnull
         public final ShaderVar asShaderVar() {
-            return new ShaderVar(mName, mDstType, ShaderVar.TypeModifier_In);
+            return new ShaderVar(mName, mDstType, ShaderVar.kIn_TypeModifier);
         }
     }
 
@@ -431,10 +430,10 @@ public abstract class GeometryProcessor extends Processor {
      * </ol>
      */
     @Nonnull
-    public final Iterator<Attribute> vertexAttributes() {
+    public final Iterable<Attribute> getVertexAttributes() {
         assert (mVertexAttributesMask == 0 || mVertexAttributes != null);
-        return mVertexAttributesMask == 0 ? AttributeSet.EMPTY_ITER :
-                mVertexAttributes.new Iter(mVertexAttributesMask);
+        return mVertexAttributesMask == 0 ? Collections.emptyList() :
+                () -> mVertexAttributes.new Iter(mVertexAttributesMask);
     }
 
     /**
@@ -467,10 +466,10 @@ public abstract class GeometryProcessor extends Processor {
      * </ol>
      */
     @Nonnull
-    public final Iterator<Attribute> instanceAttributes() {
+    public final Iterable<Attribute> getInstanceAttributes() {
         assert (mInstanceAttributesMask == 0 || mInstanceAttributes != null);
-        return mInstanceAttributesMask == 0 ? AttributeSet.EMPTY_ITER :
-                mInstanceAttributes.new Iter(mInstanceAttributesMask);
+        return mInstanceAttributesMask == 0 ? Collections.emptyList() :
+                () -> mInstanceAttributes.new Iter(mInstanceAttributesMask);
     }
 
     public final boolean hasVertexAttributes() {

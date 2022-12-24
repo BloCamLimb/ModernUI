@@ -25,7 +25,6 @@ import icyllis.akashigi.engine.shading.VertexShaderBuilder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Iterator;
 
 import static icyllis.akashigi.engine.Engine.VertexAttribType;
 import static icyllis.akashigi.opengl.GLCore.*;
@@ -90,7 +89,7 @@ public class GLPipeline extends ManagedResource {
         int attribIndex = 0;
         int bindingIndex = 0;
         if (geomProc.hasVertexAttributes()) {
-            attribIndex = setVertexFormat(geomProc.vertexAttributes(),
+            attribIndex = setVertexFormat(geomProc.getVertexAttributes(),
                     vertexArray,
                     attribIndex,
                     bindingIndex);
@@ -101,7 +100,7 @@ public class GLPipeline extends ManagedResource {
         }
 
         if (geomProc.hasInstanceAttributes()) {
-            attribIndex = setVertexFormat(geomProc.instanceAttributes(),
+            attribIndex = setVertexFormat(geomProc.getInstanceAttributes(),
                     vertexArray,
                     attribIndex,
                     bindingIndex);
@@ -135,12 +134,11 @@ public class GLPipeline extends ManagedResource {
     /**
      * See {@link VertexShaderBuilder} to see how we bind these on server side.
      */
-    private static int setVertexFormat(@Nonnull Iterator<GeometryProcessor.Attribute> attribs,
+    private static int setVertexFormat(@Nonnull Iterable<GeometryProcessor.Attribute> attribs,
                                        int vertexArray,
                                        int attribIndex,
                                        int bindingIndex) {
-        while (attribs.hasNext()) {
-            GeometryProcessor.Attribute attrib = attribs.next();
+        for (var attrib : attribs) {
             // a matrix can take up multiple locations
             int locations = attrib.locationSize();
             assert (locations > 0);

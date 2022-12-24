@@ -29,16 +29,16 @@ public class ShaderVar {
      * TypeModifiers
      */
     public static final byte
-            TypeModifier_None = 0,
-            TypeModifier_Out = 1,
-            TypeModifier_In = 2,
-            TypeModifier_InOut = 3,
-            TypeModifier_Uniform = 4;
+            kNone_TypeModifier = 0,
+            kOut_TypeModifier = 1,
+            kIn_TypeModifier = 2,
+            kInOut_TypeModifier = 3,
+            kUniform_TypeModifier = 4;
 
     /**
-     * Values for array count that have special meaning. We allow 1-sized arrays.
+     * Values for array length that have special meaning. We allow 1-sized arrays.
      */
-    public static final int NonArray = 0; // not an array
+    public static final int kNonArray = 0; // not an array
 
     private byte mType;
     private byte mTypeModifier;
@@ -52,19 +52,19 @@ public class ShaderVar {
      * Defaults to a void with no type modifier or layout qualifier.
      */
     public ShaderVar() {
-        this("", SLType.kVoid, TypeModifier_None, NonArray, "", "");
+        this("", SLType.kVoid, kNone_TypeModifier, kNonArray, "", "");
     }
 
     public ShaderVar(String name, byte type) {
-        this(name, type, TypeModifier_None, NonArray, "", "");
+        this(name, type, kNone_TypeModifier, kNonArray, "", "");
     }
 
     public ShaderVar(String name, byte type, int arrayCount) {
-        this(name, type, TypeModifier_None, arrayCount, "", "");
+        this(name, type, kNone_TypeModifier, arrayCount, "", "");
     }
 
     public ShaderVar(String name, byte type, byte typeModifier) {
-        this(name, type, typeModifier, NonArray, "", "");
+        this(name, type, typeModifier, kNonArray, "", "");
     }
 
     public ShaderVar(String name, byte type, byte typeModifier, int arrayCount) {
@@ -75,8 +75,8 @@ public class ShaderVar {
                      String layoutQualifier, String extraModifier) {
         assert (name != null);
         assert (SLType.checkSLType(type));
-        assert (typeModifier >= TypeModifier_None && typeModifier <= TypeModifier_Uniform);
-        assert (arrayCount == NonArray || arrayCount > 0);
+        assert (typeModifier >= kNone_TypeModifier && typeModifier <= kUniform_TypeModifier);
+        assert (arrayCount == kNonArray || arrayCount > 0);
         assert (layoutQualifier != null && extraModifier != null);
         mType = type;
         mTypeModifier = typeModifier;
@@ -99,11 +99,11 @@ public class ShaderVar {
      * Is the var an array.
      */
     public boolean isArray() {
-        return mCount != NonArray;
+        return mCount != kNonArray;
     }
 
     /**
-     * Get the array length. May be {@link #NonArray}.
+     * Get the array length. May be {@link #kNonArray}.
      */
     public int getArrayCount() {
         return mCount;
@@ -130,7 +130,7 @@ public class ShaderVar {
     }
 
     public void setTypeModifier(byte typeModifier) {
-        assert (typeModifier >= TypeModifier_None && typeModifier <= TypeModifier_Uniform);
+        assert (typeModifier >= kNone_TypeModifier && typeModifier <= kUniform_TypeModifier);
         mTypeModifier = typeModifier;
     }
 
@@ -171,12 +171,12 @@ public class ShaderVar {
             out.append(mExtraModifiers);
             out.append(" ");
         }
-        if (mTypeModifier != TypeModifier_None) {
+        if (mTypeModifier != kNone_TypeModifier) {
             out.append(switch (mTypeModifier) {
-                case TypeModifier_Out -> "out ";
-                case TypeModifier_In -> "in ";
-                case TypeModifier_InOut -> "inout ";
-                case TypeModifier_Uniform -> "uniform ";
+                case kOut_TypeModifier -> "out ";
+                case kIn_TypeModifier -> "in ";
+                case kInOut_TypeModifier -> "inout ";
+                case kUniform_TypeModifier -> "uniform ";
                 default -> throw new IllegalStateException();
             });
         }

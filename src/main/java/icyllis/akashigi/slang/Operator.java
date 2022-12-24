@@ -332,21 +332,24 @@ public enum Operator {
      * expression is legal, false otherwise. If false, the values of the out parameters are
      * undefined.
      *
-     * @param outTypes left type, right type, result type
+     * @param left  (in) left type
+     * @param right (in) right type
+     * @param types (out) left type, right type and result type, respectively
      */
-    public boolean determineBinaryType(ThreadContext context,
-                                       Type left,
+    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
+    public boolean determineBinaryType(Type left,
                                        Type right,
-                                       Type[] outTypes) {
-        assert (outTypes.length >= 3);
+                                       Type[] types) {
+        assert (types.length >= 3);
+        ThreadContext context = ThreadContext.getInstance();
         switch (this) {
             case ASSIGN -> {  // left = right
                 if (left.isVoid()) {
                     return false;
                 }
-                outTypes[0] = left;
-                outTypes[1] = left;
-                outTypes[2] = left;
+                types[0] = left;
+                types[1] = left;
+                types[2] = left;
                 return right.canCoerceTo(left);
             }
             case EQ, // left == right
@@ -358,16 +361,16 @@ public enum Operator {
                         leftToRight = left.coercionCost(right);
                 if (Type.CoercionCost.compare(rightToLeft, leftToRight) < 0) {
                     if (Type.CoercionCost.isPossible(rightToLeft)) {
-                        outTypes[0] = left;
-                        outTypes[1] = left;
-                        outTypes[2] = context.getTypes().mBool;
+                        types[0] = left;
+                        types[1] = left;
+                        types[2] = context.getTypes().mBool;
                         return true;
                     }
                 } else {
                     if (Type.CoercionCost.isPossible(leftToRight)) {
-                        outTypes[0] = right;
-                        outTypes[1] = right;
-                        outTypes[2] = context.getTypes().mBool;
+                        types[0] = right;
+                        types[1] = right;
+                        types[2] = context.getTypes().mBool;
                         return true;
                     }
                 }
@@ -376,9 +379,9 @@ public enum Operator {
             case LOGICAL_OR, // left || right
                     LOGICAL_AND,  // left && right
                     LOGICAL_XOR -> {  // left ^^ right
-                outTypes[0] = context.getTypes().mBool;
-                outTypes[1] = context.getTypes().mBool;
-                outTypes[2] = context.getTypes().mBool;
+                types[0] = context.getTypes().mBool;
+                types[1] = context.getTypes().mBool;
+                types[2] = context.getTypes().mBool;
                 return left.canCoerceTo(context.getTypes().mBool) &&
                         right.canCoerceTo(context.getTypes().mBool);
             }
@@ -386,9 +389,9 @@ public enum Operator {
                 if (left.isOpaque() || right.isOpaque()) {
                     return false;
                 }
-                outTypes[0] = left;
-                outTypes[1] = right;
-                outTypes[2] = right;
+                types[0] = left;
+                types[1] = right;
+                types[2] = right;
                 return true;
             }
         }
@@ -404,15 +407,15 @@ public enum Operator {
         boolean isAssignment = isAssignment();
         if (isMatrixMultiply(left, right)) {  // left * right
             // Determine final component type.
-            if (!determineBinaryType(context, left.getComponentType(), right.getComponentType(),
-                    outTypes)) {
+            if (!determineBinaryType(left.getComponentType(), right.getComponentType(),
+                    types)) {
                 return false;
             }
             // Convert component type to compound.
-            outTypes[0] = outTypes[0].toCompound(context, left.cols(), left.rows());
-            outTypes[1] = outTypes[1].toCompound(context, right.cols(), right.rows());
-            int leftColumns = left.cols(), leftRows = left.rows();
-            int rightColumns = right.cols(), rightRows = right.rows();
+            types[0] = types[0].toCompound(left.getCols(), left.getRows());
+            types[1] = types[1].toCompound(right.getCols(), right.getRows());
+            int leftColumns = left.getCols(), leftRows = left.getRows();
+            int rightColumns = right.getCols(), rightRows = right.getRows();
             if (right.isVector()) {
                 // `matrix * vector` treats the vector as a column vector; we need to transpose it.
                 int t = leftColumns;
@@ -421,13 +424,13 @@ public enum Operator {
                 assert (rightColumns == 1);
             }
             if (rightColumns > 1) {
-                outTypes[2] = outTypes[2].toCompound(context, rightColumns, leftRows);
+                types[2] = types[2].toCompound(rightColumns, leftRows);
             } else {
                 // The result was a column vector. Transpose it back to a row.
-                outTypes[2] = outTypes[2].toCompound(context, leftRows, rightColumns);
+                types[2] = types[2].toCompound(leftRows, rightColumns);
             }
-            if (isAssignment && (outTypes[2].cols() != leftColumns ||
-                    outTypes[2].rows() != leftRows)) {
+            if (isAssignment && (types[2].getCols() != leftColumns ||
+                    types[2].getRows() != leftRows)) {
                 return false;
             }
             return leftColumns == rightRows;
@@ -438,14 +441,14 @@ public enum Operator {
 
         if (leftIsVectorOrMatrix && validMatrixOrVectorOp && right.isScalar()) {
             // Determine final component type.
-            if (!determineBinaryType(context, left.getComponentType(), right,
-                    outTypes)) {
+            if (!determineBinaryType(left.getComponentType(), right,
+                    types)) {
                 return false;
             }
             // Convert component type to compound.
-            outTypes[0] = outTypes[0].toCompound(context, left.cols(), left.rows());
+            types[0] = types[0].toCompound(left.getCols(), left.getRows());
             if (!isRelational()) {
-                outTypes[2] = outTypes[2].toCompound(context, left.cols(), left.rows());
+                types[2] = types[2].toCompound(left.getCols(), left.getRows());
             }
             return true;
         }
@@ -454,14 +457,14 @@ public enum Operator {
 
         if (!isAssignment && rightIsVectorOrMatrix && validMatrixOrVectorOp && left.isScalar()) {
             // Determine final component type.
-            if (!determineBinaryType(context, left, right.getComponentType(),
-                    outTypes)) {
+            if (!determineBinaryType(left, right.getComponentType(),
+                    types)) {
                 return false;
             }
             // Convert component type to compound.
-            outTypes[1] = outTypes[1].toCompound(context, right.cols(), right.rows());
+            types[1] = types[1].toCompound(right.getCols(), right.getRows());
             if (!isRelational()) {
-                outTypes[2] = outTypes[2].toCompound(context, right.cols(), right.rows());
+                types[2] = types[2].toCompound(right.getCols(), right.getRows());
             }
             return true;
         }
@@ -479,19 +482,19 @@ public enum Operator {
             if (Type.CoercionCost.isPossible(rightToLeftCost) &&
                     Type.CoercionCost.compare(rightToLeftCost, leftToRightCost) < 0) {
                 // Right-to-Left conversion is possible and cheaper
-                outTypes[0] = left;
-                outTypes[1] = left;
-                outTypes[2] = left;
+                types[0] = left;
+                types[1] = left;
+                types[2] = left;
             } else if (Type.CoercionCost.isPossible(leftToRightCost)) {
                 // Left-to-Right conversion is possible (and at least as cheap as Right-to-Left)
-                outTypes[0] = right;
-                outTypes[1] = right;
-                outTypes[2] = right;
+                types[0] = right;
+                types[1] = right;
+                types[2] = right;
             } else {
                 return false;
             }
             if (isRelational()) {
-                outTypes[2] = context.getTypes().mBool;
+                types[2] = context.getTypes().mBool;
             }
             return true;
         }

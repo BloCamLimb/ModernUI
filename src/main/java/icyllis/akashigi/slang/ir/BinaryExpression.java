@@ -22,6 +22,7 @@ import icyllis.akashigi.slang.Operator;
 import icyllis.akashigi.slang.ThreadContext;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * A binary operation.
@@ -45,6 +46,7 @@ public final class BinaryExpression extends Expression {
      * Creates a potentially-simplified form of the expression. Determines the result type
      * programmatically.
      */
+    @Nullable
     public static Expression convert(int position,
                                      Expression left,
                                      Operator op,
@@ -59,16 +61,16 @@ public final class BinaryExpression extends Expression {
 
         boolean isAssignment = op.isAssignment();
 
-        Type[] outTypes = new Type[3];
-        if (!op.determineBinaryType(context, rawLeftType, rawRightType, outTypes)) {
+        Type[] types = new Type[3];
+        if (!op.determineBinaryType(rawLeftType, rawRightType, types)) {
             context.error(position, "type mismatch: '" + op.tightOperatorName() +
                     "' cannot operate on '" + left.getType().getName() + "', '" +
                     right.getType().getName() + "'");
             return null;
         }
-        Type leftType = outTypes[0];
-        Type rightType = outTypes[1];
-        Type resultType = outTypes[2];
+        Type leftType = types[0];
+        Type rightType = types[1];
+        Type resultType = types[2];
 
         if (isAssignment && leftType.getComponentType().isOpaque()) {
             context.error(position, "assignments to opaque type '" + left.getType().getName() +
@@ -77,7 +79,13 @@ public final class BinaryExpression extends Expression {
         }
 
         left = leftType.coerceExpression(left);
+        if (left == null) {
+            return null;
+        }
         right = rightType.coerceExpression(right);
+        if (right == null) {
+            return null;
+        }
 
         return new BinaryExpression(position, left, op, right, resultType);
     }

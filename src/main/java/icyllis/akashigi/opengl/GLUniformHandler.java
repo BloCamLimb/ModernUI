@@ -85,7 +85,7 @@ public class GLUniformHandler extends UniformHandler {
         var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,
                 type,
-                ShaderVar.TypeModifier_None,
+                ShaderVar.kNone_TypeModifier,
                 arrayCount,
                 layoutQualifier,
                 "");
@@ -112,8 +112,8 @@ public class GLUniformHandler extends UniformHandler {
         var tempInfo = new UniformInfo();
         tempInfo.mVariable = new ShaderVar(resolvedName,
                 SLType.kSampler2D,
-                ShaderVar.TypeModifier_Uniform,
-                ShaderVar.NonArray,
+                ShaderVar.kUniform_TypeModifier,
+                ShaderVar.kNonArray,
                 layoutQualifier,
                 "");
         tempInfo.mVisibility = Engine.ShaderFlags.kFragment;

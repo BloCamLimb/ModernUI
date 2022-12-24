@@ -280,95 +280,95 @@ public final class BuiltinTypes {
      * Initializes the core SL types.
      */
     public BuiltinTypes() {
-        mVoid = Type.makeSpecialType("void", "v", Type.TYPE_KIND_VOID);
+        mVoid = Type.makeSpecialType("void", "v", Type.kVoid_TypeKind);
 
         // scalar and vector types
 
         mBool = Type.makeScalarType(
-                "bool", "b", Type.SCALAR_KIND_BOOLEAN, /*priority=*/0, /*bitWidth=*/1);
-        mBool2 = Type.makeVectorType("bool2", "b2", mBool, /*vectorSize*/2);
-        mBool3 = Type.makeVectorType("bool3", "b3", mBool, /*vectorSize*/3);
-        mBool4 = Type.makeVectorType("bool4", "b4", mBool, /*vectorSize*/4);
+                "bool", "b", Type.kBoolean_ScalarKind, /*rank=*/0, /*width=*/1);
+        mBool2 = Type.makeVectorType("bool2", "b2", mBool, /*rows*/2);
+        mBool3 = Type.makeVectorType("bool3", "b3", mBool, /*rows*/3);
+        mBool4 = Type.makeVectorType("bool4", "b4", mBool, /*rows*/4);
 
         mShort = Type.makeScalarType(
-                "short", "s", Type.SCALAR_KIND_SIGNED, /*priority=*/3, /*bitWidth=*/16);
-        mShort2 = Type.makeVectorType("short2", "s2", mShort, /*vectorSize*/2);
-        mShort3 = Type.makeVectorType("short3", "s3", mShort, /*vectorSize*/3);
-        mShort4 = Type.makeVectorType("short4", "s4", mShort, /*vectorSize*/4);
+                "short", "s", Type.kSigned_ScalarKind, /*rank=*/3, /*width=*/16);
+        mShort2 = Type.makeVectorType("short2", "s2", mShort, /*rows*/2);
+        mShort3 = Type.makeVectorType("short3", "s3", mShort, /*rows*/3);
+        mShort4 = Type.makeVectorType("short4", "s4", mShort, /*rows*/4);
 
         mUShort = Type.makeScalarType(
-                "ushort", "S", Type.SCALAR_KIND_UNSIGNED, /*priority=*/4, /*bitWidth=*/16);
-        mUShort2 = Type.makeVectorType("ushort2", "S2", mUShort, /*vectorSize*/2);
-        mUShort3 = Type.makeVectorType("ushort3", "S3", mUShort, /*vectorSize*/3);
-        mUShort4 = Type.makeVectorType("ushort4", "S4", mUShort, /*vectorSize*/4);
+                "ushort", "S", Type.kUnsigned_ScalarKind, /*rank=*/4, /*width=*/16);
+        mUShort2 = Type.makeVectorType("ushort2", "S2", mUShort, /*rows*/2);
+        mUShort3 = Type.makeVectorType("ushort3", "S3", mUShort, /*rows*/3);
+        mUShort4 = Type.makeVectorType("ushort4", "S4", mUShort, /*rows*/4);
 
         mInt = Type.makeScalarType(
-                "int", "i", Type.SCALAR_KIND_SIGNED, /*priority=*/6, /*bitWidth=*/32);
-        mInt2 = Type.makeVectorType("int2", "i2", mInt, /*vectorSize*/2);
-        mInt3 = Type.makeVectorType("int3", "i3", mInt, /*vectorSize*/3);
-        mInt4 = Type.makeVectorType("int4", "i4", mInt, /*vectorSize*/4);
+                "int", "i", Type.kSigned_ScalarKind, /*rank=*/6, /*width=*/32);
+        mInt2 = Type.makeVectorType("int2", "i2", mInt, /*rows*/2);
+        mInt3 = Type.makeVectorType("int3", "i3", mInt, /*rows*/3);
+        mInt4 = Type.makeVectorType("int4", "i4", mInt, /*rows*/4);
 
         mUInt = Type.makeScalarType(
-                "uint", "I", Type.SCALAR_KIND_UNSIGNED, /*priority=*/7, /*bitWidth=*/32);
-        mUInt2 = Type.makeVectorType("uint2", "I2", mUInt, /*vectorSize*/2);
-        mUInt3 = Type.makeVectorType("uint3", "I3", mUInt, /*vectorSize*/3);
-        mUInt4 = Type.makeVectorType("uint4", "I4", mUInt, /*vectorSize*/4);
+                "uint", "I", Type.kUnsigned_ScalarKind, /*rank=*/7, /*width=*/32);
+        mUInt2 = Type.makeVectorType("uint2", "I2", mUInt, /*rows*/2);
+        mUInt3 = Type.makeVectorType("uint3", "I3", mUInt, /*rows*/3);
+        mUInt4 = Type.makeVectorType("uint4", "I4", mUInt, /*rows*/4);
 
         mHalf = Type.makeScalarType(
-                "half", "h", Type.SCALAR_KIND_FLOAT, /*priority=*/12, /*bitWidth=*/16);
-        mHalf2 = Type.makeVectorType("half2", "h2", mHalf, /*vectorSize*/2);
-        mHalf3 = Type.makeVectorType("half3", "h3", mHalf, /*vectorSize*/3);
-        mHalf4 = Type.makeVectorType("half4", "h4", mHalf, /*vectorSize*/4);
+                "half", "h", Type.kFloat_ScalarKind, /*rank=*/12, /*width=*/16);
+        mHalf2 = Type.makeVectorType("half2", "h2", mHalf, /*rows*/2);
+        mHalf3 = Type.makeVectorType("half3", "h3", mHalf, /*rows*/3);
+        mHalf4 = Type.makeVectorType("half4", "h4", mHalf, /*rows*/4);
 
         mFloat = Type.makeScalarType(
-                "float", "f", Type.SCALAR_KIND_FLOAT, /*priority=*/13, /*bitWidth=*/32);
-        mFloat2 = Type.makeVectorType("float2", "f2", mFloat, /*vectorSize*/2);
-        mFloat3 = Type.makeVectorType("float3", "f3", mFloat, /*vectorSize*/3);
-        mFloat4 = Type.makeVectorType("float4", "f4", mFloat, /*vectorSize*/4);
+                "float", "f", Type.kFloat_ScalarKind, /*rank=*/13, /*width=*/32);
+        mFloat2 = Type.makeVectorType("float2", "f2", mFloat, /*rows*/2);
+        mFloat3 = Type.makeVectorType("float3", "f3", mFloat, /*rows*/3);
+        mFloat4 = Type.makeVectorType("float4", "f4", mFloat, /*rows*/4);
 
         mDouble = Type.makeScalarType(
-                "double", "d", Type.SCALAR_KIND_FLOAT, /*priority=*/15, /*bitWidth=*/64);
-        mDouble2 = Type.makeVectorType("double2", "d2", mDouble, /*vectorSize*/2);
-        mDouble3 = Type.makeVectorType("double3", "d3", mDouble, /*vectorSize*/3);
-        mDouble4 = Type.makeVectorType("double4", "d4", mDouble, /*vectorSize*/4);
+                "double", "d", Type.kFloat_ScalarKind, /*rank=*/15, /*width=*/64);
+        mDouble2 = Type.makeVectorType("double2", "d2", mDouble, /*rows*/2);
+        mDouble3 = Type.makeVectorType("double3", "d3", mDouble, /*rows*/3);
+        mDouble4 = Type.makeVectorType("double4", "d4", mDouble, /*rows*/4);
 
         // matrix types
 
-        mHalf2x2 = Type.makeMatrixType("half2x2", "h22", mHalf, /*columns=*/2, /*rows=*/2);
-        mHalf2x3 = Type.makeMatrixType("half2x3", "h23", mHalf, /*columns=*/2, /*rows=*/3);
-        mHalf2x4 = Type.makeMatrixType("half2x4", "h24", mHalf, /*columns=*/2, /*rows=*/4);
+        mHalf2x2 = Type.makeMatrixType("half2x2", "h22", mHalf, /*cols=*/2, /*rows=*/2);
+        mHalf2x3 = Type.makeMatrixType("half2x3", "h23", mHalf, /*cols=*/2, /*rows=*/3);
+        mHalf2x4 = Type.makeMatrixType("half2x4", "h24", mHalf, /*cols=*/2, /*rows=*/4);
 
-        mHalf3x2 = Type.makeMatrixType("half3x2", "h32", mHalf, /*columns=*/3, /*rows=*/2);
-        mHalf3x3 = Type.makeMatrixType("half3x3", "h33", mHalf, /*columns=*/3, /*rows=*/3);
-        mHalf3x4 = Type.makeMatrixType("half3x4", "h34", mHalf, /*columns=*/3, /*rows=*/4);
+        mHalf3x2 = Type.makeMatrixType("half3x2", "h32", mHalf, /*cols=*/3, /*rows=*/2);
+        mHalf3x3 = Type.makeMatrixType("half3x3", "h33", mHalf, /*cols=*/3, /*rows=*/3);
+        mHalf3x4 = Type.makeMatrixType("half3x4", "h34", mHalf, /*cols=*/3, /*rows=*/4);
 
-        mHalf4x2 = Type.makeMatrixType("half4x2", "h42", mHalf, /*columns=*/4, /*rows=*/2);
-        mHalf4x3 = Type.makeMatrixType("half4x3", "h43", mHalf, /*columns=*/4, /*rows=*/3);
-        mHalf4x4 = Type.makeMatrixType("half4x4", "h44", mHalf, /*columns=*/4, /*rows=*/4);
+        mHalf4x2 = Type.makeMatrixType("half4x2", "h42", mHalf, /*cols=*/4, /*rows=*/2);
+        mHalf4x3 = Type.makeMatrixType("half4x3", "h43", mHalf, /*cols=*/4, /*rows=*/3);
+        mHalf4x4 = Type.makeMatrixType("half4x4", "h44", mHalf, /*cols=*/4, /*rows=*/4);
 
-        mFloat2x2 = Type.makeMatrixType("float2x2", "f22", mFloat, /*columns=*/2, /*rows=*/2);
-        mFloat2x3 = Type.makeMatrixType("float2x3", "f23", mFloat, /*columns=*/2, /*rows=*/3);
-        mFloat2x4 = Type.makeMatrixType("float2x4", "f24", mFloat, /*columns=*/2, /*rows=*/4);
+        mFloat2x2 = Type.makeMatrixType("float2x2", "f22", mFloat, /*cols=*/2, /*rows=*/2);
+        mFloat2x3 = Type.makeMatrixType("float2x3", "f23", mFloat, /*cols=*/2, /*rows=*/3);
+        mFloat2x4 = Type.makeMatrixType("float2x4", "f24", mFloat, /*cols=*/2, /*rows=*/4);
 
-        mFloat3x2 = Type.makeMatrixType("float3x2", "f32", mFloat, /*columns=*/3, /*rows=*/2);
-        mFloat3x3 = Type.makeMatrixType("float3x3", "f33", mFloat, /*columns=*/3, /*rows=*/3);
-        mFloat3x4 = Type.makeMatrixType("float3x4", "f34", mFloat, /*columns=*/3, /*rows=*/4);
+        mFloat3x2 = Type.makeMatrixType("float3x2", "f32", mFloat, /*cols=*/3, /*rows=*/2);
+        mFloat3x3 = Type.makeMatrixType("float3x3", "f33", mFloat, /*cols=*/3, /*rows=*/3);
+        mFloat3x4 = Type.makeMatrixType("float3x4", "f34", mFloat, /*cols=*/3, /*rows=*/4);
 
-        mFloat4x2 = Type.makeMatrixType("float4x2", "f42", mFloat, /*columns=*/4, /*rows=*/2);
-        mFloat4x3 = Type.makeMatrixType("float4x3", "f43", mFloat, /*columns=*/4, /*rows=*/3);
-        mFloat4x4 = Type.makeMatrixType("float4x4", "f44", mFloat, /*columns=*/4, /*rows=*/4);
+        mFloat4x2 = Type.makeMatrixType("float4x2", "f42", mFloat, /*cols=*/4, /*rows=*/2);
+        mFloat4x3 = Type.makeMatrixType("float4x3", "f43", mFloat, /*cols=*/4, /*rows=*/3);
+        mFloat4x4 = Type.makeMatrixType("float4x4", "f44", mFloat, /*cols=*/4, /*rows=*/4);
 
-        mDouble2x2 = Type.makeMatrixType("double2x2", "d22", mDouble, /*columns=*/2, /*rows=*/2);
-        mDouble2x3 = Type.makeMatrixType("double2x3", "d23", mDouble, /*columns=*/2, /*rows=*/3);
-        mDouble2x4 = Type.makeMatrixType("double2x4", "d24", mDouble, /*columns=*/2, /*rows=*/4);
+        mDouble2x2 = Type.makeMatrixType("double2x2", "d22", mDouble, /*cols=*/2, /*rows=*/2);
+        mDouble2x3 = Type.makeMatrixType("double2x3", "d23", mDouble, /*cols=*/2, /*rows=*/3);
+        mDouble2x4 = Type.makeMatrixType("double2x4", "d24", mDouble, /*cols=*/2, /*rows=*/4);
 
-        mDouble3x2 = Type.makeMatrixType("double3x2", "d32", mDouble, /*columns=*/3, /*rows=*/2);
-        mDouble3x3 = Type.makeMatrixType("double3x3", "d33", mDouble, /*columns=*/3, /*rows=*/3);
-        mDouble3x4 = Type.makeMatrixType("double3x4", "d34", mDouble, /*columns=*/3, /*rows=*/4);
+        mDouble3x2 = Type.makeMatrixType("double3x2", "d32", mDouble, /*cols=*/3, /*rows=*/2);
+        mDouble3x3 = Type.makeMatrixType("double3x3", "d33", mDouble, /*cols=*/3, /*rows=*/3);
+        mDouble3x4 = Type.makeMatrixType("double3x4", "d34", mDouble, /*cols=*/3, /*rows=*/4);
 
-        mDouble4x2 = Type.makeMatrixType("double4x2", "d42", mDouble, /*columns=*/4, /*rows=*/2);
-        mDouble4x3 = Type.makeMatrixType("double4x3", "d43", mDouble, /*columns=*/4, /*rows=*/3);
-        mDouble4x4 = Type.makeMatrixType("double4x4", "d44", mDouble, /*columns=*/4, /*rows=*/4);
+        mDouble4x2 = Type.makeMatrixType("double4x2", "d42", mDouble, /*cols=*/4, /*rows=*/2);
+        mDouble4x3 = Type.makeMatrixType("double4x3", "d43", mDouble, /*cols=*/4, /*rows=*/3);
+        mDouble4x4 = Type.makeMatrixType("double4x4", "d44", mDouble, /*cols=*/4, /*rows=*/4);
 
         // GLSL vector aliases
 
@@ -502,94 +502,95 @@ public final class BuiltinTypes {
         // opaque types (image, texture, sampler, combined sampler)
 
         mImage1D = Type.makeImageType("image1D", "M1", mFloat,
-                Spv.SpvDim1D, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim1D, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mImage2D = Type.makeImageType("image2D", "M2", mFloat,
-                Spv.SpvDim2D, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mImage3D = Type.makeImageType("image3D", "M3", mFloat,
-                Spv.SpvDim3D, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim3D, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mImageCube = Type.makeImageType("imageCube", "MC", mFloat,
-                Spv.SpvDimCube, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDimCube, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mImageBuffer = Type.makeImageType("imageBuffer", "MB", mFloat,
-                Spv.SpvDimBuffer, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDimBuffer, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mImage1DArray = Type.makeImageType("image1DArray", "M1A", mFloat,
-                Spv.SpvDim1D, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDim1D, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mImage2DArray = Type.makeImageType("image2DArray", "M2A", mFloat,
-                Spv.SpvDim2D, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mImageCubeArray = Type.makeImageType("imageCubeArray", "MCA", mFloat,
-                Spv.SpvDimCube, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDimCube, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mImage2DMS = Type.makeImageType("image2DMS", "MM", mFloat,
-                Spv.SpvDim2D, /*isArrayed=*/false, /*isMultisampled=*/true);
+                Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/true);
         mImage2DMSArray = Type.makeImageType("image2DMSArray", "MMA", mFloat,
-                Spv.SpvDim2D, /*isArrayed=*/true, /*isMultisampled=*/true);
+                Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/true);
 
         mSubpassInput = Type.makeImageType("subpassInput", "MP", mFloat,
-                Spv.SpvDimSubpassData, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDimSubpassData, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mSubpassInputMS = Type.makeImageType("subpassInputMS", "MPM", mFloat,
-                Spv.SpvDimSubpassData, /*isArrayed=*/false, /*isMultisampled=*/true);
+                Spv.SpvDimSubpassData, /*isArrayed=*/false, /*isMultiSampled=*/true);
 
         mTexture1D = Type.makeTextureType("texture1D", "T1", mFloat,
-                Spv.SpvDim1D, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim1D, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mTexture2D = Type.makeTextureType("texture2D", "T2", mFloat,
-                Spv.SpvDim2D, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mTexture3D = Type.makeTextureType("texture3D", "T3", mFloat,
-                Spv.SpvDim3D, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim3D, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mTextureCube = Type.makeTextureType("textureCube", "TC", mFloat,
-                Spv.SpvDimCube, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDimCube, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mTextureBuffer = Type.makeTextureType("textureBuffer", "TB", mFloat,
-                Spv.SpvDimBuffer, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDimBuffer, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mTexture1DArray = Type.makeTextureType("texture1DArray", "T1A", mFloat,
-                Spv.SpvDim1D, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDim1D, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mTexture2DArray = Type.makeTextureType("texture2DArray", "T2A", mFloat,
-                Spv.SpvDim2D, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mTextureCubeArray = Type.makeTextureType("textureCubeArray", "TCA", mFloat,
-                Spv.SpvDimCube, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDimCube, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mTexture2DMS = Type.makeTextureType("texture2DMS", "TM", mFloat,
-                Spv.SpvDim2D, /*isArrayed=*/false, /*isMultisampled=*/true);
+                Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/true);
         mTexture2DMSArray = Type.makeTextureType("texture2DMSArray", "TMA", mFloat,
-                Spv.SpvDim2D, /*isArrayed=*/true, /*isMultisampled=*/true);
+                Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/true);
 
-        mSampler = Type.makeSamplerType("sampler", "ss", mVoid, /*isShadow*/false);
-        mSamplerShadow = Type.makeSamplerType("samplerShadow", "sss", mVoid, /*isShadow*/true);
+        mSampler = Type.makeSeparateType("sampler", "ss", mVoid, /*isShadow*/false);
+        mSamplerShadow = Type.makeSeparateType("samplerShadow", "sss", mVoid, /*isShadow*/true);
 
         mSampler1D = Type.makeCombinedType("sampler1D", "Z1", mFloat,
-                Spv.SpvDim1D, /*isShadow*/false, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim1D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mSampler2D = Type.makeCombinedType("sampler2D", "Z2", mFloat,
-                Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mSampler3D = Type.makeCombinedType("sampler3D", "Z3", mFloat,
-                Spv.SpvDim3D, /*isShadow*/false, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim3D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mSamplerCube = Type.makeCombinedType("samplerCube", "ZC", mFloat,
-                Spv.SpvDimCube, /*isShadow*/false, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDimCube, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mSamplerBuffer = Type.makeCombinedType("samplerBuffer", "ZB", mFloat,
-                Spv.SpvDimBuffer, /*isShadow*/false, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDimBuffer, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mSampler1DArray = Type.makeCombinedType("sampler1DArray", "Z1A", mFloat,
-                Spv.SpvDim1D, /*isShadow*/false, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDim1D, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mSampler2DArray = Type.makeCombinedType("sampler2DArray", "Z2A", mFloat,
-                Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mSamplerCubeArray = Type.makeCombinedType("samplerCubeArray", "ZCA", mFloat,
-                Spv.SpvDimCube, /*isShadow*/false, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDimCube, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mSampler2DMS = Type.makeCombinedType("sampler2DMS", "ZM", mFloat,
-                Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/false, /*isMultisampled=*/true);
+                Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/true);
         mSampler2DMSArray = Type.makeCombinedType("sampler2DMSArray", "ZMA", mFloat,
-                Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/true, /*isMultisampled=*/true);
+                Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/true);
 
         mSampler1DShadow = Type.makeCombinedType("sampler1DShadow", "Z4", mFloat,
-                Spv.SpvDim1D, /*isShadow*/true, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim1D, /*isShadow*/true, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mSampler2DShadow = Type.makeCombinedType("sampler2DShadow", "Z5", mFloat,
-                Spv.SpvDim2D, /*isShadow*/true, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDim2D, /*isShadow*/true, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mSamplerCubeShadow = Type.makeCombinedType("samplerCubeShadow", "ZX", mFloat,
-                Spv.SpvDimCube, /*isShadow*/true, /*isArrayed=*/false, /*isMultisampled=*/false);
+                Spv.SpvDimCube, /*isShadow*/true, /*isArrayed=*/false, /*isMultiSampled=*/false);
         mSampler1DArrayShadow = Type.makeCombinedType("sampler1DArrayShadow", "Z4A", mFloat,
-                Spv.SpvDim1D, /*isShadow*/true, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDim1D, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mSampler2DArrayShadow = Type.makeCombinedType("sampler2DArrayShadow", "Z5A", mFloat,
-                Spv.SpvDim2D, /*isShadow*/true, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDim2D, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
         mSamplerCubeArrayShadow = Type.makeCombinedType("samplerCubeArrayShadow", "ZXA", mFloat,
-                Spv.SpvDimCube, /*isShadow*/true, /*isArrayed=*/true, /*isMultisampled=*/false);
+                Spv.SpvDimCube, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
 
-        mInvalid = Type.makeSpecialType(Compiler.INVALID_TAG, "O", Type.TYPE_KIND_OTHER);
+        mInvalid = Type.makeSpecialType(Compiler.INVALID_TAG, "O", Type.kOther_TypeKind);
 
         mGenFType = Type.makeGenericType("__genFType", mFloat, mFloat2, mFloat3, mFloat4);
         mGenIType = Type.makeGenericType("__genIType", mInt, mInt2, mInt3, mInt4);
 
-        mPoison = Type.makeSpecialType(Compiler.POISON_TAG, "P", Type.TYPE_KIND_OTHER);
+        // poison means a bad value or there's an error
+        mPoison = Type.makeSpecialType(Compiler.POISON_TAG, "P", Type.kOther_TypeKind);
     }
 }
