@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.*;
-
 /**
  * The conservative clip computes the maximum rectangular bounds of the actual clipping region
  * for quick reject (a preprocessing before transferring drawing commands to GPU).

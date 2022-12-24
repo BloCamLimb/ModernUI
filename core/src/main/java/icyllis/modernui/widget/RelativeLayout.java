@@ -18,7 +18,7 @@
 
 package icyllis.modernui.widget;
 
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ArrayMap;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;

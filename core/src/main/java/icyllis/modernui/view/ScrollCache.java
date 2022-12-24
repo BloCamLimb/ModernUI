@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 
 /**
  * <p>ScrollCache holds various fields used by a View when scrolling

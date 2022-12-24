@@ -358,7 +358,7 @@ public class TestLinearLayout extends LinearLayout {
         setLayoutTransition(new LayoutTransition());
     }
 
-    private static final FloatProperty<TestLinearLayout> sRoundRectLengthProp = new FloatProperty<>() {
+    private static final FloatProperty<TestLinearLayout> sRoundRectLengthProp = new FloatProperty<>("roundRectLen") {
         @Override
         public void setValue(@Nonnull TestLinearLayout object, float value) {
             object.mRoundRectLen = value;
@@ -370,7 +370,7 @@ public class TestLinearLayout extends LinearLayout {
         }
     };
 
-    private static final FloatProperty<TestLinearLayout> sSmoothRadiusProp = new FloatProperty<>() {
+    private static final FloatProperty<TestLinearLayout> sSmoothRadiusProp = new FloatProperty<>("smoothRadius") {
         @Override
         public void setValue(@Nonnull TestLinearLayout object, float value) {
             object.mSmoothRadius = value;

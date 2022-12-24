@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.Rect;
-
 import javax.annotation.Nonnull;
 
 //TODO wip

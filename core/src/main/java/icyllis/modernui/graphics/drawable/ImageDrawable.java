@@ -21,7 +21,7 @@ package icyllis.modernui.graphics.drawable;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Image;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.graphics.opengl.TextureManager;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;

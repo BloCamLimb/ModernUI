@@ -102,10 +102,10 @@ public final class ObjectAnimator extends ValueAnimator {
      * @return An ObjectAnimator object that is set up to animate between the given values.
      */
     @Nonnull
-    public static <T> ObjectAnimator ofColor(@Nullable T target, @Nonnull IntProperty<T> property,
-                                             @Nonnull int... values) {
+    public static <T> ObjectAnimator ofArgb(@Nullable T target, @Nonnull IntProperty<T> property,
+                                            @Nonnull int... values) {
         PropertyValuesHolder pvh = PropertyValuesHolder.ofInt(property, values);
-        pvh.setEvaluator(ColorEvaluator.getInstance());
+        pvh.setEvaluator(ArgbEvaluator.getInstance());
         return ofPropertyValuesHolder(target, pvh);
     }
 

@@ -289,10 +289,10 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * @return A ValueAnimator object that is set up to animate between the given values.
      */
     @Nonnull
-    public static ValueAnimator ofColor(@Nonnull int... values) {
+    public static ValueAnimator ofArgb(@Nonnull int... values) {
         ValueAnimator anim = new ValueAnimator();
         anim.setValues(PropertyValuesHolder.ofInt(values));
-        anim.setEvaluator(ColorEvaluator.getInstance());
+        anim.setEvaluator(ArgbEvaluator.getInstance());
         return anim;
     }
 
@@ -732,7 +732,7 @@ public class ValueAnimator extends Animator implements AnimationHandler.FrameCal
      * of <code>startValue</code> and <code>endValue</code> in the constructor. But if these values
      * are not one of these primitive types, or if different evaluation is desired (such as is
      * necessary with int values that represent colors), a custom evaluator needs to be assigned.
-     * For example, when running an animation on color values, the {@link ColorEvaluator}
+     * For example, when running an animation on color values, the {@link ArgbEvaluator}
      * should be used to get correct RGB color interpolation.
      *
      * <p>If this ValueAnimator has only one set of values being animated between, this evaluator

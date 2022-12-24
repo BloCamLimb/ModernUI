@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.*;
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
@@ -129,7 +127,7 @@ public abstract class BaseDevice extends MatrixProvider {
         // To get the transform from this space to the other device's, transform from our space to
         // global and then from global to the other device.
         out.set(mDeviceToGlobal);
-        out.postMul(device.mGlobalToDevice);
+        out.postConcat(device.mGlobalToDevice);
     }
 
     @Override
@@ -145,8 +143,8 @@ public abstract class BaseDevice extends MatrixProvider {
             } else {
                 localToMarker.set(globalToMarker);
             }
-            localToMarker.preMul(mDeviceToGlobal);
-            localToMarker.preMul(mLocalToDevice);
+            localToMarker.preConcat(mDeviceToGlobal);
+            localToMarker.preConcat(mLocalToDevice);
             return true;
         }
         return false;
@@ -193,7 +191,7 @@ public abstract class BaseDevice extends MatrixProvider {
         }
         if (!mGlobalToDevice.isIdentity()) {
             // Map from the global CTM state to this device's coordinate system.
-            mLocalToDevice.postMul(mGlobalToDevice);
+            mLocalToDevice.postConcat(mGlobalToDevice);
         }
     }
 

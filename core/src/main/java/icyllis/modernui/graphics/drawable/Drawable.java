@@ -23,7 +23,7 @@ import icyllis.modernui.core.Core;
 import icyllis.modernui.core.Handler;
 import icyllis.modernui.graphics.BlendMode;
 import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.util.StateSet;

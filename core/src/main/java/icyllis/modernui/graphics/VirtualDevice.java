@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.Rect;
-import icyllis.modernui.math.RectF;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 

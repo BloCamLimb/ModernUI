@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view.menu;
 
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.Gravity;
 import icyllis.modernui.view.View;
 import icyllis.modernui.view.ViewConfiguration;

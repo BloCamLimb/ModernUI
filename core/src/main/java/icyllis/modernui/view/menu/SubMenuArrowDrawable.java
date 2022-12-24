@@ -21,7 +21,7 @@ package icyllis.modernui.view.menu;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.material.MaterialDrawable;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.LayoutDirection;
 import icyllis.modernui.view.View;
 

@@ -21,7 +21,7 @@ package icyllis.modernui.widget;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.transition.AutoTransition;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;

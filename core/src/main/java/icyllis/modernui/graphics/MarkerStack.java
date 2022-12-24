@@ -18,8 +18,6 @@
 
 package icyllis.modernui.graphics;
 
-import icyllis.modernui.math.Matrix4;
-
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 

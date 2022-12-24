@@ -18,8 +18,8 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.math.Point;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Point;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.view.View.NestedScrollType;
 import icyllis.modernui.view.View.ScrollAxis;
 

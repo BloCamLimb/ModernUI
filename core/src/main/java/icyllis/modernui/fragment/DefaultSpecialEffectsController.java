@@ -25,7 +25,7 @@ import icyllis.modernui.animation.ObjectAnimator;
 import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.core.CancellationSignal;
 import icyllis.modernui.fragment.SpecialEffectsController.Operation.State;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.transition.Transition;
 import icyllis.modernui.transition.TransitionManager;
 import icyllis.modernui.transition.TransitionSet;

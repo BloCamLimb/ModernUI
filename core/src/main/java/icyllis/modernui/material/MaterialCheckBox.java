@@ -22,7 +22,7 @@ import icyllis.modernui.R;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.StateListDrawable;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.widget.CheckBox;

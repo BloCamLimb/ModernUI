@@ -23,7 +23,7 @@ import icyllis.modernui.animation.TimeInterpolator;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.SparseArray;
 import icyllis.modernui.util.SparseBooleanArray;
 import icyllis.modernui.util.StateSet;

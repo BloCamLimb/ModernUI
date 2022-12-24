@@ -18,7 +18,7 @@
 
 package icyllis.modernui.view;
 
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import org.jetbrains.annotations.ApiStatus;
 
 /**

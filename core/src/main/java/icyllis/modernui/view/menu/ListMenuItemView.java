@@ -24,7 +24,7 @@ import icyllis.modernui.graphics.Paint;
 import icyllis.modernui.graphics.drawable.Drawable;
 import icyllis.modernui.material.MaterialCheckBox;
 import icyllis.modernui.material.MaterialRadioButton;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.ColorStateList;
 import icyllis.modernui.util.StateSet;
 import icyllis.modernui.view.Gravity;

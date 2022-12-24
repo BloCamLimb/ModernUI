@@ -21,10 +21,10 @@ package icyllis.modernui.widget;
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
-import icyllis.modernui.math.FMath;
-import icyllis.modernui.math.Matrix4;
-import icyllis.modernui.math.Rect;
-import icyllis.modernui.math.RectF;
+import icyllis.modernui.graphics.FMath;
+import icyllis.modernui.graphics.Matrix4;
+import icyllis.modernui.graphics.Rect;
+import icyllis.modernui.graphics.RectF;
 import icyllis.modernui.util.Pool;
 import icyllis.modernui.util.Pools;
 import icyllis.modernui.view.*;
@@ -472,7 +472,7 @@ public class CoordinatorLayout extends ViewGroup {
         m.preTranslate(view.getLeft(), view.getTop());
 
         if (!view.getMatrix().isIdentity()) {
-            m.preMul(view.getMatrix());
+            m.preConcat(view.getMatrix());
         }
     }
 

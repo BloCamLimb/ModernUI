@@ -20,7 +20,7 @@ package icyllis.modernui.widget;
 
 import icyllis.modernui.core.Core;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.math.Rect;
+import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.DataSetObserver;
 import icyllis.modernui.view.*;
 import icyllis.modernui.view.menu.ShowableListMenu;
