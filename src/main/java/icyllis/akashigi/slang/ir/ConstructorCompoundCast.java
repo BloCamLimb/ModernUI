@@ -32,6 +32,7 @@ public final class ConstructorCompoundCast extends AnyConstructor {
 
     private ConstructorCompoundCast(int position, Type type, Expression... arguments) {
         super(position, ExpressionKind.kConstructorCompoundCast, type, arguments);
+        assert arguments.length == 1;
     }
 
     @Nonnull

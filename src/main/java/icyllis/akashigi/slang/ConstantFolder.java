@@ -30,6 +30,19 @@ public class ConstantFolder {
         return constexpr != null ? constexpr.clone(position) : expr;
     }
 
+    /**
+     * If the expression is a const variable with a known compile-time-constant value, returns that
+     * value. If not, returns the original expression as-is.
+     */
+    public static Expression getConstantValueForVariable(Expression expr) {
+        Expression constexpr = getConstantValueOrNullForVariable(expr);
+        return constexpr != null ? constexpr : expr;
+    }
+
+    /**
+     * If the expression is a const variable with a known compile-time-constant value, returns that
+     * value. If not, returns null.
+     */
     @Nullable
     public static Expression getConstantValueOrNullForVariable(Expression expr) {
         for (;;) {

@@ -30,36 +30,30 @@ public final class Engine {
     /**
      * Possible 3D APIs that may be used by Akashi Engine.
      */
-    public static final class BackendApi {
+    public interface BackendApi {
 
         /**
          * OpenGL 4.5 core profile (desktop)
          */
-        public static final int kOpenGL = 0;
+        int kOpenGL = 0;
         /**
          * Vulkan 1.1 (desktop and mobile)
          */
-        public static final int kVulkan = 1;
+        int kVulkan = 1;
         /**
          * Mock draws nothing. It is used for unit tests and to measure CPU overhead.
          */
-        public static final int kMock = 2;
-
-        private BackendApi() {
-        }
+        int kMock = 2;
     }
 
     /**
      * Image and Surfaces can be stored such that (0, 0) in texture space may correspond to
      * either the upper-left or lower-left content pixel.
      */
-    public static final class SurfaceOrigin {
+    public interface SurfaceOrigin {
 
-        public static final int kUpperLeft = 0; // top left, Vulkan
-        public static final int kLowerLeft = 1; // bottom left, OpenGL
-
-        private SurfaceOrigin() {
-        }
+        int kUpperLeft = 0; // top left, Vulkan
+        int kLowerLeft = 1; // bottom left, OpenGL
     }
 
     /**
@@ -68,104 +62,92 @@ public final class Engine {
      *
      * @see icyllis.akashigi.opengl.GLServer#markContextDirty(int)
      */
-    public static final class GLBackendState {
+    public interface GLBackendState {
 
-        public static final int kRenderTarget = 1;
-        public static final int kPixelStore = 1 << 1;
+        int kRenderTarget = 1;
+        int kPixelStore = 1 << 1;
         /**
          * Shader stages, vertex array and input buffers
          */
-        public static final int kPipeline = 1 << 2;
+        int kPipeline = 1 << 2;
         /**
          * Also includes samplers bound to texture units
          */
-        public static final int kTexture = 1 << 3;
-        public static final int kStencil = 1 << 4;
+        int kTexture = 1 << 3;
+        int kStencil = 1 << 4;
         /**
          * Antialiasing and conservative raster
          */
-        public static final int kRaster = 1 << 5;
-        public static final int kBlend = 1 << 6;
+        int kRaster = 1 << 5;
+        int kBlend = 1 << 6;
         /**
          * View state stands for scissor and viewport
          */
-        public static final int kView = 1 << 7;
-        public static final int kMisc = 1 << 8;
-
-        private GLBackendState() {
-        }
+        int kView = 1 << 7;
+        int kMisc = 1 << 8;
     }
 
     /**
      * Indicates the type of pending IO operations that can be recorded for GPU resources.
      */
-    public static final class IOType {
+    public interface IOType {
 
-        public static final int kRead = 0;
-        public static final int kWrite = 1;
-        public static final int kRW = 2;
-
-        private IOType() {
-        }
+        int kRead = 0;
+        int kWrite = 1;
+        int kRW = 2;
     }
 
     /**
      * Describes the intended usage a GPU buffer.
      */
-    public static final class BufferUsageFlags {
+    public interface BufferUsageFlags {
 
         /**
          * Vertex buffer (also includes instance buffer).
          */
-        public static final int kVertex = 1;
+        int kVertex = 1;
         /**
          * Index buffer, also known as element buffer.
          */
-        public static final int kIndex = 1 << 1;
+        int kIndex = 1 << 1;
         /**
          * Indirect buffer, also known as argument buffer.
          */
-        public static final int kDrawIndirect = 1 << 2;
+        int kDrawIndirect = 1 << 2;
 
-        public static final int kTransferSrc = 1 << 3; // transfer src only
-        public static final int kTransferDst = 1 << 4; // transfer dst only
+        int kTransferSrc = 1 << 3; // transfer src only
+        int kTransferDst = 1 << 4; // transfer dst only
 
         /**
          * For VBO, data store will be respecified once by Host and used at most a frame.
          * (Per-frame updates, VBO, IBO, etc.)
          */
-        public static final int kStream = 1 << 5;
+        int kStream = 1 << 5;
         /**
          * Data store will be specified by Host once and may be respecified
          * repeatedly by Device. (Fixed vertex/index buffer, etc.)
          */
-        public static final int kStatic = 1 << 6;
+        int kStatic = 1 << 6;
         /**
          * Data store will be respecified randomly by Host and Device.
          * (Uniform buffer, staging buffer, etc.)
          */
-        public static final int kDynamic = 1 << 7;
+        int kDynamic = 1 << 7;
 
-        public static final int kUniform = 1 << 8; // TODO remove, UBO is special buffers
-
-        private BufferUsageFlags() {
-        }
+        int kUniform = 1 << 8; // TODO remove, UBO is special buffers
     }
 
     /**
      * Shader flags.
      */
-    public static final class ShaderFlags {
+    public interface ShaderFlags {
 
-        public static final int kVertex = 1;
-        public static final int kFragment = 1 << 1;
-
-        private ShaderFlags() {
-        }
+        int kVertex = 1;
+        int kFragment = 1 << 1;
     }
 
     @ApiStatus.Internal
-    public static final class ColorType extends Core.ColorType {
+    public interface ColorType extends Core.ColorType {
 
         /**
          * Engine values.
@@ -175,7 +157,7 @@ public final class Engine {
          * data to a full RGBA quadruple. (e.g. using a R8 texture format as A8 color type but the API
          * only supports reading to RGBA8.)
          */
-        public static final int
+        int
                 kAlpha_8xxx = 21,
                 kAlpha_F32xxx = 22,
                 kGray_8xxx = 23,
@@ -185,19 +167,17 @@ public final class Engine {
          * <p>
          * Types used to initialize backend textures.
          */
-        public static final int
+        int
                 kRGB_888 = 25,
                 kR_16 = 26,
                 kR_F16 = 27;
-        public static final int kLast = kR_F16;
-
-        private ColorType() {
-        }
+        int
+                kLast = kR_F16;
 
         /**
          * @return bpp
          */
-        public static int bytesPerPixel(int colorType) {
+        static int bytesPerPixel(int colorType) {
             return switch (colorType) {
                 case kUnknown -> 0;
                 case kAlpha_8,
@@ -231,7 +211,7 @@ public final class Engine {
             };
         }
 
-        public static int channelFlags(int colorType) {
+        static int channelFlags(int colorType) {
             return switch (colorType) {
                 case kUnknown -> 0;
                 case kAlpha_8,
@@ -268,7 +248,7 @@ public final class Engine {
         /**
          * Block engine-private values.
          */
-        public static int toPublic(int colorType) {
+        static int toPublic(int colorType) {
             return switch (colorType) {
                 case kUnknown,
                         kAlpha_8,
@@ -398,16 +378,13 @@ public final class Engine {
      * We can't simply use POINTS or LINES, because both OpenGL and Vulkan can only guarantee
      * the rasterization of one pixel in screen coordinates, may or may not anti-aliased.
      */
-    public static final class PrimitiveType {
+    public interface PrimitiveType {
 
-        public static final byte kTriangleList = 0;     // separate triangle
-        public static final byte kTriangleStrip = 1;    // connected triangle
-        public static final byte kPointList = 2;        // 1 px only
-        public static final byte kLineList = 3;         // 1 px wide only
-        public static final byte kLineStrip = 4;        // 1 px wide only
-
-        private PrimitiveType() {
-        }
+        byte kTriangleList = 0;     // separate triangle
+        byte kTriangleStrip = 1;    // connected triangle
+        byte kPointList = 2;        // 1 px only
+        byte kLineList = 3;         // 1 px wide only
+        byte kLineStrip = 4;        // 1 px wide only
     }
 
     /**
@@ -425,68 +402,59 @@ public final class Engine {
      *
      * @see Resource
      */
-    public static final class BudgetType {
+    public interface BudgetType {
 
         /**
          * The resource is budgeted and is subject to cleaning up under budget pressure.
          */
-        public static final byte kBudgeted = 0;
+        byte kBudgeted = 0;
         /**
          * The resource is not budgeted and is cleaned up as soon as it has no refs regardless
          * of whether it has a unique or scratch key.
          */
-        public static final byte kNotBudgeted = 1;
+        byte kNotBudgeted = 1;
         /**
          * The resource is not budgeted and is allowed to remain in the cache with no refs
          * if it has a unique key. Scratch keys are ignored.
          */
-        public static final byte kWrapCacheable = 2;
-
-        private BudgetType() {
-        }
+        byte kWrapCacheable = 2;
     }
 
     /**
      * Load ops. Used to specify the load operation to be used when an OpsTask/OpsRenderPass
      * begins execution.
      */
-    public static final class LoadOp {
+    public interface LoadOp {
 
-        public static final byte kLoad = 0;
-        public static final byte kClear = 1;
-        public static final byte kDontCare = 2;
-
-        private LoadOp() {
-        }
+        byte kLoad = 0;
+        byte kClear = 1;
+        byte kDontCare = 2;
     }
 
     /**
      * Store ops. Used to specify the store operation to be used when an OpsTask/OpsRenderPass
      * ends execution.
      */
-    public static final class StoreOp {
+    public interface StoreOp {
 
-        public static final byte kStore = 0;
-        public static final byte kDontCare = 1;
-
-        private StoreOp() {
-        }
+        byte kStore = 0;
+        byte kDontCare = 1;
     }
 
     /**
      * Combination of load ops and store ops.
      */
-    public static final class LoadStoreOps {
+    public interface LoadStoreOps {
 
         // ensure LoadOp.kLast < (1 << kLoadOpShift)
-        private static final byte kLoadOpShift = 2;
+        byte kLoadOpShift = 2;
 
         /**
          * Combination of load ops and store ops.
          * 0-2 bits: StoreOp
          * 2-4 bits: LoadOp
          */
-        public static final byte
+        byte
                 kLoad_Store = (LoadOp.kLoad << kLoadOpShift) | StoreOp.kStore,
                 kClear_Store = (LoadOp.kClear << kLoadOpShift) | StoreOp.kStore,
                 kDontLoad_Store = (LoadOp.kDontCare << kLoadOpShift) | StoreOp.kStore,
@@ -494,29 +462,26 @@ public final class Engine {
                 kClear_DontStore = (LoadOp.kClear << kLoadOpShift) | StoreOp.kDontCare,
                 kDontLoad_DontStore = (LoadOp.kDontCare << kLoadOpShift) | StoreOp.kDontCare;
 
-        static {
-            assert (kLoad_Store == make(LoadOp.kLoad, StoreOp.kStore));
-            assert (kClear_Store == make(LoadOp.kClear, StoreOp.kStore));
-            assert (kDontLoad_Store == make(LoadOp.kDontCare, StoreOp.kStore));
-            assert (kLoad_DontStore == make(LoadOp.kLoad, StoreOp.kDontCare));
-            assert (kClear_DontStore == make(LoadOp.kClear, StoreOp.kDontCare));
-            assert (kDontLoad_DontStore == make(LoadOp.kDontCare, StoreOp.kDontCare));
-        }
-
-        private LoadStoreOps() {
-        }
-
-        public static byte make(byte load, byte store) {
+        static byte make(byte load, byte store) {
             return (byte) ((load << kLoadOpShift) | store);
         }
 
-        public static byte loadOp(byte ops) {
+        static byte loadOp(byte ops) {
             return (byte) (ops >>> kLoadOpShift);
         }
 
-        public static byte storeOp(byte ops) {
+        static byte storeOp(byte ops) {
             return (byte) (ops & ((1 << kLoadOpShift) - 1));
         }
+    }
+
+    static {
+        assert (LoadStoreOps.kLoad_Store == LoadStoreOps.make(LoadOp.kLoad, StoreOp.kStore));
+        assert (LoadStoreOps.kClear_Store == LoadStoreOps.make(LoadOp.kClear, StoreOp.kStore));
+        assert (LoadStoreOps.kDontLoad_Store == LoadStoreOps.make(LoadOp.kDontCare, StoreOp.kStore));
+        assert (LoadStoreOps.kLoad_DontStore == LoadStoreOps.make(LoadOp.kLoad, StoreOp.kDontCare));
+        assert (LoadStoreOps.kClear_DontStore == LoadStoreOps.make(LoadOp.kClear, StoreOp.kDontCare));
+        assert (LoadStoreOps.kDontLoad_DontStore == LoadStoreOps.make(LoadOp.kDontCare, StoreOp.kDontCare));
     }
 
     /**
@@ -531,31 +496,31 @@ public final class Engine {
      * An arbitrary combination of flags may result in unexpected behaviors.
      */
     @ApiStatus.Internal
-    public static final class SurfaceFlags extends Core.SurfaceFlags {
+    public interface SurfaceFlags extends Core.SurfaceFlags {
 
         /**
          * Means the pixels in the texture are read-only. {@link Texture} and {@link TextureProxy}
          * only.
          */
-        public static final int kReadOnly = kProtected << 1;
+        int kReadOnly = kProtected << 1;
         /**
          * When set, the proxy will be instantiated outside the allocator (e.g. for proxies that are
          * instantiated in on-flush callbacks). Otherwise, {@link ResourceAllocator} should instantiate
          * the proxy. {@link SurfaceProxy} only.
          */
-        public static final int kSkipAllocator = kProtected << 2;
+        int kSkipAllocator = kProtected << 2;
         /**
          * For TextureProxies created in a deferred list recording thread it is possible for the
          * unique key to be cleared on the backing {@link Texture} while the unique key remains on
          * the proxy. When set, it loosens up asserts that the key of an instantiated uniquely-keyed
          * texture proxy is also always set on the backing {@link Texture}. {@link TextureProxy} only.
          */
-        public static final int kDeferredProvider = kProtected << 3;
+        int kDeferredProvider = kProtected << 3;
         /**
          * This is a OpenGL only flag. It tells us that the internal render target wraps the OpenGL
          * default framebuffer (id=0) that preserved by window. {@link RenderTarget} only.
          */
-        public static final int kGLWrapDefaultFB = kProtected << 4;
+        int kGLWrapDefaultFB = kProtected << 4;
         /**
          * This means the render target is multi-sampled, and internally holds a non-msaa texture
          * for resolving into. The render target resolves itself by blit-ting into this internal
@@ -563,23 +528,20 @@ public final class Engine {
          * always resolve the render target before accessing this texture's data.) {@link RenderTarget}
          * only.
          */
-        public static final int kManualMSAAResolve = kProtected << 5;
+        int kManualMSAAResolve = kProtected << 5;
         /**
          * This is a Vulkan only flag. It tells us that the internal render target is wrapping a raw
          * Vulkan secondary command buffer. {@link RenderTarget} only.
          */
-        public static final int kVkWrapSecondaryCB = kProtected << 6;
-
-        private SurfaceFlags() {
-        }
+        int kVkWrapSecondaryCB = kProtected << 6;
     }
 
     /**
      * Types used to describe format of vertices in arrays.
      */
-    public static final class VertexAttribType {
+    public interface VertexAttribType {
 
-        public static final byte
+        byte
                 kFloat = 0,
                 kFloat2 = 1,
                 kFloat3 = 2,
@@ -587,42 +549,40 @@ public final class Engine {
                 kHalf = 4,
                 kHalf2 = 5,
                 kHalf4 = 6;
-        public static final byte
+        byte
                 kInt2 = 7,   // vector of 2 32-bit ints
                 kInt3 = 8,   // vector of 3 32-bit ints
                 kInt4 = 9;   // vector of 4 32-bit ints
-        public static final byte
+        byte
                 kByte = 10,   // signed byte
                 kByte2 = 11,  // vector of 2 8-bit signed bytes
                 kByte4 = 12,  // vector of 4 8-bit signed bytes
                 kUByte = 13,  // unsigned byte
                 kUByte2 = 14, // vector of 2 8-bit unsigned bytes
                 kUByte4 = 15; // vector of 4 8-bit unsigned bytes
-        public static final byte
+        byte
                 kUByte_norm = 16,  // unsigned byte, e.g. coverage, 0 -> 0.0f, 255 -> 1.0f.
                 kUByte4_norm = 17; // vector of 4 unsigned bytes, e.g. colors, 0 -> 0.0f, 255 -> 1.0f.
-        public static final byte
+        byte
                 kShort2 = 18,       // vector of 2 16-bit shorts.
                 kShort4 = 19;       // vector of 4 16-bit shorts.
-        public static final byte
+        byte
                 kUShort2 = 20,      // vector of 2 unsigned shorts. 0 -> 0, 65535 -> 65535.
                 kUShort2_norm = 21; // vector of 2 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
-        public static final byte
+        byte
                 kInt = 22,
                 kUInt = 23;
-        public static final byte
+        byte
                 kUShort_norm = 24;
-        public static final byte
+        byte
                 kUShort4_norm = 25; // vector of 4 unsigned shorts. 0 -> 0.0f, 65535 -> 1.0f.
-        public static final byte kLast = kUShort4_norm;
-
-        private VertexAttribType() {
-        }
+        byte
+                kLast = kUShort4_norm;
 
         /**
          * @return size in bytes
          */
-        public static int size(byte type) {
+        static int size(byte type) {
             switch (type) {
                 case kFloat:
                     return Float.BYTES;

@@ -21,43 +21,50 @@ package icyllis.akashigi.slang.ir;
 import icyllis.akashigi.slang.ConstantFolder;
 
 import javax.annotation.Nonnull;
+import java.util.OptionalDouble;
 
 /**
- * Represents the construction of a vector splat, such as `float3(n)`.
+ * Represents the construction of a diagonal matrix, such as `half3x3(n)`.
  * <p>
  * These always contain exactly 1 scalar.
  */
-public final class ConstructorVectorScalar extends AnyConstructor {
+public final class ConstructorMatrixScalar extends AnyConstructor {
 
-    private ConstructorVectorScalar(int position, Type type, Expression... arguments) {
-        super(position, ExpressionKind.kConstructorVectorScalar, type, arguments);
+    private ConstructorMatrixScalar(int position, Type type, Expression... arguments) {
+        super(position, ExpressionKind.kConstructorMatrixScalar, type, arguments);
         assert arguments.length == 1;
     }
 
-    // The input argument must be scalar. A "splat" to a scalar type will be optimized into a no-op.
     @Nonnull
     public static Expression make(int position, Type type, Expression arg) {
-        assert (type.isScalar() || type.isVector());
-        assert (arg.getType().matches(type.getComponentType()));
+        assert (type.isMatrix());
         assert (arg.getType().isScalar());
+        assert (arg.getType().matches(type.getComponentType()));
 
-        // A "splat" to a scalar type is a no-op and can be eliminated.
-        if (type.isScalar()) {
-            arg.mPosition = position;
-            return arg;
-        }
-
-        // Replace constant variables with their corresponding values, so `float3(five)` can compile
-        // down to `float3(5.0)` (the latter is a compile-time constant).
+        // Look up the value of constant variables. This allows constant-expressions like `mat4(five)`
+        // to be replaced with `mat4(5.0)`.
         arg = ConstantFolder.makeConstantValueForVariable(position, arg);
 
-        assert (type.isVector());
-        return new ConstructorVectorScalar(position, type, arg);
+        return new ConstructorMatrixScalar(position, type, arg);
+    }
+
+    @Override
+    public OptionalDouble getConstantValue(int i) {
+        int rows = getType().getRows();
+        int row = i % rows;
+        int col = i / rows;
+
+        assert (col >= 0);
+        assert (row >= 0);
+        assert (col < getType().getCols());
+        assert (row < getType().getRows());
+
+        return (col == row) ? getArguments()[0].getConstantValue(0) : OptionalDouble.of(0.0);
     }
 
     @Nonnull
     @Override
     public Expression clone(int position) {
-        return new ConstructorVectorScalar(position, getType(), cloneArguments());
+        return new ConstructorMatrixScalar(position, getType(), cloneArguments());
     }
 }

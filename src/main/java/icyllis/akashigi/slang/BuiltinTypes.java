@@ -26,203 +26,212 @@ import org.lwjgl.util.spvc.Spv;
  */
 public final class BuiltinTypes {
 
+    /**
+     * For functions that do not return a value.
+     */
     public final Type mVoid;
 
+    /**
+     * A conditional type, taking on values of true or false.
+     */
     public final Type mBool;
     public final Type mBool2;
     public final Type mBool3;
     public final Type mBool4;
 
+    /**
+     * A minimum 16-bit signed integer.
+     */
     public final Type mShort;
     public final Type mShort2;
     public final Type mShort3;
     public final Type mShort4;
 
+    /**
+     * A minimum 16-bit unsigned integer.
+     */
     public final Type mUShort;
     public final Type mUShort2;
     public final Type mUShort3;
     public final Type mUShort4;
 
+    /**
+     * A 32-bit signed integer.
+     */
     public final Type mInt;
     public final Type mInt2;
     public final Type mInt3;
     public final Type mInt4;
 
+    /**
+     * A 32-bit unsigned integer.
+     */
     public final Type mUInt;
     public final Type mUInt2;
     public final Type mUInt3;
     public final Type mUInt4;
 
+    /**
+     * A minimum 16-bit floating point value.
+     */
     public final Type mHalf;
     public final Type mHalf2;
     public final Type mHalf3;
     public final Type mHalf4;
 
+    /**
+     * A 32-bit floating point value.
+     */
     public final Type mFloat;
     public final Type mFloat2;
     public final Type mFloat3;
     public final Type mFloat4;
 
-    public final Type mDouble;
-    public final Type mDouble2;
-    public final Type mDouble3;
-    public final Type mDouble4;
-
+    /**
+     * A minimum 16-bit floating point matrix.
+     */
     public final Type mHalf2x2;
     public final Type mHalf2x3;
     public final Type mHalf2x4;
-
     public final Type mHalf3x2;
     public final Type mHalf3x3;
     public final Type mHalf3x4;
-
     public final Type mHalf4x2;
     public final Type mHalf4x3;
     public final Type mHalf4x4;
 
+    /**
+     * A 32-bit floating point matrix.
+     */
     public final Type mFloat2x2;
     public final Type mFloat2x3;
     public final Type mFloat2x4;
-
     public final Type mFloat3x2;
     public final Type mFloat3x3;
     public final Type mFloat3x4;
-
     public final Type mFloat4x2;
     public final Type mFloat4x3;
     public final Type mFloat4x4;
 
-    public final Type mDouble2x2;
-    public final Type mDouble2x3;
-    public final Type mDouble2x4;
-
-    public final Type mDouble3x2;
-    public final Type mDouble3x3;
-    public final Type mDouble3x4;
-
-    public final Type mDouble4x2;
-    public final Type mDouble4x3;
-    public final Type mDouble4x4;
-
+    /**
+     * GLSL aliases.
+     */
     public final Type mVec2;
     public final Type mVec3;
     public final Type mVec4;
 
-    public final Type mDVec2;
-    public final Type mDVec3;
-    public final Type mDVec4;
-
+    /**
+     * GLSL aliases.
+     */
     public final Type mBVec2;
     public final Type mBVec3;
     public final Type mBVec4;
 
+    /**
+     * GLSL aliases.
+     */
     public final Type mIVec2;
     public final Type mIVec3;
     public final Type mIVec4;
 
+    /**
+     * GLSL aliases.
+     */
     public final Type mUVec2;
     public final Type mUVec3;
     public final Type mUVec4;
 
+    /**
+     * HLSL aliases.
+     */
     public final Type mMin16Int;
     public final Type mMin16Int2;
     public final Type mMin16Int3;
     public final Type mMin16Int4;
 
+    /**
+     * HLSL aliases.
+     */
     public final Type mMin16UInt;
     public final Type mMin16UInt2;
     public final Type mMin16UInt3;
     public final Type mMin16UInt4;
 
+    /**
+     * HLSL aliases.
+     */
     public final Type mMin16Float;
     public final Type mMin16Float2;
     public final Type mMin16Float3;
     public final Type mMin16Float4;
 
+    /**
+     * GLSL aliases.
+     */
     public final Type mInt32;
     public final Type mI32Vec2;
     public final Type mI32Vec3;
     public final Type mI32Vec4;
 
+    /**
+     * GLSL aliases.
+     */
     public final Type mUInt32;
     public final Type mU32Vec2;
     public final Type mU32Vec3;
     public final Type mU32Vec4;
 
+    /**
+     * GLSL aliases.
+     */
     public final Type mFloat32;
     public final Type mF32Vec2;
     public final Type mF32Vec3;
     public final Type mF32Vec4;
 
-    public final Type mFloat64;
-    public final Type mF64Vec2;
-    public final Type mF64Vec3;
-    public final Type mF64Vec4;
-
+    /**
+     * GLSL aliases.
+     */
     public final Type mMat2;
     public final Type mMat3;
     public final Type mMat4;
 
+    /**
+     * GLSL aliases.
+     */
     public final Type mMat2x2;
     public final Type mMat2x3;
     public final Type mMat2x4;
-
     public final Type mMat3x2;
     public final Type mMat3x3;
     public final Type mMat3x4;
-
     public final Type mMat4x2;
     public final Type mMat4x3;
     public final Type mMat4x4;
 
-    public final Type mDMat2;
-    public final Type mDMat3;
-    public final Type mDMat4;
-
-    public final Type mDMat2x2;
-    public final Type mDMat2x3;
-    public final Type mDMat2x4;
-
-    public final Type mDMat3x2;
-    public final Type mDMat3x3;
-    public final Type mDMat3x4;
-
-    public final Type mDMat4x2;
-    public final Type mDMat4x3;
-    public final Type mDMat4x4;
-
+    /**
+     * GLSL aliases.
+     */
     public final Type mF32Mat2;
     public final Type mF32Mat3;
     public final Type mF32Mat4;
 
+    /**
+     * GLSL aliases.
+     */
     public final Type mF32Mat2x2;
     public final Type mF32Mat2x3;
     public final Type mF32Mat2x4;
-
     public final Type mF32Mat3x2;
     public final Type mF32Mat3x3;
     public final Type mF32Mat3x4;
-
     public final Type mF32Mat4x2;
     public final Type mF32Mat4x3;
     public final Type mF32Mat4x4;
 
-    public final Type mF64Mat2;
-    public final Type mF64Mat3;
-    public final Type mF64Mat4;
-
-    public final Type mF64Mat2x2;
-    public final Type mF64Mat2x3;
-    public final Type mF64Mat2x4;
-
-    public final Type mF64Mat3x2;
-    public final Type mF64Mat3x3;
-    public final Type mF64Mat3x4;
-
-    public final Type mF64Mat4x2;
-    public final Type mF64Mat4x3;
-    public final Type mF64Mat4x4;
-
+    /**
+     * Image types.
+     */
     public final Type mImage1D;
     public final Type mImage2D;
     public final Type mImage3D;
@@ -234,9 +243,15 @@ public final class BuiltinTypes {
     public final Type mImage2DMS;
     public final Type mImage2DMSArray;
 
+    /**
+     * Subpass types.
+     */
     public final Type mSubpassInput;
     public final Type mSubpassInputMS;
 
+    /**
+     * Texture types.
+     */
     public final Type mTexture1D;
     public final Type mTexture2D;
     public final Type mTexture3D;
@@ -248,9 +263,15 @@ public final class BuiltinTypes {
     public final Type mTexture2DMS;
     public final Type mTexture2DMSArray;
 
+    /**
+     * Sampler types.
+     */
     public final Type mSampler;
     public final Type mSamplerShadow;
 
+    /**
+     * Texture sampler types.
+     */
     public final Type mSampler1D;
     public final Type mSampler2D;
     public final Type mSampler3D;
@@ -262,6 +283,9 @@ public final class BuiltinTypes {
     public final Type mSampler2DMS;
     public final Type mSampler2DMSArray;
 
+    /**
+     * Depth texture sampler types.
+     */
     public final Type mSampler1DShadow;
     public final Type mSampler2DShadow;
     public final Type mSamplerCubeShadow;
@@ -273,7 +297,26 @@ public final class BuiltinTypes {
 
     public final Type mGenFType;
     public final Type mGenIType;
+    public final Type mGenUType;
+    public final Type mGenHType;
+    public final Type mGenSType;
+    public final Type mGenUSType;
+    public final Type mGenBType;
 
+    public final Type mMat;
+    public final Type mHMat;
+
+    public final Type mVec;
+    public final Type mIVec;
+    public final Type mUVec;
+    public final Type mHVec;
+    public final Type mSVec;
+    public final Type mUSVec;
+    public final Type mBVec;
+
+    /**
+     * A bad value or there's an error.
+     */
     public final Type mPoison;
 
     /**
@@ -315,33 +358,25 @@ public final class BuiltinTypes {
         mUInt4 = Type.makeVectorType("uint4", "I4", mUInt, /*rows*/4);
 
         mHalf = Type.makeScalarType(
-                "half", "h", Type.kFloat_ScalarKind, /*rank=*/12, /*width=*/16);
+                "half", "h", Type.kFloat_ScalarKind, /*rank=*/9, /*width=*/16);
         mHalf2 = Type.makeVectorType("half2", "h2", mHalf, /*rows*/2);
         mHalf3 = Type.makeVectorType("half3", "h3", mHalf, /*rows*/3);
         mHalf4 = Type.makeVectorType("half4", "h4", mHalf, /*rows*/4);
 
         mFloat = Type.makeScalarType(
-                "float", "f", Type.kFloat_ScalarKind, /*rank=*/13, /*width=*/32);
+                "float", "f", Type.kFloat_ScalarKind, /*rank=*/10, /*width=*/32);
         mFloat2 = Type.makeVectorType("float2", "f2", mFloat, /*rows*/2);
         mFloat3 = Type.makeVectorType("float3", "f3", mFloat, /*rows*/3);
         mFloat4 = Type.makeVectorType("float4", "f4", mFloat, /*rows*/4);
-
-        mDouble = Type.makeScalarType(
-                "double", "d", Type.kFloat_ScalarKind, /*rank=*/15, /*width=*/64);
-        mDouble2 = Type.makeVectorType("double2", "d2", mDouble, /*rows*/2);
-        mDouble3 = Type.makeVectorType("double3", "d3", mDouble, /*rows*/3);
-        mDouble4 = Type.makeVectorType("double4", "d4", mDouble, /*rows*/4);
 
         // matrix types
 
         mHalf2x2 = Type.makeMatrixType("half2x2", "h22", mHalf, /*cols=*/2, /*rows=*/2);
         mHalf2x3 = Type.makeMatrixType("half2x3", "h23", mHalf, /*cols=*/2, /*rows=*/3);
         mHalf2x4 = Type.makeMatrixType("half2x4", "h24", mHalf, /*cols=*/2, /*rows=*/4);
-
         mHalf3x2 = Type.makeMatrixType("half3x2", "h32", mHalf, /*cols=*/3, /*rows=*/2);
         mHalf3x3 = Type.makeMatrixType("half3x3", "h33", mHalf, /*cols=*/3, /*rows=*/3);
         mHalf3x4 = Type.makeMatrixType("half3x4", "h34", mHalf, /*cols=*/3, /*rows=*/4);
-
         mHalf4x2 = Type.makeMatrixType("half4x2", "h42", mHalf, /*cols=*/4, /*rows=*/2);
         mHalf4x3 = Type.makeMatrixType("half4x3", "h43", mHalf, /*cols=*/4, /*rows=*/3);
         mHalf4x4 = Type.makeMatrixType("half4x4", "h44", mHalf, /*cols=*/4, /*rows=*/4);
@@ -349,36 +384,18 @@ public final class BuiltinTypes {
         mFloat2x2 = Type.makeMatrixType("float2x2", "f22", mFloat, /*cols=*/2, /*rows=*/2);
         mFloat2x3 = Type.makeMatrixType("float2x3", "f23", mFloat, /*cols=*/2, /*rows=*/3);
         mFloat2x4 = Type.makeMatrixType("float2x4", "f24", mFloat, /*cols=*/2, /*rows=*/4);
-
         mFloat3x2 = Type.makeMatrixType("float3x2", "f32", mFloat, /*cols=*/3, /*rows=*/2);
         mFloat3x3 = Type.makeMatrixType("float3x3", "f33", mFloat, /*cols=*/3, /*rows=*/3);
         mFloat3x4 = Type.makeMatrixType("float3x4", "f34", mFloat, /*cols=*/3, /*rows=*/4);
-
         mFloat4x2 = Type.makeMatrixType("float4x2", "f42", mFloat, /*cols=*/4, /*rows=*/2);
         mFloat4x3 = Type.makeMatrixType("float4x3", "f43", mFloat, /*cols=*/4, /*rows=*/3);
         mFloat4x4 = Type.makeMatrixType("float4x4", "f44", mFloat, /*cols=*/4, /*rows=*/4);
-
-        mDouble2x2 = Type.makeMatrixType("double2x2", "d22", mDouble, /*cols=*/2, /*rows=*/2);
-        mDouble2x3 = Type.makeMatrixType("double2x3", "d23", mDouble, /*cols=*/2, /*rows=*/3);
-        mDouble2x4 = Type.makeMatrixType("double2x4", "d24", mDouble, /*cols=*/2, /*rows=*/4);
-
-        mDouble3x2 = Type.makeMatrixType("double3x2", "d32", mDouble, /*cols=*/3, /*rows=*/2);
-        mDouble3x3 = Type.makeMatrixType("double3x3", "d33", mDouble, /*cols=*/3, /*rows=*/3);
-        mDouble3x4 = Type.makeMatrixType("double3x4", "d34", mDouble, /*cols=*/3, /*rows=*/4);
-
-        mDouble4x2 = Type.makeMatrixType("double4x2", "d42", mDouble, /*cols=*/4, /*rows=*/2);
-        mDouble4x3 = Type.makeMatrixType("double4x3", "d43", mDouble, /*cols=*/4, /*rows=*/3);
-        mDouble4x4 = Type.makeMatrixType("double4x4", "d44", mDouble, /*cols=*/4, /*rows=*/4);
 
         // GLSL vector aliases
 
         mVec2 = Type.makeAliasType("vec2", mFloat2);
         mVec3 = Type.makeAliasType("vec3", mFloat3);
         mVec4 = Type.makeAliasType("vec4", mFloat4);
-
-        mDVec2 = Type.makeAliasType("dvec2", mDouble2);
-        mDVec3 = Type.makeAliasType("dvec3", mDouble3);
-        mDVec4 = Type.makeAliasType("dvec4", mDouble4);
 
         mBVec2 = Type.makeAliasType("bvec2", mBool2);
         mBVec3 = Type.makeAliasType("bvec3", mBool3);
@@ -426,11 +443,6 @@ public final class BuiltinTypes {
         mF32Vec3 = Type.makeAliasType("f32vec3", mFloat3);
         mF32Vec4 = Type.makeAliasType("f32vec4", mFloat4);
 
-        mFloat64 = Type.makeAliasType("float64_t", mDouble);
-        mF64Vec2 = Type.makeAliasType("f64vec2", mDouble2);
-        mF64Vec3 = Type.makeAliasType("f64vec3", mDouble3);
-        mF64Vec4 = Type.makeAliasType("f64vec4", mDouble4);
-
         // GLSL matrix aliases
 
         mMat2 = Type.makeAliasType("mat2", mFloat2x2);
@@ -440,30 +452,12 @@ public final class BuiltinTypes {
         mMat2x2 = Type.makeAliasType("mat2x2", mFloat2x2);
         mMat2x3 = Type.makeAliasType("mat2x3", mFloat2x3);
         mMat2x4 = Type.makeAliasType("mat2x4", mFloat2x4);
-
         mMat3x2 = Type.makeAliasType("mat3x2", mFloat3x2);
         mMat3x3 = Type.makeAliasType("mat3x3", mFloat3x3);
         mMat3x4 = Type.makeAliasType("mat3x4", mFloat3x4);
-
         mMat4x2 = Type.makeAliasType("mat4x2", mFloat4x2);
         mMat4x3 = Type.makeAliasType("mat4x3", mFloat4x3);
         mMat4x4 = Type.makeAliasType("mat4x4", mFloat4x4);
-
-        mDMat2 = Type.makeAliasType("dmat2", mDouble2x2);
-        mDMat3 = Type.makeAliasType("dmat3", mDouble3x3);
-        mDMat4 = Type.makeAliasType("dmat4", mDouble4x4);
-
-        mDMat2x2 = Type.makeAliasType("dmat2x2", mDouble2x2);
-        mDMat2x3 = Type.makeAliasType("dmat2x3", mDouble2x3);
-        mDMat2x4 = Type.makeAliasType("dmat2x4", mDouble2x4);
-
-        mDMat3x2 = Type.makeAliasType("dmat3x2", mDouble3x2);
-        mDMat3x3 = Type.makeAliasType("dmat3x3", mDouble3x3);
-        mDMat3x4 = Type.makeAliasType("dmat3x4", mDouble3x4);
-
-        mDMat4x2 = Type.makeAliasType("dmat4x2", mDouble4x2);
-        mDMat4x3 = Type.makeAliasType("dmat4x3", mDouble4x3);
-        mDMat4x4 = Type.makeAliasType("dmat4x4", mDouble4x4);
 
         // GLSL extension matrix aliases
 
@@ -474,123 +468,124 @@ public final class BuiltinTypes {
         mF32Mat2x2 = Type.makeAliasType("f32mat2x2", mFloat2x2);
         mF32Mat2x3 = Type.makeAliasType("f32mat2x3", mFloat2x3);
         mF32Mat2x4 = Type.makeAliasType("f32mat2x4", mFloat2x4);
-
         mF32Mat3x2 = Type.makeAliasType("f32mat3x2", mFloat3x2);
         mF32Mat3x3 = Type.makeAliasType("f32mat3x3", mFloat3x3);
         mF32Mat3x4 = Type.makeAliasType("f32mat3x4", mFloat3x4);
-
         mF32Mat4x2 = Type.makeAliasType("f32mat4x2", mFloat4x2);
         mF32Mat4x3 = Type.makeAliasType("f32mat4x3", mFloat4x3);
         mF32Mat4x4 = Type.makeAliasType("f32mat4x4", mFloat4x4);
 
-        mF64Mat2 = Type.makeAliasType("f64mat2", mDouble2x2);
-        mF64Mat3 = Type.makeAliasType("f64mat3", mDouble3x3);
-        mF64Mat4 = Type.makeAliasType("f64mat4", mDouble4x4);
-
-        mF64Mat2x2 = Type.makeAliasType("f64mat2x2", mDouble2x2);
-        mF64Mat2x3 = Type.makeAliasType("f64mat2x3", mDouble2x3);
-        mF64Mat2x4 = Type.makeAliasType("f64mat2x4", mDouble2x4);
-
-        mF64Mat3x2 = Type.makeAliasType("f64mat3x2", mDouble3x2);
-        mF64Mat3x3 = Type.makeAliasType("f64mat3x3", mDouble3x3);
-        mF64Mat3x4 = Type.makeAliasType("f64mat3x4", mDouble3x4);
-
-        mF64Mat4x2 = Type.makeAliasType("f64mat4x2", mDouble4x2);
-        mF64Mat4x3 = Type.makeAliasType("f64mat4x3", mDouble4x3);
-        mF64Mat4x4 = Type.makeAliasType("f64mat4x4", mDouble4x4);
-
         // opaque types (image, texture, sampler, combined sampler)
 
-        mImage1D = Type.makeImageType("image1D", "M1", mFloat,
+        mImage1D = Type.makeImageType("image1D", "M1", mHalf,
                 Spv.SpvDim1D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImage2D = Type.makeImageType("image2D", "M2", mFloat,
+        mImage2D = Type.makeImageType("image2D", "M2", mHalf,
                 Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImage3D = Type.makeImageType("image3D", "M3", mFloat,
+        mImage3D = Type.makeImageType("image3D", "M3", mHalf,
                 Spv.SpvDim3D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImageCube = Type.makeImageType("imageCube", "MC", mFloat,
+        mImageCube = Type.makeImageType("imageCube", "MC", mHalf,
                 Spv.SpvDimCube, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImageBuffer = Type.makeImageType("imageBuffer", "MB", mFloat,
+        mImageBuffer = Type.makeImageType("imageBuffer", "MB", mHalf,
                 Spv.SpvDimBuffer, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mImage1DArray = Type.makeImageType("image1DArray", "M1A", mFloat,
+        mImage1DArray = Type.makeImageType("image1DArray", "M1A", mHalf,
                 Spv.SpvDim1D, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mImage2DArray = Type.makeImageType("image2DArray", "M2A", mFloat,
+        mImage2DArray = Type.makeImageType("image2DArray", "M2A", mHalf,
                 Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mImageCubeArray = Type.makeImageType("imageCubeArray", "MCA", mFloat,
+        mImageCubeArray = Type.makeImageType("imageCubeArray", "MCA", mHalf,
                 Spv.SpvDimCube, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mImage2DMS = Type.makeImageType("image2DMS", "MM", mFloat,
+        mImage2DMS = Type.makeImageType("image2DMS", "MM", mHalf,
                 Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/true);
-        mImage2DMSArray = Type.makeImageType("image2DMSArray", "MMA", mFloat,
+        mImage2DMSArray = Type.makeImageType("image2DMSArray", "MMA", mHalf,
                 Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/true);
 
-        mSubpassInput = Type.makeImageType("subpassInput", "MP", mFloat,
+        mSubpassInput = Type.makeImageType("subpassInput", "MP", mHalf,
                 Spv.SpvDimSubpassData, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSubpassInputMS = Type.makeImageType("subpassInputMS", "MPM", mFloat,
+        mSubpassInputMS = Type.makeImageType("subpassInputMS", "MPM", mHalf,
                 Spv.SpvDimSubpassData, /*isArrayed=*/false, /*isMultiSampled=*/true);
 
-        mTexture1D = Type.makeTextureType("texture1D", "T1", mFloat,
+        mTexture1D = Type.makeTextureType("texture1D", "T1", mHalf,
                 Spv.SpvDim1D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTexture2D = Type.makeTextureType("texture2D", "T2", mFloat,
+        mTexture2D = Type.makeTextureType("texture2D", "T2", mHalf,
                 Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTexture3D = Type.makeTextureType("texture3D", "T3", mFloat,
+        mTexture3D = Type.makeTextureType("texture3D", "T3", mHalf,
                 Spv.SpvDim3D, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTextureCube = Type.makeTextureType("textureCube", "TC", mFloat,
+        mTextureCube = Type.makeTextureType("textureCube", "TC", mHalf,
                 Spv.SpvDimCube, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTextureBuffer = Type.makeTextureType("textureBuffer", "TB", mFloat,
+        mTextureBuffer = Type.makeTextureType("textureBuffer", "TB", mHalf,
                 Spv.SpvDimBuffer, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mTexture1DArray = Type.makeTextureType("texture1DArray", "T1A", mFloat,
+        mTexture1DArray = Type.makeTextureType("texture1DArray", "T1A", mHalf,
                 Spv.SpvDim1D, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mTexture2DArray = Type.makeTextureType("texture2DArray", "T2A", mFloat,
+        mTexture2DArray = Type.makeTextureType("texture2DArray", "T2A", mHalf,
                 Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mTextureCubeArray = Type.makeTextureType("textureCubeArray", "TCA", mFloat,
+        mTextureCubeArray = Type.makeTextureType("textureCubeArray", "TCA", mHalf,
                 Spv.SpvDimCube, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mTexture2DMS = Type.makeTextureType("texture2DMS", "TM", mFloat,
+        mTexture2DMS = Type.makeTextureType("texture2DMS", "TM", mHalf,
                 Spv.SpvDim2D, /*isArrayed=*/false, /*isMultiSampled=*/true);
-        mTexture2DMSArray = Type.makeTextureType("texture2DMSArray", "TMA", mFloat,
+        mTexture2DMSArray = Type.makeTextureType("texture2DMSArray", "TMA", mHalf,
                 Spv.SpvDim2D, /*isArrayed=*/true, /*isMultiSampled=*/true);
 
         mSampler = Type.makeSeparateType("sampler", "ss", mVoid, /*isShadow*/false);
         mSamplerShadow = Type.makeSeparateType("samplerShadow", "sss", mVoid, /*isShadow*/true);
 
-        mSampler1D = Type.makeCombinedType("sampler1D", "Z1", mFloat,
+        mSampler1D = Type.makeCombinedType("sampler1D", "Z1", mHalf,
                 Spv.SpvDim1D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler2D = Type.makeCombinedType("sampler2D", "Z2", mFloat,
+        mSampler2D = Type.makeCombinedType("sampler2D", "Z2", mHalf,
                 Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler3D = Type.makeCombinedType("sampler3D", "Z3", mFloat,
+        mSampler3D = Type.makeCombinedType("sampler3D", "Z3", mHalf,
                 Spv.SpvDim3D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSamplerCube = Type.makeCombinedType("samplerCube", "ZC", mFloat,
+        mSamplerCube = Type.makeCombinedType("samplerCube", "ZC", mHalf,
                 Spv.SpvDimCube, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSamplerBuffer = Type.makeCombinedType("samplerBuffer", "ZB", mFloat,
+        mSamplerBuffer = Type.makeCombinedType("samplerBuffer", "ZB", mHalf,
                 Spv.SpvDimBuffer, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler1DArray = Type.makeCombinedType("sampler1DArray", "Z1A", mFloat,
+        mSampler1DArray = Type.makeCombinedType("sampler1DArray", "Z1A", mHalf,
                 Spv.SpvDim1D, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSampler2DArray = Type.makeCombinedType("sampler2DArray", "Z2A", mFloat,
+        mSampler2DArray = Type.makeCombinedType("sampler2DArray", "Z2A", mHalf,
                 Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSamplerCubeArray = Type.makeCombinedType("samplerCubeArray", "ZCA", mFloat,
+        mSamplerCubeArray = Type.makeCombinedType("samplerCubeArray", "ZCA", mHalf,
                 Spv.SpvDimCube, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSampler2DMS = Type.makeCombinedType("sampler2DMS", "ZM", mFloat,
+        mSampler2DMS = Type.makeCombinedType("sampler2DMS", "ZM", mHalf,
                 Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/false, /*isMultiSampled=*/true);
-        mSampler2DMSArray = Type.makeCombinedType("sampler2DMSArray", "ZMA", mFloat,
+        mSampler2DMSArray = Type.makeCombinedType("sampler2DMSArray", "ZMA", mHalf,
                 Spv.SpvDim2D, /*isShadow*/false, /*isArrayed=*/true, /*isMultiSampled=*/true);
 
-        mSampler1DShadow = Type.makeCombinedType("sampler1DShadow", "Z4", mFloat,
+        mSampler1DShadow = Type.makeCombinedType("sampler1DShadow", "Z4", mHalf,
                 Spv.SpvDim1D, /*isShadow*/true, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler2DShadow = Type.makeCombinedType("sampler2DShadow", "Z5", mFloat,
+        mSampler2DShadow = Type.makeCombinedType("sampler2DShadow", "Z5", mHalf,
                 Spv.SpvDim2D, /*isShadow*/true, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSamplerCubeShadow = Type.makeCombinedType("samplerCubeShadow", "ZX", mFloat,
+        mSamplerCubeShadow = Type.makeCombinedType("samplerCubeShadow", "ZX", mHalf,
                 Spv.SpvDimCube, /*isShadow*/true, /*isArrayed=*/false, /*isMultiSampled=*/false);
-        mSampler1DArrayShadow = Type.makeCombinedType("sampler1DArrayShadow", "Z4A", mFloat,
+        mSampler1DArrayShadow = Type.makeCombinedType("sampler1DArrayShadow", "Z4A", mHalf,
                 Spv.SpvDim1D, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSampler2DArrayShadow = Type.makeCombinedType("sampler2DArrayShadow", "Z5A", mFloat,
+        mSampler2DArrayShadow = Type.makeCombinedType("sampler2DArrayShadow", "Z5A", mHalf,
                 Spv.SpvDim2D, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
-        mSamplerCubeArrayShadow = Type.makeCombinedType("samplerCubeArrayShadow", "ZXA", mFloat,
+        mSamplerCubeArrayShadow = Type.makeCombinedType("samplerCubeArrayShadow", "ZXA", mHalf,
                 Spv.SpvDimCube, /*isShadow*/true, /*isArrayed=*/true, /*isMultiSampled=*/false);
 
         mInvalid = Type.makeSpecialType(Compiler.INVALID_TAG, "O", Type.kOther_TypeKind);
 
         mGenFType = Type.makeGenericType("__genFType", mFloat, mFloat2, mFloat3, mFloat4);
         mGenIType = Type.makeGenericType("__genIType", mInt, mInt2, mInt3, mInt4);
+        mGenUType = Type.makeGenericType("__genUType", mUInt, mUInt2, mUInt3, mUInt4);
+        mGenHType = Type.makeGenericType("__genHType", mHalf, mHalf2, mHalf3, mHalf4);
+        mGenSType = Type.makeGenericType("__genSType", mShort, mShort2, mShort3, mShort4);
+        mGenUSType = Type.makeGenericType("__genUSType", mUShort, mUShort2, mUShort3, mUShort4);
+        mGenBType = Type.makeGenericType("__genBType", mBool, mBool2, mBool3, mBool4);
 
-        // poison means a bad value or there's an error
+        mMat = Type.makeGenericType("__mat", mFloat2x2, mFloat2x3, mFloat2x4,
+                mFloat3x2, mFloat3x3, mFloat3x4,
+                mFloat4x2, mFloat4x3, mFloat4x4);
+        mHMat = Type.makeGenericType("__hmat", mHalf2x2, mHalf2x3, mHalf2x4,
+                mHalf3x2, mHalf3x3, mHalf3x4,
+                mHalf4x2, mHalf4x3, mHalf4x4);
+
+        mVec = Type.makeGenericType("__vec", mInvalid, mFloat2, mFloat3, mFloat4);
+        mIVec = Type.makeGenericType("__ivec", mInvalid, mInt2, mInt3, mInt4);
+        mUVec = Type.makeGenericType("__uvec", mInvalid, mUInt2, mUInt3, mUInt4);
+        mHVec = Type.makeGenericType("__hvec", mInvalid, mHalf2, mHalf3, mHalf4);
+        mSVec = Type.makeGenericType("__svec", mInvalid, mShort2, mShort3, mShort4);
+        mUSVec = Type.makeGenericType("__usvec", mInvalid, mUShort2, mUShort3, mUShort4);
+        mBVec = Type.makeGenericType("__bvec", mInvalid, mBool2, mBool3, mBool4);
+
         mPoison = Type.makeSpecialType(Compiler.POISON_TAG, "P", Type.kOther_TypeKind);
     }
 }

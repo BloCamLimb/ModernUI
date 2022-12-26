@@ -41,10 +41,10 @@ public final class ThreadContext {
     // compilation
     private final SymbolTable mSymbolTable;
     // The element map from the base module
-    private final List<ProgramElement> mBaseElements;
+    private final List<Element> mBaseElements;
 
-    private final List<ProgramElement> mUniqueElements = new ArrayList<>();
-    private final List<ProgramElement> mSharedElements = new ArrayList<>();
+    private final List<Element> mUniqueElements = new ArrayList<>();
+    private final List<Element> mSharedElements = new ArrayList<>();
 
     // The Context holds a pointer to our error handler.
     private ErrorHandler mErrors;
@@ -130,21 +130,21 @@ public final class ThreadContext {
     /**
      * Returns the elements of the base module.
      */
-    public List<ProgramElement> getBaseElements() {
+    public List<Element> getBaseElements() {
         return mBaseElements;
     }
 
     /**
      * Returns a list for adding owned elements in the target module.
      */
-    public List<ProgramElement> getUniqueElements() {
+    public List<Element> getUniqueElements() {
         return mUniqueElements;
     }
 
     /**
      * Returns a list for adding used elements in the target module shared from {@link #getBaseElements()}.
      */
-    public List<ProgramElement> getSharedElements() {
+    public List<Element> getSharedElements() {
         return mSharedElements;
     }
 

@@ -27,7 +27,7 @@ import icyllis.akashigi.slang.ir.Node.StatementKind;
  * This is intended for simple analysis and accumulation, where custom visitation behavior is only
  * needed for a limited set of expression kinds.
  * <p>
- * Subclasses should override visitExpression/visitStatement/visitProgramElement as needed and
+ * Subclasses should override visitExpression/visitStatement/visitElement as needed and
  * intercept elements of interest. They can then invoke the base class's function to visit all
  * sub expressions. They can also choose not to call the base function to arrest recursion, or
  * implement custom recursion.
@@ -39,8 +39,8 @@ import icyllis.akashigi.slang.ir.Node.StatementKind;
 public class ProgramVisitor {
 
     public final boolean visit(Program program) {
-        for (ProgramElement pe : program) {
-            if (visitProgramElement(pe)) {
+        for (Element e : program) {
+            if (visitElement(e)) {
                 return true;
             }
         }
@@ -91,7 +91,7 @@ public class ProgramVisitor {
         };
     }
 
-    public boolean visitProgramElement(ProgramElement pe) {
+    public boolean visitElement(Element e) {
         return false;
     }
 

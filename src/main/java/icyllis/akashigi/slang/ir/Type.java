@@ -96,6 +96,9 @@ public class Type extends Symbol {
      */
     @Nonnull
     public static Type makeGenericType(String name, Type... types) {
+        for (Type type : types) {
+            assert (type == type.resolve());
+        }
         return new GenericType(name, types);
     }
 
@@ -116,6 +119,7 @@ public class Type extends Symbol {
     @Nonnull
     public static Type makeVectorType(String name, String abbr,
                                       Type type, int rows) {
+        assert (type == type.resolve());
         return new VectorType(name, abbr, type, rows);
     }
 
@@ -127,6 +131,7 @@ public class Type extends Symbol {
     @Nonnull
     public static Type makeMatrixType(String name, String abbr,
                                       Type type, int cols, int rows) {
+        assert (type == type.resolve());
         return new MatrixType(name, abbr, type, cols, rows);
     }
 
@@ -142,13 +147,14 @@ public class Type extends Symbol {
      * isShadow: True for samplers that sample a depth texture with comparison (e.g.
      * samplerShadow, sampler2DShadow, HLSL's SamplerComparisonState).
      *
-     * @param type       e.g. texture2D has a type of float
+     * @param type       e.g. texture2D has a type of half
      * @param dimensions SpvDim (e.g. {@link Spv#SpvDim1D})
      */
     @Nonnull
     public static Type makeSamplerType(String name, String abbr, Type type, int dimensions,
                                        boolean isShadow, boolean isArrayed, boolean isMultiSampled,
                                        boolean isSampled, boolean isSampler) {
+        assert (type == type.resolve());
         return new SamplerType(name, abbr, type, dimensions, isShadow, isArrayed,
                 isMultiSampled, isSampled, isSampler);
     }
@@ -288,9 +294,9 @@ public class Type extends Symbol {
     }
 
     /**
-     * For matrices and vectors, returns the type of individual cells (e.g. mat2 has a component
+     * For matrices and vectors, returns the scalar type of individual cells (e.g. mat2 has a component
      * type of Float). For textures, returns the sampled type (e.g. texture2D has a component type
-     * of Float). For all other types, returns the type itself.
+     * of Half). For all other types, returns the type itself.
      */
     @Nonnull
     public Type getComponentType() {
@@ -497,7 +503,9 @@ public class Type extends Symbol {
         if (isVector() || isMatrix()) {
             return ConstructorCompoundCast.make(position, this, expr);
         }
-        //TODO
+        if (isArray()) {
+            return ConstructorArrayCast.make(position, this, expr);
+        }
         ThreadContext.getInstance().error(position, "cannot construct '" + getName() + "'");
         return null;
     }
@@ -545,7 +553,7 @@ public class Type extends Symbol {
      * For all other types, causes an assertion failure.
      */
     public int getArrayLength() {
-        throw new AssertionError();
+        throw new UnsupportedOperationException("non-array");
     }
 
     /**
@@ -623,7 +631,7 @@ public class Type extends Symbol {
     /**
      * Returns the minimum size in bits of the type.
      */
-    public int getWidth() {
+    public int getScalarWidth() {
         return 0;
     }
 
@@ -638,133 +646,105 @@ public class Type extends Symbol {
         if (cols == 1 && rows == 1) {
             return this;
         }
-        ThreadContext context = ThreadContext.getInstance();
-        if (matches(context.getTypes().mFloat)) {
+        BuiltinTypes types = ThreadContext.getInstance().getTypes();
+        if (matches(types.mFloat)) {
             return switch (cols) {
                 case 1 -> switch (rows) {
-                    case 2 -> context.getTypes().mFloat2;
-                    case 3 -> context.getTypes().mFloat3;
-                    case 4 -> context.getTypes().mFloat4;
+                    case 2 -> types.mFloat2;
+                    case 3 -> types.mFloat3;
+                    case 4 -> types.mFloat4;
                     default -> throw new AssertionError(rows);
                 };
                 case 2 -> switch (rows) {
-                    case 2 -> context.getTypes().mFloat2x2;
-                    case 3 -> context.getTypes().mFloat2x3;
-                    case 4 -> context.getTypes().mFloat2x4;
+                    case 2 -> types.mFloat2x2;
+                    case 3 -> types.mFloat2x3;
+                    case 4 -> types.mFloat2x4;
                     default -> throw new AssertionError(rows);
                 };
                 case 3 -> switch (rows) {
-                    case 2 -> context.getTypes().mFloat3x2;
-                    case 3 -> context.getTypes().mFloat3x3;
-                    case 4 -> context.getTypes().mFloat3x4;
+                    case 2 -> types.mFloat3x2;
+                    case 3 -> types.mFloat3x3;
+                    case 4 -> types.mFloat3x4;
                     default -> throw new AssertionError(rows);
                 };
                 case 4 -> switch (rows) {
-                    case 2 -> context.getTypes().mFloat4x2;
-                    case 3 -> context.getTypes().mFloat4x3;
-                    case 4 -> context.getTypes().mFloat4x4;
+                    case 2 -> types.mFloat4x2;
+                    case 3 -> types.mFloat4x3;
+                    case 4 -> types.mFloat4x4;
                     default -> throw new AssertionError(rows);
                 };
                 default -> throw new AssertionError(cols);
             };
-        } else if (matches(context.getTypes().mHalf)) {
+        } else if (matches(types.mHalf)) {
             return switch (cols) {
                 case 1 -> switch (rows) {
-                    case 2 -> context.getTypes().mHalf2;
-                    case 3 -> context.getTypes().mHalf3;
-                    case 4 -> context.getTypes().mHalf4;
+                    case 2 -> types.mHalf2;
+                    case 3 -> types.mHalf3;
+                    case 4 -> types.mHalf4;
                     default -> throw new AssertionError(rows);
                 };
                 case 2 -> switch (rows) {
-                    case 2 -> context.getTypes().mHalf2x2;
-                    case 3 -> context.getTypes().mHalf2x3;
-                    case 4 -> context.getTypes().mHalf2x4;
+                    case 2 -> types.mHalf2x2;
+                    case 3 -> types.mHalf2x3;
+                    case 4 -> types.mHalf2x4;
                     default -> throw new AssertionError(rows);
                 };
                 case 3 -> switch (rows) {
-                    case 2 -> context.getTypes().mHalf3x2;
-                    case 3 -> context.getTypes().mHalf3x3;
-                    case 4 -> context.getTypes().mHalf3x4;
+                    case 2 -> types.mHalf3x2;
+                    case 3 -> types.mHalf3x3;
+                    case 4 -> types.mHalf3x4;
                     default -> throw new AssertionError(rows);
                 };
                 case 4 -> switch (rows) {
-                    case 2 -> context.getTypes().mHalf4x2;
-                    case 3 -> context.getTypes().mHalf4x3;
-                    case 4 -> context.getTypes().mHalf4x4;
+                    case 2 -> types.mHalf4x2;
+                    case 3 -> types.mHalf4x3;
+                    case 4 -> types.mHalf4x4;
                     default -> throw new AssertionError(rows);
                 };
                 default -> throw new AssertionError(cols);
             };
-        } else if (matches(context.getTypes().mDouble)) {
-            return switch (cols) {
-                case 1 -> switch (rows) {
-                    case 2 -> context.getTypes().mDouble2;
-                    case 3 -> context.getTypes().mDouble3;
-                    case 4 -> context.getTypes().mDouble4;
-                    default -> throw new AssertionError(rows);
-                };
-                case 2 -> switch (rows) {
-                    case 2 -> context.getTypes().mDouble2x2;
-                    case 3 -> context.getTypes().mDouble2x3;
-                    case 4 -> context.getTypes().mDouble2x4;
-                    default -> throw new AssertionError(rows);
-                };
-                case 3 -> switch (rows) {
-                    case 2 -> context.getTypes().mDouble3x2;
-                    case 3 -> context.getTypes().mDouble3x3;
-                    case 4 -> context.getTypes().mDouble3x4;
-                    default -> throw new AssertionError(rows);
-                };
-                case 4 -> switch (rows) {
-                    case 2 -> context.getTypes().mDouble4x2;
-                    case 3 -> context.getTypes().mDouble4x3;
-                    case 4 -> context.getTypes().mDouble4x4;
-                    default -> throw new AssertionError(rows);
-                };
-                default -> throw new AssertionError(cols);
-            };
-        } else if (matches(context.getTypes().mInt)) {
+        } else if (matches(types.mInt)) {
             if (cols == 1) {
                 return switch (rows) {
-                    case 2 -> context.getTypes().mInt2;
-                    case 3 -> context.getTypes().mInt3;
-                    case 4 -> context.getTypes().mInt4;
+                    case 2 -> types.mInt2;
+                    case 3 -> types.mInt3;
+                    case 4 -> types.mInt4;
                     default -> throw new AssertionError(rows);
                 };
             }
-        } else if (matches(context.getTypes().mShort)) {
+        } else if (matches(types.mShort)) {
             if (cols == 1) {
                 return switch (rows) {
-                    case 2 -> context.getTypes().mShort2;
-                    case 3 -> context.getTypes().mShort3;
-                    case 4 -> context.getTypes().mShort4;
+                    case 2 -> types.mShort2;
+                    case 3 -> types.mShort3;
+                    case 4 -> types.mShort4;
                     default -> throw new AssertionError(rows);
                 };
             }
-        } else if (matches(context.getTypes().mUInt)) {
+        } else if (matches(types.mUInt)) {
             if (cols == 1) {
                 return switch (rows) {
-                    case 2 -> context.getTypes().mUInt2;
-                    case 3 -> context.getTypes().mUInt3;
-                    case 4 -> context.getTypes().mUInt4;
+                    case 2 -> types.mUInt2;
+                    case 3 -> types.mUInt3;
+                    case 4 -> types.mUInt4;
                     default -> throw new AssertionError(rows);
                 };
             }
-        } else if (matches(context.getTypes().mUShort)) {
+        } else if (matches(types.mUShort)) {
             if (cols == 1) {
                 return switch (rows) {
-                    case 2 -> context.getTypes().mUShort2;
-                    case 3 -> context.getTypes().mUShort3;
-                    case 4 -> context.getTypes().mUShort4;
+                    case 2 -> types.mUShort2;
+                    case 3 -> types.mUShort3;
+                    case 4 -> types.mUShort4;
                     default -> throw new AssertionError(rows);
                 };
             }
-        } else if (matches(context.getTypes().mBool)) {
+        } else if (matches(types.mBool)) {
             if (cols == 1) {
                 return switch (rows) {
-                    case 2 -> context.getTypes().mBool2;
-                    case 3 -> context.getTypes().mBool3;
-                    case 4 -> context.getTypes().mBool4;
+                    case 2 -> types.mBool2;
+                    case 3 -> types.mBool3;
+                    case 4 -> types.mBool4;
                     default -> throw new AssertionError(rows);
                 };
             }
@@ -891,8 +871,8 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int getWidth() {
-            return mUnderlyingType.getWidth();
+        public int getScalarWidth() {
+            return mUnderlyingType.getScalarWidth();
         }
 
         @Override
@@ -1027,8 +1007,8 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int getWidth() {
-            return mElementType.getWidth();
+        public int getScalarWidth() {
+            return mElementType.getScalarWidth();
         }
     }
 
@@ -1062,7 +1042,7 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int getWidth() {
+        public int getScalarWidth() {
             return mWidth;
         }
 
@@ -1146,8 +1126,8 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int getWidth() {
-            return mComponentType.getWidth();
+        public int getScalarWidth() {
+            return mComponentType.getScalarWidth();
         }
     }
 
@@ -1190,8 +1170,8 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int getWidth() {
-            return mComponentType.getWidth();
+        public int getScalarWidth() {
+            return mComponentType.getScalarWidth();
         }
     }
 
@@ -1266,7 +1246,7 @@ public class Type extends Symbol {
         private final boolean mInterfaceBlock;
 
         StructType(int position, String name, Field[] fields, boolean interfaceBlock) {
-            super(name, "S", kStruct_TypeKind, position);
+            super(name, interfaceBlock ? "block" : "struct", kStruct_TypeKind, position);
             mFields = fields;
             mInterfaceBlock = interfaceBlock;
         }

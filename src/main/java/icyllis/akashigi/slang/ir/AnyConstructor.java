@@ -47,6 +47,7 @@ public abstract class AnyConstructor extends Expression {
         return getType().getComponentType();
     }
 
+    // **immutable**
     public final Expression[] getArguments() {
         return mArguments;
     }

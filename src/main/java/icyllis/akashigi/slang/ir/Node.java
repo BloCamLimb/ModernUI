@@ -26,90 +26,86 @@ import javax.annotation.Nonnull;
  */
 public abstract class Node {
 
-    public static final class ProgramElementKind {
+    public interface ElementKind {
 
-        public static final int kFirst = 0;
-        public static final int
-                kExtension = kFirst,
-                kFunctionDefinition = kFirst + 1,
-                kFunctionPrototype = kFirst + 2,
-                kGlobalVar = kFirst + 3,
-                kInterfaceBlock = kFirst + 4,
-                kModifiers = kFirst + 5,
-                kStructDeclaration = kFirst + 6;
-        public static final int kLast = kStructDeclaration;
-
-        private ProgramElementKind() {
-        }
+        int
+                kFirst = 0;
+        int
+                kExtension =                    kFirst,
+                kFunctionDefinition =           kFirst + 1,
+                kFunctionPrototype =            kFirst + 2,
+                kGlobalVar =                    kFirst + 3,
+                kInterfaceBlock =               kFirst + 4,
+                kModifiers =                    kFirst + 5,
+                kStructDeclaration =            kFirst + 6;
+        int
+                kLast = kStructDeclaration;
     }
 
-    public static final class SymbolKind {
+    public interface SymbolKind {
 
-        public static final int kFirst = ProgramElementKind.kLast + 1;
-        public static final int
-                kAnonymousField = kFirst,
-                kFunctionDeclaration = kFirst + 1,
-                kType = kFirst + 2,
-                kVariable = kFirst + 3;
-        public static final int kLast = kVariable;
-
-        private SymbolKind() {
-        }
+        int
+                kFirst = ElementKind.kLast + 1;
+        int
+                kAnonymousField =               kFirst,
+                kFunctionDeclaration =          kFirst + 1,
+                kType =                         kFirst + 2,
+                kVariable =                     kFirst + 3;
+        int
+                kLast = kVariable;
     }
 
-    public static final class StatementKind {
+    public interface StatementKind {
 
-        public static final int kFirst = SymbolKind.kLast + 1;
-        public static final int
-                kBlock = kFirst,
-                kBreak = kFirst + 1,
-                kContinue = kFirst + 2,
-                kDiscard = kFirst + 3,
-                kDo = kFirst + 4,
-                kExpression = kFirst + 5,
-                kFor = kFirst + 6,
-                kIf = kFirst + 7,
-                kNop = kFirst + 8,
-                kReturn = kFirst + 9,
-                kSwitch = kFirst + 10,
-                kSwitchCase = kFirst + 11,
-                kVarDeclaration = kFirst + 12;
-        public static final int kLast = kVarDeclaration;
-
-        private StatementKind() {
-        }
+        int
+                kFirst = SymbolKind.kLast + 1;
+        int
+                kBlock =                        kFirst,
+                kBreak =                        kFirst + 1,
+                kContinue =                     kFirst + 2,
+                kDiscard =                      kFirst + 3,
+                kDo =                           kFirst + 4,
+                kExpression =                   kFirst + 5,
+                kFor =                          kFirst + 6,
+                kIf =                           kFirst + 7,
+                kNop =                          kFirst + 8,
+                kReturn =                       kFirst + 9,
+                kSwitch =                       kFirst + 10,
+                kSwitchCase =                   kFirst + 11,
+                kVarDeclaration =               kFirst + 12;
+        int
+                kLast = kVarDeclaration;
     }
 
-    public static final class ExpressionKind {
+    public interface ExpressionKind {
 
-        public static final int kFirst = StatementKind.kLast + 1;
-        public static final int
-                kBinary = kFirst,
-                kConditional = kFirst + 1,
-                kConstructorArray = kFirst + 2,
-                kConstructorArrayCast = kFirst + 3,
-                kConstructorCompound = kFirst + 4,
-                kConstructorCompoundCast = kFirst + 5,
-                kConstructorMatrixMatrix = kFirst + 6,
-                kConstructorMatrixScalar = kFirst + 7,
-                kConstructorScalarCast = kFirst + 8,
-                kConstructorStruct = kFirst + 9,
-                kConstructorVectorScalar = kFirst + 10,
-                kFieldAccess = kFirst + 11,
-                kFunctionCall = kFirst + 12,
-                kFunctionReference = kFirst + 13,
-                kIndex = kFirst + 14,
-                kLiteral = kFirst + 15,
-                kPoison = kFirst + 16,
-                kPostfix = kFirst + 17,
-                kPrefix = kFirst + 18,
-                kSwizzle = kFirst + 19,
-                kTypeReference = kFirst + 20,
-                kVariableReference = kFirst + 21;
-        public static final int kLast = kVariableReference;
-
-        private ExpressionKind() {
-        }
+        int
+                kFirst = StatementKind.kLast + 1;
+        int
+                kBinary =                       kFirst,
+                kConditional =                  kFirst + 1,
+                kConstructorArray =             kFirst + 2,
+                kConstructorArrayCast =         kFirst + 3,
+                kConstructorCompound =          kFirst + 4,
+                kConstructorCompoundCast =      kFirst + 5,
+                kConstructorMatrixMatrix =      kFirst + 6,
+                kConstructorMatrixScalar =      kFirst + 7,
+                kConstructorScalarCast =        kFirst + 8,
+                kConstructorStruct =            kFirst + 9,
+                kConstructorVectorScalar =      kFirst + 10,
+                kFieldAccess =                  kFirst + 11,
+                kFunctionCall =                 kFirst + 12,
+                kFunctionReference =            kFirst + 13,
+                kIndex =                        kFirst + 14,
+                kLiteral =                      kFirst + 15,
+                kPoison =                       kFirst + 16,
+                kPostfix =                      kFirst + 17,
+                kPrefix =                       kFirst + 18,
+                kSwizzle =                      kFirst + 19,
+                kTypeReference =                kFirst + 20,
+                kVariableReference =            kFirst + 21;
+        int
+                kLast = kVariableReference;
     }
 
     // position of this element within the program being compiled, for error reporting purposes

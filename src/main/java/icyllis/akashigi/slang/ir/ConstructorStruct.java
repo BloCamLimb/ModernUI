@@ -18,24 +18,21 @@
 
 package icyllis.akashigi.slang.ir;
 
+import javax.annotation.Nonnull;
+
 /**
- * Abstract supertype of all statements.
+ * Represents the construction of a struct object, such as "Color(red, green, blue, 1)".
  */
-public abstract class Statement extends Node {
+//TODO
+public final class ConstructorStruct extends AnyConstructor {
 
-    protected Statement(int position, int kind) {
-        super(position, kind);
-        assert (kind >= StatementKind.kFirst && kind <= StatementKind.kLast);
+    private ConstructorStruct(int position, Type type, Expression[] arguments) {
+        super(position, ExpressionKind.kConstructorStruct, type, arguments);
     }
 
-    /**
-     * @see Node.StatementKind
-     */
-    public final int kind() {
-        return mKind;
-    }
-
-    public boolean isEmpty() {
-        return false;
+    @Nonnull
+    @Override
+    public Expression clone(int position) {
+        return new ConstructorStruct(position, getType(), cloneArguments());
     }
 }

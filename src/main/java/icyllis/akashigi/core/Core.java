@@ -48,23 +48,18 @@ public final class Core {
      *   </tr>
      * </table>
      */
-    public static final class CompressionType {
+    public interface CompressionType {
 
         /**
          * Public values.
          */
-        public static final int
-                kNone = 0;
-        public static final int
-                kETC2_RGB8_UNORM = 1;
-        public static final int
+        int
+                kNone = 0,
+                kETC2_RGB8_UNORM = 1,
                 kBC1_RGB8_UNORM = 2,
                 kBC1_RGBA8_UNORM = 3;
-        public static final int
+        int
                 kLast = kBC1_RGBA8_UNORM;
-
-        private CompressionType() {
-        }
     }
 
     /**
@@ -86,20 +81,18 @@ public final class Core {
      * The usual practice is to premultiply alpha in the GPU, since they were
      * converted into floating-point values.
      */
-    public static final class AlphaType {
+    public interface AlphaType {
 
         /**
          * Public values.
          */
-        public static final int
+        int
                 kUnknown = 0,   // uninitialized
                 kOpaque = 1,    // pixel is opaque
                 kPremul = 2,    // pixel components are premultiplied by alpha
                 kUnpremul = 3;  // pixel components are unassociated with alpha
-        public static final int kLast = kUnpremul;
-
-        private AlphaType() {
-        }
+        int
+                kLast = kUnpremul;
     }
 
     /**
@@ -112,12 +105,12 @@ public final class Core {
      * memory. In other words the first component listed is in the low bits and the last component in
      * the high bits.
      */
-    public static class ColorType {
+    public interface ColorType {
 
         /**
          * Public values.
          */
-        public static final int
+        int
                 kUnknown = 0,           // uninitialized
                 kAlpha_8 = 1,           // pixel with alpha in 8-bit byte
                 kBGR_565 = 2,           // pixel with 5 bits red, 6 bits green, 5 bits blue, in 16-bit word
@@ -142,7 +135,7 @@ public final class Core {
         /**
          * Aliases.
          */
-        public static final int
+        int
                 kRGB_565 = kBGR_565,
                 kSRGBA_8888 = kRGBA_8888_SRGB,
                 kRGBA_F16Norm = kRGBA_F16_Clamped,
@@ -150,7 +143,7 @@ public final class Core {
         /**
          * The following 6 color types are just for reading from - not for rendering to.
          */
-        public static final int
+        int
                 kR8G8_unorm = kRG_88,
                 kA16_float = kAlpha_F16,
                 kR16G16_float = kRG_F16,
@@ -158,13 +151,10 @@ public final class Core {
                 kR16G16_unorm = kRG_1616,
                 kR16G16B16A16_unorm = kRGBA_16161616;
 
-        protected ColorType() {
-        }
-
         /**
          * @return bpp
          */
-        public static int bytesPerPixel(int colorType) {
+        static int bytesPerPixel(int colorType) {
             return switch (colorType) {
                 case kUnknown -> 0;
                 case kAlpha_8,
@@ -195,32 +185,32 @@ public final class Core {
     /**
      * Surface flags.
      */
-    public static class SurfaceFlags {
+    public interface SurfaceFlags {
 
         /**
          * Public values.
          */
-        public static final int kNone = 0;
+        int kNone = 0;
         /**
          * Indicates whether an allocation should count against a cache budget. Budgeted when
          * set, otherwise not budgeted.
          */
-        public static final int kBudgeted = 1;
+        int kBudgeted = 1;
         /**
          * Indicates whether a backing store needs to be an exact match or can be larger than
          * is strictly necessary. Loose fit when set, otherwise exact fit.
          */
-        public static final int kLooseFit = 1 << 1;
+        int kLooseFit = 1 << 1;
         /**
          * Used to say whether a texture has mip levels allocated or not. Mipmaps are allocated
          * when set, otherwise mipmaps are not allocated.
          */
-        public static final int kMipmapped = 1 << 2;
+        int kMipmapped = 1 << 2;
         /**
          * Used to say whether a surface can be rendered to, whether a texture can be used as
          * color attachments. Renderable when set, otherwise not renderable.
          */
-        public static final int kRenderable = 1 << 3;
+        int kRenderable = 1 << 3;
         /**
          * Used to say whether texture is backed by protected memory. Protected when set, otherwise
          * not protected.
@@ -228,10 +218,7 @@ public final class Core {
          * @see <a href="https://github.com/KhronosGroup/Vulkan-Guide/blob/master/chapters/protected.adoc">
          * Protected Memory</a>
          */
-        public static final int kProtected = 1 << 4;
-
-        protected SurfaceFlags() {
-        }
+        int kProtected = 1 << 4;
     }
 
     private Core() {

@@ -25,22 +25,22 @@ import java.util.List;
 /**
  * A fully-resolved intermediate representation of a program (shader stage), ready for code generation.
  */
-public class Program implements Iterable<ProgramElement> {
+public class Program implements Iterable<Element> {
 
-    private List<ProgramElement> mOwnedElements;
-    private List<ProgramElement> mSharedElements;
+    private List<Element> mOwnedElements;
+    private List<Element> mSharedElements;
 
     @Nonnull
     @Override
-    public Iterator<ProgramElement> iterator() {
+    public Iterator<Element> iterator() {
         return new ElementIterator();
     }
 
-    // shared first, owned last
-    private class ElementIterator implements Iterator<ProgramElement> {
+    // shared first, then owned
+    private class ElementIterator implements Iterator<Element> {
 
-        private Iterator<ProgramElement> mCurrIter = mSharedElements.iterator();
-        private boolean mSharedEnded;
+        private Iterator<Element> mCurrIter = mSharedElements.iterator();
+        private boolean mSharedEnded = false;
 
         @Override
         public boolean hasNext() {
@@ -49,7 +49,7 @@ public class Program implements Iterable<ProgramElement> {
         }
 
         @Override
-        public ProgramElement next() {
+        public Element next() {
             forward();
             return mCurrIter.next();
         }

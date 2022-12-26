@@ -32,6 +32,7 @@ public final class ConstructorScalarCast extends AnyConstructor {
 
     private ConstructorScalarCast(int position, Type type, Expression... arguments) {
         super(position, ExpressionKind.kConstructorScalarCast, type, arguments);
+        assert arguments.length == 1;
     }
 
     // Casts a scalar expression. Casts that can be evaluated at compile-time will do so

@@ -37,6 +37,9 @@ public abstract class Expression extends Node {
         mType = type;
     }
 
+    /**
+     * @see Node.ExpressionKind
+     */
     public final int kind() {
         return mKind;
     }
