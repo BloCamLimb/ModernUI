@@ -18,10 +18,10 @@
 
 package icyllis.akashigi.slang.ir;
 
-import icyllis.akashigi.slang.ConstantFolder;
-import icyllis.akashigi.slang.Operator;
+import icyllis.akashigi.slang.*;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -33,7 +33,7 @@ public final class Swizzle extends Expression {
      * SwizzleComponents.
      * <p>
      * Pack format: 0xAABBGGRR; terminated with 0xFF if less than 4
-     * (e.g. 0x00FF0102 means myVector.zy; 0x01010301 means myVector.ywyy).
+     * (e.g. 0xFFFF0102 means myVector.zy; 0x01010301 means myVector.ywyy).
      */
     public static final byte
             X =  0,  Y =  1,  Z =  2,  W =  3, // X, Y, Z and W must be 0, 1, 2 and 3
@@ -43,47 +43,90 @@ public final class Swizzle extends Expression {
             ONE  = 17;
 
     private final Expression mBase;
-    private final int mComponents; // contains only X, Y, Z and W
+    private final byte[] mComponents; // contains only X, Y, Z and W
 
-    private Swizzle(int position, Type type, Expression base, int components) {
+    private Swizzle(int position, Type type, Expression base, byte[] components) {
         super(position, ExpressionKind.kSwizzle, type);
+        assert components.length >= 1 && components.length <= 4;
         mBase = base;
         mComponents = components;
     }
 
-    public static int at(int components, int i) {
-        return (components >> (i << 3)) & 0xFF;
+    @Nullable
+    public static Expression convert(int position, int maskPosition,
+                                     Expression base, String maskString) {
+        byte[] components = new byte[maskString.length()];
+        for (int i = 0; i < maskString.length(); ++i) {
+            char field = maskString.charAt(i);
+            byte c;
+            switch (field) {
+                case 'x' -> c = X;
+                case 'r' -> c = R;
+                case 's' -> c = S;
+                case 'y' -> c = Y;
+                case 'g' -> c = G;
+                case 't' -> c = T;
+                case 'z' -> c = Z;
+                case 'b' -> c = B;
+                case 'p' -> c = P;
+                case 'w' -> c = W;
+                case 'a' -> c = A;
+                case 'q' -> c = Q;
+                case '0' -> c = ZERO;
+                case '1' -> c = ONE;
+                default -> {
+                    int pos = getStartOffset(maskPosition) + i;
+                    pos = makeRange(pos, pos + 1);
+                    ThreadContext.getInstance().error(pos,
+                            String.format("invalid swizzle component '%c'", field));
+                    return null;
+                }
+            }
+            components[i] = c;
+        }
+        return convert(position, maskPosition, base, components);
     }
 
+    /**
+     * Create swizzle expressions. This method permits components containing ZERO or ONE,
+     * does typechecking, reports errors via ErrorHandler, and returns an expression that
+     * combines constructors and native swizzles (comprised solely of X/Y/W/Z).
+     */
+    @Nullable
+    public static Expression convert(int position, int maskPosition,
+                                     Expression base, byte[] components) {
+        return null;
+    }
+
+    // input array must be immutable
     @Nonnull
-    public static Expression make(int position, Expression base, int components) {
+    public static Expression make(int position, Expression base, byte[] components) {
         Type baseType = base.getType();
         assert baseType.isVector() || baseType.isScalar() :
                 "cannot swizzle type " + baseType;
         // Confirm that the component array only contains X/Y/Z/W.
         // Once initial IR generation is complete, no swizzles should have zeros or ones in them.
-        int n = 0;
-        for (; n < 4 && at(components, n) != 0xFF; ++n) {
-            switch (at(components, n)) {
+        for (byte component : components) {
+            switch (component) {
                 case X, Y, Z, W -> {
                 }
                 default -> throw new AssertionError();
             }
         }
-        assert n >= 1 && n <= 4;
+        assert components.length >= 1 && components.length <= 4;
 
         // GLSL supports splatting a scalar via `scalar.xxxx`, but not all versions of GLSL allow this.
         // Replace swizzles with equivalent splat constructors (`scalar.xxx` --> `half3(value)`).
         if (baseType.isScalar()) {
             return ConstructorVectorScalar.make(position,
-                    baseType.toCompound(/*cols=*/1, n), base);
+                    baseType.toCompound(/*cols=*/1, components.length), base);
         }
 
         // Detect identity swizzles like `color.rgba` and optimize it away.
-        if (n == baseType.getRows()) {
+        if (components.length == baseType.getRows()) {
             boolean identity = true;
-            for (int i = 0; i < n; ++i) {
-                if (at(components, i) != i) {
+            for (int i = 0; i < components.length; ++i) {
+                if (components[i] != i) {
                     identity = false;
                     break;
                 }
@@ -97,11 +140,10 @@ public final class Swizzle extends Expression {
         // Optimize swizzles of swizzles, e.g. replace `foo.argb.rggg` with `foo.arrr`.
         if (base.kind() == ExpressionKind.kSwizzle) {
             var b = (Swizzle) base;
-            int combined = 0;
-            for (int i = 0; i < n; ++i) {
-                int c = at(components, i);
-                int t = at(b.getComponents(), c);
-                combined |= (t << (i << 3));
+            byte[] combined = new byte[components.length];
+            for (int i = 0; i < components.length; ++i) {
+                byte c = components[i];
+                combined[i] = b.getComponents()[c];
             }
 
             // It may actually be possible to further simplify this swizzle. Go again.
@@ -118,7 +160,7 @@ public final class Swizzle extends Expression {
         // in a splat constructor holds the same value.
         if (value.kind() == ExpressionKind.kConstructorVectorScalar) {
             var ctor = (ConstructorVectorScalar) value;
-            Type ctorType = ctor.getComponentType().toCompound(/*cols=*/1, n);
+            Type ctorType = ctor.getComponentType().toCompound(/*cols=*/1, components.length);
             return ConstructorVectorScalar.make(
                     position,
                     ctorType,
@@ -128,7 +170,7 @@ public final class Swizzle extends Expression {
         // Swizzles on casts, like `half4(myFloat4).zyy`, can optimize to `half3(myFloat4.zyy)`.
         if (value.kind() == ExpressionKind.kConstructorCompoundCast) {
             var ctor = (ConstructorCompoundCast) value;
-            Type ctorType = ctor.getComponentType().toCompound(/*cols=*/1, n);
+            Type ctorType = ctor.getComponentType().toCompound(/*cols=*/1, components.length);
             Expression swizzled = make(position, ctor.getArguments()[0].clone(), components);
             Objects.requireNonNull(swizzled);
             return (ctorType.getRows() > 1)
@@ -146,7 +188,7 @@ public final class Swizzle extends Expression {
 
         // The swizzle could not be simplified, so apply the requested swizzle to the base expression.
         return new Swizzle(position,
-                baseType.getComponentType().toCompound(/*cols=*/1, n),
+                baseType.getComponentType().toCompound(/*cols=*/1, components.length),
                 base, components);
     }
 
@@ -154,7 +196,8 @@ public final class Swizzle extends Expression {
         return mBase;
     }
 
-    public int getComponents() {
+    // **immutable**
+    public byte[] getComponents() {
         return mComponents;
     }
 
@@ -170,8 +213,8 @@ public final class Swizzle extends Expression {
         StringBuilder result = new StringBuilder(
                 mBase.toString(Operator.PRECEDENCE_POSTFIX));
         result.append('.');
-        for (int i = 0; i < 4 && at(mComponents, i) != 0xFF; ++i) {
-            result.append((char) switch (at(mComponents, i)) {
+        for (byte component : mComponents) {
+            result.append(switch (component) {
                 case X -> 'x';
                 case Y -> 'y';
                 case Z -> 'z';

@@ -20,12 +20,14 @@ package icyllis.akashigi.slang;
 
 import icyllis.akashigi.slang.ir.Node;
 
+import java.util.Objects;
+
 /**
  * Class which is notified in the event of an error.
  */
 public abstract class ErrorHandler {
 
-    private String mSource;
+    private String mSource = "";
     private int mErrorCount;
     private int mWarningCount;
 
@@ -37,7 +39,7 @@ public abstract class ErrorHandler {
     }
 
     public final void setSource(String source) {
-        mSource = source;
+        mSource = Objects.requireNonNullElse(source, "");
     }
 
     public final int getErrorCount() {

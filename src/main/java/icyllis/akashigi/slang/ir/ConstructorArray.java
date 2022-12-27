@@ -39,7 +39,7 @@ public final class ConstructorArray extends AnyConstructor {
      */
     @Nullable
     public static Expression convert(int position, Type type, Expression[] arguments) {
-        assert type.isArray() && type.getArrayLength() > 0 : type.toString();
+        assert type.isArray() && type.getArraySize() > 0 : type.toString();
 
         // If there is a single argument containing an array of matching size and the types are
         // coercible, this is actually a cast. i.e., `half[10](myFloat10Array)`. This isn't a GLSL
@@ -56,9 +56,9 @@ public final class ConstructorArray extends AnyConstructor {
         }
 
         // Check that the number of constructor arguments matches the array size.
-        if (type.getArrayLength() != arguments.length) {
+        if (type.getArraySize() != arguments.length) {
             ThreadContext.getInstance().error(position, String.format("invalid arguments to '%s' constructor " +
-                            "(expected %d elements, but found %d)", type.getName(), type.getArrayLength(),
+                            "(expected %d elements, but found %d)", type.getName(), type.getArraySize(),
                     arguments.length));
             return null;
         }
@@ -83,7 +83,7 @@ public final class ConstructorArray extends AnyConstructor {
      */
     @Nonnull
     public static Expression make(int position, Type type, Expression[] arguments) {
-        assert type.getArrayLength() == arguments.length;
+        assert type.getArraySize() == arguments.length;
         for (Expression arg : arguments) {
             assert type.getElementType().matches(arg.getType());
         }

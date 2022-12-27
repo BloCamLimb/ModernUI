@@ -40,7 +40,7 @@ public final class ConstructorArrayCast extends AnyConstructor {
         // Only arrays of the same size are allowed.
         assert (type.isArray());
         assert (arg.getType().isArray());
-        assert (type.getArrayLength() == arg.getType().getArrayLength());
+        assert (type.getArraySize() == arg.getType().getArraySize());
 
         // If this is a no-op cast, return the expression as-is.
         if (type.matches(arg.getType())) {

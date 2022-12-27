@@ -30,46 +30,40 @@ public final class ThreadContext {
 
     private static final ThreadLocal<ThreadContext> TLS = new ThreadLocal<>();
 
-    private final Compiler mCompiler;
-
     // The Context holds a pointer to the configuration of the program being compiled.
     private final ModuleKind mKind;
-    private final ModuleSettings mSettings;
-    private final boolean mIsModule;
+    private final ModuleOptions mOptions;
+    private final boolean mIsBuiltin;
+
+    // The Context holds all of the built-in types.
+    private final BuiltinTypes mTypes;
 
     // This is the current symbol table of the code we are processing, and therefore changes during
     // compilation
     private final SymbolTable mSymbolTable;
     // The element map from the base module
-    private final List<Element> mBaseElements;
+    private final List<Element> mParentElements;
 
     private final List<Element> mUniqueElements = new ArrayList<>();
     private final List<Element> mSharedElements = new ArrayList<>();
 
     // The Context holds a pointer to our error handler.
-    private ErrorHandler mErrors;
+    private ErrorHandler mErrorHandler = new DefaultErrorHandler();
 
     /**
-     * @param isModule true if we are processing include files
+     * @param isBuiltin true if we are processing include files
      */
-    ThreadContext(Compiler compiler,
-                  ModuleKind kind,
-                  ModuleSettings settings,
-                  Module baseModule,
-                  boolean isModule) {
-        Objects.requireNonNull(compiler);
-        Objects.requireNonNull(kind);
-        Objects.requireNonNull(settings);
-        Objects.requireNonNull(baseModule);
-        mCompiler = compiler;
-        mKind = kind;
-        mSettings = settings;
-        mIsModule = isModule;
+    ThreadContext(ModuleKind kind, ModuleOptions options,
+                  Module parent, boolean isBuiltin) {
+        mKind = Objects.requireNonNull(kind);
+        mOptions = Objects.requireNonNull(options);
+        Objects.requireNonNull(parent);
+        mIsBuiltin = isBuiltin;
 
-        mSymbolTable = SymbolTable.push(baseModule.mSymbols, isModule);
-        mBaseElements = baseModule.mElements;
+        mTypes = ModuleLoader.getInstance().getBuiltinTypes();
 
-        mErrors = compiler.getErrorHandler();
+        mSymbolTable = SymbolTable.push(parent.mSymbols, isBuiltin);
+        mParentElements = parent.mElements;
 
         TLS.set(this);
     }
@@ -94,30 +88,23 @@ public final class ThreadContext {
         return Objects.requireNonNull(TLS.get(), "DSL is not started");
     }
 
-    /**
-     * Returns the Compiler used by DSL operations in the current thread.
-     */
-    public Compiler getCompiler() {
-        return mCompiler;
-    }
-
     public ModuleKind getKind() {
         return mKind;
     }
 
-    public ModuleSettings getSettings() {
-        return mSettings;
+    public ModuleOptions getOptions() {
+        return mOptions;
     }
 
-    public boolean isModule() {
-        return mIsModule;
+    public boolean isBuiltin() {
+        return mIsBuiltin;
     }
 
     /**
      * Returns the BuiltinTypes used by DSL operations in the current thread.
      */
     public BuiltinTypes getTypes() {
-        return mCompiler.getTypes();
+        return mTypes;
     }
 
     /**
@@ -130,8 +117,8 @@ public final class ThreadContext {
     /**
      * Returns the elements of the base module.
      */
-    public List<Element> getBaseElements() {
-        return mBaseElements;
+    public List<Element> getParentElements() {
+        return mParentElements;
     }
 
     /**
@@ -142,26 +129,26 @@ public final class ThreadContext {
     }
 
     /**
-     * Returns a list for adding used elements in the target module shared from {@link #getBaseElements()}.
+     * Returns a list for adding used elements in the target module shared from {@link #getParentElements()}.
      */
     public List<Element> getSharedElements() {
         return mSharedElements;
     }
 
     public void error(int position, String msg) {
-        mErrors.error(position, msg);
+        mErrorHandler.error(position, msg);
     }
 
     public void warning(int position, String msg) {
-        mErrors.warning(position, msg);
+        mErrorHandler.warning(position, msg);
     }
 
-    public ErrorHandler getErrorHandler() {
-        return mErrors;
+    ErrorHandler getErrorHandler() {
+        return mErrorHandler;
     }
 
-    public void setErrorHandler(ErrorHandler errors) {
-        mErrors = Objects.requireNonNull(errors);
+    void setErrorHandler(ErrorHandler errorHandler) {
+        mErrorHandler = Objects.requireNonNull(errorHandler);
     }
 
     @Nullable
@@ -190,7 +177,7 @@ public final class ThreadContext {
             }
             case Node.SymbolKind.kType -> {
                 Type type = (Type) result;
-                if (!mIsModule && type.isGeneric()) {
+                if (!mIsBuiltin && type.isGeneric()) {
                     error(position, "type '" + type.getName() + "' is generic");
                     type = getTypes().mPoison;
                 }
@@ -198,5 +185,18 @@ public final class ThreadContext {
             }
             default -> throw new AssertionError(result.kind());
         };
+    }
+
+    private static class DefaultErrorHandler extends ErrorHandler {
+
+        @Override
+        protected void handleError(int start, int end, String msg) {
+            throw new RuntimeException("error: " + msg);
+        }
+
+        @Override
+        protected void handleWarning(int start, int end, String msg) {
+            // noop
+        }
     }
 }

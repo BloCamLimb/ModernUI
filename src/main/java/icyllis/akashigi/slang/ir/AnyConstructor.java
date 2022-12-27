@@ -68,7 +68,7 @@ public abstract class AnyConstructor extends Expression {
     @Nonnull
     @Override
     public String toString(int parentPrecedence) {
-        String result = getType() + "(";
+        String result = getType().getName() + "(";
         StringJoiner joiner = new StringJoiner(", ");
         for (Expression arg : mArguments) {
             joiner.add(arg.toString(Operator.PRECEDENCE_SEQUENCE));

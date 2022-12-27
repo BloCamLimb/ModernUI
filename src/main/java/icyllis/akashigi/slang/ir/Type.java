@@ -23,6 +23,7 @@ import org.lwjgl.util.spvc.Spv;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.OptionalInt;
 
 /**
  * Represents a type symbol, such as int or float4.
@@ -68,17 +69,17 @@ public class Type extends Symbol {
             kBoolean_ScalarKind = 3,
             kNonScalar_ScalarKind = 4;
 
-    private final String mAbbr;
+    private final String mDesc;
     private final byte mTypeKind;
 
-    Type(String name, String abbr, byte typeKind) {
-        this(name, abbr, typeKind, -1);
+    Type(String name, String desc, byte kind) {
+        this(name, desc, kind, -1);
     }
 
-    Type(String name, String abbr, byte typeKind, int position) {
+    Type(String name, String desc, byte kind, int position) {
         super(position, SymbolKind.kType, name);
-        mAbbr = abbr;
-        mTypeKind = typeKind;
+        mDesc = desc;
+        mTypeKind = kind;
     }
 
     /**
@@ -104,6 +105,8 @@ public class Type extends Symbol {
 
     /**
      * Create a scalar type.
+     *
+     * @param kind a scalar kind
      */
     @Nonnull
     public static Type makeScalarType(String name, String abbr,
@@ -114,25 +117,25 @@ public class Type extends Symbol {
     /**
      * Create a vector type.
      *
-     * @param type a scalar type
+     * @param component a scalar type
      */
     @Nonnull
     public static Type makeVectorType(String name, String abbr,
-                                      Type type, int rows) {
-        assert (type == type.resolve());
-        return new VectorType(name, abbr, type, rows);
+                                      Type component, int rows) {
+        assert (component == component.resolve());
+        return new VectorType(name, abbr, component, rows);
     }
 
     /**
      * Create a matrix type.
      *
-     * @param type a scalar type
+     * @param component a scalar type
      */
     @Nonnull
     public static Type makeMatrixType(String name, String abbr,
-                                      Type type, int cols, int rows) {
-        assert (type == type.resolve());
-        return new MatrixType(name, abbr, type, cols, rows);
+                                      Type component, int cols, int rows) {
+        assert (component == component.resolve());
+        return new MatrixType(name, abbr, component, cols, rows);
     }
 
     /**
@@ -147,15 +150,15 @@ public class Type extends Symbol {
      * isShadow: True for samplers that sample a depth texture with comparison (e.g.
      * samplerShadow, sampler2DShadow, HLSL's SamplerComparisonState).
      *
-     * @param type       e.g. texture2D has a type of half
+     * @param component  e.g. texture2D has a type of half
      * @param dimensions SpvDim (e.g. {@link Spv#SpvDim1D})
      */
     @Nonnull
-    public static Type makeSamplerType(String name, String abbr, Type type, int dimensions,
+    public static Type makeSamplerType(String name, String abbr, Type component, int dimensions,
                                        boolean isShadow, boolean isArrayed, boolean isMultiSampled,
                                        boolean isSampled, boolean isSampler) {
-        assert (type == type.resolve());
-        return new SamplerType(name, abbr, type, dimensions, isShadow, isArrayed,
+        assert (component == component.resolve());
+        return new SamplerType(name, abbr, component, dimensions, isShadow, isArrayed,
                 isMultiSampled, isSampled, isSampler);
     }
 
@@ -163,10 +166,10 @@ public class Type extends Symbol {
      * Create an image or subpass type.
      */
     @Nonnull
-    public static Type makeImageType(String name, String abbr, Type type, int dimensions,
+    public static Type makeImageType(String name, String abbr, Type component, int dimensions,
                                      boolean isArrayed, boolean isMultiSampled) {
-        assert (type.isScalar());
-        return makeSamplerType(name, abbr, type, dimensions, /*isShadow=*/false, isArrayed,
+        assert (component.isScalar());
+        return makeSamplerType(name, abbr, component, dimensions, /*isShadow=*/false, isArrayed,
                 isMultiSampled, /*isSampled=*/false, /*isSampler*/false);
     }
 
@@ -174,10 +177,10 @@ public class Type extends Symbol {
      * Create a texture type.
      */
     @Nonnull
-    public static Type makeTextureType(String name, String abbr, Type type, int dimensions,
+    public static Type makeTextureType(String name, String abbr, Type component, int dimensions,
                                        boolean isArrayed, boolean isMultiSampled) {
-        assert (type.isScalar());
-        return makeSamplerType(name, abbr, type, dimensions, /*isShadow=*/false, isArrayed,
+        assert (component.isScalar());
+        return makeSamplerType(name, abbr, component, dimensions, /*isShadow=*/false, isArrayed,
                 isMultiSampled, /*isSampled=*/true, /*isSampler*/false);
     }
 
@@ -185,9 +188,9 @@ public class Type extends Symbol {
      * Create a separate sampler type.
      */
     @Nonnull
-    public static Type makeSeparateType(String name, String abbr, Type type, boolean isShadow) {
-        assert (type.isVoid());
-        return makeSamplerType(name, abbr, type, /*dimensions*/-1, isShadow, /*isArrayed*/false,
+    public static Type makeSeparateType(String name, String abbr, Type component, boolean isShadow) {
+        assert (component.isVoid());
+        return makeSamplerType(name, abbr, component, /*dimensions*/-1, isShadow, /*isArrayed*/false,
                 /*isMultiSampled*/false, /*isSampled=*/false, /*isSampler*/true);
     }
 
@@ -195,15 +198,17 @@ public class Type extends Symbol {
      * Create a combined sampler type.
      */
     @Nonnull
-    public static Type makeCombinedType(String name, String abbr, Type type, int dimensions,
+    public static Type makeCombinedType(String name, String abbr, Type component, int dimensions,
                                         boolean isShadow, boolean isArrayed, boolean isMultiSampled) {
-        assert (type.isScalar());
-        return makeSamplerType(name, abbr, type, dimensions, isShadow, isArrayed,
+        assert (component.isScalar());
+        return makeSamplerType(name, abbr, component, dimensions, isShadow, isArrayed,
                 isMultiSampled, /*isSampled=*/true, /*isSampler*/true);
     }
 
     /**
      * Create a "special" type with the given name.
+     *
+     * @param kind a type kind
      */
     @Nonnull
     public static Type makeSpecialType(String name, String abbr, byte kind) {
@@ -211,11 +216,14 @@ public class Type extends Symbol {
     }
 
     /**
-     * Creates an array type.
+     * Creates an array type. Call {@link #isUsableInArray(int)} first.
+     *
+     * @param type the element type
      */
     @Nonnull
-    public static Type makeArrayType(Type type, int length) {
-        return new ArrayType(type, length);
+    public static Type makeArrayType(String name, Type type, int size) {
+        assert !type.isArray();
+        return new ArrayType(name, type, size);
     }
 
     /**
@@ -311,11 +319,11 @@ public class Type extends Symbol {
     }
 
     /**
-     * Returns an abbreviation of the type, meant for name-mangling. (e.g. float4x4 -> f44)
+     * Returns a descriptor of the type, meant for name-mangling. (e.g. float4x4 -> f44)
      */
     @Nonnull
-    public final String getAbbr() {
-        return mAbbr;
+    public final String getDesc() {
+        return mDesc;
     }
 
     /**
@@ -421,7 +429,7 @@ public class Type extends Symbol {
      * another type.
      */
     public final boolean canCoerceTo(Type other) {
-        return CoercionCost.isPossible(coercionCost(other));
+        return CoercionCost.isPossible(getCoercionCost(other));
     }
 
     /**
@@ -431,23 +439,30 @@ public class Type extends Symbol {
      *
      * @see CoercionCost
      */
-    public final int coercionCost(Type other) {
+    public final int getCoercionCost(Type other) {
         if (matches(other)) {
             return CoercionCost.free();
         }
-        if (getTypeKind() == other.getTypeKind() &&
-                (isVector() || isMatrix() || isArray())) {
+        if (getTypeKind() == other.getTypeKind()) {
             // Vectors/matrices/arrays of the same size can be coerced if their component type can be.
-            if (isMatrix() && (getRows() != other.getRows() || getCols() != other.getCols())) {
-                return CoercionCost.impossible();
+            if (isVector()) {
+                if (getRows() != other.getRows()) {
+                    return CoercionCost.impossible();
+                }
+                return getComponentType().getCoercionCost(other.getComponentType());
             }
-            if (isArray() && getArrayLength() != other.getArrayLength()) {
-                return CoercionCost.impossible();
+            if (isMatrix()) {
+                if (getRows() != other.getRows() || getCols() != other.getCols()) {
+                    return CoercionCost.impossible();
+                }
+                return getComponentType().getCoercionCost(other.getComponentType());
             }
-            if (getRows() != other.getRows()) {
-                return CoercionCost.impossible();
+            if (isArray()) {
+                if (getArraySize() != other.getArraySize()) {
+                    return CoercionCost.impossible();
+                }
+                return getElementType().getCoercionCost(other.getElementType());
             }
-            return getComponentType().coercionCost(other.getComponentType());
         }
         if (isNumeric() && other.isNumeric()) {
             if (getScalarKind() != other.getScalarKind()) {
@@ -458,7 +473,7 @@ public class Type extends Symbol {
                 return CoercionCost.impossible();
             }
         }
-        if (mTypeKind == kGeneric_TypeKind) {
+        if (isGeneric()) {
             final Type[] types = getCoercibleTypes();
             for (int i = 0; i < types.length; i++) {
                 if (types[i].matches(other)) {
@@ -491,7 +506,7 @@ public class Type extends Symbol {
         }
 
         int position = expr.mPosition;
-        if (!CoercionCost.isPossible(expr.coercionCost(this))) {
+        if (!CoercionCost.isPossible(expr.getCoercionCost(this))) {
             ThreadContext.getInstance().error(position, "expected '" + getName() + "', but found '" +
                     expr.getType().getName() + "'");
             return null;
@@ -552,7 +567,7 @@ public class Type extends Symbol {
      * For arrays, returns either the size of the array (if known) or -1 (unsized).
      * For all other types, causes an assertion failure.
      */
-    public int getArrayLength() {
+    public int getArraySize() {
         throw new UnsupportedOperationException("non-array");
     }
 
@@ -753,9 +768,73 @@ public class Type extends Symbol {
     }
 
     /**
+     * Converts an element type and a size (float, 10) into an array name ("float[10]").
+     */
+    @Nonnull
+    public String getArrayName(int size) {
+        return getArrayName(getName(), size);
+    }
+
+    @Nonnull
+    static String getArrayName(String base, int size) {
+        if (size == kUnsizedArray) {
+            return base + "[]";
+        }
+        assert (size > 0);
+        return base + "[" + size + "]";
+    }
+
+    /**
+     * Reports errors and returns false if this type cannot be used as the element type for an array.
+     */
+    public boolean isUsableInArray(int position) {
+        ThreadContext context = ThreadContext.getInstance();
+        if (isArray()) {
+            // Vulkan: disallow multi-dimensional arrays
+            context.error(position, "multi-dimensional arrays are not supported");
+            return false;
+        }
+        if (isVoid()) {
+            context.error(position, "type 'void' may not be used in an array");
+            return false;
+        }
+        if (isOpaque()) {
+            context.error(position, "opaque type '" + getName() +
+                    "' may not be used in an array");
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Verifies that the expression is a valid constant array size for this type. Returns the array
+     * size, or reports errors and returns zero if the expression isn't a valid literal value.
+     */
+    public int convertArraySize(int position, Expression size) {
+        ThreadContext context = ThreadContext.getInstance();
+        size = context.getTypes().mInt.coerceExpression(size);
+        if (size == null) {
+            return 0;
+        }
+        if (!isUsableInArray(position)) {
+            return 0;
+        }
+        OptionalInt value = ConstantFolder.getConstantInt(size);
+        if (value.isEmpty()) {
+            context.error(size.mPosition, "array size must be an integer");
+            return 0;
+        }
+        if (value.getAsInt() <= 0) {
+            context.error(size.mPosition, "array size must be positive");
+            return 0;
+        }
+        return value.getAsInt();
+    }
+
+    /**
      * CoercionCost. The values are packed into a long value.
      *
-     * @see #coercionCost(Type)
+     * @see #getCoercionCost(Type)
      */
     public static final class CoercionCost {
 
@@ -808,7 +887,7 @@ public class Type extends Symbol {
         private final Type mUnderlyingType;
 
         AliasType(String name, Type type) {
-            super(name, type.getAbbr(), type.getTypeKind());
+            super(name, type.getDesc(), type.getTypeKind());
             mUnderlyingType = type;
         }
 
@@ -856,8 +935,8 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int getArrayLength() {
-            return mUnderlyingType.getArrayLength();
+        public int getArraySize() {
+            return mUnderlyingType.getArraySize();
         }
 
         @Override
@@ -956,26 +1035,14 @@ public class Type extends Symbol {
     public static final class ArrayType extends Type {
 
         private final Type mElementType;
-        private final int mArrayLength;
+        private final int mArraySize;
 
-        ArrayType(Type type, int length) {
-            super(mangle(type.getName(), length),
-                    mangle(type.getAbbr(), length),
+        ArrayType(String name, Type type, int size) {
+            super(name, getArrayName(type.getDesc(), size),
                     kArray_TypeKind);
-            if (type instanceof ArrayType) {
-                throw new IllegalArgumentException("Vulkan: disallow multi-dimensional arrays");
-            }
+            assert name.equals(getArrayName(type.getName(), size));
             mElementType = type;
-            mArrayLength = length;
-        }
-
-        @Nonnull
-        public static String mangle(String base, int length) {
-            if (length == kUnsizedArray) {
-                return base + "[]";
-            }
-            assert (length > 0);
-            return base + "[" + length + "]";
+            mArraySize = size;
         }
 
         @Override
@@ -984,14 +1051,14 @@ public class Type extends Symbol {
         }
 
         @Override
-        public int getArrayLength() {
-            return mArrayLength;
+        public int getArraySize() {
+            return mArraySize;
         }
 
         @Override
         public int getComponents() {
-            assert (mArrayLength != kUnsizedArray);
-            return super.getComponents() * mArrayLength;
+            assert (mArraySize != kUnsizedArray);
+            return super.getComponents() * mArraySize;
         }
 
         @Nonnull
@@ -1098,7 +1165,7 @@ public class Type extends Symbol {
         VectorType(String name, String abbr, Type type, int rows) {
             super(name, abbr, kVector_TypeKind);
             assert (rows >= 2 && rows <= 4);
-            assert (abbr.equals(type.getAbbr() + rows));
+            assert (abbr.equals(type.getDesc() + rows));
             assert (name.equals(type.getName() + rows));
             mComponentType = (ScalarType) type;
             mRows = (byte) rows;
@@ -1141,7 +1208,7 @@ public class Type extends Symbol {
             super(name, abbr, kMatrix_TypeKind);
             assert (rows >= 2 && rows <= 4);
             assert (cols >= 2 && cols <= 4);
-            assert (abbr.equals(type.getAbbr() + cols + "" + rows));
+            assert (abbr.equals(type.getDesc() + cols + "" + rows));
             assert (name.equals(type.getName() + cols + "x" + rows));
             mComponentType = (ScalarType) type;
             mCols = (byte) cols;
@@ -1245,10 +1312,23 @@ public class Type extends Symbol {
         private final Field[] mFields;
         private final boolean mInterfaceBlock;
 
+        // name - the type name, not instance name
+        // (interface block can have no instance name, but there must be type name)
         StructType(int position, String name, Field[] fields, boolean interfaceBlock) {
-            super(name, interfaceBlock ? "block" : "struct", kStruct_TypeKind, position);
+            super(name, desc(name, fields, interfaceBlock), kStruct_TypeKind, position);
             mFields = fields;
             mInterfaceBlock = interfaceBlock;
+        }
+
+        @Nonnull
+        public static String desc(String name, Field[] fields, boolean interfaceBlock) {
+            StringBuilder s = new StringBuilder(interfaceBlock ? "block-" : "struct-");
+            s.append(name);
+            for (Field field : fields) {
+                s.append('-');
+                s.append(field.type().getDesc());
+            }
+            return s.toString();
         }
 
         @Override

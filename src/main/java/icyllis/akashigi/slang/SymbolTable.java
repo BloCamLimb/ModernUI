@@ -130,4 +130,24 @@ public class SymbolTable {
         ThreadContext.getInstance().error(symbol.mPosition,
                 "symbol '" + key + "' is already defined");
     }
+
+    public Type findOrInsertArrayType(Type type, int size) {
+        if (size == 0) {
+            return type;
+        }
+        // If this is a builtin type, we add it as high as possible in the symbol table tree (at the
+        // module boundary), to enable additional reuse of the array-type.
+        if (mParent != null && type.isInBuiltinTypes()) {
+            return mParent.findOrInsertArrayType(type, size);
+        }
+        // Reuse an existing array type with this name if one already exists in our symbol table.
+        String arrayName = type.getArrayName(size);
+        Symbol existingSymbol = find(arrayName);
+        if (existingSymbol != null) {
+            return (Type) existingSymbol;
+        }
+        Type arrayType = Type.makeArrayType(arrayName, type, size);
+        insert(arrayType);
+        return arrayType;
+    }
 }

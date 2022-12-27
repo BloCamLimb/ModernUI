@@ -18,10 +18,13 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.Node;
 import icyllis.akashigi.slang.codegen.CodeGenerator;
+import icyllis.akashigi.slang.ir.Node;
+import icyllis.akashigi.slang.ir.Program;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Objects;
 
 /**
  * Main compiler entry point. The compiler parses the AkSL text directly into a tree of
@@ -36,9 +39,6 @@ public class Compiler {
 
     private final CompilerErrorHandler mErrorHandler = new CompilerErrorHandler();
 
-    // The Context holds all of the built-in types.
-    private final BuiltinTypes mTypes = new BuiltinTypes();
-
     final Inliner mInliner;
 
     private final StringBuilder mErrorText = new StringBuilder();
@@ -47,8 +47,53 @@ public class Compiler {
         mInliner = new Inliner();
     }
 
-    public BuiltinTypes getTypes() {
-        return mTypes;
+    /**
+     * Parse the source code into an abstract syntax tree of the final program.
+     *
+     * @param kind    the source type
+     * @param options the compiler options
+     * @param source  the source code of the module to be parsed
+     * @param parent  the parent module of the module to be parsed
+     * @return the program, or null if there's an error
+     */
+    @Nullable
+    public Program parse(ModuleKind kind,
+                         ModuleOptions options,
+                         String source,
+                         Module parent) {
+        Objects.requireNonNull(kind);
+        Objects.requireNonNull(parent);
+        if (source == null || source.isEmpty()) {
+            throw new IllegalArgumentException("Source code is empty");
+        }
+        resetErrors();
+        options = Objects.requireNonNullElseGet(options, ModuleOptions::new);
+        Parser parser = new Parser(this, kind, options, source);
+        return parser.parse(parent);
+    }
+
+    /**
+     * Parse the source code into an abstract syntax tree to further parse
+     * other modules or final programs.
+     *
+     * @param kind   the source type
+     * @param source the source code of the module to be parsed
+     * @param parent the parent module of the module to be parsed
+     * @return the module, or null if there's an error
+     */
+    @Nullable
+    public Module parseModule(ModuleKind kind,
+                              String source,
+                              Module parent) {
+        Objects.requireNonNull(kind);
+        Objects.requireNonNull(parent);
+        if (source == null || source.isEmpty()) {
+            throw new IllegalArgumentException("Source code is empty");
+        }
+        resetErrors();
+        ModuleOptions options = new ModuleOptions();
+        Parser parser = new Parser(this, kind, options, source);
+        return parser.parseModule(parent);
     }
 
     /**

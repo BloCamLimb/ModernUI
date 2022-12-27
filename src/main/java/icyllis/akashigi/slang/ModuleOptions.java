@@ -19,9 +19,9 @@
 package icyllis.akashigi.slang;
 
 /**
- * Holds the compiler settings for a shader module.
+ * Holds the compiler options for a shader module.
  */
-public class ModuleSettings {
+public class ModuleOptions {
 
 
 }

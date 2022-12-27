@@ -73,8 +73,11 @@ public abstract class Expression extends Node {
     /**
      * @see Type.CoercionCost
      */
-    public int coercionCost(Type target) {
-        return getType().coercionCost(target);
+    public int getCoercionCost(Type other) {
+        if (isIntLiteral() && other.isNumeric()) {
+            return Type.CoercionCost.free();
+        }
+        return getType().getCoercionCost(other);
     }
 
     /**
@@ -82,7 +85,7 @@ public abstract class Expression extends Node {
      * references that were never invoked, or type references that were never constructed, are
      * considered incomplete expressions and should result in an error.
      */
-    public boolean isIncomplete() {
+    public final boolean isIncomplete() {
         return switch (kind()) {
             case ExpressionKind.kFunctionReference -> {
                 int pos = getEndOffset();

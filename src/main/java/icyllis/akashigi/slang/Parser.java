@@ -46,11 +46,11 @@ public class Parser {
             LAYOUT_TOKEN_COLOR = 10;
 
     private final Compiler mCompiler;
-    private final ModuleSettings mSettings;
-    private final int mKind;
+    private final ModuleKind mKind;
+    private final ModuleOptions mOptions;
 
     // current parse stream
-    private final String mText;
+    private final String mSource;
     private int mScanOffset;
     private long mScanToken;
 
@@ -59,17 +59,52 @@ public class Parser {
     private int mDepth = 0;
     private long mPushback = -1;
 
-    public Parser(Compiler compiler, ModuleSettings settings, int kind, String text) {
+    public Parser(Compiler compiler, ModuleKind kind, ModuleOptions options, String source) {
         // ideally we can break long text into pieces, but shader code should not be too long
-        if (text.length() > 0x7FFFFE) {
-            throw new IllegalArgumentException("Source code is too long, " + text.length() + " > 8,388,606");
+        if (source.length() > 0x7FFFFE) {
+            throw new IllegalArgumentException("Source code is too long, " + source.length() + " > 8,388,606");
         }
         mCompiler = Objects.requireNonNull(compiler);
-        mSettings = Objects.requireNonNull(settings);
+        mOptions = Objects.requireNonNull(options);
         mKind = kind;
-        mText = text;
+        mSource = source;
         mScanOffset = 0;
         mScanToken = -1;
+    }
+
+    @Nullable
+    public Program parse(Module parent) {
+        Objects.requireNonNull(parent);
+        ErrorHandler errorHandler = mCompiler.getErrorHandler();
+        DSL.start(mKind, mOptions, parent);
+        DSL.setErrorHandler(errorHandler);
+        errorHandler.setSource(mSource);
+        //TODO declarations
+        errorHandler.setSource(null);
+        DSL.end();
+        return null;
+    }
+
+    @Nullable
+    public Module parseModule(Module parent) {
+        Objects.requireNonNull(parent);
+        ErrorHandler errorHandler = mCompiler.getErrorHandler();
+        DSL.startModule(mKind, mOptions, parent);
+        DSL.setErrorHandler(errorHandler);
+        errorHandler.setSource(mSource);
+        //TODO declarations
+        final Module result;
+        if (DSL.getErrorHandler().getErrorCount() == 0) {
+            result = new Module();
+            result.mParent = parent;
+            result.mSymbols = ThreadContext.getInstance().getSymbolTable();
+            result.mElements = ThreadContext.getInstance().getUniqueElements();
+        } else {
+            result = null;
+        }
+        errorHandler.setSource(null);
+        DSL.end();
+        return result;
     }
 
     /**
@@ -93,13 +128,13 @@ public class Parser {
             int state = 1;
             boolean eof = false;
             for (;;) {
-                if (mScanOffset >= mText.length()) {
-                    if (startOffset == mText.length() || Lexer.ACCEPTS[state] == Lexer.TK_NONE) {
+                if (mScanOffset >= mSource.length()) {
+                    if (startOffset == mSource.length() || Lexer.ACCEPTS[state] == Lexer.TK_NONE) {
                         eof = true;
                     }
                     break;
                 }
-                int c = (mText.charAt(mScanOffset) - NFAtoDFA.START_CHAR);
+                int c = (mSource.charAt(mScanOffset) - NFAtoDFA.START_CHAR);
                 if (c < 0 || c > NFAtoDFA.END_CHAR - NFAtoDFA.START_CHAR) {
                     // Choose '\e' as invalid char which is greater than start char,
                     // and should not appear in actual input.
@@ -126,11 +161,11 @@ public class Parser {
                 switch (kind) {
                     case Lexer.TK_RESERVED -> {
                         error(startOffset, mScanOffset,
-                                "'" + mText.substring(startOffset, endOffset) + "' is a reserved keyword");
+                                "'" + mSource.substring(startOffset, endOffset) + "' is a reserved keyword");
                         kind = Lexer.TK_IDENTIFIER;  // reduces additional follow-up errors
                     }
                     case Lexer.TK_BAD_OCTAL -> error(startOffset, endOffset,
-                            "'" + mText.substring(startOffset, endOffset) + "' is not a valid octal number");
+                            "'" + mSource.substring(startOffset, endOffset) + "' is not a valid octal number");
                 }
             }
             // encode token state, we've checked text length in the constructor
@@ -200,7 +235,7 @@ public class Parser {
         assert (token == mScanToken) : "current stream";
         int start = (int) (token >> 16) & 0xFFFFFF;
         int end = (int) (token >>> 40);
-        return mText.substring(start, end);
+        return mSource.substring(start, end);
     }
 
     // see Node.mPosition

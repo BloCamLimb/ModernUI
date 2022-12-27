@@ -18,28 +18,26 @@
 
 package icyllis.akashigi.slang;
 
-public final class DSLCore {
+public final class DSL {
 
     /**
-     * Starts the DSL on the current thread for compiling shader modules.
+     * Starts the DSL on the current thread for compiling programs.
      */
-    public static void start(Compiler compiler, ModuleKind kind,
-                             ModuleSettings settings, Module baseModule) {
+    public static void start(ModuleKind kind, ModuleOptions options, icyllis.akashigi.slang.Module parent) {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
-        new ThreadContext(compiler, kind, settings, baseModule, false);
+        new ThreadContext(kind, options, parent, false);
     }
 
     /**
-     * Starts the DSL on the current thread for compiling base modules (include files).
+     * Starts the DSL on the current thread for compiling modules (include files).
      */
-    public static void startModule(Compiler compiler, ModuleKind kind,
-                                   ModuleSettings settings, Module baseModule) {
+    public static void startModule(ModuleKind kind, ModuleOptions options, Module parent) {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
-        new ThreadContext(compiler, kind, settings, baseModule, true);
+        new ThreadContext(kind, options, parent, true);
     }
 
     /**
@@ -47,5 +45,20 @@ public final class DSLCore {
      */
     public static void end() {
         ThreadContext.getInstance().kill();
+    }
+
+    /**
+     * Returns the ErrorHandler which will be notified of any errors that occur during DSL calls.
+     * The default error handler throws RuntimeException on any error.
+     */
+    public static ErrorHandler getErrorHandler() {
+        return ThreadContext.getInstance().getErrorHandler();
+    }
+
+    /**
+     * Installs an ErrorHandler which will be notified of any errors that occur during DSL calls.
+     */
+    public static void setErrorHandler(ErrorHandler errorHandler) {
+        ThreadContext.getInstance().setErrorHandler(errorHandler);
     }
 }

@@ -27,8 +27,14 @@ import java.util.List;
  */
 public class Program implements Iterable<Element> {
 
-    private List<Element> mOwnedElements;
-    private List<Element> mSharedElements;
+    private final List<Element> mUniqueElements;
+    private final List<Element> mSharedElements;
+
+    public Program(List<Element> uniqueElements,
+                   List<Element> sharedElements) {
+        mUniqueElements = uniqueElements;
+        mSharedElements = sharedElements;
+    }
 
     @Nonnull
     @Override
@@ -56,7 +62,7 @@ public class Program implements Iterable<Element> {
 
         private void forward() {
             while (!mCurrIter.hasNext() && !mSharedEnded) {
-                mCurrIter = mOwnedElements.iterator();
+                mCurrIter = mUniqueElements.iterator();
                 mSharedEnded = true;
             }
         }

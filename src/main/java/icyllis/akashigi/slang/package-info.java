@@ -19,7 +19,4 @@
 /**
  * Akashi Shading Language, based on GLSL 450, inspired by SkSL 300.
  */
-@ParametersAreNonnullByDefault
 package icyllis.akashigi.slang;
-
-import javax.annotation.ParametersAreNonnullByDefault;

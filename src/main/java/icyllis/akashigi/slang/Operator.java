@@ -357,8 +357,8 @@ public enum Operator {
                 if (left.isVoid() || left.isOpaque()) {
                     return false;
                 }
-                int rightToLeft = right.coercionCost(left),
-                        leftToRight = left.coercionCost(right);
+                int rightToLeft = right.getCoercionCost(left),
+                        leftToRight = left.getCoercionCost(right);
                 if (Type.CoercionCost.compare(rightToLeft, leftToRight) < 0) {
                     if (Type.CoercionCost.isPossible(rightToLeft)) {
                         types[0] = left;
@@ -469,9 +469,9 @@ public enum Operator {
             return true;
         }
 
-        int rightToLeftCost = right.coercionCost(left);
+        int rightToLeftCost = right.getCoercionCost(left);
         int leftToRightCost = isAssignment ? Type.CoercionCost.impossible()
-                : left.coercionCost(right);
+                : left.getCoercionCost(right);
 
         if ((left.isScalar() && right.isScalar()) || (leftIsVectorOrMatrix && validMatrixOrVectorOp)) {
             if (isOnlyValidForIntegralTypes()) {

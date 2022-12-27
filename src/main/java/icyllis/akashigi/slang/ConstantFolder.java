@@ -22,21 +22,30 @@ import icyllis.akashigi.slang.analysis.Analysis;
 import icyllis.akashigi.slang.ir.*;
 
 import javax.annotation.Nullable;
+import java.util.OptionalInt;
 
 public class ConstantFolder {
 
-    public static Expression makeConstantValueForVariable(int position, Expression expr) {
-        Expression constexpr = getConstantValueOrNullForVariable(expr);
-        return constexpr != null ? constexpr.clone(position) : expr;
+    public static OptionalInt getConstantInt(Expression value) {
+        Expression expr = getConstantValueForVariable(value);
+        if (expr.isIntLiteral()) {
+            return OptionalInt.of(((Literal) expr).intValue());
+        }
+        return OptionalInt.empty();
+    }
+
+    public static Expression makeConstantValueForVariable(int position, Expression value) {
+        Expression expr = getConstantValueOrNullForVariable(value);
+        return expr != null ? expr.clone(position) : value;
     }
 
     /**
      * If the expression is a const variable with a known compile-time-constant value, returns that
      * value. If not, returns the original expression as-is.
      */
-    public static Expression getConstantValueForVariable(Expression expr) {
-        Expression constexpr = getConstantValueOrNullForVariable(expr);
-        return constexpr != null ? constexpr : expr;
+    public static Expression getConstantValueForVariable(Expression value) {
+        Expression expr = getConstantValueOrNullForVariable(value);
+        return expr != null ? expr : value;
     }
 
     /**
