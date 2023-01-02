@@ -253,19 +253,8 @@ public class Parser {
         error(start, end, msg);
     }
 
-    private void warning(long token, String msg) {
-        assert (token == mScanToken) : "current stream";
-        int start = (int) (token >> 16) & 0xFFFFFF;
-        int end = (int) (token >>> 40);
-        warning(start, end, msg);
-    }
-
     private void error(int start, int end, String msg) {
-        ThreadContext.getInstance().getErrorHandler().error(start, end, msg);
-    }
-
-    private void warning(int start, int end, String msg) {
-        ThreadContext.getInstance().getErrorHandler().warning(start, end, msg);
+        ThreadContext.getInstance().error(start, end, msg);
     }
 
     /**

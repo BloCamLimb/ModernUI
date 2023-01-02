@@ -19,48 +19,55 @@
 package icyllis.akashigi.slang;
 
 import icyllis.akashigi.slang.ir.*;
+import org.jetbrains.annotations.Contract;
 
-import java.util.NavigableMap;
-import java.util.TreeMap;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.*;
 
 /**
  * Maps identifiers to symbols.
  */
-public class SymbolTable {
+public final class SymbolTable {
 
     private final NavigableMap<String, Symbol> mTable = new TreeMap<>();
 
-    public SymbolTable mParent;
-    private boolean mBuiltin;
+    private final SymbolTable mParent;
+    private final boolean mBuiltin;
 
-    public SymbolTable(boolean builtin) {
-        mBuiltin = builtin;
+    /**
+     * The root symbol table is always builtin.
+     */
+    SymbolTable() {
+        this(null, true);
     }
 
-    public SymbolTable(SymbolTable parent, boolean builtin) {
-        mBuiltin = builtin;
+    private SymbolTable(SymbolTable parent, boolean builtin) {
         mParent = parent;
+        mBuiltin = builtin;
     }
 
+    @Nonnull
+    @Contract("_ -> new")
     public static SymbolTable push(SymbolTable table) {
-        return push(table, table.isBuiltin());
+        Objects.requireNonNull(table);
+        return new SymbolTable(table, table.mBuiltin);
     }
 
-    public static SymbolTable push(SymbolTable table, boolean isBuiltin) {
-        return new SymbolTable(table, isBuiltin);
+    @Nonnull
+    @Contract("_, _ -> new")
+    public static SymbolTable push(SymbolTable table, boolean builtin) {
+        Objects.requireNonNull(table);
+        return new SymbolTable(table, builtin);
     }
 
-    public static SymbolTable pop(SymbolTable table) {
-        return table.mParent;
+    public SymbolTable getParent() {
+        return mParent;
     }
 
-    public static SymbolTable pushIfBuiltin(SymbolTable table) {
-        if (!table.isBuiltin()) {
-            return table;
-        }
-        return push(table, false);
-    }
-
+    /**
+     * @return true if this symbol table is at builtin level
+     */
     public boolean isBuiltin() {
         return mBuiltin;
     }
@@ -68,9 +75,10 @@ public class SymbolTable {
     /**
      * Looks up the requested symbol and returns a const pointer.
      */
+    @Nullable
     public Symbol find(String name) {
-        Symbol symbol = mTable.get(name);
-        if (symbol != null) {
+        Symbol symbol;
+        if ((symbol = mTable.get(name)) != null) {
             return symbol;
         }
         return mParent != null ? mParent.find(name) : null;
@@ -79,6 +87,7 @@ public class SymbolTable {
     /**
      * Looks up the requested symbol, only searching the built-in symbol tables. Always const.
      */
+    @Nullable
     public Symbol findBuiltinSymbol(String name) {
         if (mBuiltin) {
             return find(name);
@@ -90,8 +99,7 @@ public class SymbolTable {
      * Returns true if the name refers to a type (user or built-in) in the current symbol table.
      */
     public boolean isType(String name) {
-        Symbol symbol = find(name);
-        return symbol != null && symbol.kind() == Node.SymbolKind.kType;
+        return find(name) instanceof Type;
     }
 
     /**
@@ -106,48 +114,53 @@ public class SymbolTable {
 
     /**
      * Inserts a symbol into the symbol table, reports errors if there was a name collision.
+     *
+     * @return the given symbol if successful, or null if there was a name collision
      */
-    public void insert(Symbol symbol) {
+    @Nullable
+    public <T extends Symbol> T insert(T symbol) {
         String key = symbol.getName();
 
         // If this is a function declaration, we need to keep the overload chain in sync.
-        if (symbol.kind() == Node.SymbolKind.kFunctionDeclaration) {
+        if (symbol instanceof Function) {
             // If we have a function with the same name...
-            Symbol existingSymbol = find(key);
-            if (existingSymbol != null && existingSymbol.kind() == Node.SymbolKind.kFunctionDeclaration) {
-                ((FunctionDeclaration) symbol).setNextOverload((FunctionDeclaration) existingSymbol);
+            if (find(key) instanceof Function next) {
+                ((Function) symbol).setNextOverload(next);
                 mTable.put(key, symbol);
-                return;
+                return symbol;
             }
         }
 
         if (mParent == null || mParent.find(key) == null) {
             if (mTable.putIfAbsent(key, symbol) == null) {
-                return;
+                return symbol;
             }
         }
 
         ThreadContext.getInstance().error(symbol.mPosition,
                 "symbol '" + key + "' is already defined");
+        return null;
     }
 
-    public Type findOrInsertArrayType(Type type, int size) {
+    /**
+     * Finds or creates an array type with the given element type and array size.
+     */
+    public Type computeArrayType(Type type, int size) {
         if (size == 0) {
             return type;
         }
         // If this is a builtin type, we add it as high as possible in the symbol table tree (at the
         // module boundary), to enable additional reuse of the array-type.
         if (mParent != null && type.isInBuiltinTypes()) {
-            return mParent.findOrInsertArrayType(type, size);
+            return mParent.computeArrayType(type, size);
         }
         // Reuse an existing array type with this name if one already exists in our symbol table.
-        String arrayName = type.getArrayName(size);
-        Symbol existingSymbol = find(arrayName);
-        if (existingSymbol != null) {
-            return (Type) existingSymbol;
+        String name = type.getArrayName(size);
+        Symbol symbol;
+        if ((symbol = find(name)) != null) {
+            return (Type) symbol;
         }
-        Type arrayType = Type.makeArrayType(arrayName, type, size);
-        insert(arrayType);
-        return arrayType;
+        Type result = Type.makeArrayType(name, type, size);
+        return Objects.requireNonNull(insert(result));
     }
 }

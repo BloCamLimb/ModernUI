@@ -29,10 +29,6 @@ public abstract class ErrorHandler {
 
     private String mSource = "";
     private int mErrorCount;
-    private int mWarningCount;
-
-    public ErrorHandler() {
-    }
 
     public final String getSource() {
         return mSource;
@@ -46,13 +42,8 @@ public abstract class ErrorHandler {
         return mErrorCount;
     }
 
-    public final int getWarningCount() {
-        return mWarningCount;
-    }
-
-    public final void resetCount() {
+    public final void resetErrorCount() {
         mErrorCount = 0;
-        mWarningCount = 0;
     }
 
     public final void error(int position, String msg) {
@@ -68,22 +59,8 @@ public abstract class ErrorHandler {
         handleError(start, end, msg);
     }
 
-    public final void warning(int position, String msg) {
-        warning(Node.getStartOffset(position), Node.getEndOffset(position), msg);
-    }
-
-    public final void warning(int start, int end, String msg) {
-        mWarningCount++;
-        handleWarning(start, end, msg);
-    }
-
     /**
      * Called when an error is reported.
      */
     protected abstract void handleError(int start, int end, String msg);
-
-    /**
-     * Called when a warning is reported.
-     */
-    protected abstract void handleWarning(int start, int end, String msg);
 }

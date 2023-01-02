@@ -18,12 +18,14 @@
 
 package icyllis.akashigi.slang;
 
+import java.util.Objects;
+
 public final class DSL {
 
     /**
      * Starts the DSL on the current thread for compiling programs.
      */
-    public static void start(ModuleKind kind, ModuleOptions options, icyllis.akashigi.slang.Module parent) {
+    public static void start(ModuleKind kind, ModuleOptions options, Module parent) {
         if (ThreadContext.isActive()) {
             throw new IllegalStateException("DSL is already started");
         }
@@ -44,7 +46,7 @@ public final class DSL {
      * Ends the DSL on the current thread.
      */
     public static void end() {
-        ThreadContext.getInstance().kill();
+        ThreadContext.getInstance().end();
     }
 
     /**
@@ -52,13 +54,13 @@ public final class DSL {
      * The default error handler throws RuntimeException on any error.
      */
     public static ErrorHandler getErrorHandler() {
-        return ThreadContext.getInstance().getErrorHandler();
+        return ThreadContext.getInstance().mErrorHandler;
     }
 
     /**
      * Installs an ErrorHandler which will be notified of any errors that occur during DSL calls.
      */
     public static void setErrorHandler(ErrorHandler errorHandler) {
-        ThreadContext.getInstance().setErrorHandler(errorHandler);
+        ThreadContext.getInstance().mErrorHandler = Objects.requireNonNull(errorHandler);
     }
 }

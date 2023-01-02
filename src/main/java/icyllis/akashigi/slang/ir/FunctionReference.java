@@ -28,20 +28,20 @@ import javax.annotation.Nonnull;
  */
 public final class FunctionReference extends Expression {
 
-    private final FunctionDeclaration mOverloadChain;
+    private final Function mOverloadChain;
 
-    private FunctionReference(int position, FunctionDeclaration overloadChain, Type type) {
+    private FunctionReference(int position, Function overloadChain, Type type) {
         super(position, ExpressionKind.kFunctionReference, type);
         mOverloadChain = overloadChain;
     }
 
     @Nonnull
-    public static Expression make(int position, FunctionDeclaration overloadChain) {
+    public static Expression make(int position, Function overloadChain) {
         ThreadContext context = ThreadContext.getInstance();
         return new FunctionReference(position, overloadChain, context.getTypes().mInvalid);
     }
 
-    public FunctionDeclaration getOverloadChain() {
+    public Function getOverloadChain() {
         return mOverloadChain;
     }
 

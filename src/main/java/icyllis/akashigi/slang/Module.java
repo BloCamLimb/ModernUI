@@ -20,17 +20,17 @@ package icyllis.akashigi.slang;
 
 import icyllis.akashigi.slang.ir.Element;
 
-import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Represents a base module that can be used to compile other modules.
  */
 public final class Module {
 
-    public Module mParent;
-    public SymbolTable mSymbols;
-    public List<Element> mElements;
+    Module mParent;
+    SymbolTable mSymbols;
+    ArrayList<Element> mElements;
 
-    public Module() {
+    Module() {
     }
 }

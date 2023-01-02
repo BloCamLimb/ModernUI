@@ -28,26 +28,24 @@ import java.util.StringJoiner;
 /**
  * A function declaration (function symbol).
  */
-public final class FunctionDeclaration extends Symbol {
+public final class Function extends Symbol {
 
     private final int mModifiers;
     private final List<Variable> mParameters;
     private final Type mReturnType;
-    private final String mMangledName;
 
-    private FunctionDeclaration mNextOverload;
+    private boolean mBuiltin;
+    private boolean mEntryPoint;
+    private int mIntrinsicKind;
 
-    public FunctionDeclaration(int position, int modifiers, String name, List<Variable> parameters, Type returnType) {
+    private Function mNextOverload;
+    private FunctionDefinition mDefinition;
+
+    public Function(int position, int modifiers, String name, List<Variable> parameters, Type returnType) {
         super(position, SymbolKind.kFunctionDeclaration, name);
         mModifiers = modifiers;
         mParameters = parameters;
         mReturnType = returnType;
-        StringBuilder mangledName = new StringBuilder(name);
-        mangledName.append('(');
-        for (Variable p : parameters) {
-            mangledName.append(p.getType().getDesc()).append(';');
-        }
-        mMangledName = mangledName.toString();
     }
 
     @Nonnull
@@ -58,15 +56,20 @@ public final class FunctionDeclaration extends Symbol {
 
     @Nonnull
     public String getMangledName() {
-        return mMangledName;
+        StringBuilder mangledName = new StringBuilder(getName());
+        mangledName.append('(');
+        for (Variable p : mParameters) {
+            mangledName.append(p.getType().getDesc()).append(';');
+        }
+        return  mangledName.toString();
     }
 
     @Nullable
-    public FunctionDeclaration getNextOverload() {
+    public Function getNextOverload() {
         return mNextOverload;
     }
 
-    public void setNextOverload(FunctionDeclaration overload) {
+    public void setNextOverload(Function overload) {
         assert (overload == null || overload.getName().equals(getName()));
         mNextOverload = overload;
     }

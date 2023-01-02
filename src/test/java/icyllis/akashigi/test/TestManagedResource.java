@@ -18,7 +18,6 @@
 
 package icyllis.akashigi.test;
 
-import icyllis.akashigi.core.FMath;
 import icyllis.akashigi.core.*;
 import icyllis.akashigi.engine.*;
 import icyllis.akashigi.engine.geom.RoundRectProcessor;
@@ -30,15 +29,18 @@ import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.*;
+import sun.misc.Unsafe;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Objects;
 
 import static icyllis.akashigi.core.Core.*;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -72,6 +74,16 @@ public class TestManagedResource {
         pw.println("Max vertex bindings: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_BINDINGS));
         pw.println("Max vertex stride: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
         pw.println("Max label length: " + GLCore.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
+
+        try {
+            Field f = MemoryUtil.class.getDeclaredField("UNSAFE");
+            f.setAccessible(true);
+            Unsafe unsafe = (Unsafe) f.get(null);
+            long addr = unsafe.allocateMemory(256);
+            pw.println("Allocate memory address: " + Long.toHexString(addr));
+            unsafe.freeMemory(addr);
+        } catch (Exception ignored) {
+        }
 
         pw.println("quickModPow: " + FMath.quickModPow(95959595, 87878787, 998244353));
 

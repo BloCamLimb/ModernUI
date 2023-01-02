@@ -772,11 +772,11 @@ public class Type extends Symbol {
      */
     @Nonnull
     public String getArrayName(int size) {
-        return getArrayName(getName(), size);
+        return getArrayNameOrDesc(getName(), size);
     }
 
     @Nonnull
-    static String getArrayName(String base, int size) {
+    static String getArrayNameOrDesc(String base, int size) {
         if (size == kUnsizedArray) {
             return base + "[]";
         }
@@ -1038,9 +1038,9 @@ public class Type extends Symbol {
         private final int mArraySize;
 
         ArrayType(String name, Type type, int size) {
-            super(name, getArrayName(type.getDesc(), size),
+            super(name, getArrayNameOrDesc(type.getDesc(), size),
                     kArray_TypeKind);
-            assert name.equals(getArrayName(type.getName(), size));
+            assert name.equals(getArrayNameOrDesc(type.getName(), size));
             mElementType = type;
             mArraySize = size;
         }

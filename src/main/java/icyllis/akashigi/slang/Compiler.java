@@ -27,9 +27,9 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * Main compiler entry point. The compiler parses the AkSL text directly into a tree of
+ * Main compiler entry point. The compiler parses the source text directly into a tree of
  * {@link Node Nodes}, while performing basic optimizations such as constant-folding and
- * dead-code elimination. Then the Program is passed into a {@link CodeGenerator}
+ * dead-code elimination. Then the {@link Program} is passed into a {@link CodeGenerator}
  * to produce compiled output.
  */
 public class Compiler {
@@ -134,7 +134,7 @@ public class Compiler {
 
     private void resetErrors() {
         mErrorText.setLength(0); // reset but do not trim the internal array
-        mErrorHandler.resetCount();
+        mErrorHandler.resetErrorCount();
     }
 
     private class CompilerErrorHandler extends ErrorHandler {
@@ -145,7 +145,7 @@ public class Compiler {
             assert (start <= 0xFFFFFF);
 
             mErrorText.append("error: ");
-            boolean printLocation = false;
+            boolean showLocation = false;
             String src = getSource();
             assert src != null;
             if (start != 0xFFFFFF) {
@@ -157,11 +157,11 @@ public class Compiler {
                         line++;
                     }
                 }
-                printLocation = start < src.length();
+                showLocation = start < src.length();
                 mErrorText.append(line).append(": ");
             }
             mErrorText.append(msg).append('\n');
-            if (printLocation) {
+            if (showLocation) {
                 // Find the beginning of the line
                 int lineStart = start;
                 while (lineStart > 0) {
@@ -200,11 +200,6 @@ public class Compiler {
                 }
                 mErrorText.append('\n');
             }
-        }
-
-        @Override
-        protected void handleWarning(int start, int end, String msg) {
-            //TODO
         }
     }
 }

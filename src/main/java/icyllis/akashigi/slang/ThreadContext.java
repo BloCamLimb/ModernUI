@@ -33,7 +33,7 @@ public final class ThreadContext {
     // The Context holds a pointer to the configuration of the program being compiled.
     private final ModuleKind mKind;
     private final ModuleOptions mOptions;
-    private final boolean mIsBuiltin;
+    private final boolean mBuiltin;
 
     // The Context holds all of the built-in types.
     private final BuiltinTypes mTypes;
@@ -41,34 +41,39 @@ public final class ThreadContext {
     // This is the current symbol table of the code we are processing, and therefore changes during
     // compilation
     private final SymbolTable mSymbolTable;
-    // The element map from the base module
+    // The element map from the parent module
     private final List<Element> mParentElements;
 
-    private final List<Element> mUniqueElements = new ArrayList<>();
-    private final List<Element> mSharedElements = new ArrayList<>();
+    private final ArrayList<Element> mUniqueElements = new ArrayList<>();
+    private final ArrayList<Element> mSharedElements = new ArrayList<>();
 
     // The Context holds a pointer to our error handler.
-    private ErrorHandler mErrorHandler = new DefaultErrorHandler();
+    ErrorHandler mErrorHandler = new ErrorHandler() {
+        @Override
+        protected void handleError(int start, int end, String msg) {
+            throw new RuntimeException("error: " + msg);
+        }
+    };
 
     /**
-     * @param isBuiltin true if we are processing include files
+     * @param builtin true if we are processing include files
      */
     ThreadContext(ModuleKind kind, ModuleOptions options,
-                  Module parent, boolean isBuiltin) {
+                  Module parent, boolean builtin) {
         mKind = Objects.requireNonNull(kind);
         mOptions = Objects.requireNonNull(options);
         Objects.requireNonNull(parent);
-        mIsBuiltin = isBuiltin;
+        mBuiltin = builtin;
 
         mTypes = ModuleLoader.getInstance().getBuiltinTypes();
 
-        mSymbolTable = SymbolTable.push(parent.mSymbols, isBuiltin);
-        mParentElements = parent.mElements;
+        mSymbolTable = SymbolTable.push(parent.mSymbols, builtin);
+        mParentElements = Collections.unmodifiableList(parent.mElements);
 
         TLS.set(this);
     }
 
-    void kill() {
+    void end() {
         TLS.remove();
     }
 
@@ -96,8 +101,11 @@ public final class ThreadContext {
         return mOptions;
     }
 
+    /**
+     * @return true if we are processing include files
+     */
     public boolean isBuiltin() {
-        return mIsBuiltin;
+        return mBuiltin;
     }
 
     /**
@@ -115,23 +123,23 @@ public final class ThreadContext {
     }
 
     /**
-     * Returns the elements of the base module.
+     * Returns the elements of the parent module, unmodifiable.
      */
     public List<Element> getParentElements() {
         return mParentElements;
     }
 
     /**
-     * Returns a list for adding owned elements in the target module.
+     * Returns a list for adding unique elements in the target module.
      */
-    public List<Element> getUniqueElements() {
+    public ArrayList<Element> getUniqueElements() {
         return mUniqueElements;
     }
 
     /**
      * Returns a list for adding used elements in the target module shared from {@link #getParentElements()}.
      */
-    public List<Element> getSharedElements() {
+    public ArrayList<Element> getSharedElements() {
         return mSharedElements;
     }
 
@@ -139,18 +147,14 @@ public final class ThreadContext {
         mErrorHandler.error(position, msg);
     }
 
-    public void warning(int position, String msg) {
-        mErrorHandler.warning(position, msg);
+    public void error(int start, int end, String msg) {
+        mErrorHandler.error(start, end, msg);
     }
 
-    ErrorHandler getErrorHandler() {
-        return mErrorHandler;
-    }
-
-    void setErrorHandler(ErrorHandler errorHandler) {
-        mErrorHandler = Objects.requireNonNull(errorHandler);
-    }
-
+    /**
+     * Create expressions with the given identifier name and current symbol table.
+     * Report errors via {@link ErrorHandler}; return null on error.
+     */
     @Nullable
     public Expression convertIdentifier(int position, String name) {
         Symbol result = mSymbolTable.find(name);
@@ -160,43 +164,30 @@ public final class ThreadContext {
         }
         return switch (result.kind()) {
             case Node.SymbolKind.kFunctionDeclaration -> {
-                FunctionDeclaration overloadChain = (FunctionDeclaration) result;
-                yield FunctionReference.make(position, overloadChain);
+                var chain = (Function) result;
+                yield FunctionReference.make(position, chain);
             }
             case Node.SymbolKind.kVariable -> {
-                Variable variable = (Variable) result;
+                var variable = (Variable) result;
                 yield VariableReference.make(position, variable,
                         VariableReference.kRead_ReferenceKind);
             }
             case Node.SymbolKind.kAnonymousField -> {
-                AnonymousField field = (AnonymousField) result;
+                var field = (AnonymousField) result;
                 Expression base = VariableReference.make(position, field.getContainer(),
                         VariableReference.kRead_ReferenceKind);
                 yield FieldExpression.make(position, base, field.getFieldIndex(),
-                        FieldExpression.kAnonymousInterfaceBlock_ContainerKind);
+                        /*anonymousBlock*/true);
             }
             case Node.SymbolKind.kType -> {
-                Type type = (Type) result;
-                if (!mIsBuiltin && type.isGeneric()) {
+                var type = (Type) result;
+                if (!mBuiltin && type.isGeneric()) {
                     error(position, "type '" + type.getName() + "' is generic");
                     type = getTypes().mPoison;
                 }
                 yield TypeReference.make(position, type);
             }
-            default -> throw new AssertionError(result.kind());
+            default -> throw new AssertionError(result.getClass());
         };
-    }
-
-    private static class DefaultErrorHandler extends ErrorHandler {
-
-        @Override
-        protected void handleError(int start, int end, String msg) {
-            throw new RuntimeException("error: " + msg);
-        }
-
-        @Override
-        protected void handleWarning(int start, int end, String msg) {
-            // noop
-        }
     }
 }

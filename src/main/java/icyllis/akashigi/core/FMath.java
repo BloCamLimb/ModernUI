@@ -227,9 +227,9 @@ public final class FMath {
 
     /**
      * Linear interpolation between two values, matches GLSL {@code mix} intrinsic function.
-     * Slower than {@link #lerp(float, float, float)} but without overflow or underflow.
+     * Slower than {@link #lerp(float, float, float)} but without intermediate overflow or underflow.
      */
-    public static float lerpStable(float a, float b, float t) {
+    public static float mix(float a, float b, float t) {
         return a * (1 - t) + b * t;
     }
 
@@ -237,7 +237,7 @@ public final class FMath {
      * Linear interpolation between two values, matches GLSL {@code mix} intrinsic function.
      * Slower than {@link #lerp(double, double, double)} but without intermediate overflow or underflow.
      */
-    public static double lerpStable(double a, double b, double t) {
+    public static double mix(double a, double b, double t) {
         return a * (1 - t) + b * t;
     }
 
@@ -323,31 +323,49 @@ public final class FMath {
         return (x + 7) & -8;
     }
 
+    /**
+     * Returns {@code true} if {@code x} is a multiple of 2. Asserts {@code x >= 0}.
+     */
     public static boolean isAlign2(int x) {
         assert x >= 0;
         return (x & 1) == 0;
     }
 
+    /**
+     * Returns {@code true} if {@code x} is a multiple of 4. Asserts {@code x >= 0}.
+     */
     public static boolean isAlign4(int x) {
         assert x >= 0;
         return (x & 3) == 0;
     }
 
+    /**
+     * Returns {@code true} if {@code x} is a multiple of 8. Asserts {@code x >= 0}.
+     */
     public static boolean isAlign8(int x) {
         assert x >= 0;
         return (x & 7) == 0;
     }
 
+    /**
+     * Returns {@code true} if {@code x} is a multiple of 2. Asserts {@code x >= 0}.
+     */
     public static boolean isAlign2(long x) {
         assert x >= 0;
         return (x & 1) == 0;
     }
 
+    /**
+     * Returns {@code true} if {@code x} is a multiple of 4. Asserts {@code x >= 0}.
+     */
     public static boolean isAlign4(long x) {
         assert x >= 0;
         return (x & 3) == 0;
     }
 
+    /**
+     * Returns {@code true} if {@code x} is a multiple of 8. Asserts {@code x >= 0}.
+     */
     public static boolean isAlign8(long x) {
         assert x >= 0;
         return (x & 7) == 0;
@@ -537,7 +555,7 @@ public final class FMath {
      * @param a     the array to be searched
      * @param value the value to be searched for
      * @return index of the search value, or {@code a.length}
-     * @see java.util.Arrays#sort(int[]);
+     * @see java.util.Arrays#sort(int[])
      */
     public static int upperBound(int[] a, int value) {
         return upperBound(a, 0, a.length, value);
@@ -554,7 +572,7 @@ public final class FMath {
      * @param last  the index of the last element (exclusive) to be searched
      * @param value the value to be searched for
      * @return index of the search value, or {@code last}
-     * @see java.util.Arrays#sort(int[], int, int);
+     * @see java.util.Arrays#sort(int[], int, int)
      */
     public static int upperBound(int[] a, int first, int last, int value) {
         assert (first | last - first | a.length - last) >= 0;
@@ -576,7 +594,7 @@ public final class FMath {
      * @param a     the array to be searched
      * @param value the value to be searched for
      * @return index of the search value, or {@code a.length}
-     * @see java.util.Arrays#sort(long[]);
+     * @see java.util.Arrays#sort(long[])
      */
     public static int upperBound(long[] a, long value) {
         return upperBound(a, 0, a.length, value);
@@ -593,7 +611,7 @@ public final class FMath {
      * @param last  the index of the last element (exclusive) to be searched
      * @param value the value to be searched for
      * @return index of the search value, or {@code last}
-     * @see java.util.Arrays#sort(long[], int, int);
+     * @see java.util.Arrays#sort(long[], int, int)
      */
     public static int upperBound(long[] a, int first, int last, long value) {
         assert (first | last - first | a.length - last) >= 0;
@@ -618,7 +636,7 @@ public final class FMath {
      *              {@code null} value indicates that the elements'
      *              {@linkplain Comparable natural ordering} should be used.
      * @return index of the search value, or {@code a.length}
-     * @see java.util.Arrays#sort(Object[], Comparator);
+     * @see java.util.Arrays#sort(Object[], Comparator)
      */
     public static <T> int upperBound(T[] a, T value, Comparator<? super T> c) {
         return upperBound(a, 0, a.length, value, c);
@@ -638,7 +656,7 @@ public final class FMath {
      *              {@code null} value indicates that the elements'
      *              {@linkplain Comparable natural ordering} should be used.
      * @return index of the search value, or {@code last}
-     * @see java.util.Arrays#sort(Object[], int, int, Comparator);
+     * @see java.util.Arrays#sort(Object[], int, int, Comparator)
      */
     @SuppressWarnings("unchecked")
     public static <T> int upperBound(T[] a, int first, int last, T value, Comparator<? super T> c) {
@@ -662,7 +680,7 @@ public final class FMath {
      * @param a     the array to be searched
      * @param value the value to be searched for
      * @return index of the search value, or {@code a.length}
-     * @see java.util.Arrays#sort(int[]);
+     * @see java.util.Arrays#sort(int[])
      */
     public static int lowerBound(int[] a, int value) {
         return lowerBound(a, 0, a.length, value);
@@ -679,7 +697,7 @@ public final class FMath {
      * @param last  the index of the last element (exclusive) to be searched
      * @param value the value to be searched for
      * @return index of the search value, or {@code last}
-     * @see java.util.Arrays#sort(int[], int, int);
+     * @see java.util.Arrays#sort(int[], int, int)
      */
     public static int lowerBound(int[] a, int first, int last, int value) {
         assert (first | last - first | a.length - last) >= 0;
@@ -701,7 +719,7 @@ public final class FMath {
      * @param a     the array to be searched
      * @param value the value to be searched for
      * @return index of the search value, or {@code a.length}
-     * @see java.util.Arrays#sort(long[]);
+     * @see java.util.Arrays#sort(long[])
      */
     public static int lowerBound(long[] a, long value) {
         return lowerBound(a, 0, a.length, value);
@@ -718,7 +736,7 @@ public final class FMath {
      * @param last  the index of the last element (exclusive) to be searched
      * @param value the value to be searched for
      * @return index of the search value, or {@code last}
-     * @see java.util.Arrays#sort(long[], int, int);
+     * @see java.util.Arrays#sort(long[], int, int)
      */
     public static int lowerBound(long[] a, int first, int last, long value) {
         assert (first | last - first | a.length - last) >= 0;
@@ -743,7 +761,7 @@ public final class FMath {
      *              {@code null} value indicates that the elements'
      *              {@linkplain Comparable natural ordering} should be used.
      * @return index of the search value, or {@code a.length}
-     * @see java.util.Arrays#sort(Object[], Comparator);
+     * @see java.util.Arrays#sort(Object[], Comparator)
      */
     public static <T> int lowerBound(T[] a, T value, Comparator<? super T> c) {
         return lowerBound(a, 0, a.length, value, c);
@@ -763,7 +781,7 @@ public final class FMath {
      *              {@code null} value indicates that the elements'
      *              {@linkplain Comparable natural ordering} should be used.
      * @return index of the search value, or {@code last}
-     * @see java.util.Arrays#sort(Object[], int, int, Comparator);
+     * @see java.util.Arrays#sort(Object[], int, int, Comparator)
      */
     @SuppressWarnings("unchecked")
     public static <T> int lowerBound(T[] a, int first, int last, T value, Comparator<? super T> c) {

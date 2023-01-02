@@ -18,6 +18,14 @@
 
 package icyllis.akashigi.slang;
 
+import icyllis.akashigi.slang.ir.Node;
+
+import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+
 /**
  * Thread-safe class that loads shader modules.
  */
@@ -29,12 +37,13 @@ public class ModuleLoader {
 
     private final Module mRootModule;
 
+    @GuardedBy("mRootModule")
     private volatile Module mCommonModule;
 
     private ModuleLoader() {
         mRootModule = new Module();
 
-        SymbolTable symbols = new SymbolTable(/*builtin=*/true);
+        SymbolTable symbols = new SymbolTable();
         BuiltinTypes types = mBuiltinTypes;
 
         symbols.insert(types.mVoid);
@@ -248,14 +257,59 @@ public class ModuleLoader {
         return mRootModule;
     }
 
+    @Nonnull
+    private Module loadModule(Compiler compiler,
+                              ModuleKind kind,
+                              String source,
+                              Module parent) {
+        Module module = compiler.parseModule(kind, source, parent);
+        if (module == null) {
+            throw new RuntimeException("Failed to load module:\n" + compiler.getErrorText(false));
+        }
+        // We can eliminate FunctionPrototypes without changing the meaning of the module; the function
+        // declaration is still safely in the symbol table. This only impacts our ability to recreate
+        // the input verbatim, which we don't care about at runtime.
+        module.mElements.removeIf(element -> switch (element.kind()) {
+            case Node.ElementKind.kFunctionDefinition,
+                    Node.ElementKind.kGlobalVar,
+                    Node.ElementKind.kInterfaceBlock ->
+                // We need to preserve these.
+                    false;
+            case Node.ElementKind.kFunctionPrototype ->
+                // These are already in the symbol table; the
+                // ProgramElement isn't needed anymore.
+                    true;
+            default -> throw new IllegalStateException("Unsupported element: " + element);
+        });
+        module.mElements.trimToSize();
+        return module;
+    }
+
+    @Nonnull
+    private String loadModuleSource(String name) {
+        final InputStream in = ModuleLoader.class
+                .getResourceAsStream("/assets/akashigi/shaders/" + name);
+        if (in == null) {
+            throw new RuntimeException("Failed to load module: " + name);
+        }
+        try (in) {
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to load module: " + name, e);
+        }
+    }
+
+    @Nonnull
     public Module loadCommonModule(Compiler compiler) {
         if (mCommonModule != null) {
             return mCommonModule;
         }
         synchronized (mRootModule) {
             if (mCommonModule == null) {
-                mCommonModule = new Module();
-                //TODO parse
+                mCommonModule = loadModule(compiler,
+                        ModuleKind.FRAGMENT,
+                        loadModuleSource("slang_common.txt"),
+                        mRootModule);
             }
         }
         return mCommonModule;

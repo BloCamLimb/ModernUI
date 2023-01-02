@@ -26,26 +26,19 @@ import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
- * An expression which selects a field from a block, as in 'foo.bar'.
+ * An expression which selects a field from a struct/block, as in 'foo.bar'.
  */
 public final class FieldExpression extends Expression {
 
-    /**
-     * ContainerKinds.
-     */
-    public static final int
-            kDefault_ContainerKind = 0,
-            kAnonymousInterfaceBlock_ContainerKind = 1; // for AnonField
-
     private final Expression mBase;
     private final int mFieldIndex;
-    private final int mContainerKind;
+    private final boolean mAnonymousBlock;
 
-    private FieldExpression(int position, Expression base, int fieldIndex, int containerKind) {
+    private FieldExpression(int position, Expression base, int fieldIndex, boolean anonymousBlock) {
         super(position, ExpressionKind.kFieldAccess, base.getType().getFields()[fieldIndex].type());
         mBase = base;
         mFieldIndex = fieldIndex;
-        mContainerKind = containerKind;
+        mAnonymousBlock = anonymousBlock;
     }
 
     /**
@@ -60,7 +53,7 @@ public final class FieldExpression extends Expression {
             final Type.Field[] fields = baseType.getFields();
             for (int i = 0; i < fields.length; i++) {
                 if (fields[i].name().equals(fieldName)) {
-                    return make(position, base, i, kDefault_ContainerKind);
+                    return make(position, base, i, false);
                 }
             }
         }
@@ -76,14 +69,14 @@ public final class FieldExpression extends Expression {
     public static Expression make(int position,
                                   Expression base,
                                   int fieldIndex,
-                                  int containerKind) {
+                                  boolean anonymousBlock) {
         Type baseType = base.getType();
         if (!baseType.isStruct()) {
             throw new AssertionError();
         }
         Objects.checkIndex(fieldIndex, baseType.getFields().length);
 
-        return new FieldExpression(position, base, fieldIndex, containerKind);
+        return new FieldExpression(position, base, fieldIndex, anonymousBlock);
     }
 
     public Expression getBase() {
@@ -94,8 +87,8 @@ public final class FieldExpression extends Expression {
         return mFieldIndex;
     }
 
-    public int getContainerKind() {
-        return mContainerKind;
+    public boolean isAnonymousBlock() {
+        return mAnonymousBlock;
     }
 
     @Nonnull
@@ -104,7 +97,7 @@ public final class FieldExpression extends Expression {
         return new FieldExpression(position,
                 mBase.clone(),
                 mFieldIndex,
-                mContainerKind);
+                mAnonymousBlock);
     }
 
     @Nonnull
@@ -113,7 +106,7 @@ public final class FieldExpression extends Expression {
         String s = mBase.toString(Operator.PRECEDENCE_POSTFIX);
         if (!s.isEmpty()) {
             s += ".";
-        }
+        } // else anonymous block
         return s + mBase.getType().getFields()[mFieldIndex].name();
     }
 }

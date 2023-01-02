@@ -29,13 +29,13 @@ public class DSLType {
         if (size == 0) {
             return ThreadContext.getInstance().getTypes().mPoison;
         }
-        return ThreadContext.getInstance().getSymbolTable().findOrInsertArrayType(type, size);
+        return ThreadContext.getInstance().getSymbolTable().computeArrayType(type, size);
     }
 
     public static Type UnsizedArray(Type type, int position) {
         if (!type.isUsableInArray(position)) {
             return ThreadContext.getInstance().getTypes().mPoison;
         }
-        return ThreadContext.getInstance().getSymbolTable().findOrInsertArrayType(type, Type.kUnsizedArray);
+        return ThreadContext.getInstance().getSymbolTable().computeArrayType(type, Type.kUnsizedArray);
     }
 }
