@@ -18,121 +18,192 @@
 
 package icyllis.akashigi.slang.lex;
 
-import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import org.jetbrains.annotations.Contract;
 
-import java.util.ArrayList;
+import javax.annotation.Nonnull;
+import java.util.BitSet;
 import java.util.List;
 
 /**
  * Represents a node in the parse tree of a regular expression.
  */
-public class RegexNode {
-
-    public static final int
-            kChar_Kind = 0,
-            kCharset_Kind = 1,
-            kConcat_Kind = 2,
-            kDot_Kind = 3,
-            kOr_Kind = 4,
-            kPlus_Kind = 5,
-            kRange_Kind = 6,
-            kQuestion_Kind = 7,
-            kStar_Kind = 8;
-
-    public int mKind;
-    public char mPayload;
-    public final List<RegexNode> mChildren = new ArrayList<>();
-
-    public RegexNode(int kind) {
-        mKind = kind;
-    }
-
-    public RegexNode(int kind, char payload) {
-        mKind = kind;
-        mPayload = payload;
-    }
-
-    public RegexNode(int kind, String children) {
-        mKind = kind;
-        mPayload = 0;
-        for (int i = 0; i < children.length(); i++) {
-            mChildren.add(new RegexNode(kChar_Kind, children.charAt(i)));
-        }
-    }
-
-    public RegexNode(int kind, RegexNode child) {
-        mKind = kind;
-        mChildren.add(child);
-    }
-
-    public RegexNode(int kind, RegexNode child1, RegexNode child2) {
-        mKind = kind;
-        mChildren.add(child1);
-        mChildren.add(child2);
-    }
+@FunctionalInterface
+public interface RegexNode {
 
     /**
      * Creates NFA states for this node, with a successful match against this node resulting in a
-     * transition to all of the states in the accept vector.
+     * transition to all of the states in the {@code next} vector.
      */
-    public IntList createStates(NFA nfa, IntList accept) {
-        return switch (mKind) {
-            case kChar_Kind -> IntLists.singleton(nfa.addState(new NFAState(mPayload, accept)));
-            case kCharset_Kind -> {
-                var chars = new IntArrayList();
-                for (var child : mChildren) {
-                    if (child.mKind == kChar_Kind) {
-                        while (chars.size() <= child.mPayload) {
-                            chars.add(0);
-                        }
-                        chars.set(child.mPayload, 1);
-                    } else {
-                        assert (child.mKind == kRange_Kind);
-                        while (chars.size() <= child.mChildren.get(1).mPayload) {
-                            chars.add(0);
-                        }
-                        for (char c = child.mChildren.get(0).mPayload;
-                             c <= child.mChildren.get(1).mPayload;
-                             ++c) {
-                            chars.set(c, 1);
-                        }
-                    }
-                }
-                yield IntLists.singleton(nfa.addState(new NFAState(mPayload != 0, chars, accept)));
-            }
-            case kConcat_Kind -> {
-                var right = mChildren.get(1).createStates(nfa, accept);
-                yield mChildren.get(0).createStates(nfa, right);
-            }
-            case kDot_Kind -> IntLists.singleton(nfa.addState(new NFAState(NFAState.Kind_Dot, accept)));
-            case kOr_Kind -> {
-                var result = new IntArrayList(mChildren.get(0).createStates(nfa, accept));
-                result.addAll(mChildren.get(1).createStates(nfa, accept));
-                yield result;
-            }
-            case kPlus_Kind -> {
-                var next = new IntArrayList(accept);
-                int id = nfa.addState(NFAState.PLACEHOLDER);
-                next.add(id);
-                var result = mChildren.get(0).createStates(nfa, next);
-                nfa.mStates.set(id, new NFAState(result));
-                yield result;
-            }
-            case kQuestion_Kind -> {
-                var result = new IntArrayList(mChildren.get(0).createStates(nfa, accept));
-                result.addAll(accept);
-                yield result;
-            }
-            case kStar_Kind -> {
-                var next = new IntArrayList(accept);
-                int id = nfa.addState(NFAState.PLACEHOLDER);
-                next.add(id);
-                var result = new IntArrayList(mChildren.get(0).createStates(nfa, next));
-                result.addAll(accept);
-                nfa.mStates.set(id, new NFAState(result));
-                yield result;
-            }
-            default -> throw new IllegalStateException();
+    IntList createStates(NFA nfa, IntList next);
+
+    @Nonnull
+    static RegexNode Char(char c) {
+        return new Char(c);
+    }
+
+    @Nonnull
+    static RegexNode Range(char start, char end) {
+        return new Range(start, end);
+    }
+
+    @Nonnull
+    static RegexNode Range(RegexNode start, RegexNode end) {
+        return new Range(((Char) start).mChar, ((Char) end).mChar);
+    }
+
+    @Nonnull
+    static RegexNode CharClass(List<RegexNode> clazz) {
+        return new CharClass(clazz, false);
+    }
+
+    @Nonnull
+    static RegexNode CharClass(List<RegexNode> clazz, boolean negative) {
+        return new CharClass(clazz, negative);
+    }
+
+    /**
+     * Concatenation: XY (X -> Y -> Next)
+     */
+    @Nonnull
+    @Contract(pure = true)
+    static RegexNode Concat(RegexNode x, RegexNode y) {
+        return (nfa, next) -> {
+            IntList right = y.createStates(nfa, next);
+            return x.createStates(nfa, right);
         };
+    }
+
+    /**
+     * Alternation: X|Y (X -> Next, Y -> Next)
+     */
+    @Nonnull
+    @Contract(pure = true)
+    static RegexNode Union(RegexNode x, RegexNode y) {
+        return (nfa, next) -> {
+            var result = new IntArrayList(x.createStates(nfa, next));
+            result.addAll(y.createStates(nfa, next));
+            return result;
+        };
+    }
+
+    /**
+     * Wildcard.
+     */
+    @Nonnull
+    @Contract(pure = true)
+    static RegexNode Dot() {
+        return (nfa, next) -> {
+            int index = nfa.add(NFAState.Filter(ch -> ch != '\n', next));
+            return IntList.of(index);
+        };
+    }
+
+    /**
+     * Closure.
+     */
+    @Nonnull
+    @Contract(pure = true)
+    static RegexNode Star(RegexNode x) {
+        return (nfa, next) -> {
+            var cycle = new IntArrayList(next);
+            int index = nfa.add(NFAState.PLACEHOLDER);
+            cycle.add(index);
+            var result = new IntArrayList(x.createStates(nfa, cycle));
+            result.addAll(next);
+            nfa.remap(index, result);
+            return result;
+        };
+    }
+
+    @Nonnull
+    @Contract(pure = true)
+    static RegexNode Plus(RegexNode x) {
+        return (nfa, next) -> {
+            var cycle = new IntArrayList(next);
+            int index = nfa.add(NFAState.PLACEHOLDER);
+            cycle.add(index);
+            IntList result = x.createStates(nfa, cycle);
+            nfa.remap(index, result);
+            return result;
+        };
+    }
+
+    /**
+     * X -> Next, Next -> Next
+     */
+    @Nonnull
+    @Contract(pure = true)
+    static RegexNode Ques(RegexNode x) {
+        return (nfa, next) -> {
+            var result = new IntArrayList(x.createStates(nfa, next));
+            result.addAll(next);
+            return result;
+        };
+    }
+
+    class Char implements RegexNode {
+
+        public final char mChar;
+
+        private Char(char c) {
+            mChar = c;
+        }
+
+        @Override
+        public IntList createStates(NFA nfa, IntList next) {
+            int index = nfa.add(NFAState.Filter(ch -> ch == mChar, next));
+            return IntList.of(index);
+        }
+    }
+
+    class Range implements RegexNode {
+
+        public final char mStart;
+        public final char mEnd;
+
+        private Range(char start, char end) {
+            if (start > end) {
+                throw new IllegalStateException(
+                        String.format("character range '%c'-'%c' is out of order", start, end));
+            }
+            mStart = start;
+            mEnd = end;
+        }
+
+        @Override
+        public IntList createStates(NFA nfa, IntList next) {
+            int index = nfa.add(NFAState.Filter(ch -> ch >= mStart && ch <= mEnd, next));
+            return IntList.of(index);
+        }
+    }
+
+    class CharClass implements RegexNode {
+
+        public final BitSet mTable = new BitSet();
+        public final boolean mNegative;
+
+        private CharClass(List<RegexNode> clazz, boolean negative) {
+            mNegative = negative;
+            for (RegexNode x : clazz) {
+                if (x instanceof Char node) {
+                    mTable.set(node.mChar);
+                } else if (x instanceof Range node) {
+                    mTable.set(node.mStart, node.mEnd);
+                } else if (x instanceof CharClass node) {
+                    assert !node.mNegative;
+                    mTable.or(node.mTable);
+                } else {
+                    throw new AssertionError(x);
+                }
+            }
+        }
+
+        @Override
+        public IntList createStates(NFA nfa, IntList next) {
+            int index = nfa.add(NFAState.Filter(ch -> mTable.get(ch) != mNegative, next));
+            return IntList.of(index);
+        }
     }
 }

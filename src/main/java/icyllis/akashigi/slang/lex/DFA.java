@@ -36,7 +36,7 @@ public class DFA {
     public final int[][] mTransitions;
 
     // contains, for each state, the token id we should report when matching ends in that state
-    // (INVALID for no match)
+    // (-1 for no match)
     public final int[] mAccepts;
 
     public DFA(int[] charMappings, int[][] transitions, int[] accepts) {
@@ -49,7 +49,7 @@ public class DFA {
     public String toString() {
         return "DFA{" +
                 "mCharMappings=" + Arrays.toString(mCharMappings) +
-                ", mTransitions=" + Arrays.toString(mTransitions) +
+                ", mTransitions=" + Arrays.deepToString(mTransitions) +
                 ", mAccepts=" + Arrays.toString(mAccepts) +
                 '}';
     }

@@ -19,8 +19,7 @@
 package icyllis.akashigi.slang;
 
 import icyllis.akashigi.slang.ir.*;
-import icyllis.akashigi.slang.lex.Lexer;
-import icyllis.akashigi.slang.lex.NFAtoDFA;
+import icyllis.akashigi.slang.lex.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -129,7 +128,7 @@ public class Parser {
             boolean eof = false;
             for (;;) {
                 if (mScanOffset >= mSource.length()) {
-                    if (startOffset == mSource.length() || Lexer.ACCEPTS[state] == Lexer.TK_NONE) {
+                    if (startOffset == mSource.length() || Lexer.ACCEPTS[state] == DFA.INVALID) {
                         eof = true;
                     }
                     break;
@@ -754,7 +753,7 @@ public class Parser {
             case Lexer.TK_FLOAT_LITERAL -> {
                 return floatLiteral();
             }
-            case Lexer.TK_TRUE_LITERAL, Lexer.TK_FALSE_LITERAL -> {
+            case Lexer.TK_TRUE, Lexer.TK_FALSE -> {
                 return boolLiteral();
             }
             case Lexer.TK_LPAREN -> {
@@ -830,10 +829,10 @@ public class Parser {
     private Literal boolLiteral() {
         long token = nextToken();
         return switch (kind(token)) {
-            case Lexer.TK_TRUE_LITERAL -> Literal.makeBoolean(
+            case Lexer.TK_TRUE -> Literal.makeBoolean(
                     position(token),
                     true);
-            case Lexer.TK_FALSE_LITERAL -> Literal.makeBoolean(
+            case Lexer.TK_FALSE -> Literal.makeBoolean(
                     position(token),
                     false);
             default -> {

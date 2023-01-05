@@ -18,23 +18,26 @@
 
 package icyllis.akashigi.slang.lex;
 
+import icyllis.akashigi.core.FMath;
 import it.unimi.dsi.fastutil.ints.*;
 
+import javax.annotation.Nonnull;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Generates the {@link Lexer} class.
  */
-public class Main {
+public class LexerGenerator {
 
     public static final String LEXICON = """
-            FLOAT_LITERAL  = [0-9]*\\.[0-9]+([eE][+-]?[0-9]+)?|[0-9]+\\.[0-9]*([eE][+-]?[0-9]+)?|[0-9]+([eE][+-]?[0-9]+)
-            INT_LITERAL    = ([1-9][0-9]*|0[0-7]*|0[xX][0-9a-fA-F]+)[uU]?
+            FLOAT_LITERAL  = \\d*\\.\\d+([eE][+-]?\\d+)?[fF]?|\\d+\\.\\d*([eE][+-]?\\d+)?[fF]?|\\d+([eE][+-]?\\d+)[fF]?
+            INT_LITERAL    = ([1-9]\\d*|0[0-7]*|0[xX][\\da-fA-F]+)[uU]?
             BAD_OCTAL      = (0[0-9]+)[uU]?
-            TRUE_LITERAL   = "true"
-            FALSE_LITERAL  = "false"
+            TRUE           = "true"
+            FALSE          = "false"
             IF             = "if"
             ELSE           = "else"
             FOR            = "for"
@@ -64,9 +67,9 @@ public class Main {
             LAYOUT         = "layout"
             EXPORT         = "export"
             WORKGROUP      = "workgroup"
-            RESERVED       = attribute|varying|precision|invariant|asm|class|union|enum|typedef|template|this|packed|goto|volatile|public|static|extern|external|interface|long|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|sizeof|cast|namespace|using|gl_[0-9a-zA-Z_]*
-            IDENTIFIER     = [a-zA-Z_$][0-9a-zA-Z_]*
-            DIRECTIVE      = #[a-zA-Z_][0-9a-zA-Z_]*
+            EXTENSION      = "extension"
+            RESERVED       = shared|attribute|varying|atomic_uint|lowp|mediump|highp|precision|invariant|asm|class|union|enum|typedef|template|this|packed|goto|public|static|extern|external|interface|long|double|fixed|unsigned|superp|input|output|hvec[234]|dvec[234]|fvec[234]|sizeof|cast|namespace|using|gl_[0-9a-zA-Z_]*
+            IDENTIFIER     = [a-zA-Z_]\\w*
             LPAREN         = "("
             RPAREN         = ")"
             LBRACE         = "{"
@@ -117,7 +120,7 @@ public class Main {
             BLOCK_COMMENT  = /\\*([^*]|\\*[^/])*\\*/
             INVALID        = .""";
 
-    // The number of bits to use per entry in our compact transition table. This is customizable:
+    // The number of bits to use per entry in our packed transition table. This is customizable:
     // - 1-bit: reasonable in theory. Doesn't actually pack many slices.
     // - 2-bit: best fit for our data. Packs extremely well.
     // - 4-bit: packs all but one slice, but doesn't save as much space overall.
@@ -128,21 +131,15 @@ public class Main {
     // These values are derived from NUM_BITS and shouldn't need to change.
     public static final int NUM_VALUES = (1 << NUM_BITS) - 1;
     public static final int DATA_PER_BYTE = Byte.SIZE / NUM_BITS;
-    public static final int DATA_PER_BYTE_SHIFT = Integer.SIZE - Integer.numberOfLeadingZeros(DATA_PER_BYTE - 1);
+    public static final int DATA_PER_BYTE_SHIFT = Integer.numberOfTrailingZeros(DATA_PER_BYTE);
 
-    /**
-     * Generates the lexicon texts.
-     *
-     * @param args no args required
-     */
-    public static void main(String[] args) {
-        final PrintWriter pw = new PrintWriter(System.out, false, StandardCharsets.UTF_8);
-
-        final NFA nfa = new NFA();
-        final ArrayList<String> tokens = new ArrayList<>();
+    @Nonnull
+    public static DFA process(PrintWriter pw) {
+        NFA nfa = new NFA();
+        List<String> tokens = new ArrayList<>();
         tokens.add("END_OF_FILE");
-        final RegexParser regexParser = new RegexParser();
-        for (var line : LEXICON.split("\n")) {
+        RegexParser parser = new RegexParser();
+        for (String line : LEXICON.split("\n")) {
             String[] split = line.split("\\s+");
             assert split.length == 3;
             String name = split[0];
@@ -153,62 +150,40 @@ public class Main {
             assert !pattern.isEmpty();
             tokens.add(name);
             if (pattern.startsWith("\"")) {
-                assert (pattern.length()) > 2 && pattern.endsWith("\"");
-                var node = new RegexNode(RegexNode.kChar_Kind, pattern.charAt(1));
+                assert (pattern.length() > 2 && pattern.endsWith("\""));
+                RegexNode node = RegexNode.Char(pattern.charAt(1));
                 for (int i = 2; i < pattern.length() - 1; ++i) {
-                    node = new RegexNode(RegexNode.kConcat_Kind, node,
-                            new RegexNode(RegexNode.kChar_Kind, pattern.charAt(i)));
+                    node = RegexNode.Concat(node,
+                            RegexNode.Char(pattern.charAt(i)));
                 }
-                nfa.addRegex(node);
+                nfa.add(node);
             } else {
-                nfa.addRegex(regexParser.parse(pattern));
+                nfa.add(parser.parse(pattern));
             }
         }
-        final NFAtoDFA converter = new NFAtoDFA(nfa);
-        final DFA dfa = converter.convert();
+        NFAtoDFA converter = new NFAtoDFA(nfa);
+        DFA dfa = converter.convert();
 
         pw.println("public static final int");
-        for (int i = 0, e = tokens.size(); i < e; i++) {
+        for (int i = 0; i < tokens.size(); i++) {
             pw.println("TK_" + tokens.get(i) + " = " + i + ",");
         }
-        pw.println("TK_NONE = DFA.INVALID;");
+        pw.println("TK_NONE = " + tokens.size() + ";");
 
-        int states = 0;
-        for (var row : dfa.mTransitions) {
-            states = Math.max(states, row.length);
+        return dfa;
+    }
+
+    public static void writeTransitionTable(PrintWriter pw, DFA dfa, int states) {
+        record MutablePackedEntry(IntList v, IntList data) {
+            // v.size() == NUM_VALUES
         }
 
-        // Find the first character mapped in our DFA.
-        int startChar = 0;
-        for (; startChar < dfa.mCharMappings.length; ++startChar) {
-            if (dfa.mCharMappings[startChar] != 0) {
-                break;
-            }
-        }
+        int numTransitions = dfa.mTransitions.length;
 
-        assert startChar == NFAtoDFA.START_CHAR;
-        pw.println("public static final byte[] MAPPINGS = {");
-        for (int index = 0, end = dfa.mCharMappings.length - startChar; index < end; index++) {
-            pw.print(String.valueOf((byte) dfa.mCharMappings[index + startChar]));
-            if (index == end - 1) {
-                pw.println();
-            } else if ((index % 9) == 8) {
-                pw.println(",");
-            } else {
-                pw.print(", ");
-            }
-        }
-        pw.println("};");
-
-        record WorkingCompactEntry(IntArrayList v, IntArrayList data) {
-        }
-
-        final int numTransitions = dfa.mTransitions.length;
-
-        // Assemble our compact and full data tables, and an index into them.
-        final ArrayList<WorkingCompactEntry> compactEntries = new ArrayList<>();
-        final ArrayList<IntArrayList> fullEntries = new ArrayList<>();
-        final IntArrayList indices = new IntArrayList();
+        // Assemble our packed and full data tables, and an index into them.
+        List<MutablePackedEntry> packedEntries = new ArrayList<>();
+        List<IntList> fullEntries = new ArrayList<>();
+        IntList indices = new IntArrayList();
         for (int s = 0; s < states; ++s) {
             // Copy all the transitions for this state into a flat array, and into a histogram (counting
             // the number of unique state-transition values). Most states only transition to a few
@@ -228,10 +203,10 @@ public class Main {
             transitionSet.remove(0);
             if (transitionSet.size() <= NUM_VALUES) {
                 // This table only contained a small number of unique nonzero values.
-                // Use a compact representation that squishes each value down to a few bits.
-                // Create a compact entry with the unique values from the transition set, padded out with zeros
-                // and sorted.
-                var result = new WorkingCompactEntry(new IntArrayList(NUM_VALUES), new IntArrayList());
+                // Use a packed representation that squishes each value down to a few bits.
+                // Create a packed entry with the unique values from the transition set,
+                // padded out with zeros and sorted.
+                var result = new MutablePackedEntry(new IntArrayList(NUM_VALUES), new IntArrayList());
                 result.v.addAll(transitionSet);
                 result.v.size(NUM_VALUES);
                 result.v.sort(IntComparators.OPPOSITE_COMPARATOR);
@@ -250,45 +225,37 @@ public class Main {
                     result.data.add(translationTable.get(value));
                 }
 
-                int index = -1;
                 // Look for an existing entry that exactly matches this one.
-                for (int i = 0; i < compactEntries.size(); ++i) {
-                    if (compactEntries.get(i).equals(result)) {
-                        index = i;
-                        break;
-                    }
-                }
+                int index = packedEntries.indexOf(result);
 
                 if (index == -1) {
                     // Add this as a new entry.
-                    index = compactEntries.size();
-                    compactEntries.add(result);
+                    index = packedEntries.size();
+                    packedEntries.add(result);
                 }
-                // Compact entries start at 0 and go up from there.
+
+                // Packed entries start at 0 and go up from there.
                 indices.add(index);
             } else {
+                // This table contained a large number of values. We can't pack it.
                 // Create a full entry with this data.
-                int index = -1;
                 // Look for an existing entry that exactly matches this one.
-                for (int i = 0; i < fullEntries.size(); ++i) {
-                    if (fullEntries.get(i).equals(data)) {
-                        index = i;
-                        break;
-                    }
-                }
+                int index = fullEntries.indexOf(data);
+
                 if (index == -1) {
                     // Add this as a new entry.
                     index = fullEntries.size();
                     fullEntries.add(data);
                 }
+
                 // Bit-not is used so that full entries start at -1 and go down from there.
                 indices.add(~index);
             }
         }
 
-        // Find the largest value for each compact-entry slot.
+        // Find the largest value for each packed-entry slot.
         int maxValue = 0;
-        for (var entry : compactEntries) {
+        for (var entry : packedEntries) {
             for (int index = 0; index < NUM_VALUES; ++index) {
                 maxValue = Math.max(maxValue, entry.v.getInt(index));
             }
@@ -303,12 +270,12 @@ public class Main {
         assert (bitsPerValue <= Integer.SIZE / NUM_VALUES);
 
         pw.println("public static final short[][] FULL = {");
-        for (int index = 0, end = fullEntries.size(); index < end; index++) {
-            var data = fullEntries.get(index);
+        for (int i = 0, end = fullEntries.size(); i < end; i++) {
+            IntList data = fullEntries.get(i);
             assert (data.size() == numTransitions);
             pw.println("{");
             for (int j = 0; j < numTransitions; j++) {
-                pw.print(String.valueOf((short) data.getInt(j)));
+                pw.print((short) data.getInt(j)); // unsigned
                 if (j == numTransitions - 1) {
                     pw.println();
                 } else if ((j % 9) == 8) {
@@ -317,7 +284,7 @@ public class Main {
                     pw.print(", ");
                 }
             }
-            if (index == end - 1) {
+            if (i == end - 1) {
                 pw.println("}");
             } else {
                 pw.println("},");
@@ -325,11 +292,11 @@ public class Main {
         }
         pw.println("};");
 
-        final int compactDataSize = (int) Math.ceil((double) numTransitions / DATA_PER_BYTE);
-        pw.println("public static final CompactEntry[] COMPACT = {");
-        for (int i = 0, e = compactEntries.size(); i < e; i++) {
-            var entry = compactEntries.get(i);
-            pw.print("new CompactEntry(");
+        final int packedDataSize = FMath.alignTo(numTransitions, DATA_PER_BYTE);
+        pw.println("public static final PackedEntry[] PACKED = {");
+        for (int i = 0, end = packedEntries.size(); i < end; i++) {
+            MutablePackedEntry entry = packedEntries.get(i);
+            pw.print("new PackedEntry(");
             // We pack all three values into `v`. If NUM_BITS were to change, we would need to adjust
             // this packing algorithm.
             assert (entry.v.size() == NUM_VALUES);
@@ -343,13 +310,14 @@ public class Main {
             pw.println(",");
             pw.println("new byte[]{");
 
-            int shiftBits = 0, combinedBits = 0, j = 0;
+            int j = 0, shiftBits = 0, combinedBits = 0;
             for (int index = 0; index < numTransitions; index++) {
                 combinedBits |= entry.data.getInt(index) << shiftBits;
                 shiftBits += NUM_BITS;
+                // assert shiftBits <= 8;
                 if (shiftBits == 8) {
-                    pw.print(String.valueOf((byte) combinedBits));
-                    if (j == compactDataSize - 1) {
+                    pw.print((byte) combinedBits); // unsigned
+                    if (j == packedDataSize - 1) {
                         pw.println();
                     } else if ((j % 4) == 3) {
                         pw.println(",");
@@ -363,9 +331,9 @@ public class Main {
             }
             if (shiftBits > 0) {
                 // Flush any partial values.
-                pw.println(String.valueOf((byte) combinedBits));
+                pw.println((byte) combinedBits);
             }
-            if (i == e - 1) {
+            if (i == end - 1) {
                 pw.println("})");
             } else {
                 pw.println("}),");
@@ -375,25 +343,8 @@ public class Main {
 
         pw.println("public static final short[] INDICES = {");
         for (int index = 0, end = indices.size(); index < end; index++) {
-            pw.print(String.valueOf((short) indices.getInt(index)));
+            pw.print(indices.getInt(index));
             if (index == end - 1) {
-                pw.println();
-            } else if ((index % 9) == 8) {
-                pw.println(",");
-            } else {
-                pw.print(", ");
-            }
-        }
-        pw.println("};");
-
-        pw.println("public static final byte[] ACCEPTS = {");
-        for (int index = 0; index < states; index++) {
-            if (index < dfa.mAccepts.length) {
-                pw.print(String.valueOf((byte) dfa.mAccepts[index]));
-            } else {
-                pw.print(DFA.INVALID);
-            }
-            if (index == states - 1) {
                 pw.println();
             } else if ((index % 9) == 8) {
                 pw.println(",");
@@ -406,25 +357,69 @@ public class Main {
         pw.println("public static int getTransition(int transition, int state) {");
         pw.println("short index = INDICES[state];");
         pw.println("if (index < 0) return FULL[~index][transition] & 0xFFFF;");
-        pw.println("final CompactEntry entry = COMPACT[index];");
-        pw.print("int v = entry.data[transition >> ");
-        pw.print(DATA_PER_BYTE_SHIFT);
-        pw.println("] & 0xFF;");
-        pw.print("v >>= ");
-        pw.print(NUM_BITS);
-        pw.print(" * (transition & ");
-        pw.print(DATA_PER_BYTE - 1);
-        pw.println(");");
-        pw.print("v &= ");
-        pw.print(NUM_VALUES);
-        pw.println(";");
-        pw.print("v *= ");
-        pw.print(bitsPerValue);
-        pw.println(";");
-        pw.print("return (entry.values >>> v) & ");
-        pw.print(maxValue);
-        pw.println(";");
+        pw.println("final PackedEntry entry = PACKED[index];");
+        pw.println("int v = entry.data[transition >> " + DATA_PER_BYTE_SHIFT + "] & 0xFF;");
+        pw.println("v >>= " + NUM_BITS + " * (transition & " + (DATA_PER_BYTE - 1) + ");");
+        pw.println("v &= " + NUM_VALUES + ";");
+        pw.println("v *= " + bitsPerValue + ";");
+        pw.println("return (entry.values >>> v) & " + maxValue + ";");
         pw.println("}");
+    }
+
+    /**
+     * Generates the lexer source code.
+     */
+    public static void main(String[] args) {
+        PrintWriter pw = new PrintWriter(System.out, false, StandardCharsets.UTF_8);
+
+        DFA dfa = process(pw);
+
+        { // Check the first character mapped in our DFA.
+            int c = 0, length = dfa.mCharMappings.length;
+            for (; c < length; ++c) {
+                if (dfa.mCharMappings[c] != 0) {
+                    break;
+                }
+            }
+            assert c == NFAtoDFA.START_CHAR;
+            assert length == (NFAtoDFA.END_CHAR + 1);
+        }
+
+        pw.println("public static final byte[] MAPPINGS = {");
+        for (int i = 0; i <= NFAtoDFA.END_CHAR - NFAtoDFA.START_CHAR; ++i) {
+            pw.print(dfa.mCharMappings[i + NFAtoDFA.START_CHAR]);
+            if (i == NFAtoDFA.END_CHAR - NFAtoDFA.START_CHAR) {
+                pw.println();
+            } else if ((i % 9) == 8) {
+                pw.println(",");
+            } else {
+                pw.print(", ");
+            }
+        }
+        pw.println("};");
+
+        int states = 0;
+        for (int[] row : dfa.mTransitions) {
+            states = Math.max(states, row.length);
+        }
+        writeTransitionTable(pw, dfa, states);
+
+        pw.println("public static final byte[] ACCEPTS = {");
+        for (int i = 0; i < states; i++) {
+            if (i < dfa.mAccepts.length) {
+                pw.print(dfa.mAccepts[i]);
+            } else {
+                pw.print(DFA.INVALID);
+            }
+            if (i == states - 1) {
+                pw.println();
+            } else if ((i % 9) == 8) {
+                pw.println(",");
+            } else {
+                pw.print(", ");
+            }
+        }
+        pw.println("};");
 
         pw.flush();
     }

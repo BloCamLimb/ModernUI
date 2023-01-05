@@ -22,12 +22,13 @@ import it.unimi.dsi.fastutil.ints.IntList;
 
 public class DFAState {
 
-    public int mId;
-    public IntList mLabel;
-    public boolean mIsScanned;
+    public final int mId;
+    public final IntList mStates;
 
-    public DFAState(int id, IntList label) {
+    boolean mScanned = false;
+
+    public DFAState(int id, IntList states) {
         mId = id;
-        mLabel = label;
+        mStates = states;
     }
 }

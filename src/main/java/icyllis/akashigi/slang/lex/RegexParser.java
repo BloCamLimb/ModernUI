@@ -18,36 +18,38 @@
 
 package icyllis.akashigi.slang.lex;
 
-import java.util.ArrayDeque;
+import javax.annotation.Nonnull;
+import java.util.*;
 
 /**
  * Turns a simple regular expression into a parse tree. The regular expression syntax supports only
- * the basic quantifiers ('*', '+', and '?'), alternation ('|'), character sets ('[a-z]'), and
+ * the basic quantifiers ('*', '+', and '?'), alternation ('|'), character classes ('[a-z]'), and
  * groups ('()').
  */
 public class RegexParser {
 
-    private static final char END = '\0';
+    private static final char EOF = '\0';
 
-    private String mSource;
+    private final Deque<RegexNode> mStack = new ArrayDeque<>();
+    private String mRegex;
     private int mIndex;
-    private final ArrayDeque<RegexNode> mStack = new ArrayDeque<>();
 
-    public RegexNode parse(String source) {
-        mSource = source;
+    @Nonnull
+    public RegexNode parse(@Nonnull String regex) {
+        mRegex = regex;
         mIndex = 0;
-        assert (mStack.isEmpty());
+        assert (mStack.size() == 0);
         regex();
         assert (mStack.size() == 1);
-        assert (mIndex == source.length());
+        assert (mIndex == regex.length());
         return pop();
     }
 
     private char peek() {
-        if (mIndex >= mSource.length()) {
-            return END;
+        if (mIndex >= mRegex.length()) {
+            return EOF;
         }
-        return mSource.charAt(mIndex);
+        return mRegex.charAt(mIndex);
     }
 
     private void expect(char c) {
@@ -58,17 +60,22 @@ public class RegexParser {
         ++mIndex;
     }
 
+    private void push(@Nonnull RegexNode node) {
+        mStack.push(node);
+    }
+
+    @Nonnull
     private RegexNode pop() {
         return mStack.pop();
     }
 
     /**
-     * Matches a char literal, parenthesized group, character set, or dot ('.').
+     * Matches a char literal, parenthesized group, character class, or dot ('.').
      */
-    private void term() {
+    private void atom() {
         switch (peek()) {
             case '(' -> group();
-            case '[' -> set();
+            case '[' -> clazz();
             case '.' -> dot();
             default -> literal();
         }
@@ -77,56 +84,66 @@ public class RegexParser {
     /**
      * Matches a term followed by an optional quantifier ('*', '+', or '?').
      */
-    private void quantifiedTerm() {
-        term();
+    private void factor() {
+        atom();
         switch (peek()) {
             case '*' -> {
-                mStack.push(new RegexNode(RegexNode.kStar_Kind, pop()));
+                push(RegexNode.Star(pop()));
                 ++mIndex;
             }
             case '+' -> {
-                mStack.push(new RegexNode(RegexNode.kPlus_Kind, pop()));
+                push(RegexNode.Plus(pop()));
                 ++mIndex;
             }
             case '?' -> {
-                mStack.push(new RegexNode(RegexNode.kQuestion_Kind, pop()));
+                push(RegexNode.Ques(pop()));
                 ++mIndex;
             }
         }
     }
 
     /**
-     * Matches a sequence of quantifiedTerms.
+     * Matches a sequence of factors.
      */
     private void sequence() {
-        quantifiedTerm();
+        factor();
         for (;;) {
             switch (peek()) {
-                case END: // fall through
+                case EOF: // fall through
                 case '|': // fall through
                 case ')':
                     return;
                 default:
                     sequence();
-                    RegexNode right = pop();
-                    RegexNode left = pop();
-                    mStack.push(new RegexNode(RegexNode.kConcat_Kind, left, right));
+                    RegexNode y = pop();
+                    RegexNode x = pop();
+                    push(RegexNode.Concat(x, y));
                     break;
             }
         }
     }
 
     /**
-     * Returns a node representing the given escape character (e.g. escapeSequence('n') returns a
-     * node which matches a newline character).
+     * Returns a node representing the given escape character (e.g. escape('n') returns a
+     * node which matches a line feed character).
      */
-    private RegexNode escapeSequence(char c) {
+    private RegexNode escape(char c) {
         return switch (c) {
-            case 'n' -> new RegexNode(RegexNode.kChar_Kind, '\n');
-            case 'r' -> new RegexNode(RegexNode.kChar_Kind, '\r');
-            case 't' -> new RegexNode(RegexNode.kChar_Kind, '\t');
-            case 's' -> new RegexNode(RegexNode.kCharset_Kind, " \t\n\r");
-            default -> new RegexNode(RegexNode.kChar_Kind, c);
+            case 't' -> RegexNode.Char('\t');
+            case 'n' -> RegexNode.Char('\n');
+            case 'r' -> RegexNode.Char('\r');
+            case 's' -> RegexNode.CharClass(List.of(
+                    RegexNode.Char('\t'),
+                    RegexNode.Char('\n'),
+                    RegexNode.Char('\r'),
+                    RegexNode.Char('\040')));
+            case 'd' -> RegexNode.Range('0', '9');
+            case 'w' -> RegexNode.CharClass(List.of(
+                    RegexNode.Range('a', 'z'),
+                    RegexNode.Range('A', 'Z'),
+                    RegexNode.Range('0', '9'),
+                    RegexNode.Char('_')));
+            default -> RegexNode.Char(c);
         };
     }
 
@@ -137,9 +154,9 @@ public class RegexParser {
         char c = peek();
         if (c == '\\') {
             ++mIndex;
-            mStack.push(escapeSequence(peek()));
+            push(escape(peek()));
         } else {
-            mStack.push(new RegexNode(RegexNode.kChar_Kind, c));
+            push(RegexNode.Char(c));
         }
         ++mIndex;
     }
@@ -149,7 +166,7 @@ public class RegexParser {
      */
     private void dot() {
         expect('.');
-        mStack.push(new RegexNode(RegexNode.kDot_Kind));
+        push(RegexNode.Dot());
     }
 
     /**
@@ -162,50 +179,50 @@ public class RegexParser {
     }
 
     /**
-     * Matches a literal character, escape sequence, or character range from a character set.
+     * Matches a literal character, escape sequence, or character range from a character class.
      */
-    private void setItem() {
+    private void item() {
         literal();
         if (peek() == '-') {
             ++mIndex;
             if (peek() == ']') {
-                mStack.push(new RegexNode(RegexNode.kChar_Kind, '-'));
+                push(RegexNode.Char('-'));
             } else {
                 literal();
                 RegexNode end = pop();
-                assert (end.mKind == RegexNode.kChar_Kind);
                 RegexNode start = pop();
-                assert (start.mKind == RegexNode.kChar_Kind);
-                mStack.push(new RegexNode(RegexNode.kRange_Kind, start, end));
+                push(RegexNode.Range(start, end));
             }
         }
     }
 
     /**
-     * Matches a character set.
+     * Matches a character class.
      */
-    private void set() {
+    private void clazz() {
         expect('[');
         int depth = mStack.size();
-        RegexNode set = new RegexNode(RegexNode.kCharset_Kind);
+        boolean negative;
         if (peek() == '^') {
             ++mIndex;
-            set.mPayload = 1;
+            negative = true;
         } else {
-            set.mPayload = 0;
+            negative = false;
         }
         for (;;) {
             switch (peek()) {
                 case ']' -> {
                     ++mIndex;
-                    while (mStack.size() > depth) {
-                        set.mChildren.add(pop());
+                    int n = mStack.size() - depth;
+                    List<RegexNode> clazz = new ArrayList<>(n);
+                    while (n-- > 0) {
+                        clazz.add(pop());
                     }
-                    mStack.push(set);
+                    push(RegexNode.CharClass(clazz, negative));
                     return;
                 }
-                case END -> throw new IllegalStateException("unterminated character set");
-                default -> setItem();
+                case EOF -> throw new IllegalStateException("unterminated character class");
+                default -> item();
             }
         }
     }
@@ -216,12 +233,12 @@ public class RegexParser {
             case '|': {
                 ++mIndex;
                 regex();
-                RegexNode right = pop();
-                RegexNode left = pop();
-                mStack.push(new RegexNode(RegexNode.kOr_Kind, left, right));
+                RegexNode y = pop();
+                RegexNode x = pop();
+                push(RegexNode.Union(x, y));
                 break;
             }
-            case END: // fall through
+            case EOF: // fall through
             case ')':
                 return;
             default:

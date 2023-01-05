@@ -23,6 +23,7 @@ import it.unimi.dsi.fastutil.ints.IntList;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * A nondeterministic finite automaton for matching regular expressions. The NFA is initialized with
@@ -30,29 +31,39 @@ import java.util.ArrayList;
  */
 public class NFA {
 
-    public int mRegexCount = 0;
-    public ArrayList<NFAState> mStates = new ArrayList<>();
-    public IntArrayList mStartStates = new IntArrayList();
+    private final List<NFAState> mStates = new ArrayList<>();
+    private int mTokenIndex = 0;
+
+    final IntList mStartStates = new IntArrayList();
 
     /**
-     * Adds a new regular expression to the set of expressions matched by this automaton, returning
-     * its index.
+     * Adds a new regular expression to the set of expressions matched by this automaton.
      */
-    public int addRegex(@Nonnull RegexNode regex) {
-        IntList accept = new IntArrayList();
+    public void add(@Nonnull RegexNode n) {
         // we reserve token 0 for END_OF_FILE, so this starts at 1
-        accept.add(addState(new NFAState(++mRegexCount)));
-        IntList startStates = regex.createStates(this, accept);
-        mStartStates.addAll(startStates);
-        return mStartStates.size() - 1;
+        int token = ++mTokenIndex;
+        int index = add(NFAState.Accept(token));
+        mStartStates.addAll(n.createStates(this, IntList.of(index)));
     }
 
     /**
      * Adds a new state to the NFA, returning its index.
      */
-    public int addState(@Nonnull NFAState s) {
+    public int add(NFAState s) {
         mStates.add(s);
         return mStates.size() - 1;
+    }
+
+    /**
+     * Gets a NFA state from its index.
+     */
+    public NFAState get(int index) {
+        return mStates.get(index);
+    }
+
+    public void remap(int index, IntList states) {
+        assert mStates.get(index) == NFAState.PLACEHOLDER;
+        mStates.set(index, NFAState.Remapped(states));
     }
 
     /**
@@ -61,31 +72,31 @@ public class NFA {
      * only for debugging purposes; the NFA should be converted to a DFA before actual use.
      */
     public int match(@Nonnull String s) {
-        var states = mStartStates;
+        IntList states = mStartStates;
         for (int i = 0; i < s.length(); ++i) {
             var next = new IntArrayList();
             for (int id : states) {
-                if (mStates.get(id).accept(s.charAt(i))) {
-                    for (int nextId : mStates.get(id).mNext) {
-                        if (mStates.get(nextId).mKind != NFAState.Kind_Remapped) {
-                            next.add(nextId);
+                NFAState state = get(id);
+                if (state.accept(s.charAt(i))) {
+                    for (int nextId : state.getNext()) {
+                        if (get(nextId) instanceof NFAState.Remapped remapped) {
+                            next.addAll(remapped.mStates);
                         } else {
-                            next.addAll(mStates.get(nextId).mData);
+                            next.add(nextId);
                         }
                     }
                 }
             }
             if (next.isEmpty()) {
-                return -1;
+                return DFA.INVALID;
             }
             states = next;
         }
-        int accept = -1;
+        int accept = DFA.INVALID;
         for (int id : states) {
-            if (mStates.get(id).mKind == NFAState.Kind_Accept) {
-                int result = mStates.get(id).mData.getInt(0);
-                if (accept == -1 || result < accept) {
-                    accept = result;
+            if (get(id) instanceof NFAState.Accept end) {
+                if (accept == DFA.INVALID || end.mToken < accept) {
+                    accept = end.mToken;
                 }
             }
         }

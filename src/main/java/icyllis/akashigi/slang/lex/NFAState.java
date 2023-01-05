@@ -21,78 +21,100 @@ package icyllis.akashigi.slang.lex;
 import it.unimi.dsi.fastutil.ints.IntList;
 import it.unimi.dsi.fastutil.ints.IntLists;
 
-public class NFAState {
+import javax.annotation.Nonnull;
+import java.util.function.IntPredicate;
 
-    // represents an accept state - if the NFA ends up in this state, we have successfully
-    // matched the token indicated by mData[0]
-    public static final int Kind_Accept = 0;
-    // matches the single character mChar
-    public static final int Kind_Char = 1;
-    // the regex '.'; matches any char but '\n'
-    public static final int Kind_Dot = 2;
-    // a state which serves as a placeholder for the states indicated in mData. When we
-    // transition to this state, we instead transition to all of the mData states.
-    public static final int Kind_Remapped = 3;
-    // contains a list of true/false values in mData. mData[c] tells us whether we accept the
-    // character c.
-    public static final int Kind_Table = 4;
+public interface NFAState {
 
-    public static final NFAState PLACEHOLDER = new NFAState(IntLists.emptyList());
+    NFAState PLACEHOLDER = NFAState.Remapped(IntLists.emptyList());
 
-    public int mKind;
-    public char mChar = 0;
-    public boolean mInverse = false;
-    public IntList mData = IntLists.emptyList();
+    boolean accept(char c);
+
     // states we transition to upon a successful match from this state
-    public IntList mNext = IntLists.emptyList();
+    IntList getNext();
 
-    public NFAState(int kind, IntList next) {
-        mKind = kind;
-        mNext = next;
+    @Nonnull
+    static NFAState Accept(int token) {
+        return new Accept(token);
     }
 
-    public NFAState(char c, IntList next) {
-        mKind = Kind_Char;
-        mChar = c;
-        mNext = next;
+    @Nonnull
+    static NFAState Filter(IntPredicate filter, IntList next) {
+        return new Filter(filter, next);
     }
 
-    public NFAState(IntList states) {
-        mKind = Kind_Remapped;
-        mData = states;
+    @Nonnull
+    static NFAState Remapped(IntList states) {
+        return new Remapped(states);
     }
 
-    public NFAState(boolean inverse, IntList accepts, IntList next) {
-        mKind = Kind_Table;
-        mInverse = inverse;
-        mData = accepts;
-        mNext = next;
+    /**
+     * Represents an accepting state - if the NFA ends up in this state, we have successfully
+     * matched the token indicated by 'mToken'.
+     */
+    class Accept implements NFAState {
+
+        public final int mToken;
+
+        private Accept(int token) {
+            mToken = token;
+        }
+
+        @Override
+        public boolean accept(char c) {
+            return false;
+        }
+
+        @Override
+        public IntList getNext() {
+            return IntLists.emptyList();
+        }
     }
 
-    public NFAState(int token) {
-        mKind = Kind_Accept;
-        mData = IntLists.singleton(token);
+    /**
+     * Matches a character that satisfies a character filter.
+     */
+    class Filter implements NFAState {
+
+        private final IntPredicate mFilter;
+        private final IntList mNext;
+
+        private Filter(IntPredicate filter, IntList next) {
+            mFilter = filter;
+            mNext = next;
+        }
+
+        @Override
+        public boolean accept(char c) {
+            return mFilter.test(c);
+        }
+
+        @Override
+        public IntList getNext() {
+            return mNext;
+        }
     }
 
-    public boolean accept(char c) {
-        switch (mKind) {
-            case Kind_Accept:
-                return false;
-            case Kind_Char:
-                return c == mChar;
-            case Kind_Dot:
-                return c != '\n';
-            case Kind_Table: {
-                boolean value;
-                if (c < mData.size()) {
-                    value = mData.getInt(c) != 0;
-                } else {
-                    value = false;
-                }
-                return value != mInverse;
-            }
-            default:
-                throw new IllegalStateException();
+    /**
+     * A state which serves as a placeholder for the states indicated in 'mStates'. When we
+     * transition to this state, we instead transition to all of the 'mStates' states.
+     */
+    class Remapped implements NFAState {
+
+        public final IntList mStates;
+
+        private Remapped(IntList states) {
+            mStates = states;
+        }
+
+        @Override
+        public boolean accept(char c) {
+            throw new IllegalStateException();
+        }
+
+        @Override
+        public IntList getNext() {
+            throw new IllegalStateException();
         }
     }
 }

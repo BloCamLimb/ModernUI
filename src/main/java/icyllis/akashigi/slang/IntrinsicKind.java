@@ -20,6 +20,8 @@ package icyllis.akashigi.slang;
 
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
+import java.util.regex.Pattern;
+
 /**
  * A list of every supported intrinsic.
  */
@@ -338,15 +340,15 @@ public final class IntrinsicKind {
         map.put("inverse"               , kMatrixInverse            );
         map.put("transpose"             , kTranspose                );
 
-        map.put("dFdx"                 , kDPdx                      );
-        map.put("dFdy"                 , kDPdy                      );
-        map.put("fwidth"               , kFwidth                    );
-        map.put("dFdxFine"             , kDPdxFine                  );
-        map.put("dFdyFine"             , kDPdyFine                  );
-        map.put("fwidthFine"           , kFwidthFine                );
-        map.put("dFdxCoarse"           , kDPdxCoarse                );
-        map.put("dFdyCoarse"           , kDPdyCoarse                );
-        map.put("fwidthCoarse"         , kFwidthCoarse              );
+        map.put("dFdx"                  , kDPdx                     );
+        map.put("dFdy"                  , kDPdy                     );
+        map.put("fwidth"                , kFwidth                   );
+        map.put("dFdxFine"              , kDPdxFine                 );
+        map.put("dFdyFine"              , kDPdyFine                 );
+        map.put("fwidthFine"            , kFwidthFine               );
+        map.put("dFdxCoarse"            , kDPdxCoarse               );
+        map.put("dFdyCoarse"            , kDPdyCoarse               );
+        map.put("fwidthCoarse"          , kFwidthCoarse             );
 
         sIntrinsicMap = map;
     }
