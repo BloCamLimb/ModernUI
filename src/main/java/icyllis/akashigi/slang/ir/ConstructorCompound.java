@@ -30,10 +30,10 @@ import javax.annotation.Nonnull;
  * constructor must always match the type's scalar count. (e.g. `pos.xy` consumes two scalars.)
  * The inner values must have the same component type as the vector/matrix.
  */
-public final class ConstructorCompound extends AnyConstructor {
+public final class ConstructorCompound extends ConstructorCall {
 
     private ConstructorCompound(int position, Type type, Expression[] arguments) {
-        super(position, ExpressionKind.kConstructorCompound, type, arguments);
+        super(position, type, arguments);
     }
 
     @Nonnull
@@ -82,6 +82,11 @@ public final class ConstructorCompound extends AnyConstructor {
         }
 
         return new ConstructorCompound(position, type, arguments);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_COMPOUND;
     }
 
     @Nonnull

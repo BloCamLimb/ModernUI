@@ -31,18 +31,15 @@ public abstract class Expression extends Node {
 
     private final Type mType;
 
-    protected Expression(int position, int kind, Type type) {
-        super(position, kind);
-        assert (kind >= ExpressionKind.kFirst && kind <= ExpressionKind.kLast);
+    protected Expression(int position, Type type) {
+        super(position);
         mType = type;
     }
 
     /**
      * @see Node.ExpressionKind
      */
-    public final int kind() {
-        return mKind;
-    }
+    public abstract ExpressionKind getKind();
 
     @Nonnull
     public Type getType() {
@@ -50,7 +47,7 @@ public abstract class Expression extends Node {
         return mType;
     }
 
-    public boolean isAnyConstructor() {
+    public boolean isConstructorCall() {
         return false;
     }
 
@@ -66,7 +63,7 @@ public abstract class Expression extends Node {
         return isLiteral() && getType().isFloat();
     }
 
-    public final boolean isBoolLiteral() {
+    public final boolean isBooleanLiteral() {
         return isLiteral() && getType().isBoolean();
     }
 
@@ -86,14 +83,14 @@ public abstract class Expression extends Node {
      * considered incomplete expressions and should result in an error.
      */
     public final boolean isIncomplete() {
-        return switch (kind()) {
-            case ExpressionKind.kFunctionReference -> {
+        return switch (getKind()) {
+            case FUNCTION_REFERENCE -> {
                 int pos = getEndOffset();
                 pos = makeRange(pos, pos + 1);
-                ThreadContext.getInstance().error(pos, "expected '(' to begin function call");
+                ThreadContext.getInstance().error(pos, "expected '(' to begin function invocation");
                 yield true;
             }
-            case ExpressionKind.kTypeReference -> {
+            case TYPE_REFERENCE -> {
                 int pos = getEndOffset();
                 pos = makeRange(pos, pos + 1);
                 ThreadContext.getInstance().error(pos, "expected '(' to begin constructor invocation");

@@ -31,10 +31,15 @@ public final class AnonymousField extends Symbol {
     private final int mFieldIndex;
 
     public AnonymousField(int position, Variable container, int fieldIndex) {
-        super(position, SymbolKind.kAnonymousField,
-                container.getType().getFields()[fieldIndex].name());
+        super(position, container.getType().getFields()[fieldIndex].name());
         mContainer = container;
         mFieldIndex = fieldIndex;
+    }
+
+    @Nonnull
+    @Override
+    public SymbolKind getKind() {
+        return SymbolKind.ANONYMOUS_FIELD;
     }
 
     @Nonnull

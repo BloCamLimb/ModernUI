@@ -23,15 +23,12 @@ package icyllis.akashigi.slang.ir;
  */
 public abstract class Element extends Node {
 
-    protected Element(int position, int kind) {
-        super(position, kind);
-        assert (kind >= ElementKind.kFirst && kind <= ElementKind.kLast);
+    protected Element(int position) {
+        super(position);
     }
 
     /**
      * @see Node.ElementKind
      */
-    public final int kind() {
-        return mKind;
-    }
+    public abstract ElementKind getKind();
 }

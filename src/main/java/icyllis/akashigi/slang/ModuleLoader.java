@@ -18,8 +18,6 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.Node;
-
 import javax.annotation.Nonnull;
 import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
@@ -269,13 +267,13 @@ public class ModuleLoader {
         // We can eliminate FunctionPrototypes without changing the meaning of the module; the function
         // declaration is still safely in the symbol table. This only impacts our ability to recreate
         // the input verbatim, which we don't care about at runtime.
-        module.mElements.removeIf(element -> switch (element.kind()) {
-            case Node.ElementKind.kFunctionDefinition,
-                    Node.ElementKind.kGlobalVar,
-                    Node.ElementKind.kInterfaceBlock ->
+        module.mElements.removeIf(element -> switch (element.getKind()) {
+            case FUNCTION_DEFINITION,
+                    GLOBAL_VAR,
+                    INTERFACE_BLOCK ->
                 // We need to preserve these.
                     false;
-            case Node.ElementKind.kFunctionPrototype ->
+            case FUNCTION_PROTOTYPE ->
                 // These are already in the symbol table; the
                 // ProgramElement isn't needed anymore.
                     true;
@@ -286,7 +284,7 @@ public class ModuleLoader {
     }
 
     @Nonnull
-    private String loadModuleSource(String name) {
+    public String loadModuleSource(String name) {
         final InputStream in = ModuleLoader.class
                 .getResourceAsStream("/assets/akashigi/shaders/" + name);
         if (in == null) {

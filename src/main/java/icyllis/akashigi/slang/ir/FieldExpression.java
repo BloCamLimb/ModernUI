@@ -20,6 +20,7 @@ package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.Operator;
 import icyllis.akashigi.slang.ThreadContext;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,7 +36,7 @@ public final class FieldExpression extends Expression {
     private final boolean mAnonymousBlock;
 
     private FieldExpression(int position, Expression base, int fieldIndex, boolean anonymousBlock) {
-        super(position, ExpressionKind.kFieldAccess, base.getType().getFields()[fieldIndex].type());
+        super(position, base.getType().getFields()[fieldIndex].type());
         mBase = base;
         mFieldIndex = fieldIndex;
         mAnonymousBlock = anonymousBlock;
@@ -77,6 +78,19 @@ public final class FieldExpression extends Expression {
         Objects.checkIndex(fieldIndex, baseType.getFields().length);
 
         return new FieldExpression(position, base, fieldIndex, anonymousBlock);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.FIELD_ACCESS;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        if (visitor.visitFieldAccess(this)) {
+            return true;
+        }
+        return mBase.accept(visitor);
     }
 
     public Expression getBase() {

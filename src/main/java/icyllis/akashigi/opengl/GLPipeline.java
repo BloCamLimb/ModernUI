@@ -132,7 +132,7 @@ public class GLPipeline extends ManagedResource {
     }
 
     /**
-     * See {@link VertexShaderBuilder} to see how we bind these on server side.
+     * See {@link VertexShaderBuilder} to see how we bind these on GPU side.
      */
     private static int setVertexFormat(@Nonnull Iterable<GeometryProcessor.Attribute> attribs,
                                        int vertexArray,
@@ -154,6 +154,7 @@ public class GLPipeline extends ManagedResource {
         return attribIndex;
     }
 
+    // @formatter:off
     private static void setAttribFormat(int attribType, int vertexArray, int attribIndex, int offset) {
         switch (attribType) {
             case VertexAttribType.kFloat ->
@@ -208,9 +209,10 @@ public class GLPipeline extends ManagedResource {
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 1, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
             case VertexAttribType.kUShort4_norm ->
                     glVertexArrayAttribFormat(vertexArray, attribIndex, 4, GL_UNSIGNED_SHORT, /*normalized*/true, offset);
-            default -> throw new IllegalStateException();
+            default -> throw new AssertionError(attribType);
         }
     }
+    // @formatter:on
 
     @Override
     public void dispose() {

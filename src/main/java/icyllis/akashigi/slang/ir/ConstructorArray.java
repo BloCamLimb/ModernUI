@@ -26,10 +26,10 @@ import javax.annotation.Nullable;
 /**
  * Represents the construction of an array type, such as "float[5](x, y, z, w, 1)".
  */
-public final class ConstructorArray extends AnyConstructor {
+public final class ConstructorArray extends ConstructorCall {
 
     private ConstructorArray(int position, Type type, Expression[] arguments) {
-        super(position, ExpressionKind.kConstructorArray, type, arguments);
+        super(position, type, arguments);
     }
 
     /**
@@ -88,6 +88,11 @@ public final class ConstructorArray extends AnyConstructor {
             assert type.getElementType().matches(arg.getType());
         }
         return new ConstructorArray(position, type, arguments);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_ARRAY;
     }
 
     @Nonnull

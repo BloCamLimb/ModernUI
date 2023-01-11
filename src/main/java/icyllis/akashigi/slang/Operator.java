@@ -24,8 +24,8 @@ import icyllis.akashigi.slang.ir.Type;
  * Operators.
  */
 public enum Operator {
-    ADD,            // +
-    SUB,            // -
+    ADD,            // +, unary positive or binary add
+    SUB,            // -, unary negative or binary sub
     MUL,            // *
     DIV,            // /
     MOD,            // %
@@ -56,8 +56,8 @@ public enum Operator {
     AND_ASSIGN,     // &=
     OR_ASSIGN,      // |=
     XOR_ASSIGN,     // ^=
-    INC,            // ++
-    DEC,            // --
+    INC,            // ++, prefix inc or postfix inc
+    DEC,            // --, prefix dec or postfix dec
     COMMA;          // ,
 
     /**

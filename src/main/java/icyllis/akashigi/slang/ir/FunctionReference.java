@@ -19,6 +19,7 @@
 package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.ThreadContext;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 
@@ -31,7 +32,7 @@ public final class FunctionReference extends Expression {
     private final Function mOverloadChain;
 
     private FunctionReference(int position, Function overloadChain, Type type) {
-        super(position, ExpressionKind.kFunctionReference, type);
+        super(position, type);
         mOverloadChain = overloadChain;
     }
 
@@ -39,6 +40,16 @@ public final class FunctionReference extends Expression {
     public static Expression make(int position, Function overloadChain) {
         ThreadContext context = ThreadContext.getInstance();
         return new FunctionReference(position, overloadChain, context.getTypes().mInvalid);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.FUNCTION_REFERENCE;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        return visitor.visitFunctionReference(this);
     }
 
     public Function getOverloadChain() {

@@ -28,10 +28,10 @@ import javax.annotation.Nonnull;
  * <p>
  * These always contain exactly 1 scalar of a differing type, and are never constant.
  */
-public final class ConstructorScalarCast extends AnyConstructor {
+public final class ConstructorScalarCast extends ConstructorCall {
 
     private ConstructorScalarCast(int position, Type type, Expression... arguments) {
-        super(position, ExpressionKind.kConstructorScalarCast, type, arguments);
+        super(position, type, arguments);
         assert arguments.length == 1;
     }
 
@@ -53,8 +53,8 @@ public final class ConstructorScalarCast extends AnyConstructor {
         // out of range for its type, we report an error and return zero to minimize error cascading.
         // This can occur when code is inlined, so we can't necessarily catch it during Convert. As
         // such, it's not safe to return null or assert.)
-        if (arg.isLiteral()) {
-            double value = ((Literal) arg).getValue();
+        if (arg instanceof Literal literal) {
+            double value = literal.getValue();
             if (type.isNumeric() &&
                     (value < type.getMinValue() || value > type.getMaxValue())) {
                 ThreadContext.getInstance().error(position,
@@ -65,6 +65,11 @@ public final class ConstructorScalarCast extends AnyConstructor {
             return Literal.make(position, value, type);
         }
         return new ConstructorScalarCast(position, type, arg);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_SCALAR_CAST;
     }
 
     @Nonnull

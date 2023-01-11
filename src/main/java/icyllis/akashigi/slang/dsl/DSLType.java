@@ -25,7 +25,7 @@ import icyllis.akashigi.slang.ir.Type;
 public class DSLType {
 
     public static Type Array(Type type, int size, int position) {
-        size = type.convertArraySize(position, Literal.makeInt(position, size));
+        size = type.convertArraySize(position, Literal.makeInteger(position, size));
         if (size == 0) {
             return ThreadContext.getInstance().getTypes().mPoison;
         }

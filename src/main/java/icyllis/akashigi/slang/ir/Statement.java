@@ -23,17 +23,14 @@ package icyllis.akashigi.slang.ir;
  */
 public abstract class Statement extends Node {
 
-    protected Statement(int position, int kind) {
-        super(position, kind);
-        assert (kind >= StatementKind.kFirst && kind <= StatementKind.kLast);
+    protected Statement(int position) {
+        super(position);
     }
 
     /**
      * @see Node.StatementKind
      */
-    public final int kind() {
-        return mKind;
-    }
+    public abstract StatementKind getKind();
 
     public boolean isEmpty() {
         return false;

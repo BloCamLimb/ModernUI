@@ -19,27 +19,43 @@
 package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.Operator;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 import java.util.OptionalDouble;
 import java.util.StringJoiner;
 
 /**
- * Base class representing a constructor.
+ * Base class representing a constructor call: type_name( args, ... ).
+ *
+ * @see FunctionCall
  */
-public abstract class AnyConstructor extends Expression {
+public abstract class ConstructorCall extends Expression {
 
     private final Expression[] mArguments;
 
-    protected AnyConstructor(int position, int kind, Type type,
-                             Expression[] arguments) {
-        super(position, kind, type);
-        assert (kind >= ExpressionKind.kConstructorArray && kind <= ExpressionKind.kConstructorVectorScalar);
+    protected ConstructorCall(int position, Type type,
+                              Expression[] arguments) {
+        super(position, type);
+        assert (arguments.length != 0);
         mArguments = arguments;
     }
 
     @Override
-    public final boolean isAnyConstructor() {
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        if (visitor.visitConstructorCall(this)) {
+            return true;
+        }
+        for (Expression arg : mArguments) {
+            if (arg.accept(visitor)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public final boolean isConstructorCall() {
         return true;
     }
 
@@ -68,12 +84,11 @@ public abstract class AnyConstructor extends Expression {
     @Nonnull
     @Override
     public String toString(int parentPrecedence) {
-        String result = getType().getName() + "(";
         StringJoiner joiner = new StringJoiner(", ");
         for (Expression arg : mArguments) {
             joiner.add(arg.toString(Operator.PRECEDENCE_SEQUENCE));
         }
-        return result + joiner + ")";
+        return getType().getName() + "(" + joiner + ")";
     }
 
     final Expression[] cloneArguments() {

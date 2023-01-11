@@ -95,8 +95,8 @@ public interface RegexNode {
     @Contract(pure = true)
     static RegexNode Dot() {
         return (nfa, next) -> {
-            int index = nfa.add(NFAState.Filter(ch -> ch != '\n', next));
-            return IntList.of(index);
+            int state = nfa.add(NFAState.Filter(ch -> ch != '\n', next));
+            return IntList.of(state);
         };
     }
 
@@ -108,11 +108,11 @@ public interface RegexNode {
     static RegexNode Star(RegexNode x) {
         return (nfa, next) -> {
             var cycle = new IntArrayList(next);
-            int index = nfa.add(NFAState.PLACEHOLDER);
-            cycle.add(index);
+            int state = nfa.add(NFAState.PLACEHOLDER);
+            cycle.add(state);
             var result = new IntArrayList(x.createStates(nfa, cycle));
             result.addAll(next);
-            nfa.remap(index, result);
+            nfa.remap(state, result);
             return result;
         };
     }
@@ -122,10 +122,10 @@ public interface RegexNode {
     static RegexNode Plus(RegexNode x) {
         return (nfa, next) -> {
             var cycle = new IntArrayList(next);
-            int index = nfa.add(NFAState.PLACEHOLDER);
-            cycle.add(index);
+            int state = nfa.add(NFAState.PLACEHOLDER);
+            cycle.add(state);
             IntList result = x.createStates(nfa, cycle);
-            nfa.remap(index, result);
+            nfa.remap(state, result);
             return result;
         };
     }
@@ -153,8 +153,8 @@ public interface RegexNode {
 
         @Override
         public IntList createStates(NFA nfa, IntList next) {
-            int index = nfa.add(NFAState.Filter(ch -> ch == mChar, next));
-            return IntList.of(index);
+            int state = nfa.add(NFAState.Filter(ch -> ch == mChar, next));
+            return IntList.of(state);
         }
     }
 
@@ -174,8 +174,8 @@ public interface RegexNode {
 
         @Override
         public IntList createStates(NFA nfa, IntList next) {
-            int index = nfa.add(NFAState.Filter(ch -> ch >= mStart && ch <= mEnd, next));
-            return IntList.of(index);
+            int state = nfa.add(NFAState.Filter(ch -> ch >= mStart && ch <= mEnd, next));
+            return IntList.of(state);
         }
     }
 
@@ -202,8 +202,8 @@ public interface RegexNode {
 
         @Override
         public IntList createStates(NFA nfa, IntList next) {
-            int index = nfa.add(NFAState.Filter(ch -> mTable.get(ch) != mNegative, next));
-            return IntList.of(index);
+            int state = nfa.add(NFAState.Filter(ch -> mTable.get(ch) ^ mNegative, next));
+            return IntList.of(state);
         }
     }
 }

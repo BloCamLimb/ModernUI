@@ -24,6 +24,7 @@ import org.lwjgl.util.spvc.Spv;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.OptionalInt;
+import java.util.OptionalLong;
 
 /**
  * Represents a type symbol, such as int or float4.
@@ -77,7 +78,7 @@ public class Type extends Symbol {
     }
 
     Type(String name, String desc, byte kind, int position) {
-        super(position, SymbolKind.kType, name);
+        super(position, name);
         mDesc = desc;
         mTypeKind = kind;
     }
@@ -277,6 +278,12 @@ public class Type extends Symbol {
         }
 
         return false;
+    }
+
+    @Nonnull
+    @Override
+    public SymbolKind getKind() {
+        return SymbolKind.TYPE;
     }
 
     @Nonnull
@@ -819,16 +826,20 @@ public class Type extends Symbol {
         if (!isUsableInArray(position)) {
             return 0;
         }
-        OptionalInt value = ConstantFolder.getConstantInt(size);
+        OptionalLong value = ConstantFolder.getConstantInt(size);
         if (value.isEmpty()) {
             context.error(size.mPosition, "array size must be an integer");
             return 0;
         }
-        if (value.getAsInt() <= 0) {
+        if (value.getAsLong() <= 0) {
             context.error(size.mPosition, "array size must be positive");
             return 0;
         }
-        return value.getAsInt();
+        if (value.getAsLong() > Integer.MAX_VALUE) {
+            context.error(size.mPosition, "array size is too large");
+            return 0;
+        }
+        return (int) value.getAsLong();
     }
 
     /**

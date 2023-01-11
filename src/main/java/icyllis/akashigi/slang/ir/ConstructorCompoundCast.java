@@ -28,10 +28,10 @@ import javax.annotation.Nonnull;
  * <p>
  * These always contain exactly 1 vector or matrix of matching size, and are never constant.
  */
-public final class ConstructorCompoundCast extends AnyConstructor {
+public final class ConstructorCompoundCast extends ConstructorCall {
 
     private ConstructorCompoundCast(int position, Type type, Expression... arguments) {
-        super(position, ExpressionKind.kConstructorCompoundCast, type, arguments);
+        super(position, type, arguments);
         assert arguments.length == 1;
     }
 
@@ -54,6 +54,11 @@ public final class ConstructorCompoundCast extends AnyConstructor {
 
         //TODO optimize for constexpr
         return new ConstructorCompoundCast(position, type, arg);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_COMPOUND_CAST;
     }
 
     @Nonnull

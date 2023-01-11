@@ -18,6 +18,8 @@
 
 package icyllis.akashigi.slang.ir;
 
+import icyllis.akashigi.slang.analysis.NodeVisitor;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -27,18 +29,22 @@ public abstract class Symbol extends Node {
 
     private String mName;
 
-    protected Symbol(int position, int kind, String name) {
-        super(position, kind);
-        assert (kind >= SymbolKind.kFirst && kind <= SymbolKind.kLast);
+    protected Symbol(int position, String name) {
+        super(position);
         mName = name;
+    }
+
+    @Override
+    public final boolean accept(@Nonnull NodeVisitor visitor) {
+        // symbols will not be visited
+        throw new AssertionError();
     }
 
     /**
      * @see Node.SymbolKind
      */
-    public final int kind() {
-        return mKind;
-    }
+    @Nonnull
+    public abstract SymbolKind getKind();
 
     @Nonnull
     public final String getName() {
@@ -48,7 +54,7 @@ public abstract class Symbol extends Node {
     /**
      * Changes the symbol's name.
      */
-    public final void setName(String name) {
+    public final void setName(@Nonnull String name) {
         mName = name;
     }
 

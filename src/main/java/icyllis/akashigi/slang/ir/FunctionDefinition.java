@@ -18,6 +18,8 @@
 
 package icyllis.akashigi.slang.ir;
 
+import icyllis.akashigi.slang.analysis.NodeVisitor;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -29,9 +31,19 @@ public final class FunctionDefinition extends Element {
     private final Statement mBody;
 
     private FunctionDefinition(int position, Function decl, Statement body) {
-        super(position, ElementKind.kFunctionDefinition);
+        super(position);
         mDecl = decl;
         mBody = body;
+    }
+
+    @Override
+    public ElementKind getKind() {
+        return ElementKind.FUNCTION_DEFINITION;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        return false;
     }
 
     public Function getDecl() {

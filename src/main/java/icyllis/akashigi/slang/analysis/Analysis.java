@@ -19,41 +19,42 @@
 package icyllis.akashigi.slang.analysis;
 
 import icyllis.akashigi.slang.ir.Expression;
-import icyllis.akashigi.slang.ir.Node.ExpressionKind;
+import icyllis.akashigi.slang.ir.Literal;
 
-public class Analysis {
+public final class Analysis {
 
     /**
      * Determines if `expr` is a compile-time constant (composed of just constructors and literals).
      */
     public static boolean isCompileTimeConstant(Expression expr) {
-        class IsCompileTimeConstantVisitor extends ProgramVisitor {
-            boolean mIsConstant = true;
+        class IsCompileTimeConstantVisitor extends NodeVisitor {
+            @Override
+            public boolean visitLiteral(Literal expr) {
+                // Literals are compile-time constants.
+                return false;
+            }
 
             @Override
-            public boolean visitExpression(Expression expr) {
-                return switch (expr.kind()) {
-                    case ExpressionKind.kLiteral ->
-                        // Literals are compile-time constants.
-                            false;
-                    case ExpressionKind.kConstructorArray,
-                            ExpressionKind.kConstructorCompound,
-                            ExpressionKind.kConstructorMatrixMatrix,
-                            ExpressionKind.kConstructorMatrixScalar,
-                            ExpressionKind.kConstructorStruct,
-                            ExpressionKind.kConstructorVectorScalar ->
+            protected boolean visitExpression(Expression expr) {
+                return switch (expr.getKind()) {
+                    case CONSTRUCTOR_ARRAY,
+                            CONSTRUCTOR_COMPOUND,
+                            CONSTRUCTOR_MATRIX_MATRIX,
+                            CONSTRUCTOR_MATRIX_SCALAR,
+                            CONSTRUCTOR_STRUCT,
+                            CONSTRUCTOR_VECTOR_SCALAR ->
                         // Constructors might be compile-time constants.
                             super.visitExpression(expr);
-                    default -> {
-                        // This expression isn't a compile-time constant.
-                        mIsConstant = false;
-                        yield true;
-                    }
+                    // This expression isn't a compile-time constant.
+                    default -> true;
                 };
             }
         }
         IsCompileTimeConstantVisitor visitor = new IsCompileTimeConstantVisitor();
-        visitor.visitExpression(expr);
-        return visitor.mIsConstant;
+        return !expr.accept(visitor);
+    }
+
+    public static boolean updateVariableRefKind(Expression expr, int refKind) {
+        return true;
     }
 }

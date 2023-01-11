@@ -27,10 +27,10 @@ import javax.annotation.Nonnull;
  * <p>
  * These always contain exactly 1 scalar.
  */
-public final class ConstructorVectorScalar extends AnyConstructor {
+public final class ConstructorVectorScalar extends ConstructorCall {
 
     private ConstructorVectorScalar(int position, Type type, Expression... arguments) {
-        super(position, ExpressionKind.kConstructorVectorScalar, type, arguments);
+        super(position, type, arguments);
         assert arguments.length == 1;
     }
 
@@ -53,6 +53,11 @@ public final class ConstructorVectorScalar extends AnyConstructor {
 
         assert (type.isVector());
         return new ConstructorVectorScalar(position, type, arg);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_VECTOR_SCALAR;
     }
 
     @Nonnull

@@ -48,14 +48,12 @@ public final class SymbolTable {
     }
 
     @Nonnull
-    @Contract("_ -> new")
     public static SymbolTable push(SymbolTable table) {
         Objects.requireNonNull(table);
         return new SymbolTable(table, table.mBuiltin);
     }
 
     @Nonnull
-    @Contract("_, _ -> new")
     public static SymbolTable push(SymbolTable table, boolean builtin) {
         Objects.requireNonNull(table);
         return new SymbolTable(table, builtin);

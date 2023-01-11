@@ -24,9 +24,9 @@ import icyllis.akashigi.slang.Modifier;
 import javax.annotation.Nonnull;
 
 /**
- * Represents a variable, whether local, global, or a function parameter. This represents the
- * variable itself (the storage location), which is shared between all VariableReferences which
- * read or write that storage location.
+ * Represents a variable symbol, whether local, global, or a function parameter.
+ * This represents the variable itself (the storage location), which is shared
+ * between all VariableReferences which read or write that storage location.
  */
 public final class Variable extends Symbol {
 
@@ -45,13 +45,19 @@ public final class Variable extends Symbol {
 
     public Variable(int position, int modifiersPos, int modifiers, Layout layout,
                     String name, Type type, boolean builtin, byte storage) {
-        super(position, SymbolKind.kVariable, name);
+        super(position, name);
         mModifiersPos = modifiersPos;
         mModifiers = modifiers;
         mLayout = layout;
         mType = type;
         mStorage = storage;
         mBuiltin = builtin;
+    }
+
+    @Nonnull
+    @Override
+    public SymbolKind getKind() {
+        return SymbolKind.VARIABLE;
     }
 
     @Nonnull

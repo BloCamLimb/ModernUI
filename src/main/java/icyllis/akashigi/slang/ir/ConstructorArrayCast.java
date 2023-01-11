@@ -28,10 +28,10 @@ import javax.annotation.Nonnull;
  * <p>
  * These always contain exactly 1 array of matching size, and are never constant.
  */
-public final class ConstructorArrayCast extends AnyConstructor {
+public final class ConstructorArrayCast extends ConstructorCall {
 
     private ConstructorArrayCast(int position, Type type, Expression... arguments) {
-        super(position, ExpressionKind.kConstructorArrayCast, type, arguments);
+        super(position, type, arguments);
         assert arguments.length == 1;
     }
 
@@ -71,6 +71,11 @@ public final class ConstructorArrayCast extends AnyConstructor {
             return ConstructorArray.make(position, type, typecastArgs);
         }
         return new ConstructorArrayCast(position, type, arg);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_ARRAY_CAST;
     }
 
     @Nonnull

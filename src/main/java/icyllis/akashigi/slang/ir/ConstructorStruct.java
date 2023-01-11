@@ -24,10 +24,15 @@ import javax.annotation.Nonnull;
  * Represents the construction of a struct object, such as "Color(red, green, blue, 1)".
  */
 //TODO
-public final class ConstructorStruct extends AnyConstructor {
+public final class ConstructorStruct extends ConstructorCall {
 
     private ConstructorStruct(int position, Type type, Expression[] arguments) {
-        super(position, ExpressionKind.kConstructorStruct, type, arguments);
+        super(position, type, arguments);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_STRUCT;
     }
 
     @Nonnull

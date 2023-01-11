@@ -20,6 +20,7 @@ package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.Operator;
 import icyllis.akashigi.slang.ThreadContext;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,13 +30,13 @@ import javax.annotation.Nullable;
  */
 public final class BinaryExpression extends Expression {
 
-    private final Expression mLeft;
+    private Expression mLeft;
     private final Operator mOperator;
-    private final Expression mRight;
+    private Expression mRight;
 
     private BinaryExpression(int position, Expression left, Operator op,
                              Expression right, Type type) {
-        super(position, ExpressionKind.kBinary, type);
+        super(position, type);
         mLeft = left;
         mOperator = op;
         mRight = right;
@@ -90,6 +91,20 @@ public final class BinaryExpression extends Expression {
         return new BinaryExpression(position, left, op, right, resultType);
     }
 
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.BINARY;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        if (visitor.visitBinary(this)) {
+            return true;
+        }
+        return (mLeft != null && mLeft.accept(visitor)) ||
+                (mRight != null && mRight.accept(visitor));
+    }
+
     public Expression getLeft() {
         return mLeft;
     }
@@ -100,6 +115,14 @@ public final class BinaryExpression extends Expression {
 
     public Expression getRight() {
         return mRight;
+    }
+
+    public void setLeft(Expression left) {
+        mLeft = left;
+    }
+
+    public void setRight(Expression right) {
+        mRight = right;
     }
 
     @Nonnull

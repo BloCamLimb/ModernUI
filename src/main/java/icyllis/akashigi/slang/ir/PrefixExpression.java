@@ -19,6 +19,9 @@
 package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.Operator;
+import icyllis.akashigi.slang.ThreadContext;
+import icyllis.akashigi.slang.analysis.Analysis;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 
@@ -35,9 +38,76 @@ public final class PrefixExpression extends Expression {
     private final Expression mOperand;
 
     private PrefixExpression(int position, Operator op, Expression operand) {
-        super(position, ExpressionKind.kPrefix, operand.getType());
+        super(position, operand.getType());
         mOperator = op;
         mOperand = operand;
+    }
+
+    public static Expression convert(int position, Operator op, Expression base) {
+        ThreadContext context = ThreadContext.getInstance();
+        Type baseType = base.getType();
+        switch (op) {
+            case ADD:
+                if (baseType.isArray() || !baseType.getComponentType().isNumeric()) {
+                    context.error(position,
+                            "'+' cannot operate on '" + baseType.getName() + "'");
+                    return null;
+                }
+                break;
+
+            case SUB:
+                if (baseType.isArray() || !baseType.getComponentType().isNumeric()) {
+                    context.error(position,
+                            "'-' cannot operate on '" + baseType.getName() + "'");
+                    return null;
+                }
+                break;
+
+            case INC:
+            case DEC:
+                if (!baseType.isNumeric()) {
+                    context.error(position,
+                            "'" + op.tightOperatorName() +
+                                    "' cannot operate on '" + baseType.getName() + "'");
+                    return null;
+                }
+                if (!Analysis.updateVariableRefKind(base, VariableReference.kReadWrite_ReferenceKind)) {
+                    return null;
+                }
+                break;
+
+            case LOGICAL_NOT:
+                if (!baseType.isBoolean()) {
+                    context.error(position,
+                            "'" + op.tightOperatorName() +
+                                    "' cannot operate on '" + baseType.getName() + "'");
+                    return null;
+                }
+                break;
+
+            case BITWISE_NOT:
+                if (baseType.isArray() || !baseType.getComponentType().isInteger()) {
+                    context.error(position,
+                            "'" + op.tightOperatorName() +
+                                    "' cannot operate on '" + baseType.getName() + "'");
+                    return null;
+                }
+                if (base.isLiteral()) {
+                    // The expression `~123` is no longer a literal; coerce to the actual type.
+                    base = baseType.coerceExpression(base);
+                    if (base == null) {
+                        return null;
+                    }
+                }
+                break;
+
+            default:
+                throw new AssertionError();
+        }
+
+        Expression result = make(position, op, base);
+        assert (result.mPosition == position);
+        return result;
     }
 
     @Nonnull
@@ -74,6 +144,19 @@ public final class PrefixExpression extends Expression {
         }
 
         return new PrefixExpression(position, op, base);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.PREFIX;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        if (visitor.visitPrefix(this)) {
+            return true;
+        }
+        return mOperand.accept(visitor);
     }
 
     public Operator getOperator() {

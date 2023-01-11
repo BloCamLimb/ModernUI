@@ -27,10 +27,10 @@ import java.util.OptionalDouble;
  * These always contain exactly 1 matrix of non-matching size. Cells that aren't present in the
  * input matrix are populated with the identity matrix.
  */
-public final class ConstructorMatrixMatrix extends AnyConstructor {
+public final class ConstructorMatrixMatrix extends ConstructorCall {
 
     private ConstructorMatrixMatrix(int position, Type type, Expression... arguments) {
-        super(position, ExpressionKind.kConstructorMatrixMatrix, type, arguments);
+        super(position, type, arguments);
         assert arguments.length == 1;
     }
 
@@ -45,6 +45,11 @@ public final class ConstructorMatrixMatrix extends AnyConstructor {
         }
 
         return new ConstructorMatrixMatrix(position, type, arg);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_MATRIX_MATRIX;
     }
 
     @Override

@@ -19,6 +19,7 @@
 package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.ThreadContext;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 
@@ -31,7 +32,7 @@ public final class TypeReference extends Expression {
     private final Type mValue;
 
     private TypeReference(int position, Type value, Type type) {
-        super(position, ExpressionKind.kTypeReference, type);
+        super(position, type);
         mValue = value;
     }
 
@@ -39,6 +40,16 @@ public final class TypeReference extends Expression {
     public static Expression make(int position, Type value) {
         ThreadContext context = ThreadContext.getInstance();
         return new TypeReference(position, value, context.getTypes().mInvalid);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.TYPE_REFERENCE;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        return visitor.visitTypeReference(this);
     }
 
     public Type getValue() {

@@ -22,6 +22,8 @@ import icyllis.akashigi.core.*;
 import icyllis.akashigi.engine.*;
 import icyllis.akashigi.engine.geom.RoundRectProcessor;
 import icyllis.akashigi.opengl.*;
+import icyllis.akashigi.slang.ModuleLoader;
+import icyllis.akashigi.slang.lex.Lexer;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -29,18 +31,15 @@ import org.lwjgl.opengl.EXTTextureCompressionS3TC;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.stb.STBImage;
 import org.lwjgl.system.*;
-import sun.misc.Unsafe;
 
 import java.io.*;
-import java.lang.reflect.Field;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.*;
 
 import static icyllis.akashigi.core.Core.*;
 import static org.lwjgl.system.MemoryUtil.*;
@@ -75,35 +74,32 @@ public class TestManagedResource {
         pw.println("Max vertex stride: " + GLCore.glGetInteger(GLCore.GL_MAX_VERTEX_ATTRIB_STRIDE));
         pw.println("Max label length: " + GLCore.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
 
-        try {
-            Field f = MemoryUtil.class.getDeclaredField("UNSAFE");
-            f.setAccessible(true);
-            Unsafe unsafe = (Unsafe) f.get(null);
-            long addr = unsafe.allocateMemory(256);
-            pw.println("Allocate memory address: " + Long.toHexString(addr));
-            unsafe.freeMemory(addr);
-        } catch (Exception ignored) {
+        {
+            long bytes = 0;
+            bytes += 16 + FMath.align8(Lexer.MAPPINGS.length);
+            bytes += 16 + FMath.align8(Lexer.ACCEPTS.length);
+            bytes += 16 + FMath.align8(Lexer.INDICES.length * 2);
+            bytes += 16 + FMath.align8(Lexer.FULL.length * 4);
+            for (short[] elem : Lexer.FULL) {
+                bytes += 16 + FMath.align8(elem.length * 2);
+            }
+            bytes += 16 + FMath.align8(Lexer.PACKED.length * 4);
+            for (Lexer.PackedEntry elem : Lexer.PACKED) {
+                bytes += 16 + 4 + 4 + 16 + FMath.align8(elem.data().length);
+            }
+            pw.println("Lexer bytes: " + bytes);
+
+            pw.println("Decode int: " + Long.decode("4294967295"));
         }
+
+        var str = """
+                static func <T> copy(dest: *List<T : ?>, src: *List<? : T>)
+                    where T : Object & Comparable<T : ?>;
+                        """;
 
         pw.println("quickModPow: " + FMath.quickModPow(95959595, 87878787, 998244353));
 
         pw.println("BinaryFormats: " + Arrays.toString(((GLCaps) dContext.getCaps()).mProgramBinaryFormats));
-        try {
-            Process process = new ProcessBuilder("ipconfig", "/all").start();
-            process.onExit().thenAccept(p -> {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                try {
-                    for (;;) {
-                        String line = reader.readLine();
-                        if (line == null)
-                            break;
-                        System.out.println(line);
-                    }
-                } catch (Exception ignored) {
-                }
-            });
-        } catch (Exception ignored) {
-        }
 
         if (dContext.getCaps().isFormatTexturable(
                 GLBackendFormat.make(EXTTextureCompressionS3TC.GL_COMPRESSED_RGBA_S3TC_DXT1_EXT))) {
@@ -116,32 +112,7 @@ public class TestManagedResource {
 
         testTexture(pw, dContext);
 
-        try {
-            double v = -Double.MAX_VALUE;
-            pw.println("Float v: " + v);
-        } catch (NumberFormatException e) {
-            pw.println(e.getMessage());
-        }
-
-        GLServer server = (GLServer) dContext.getServer();
-        GLPipelineStateCache pipelineStateCache = server.getPipelineBuilder();
-        @SharedPtr
-        TextureProxy target = dContext.getProxyProvider().createRenderTextureProxy(
-                GLBackendFormat.make(GLCore.GL_RGBA8),
-                800, 800, 4,
-                SurfaceFlags.kBudgeted | SurfaceFlags.kRenderable
-        );
-        Objects.requireNonNull(target);
-        GLPipelineState pso = pipelineStateCache.findOrCreatePipelineState(
-                new PipelineInfo(new SurfaceProxyView(target), new RoundRectProcessor(true),
-                        null, null, null, null,
-                        PipelineInfo.kNone_Flag));
-        {
-            pw.println(target);
-            target.unref();
-        }
-
-        pw.println(dContext.getServer().getPipelineBuilder().getStates());
+        tokens(pw, "slang_common.txt");
 
         if (Platform.get() == Platform.WINDOWS) {
             if (!Kernel32.CloseHandle(959595595959595959L)) {
@@ -166,6 +137,146 @@ public class TestManagedResource {
         } catch (AssertionError e) {
             pw.println("Assert: " + (System.nanoTime() - time) / 1000000 + "ms");
         }
+    }
+
+    public static void tokens(PrintWriter pw, String name) {
+        List<String> tokens = List.of("END_OF_FILE","INTLITERAL",
+                "FLOATLITERAL",
+                "TRUE",
+                "FALSE",
+                "BREAK",
+                "CONTINUE",
+                "DO",
+                "FOR",
+                "WHILE",
+                "IF",
+                "ELSE",
+                "SWITCH",
+                "CASE",
+                "DEFAULT",
+                "DISCARD",
+                "RETURN",
+                "IN",
+                "OUT",
+                "INOUT",
+                "CONST",
+                "UNIFORM",
+                "BUFFER",
+                "WORKGROUP",
+                "FLAT",
+                "NOPERSPECTIVE",
+                "COHERENT",
+                "VOLATILE",
+                "RESTRICT",
+                "READONLY",
+                "WRITEONLY",
+                "LAYOUT",
+                "STRUCT",
+                "INLINE",
+                "NOINLINE",
+                "PURE",
+                "EXPORT",
+                "RESERVED",
+                "IDENTIFIER",
+                "LPAREN",
+                "RPAREN",
+                "LBRACE",
+                "RBRACE",
+                "LBRACKET",
+                "RBRACKET",
+                "DOT",
+                "COMMA",
+                "EQ",
+                "LT",
+                "GT",
+                "BANG",
+                "TILDE",
+                "QUES",
+                "COLON",
+                "EQEQ",
+                "LTEQ",
+                "GTEQ",
+                "BANGEQ",
+                "PLUSPLUS",
+                "MINUSMINUS",
+                "PLUS",
+                "MINUS",
+                "STAR",
+                "SLASH",
+                "PERCENT",
+                "LTLT",
+                "GTGT",
+                "AMPAMP",
+                "PIPEPIPE",
+                "CARETCARET",
+                "AMP",
+                "PIPE",
+                "CARET",
+                "PLUSEQ",
+                "MINUSEQ",
+                "STAREQ",
+                "SLASHEQ",
+                "PERCENTEQ",
+                "LTLTEQ",
+                "GTGTEQ",
+                "AMPEQ",
+                "PIPEEQ",
+                "CARETEQ",
+                "SEMICOLON",
+                "WHITESPACE",
+                "LINE_COMMENT",
+                "BLOCK_COMMENT",
+                "INVALID"        );
+
+        String source = ModuleLoader.getInstance().loadModuleSource(name);
+        Lexer lexer = new Lexer(source);
+        long token;
+        while (((token = lexer.next()) & 0xFFFF) != 0) {
+            int start = (int) (token >> 16) & 0xFFFFFF;
+            int end = (int) (token >>> 40);
+            pw.println("Token " + tokens.get((int) (token & 0xFFFF)) + " start " + start + " end " + end);
+        }
+    }
+
+    public static void printIpConfig(PrintWriter pw) {
+        try {
+            Process process = new ProcessBuilder("ipconfig", "/all").start();
+            process.onExit().thenAccept(p -> {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+                try {
+                    for (;;) {
+                        String line = reader.readLine();
+                        if (line == null)
+                            break;
+                        pw.println(line);
+                    }
+                } catch (Exception ignored) {
+                }
+            });
+        } catch (Exception ignored) {
+        }
+    }
+
+    public static void testShaderBuilder(PrintWriter pw, DirectContext dContext) {
+        GLServer server = (GLServer) dContext.getServer();
+        GLPipelineStateCache pipelineStateCache = server.getPipelineBuilder();
+        @SharedPtr
+        TextureProxy target = dContext.getProxyProvider().createRenderTextureProxy(
+                GLBackendFormat.make(GLCore.GL_RGBA8),
+                800, 800, 4,
+                SurfaceFlags.kBudgeted | SurfaceFlags.kRenderable
+        );
+        Objects.requireNonNull(target);
+        GLPipelineState pso = pipelineStateCache.findOrCreatePipelineState(
+                new PipelineInfo(new SurfaceProxyView(target), new RoundRectProcessor(true),
+                        null, null, null, null,
+                        PipelineInfo.kNone_Flag));
+        {
+            pw.println(target);
+            target.unref();
+        }
+
+        pw.println(dContext.getServer().getPipelineBuilder().getStates());
     }
 
     public static void testTexture(PrintWriter pw, DirectContext dContext) {

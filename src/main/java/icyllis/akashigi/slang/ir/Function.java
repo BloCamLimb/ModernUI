@@ -42,10 +42,16 @@ public final class Function extends Symbol {
     private FunctionDefinition mDefinition;
 
     public Function(int position, int modifiers, String name, List<Variable> parameters, Type returnType) {
-        super(position, SymbolKind.kFunctionDeclaration, name);
+        super(position, name);
         mModifiers = modifiers;
         mParameters = parameters;
         mReturnType = returnType;
+    }
+
+    @Nonnull
+    @Override
+    public SymbolKind getKind() {
+        return SymbolKind.FUNCTION;
     }
 
     @Nonnull

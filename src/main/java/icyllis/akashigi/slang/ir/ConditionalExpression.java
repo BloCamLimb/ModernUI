@@ -20,6 +20,7 @@ package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.Operator;
 import icyllis.akashigi.slang.ThreadContext;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,7 +36,7 @@ public final class ConditionalExpression extends Expression {
 
     private ConditionalExpression(int position, Expression condition,
                                   Expression trueExpr, Expression falseExpr) {
-        super(position, ExpressionKind.kConditional, trueExpr.getType());
+        super(position, trueExpr.getType());
         mCondition = condition;
         mTrueExpr = trueExpr;
         mFalseExpr = falseExpr;
@@ -77,6 +78,21 @@ public final class ConditionalExpression extends Expression {
         }
 
         return new ConditionalExpression(position, condition, trueExpr, falseExpr);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONDITIONAL;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        if (visitor.visitConditional(this)) {
+            return true;
+        }
+        return mCondition.accept(visitor) ||
+                (mTrueExpr != null && mTrueExpr.accept(visitor)) ||
+                (mFalseExpr != null && mFalseExpr.accept(visitor));
     }
 
     public Expression getCondition() {

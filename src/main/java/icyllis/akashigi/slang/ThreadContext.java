@@ -19,6 +19,7 @@
 package icyllis.akashigi.slang;
 
 import icyllis.akashigi.slang.ir.*;
+import org.jetbrains.annotations.UnmodifiableView;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -40,7 +41,7 @@ public final class ThreadContext {
 
     // This is the current symbol table of the code we are processing, and therefore changes during
     // compilation
-    private final SymbolTable mSymbolTable;
+    private SymbolTable mSymbolTable;
     // The element map from the parent module
     private final List<Element> mParentElements;
 
@@ -123,8 +124,23 @@ public final class ThreadContext {
     }
 
     /**
+     * Enters a scope.
+     */
+    public void pushSymbolTable() {
+        mSymbolTable = SymbolTable.push(mSymbolTable);
+    }
+
+    /**
+     * Exits a scope.
+     */
+    public void popSymbolTable() {
+        mSymbolTable = mSymbolTable.getParent();
+    }
+
+    /**
      * Returns the elements of the parent module, unmodifiable.
      */
+    @UnmodifiableView
     public List<Element> getParentElements() {
         return mParentElements;
     }
@@ -162,24 +178,24 @@ public final class ThreadContext {
             error(position, "unknown identifier '" + name + "'");
             return null;
         }
-        return switch (result.kind()) {
-            case Node.SymbolKind.kFunctionDeclaration -> {
+        return switch (result.getKind()) {
+            case FUNCTION -> {
                 var chain = (Function) result;
                 yield FunctionReference.make(position, chain);
             }
-            case Node.SymbolKind.kVariable -> {
+            case VARIABLE -> {
                 var variable = (Variable) result;
                 yield VariableReference.make(position, variable,
                         VariableReference.kRead_ReferenceKind);
             }
-            case Node.SymbolKind.kAnonymousField -> {
+            case ANONYMOUS_FIELD -> {
                 var field = (AnonymousField) result;
                 Expression base = VariableReference.make(position, field.getContainer(),
                         VariableReference.kRead_ReferenceKind);
                 yield FieldExpression.make(position, base, field.getFieldIndex(),
                         /*anonymousBlock*/true);
             }
-            case Node.SymbolKind.kType -> {
+            case TYPE -> {
                 var type = (Type) result;
                 if (!mBuiltin && type.isGeneric()) {
                     error(position, "type '" + type.getName() + "' is generic");
@@ -187,7 +203,6 @@ public final class ThreadContext {
                 }
                 yield TypeReference.make(position, type);
             }
-            default -> throw new AssertionError(result.getClass());
         };
     }
 }

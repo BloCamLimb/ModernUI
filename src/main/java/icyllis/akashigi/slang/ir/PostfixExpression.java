@@ -20,6 +20,7 @@ package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.Operator;
 import icyllis.akashigi.slang.ThreadContext;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,7 +38,7 @@ public final class PostfixExpression extends Expression {
     private final Operator mOperator;
 
     private PostfixExpression(int position, Expression operand, Operator op) {
-        super(position, ExpressionKind.kPostfix, operand.getType());
+        super(position, operand.getType());
         mOperand = operand;
         mOperator = op;
     }
@@ -58,6 +59,19 @@ public final class PostfixExpression extends Expression {
     public static Expression make(int position, Expression base, Operator op) {
         assert base.getType().isNumeric();
         return new PostfixExpression(position, base, op);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.POSTFIX;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        if (visitor.visitPostfix(this)) {
+            return true;
+        }
+        return mOperand.accept(visitor);
     }
 
     public Expression getOperand() {

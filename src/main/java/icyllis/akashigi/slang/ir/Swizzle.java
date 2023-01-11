@@ -19,6 +19,7 @@
 package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.*;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,7 +47,7 @@ public final class Swizzle extends Expression {
     private final byte[] mComponents; // contains only X, Y, Z and W
 
     private Swizzle(int position, Type type, Expression base, byte[] components) {
-        super(position, ExpressionKind.kSwizzle, type);
+        super(position, type);
         assert components.length >= 1 && components.length <= 4;
         mBase = base;
         mComponents = components;
@@ -138,8 +139,7 @@ public final class Swizzle extends Expression {
         }
 
         // Optimize swizzles of swizzles, e.g. replace `foo.argb.rggg` with `foo.arrr`.
-        if (base.kind() == ExpressionKind.kSwizzle) {
-            var b = (Swizzle) base;
+        if (base instanceof Swizzle b) {
             byte[] combined = new byte[components.length];
             for (int i = 0; i < components.length; ++i) {
                 byte c = components[i];
@@ -158,8 +158,7 @@ public final class Swizzle extends Expression {
         // `half4(scalar).zyy` can be optimized to `half3(scalar)`, and `half3(scalar).y` can be
         // optimized to just `scalar`. The swizzle components don't actually matter, as every field
         // in a splat constructor holds the same value.
-        if (value.kind() == ExpressionKind.kConstructorVectorScalar) {
-            var ctor = (ConstructorVectorScalar) value;
+        if (value instanceof ConstructorVectorScalar ctor) {
             Type ctorType = ctor.getComponentType().toCompound(/*cols=*/1, components.length);
             return ConstructorVectorScalar.make(
                     position,
@@ -168,8 +167,7 @@ public final class Swizzle extends Expression {
         }
 
         // Swizzles on casts, like `half4(myFloat4).zyy`, can optimize to `half3(myFloat4.zyy)`.
-        if (value.kind() == ExpressionKind.kConstructorCompoundCast) {
-            var ctor = (ConstructorCompoundCast) value;
+        if (value instanceof ConstructorCompoundCast ctor) {
             Type ctorType = ctor.getComponentType().toCompound(/*cols=*/1, components.length);
             Expression swizzled = make(position, ctor.getArguments()[0].clone(), components);
             Objects.requireNonNull(swizzled);
@@ -190,6 +188,19 @@ public final class Swizzle extends Expression {
         return new Swizzle(position,
                 baseType.getComponentType().toCompound(/*cols=*/1, components.length),
                 base, components);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.SWIZZLE;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        if (visitor.visitSwizzle(this)) {
+            return true;
+        }
+        return mBase != null && mBase.accept(visitor);
     }
 
     public Expression getBase() {

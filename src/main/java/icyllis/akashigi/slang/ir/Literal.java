@@ -19,6 +19,7 @@
 package icyllis.akashigi.slang.ir;
 
 import icyllis.akashigi.slang.ThreadContext;
+import icyllis.akashigi.slang.analysis.NodeVisitor;
 
 import javax.annotation.Nonnull;
 
@@ -30,13 +31,8 @@ public final class Literal extends Expression {
     private final double mValue;
 
     private Literal(int position, double value, Type type) {
-        super(position, ExpressionKind.kLiteral, type);
+        super(position, type);
         mValue = value;
-    }
-
-    @Override
-    public boolean isLiteral() {
-        return true;
     }
 
     @Nonnull
@@ -53,12 +49,12 @@ public final class Literal extends Expression {
     }
 
     @Nonnull
-    public static Literal makeInt(int position, long value) {
+    public static Literal makeInteger(int position, long value) {
         return new Literal(position, value, ThreadContext.getInstance().getTypes().mInt);
     }
 
     @Nonnull
-    public static Literal makeInt(int position, long value, Type type) {
+    public static Literal makeInteger(int position, long value, Type type) {
         if (type.isInteger() && value >= type.getMinValue() && value <= type.getMaxValue()) {
             return new Literal(position, value, type);
         }
@@ -84,7 +80,7 @@ public final class Literal extends Expression {
             return makeFloat(position, (float) value, type);
         }
         if (type.isInteger()) {
-            return makeInt(position, (int) value, type);
+            return makeInteger(position, (long) value, type);
         }
         if (type.isBoolean()) {
             return makeBoolean(position, value != 0, type);
@@ -92,17 +88,32 @@ public final class Literal extends Expression {
         throw new IllegalArgumentException();
     }
 
-    public float floatValue() {
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.LITERAL;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        return visitor.visitLiteral(this);
+    }
+
+    @Override
+    public boolean isLiteral() {
+        return true;
+    }
+
+    public float getFloatValue() {
         assert (getType().isFloat());
         return (float) mValue;
     }
 
-    public int intValue() {
+    public long getIntegerValue() {
         assert (getType().isInteger());
-        return (int) mValue;
+        return (long) mValue;
     }
 
-    public boolean boolValue() {
+    public boolean getBooleanValue() {
         assert (getType().isBoolean());
         return mValue != 0;
     }
@@ -121,12 +132,12 @@ public final class Literal extends Expression {
     @Override
     public String toString(int parentPrecedence) {
         if (getType().isFloat()) {
-            return Float.toString(floatValue());
+            return String.valueOf(getFloatValue());
         }
         if (getType().isInteger()) {
-            return Integer.toString(intValue());
+            return String.valueOf(getIntegerValue());
         }
         assert (getType().isBoolean());
-        return Boolean.toString(boolValue());
+        return String.valueOf(getBooleanValue());
     }
 }

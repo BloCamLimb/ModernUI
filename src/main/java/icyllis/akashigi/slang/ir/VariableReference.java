@@ -18,6 +18,8 @@
 
 package icyllis.akashigi.slang.ir;
 
+import icyllis.akashigi.slang.analysis.NodeVisitor;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -38,7 +40,7 @@ public final class VariableReference extends Expression {
     private int mReferenceKind;
 
     private VariableReference(int position, Variable variable, int referenceKind) {
-        super(position, ExpressionKind.kVariableReference, variable.getType());
+        super(position, variable.getType());
         mVariable = variable;
         mReferenceKind = referenceKind;
     }
@@ -46,6 +48,16 @@ public final class VariableReference extends Expression {
     @Nonnull
     public static Expression make(int position, Variable variable, int referenceKind) {
         return new VariableReference(position, variable, referenceKind);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.VARIABLE_REFERENCE;
+    }
+
+    @Override
+    public boolean accept(@Nonnull NodeVisitor visitor) {
+        return visitor.visitVariableReference(this);
     }
 
     public Variable getVariable() {

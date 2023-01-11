@@ -28,10 +28,10 @@ import java.util.OptionalDouble;
  * <p>
  * These always contain exactly 1 scalar.
  */
-public final class ConstructorMatrixScalar extends AnyConstructor {
+public final class ConstructorMatrixScalar extends ConstructorCall {
 
     private ConstructorMatrixScalar(int position, Type type, Expression... arguments) {
-        super(position, ExpressionKind.kConstructorMatrixScalar, type, arguments);
+        super(position, type, arguments);
         assert arguments.length == 1;
     }
 
@@ -46,6 +46,11 @@ public final class ConstructorMatrixScalar extends AnyConstructor {
         arg = ConstantFolder.makeConstantValueForVariable(position, arg);
 
         return new ConstructorMatrixScalar(position, type, arg);
+    }
+
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_MATRIX_SCALAR;
     }
 
     @Override
