@@ -18,6 +18,7 @@
 
 package icyllis.modernui.test;
 
+import icyllis.modernui.ModernUI;
 import icyllis.modernui.fragment.Fragment;
 import icyllis.modernui.graphics.Canvas;
 import icyllis.modernui.graphics.Paint;
@@ -40,7 +41,34 @@ import static icyllis.modernui.view.View.dp;
 public class TestFragment extends Fragment {
 
     public static void main(String[] args) {
-
+        try (ModernUI app = new ModernUI()) {
+            app.run(new TestFragment());
+        }
+        String str = """
+                public final class Reference {
+                public:
+                    static func hash(x: Object?): int {
+                        uint* v = (uint*) x;
+                        int h = (int) (v ^ (v >>> 32)) * 0x9e3779b1;
+                        return h ^ (h >>> 16);
+                    }
+                    
+                    @ForceInline
+                    static func equals(a: Object?, b: Object?): bool {
+                        return (uint*) a == (uint*) b;
+                    }
+                }
+                public final class Objects {
+                public:
+                    static func hash(x: Object?): int {
+                        return x ? x.hash() : 0;
+                    }
+                                    
+                    static func equals(a: Object?, b: Object?): bool {
+                        return Reference::equals(a, b) || (a && b && a.equals(b));
+                    }
+                }
+                """;
     }
 
     @Nullable

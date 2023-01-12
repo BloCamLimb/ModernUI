@@ -18,8 +18,9 @@
 
 package icyllis.modernui.core;
 
+import org.jetbrains.annotations.ApiStatus;
+
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 
 /**
  * A {@link Thread} that has a {@link Looper}.
@@ -29,8 +30,7 @@ import javax.annotation.Nullable;
  */
 public class HandlerThread extends Thread {
 
-    Looper mLooper;
-    @Nullable
+    private Looper mLooper;
     private Handler mHandler;
 
     public HandlerThread(String name) {
@@ -93,8 +93,8 @@ public class HandlerThread extends Thread {
 
     /**
      * @return a shared {@link Handler} associated with this thread
-     * @hide
      */
+    @ApiStatus.Internal
     @Nonnull
     public Handler getThreadHandler() {
         if (mHandler == null) {
