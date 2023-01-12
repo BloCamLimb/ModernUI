@@ -20,27 +20,19 @@ package icyllis.modernui.util;
 
 import icyllis.modernui.ModernUI;
 import it.unimi.dsi.fastutil.bytes.ByteArrayList;
-import it.unimi.dsi.fastutil.bytes.ByteList;
 import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
-import it.unimi.dsi.fastutil.doubles.DoubleList;
 import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import it.unimi.dsi.fastutil.floats.FloatList;
-import it.unimi.dsi.fastutil.ints.*;
+import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.longs.LongList;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.shorts.ShortArrayList;
-import it.unimi.dsi.fastutil.shorts.ShortList;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.annotation.ParametersAreNonnullByDefault;
-import javax.annotation.concurrent.NotThreadSafe;
 import java.io.*;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
@@ -56,11 +48,6 @@ import java.util.zip.GZIPOutputStream;
  * is also supported, array objects are backed by {@link ArrayList} and primitive-specified
  * array lists such as {@link IntArrayList}. All object keys and values can not be null.
  * <p>
- * The default implementation seeks the balance between memory usage and IO performance
- * (data insertion and deletion, inflation and deflation, and network serialization).
- * You can override {@link #initializeIntMap()} and {@link #initializeStringMap()}
- * according to your needs.
- * <p>
  * Common IO interfaces are {@link DataInput} and {@link DataOutput}, where
  * {@link String} are coded in Java modified UTF-8 format. When the target is local
  * storage, the data will be gzip compressed. You can check the source code to find
@@ -75,33 +62,112 @@ import java.util.zip.GZIPOutputStream;
  * Format conversion between common data-interchange formats such as JSON and Minecraft NBT
  * can be easily done. The default implementations are not provided here.
  */
-//TODO may not use primitive wrapper?
-@SuppressWarnings({"unused", "unchecked", "rawtypes"})
-@NotThreadSafe
-@ParametersAreNonnullByDefault
-public class DataSet {
+//TODO not finished yet
+@SuppressWarnings({"unchecked", "unused"})
+public final class DataSet implements Map<String, Object> {
 
     public static final Marker MARKER = MarkerManager.getMarker("DataSet");
 
-    private static final byte VAL_NULL = 0x00;
-    private static final byte VAL_BYTE = 0x01;
-    private static final byte VAL_SHORT = 0x02;
-    private static final byte VAL_INT = 0x03;
-    private static final byte VAL_LONG = 0x04;
-    private static final byte VAL_FLOAT = 0x05;
-    private static final byte VAL_DOUBLE = 0x06;
-    private static final byte VAL_STRING = 0x07;
-    private static final byte VAL_UUID = 0x08;
-    private static final byte VAL_LIST = 0x09;
-    private static final byte VAL_DATA_SET = 0x0A;
-
-    protected Int2ObjectMap<Object> mIntMap;
-    protected Map<String, Object> mStringMap;
+    /**
+     * Value types; all types other than length-prefixed are null-terminated.
+     */
+    private static final byte VAL_NULL = 0;
+    private static final byte
+            VAL_BOOLEAN = 1,
+            VAL_BYTE = 2,
+            VAL_CHAR = 3,
+            VAL_SHORT = 4,
+            VAL_INT = 5,
+            VAL_LONG = 6,
+            VAL_FLOAT = 7,
+            VAL_DOUBLE = 8;
+    private static final byte
+            VAL_BOOLEAN_ARRAY = 9,
+            VAL_BYTE_ARRAY = 10,
+            VAL_CHAR_ARRAY = 11,
+            VAL_SHORT_ARRAY = 12,
+            VAL_INT_ARRAY = 13,
+            VAL_LONG_ARRAY = 14,
+            VAL_FLOAT_ARRAY = 15,
+            VAL_DOUBLE_ARRAY = 16;
+    private static final byte
+            VAL_STRING = 17,
+            VAL_CHAR_SEQUENCE = 18,
+            VAL_UUID = 19;
+    private static final byte
+            VAL_OBJECT_ARRAY = 20,
+            VAL_LIST = 21,
+            VAL_DATA_SET = 22,
+            VAL_MAP = 23,
+            VAL_DATA_SERIALIZABLE = 24,
+            VAL_SERIALIZABLE = 25;
 
     /**
-     * Create a new DataSet.
+     * The initial default size of a hash table.
+     */
+    private static final int DEFAULT_INITIAL_SIZE = 16;
+    /**
+     * The default load factor of a hash table.
+     */
+    private static final float DEFAULT_LOAD_FACTOR = .75f;
+
+    /**
+     * The array of keys.
+     */
+    private String[] mKey;
+    /**
+     * The array of values.
+     */
+    private Object[] mValue;
+
+    /**
+     * The index of the head entry in iteration order.
+     * It is valid if {@link #mSize} is nonzero; otherwise, it contains -1.
+     */
+    private int mHead = -1;
+    /**
+     * The index of the tail entry in iteration order.
+     * It is valid if {@link #mSize} is nonzero; otherwise, it contains -1.
+     */
+    private int mTail = -1;
+    /**
+     * For each entry, the next and the prev entry in iteration order, packed as
+     * {@code ((prev & 0xFFFFFFFFL) << 32) | (next & 0xFFFFFFFFL)}.
+     * The head entry contains predecessor -1, and the tail entry contains successor -1.
+     */
+    private long[] mLink;
+
+    /**
+     * Number of entries in the set.
+     */
+    private int mSize;
+
+    /**
+     * Threshold after which we rehash. It must be the table size times load factor.
+     */
+    private int mThreshold;
+
+    /**
+     * Cached set of entries.
+     */
+    private Set<Entry<String, Object>> mEntries;
+    /**
+     * Cached set of keys.
+     */
+    private Set<String> mKeys;
+    /**
+     * Cached collection of values.
+     */
+    private Collection<Object> mValues;
+
+    /**
+     * Creates a new, empty DataSet.
      */
     public DataSet() {
+        mKey = new String[DEFAULT_INITIAL_SIZE];
+        mValue = new Object[DEFAULT_INITIAL_SIZE];
+        mLink = new long[DEFAULT_INITIAL_SIZE];
+        mThreshold = (int) (DEFAULT_INITIAL_SIZE * DEFAULT_LOAD_FACTOR);
     }
 
     /**
@@ -136,148 +202,174 @@ public class DataSet {
         }
     }
 
-    /**
-     * Use an {@link Int2ObjectOpenHashMap} with a load factor of 0.8f.
-     *
-     * @return backing int mapping
-     */
-    @Nonnull
-    protected Int2ObjectMap<Object> initializeIntMap() {
-        // for int keys, fast-util map is always faster
-        return new Int2ObjectOpenHashMap<>(6, 0.8f);
+    static int hash(Object key) {
+        final int h = key.hashCode() * 0x9e3779b1;
+        return h ^ (h >>> 16);
     }
+
+    // Query Operations
 
     /**
-     * Use an {@link Object2ObjectOpenHashMap} with a load factor of 0.8f.
+     * Returns the number of key-value mappings in this map.
      *
-     * @return backing string mapping
+     * @return the number of key-value mappings in this map
      */
-    @Nonnull
-    protected Map<String, Object> initializeStringMap() {
-        // for string keys, Java HashMap is faster, but it takes more memory
-        return new Object2ObjectOpenHashMap<>(6, 0.8f);
-    }
-
-    private void createIntMapIfNeeded() {
-        if (mIntMap == null) mIntMap = initializeIntMap();
-    }
-
-    private void createStringMapIfNeeded() {
-        if (mStringMap == null) mStringMap = initializeStringMap();
-    }
-
-    /**
-     * Returns the number of key-value mappings in this data set.
-     *
-     * @return the number of key-value mappings in this data set
-     */
+    @Override
     public int size() {
-        int size = 0;
-        if (mIntMap != null)
-            size += mIntMap.size();
-        if (mStringMap != null)
-            size += mStringMap.size();
-        return size;
+        return mSize;
     }
 
     /**
-     * Returns {@code true} if this data set contains no key-value mappings.
+     * Returns {@code true} if this map contains no key-value mappings.
      *
-     * @return {@code true} if this data set contains no key-value mappings
+     * @return {@code true} if this map contains no key-value mappings
      */
+    @Override
     public boolean isEmpty() {
-        return (mIntMap == null || mIntMap.isEmpty()) &&
-                (mStringMap == null || mStringMap.isEmpty());
+        return mSize == 0;
     }
 
-    /**
-     * Returns {@code true} if this data set contains a mapping for the specified key.
-     *
-     * @param key the key whose presence in this data set is to be tested
-     * @return {@code true} if this data set contains a mapping for the specified key
-     */
-    public boolean contains(int key) {
-        if (mIntMap == null)
-            return false;
-        return mIntMap.containsKey(key);
-    }
-
-    /**
-     * Returns {@code true} if this data set contains a mapping for the specified key.
-     *
-     * @param key the key whose presence in this data set is to be tested
-     * @return {@code true} if this data set contains a mapping for the specified key
-     */
-    public boolean contains(String key) {
-        if (mStringMap == null)
-            return false;
-        return mStringMap.containsKey(key);
-    }
-
-    /**
-     * Returns the value to which the specified key is mapped,
-     * or {@code null} if this data set contains no mapping for the key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the value to which the specified key is mapped, or
-     * {@code null} if this map contains no mapping for the key
-     */
-    public Object get(int key) {
-        if (mIntMap == null)
-            return null;
-        return mIntMap.get(key);
-    }
-
-    /**
-     * Returns the value to which the specified key is mapped,
-     * or {@code null} if this data set contains no mapping for the key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the value to which the specified key is mapped, or
-     * {@code null} if this map contains no mapping for the key
-     */
-    public Object get(String key) {
-        if (mStringMap == null)
-            return null;
-        return mStringMap.get(key);
-    }
-
-    /**
-     * Returns the value to which the specified key is mapped,
-     * or {@code null} if this data set contains no mapping for the key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @param <T> the value type
-     * @return the value to which the specified key is mapped, or
-     * {@code null} if this map contains no mapping for the key
-     */
-    public <T> T getValue(int key) {
-        if (mIntMap == null)
-            return null;
-        Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (T) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "<T>", e);
-            return null;
+    private int find(String key) {
+        Objects.requireNonNull(key);
+        String k;
+        final String[] keys = mKey;
+        final int mask = keys.length - 1;
+        int pos;
+        // The starting point.
+        if ((k = keys[pos = hash(key) & mask]) == null)
+            return -pos - 1;
+        if (key.equals(k))
+            return pos;
+        // There's always an unused entry.
+        while (true) {
+            if ((k = keys[pos = (pos + 1) & mask]) == null)
+                return -pos - 1;
+            if (key.equals(k))
+                return pos;
         }
     }
 
     /**
+     * Returns {@code true} if this map contains a mapping for the specified key.
+     * More formally, returns {@code true} if and only if this map contains a mapping
+     * for a key {@code k} such that {@code Objects.equals(key, k)}. (There can be
+     * at most one such mapping.)
+     *
+     * @param key the key whose presence in this data set is to be tested
+     * @return {@code true} if this data set contains a mapping for the specified key
+     * @throws NullPointerException if the specified key is null
+     */
+    @Override
+    public boolean containsKey(Object key) {
+        Objects.requireNonNull(key);
+        String k;
+        final String[] keys = mKey;
+        final int mask = keys.length - 1;
+        int pos;
+        // The starting point.
+        if ((k = keys[pos = hash(key) & mask]) == null)
+            return false;
+        if (k == key || key.equals(k))
+            return true;
+        // There's always an unused entry.
+        while (true) {
+            if ((k = keys[pos = (pos + 1) & mask]) == null)
+                return false;
+            if (k == key || key.equals(k))
+                return true;
+        }
+    }
+
+    /**
+     * Returns {@code true} if this map contains one or more keys to the specified value.
+     * More formally, returns {@code true} if and only if this map contains at least
+     * one mapping to a value {@code v} such that {@code Objects.equals(value, v)}.
+     * This operation requires time linear in the map size.
+     *
+     * @param value value whose presence in this map is to be tested
+     * @return {@code true} if this map contains one or more keys to the specified value
+     * @throws NullPointerException if the specified value is null
+     */
+    // @formatter:off
+    @Override
+    public boolean containsValue(Object value) {
+        Objects.requireNonNull(value);
+        final Object[] values = mValue;
+        final String[] keys = mKey;
+        for (int i = keys.length; i-->0;) {
+            if (keys[i] == null)
+                continue;
+            Object v = values[i];
+            if (v == value || value.equals(v))
+                return true;
+        }
+        return false;
+    }
+    // @formatter:on
+
+    /**
      * Returns the value to which the specified key is mapped,
-     * or {@code null} if this data set contains no mapping for the key.
+     * or {@code null} if this map contains no mapping for the key.
+     *
+     * <p>More formally, if this map contains a mapping from a key
+     * {@code k} to a value {@code v} such that {@code Objects.equals(key, k)},
+     * then this method returns {@code v}; otherwise it returns {@code null}.
+     * (There can be at most one such mapping.)
      *
      * @param key the key whose associated value is to be returned
-     * @param <T> the value type
+     * @return the value to which the specified key is mapped, or
+     * {@code null} if this map contains no mapping for the key
+     * @throws NullPointerException if the specified key is null
+     */
+    @Override
+    public Object get(Object key) {
+        Objects.requireNonNull(key);
+        String k;
+        final String[] keys = mKey;
+        final int mask = keys.length - 1;
+        int pos;
+        // The starting point.
+        if ((k = keys[pos = hash(key) & mask]) == null)
+            return null;
+        if (k == key || key.equals(k))
+            return mValue[pos];
+        // There's always an unused entry.
+        while (true) {
+            if ((k = keys[pos = (pos + 1) & mask]) == null)
+                return null;
+            if (k == key || key.equals(k))
+                return mValue[pos];
+        }
+    }
+
+    @Override
+    public Object getOrDefault(Object key, Object defaultValue) {
+        final Object o = get(key);
+        if (o == null)
+            return defaultValue;
+        return o;
+    }
+
+    @Nullable
+    @Override
+    public Object putIfAbsent(String key, Object value) {
+        final int pos = find(key);
+        if (pos >= 0)
+            return mValue[pos];
+        insert(-pos - 1, key, value);
+        return null;
+    }
+
+    /**
+     * Returns the value to which the specified key is mapped,
+     * or {@code null} if this map contains no mapping for the key.
+     *
+     * @param key the key whose associated value is to be returned
      * @return the value to which the specified key is mapped, or
      * {@code null} if this map contains no mapping for the key
      */
     public <T> T getValue(String key) {
-        if (mStringMap == null)
-            return null;
-        Object o = mStringMap.get(key);
+        Object o = get(key);
         if (o == null)
             return null;
         try {
@@ -285,461 +377,6 @@ public class DataSet {
         } catch (ClassCastException e) {
             typeWarning(key, o, "<T>", e);
             return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or (byte) 0 if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the byte value to which the specified key is mapped
-     */
-    public byte getByte(int key) {
-        return getByte(key, (byte) 0);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the byte value to which the specified key is mapped
-     */
-    public byte getByte(int key, byte defValue) {
-        if (mIntMap == null)
-            return defValue;
-        Object o = mIntMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).byteValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or (short) 0 if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the short value to which the specified key is mapped
-     */
-    public short getShort(int key) {
-        return getShort(key, (short) 0);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the short value to which the specified key is mapped
-     */
-    public short getShort(int key, short defValue) {
-        if (mIntMap == null)
-            return defValue;
-        Object o = mIntMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).shortValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or 0 if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the int value to which the specified key is mapped
-     */
-    public int getInt(int key) {
-        return getInt(key, 0);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the int value to which the specified key is mapped
-     */
-    public int getInt(int key, int defValue) {
-        if (mIntMap == null)
-            return defValue;
-        Object o = mIntMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).intValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or 0L if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the long value to which the specified key is mapped
-     */
-    public long getLong(int key) {
-        return getLong(key, 0L);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the long value to which the specified key is mapped
-     */
-    public long getLong(int key, long defValue) {
-        if (mIntMap == null)
-            return defValue;
-        Object o = mIntMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).longValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or 0.0f if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the float value to which the specified key is mapped
-     */
-    public float getFloat(int key) {
-        return getFloat(key, 0.0f);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the float value to which the specified key is mapped
-     */
-    public float getFloat(int key, float defValue) {
-        if (mIntMap == null)
-            return defValue;
-        Object o = mIntMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).floatValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or 0.0 if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the double value to which the specified key is mapped
-     */
-    public double getDouble(int key) {
-        return getDouble(key, 0.0);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the double value to which the specified key is mapped
-     */
-    public double getDouble(int key, double defValue) {
-        if (mIntMap == null)
-            return defValue;
-        Object o = mIntMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).doubleValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or false if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the boolean value to which the specified key is mapped
-     */
-    public boolean getBoolean(int key) {
-        return getBoolean(key, false);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the boolean value to which the specified key is mapped
-     */
-    public boolean getBoolean(int key, boolean defValue) {
-        if (mIntMap == null)
-            return defValue;
-        Object o = mIntMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).byteValue() != 0;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or (byte) 0 if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the byte value to which the specified key is mapped
-     */
-    public byte getByte(String key) {
-        return getByte(key, (byte) 0);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the byte value to which the specified key is mapped
-     */
-    public byte getByte(String key, byte defValue) {
-        if (mStringMap == null)
-            return defValue;
-        Object o = mStringMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).byteValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or (short) 0 if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the short value to which the specified key is mapped
-     */
-    public short getShort(String key) {
-        return getShort(key, (short) 0);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the short value to which the specified key is mapped
-     */
-    public short getShort(String key, short defValue) {
-        if (mStringMap == null)
-            return defValue;
-        Object o = mStringMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).shortValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or 0 if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the int value to which the specified key is mapped
-     */
-    public int getInt(String key) {
-        return getInt(key, 0);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the int value to which the specified key is mapped
-     */
-    public int getInt(String key, int defValue) {
-        if (mStringMap == null)
-            return defValue;
-        Object o = mStringMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).intValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or 0L if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the long value to which the specified key is mapped
-     */
-    public long getLong(String key) {
-        return getLong(key, 0L);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the long value to which the specified key is mapped
-     */
-    public long getLong(String key, long defValue) {
-        if (mStringMap == null)
-            return defValue;
-        Object o = mStringMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).longValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or 0.0f if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the float value to which the specified key is mapped
-     */
-    public float getFloat(String key) {
-        return getFloat(key, 0.0f);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the float value to which the specified key is mapped
-     */
-    public float getFloat(String key, float defValue) {
-        if (mStringMap == null)
-            return defValue;
-        Object o = mStringMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).floatValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or 0.0 if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the double value to which the specified key is mapped
-     */
-    public double getDouble(String key) {
-        return getDouble(key, 0.0);
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     * Significantly, any numbers found with the key can be returned.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
-     * @return the double value to which the specified key is mapped
-     */
-    public double getDouble(String key, double defValue) {
-        if (mStringMap == null)
-            return defValue;
-        Object o = mStringMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return ((Number) o).doubleValue();
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
         }
     }
 
@@ -756,178 +393,272 @@ public class DataSet {
     }
 
     /**
-     * Returns the value associated with the given key, or defValue if
+     * Returns the value associated with the given key, or defaultValue if
      * no mapping of the desired type exists for the given key.
      * Significantly, any numbers found with the key can be returned.
      *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist
      * @return the boolean value to which the specified key is mapped
      */
-    public boolean getBoolean(String key, boolean defValue) {
-        if (mStringMap == null)
-            return defValue;
-        Object o = mStringMap.get(key);
+    public boolean getBoolean(String key, boolean defaultValue) {
+        Object o = get(key);
         if (o == null)
-            return defValue;
+            return defaultValue;
         try {
-            return ((Number) o).byteValue() != 0;
+            return (boolean) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "Number", defValue, e);
-            return defValue;
+            typeWarning(key, o, "Boolean", defaultValue, e);
+            return defaultValue;
         }
     }
 
     /**
-     * Returns the value associated with the given key, or null if
+     * Returns the value associated with the given key, or (byte) 0 if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getByteList(int)} instead.
+     * Significantly, any numbers found with the key can be returned.
      *
      * @param key the key whose associated value is to be returned
-     * @return the byte[] value to which the specified key is mapped, or null
+     * @return the byte value to which the specified key is mapped
      */
-    public byte[] getByteArray(int key) {
-        if (mIntMap == null)
-            return null;
-        Object o = mIntMap.get(key);
+    public byte getByte(String key) {
+        return getByte(key, (byte) 0);
+    }
+
+    /**
+     * Returns the value associated with the given key, or defaultValue if
+     * no mapping of the desired type exists for the given key.
+     * Significantly, any numbers found with the key can be returned.
+     *
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist
+     * @return the byte value to which the specified key is mapped
+     */
+    public byte getByte(String key, byte defaultValue) {
+        Object o = get(key);
         if (o == null)
-            return null;
+            return defaultValue;
         try {
-            return ((ByteArrayList) o).elements();
+            return (byte) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "ByteArrayList", e);
-            return null;
+            typeWarning(key, o, "Byte", defaultValue, e);
+            return defaultValue;
         }
     }
 
     /**
-     * Returns the value associated with the given key, or null if
+     * Returns the value associated with the given key, or '0' if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getShortList(int)} instead.
+     * Significantly, any numbers found with the key can be returned.
      *
      * @param key the key whose associated value is to be returned
-     * @return the short[] value to which the specified key is mapped, or null
+     * @return the char value to which the specified key is mapped
      */
-    public short[] getShortArray(int key) {
-        if (mIntMap == null)
-            return null;
-        Object o = mIntMap.get(key);
+    public char getChar(String key) {
+        return getChar(key, '0');
+    }
+
+    /**
+     * Returns the value associated with the given key, or defaultValue if
+     * no mapping of the desired type exists for the given key.
+     * Significantly, any numbers found with the key can be returned.
+     *
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist
+     * @return the char value to which the specified key is mapped
+     */
+    public char getChar(String key, char defaultValue) {
+        Object o = get(key);
         if (o == null)
-            return null;
+            return defaultValue;
         try {
-            return ((ShortArrayList) o).elements();
+            return (char) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "ShortArrayList", e);
-            return null;
+            typeWarning(key, o, "Character", defaultValue, e);
+            return defaultValue;
         }
     }
 
     /**
-     * Returns the value associated with the given key, or null if
+     * Returns the value associated with the given key, or (short) 0 if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getIntList(int)} instead.
+     * Significantly, any numbers found with the key can be returned.
      *
      * @param key the key whose associated value is to be returned
-     * @return the int[] value to which the specified key is mapped, or null
+     * @return the short value to which the specified key is mapped
      */
-    public int[] getIntArray(int key) {
-        if (mIntMap == null)
-            return null;
-        Object o = mIntMap.get(key);
+    public short getShort(String key) {
+        return getShort(key, (short) 0);
+    }
+
+    /**
+     * Returns the value associated with the given key, or defaultValue if
+     * no mapping of the desired type exists for the given key.
+     * Significantly, any numbers found with the key can be returned.
+     *
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist
+     * @return the short value to which the specified key is mapped
+     */
+    public short getShort(String key, short defaultValue) {
+        Object o = get(key);
         if (o == null)
-            return null;
+            return defaultValue;
         try {
-            return ((IntArrayList) o).elements();
+            return (short) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "IntArrayList", e);
-            return null;
+            typeWarning(key, o, "Short", defaultValue, e);
+            return defaultValue;
         }
     }
 
     /**
-     * Returns the value associated with the given key, or null if
+     * Returns the value associated with the given key, or 0 if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getLongList(int)} instead.
+     * Significantly, any numbers found with the key can be returned.
      *
      * @param key the key whose associated value is to be returned
-     * @return the long[] value to which the specified key is mapped, or null
+     * @return the int value to which the specified key is mapped
      */
-    public long[] getLongArray(int key) {
-        if (mIntMap == null)
-            return null;
-        Object o = mIntMap.get(key);
+    public int getInt(String key) {
+        return getInt(key, 0);
+    }
+
+    /**
+     * Returns the value associated with the given key, or defaultValue if
+     * no mapping of the desired type exists for the given key.
+     * Significantly, any numbers found with the key can be returned.
+     *
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist
+     * @return the int value to which the specified key is mapped
+     */
+    public int getInt(String key, int defaultValue) {
+        Object o = get(key);
         if (o == null)
-            return null;
+            return defaultValue;
         try {
-            return ((LongArrayList) o).elements();
+            return (int) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "LongArrayList", e);
-            return null;
+            typeWarning(key, o, "Integer", defaultValue, e);
+            return defaultValue;
         }
     }
 
     /**
-     * Returns the value associated with the given key, or null if
+     * Returns the value associated with the given key, or 0L if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getFloatList(int)} instead.
+     * Significantly, any numbers found with the key can be returned.
      *
      * @param key the key whose associated value is to be returned
-     * @return the float[] value to which the specified key is mapped, or null
+     * @return the long value to which the specified key is mapped
      */
-    public float[] getFloatArray(int key) {
-        if (mIntMap == null)
-            return null;
-        Object o = mIntMap.get(key);
+    public long getLong(String key) {
+        return getLong(key, 0L);
+    }
+
+    /**
+     * Returns the value associated with the given key, or defaultValue if
+     * no mapping of the desired type exists for the given key.
+     * Significantly, any numbers found with the key can be returned.
+     *
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist
+     * @return the long value to which the specified key is mapped
+     */
+    public long getLong(String key, long defaultValue) {
+        Object o = get(key);
         if (o == null)
-            return null;
+            return defaultValue;
         try {
-            return ((FloatArrayList) o).elements();
+            return (long) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "FloatArrayList", e);
-            return null;
+            typeWarning(key, o, "Long", defaultValue, e);
+            return defaultValue;
         }
     }
 
     /**
-     * Returns the value associated with the given key, or null if
+     * Returns the value associated with the given key, or 0.0f if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getDoubleList(int)} instead.
+     * Significantly, any numbers found with the key can be returned.
      *
      * @param key the key whose associated value is to be returned
-     * @return the double[] value to which the specified key is mapped, or null
+     * @return the float value to which the specified key is mapped
      */
-    public double[] getDoubleArray(int key) {
-        if (mIntMap == null)
-            return null;
-        Object o = mIntMap.get(key);
+    public float getFloat(String key) {
+        return getFloat(key, 0.0f);
+    }
+
+    /**
+     * Returns the value associated with the given key, or defaultValue if
+     * no mapping of the desired type exists for the given key.
+     * Significantly, any numbers found with the key can be returned.
+     *
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist
+     * @return the float value to which the specified key is mapped
+     */
+    public float getFloat(String key, float defaultValue) {
+        Object o = get(key);
         if (o == null)
-            return null;
+            return defaultValue;
         try {
-            return ((DoubleArrayList) o).elements();
+            return (float) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "DoubleArrayList", e);
-            return null;
+            typeWarning(key, o, "Float", defaultValue, e);
+            return defaultValue;
+        }
+    }
+
+    /**
+     * Returns the value associated with the given key, or 0.0 if
+     * no mapping of the desired type exists for the given key.
+     * Significantly, any numbers found with the key can be returned.
+     *
+     * @param key the key whose associated value is to be returned
+     * @return the double value to which the specified key is mapped
+     */
+    public double getDouble(String key) {
+        return getDouble(key, 0.0);
+    }
+
+    /**
+     * Returns the value associated with the given key, or defaultValue if
+     * no mapping of the desired type exists for the given key.
+     * Significantly, any numbers found with the key can be returned.
+     *
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist
+     * @return the double value to which the specified key is mapped
+     */
+    public double getDouble(String key, double defaultValue) {
+        Object o = get(key);
+        if (o == null)
+            return defaultValue;
+        try {
+            return (double) o;
+        } catch (ClassCastException e) {
+            typeWarning(key, o, "Double", defaultValue, e);
+            return defaultValue;
         }
     }
 
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getByteList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the byte[] value to which the specified key is mapped, or null
      */
     public byte[] getByteArray(String key) {
-        if (mStringMap == null)
-            return null;
-        Object o = mStringMap.get(key);
+        Object o = get(key);
         if (o == null)
             return null;
         try {
-            return ((ByteArrayList) o).elements();
+            return (byte[]) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "ByteArrayList", e);
+            typeWarning(key, o, "byte[]", e);
             return null;
         }
     }
@@ -935,21 +666,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getShortList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the short[] value to which the specified key is mapped, or null
      */
     public short[] getShortArray(String key) {
-        if (mStringMap == null)
-            return null;
-        Object o = mStringMap.get(key);
+        Object o = get(key);
         if (o == null)
             return null;
         try {
-            return ((ShortArrayList) o).elements();
+            return (short[]) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "ShortArrayList", e);
+            typeWarning(key, o, "short[]", e);
             return null;
         }
     }
@@ -957,21 +685,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getIntList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the int[] value to which the specified key is mapped, or null
      */
     public int[] getIntArray(String key) {
-        if (mStringMap == null)
-            return null;
-        Object o = mStringMap.get(key);
+        Object o = get(key);
         if (o == null)
             return null;
         try {
-            return ((IntArrayList) o).elements();
+            return (int[]) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "IntArrayList", e);
+            typeWarning(key, o, "int[]", e);
             return null;
         }
     }
@@ -979,21 +704,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getLongList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the long[] value to which the specified key is mapped, or null
      */
     public long[] getLongArray(String key) {
-        if (mStringMap == null)
-            return null;
-        Object o = mStringMap.get(key);
+        Object o = get(key);
         if (o == null)
             return null;
         try {
-            return ((LongArrayList) o).elements();
+            return (long[]) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "LongArrayList", e);
+            typeWarning(key, o, "long[]", e);
             return null;
         }
     }
@@ -1001,21 +723,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getFloatList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the float[] value to which the specified key is mapped, or null
      */
     public float[] getFloatArray(String key) {
-        if (mStringMap == null)
-            return null;
-        Object o = mStringMap.get(key);
+        Object o = get(key);
         if (o == null)
             return null;
         try {
-            return ((FloatArrayList) o).elements();
+            return (float[]) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "FloatArrayList", e);
+            typeWarning(key, o, "float[]", e);
             return null;
         }
     }
@@ -1023,42 +742,18 @@ public class DataSet {
     /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
-     * If the length is variable, use {@link #getDoubleList(int)} instead.
      *
      * @param key the key whose associated value is to be returned
      * @return the double[] value to which the specified key is mapped, or null
      */
     public double[] getDoubleArray(String key) {
-        if (mStringMap == null)
-            return null;
-        Object o = mStringMap.get(key);
+        Object o = get(key);
         if (o == null)
             return null;
         try {
-            return ((DoubleArrayList) o).elements();
+            return (double[]) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "DoubleArrayList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the String value to which the specified key is mapped, or null
-     */
-    public String getString(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (String) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "String", e);
+            typeWarning(key, o, "double[]", e);
             return null;
         }
     }
@@ -1071,9 +766,7 @@ public class DataSet {
      * @return the String value to which the specified key is mapped, or null
      */
     public String getString(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
+        final Object o = get(key);
         if (o == null)
             return null;
         try {
@@ -1085,73 +778,25 @@ public class DataSet {
     }
 
     /**
-     * Returns the value associated with the given key, or defValue if
+     * Returns the value associated with the given key, or defaultValue if
      * no mapping of the desired type exists for the given key.
      *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist or if a null
-     *                 value is associated with the given key.
-     * @return the String value associated with the given key, or defValue
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist or if a null
+     *                     value is associated with the given key.
+     * @return the String value associated with the given key, or defaultValue
      * if no valid String object is currently mapped to that key.
      */
     @Nonnull
-    public String getString(int key, String defValue) {
-        if (mIntMap == null)
-            return defValue;
-        final Object o = mIntMap.get(key);
+    public String getString(String key, String defaultValue) {
+        final Object o = get(key);
         if (o == null)
-            return defValue;
+            return defaultValue;
         try {
             return (String) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "String", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist or if a null
-     *                 value is associated with the given key.
-     * @return the String value associated with the given key, or defValue
-     * if no valid String object is currently mapped to that key.
-     */
-    @Nonnull
-    public String getString(String key, String defValue) {
-        if (mStringMap == null)
-            return defValue;
-        final Object o = mStringMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return (String) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "String", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the UUID value to which the specified key is mapped, or null
-     */
-    public UUID getUUID(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (UUID) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "UUID", e);
-            return null;
+            typeWarning(key, o, "String", defaultValue, e);
+            return defaultValue;
         }
     }
 
@@ -1163,9 +808,7 @@ public class DataSet {
      * @return the UUID value to which the specified key is mapped, or null
      */
     public UUID getUUID(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
+        final Object o = get(key);
         if (o == null)
             return null;
         try {
@@ -1177,141 +820,26 @@ public class DataSet {
     }
 
     /**
-     * Returns the value associated with the given key, or defValue if
+     * Returns the value associated with the given key, or defaultValue if
      * no mapping of the desired type exists for the given key.
      *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist or if a null
-     *                 value is associated with the given key.
-     * @return the UUID value associated with the given key, or defValue
+     * @param key          the key whose associated value is to be returned
+     * @param defaultValue the value to return if key does not exist or if a null
+     *                     value is associated with the given key.
+     * @return the UUID value associated with the given key, or defaultValue
      * if no valid UUID object is currently mapped to that key.
      */
     @Nonnull
-    public UUID getUUID(int key, UUID defValue) {
-        if (mIntMap == null)
-            return defValue;
-        final Object o = mIntMap.get(key);
+    public UUID getUUID(String key, UUID defaultValue) {
+        final Object o = get(key);
         if (o == null)
-            return defValue;
+            return defaultValue;
         try {
             return (UUID) o;
         } catch (ClassCastException e) {
-            typeWarning(key, o, "UUID", defValue, e);
-            return defValue;
+            typeWarning(key, o, "UUID", defaultValue, e);
+            return defaultValue;
         }
-    }
-
-    /**
-     * Returns the value associated with the given key, or defValue if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key      the key whose associated value is to be returned
-     * @param defValue the value to return if key does not exist or if a null
-     *                 value is associated with the given key.
-     * @return the UUID value associated with the given key, or defValue
-     * if no valid UUID object is currently mapped to that key.
-     */
-    @Nonnull
-    public UUID getUUID(String key, UUID defValue) {
-        if (mStringMap == null)
-            return defValue;
-        final Object o = mStringMap.get(key);
-        if (o == null)
-            return defValue;
-        try {
-            return (UUID) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "UUID", defValue, e);
-            return defValue;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     * <p>
-     * Note that if the list elements are primitive types, you should use the methods
-     * which are specified by primitive types.
-     *
-     * @param key the key whose associated value is to be returned
-     * @param <T> the element type
-     * @return the List value to which the specified key is mapped, or null
-     */
-    public <T> List<T> getList(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (List<T>) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "List<T>", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     * <p>
-     * Note that if the list elements are primitive types, you should use the methods
-     * which are specified by primitive types.
-     *
-     * @param key the key whose associated value is to be returned
-     * @param <T> the element type
-     * @return the List value to which the specified key is mapped
-     */
-    @Nonnull
-    public <T> List<T> acquireList(int key) {
-        List<T> list = getList(key);
-        if (list == null) {
-            list = new ArrayList<>();
-            putList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the DataSet value to which the specified key is mapped, or null
-     */
-    public DataSet getDataSet(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (DataSet) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "DataSet", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the DataSet value to which the specified key is mapped
-     */
-    @Nonnull
-    public DataSet acquireDataSet(int key) {
-        DataSet set = getDataSet(key);
-        if (set == null) {
-            set = new DataSet();
-            putDataSet(key, set);
-        }
-        return set;
     }
 
     /**
@@ -1326,9 +854,7 @@ public class DataSet {
      * @return the List value to which the specified key is mapped, or null
      */
     public <T> List<T> getList(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
+        final Object o = get(key);
         if (o == null)
             return null;
         try {
@@ -1340,29 +866,6 @@ public class DataSet {
     }
 
     /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     * <p>
-     * Note that if the list elements are primitive types, you should use the methods
-     * which are specified by primitive types.
-     *
-     * @param key the key whose associated value is to be returned
-     * @param <T> the element type
-     * @return the List value to which the specified key is mapped
-     */
-    @Nonnull
-    public <T> List<T> acquireList(String key) {
-        List<T> list = getList(key);
-        if (list == null) {
-            list = new ArrayList<>();
-            putList(key, list);
-        }
-        return list;
-    }
-
-    /**
      * Returns the value associated with the given key, or null if
      * no mapping of the desired type exists for the given key.
      *
@@ -1370,9 +873,7 @@ public class DataSet {
      * @return the DataSet value to which the specified key is mapped, or null
      */
     public DataSet getDataSet(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
+        final Object o = get(key);
         if (o == null)
             return null;
         try {
@@ -1383,503 +884,73 @@ public class DataSet {
         }
     }
 
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the DataSet value to which the specified key is mapped
-     */
-    @Nonnull
-    public DataSet acquireDataSet(String key) {
-        DataSet set = getDataSet(key);
-        if (set == null) {
-            set = new DataSet();
-            putDataSet(key, set);
-        }
-        return set;
-    }
+    // Modification Operations
 
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the ByteList value to which the specified key is mapped, or null
-     */
-    public ByteList getByteList(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (ByteList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "ByteList", e);
-            return null;
+    private void insert(int pos, String key, Object value) {
+        mKey[pos] = key;
+        mValue[pos] = value;
+        if (mSize == 0) {
+            mHead = mTail = pos;
+            mLink[pos] = -1L;
+        } else {
+            mLink[mTail] ^= ((mLink[mTail] ^ (pos & 0xFFFFFFFFL)) & 0xFFFFFFFFL);
+            mLink[pos] = ((mTail & 0xFFFFFFFFL) << 32) | 0xFFFFFFFFL;
+            mTail = pos;
+        }
+        if (mSize++ >= mThreshold) {
+            int cap = mKey.length;
+            if (cap > (1 << 30))
+                throw new IllegalStateException("hashtable is too large");
+            rehash(cap << 1);
         }
     }
 
     /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
+     * Rehashes the map.
      *
-     * @param key the key whose associated value is to be returned
-     * @return the ByteList value to which the specified key is mapped, or null
+     * @param cap the new size
      */
-    @Nonnull
-    public ByteList acquireByteList(int key) {
-        ByteList list = getByteList(key);
-        if (list == null) {
-            list = new ByteArrayList();
-            putByteList(key, list);
+    private void rehash(final int cap) {
+        final String[] key = mKey;
+        final Object[] value = mValue;
+        final int mask = cap - 1; // Note that this is used by the hashing macro
+        final String[] newKey = new String[cap];
+        final Object[] newValue = new Object[cap];
+        int i = mHead, prev = -1, newPrev = -1, t, pos;
+        final long[] link = mLink;
+        final long[] newLink = new long[cap];
+        mHead = -1;
+        for (int j = mSize; j-- != 0; ) {
+            if (key[i] == null)
+                pos = cap;
+            else {
+                pos = hash(key[i]) & mask;
+                while (!(newKey[pos] == null))
+                    pos = (pos + 1) & mask;
+            }
+            newKey[pos] = key[i];
+            newValue[pos] = value[i];
+            if (prev != -1) {
+                newLink[newPrev] ^= ((newLink[newPrev] ^ (pos & 0xFFFFFFFFL)) & 0xFFFFFFFFL);
+                newLink[pos] ^= ((newLink[pos] ^ ((newPrev & 0xFFFFFFFFL) << 32)) & 0xFFFFFFFF00000000L);
+                newPrev = pos;
+            } else {
+                newPrev = mHead = pos;
+                // Special case of SET(newLink[pos], -1, -1);
+                newLink[pos] = -1L;
+            }
+            t = i;
+            i = (int) link[i];
+            prev = t;
         }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the ShortList value to which the specified key is mapped, or null
-     */
-    public ShortList getShortList(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (ShortList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "ShortList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the ShortList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public ShortList acquireShortList(int key) {
-        ShortList list = getShortList(key);
-        if (list == null) {
-            list = new ShortArrayList();
-            putShortList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the IntList value to which the specified key is mapped, or null
-     */
-    public IntList getIntList(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (IntList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "IntList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the IntList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public IntList acquireIntList(int key) {
-        IntList list = getIntList(key);
-        if (list == null) {
-            list = new IntArrayList();
-            putIntList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the LongList value to which the specified key is mapped, or null
-     */
-    public LongList getLongList(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (LongList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "LongList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the LongList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public LongList acquireLongList(int key) {
-        LongList list = getLongList(key);
-        if (list == null) {
-            list = new LongArrayList();
-            putLongList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the FloatList value to which the specified key is mapped, or null
-     */
-    public FloatList getFloatList(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (FloatList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "FloatList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the FloatList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public FloatList acquireFloatList(int key) {
-        FloatList list = getFloatList(key);
-        if (list == null) {
-            list = new FloatArrayList();
-            putFloatList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the DoubleList value to which the specified key is mapped, or null
-     */
-    public DoubleList getDoubleList(int key) {
-        if (mIntMap == null)
-            return null;
-        final Object o = mIntMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (DoubleList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "DoubleList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the DoubleList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public DoubleList acquireDoubleList(int key) {
-        DoubleList list = getDoubleList(key);
-        if (list == null) {
-            list = new DoubleArrayList();
-            putDoubleList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the ByteList value to which the specified key is mapped, or null
-     */
-    public ByteList getByteList(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (ByteList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "ByteList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the ByteList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public ByteList acquireByteList(String key) {
-        ByteList list = getByteList(key);
-        if (list == null) {
-            list = new ByteArrayList();
-            putByteList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the ShortList value to which the specified key is mapped, or null
-     */
-    public ShortList getShortList(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (ShortList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "ShortList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the ShortList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public ShortList acquireShortList(String key) {
-        ShortList list = getShortList(key);
-        if (list == null) {
-            list = new ShortArrayList();
-            putShortList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the IntList value to which the specified key is mapped, or null
-     */
-    public IntList getIntList(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (IntList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "IntList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the IntList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public IntList acquireIntList(String key) {
-        IntList list = getIntList(key);
-        if (list == null) {
-            list = new IntArrayList();
-            putIntList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the LongList value to which the specified key is mapped, or null
-     */
-    public LongList getLongList(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (LongList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "LongList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the LongList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public LongList acquireLongList(String key) {
-        LongList list = getLongList(key);
-        if (list == null) {
-            list = new LongArrayList();
-            putLongList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the FloatList value to which the specified key is mapped, or null
-     */
-    public FloatList getFloatList(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (FloatList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "FloatList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the FloatList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public FloatList acquireFloatList(String key) {
-        FloatList list = getFloatList(key);
-        if (list == null) {
-            list = new FloatArrayList();
-            putFloatList(key, list);
-        }
-        return list;
-    }
-
-    /**
-     * Returns the value associated with the given key, or null if
-     * no mapping of the desired type exists for the given key.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the DoubleList value to which the specified key is mapped, or null
-     */
-    public DoubleList getDoubleList(String key) {
-        if (mStringMap == null)
-            return null;
-        final Object o = mStringMap.get(key);
-        if (o == null)
-            return null;
-        try {
-            return (DoubleList) o;
-        } catch (ClassCastException e) {
-            typeWarning(key, o, "DoubleList", e);
-            return null;
-        }
-    }
-
-    /**
-     * Returns the value associated with the given key. If
-     * no mapping of the desired type exists for the given key,
-     * attempts to compute its value using the default construction
-     * function and inserts it into this map.
-     *
-     * @param key the key whose associated value is to be returned
-     * @return the DoubleList value to which the specified key is mapped, or null
-     */
-    @Nonnull
-    public DoubleList acquireDoubleList(String key) {
-        DoubleList list = getDoubleList(key);
-        if (list == null) {
-            list = new DoubleArrayList();
-            putDoubleList(key, list);
-        }
-        return list;
+        mLink = newLink;
+        mTail = newPrev;
+        if (newPrev != -1)
+            // Special case of SET_NEXT(newLink[newPrev], -1);
+            newLink[newPrev] |= 0xFFFFFFFFL;
+        mThreshold = (int) (cap * DEFAULT_LOAD_FACTOR);
+        mKey = newKey;
+        mValue = newValue;
     }
 
     /**
@@ -1895,307 +966,19 @@ public class DataSet {
      * {@code null} if there was no mapping for {@code key}.
      */
     @Nullable
-    public Object put(int key, Object value) {
-        if (value == this) {
-            throw new IllegalArgumentException("You can't put yourself");
-        }
-        createIntMapIfNeeded();
-        return mIntMap.put(key, value);
-    }
-
-    /**
-     * Associates the specified value with the specified key in this map
-     * (optional operation).  If the map previously contained a mapping for
-     * the key, the old value is replaced by the specified value.
-     * <p>
-     * Note that the value must be a supported type by DataSets.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the value to be associated with the specified key
-     * @return the previous value associated with {@code key}, or
-     * {@code null} if there was no mapping for {@code key}.
-     */
-    @Nullable
+    @Override
     public Object put(String key, Object value) {
-        if (value == this) {
-            throw new IllegalArgumentException("You can't put yourself");
+        if (Objects.requireNonNull(value) == this) {
+            throw new IllegalArgumentException("closed loop");
         }
-        createStringMapIfNeeded();
-        return mStringMap.put(key, value);
-    }
-
-    /**
-     * Inserts a byte value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the byte value to be associated with the specified key
-     */
-    public void putByte(int key, byte value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, Byte.valueOf(value));
-    }
-
-    /**
-     * Inserts a short value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the short value to be associated with the specified key
-     */
-    public void putShort(int key, short value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, Short.valueOf(value));
-    }
-
-    /**
-     * Inserts an int value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the int value to be associated with the specified key
-     */
-    public void putInt(int key, int value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, Integer.valueOf(value));
-    }
-
-    /**
-     * Inserts a long value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the long value to be associated with the specified key
-     */
-    public void putLong(int key, long value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, Long.valueOf(value));
-    }
-
-    /**
-     * Inserts a float value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the float value to be associated with the specified key
-     */
-    public void putFloat(int key, float value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, Float.valueOf(value));
-    }
-
-    /**
-     * Inserts a double value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the double value to be associated with the specified key
-     */
-    public void putDouble(int key, double value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, Double.valueOf(value));
-    }
-
-    /**
-     * Inserts a boolean value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the boolean value to be associated with the specified key
-     */
-    public void putBoolean(int key, boolean value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, Byte.valueOf((byte) (value ? 1 : 0)));
-    }
-
-    /**
-     * Inserts a String value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the String value to be associated with the specified key
-     */
-    public void putString(int key, String value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
-    }
-
-    /**
-     * Inserts a UUID value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the UUID value to be associated with the specified key
-     */
-    public void putUUID(int key, UUID value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
-    }
-
-    /**
-     * Inserts a List value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * The list value type must be the same and supported by DataSets. Significantly,
-     * the list can be nested list or a list of nodes.
-     * <p>
-     * Note that if the list elements are primitive types, you should use the methods
-     * which are specified by primitive types.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the List value to be associated with the specified key
-     */
-    public void putList(int key, List<?> value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
-    }
-
-    /**
-     * Inserts a DataSet value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the DataSet value to be associated with the specified key
-     */
-    public void putDataSet(int key, DataSet value) {
-        if (value == this) {
-            throw new IllegalArgumentException("You can't put yourself");
+        final int pos = find(key);
+        if (pos < 0) {
+            insert(-pos - 1, key, value);
+            return null;
         }
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
-    }
-
-    /**
-     * Inserts a byte[] value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the byte[] value to be associated with the specified key
-     */
-    public void putByteArray(int key, byte[] value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, ByteArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a ByteList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link ByteArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the ByteList value to be associated with the specified key
-     */
-    public void putByteList(int key, ByteList value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
-    }
-
-    /**
-     * Inserts a short[] value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the short[] value to be associated with the specified key
-     */
-    public void putShortArray(int key, short[] value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, ShortArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a ShortList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link ShortArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the ShortList value to be associated with the specified key
-     */
-    public void putShortList(int key, ShortList value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
-    }
-
-    /**
-     * Inserts an int[] value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the int[] value to be associated with the specified key
-     */
-    public void putIntArray(int key, int[] value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, IntArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a IntList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link IntArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the IntList value to be associated with the specified key
-     */
-    public void putIntList(int key, IntList value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
-    }
-
-    /**
-     * Inserts a long[] value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the long[] value to be associated with the specified key
-     */
-    public void putLongArray(int key, long[] value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, LongArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a LongList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link LongArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the LongList value to be associated with the specified key
-     */
-    public void putLongList(int key, LongList value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
-    }
-
-    /**
-     * Inserts a float[] value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the float[] value to be associated with the specified key
-     */
-    public void putFloatArray(int key, float[] value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, FloatArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a FloatList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link FloatArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the FloatList value to be associated with the specified key
-     */
-    public void putFloatList(int key, FloatList value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
-    }
-
-    /**
-     * Inserts a double[] value into the mapping, replacing any existing value for the given key.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the double[] value to be associated with the specified key
-     */
-    public void putDoubleArray(int key, double[] value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, DoubleArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a DoubleList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link DoubleArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the DoubleList value to be associated with the specified key
-     */
-    public void putDoubleList(int key, DoubleList value) {
-        createIntMapIfNeeded();
-        mIntMap.put(key, value);
+        final Object oldValue = mValue[pos];
+        mValue[pos] = value;
+        return oldValue;
     }
 
     /**
@@ -2205,8 +988,7 @@ public class DataSet {
      * @param value the byte value to be associated with the specified key
      */
     public void putByte(String key, byte value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2216,8 +998,7 @@ public class DataSet {
      * @param value the short value to be associated with the specified key
      */
     public void putShort(String key, short value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2227,8 +1008,7 @@ public class DataSet {
      * @param value the int value to be associated with the specified key
      */
     public void putInt(String key, int value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2238,8 +1018,7 @@ public class DataSet {
      * @param value the long value to be associated with the specified key
      */
     public void putLong(String key, long value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2249,8 +1028,7 @@ public class DataSet {
      * @param value the float value to be associated with the specified key
      */
     public void putFloat(String key, float value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2260,8 +1038,7 @@ public class DataSet {
      * @param value the double value to be associated with the specified key
      */
     public void putDouble(String key, double value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2271,8 +1048,7 @@ public class DataSet {
      * @param value the boolean value to be associated with the specified key
      */
     public void putBoolean(String key, boolean value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, (byte) (value ? 1 : 0));
+        put(key, value);
     }
 
     /**
@@ -2282,8 +1058,7 @@ public class DataSet {
      * @param value the String value to be associated with the specified key
      */
     public void putString(String key, String value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2293,8 +1068,7 @@ public class DataSet {
      * @param value the UUID value to be associated with the specified key
      */
     public void putUUID(String key, UUID value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2310,8 +1084,7 @@ public class DataSet {
      * @param value the List value to be associated with the specified key
      */
     public void putList(String key, List<?> value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2321,11 +1094,7 @@ public class DataSet {
      * @param value the DataSet value to be associated with the specified key
      */
     public void putDataSet(String key, DataSet value) {
-        if (value == this) {
-            throw new IllegalArgumentException("You can't put yourself");
-        }
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2335,21 +1104,7 @@ public class DataSet {
      * @param value the byte[] value to be associated with the specified key
      */
     public void putByteArray(String key, byte[] value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, ByteArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a ByteList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link ByteArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the ByteList value to be associated with the specified key
-     */
-    public void putByteList(String key, ByteList value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2359,21 +1114,7 @@ public class DataSet {
      * @param value the short[] value to be associated with the specified key
      */
     public void putShortArray(String key, short[] value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, ShortArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a ShortList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link ShortArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the ShortList value to be associated with the specified key
-     */
-    public void putShortList(String key, ShortList value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2383,21 +1124,7 @@ public class DataSet {
      * @param value the int[] value to be associated with the specified key
      */
     public void putIntArray(String key, int[] value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, IntArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a IntList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link IntArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the IntList value to be associated with the specified key
-     */
-    public void putIntList(String key, IntList value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2407,21 +1134,7 @@ public class DataSet {
      * @param value the long[] value to be associated with the specified key
      */
     public void putLongArray(String key, long[] value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, LongArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a LongList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link LongArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the LongList value to be associated with the specified key
-     */
-    public void putLongList(String key, LongList value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2431,21 +1144,7 @@ public class DataSet {
      * @param value the float[] value to be associated with the specified key
      */
     public void putFloatArray(String key, float[] value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, FloatArrayList.wrap(value));
-    }
-
-    /**
-     * Inserts a FloatList value into the mapping, replacing any existing value for the given key.
-     * <p>
-     * Note that the list must be subclasses of {@link FloatArrayList}.
-     *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the FloatList value to be associated with the specified key
-     */
-    public void putFloatList(String key, FloatList value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
+        put(key, value);
     }
 
     /**
@@ -2455,118 +1154,803 @@ public class DataSet {
      * @param value the double[] value to be associated with the specified key
      */
     public void putDoubleArray(String key, double[] value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, DoubleArrayList.wrap(value));
+        put(key, value);
     }
 
     /**
-     * Inserts a DoubleList value into the mapping, replacing any existing value for the given key.
+     * Modifies the {@link #mLink} vector so that the given entry is removed. This method will complete
+     * in constant time.
+     *
+     * @param i the index of an entry.
+     */
+    private void updateLinks(int i) {
+        if (mSize == 0) {
+            mHead = mTail = -1;
+            return;
+        }
+        if (mHead == i) {
+            mHead = (int) mLink[i];
+            if (mHead >= 0) {
+                mLink[mHead] |= 0xFFFFFFFF_00000000L;
+            }
+            return;
+        }
+        if (mTail == i) {
+            mTail = (int) (mLink[i] >>> 32);
+            if (mTail >= 0) {
+                mLink[mTail] |= 0x00000000_FFFFFFFFL;
+            }
+            return;
+        }
+        final long link = mLink[i];
+        final int prev = (int) (link >>> 32);
+        final int next = (int) link;
+        mLink[prev] ^= ((mLink[prev] ^ (link & 0x00000000_FFFFFFFFL)) & 0x00000000_FFFFFFFFL);
+        mLink[next] ^= ((mLink[next] ^ (link & 0xFFFFFFFF_00000000L)) & 0xFFFFFFFF_00000000L);
+    }
+
+    /**
+     * Modifies the {@link #mLink} vector for a shift from x to y.
      * <p>
-     * Note that the list must be subclasses of {@link DoubleArrayList}.
+     * This method will complete in constant time.
      *
-     * @param key   the key with which the specified value is to be associated
-     * @param value the DoubleList value to be associated with the specified key
+     * @param x the source position.
+     * @param y the destination position.
      */
-    public void putDoubleList(String key, DoubleList value) {
-        createStringMapIfNeeded();
-        mStringMap.put(key, value);
-    }
-
-    /**
-     * Removes the mapping for a key from this map if it is present
-     * (optional operation).
-     *
-     * <p>Returns the value to which this map previously associated the key,
-     * or {@code null} if the map contained no mapping for the key.
-     *
-     * <p>The map will not contain a mapping for the specified key once the
-     * call returns.
-     *
-     * @param key key whose mapping is to be removed from the map
-     * @return the previous value associated with {@code key}, or
-     * {@code null} if there was no mapping for {@code key}.
-     */
-    public Object remove(int key) {
-        if (mIntMap == null)
-            return null;
-        return mIntMap.remove(key);
-    }
-
-    /**
-     * Removes the mapping for a key from this map if it is present
-     * (optional operation).
-     *
-     * <p>Returns the value to which this map previously associated the key,
-     * or {@code null} if the map contained no mapping for the key.
-     *
-     * <p>The map will not contain a mapping for the specified key once the
-     * call returns.
-     *
-     * @param key key whose mapping is to be removed from the map
-     * @return the previous value associated with {@code key}, or
-     * {@code null} if there was no mapping for {@code key}.
-     */
-    public Object remove(String key) {
-        if (mStringMap == null)
-            return null;
-        return mStringMap.remove(key);
-    }
-
-    /**
-     * @return a set view of the keys contained in this map
-     */
-    @Nonnull
-    public IntSet intKeys() {
-        if (mIntMap == null || mIntMap.isEmpty())
-            return IntSets.emptySet();
-        return mIntMap.keySet();
-    }
-
-    /**
-     * @return a set view of the keys contained in this map
-     */
-    @Nonnull
-    public Set<String> stringKeys() {
-        if (mStringMap == null || mStringMap.isEmpty())
-            return Collections.emptySet();
-        return mStringMap.keySet();
-    }
-
-    @Nullable
-    public Iterator<Int2ObjectMap.Entry<Object>> intEntryIterator() {
-        if (mIntMap == null || mIntMap.isEmpty()) {
-            return null;
+    private void updateLinks(int x, int y) {
+        if (mSize == 1) {
+            mHead = mTail = y;
+            mLink[y] = -1L;
+        } else if (mHead == x) {
+            mHead = y;
+            int next = (int) mLink[x];
+            mLink[next] ^= ((mLink[next] ^ ((y & 0xFFFFFFFFL) << 32)) & 0xFFFFFFFF_00000000L);
+            mLink[y] = mLink[x];
+        } else if (mTail == x) {
+            mTail = y;
+            int prev = (int) (mLink[x] >>> 32);
+            mLink[prev] ^= ((mLink[prev] ^ (y & 0xFFFFFFFFL)) & 0x00000000_FFFFFFFFL);
+            mLink[y] = mLink[x];
         } else {
-            return Int2ObjectMaps.fastIterator(mIntMap);
+            final long link = mLink[x];
+            final int prev = (int) (link >>> 32);
+            final int next = (int) link;
+            mLink[prev] ^= ((mLink[prev] ^ (y & 0xFFFFFFFFL)) & 0x00000000_FFFFFFFFL);
+            mLink[next] ^= ((mLink[next] ^ ((y & 0xFFFFFFFFL) << 32)) & 0xFFFFFFFF_00000000L);
+            mLink[y] = link;
         }
     }
 
-    @Nullable
-    public Iterator<Map.Entry<String, Object>> stringEntryIterator() {
-        if (mStringMap == null || mStringMap.isEmpty()) {
-            return null;
+    private Object removeEntry(int pos) {
+        final Object value = mValue[pos];
+        mValue[pos] = null;
+        mSize--;
+        updateLinks(pos);
+        shiftKeys(pos);
+        if (mSize < mThreshold / 4 && mKey.length > DEFAULT_INITIAL_SIZE)
+            rehash(mKey.length / 2);
+        return value;
+    }
+
+    /**
+     * Shifts left entries with the specified hash code, starting at the specified position, and empties
+     * the resulting free entry.
+     *
+     * @param pos a starting position.
+     */
+    // @formatter:off
+    private void shiftKeys(int pos) {
+        // Shift entries with the same hash.
+        int prev, i;
+        String k;
+        final String[] key = mKey;
+        final int mask = key.length - 1;
+        for (;;) {
+            pos = ((prev = pos) + 1) & mask;
+            for (;;) {
+                if ((k = key[pos]) == null) {
+                    key[prev] = null;
+                    mValue[prev] = null;
+                    return;
+                }
+                i = hash(k) & mask;
+                if (prev <= pos ? prev >= i || i > pos : prev >= i && i > pos)
+                    break;
+                pos = (pos + 1) & mask;
+            }
+            key[prev] = k;
+            mValue[prev] = mValue[pos];
+            updateLinks(pos, prev);
         }
-        final Set<Map.Entry<String, Object>> entries = mStringMap.entrySet();
-        return entries instanceof Object2ObjectMap.FastEntrySet ?
-                ((Object2ObjectMap.FastEntrySet) entries).fastIterator() : entries.iterator();
+    }
+    // @formatter:on
+
+    /**
+     * Removes the mapping for a key from this map if it is present.
+     *
+     * <p>Returns the value to which this map previously associated the key,
+     * or {@code null} if the map contained no mapping for the key.
+     *
+     * <p>The map will not contain a mapping for the specified key once the
+     * call returns.
+     *
+     * @param key key whose mapping is to be removed from the map
+     * @return the previous value associated with {@code key}, or
+     * {@code null} if there was no mapping for {@code key}.
+     */
+    @Override
+    public Object remove(Object key) {
+        Objects.requireNonNull(key);
+        String k;
+        final String[] keys = mKey;
+        final int mask = keys.length - 1;
+        int pos;
+        // The starting point.
+        if ((k = keys[pos = hash(key) & mask]) == null)
+            return null;
+        if (k == key || key.equals(k))
+            return removeEntry(pos);
+        // There's always an unused entry.
+        while (true) {
+            if ((k = keys[pos = (pos + 1) & mask]) == null)
+                return null;
+            if (k == key || key.equals(k))
+                return removeEntry(pos);
+        }
+    }
+
+    /**
+     * Removes the mapping associated with the first key in iteration order.
+     *
+     * @return the value previously associated with the first key in iteration order.
+     * @throws NoSuchElementException is this map is empty.
+     */
+    public Object removeFirst() {
+        if (mSize == 0)
+            throw new NoSuchElementException();
+        final int pos = mHead;
+        // Abbreviated version of updateLinks(pos)
+        mHead = (int) mLink[pos];
+        if (mHead >= 0) {
+            mLink[mHead] |= 0xFFFFFFFF_00000000L;
+        }
+        mSize--;
+        final Object v = mValue[pos];
+        shiftKeys(pos);
+        if (mSize < mThreshold / 4 && mKey.length > DEFAULT_INITIAL_SIZE)
+            rehash(mKey.length / 2);
+        return v;
+    }
+
+    /**
+     * Removes the mapping associated with the last key in iteration order.
+     *
+     * @return the value previously associated with the last key in iteration order.
+     * @throws NoSuchElementException is this map is empty.
+     */
+    public Object removeLast() {
+        if (mSize == 0)
+            throw new NoSuchElementException();
+        final int pos = mTail;
+        // Abbreviated version of updateLinks(pos)
+        mTail = (int) (mLink[pos] >>> 32);
+        if (mTail >= 0) {
+            mLink[mTail] |= 0x00000000_FFFFFFFFL;
+        }
+        mSize--;
+        final Object v = mValue[pos];
+        shiftKeys(pos);
+        if (mSize < mThreshold / 4 && mKey.length > DEFAULT_INITIAL_SIZE)
+            rehash(mKey.length / 2);
+        return v;
+    }
+
+    // Bulk Operations
+
+    @Override
+    public void putAll(@Nonnull Map<? extends String, ?> map) {
+        int capacity = (int) Math.min(1 << 30,
+                1L << -Long.numberOfLeadingZeros((long) Math.ceil((mSize + map.size()) / DEFAULT_LOAD_FACTOR) - 1));
+        if (capacity > mKey.length)
+            rehash(capacity);
+        for (var e : map.entrySet())
+            put(e.getKey(), e.getValue());
+    }
+
+    /**
+     * Removes all of the mappings from this map.
+     * The map will be empty after this call returns.
+     */
+    @Override
+    public void clear() {
+        if (mSize == 0)
+            return;
+        mSize = 0;
+        Arrays.fill(mKey, null);
+        Arrays.fill(mValue, null);
+        mHead = mTail = -1;
+    }
+
+    // Views
+
+    /**
+     * @return a set view of the keys contained in this map
+     */
+    @Nonnull
+    @Override
+    public Set<String> keySet() {
+        if (mKeys == null)
+            mKeys = new KeySet();
+        return mKeys;
+    }
+
+    @Nonnull
+    @Override
+    public Collection<Object> values() {
+        if (mValues == null)
+            mValues = new Values();
+        return mValues;
+    }
+
+    @Nonnull
+    @Override
+    public Set<Entry<String, Object>> entrySet() {
+        if (mEntries == null)
+            mEntries = new MapEntrySet();
+        return mEntries;
+    }
+
+    /**
+     * A list iterator over a linked map.
+     *
+     * <p>
+     * This class provides a list iterator over a linked hash map. The constructor runs in constant
+     * time.
+     */
+    private abstract class MapIterator<ACTION> {
+
+        /**
+         * The entry that will be returned by the next call to {@link java.util.ListIterator#previous()} (or
+         * {@code null} if no previous entry exists).
+         */
+        int prev = -1;
+        /**
+         * The entry that will be returned by the next call to {@link java.util.ListIterator#next()} (or
+         * {@code null} if no next entry exists).
+         */
+        int next = -1;
+        /**
+         * The last entry that was returned (or -1 if we did not iterate or used
+         * {@link java.util.Iterator#remove()}).
+         */
+        int curr = -1;
+        /**
+         * The current index (in the sense of a {@link java.util.ListIterator}). Note that this value is not
+         * meaningful when this iterator has been created using the nonempty constructor.
+         */
+        int index = -1;
+
+        MapIterator() {
+            next = mTail;
+            index = 0;
+        }
+
+        MapIterator(String key) {
+            Objects.requireNonNull(key);
+            if (Objects.equals(key, mKey[mTail])) {
+                prev = mTail;
+                index = mSize;
+                return;
+            }
+            String k;
+            final String[] keys = mKey;
+            final int mask = keys.length - 1;
+            // The starting point.
+            int pos = hash(key) & mask;
+            // There's always an unused entry.
+            while ((k = keys[pos]) != null) {
+                if (key.equals(k)) {
+                    // Note: no valid index known.
+                    next = (int) mLink[pos];
+                    prev = pos;
+                    return;
+                }
+                pos = (pos + 1) & mask;
+            }
+            throw new NoSuchElementException("The key " + key + " does not belong to this map.");
+        }
+
+        abstract void accept(ACTION action, int index);
+
+        public boolean hasNext() {
+            return next != -1;
+        }
+
+        public boolean hasPrevious() {
+            return prev != -1;
+        }
+
+        private void forward0() {
+            if (index >= 0)
+                return;
+            if (prev == -1) {
+                index = 0;
+                return;
+            }
+            if (next == -1) {
+                index = mSize;
+                return;
+            }
+            int pos = mTail;
+            index = 1;
+            while (pos != prev) {
+                pos = (int) mLink[pos];
+                index++;
+            }
+        }
+
+        public int nextIndex() {
+            forward0();
+            return index;
+        }
+
+        public int previousIndex() {
+            forward0();
+            return index - 1;
+        }
+
+        public int nextEntry() {
+            if (!hasNext())
+                throw new NoSuchElementException();
+            curr = next;
+            next = (int) mLink[curr];
+            prev = curr;
+            if (index >= 0)
+                index++;
+            return curr;
+        }
+
+        public int previousEntry() {
+            if (!hasPrevious())
+                throw new NoSuchElementException();
+            curr = prev;
+            prev = (int) (mLink[curr] >>> 32);
+            next = curr;
+            if (index >= 0)
+                index--;
+            return curr;
+        }
+
+        public void forEachRemaining(ACTION action) {
+            while (hasNext()) {
+                curr = next;
+                next = (int) mLink[curr];
+                prev = curr;
+                if (index >= 0)
+                    index++;
+                accept(action, curr);
+            }
+        }
+
+        // @formatter:off
+        public void remove() {
+            forward0();
+            if (curr == -1)
+                throw new IllegalStateException();
+            if (curr == prev) {
+				/* If the last operation was a next(), we are removing an entry that preceeds
+						   the current index, and thus we must decrement it. */
+                index--;
+                prev = (int) (mLink[curr] >>> 32);
+            } else
+                next = (int) mLink[curr];
+            mSize--;
+			/* Now we manually fix the pointers. Because of our knowledge of next
+				   and prev, this is going to be faster than calling fixPointers(). */
+            if (prev == -1)
+                mHead = next;
+            else
+                mLink[prev] ^= ((mLink[prev] ^ (next & 0xFFFFFFFFL)) & 0xFFFFFFFFL);
+            if (next == -1)
+                mTail = prev;
+            else
+                mLink[next] ^= ((mLink[next] ^ ((prev & 0xFFFFFFFFL) << 32)) & 0xFFFFFFFF00000000L);
+            int last, slot, pos = curr;
+            curr = -1;
+            String k;
+            final String[] keys = mKey;
+            final int mask = keys.length - 1;
+            // We have to horribly duplicate the shiftKeys() code because we need to update next/prev.
+            for (;;) {
+                pos = ((last = pos) + 1) & mask;
+                for (;;) {
+                    if (((k = keys[pos]) == null)) {
+                        keys[last] = (null);
+                        mValue[last] = null;
+                        return;
+                    }
+                    slot = hash(k) & mask;
+                    if (last <= pos ? last >= slot || slot > pos : last >= slot && slot > pos)
+                        break;
+                    pos = (pos + 1) & mask;
+                }
+                keys[last] = k;
+                mValue[last] = mValue[pos];
+                if (next == pos)
+                    next = last;
+                if (prev == pos)
+                    prev = last;
+                updateLinks(pos, last);
+            }
+        }
+        // @formatter:on
+
+        public int skip(final int n) {
+            int i = n;
+            while (i-- != 0 && hasNext()) nextEntry();
+            return n - i - 1;
+        }
+
+        public int back(final int n) {
+            int i = n;
+            while (i-- != 0 && hasPrevious()) previousEntry();
+            return n - i - 1;
+        }
+    }
+
+    /**
+     * An iterator on keys.
+     *
+     * <p>
+     * We simply override the
+     * {@link java.util.ListIterator#next()}/{@link java.util.ListIterator#previous()} methods (and
+     * possibly their type-specific counterparts) so that they return keys instead of entries.
+     */
+    private final class KeyIterator extends MapIterator<Consumer<? super String>> implements ListIterator<String> {
+
+        public KeyIterator() {
+            super();
+        }
+
+        public KeyIterator(String k) {
+            super(k);
+        }
+
+        // forEachRemaining inherited from MapIterator superclass.
+        // Despite the superclass declared with generics, the way Java inherits and generates bridge methods
+        // avoids the boxing/unboxing
+        @Override
+        void accept(Consumer<? super String> action, int index) {
+            action.accept(mKey[index]);
+        }
+
+        @Override
+        public String previous() {
+            return mKey[previousEntry()];
+        }
+
+        @Override
+        public void set(String s) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void add(String s) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String next() {
+            return mKey[nextEntry()];
+        }
+    }
+
+    /**
+     * An iterator on values.
+     *
+     * <p>
+     * We simply override the
+     * {@link java.util.ListIterator#next()}/{@link java.util.ListIterator#previous()} methods (and
+     * possibly their type-specific counterparts) so that they return values instead of entries.
+     */
+    private final class ValueIterator extends MapIterator<Consumer<? super Object>> implements ListIterator<Object> {
+
+        public ValueIterator() {
+            super();
+        }
+
+        // forEachRemaining inherited from MapIterator superclass.
+        // Despite the superclass declared with generics, the way Java inherits and generates bridge methods
+        // avoids the boxing/unboxing
+        @Override
+        void accept(final Consumer<? super Object> action, final int index) {
+            action.accept(mValue[index]);
+        }
+
+        @Override
+        public Object previous() {
+            return mValue[previousEntry()];
+        }
+
+        @Override
+        public void set(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void add(Object o) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Object next() {
+            return mValue[nextEntry()];
+        }
+    }
+
+    private final class KeySet extends AbstractSet<String> {
+
+        @Nonnull
+        @Override
+        public Iterator<String> iterator() {
+            return new KeyIterator();
+        }
+
+        @Override
+        public int size() {
+            return mSize;
+        }
+
+        @Override
+        public void forEach(Consumer<? super String> action) {
+            for (int i = mSize, curr, next = mHead; i-- != 0; ) {
+                curr = next;
+                next = (int) mLink[curr];
+                action.accept(mKey[curr]);
+            }
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return containsKey(o);
+        }
+
+        @Override
+        public boolean remove(Object o) {
+            return DataSet.this.remove(o) != null;
+        }
+
+        @Override
+        public void clear() {
+            DataSet.this.clear();
+        }
+    }
+
+    private final class Values extends AbstractCollection<Object> {
+
+        @Nonnull
+        @Override
+        public Iterator<Object> iterator() {
+            return new ValueIterator();
+        }
+
+        @Override
+        public int size() {
+            return mSize;
+        }
+
+        @Override
+        public void forEach(Consumer<? super Object> action) {
+            for (int i = mSize, curr, next = mHead; i-- != 0; ) {
+                curr = next;
+                next = (int) mLink[curr];
+                action.accept(mValue[curr]);
+            }
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            return containsValue(o);
+        }
+
+        @Override
+        public void clear() {
+            DataSet.this.clear();
+        }
+    }
+
+    /**
+     * The entry class for a hash map does not record key and value, but rather the position in the hash
+     * table of the corresponding entry. This is necessary so that calls to
+     * {@link Map.Entry#setValue(Object)} are reflected in the map
+     */
+    private final class MapEntry implements Map.Entry<String, Object> {
+
+        // The table index this entry refers to, or -1 if this entry has been deleted.
+        int mIndex;
+
+        MapEntry() {
+        }
+
+        MapEntry(int index) {
+            mIndex = index;
+        }
+
+        @Override
+        public String getKey() {
+            return mKey[mIndex];
+        }
+
+        @Override
+        public Object getValue() {
+            return mValue[mIndex];
+        }
+
+        @Override
+        public Object setValue(Object newValue) {
+            Object oldValue = mValue[mIndex];
+            mValue[mIndex] = newValue;
+            return oldValue;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(mKey[mIndex]) ^ Objects.hashCode(mValue[mIndex]);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            return o instanceof Map.Entry<?, ?> e
+                    && Objects.equals(mKey[mIndex], e.getKey())
+                    && Objects.equals(mValue[mIndex], e.getValue());
+        }
+
+        @Nonnull
+        @Override
+        public String toString() {
+            return mKey[mIndex] + "=" + mValue[mIndex];
+        }
+    }
+
+    private final class EntryIterator extends MapIterator<Consumer<? super Map.Entry<String, Object>>>
+            implements ListIterator<Map.Entry<String, Object>> {
+
+        private MapEntry mEntry;
+
+        public EntryIterator() {
+        }
+
+        public EntryIterator(String from) {
+            super(from);
+        }
+
+        // forEachRemaining inherited from MapIterator superclass.
+        @Override
+        void accept(Consumer<? super Map.Entry<String, Object>> action, int index) {
+            action.accept(new MapEntry(index));
+        }
+
+        @Override
+        public MapEntry next() {
+            return mEntry = new MapEntry(nextEntry());
+        }
+
+        @Override
+        public MapEntry previous() {
+            return mEntry = new MapEntry(previousEntry());
+        }
+
+        @Override
+        public void remove() {
+            super.remove();
+            mEntry.mIndex = -1; // You cannot use a deleted entry.
+        }
+
+        @Override
+        public void set(Entry<String, Object> e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void add(Entry<String, Object> e) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private final class FastEntryIterator extends MapIterator<Consumer<? super Entry<String, Object>>>
+            implements ListIterator<Entry<String, Object>> {
+
+        private final MapEntry mEntry = new MapEntry();
+
+        public FastEntryIterator() {
+        }
+
+        public FastEntryIterator(String from) {
+            super(from);
+        }
+
+        // forEachRemaining inherited from MapIterator superclass.
+        @Override
+        void accept(Consumer<? super Entry<String, Object>> action, int index) {
+            mEntry.mIndex = index;
+            action.accept(mEntry);
+        }
+
+        @Override
+        public MapEntry next() {
+            mEntry.mIndex = nextEntry();
+            return mEntry;
+        }
+
+        @Override
+        public MapEntry previous() {
+            mEntry.mIndex = previousEntry();
+            return mEntry;
+        }
+
+        @Override
+        public void set(Entry<String, Object> e) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void add(Entry<String, Object> e) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private final class MapEntrySet extends AbstractSet<Entry<String, Object>> {
+
+        @Nonnull
+        @Override
+        public Iterator<Entry<String, Object>> iterator() {
+            return new EntryIterator();
+        }
+
+        @Override
+        public int size() {
+            return mSize;
+        }
+
+        @Override
+        public void clear() {
+            DataSet.this.clear();
+        }
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        DataSet dataSet = (DataSet) o;
-
-        if (!Objects.equals(mIntMap, dataSet.mIntMap)) return false;
-        return Objects.equals(mStringMap, dataSet.mStringMap);
+        if (o == this)
+            return true;
+        if (!(o instanceof Map<?, ?> map))
+            return false;
+        if (map.size() != size())
+            return false;
+        try {
+            var it = new FastEntryIterator();
+            while (it.hasNext()) {
+                MapEntry e = it.next();
+                if (!e.getValue().equals(map.get(e.getKey())))
+                    return false;
+            }
+        } catch (ClassCastException | NullPointerException ignored) {
+            return false;
+        }
+        return true;
     }
 
     @Override
     public int hashCode() {
-        int result = mIntMap != null ? mIntMap.hashCode() : 0;
-        result = 31 * result + (mStringMap != null ? mStringMap.hashCode() : 0);
-        return result;
+        int h = 0;
+        for (int j = mSize, i = 0, t; j-- != 0; ) {
+            while (mKey[i] == null)
+                i++;
+            t = (mKey[i].hashCode());
+            t ^= Objects.hashCode(mValue[i]);
+            h += t;
+            i++;
+        }
+        return h;
     }
 
     @Override
@@ -2574,27 +1958,11 @@ public class DataSet {
         if (isEmpty()) {
             return "{}";
         }
-        final StringBuilder s = new StringBuilder();
+        final var s = new StringBuilder();
         s.append('{');
-        final Iterator<Int2ObjectMap.Entry<Object>> it = intEntryIterator();
-        if (it != null) {
-            while (it.hasNext()) {
-                Int2ObjectMap.Entry<Object> e = it.next();
-                s.append(e.getIntKey());
-                s.append('=');
-                s.append(e.getValue());
-                s.append(',');
-            }
-        }
-        final Iterator<Map.Entry<String, Object>> stringIt = stringEntryIterator();
-        if (stringIt != null) {
-            while (stringIt.hasNext()) {
-                Map.Entry<String, Object> e = stringIt.next();
-                s.append(e.getKey());
-                s.append('=');
-                s.append(e.getValue());
-                s.append(',');
-            }
+        for (var it = new FastEntryIterator(); it.hasNext();) {
+            s.append(it.next());
+            s.append(',');
         }
         s.deleteCharAt(s.length() - 1);
         return s.append('}').toString();
@@ -2635,58 +2003,7 @@ public class DataSet {
      */
     private static void writeList(List<?> list, DataOutput output) throws IOException {
         final int size = list.size();
-        if (list instanceof ByteArrayList) {
-            output.writeByte(VAL_BYTE);
-            output.writeInt(size);
-            if (size > 0) {
-                output.write(((ByteArrayList) list).elements(), 0, size);
-            }
-        } else if (list instanceof ShortArrayList) {
-            output.writeByte(VAL_SHORT);
-            output.writeInt(size);
-            if (size > 0) {
-                short[] data = ((ShortArrayList) list).elements();
-                for (int i = 0; i < size; i++) {
-                    output.writeShort(data[i]);
-                }
-            }
-        } else if (list instanceof IntArrayList) {
-            output.writeByte(VAL_INT);
-            output.writeInt(size);
-            if (size > 0) {
-                int[] data = ((IntArrayList) list).elements();
-                for (int i = 0; i < size; i++) {
-                    output.writeInt(data[i]);
-                }
-            }
-        } else if (list instanceof LongArrayList) {
-            output.writeByte(VAL_LONG);
-            output.writeInt(size);
-            if (size > 0) {
-                long[] data = ((LongArrayList) list).elements();
-                for (int i = 0; i < size; i++) {
-                    output.writeLong(data[i]);
-                }
-            }
-        } else if (list instanceof FloatArrayList) {
-            output.writeByte(VAL_FLOAT);
-            output.writeInt(size);
-            if (size > 0) {
-                float[] data = ((FloatArrayList) list).elements();
-                for (int i = 0; i < size; i++) {
-                    output.writeFloat(data[i]);
-                }
-            }
-        } else if (list instanceof DoubleArrayList) {
-            output.writeByte(VAL_DOUBLE);
-            output.writeInt(size);
-            if (size > 0) {
-                double[] data = ((DoubleArrayList) list).elements();
-                for (int i = 0; i < size; i++) {
-                    output.writeDouble(data[i]);
-                }
-            }
-        } else if (size == 0) {
+        if (size == 0) {
             // short path for Object arrays, but do not break primitive-specified arrays
             output.writeByte(VAL_NULL);
         } else {
@@ -2730,106 +2047,53 @@ public class DataSet {
     public static void writeDataSet(@Nullable DataSet set, DataOutput output) throws IOException {
         if (set == null) {
             output.writeByte(VAL_NULL);
-            output.writeByte(VAL_NULL);
             return;
         }
-        final Iterator<Int2ObjectMap.Entry<Object>> it = set.intEntryIterator();
-        if (it != null) {
-            while (it.hasNext()) {
-                final Int2ObjectMap.Entry<Object> entry = it.next();
-                final Object v = entry.getValue();
-                if (v instanceof Byte) {
-                    output.writeByte(VAL_BYTE);
-                    output.writeInt(entry.getIntKey());
-                    output.writeByte((byte) v);
-                } else if (v instanceof Short) {
-                    output.writeByte(VAL_SHORT);
-                    output.writeInt(entry.getIntKey());
-                    output.writeShort((short) v);
-                } else if (v instanceof Integer) {
-                    output.writeByte(VAL_INT);
-                    output.writeInt(entry.getIntKey());
-                    output.writeInt((int) v);
-                } else if (v instanceof Long) {
-                    output.writeByte(VAL_LONG);
-                    output.writeInt(entry.getIntKey());
-                    output.writeLong((long) v);
-                } else if (v instanceof Float) {
-                    output.writeByte(VAL_FLOAT);
-                    output.writeInt(entry.getIntKey());
-                    output.writeFloat((float) v);
-                } else if (v instanceof Double) {
-                    output.writeByte(VAL_DOUBLE);
-                    output.writeInt(entry.getIntKey());
-                    output.writeDouble((double) v);
-                } else if (v instanceof String) {
-                    output.writeByte(VAL_STRING);
-                    output.writeInt(entry.getIntKey());
-                    output.writeUTF((String) v);
-                } else if (v instanceof UUID u) {
-                    output.writeByte(VAL_UUID);
-                    output.writeInt(entry.getIntKey());
-                    output.writeLong(u.getMostSignificantBits());
-                    output.writeLong(u.getLeastSignificantBits());
-                } else if (v instanceof List) {
-                    output.writeByte(VAL_LIST);
-                    output.writeInt(entry.getIntKey());
-                    writeList((List<?>) v, output);
-                } else if (v instanceof DataSet) {
-                    output.writeByte(VAL_DATA_SET);
-                    output.writeInt(entry.getIntKey());
-                    writeDataSet((DataSet) v, output);
-                }
-            }
-        }
-        output.writeByte(VAL_NULL);
-        final Iterator<Map.Entry<String, Object>> stringIt = set.stringEntryIterator();
-        if (stringIt != null) {
-            while (stringIt.hasNext()) {
-                final Map.Entry<String, Object> entry = stringIt.next();
-                final Object v = entry.getValue();
-                if (v instanceof Byte) {
-                    output.writeByte(VAL_BYTE);
-                    output.writeUTF(entry.getKey());
-                    output.writeByte((byte) v);
-                } else if (v instanceof Short) {
-                    output.writeByte(VAL_SHORT);
-                    output.writeUTF(entry.getKey());
-                    output.writeShort((short) v);
-                } else if (v instanceof Integer) {
-                    output.writeByte(VAL_INT);
-                    output.writeUTF(entry.getKey());
-                    output.writeInt((int) v);
-                } else if (v instanceof Long) {
-                    output.writeByte(VAL_LONG);
-                    output.writeUTF(entry.getKey());
-                    output.writeLong((long) v);
-                } else if (v instanceof Float) {
-                    output.writeByte(VAL_FLOAT);
-                    output.writeUTF(entry.getKey());
-                    output.writeFloat((float) v);
-                } else if (v instanceof Double) {
-                    output.writeByte(VAL_DOUBLE);
-                    output.writeUTF(entry.getKey());
-                    output.writeDouble((double) v);
-                } else if (v instanceof String) {
-                    output.writeByte(VAL_STRING);
-                    output.writeUTF(entry.getKey());
-                    output.writeUTF((String) v);
-                } else if (v instanceof UUID u) {
-                    output.writeByte(VAL_UUID);
-                    output.writeUTF(entry.getKey());
-                    output.writeLong(u.getMostSignificantBits());
-                    output.writeLong(u.getLeastSignificantBits());
-                } else if (v instanceof List) {
-                    output.writeByte(VAL_LIST);
-                    output.writeUTF(entry.getKey());
-                    writeList((List<?>) v, output);
-                } else if (v instanceof DataSet) {
-                    output.writeByte(VAL_DATA_SET);
-                    output.writeUTF(entry.getKey());
-                    writeDataSet((DataSet) v, output);
-                }
+        var it = set.new FastEntryIterator();
+        while (it.hasNext()) {
+            MapEntry e = it.next();
+            final Object v = e.getValue();
+            if (v instanceof Byte) {
+                output.writeByte(VAL_BYTE);
+                output.writeUTF(e.getKey());
+                output.writeByte((byte) v);
+            } else if (v instanceof Short) {
+                output.writeByte(VAL_SHORT);
+                output.writeUTF(e.getKey());
+                output.writeShort((short) v);
+            } else if (v instanceof Integer) {
+                output.writeByte(VAL_INT);
+                output.writeUTF(e.getKey());
+                output.writeInt((int) v);
+            } else if (v instanceof Long) {
+                output.writeByte(VAL_LONG);
+                output.writeUTF(e.getKey());
+                output.writeLong((long) v);
+            } else if (v instanceof Float) {
+                output.writeByte(VAL_FLOAT);
+                output.writeUTF(e.getKey());
+                output.writeFloat((float) v);
+            } else if (v instanceof Double) {
+                output.writeByte(VAL_DOUBLE);
+                output.writeUTF(e.getKey());
+                output.writeDouble((double) v);
+            } else if (v instanceof String) {
+                output.writeByte(VAL_STRING);
+                output.writeUTF(e.getKey());
+                output.writeUTF((String) v);
+            } else if (v instanceof UUID u) {
+                output.writeByte(VAL_UUID);
+                output.writeUTF(e.getKey());
+                output.writeLong(u.getMostSignificantBits());
+                output.writeLong(u.getLeastSignificantBits());
+            } else if (v instanceof List) {
+                output.writeByte(VAL_LIST);
+                output.writeUTF(e.getKey());
+                writeList((List<?>) v, output);
+            } else if (v instanceof DataSet) {
+                output.writeByte(VAL_DATA_SET);
+                output.writeUTF(e.getKey());
+                writeDataSet((DataSet) v, output);
             }
         }
         output.writeByte(VAL_NULL);
@@ -2936,47 +2200,22 @@ public class DataSet {
     @Nonnull
     public static DataSet readDataSet(DataInput input) throws IOException {
         final DataSet set = new DataSet();
-        byte id = input.readByte();
-        if (id != VAL_NULL) {
-            set.createIntMapIfNeeded();
-            final Int2ObjectMap<Object> map = set.mIntMap;
-            do {
-                final int key = input.readInt();
-                switch (id) {
-                    case VAL_BYTE -> map.put(key, Byte.valueOf(input.readByte()));
-                    case VAL_SHORT -> map.put(key, Short.valueOf(input.readShort()));
-                    case VAL_INT -> map.put(key, Integer.valueOf(input.readInt()));
-                    case VAL_LONG -> map.put(key, Long.valueOf(input.readLong()));
-                    case VAL_FLOAT -> map.put(key, Float.valueOf(input.readFloat()));
-                    case VAL_DOUBLE -> map.put(key, Double.valueOf(input.readDouble()));
-                    case VAL_STRING -> map.put(key, input.readUTF());
-                    case VAL_UUID -> map.put(key, new UUID(input.readLong(), input.readLong()));
-                    case VAL_LIST -> map.put(key, readList(input));
-                    case VAL_DATA_SET -> map.put(key, readDataSet(input));
-                    default -> throw new IOException("Unknown value type identifier: " + id);
-                }
-            } while ((id = input.readByte()) != VAL_NULL);
-        }
-        id = input.readByte();
-        if (id != VAL_NULL) {
-            set.createStringMapIfNeeded();
-            final Map<String, Object> map = set.mStringMap;
-            do {
-                final String key = input.readUTF();
-                switch (id) {
-                    case VAL_BYTE -> map.put(key, input.readByte());
-                    case VAL_SHORT -> map.put(key, input.readShort());
-                    case VAL_INT -> map.put(key, input.readInt());
-                    case VAL_LONG -> map.put(key, input.readLong());
-                    case VAL_FLOAT -> map.put(key, input.readFloat());
-                    case VAL_DOUBLE -> map.put(key, input.readDouble());
-                    case VAL_STRING -> map.put(key, input.readUTF());
-                    case VAL_UUID -> map.put(key, new UUID(input.readLong(), input.readLong()));
-                    case VAL_LIST -> map.put(key, readList(input));
-                    case VAL_DATA_SET -> map.put(key, readDataSet(input));
-                    default -> throw new IOException("Unknown value type identifier: " + id);
-                }
-            } while ((id = input.readByte()) != VAL_NULL);
+        byte t;
+        while ((t = input.readByte()) != VAL_NULL) {
+            final String key = input.readUTF();
+            switch (t) {
+                case VAL_BYTE -> set.put(key, input.readByte());
+                case VAL_SHORT -> set.put(key, input.readShort());
+                case VAL_INT -> set.put(key, input.readInt());
+                case VAL_LONG -> set.put(key, input.readLong());
+                case VAL_FLOAT -> set.put(key, input.readFloat());
+                case VAL_DOUBLE -> set.put(key, input.readDouble());
+                case VAL_STRING -> set.put(key, input.readUTF());
+                case VAL_UUID -> set.put(key, new UUID(input.readLong(), input.readLong()));
+                case VAL_LIST -> set.put(key, readList(input));
+                case VAL_DATA_SET -> set.put(key, readDataSet(input));
+                default -> throw new IOException("Unknown value type identifier: " + t);
+            }
         }
         return set;
     }

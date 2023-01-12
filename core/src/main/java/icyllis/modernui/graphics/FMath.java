@@ -166,14 +166,44 @@ public final class FMath {
         return (float) Math.hypot(x, y);
     }
 
-    // clamp 'a' in range [min,max]
-    public static int clamp(int a, int min, int max) {
-        return Math.max(Math.min(a, max), min);
+    /**
+     * If x compares less than min, returns min; otherwise if max compares less than x,
+     * returns max; otherwise returns x.
+     *
+     * @return x clamped between min and max, inclusively.
+     */
+    public static int clamp(int x, int min, int max) {
+        return Math.max(min, Math.min(x, max));
     }
 
-    // clamp 'a' in range [min,max]
-    public static float clamp(float a, float min, float max) {
-        return Math.max(Math.min(a, max), min);
+    /**
+     * If x compares less than min, returns min; otherwise if max compares less than x,
+     * returns max; otherwise returns x.
+     *
+     * @return x clamped between min and max, inclusively.
+     */
+    public static long clamp(long x, long min, long max) {
+        return Math.max(min, Math.min(x, max));
+    }
+
+    /**
+     * If x compares less than min, returns min; otherwise if max compares less than x,
+     * returns max; otherwise returns x.
+     *
+     * @return x clamped between min and max, inclusively.
+     */
+    public static float clamp(float x, float min, float max) {
+        return Math.max(min, Math.min(x, max));
+    }
+
+    /**
+     * If x compares less than min, returns min; otherwise if max compares less than x,
+     * returns max; otherwise returns x.
+     *
+     * @return x clamped between min and max, inclusively.
+     */
+    public static double clamp(double x, double min, double max) {
+        return Math.max(min, Math.min(x, max));
     }
 
     // min component of vec4
@@ -275,5 +305,41 @@ public final class FMath {
     public static int align8(int x) {
         assert x >= 0 && x <= Integer.MAX_VALUE - 8;
         return (x + 7) & -8;
+    }
+
+    /**
+     * Returns the smallest power of two greater than or equal to {@code x}.
+     * Asserts {@code x > 0 && x <= 2^30}.
+     */
+    public static int ceilPow2(int x) {
+        assert x > 0 && x <= (1 << (Integer.SIZE - 2));
+        return 1 << -Integer.numberOfLeadingZeros(x - 1);
+    }
+
+    /**
+     * Returns the smallest power of two greater than or equal to {@code x}.
+     * Asserts {@code x > 0 && x <= 2^62}.
+     */
+    public static long ceilPow2(long x) {
+        assert x > 0 && x <= (1L << (Long.SIZE - 2));
+        return 1L << -Long.numberOfLeadingZeros(x - 1);
+    }
+
+    /**
+     * Returns the largest power of two less than or equal to {@code x}.
+     * Asserts {@code x > 0}.
+     */
+    public static int floorPow2(int x) {
+        assert x > 0;
+        return Integer.highestOneBit(x);
+    }
+
+    /**
+     * Returns the largest power of two less than or equal to {@code x}.
+     * Asserts {@code x > 0}.
+     */
+    public static long floorPow2(long x) {
+        assert x > 0;
+        return Long.highestOneBit(x);
     }
 }
