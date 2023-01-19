@@ -23,6 +23,8 @@ import javax.annotation.concurrent.GuardedBy;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.Collections;
 
 /**
  * Thread-safe class that loads shader modules.
@@ -241,6 +243,7 @@ public class ModuleLoader {
         symbols.insert(types.mF32Mat4x4);
 
         mRootModule.mSymbols = symbols;
+        mRootModule.mElements = new ArrayList<>();
     }
 
     public static ModuleLoader getInstance() {
@@ -262,7 +265,8 @@ public class ModuleLoader {
                               Module parent) {
         Module module = compiler.parseModule(kind, source, parent);
         if (module == null) {
-            throw new RuntimeException("Failed to load module:\n" + compiler.getErrorText(false));
+            System.err.print(compiler.getLogMessage());
+            throw new RuntimeException("Failed to load module");
         }
         // We can eliminate FunctionPrototypes without changing the meaning of the module; the function
         // declaration is still safely in the symbol table. This only impacts our ability to recreate

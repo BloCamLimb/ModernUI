@@ -53,6 +53,7 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
         for (int i = 0; i <= CODE; i++) {
             mShaderStrings[i] = new StringBuilder();
         }
+        extensions().append("#version 450\n");
         mCodeIndex = CODE;
         codeAppend("void main() {\n");
     }
@@ -144,7 +145,6 @@ public abstract class ShaderBuilderBase implements ShaderBuilder {
     }
 
     public final String build() {
-        extensions().append("#version 450\n");
         onFinish();
         // append the 'footer' to code
         code().append("}");

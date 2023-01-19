@@ -19,8 +19,8 @@
 package icyllis.akashigi.slang.dsl;
 
 import icyllis.akashigi.slang.ThreadContext;
-import icyllis.akashigi.slang.ir.Literal;
-import icyllis.akashigi.slang.ir.Type;
+import icyllis.akashigi.slang.tree.Literal;
+import icyllis.akashigi.slang.tree.Type;
 
 public class DSLType {
 
@@ -29,13 +29,13 @@ public class DSLType {
         if (size == 0) {
             return ThreadContext.getInstance().getTypes().mPoison;
         }
-        return ThreadContext.getInstance().getSymbolTable().computeArrayType(type, size);
+        return ThreadContext.getInstance().getSymbolTable().getArrayType(type, size);
     }
 
     public static Type UnsizedArray(Type type, int position) {
         if (!type.isUsableInArray(position)) {
             return ThreadContext.getInstance().getTypes().mPoison;
         }
-        return ThreadContext.getInstance().getSymbolTable().computeArrayType(type, Type.kUnsizedArray);
+        return ThreadContext.getInstance().getSymbolTable().getArrayType(type, Type.kUnsizedArray);
     }
 }

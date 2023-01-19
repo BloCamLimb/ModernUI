@@ -18,14 +18,15 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.*;
+import icyllis.akashigi.slang.tree.*;
 import org.jetbrains.annotations.UnmodifiableView;
 
 import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * Thread-safe class that tracks per-thread state associated with {@link Parser}.
+ * Thread-safe class that tracks per-thread state associated with {@link Compiler}
+ * (i.e. {@link Parser} or CodeGenerator).
  */
 public final class ThreadContext {
 
@@ -34,7 +35,7 @@ public final class ThreadContext {
     // The Context holds a pointer to the configuration of the program being compiled.
     private final ModuleKind mKind;
     private final ModuleOptions mOptions;
-    private final boolean mBuiltin;
+    private final boolean mIsBuiltin;
 
     // The Context holds all of the built-in types.
     private final BuiltinTypes mTypes;
@@ -57,18 +58,18 @@ public final class ThreadContext {
     };
 
     /**
-     * @param builtin true if we are processing include files
+     * @param isBuiltin true if we are processing include files
      */
     ThreadContext(ModuleKind kind, ModuleOptions options,
-                  Module parent, boolean builtin) {
+                  Module parent, boolean isBuiltin) {
         mKind = Objects.requireNonNull(kind);
         mOptions = Objects.requireNonNull(options);
         Objects.requireNonNull(parent);
-        mBuiltin = builtin;
+        mIsBuiltin = isBuiltin;
 
         mTypes = ModuleLoader.getInstance().getBuiltinTypes();
 
-        mSymbolTable = SymbolTable.push(parent.mSymbols, builtin);
+        mSymbolTable = parent.mSymbols.enterModule(isBuiltin);
         mParentElements = Collections.unmodifiableList(parent.mElements);
 
         TLS.set(this);
@@ -106,7 +107,7 @@ public final class ThreadContext {
      * @return true if we are processing include files
      */
     public boolean isBuiltin() {
-        return mBuiltin;
+        return mIsBuiltin;
     }
 
     /**
@@ -124,17 +125,17 @@ public final class ThreadContext {
     }
 
     /**
-     * Enters a scope.
+     * Enters a scope level.
      */
-    public void pushSymbolTable() {
-        mSymbolTable = SymbolTable.push(mSymbolTable);
+    public void enterScope() {
+        mSymbolTable = mSymbolTable.enterScope();
     }
 
     /**
-     * Exits a scope.
+     * Leaves a scope level.
      */
-    public void popSymbolTable() {
-        mSymbolTable = mSymbolTable.getParent();
+    public void leaveScope() {
+        mSymbolTable = mSymbolTable.leaveScope();
     }
 
     /**
@@ -175,13 +176,13 @@ public final class ThreadContext {
     public Expression convertIdentifier(int position, String name) {
         Symbol result = mSymbolTable.find(name);
         if (result == null) {
-            error(position, "unknown identifier '" + name + "'");
+            error(position, "identifier '" + name + "' is undefined");
             return null;
         }
         return switch (result.getKind()) {
             case FUNCTION -> {
-                var chain = (Function) result;
-                yield FunctionReference.make(position, chain);
+                var overloadChain = (Function) result;
+                yield FunctionReference.make(position, overloadChain);
             }
             case VARIABLE -> {
                 var variable = (Variable) result;
@@ -197,7 +198,7 @@ public final class ThreadContext {
             }
             case TYPE -> {
                 var type = (Type) result;
-                if (!mBuiltin && type.isGeneric()) {
+                if (!mIsBuiltin && type.isGeneric()) {
                     error(position, "type '" + type.getName() + "' is generic");
                     type = getTypes().mPoison;
                 }

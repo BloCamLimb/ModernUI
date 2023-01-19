@@ -16,24 +16,24 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.slang.codegen;
+package icyllis.akashigi.slang.parser;
 
-import icyllis.akashigi.slang.tree.Program;
-import icyllis.akashigi.engine.Context;
+import it.unimi.dsi.fastutil.ints.IntList;
+import org.jetbrains.annotations.Unmodifiable;
 
-/**
- * Abstract superclass of all code generators, which take a Program as input and produce code as
- * output.
- */
-public abstract class CodeGenerator {
+public class DFAState {
 
-    public final Context mContext;
-    public final Program mProgram;
-    public StringBuilder mOut;
+    public final int mIndex;
+    public final IntList mStates;
 
-    public CodeGenerator(Context context, Program program, StringBuilder out) {
-        mContext = context;
-        mProgram = program;
-        mOut = out;
+    boolean mScanned = false;
+
+    /**
+     * @param index the ID of this DFA state, also the index in the DFA state list
+     * @param states a list of NFA states
+     */
+    public DFAState(int index, @Unmodifiable IntList states) {
+        mIndex = index;
+        mStates = states;
     }
 }

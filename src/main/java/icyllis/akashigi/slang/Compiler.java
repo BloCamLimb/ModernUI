@@ -19,8 +19,8 @@
 package icyllis.akashigi.slang;
 
 import icyllis.akashigi.slang.codegen.CodeGenerator;
-import icyllis.akashigi.slang.ir.Node;
-import icyllis.akashigi.slang.ir.Program;
+import icyllis.akashigi.slang.tree.Node;
+import icyllis.akashigi.slang.tree.Program;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -35,25 +35,82 @@ import java.util.Objects;
 public class Compiler {
 
     public static final String INVALID_TAG = "<INVALID>";
-    public static final String POISON_TAG = "<POISON>"; // bad value
+    public static final String POISON_TAG = "<POISON>"; // error value
 
-    private final CompilerErrorHandler mErrorHandler = new CompilerErrorHandler();
+    private final StringBuilder mLogBuilder = new StringBuilder();
+    private final ErrorHandler mErrorHandler = new ErrorHandler() {
+        @Override
+        protected void handleError(int start, int end, String msg) {
+            mLogBuilder.append("error: ");
+            boolean showLocation = false;
+            String source = getSource();
+            if (start != -1) {
+                int offset = Math.min(start, source.length());
+                int line = 1;
+                for (int i = 0; i < offset; ++i) {
+                    if (source.charAt(i) == '\n') {
+                        ++line;
+                    }
+                }
+                showLocation = start < source.length();
+                mLogBuilder.append(line).append(": ");
+            }
+            mLogBuilder.append(msg).append('\n');
+            if (showLocation) {
+                // Find the beginning of the line
+                int lineStart = start;
+                while (lineStart > 0) {
+                    if (source.charAt(lineStart - 1) == '\n') {
+                        break;
+                    }
+                    --lineStart;
+                }
+
+                // echo the line
+                for (int i = lineStart; i < source.length(); i++) {
+                    switch (source.charAt(i)) {
+                        case '\t' -> mLogBuilder.append("    ");
+                        case '\0' -> mLogBuilder.append(" ");
+                        case '\n' -> i = source.length();
+                        default -> mLogBuilder.append(source.charAt(i));
+                    }
+                }
+                mLogBuilder.append('\n');
+
+                // print the carets underneath it, pointing to the range in question
+                for (int i = lineStart; i < source.length(); i++) {
+                    if (i >= end) {
+                        break;
+                    }
+                    switch (source.charAt(i)) {
+                        case '\t' -> mLogBuilder.append((i >= start) ? "^^^^" : "    ");
+                        case '\n' -> {
+                            assert (i >= start);
+                            // use an ellipsis if the error continues past the end of the line
+                            mLogBuilder.append((end > i + 1) ? "..." : "^");
+                            i = source.length();
+                        }
+                        default -> mLogBuilder.append((i >= start) ? '^' : ' ');
+                    }
+                }
+                mLogBuilder.append('\n');
+            }
+        }
+    };
 
     final Inliner mInliner;
-
-    private final StringBuilder mErrorText = new StringBuilder();
 
     public Compiler() {
         mInliner = new Inliner();
     }
 
     /**
-     * Parse the source code into an abstract syntax tree of the final program.
+     * Parse the source into an abstract syntax tree.
      *
-     * @param kind    the source type
+     * @param kind    the language
      * @param options the compiler options
-     * @param source  the source code of the module to be parsed
-     * @param parent  the parent module of the module to be parsed
+     * @param source  the source code of the program to be parsed
+     * @param parent  the parent module of the program to be parsed
      * @return the program, or null if there's an error
      */
     @Nullable
@@ -63,20 +120,17 @@ public class Compiler {
                          Module parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        if (source == null || source.isEmpty()) {
-            throw new IllegalArgumentException("Source code is empty");
-        }
-        resetErrors();
-        options = Objects.requireNonNullElseGet(options, ModuleOptions::new);
-        Parser parser = new Parser(this, kind, options, source);
+        Objects.requireNonNull(source);
+        resetLog(); // make a clean start
+        Parser parser = new Parser(this, kind,
+                Objects.requireNonNullElseGet(options, ModuleOptions::new), source);
         return parser.parse(parent);
     }
 
     /**
-     * Parse the source code into an abstract syntax tree to further parse
-     * other modules or final programs.
+     * Parse the source into an abstract syntax tree for further parsing.
      *
-     * @param kind   the source type
+     * @param kind   the language
      * @param source the source code of the module to be parsed
      * @param parent the parent module of the module to be parsed
      * @return the module, or null if there's an error
@@ -87,119 +141,58 @@ public class Compiler {
                               Module parent) {
         Objects.requireNonNull(kind);
         Objects.requireNonNull(parent);
-        if (source == null || source.isEmpty()) {
-            throw new IllegalArgumentException("Source code is empty");
-        }
-        resetErrors();
-        ModuleOptions options = new ModuleOptions();
-        Parser parser = new Parser(this, kind, options, source);
+        Objects.requireNonNull(source);
+        resetLog(); // make a clean start
+        Parser parser = new Parser(this, kind,
+                new ModuleOptions(), source);
         return parser.parseModule(parent);
     }
 
     /**
-     * Returns the concatenated error text and clears the buffer.
-     *
-     * @param showCount whether to write the number of errors
+     * Returns the concatenated log message and clears the buffer.
      */
     @Nonnull
-    public String getErrorText(boolean showCount) {
-        if (showCount) {
-            int count = getErrorCount();
-            if (count != 0) {
-                mErrorText.append(count).append(" error");
-                if (count > 1) {
-                    mErrorText.append('s');
-                }
-                mErrorText.append('\n');
+    public String getLogMessage() {
+        int errors = getNumErrors();
+        int warnings = getNumWarnings();
+        if (errors > 0 || warnings > 0) {
+            mLogBuilder.append(errors).append(" error");
+            if (errors > 1) {
+                mLogBuilder.append('s');
             }
+            mLogBuilder.append(", ");
+            mLogBuilder.append(warnings).append(" warning");
+            if (warnings > 1) {
+                mLogBuilder.append('s');
+            }
+            mLogBuilder.append('\n');
         }
-        String result = mErrorText.toString();
-        resetErrors();
+        String result = mLogBuilder.toString();
+        resetLog();
         return result;
     }
 
     /**
-     * Returns the Compiler's error reporter.
+     * Returns the Compiler's error handler.
      */
     public ErrorHandler getErrorHandler() {
         return mErrorHandler;
     }
 
-    /**
-     * Returns the number of errors. Shortcut for getErrorHandler().getErrorCount().
-     */
-    public int getErrorCount() {
-        return mErrorHandler.getErrorCount();
+    public int getNumErrors() {
+        return mErrorHandler.getNumErrors();
     }
 
-    private void resetErrors() {
-        mErrorText.setLength(0); // reset but do not trim the internal array
-        mErrorHandler.resetErrorCount();
+    public int getNumWarnings() {
+        return mErrorHandler.getNumWarnings();
     }
 
-    private class CompilerErrorHandler extends ErrorHandler {
-
-        @Override
-        protected void handleError(int start, int end, String msg) {
-            assert (start <= end);
-            assert (start <= 0xFFFFFF);
-
-            mErrorText.append("error: ");
-            boolean showLocation = false;
-            String src = getSource();
-            assert src != null;
-            if (start != 0xFFFFFF) {
-                // we allow the offset to equal the length, because that's where TK_END_OF_FILE is reported
-                int offset = Math.min(start, src.length());
-                int line = 1;
-                for (int i = 0; i < offset; i++) {
-                    if (src.charAt(i) == '\n') {
-                        line++;
-                    }
-                }
-                showLocation = start < src.length();
-                mErrorText.append(line).append(": ");
-            }
-            mErrorText.append(msg).append('\n');
-            if (showLocation) {
-                // Find the beginning of the line
-                int lineStart = start;
-                while (lineStart > 0) {
-                    if (src.charAt(lineStart - 1) == '\n') {
-                        break;
-                    }
-                    --lineStart;
-                }
-
-                // echo the line
-                for (int i = lineStart; i < src.length(); i++) {
-                    switch (src.charAt(i)) {
-                        case '\t' -> mErrorText.append("    ");
-                        case '\0' -> mErrorText.append(" ");
-                        case '\n' -> i = src.length();
-                        default -> mErrorText.append(src.charAt(i));
-                    }
-                }
-                mErrorText.append('\n');
-
-                // print the carets underneath it, pointing to the range in question
-                for (int i = lineStart; i < src.length(); i++) {
-                    if (i >= end) {
-                        break;
-                    }
-                    switch (src.charAt(i)) {
-                        case '\t' -> mErrorText.append((i >= start) ? "^^^^" : "    ");
-                        case '\n' -> {
-                            assert (i >= start);
-                            // use an ellipsis if the error continues past the end of the line
-                            mErrorText.append((end > i + 1) ? "..." : "^");
-                            i = src.length();
-                        }
-                        default -> mErrorText.append((i >= start) ? '^' : ' ');
-                    }
-                }
-                mErrorText.append('\n');
-            }
+    private void resetLog() {
+        boolean trim = mLogBuilder.length() > 8192;
+        mLogBuilder.setLength(0);
+        if (trim) {
+            mLogBuilder.trimToSize();
         }
+        mErrorHandler.reset();
     }
 }

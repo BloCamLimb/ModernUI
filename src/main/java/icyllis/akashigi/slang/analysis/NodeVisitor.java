@@ -18,8 +18,7 @@
 
 package icyllis.akashigi.slang.analysis;
 
-import icyllis.akashigi.slang.ir.*;
-import icyllis.akashigi.slang.ir.Node.StatementKind;
+import icyllis.akashigi.slang.tree.*;
 
 /**
  * Utility class to visit every element, statement, and expression in a program IR.

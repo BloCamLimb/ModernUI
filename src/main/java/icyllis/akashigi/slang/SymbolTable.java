@@ -18,45 +18,61 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.*;
-import org.jetbrains.annotations.Contract;
+import icyllis.akashigi.slang.tree.*;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.*;
 
 /**
- * Maps identifiers to symbols.
+ * Maps identifiers to symbols, each instance represents a scope level or a module boundary.
  */
 public final class SymbolTable {
 
-    private final NavigableMap<String, Symbol> mTable = new TreeMap<>();
+    private final Map<String, Symbol> mTable = new HashMap<>();
 
     private final SymbolTable mParent;
-    private final boolean mBuiltin;
+    private final boolean mIsBuiltin;
+    private final boolean mIsBoundary;
 
     /**
-     * The root symbol table is always builtin.
+     * Constructor for the root symbol table.
      */
     SymbolTable() {
-        this(null, true);
+        this(null, true, false);
     }
 
-    private SymbolTable(SymbolTable parent, boolean builtin) {
+    private SymbolTable(SymbolTable parent, boolean isBuiltin, boolean isBoundary) {
         mParent = parent;
-        mBuiltin = builtin;
+        mIsBuiltin = isBuiltin;
+        mIsBoundary = isBoundary;
     }
 
+    /**
+     * Enters a scope level.
+     */
     @Nonnull
-    public static SymbolTable push(SymbolTable table) {
-        Objects.requireNonNull(table);
-        return new SymbolTable(table, table.mBuiltin);
+    SymbolTable enterScope() {
+        return new SymbolTable(this, mIsBuiltin, /*isBoundary*/false);
     }
 
+    /**
+     * Enters a module level.
+     */
     @Nonnull
-    public static SymbolTable push(SymbolTable table, boolean builtin) {
-        Objects.requireNonNull(table);
-        return new SymbolTable(table, builtin);
+    SymbolTable enterModule(boolean isBuiltin) {
+        if ((isBuiltin && !mIsBuiltin) ||
+                (!mIsBoundary && mParent != null)) {
+            throw new AssertionError();
+        }
+        return new SymbolTable(this, isBuiltin, /*isBoundary*/true);
+    }
+
+    SymbolTable leaveScope() {
+        if (mIsBoundary || mParent == null) {
+            throw new AssertionError();
+        }
+        return mParent;
     }
 
     public SymbolTable getParent() {
@@ -67,7 +83,7 @@ public final class SymbolTable {
      * @return true if this symbol table is at builtin level
      */
     public boolean isBuiltin() {
-        return mBuiltin;
+        return mIsBuiltin;
     }
 
     /**
@@ -87,7 +103,7 @@ public final class SymbolTable {
      */
     @Nullable
     public Symbol findBuiltinSymbol(String name) {
-        if (mBuiltin) {
+        if (mIsBuiltin) {
             return find(name);
         }
         return mParent != null ? mParent.findBuiltinSymbol(name) : null;
@@ -104,7 +120,7 @@ public final class SymbolTable {
      * Returns true if the name refers to a builtin type.
      */
     public boolean isBuiltinType(String name) {
-        if (mBuiltin) {
+        if (mIsBuiltin) {
             return isType(name);
         }
         return mParent != null && mParent.isBuiltinType(name);
@@ -129,7 +145,7 @@ public final class SymbolTable {
             }
         }
 
-        if (mParent == null || mParent.find(key) == null) {
+        if (!mIsBoundary || mParent == null || mParent.find(key) == null) {
             if (mTable.putIfAbsent(key, symbol) == null) {
                 return symbol;
             }
@@ -143,14 +159,14 @@ public final class SymbolTable {
     /**
      * Finds or creates an array type with the given element type and array size.
      */
-    public Type computeArrayType(Type type, int size) {
+    public Type getArrayType(Type type, int size) {
         if (size == 0) {
             return type;
         }
         // If this is a builtin type, we add it as high as possible in the symbol table tree (at the
         // module boundary), to enable additional reuse of the array-type.
-        if (mParent != null && type.isInBuiltinTypes()) {
-            return mParent.computeArrayType(type, size);
+        if (!mIsBoundary && mParent != null && type.isInBuiltinTypes()) {
+            return mParent.getArrayType(type, size);
         }
         // Reuse an existing array type with this name if one already exists in our symbol table.
         String name = type.getArrayName(size);

@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.Type;
+import icyllis.akashigi.slang.tree.Type;
 import org.lwjgl.util.spvc.Spv;
 
 /**

@@ -18,7 +18,7 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.Element;
+import icyllis.akashigi.slang.tree.Element;
 
 import java.util.ArrayList;
 

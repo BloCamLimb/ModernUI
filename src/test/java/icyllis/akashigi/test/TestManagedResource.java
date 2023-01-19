@@ -22,8 +22,10 @@ import icyllis.akashigi.core.*;
 import icyllis.akashigi.engine.*;
 import icyllis.akashigi.engine.geom.RoundRectProcessor;
 import icyllis.akashigi.opengl.*;
-import icyllis.akashigi.slang.ModuleLoader;
-import icyllis.akashigi.slang.lex.Lexer;
+import icyllis.akashigi.slang.*;
+import icyllis.akashigi.slang.parser.Lexer;
+import icyllis.akashigi.slang.parser.Token;
+import icyllis.akashigi.slang.tree.Type;
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import org.lwjgl.PointerBuffer;
 import org.lwjgl.glfw.GLFW;
@@ -75,6 +77,16 @@ public class TestManagedResource {
         pw.println("Max label length: " + GLCore.glGetInteger(GLCore.GL_MAX_LABEL_LENGTH));
 
         {
+            ModuleLoader moduleLoader = ModuleLoader.getInstance();
+            DSL.start(ModuleKind.GENERIC, new ModuleOptions(), moduleLoader.getRootModule());
+            Type[] types = new Type[3];
+            boolean success = Operator.MUL.determineBinaryType(moduleLoader.getBuiltinTypes().mHalf3x4,
+                    moduleLoader.getBuiltinTypes().mFloat3, types);
+            pw.println("Operator types: " + success + ", " + Arrays.toString(types));
+            DSL.end();
+        }
+
+        {
             long bytes = 0;
             bytes += 16 + FMath.align8(Lexer.MAPPINGS.length);
             bytes += 16 + FMath.align8(Lexer.ACCEPTS.length);
@@ -97,6 +109,8 @@ public class TestManagedResource {
                     where T : Object & Comparable<T : ?>;
                         """;
 
+        testShaderBuilder(pw, dContext);
+
         pw.println("quickModPow: " + FMath.quickModPow(95959595, 87878787, 998244353));
 
         pw.println("BinaryFormats: " + Arrays.toString(((GLCaps) dContext.getCaps()).mProgramBinaryFormats));
@@ -112,7 +126,7 @@ public class TestManagedResource {
 
         testTexture(pw, dContext);
 
-        tokens(pw, "slang_common.txt");
+        //tokenize(pw);
 
         if (Platform.get() == Platform.WINDOWS) {
             if (!Kernel32.CloseHandle(959595595959595959L)) {
@@ -139,8 +153,9 @@ public class TestManagedResource {
         }
     }
 
-    public static void tokens(PrintWriter pw, String name) {
-        List<String> tokens = List.of("END_OF_FILE","INTLITERAL",
+    public static void tokenize(PrintWriter pw) {
+        List<String> tokens = List.of("END_OF_FILE",
+                "INTLITERAL",
                 "FLOATLITERAL",
                 "TRUE",
                 "FALSE",
@@ -226,15 +241,34 @@ public class TestManagedResource {
                 "WHITESPACE",
                 "LINE_COMMENT",
                 "BLOCK_COMMENT",
-                "INVALID"        );
-
-        String source = ModuleLoader.getInstance().loadModuleSource(name);
-        Lexer lexer = new Lexer(source);
-        long token;
-        while (((token = lexer.next()) & 0xFFFF) != 0) {
-            int start = (int) (token >> 16) & 0xFFFFFF;
-            int end = (int) (token >>> 40);
-            pw.println("Token " + tokens.get((int) (token & 0xFFFF)) + " start " + start + " end " + end);
+                "INVALID");
+        Lexer lexer = new Lexer("""
+                layout(std140, binding = 0) uniform UniformBlock {
+                    mat4 u_Projection;
+                    mat4 u_ModelView;
+                    vec4 u_Color;
+                };
+                layout(location = 0) smooth in vec2 f_Position;
+                layout(location = 1) smooth in vec4 f_Color;
+                layout(location = 0, index = 0) out vec4 FragColor0;
+                float rand(vec2 n) {
+                    return fract(sin(dot(n, vec2(12.9898,12.1414))) * 83758.5453);
+                }
+                void main() {
+                    vec2 pos = f_Position;
+                    float dist = abs(pos.y-sin(pos.x*10.0-u_Color.x*5.0)*0.1-cos(pos.x*5.0)*0.05);
+                    dist = pow(0.1/dist,0.8);
+                    vec4 col = vec4(mix(vec3(0.2,0.85,0.95),vec3(0.85,0.5,0.75),pos.x*0.5+0.5),1.0);
+                    col *= (dist+rand(pos.yx)*0.05);
+                    col = 1.0 - exp(-col*0.5);
+                    FragColor0 = col;
+                }
+                """);
+        long token; int kind;
+        while ((kind = Token.kind(token = lexer.next())) != Lexer.TK_END_OF_FILE) {
+            if (kind == Lexer.TK_WHITESPACE) continue;
+            int offset = Token.offset(token);
+            pw.println("(" + offset + ", " + (offset + Token.length(token)) + ") " + tokens.get(kind));
         }
     }
 

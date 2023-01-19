@@ -16,24 +16,28 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.slang.codegen;
+package icyllis.akashigi.slang.tree;
 
-import icyllis.akashigi.slang.tree.Program;
-import icyllis.akashigi.engine.Context;
+import javax.annotation.Nonnull;
 
 /**
- * Abstract superclass of all code generators, which take a Program as input and produce code as
- * output.
+ * Represents the construction of a struct object, such as "Color(red, green, blue, 1)".
  */
-public abstract class CodeGenerator {
+//TODO
+public final class ConstructorStruct extends ConstructorCall {
 
-    public final Context mContext;
-    public final Program mProgram;
-    public StringBuilder mOut;
+    private ConstructorStruct(int position, Type type, Expression[] arguments) {
+        super(position, type, arguments);
+    }
 
-    public CodeGenerator(Context context, Program program, StringBuilder out) {
-        mContext = context;
-        mProgram = program;
-        mOut = out;
+    @Override
+    public ExpressionKind getKind() {
+        return ExpressionKind.CONSTRUCTOR_STRUCT;
+    }
+
+    @Nonnull
+    @Override
+    public Expression clone(int position) {
+        return new ConstructorStruct(position, getType(), cloneArguments());
     }
 }

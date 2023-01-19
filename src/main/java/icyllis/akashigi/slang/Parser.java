@@ -18,14 +18,17 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.*;
-import icyllis.akashigi.slang.lex.Lexer;
+import icyllis.akashigi.slang.dsl.DSLCore;
+import icyllis.akashigi.slang.dsl.DSLExpression;
+import icyllis.akashigi.slang.parser.Lexer;
+import icyllis.akashigi.slang.parser.Token;
+import icyllis.akashigi.slang.tree.*;
 import it.unimi.dsi.fastutil.longs.LongArrayList;
+import it.unimi.dsi.fastutil.longs.LongList;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * Consumes AkSL text and invokes DSL functions to instantiate the program.
@@ -53,10 +56,7 @@ public class Parser {
     private final String mSource;
     private final Lexer mLexer;
 
-    // current parse depth, used to enforce a recursion limit to try to keep us from overflowing the
-    // stack on pathological inputs
-    private int mDepth = 0;
-    private final LongArrayList mPushback = new LongArrayList();
+    private final LongList mPushback = new LongArrayList();
 
     public Parser(Compiler compiler, ModuleKind kind, ModuleOptions options, String source) {
         // ideally we can break long text into pieces, but shader code should not be too long
@@ -92,7 +92,7 @@ public class Parser {
         errorHandler.setSource(mSource);
         //TODO declarations
         final Module result;
-        if (DSL.getErrorHandler().getErrorCount() == 0) {
+        if (DSL.getErrorHandler().getNumErrors() == 0) {
             result = new Module();
             result.mParent = parent;
             result.mSymbols = ThreadContext.getInstance().getSymbolTable();
@@ -117,17 +117,13 @@ public class Parser {
             // Fetch a token from the lexer.
             token = mLexer.next();
 
-            if (kind(token) == Lexer.TK_RESERVED) {
+            if (Token.kind(token) == Lexer.TK_RESERVED) {
                 error(token, "'" + text(token) + "' is a reserved keyword");
                 // reduces additional follow-up errors
-                return (token & ~0xFFFF) | Lexer.TK_IDENTIFIER;
+                return Token.replace(token, Lexer.TK_IDENTIFIER);
             }
         }
         return token;
-    }
-
-    private static int kind(long token) {
-        return (int) (token & 0xFFFF);
     }
 
     // @formatter:off
@@ -148,7 +144,7 @@ public class Parser {
     private long nextToken() {
         for (;;) {
             long token = nextRawToken();
-            if (!isWhitespace(kind(token))) {
+            if (!isWhitespace(Token.kind(token))) {
                 return token;
             }
         }
@@ -176,28 +172,44 @@ public class Parser {
         return mPushback.getLong(0);
     }
 
-    @Nonnull
-    private String text(long token) {
-        int start = (int) (token >> 16) & 0xFFFFFF;
-        int end = (int) (token >>> 40);
-        return mSource.substring(start, end);
+    private boolean peek(int kind) {
+        return Token.kind(peek()) == kind;
     }
 
-    // see Node.mPosition
+    @Nonnull
+    private String text(long token) {
+        int offset = Token.offset(token);
+        return mSource.substring(offset, offset + Token.length(token));
+    }
+
     private int position(long token) {
-        int start = (int) (token >> 16) & 0xFFFFFF;
-        int end = (int) (token >>> 40);
-        return Node.makeRange(start, end);
+        int offset = Token.offset(token);
+        return Position.range(offset, offset + Token.length(token));
     }
 
     private void error(long token, String msg) {
-        int start = (int) (token >> 16) & 0xFFFFFF;
-        int end = (int) (token >>> 40);
-        error(start, end, msg);
+        int offset = Token.offset(token);
+        error(offset, offset + Token.length(token), msg);
     }
 
     private void error(int start, int end, String msg) {
         ThreadContext.getInstance().error(start, end, msg);
+    }
+
+    // Returns the range from `start` to the current parse position.
+    private int rangeFrom0(int startOffset) {
+        int endOffset = mPushback.isEmpty()
+                ? mLexer.offset()
+                : Token.offset(mPushback.getLong(0));
+        return Position.range(startOffset, endOffset);
+    }
+
+    private int rangeFrom(int startPos) {
+        return rangeFrom0(Position.getStartOffset(startPos));
+    }
+
+    private int rangeFrom(long startToken) {
+        return rangeFrom0(Token.offset(startToken));
     }
 
     /**
@@ -206,7 +218,7 @@ public class Parser {
      */
     private long checkNext(int kind) {
         long next = peek();
-        if (kind(next) == kind) {
+        if (Token.kind(next) == kind) {
             return nextToken();
         }
         return -1;
@@ -218,26 +230,23 @@ public class Parser {
      * considered to be an identifier).
      */
     private long checkIdentifier() {
-        long result = checkNext(Lexer.TK_IDENTIFIER);
-        if (result == -1) {
-            return -1;
+        long next = peek();
+        if (Token.kind(next) == Lexer.TK_IDENTIFIER &&
+                !ThreadContext.getInstance().getSymbolTable().isBuiltinType(text(next))) {
+            return nextToken();
         }
-        if (ThreadContext.getInstance().getSymbolTable().isBuiltinType(text(result))) {
-            pushback(result);
-            return -1;
-        }
-        return result;
+        return -1;
     }
 
     /**
      * Reads the next non-whitespace token and generates an error if it is not the expected type.
-     * The 'expected' string is part of the error message, which reads:
+     * The {@code expected} string is part of the error message, which reads:
      * <p>
      * "expected [expected], but found '[actual text]'"
      */
     private long expect(int kind, String expected) {
         long next = nextToken();
-        if (kind(next) != kind) {
+        if (Token.kind(next) != kind) {
             error(next, "expected " + expected + ", but found '" +
                     text(next) + "'");
             throw new IllegalStateException();
@@ -266,7 +275,7 @@ public class Parser {
      */
     private boolean expectNewline() {
         long token = nextRawToken();
-        if (kind(token) == Lexer.TK_WHITESPACE) {
+        if (Token.kind(token) == Lexer.TK_WHITESPACE) {
             // The lexer doesn't distinguish newlines from other forms of whitespace, so we check
             // for newlines by searching through the token text.
             String tokenText = text(token);
@@ -282,7 +291,7 @@ public class Parser {
 
     private boolean declaration() {
         long token = peek();
-        if (kind(token) == Lexer.TK_SEMICOLON) {
+        if (Token.kind(token) == Lexer.TK_SEMICOLON) {
             nextToken();
             error(token, "expected a declaration, but found ';'");
             return false;
@@ -331,26 +340,37 @@ public class Parser {
     }
 
     @Nullable
-    private Expression operatorRight(Expression left, Operator op, Supplier<Expression> rightFn) {
-        Expression right = rightFn.get();
+    private Expression operatorRight(Expression left, Operator op,
+                                     java.util.function.Function<Parser, Expression> rightFn) {
+        nextToken();
+        Expression right = rightFn.apply(this);
         if (right == null) {
             return null;
         }
-        int pos = Node.makeRange(left.getStartOffset(), right.getEndOffset());
-        return BinaryExpression.convert(pos, left, op, right);
+        int pos = Position.range(left.getStartOffset(), right.getEndOffset());
+        Expression result = BinaryExpression.convert(pos, left, op, right);
+        if (result != null) {
+            return result;
+        }
+        return Poison.make(pos);
     }
 
     /**
-     * assignmentExpression (COMMA assignmentExpression)*
+     * <pre>{@literal
+     * Expression
+     *     : AssignmentExpression
+     *     | Expression COMMA AssignmentExpression
+     * }</pre>
      */
     @Nullable
-    private Expression expression() {
-        Expression result = assignmentExpression();
+    private Expression Expression() {
+        Expression result = AssignmentExpression();
         if (result == null) {
             return null;
         }
-        while (kind(peek()) == Lexer.TK_COMMA) {
-            if ((result = operatorRight(result, Operator.COMMA, this::assignmentExpression)) == null) {
+        while (peek(Lexer.TK_COMMA)) {
+            if ((result = operatorRight(result, Operator.COMMA,
+                    Parser::AssignmentExpression)) == null) {
                 return null;
             }
         }
@@ -358,17 +378,34 @@ public class Parser {
     }
 
     /**
-     * conditional_expression (assignment_operator assignment_expression)*
+     * <pre>{@literal
+     * AssignmentExpression
+     *     : ConditionalExpression
+     *     | ConditionalExpression AssignmentOperator AssignmentExpression
+     *
+     * AssignmentOperator
+     *     : EQ
+     *     | PLUSEQ
+     *     | MINUSEQ
+     *     | STAREQ
+     *     | SLASHEQ
+     *     | PERCENTEQ
+     *     | AMPEQ
+     *     | PIPEEQ
+     *     | CARETEQ
+     *     | LTLTEQ
+     *     | GTGTEQ
+     * }</pre>
      */
     // @formatter:off
     @Nullable
-    private Expression assignmentExpression() {
-        Expression result = conditionalExpression();
+    private Expression AssignmentExpression() {
+        Expression result = ConditionalExpression();
         if (result == null) {
             return null;
         }
         for (;;) {
-            Operator op = switch (kind(peek())) {
+            Operator op = switch (Token.kind(peek())) {
                 case Lexer.TK_EQ        -> Operator.    ASSIGN;
                 case Lexer.TK_PLUSEQ    -> Operator.ADD_ASSIGN;
                 case Lexer.TK_MINUSEQ   -> Operator.SUB_ASSIGN;
@@ -383,7 +420,8 @@ public class Parser {
                 default -> null;
             };
             if (op != null) {
-                if ((result = operatorRight(result, op, this::assignmentExpression)) == null) {
+                if ((result = operatorRight(result, op,
+                        Parser::AssignmentExpression)) == null) {
                     return null;
                 }
             } else {
@@ -394,41 +432,51 @@ public class Parser {
     // @formatter:on
 
     /**
-     * logicalOrExpression ('?' expression ':' assignmentExpression)?
+     * <pre>{@literal
+     * ConditionalExpression
+     *     : LogicalOrExpression
+     *     | LogicalOrExpression QUES Expression COLON AssignmentExpression
+     * }</pre>
      */
     @Nullable
-    private Expression conditionalExpression() {
-        Expression base = logicalOrExpression();
+    private Expression ConditionalExpression() {
+        Expression base = LogicalOrExpression();
         if (base == null) {
             return null;
         }
-        if (checkNext(Lexer.TK_QUES) == -1) {
+        if (!peek(Lexer.TK_QUES)) {
             return base;
         }
-        Expression trueExpr = expression();
+        nextToken();
+        Expression trueExpr = Expression();
         if (trueExpr == null) {
             return null;
         }
         expect(Lexer.TK_COLON, "':'");
-        Expression falseExpr = assignmentExpression();
+        Expression falseExpr = AssignmentExpression();
         if (falseExpr == null) {
             return null;
         }
-        int pos = Node.makeRange(base.getStartOffset(), falseExpr.getEndOffset());
-        return ConditionalExpression.convert(pos, base, trueExpr, falseExpr);
+        int pos = Position.range(base.getStartOffset(), falseExpr.getEndOffset());
+        return DSLCore.Conditional(pos, base, trueExpr, falseExpr);
     }
 
     /**
-     * logicalXorExpression ('||' logicalXorExpression)*
+     * <pre>{@literal
+     * LogicalOrExpression
+     *     : LogicalXorExpression
+     *     | LogicalOrExpression PIPEPIPE LogicalXorExpression
+     * }</pre>
      */
     @Nullable
-    private Expression logicalOrExpression() {
-        Expression result = logicalXorExpression();
+    private Expression LogicalOrExpression() {
+        Expression result = LogicalXorExpression();
         if (result == null) {
             return null;
         }
-        while (kind(peek()) == Lexer.TK_PIPEPIPE) {
-            if ((result = operatorRight(result, Operator.LOGICAL_OR, this::logicalXorExpression)) == null) {
+        while (peek(Lexer.TK_PIPEPIPE)) {
+            if ((result = operatorRight(result, Operator.LOGICAL_OR,
+                    Parser::LogicalXorExpression)) == null) {
                 return null;
             }
         }
@@ -436,16 +484,21 @@ public class Parser {
     }
 
     /**
-     * logicalAndExpression ('^^' logicalAndExpression)*
+     * <pre>{@literal
+     * LogicalXorExpression
+     *     : LogicalAndExpression
+     *     | LogicalXorExpression CARETCARET LogicalAndExpression
+     * }</pre>
      */
     @Nullable
-    private Expression logicalXorExpression() {
-        Expression result = logicalAndExpression();
+    private Expression LogicalXorExpression() {
+        Expression result = LogicalAndExpression();
         if (result == null) {
             return null;
         }
-        while (kind(peek()) == Lexer.TK_CARETCARET) {
-            if ((result = operatorRight(result, Operator.LOGICAL_XOR, this::logicalAndExpression)) == null) {
+        while (peek(Lexer.TK_CARETCARET)) {
+            if ((result = operatorRight(result, Operator.LOGICAL_XOR,
+                    Parser::LogicalAndExpression)) == null) {
                 return null;
             }
         }
@@ -453,16 +506,21 @@ public class Parser {
     }
 
     /**
-     * bitwiseOrExpression ('&&' bitwiseOrExpression)*
+     * <pre>{@literal
+     * LogicalAndExpression
+     *     : BitwiseOrExpression
+     *     | LogicalAndExpression AMPAMP BitwiseOrExpression
+     * }</pre>
      */
     @Nullable
-    private Expression logicalAndExpression() {
-        Expression result = bitwiseOrExpression();
+    private Expression LogicalAndExpression() {
+        Expression result = BitwiseOrExpression();
         if (result == null) {
             return null;
         }
-        while (kind(peek()) == Lexer.TK_AMPAMP) {
-            if ((result = operatorRight(result, Operator.LOGICAL_AND, this::bitwiseOrExpression)) == null) {
+        while (peek(Lexer.TK_AMPAMP)) {
+            if ((result = operatorRight(result, Operator.LOGICAL_AND,
+                    Parser::BitwiseOrExpression)) == null) {
                 return null;
             }
         }
@@ -470,16 +528,21 @@ public class Parser {
     }
 
     /**
-     * bitwiseXorExpression ('|' bitwiseXorExpression)*
+     * <pre>{@literal
+     * BitwiseOrExpression
+     *     : BitwiseXorExpression
+     *     | BitwiseOrExpression PIPE BitwiseXorExpression
+     * }</pre>
      */
     @Nullable
-    private Expression bitwiseOrExpression() {
-        Expression result = bitwiseXorExpression();
+    private Expression BitwiseOrExpression() {
+        Expression result = BitwiseXorExpression();
         if (result == null) {
             return null;
         }
-        while (kind(peek()) == Lexer.TK_PIPE) {
-            if ((result = operatorRight(result, Operator.BITWISE_OR, this::bitwiseXorExpression)) == null) {
+        while (peek(Lexer.TK_PIPE)) {
+            if ((result = operatorRight(result, Operator.BITWISE_OR,
+                    Parser::BitwiseXorExpression)) == null) {
                 return null;
             }
         }
@@ -487,16 +550,21 @@ public class Parser {
     }
 
     /**
-     * bitwiseAndExpression ('^' bitwiseAndExpression)*
+     * <pre>{@literal
+     * BitwiseXorExpression
+     *     : BitwiseAndExpression
+     *     | BitwiseXorExpression CARET BitwiseAndExpression
+     * }</pre>
      */
     @Nullable
-    private Expression bitwiseXorExpression() {
-        Expression result = bitwiseAndExpression();
+    private Expression BitwiseXorExpression() {
+        Expression result = BitwiseAndExpression();
         if (result == null) {
             return null;
         }
-        while (kind(peek()) == Lexer.TK_CARET) {
-            if ((result = operatorRight(result, Operator.BITWISE_XOR, this::bitwiseAndExpression)) == null) {
+        while (peek(Lexer.TK_CARET)) {
+            if ((result = operatorRight(result, Operator.BITWISE_XOR,
+                    Parser::BitwiseAndExpression)) == null) {
                 return null;
             }
         }
@@ -504,16 +572,21 @@ public class Parser {
     }
 
     /**
-     * equalityExpression ('&' equalityExpression)*
+     * <pre>{@literal
+     * BitwiseAndExpression
+     *     : EqualityExpression
+     *     | BitwiseAndExpression AMP EqualityExpression
+     * }</pre>
      */
     @Nullable
-    private Expression bitwiseAndExpression() {
-        Expression result = equalityExpression();
+    private Expression BitwiseAndExpression() {
+        Expression result = EqualityExpression();
         if (result == null) {
             return null;
         }
-        while (kind(peek()) == Lexer.TK_AMP) {
-            if ((result = operatorRight(result, Operator.BITWISE_AND, this::equalityExpression)) == null) {
+        while (peek(Lexer.TK_AMP)) {
+            if ((result = operatorRight(result, Operator.BITWISE_AND,
+                    Parser::EqualityExpression)) == null) {
                 return null;
             }
         }
@@ -521,22 +594,29 @@ public class Parser {
     }
 
     /**
-     * relationalExpression (('==' | '!=') relationalExpression)*
+     * <pre>{@literal
+     * EqualityExpression
+     *     : RelationalExpression
+     *     | EqualityExpression EQEQ RelationalExpression
+     *     | EqualityExpression BANGEQ RelationalExpression
+     * }</pre>
      */
+    // @formatter:off
     @Nullable
-    private Expression equalityExpression() {
-        Expression result = relationalExpression();
+    private Expression EqualityExpression() {
+        Expression result = RelationalExpression();
         if (result == null) {
             return null;
         }
         for (;;) {
-            Operator op = switch (kind(peek())) {
-                case Lexer.TK_EQEQ -> Operator.EQ;
+            Operator op = switch (Token.kind(peek())) {
+                case Lexer.TK_EQEQ   -> Operator.EQ;
                 case Lexer.TK_BANGEQ -> Operator.NE;
                 default -> null;
             };
             if (op != null) {
-                if ((result = operatorRight(result, op, this::relationalExpression)) == null) {
+                if ((result = operatorRight(result, op,
+                        Parser::RelationalExpression)) == null) {
                     return null;
                 }
             } else {
@@ -544,26 +624,36 @@ public class Parser {
             }
         }
     }
+    // @formatter:on
 
     /**
-     * shiftExpression (('&lt' | '&gt' | '&lt=' | '&gt=') shiftExpression)*
+     * <pre>{@literal
+     * RelationalExpression
+     *     : ShiftExpression
+     *     | RelationalExpression LT ShiftExpression
+     *     | RelationalExpression GT ShiftExpression
+     *     | RelationalExpression LTEQ ShiftExpression
+     *     | RelationalExpression GTEQ ShiftExpression
+     * }</pre>
      */
+    // @formatter:off
     @Nullable
-    private Expression relationalExpression() {
-        Expression result = shiftExpression();
+    private Expression RelationalExpression() {
+        Expression result = ShiftExpression();
         if (result == null) {
             return null;
         }
         for (;;) {
-            Operator op = switch (kind(peek())) {
-                case Lexer.TK_LT -> Operator.LT;
-                case Lexer.TK_GT -> Operator.GT;
+            Operator op = switch (Token.kind(peek())) {
+                case Lexer.TK_LT   -> Operator.LT;
+                case Lexer.TK_GT   -> Operator.GT;
                 case Lexer.TK_LTEQ -> Operator.LE;
                 case Lexer.TK_GTEQ -> Operator.GE;
                 default -> null;
             };
             if (op != null) {
-                if ((result = operatorRight(result, op, this::shiftExpression)) == null) {
+                if ((result = operatorRight(result, op,
+                        Parser::ShiftExpression)) == null) {
                     return null;
                 }
             } else {
@@ -571,24 +661,32 @@ public class Parser {
             }
         }
     }
+    // @formatter:on
 
     /**
-     * additiveExpression (('&lt&lt' | '&gt&gt') additiveExpression)*
+     * <pre>{@literal
+     * ShiftExpression
+     *     : AdditiveExpression
+     *     | ShiftExpression LTLT AdditiveExpression
+     *     | ShiftExpression GTGT AdditiveExpression
+     * }</pre>
      */
+    // @formatter:off
     @Nullable
-    private Expression shiftExpression() {
-        Expression result = additiveExpression();
+    private Expression ShiftExpression() {
+        Expression result = AdditiveExpression();
         if (result == null) {
             return null;
         }
         for (;;) {
-            Operator op = switch (kind(peek())) {
+            Operator op = switch (Token.kind(peek())) {
                 case Lexer.TK_LTLT -> Operator.SHL;
                 case Lexer.TK_GTGT -> Operator.SHR;
                 default -> null;
             };
             if (op != null) {
-                if ((result = operatorRight(result, op, this::additiveExpression)) == null) {
+                if ((result = operatorRight(result, op,
+                        Parser::AdditiveExpression)) == null) {
                     return null;
                 }
             } else {
@@ -596,24 +694,32 @@ public class Parser {
             }
         }
     }
+    // @formatter:on
 
     /**
-     * multiplicativeExpression (('+' | '-') multiplicativeExpression)*
+     * <pre>{@literal
+     * AdditiveExpression
+     *     : MultiplicativeExpression
+     *     | AdditiveExpression PLUS MultiplicativeExpression
+     *     | AdditiveExpression MINUS MultiplicativeExpression
+     * }</pre>
      */
+    // @formatter:off
     @Nullable
-    private Expression additiveExpression() {
-        Expression result = multiplicativeExpression();
+    private Expression AdditiveExpression() {
+        Expression result = MultiplicativeExpression();
         if (result == null) {
             return null;
         }
         for (;;) {
-            Operator op = switch (kind(peek())) {
-                case Lexer.TK_PLUS -> Operator.ADD;
+            Operator op = switch (Token.kind(peek())) {
+                case Lexer.TK_PLUS  -> Operator.ADD;
                 case Lexer.TK_MINUS -> Operator.SUB;
                 default -> null;
             };
             if (op != null) {
-                if ((result = operatorRight(result, op, this::multiplicativeExpression)) == null) {
+                if ((result = operatorRight(result, op,
+                        Parser::MultiplicativeExpression)) == null) {
                     return null;
                 }
             } else {
@@ -621,25 +727,34 @@ public class Parser {
             }
         }
     }
+    // @formatter:on
 
     /**
-     * unaryExpression (('*' | '/' | '%') unaryExpression)*
+     * <pre>{@literal
+     * MultiplicativeExpression
+     *     : UnaryExpression
+     *     | MultiplicativeExpression STAR UnaryExpression
+     *     | MultiplicativeExpression SLASH UnaryExpression
+     *     | MultiplicativeExpression PERCENT UnaryExpression
+     * }</pre>
      */
+    // @formatter:off
     @Nullable
-    private Expression multiplicativeExpression() {
-        Expression result = unaryExpression();
+    private Expression MultiplicativeExpression() {
+        Expression result = UnaryExpression();
         if (result == null) {
             return null;
         }
         for (;;) {
-            Operator op = switch (kind(peek())) {
-                case Lexer.TK_STAR -> Operator.MUL;
-                case Lexer.TK_SLASH -> Operator.DIV;
+            Operator op = switch (Token.kind(peek())) {
+                case Lexer.TK_STAR    -> Operator.MUL;
+                case Lexer.TK_SLASH   -> Operator.DIV;
                 case Lexer.TK_PERCENT -> Operator.MOD;
                 default -> null;
             };
             if (op != null) {
-                if ((result = operatorRight(result, op, this::unaryExpression)) == null) {
+                if ((result = operatorRight(result, op,
+                        Parser::UnaryExpression)) == null) {
                     return null;
                 }
             } else {
@@ -647,48 +762,69 @@ public class Parser {
             }
         }
     }
+    // @formatter:on
 
     /**
-     * postfix_expression | (PLUSPLUS | MINUSMINUS | PLUS | MINUS | BANG | TILDE) unary_expression
+     * <pre>{@literal
+     * UnaryExpression
+     *     : PrimaryExpression Selector* (PLUSPLUS | MINUSMINUS)?
+     *     | PLUSPLUS UnaryExpression
+     *     | MINUSMINUS UnaryExpression
+     *     | UnaryOperator UnaryExpression
+     *
+     * UnaryOperator
+     *     : PLUS
+     *     | MINUS
+     *     | BANG
+     *     | TILDE
+     * }</pre>
      */
+    // @formatter:off
     @Nullable
-    private Expression unaryExpression() {
-        long start = peek();
-        Operator op = switch (kind(start)) {
-            case Lexer.TK_PLUSPLUS -> Operator.INC;
+    private Expression UnaryExpression() {
+        long prefix = peek();
+        Operator op = switch (Token.kind(prefix)) {
+            case Lexer.TK_PLUSPLUS   -> Operator.INC;
             case Lexer.TK_MINUSMINUS -> Operator.DEC;
-            case Lexer.TK_PLUS -> Operator.ADD;
-            case Lexer.TK_MINUS -> Operator.SUB;
-            case Lexer.TK_BANG -> Operator.LOGICAL_NOT;
-            case Lexer.TK_TILDE -> Operator.BITWISE_NOT;
+            case Lexer.TK_PLUS       -> Operator.ADD;
+            case Lexer.TK_MINUS      -> Operator.SUB;
+            case Lexer.TK_BANG       -> Operator.LOGICAL_NOT;
+            case Lexer.TK_TILDE      -> Operator.BITWISE_NOT;
             default -> null;
         };
         if (op != null) {
             nextToken();
-            Expression base = unaryExpression();
+            Expression base = UnaryExpression();
             if (base == null) {
                 return null;
             }
-            int position = (int) (start >> 16) & 0xFFFFFF;
-            position = Node.makeRange(position, base.getEndOffset());
-            return PrefixExpression.convert(position, op, base);
+            int pos = Position.range(Token.offset(prefix), base.getEndOffset());
+            return DSLExpression.Prefix(base, op, pos);
         }
-        return postfixExpression();
+        return PostfixExpression();
     }
+    // @formatter:on
 
     /**
-     * primary_expression (LBRACKET expression? RBRACKET | DOT IDENTIFIER | LPAREN arguments RPAREN |
-     * PLUSPLUS | MINUSMINUS | COLONCOLON IDENTIFIER)?
+     * <pre>{@literal
+     * PostfixExpression
+     *     : PrimaryExpression
+     *     | PostfixExpression LBRACKET Expression? RBRACKET
+     *     | PostfixExpression LPAREN (VOID | Expression)? RPAREN
+     *     | PostfixExpression DOT IDENTIFIER
+     *     | PostfixExpression PLUSPLUS
+     *     | PostfixExpression MINUSMINU
+     * }</pre>
      */
     @Nullable
-    private Expression postfixExpression() {
-        Expression result = primaryExpression();
+    private Expression PostfixExpression() {
+        Expression result = PrimaryExpression();
         if (result == null) {
             return null;
         }
         for (;;) {
             long t = peek();
-            switch (kind(t)) {
+            switch (Token.kind(t)) {
                 case Lexer.TK_LBRACKET:
                 case Lexer.TK_DOT:
                 case Lexer.TK_LPAREN:
@@ -703,57 +839,50 @@ public class Parser {
     }
 
     /**
-     * IDENTIFIER | INTLITERAL | FLOATLITERAL | BOOLEANLITERAL | '(' expression ')'
+     * <pre>{@literal
+     * PrimaryExpression
+     *     : IDENTIFIER
+     *     | INTLITERAL
+     *     | FLOATLITERAL
+     *     | BOOLEANLITERAL
+     *     | LPAREN Expression RPAREN
+     * }</pre>
      */
     @Nullable
-    private Expression primaryExpression() {
+    private Expression PrimaryExpression() {
         long t = peek();
-        switch (kind(t)) {
+        return switch (Token.kind(t)) {
             case Lexer.TK_IDENTIFIER -> {
-                String identifier = identifier();
-                return ThreadContext.getInstance().convertIdentifier(position(t), identifier);
+                nextToken();
+                yield ThreadContext.getInstance().convertIdentifier(position(t), text(t));
             }
-            case Lexer.TK_INTLITERAL -> {
-                return intLiteral();
-            }
-            case Lexer.TK_FLOATLITERAL -> {
-                return floatLiteral();
-            }
-            case Lexer.TK_TRUE, Lexer.TK_FALSE -> {
-                return booleanLiteral();
-            }
+            case Lexer.TK_INTLITERAL -> IntLiteral();
+            case Lexer.TK_FLOATLITERAL -> FloatLiteral();
+            case Lexer.TK_TRUE, Lexer.TK_FALSE -> BooleanLiteral();
             case Lexer.TK_LPAREN -> {
                 nextToken();
-                Expression result = expression();
+                Expression result = Expression();
                 if (result != null) {
                     expect(Lexer.TK_RPAREN, "')' to complete expression");
-                    result.mPosition = Node.makeRange(result.getStartOffset(), mLexer.position());
-                    return result;
+                    result.mPosition = rangeFrom(t);
+                    yield result;
                 }
+                yield null;
             }
             default -> {
                 nextToken();
-                error(t, "expected expression, but found '" + text(t) + "'");
-                throw new RuntimeException();
+                error(t, "expected identifier, literal constant or parenthesized expression, but found '" +
+                        text(t) + "'");
+                throw new IllegalStateException();
             }
-        }
-        return null;
-    }
-
-    /**
-     * IDENTIFIER
-     */
-    @Nonnull
-    private String identifier() {
-        long token = expect(Lexer.TK_IDENTIFIER, "identifier");
-        return text(token);
+        };
     }
 
     /**
      * INTLITERAL
      */
     @Nullable
-    private Literal intLiteral() {
+    private Literal IntLiteral() {
         long token = expect(Lexer.TK_INTLITERAL, "integer literal");
         String s = text(token);
         if (s.endsWith("u") || s.endsWith("U")) {
@@ -778,7 +907,7 @@ public class Parser {
      * FLOATLITERAL
      */
     @Nullable
-    private Literal floatLiteral() {
+    private Literal FloatLiteral() {
         long token = expect(Lexer.TK_FLOATLITERAL, "float literal");
         String s = text(token);
         try {
@@ -800,9 +929,9 @@ public class Parser {
      * TRUE | FALSE
      */
     @Nullable
-    private Literal booleanLiteral() {
+    private Literal BooleanLiteral() {
         long token = nextToken();
-        return switch (kind(token)) {
+        return switch (Token.kind(token)) {
             case Lexer.TK_TRUE -> Literal.makeBoolean(
                     position(token),
                     true);
@@ -815,5 +944,25 @@ public class Parser {
                 yield null;
             }
         };
+    }
+
+    /**
+     * <pre>{@literal
+     * StructDeclaration
+     *     : STRUCT IDENTIFIER LBRACE VarDeclaration+ RBRACE
+     *
+     * VarDeclaration
+     *     : Modifiers? Type VarDeclarator (COMMA VarDeclarator)* SEMICOLON
+     *
+     * VarDeclarator
+     *     : IDENTIFIER (LBRACKET ConditionalExpression RBRACKET)*
+     * }</pre>
+     */
+    private Type StructDeclaration() {
+        long start = peek();
+        expect(Lexer.TK_STRUCT, "'struct'");
+        long typeName = expectIdentifier();
+        expect(Lexer.TK_LBRACE, "'{'");
+        return null;
     }
 }

@@ -16,24 +16,19 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.slang.codegen;
-
-import icyllis.akashigi.slang.tree.Program;
-import icyllis.akashigi.engine.Context;
+package icyllis.akashigi.slang.tree;
 
 /**
- * Abstract superclass of all code generators, which take a Program as input and produce code as
- * output.
+ * Represents a top-level element (e.g. function or global variable) in a program.
  */
-public abstract class CodeGenerator {
+public abstract class Element extends Node {
 
-    public final Context mContext;
-    public final Program mProgram;
-    public StringBuilder mOut;
-
-    public CodeGenerator(Context context, Program program, StringBuilder out) {
-        mContext = context;
-        mProgram = program;
-        mOut = out;
+    protected Element(int position) {
+        super(position);
     }
+
+    /**
+     * @see Node.ElementKind
+     */
+    public abstract ElementKind getKind();
 }

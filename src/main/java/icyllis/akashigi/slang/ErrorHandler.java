@@ -18,8 +18,6 @@
 
 package icyllis.akashigi.slang;
 
-import icyllis.akashigi.slang.ir.Node;
-
 import java.util.Objects;
 
 /**
@@ -28,7 +26,8 @@ import java.util.Objects;
 public abstract class ErrorHandler {
 
     private String mSource = "";
-    private int mErrorCount;
+    private int mErrors;
+    private int mWarnings;
 
     public final String getSource() {
         return mSource;
@@ -38,24 +37,44 @@ public abstract class ErrorHandler {
         mSource = Objects.requireNonNullElse(source, "");
     }
 
-    public final int getErrorCount() {
-        return mErrorCount;
+    public final int getNumErrors() {
+        return mErrors;
     }
 
-    public final void resetErrorCount() {
-        mErrorCount = 0;
+    public final int getNumWarnings() {
+        return mWarnings;
     }
 
-    public final void error(int position, String msg) {
-        error(Node.getStartOffset(position), Node.getEndOffset(position), msg);
+    public final void reset() {
+        mErrors = 0;
+        mWarnings = 0;
     }
 
+    /**
+     * Reports an error.
+     *
+     * @param pos see {@link Position}
+     * @param msg the error message to report
+     */
+    public final void error(int pos, String msg) {
+        error(Position.getStartOffset(pos), Position.getEndOffset(pos), msg);
+    }
+
+    /**
+     * Reports an error.
+     *
+     * @param start the start offset in the source string, or -1
+     * @param end   the end offset in the source string, or -1
+     * @param msg   the error message to report
+     */
     public final void error(int start, int end, String msg) {
+        assert (start == -1 && end == -1)
+                || (start >= 0 && start <= end && end <= Position.MAX_OFFSET);
         if (msg.contains(Compiler.POISON_TAG)) {
             // Don't report errors on poison values.
             return;
         }
-        mErrorCount++;
+        mErrors++;
         handleError(start, end, msg);
     }
 

@@ -1,6 +1,6 @@
 /*
  * Akashi GI.
- * Copyright (C) 2022-2022 BloCamLimb. All rights reserved.
+ * Copyright (C) 2022-2023 BloCamLimb. All rights reserved.
  *
  * Akashi GI is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -16,24 +16,21 @@
  * License along with Akashi GI. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package icyllis.akashigi.slang.codegen;
+package icyllis.akashigi.slang.dsl;
 
-import icyllis.akashigi.slang.tree.Program;
-import icyllis.akashigi.engine.Context;
+import icyllis.akashigi.slang.tree.*;
 
-/**
- * Abstract superclass of all code generators, which take a Program as input and produce code as
- * output.
- */
-public abstract class CodeGenerator {
+import javax.annotation.Nonnull;
 
-    public final Context mContext;
-    public final Program mProgram;
-    public StringBuilder mOut;
+public class DSLCore {
 
-    public CodeGenerator(Context context, Program program, StringBuilder out) {
-        mContext = context;
-        mProgram = program;
-        mOut = out;
+    @Nonnull
+    public static Expression Conditional(int position, Expression condition,
+                                         Expression trueExpr, Expression falseExpr) {
+        Expression result = ConditionalExpression.convert(position, condition, trueExpr, falseExpr);
+        if (result != null) {
+            return result;
+        }
+        return Poison.make(position);
     }
 }
