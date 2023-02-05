@@ -19,12 +19,7 @@
 package icyllis.modernui.util;
 
 import icyllis.modernui.ModernUI;
-import it.unimi.dsi.fastutil.bytes.ByteArrayList;
-import it.unimi.dsi.fastutil.doubles.DoubleArrayList;
-import it.unimi.dsi.fastutil.floats.FloatArrayList;
-import it.unimi.dsi.fastutil.ints.IntArrayList;
-import it.unimi.dsi.fastutil.longs.LongArrayList;
-import it.unimi.dsi.fastutil.shorts.ShortArrayList;
+import icyllis.modernui.text.TextUtils;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 
@@ -45,19 +40,19 @@ import java.util.zip.GZIPOutputStream;
  * <p>
  * A Data Set object can be put into other data sets (exclude itself) to
  * construct a tree structure. Additionally, an array structure (exposed in {@link List})
- * is also supported, array objects are backed by {@link ArrayList} and primitive-specified
- * array lists such as {@link IntArrayList}. All object keys and values can not be null.
+ * is also supported, where elements are backed by {@link ArrayList}. All object keys
+ * can not be null.
  * <p>
  * Common IO interfaces are {@link DataInput} and {@link DataOutput}, where
  * {@link String} are coded in Java modified UTF-8 format. When the target is local
  * storage, the data will be gzip compressed. You can check the source code to find
  * the detailed format specifications.
  * <p>
- * For Netty network IO, calls {@link #readDataSet(DataInput)} passing a ByteBufInputStream
- * and {@link #writeDataSet(DataSet, DataOutput)} passing a ByteBufOutputStream.
+ * For Netty network IO, calls {@link #readDataSet(DataInput, ClassLoader)} passing a
+ * ByteBufInputStream and {@link #writeDataSet(DataOutput, DataSet)} passing a ByteBufOutputStream.
  * <p>
- * For local IO, calls {@link #inflate(InputStream)} and {@link #deflate(DataSet, OutputStream)}
- * passing FileInputStream and FileOutputStream.
+ * For local IO, calls {@link #inflate(InputStream, ClassLoader)} and
+ * {@link #deflate(OutputStream, DataSet)} passing FileInputStream and FileOutputStream.
  * <p>
  * Format conversion between common data-interchange formats such as JSON and Minecraft NBT
  * can be easily done. The default implementations are not provided here.
@@ -69,7 +64,7 @@ public final class DataSet implements Map<String, Object> {
     public static final Marker MARKER = MarkerManager.getMarker("DataSet");
 
     /**
-     * Value types; all types other than length-prefixed are null-terminated.
+     * Value types.
      */
     private static final byte VAL_NULL = 0;
     private static final byte
@@ -95,15 +90,14 @@ public final class DataSet implements Map<String, Object> {
             VAL_CHAR_SEQUENCE = 18,
             VAL_UUID = 19;
     private static final byte
-            VAL_OBJECT_ARRAY = 20,
-            VAL_LIST = 21,
-            VAL_DATA_SET = 22,
-            VAL_MAP = 23,
-            VAL_DATA_SERIALIZABLE = 24,
-            VAL_SERIALIZABLE = 25;
+            VAL_LIST = 20,
+            VAL_DATA_SET = 21,
+            VAL_DATA_SERIALIZABLE = 22,
+            VAL_OBJECT_ARRAY = 23,
+            VAL_SERIALIZABLE = 24;
 
     /**
-     * The initial default size of a hash table.
+     * The default initial size of a hash table.
      */
     private static final int DEFAULT_INITIAL_SIZE = 16;
     /**
@@ -170,6 +164,17 @@ public final class DataSet implements Map<String, Object> {
         mThreshold = (int) (DEFAULT_INITIAL_SIZE * DEFAULT_LOAD_FACTOR);
     }
 
+    DataSet(int n) {
+        n = (int) Math.ceil(n / DEFAULT_LOAD_FACTOR);
+        if (n < DEFAULT_INITIAL_SIZE || n > (1 << (Integer.SIZE - 2)))
+            throw new IllegalStateException();
+        n = 1 << -Integer.numberOfLeadingZeros(n - 1); // ceilPow2
+        mKey = new String[n];
+        mValue = new Object[n];
+        mLink = new long[n];
+        mThreshold = (int) (n * DEFAULT_LOAD_FACTOR);
+    }
+
     /**
      * Reads a compressed DataSet from a GNU zipped file.
      * <p>
@@ -179,10 +184,11 @@ public final class DataSet implements Map<String, Object> {
      * @param stream the FileInputStream or FileChannel->ChannelInputStream
      * @return the newly inflated data set
      */
-    @Nonnull
-    public static DataSet inflate(InputStream stream) throws IOException {
-        try (var input = new DataInputStream(new BufferedInputStream(new GZIPInputStream(stream, 4096), 4096))) {
-            return readDataSet(input);
+    @Nullable
+    public static DataSet inflate(InputStream stream, ClassLoader loader) throws IOException {
+        try (var input = new DataInputStream(
+                new BufferedInputStream(new GZIPInputStream(stream, 4096), 4096))) {
+            return readDataSet(input, loader);
         }
     }
 
@@ -193,12 +199,13 @@ public final class DataSet implements Map<String, Object> {
      * The stream should be a FileOutputStream or a FileChannel->ChannelOutputStream,
      * and will be closed after the method call.
      *
-     * @param source the data set to deflate
      * @param stream the FileOutputStream or FileChannel->ChannelOutputStream
+     * @param source the data set to deflate
      */
-    public static void deflate(DataSet source, OutputStream stream) throws IOException {
-        try (var output = new DataOutputStream(new BufferedOutputStream(new GZIPOutputStream(stream, 4096), 4096))) {
-            writeDataSet(source, output);
+    public static void deflate(OutputStream stream, DataSet source) throws IOException {
+        try (var output = new DataOutputStream(
+                new BufferedOutputStream(new GZIPOutputStream(stream, 4096), 4096))) {
+            writeDataSet(output, source);
         }
     }
 
@@ -288,21 +295,15 @@ public final class DataSet implements Map<String, Object> {
      *
      * @param value value whose presence in this map is to be tested
      * @return {@code true} if this map contains one or more keys to the specified value
-     * @throws NullPointerException if the specified value is null
      */
     // @formatter:off
     @Override
     public boolean containsValue(Object value) {
-        Objects.requireNonNull(value);
         final Object[] values = mValue;
         final String[] keys = mKey;
-        for (int i = keys.length; i-->0;) {
-            if (keys[i] == null)
-                continue;
-            Object v = values[i];
-            if (v == value || value.equals(v))
+        for (int i = keys.length; i-- > 0;)
+            if (keys[i] != null && Objects.equals(value, values[i]))
                 return true;
-        }
         return false;
     }
     // @formatter:on
@@ -376,6 +377,26 @@ public final class DataSet implements Map<String, Object> {
             return (T) o;
         } catch (ClassCastException e) {
             typeWarning(key, o, "<T>", e);
+            return null;
+        }
+    }
+
+    /**
+     * Returns the value to which the specified key is mapped,
+     * or {@code null} if this map contains no mapping for the key.
+     *
+     * @param key the key whose associated value is to be returned
+     * @return the value to which the specified key is mapped, or
+     * {@code null} if this map contains no mapping for the key
+     */
+    public <T> T getValue(String key, Class<T> clazz) {
+        Object o = get(key);
+        if (o == null)
+            return null;
+        try {
+            return (T) o;
+        } catch (ClassCastException e) {
+            typeWarning(key, o, clazz.getName(), e);
             return null;
         }
     }
@@ -1919,304 +1940,472 @@ public final class DataSet implements Map<String, Object> {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (o == this)
-            return true;
-        if (!(o instanceof Map<?, ?> map))
-            return false;
-        if (map.size() != size())
-            return false;
-        try {
-            var it = new FastEntryIterator();
-            while (it.hasNext()) {
-                MapEntry e = it.next();
-                if (!e.getValue().equals(map.get(e.getKey())))
-                    return false;
-            }
-        } catch (ClassCastException | NullPointerException ignored) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
     public int hashCode() {
         int h = 0;
-        for (int j = mSize, i = 0, t; j-- != 0; ) {
+        for (int j = mSize, i = 0; j-->0;) {
             while (mKey[i] == null)
                 i++;
-            t = (mKey[i].hashCode());
-            t ^= Objects.hashCode(mValue[i]);
-            h += t;
+            h += mKey[i].hashCode() ^ Objects.hashCode(mValue[i]);
             i++;
         }
         return h;
     }
 
     @Override
-    public String toString() {
-        if (isEmpty()) {
-            return "{}";
-        }
-        final var s = new StringBuilder();
-        s.append('{');
-        for (var it = new FastEntryIterator(); it.hasNext();) {
-            s.append(it.next());
-            s.append(',');
-        }
-        s.deleteCharAt(s.length() - 1);
-        return s.append('}').toString();
-    }
-
-    static void typeWarning(int key, Object value, String className,
-                            ClassCastException e) {
-        typeWarning(key, value, className, "<null>", e);
-    }
-
-    // Log a message if the value was non-null but not of the expected type
-    static void typeWarning(int key, Object value, String className,
-                            Object defaultValue, ClassCastException e) {
-        ModernUI.LOGGER.warn(MARKER, "Key {} expected {} but value was a {}. The default value {} was returned.",
-                key, className, value.getClass().getName(), defaultValue);
-        ModernUI.LOGGER.warn(MARKER, "Attempt to cast generated internal exception", e);
-    }
-
-    static void typeWarning(String key, Object value, String className,
-                            ClassCastException e) {
-        typeWarning(key, value, className, "<null>", e);
-    }
-
-    // Log a message if the value was non-null but not of the expected type
-    static void typeWarning(String key, Object value, String className,
-                            Object defaultValue, ClassCastException e) {
-        ModernUI.LOGGER.warn(MARKER, "Key {} expected {} but value was a {}. The default value {} was returned.",
-                key, className, value.getClass().getName(), defaultValue);
-        ModernUI.LOGGER.warn(MARKER, "Attempt to cast generated internal exception", e);
-    }
-
-    /**
-     * Write a list as a value.
-     *
-     * @param list   the list to write
-     * @param output the data output
-     * @throws IOException if an IO error occurs
-     */
-    private static void writeList(List<?> list, DataOutput output) throws IOException {
-        final int size = list.size();
-        if (size == 0) {
-            // short path for Object arrays, but do not break primitive-specified arrays
-            output.writeByte(VAL_NULL);
-        } else {
-            final Object e = list.get(0);
-            if (e instanceof String) {
-                output.writeByte(VAL_STRING);
-                output.writeInt(size);
-                for (String s : (List<String>) list) {
-                    output.writeUTF(s);
-                }
-            } else if (e instanceof UUID) {
-                output.writeByte(VAL_UUID);
-                output.writeInt(size);
-                for (UUID u : (List<UUID>) list) {
-                    output.writeLong(u.getMostSignificantBits());
-                    output.writeLong(u.getLeastSignificantBits());
-                }
-            } else if (e instanceof List) {
-                output.writeByte(VAL_LIST);
-                output.writeInt(size);
-                for (List<?> li : (List<List<?>>) list) {
-                    writeList(li, output);
-                }
-            } else if (e instanceof DataSet) {
-                output.writeByte(VAL_DATA_SET);
-                output.writeInt(size);
-                for (DataSet set : (List<DataSet>) list) {
-                    writeDataSet(set, output);
+    public boolean equals(Object o) {
+        if (o == this)
+            return true;
+        if (!(o instanceof Map<?, ?> m))
+            return false;
+        if (m.size() != size())
+            return false;
+        try {
+            var it = new FastEntryIterator();
+            while (it.hasNext()) {
+                MapEntry e = it.next();
+                String key = e.getKey();
+                Object value = e.getValue();
+                if (value == null) {
+                    if (!(m.get(key) == null && m.containsKey(key)))
+                        return false;
+                } else {
+                    if (!value.equals(m.get(key)))
+                        return false;
                 }
             }
+        } catch (ClassCastException | NullPointerException e) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        if (isEmpty())
+            return "{}";
+        var s = new StringBuilder();
+        s.append('{');
+        var it = new FastEntryIterator();
+        for (;;) {
+            s.append(it.next());
+            if (!it.hasNext())
+                return s.append('}').toString();
+            s.append(',').append(' ');
+        }
+    }
+
+    static void typeWarning(int key, Object value, String className,
+                            ClassCastException e) {
+        typeWarning(key, value, className, "<null>", e);
+    }
+
+    // Log a message if the value was non-null but not of the expected type
+    static void typeWarning(int key, Object value, String className,
+                            Object defaultValue, ClassCastException e) {
+        ModernUI.LOGGER.warn(MARKER, "Key {} expected {} but value was a {}. The default value {} was returned.",
+                key, className, value.getClass().getName(), defaultValue);
+        ModernUI.LOGGER.warn(MARKER, "Attempt to cast generated internal exception", e);
+    }
+
+    static void typeWarning(String key, Object value, String className,
+                            ClassCastException e) {
+        typeWarning(key, value, className, "<null>", e);
+    }
+
+    // Log a message if the value was non-null but not of the expected type
+    static void typeWarning(String key, Object value, String className,
+                            Object defaultValue, ClassCastException e) {
+        ModernUI.LOGGER.warn(MARKER, "Key {} expected {} but value was a {}. The default value {} was returned.",
+                key, className, value.getClass().getName(), defaultValue);
+        ModernUI.LOGGER.warn(MARKER, "Attempt to cast generated internal exception", e);
+    }
+
+    private static byte getValueType(Object v) {
+        if (v instanceof String)
+            return VAL_STRING;
+        else if (v instanceof Integer)
+            return VAL_INT;
+        else {
+            Class<?> clazz = v.getClass();
+            if (clazz.isArray() && clazz.getComponentType() == Object.class)
+                return VAL_OBJECT_ARRAY;
+            else if (v instanceof Serializable)
+                return VAL_SERIALIZABLE;
+            else return -1; // silently ignored
         }
     }
 
     /**
-     * Write a data set as a value.
+     * Write a value and its type.
      *
-     * @param set    the set to write
-     * @param output the data output
+     * @param out  the data output
+     * @param v the value to write
      * @throws IOException if an IO error occurs
      */
-    public static void writeDataSet(@Nullable DataSet set, DataOutput output) throws IOException {
-        if (set == null) {
-            output.writeByte(VAL_NULL);
+    public static void writeValue(@Nonnull DataOutput out, @Nullable Object v) throws IOException {
+        if (v == null) {
+            out.writeByte(VAL_NULL);
+        } else if (v instanceof String) {
+            out.writeByte(VAL_STRING);
+            writeString(out, (String) v);
+        } else if (v instanceof Integer) {
+            out.writeByte(VAL_INT);
+            out.writeInt((Integer) v);
+        } else if (v instanceof Long) {
+            out.writeByte(VAL_LONG);
+            out.writeLong((Long) v);
+        } else if (v instanceof Float) {
+            out.writeByte(VAL_FLOAT);
+            out.writeFloat((Float) v);
+        } else if (v instanceof Double) {
+            out.writeByte(VAL_DOUBLE);
+            out.writeDouble((Double) v);
+        } else if (v instanceof Byte) {
+            out.writeByte(VAL_BYTE);
+            out.writeByte((Byte) v);
+        } else if (v instanceof Short) {
+            out.writeByte(VAL_SHORT);
+            out.writeShort((Short) v);
+        } else if (v instanceof Character) {
+            out.writeByte(VAL_CHAR);
+            out.writeChar((Character) v);
+        } else if (v instanceof Boolean) {
+            out.writeByte(VAL_BOOLEAN);
+            out.writeBoolean((Boolean) v);
+        } else if (v instanceof CharSequence) {
+            out.writeByte(VAL_CHAR_SEQUENCE);
+            TextUtils.write(out, (CharSequence) v);
+        } else if (v instanceof UUID value) {
+            out.writeByte(VAL_UUID);
+            out.writeLong(value.getMostSignificantBits());
+            out.writeLong(value.getLeastSignificantBits());
+        } else if (v instanceof byte[]) {
+            out.writeByte(VAL_BYTE_ARRAY);
+            writeByteArray(out, (byte[]) v);
+        } else if (v instanceof char[]) {
+            out.writeByte(VAL_CHAR_ARRAY);
+            writeCharArray(out, (char[]) v);
+        } else if (v instanceof List) {
+            out.writeByte(VAL_LIST);
+            writeList(out, (List<?>) v);
+        } else if (v instanceof DataSet) {
+            out.writeByte(VAL_DATA_SET);
+            writeDataSet(out, (DataSet) v);
+        } else if (v instanceof DataSerializable value) {
+            out.writeByte(VAL_DATA_SERIALIZABLE);
+            writeString(out, value.getClass().getName());
+            value.writeData(out);
+        } else if (v instanceof int[]) {
+            out.writeByte(VAL_INT_ARRAY);
+            writeIntArray(out, (int[]) v);
+        } else if (v instanceof long[]) {
+            out.writeByte(VAL_LONG_ARRAY);
+            writeLongArray(out, (long[]) v);
+        } else if (v instanceof short[]) {
+            out.writeByte(VAL_SHORT_ARRAY);
+            writeShortArray(out, (short[]) v);
+        } else if (v instanceof float[]) {
+            out.writeByte(VAL_FLOAT_ARRAY);
+            writeFloatArray(out, (float[]) v);
+        } else if (v instanceof double[]) {
+            out.writeByte(VAL_DOUBLE_ARRAY);
+            writeDoubleArray(out, (double[]) v);
+        } else if (v instanceof boolean[]) {
+            out.writeByte(VAL_BOOLEAN_ARRAY);
+            writeBooleanArray(out, (boolean[]) v);
+        } else {
+            Class<?> clazz = v.getClass();
+            if (clazz.isArray() && clazz.getComponentType() == Object.class) {
+                out.writeByte(VAL_OBJECT_ARRAY);
+                writeArray(out, (Object[]) v);
+            } else if (v instanceof Serializable value) {
+                out.writeByte(VAL_SERIALIZABLE);
+                writeString(out, value.getClass().getName());
+                ByteArrayOutputStream stream = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(stream);
+                oos.writeObject(value);
+                oos.close();
+                writeByteArray(out, stream.toByteArray());
+            }
+            // others are silently ignored
+        }
+    }
+
+    /**
+     * Write a string in UTF-16 BE format.
+     *
+     * @param out the data output
+     * @param s   the string to write
+     * @throws IOException if an IO error occurs
+     */
+    public static void writeString(@Nonnull DataOutput out, @Nullable String s) throws IOException {
+        if (s == null) {
+            out.writeInt(-1);
             return;
         }
-        var it = set.new FastEntryIterator();
+        out.writeInt(s.length());
+        out.writeChars(s);
+    }
+
+    /**
+     * Write a byte array.
+     *
+     * @param out the data output
+     * @param b   the bytes to write
+     * @throws IOException if an IO error occurs
+     */
+    public static void writeByteArray(@Nonnull DataOutput out,
+                                      @Nullable byte[] b) throws IOException {
+        if (b == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(b.length);
+        out.write(b);
+    }
+
+    /**
+     * Write a byte array.
+     *
+     * @param out the data output
+     * @param b   the bytes to write
+     * @throws IOException if an IO error occurs
+     */
+    public static void writeByteArray(@Nonnull DataOutput out,
+                                      @Nullable byte[] b, int off, int len) throws IOException {
+        if (b == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(len);
+        out.write(b, off, len);
+    }
+
+    public static void writeIntArray(@Nonnull DataOutput out,
+                                     @Nullable int[] value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(value.length);
+        for (int e : value)
+            out.writeInt(e);
+    }
+
+    public static void writeLongArray(@Nonnull DataOutput out,
+                                      @Nullable long[] value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(value.length);
+        for (long e : value)
+            out.writeLong(e);
+    }
+
+    public static void writeShortArray(@Nonnull DataOutput out,
+                                       @Nullable short[] value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(value.length);
+        for (short e : value)
+            out.writeShort(e);
+    }
+
+    public static void writeFloatArray(@Nonnull DataOutput out,
+                                       @Nullable float[] value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(value.length);
+        for (float e : value)
+            out.writeFloat(e);
+    }
+
+    public static void writeDoubleArray(@Nonnull DataOutput out,
+                                        @Nullable double[] value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(value.length);
+        for (double e : value)
+            out.writeDouble(e);
+    }
+
+    public static void writeCharArray(@Nonnull DataOutput out,
+                                      @Nullable char[] value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(value.length);
+        for (char e : value)
+            out.writeChar(e);
+    }
+
+    public static void writeBooleanArray(@Nonnull DataOutput out,
+                                         @Nullable boolean[] value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(value.length);
+        for (boolean e : value)
+            out.writeBoolean(e);
+    }
+
+    /**
+     * Write an object array.
+     *
+     * @param out   the data output
+     * @param value the object array to write
+     * @throws IOException if an IO error occurs
+     */
+    public static void writeArray(@Nonnull DataOutput out,
+                                  @Nullable Object[] value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        int n = value.length, i = 0;
+        out.writeInt(n);
+        while (i < n)
+            writeValue(out, value[i++]);
+    }
+
+    /**
+     * Write a list.
+     *
+     * @param out   the data output
+     * @param value the list to write
+     * @throws IOException if an IO error occurs
+     */
+    public static void writeList(@Nonnull DataOutput out,
+                                 @Nullable List<?> value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        int n = value.size(), i = 0;
+        out.writeInt(n);
+        while (i < n)
+            writeValue(out, value.get(i++));
+    }
+
+    /**
+     * Write a data set.
+     *
+     * @param out   the data output
+     * @param value the data set to write
+     * @throws IOException if an IO error occurs
+     */
+    public static void writeDataSet(@Nonnull DataOutput out,
+                                    @Nullable DataSet value) throws IOException {
+        if (value == null) {
+            out.writeInt(-1);
+            return;
+        }
+        out.writeInt(value.size());
+        var it = value.new FastEntryIterator();
         while (it.hasNext()) {
             MapEntry e = it.next();
-            final Object v = e.getValue();
-            if (v instanceof Byte) {
-                output.writeByte(VAL_BYTE);
-                output.writeUTF(e.getKey());
-                output.writeByte((byte) v);
-            } else if (v instanceof Short) {
-                output.writeByte(VAL_SHORT);
-                output.writeUTF(e.getKey());
-                output.writeShort((short) v);
-            } else if (v instanceof Integer) {
-                output.writeByte(VAL_INT);
-                output.writeUTF(e.getKey());
-                output.writeInt((int) v);
-            } else if (v instanceof Long) {
-                output.writeByte(VAL_LONG);
-                output.writeUTF(e.getKey());
-                output.writeLong((long) v);
-            } else if (v instanceof Float) {
-                output.writeByte(VAL_FLOAT);
-                output.writeUTF(e.getKey());
-                output.writeFloat((float) v);
-            } else if (v instanceof Double) {
-                output.writeByte(VAL_DOUBLE);
-                output.writeUTF(e.getKey());
-                output.writeDouble((double) v);
-            } else if (v instanceof String) {
-                output.writeByte(VAL_STRING);
-                output.writeUTF(e.getKey());
-                output.writeUTF((String) v);
-            } else if (v instanceof UUID u) {
-                output.writeByte(VAL_UUID);
-                output.writeUTF(e.getKey());
-                output.writeLong(u.getMostSignificantBits());
-                output.writeLong(u.getLeastSignificantBits());
-            } else if (v instanceof List) {
-                output.writeByte(VAL_LIST);
-                output.writeUTF(e.getKey());
-                writeList((List<?>) v, output);
-            } else if (v instanceof DataSet) {
-                output.writeByte(VAL_DATA_SET);
-                output.writeUTF(e.getKey());
-                writeDataSet((DataSet) v, output);
-            }
+            writeString(out, e.getKey());
+            writeValue(out, e.getValue());
         }
-        output.writeByte(VAL_NULL);
+    }
+
+    @Nullable
+    public static <T> T readValue(@Nonnull DataInput in, @Nullable ClassLoader loader,
+                                  @Nullable Class<T> clazz, @Nullable Class<?> itemType) throws IOException {
+        final byte type = in.readByte();
+        final Object object = switch (type) {
+            case VAL_NULL -> null;
+            case VAL_BOOLEAN -> in.readBoolean();
+            case VAL_BYTE -> in.readByte();
+            case VAL_CHAR -> in.readChar();
+            case VAL_SHORT -> in.readShort();
+            case VAL_INT -> in.readInt();
+            case VAL_LONG -> in.readLong();
+            case VAL_FLOAT -> in.readFloat();
+            case VAL_DOUBLE -> in.readDouble();
+            case VAL_BOOLEAN_ARRAY -> readBooleanArray(in);
+            case VAL_STRING -> readString(in);
+            case VAL_CHAR_SEQUENCE -> TextUtils.read(in);
+            case VAL_UUID -> new UUID(in.readLong(), in.readLong());
+            case VAL_LIST -> readList(in, loader, itemType);
+            case VAL_DATA_SET -> readDataSet(in, loader);
+            default -> throw new IOException("Unknown value type identifier: " + type);
+        };
+        if (object != null && clazz != null && !clazz.isInstance(object)) {
+            throw new IOException("Deserialized object " + object
+                    + " is not an instance of required class " + clazz.getName()
+                    + " provided in the parameter");
+        }
+        return (T) object;
+    }
+
+    @Nullable
+    public static String readString(@Nonnull DataInput in) throws IOException {
+        int n = in.readInt();
+        if (n < 0)
+            return null;
+        char[] value = new char[n];
+        for (int i = 0; i < n; i++)
+            value[i] = in.readChar();
+        return new String(value);
+    }
+
+    @Nullable
+    public static boolean[] readBooleanArray(@Nonnull DataInput in) throws IOException {
+        int n = in.readInt();
+        if (n < 0)
+            return null;
+        boolean[] value = new boolean[n];
+        for (int i = 0; i < n; i++)
+            value[i] = in.readBoolean();
+        return value;
     }
 
     /**
      * Read a list as a value.
      *
-     * @param input the data input
+     * @param in the data input
      * @return the newly created list
      * @throws IOException if an IO error occurs
      */
-    @Nonnull
-    private static List<?> readList(DataInput input) throws IOException {
-        final byte id = input.readByte();
-        if (id == VAL_NULL) {
-            // short path for Object arrays, but do not break primitive-specified arrays
-            return new ArrayList<>();
-        }
-        // here, the size may be zero for non-primitive types
-        final int size = input.readInt();
-        switch (id) {
-            case VAL_BYTE -> {
-                ByteArrayList list = new ByteArrayList(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(input.readByte());
-                }
-                return list;
-            }
-            case VAL_SHORT -> {
-                ShortArrayList list = new ShortArrayList(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(input.readShort());
-                }
-                return list;
-            }
-            case VAL_INT -> {
-                IntArrayList list = new IntArrayList(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(input.readInt());
-                }
-                return list;
-            }
-            case VAL_LONG -> {
-                LongArrayList list = new LongArrayList(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(input.readLong());
-                }
-                return list;
-            }
-            case VAL_FLOAT -> {
-                FloatArrayList list = new FloatArrayList(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(input.readFloat());
-                }
-                return list;
-            }
-            case VAL_DOUBLE -> {
-                DoubleArrayList list = new DoubleArrayList(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(input.readDouble());
-                }
-                return list;
-            }
-            case VAL_STRING -> {
-                ArrayList<String> list = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(input.readUTF());
-                }
-                return list;
-            }
-            case VAL_UUID -> {
-                ArrayList<UUID> list = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(new UUID(input.readLong(), input.readLong()));
-                }
-                return list;
-            }
-            case VAL_LIST -> {
-                ArrayList<List<?>> list = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(readList(input));
-                }
-                return list;
-            }
-            case VAL_DATA_SET -> {
-                ArrayList<DataSet> list = new ArrayList<>(size);
-                for (int i = 0; i < size; i++) {
-                    list.add(readDataSet(input));
-                }
-                return list;
-            }
-            default -> throw new IOException("Unknown element type identifier: " + id);
-        }
+    @Nullable
+    private static <T> List<T> readList(@Nonnull DataInput in, @Nullable ClassLoader loader,
+                                        @Nullable Class<? extends T> clazz) throws IOException {
+        int n = in.readInt();
+        if (n < 0)
+            return null;
+        List<T> result = new ArrayList<>(n);
+        while (n-- > 0)
+            result.add(readValue(in, loader, clazz, null));
+        return result;
     }
 
     /**
      * Read a data set as a value.
      *
-     * @param input the data input
+     * @param in the data input
      * @return the newly created data set
      * @throws IOException if an IO error occurs
      */
-    @Nonnull
-    public static DataSet readDataSet(DataInput input) throws IOException {
-        final DataSet set = new DataSet();
-        byte t;
-        while ((t = input.readByte()) != VAL_NULL) {
-            final String key = input.readUTF();
-            switch (t) {
-                case VAL_BYTE -> set.put(key, input.readByte());
-                case VAL_SHORT -> set.put(key, input.readShort());
-                case VAL_INT -> set.put(key, input.readInt());
-                case VAL_LONG -> set.put(key, input.readLong());
-                case VAL_FLOAT -> set.put(key, input.readFloat());
-                case VAL_DOUBLE -> set.put(key, input.readDouble());
-                case VAL_STRING -> set.put(key, input.readUTF());
-                case VAL_UUID -> set.put(key, new UUID(input.readLong(), input.readLong()));
-                case VAL_LIST -> set.put(key, readList(input));
-                case VAL_DATA_SET -> set.put(key, readDataSet(input));
-                default -> throw new IOException("Unknown value type identifier: " + t);
-            }
-        }
-        return set;
+    @Nullable
+    public static DataSet readDataSet(@Nonnull DataInput in, @Nullable ClassLoader loader) throws IOException {
+        int n = in.readInt();
+        if (n < 0)
+            return null;
+        DataSet result = n > (DEFAULT_INITIAL_SIZE * DEFAULT_LOAD_FACTOR)
+                ? new DataSet(n)
+                : new DataSet();
+        while (n-- > 0)
+            result.put(readString(in), readValue(in, loader, null, null));
+        return result;
     }
 }

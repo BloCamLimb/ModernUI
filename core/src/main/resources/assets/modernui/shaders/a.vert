@@ -263,3 +263,56 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     fragColor = vec4(col,1.0);
 }
+
+// two circle light
+vec4 uncharted2_tonemap_partial(vec4 x)
+{
+    float A = 0.15f;
+    float B = 0.50f;
+    float C = 0.10f;
+    float D = 0.20f;
+    float E = 0.02f;
+    float F = 0.30f;
+    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
+vec4 uncharted2_filmic(vec4 v)
+{
+    float exposure_bias = 2.0f;
+    vec4 curr = uncharted2_tonemap_partial(v * exposure_bias);
+
+    vec4 W = vec4(11.2f);
+    vec4 white_scale = vec4(1.0f) / uncharted2_tonemap_partial(W);
+    return curr * white_scale;
+}
+
+float luminance(vec3 v)
+{
+    return dot(v, vec3(0.2126f, 0.7152f, 0.0722f));
+}
+
+float rand(vec2 n)
+{
+    return fract(sin(dot(n, vec2(12.9898,12.1414))) * 83758.5453);
+}
+
+void mainImage( out vec4 fragColor, in vec2 fragCoord )
+{
+    vec2 uv = fragCoord/iResolution.xy;
+    vec2 pos = 2.0 * uv - 1.0;
+    pos.y /= iResolution.x/iResolution.y;
+
+    float dist1 = length(pos-sin(iTime*3.0)*0.1-0.1);
+    dist1 = max(0.05/(dist1*dist1)-0.1,0.0);
+    vec4 col1 = vec4(0.85,0.5,0.75,1.0);
+    col1 *= (dist1+rand(pos.yx)*0.01);
+    col1 = uncharted2_filmic(col1);
+
+    float dist2 = length(pos+sin(iTime*2.0)*0.1+0.1);
+    dist2 = max(0.05/(dist2*dist2)-0.1,0.0);
+    vec4 col2 = vec4(0.2,0.85,0.95,1.0);
+    col2 *= (dist2+rand(pos.yx)*0.01);
+    col2 = uncharted2_filmic(col2);
+
+    fragColor = col1+(1.0-col1.a)*col2;
+}
