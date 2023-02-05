@@ -163,6 +163,10 @@ public class ModernUI implements AutoCloseable, LifecycleOwner {
             mWindow = MainWindow.initialize(NAME_CPT, (int) (mode.getWidth() * 0.75f),
                     (int) (mode.getHeight() * 0.75f));
             mWindow.center(monitor);
+            int[] w = {0}, h = {0};
+            glfwGetMonitorPhysicalSize(monitor.getHandle(), w, h);
+            LOGGER.info(MARKER, "Primary monitor DPI: {}",
+                    25.4 * Math.hypot(mode.getWidth(), mode.getHeight()) / Math.hypot(w[0], h[0]));
         }
 
         loadDefaultTypeface();

@@ -20,10 +20,12 @@ package icyllis.modernui.text;
 
 import com.ibm.icu.util.ULocale;
 import icyllis.modernui.graphics.font.FontPaint;
+import icyllis.modernui.util.DataSet;
 import icyllis.modernui.view.View;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.*;
 import java.lang.reflect.Array;
 import java.util.Locale;
 
@@ -268,6 +270,30 @@ public final class TextUtils {
                 return i;
 
         return -1;
+    }
+
+    public static void write(@Nonnull DataOutput out, @Nullable CharSequence cs) throws IOException {
+        if (cs == null) {
+            out.writeInt(0);
+        } else if (cs instanceof Spanned) {
+            out.writeInt(2);
+            out.writeUTF(cs.toString());
+            //TODO
+        } else {
+            out.writeInt(1);
+            out.writeUTF(cs.toString());
+        }
+    }
+
+    @Nullable
+    public static CharSequence read(@Nonnull DataInput in) throws IOException {
+        int kind = in.readInt();
+        if (kind == 0)
+            return null;
+        String string = in.readUTF();
+        if (kind == 1)
+            return string;
+        return new SpannableString(string);
     }
 
     /**

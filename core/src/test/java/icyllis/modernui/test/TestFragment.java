@@ -20,18 +20,16 @@ package icyllis.modernui.test;
 
 import icyllis.modernui.ModernUI;
 import icyllis.modernui.fragment.Fragment;
-import icyllis.modernui.graphics.Canvas;
-import icyllis.modernui.graphics.Paint;
+import icyllis.modernui.graphics.*;
 import icyllis.modernui.graphics.drawable.Drawable;
-import icyllis.modernui.graphics.Rect;
 import icyllis.modernui.util.DataSet;
-import icyllis.modernui.view.Gravity;
-import icyllis.modernui.view.View;
-import icyllis.modernui.view.ViewGroup;
+import icyllis.modernui.util.TypedValue;
+import icyllis.modernui.view.*;
 import icyllis.modernui.view.ViewGroup.LayoutParams;
-import icyllis.modernui.widget.FrameLayout;
-import icyllis.modernui.widget.LinearLayout;
-import icyllis.modernui.widget.ScrollView;
+import icyllis.modernui.widget.*;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.config.Configurator;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -41,9 +39,15 @@ import static icyllis.modernui.view.View.dp;
 public class TestFragment extends Fragment {
 
     public static void main(String[] args) {
-        try (ModernUI app = new ModernUI()) {
+        System.setProperty("java.awt.headless", "true");
+        Configurator.setRootLevel(Level.ALL);
+        int complex = TypedValue.floatToComplex(-0.0f);
+        ModernUI.LOGGER.info("{} -> {}",
+                Integer.toHexString(complex),
+                TypedValue.complexToFloat(complex));
+        /*try (ModernUI app = new ModernUI()) {
             app.run(new TestFragment());
-        }
+        }*/
         String str = """
                 public final class Reference {
                 public:
